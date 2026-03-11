@@ -1,7 +1,9 @@
+import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("jvm")
+    id("io.gitlab.arturbosch.detekt")
 }
 
 group = "tech.testsys"
@@ -31,4 +33,14 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
         allWarningsAsErrors = true
         jvmTarget = JvmTarget.JVM_21
     }
+}
+
+// TODO update to custom config if needed (https://detekt.dev)
+tasks.withType<Detekt>().configureEach {
+    reports {
+        sarif.required.set(true)
+    }
+
+//    config.setFrom("$rootDir/detekt.yml")
+//    buildUponDefaultConfig = true
 }

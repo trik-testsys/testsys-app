@@ -1,0 +1,57 @@
+name: Lint
+
+on:
+  push:
+    branches: [ "master", "dev" ]
+  pull_request:
+    branches: [ "master", "dev" ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detekt:
+    name: Detekt
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: wrapper
+
+      - name: Run Detekt
+        run: ./gradlew detekt --no-daemon
+
+      - name: Upload Detekt report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: detekt-report
+          path: |
+            **/build/reports/detekt/
+          retention-days: 7
+
+      - name: Collect SARIF reports
+        if: always()
+        run: |
+          mkdir -p build/sarif
+          find . -path "*/build/reports/detekt/*.sarif" | while read f; do
+            cp "$f" "build/sarif/$(echo "$f" | tr '/' '_')"
+          done
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: build/sarif

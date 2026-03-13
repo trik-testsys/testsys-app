@@ -19,5 +19,6 @@ data class JudgmentOrderData(
 
 class JudgmentOrder(
     id: JudgmentOrderId,
-    val data: JudgmentOrderData
-) : DomainEntity<JudgmentOrderId>(id)
+    val data: JudgmentOrderData,
+    createdAt: Instant = Instant.now(),
+) : DomainEntity<JudgmentOrderId>(id, createdAt)

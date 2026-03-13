@@ -9,9 +9,9 @@ import java.time.Instant
 
 sealed class SingleRoleUser(
     id: UserId,
-    accessToken: String,
     createdAt: Instant,
-) : User(id, accessToken, createdAt)
+    accessToken: String,
+) : User(id, createdAt, accessToken)
 
 data class ParticipantData(
     val competition: LazyEntity<CompetitionId, Competition>
@@ -19,10 +19,10 @@ data class ParticipantData(
 
 class Participant(
     id: UserId,
+    createdAt: Instant,
     accessToken: String,
     val data: ParticipantData,
-    createdAt: Instant,
-) : SingleRoleUser(id, accessToken, createdAt)
+) : SingleRoleUser(id, createdAt, accessToken)
 
 data class ObserverData(
     val competitions: LazyEntityList<CompetitionId, Competition>
@@ -30,13 +30,13 @@ data class ObserverData(
 
 class Observer(
     id: UserId,
+    createdAt: Instant,
     accessToken: String,
     val data: ObserverData,
-    createdAt: Instant,
-) : SingleRoleUser(id, accessToken, createdAt)
+) : SingleRoleUser(id, createdAt, accessToken)
 
 class Supervisor(
     id: UserId,
-    accessToken: String,
     createdAt: Instant,
-) : SingleRoleUser(id, accessToken, createdAt)
+    accessToken: String,
+) : SingleRoleUser(id, createdAt, accessToken)

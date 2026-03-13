@@ -11,6 +11,6 @@ value class UserId(
 
 sealed class User(
     id: UserId,
-    val accessToken: String,
     createdAt: Instant,
+    val accessToken: String,
 ) : DomainEntity<UserId>(id, createdAt)

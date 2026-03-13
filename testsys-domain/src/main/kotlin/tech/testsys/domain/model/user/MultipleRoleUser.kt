@@ -29,10 +29,10 @@ data class MultipleRoleUserData(
 
 sealed class MultipleRoleUser(
     id: UserId,
+    createdAt: Instant,
     accessToken: String,
     val data: MultipleRoleUserData,
-    createdAt: Instant,
-) : User(id, accessToken, createdAt)
+) : User(id, createdAt, accessToken)
 
 sealed class CompatibleUserRole(
     val memberOf: LazyEntityList<CommunityId, Community>

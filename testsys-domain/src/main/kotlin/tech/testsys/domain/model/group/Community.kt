@@ -20,6 +20,6 @@ data class CommunityData(
 
 class Community(
     id: CommunityId,
-    val data: CommunityData,
     createdAt: Instant,
+    val data: CommunityData,
 ) : DomainEntity<CommunityId>(id, createdAt)

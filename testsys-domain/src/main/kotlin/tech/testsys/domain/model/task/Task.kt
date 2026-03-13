@@ -25,8 +25,8 @@ data class DeveloperSolutionData(
 
 class DeveloperSolution(
     id: DeveloperSolutionId,
-    val data: DeveloperSolutionData,
     createdAt: Instant,
+    val data: DeveloperSolutionData,
 ) : DomainEntity<DeveloperSolutionId>(id, createdAt)
 
 @JvmInline
@@ -51,8 +51,8 @@ data class TaskData(
 
 class Task(
     id: TaskId,
-    val data: TaskData,
     createdAt: Instant,
+    val data: TaskData,
 ) : DomainEntity<TaskId>(id, createdAt)
 
 @JvmInline
@@ -79,8 +79,8 @@ class TestData(
 // TODO: add data like timelimit, analysis data
 class Test(
     id: TestId,
-    val data: TestData,
     createdAt: Instant,
+    val data: TestData,
 ) : DomainEntity<TestId>(id, createdAt)
 
 @JvmInline
@@ -95,8 +95,8 @@ class SolutionData(
 
 class Solution(
     id: SolutionId,
-    val data: SolutionData,
     createdAt: Instant,
+    val data: SolutionData,
 ) : DomainEntity<SolutionId>(id, createdAt)
 
 @JvmInline
@@ -111,8 +111,8 @@ class ExerciseData(
 
 class Exercise(
     id: ExerciseId,
+    createdAt: Instant,
     val versionData: VersionData<ExerciseId, Exercise>,
     val data: ExerciseData,
-    createdAt: Instant,
 ) : DomainEntity<ExerciseId>(id, createdAt)
 

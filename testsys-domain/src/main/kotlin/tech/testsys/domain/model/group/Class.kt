@@ -23,5 +23,5 @@ data class ClassData(
 class Class(
     id: ClassId,
     val data: ClassData,
-    createdAt: Instant = Instant.now(),
+    createdAt: Instant,
 ) : DomainEntity<ClassId>(id, createdAt)

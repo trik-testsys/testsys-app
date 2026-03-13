@@ -25,5 +25,5 @@ data class CompetitionData(
 class Competition(
     id: CompetitionId,
     val data: CompetitionData,
-    createdAt: Instant = Instant.now(),
+    createdAt: Instant,
 ) : DomainEntity<CompetitionId>(id, createdAt)

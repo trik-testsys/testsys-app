@@ -21,7 +21,7 @@ data class VerdictData(
 class Verdict(
     id: VerdictId,
     val data: VerdictData,
-    createdAt: Instant = Instant.now(),
+    createdAt: Instant,
 ) : DomainEntity<VerdictId>(id, createdAt)
 
 @JvmInline
@@ -58,5 +58,5 @@ data class SubmissionData(
 class Submission(
     id: SubmissionId,
     val data: SubmissionData,
-    createdAt: Instant = Instant.now(),
+    createdAt: Instant,
 ) : DomainEntity<SubmissionId>(id, createdAt)

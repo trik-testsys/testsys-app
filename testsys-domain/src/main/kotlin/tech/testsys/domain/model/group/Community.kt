@@ -21,5 +21,5 @@ data class CommunityData(
 class Community(
     id: CommunityId,
     val data: CommunityData,
-    createdAt: Instant = Instant.now(),
+    createdAt: Instant,
 ) : DomainEntity<CommunityId>(id, createdAt)

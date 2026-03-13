@@ -21,7 +21,7 @@ class Participant(
     id: UserId,
     accessToken: String,
     val data: ParticipantData,
-    createdAt: Instant = Instant.now(),
+    createdAt: Instant,
 ) : SingleRoleUser(id, accessToken, createdAt)
 
 data class ObserverData(
@@ -32,11 +32,11 @@ class Observer(
     id: UserId,
     accessToken: String,
     val data: ObserverData,
-    createdAt: Instant = Instant.now(),
+    createdAt: Instant,
 ) : SingleRoleUser(id, accessToken, createdAt)
 
 class Supervisor(
     id: UserId,
     accessToken: String,
-    createdAt: Instant = Instant.now(),
+    createdAt: Instant,
 ) : SingleRoleUser(id, accessToken, createdAt)

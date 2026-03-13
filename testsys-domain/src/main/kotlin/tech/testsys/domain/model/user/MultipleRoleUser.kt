@@ -31,7 +31,7 @@ sealed class MultipleRoleUser(
     id: UserId,
     accessToken: String,
     val data: MultipleRoleUserData,
-    createdAt: Instant = Instant.now(),
+    createdAt: Instant,
 ) : User(id, accessToken, createdAt)
 
 sealed class CompatibleUserRole(

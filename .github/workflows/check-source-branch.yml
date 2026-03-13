@@ -1,0 +1,22 @@
+name: Check source branch
+
+on:
+  pull_request:
+    branches: [ "dev" ]
+
+jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate source branch
+        run: |
+          ALLOWED_PREFIXES=("sh1sh4k1n9" "ch3zych3z" "KarasssDev")
+          ALLOWED_REGEX="^($(IFS='|'; echo "${ALLOWED_PREFIXES[*]}"))/.+"
+          SOURCE="${{ github.head_ref }}"
+          if [[ ! "$SOURCE" =~ $ALLOWED_REGEX ]]; then
+            allowed_msg=$(printf '%s/, ' "${ALLOWED_PREFIXES[@]}")
+            allowed_msg=${allowed_msg%, }
+            echo "❌ Merge allowed only from branches with next prefixes: $allowed_msg"
+            exit 1
+          fi
+          echo "✅ Merge from branch $SOURCE allowed"

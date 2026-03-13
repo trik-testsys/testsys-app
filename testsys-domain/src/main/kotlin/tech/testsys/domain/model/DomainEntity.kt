@@ -9,7 +9,7 @@ interface DomainId {
 
 abstract class DomainEntity<Id: DomainId>(
     val id: Id,
-    val createdAt: Instant
+    val createdAt: Instant,
 ) {
 
     override fun equals(other: Any?): Boolean {

@@ -9,12 +9,15 @@ plugins {
 group = "tech.testsys"
 version = "1.0.0-SNAPSHOT"
 
+val libs = versionCatalogs.named("libs")
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
     testImplementation(kotlin("test"))
+    detektPlugins(libs.findLibrary("detekt-formatting").get())
 }
 
 kotlin {

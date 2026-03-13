@@ -56,6 +56,19 @@ complexity:
     excludeStringsWithLessThan5Characters: true
     ignoreStringsRegex: '$^'
 
+formatting:
+  active: true
+  android: false
+  autoCorrect: true
+  MaximumLineLength:
+    active: true
+    maxLineLength: 140
+  NoWildcardImports:
+    active: true
+  ParameterListWrapping:
+    active: true
+    maxLineLength: 140
+
 coroutines:
   active: true
   GlobalCoroutineUsage:

@@ -45,4 +45,5 @@ tasks.withType<Detekt>().configureEach {
 
     config.setFrom("$rootDir/detekt.yml")
     buildUponDefaultConfig = true
+    autoCorrect = true
 }

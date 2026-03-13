@@ -1,14 +1,12 @@
 plugins {
-    id("testsys.conventions")
+    id("testsys.infra-conventions")
     kotlin("plugin.spring")
     kotlin("plugin.jpa")
 }
 
-group = "tech.testsys.infra"
-
-val springBootVersion = "3.4.3"
+val libs = versionCatalogs.named("libs")
 
 dependencies {
     implementation(project(":testsys-domain"))
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa:$springBootVersion")
+    implementation(libs.findLibrary("spring-boot-starter-data-jpa").get())
 }

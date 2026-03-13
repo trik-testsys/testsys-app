@@ -1,5 +1,3 @@
 plugins {
-    id("testsys.conventions")
+    id("testsys.infra-conventions")
 }
-
-group = "tech.testsys.infra"

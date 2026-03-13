@@ -21,7 +21,6 @@ data class ContestData(
     val startsAt: Instant?,
     val contestDuration: Duration,
     val attemptDuration: Duration,
-    val createdAt: Instant,
     val trikStudioVersion: TrikStudioVersion
     // TODO: val sharedTo: List<>
 ) {
@@ -30,5 +29,6 @@ data class ContestData(
 
 class Contest(
     id: ContestId,
-    val data: ContestData
-) : DomainEntity<ContestId>(id)
+    createdAt: Instant,
+    val data: ContestData,
+) : DomainEntity<ContestId>(id, createdAt)

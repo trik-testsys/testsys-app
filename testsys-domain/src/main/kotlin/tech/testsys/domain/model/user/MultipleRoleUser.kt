@@ -21,6 +21,7 @@ import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestId
+import java.time.Instant
 
 data class MultipleRoleUserData(
     val roles: List<CompatibleUserRole>
@@ -28,9 +29,10 @@ data class MultipleRoleUserData(
 
 sealed class MultipleRoleUser(
     id: UserId,
+    createdAt: Instant,
     accessToken: String,
-    val data: MultipleRoleUserData
-) : User(id, accessToken)
+    val data: MultipleRoleUserData,
+) : User(id, createdAt, accessToken)
 
 sealed class CompatibleUserRole(
     val memberOf: LazyEntityList<CommunityId, Community>

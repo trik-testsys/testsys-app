@@ -8,6 +8,7 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.UserId
+import java.time.Instant
 
 @JvmInline
 value class CompetitionId(
@@ -23,5 +24,6 @@ data class CompetitionData(
 
 class Competition(
     id: CompetitionId,
-    val data: CompetitionData
-) : DomainEntity<CompetitionId>(id)
+    createdAt: Instant,
+    val data: CompetitionData,
+) : DomainEntity<CompetitionId>(id, createdAt)

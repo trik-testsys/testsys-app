@@ -5,6 +5,7 @@ import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.user.MultipleRoleUser
+import java.time.Instant
 
 sealed interface TrikSupportedLanguage {
     object Python: TrikSupportedLanguage
@@ -24,8 +25,9 @@ data class DeveloperSolutionData(
 
 class DeveloperSolution(
     id: DeveloperSolutionId,
+    createdAt: Instant,
     val data: DeveloperSolutionData,
-) : DomainEntity<DeveloperSolutionId>(id)
+) : DomainEntity<DeveloperSolutionId>(id, createdAt)
 
 @JvmInline
 value class TaskId(
@@ -49,8 +51,9 @@ data class TaskData(
 
 class Task(
     id: TaskId,
+    createdAt: Instant,
     val data: TaskData,
-) : DomainEntity<TaskId>(id)
+) : DomainEntity<TaskId>(id, createdAt)
 
 @JvmInline
 value class TestId(
@@ -76,8 +79,9 @@ class TestData(
 // TODO: add data like timelimit, analysis data
 class Test(
     id: TestId,
+    createdAt: Instant,
     val data: TestData,
-) : DomainEntity<TestId>(id)
+) : DomainEntity<TestId>(id, createdAt)
 
 @JvmInline
 value class SolutionId(
@@ -91,8 +95,9 @@ class SolutionData(
 
 class Solution(
     id: SolutionId,
+    createdAt: Instant,
     val data: SolutionData,
-) : DomainEntity<SolutionId>(id)
+) : DomainEntity<SolutionId>(id, createdAt)
 
 @JvmInline
 value class ExerciseId(
@@ -106,7 +111,8 @@ class ExerciseData(
 
 class Exercise(
     id: ExerciseId,
+    createdAt: Instant,
     val versionData: VersionData<ExerciseId, Exercise>,
-    val data: ExerciseData
-) : DomainEntity<ExerciseId>(id)
+    val data: ExerciseData,
+) : DomainEntity<ExerciseId>(id, createdAt)
 

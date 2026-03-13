@@ -20,8 +20,9 @@ data class VerdictData(
 
 class Verdict(
     id: VerdictId,
-    val data: VerdictData
-) : DomainEntity<VerdictId>(id)
+    createdAt: Instant,
+    val data: VerdictData,
+) : DomainEntity<VerdictId>(id, createdAt)
 
 @JvmInline
 value class SubmissionId(
@@ -50,12 +51,12 @@ data class SubmissionData(
     val solution: LazyEntity<SolutionId, Solution>,
     val task: LazyEntity<TaskId, Task>,
     val status: SubmissionStatus,
-    val createdAt: Instant,
     val kind: SubmissionKind,
     val judgmentOrders: LazyEntityList<JudgmentOrderId, JudgmentOrder>
 )
 
 class Submission(
     id: SubmissionId,
-    val data: SubmissionData
-) : DomainEntity<SubmissionId>(id)
+    createdAt: Instant,
+    val data: SubmissionData,
+) : DomainEntity<SubmissionId>(id, createdAt)

@@ -6,6 +6,7 @@ import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
+import java.time.Instant
 
 @JvmInline
 value class CommunityId(
@@ -19,5 +20,6 @@ data class CommunityData(
 
 class Community(
     id: CommunityId,
-    val data: CommunityData
-) : DomainEntity<CommunityId>(id)
+    createdAt: Instant,
+    val data: CommunityData,
+) : DomainEntity<CommunityId>(id, createdAt)

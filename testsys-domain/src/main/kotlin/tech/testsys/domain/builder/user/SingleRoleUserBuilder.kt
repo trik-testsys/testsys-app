@@ -3,6 +3,7 @@ package tech.testsys.domain.builder.user
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DataCapable
 import tech.testsys.domain.builder.util.lazify
+import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
@@ -29,7 +30,7 @@ class ParticipantDataBuilder : Builder<ParticipantData> {
     }
 
     override fun build(): ParticipantData {
-        val competition = requireNotNull(competition)
+        val competition = requireField(competition, "competition")
 
         return ParticipantData(
             competition = competition.lazify(),
@@ -44,10 +45,10 @@ class ParticipantBuilder : SingleRoleUserBuilder<Participant>(), DataCapable<Par
     override fun dataBuilder() = ParticipantDataBuilder()
 
     override fun build(): Participant {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val accessToken = requireNotNull(accessToken)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val accessToken = requireField(accessToken, "accessToken")
+        val data = requireField(data, "data")
 
         return Participant(
             id = UserId(id),
@@ -85,10 +86,10 @@ class ObserverBuilder : SingleRoleUserBuilder<Observer>(), DataCapable<ObserverD
     override fun dataBuilder() = ObserverDataBuilder()
 
     override fun build(): Observer {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val accessToken = requireNotNull(accessToken)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val accessToken = requireField(accessToken, "accessToken")
+        val data = requireField(data, "data")
 
         return Observer(
             id = UserId(id),
@@ -106,9 +107,9 @@ inline fun buildObserver(builder: ObserverBuilder.() -> Unit) = ObserverBuilder(
 class SupervisorBuilder : SingleRoleUserBuilder<Supervisor>() {
 
     override fun build(): Supervisor {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val accessToken = requireNotNull(accessToken)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val accessToken = requireField(accessToken, "accessToken")
 
         return Supervisor(
             id = UserId(id),

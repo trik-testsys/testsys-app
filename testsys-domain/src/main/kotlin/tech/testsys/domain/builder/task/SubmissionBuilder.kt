@@ -6,6 +6,7 @@ import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.user.MultipleRoleUserBuilder
 import tech.testsys.domain.builder.util.chooser.SubmissionKindChooser
 import tech.testsys.domain.builder.util.chooser.SubmissionStatusChooser
+import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.JudgmentOrderId
@@ -36,9 +37,9 @@ class VerdictDataBuilder : Builder<VerdictData> {
     }
 
     override fun build(): VerdictData {
-        val score = requireNotNull(score)
-        val task = requireNotNull(task)
-        val submission = requireNotNull(submission)
+        val score = requireField(score, "score")
+        val task = requireField(task, "task")
+        val submission = requireField(submission, "submission")
 
         return VerdictData(
             score = score,
@@ -54,9 +55,9 @@ class VerdictBuilder : DomainEntityWithDataBuilder<Verdict, VerdictData, Verdict
     override fun dataBuilder() = VerdictDataBuilder()
 
     override fun build(): Verdict {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val data = requireField(data, "data")
 
         return Verdict(
             id = VerdictId(id),
@@ -114,11 +115,11 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     }
 
     override fun build(): SubmissionData {
-        val author = requireNotNull(author)
-        val solution = requireNotNull(solution)
-        val task = requireNotNull(task)
-        val status = requireNotNull(status.choice)
-        val kind = requireNotNull(kind.choice)
+        val author = requireField(author, "author")
+        val solution = requireField(solution, "solution")
+        val task = requireField(task, "task")
+        val status = requireField(status.choice, "status")
+        val kind = requireField(kind.choice, "kind")
 
         return SubmissionData(
             author = author,
@@ -137,9 +138,9 @@ class SubmissionBuilder : DomainEntityWithDataBuilder<Submission, SubmissionData
     override fun dataBuilder() = SubmissionDataBuilder()
 
     override fun build(): Submission {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val data = requireField(data, "data")
 
         return Submission(
             id = SubmissionId(id),

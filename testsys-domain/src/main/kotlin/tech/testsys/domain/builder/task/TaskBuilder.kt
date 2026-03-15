@@ -5,6 +5,7 @@ import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.user.MultipleRoleUserBuilder
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
+import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
@@ -40,8 +41,8 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
     }
 
     override fun build(): DeveloperSolutionData {
-        val solution = requireNotNull(solution)
-        val expectedVerdict = requireNotNull(expectedVerdict)
+        val solution = requireField(solution, "solution")
+        val expectedVerdict = requireField(expectedVerdict, "expectedVerdict")
 
         return DeveloperSolutionData(
             solution = solution.lazify(),
@@ -58,9 +59,9 @@ class DeveloperSolutionBuilder :
     override fun dataBuilder() = DeveloperSolutionDataBuilder()
 
     override fun build(): DeveloperSolution {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val data = requireField(data, "data")
 
         return DeveloperSolution(
             id = DeveloperSolutionId(id),
@@ -111,11 +112,11 @@ class TaskDataBuilder : Builder<TaskData> {
     }
 
     override fun build(): TaskData {
-        val owner = requireNotNull(owner)
-        val name = requireNotNull(name)
-        val description = requireNotNull(description)
-        val exercise = requireNotNull(exercise)
-        val trikStudioVersion = requireNotNull(_trikStudioVersion)
+        val owner = requireField(owner, "owner")
+        val name = requireField(name, "name")
+        val description = requireField(description, "description")
+        val exercise = requireField(exercise, "exercise")
+        val trikStudioVersion = requireField(_trikStudioVersion, "trikStudioVersion")
 
         return TaskData(
             owner = owner,
@@ -135,9 +136,9 @@ class TaskBuilder : DomainEntityWithDataBuilder<Task, TaskData, TaskDataBuilder>
     override fun dataBuilder() = TaskDataBuilder()
 
     override fun build(): Task {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val data = requireField(data, "data")
 
         return Task(
             id = TaskId(id),
@@ -168,9 +169,9 @@ class TestDataBuilder : Builder<TestData> {
     val language = LanguageChooser()
 
     override fun build(): TestData {
-        val file = requireNotNull(_file)
-        val versionData = requireNotNull(_versionData)
-        val language = requireNotNull(language.choice)
+        val file = requireField(_file, "file")
+        val versionData = requireField(_versionData, "versionData")
+        val language = requireField(language.choice, "language")
 
         return TestData(
             file = file,
@@ -186,9 +187,9 @@ class TestBuilder : DomainEntityWithDataBuilder<Test, TestData, TestDataBuilder>
     override fun dataBuilder() = TestDataBuilder()
 
     override fun build(): Test {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val data = requireField(data, "data")
 
         return Test(
             id = TestId(id),
@@ -214,8 +215,8 @@ class SolutionDataBuilder : Builder<SolutionData> {
     val language = LanguageChooser()
 
     override fun build(): SolutionData {
-        val file = requireNotNull(_file)
-        val language = requireNotNull(language.choice)
+        val file = requireField(_file, "file")
+        val language = requireField(language.choice, "language")
 
         return SolutionData(
             file = file,
@@ -230,9 +231,9 @@ class SolutionBuilder : DomainEntityWithDataBuilder<Solution, SolutionData, Solu
     override fun dataBuilder() = SolutionDataBuilder()
 
     override fun build(): Solution {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val data = requireField(data, "data")
 
         return Solution(
             id = SolutionId(id),
@@ -258,8 +259,8 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
     val language = LanguageChooser()
 
     override fun build(): ExerciseData {
-        val file = requireNotNull(_file)
-        val language = requireNotNull(language.choice)
+        val file = requireField(_file, "file")
+        val language = requireField(language.choice, "language")
 
         return ExerciseData(
             file = file,
@@ -280,10 +281,10 @@ class ExerciseBuilder : DomainEntityWithDataBuilder<Exercise, ExerciseData, Exer
     override fun dataBuilder() = ExerciseDataBuilder()
 
     override fun build(): Exercise {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val versionData = requireNotNull(_versionData)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val versionData = requireField(_versionData, "versionData")
+        val data = requireField(data, "data")
 
         return Exercise(
             id = ExerciseId(id),

@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.user.MultipleRoleUserBuilder
+import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
@@ -36,12 +37,12 @@ class ContestDataBuilder : Builder<ContestData> {
     }
 
     override fun build(): ContestData {
-        val owner = requireNotNull(owner)
-        val name = requireNotNull(name)
-        val description = requireNotNull(description)
-        val contestDuration = requireNotNull(contestDuration)
-        val attemptDuration = requireNotNull(attemptDuration)
-        val trikStudioVersion = requireNotNull(trikStudioVersion)
+        val owner = requireField(owner, "owner")
+        val name = requireField(name, "name")
+        val description = requireField(description, "description")
+        val contestDuration = requireField(contestDuration, "contestDuration")
+        val attemptDuration = requireField(attemptDuration, "attemptDuration")
+        val trikStudioVersion = requireField(trikStudioVersion, "trikStudioVersion")
 
         return ContestData(
             owner = owner,
@@ -61,9 +62,9 @@ class ContestBuilder : DomainEntityWithDataBuilder<Contest, ContestData, Contest
     override fun dataBuilder() = ContestDataBuilder()
 
     override fun build(): Contest {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val data = requireField(data, "data")
 
         return Contest(
             id = ContestId(id),

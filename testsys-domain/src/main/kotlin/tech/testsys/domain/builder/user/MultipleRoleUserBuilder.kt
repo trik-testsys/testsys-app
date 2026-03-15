@@ -3,6 +3,7 @@ package tech.testsys.domain.builder.user
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DataCapable
 import tech.testsys.domain.builder.util.lazify
+import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
@@ -84,7 +85,7 @@ class DeveloperBuilder : CompatibleUserRoleBuilder<Developer>(), DataCapable<Dev
     override fun dataBuilder() = DeveloperDataBuilder()
 
     override fun build(): Developer {
-        val data = requireNotNull(data)
+        val data = requireField(data, "data")
         return Developer(
             memberOf = memberOf.lazify(),
             data = data,
@@ -121,7 +122,7 @@ class StudentBuilder : CompatibleUserRoleBuilder<Student>(), DataCapable<Student
     override fun dataBuilder() = StudentDataBuilder()
 
     override fun build(): Student {
-        val data = requireNotNull(data)
+        val data = requireField(data, "data")
         return Student(
             memberOf = memberOf.lazify(),
             data = data,
@@ -158,7 +159,7 @@ class JudgeBuilder : CompatibleUserRoleBuilder<Judge>(), DataCapable<JudgeData, 
     override fun dataBuilder() = JudgeDataBuilder()
 
     override fun build(): Judge {
-        val data = requireNotNull(data)
+        val data = requireField(data, "data")
         return Judge(
             memberOf = memberOf.lazify(),
             data = data,
@@ -193,7 +194,7 @@ class ManagerBuilder : CompatibleUserRoleBuilder<Manager>(), DataCapable<Manager
     override fun dataBuilder() = ManagerDataBuilder()
 
     override fun build(): Manager {
-        val data = requireNotNull(data)
+        val data = requireField(data, "data")
         return Manager(
             memberOf = memberOf.lazify(),
             data = data,
@@ -264,10 +265,10 @@ class MultipleRoleUserBuilder :
     override fun dataBuilder() = MultipleRoleUserDataBuilder()
 
     override fun build(): MultipleRoleUser {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val accessToken = requireNotNull(accessToken)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val accessToken = requireField(accessToken, "accessToken")
+        val data = requireField(data, "data")
 
         return MultipleRoleUser(
             id = UserId(id),

@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.user.MultipleRoleUserBuilder
+import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionData
 import tech.testsys.domain.model.group.CompetitionId
@@ -30,7 +31,7 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
     }
 
     override fun build(): CompetitionData {
-        val owner = requireNotNull(owner)
+        val owner = requireField(owner, "owner")
 
         return CompetitionData(
             owner = owner,
@@ -45,9 +46,9 @@ class CompetitionBuilder : DomainEntityWithDataBuilder<Competition, CompetitionD
     override fun dataBuilder() = CompetitionDataBuilder()
 
     override fun build(): Competition {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val data = requireField(data, "data")
 
         return Competition(
             id = CompetitionId(id),

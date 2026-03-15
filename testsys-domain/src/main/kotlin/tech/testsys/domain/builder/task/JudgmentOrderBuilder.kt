@@ -3,6 +3,7 @@ package tech.testsys.domain.builder.task
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
+import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderData
 import tech.testsys.domain.model.task.JudgmentOrderId
@@ -23,8 +24,8 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
     }
 
     override fun build(): JudgmentOrderData {
-        val judge = requireNotNull(judge)
-        val verdict = requireNotNull(verdict)
+        val judge = requireField(judge, "judge")
+        val verdict = requireField(verdict, "verdict")
 
         return JudgmentOrderData(
             judge = judge.lazify(),
@@ -39,9 +40,9 @@ class JudgmentOrderBuilder : DomainEntityWithDataBuilder<JudgmentOrder, Judgment
     override fun dataBuilder() = JudgmentOrderDataBuilder()
 
     override fun build(): JudgmentOrder {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val data = requireField(data, "data")
 
         return JudgmentOrder(
             id = JudgmentOrderId(id),

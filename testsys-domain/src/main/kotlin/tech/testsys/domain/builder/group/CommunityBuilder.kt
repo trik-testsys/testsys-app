@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.user.MultipleRoleUserBuilder
+import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityData
 import tech.testsys.domain.model.group.CommunityId
@@ -24,7 +25,7 @@ class CommunityDataBuilder : Builder<CommunityData> {
     }
 
     override fun build(): CommunityData {
-        val owner = requireNotNull(owner)
+        val owner = requireField(owner, "owner")
 
         return CommunityData(
             owner = owner,
@@ -38,9 +39,9 @@ class CommunityBuilder : DomainEntityWithDataBuilder<Community, CommunityData, C
     override fun dataBuilder() = CommunityDataBuilder()
 
     override fun build(): Community {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val data = requireField(data, "data")
 
         return Community(
             id = CommunityId(id),

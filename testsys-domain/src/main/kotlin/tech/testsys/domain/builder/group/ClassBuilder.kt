@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.user.MultipleRoleUserBuilder
+import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassData
 import tech.testsys.domain.model.group.ClassId
@@ -30,7 +31,7 @@ class ClassDataBuilder : Builder<ClassData> {
     }
 
     override fun build(): ClassData {
-        val owner = requireNotNull(owner)
+        val owner = requireField(owner, "owner")
 
         return ClassData(
             owner = owner,
@@ -46,9 +47,9 @@ class ClassBuilder : DomainEntityWithDataBuilder<Class, ClassData, ClassDataBuil
     override fun dataBuilder() = ClassDataBuilder()
 
     override fun build(): Class {
-        val id = requireNotNull(id)
-        val createdAt = requireNotNull(createdAt)
-        val data = requireNotNull(data)
+        val id = requireField(id, "id")
+        val createdAt = requireField(createdAt, "createdAt")
+        val data = requireField(data, "data")
 
         return Class(
             id = ClassId(id),

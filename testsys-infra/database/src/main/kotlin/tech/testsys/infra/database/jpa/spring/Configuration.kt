@@ -7,6 +7,11 @@ import org.springframework.context.annotation.PropertySource
 import tech.testsys.infra.database.jpa.spring.component.TestsysPhysicalNamingStrategy
 
 /**
+ * Spring configuration for the JPA/Hibernate infrastructure layer.
+ *
+ * Loads default Hibernate properties from `classpath:hibernate-defaults.properties`
+ * and registers project-wide beans such as the [PhysicalNamingStrategy].
+ *
  * @since %CURRENT_VERSION%
  */
 @Configuration
@@ -14,6 +19,10 @@ import tech.testsys.infra.database.jpa.spring.component.TestsysPhysicalNamingStr
 class Configuration {
 
     /**
+     * Registers [TestsysPhysicalNamingStrategy] as the physical naming strategy,
+     * which converts entity and field names to snake_case table/column names
+     * with a `t_` table prefix.
+     *
      * @since %CURRENT_VERSION%
      */
     @Bean

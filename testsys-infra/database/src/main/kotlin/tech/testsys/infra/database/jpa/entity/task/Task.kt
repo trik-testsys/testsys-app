@@ -1,4 +1,4 @@
-package tech.testsys.infra.database.jpa.entity.user
+package tech.testsys.infra.database.jpa.entity.task
 
 import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
@@ -20,19 +20,6 @@ enum class TrikSupportedLanguageJpaEnum {
     JAVA_SCRIPT,
     VISUAL_LANGUAGE;
 }
-
-/**
- * JPA entity representing a judgment order domain entity.
- *
- * @see tech.testsys.domain.model.task.JudgmentOrder
- * @see tech.testsys.domain.model.task.JudgmentOrderData
- * @since %CURRENT_VERSION%
- */
-@Entity
-class JudgmentOrderJpaEntity(
-    val judgeId: Long,
-    val verdictId: Long,
-) : JpaEntity()
 
 /**
  * Base JPA entity for file-based domain entities.

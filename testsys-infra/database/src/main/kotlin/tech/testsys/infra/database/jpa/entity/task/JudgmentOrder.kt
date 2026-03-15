@@ -17,4 +17,5 @@ import tech.testsys.infra.database.jpa.entity.JpaEntity
 class JudgmentOrderJpaEntity(
     val judgeId: Long,
     val verdictId: Long,
+    val submissionId: Long,
 ) : JpaEntity()

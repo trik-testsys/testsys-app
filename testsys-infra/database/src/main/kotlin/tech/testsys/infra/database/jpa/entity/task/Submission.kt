@@ -1,11 +1,8 @@
 package tech.testsys.infra.database.jpa.entity.task
 
-import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import tech.testsys.infra.database.jpa.entity.JpaCompositeEntity
-import tech.testsys.infra.database.jpa.entity.JpaCompositeId
 import tech.testsys.infra.database.jpa.entity.JpaEntity
 
 /**
@@ -96,29 +93,6 @@ class SubmissionKindJpaEntity(
     val submissionKind: SubmissionKindJpaEnum,
     val contestId: Long?,
 ) : JpaEntity()
-
-/**
- * Composite primary key for [JudgmentOrderToSubmissionJpaEntity].
- *
- * @since %CURRENT_VERSION%
- */
-@Embeddable
-data class JudgmentOrderToSubmissionId(
-    val judgmentOrderId: Long,
-    val submissionId: Long,
-) : JpaCompositeId()
-
-/**
- * JPA entity representing a judgment order to submission association domain entity.
- *
- * Uses a composite key [JudgmentOrderToSubmissionId].
- *
- * @since %CURRENT_VERSION%
- */
-@Entity
-class JudgmentOrderToSubmissionJpaEntity(
-    id: JudgmentOrderToSubmissionId,
-) : JpaCompositeEntity<JudgmentOrderToSubmissionId>(id)
 
 /**
  * JPA entity representing a submission domain entity.

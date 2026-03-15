@@ -1,18 +1,12 @@
 package tech.testsys.infra.database.jpa.entity.user
 
 import jakarta.persistence.Entity
-import jakarta.persistence.MappedSuperclass
-import tech.testsys.infra.database.jpa.entity.JpaEntity
 
 /**
- * @since %CURRENT_VERSION%
- */
-@MappedSuperclass
-abstract class RoleEntity(
-    val userId: Long
-) : JpaEntity()
-
-/**
+ * JPA entity representing a developer role domain entity.
+ *
+ * @see tech.testsys.domain.model.user.Developer
+ * @see tech.testsys.domain.model.user.DeveloperData
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -21,6 +15,10 @@ class DeveloperRoleJpaEntity(
 ) : RoleEntity(userId)
 
 /**
+ * JPA entity representing a student role domain entity.
+ *
+ * @see tech.testsys.domain.model.user.Student
+ * @see tech.testsys.domain.model.user.StudentData
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -29,6 +27,9 @@ class StudentRoleJpaEntity(
 ) : RoleEntity(userId)
 
 /**
+ * JPA entity representing an administrator role domain entity.
+ *
+ * @see tech.testsys.domain.model.user.Administrator
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -37,6 +38,22 @@ class AdministratorRoleJpaEntity(
 ) : RoleEntity(userId)
 
 /**
+ * JPA entity representing a judge role domain entity.
+ *
+ * @see tech.testsys.domain.model.user.Judge
+ * @see tech.testsys.domain.model.user.JudgeData
+ * @since %CURRENT_VERSION%
+ */
+@Entity
+class JudgeRoleJpaEntity(
+    userId: Long
+) : RoleEntity(userId)
+
+/**
+ * JPA entity representing a manager role domain entity.
+ *
+ * @see tech.testsys.domain.model.user.Manager
+ * @see tech.testsys.domain.model.user.ManagerData
  * @since %CURRENT_VERSION%
  */
 @Entity

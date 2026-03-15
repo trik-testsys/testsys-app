@@ -134,7 +134,7 @@ class TaskJpaEntity(
     val description: String,
     val exerciseId: Long,
     val trikStudioVersionImage: String,
-    val trikStudioVersionName: String,
+    val trikStudioVersionTag: String,
 ) : JpaEntity()
 
 /**

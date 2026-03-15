@@ -15,7 +15,6 @@ import java.time.Instant
  *
  * @since %CURRENT_VERSION%
  */
-@MappedSuperclass
 abstract class JpaCompositeId : Serializable
 
 /**

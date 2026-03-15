@@ -41,7 +41,7 @@ enum class SubmissionStatusJpaEnum {
 class SubmissionStatusJpaEntity(
     @Enumerated(EnumType.STRING)
     val status: SubmissionStatusJpaEnum,
-    val gradingResultId: Long,
+    val gradingResultId: Long?,
 ) : JpaEntity()
 
 /**

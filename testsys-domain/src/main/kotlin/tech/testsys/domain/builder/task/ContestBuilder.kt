@@ -75,6 +75,6 @@ class ContestBuilder : DomainEntityWithDataBuilder<Contest, ContestData, Contest
 
 }
 
-fun buildContestData(builder: ContestDataBuilder.() -> Unit) = ContestDataBuilder().apply(builder).build()
+inline fun buildContestData(builder: ContestDataBuilder.() -> Unit) = ContestDataBuilder().apply(builder).build()
 
-fun buildContest(builder: ContestBuilder.() -> Unit) = ContestBuilder().apply(builder).build()
+inline fun buildContest(builder: ContestBuilder.() -> Unit) = ContestBuilder().apply(builder).build()

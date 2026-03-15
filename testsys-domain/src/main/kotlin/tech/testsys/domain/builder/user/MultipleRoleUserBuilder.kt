@@ -279,8 +279,8 @@ class MultipleRoleUserBuilder :
 
 }
 
-fun buildMultipleRoleUserData(builder: MultipleRoleUserDataBuilder.() -> Unit) =
+inline fun buildMultipleRoleUserData(builder: MultipleRoleUserDataBuilder.() -> Unit) =
     MultipleRoleUserDataBuilder().apply(builder).build()
 
-fun buildMultipleRoleUser(builder: MultipleRoleUserBuilder.() -> Unit) =
+inline fun buildMultipleRoleUser(builder: MultipleRoleUserBuilder.() -> Unit) =
     MultipleRoleUserBuilder().apply(builder).build()

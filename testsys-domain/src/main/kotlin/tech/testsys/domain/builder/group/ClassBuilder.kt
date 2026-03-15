@@ -11,7 +11,7 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.UserId
 
-open class ClassDataBuilder : Builder<ClassData> {
+class ClassDataBuilder : Builder<ClassData> {
 
     var owner: MultipleRoleUser? = null
     var students = mutableListOf<UserId>()

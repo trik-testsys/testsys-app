@@ -59,10 +59,10 @@ class ParticipantBuilder : SingleRoleUserBuilder<Participant>(), DataCapable<Par
 
 }
 
-fun buildParticipantData(builder: ParticipantDataBuilder.() -> Unit) =
+inline fun buildParticipantData(builder: ParticipantDataBuilder.() -> Unit) =
     ParticipantDataBuilder().apply(builder).build()
 
-fun buildParticipant(builder: ParticipantBuilder.() -> Unit) =
+inline fun buildParticipant(builder: ParticipantBuilder.() -> Unit) =
     ParticipantBuilder().apply(builder).build()
 
 class ObserverDataBuilder : Builder<ObserverData> {
@@ -99,9 +99,9 @@ class ObserverBuilder : SingleRoleUserBuilder<Observer>(), DataCapable<ObserverD
     }
 }
 
-fun buildObserverData(builder: ObserverDataBuilder.() -> Unit) = ObserverDataBuilder().apply(builder).build()
+inline fun buildObserverData(builder: ObserverDataBuilder.() -> Unit) = ObserverDataBuilder().apply(builder).build()
 
-fun buildObserver(builder: ObserverBuilder.() -> Unit) = ObserverBuilder().apply(builder).build()
+inline fun buildObserver(builder: ObserverBuilder.() -> Unit) = ObserverBuilder().apply(builder).build()
 
 class SupervisorBuilder : SingleRoleUserBuilder<Supervisor>() {
 
@@ -119,4 +119,4 @@ class SupervisorBuilder : SingleRoleUserBuilder<Supervisor>() {
 
 }
 
-fun buildSupervisor(builder: SupervisorBuilder.() -> Unit) = SupervisorBuilder().apply(builder).build()
+inline fun buildSupervisor(builder: SupervisorBuilder.() -> Unit) = SupervisorBuilder().apply(builder).build()

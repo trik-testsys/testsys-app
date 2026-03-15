@@ -48,7 +48,6 @@ class ContestDataBuilder : Builder<ContestData> {
             name = name,
             description = description,
             tasks = tasks.lazify(),
-            tasksOrder = tasks,
             startsAt = startsAt,
             contestDuration = contestDuration,
             attemptDuration = attemptDuration,

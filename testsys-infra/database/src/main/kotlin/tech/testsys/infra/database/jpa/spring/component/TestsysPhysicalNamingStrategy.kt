@@ -12,7 +12,6 @@ import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment
  *
  * Columns: converts camelCase to snake_case. Example: `taskId` → `task_id`
  *
- * @author Roman Shishkin
  * @since %CURRENT_VERSION%
  */
 class TestsysPhysicalNamingStrategy : PhysicalNamingStrategyStandardImpl() {
@@ -33,10 +32,21 @@ class TestsysPhysicalNamingStrategy : PhysicalNamingStrategyStandardImpl() {
         return Identifier.toIdentifier(name)
     }
 
+    override fun toPhysicalSequenceName(logicalName: Identifier, jdbcEnvironment: JdbcEnvironment): Identifier {
+        val name = logicalName.text
+            .removeSuffix(SEQUENCE_SUFFIX)
+            .removeSuffix(JPA_ENTITY_SUFFIX)
+            .removeSuffix(ENTITY_SUFFIX)
+            .replace(CAMEL_CASE_REGEX, SNAKE_CASE_REPLACEMENT)
+            .lowercase()
+        return Identifier.toIdentifier("${TABLE_NAME_PREFIX}_${name}_seq")
+    }
+
     companion object {
 
         private const val JPA_ENTITY_SUFFIX = "JpaEntity"
         private const val ENTITY_SUFFIX = "Entity"
+        private const val SEQUENCE_SUFFIX = "_SEQ"
 
         private const val TABLE_NAME_PREFIX = "t"
 

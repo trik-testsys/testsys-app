@@ -7,10 +7,6 @@ import tech.testsys.infra.database.jpa.entity.JpaEntity
 // TODO: видеозаписи, логи
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity

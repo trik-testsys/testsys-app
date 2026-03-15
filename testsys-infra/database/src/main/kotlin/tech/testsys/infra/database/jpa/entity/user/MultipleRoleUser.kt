@@ -5,10 +5,6 @@ import jakarta.persistence.MappedSuperclass
 import tech.testsys.infra.database.jpa.entity.JpaEntity
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @MappedSuperclass
@@ -17,10 +13,6 @@ abstract class RoleEntity(
 ) : JpaEntity()
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -29,10 +21,6 @@ class DeveloperRoleJpaEntity(
 ) : RoleEntity(userId)
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -41,10 +29,6 @@ class StudentRoleJpaEntity(
 ) : RoleEntity(userId)
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -53,10 +37,6 @@ class AdministratorRoleJpaEntity(
 ) : RoleEntity(userId)
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity

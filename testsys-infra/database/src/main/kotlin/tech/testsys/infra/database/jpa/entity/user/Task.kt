@@ -7,10 +7,6 @@ import jakarta.persistence.MappedSuperclass
 import tech.testsys.infra.database.jpa.entity.JpaEntity
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 enum class TrikSupportedLanguageJpaEnum {
@@ -20,10 +16,6 @@ enum class TrikSupportedLanguageJpaEnum {
 }
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -33,10 +25,6 @@ class JudgmentOrderJpaEntity(
 ) : JpaEntity()
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @MappedSuperclass
@@ -45,10 +33,6 @@ abstract class FileJpaEntity(
 ) : JpaEntity()
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -61,10 +45,6 @@ class TestJpaEntity(
 ) : FileJpaEntity(uploadedFilename)
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -77,10 +57,6 @@ class ExerciseJpaEntity(
 ) : FileJpaEntity(uploadedFilename)
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -96,10 +72,6 @@ class TestToTaskId(
 )
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -108,10 +80,6 @@ class TestsToTasksJpaEntity(
 ) : JpaEntity()
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity

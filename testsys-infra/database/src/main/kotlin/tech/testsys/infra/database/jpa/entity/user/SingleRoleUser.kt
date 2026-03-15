@@ -3,10 +3,6 @@ package tech.testsys.infra.database.jpa.entity.user
 import jakarta.persistence.Entity
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -15,10 +11,6 @@ class SupervisorRoleJpaEntity(
 ) : RoleEntity(userId)
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -28,10 +20,6 @@ class ParticipantRoleJpaEntity(
 ) : RoleEntity(userId)
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity

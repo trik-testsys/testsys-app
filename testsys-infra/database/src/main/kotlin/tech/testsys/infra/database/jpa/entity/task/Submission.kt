@@ -6,10 +6,6 @@ import jakarta.persistence.Enumerated
 import tech.testsys.infra.database.jpa.entity.JpaEntity
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -20,10 +16,6 @@ class VerdictJpaEntity(
 ) : JpaEntity()
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 enum class SubmissionStatusJpaEnum {
@@ -33,10 +25,6 @@ enum class SubmissionStatusJpaEnum {
 }
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -47,10 +35,6 @@ class SubmissionStatusJpaEntity(
 ) : JpaEntity()
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 enum class GradingResultJpaEnum {
@@ -60,10 +44,6 @@ enum class GradingResultJpaEnum {
 }
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -75,10 +55,6 @@ class GradingResultJpaEntity(
 ) : JpaEntity()
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 enum class SubmissionKindJpaEnum {
@@ -87,10 +63,6 @@ enum class SubmissionKindJpaEnum {
 }
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -101,10 +73,6 @@ class SubmissionKindJpaEntity(
 ) : JpaEntity()
 
 /**
- * @author Viktor Karasev
- * @author Vyacheslav Buchin
- * @author Roman Shishkin
- *
  * @since %CURRENT_VERSION%
  */
 @Entity

@@ -7,6 +7,10 @@ import tech.testsys.infra.database.jpa.entity.JpaEntity
 // TODO: видеозаписи, логи
 
 /**
+ * JPA entity representing a judgment order domain entity.
+ *
+ * @see tech.testsys.domain.model.task.JudgmentOrder
+ * @see tech.testsys.domain.model.task.JudgmentOrderData
  * @since %CURRENT_VERSION%
  */
 @Entity

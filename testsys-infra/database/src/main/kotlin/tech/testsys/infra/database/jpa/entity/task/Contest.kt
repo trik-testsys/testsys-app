@@ -7,17 +7,34 @@ import tech.testsys.infra.database.jpa.entity.JpaCompositeId
 import tech.testsys.infra.database.jpa.entity.JpaEntity
 import java.time.Instant
 
+/**
+ * Composite primary key for [TaskToContestJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Embeddable
 data class TaskToContestId(
     val taskId: Long,
     val contestId: Long,
 ) : JpaCompositeId()
 
+/**
+ * JPA entity representing a task to contest association domain entity.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class TaskToContestJpaEntity(
     id: TaskToContestId,
 ) : JpaCompositeEntity<TaskToContestId>(id)
 
+/**
+ * JPA entity representing a contest domain entity.
+ *
+ * @see tech.testsys.domain.model.task.Contest
+ * @see tech.testsys.domain.model.task.ContestData
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class ContestJpaEntity(
     val ownerId: Long,

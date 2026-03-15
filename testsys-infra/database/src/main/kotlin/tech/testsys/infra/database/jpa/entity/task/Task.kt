@@ -78,6 +78,11 @@ class SolutionJpaEntity(
     val language: TrikSupportedLanguageJpaEnum
 ) : FileJpaEntity(uploadedFilename)
 
+/**
+ * Composite primary key for [TestToTaskJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Embeddable
 data class TestToTaskId(
     val testId: Long,
@@ -94,16 +99,26 @@ class TestToTaskJpaEntity(
     id: TestToTaskId,
 ) : JpaCompositeEntity<TestToTaskId>(id)
 
+/**
+ * Composite primary key for [DeveloperSolutionToTaskJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Embeddable
 data class DeveloperSolutionToTaskId(
     val developerSolutionId: Long,
     val taskId: Long,
 ) : JpaCompositeId()
 
+/**
+ * JPA entity representing a developer solution to task association domain entity.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class DeveloperSolutionToTaskJpaEntity(
-    id: TestToTaskId,
-) : JpaCompositeEntity<TestToTaskId>(id)
+    id: DeveloperSolutionToTaskId,
+) : JpaCompositeEntity<DeveloperSolutionToTaskId>(id)
 
 /**
  * JPA entity representing a task domain entity.
@@ -122,6 +137,13 @@ class TaskJpaEntity(
     val trikStudioVersionName: String,
 ) : JpaEntity()
 
+/**
+ * JPA entity representing a developer solution domain entity.
+ *
+ * @see tech.testsys.domain.model.task.DeveloperSolution
+ * @see tech.testsys.domain.model.task.DeveloperSolutionData
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class DeveloperSolutionJpaEntity(
     val solutionId: Long,

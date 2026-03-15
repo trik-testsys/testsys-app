@@ -18,12 +18,22 @@ class ParticipantRoleJpaEntity(
     val competitionId: Long
 ) : RoleEntity(userId)
 
+/**
+ * Composite primary key for [ObserverToCompetitionJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Embeddable
 data class ObserverToCompetitionId(
     val observerId: Long,
     val competitionId: Long,
 ) : JpaCompositeId()
 
+/**
+ * JPA entity representing an observer to competition association domain entity.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class ObserverToCompetitionJpaEntity(
     id: ObserverToCompetitionId,

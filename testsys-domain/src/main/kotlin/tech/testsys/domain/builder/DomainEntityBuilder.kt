@@ -2,6 +2,11 @@ package tech.testsys.domain.builder
 
 import java.time.Instant
 
+@DslMarker
+@Target(AnnotationTarget.CLASS)
+annotation class DomainEntityBuilderDsl
+
+@DomainEntityBuilderDsl
 interface Builder<out T> {
     fun build(): T
 }

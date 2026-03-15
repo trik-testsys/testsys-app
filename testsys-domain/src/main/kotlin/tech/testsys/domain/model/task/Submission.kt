@@ -33,17 +33,23 @@ sealed interface GradingResult {
     data class Success(val verdict: LazyEntity<VerdictId, Verdict>) : GradingResult
     data class GradingError(val description: String) : GradingResult
     object Timeout : GradingResult
+
+    companion object
 }
 
 sealed interface SubmissionStatus {
     object Queued : SubmissionStatus
     object InProgress : SubmissionStatus
     data class Graded(val grade: GradingResult) : SubmissionStatus
+
+    companion object
 }
 
 sealed interface SubmissionKind {
     object DeveloperSolutionTest : SubmissionKind
     class Grading(val contest: LazyEntity<ContestId, Contest>) : SubmissionKind
+
+    companion object
 }
 
 data class SubmissionData(

@@ -27,7 +27,7 @@ data class MultipleRoleUserData(
     val roles: List<CompatibleUserRole>
 )
 
-sealed class MultipleRoleUser(
+class MultipleRoleUser(
     id: UserId,
     createdAt: Instant,
     accessToken: String,

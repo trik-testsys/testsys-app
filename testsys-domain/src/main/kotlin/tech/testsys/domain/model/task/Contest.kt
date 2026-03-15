@@ -17,7 +17,6 @@ data class ContestData(
     val name: String,
     val description: String,
     val tasks: LazyEntityList<TaskId, Task>,
-    val tasksOrder: List<TaskId>,
     val startsAt: Instant?,
     val contestDuration: Duration,
     val attemptDuration: Duration,

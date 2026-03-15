@@ -109,7 +109,7 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
 
     val kind = SubmissionKindChooser()
 
-    fun judgementOrders(orders: Iterable<Long>) {
+    fun judgmentOrders(orders: Iterable<Long>) {
         this.judgmentOrders = orders.map { JudgmentOrderId(it) }.toMutableList()
     }
 

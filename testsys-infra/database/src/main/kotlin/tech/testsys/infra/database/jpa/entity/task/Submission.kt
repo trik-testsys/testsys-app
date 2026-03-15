@@ -1,21 +1,31 @@
 package tech.testsys.infra.database.jpa.entity.task
 
+import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import tech.testsys.infra.database.jpa.entity.JpaCompositeEntity
+import tech.testsys.infra.database.jpa.entity.JpaCompositeId
 import tech.testsys.infra.database.jpa.entity.JpaEntity
 
 /**
+ * JPA entity representing a verdict domain entity.
+ *
+ * @see tech.testsys.domain.model.task.Verdict
+ * @see tech.testsys.domain.model.task.VerdictData
  * @since %CURRENT_VERSION%
  */
 @Entity
 class VerdictJpaEntity(
-    val score: Long,
+    val score: Int,
     val taskId: Long,
-    val submissionId: Long
+    val submissionId: Long,
 ) : JpaEntity()
 
 /**
+ * Possible lifecycle states of a [SubmissionJpaEntity].
+ *
+ * @see tech.testsys.domain.model.task.SubmissionStatus
  * @since %CURRENT_VERSION%
  */
 enum class SubmissionStatusJpaEnum {
@@ -25,54 +35,96 @@ enum class SubmissionStatusJpaEnum {
 }
 
 /**
+ * JPA entity representing a submission status domain entity.
+ *
+ * @see tech.testsys.domain.model.task.SubmissionStatus
  * @since %CURRENT_VERSION%
  */
 @Entity
 class SubmissionStatusJpaEntity(
     @Enumerated(EnumType.STRING)
     val status: SubmissionStatusJpaEnum,
-    val gradingResultId: Long
+    val gradingResultId: Long,
 ) : JpaEntity()
 
 /**
+ * Possible outcomes of a grading attempt.
+ *
+ * @see tech.testsys.domain.model.task.GradingResult
  * @since %CURRENT_VERSION%
  */
 enum class GradingResultJpaEnum {
     SUCCESS,
     GRADING_ERROR,
-    TIMEOUT
+    TIMEOUT;
 }
 
 /**
+ * JPA entity representing a grading result domain entity.
+ *
+ * @see tech.testsys.domain.model.task.GradingResult
  * @since %CURRENT_VERSION%
  */
 @Entity
 class GradingResultJpaEntity(
     @Enumerated(EnumType.STRING)
     val gradingResult: GradingResultJpaEnum,
+    val verdictId: Long?,
     val description: String?,
-    val verdictId: Long?
 ) : JpaEntity()
 
 /**
+ * Classifies the purpose of a submission.
+ *
+ * @see tech.testsys.domain.model.task.SubmissionKind
  * @since %CURRENT_VERSION%
  */
 enum class SubmissionKindJpaEnum {
-    GRADING,
-    DEVELOPER_SOLUTION
+    DEVELOPER_SOLUTION,
+    GRADING;
 }
 
 /**
+ * JPA entity representing a submission kind domain entity.
+ *
+ * @see tech.testsys.domain.model.task.SubmissionKind
  * @since %CURRENT_VERSION%
  */
 @Entity
 class SubmissionKindJpaEntity(
     @Enumerated(EnumType.STRING)
     val submissionKind: SubmissionKindJpaEnum,
-    val contestId: Long?
+    val contestId: Long?,
 ) : JpaEntity()
 
 /**
+ * Composite primary key for [JudgmentOrderToSubmissionJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
+@Embeddable
+data class JudgmentOrderToSubmissionId(
+    val judgmentOrderId: Long,
+    val submissionId: Long,
+) : JpaCompositeId()
+
+/**
+ * JPA entity representing a judgment order to submission association domain entity.
+ *
+ * Uses a composite key [JudgmentOrderToSubmissionId].
+ *
+ * @since %CURRENT_VERSION%
+ */
+@Entity
+class JudgmentOrderToSubmissionJpaEntity(
+    id: JudgmentOrderToSubmissionId,
+) : JpaCompositeEntity<JudgmentOrderToSubmissionId>(id)
+
+/**
+ * JPA entity representing a submission domain entity.
+ *
+ * @see tech.testsys.domain.model.task.Submission
+ * @see tech.testsys.domain.model.task.SubmissionData
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -81,5 +133,5 @@ class SubmissionJpaEntity(
     val solutionId: Long,
     val taskId: Long,
     val submissionStatusId: Long,
-    val submissionKindId: Long
+    val submissionKindId: Long,
 ) : JpaEntity()

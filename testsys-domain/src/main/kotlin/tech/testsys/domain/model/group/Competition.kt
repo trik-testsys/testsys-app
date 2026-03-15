@@ -6,6 +6,8 @@ import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Participant

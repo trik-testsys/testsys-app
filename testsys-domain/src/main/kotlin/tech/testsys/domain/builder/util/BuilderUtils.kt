@@ -7,9 +7,21 @@ import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 
+/**
+ * Wraps a list of domain IDs into a [LazyEntityList] for deferred entity resolution.
+ *
+ * @return a [LazyEntityList] backed by this list of IDs.
+ * @since %CURRENT_VERSION%
+ */
 fun <Id : DomainId, Entity : DomainEntity<Id>> List<Id>.lazify() =
     LazyEntityList<Id, Entity>(this)
 
+/**
+ * Wraps a single domain ID into a [LazyEntity] for deferred entity resolution.
+ *
+ * @return a [LazyEntity] backed by this ID.
+ * @since %CURRENT_VERSION%
+ */
 fun <Id : DomainId, Entity : DomainEntity<Id>> Id.lazify() =
     LazyEntity<Id, Entity>(this)
 

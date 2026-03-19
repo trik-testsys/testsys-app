@@ -6,12 +6,9 @@ repositories {
     gradlePluginPortal()
 }
 
-val kotlinVersion = "2.2.21"
-val detektVersion = "1.23.6"
-
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
-    implementation("org.jetbrains.kotlin:kotlin-allopen:$kotlinVersion")
-    implementation("org.jetbrains.kotlin:kotlin-noarg:$kotlinVersion")
-    implementation("io.gitlab.arturbosch.detekt:detekt-gradle-plugin:$detektVersion")
+    implementation(libs.kotlin.gradle.plugin)
+    implementation(libs.kotlin.allopen)
+    implementation(libs.kotlin.noarg)
+    implementation(libs.detekt.gradle.plugin)
 }

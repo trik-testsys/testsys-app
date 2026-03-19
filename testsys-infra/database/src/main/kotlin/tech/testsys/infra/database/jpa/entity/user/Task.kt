@@ -71,10 +71,10 @@ class SolutionJpaEntity(
     val language: TrikSupportedLanguageJpaEnum
 ) : FileJpaEntity(uploadedFilename)
 
-@IdClass
-class TestToTaskId(
-
-)
+//@IdClass
+//class TestToTaskId(
+//
+//)
 
 
 @Entity

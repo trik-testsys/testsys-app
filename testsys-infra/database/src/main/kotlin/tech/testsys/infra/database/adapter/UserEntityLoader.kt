@@ -87,7 +87,7 @@ class UserEntityLoader(
             memberOf = LazyEntityList(jpa.communityIds.map { CommunityId(it) }),
             data = DeveloperData(
                 tasks = LazyEntityList(jpa.taskIds.map { TaskId(it) }),
-                contest = LazyEntityList(jpa.contestIds.map { ContestId(it) }),
+                contests = LazyEntityList(jpa.contestIds.map { ContestId(it) }),
                 polygons = LazyEntityList(jpa.testIds.map { TestId(it) }),
                 solutions = LazyEntityList(jpa.solutionIds.map { SolutionId(it) }),
                 exercises = LazyEntityList(jpa.exerciseIds.map { ExerciseId(it) }),
@@ -126,7 +126,7 @@ class UserEntityLoader(
                 jpa.roleType = "DEVELOPER"
                 jpa.communityIds = role.memberOf.ids.map { it.value }.toMutableList()
                 jpa.taskIds = role.data.tasks.ids.map { it.value }.toMutableList()
-                jpa.contestIds = role.data.contest.ids.map { it.value }.toMutableList()
+                jpa.contestIds = role.data.contests.ids.map { it.value }.toMutableList()
                 jpa.testIds = role.data.polygons.ids.map { it.value }.toMutableList()
                 jpa.solutionIds = role.data.solutions.ids.map { it.value }.toMutableList()
                 jpa.exerciseIds = role.data.exercises.ids.map { it.value }.toMutableList()

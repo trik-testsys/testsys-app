@@ -275,7 +275,7 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
      * @param builder the configuration block for the author.
      * @since %CURRENT_VERSION%
      */
-    fun author(builder: MultipleRoleUserBuilder.() -> Unit) {
+    inline fun author(builder: MultipleRoleUserBuilder.() -> Unit) {
         author = MultipleRoleUserBuilder().apply(builder).build()
     }
 

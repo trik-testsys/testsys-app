@@ -158,7 +158,7 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
     override fun build(): DeveloperData {
         return DeveloperData(
             tasks = tasks.lazify(),
-            contest = contests.lazify(),
+            contests = contests.lazify(),
             polygons = polygons.lazify(),
             solutions = solutions.lazify(),
             exercises = exercises.lazify(),

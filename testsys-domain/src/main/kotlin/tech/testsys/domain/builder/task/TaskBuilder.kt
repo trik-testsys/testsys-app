@@ -196,7 +196,7 @@ class TaskDataBuilder : Builder<TaskData> {
      * @param builder the configuration block for the owner.
      * @since %CURRENT_VERSION%
      */
-    fun owner(builder: MultipleRoleUserBuilder.() -> Unit) {
+    inline fun owner(builder: MultipleRoleUserBuilder.() -> Unit) {
         owner = MultipleRoleUserBuilder().apply(builder).build()
     }
 

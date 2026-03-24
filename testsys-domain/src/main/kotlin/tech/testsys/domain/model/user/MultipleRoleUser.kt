@@ -40,7 +40,7 @@ sealed class CompatibleUserRole(
 
 data class DeveloperData(
     val tasks: LazyEntityList<TaskId, Task>,
-    val contest: LazyEntityList<ContestId, Contest>,
+    val contests: LazyEntityList<ContestId, Contest>,
     val polygons: LazyEntityList<TestId, Test>,
     val solutions: LazyEntityList<SolutionId, Solution>,
     val exercises: LazyEntityList<ExerciseId, Exercise>

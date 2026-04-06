@@ -3,6 +3,8 @@ package tech.testsys.domain.model.task
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntityList
+import tech.testsys.domain.model.group.Community
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.MultipleRoleUser
 import java.time.Duration
 import java.time.Instant
@@ -21,8 +23,9 @@ data class ContestData(
     val startsAt: Instant?,
     val contestDuration: Duration,
     val attemptDuration: Duration,
-    val trikStudioVersion: TrikStudioVersion
-    // TODO: val sharedTo: List<>
+    val createdAt: Instant,
+    val trikStudioVersion: TrikStudioVersion,
+    val sharedTo: LazyEntityList<CommunityId, Community>
 ) {
     val endsAt = startsAt?.let { it + contestDuration }
 }

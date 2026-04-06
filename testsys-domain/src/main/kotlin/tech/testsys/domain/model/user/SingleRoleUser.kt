@@ -1,6 +1,5 @@
 package tech.testsys.domain.model.user
 
-
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.Competition

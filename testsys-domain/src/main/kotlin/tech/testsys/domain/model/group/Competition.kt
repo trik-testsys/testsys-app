@@ -16,7 +16,6 @@ value class CompetitionId(
 ) : DomainId
 
 data class CompetitionData(
-    // TODO: Expiration?
     val owner: MultipleRoleUser,
     val participants: LazyEntityList<UserId, Participant>,
     val contests: LazyEntityList<ContestId, Contest>

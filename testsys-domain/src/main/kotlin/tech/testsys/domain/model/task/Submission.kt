@@ -13,7 +13,7 @@ value class VerdictId(
 ) : DomainId
 
 data class VerdictData(
-    val score: Int,
+    val score: Score,
     val task: LazyEntity<TaskId, Task>,
     val submission: LazyEntity<SubmissionId, Submission>,
 )

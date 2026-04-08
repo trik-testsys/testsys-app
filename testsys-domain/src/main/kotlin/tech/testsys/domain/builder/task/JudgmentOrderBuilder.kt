@@ -8,7 +8,7 @@ import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderData
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.VerdictId
-import tech.testsys.domain.model.user.UserId
+import tech.testsys.domain.model.user.MultipleRoleUserId
 
 /**
  * Builder for constructing [JudgmentOrderData].
@@ -22,7 +22,7 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
      *
      * @since %CURRENT_VERSION%
      */
-    var judge: UserId? = null
+    var judge: MultipleRoleUserId? = null
 
     /**
      * The ID of the verdict associated with this order.
@@ -38,7 +38,7 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
      * @since %CURRENT_VERSION%
      */
     fun judge(id: Long) {
-        this.judge = UserId(id)
+        this.judge = MultipleRoleUserId(id)
     }
 
     /**
@@ -59,8 +59,8 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): JudgmentOrderData {
-        val judge = requireField(judge, "judge")
-        val verdict = requireField(verdict, "verdict")
+        val judge = requireField(judge) { ::judge }
+        val verdict = requireField(verdict) { ::verdict }
 
         return JudgmentOrderData(
             judge = judge.lazify(),
@@ -87,9 +87,9 @@ class JudgmentOrderBuilder : DomainEntityWithDataBuilder<JudgmentOrder, Judgment
      * @since %CURRENT_VERSION%
      */
     override fun build(): JudgmentOrder {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return JudgmentOrder(
             id = JudgmentOrderId(id),

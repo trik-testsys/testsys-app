@@ -5,6 +5,7 @@ import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Instant
 
 @JvmInline
@@ -53,7 +54,7 @@ sealed interface SubmissionKind {
 }
 
 data class SubmissionData(
-    val author: MultipleRoleUser,
+    val author: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val solution: LazyEntity<SolutionId, Solution>,
     val task: LazyEntity<TaskId, Task>,
     val status: SubmissionStatus,

@@ -4,6 +4,7 @@ import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.UserId
 import java.time.Instant
 
@@ -13,7 +14,7 @@ value class JudgmentOrderId(
 ) : DomainId
 
 data class JudgmentOrderData(
-    val judge: LazyEntity<UserId, MultipleRoleUser>,
+    val judge: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val verdict: LazyEntity<VerdictId, Verdict>
 )
 

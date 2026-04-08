@@ -7,6 +7,7 @@ import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Instant
 
 @JvmInline
@@ -15,7 +16,7 @@ value class TaskId(
 ) : DomainId
 
 data class TaskData(
-    val owner: MultipleRoleUser,
+    val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val name: String,
     val description: String,
     val tests: LazyEntityList<TestId, Test>,

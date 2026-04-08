@@ -3,9 +3,9 @@ package tech.testsys.domain.builder.task
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
-import tech.testsys.domain.builder.user.MultipleRoleUserBuilder
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
 import tech.testsys.domain.builder.util.requireField
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
@@ -13,9 +13,11 @@ import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.SolutionId
+import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
@@ -23,9 +25,8 @@ import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
-import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.VersionData
-import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.MultipleRoleUserId
 
 /**
  * Builder for constructing [DeveloperSolutionData].
@@ -46,7 +47,7 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
      *
      * @since %CURRENT_VERSION%
      */
-    var expectedVerdict: VerdictId? = null
+    var expectedScore: Score? = null
 
     /**
      * Sets the [solution] from a raw ID value.
@@ -59,13 +60,13 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
     }
 
     /**
-     * Sets the [expectedVerdict] from a raw ID value.
+     * Sets the [expectedScore] from a raw ID value.
      *
-     * @param expectedVerdict the raw verdict ID.
+     * @param expectedScore the raw verdict ID.
      * @since %CURRENT_VERSION%
      */
-    fun expectedVerdict(expectedVerdict: Long) {
-        this.expectedVerdict = VerdictId(expectedVerdict)
+    fun expectedScore(expectedScore: Int) {
+        this.expectedScore = Score(expectedScore)
     }
 
     /**
@@ -76,12 +77,12 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): DeveloperSolutionData {
-        val solution = requireField(solution, "solution")
-        val expectedVerdict = requireField(expectedVerdict, "expectedVerdict")
+        val solution = requireField(solution) { ::solution }
+        val expectedScore = requireField(expectedScore) { ::expectedScore }
 
         return DeveloperSolutionData(
             solution = solution.lazify(),
-            expectedVerdict = expectedVerdict.lazify(),
+            expectedScore = expectedScore
         )
     }
 
@@ -106,9 +107,9 @@ class DeveloperSolutionBuilder :
      * @since %CURRENT_VERSION%
      */
     override fun build(): DeveloperSolution {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return DeveloperSolution(
             id = DeveloperSolutionId(id),
@@ -151,7 +152,7 @@ class TaskDataBuilder : Builder<TaskData> {
      *
      * @since %CURRENT_VERSION%
      */
-    var owner: MultipleRoleUser? = null
+    var owner: MultipleRoleUserId? = null
 
     /**
      * The name of the task.
@@ -188,16 +189,22 @@ class TaskDataBuilder : Builder<TaskData> {
      */
     var developerSolutions = mutableListOf<DeveloperSolutionId>()
 
-    private var _trikStudioVersion: TrikStudioVersion? = null
+    var supportedTrikStudioVersions = mutableListOf<TrikStudioVersion>()
 
-    /**
-     * Configures the [owner] using a DSL block on [MultipleRoleUserBuilder].
-     *
-     * @param builder the configuration block for the owner.
-     * @since %CURRENT_VERSION%
-     */
-    inline fun owner(builder: MultipleRoleUserBuilder.() -> Unit) {
-        owner = MultipleRoleUserBuilder().apply(builder).build()
+    var statement: StatementId? = null
+
+    var sharedTo = mutableListOf<CommunityId>()
+
+    fun statement(statement: Long) {
+        this.statement = StatementId(statement)
+    }
+
+    fun sharedTo(sharedTo: Iterable<Long>) {
+        this.sharedTo = sharedTo.map { CommunityId(it) }.toMutableList()
+    }
+
+    fun owner(owner: Long) {
+        this.owner = MultipleRoleUserId(owner)
     }
 
     /**
@@ -230,18 +237,8 @@ class TaskDataBuilder : Builder<TaskData> {
         this.developerSolutions = developerSolutions.map { DeveloperSolutionId(it) }.toMutableList()
     }
 
-    /**
-     * Sets the TRIK Studio version from image and tag strings.
-     *
-     * @param image the Docker image name.
-     * @param tag the Docker image tag.
-     * @since %CURRENT_VERSION%
-     */
-    fun trikStudioVersion(image: String, tag: String) {
-        _trikStudioVersion = TrikStudioVersion(
-            image = image,
-            tag = tag,
-        )
+    fun supportedTrikStudioVersions(supportedTrikStudioVersions: Iterable<String>) {
+        this.supportedTrikStudioVersions = supportedTrikStudioVersions.map { TrikStudioVersion(it) }.toMutableList()
     }
 
     /**
@@ -252,20 +249,23 @@ class TaskDataBuilder : Builder<TaskData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): TaskData {
-        val owner = requireField(owner, "owner")
-        val name = requireField(name, "name")
-        val description = requireField(description, "description")
-        val exercise = requireField(exercise, "exercise")
-        val trikStudioVersion = requireField(_trikStudioVersion, "trikStudioVersion")
+        val owner = requireField(owner) { ::owner }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
+        val exercise = requireField(exercise) { ::exercise }
+        val supportedTrikStudioVersions = requireField(supportedTrikStudioVersions) { ::supportedTrikStudioVersions }
+        val statement = requireField(statement) { ::statement }
 
         return TaskData(
-            owner = owner,
+            owner = owner.lazify(),
             name = name,
             description = description,
             tests = tests.lazify(),
             exercise = exercise.lazify(),
             developerSolutions = developerSolutions.lazify(),
-            trikStudioVersion = trikStudioVersion,
+            statement = statement.lazify(),
+            sharedTo = sharedTo.lazify(),
+            supportedTrikStudioVersions = supportedTrikStudioVersions,
         )
     }
 
@@ -288,9 +288,9 @@ class TaskBuilder : DomainEntityWithDataBuilder<Task, TaskData, TaskDataBuilder>
      * @since %CURRENT_VERSION%
      */
     override fun build(): Task {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return Task(
             id = TaskId(id),
@@ -352,13 +352,6 @@ class TestDataBuilder : Builder<TestData> {
     }
 
     /**
-     * Chooser for selecting the programming language of the test.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    val language = LanguageChooser()
-
-    /**
      * Builds the [TestData] instance.
      *
      * @return the constructed [TestData].
@@ -366,14 +359,12 @@ class TestDataBuilder : Builder<TestData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): TestData {
-        val file = requireField(_file, "file")
-        val versionData = requireField(_versionData, "versionData")
-        val language = requireField(language.choice, "language")
+        val file = requireField(_file) { ::_file }
+        val versionData = requireField(_versionData) { ::_versionData }
 
         return TestData(
             file = file,
             versionData = versionData,
-            language = language,
         )
     }
 
@@ -396,9 +387,9 @@ class TestBuilder : DomainEntityWithDataBuilder<Test, TestData, TestDataBuilder>
      * @since %CURRENT_VERSION%
      */
     override fun build(): Test {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return Test(
             id = TestId(id),
@@ -462,8 +453,8 @@ class SolutionDataBuilder : Builder<SolutionData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): SolutionData {
-        val file = requireField(_file, "file")
-        val language = requireField(language.choice, "language")
+        val file = requireField(_file) { ::_file }
+        val language = requireField(language.choice) { language::choice }
 
         return SolutionData(
             file = file,
@@ -490,9 +481,9 @@ class SolutionBuilder : DomainEntityWithDataBuilder<Solution, SolutionData, Solu
      * @since %CURRENT_VERSION%
      */
     override fun build(): Solution {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return Solution(
             id = SolutionId(id),
@@ -556,8 +547,8 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): ExerciseData {
-        val file = requireField(_file, "file")
-        val language = requireField(language.choice, "language")
+        val file = requireField(_file) { ::_file }
+        val language = requireField(language.choice) { language::choice }
 
         return ExerciseData(
             file = file,
@@ -598,10 +589,10 @@ class ExerciseBuilder : DomainEntityWithDataBuilder<Exercise, ExerciseData, Exer
      * @since %CURRENT_VERSION%
      */
     override fun build(): Exercise {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val versionData = requireField(_versionData, "versionData")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val versionData = requireField(_versionData) { ::_versionData }
+        val data = requireField(data) { ::data }
 
         return Exercise(
             id = ExerciseId(id),

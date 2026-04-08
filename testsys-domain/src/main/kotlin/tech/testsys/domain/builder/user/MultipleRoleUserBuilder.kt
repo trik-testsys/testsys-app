@@ -24,9 +24,9 @@ import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.ManagerData
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.StudentData
-import tech.testsys.domain.model.user.UserId
 import java.time.Instant
 
 /**
@@ -186,7 +186,7 @@ class DeveloperBuilder : CompatibleUserRoleBuilder<Developer>(), DataCapable<Dev
      * @since %CURRENT_VERSION%
      */
     override fun build(): Developer {
-        val data = requireField(data, "data")
+        val data = requireField(data) { ::data }
         return Developer(
             memberOf = memberOf.lazify(),
             data = data,
@@ -270,7 +270,7 @@ class StudentBuilder : CompatibleUserRoleBuilder<Student>(), DataCapable<Student
      * @since %CURRENT_VERSION%
      */
     override fun build(): Student {
-        val data = requireField(data, "data")
+        val data = requireField(data) { ::data }
         return Student(
             memberOf = memberOf.lazify(),
             data = data,
@@ -354,7 +354,7 @@ class JudgeBuilder : CompatibleUserRoleBuilder<Judge>(), DataCapable<JudgeData, 
      * @since %CURRENT_VERSION%
      */
     override fun build(): Judge {
-        val data = requireField(data, "data")
+        val data = requireField(data) { ::data }
         return Judge(
             memberOf = memberOf.lazify(),
             data = data,
@@ -436,7 +436,7 @@ class ManagerBuilder : CompatibleUserRoleBuilder<Manager>(), DataCapable<Manager
      * @since %CURRENT_VERSION%
      */
     override fun build(): Manager {
-        val data = requireField(data, "data")
+        val data = requireField(data) { ::data }
         return Manager(
             memberOf = memberOf.lazify(),
             data = data,
@@ -455,6 +455,8 @@ private typealias Roles = MutableList<CompatibleUserRole>
 class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
 
     private var roles: Roles = mutableListOf()
+
+    var accessToken: String? = null
 
     /**
      * Configures the roles list using a DSL block.
@@ -539,6 +541,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
      */
     override fun build() = MultipleRoleUserData(
         roles = roles,
+        accessToken = requireField(accessToken) { ::accessToken },
     )
 
 }
@@ -550,7 +553,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
  * @since %CURRENT_VERSION%
  */
 class MultipleRoleUserBuilder :
-    UserBuilder<MultipleRoleUser>(),
+    UserBuilder<MultipleRoleUserId, MultipleRoleUser>(),
     DataCapable<MultipleRoleUserData, MultipleRoleUserDataBuilder>
 {
 
@@ -567,15 +570,13 @@ class MultipleRoleUserBuilder :
      * @since %CURRENT_VERSION%
      */
     override fun build(): MultipleRoleUser {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val accessToken = requireField(accessToken, "accessToken")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return MultipleRoleUser(
-            id = UserId(id),
+            id = MultipleRoleUserId(id),
             createdAt = createdAt,
-            accessToken = accessToken,
             data = data,
         )
     }

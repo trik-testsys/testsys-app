@@ -10,8 +10,9 @@ import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
 import tech.testsys.domain.model.user.SingleRoleUser
+import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
-import tech.testsys.domain.model.user.UserId
+import tech.testsys.domain.model.user.SupervisorData
 import java.time.Instant
 
 /**
@@ -21,7 +22,7 @@ import java.time.Instant
  * @param U the concrete single-role user type being built.
  * @since %CURRENT_VERSION%
  */
-abstract class SingleRoleUserBuilder<U: SingleRoleUser> : UserBuilder<U>() {
+abstract class SingleRoleUserBuilder<U: SingleRoleUser> : UserBuilder<SingleRoleUserId, U>() {
 
     override var id: Long? = null
     override var createdAt: Instant? = null
@@ -42,6 +43,8 @@ class ParticipantDataBuilder : Builder<ParticipantData> {
      */
     var competition: CompetitionId? = null
 
+    var accessToken: String? = null
+
     /**
      * Sets the [competition] from a raw ID value.
      *
@@ -60,10 +63,11 @@ class ParticipantDataBuilder : Builder<ParticipantData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): ParticipantData {
-        val competition = requireField(competition, "competition")
+        val competition = requireField(competition) { ::competition }
 
         return ParticipantData(
             competition = competition.lazify(),
+            accessToken = requireField(accessToken) { ::accessToken }
         )
     }
 
@@ -88,15 +92,13 @@ class ParticipantBuilder : SingleRoleUserBuilder<Participant>(), DataCapable<Par
      * @since %CURRENT_VERSION%
      */
     override fun build(): Participant {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val accessToken = requireField(accessToken, "accessToken")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return Participant(
-            id = UserId(id),
+            id = SingleRoleUserId(id),
             createdAt = createdAt,
-            accessToken = accessToken,
             data = data,
         )
     }
@@ -137,6 +139,8 @@ class ObserverDataBuilder : Builder<ObserverData> {
      */
     var competitions = mutableListOf<CompetitionId>()
 
+    var accessToken: String? = null
+
     /**
      * Sets the [competitions] list from raw ID values.
      *
@@ -155,6 +159,7 @@ class ObserverDataBuilder : Builder<ObserverData> {
      */
     override fun build() = ObserverData(
         competitions = competitions.lazify(),
+        accessToken = requireField(accessToken) { ::accessToken },
     )
 
 }
@@ -178,15 +183,13 @@ class ObserverBuilder : SingleRoleUserBuilder<Observer>(), DataCapable<ObserverD
      * @since %CURRENT_VERSION%
      */
     override fun build(): Observer {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val accessToken = requireField(accessToken, "accessToken")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return Observer(
-            id = UserId(id),
+            id = SingleRoleUserId(id),
             createdAt = createdAt,
-            accessToken = accessToken,
             data = data,
         )
     }
@@ -210,13 +213,34 @@ inline fun buildObserverData(builder: ObserverDataBuilder.() -> Unit) = Observer
  */
 inline fun buildObserver(builder: ObserverBuilder.() -> Unit) = ObserverBuilder().apply(builder).build()
 
+class SupervisorDataBuilder : Builder<SupervisorData> {
+
+
+    var accessToken: String? = null
+
+    /**
+     * Builds the [ObserverData] instance.
+     *
+     * @return the constructed [ObserverData].
+     * @since %CURRENT_VERSION%
+     */
+    override fun build() = SupervisorData(
+        accessToken = requireField(accessToken) { ::accessToken },
+    )
+
+}
+
+
 /**
  * Builder for constructing [Supervisor] domain entities.
  * Supervisors have no additional data beyond the base user fields.
  *
  * @since %CURRENT_VERSION%
  */
-class SupervisorBuilder : SingleRoleUserBuilder<Supervisor>() {
+class SupervisorBuilder : SingleRoleUserBuilder<Supervisor>(), DataCapable<SupervisorData, SupervisorDataBuilder> {
+
+    override var data: SupervisorData? = null
+    override fun dataBuilder() = SupervisorDataBuilder()
 
     /**
      * Builds the [Supervisor] instance.
@@ -226,18 +250,21 @@ class SupervisorBuilder : SingleRoleUserBuilder<Supervisor>() {
      * @since %CURRENT_VERSION%
      */
     override fun build(): Supervisor {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val accessToken = requireField(accessToken, "accessToken")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return Supervisor(
-            id = UserId(id),
+            id = SingleRoleUserId(id),
             createdAt = createdAt,
-            accessToken = accessToken,
+            data = data,
         )
     }
 
 }
+
+inline fun buildObserverData(builder: SupervisorDataBuilder.() -> Unit) = SupervisorDataBuilder().apply(builder).build()
+
 
 /**
  * DSL entry point for building a [Supervisor].

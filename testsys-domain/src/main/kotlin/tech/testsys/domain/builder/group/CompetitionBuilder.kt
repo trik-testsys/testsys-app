@@ -3,14 +3,13 @@ package tech.testsys.domain.builder.group
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
-import tech.testsys.domain.builder.user.MultipleRoleUserBuilder
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionData
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.model.user.MultipleRoleUser
-import tech.testsys.domain.model.user.UserId
+import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.SingleRoleUserId
 
 /**
  * Builder for constructing [CompetitionData].
@@ -24,14 +23,14 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
      *
      * @since %CURRENT_VERSION%
      */
-    var owner: MultipleRoleUser? = null
+    var owner: MultipleRoleUserId? = null
 
     /**
      * The list of participant user IDs.
      *
      * @since %CURRENT_VERSION%
      */
-    var participants = mutableListOf<UserId>()
+    var participants = mutableListOf<SingleRoleUserId>()
 
     /**
      * The list of contest IDs included in this competition.
@@ -41,13 +40,13 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
     var contests = mutableListOf<ContestId>()
 
     /**
-     * Configures the [owner] using a DSL block on [MultipleRoleUserBuilder].
+     * Sets the [owner] from a raw ID value.
      *
-     * @param builder the configuration block for the owner.
+     * @param owner the raw owner ID.
      * @since %CURRENT_VERSION%
      */
-    inline fun owner(builder: MultipleRoleUserBuilder.() -> Unit) {
-        owner = MultipleRoleUserBuilder().apply(builder).build()
+    fun owner(owner: Long) {
+        this.owner = MultipleRoleUserId(owner)
     }
 
     /**
@@ -57,7 +56,7 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
      * @since %CURRENT_VERSION%
      */
     fun participants(participants: Iterable<Long>) {
-        this.participants = participants.map { UserId(it) }.toMutableList()
+        this.participants = participants.map { SingleRoleUserId(it) }.toMutableList()
     }
 
     /**
@@ -78,10 +77,10 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): CompetitionData {
-        val owner = requireField(owner, "owner")
+        val owner = requireField(owner) { ::owner }
 
         return CompetitionData(
-            owner = owner,
+            owner = owner.lazify(),
             participants = participants.lazify(),
             contests = contests.lazify(),
         )
@@ -105,9 +104,9 @@ class CompetitionBuilder : DomainEntityWithDataBuilder<Competition, CompetitionD
      * @since %CURRENT_VERSION%
      */
     override fun build(): Competition {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return Competition(
             id = CompetitionId(id),

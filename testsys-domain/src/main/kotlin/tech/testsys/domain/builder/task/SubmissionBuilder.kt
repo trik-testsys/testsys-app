@@ -3,13 +3,13 @@ package tech.testsys.domain.builder.task
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
-import tech.testsys.domain.builder.user.MultipleRoleUserBuilder
 import tech.testsys.domain.builder.util.chooser.SubmissionKindChooser
 import tech.testsys.domain.builder.util.chooser.SubmissionStatusChooser
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.JudgmentOrderId
+import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
@@ -20,7 +20,7 @@ import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
-import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.MultipleRoleUserId
 
 /**
  * Builder for constructing [VerdictData].
@@ -78,12 +78,12 @@ class VerdictDataBuilder : Builder<VerdictData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): VerdictData {
-        val score = requireField(score, "score")
-        val task = requireField(task, "task")
-        val submission = requireField(submission, "submission")
+        val score = requireField(score) { ::score }
+        val task = requireField(task) { ::task }
+        val submission = requireField(submission) { ::submission }
 
         return VerdictData(
-            score = score,
+            score = Score(score),
             task = task.lazify(),
             submission = submission.lazify(),
         )
@@ -108,9 +108,9 @@ class VerdictBuilder : DomainEntityWithDataBuilder<Verdict, VerdictData, Verdict
      * @since %CURRENT_VERSION%
      */
     override fun build(): Verdict {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return Verdict(
             id = VerdictId(id),
@@ -246,7 +246,17 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
      *
      * @since %CURRENT_VERSION%
      */
-    var author: MultipleRoleUser? = null
+    var author: MultipleRoleUserId? = null
+
+    /**
+     * Sets the [author] from a raw ID value.
+     *
+     * @param author the raw author ID.
+     * @since %CURRENT_VERSION%
+     */
+    fun author(author: Long) {
+        this.author = MultipleRoleUserId(author)
+    }
 
     /**
      * The ID of the solution being submitted.
@@ -268,16 +278,6 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
      * @since %CURRENT_VERSION%
      */
     var judgmentOrders = mutableListOf<JudgmentOrderId>()
-
-    /**
-     * Configures the [author] using a DSL block on [MultipleRoleUserBuilder].
-     *
-     * @param builder the configuration block for the author.
-     * @since %CURRENT_VERSION%
-     */
-    inline fun author(builder: MultipleRoleUserBuilder.() -> Unit) {
-        author = MultipleRoleUserBuilder().apply(builder).build()
-    }
 
     /**
      * Sets the [solution] from a raw ID value.
@@ -331,14 +331,14 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): SubmissionData {
-        val author = requireField(author, "author")
-        val solution = requireField(solution, "solution")
-        val task = requireField(task, "task")
-        val status = requireField(status.choice, "status")
-        val kind = requireField(kind.choice, "kind")
+        val author = requireField(author) { ::author }
+        val solution = requireField(solution) { ::solution }
+        val task = requireField(task) { ::task }
+        val status = requireField(status.choice) { status::choice }
+        val kind = requireField(kind.choice) { kind::choice }
 
         return SubmissionData(
-            author = author,
+            author = author.lazify(),
             solution = solution.lazify(),
             task = task.lazify(),
             status = status,
@@ -366,9 +366,9 @@ class SubmissionBuilder : DomainEntityWithDataBuilder<Submission, SubmissionData
      * @since %CURRENT_VERSION%
      */
     override fun build(): Submission {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return Submission(
             id = SubmissionId(id),

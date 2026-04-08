@@ -3,13 +3,11 @@ package tech.testsys.domain.builder.group
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
-import tech.testsys.domain.builder.user.MultipleRoleUserBuilder
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityData
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.user.MultipleRoleUser
-import tech.testsys.domain.model.user.UserId
+import tech.testsys.domain.model.user.MultipleRoleUserId
 
 /**
  * Builder for constructing [CommunityData].
@@ -23,33 +21,16 @@ class CommunityDataBuilder : Builder<CommunityData> {
      *
      * @since %CURRENT_VERSION%
      */
-    var owner: MultipleRoleUser? = null
+    var owner: MultipleRoleUserId? = null
 
     /**
-     * The list of community member IDs.
+     * Sets the [owner] from a raw ID value.
      *
+     * @param owner the raw owner ID.
      * @since %CURRENT_VERSION%
      */
-    var members = mutableListOf<UserId>()
-
-    /**
-     * Configures the [owner] using a DSL block on [MultipleRoleUserBuilder].
-     *
-     * @param builder the configuration block for the owner.
-     * @since %CURRENT_VERSION%
-     */
-    inline fun owner(builder: MultipleRoleUserBuilder.() -> Unit) {
-        owner = MultipleRoleUserBuilder().apply(builder).build()
-    }
-
-    /**
-     * Sets the [members] list from raw ID values.
-     *
-     * @param members the raw user IDs.
-     * @since %CURRENT_VERSION%
-     */
-    fun members(members: Iterable<Long>) {
-        this.members = members.map { UserId(it) }.toMutableList()
+    fun owner(owner: Long) {
+        this.owner = MultipleRoleUserId(owner)
     }
 
     /**
@@ -60,11 +41,10 @@ class CommunityDataBuilder : Builder<CommunityData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): CommunityData {
-        val owner = requireField(owner, "owner")
+        val owner = requireField(owner) { ::owner }
 
         return CommunityData(
-            owner = owner,
-            members = members.lazify(),
+            owner = owner.lazify(),
         )
     }
 }
@@ -86,9 +66,9 @@ class CommunityBuilder : DomainEntityWithDataBuilder<Community, CommunityData, C
      * @since %CURRENT_VERSION%
      */
     override fun build(): Community {
-        val id = requireField(id, "id")
-        val createdAt = requireField(createdAt, "createdAt")
-        val data = requireField(data, "data")
+        val id = requireField(id) { ::id }
+        val createdAt = requireField(createdAt) { ::createdAt }
+        val data = requireField(data) { ::data }
 
         return Community(
             id = CommunityId(id),

@@ -5,6 +5,7 @@ import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Instant
 
 @JvmInline
@@ -33,21 +34,27 @@ sealed interface GradingResult {
     data class Success(val verdict: LazyEntity<VerdictId, Verdict>) : GradingResult
     data class GradingError(val description: String) : GradingResult
     object Timeout : GradingResult
+
+    companion object
 }
 
 sealed interface SubmissionStatus {
     object Queued : SubmissionStatus
     object InProgress : SubmissionStatus
     data class Graded(val grade: GradingResult) : SubmissionStatus
+
+    companion object
 }
 
 sealed interface SubmissionKind {
     object DeveloperSolutionTest : SubmissionKind
     class Grading(val contest: LazyEntity<ContestId, Contest>) : SubmissionKind
+
+    companion object
 }
 
 data class SubmissionData(
-    val author: MultipleRoleUser,
+    val author: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val solution: LazyEntity<SolutionId, Solution>,
     val task: LazyEntity<TaskId, Task>,
     val status: SubmissionStatus,

@@ -15,7 +15,23 @@ value class TaskId(
     override val value: Long,
 ) : DomainId
 
-data class TaskData(
+sealed interface TaskData {
+
+    data class New(
+        val wip: TaskContent
+    ) : TaskData
+
+    data class Uncommited(
+        val wip: TaskContent,
+        val lastCommited: TaskContent,
+    ) : TaskData
+
+    data class Committed(
+        val lastCommited: TaskContent
+    ) : TaskData
+}
+
+data class TaskContent(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val name: String,
     val description: String,

@@ -7,6 +7,7 @@ import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Instant
 
 @JvmInline
@@ -14,13 +15,43 @@ value class TaskId(
     override val value: Long,
 ) : DomainId
 
-data class TaskData(
-    val owner: MultipleRoleUser,
+sealed interface TaskData {
+
+    data class New(
+        val wip: WipTaskContent
+    ) : TaskData
+
+    data class Uncommited(
+        val wip: WipTaskContent,
+        val lastCommited: CommitedTaskContent,
+    ) : TaskData
+
+    data class Committed(
+        val lastCommited: CommitedTaskContent
+    ) : TaskData
+
+    companion object
+}
+
+data class CommitedTaskContent(
+    val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val name: String,
     val description: String,
     val tests: LazyEntityList<TestId, Test>,
     val exercise: LazyEntity<ExerciseId, Exercise>,
     val statement: LazyEntity<StatementId, Statement>,
+    val developerSolutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
+    val supportedTrikStudioVersions: List<TrikStudioVersion>,
+    val sharedTo: LazyEntityList<CommunityId, Community>
+)
+
+data class WipTaskContent(
+    val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
+    val name: String,
+    val description: String?,
+    val tests: LazyEntityList<TestId, Test>,
+    val exercise: LazyEntity<ExerciseId, Exercise>?,
+    val statement: LazyEntity<StatementId, Statement>?,
     val developerSolutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
     val supportedTrikStudioVersions: List<TrikStudioVersion>,
     val sharedTo: LazyEntityList<CommunityId, Community>

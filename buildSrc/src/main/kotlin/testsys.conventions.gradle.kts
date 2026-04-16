@@ -13,6 +13,7 @@ repositories {
     mavenCentral()
 }
 
+// Accessing libs.versions.toml from buildSrc is complicated, so avoid declaring dependencies here.
 dependencies {
     testImplementation(kotlin("test"))
 }

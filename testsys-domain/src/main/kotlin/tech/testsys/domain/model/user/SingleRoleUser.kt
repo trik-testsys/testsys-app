@@ -6,36 +6,53 @@ import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionId
 import java.time.Instant
 
+@JvmInline
+value class SingleRoleUserId(
+    override val value: Long,
+) : UserId
+
 sealed class SingleRoleUser(
-    id: UserId,
+    id: SingleRoleUserId,
     createdAt: Instant,
-    accessToken: String,
-) : User(id, createdAt, accessToken)
+) : User<SingleRoleUserId>(id, createdAt)
 
 data class ParticipantData(
+    val accessToken: String,
     val competition: LazyEntity<CompetitionId, Competition>
 )
 
 class Participant(
-    id: UserId,
+    id: SingleRoleUserId,
     createdAt: Instant,
-    accessToken: String,
     val data: ParticipantData,
-) : SingleRoleUser(id, createdAt, accessToken)
+) : SingleRoleUser(id, createdAt) {
+
+    override val accessToken = data.accessToken
+}
 
 data class ObserverData(
+    val accessToken: String,
     val competitions: LazyEntityList<CompetitionId, Competition>
 )
 
 class Observer(
-    id: UserId,
+    id: SingleRoleUserId,
     createdAt: Instant,
-    accessToken: String,
     val data: ObserverData,
-) : SingleRoleUser(id, createdAt, accessToken)
+) : SingleRoleUser(id, createdAt) {
+
+    override val accessToken = data.accessToken
+}
+
+data class SupervisorData(
+    val accessToken: String,
+)
 
 class Supervisor(
-    id: UserId,
+    id: SingleRoleUserId,
     createdAt: Instant,
-    accessToken: String,
-) : SingleRoleUser(id, createdAt, accessToken)
+    val data: SupervisorData,
+) : SingleRoleUser(id, createdAt) {
+
+    override val accessToken = data.accessToken
+}

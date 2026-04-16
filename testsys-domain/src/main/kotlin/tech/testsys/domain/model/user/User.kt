@@ -4,13 +4,12 @@ import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import java.time.Instant
 
-@JvmInline
-value class UserId(
-    override val value: Long
-) : DomainId
+interface UserId : DomainId
 
-sealed class User(
-    id: UserId,
+sealed class User<Id : UserId>(
+    id: Id,
     createdAt: Instant,
-    val accessToken: String,
-) : DomainEntity<UserId>(id, createdAt)
+) : DomainEntity<Id>(id, createdAt) {
+
+    abstract val accessToken: String
+}

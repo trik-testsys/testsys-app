@@ -1,7 +1,8 @@
-package tech.testsys.domain.builder.user
+ package tech.testsys.domain.builder.user
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DataCapable
+import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.ClassId
@@ -29,14 +30,46 @@ import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.StudentData
 import java.time.Instant
 
+
+ /**
+  * Abstract base builder for [CompatibleUserRole] instances without data.
+  * Provides community membership configuration common to all compatible roles.
+  *
+  * @param Role the concrete role type being built.
+  * @since %CURRENT_VERSION%
+  */
+ abstract class CompatibleUserRoleBuilderWithoutData<Role : CompatibleUserRole> : Builder<Role> {
+
+     /**
+      * The list of communities this role is a member of.
+      *
+      * @since %CURRENT_VERSION%
+      */
+     var memberOf = mutableListOf<CommunityId>()
+
+     /**
+      * Sets the community membership list from raw ID values.
+      *
+      * @param communities the raw community IDs.
+      * @since %CURRENT_VERSION%
+      */
+     fun memberOf(communities: Iterable<Long>) {
+         memberOf = communities.map { CommunityId(it) }.toMutableList()
+     }
+
+ }
+
 /**
- * Abstract base builder for [CompatibleUserRole] instances.
+ * Abstract base builder for [CompatibleUserRole] instances with data.
  * Provides community membership configuration common to all compatible roles.
  *
  * @param Role the concrete role type being built.
+ * @param Data the type of associated data object.
+ * @param DataBuilder the builder type used to construct [Data].
  * @since %CURRENT_VERSION%
  */
-abstract class CompatibleUserRoleBuilder<Role : CompatibleUserRole> : Builder<Role> {
+abstract class CompatibleUserRoleBuilderWithData<Role : CompatibleUserRole, Data, DataBuilder : Builder<Data>>
+    : DomainEntityWithDataBuilder<Role, Data, DataBuilder>() {
 
     /**
      * The list of communities this role is a member of.
@@ -173,7 +206,7 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
  *
  * @since %CURRENT_VERSION%
  */
-class DeveloperBuilder : CompatibleUserRoleBuilder<Developer>(), DataCapable<DeveloperData, DeveloperDataBuilder> {
+class DeveloperBuilder : CompatibleUserRoleBuilderWithData<Developer, DeveloperData, DeveloperDataBuilder>() {
 
     override var data: DeveloperData? = null
     override fun dataBuilder() = DeveloperDataBuilder()
@@ -257,7 +290,7 @@ class StudentDataBuilder : Builder<StudentData> {
  *
  * @since %CURRENT_VERSION%
  */
-class StudentBuilder : CompatibleUserRoleBuilder<Student>(), DataCapable<StudentData, StudentDataBuilder> {
+class StudentBuilder : CompatibleUserRoleBuilderWithData<Student, StudentData, StudentDataBuilder>() {
 
     override var data: StudentData? = null
     override fun dataBuilder() = StudentDataBuilder()
@@ -285,7 +318,7 @@ class StudentBuilder : CompatibleUserRoleBuilder<Student>(), DataCapable<Student
  *
  * @since %CURRENT_VERSION%
  */
-class AdministratorBuilder : CompatibleUserRoleBuilder<Administrator>() {
+class AdministratorBuilder : CompatibleUserRoleBuilderWithoutData<Administrator>() {
 
     /**
      * Builds the [Administrator] role instance.
@@ -296,7 +329,6 @@ class AdministratorBuilder : CompatibleUserRoleBuilder<Administrator>() {
     override fun build() = Administrator(
         memberOf = memberOf.lazify(),
     )
-
 }
 
 /**
@@ -341,7 +373,7 @@ class JudgeDataBuilder : Builder<JudgeData> {
  *
  * @since %CURRENT_VERSION%
  */
-class JudgeBuilder : CompatibleUserRoleBuilder<Judge>(), DataCapable<JudgeData, JudgeDataBuilder> {
+class JudgeBuilder : CompatibleUserRoleBuilderWithData<Judge, JudgeData, JudgeDataBuilder>() {
 
     override var data: JudgeData? = null
     override fun dataBuilder() = JudgeDataBuilder()
@@ -423,7 +455,7 @@ class ManagerDataBuilder : Builder<ManagerData> {
  *
  * @since %CURRENT_VERSION%
  */
-class ManagerBuilder : CompatibleUserRoleBuilder<Manager>(), DataCapable<ManagerData, ManagerDataBuilder> {
+class ManagerBuilder : CompatibleUserRoleBuilderWithData<Manager, ManagerData, ManagerDataBuilder>() {
 
     override var data: ManagerData? = null
     override fun dataBuilder() = ManagerDataBuilder()
@@ -553,8 +585,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
  * @since %CURRENT_VERSION%
  */
 class MultipleRoleUserBuilder :
-    UserBuilder<MultipleRoleUserId, MultipleRoleUser>(),
-    DataCapable<MultipleRoleUserData, MultipleRoleUserDataBuilder>
+    UserBuilder<MultipleRoleUserId, MultipleRoleUser, MultipleRoleUserData, MultipleRoleUserDataBuilder>()
 {
 
     override var id: Long? = null
@@ -582,23 +613,3 @@ class MultipleRoleUserBuilder :
     }
 
 }
-
-/**
- * DSL entry point for building [MultipleRoleUserData].
- *
- * @param builder the configuration block applied to [MultipleRoleUserDataBuilder].
- * @return the constructed [MultipleRoleUserData].
- * @since %CURRENT_VERSION%
- */
-inline fun buildMultipleRoleUserData(builder: MultipleRoleUserDataBuilder.() -> Unit) =
-    MultipleRoleUserDataBuilder().apply(builder).build()
-
-/**
- * DSL entry point for building a [MultipleRoleUser].
- *
- * @param builder the configuration block applied to [MultipleRoleUserBuilder].
- * @return the constructed [MultipleRoleUser].
- * @since %CURRENT_VERSION%
- */
-inline fun buildMultipleRoleUser(builder: MultipleRoleUserBuilder.() -> Unit) =
-    MultipleRoleUserBuilder().apply(builder).build()

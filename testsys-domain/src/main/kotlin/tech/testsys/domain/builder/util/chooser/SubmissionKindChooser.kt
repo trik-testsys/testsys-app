@@ -1,7 +1,10 @@
 package tech.testsys.domain.builder.util.chooser
 
-import tech.testsys.domain.builder.task.developerSolutionTest
-import tech.testsys.domain.builder.task.grading
+
+import tech.testsys.domain.builder.Builder
+import tech.testsys.domain.builder.api.*
+import tech.testsys.domain.builder.util.lazify
+import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.SubmissionKind
 
@@ -18,21 +21,33 @@ class SubmissionKindChooser : Chooser<SubmissionKind>() {
      * @param contest the contest ID.
      * @since %CURRENT_VERSION%
      */
-    fun grading(contest: ContestId) = makeChoice(SubmissionKind.grading(contest))
-
-    /**
-     * Selects [SubmissionKind.Grading] for the given contest.
-     *
-     * @param contest the raw contest ID value.
-     * @since %CURRENT_VERSION%
-     */
-    fun grading(contest: Long) = makeChoice(SubmissionKind.grading(contest))
+    fun grading(builder: GradingSubmissionKindBuilder.() -> Unit) {
+        val currentBuilder = choice as? GradingSubmissionKindBuilder ?: GradingSubmissionKindBuilder()
+        makeChoice(currentBuilder.apply(builder))
+    }
 
     /**
      * Selects [SubmissionKind.DeveloperSolutionTest].
      *
      * @since %CURRENT_VERSION%
      */
-    fun developerSolutionTest() = makeChoice(SubmissionKind.developerSolutionTest())
-
+    fun developerSolutionTest() = makeChoice(object : Builder<SubmissionKind> {
+        override fun build() = SubmissionKind.DeveloperSolutionTest
+    })
 }
+
+class GradingSubmissionKindBuilder : Builder<SubmissionKind> {
+
+    var contest: ContestId? = null
+
+    fun contest(contestId: Long) {
+        contest = ContestId(contestId)
+    }
+
+    override fun build(): SubmissionKind {
+        val contest = requireField(contest) { ::contest }
+        return SubmissionKind.Grading(contest.lazify())
+    }
+}
+
+

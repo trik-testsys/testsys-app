@@ -1,5 +1,8 @@
 package tech.testsys.domain.builder.util.chooser
 
+import tech.testsys.domain.builder.Builder
+import tech.testsys.domain.builder.util.requireField
+
 /**
  * Abstract base class for DSL-style single-choice selectors.
  * Subclasses expose named functions that set the [choice] to a specific value of [T].
@@ -7,14 +10,14 @@ package tech.testsys.domain.builder.util.chooser
  * @param T the type of value being chosen.
  * @since %CURRENT_VERSION%
  */
-abstract class Chooser<T> {
+abstract class Chooser<T>: Builder<T> {
 
     /**
      * The currently selected value, or `null` if no choice has been made.
      *
      * @since %CURRENT_VERSION%
      */
-    internal var choice: T? = null
+    protected var choice: Builder<T>? = null
         private set
 
     /**
@@ -23,8 +26,12 @@ abstract class Chooser<T> {
      * @param choice the value to select.
      * @since %CURRENT_VERSION%
      */
-    protected fun makeChoice(choice: T) {
+    protected fun makeChoice(choice: Builder<T>) {
         this.choice = choice
     }
 
+    override fun build(): T {
+        val choice = requireField(choice) { ::choice }
+        return choice.build()
+    }
 }

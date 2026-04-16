@@ -116,23 +116,3 @@ class CompetitionBuilder : DomainEntityWithDataBuilder<Competition, CompetitionD
     }
 
 }
-
-/**
- * DSL entry point for building [CompetitionData].
- *
- * @param builder the configuration block applied to [CompetitionDataBuilder].
- * @return the constructed [CompetitionData].
- * @since %CURRENT_VERSION%
- */
-inline fun buildCompetitionData(builder: CompetitionDataBuilder.() -> Unit) =
-    CompetitionDataBuilder().apply(builder).build()
-
-/**
- * DSL entry point for building a [Competition].
- *
- * @param builder the configuration block applied to [CompetitionBuilder].
- * @return the constructed [Competition].
- * @since %CURRENT_VERSION%
- */
-inline fun buildCompetition(builder: CompetitionBuilder.() -> Unit) =
-    CompetitionBuilder().apply(builder).build()

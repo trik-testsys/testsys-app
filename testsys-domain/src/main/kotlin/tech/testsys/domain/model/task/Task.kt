@@ -18,26 +18,40 @@ value class TaskId(
 sealed interface TaskData {
 
     data class New(
-        val wip: TaskContent
+        val wip: WipTaskContent
     ) : TaskData
 
     data class Uncommited(
-        val wip: TaskContent,
-        val lastCommited: TaskContent,
+        val wip: WipTaskContent,
+        val lastCommited: CommitedTaskContent,
     ) : TaskData
 
     data class Committed(
-        val lastCommited: TaskContent
+        val lastCommited: CommitedTaskContent
     ) : TaskData
+
+    companion object
 }
 
-data class TaskContent(
+data class CommitedTaskContent(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val name: String,
     val description: String,
     val tests: LazyEntityList<TestId, Test>,
     val exercise: LazyEntity<ExerciseId, Exercise>,
     val statement: LazyEntity<StatementId, Statement>,
+    val developerSolutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
+    val supportedTrikStudioVersions: List<TrikStudioVersion>,
+    val sharedTo: LazyEntityList<CommunityId, Community>
+)
+
+data class WipTaskContent(
+    val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
+    val name: String,
+    val description: String?,
+    val tests: LazyEntityList<TestId, Test>,
+    val exercise: LazyEntity<ExerciseId, Exercise>?,
+    val statement: LazyEntity<StatementId, Statement>?,
     val developerSolutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
     val supportedTrikStudioVersions: List<TrikStudioVersion>,
     val sharedTo: LazyEntityList<CommunityId, Community>

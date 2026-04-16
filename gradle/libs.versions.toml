@@ -1,0 +1,36 @@
+[versions]
+junit = "6.0.3"
+kotlin = "2.2.21"
+detekt = "1.23.6"
+
+[libraries]
+org-junit-jupiter-junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+org-junit-jupiter-junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+org-junit-jupiter-junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+org-junit-platform-junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+
+org-jetbrains-kotlin-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin"}
+org-jetbrains-kotlin-kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin"}
+org-jetbrains-kotlin-kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin"}
+
+io-gitlab-arturbosch-detekt-detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt"}
+
+[bundles]
+test-implementation = [
+    "org-junit-jupiter-junit-jupiter-api",
+    "org-junit-jupiter-junit-jupiter-params"
+]
+test-runtime = [
+    "org-junit-jupiter-junit-jupiter-engine",
+    "org-junit-platform-junit-platform-launcher"
+]
+kotlin-implementation = [
+    "org-jetbrains-kotlin-kotlin-gradle-plugin",
+    "org-jetbrains-kotlin-kotlin-allopen",
+    "org-jetbrains-kotlin-kotlin-noarg"
+]
+detekt-implementation = [
+    "io-gitlab-arturbosch-detekt-detekt-gradle-plugin"
+]
+
+[plugins]

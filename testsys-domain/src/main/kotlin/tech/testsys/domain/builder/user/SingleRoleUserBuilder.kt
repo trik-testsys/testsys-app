@@ -20,9 +20,12 @@ import java.time.Instant
  * Provides default `null` initial values for [id] and [createdAt].
  *
  * @param U the concrete single-role user type being built.
+ * @param Data the type of associated data object.
+ * @param DataBuilder the builder type used to construct [Data].
  * @since %CURRENT_VERSION%
  */
-abstract class SingleRoleUserBuilder<U: SingleRoleUser> : UserBuilder<SingleRoleUserId, U>() {
+abstract class SingleRoleUserBuilder<U: SingleRoleUser, Data, DataBuilder: Builder<Data>>
+    : UserBuilder<SingleRoleUserId, U, Data, DataBuilder>() {
 
     override var id: Long? = null
     override var createdAt: Instant? = null
@@ -79,7 +82,7 @@ class ParticipantDataBuilder : Builder<ParticipantData> {
  *
  * @since %CURRENT_VERSION%
  */
-class ParticipantBuilder : SingleRoleUserBuilder<Participant>(), DataCapable<ParticipantData, ParticipantDataBuilder> {
+class ParticipantBuilder : SingleRoleUserBuilder<Participant, ParticipantData, ParticipantDataBuilder>() {
 
     override var data: ParticipantData? = null
     override fun dataBuilder() = ParticipantDataBuilder()
@@ -104,26 +107,6 @@ class ParticipantBuilder : SingleRoleUserBuilder<Participant>(), DataCapable<Par
     }
 
 }
-
-/**
- * DSL entry point for building [ParticipantData].
- *
- * @param builder the configuration block applied to [ParticipantDataBuilder].
- * @return the constructed [ParticipantData].
- * @since %CURRENT_VERSION%
- */
-inline fun buildParticipantData(builder: ParticipantDataBuilder.() -> Unit) =
-    ParticipantDataBuilder().apply(builder).build()
-
-/**
- * DSL entry point for building a [Participant].
- *
- * @param builder the configuration block applied to [ParticipantBuilder].
- * @return the constructed [Participant].
- * @since %CURRENT_VERSION%
- */
-inline fun buildParticipant(builder: ParticipantBuilder.() -> Unit) =
-    ParticipantBuilder().apply(builder).build()
 
 /**
  * Builder for constructing [ObserverData].
@@ -170,7 +153,7 @@ class ObserverDataBuilder : Builder<ObserverData> {
  *
  * @since %CURRENT_VERSION%
  */
-class ObserverBuilder : SingleRoleUserBuilder<Observer>(), DataCapable<ObserverData, ObserverDataBuilder> {
+class ObserverBuilder : SingleRoleUserBuilder<Observer, ObserverData, ObserverDataBuilder>() {
 
     override var data: ObserverData? = null
     override fun dataBuilder() = ObserverDataBuilder()
@@ -195,24 +178,6 @@ class ObserverBuilder : SingleRoleUserBuilder<Observer>(), DataCapable<ObserverD
     }
 }
 
-/**
- * DSL entry point for building [ObserverData].
- *
- * @param builder the configuration block applied to [ObserverDataBuilder].
- * @return the constructed [ObserverData].
- * @since %CURRENT_VERSION%
- */
-inline fun buildObserverData(builder: ObserverDataBuilder.() -> Unit) = ObserverDataBuilder().apply(builder).build()
-
-/**
- * DSL entry point for building an [Observer].
- *
- * @param builder the configuration block applied to [ObserverBuilder].
- * @return the constructed [Observer].
- * @since %CURRENT_VERSION%
- */
-inline fun buildObserver(builder: ObserverBuilder.() -> Unit) = ObserverBuilder().apply(builder).build()
-
 class SupervisorDataBuilder : Builder<SupervisorData> {
 
 
@@ -230,14 +195,13 @@ class SupervisorDataBuilder : Builder<SupervisorData> {
 
 }
 
-
 /**
  * Builder for constructing [Supervisor] domain entities.
  * Supervisors have no additional data beyond the base user fields.
  *
  * @since %CURRENT_VERSION%
  */
-class SupervisorBuilder : SingleRoleUserBuilder<Supervisor>(), DataCapable<SupervisorData, SupervisorDataBuilder> {
+class SupervisorBuilder : SingleRoleUserBuilder<Supervisor, SupervisorData, SupervisorDataBuilder>() {
 
     override var data: SupervisorData? = null
     override fun dataBuilder() = SupervisorDataBuilder()
@@ -262,15 +226,3 @@ class SupervisorBuilder : SingleRoleUserBuilder<Supervisor>(), DataCapable<Super
     }
 
 }
-
-inline fun buildObserverData(builder: SupervisorDataBuilder.() -> Unit) = SupervisorDataBuilder().apply(builder).build()
-
-
-/**
- * DSL entry point for building a [Supervisor].
- *
- * @param builder the configuration block applied to [SupervisorBuilder].
- * @return the constructed [Supervisor].
- * @since %CURRENT_VERSION%
- */
-inline fun buildSupervisor(builder: SupervisorBuilder.() -> Unit) = SupervisorBuilder().apply(builder).build()

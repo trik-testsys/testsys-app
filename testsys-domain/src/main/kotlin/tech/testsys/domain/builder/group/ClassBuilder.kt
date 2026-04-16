@@ -115,21 +115,3 @@ class ClassBuilder : DomainEntityWithDataBuilder<Class, ClassData, ClassDataBuil
         )
     }
 }
-
-/**
- * DSL entry point for building [ClassData].
- *
- * @param builder the configuration block applied to [ClassDataBuilder].
- * @return the constructed [ClassData].
- * @since %CURRENT_VERSION%
- */
-inline fun buildClassData(builder: ClassDataBuilder.() -> Unit) = ClassDataBuilder().apply(builder).build()
-
-/**
- * DSL entry point for building a [Class].
- *
- * @param builder the configuration block applied to [ClassBuilder].
- * @return the constructed [Class].
- * @since %CURRENT_VERSION%
- */
-inline fun buildClass(builder: ClassBuilder.() -> Unit) = ClassBuilder().apply(builder).build()

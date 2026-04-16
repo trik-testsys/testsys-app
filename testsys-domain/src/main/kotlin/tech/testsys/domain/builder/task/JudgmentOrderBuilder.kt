@@ -99,23 +99,3 @@ class JudgmentOrderBuilder : DomainEntityWithDataBuilder<JudgmentOrder, Judgment
     }
 
 }
-
-/**
- * DSL entry point for building [JudgmentOrderData].
- *
- * @param builder the configuration block applied to [JudgmentOrderDataBuilder].
- * @return the constructed [JudgmentOrderData].
- * @since %CURRENT_VERSION%
- */
-inline fun buildJudgmentOrderData(builder: JudgmentOrderDataBuilder.() -> Unit) =
-    JudgmentOrderDataBuilder().apply(builder).build()
-
-/**
- * DSL entry point for building a [JudgmentOrder].
- *
- * @param builder the configuration block applied to [JudgmentOrderBuilder].
- * @return the constructed [JudgmentOrder].
- * @since %CURRENT_VERSION%
- */
-inline fun buildJudgmentOrder(builder: JudgmentOrderBuilder.() -> Unit) =
-    JudgmentOrderBuilder().apply(builder).build()

@@ -6,16 +6,12 @@ import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.chooser.SubmissionKindChooser
 import tech.testsys.domain.builder.util.chooser.SubmissionStatusChooser
 import tech.testsys.domain.builder.util.requireField
-import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionId
-import tech.testsys.domain.model.task.SubmissionKind
-import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
@@ -122,119 +118,6 @@ class VerdictBuilder : DomainEntityWithDataBuilder<Verdict, VerdictData, Verdict
 }
 
 /**
- * DSL entry point for building [VerdictData].
- *
- * @param builder the configuration block applied to [VerdictDataBuilder].
- * @return the constructed [VerdictData].
- * @since %CURRENT_VERSION%
- */
-inline fun buildVerdictData(builder: VerdictDataBuilder.() -> Unit) = VerdictDataBuilder().apply(builder).build()
-
-/**
- * DSL entry point for building a [Verdict].
- *
- * @param builder the configuration block applied to [VerdictBuilder].
- * @return the constructed [Verdict].
- * @since %CURRENT_VERSION%
- */
-inline fun buildVerdict(builder: VerdictBuilder.() -> Unit) = VerdictBuilder().apply(builder).build()
-
-/**
- * Creates a [GradingResult.Success] with the given verdict ID.
- *
- * @param verdict the verdict ID.
- * @return the success grading result.
- * @since %CURRENT_VERSION%
- */
-fun GradingResult.Companion.success(verdict: VerdictId) = GradingResult.Success(verdict.lazify())
-
-/**
- * Creates a [GradingResult.Success] with the given raw verdict ID.
- *
- * @param verdict the raw verdict ID value.
- * @return the success grading result.
- * @since %CURRENT_VERSION%
- */
-fun GradingResult.Companion.success(verdict: Long) = VerdictId(verdict).let { GradingResult.success(it) }
-
-/**
- * Creates a [GradingResult.GradingError] with the given description.
- *
- * @param description the error description.
- * @return the grading error result.
- * @since %CURRENT_VERSION%
- */
-fun GradingResult.Companion.error(description: String) = GradingResult.GradingError(description)
-
-/**
- * Creates a [GradingResult.Timeout] instance.
- *
- * @return the timeout grading result.
- * @since %CURRENT_VERSION%
- */
-fun GradingResult.Companion.timeout() = GradingResult.Timeout
-
-/**
- * Wraps this [GradingResult] into a [SubmissionStatus.Graded] status.
- *
- * @return the graded submission status containing this result.
- * @since %CURRENT_VERSION%
- */
-fun GradingResult.graded() = SubmissionStatus.Graded(this)
-
-/**
- * Creates a [SubmissionStatus.Graded] status from a [GradingResult] configured via the [builder] block.
- *
- * @param builder a lambda on [GradingResult.Companion] that returns the grading result.
- * @return the graded submission status.
- * @since %CURRENT_VERSION%
- */
-inline fun SubmissionStatus.Companion.graded(builder: GradingResult.Companion.() -> GradingResult) =
-    builder(GradingResult.Companion).graded()
-
-/**
- * Creates a [SubmissionStatus.Queued] status.
- *
- * @return the queued submission status.
- * @since %CURRENT_VERSION%
- */
-fun SubmissionStatus.Companion.queued() = SubmissionStatus.Queued
-
-/**
- * Creates a [SubmissionStatus.InProgress] status.
- *
- * @return the in-progress submission status.
- * @since %CURRENT_VERSION%
- */
-fun SubmissionStatus.Companion.inProgress() = SubmissionStatus.InProgress
-
-/**
- * Creates a [SubmissionKind.DeveloperSolutionTest] kind.
- *
- * @return the developer solution test submission kind.
- * @since %CURRENT_VERSION%
- */
-fun SubmissionKind.Companion.developerSolutionTest() = SubmissionKind.DeveloperSolutionTest
-
-/**
- * Creates a [SubmissionKind.Grading] kind for the given contest.
- *
- * @param contest the contest ID.
- * @return the grading submission kind.
- * @since %CURRENT_VERSION%
- */
-fun SubmissionKind.Companion.grading(contest: ContestId) = SubmissionKind.Grading(contest.lazify())
-
-/**
- * Creates a [SubmissionKind.Grading] kind for the given raw contest ID.
- *
- * @param contest the raw contest ID value.
- * @return the grading submission kind.
- * @since %CURRENT_VERSION%
- */
-fun SubmissionKind.Companion.grading(contest: Long) = ContestId(contest).let { SubmissionKind.grading(it) }
-
-/**
  * Builder for constructing [SubmissionData].
  *
  * @since %CURRENT_VERSION%
@@ -334,15 +217,13 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
         val author = requireField(author) { ::author }
         val solution = requireField(solution) { ::solution }
         val task = requireField(task) { ::task }
-        val status = requireField(status.choice) { status::choice }
-        val kind = requireField(kind.choice) { kind::choice }
 
         return SubmissionData(
             author = author.lazify(),
             solution = solution.lazify(),
             task = task.lazify(),
-            status = status,
-            kind = kind,
+            status = status.build(),
+            kind = kind.build(),
             judgmentOrders = judgmentOrders.lazify()
         )
     }
@@ -378,23 +259,3 @@ class SubmissionBuilder : DomainEntityWithDataBuilder<Submission, SubmissionData
     }
 
 }
-
-/**
- * DSL entry point for building [SubmissionData].
- *
- * @param builder the configuration block applied to [SubmissionDataBuilder].
- * @return the constructed [SubmissionData].
- * @since %CURRENT_VERSION%
- */
-inline fun buildSubmissionData(builder: SubmissionDataBuilder.() -> Unit) =
-    SubmissionDataBuilder().apply(builder).build()
-
-/**
- * DSL entry point for building a [Submission].
- *
- * @param builder the configuration block applied to [SubmissionBuilder].
- * @return the constructed [Submission].
- * @since %CURRENT_VERSION%
- */
-inline fun buildSubmission(builder: SubmissionBuilder.() -> Unit) =
-    SubmissionBuilder().apply(builder).build()

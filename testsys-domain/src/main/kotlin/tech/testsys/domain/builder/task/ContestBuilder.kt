@@ -162,21 +162,3 @@ class ContestBuilder : DomainEntityWithDataBuilder<Contest, ContestData, Contest
     }
 
 }
-
-/**
- * DSL entry point for building [ContestData].
- *
- * @param builder the configuration block applied to [ContestDataBuilder].
- * @return the constructed [ContestData].
- * @since %CURRENT_VERSION%
- */
-inline fun buildContestData(builder: ContestDataBuilder.() -> Unit) = ContestDataBuilder().apply(builder).build()
-
-/**
- * DSL entry point for building a [Contest].
- *
- * @param builder the configuration block applied to [ContestBuilder].
- * @return the constructed [Contest].
- * @since %CURRENT_VERSION%
- */
-inline fun buildContest(builder: ContestBuilder.() -> Unit) = ContestBuilder().apply(builder).build()

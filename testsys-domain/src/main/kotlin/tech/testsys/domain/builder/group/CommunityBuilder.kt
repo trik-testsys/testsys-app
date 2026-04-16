@@ -77,21 +77,3 @@ class CommunityBuilder : DomainEntityWithDataBuilder<Community, CommunityData, C
         )
     }
 }
-
-/**
- * DSL entry point for building [CommunityData].
- *
- * @param builder the configuration block applied to [CommunityDataBuilder].
- * @return the constructed [CommunityData].
- * @since %CURRENT_VERSION%
- */
-inline fun buildCommunityData(builder: CommunityDataBuilder.() -> Unit) = CommunityDataBuilder().apply(builder).build()
-
-/**
- * DSL entry point for building a [Community].
- *
- * @param builder the configuration block applied to [CommunityBuilder].
- * @return the constructed [Community].
- * @since %CURRENT_VERSION%
- */
-inline fun buildCommunity(builder: CommunityBuilder.() -> Unit) = CommunityBuilder().apply(builder).build()

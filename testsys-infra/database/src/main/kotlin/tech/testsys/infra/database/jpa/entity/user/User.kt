@@ -2,7 +2,7 @@ package tech.testsys.infra.database.jpa.entity.user
 
 import jakarta.persistence.Entity
 import jakarta.persistence.MappedSuperclass
-import tech.testsys.infra.database.jpa.entity.JpaEntity
+import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
 
 /**
  * JPA entity representing a user domain entity.
@@ -13,7 +13,7 @@ import tech.testsys.infra.database.jpa.entity.JpaEntity
 @Entity
 class UserJpaEntity(
     val accessToken: String,
-) : JpaEntity()
+) : JpaSequenceEntity()
 
 /**
  * Base JPA entity for user role domain entities.
@@ -24,4 +24,4 @@ class UserJpaEntity(
 @MappedSuperclass
 abstract class RoleEntity(
     val userId: Long
-) : JpaEntity()
+) : JpaSequenceEntity()

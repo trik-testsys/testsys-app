@@ -7,7 +7,7 @@ import jakarta.persistence.Enumerated
 import jakarta.persistence.MappedSuperclass
 import tech.testsys.infra.database.jpa.entity.JpaCompositeEntity
 import tech.testsys.infra.database.jpa.entity.JpaCompositeId
-import tech.testsys.infra.database.jpa.entity.JpaEntity
+import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
 
 /**
  * Supported programming languages for TRIK Studio tasks.
@@ -30,7 +30,7 @@ enum class TrikSupportedLanguageJpaEnum {
 @MappedSuperclass
 abstract class FileJpaEntity(
     val uploadedFilename: String,
-) : JpaEntity()
+) : JpaSequenceEntity()
 
 /**
  * JPA entity representing a test domain entity.
@@ -135,7 +135,7 @@ class TaskJpaEntity(
     val exerciseId: Long,
     val trikStudioVersionImage: String,
     val trikStudioVersionTag: String,
-) : JpaEntity()
+) : JpaSequenceEntity()
 
 /**
  * JPA entity representing a developer solution domain entity.
@@ -148,4 +148,4 @@ class TaskJpaEntity(
 class DeveloperSolutionJpaEntity(
     val solutionId: Long,
     val expectedVerdictId: Long,
-) : JpaEntity()
+) : JpaSequenceEntity()

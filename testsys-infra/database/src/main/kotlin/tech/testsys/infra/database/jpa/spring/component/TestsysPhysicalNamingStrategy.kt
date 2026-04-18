@@ -7,8 +7,8 @@ import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment
 /**
  * Physical naming strategy that derives table and column names from entity/field names.
  *
- * Tables: strips `JpaEntity`/`Entity` suffix, converts CamelCase to snake_case,
- * and prepends `t_` prefix. Example: `SubmissionStatusJpaEntity` → `t_submission_status`
+ * Tables: strips `JpaSequenceEntity`/`JpaEntity`/`Entity` suffix, converts CamelCase to snake_case,
+ * and prepends `t_` prefix. Example: `SubmissionStatusJpaSequenceEntity` → `t_submission_status`
  *
  * Columns: converts camelCase to snake_case. Example: `taskId` → `task_id`
  *

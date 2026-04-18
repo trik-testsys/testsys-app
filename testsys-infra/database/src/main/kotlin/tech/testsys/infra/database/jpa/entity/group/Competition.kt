@@ -4,7 +4,7 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import tech.testsys.infra.database.jpa.entity.JpaCompositeEntity
 import tech.testsys.infra.database.jpa.entity.JpaCompositeId
-import tech.testsys.infra.database.jpa.entity.JpaEntity
+import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
 
 /**
  * Composite primary key for [ObserverToCompetitionJpaEntity].
@@ -79,4 +79,4 @@ class TaskToCompetitionJpaEntity(
 @Entity
 class CompetitionJpaEntity(
     val ownerId: Long,
-) : JpaEntity()
+) : JpaSequenceEntity()

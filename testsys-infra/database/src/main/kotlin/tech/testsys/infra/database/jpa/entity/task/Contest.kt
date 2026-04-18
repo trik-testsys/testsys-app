@@ -4,7 +4,7 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import tech.testsys.infra.database.jpa.entity.JpaCompositeEntity
 import tech.testsys.infra.database.jpa.entity.JpaCompositeId
-import tech.testsys.infra.database.jpa.entity.JpaEntity
+import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
 import java.time.Instant
 
 /**
@@ -45,4 +45,4 @@ class ContestJpaEntity(
     val attemptDuration: Long,
     val trikStudioVersionImage: String,
     val trikStudioVersionTag: String,
-) : JpaEntity()
+) : JpaSequenceEntity()

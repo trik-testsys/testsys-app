@@ -87,7 +87,7 @@ class SolutionJpaEntity(
 data class TestToTaskId(
     val testId: Long,
     val taskId: Long,
-) : JpaCompositeId()
+) : JpaCompositeId
 
 /**
  * JPA entity representing a test to task association domain entity.
@@ -108,7 +108,7 @@ class TestToTaskJpaEntity(
 data class DeveloperSolutionToTaskId(
     val developerSolutionId: Long,
     val taskId: Long,
-) : JpaCompositeId()
+) : JpaCompositeId
 
 /**
  * JPA entity representing a developer solution to task association domain entity.

@@ -13,7 +13,7 @@ import java.io.Serializable
  *
  * @since %CURRENT_VERSION%
  */
-abstract class JpaCompositeId : Serializable
+interface JpaCompositeId : Serializable
 
 /**
  * Base abstract class for all JPA entities with a composite (multi-column) primary key.

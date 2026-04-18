@@ -16,7 +16,7 @@ import java.time.Instant
 data class TaskToContestId(
     val taskId: Long,
     val contestId: Long,
-) : JpaCompositeId()
+) : JpaCompositeId
 
 /**
  * JPA entity representing a task to contest association domain entity.

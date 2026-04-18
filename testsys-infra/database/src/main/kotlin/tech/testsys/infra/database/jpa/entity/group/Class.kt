@@ -15,7 +15,13 @@ import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
 data class StudentToClassId(
     val studentId: Long,
     val classId: Long,
-) : JpaCompositeId()
+) : JpaCompositeId {
+
+    companion object {
+
+        private const val serialVersionUID: Long = 1L
+    }
+}
 
 /**
  * JPA entity representing a student to class association domain entity.
@@ -28,27 +34,6 @@ class StudentToClassJpaEntity(
 ) : JpaCompositeEntity<StudentToClassId>(id)
 
 /**
- * Composite primary key for [ManagerToClassJpaEntity].
- *
- * @since %CURRENT_VERSION%
- */
-@Embeddable
-data class ManagerToClassId(
-    val managerId: Long,
-    val classId: Long,
-) : JpaCompositeId()
-
-/**
- * JPA entity representing a manager to class association domain entity.
- *
- * @since %CURRENT_VERSION%
- */
-@Entity
-class ManagerToClassJpaEntity(
-    id: ManagerToClassId,
-) : JpaCompositeEntity<ManagerToClassId>(id)
-
-/**
  * Composite primary key for [ContestToClassJpaEntity].
  *
  * @since %CURRENT_VERSION%
@@ -57,7 +42,13 @@ class ManagerToClassJpaEntity(
 data class ContestToClassId(
     val contestId: Long,
     val classId: Long,
-) : JpaCompositeId()
+) : JpaCompositeId {
+
+    companion object {
+
+        private const val serialVersionUID: Long = 1L
+    }
+}
 
 /**
  * JPA entity representing a contest to class association domain entity.

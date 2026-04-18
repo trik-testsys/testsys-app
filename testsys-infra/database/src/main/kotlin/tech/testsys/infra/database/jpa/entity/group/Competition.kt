@@ -6,68 +6,39 @@ import tech.testsys.infra.database.jpa.entity.JpaCompositeEntity
 import tech.testsys.infra.database.jpa.entity.JpaCompositeId
 import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
 
-/**
- * Composite primary key for [ObserverToCompetitionJpaEntity].
- *
- * @since %CURRENT_VERSION%
- */
 @Embeddable
-data class ObserverToCompetitionId(
-    val observerId: Long,
+data class ContestToCompetitionId(
+    val contestId: Long,
     val competitionId: Long,
-) : JpaCompositeId()
+) : JpaCompositeId {
 
-/**
- * JPA entity representing an observer to competition association domain entity.
- *
- * @since %CURRENT_VERSION%
- */
+    companion object {
+
+        private const val serialVersionUID: Long = 1L
+    }
+}
+
 @Entity
-class ObserverToCompetitionJpaEntity(
-    id: ObserverToCompetitionId,
-) : JpaCompositeEntity<ObserverToCompetitionId>(id)
+class ContestToCompetitionJpaEntity(
+    id: ContestToCompetitionId
+) : JpaCompositeEntity<ContestToCompetitionId>(id)
 
-/**
- * Composite primary key for [ManagerToCompetitionJpaEntity].
- *
- * @since %CURRENT_VERSION%
- */
 @Embeddable
-data class ManagerToCompetitionId(
-    val managerId: Long,
+data class ParticipantToCompetitionId(
+    val participantId: Long,
     val competitionId: Long,
-) : JpaCompositeId()
+) : JpaCompositeId {
 
-/**
- * JPA entity representing a manager to competition association domain entity.
- *
- * @since %CURRENT_VERSION%
- */
+    companion object {
+
+        private const val serialVersionUID: Long = 1L
+    }
+}
+
 @Entity
-class ManagerToCompetitionJpaEntity(
-    id: ManagerToCompetitionId,
-) : JpaCompositeEntity<ManagerToCompetitionId>(id)
-
-/**
- * Composite primary key for [TaskToCompetitionJpaEntity].
- *
- * @since %CURRENT_VERSION%
- */
-@Embeddable
-data class TaskToCompetitionId(
-    val taskId: Long,
-    val competitionId: Long,
-) : JpaCompositeId()
-
-/**
- * JPA entity representing a task to competition association domain entity.
- *
- * @since %CURRENT_VERSION%
- */
-@Entity
-class TaskToCompetitionJpaEntity(
-    id: TaskToCompetitionId,
-) : JpaCompositeEntity<TaskToCompetitionId>(id)
+class ParticipantToCompetitionJpaEntity(
+    id: ParticipantToCompetitionId
+) : JpaCompositeEntity<ParticipantToCompetitionId>(id)
 
 /**
  * JPA entity representing a competition domain entity.

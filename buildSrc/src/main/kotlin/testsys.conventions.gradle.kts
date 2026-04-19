@@ -44,6 +44,14 @@ tasks.withType<Detekt>().configureEach {
     }
 
     config.setFrom("$rootDir/detekt.yml")
-    buildUponDefaultConfig = true
+    buildUponDefaultConfig = false
     autoCorrect = true
+}
+
+tasks.named("detekt") {
+    enabled = false
+}
+
+tasks.named("check") {
+    dependsOn(tasks.named("detektMain"))
 }

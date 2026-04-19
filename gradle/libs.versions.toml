@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.2.21"
-detekt = "1.23.6"
+detekt = "1.23.8"
 spring-boot = "3.4.3"
 
 [libraries]

@@ -1,5 +1,6 @@
 package tech.testsys.domain.model.task
 
+import tech.testsys.domain.model.Describable
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
@@ -53,11 +54,18 @@ data class SubmissionData(
     val task: LazyEntity<TaskId, Task>,
     val status: SubmissionStatus,
     val kind: SubmissionKind,
-    val judgmentOrders: LazyEntityList<JudgmentOrderId, JudgmentOrder>
+    val judgmentOrders: LazyEntityList<JudgmentOrderId, JudgmentOrder>,
+    val name: String,
+    val description: String,
 )
 
 class Submission(
     id: SubmissionId,
     createdAt: Instant,
     val data: SubmissionData,
-) : DomainEntity<SubmissionId>(id, createdAt)
+) : DomainEntity<SubmissionId>(id, createdAt),
+    Describable {
+
+    override val name = data.name
+    override val description = data.description
+}

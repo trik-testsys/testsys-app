@@ -1,5 +1,6 @@
 package tech.testsys.domain.model.task
 
+import tech.testsys.domain.model.Describable
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import java.time.Instant
@@ -10,7 +11,9 @@ value class StatementId(
 ) : DomainId
 
 class StatementData(
-    val file: FileData
+    val file: FileData,
+    val name: String,
+    val description: String,
 )
 
 class Statement(
@@ -18,4 +21,9 @@ class Statement(
     createdAt: Instant,
     val versionData: VersionData<StatementId, Statement>,
     val data: StatementData
-) : DomainEntity<StatementId>(id, createdAt)
+) : DomainEntity<StatementId>(id, createdAt),
+    Describable {
+
+    override val name = data.name
+    override val description = data.description
+}

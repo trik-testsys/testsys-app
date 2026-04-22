@@ -1,5 +1,6 @@
 package tech.testsys.domain.model.group
 
+import tech.testsys.domain.model.Describable
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
@@ -18,11 +19,18 @@ value class ClassId(
 data class ClassData(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val students: LazyEntityList<MultipleRoleUserId, MultipleRoleUser>,
-    val contests: LazyEntityList<ContestId, Contest>
+    val contests: LazyEntityList<ContestId, Contest>,
+    val name: String,
+    val description: String,
 )
 
 class Class(
     id: ClassId,
     createdAt: Instant,
     val data: ClassData,
-) : DomainEntity<ClassId>(id, createdAt)
+) : DomainEntity<ClassId>(id, createdAt),
+    Describable {
+
+    override val name = data.name
+    override val description = data.description
+}

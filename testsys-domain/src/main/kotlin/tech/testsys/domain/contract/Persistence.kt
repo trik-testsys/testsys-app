@@ -7,15 +7,25 @@ import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.LazyNullableEntity
 
 interface EntityLoader<Id: DomainId, Entity: DomainEntity<Id>> {
+
     fun load(field: LazyEntity<Id, Entity>): Entity
     fun load(field: LazyNullableEntity<Id, Entity>): Entity?
     fun load(list: LazyEntityList<Id, Entity>, pageSize: Int, page: Int): List<Entity>
 }
 
+interface EntityFinder<Id: DomainId, Entity: DomainEntity<Id>> {
+
+    fun find(id: Id): Entity?
+}
+
 interface EntitySaver<Data, Id: DomainId, Entity: DomainEntity<Id>> {
+
     fun save(data: Data): Entity
-    fun save(data: List<Data>): List<Entity>
+    fun save(dataList: List<Data>): List<Entity>
+
+    fun update(entity: Entity): Entity
+    fun update(entityList: List<Entity>): List<Entity>
 }
 
 interface EntityRepository<Data, Id: DomainId, Entity: DomainEntity<Id>>:
-    EntitySaver<Data, Id, Entity>, EntityLoader<Id, Entity>
+    EntitySaver<Data, Id, Entity>, EntityLoader<Id, Entity>, EntityFinder<Id, Entity>

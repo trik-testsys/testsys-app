@@ -1,13 +1,12 @@
 package tech.testsys.domain.model.group
 
+import tech.testsys.domain.model.Describable
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.model.task.Task
-import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Participant
@@ -22,11 +21,18 @@ value class CompetitionId(
 data class CompetitionData(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val participants: LazyEntityList<SingleRoleUserId, Participant>,
-    val contests: LazyEntityList<ContestId, Contest>
+    val contests: LazyEntityList<ContestId, Contest>,
+    val name: String,
+    val description: String,
 )
 
 class Competition(
     id: CompetitionId,
     createdAt: Instant,
     val data: CompetitionData,
-) : DomainEntity<CompetitionId>(id, createdAt)
+) : DomainEntity<CompetitionId>(id, createdAt),
+    Describable {
+
+    override val name = data.name
+    override val description = data.description
+}

@@ -58,6 +58,7 @@ class LazyNullableEntity<Id: DomainId, Event: DomainEntity<Id>>(val id: Id) {
     }
 }
 
+// TODO мб хотим сделать листы мутабельными
 class LazyEntityList<Id: DomainId, Entity: DomainEntity<Id>>(val ids: List<Id>) {
     private var value: List<Entity>? = null
 

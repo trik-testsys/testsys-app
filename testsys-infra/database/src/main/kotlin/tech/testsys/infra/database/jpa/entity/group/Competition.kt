@@ -2,6 +2,7 @@ package tech.testsys.infra.database.jpa.entity.group
 
 import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
+import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
 import tech.testsys.infra.database.jpa.entity.JpaCompositeEntity
 import tech.testsys.infra.database.jpa.entity.JpaCompositeId
 import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
@@ -49,5 +50,7 @@ class ParticipantToCompetitionJpaEntity(
  */
 @Entity
 class CompetitionJpaEntity(
+    name: String,
+    description: String,
     val ownerId: Long,
-) : JpaSequenceEntity()
+) : DescribableJpaEntity(name, description)

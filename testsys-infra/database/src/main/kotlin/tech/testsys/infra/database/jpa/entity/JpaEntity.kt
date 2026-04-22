@@ -1,9 +1,15 @@
 package tech.testsys.infra.database.jpa.entity
 
+import jakarta.persistence.Embeddable
+import jakarta.persistence.EmbeddedId
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
 import jakarta.persistence.Version
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
+import java.io.Serializable
 import java.time.Instant
 
 /**
@@ -17,7 +23,6 @@ import java.time.Instant
  */
 @MappedSuperclass
 abstract class JpaEntity(
-
     @CreationTimestamp
     val createdAt: Instant = Instant.now(),
 
@@ -27,3 +32,53 @@ abstract class JpaEntity(
     @Version
     val version: Long = 0,
 )
+
+
+/**
+ * Base abstract class for composite (multi-column) primary keys used with [JpaCompositeEntity].
+ *
+ * Subclasses must be annotated with [Embeddable] and are recommended to be Kotlin `data class`es,
+ * which automatically provide the [equals] and [hashCode] implementations required by the JPA spec.
+ *
+ * @since %CURRENT_VERSION%
+ */
+interface JpaCompositeId : Serializable
+
+/**
+ * Base abstract class for all JPA entities with a composite (multi-column) primary key.
+ *
+ * Uses an [EmbeddedId] of type [T] instead of a simple auto-generated [Long] identifier.
+ * Inherits audit and versioning fields from [JpaEntity].
+ *
+ * Subclasses should be annotated with `@Entity` and provide a concrete [JpaCompositeId] subclass
+ * as the type parameter.
+ *
+ * @param T the composite key type, must extend [JpaCompositeId].
+ * @property id the composite primary key.
+ *
+ * @since %CURRENT_VERSION%
+ */
+@MappedSuperclass
+abstract class JpaCompositeEntity<T : JpaCompositeId>(
+    @EmbeddedId
+    val id: T,
+) : JpaEntity()
+
+/**
+ * Base abstract class for all JPA entities with a simple (non-composite) primary key.
+ *
+ * Provides an auto-generated primary key using a database sequence.
+ * Inherits audit and versioning fields from [JpaEntity].
+ *
+ * Subclasses should be annotated with `@Entity` and define their own fields and relationships.
+ *
+ * @property id unique entity identifier, `null` until persisted to the database.
+ *
+ * @since %CURRENT_VERSION%
+ */
+@MappedSuperclass
+abstract class JpaSequenceEntity(
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    val id: Long? = null,
+) : JpaEntity()

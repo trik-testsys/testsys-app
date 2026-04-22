@@ -1,7 +1,7 @@
 package tech.testsys.infra.database.jpa.entity.group
 
 import jakarta.persistence.Entity
-import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
+import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
 
 /**
  * JPA entity representing a community domain entity.
@@ -12,5 +12,7 @@ import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
  */
 @Entity
 class CommunityJpaEntity(
+    name: String,
+    description: String,
     val ownerId: Long,
-) : JpaSequenceEntity()
+) : DescribableJpaEntity(name, description)

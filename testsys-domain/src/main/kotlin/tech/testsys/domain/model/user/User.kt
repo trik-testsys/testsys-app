@@ -9,7 +9,17 @@ interface UserId : DomainId
 sealed class User<Id : UserId>(
     id: Id,
     createdAt: Instant,
-) : DomainEntity<Id>(id, createdAt) {
+    data: UserData,
+) : DomainEntity<Id>(id, createdAt), UserData by data
 
-    abstract val accessToken: String
+interface UserData {
+
+    val accessToken: String
+    val name: String
+    val description: String
+}
+
+interface WithEmail {
+
+    val email: String
 }

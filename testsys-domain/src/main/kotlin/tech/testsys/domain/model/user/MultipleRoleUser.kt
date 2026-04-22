@@ -24,9 +24,12 @@ import tech.testsys.domain.model.task.TestId
 import java.time.Instant
 
 data class MultipleRoleUserData(
-    val accessToken: String,
+    override val accessToken: String,
+    override val name: String,
+    override val description: String,
+    override val email: String,
     val roles: List<CompatibleUserRole>,
-)
+) : UserData, WithEmail
 
 @JvmInline
 value class MultipleRoleUserId(
@@ -37,10 +40,7 @@ class MultipleRoleUser(
     id: MultipleRoleUserId,
     createdAt: Instant,
     val data: MultipleRoleUserData,
-) : User<MultipleRoleUserId>(id, createdAt) {
-
-    override val accessToken = data.accessToken
-}
+) : User<MultipleRoleUserId>(id, createdAt, data)
 
 sealed class CompatibleUserRole(
     val memberOf: LazyEntityList<CommunityId, Community>

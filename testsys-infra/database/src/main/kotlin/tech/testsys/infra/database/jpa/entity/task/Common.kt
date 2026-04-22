@@ -3,7 +3,7 @@ package tech.testsys.infra.database.jpa.entity.task
 import jakarta.persistence.Entity
 import jakarta.persistence.MappedSuperclass
 import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
-import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
+import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 enum class TrikSupportedLanguageEnum {
     PYTHON,
@@ -15,12 +15,12 @@ enum class TrikSupportedLanguageEnum {
 class FileDataJpaEntity(
     val uploadedFileName: String,
     val storedFileName: String,
-) : JpaSequenceEntity()
+) : SequenceJpaEntity()
 
 @Entity
 class TrikStudioVersion(
     val tag: String,
-) : JpaSequenceEntity()
+) : SequenceJpaEntity()
 
 interface Versioned {
 

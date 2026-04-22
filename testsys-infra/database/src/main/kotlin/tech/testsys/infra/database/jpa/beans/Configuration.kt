@@ -1,10 +1,10 @@
-package tech.testsys.infra.database.jpa.spring
+package tech.testsys.infra.database.jpa.beans
 
 import org.hibernate.boot.model.naming.PhysicalNamingStrategy
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.PropertySource
-import tech.testsys.infra.database.jpa.spring.component.TestsysPhysicalNamingStrategy
+import tech.testsys.infra.database.jpa.beans.component.TestsysPhysicalNamingStrategy
 
 /**
  * Spring configuration for the JPA/Hibernate infrastructure layer.

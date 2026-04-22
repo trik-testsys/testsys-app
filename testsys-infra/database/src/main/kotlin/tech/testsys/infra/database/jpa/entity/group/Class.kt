@@ -3,9 +3,8 @@ package tech.testsys.infra.database.jpa.entity.group
 import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
-import tech.testsys.infra.database.jpa.entity.JpaCompositeEntity
-import tech.testsys.infra.database.jpa.entity.JpaCompositeId
-import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
+import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+import tech.testsys.infra.database.jpa.entity.CompositeId
 
 /**
  * Composite primary key for [StudentToClassJpaEntity].
@@ -16,7 +15,7 @@ import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
 data class StudentToClassId(
     val studentId: Long,
     val classId: Long,
-) : JpaCompositeId {
+) : CompositeId {
 
     companion object {
 
@@ -32,7 +31,7 @@ data class StudentToClassId(
 @Entity
 class StudentToClassJpaEntity(
     id: StudentToClassId,
-) : JpaCompositeEntity<StudentToClassId>(id)
+) : CompositeJpaEntity<StudentToClassId>(id)
 
 /**
  * Composite primary key for [ContestToClassJpaEntity].
@@ -43,7 +42,7 @@ class StudentToClassJpaEntity(
 data class ContestToClassId(
     val contestId: Long,
     val classId: Long,
-) : JpaCompositeId {
+) : CompositeId {
 
     companion object {
 
@@ -59,7 +58,7 @@ data class ContestToClassId(
 @Entity
 class ContestToClassJpaEntity(
     id: ContestToClassId,
-) : JpaCompositeEntity<ContestToClassId>(id)
+) : CompositeJpaEntity<ContestToClassId>(id)
 
 /**
  * JPA entity representing a class domain entity.

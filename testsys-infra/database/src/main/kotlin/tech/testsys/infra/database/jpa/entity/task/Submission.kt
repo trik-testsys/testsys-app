@@ -3,7 +3,7 @@ package tech.testsys.infra.database.jpa.entity.task
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
+import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 /**
  * JPA entity representing a verdict domain entity.
@@ -17,7 +17,7 @@ class VerdictJpaEntity(
     val score: Int,
     val taskId: Long,
     val submissionId: Long,
-) : JpaSequenceEntity()
+) : SequenceJpaEntity()
 
 /**
  * Possible lifecycle states of a [SubmissionJpaEntity].
@@ -42,7 +42,7 @@ class SubmissionStatusJpaEntity(
     @Enumerated(EnumType.STRING)
     val status: SubmissionStatusJpaEnum,
     val gradingResultId: Long?,
-) : JpaSequenceEntity()
+) : SequenceJpaEntity()
 
 /**
  * Possible outcomes of a grading attempt.
@@ -68,7 +68,7 @@ class GradingResultJpaEntity(
     val gradingResult: GradingResultJpaEnum,
     val verdictId: Long?,
     val description: String?,
-) : JpaSequenceEntity()
+) : SequenceJpaEntity()
 
 /**
  * Classifies the purpose of a submission.
@@ -92,7 +92,7 @@ class SubmissionKindJpaEntity(
     @Enumerated(EnumType.STRING)
     val submissionKind: SubmissionKindJpaEnum,
     val contestId: Long?,
-) : JpaSequenceEntity()
+) : SequenceJpaEntity()
 
 /**
  * JPA entity representing a submission domain entity.
@@ -108,4 +108,4 @@ class SubmissionJpaEntity(
     val taskId: Long,
     val submissionStatusId: Long,
     val submissionKindId: Long,
-) : JpaSequenceEntity()
+) : SequenceJpaEntity()

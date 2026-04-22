@@ -35,14 +35,14 @@ abstract class JpaEntity(
 
 
 /**
- * Base abstract class for composite (multi-column) primary keys used with [JpaCompositeEntity].
+ * Base abstract class for composite (multi-column) primary keys used with [CompositeJpaEntity].
  *
  * Subclasses must be annotated with [Embeddable] and are recommended to be Kotlin `data class`es,
  * which automatically provide the [equals] and [hashCode] implementations required by the JPA spec.
  *
  * @since %CURRENT_VERSION%
  */
-interface JpaCompositeId : Serializable
+interface CompositeId : Serializable
 
 /**
  * Base abstract class for all JPA entities with a composite (multi-column) primary key.
@@ -50,16 +50,16 @@ interface JpaCompositeId : Serializable
  * Uses an [EmbeddedId] of type [T] instead of a simple auto-generated [Long] identifier.
  * Inherits audit and versioning fields from [JpaEntity].
  *
- * Subclasses should be annotated with `@Entity` and provide a concrete [JpaCompositeId] subclass
+ * Subclasses should be annotated with `@Entity` and provide a concrete [CompositeId] subclass
  * as the type parameter.
  *
- * @param T the composite key type, must extend [JpaCompositeId].
+ * @param T the composite key type, must extend [CompositeId].
  * @property id the composite primary key.
  *
  * @since %CURRENT_VERSION%
  */
 @MappedSuperclass
-abstract class JpaCompositeEntity<T : JpaCompositeId>(
+abstract class CompositeJpaEntity<T : CompositeId>(
     @EmbeddedId
     val id: T,
 ) : JpaEntity()
@@ -77,7 +77,7 @@ abstract class JpaCompositeEntity<T : JpaCompositeId>(
  * @since %CURRENT_VERSION%
  */
 @MappedSuperclass
-abstract class JpaSequenceEntity(
+abstract class SequenceJpaEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     val id: Long? = null,

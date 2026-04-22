@@ -3,15 +3,14 @@ package tech.testsys.infra.database.jpa.entity.group
 import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
-import tech.testsys.infra.database.jpa.entity.JpaCompositeEntity
-import tech.testsys.infra.database.jpa.entity.JpaCompositeId
-import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
+import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+import tech.testsys.infra.database.jpa.entity.CompositeId
 
 @Embeddable
 data class ContestToCompetitionId(
     val contestId: Long,
     val competitionId: Long,
-) : JpaCompositeId {
+) : CompositeId {
 
     companion object {
 
@@ -22,13 +21,13 @@ data class ContestToCompetitionId(
 @Entity
 class ContestToCompetitionJpaEntity(
     id: ContestToCompetitionId
-) : JpaCompositeEntity<ContestToCompetitionId>(id)
+) : CompositeJpaEntity<ContestToCompetitionId>(id)
 
 @Embeddable
 data class ParticipantToCompetitionId(
     val participantId: Long,
     val competitionId: Long,
-) : JpaCompositeId {
+) : CompositeId {
 
     companion object {
 
@@ -39,7 +38,7 @@ data class ParticipantToCompetitionId(
 @Entity
 class ParticipantToCompetitionJpaEntity(
     id: ParticipantToCompetitionId
-) : JpaCompositeEntity<ParticipantToCompetitionId>(id)
+) : CompositeJpaEntity<ParticipantToCompetitionId>(id)
 
 /**
  * JPA entity representing a competition domain entity.

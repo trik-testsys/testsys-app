@@ -1,9 +1,16 @@
 package tech.testsys.infra.database.jpa.entity.user
 
 import jakarta.persistence.Entity
+import jakarta.persistence.Enumerated
 import jakarta.persistence.MappedSuperclass
-import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
+import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
+import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
+enum class UserTypeJpaEnum {
+
+    MULTIPLE_ROLE,
+    SINGLE_ROLE
+}
 /**
  * JPA entity representing a user domain entity.
  *
@@ -12,8 +19,13 @@ import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
  */
 @Entity
 class UserJpaEntity(
+    name: String,
+    description: String,
     val accessToken: String,
-) : JpaSequenceEntity()
+    val email: String?,
+    @Enumerated
+    val type: UserTypeJpaEnum,
+) : DescribableJpaEntity(name, description)
 
 /**
  * Base JPA entity for user role domain entities.
@@ -24,4 +36,4 @@ class UserJpaEntity(
 @MappedSuperclass
 abstract class RoleEntity(
     val userId: Long
-) : JpaSequenceEntity()
+) : SequenceJpaEntity()

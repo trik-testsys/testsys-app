@@ -1,7 +1,7 @@
 package tech.testsys.infra.database.jpa.entity.task
 
 import jakarta.persistence.Entity
-import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
+import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 
 // TODO: видеозаписи, логи
@@ -18,4 +18,4 @@ class JudgmentOrderJpaEntity(
     val judgeId: Long,
     val verdictId: Long,
     val submissionId: Long,
-) : JpaSequenceEntity()
+) : SequenceJpaEntity()

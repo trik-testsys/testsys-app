@@ -6,4 +6,4 @@ import jakarta.persistence.MappedSuperclass
 abstract class DescribableJpaEntity(
     val name: String,
     val description: String,
-) : JpaSequenceEntity()
+) : SequenceJpaEntity()

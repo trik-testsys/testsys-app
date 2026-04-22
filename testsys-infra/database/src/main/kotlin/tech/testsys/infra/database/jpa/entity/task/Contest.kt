@@ -3,9 +3,8 @@ package tech.testsys.infra.database.jpa.entity.task
 import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
-import tech.testsys.infra.database.jpa.entity.JpaCompositeEntity
-import tech.testsys.infra.database.jpa.entity.JpaCompositeId
-import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
+import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+import tech.testsys.infra.database.jpa.entity.CompositeId
 import java.time.Instant
 
 /**
@@ -17,7 +16,7 @@ import java.time.Instant
 data class TaskToContestId(
     val taskId: Long,
     val contestId: Long,
-) : JpaCompositeId {
+) : CompositeId {
 
     companion object {
 
@@ -33,13 +32,13 @@ data class TaskToContestId(
 @Entity
 class TaskToContestJpaEntity(
     id: TaskToContestId,
-) : JpaCompositeEntity<TaskToContestId>(id)
+) : CompositeJpaEntity<TaskToContestId>(id)
 
 @Embeddable
 data class CommunityToTaskId(
     val communityId: Long,
     val taskId: Long,
-) : JpaCompositeId {
+) : CompositeId {
 
     companion object {
 
@@ -50,7 +49,7 @@ data class CommunityToTaskId(
 @Entity
 class CommunityToTaskJpaEntity(
     id: CommunityToTaskId,
-) : JpaCompositeEntity<CommunityToTaskId>(id)
+) : CompositeJpaEntity<CommunityToTaskId>(id)
 
 /**
  * JPA entity representing a contest domain entity.

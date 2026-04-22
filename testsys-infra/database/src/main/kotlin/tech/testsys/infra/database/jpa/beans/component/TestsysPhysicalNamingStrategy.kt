@@ -1,4 +1,4 @@
-package tech.testsys.infra.database.jpa.spring.component
+package tech.testsys.infra.database.jpa.beans.component
 
 import org.hibernate.boot.model.naming.Identifier
 import org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl

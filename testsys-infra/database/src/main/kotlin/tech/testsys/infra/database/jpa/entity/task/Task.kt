@@ -5,9 +5,9 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
-import tech.testsys.infra.database.jpa.entity.JpaCompositeEntity
-import tech.testsys.infra.database.jpa.entity.JpaCompositeId
-import tech.testsys.infra.database.jpa.entity.JpaSequenceEntity
+import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+import tech.testsys.infra.database.jpa.entity.CompositeId
+import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 
 enum class TaskStatusJpaEnum {
@@ -20,7 +20,7 @@ enum class TaskStatusJpaEnum {
 data class TestToTaskContentId(
     val testId: Long,
     val taskContentId: Long,
-) : JpaCompositeId {
+) : CompositeId {
 
     companion object {
 
@@ -31,13 +31,13 @@ data class TestToTaskContentId(
 @Entity
 class TestToTaskContentJpaEntity(
     id: TestToTaskContentId,
-) : JpaCompositeEntity<TestToTaskContentId>(id)
+) : CompositeJpaEntity<TestToTaskContentId>(id)
 
 @Embeddable
 data class DeveloperSolutionToTaskContentId(
     val developerSolutionId: Long,
     val taskContentId: Long,
-) : JpaCompositeId {
+) : CompositeId {
 
     companion object {
 
@@ -48,13 +48,13 @@ data class DeveloperSolutionToTaskContentId(
 @Entity
 class DeveloperSolutionToTaskContentJpaEntity(
     id: DeveloperSolutionToTaskContentId,
-) : JpaCompositeEntity<DeveloperSolutionToTaskContentId>(id)
+) : CompositeJpaEntity<DeveloperSolutionToTaskContentId>(id)
 
 @Embeddable
 data class CommunityToTaskContentId(
     val communityId: Long,
     val taskContentId: Long,
-) : JpaCompositeId {
+) : CompositeId {
 
     companion object {
 
@@ -65,13 +65,13 @@ data class CommunityToTaskContentId(
 @Entity
 class CommunityToTaskContentJpaEntity(
     id: CommunityToTaskContentId,
-) : JpaCompositeEntity<CommunityToTaskContentId>(id)
+) : CompositeJpaEntity<CommunityToTaskContentId>(id)
 
 @Embeddable
 data class TrikStudioVersionToTaskContentId(
     val trikStudioVersionId: Long,
     val taskContentId: Long,
-) : JpaCompositeId {
+) : CompositeId {
 
     companion object {
 
@@ -82,7 +82,7 @@ data class TrikStudioVersionToTaskContentId(
 @Entity
 class TrikStudioVersionToTaskContentJpaEntity(
     id: TrikStudioVersionToTaskContentId,
-) : JpaCompositeEntity<TrikStudioVersionToTaskContentId>(id)
+) : CompositeJpaEntity<TrikStudioVersionToTaskContentId>(id)
 
 @Entity
 class TaskContent(
@@ -99,4 +99,4 @@ class TaskJpaEntity(
     val status: TaskStatusJpaEnum,
     val wipContentId: Long,
     val commitedContentId: Long,
-) : JpaSequenceEntity()
+) : SequenceJpaEntity()

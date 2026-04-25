@@ -3,51 +3,54 @@ junit = "6.0.3"
 kotlin = "2.2.21"
 detekt = "1.23.6"
 spring-boot = "3.5.13"
-mysql = "9.3.0"
+spring = "6.2.17"
+mysql-connector = "9.3.0"
 liquibase = "4.32.0"
 commons-lang3 = "3.18.0"
 
 [libraries]
-org-junit-jupiter-junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
-org-junit-jupiter-junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
-org-junit-jupiter-junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
-org-junit-platform-junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
-org-jetbrains-kotlin-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin"}
-org-jetbrains-kotlin-kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin"}
-org-jetbrains-kotlin-kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin"}
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin" }
+kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin" }
 
-org-springframework-boot-spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
 
-com-mysql-mysql-connector-j = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
-org-liquibase-liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase" }
-org-apache-commons-commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
+mysql-connector-j = { module = "com.mysql:mysql-connector-j", version.ref = "mysql-connector" }
+liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase" }
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 
-io-gitlab-arturbosch-detekt-detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt"}
+detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 
 [bundles]
 test-implementation = [
-    "org-junit-jupiter-junit-jupiter-api",
-    "org-junit-jupiter-junit-jupiter-params"
+    "junit-jupiter-api",
+    "junit-jupiter-params"
 ]
 test-runtime = [
-    "org-junit-jupiter-junit-jupiter-engine",
-    "org-junit-platform-junit-platform-launcher"
+    "junit-jupiter-engine",
+    "junit-platform-launcher"
 ]
 kotlin-implementation = [
-    "org-jetbrains-kotlin-kotlin-gradle-plugin",
+    "kotlin-gradle-plugin",
 ]
 kotlin-spring-plugins = [
-    "org-jetbrains-kotlin-kotlin-allopen",
-    "org-jetbrains-kotlin-kotlin-noarg"
+    "kotlin-allopen",
+]
+kotlin-jpa-plugins = [
+    "kotlin-noarg",
 ]
 database-implementation = [
-    "org-springframework-boot-spring-boot-starter-data-jpa",
-    "org-liquibase-liquibase-core",
-    "org-apache-commons-commons-lang3"
+    "spring-boot-starter-data-jpa",
+    "liquibase-core",
+    "commons-lang3"
 ]
 detekt-implementation = [
-    "io-gitlab-arturbosch-detekt-detekt-gradle-plugin"
+    "detekt-gradle-plugin",
 ]
 
 [plugins]

@@ -12,10 +12,10 @@ value class DeveloperSolutionId(
 ) : DomainId
 
 data class DeveloperSolutionData(
-    val solution: LazyEntity<SolutionId, Solution>,
-    val expectedScore: Score,
     val name: String,
     val description: String,
+    val solution: LazyEntity<SolutionId, Solution>,
+    val expectedScore: Score,
     val versionBucket: UUID,
 )
 

@@ -17,10 +17,10 @@ value class ClassId(
 
 data class ClassData(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
-    val students: LazyEntityList<MultipleRoleUserId, MultipleRoleUser>,
-    val contests: LazyEntityList<ContestId, Contest>,
     val name: String,
     val description: String,
+    val students: LazyEntityList<MultipleRoleUserId, MultipleRoleUser>,
+    val contests: LazyEntityList<ContestId, Contest>,
 )
 
 class Class(

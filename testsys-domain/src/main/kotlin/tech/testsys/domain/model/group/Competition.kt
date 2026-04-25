@@ -19,10 +19,10 @@ value class CompetitionId(
 
 data class CompetitionData(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
-    val participants: LazyEntityList<SingleRoleUserId, Participant>,
-    val contests: LazyEntityList<ContestId, Contest>,
     val name: String,
     val description: String,
+    val participants: LazyEntityList<SingleRoleUserId, Participant>,
+    val contests: LazyEntityList<ContestId, Contest>,
 )
 
 class Competition(

@@ -2,6 +2,8 @@ package tech.testsys.domain.model.user
 
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
+import tech.testsys.domain.model.group.Community
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionId
 import java.time.Instant
@@ -32,7 +34,8 @@ class Participant(
 data class ObserverData(
     override val accessToken: String,
     override val name: String,
-    val competitions: LazyEntityList<CompetitionId, Competition>
+    val community: LazyEntity<CommunityId, Community>,
+    val competitions: LazyEntityList<CompetitionId, Competition>,
 ) : UserData
 
 class Observer(

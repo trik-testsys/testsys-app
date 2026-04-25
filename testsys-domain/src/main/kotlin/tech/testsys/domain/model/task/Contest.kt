@@ -18,15 +18,16 @@ value class ContestId(
 
 data class ContestData(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
+    val name: String,
+    val description: String,
     val tasks: LazyEntityList<TaskId, Task>,
     val startsAt: Instant?,
     val contestDuration: Duration,
     val attemptDuration: Duration,
     val trikStudioVersion: TrikStudioVersion,
     val sharedTo: LazyEntityList<CommunityId, Community>,
-    val name: String,
-    val description: String,
 ) {
+
     val endsAt = startsAt?.let { it + contestDuration }
 }
 

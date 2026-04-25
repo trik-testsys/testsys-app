@@ -31,13 +31,6 @@ sealed interface TaskContent {
     ) : TaskContent
 }
 
-data class TaskData(
-    val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
-    val sharedTo: LazyEntityList<CommunityId, Community>,
-    val name: String,
-    val description: String,
-)
-
 data class CommitedTaskContent(
     val tests: LazyEntityList<TestId, Test>,
     val exercise: LazyEntity<ExerciseId, Exercise>,
@@ -52,6 +45,14 @@ data class WipTaskContent(
     val statement: LazyEntity<StatementId, Statement>?,
     val developerSolutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
     val supportedTrikStudioVersions: List<TrikStudioVersion>,
+)
+
+data class TaskData(
+    val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
+    val name: String,
+    val description: String,
+    val sharedTo: LazyEntityList<CommunityId, Community>,
+    val content: TaskContent,
 )
 
 class Task(

@@ -11,10 +11,10 @@ value class ExerciseId(
 ) : DomainId
 
 class ExerciseData(
-    val file: FileData,
-    val language: TrikSupportedLanguage,
     val name: String,
     val description: String,
+    val file: FileData,
+    val language: TrikSupportedLanguage,
     val versionBucket: UUID,
 )
 

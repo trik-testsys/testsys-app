@@ -9,5 +9,5 @@ group = "tech.testsys.infra"
 dependencies {
     implementation(project(":testsys-domain"))
     implementation(libs.bundles.database.implementation)
-    runtimeOnly(libs.mysql.connector.j)
+    runtimeOnly(libs.postgresql)
 }

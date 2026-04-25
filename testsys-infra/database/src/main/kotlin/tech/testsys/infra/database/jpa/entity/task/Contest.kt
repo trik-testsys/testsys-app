@@ -2,9 +2,9 @@ package tech.testsys.infra.database.jpa.entity.task
 
 import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
-import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
+import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 import java.time.Instant
 
 /**
@@ -60,11 +60,11 @@ class CommunityToTaskJpaEntity(
  */
 @Entity
 class ContestJpaEntity(
-    name: String,
-    description: String,
+    val name: String,
+    val description: String,
     val ownerId: Long,
     val startsAt: Instant?,
     val contestDuration: Long,
     val attemptDuration: Long,
     val trikStudioVersionId: Long,
-) : DescribableJpaEntity(name, description)
+) : SequenceJpaEntity()

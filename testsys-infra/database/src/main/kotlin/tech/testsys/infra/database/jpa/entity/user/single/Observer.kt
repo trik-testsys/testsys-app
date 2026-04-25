@@ -26,5 +26,6 @@ class CompetitionToObserverJpaEntity(
 @Entity
 class ObserverDataJpaEntity(
     val userId: Long,
+    val communityId: Long,
 ) : SequenceJpaEntity()
 

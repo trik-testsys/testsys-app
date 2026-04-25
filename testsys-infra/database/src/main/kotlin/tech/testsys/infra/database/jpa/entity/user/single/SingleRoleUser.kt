@@ -19,7 +19,6 @@ data class SingleRoleToUserId(
     @Enumerated(EnumType.STRING)
     val singleRole: UserSingleRoleJpaEnum,
     val userId: Long,
-    val communityId: Long,
 ) : CompositeId {
 
     companion object {

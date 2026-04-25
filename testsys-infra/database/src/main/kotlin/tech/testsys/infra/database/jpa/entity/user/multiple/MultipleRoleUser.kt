@@ -6,7 +6,6 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
-import tech.testsys.infra.database.jpa.entity.user.single.UserSingleRoleJpaEnum
 
 enum class UserMultipleRoleJpaEnum {
 
@@ -20,7 +19,7 @@ enum class UserMultipleRoleJpaEnum {
 @Embeddable
 data class MultipleRoleToUserId(
     @Enumerated(EnumType.STRING)
-    val multipleRole: UserSingleRoleJpaEnum,
+    val multipleRole: UserMultipleRoleJpaEnum,
     val userId: Long,
     val communityId: Long,
 ) : CompositeId {

@@ -1,13 +1,13 @@
 package tech.testsys.infra.database.jpa.entity.task
 
 import jakarta.persistence.Entity
+import java.util.UUID
 
 @Entity
 class DeveloperSolutionJpaEntity(
     name: String,
     description: String,
-    rootId: Long?,
-    index: Long,
     fileDataId: Long,
+    versionBucket: UUID,
     val expectedScore: Int,
-) : FileJpaEntity(name, description, rootId, index, fileDataId)
+) : ResourceJpaEntity(name, description, fileDataId, versionBucket)

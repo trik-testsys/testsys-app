@@ -32,20 +32,9 @@ enum class SubmissionStatusJpaEnum {
 }
 
 /**
- * JPA entity representing a submission status domain entity.
- *
- * @see tech.testsys.domain.model.task.SubmissionStatus
- * @since %CURRENT_VERSION%
- */
-@Entity
-class SubmissionStatusJpaEntity(
-    @Enumerated(EnumType.STRING)
-    val status: SubmissionStatusJpaEnum,
-    val gradingResultId: Long?,
-) : SequenceJpaEntity()
-
-/**
  * Possible outcomes of a grading attempt.
+ *
+ * Only meaningful when the owning submission has [SubmissionStatusJpaEnum.GRADED] status.
  *
  * @see tech.testsys.domain.model.task.GradingResult
  * @since %CURRENT_VERSION%
@@ -57,45 +46,27 @@ enum class GradingResultJpaEnum {
 }
 
 /**
- * JPA entity representing a grading result domain entity.
- *
- * @see tech.testsys.domain.model.task.GradingResult
- * @since %CURRENT_VERSION%
- */
-@Entity
-class GradingResultJpaEntity(
-    @Enumerated(EnumType.STRING)
-    val gradingResult: GradingResultJpaEnum,
-    val verdictId: Long?,
-    val description: String?,
-) : SequenceJpaEntity()
-
-/**
  * Classifies the purpose of a submission.
  *
  * @see tech.testsys.domain.model.task.SubmissionKind
  * @since %CURRENT_VERSION%
  */
 enum class SubmissionKindJpaEnum {
-    DEVELOPER_SOLUTION,
+    DEVELOPER_SOLUTION_TEST,
     GRADING;
 }
 
 /**
- * JPA entity representing a submission kind domain entity.
- *
- * @see tech.testsys.domain.model.task.SubmissionKind
- * @since %CURRENT_VERSION%
- */
-@Entity
-class SubmissionKindJpaEntity(
-    @Enumerated(EnumType.STRING)
-    val submissionKind: SubmissionKindJpaEnum,
-    val contestId: Long?,
-) : SequenceJpaEntity()
-
-/**
  * JPA entity representing a submission domain entity.
+ *
+ * Status, grading result and kind payloads are flattened onto this entity because
+ * they do not exist independently of a submission. Nullability of the grading and
+ * kind fields encodes the active sealed-interface variant:
+ *
+ *  - [status] == `GRADED` ⇔ [gradingResult] is non-null;
+ *  - [gradingResult] == `SUCCESS` ⇔ [gradingVerdictId] is non-null;
+ *  - [gradingResult] == `GRADING_ERROR` ⇔ [gradingErrorDescription] is non-null;
+ *  - [kind] == `GRADING` ⇔ [gradingContestId] is non-null.
  *
  * @see tech.testsys.domain.model.task.Submission
  * @see tech.testsys.domain.model.task.SubmissionData
@@ -106,6 +77,13 @@ class SubmissionJpaEntity(
     val authorId: Long,
     val solutionId: Long,
     val taskId: Long,
-    val submissionStatusId: Long,
-    val submissionKindId: Long,
+    @Enumerated(EnumType.STRING)
+    val status: SubmissionStatusJpaEnum,
+    @Enumerated(EnumType.STRING)
+    val gradingResult: GradingResultJpaEnum?,
+    val gradingVerdictId: Long?,
+    val gradingErrorDescription: String?,
+    @Enumerated(EnumType.STRING)
+    val kind: SubmissionKindJpaEnum,
+    val gradingContestId: Long?,
 ) : SequenceJpaEntity()

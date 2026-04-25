@@ -4,7 +4,6 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
@@ -86,12 +85,12 @@ class TrikStudioVersionToTaskContentJpaEntity(
 
 @Entity
 class TaskContent(
-    name: String,
-    description: String,
+    val name: String,
+    val description: String,
     val ownerId: Long,
     val exerciseId: Long?,
     val statementId: Long?,
-) : DescribableJpaEntity(name, description)
+) : SequenceJpaEntity()
 
 @Entity
 class TaskJpaEntity(

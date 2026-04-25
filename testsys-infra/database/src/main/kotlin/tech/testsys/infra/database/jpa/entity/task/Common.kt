@@ -2,10 +2,11 @@ package tech.testsys.infra.database.jpa.entity.task
 
 import jakarta.persistence.Entity
 import jakarta.persistence.MappedSuperclass
-import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
+import java.util.UUID
 
 enum class TrikSupportedLanguageEnum {
+
     PYTHON,
     JAVA_SCRIPT,
     VISUAL_LANGUAGE
@@ -22,18 +23,10 @@ class TrikStudioVersion(
     val tag: String,
 ) : SequenceJpaEntity()
 
-interface Versioned {
-
-    val rootId: Long?
-    val index: Long
-}
-
 @MappedSuperclass
-abstract class FileJpaEntity(
-    name: String,
-    description: String,
-    override val rootId: Long?,
-    override val index: Long,
+abstract class ResourceJpaEntity(
+    val name: String,
+    val description: String,
     val fileDataId: Long,
-) : DescribableJpaEntity(name, description),
-    Versioned
+    val versionBucket: UUID,
+) : SequenceJpaEntity()

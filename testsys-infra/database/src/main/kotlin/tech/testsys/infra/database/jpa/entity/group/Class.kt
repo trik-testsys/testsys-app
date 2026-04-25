@@ -2,9 +2,9 @@ package tech.testsys.infra.database.jpa.entity.group
 
 import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
-import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
+import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 /**
  * Composite primary key for [StudentToClassJpaEntity].
@@ -69,7 +69,7 @@ class ContestToClassJpaEntity(
  */
 @Entity
 class ClassJpaEntity(
-    name: String,
-    description: String,
+    val name: String,
+    val description: String,
     val ownerId: Long,
-) : DescribableJpaEntity(name, description)
+) : SequenceJpaEntity()

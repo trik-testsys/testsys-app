@@ -1,12 +1,12 @@
 package tech.testsys.infra.database.jpa.entity.task
 
 import jakarta.persistence.Entity
+import java.util.UUID
 
 @Entity
 class StatementJpaEntity(
     name: String,
     description: String,
-    rootId: Long?,
-    index: Long,
     fileDataId: Long,
-) : FileJpaEntity(name, description, rootId, index, fileDataId)
+    versionBucket: UUID,
+) : ResourceJpaEntity(name, description, fileDataId, versionBucket)

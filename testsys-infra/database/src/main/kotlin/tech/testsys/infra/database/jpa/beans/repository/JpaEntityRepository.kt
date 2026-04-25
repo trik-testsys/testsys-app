@@ -2,16 +2,19 @@ package tech.testsys.infra.database.jpa.beans.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.repository.NoRepositoryBean
-import tech.testsys.infra.database.jpa.entity.DescribableJpaEntity
+import org.springframework.stereotype.Repository
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
+import tech.testsys.infra.database.jpa.entity.group.ClassJpaEntity
 
 @NoRepositoryBean
-interface JpaSequenceEntityRepository<E : SequenceJpaEntity> : JpaRepository<E, Long>
+interface SequenceJpaEntityRepository<Entity : SequenceJpaEntity> : JpaRepository<Entity, Long>
 
 @NoRepositoryBean
-interface JpaCompositeEntityRepository<E : CompositeJpaEntity<ID>, ID : CompositeId> : JpaRepository<E, ID>
+interface CompositeJpaEntityRepository<Entity : CompositeJpaEntity<ID>, ID : CompositeId> : JpaRepository<Entity, ID>
 
-@NoRepositoryBean
-interface JpaDescribableEntityRepository<E : DescribableJpaEntity>
+@Repository
+interface ClassRepository : SequenceJpaEntityRepository<ClassJpaEntity> {
+
+}

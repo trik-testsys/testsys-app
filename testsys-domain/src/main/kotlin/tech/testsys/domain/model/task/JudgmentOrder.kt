@@ -1,6 +1,5 @@
 package tech.testsys.domain.model.task
 
-import tech.testsys.domain.model.Describable
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
@@ -16,17 +15,11 @@ value class JudgmentOrderId(
 data class JudgmentOrderData(
     val judge: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val verdict: LazyEntity<VerdictId, Verdict>,
-    val name: String,
-    val description: String,
+    val reason: String,
 )
 
 class JudgmentOrder(
     id: JudgmentOrderId,
     createdAt: Instant,
     val data: JudgmentOrderData,
-) : DomainEntity<JudgmentOrderId>(id, createdAt),
-    Describable {
-
-    override val name = data.name
-    override val description = data.description
-}
+) : DomainEntity<JudgmentOrderId>(id, createdAt)

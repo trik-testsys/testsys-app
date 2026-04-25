@@ -1,6 +1,5 @@
 package tech.testsys.domain.model.user
 
-import tech.testsys.domain.model.Describable
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.Competition
@@ -16,13 +15,11 @@ sealed class SingleRoleUser(
     id: SingleRoleUserId,
     createdAt: Instant,
     data: UserData,
-) : User<SingleRoleUserId>(id, createdAt, data),
-    Describable
+) : User<SingleRoleUserId>(id, createdAt, data)
 
 data class ParticipantData(
     override val accessToken: String,
     override val name: String,
-    override val description: String,
     val competition: LazyEntity<CompetitionId, Competition>,
 ) : UserData
 
@@ -35,7 +32,6 @@ class Participant(
 data class ObserverData(
     override val accessToken: String,
     override val name: String,
-    override val description: String,
     val competitions: LazyEntityList<CompetitionId, Competition>
 ) : UserData
 
@@ -47,10 +43,8 @@ class Observer(
 
 data class SupervisorData(
     override val accessToken: String,
-    override val name: String,
-    override val description: String,
-    override val email: String,
-) : UserData, WithEmail
+    override val name: String
+) : UserData
 
 class Supervisor(
     id: SingleRoleUserId,

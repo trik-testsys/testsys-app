@@ -1,11 +1,9 @@
 package tech.testsys.domain.model.task
 
-import tech.testsys.domain.model.Describable
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
-import tech.testsys.domain.model.Sharable
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -36,10 +34,4 @@ class Contest(
     id: ContestId,
     createdAt: Instant,
     val data: ContestData,
-) : DomainEntity<ContestId>(id, createdAt),
-    Describable, Sharable {
-
-    override val sharedTo = data.sharedTo
-    override val name = data.name
-    override val description = data.description
-}
+) : DomainEntity<ContestId>(id, createdAt)

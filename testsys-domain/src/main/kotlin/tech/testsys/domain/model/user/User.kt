@@ -10,16 +10,10 @@ sealed class User<Id : UserId>(
     id: Id,
     createdAt: Instant,
     data: UserData,
-) : DomainEntity<Id>(id, createdAt), UserData by data
+) : DomainEntity<Id>(id, createdAt)
 
 interface UserData {
 
     val accessToken: String
     val name: String
-    val description: String
-}
-
-interface WithEmail {
-
-    val email: String
 }

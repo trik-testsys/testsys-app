@@ -13,11 +13,6 @@ interface EntityLoader<Id: DomainId, Entity: DomainEntity<Id>> {
     fun load(list: LazyEntityList<Id, Entity>, pageSize: Int, page: Int): List<Entity>
 }
 
-interface EntityFinder<Id: DomainId, Entity: DomainEntity<Id>> {
-
-    fun find(id: Id): Entity?
-}
-
 interface EntitySaver<Data, Id: DomainId, Entity: DomainEntity<Id>> {
 
     fun save(data: Data): Entity
@@ -27,5 +22,5 @@ interface EntitySaver<Data, Id: DomainId, Entity: DomainEntity<Id>> {
     fun update(entityList: List<Entity>): List<Entity>
 }
 
-interface EntityRepository<Data, Id: DomainId, Entity: DomainEntity<Id>>:
-    EntitySaver<Data, Id, Entity>, EntityLoader<Id, Entity>, EntityFinder<Id, Entity>
+interface EntityRepository<Data, Id: DomainId, Entity: DomainEntity<Id>> :
+    EntitySaver<Data, Id, Entity>, EntityLoader<Id, Entity>

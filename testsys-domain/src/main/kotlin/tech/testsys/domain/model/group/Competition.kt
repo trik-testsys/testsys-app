@@ -1,6 +1,5 @@
 package tech.testsys.domain.model.group
 
-import tech.testsys.domain.model.Describable
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
@@ -30,9 +29,4 @@ class Competition(
     id: CompetitionId,
     createdAt: Instant,
     val data: CompetitionData,
-) : DomainEntity<CompetitionId>(id, createdAt),
-    Describable {
-
-    override val name = data.name
-    override val description = data.description
-}
+) : DomainEntity<CompetitionId>(id, createdAt)

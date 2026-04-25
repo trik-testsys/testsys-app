@@ -1,10 +1,10 @@
 package tech.testsys.domain.model.task
 
-import tech.testsys.domain.model.Describable
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import java.time.Instant
+import java.util.UUID
 
 @JvmInline
 value class DeveloperSolutionId(
@@ -16,16 +16,11 @@ data class DeveloperSolutionData(
     val expectedScore: Score,
     val name: String,
     val description: String,
+    val versionBucket: UUID,
 )
 
 class DeveloperSolution(
     id: DeveloperSolutionId,
     createdAt: Instant,
-    val versionData: VersionData<ExerciseId, Exercise>,
     val data: DeveloperSolutionData,
-) : DomainEntity<DeveloperSolutionId>(id, createdAt),
-    Describable {
-
-    override val name = data.name
-    override val description = data.description
-}
+) : DomainEntity<DeveloperSolutionId>(id, createdAt)

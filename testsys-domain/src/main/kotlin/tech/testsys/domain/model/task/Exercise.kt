@@ -1,9 +1,9 @@
 package tech.testsys.domain.model.task
 
-import tech.testsys.domain.model.Describable
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import java.time.Instant
+import java.util.UUID
 
 @JvmInline
 value class ExerciseId(
@@ -15,16 +15,11 @@ class ExerciseData(
     val language: TrikSupportedLanguage,
     val name: String,
     val description: String,
+    val versionBucket: UUID,
 )
 
 class Exercise(
     id: ExerciseId,
     createdAt: Instant,
-    val versionData: VersionData<ExerciseId, Exercise>,
     val data: ExerciseData,
-) : DomainEntity<ExerciseId>(id, createdAt),
-    Describable {
-
-    override val name = data.name
-    override val description = data.description
-}
+) : DomainEntity<ExerciseId>(id, createdAt)

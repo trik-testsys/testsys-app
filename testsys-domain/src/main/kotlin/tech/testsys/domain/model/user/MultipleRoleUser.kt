@@ -9,6 +9,8 @@ import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.DeveloperSolution
+import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.JudgmentOrder
@@ -26,10 +28,9 @@ import java.time.Instant
 data class MultipleRoleUserData(
     override val accessToken: String,
     override val name: String,
-    override val description: String,
-    override val email: String,
+    val email: String,
     val roles: List<CompatibleUserRole>,
-) : UserData, WithEmail
+) : UserData
 
 @JvmInline
 value class MultipleRoleUserId(
@@ -50,7 +51,7 @@ data class DeveloperData(
     val tasks: LazyEntityList<TaskId, Task>,
     val contests: LazyEntityList<ContestId, Contest>,
     val polygons: LazyEntityList<TestId, Test>,
-    val solutions: LazyEntityList<SolutionId, Solution>,
+    val solutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
     val exercises: LazyEntityList<ExerciseId, Exercise>
 )
 

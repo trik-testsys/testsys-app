@@ -21,7 +21,10 @@ data class CompetitionToObserverId(
 @Entity
 class CompetitionToObserverJpaEntity(
     id: CompetitionToObserverId,
-) : CompositeJpaEntity<CompetitionToObserverId>(id)
+) : CompositeJpaEntity<CompetitionToObserverId>(id) {
+
+    constructor(competitionId: Long, observerId: Long): this(CompetitionToObserverId(competitionId, observerId))
+}
 
 @Entity
 class ObserverDataJpaEntity(

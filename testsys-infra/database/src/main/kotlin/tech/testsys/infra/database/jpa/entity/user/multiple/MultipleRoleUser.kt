@@ -33,4 +33,7 @@ data class MultipleRoleToUserId(
 @Entity
 class MultipleRoleToUserJpaEntity(
     id: MultipleRoleToUserId,
-) : CompositeJpaEntity<MultipleRoleToUserId>(id)
+) : CompositeJpaEntity<MultipleRoleToUserId>(id) {
+
+    constructor(multipleRole: UserMultipleRoleJpaEnum, userId: Long, communityId: Long): this(MultipleRoleToUserId(multipleRole, userId, communityId))
+}

@@ -62,7 +62,16 @@ interface CompositeId : Serializable
 abstract class CompositeJpaEntity<T : CompositeId>(
     @EmbeddedId
     val id: T,
-) : JpaEntity()
+) : JpaEntity() {
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is CompositeJpaEntity<*>) return false
+        return id == other.id
+    }
+
+    override fun hashCode(): Int = id.hashCode()
+}
 
 /**
  * Base abstract class for all JPA entities with a simple (non-composite) primary key.

@@ -21,7 +21,10 @@ data class ClassToStudentId(
 @Entity
 class ClassToStudentJpaEntity(
     id: ClassToStudentId,
-) : CompositeJpaEntity<ClassToStudentId>(id)
+) : CompositeJpaEntity<ClassToStudentId>(id) {
+
+    constructor(classId: Long, studentId: Long): this(ClassToStudentId(classId, studentId))
+}
 
 @Entity
 class StudentDataJpaEntity(

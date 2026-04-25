@@ -30,7 +30,10 @@ data class TestToTaskContentId(
 @Entity
 class TestToTaskContentJpaEntity(
     id: TestToTaskContentId,
-) : CompositeJpaEntity<TestToTaskContentId>(id)
+) : CompositeJpaEntity<TestToTaskContentId>(id) {
+
+    constructor(testId: Long, taskContentId: Long): this(TestToTaskContentId(testId, taskContentId))
+}
 
 @Embeddable
 data class DeveloperSolutionToTaskContentId(
@@ -47,7 +50,10 @@ data class DeveloperSolutionToTaskContentId(
 @Entity
 class DeveloperSolutionToTaskContentJpaEntity(
     id: DeveloperSolutionToTaskContentId,
-) : CompositeJpaEntity<DeveloperSolutionToTaskContentId>(id)
+) : CompositeJpaEntity<DeveloperSolutionToTaskContentId>(id) {
+
+    constructor(developerSolutionId: Long, taskContentId: Long): this(DeveloperSolutionToTaskContentId(developerSolutionId, taskContentId))
+}
 
 @Embeddable
 data class CommunityToTaskContentId(
@@ -64,7 +70,10 @@ data class CommunityToTaskContentId(
 @Entity
 class CommunityToTaskContentJpaEntity(
     id: CommunityToTaskContentId,
-) : CompositeJpaEntity<CommunityToTaskContentId>(id)
+) : CompositeJpaEntity<CommunityToTaskContentId>(id) {
+
+    constructor(communityId: Long, taskContentId: Long): this(CommunityToTaskContentId(communityId, taskContentId))
+}
 
 @Embeddable
 data class TrikStudioVersionToTaskContentId(
@@ -81,21 +90,44 @@ data class TrikStudioVersionToTaskContentId(
 @Entity
 class TrikStudioVersionToTaskContentJpaEntity(
     id: TrikStudioVersionToTaskContentId,
-) : CompositeJpaEntity<TrikStudioVersionToTaskContentId>(id)
+) : CompositeJpaEntity<TrikStudioVersionToTaskContentId>(id) {
+
+    constructor(trikStudioVersionId: Long, taskContentId: Long): this(TrikStudioVersionToTaskContentId(trikStudioVersionId, taskContentId))
+}
+
+@Embeddable
+data class CommunityToTaskId(
+    val communityId: Long,
+    val taskId: Long,
+) : CompositeId {
+
+    companion object {
+
+        private const val serialVersionUID: Long = 1L
+    }
+}
+
+@Entity
+class CommunityToTaskJpaEntity(
+    id: CommunityToTaskId,
+) : CompositeJpaEntity<CommunityToTaskId>(id) {
+
+    constructor(communityId: Long, taskId: Long): this(CommunityToTaskId(communityId, taskId))
+}
 
 @Entity
 class TaskContent(
-    val name: String,
-    val description: String,
-    val ownerId: Long,
     val exerciseId: Long?,
     val statementId: Long?,
 ) : SequenceJpaEntity()
 
 @Entity
 class TaskJpaEntity(
+    val name: String,
+    val description: String,
+    val ownerId: Long,
     @Enumerated(EnumType.STRING)
     val status: TaskStatusJpaEnum,
     val wipContentId: Long,
-    val commitedContentId: Long,
+    val commitedContentId: Long?,
 ) : SequenceJpaEntity()

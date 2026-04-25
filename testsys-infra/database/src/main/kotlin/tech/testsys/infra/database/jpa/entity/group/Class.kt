@@ -31,7 +31,10 @@ data class StudentToClassId(
 @Entity
 class StudentToClassJpaEntity(
     id: StudentToClassId,
-) : CompositeJpaEntity<StudentToClassId>(id)
+) : CompositeJpaEntity<StudentToClassId>(id) {
+
+    constructor(studentId: Long, classId: Long): this(StudentToClassId(studentId, classId))
+}
 
 /**
  * Composite primary key for [ContestToClassJpaEntity].
@@ -58,7 +61,10 @@ data class ContestToClassId(
 @Entity
 class ContestToClassJpaEntity(
     id: ContestToClassId,
-) : CompositeJpaEntity<ContestToClassId>(id)
+) : CompositeJpaEntity<ContestToClassId>(id) {
+
+    constructor(contestId: Long, classId: Long): this(ContestToClassId(contestId, classId))
+}
 
 /**
  * JPA entity representing a class domain entity.

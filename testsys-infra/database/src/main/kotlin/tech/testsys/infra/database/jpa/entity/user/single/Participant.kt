@@ -21,7 +21,10 @@ data class CompetitionToParticipantId(
 @Entity
 class CompetitionToParticipantJpaEntity(
     id: CompetitionToParticipantId,
-) : CompositeJpaEntity<CompetitionToParticipantId>(id)
+) : CompositeJpaEntity<CompetitionToParticipantId>(id) {
+
+    constructor(competitionId: Long, participantId: Long): this(CompetitionToParticipantId(competitionId, participantId))
+}
 
 @Entity
 class ParticipantDataJpaEntity(

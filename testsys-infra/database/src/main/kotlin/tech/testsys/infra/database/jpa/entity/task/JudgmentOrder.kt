@@ -18,4 +18,5 @@ class JudgmentOrderJpaEntity(
     val judgeId: Long,
     val verdictId: Long,
     val submissionId: Long,
+    val reason: String,
 ) : SequenceJpaEntity()

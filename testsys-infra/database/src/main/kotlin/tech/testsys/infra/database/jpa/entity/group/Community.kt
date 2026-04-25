@@ -12,7 +12,7 @@ import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
  */
 @Entity
 class CommunityJpaEntity(
-    name: String,
-    description: String,
+    val name: String,
+    val description: String,
     val ownerId: Long,
 ) : SequenceJpaEntity()

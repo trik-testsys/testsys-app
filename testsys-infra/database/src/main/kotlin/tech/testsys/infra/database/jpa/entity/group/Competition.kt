@@ -21,7 +21,10 @@ data class ContestToCompetitionId(
 @Entity
 class ContestToCompetitionJpaEntity(
     id: ContestToCompetitionId
-) : CompositeJpaEntity<ContestToCompetitionId>(id)
+) : CompositeJpaEntity<ContestToCompetitionId>(id) {
+
+    constructor(contestId: Long, competitionId: Long): this(ContestToCompetitionId(contestId, competitionId))
+}
 
 @Embeddable
 data class ParticipantToCompetitionId(
@@ -38,7 +41,10 @@ data class ParticipantToCompetitionId(
 @Entity
 class ParticipantToCompetitionJpaEntity(
     id: ParticipantToCompetitionId
-) : CompositeJpaEntity<ParticipantToCompetitionId>(id)
+) : CompositeJpaEntity<ParticipantToCompetitionId>(id) {
+
+    constructor(participantId: Long, competitionId: Long): this(ParticipantToCompetitionId(participantId, competitionId))
+}
 
 /**
  * JPA entity representing a competition domain entity.

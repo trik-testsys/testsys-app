@@ -32,12 +32,15 @@ data class TaskToContestId(
 @Entity
 class TaskToContestJpaEntity(
     id: TaskToContestId,
-) : CompositeJpaEntity<TaskToContestId>(id)
+) : CompositeJpaEntity<TaskToContestId>(id) {
+
+    constructor(taskId: Long, contestId: Long): this(TaskToContestId(taskId, contestId))
+}
 
 @Embeddable
-data class CommunityToTaskId(
+data class CommunityToContestId(
     val communityId: Long,
-    val taskId: Long,
+    val contestId: Long,
 ) : CompositeId {
 
     companion object {
@@ -47,9 +50,12 @@ data class CommunityToTaskId(
 }
 
 @Entity
-class CommunityToTaskJpaEntity(
-    id: CommunityToTaskId,
-) : CompositeJpaEntity<CommunityToTaskId>(id)
+class CommunityToContestJpaEntity(
+    id: CommunityToContestId,
+) : CompositeJpaEntity<CommunityToContestId>(id) {
+
+    constructor(communityId: Long, contestId: Long): this(CommunityToContestId(communityId, contestId))
+}
 
 /**
  * JPA entity representing a contest domain entity.

@@ -30,4 +30,7 @@ data class SingleRoleToUserId(
 @Entity
 class SingleRoleToUserJpaEntity(
     id: SingleRoleToUserId,
-) : CompositeJpaEntity<SingleRoleToUserId>(id)
+) : CompositeJpaEntity<SingleRoleToUserId>(id) {
+
+    constructor(singleRole: UserSingleRoleJpaEnum, userId: Long): this(SingleRoleToUserId(singleRole, userId))
+}

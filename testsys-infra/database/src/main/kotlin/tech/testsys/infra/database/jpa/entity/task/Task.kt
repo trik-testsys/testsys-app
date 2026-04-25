@@ -42,7 +42,7 @@ data class TestToTaskContentId(
 }
 
 /**
- * JPA entity associating a polygon ([TestJpaEntity]) with a [TaskContent] revision.
+ * JPA entity associating a polygon ([TestJpaEntity]) with a [TaskContentJpaEntity] revision.
  *
  * @since %CURRENT_VERSION%
  */
@@ -72,7 +72,7 @@ data class DeveloperSolutionToTaskContentId(
 }
 
 /**
- * JPA entity associating a [DeveloperSolutionJpaEntity] with a [TaskContent] revision.
+ * JPA entity associating a [DeveloperSolutionJpaEntity] with a [TaskContentJpaEntity] revision.
  *
  * @since %CURRENT_VERSION%
  */
@@ -82,36 +82,6 @@ class DeveloperSolutionToTaskContentJpaEntity(
 ) : CompositeJpaEntity<DeveloperSolutionToTaskContentId>(id) {
 
     constructor(developerSolutionId: Long, taskContentId: Long): this(DeveloperSolutionToTaskContentId(developerSolutionId, taskContentId))
-}
-
-/**
- * Composite primary key for [CommunityToTaskContentJpaEntity].
- *
- * @since %CURRENT_VERSION%
- */
-@Embeddable
-data class CommunityToTaskContentId(
-    val communityId: Long,
-    val taskContentId: Long,
-) : CompositeId {
-
-    companion object {
-
-        private const val serialVersionUID: Long = 1L
-    }
-}
-
-/**
- * JPA entity associating a community with a [TaskContent] revision.
- *
- * @since %CURRENT_VERSION%
- */
-@Entity
-class CommunityToTaskContentJpaEntity(
-    id: CommunityToTaskContentId,
-) : CompositeJpaEntity<CommunityToTaskContentId>(id) {
-
-    constructor(communityId: Long, taskContentId: Long): this(CommunityToTaskContentId(communityId, taskContentId))
 }
 
 /**
@@ -132,7 +102,7 @@ data class TrikStudioVersionToTaskContentId(
 }
 
 /**
- * JPA entity associating a [TrikStudioVersion] supported by a [TaskContent] revision.
+ * JPA entity associating a [TrikStudioVersionJpaEntity] supported by a [TaskContentJpaEntity] revision.
  *
  * @since %CURRENT_VERSION%
  */
@@ -189,7 +159,7 @@ class CommunityToTaskJpaEntity(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class TaskContent(
+class TaskContentJpaEntity(
     val exerciseId: Long?,
     val statementId: Long?,
 ) : SequenceJpaEntity()
@@ -199,7 +169,7 @@ class TaskContent(
  *
  * A task's identity (name, description, owner) lives on this entity, while the
  * versioned payload — exercise, statement, tests, developer solutions — is held
- * by [TaskContent] revisions referenced via [wipContentId] and [commitedContentId].
+ * by [TaskContentJpaEntity] revisions referenced via [wipContentId] and [commitedContentId].
  *
  * [commitedContentId] is `null` while [status] is [TaskStatusJpaEnum.NEW] (no
  * revision has been committed yet).

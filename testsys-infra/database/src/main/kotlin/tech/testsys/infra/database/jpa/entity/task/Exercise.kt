@@ -10,6 +10,7 @@ import java.util.UUID
  *
  * An exercise is the executable scaffold delivered to participants together with
  * a [StatementJpaEntity]; its programming language is captured by [language].
+ * Owned by the developer who authored it ([ownerId]).
  *
  * @see tech.testsys.domain.model.task.Exercise
  * @see tech.testsys.domain.model.task.ExerciseData
@@ -23,4 +24,5 @@ class ExerciseJpaEntity(
     versionBucket: UUID,
     @Enumerated(EnumType.STRING)
     val language: TrikSupportedLanguageEnum,
+    val ownerId: Long,
 ) : ResourceJpaEntity(name, description, fileDataId, versionBucket)

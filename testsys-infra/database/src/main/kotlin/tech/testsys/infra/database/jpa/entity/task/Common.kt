@@ -40,7 +40,7 @@ class FileDataJpaEntity(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class TrikStudioVersion(
+class TrikStudioVersionJpaEntity(
     val tag: String,
 ) : SequenceJpaEntity()
 

@@ -1,13 +1,16 @@
 package tech.testsys.infra.database.jpa.entity.task
 
 import jakarta.persistence.Entity
+import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 import java.util.UUID
 
 /**
  * JPA entity representing a developer solution domain entity.
  *
- * A developer solution is a reference implementation submitted along with a task
- * by its author; it carries an [expectedScore] used to validate grading.
+ * A developer solution is a thin aggregate over a [SolutionJpaEntity]
+ * (referenced by [solutionId]) carrying an [expectedScore] used to validate
+ * grading; the actual source code, file content and language live on the
+ * referenced solution. Owned by the developer who authored it ([ownerId]).
  *
  * @see tech.testsys.domain.model.task.DeveloperSolution
  * @see tech.testsys.domain.model.task.DeveloperSolutionData
@@ -15,9 +18,10 @@ import java.util.UUID
  */
 @Entity
 class DeveloperSolutionJpaEntity(
-    name: String,
-    description: String,
-    fileDataId: Long,
-    versionBucket: UUID,
+    val name: String,
+    val description: String,
+    val solutionId: Long,
     val expectedScore: Int,
-) : ResourceJpaEntity(name, description, fileDataId, versionBucket)
+    val versionBucket: UUID,
+    val ownerId: Long,
+) : SequenceJpaEntity()

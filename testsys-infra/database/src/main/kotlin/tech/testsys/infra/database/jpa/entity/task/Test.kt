@@ -7,7 +7,7 @@ import java.util.UUID
  * JPA entity representing a polygon (test) domain entity.
  *
  * A polygon is a single test case used by the grader to evaluate submissions
- * against a task.
+ * against a task. Owned by the developer who authored it ([ownerId]).
  *
  * @see tech.testsys.domain.model.task.Test
  * @see tech.testsys.domain.model.task.TestData
@@ -19,4 +19,5 @@ class TestJpaEntity(
     description: String,
     fileDataId: Long,
     versionBucket: UUID,
+    val ownerId: Long,
 ) : ResourceJpaEntity(name, description, fileDataId, versionBucket)

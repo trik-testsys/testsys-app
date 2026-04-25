@@ -71,6 +71,9 @@ class CommunityToContestJpaEntity(
 /**
  * JPA entity representing a contest domain entity.
  *
+ * @property contestDurationMillis total contest duration in milliseconds.
+ * @property attemptDurationMillis per-attempt duration in milliseconds.
+ *
  * @see tech.testsys.domain.model.task.Contest
  * @see tech.testsys.domain.model.task.ContestData
  * @since %CURRENT_VERSION%
@@ -81,7 +84,7 @@ class ContestJpaEntity(
     val description: String,
     val ownerId: Long,
     val startsAt: Instant?,
-    val contestDuration: Long,
-    val attemptDuration: Long,
+    val contestDurationMillis: Long,
+    val attemptDurationMillis: Long,
     val trikStudioVersionId: Long,
 ) : SequenceJpaEntity()

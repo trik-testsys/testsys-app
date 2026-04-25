@@ -6,6 +6,11 @@ import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
+/**
+ * Composite primary key for [ContestToCompetitionJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Embeddable
 data class ContestToCompetitionId(
     val contestId: Long,
@@ -18,6 +23,11 @@ data class ContestToCompetitionId(
     }
 }
 
+/**
+ * JPA entity representing a contest to competition association domain entity.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class ContestToCompetitionJpaEntity(
     id: ContestToCompetitionId
@@ -26,6 +36,11 @@ class ContestToCompetitionJpaEntity(
     constructor(contestId: Long, competitionId: Long): this(ContestToCompetitionId(contestId, competitionId))
 }
 
+/**
+ * Composite primary key for [ParticipantToCompetitionJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Embeddable
 data class ParticipantToCompetitionId(
     val participantId: Long,
@@ -38,6 +53,11 @@ data class ParticipantToCompetitionId(
     }
 }
 
+/**
+ * JPA entity representing a participant to competition association domain entity.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class ParticipantToCompetitionJpaEntity(
     id: ParticipantToCompetitionId

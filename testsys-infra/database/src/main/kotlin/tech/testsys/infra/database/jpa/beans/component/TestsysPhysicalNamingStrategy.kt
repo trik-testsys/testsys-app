@@ -6,12 +6,16 @@ import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment
 import org.springframework.stereotype.Component
 
 /**
- * Physical naming strategy that derives table and column names from entity/field names.
+ * Physical naming strategy that derives database object names from entity/field names.
  *
- * Tables: strips `JpaSequenceEntity`/`JpaEntity`/`Entity` suffix, converts CamelCase to snake_case,
- * and prepends `t_` prefix. Example: `SubmissionStatusJpaSequenceEntity` → `t_submission_status`
+ * Tables: strips `JpaEntity`/`Entity` suffix, converts CamelCase to snake_case,
+ * and prepends the `ts_` prefix. Example: `SubmissionJpaEntity` → `ts_submission`.
  *
- * Columns: converts camelCase to snake_case. Example: `taskId` → `task_id`
+ * Columns: converts camelCase to snake_case. Example: `taskId` → `task_id`.
+ *
+ * Sequences: strips the `_SEQ` suffix produced by Hibernate, then applies the same
+ * normalization as tables and re-appends `_seq`. Example: Hibernate's logical
+ * `SubmissionJpaEntity_SEQ` → `ts_submission_seq`.
  *
  * @since %CURRENT_VERSION%
  */

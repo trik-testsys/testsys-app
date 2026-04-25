@@ -7,6 +7,13 @@ import jakarta.persistence.Enumerated
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
 
+/**
+ * The single role a [tech.testsys.infra.database.jpa.entity.user.UserJpaEntity] of type
+ * [tech.testsys.infra.database.jpa.entity.user.UserTypeJpaEnum.SINGLE_ROLE] holds.
+ *
+ * @see tech.testsys.domain.model.user.UserRole
+ * @since %CURRENT_VERSION%
+ */
 enum class UserSingleRoleJpaEnum {
 
     PARTICIPANT,
@@ -14,6 +21,11 @@ enum class UserSingleRoleJpaEnum {
     SUPERVISOR
 }
 
+/**
+ * Composite primary key for [SingleRoleToUserJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Embeddable
 data class SingleRoleToUserId(
     @Enumerated(EnumType.STRING)
@@ -27,6 +39,11 @@ data class SingleRoleToUserId(
     }
 }
 
+/**
+ * JPA entity representing the (role, user) pairing for a single-role user.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class SingleRoleToUserJpaEntity(
     id: SingleRoleToUserId,

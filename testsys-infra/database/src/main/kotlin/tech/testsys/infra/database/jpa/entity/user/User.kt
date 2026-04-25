@@ -5,6 +5,12 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
+/**
+ * Top-level discriminator between users that may hold many roles within different
+ * communities ([MULTIPLE_ROLE]) and users that hold exactly one fixed role ([SINGLE_ROLE]).
+ *
+ * @since %CURRENT_VERSION%
+ */
 enum class UserTypeJpaEnum {
 
     MULTIPLE_ROLE,

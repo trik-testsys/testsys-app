@@ -7,6 +7,12 @@ import jakarta.persistence.Enumerated
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
 
+/**
+ * Roles a multiple-role user may take within a community.
+ *
+ * @see tech.testsys.domain.model.user.UserRole
+ * @since %CURRENT_VERSION%
+ */
 enum class UserMultipleRoleJpaEnum {
 
     DEVELOPER,
@@ -16,6 +22,12 @@ enum class UserMultipleRoleJpaEnum {
     MANAGER,
 }
 
+/**
+ * Composite primary key for [MultipleRoleToUserJpaEntity], pairing a (role, user, community)
+ * triple so a user can hold different roles in different communities.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Embeddable
 data class MultipleRoleToUserId(
     @Enumerated(EnumType.STRING)
@@ -30,6 +42,11 @@ data class MultipleRoleToUserId(
     }
 }
 
+/**
+ * JPA entity representing a (role, user, community) membership for multiple-role users.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class MultipleRoleToUserJpaEntity(
     id: MultipleRoleToUserId,

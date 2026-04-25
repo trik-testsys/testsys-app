@@ -4,7 +4,7 @@ import jakarta.persistence.Entity
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 
-// TODO: видеозаписи, логи
+// TODO: video recordings, logs
 
 /**
  * JPA entity representing a judgment order domain entity.

@@ -37,6 +37,11 @@ class TaskToContestJpaEntity(
     constructor(taskId: Long, contestId: Long): this(TaskToContestId(taskId, contestId))
 }
 
+/**
+ * Composite primary key for [CommunityToContestJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Embeddable
 data class CommunityToContestId(
     val communityId: Long,
@@ -49,6 +54,12 @@ data class CommunityToContestId(
     }
 }
 
+/**
+ * JPA entity representing the share-to-community relation of a contest
+ * (mirrors `ContestData.sharedTo` from the domain model).
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class CommunityToContestJpaEntity(
     id: CommunityToContestId,

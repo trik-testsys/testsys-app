@@ -6,6 +6,11 @@ import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
+/**
+ * Composite primary key for [CompetitionToObserverJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Embeddable
 data class CompetitionToObserverId(
     val competitionId: Long,
@@ -18,6 +23,11 @@ data class CompetitionToObserverId(
     }
 }
 
+/**
+ * JPA entity associating an observer with a competition they are allowed to watch.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class CompetitionToObserverJpaEntity(
     id: CompetitionToObserverId,
@@ -26,9 +36,16 @@ class CompetitionToObserverJpaEntity(
     constructor(competitionId: Long, observerId: Long): this(CompetitionToObserverId(competitionId, observerId))
 }
 
+/**
+ * JPA entity representing the observer role data attached to a user.
+ *
+ * Observers are scoped to a single community via [communityId].
+ *
+ * @see tech.testsys.domain.model.user.ObserverData
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class ObserverDataJpaEntity(
     val userId: Long,
     val communityId: Long,
 ) : SequenceJpaEntity()
-

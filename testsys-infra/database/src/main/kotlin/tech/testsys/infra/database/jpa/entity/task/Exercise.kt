@@ -5,6 +5,16 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import java.util.UUID
 
+/**
+ * JPA entity representing an exercise domain entity.
+ *
+ * An exercise is the executable scaffold delivered to participants together with
+ * a [StatementJpaEntity]; its programming language is captured by [language].
+ *
+ * @see tech.testsys.domain.model.task.Exercise
+ * @see tech.testsys.domain.model.task.ExerciseData
+ * @since %CURRENT_VERSION%
+ */
 @Entity
 class ExerciseJpaEntity(
     name: String,

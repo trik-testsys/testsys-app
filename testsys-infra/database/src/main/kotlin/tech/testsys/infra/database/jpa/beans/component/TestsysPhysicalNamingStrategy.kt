@@ -3,6 +3,7 @@ package tech.testsys.infra.database.jpa.beans.component
 import org.hibernate.boot.model.naming.Identifier
 import org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment
+import org.springframework.stereotype.Component
 
 /**
  * Physical naming strategy that derives table and column names from entity/field names.
@@ -14,6 +15,7 @@ import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment
  *
  * @since %CURRENT_VERSION%
  */
+@Component
 class TestsysPhysicalNamingStrategy : PhysicalNamingStrategyStandardImpl() {
 
     override fun toPhysicalTableName(logicalName: Identifier, jdbcEnvironment: JdbcEnvironment): Identifier {
@@ -48,7 +50,7 @@ class TestsysPhysicalNamingStrategy : PhysicalNamingStrategyStandardImpl() {
         private const val ENTITY_SUFFIX = "Entity"
         private const val SEQUENCE_SUFFIX = "_SEQ"
 
-        private const val TABLE_NAME_PREFIX = "t"
+        private const val TABLE_NAME_PREFIX = "ts"
 
         private val CAMEL_CASE_REGEX = Regex("([a-z])([A-Z])")
         private const val SNAKE_CASE_REPLACEMENT = "$1_$2"

@@ -16,6 +16,8 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
     override fun buildDataWithAllFields() = listOf(
         multipleRoleUserData {
             accessToken = "token"
+            name = "Alice"
+            email = "alice@example.com"
             roles {
                 developer {
                     memberOf(listOf(1))
@@ -25,6 +27,8 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
         },
         multipleRoleUserData {
             accessToken = "token"
+            name = "Bob"
+            email = "bob@example.com"
             roles {
                 student {
                     memberOf(listOf(1))
@@ -37,6 +41,8 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
         },
         multipleRoleUserData {
             accessToken = "token"
+            name = "Carol"
+            email = "carol@example.com"
             roles {
                 judge {
                     memberOf(listOf(1))
@@ -48,6 +54,8 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
         },
         multipleRoleUserData {
             accessToken = "token"
+            name = "Dan"
+            email = "dan@example.com"
             roles {
                 manager {
                     memberOf(listOf(1))
@@ -60,12 +68,16 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
         },
         multipleRoleUserData {
             accessToken = "token"
+            name = "Eve"
+            email = "eve@example.com"
             roles {
                 administrator {}
             }
         },
         multipleRoleUserData {
             accessToken = "token"
+            name = "Frank"
+            email = "frank@example.com"
             roles {
                 developer {
                     memberOf(listOf(1))

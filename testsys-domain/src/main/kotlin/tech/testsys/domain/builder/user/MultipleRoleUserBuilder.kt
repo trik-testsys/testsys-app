@@ -9,6 +9,7 @@ import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.SolutionId
@@ -123,7 +124,7 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
      *
      * @since %CURRENT_VERSION%
      */
-    var solutions = mutableListOf<SolutionId>()
+    var solutions = mutableListOf<DeveloperSolutionId>()
 
     /**
      * The list of exercises owned by the developer.
@@ -169,7 +170,7 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
      * @since %CURRENT_VERSION%
      */
     fun solutions(solutions: Iterable<Long>) {
-        this.solutions = solutions.map { SolutionId(it) }.toMutableList()
+        this.solutions = solutions.map { DeveloperSolutionId(it) }.toMutableList()
     }
 
     /**
@@ -491,6 +492,20 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     var accessToken: String? = null
 
     /**
+     * The display name of the user.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var name: String? = null
+
+    /**
+     * The email address of the user.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var email: String? = null
+
+    /**
      * Configures the roles list using a DSL block.
      *
      * @param builder the configuration block applied to the roles list.
@@ -574,6 +589,8 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     override fun build() = MultipleRoleUserData(
         roles = roles,
         accessToken = requireField(accessToken) { ::accessToken },
+        name = requireField(name) { ::name },
+        email = requireField(email) { ::email },
     )
 
 }

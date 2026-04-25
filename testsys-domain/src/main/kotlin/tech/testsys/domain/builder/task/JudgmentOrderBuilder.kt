@@ -32,6 +32,13 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
     var verdict: VerdictId? = null
 
     /**
+     * Free-form reasoning describing why this judgment was issued.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var reason: String? = null
+
+    /**
      * Sets the [judge] from a raw ID value.
      *
      * @param id the raw user ID of the judge.
@@ -61,10 +68,12 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
     override fun build(): JudgmentOrderData {
         val judge = requireField(judge) { ::judge }
         val verdict = requireField(verdict) { ::verdict }
+        val reason = requireField(reason) { ::reason }
 
         return JudgmentOrderData(
             judge = judge.lazify(),
             verdict = verdict.lazify(),
+            reason = reason,
         )
     }
 

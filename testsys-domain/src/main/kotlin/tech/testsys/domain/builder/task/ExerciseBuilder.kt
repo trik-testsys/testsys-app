@@ -3,13 +3,12 @@ package tech.testsys.domain.builder.task
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
-import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.FileData
-import tech.testsys.domain.model.task.VersionData
+import java.util.UUID
 
 /**
  * Builder for constructing [ExerciseData].
@@ -19,6 +18,27 @@ import tech.testsys.domain.model.task.VersionData
 class ExerciseDataBuilder : Builder<ExerciseData> {
 
     private var _file: FileData? = null
+
+    /**
+     * The name of the exercise.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var name: String? = null
+
+    /**
+     * The description of the exercise.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var description: String? = null
+
+    /**
+     * Logical identity shared by all versions of this exercise.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var versionBucket: UUID? = null
 
     /**
      * Sets the file data for the exercise.
@@ -47,10 +67,16 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
      */
     override fun build(): ExerciseData {
         val file = requireField(_file) { ::_file }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
+        val versionBucket = requireField(versionBucket) { ::versionBucket }
 
         return ExerciseData(
+            name = name,
+            description = description,
             file = file,
             language = language.build(),
+            versionBucket = versionBucket,
         )
     }
 
@@ -58,24 +84,10 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
 
 /**
  * Builder for constructing [Exercise] domain entities.
- * Exercises support versioning via [versionData].
  *
  * @since %CURRENT_VERSION%
  */
 class ExerciseBuilder : DomainEntityWithDataBuilder<Exercise, ExerciseData, ExerciseDataBuilder>() {
-
-    private var _versionData: VersionData<ExerciseId, Exercise>? = null
-
-    /**
-     * Sets the version data for the exercise.
-     *
-     * @param root the ID of the root exercise in the version chain.
-     * @param index the version index.
-     * @since %CURRENT_VERSION%
-     */
-    fun versionData(root: ExerciseId, index: Long) {
-        _versionData = VersionData(root.lazify(), index)
-    }
 
     override fun dataBuilder() = ExerciseDataBuilder()
 
@@ -89,13 +101,11 @@ class ExerciseBuilder : DomainEntityWithDataBuilder<Exercise, ExerciseData, Exer
     override fun build(): Exercise {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val versionData = requireField(_versionData) { ::_versionData }
         val data = requireField(data) { ::data }
 
         return Exercise(
             id = ExerciseId(id),
             createdAt = createdAt,
-            versionData = versionData,
             data = data,
         )
     }

@@ -12,5 +12,6 @@ class JudgmentOrderBuilderTests : DomainEntityBuilderTests<JudgmentOrder, Judgme
     override fun buildDataWithAllFields() = listOf(judgmentOrderData {
         judge(42)
         verdict(1)
+        reason = "manual override"
     })
 }

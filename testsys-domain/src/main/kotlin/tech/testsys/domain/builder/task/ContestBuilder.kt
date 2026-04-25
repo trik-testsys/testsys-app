@@ -112,9 +112,9 @@ class ContestDataBuilder : Builder<ContestData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): ContestData {
-        val owner = requireField(owner) { ::owner }
         val name = requireField(name) { ::name }
         val description = requireField(description) { ::description }
+        val owner = requireField(owner) { ::owner }
         val contestDuration = requireField(contestDuration) { ::contestDuration }
         val attemptDuration = requireField(attemptDuration) { ::attemptDuration }
         val trikStudioVersion = requireField(trikStudioVersion) { ::trikStudioVersion }

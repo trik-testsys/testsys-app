@@ -3,8 +3,7 @@ package tech.testsys.domain.builder.api
 import tech.testsys.domain.builder.group.*
 import tech.testsys.domain.builder.task.*
 import tech.testsys.domain.builder.user.*
-import tech.testsys.domain.builder.util.chooser.TaskDataChooser
-import tech.testsys.domain.builder.util.lazify
+import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.model.group.*
 import tech.testsys.domain.model.task.*
 import tech.testsys.domain.model.user.*
@@ -239,38 +238,48 @@ inline fun submission(builder: SubmissionBuilder.() -> Unit) =
     SubmissionBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [TaskData.New].
+ * DSL entry point for building [TaskData].
+ *
+ * @param builder the configuration block applied to [TaskDataBuilder].
+ * @return the constructed [TaskData].
+ * @since %CURRENT_VERSION%
+ */
+inline fun taskData(builder: TaskDataBuilder.() -> Unit) =
+    TaskDataBuilder().apply(builder).build()
+
+/**
+ * DSL entry point for building [TaskContent.New].
  *
  * @param builder the configuration block applied to [WipTaskContentBuilder].
- * @return the constructed [TaskData.New].
+ * @return the constructed [TaskContent.New].
  * @since %CURRENT_VERSION%
  */
-inline fun taskDataNew(builder: WipTaskContentBuilder.() -> Unit) =
-    TaskData.New(WipTaskContentBuilder().apply(builder).build())
+inline fun taskContentNew(builder: WipTaskContentBuilder.() -> Unit) =
+    TaskContent.New(WipTaskContentBuilder().apply(builder).build())
 
 /**
- * DSL entry point for building [TaskData.Committed].
+ * DSL entry point for building [TaskContent.Committed].
  *
  * @param builder the configuration block applied to [CommittedTaskContentBuilder].
- * @return the constructed [TaskData.New].
+ * @return the constructed [TaskContent.Committed].
  * @since %CURRENT_VERSION%
  */
-inline fun taskDataCommited(builder: CommittedTaskContentBuilder.() -> Unit) =
-    TaskData.Committed(CommittedTaskContentBuilder().apply(builder).build())
+inline fun taskContentCommited(builder: CommittedTaskContentBuilder.() -> Unit) =
+    TaskContent.Committed(CommittedTaskContentBuilder().apply(builder).build())
 
 /**
- * DSL entry point for building [TaskData.Uncommited].
+ * DSL entry point for building [TaskContent.Uncommited].
  *
  * @param wipBuilder the configuration block applied to [WipTaskContentBuilder] for wip.
  * @param lastCommitedBuilder the configuration block applied to [CommittedTaskContentBuilder] for lastCommited.
- * @return the constructed [TaskData.New].
+ * @return the constructed [TaskContent.Uncommited].
  * @since %CURRENT_VERSION%
  */
-inline fun taskDataUncommited(
+inline fun taskContentUncommited(
     wipBuilder: WipTaskContentBuilder.() -> Unit,
     lastCommitedBuilder: CommittedTaskContentBuilder.() -> Unit,
 ) =
-    TaskData.Uncommited(
+    TaskContent.Uncommited(
         WipTaskContentBuilder().apply(wipBuilder).build(),
         CommittedTaskContentBuilder().apply(lastCommitedBuilder).build()
     )
@@ -472,6 +481,8 @@ private fun ClassData.toBuilder(): ClassDataBuilder {
     val thisData = this
     return ClassDataBuilder().apply {
         owner = thisData.owner.id
+        name = thisData.name
+        description = thisData.description
         students = thisData.students.ids.toMutableList()
         contests = thisData.contests.ids.toMutableList()
     }
@@ -492,6 +503,8 @@ private fun CommunityData.toBuilder(): CommunityDataBuilder {
     val thisData = this
     return CommunityDataBuilder().apply {
         owner = thisData.owner.id
+        name = thisData.name
+        description = thisData.description
     }
 }
 
@@ -510,6 +523,8 @@ private fun CompetitionData.toBuilder(): CompetitionDataBuilder {
     val thisData = this
     return CompetitionDataBuilder().apply {
         owner = thisData.owner.id
+        name = thisData.name
+        description = thisData.description
         participants = thisData.participants.ids.toMutableList()
         contests = thisData.contests.ids.toMutableList()
     }
@@ -555,8 +570,11 @@ fun Contest.withData(builder: ContestDataBuilder.() -> Unit): Contest {
 private fun DeveloperSolutionData.toBuilder(): DeveloperSolutionDataBuilder {
     val thisData = this
     return DeveloperSolutionDataBuilder().apply {
+        name = thisData.name
+        description = thisData.description
         solution = thisData.solution.id
         expectedScore = thisData.expectedScore
+        versionBucket = thisData.versionBucket
     }
 }
 
@@ -574,12 +592,15 @@ fun DeveloperSolution.withData(builder: DeveloperSolutionDataBuilder.() -> Unit)
 private fun ExerciseData.toBuilder(): ExerciseDataBuilder {
     val thisData = this
     return ExerciseDataBuilder().apply {
+        name = thisData.name
+        description = thisData.description
         file(thisData.file.uploadedFilename, thisData.file.content)
         when (thisData.language) {
             TrikSupportedLanguage.Python -> language.python()
             TrikSupportedLanguage.JavaScript -> language.javaScript()
             TrikSupportedLanguage.VisualLanguage -> language.visualLanguage()
         }
+        versionBucket = thisData.versionBucket
     }
 }
 
@@ -591,7 +612,7 @@ private fun ExerciseData.toBuilder(): ExerciseDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Exercise.withData(builder: ExerciseDataBuilder.() -> Unit): Exercise {
-    return Exercise(this.id, this.createdAt, this.versionData, this.data.toBuilder().apply(builder).build())
+    return Exercise(this.id, this.createdAt, this.data.toBuilder().apply(builder).build())
 }
 
 private fun JudgmentOrderData.toBuilder(): JudgmentOrderDataBuilder {
@@ -599,6 +620,7 @@ private fun JudgmentOrderData.toBuilder(): JudgmentOrderDataBuilder {
     return JudgmentOrderDataBuilder().apply {
         judge = thisData.judge.id
         verdict = thisData.verdict.id
+        reason = thisData.reason
     }
 }
 
@@ -616,12 +638,15 @@ fun JudgmentOrder.withData(builder: JudgmentOrderDataBuilder.() -> Unit): Judgme
 private fun SolutionData.toBuilder(): SolutionDataBuilder {
     val thisData = this
     return SolutionDataBuilder().apply {
+        name = thisData.name
+        description = thisData.description
         file(thisData.file.uploadedFilename, thisData.file.content)
         when (thisData.language) {
             TrikSupportedLanguage.Python -> language.python()
             TrikSupportedLanguage.JavaScript -> language.javaScript()
             TrikSupportedLanguage.VisualLanguage -> language.visualLanguage()
         }
+        versionBucket = thisData.versionBucket
     }
 }
 
@@ -639,7 +664,10 @@ fun Solution.withData(builder: SolutionDataBuilder.() -> Unit): Solution {
 private fun StatementData.toBuilder(): StatementDataBuilder {
     val thisData = this
     return StatementDataBuilder().apply {
+        name = thisData.name
+        description = thisData.description
         file(thisData.file.uploadedFilename, thisData.file.content)
+        versionBucket = thisData.versionBucket
     }
 }
 
@@ -651,14 +679,16 @@ private fun StatementData.toBuilder(): StatementDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Statement.withData(builder: StatementDataBuilder.() -> Unit): Statement {
-    return Statement(this.id, this.createdAt, this.versionData, this.data.toBuilder().apply(builder).build())
+    return Statement(this.id, this.createdAt, this.data.toBuilder().apply(builder).build())
 }
 
 private fun TestData.toBuilder(): TestDataBuilder {
     val thisData = this
     return TestDataBuilder().apply {
+        name = thisData.name
+        description = thisData.description
         file(thisData.file.uploadedFilename, thisData.file.content)
-        versionData(thisData.versionData.root.id, thisData.versionData.index)
+        versionBucket = thisData.versionBucket
     }
 }
 
@@ -674,40 +704,40 @@ fun Test.withData(builder: TestDataBuilder.() -> Unit): Test {
 }
 
 private fun WipTaskContentBuilder.populateFrom(content: WipTaskContent) {
-    owner = content.owner.id
-    name = content.name
-    description = content.description
     tests = content.tests.ids.toMutableList()
     exercise = content.exercise?.id
     statement = content.statement?.id
     developerSolutions = content.developerSolutions.ids.toMutableList()
     supportedTrikStudioVersions = content.supportedTrikStudioVersions.toMutableList()
-    sharedTo = content.sharedTo.ids.toMutableList()
 }
 
 private fun CommittedTaskContentBuilder.populateFrom(content: CommitedTaskContent) {
-    owner = content.owner.id
-    name = content.name
-    description = content.description
     tests = content.tests.ids.toMutableList()
     exercise = content.exercise.id
     statement = content.statement.id
     developerSolutions = content.developerSolutions.ids.toMutableList()
     supportedTrikStudioVersions = content.supportedTrikStudioVersions.toMutableList()
-    sharedTo = content.sharedTo.ids.toMutableList()
 }
 
-private fun TaskData.toBuilder(): TaskDataChooser {
+private fun TaskContentChooser.populateFrom(taskContent: TaskContent) {
+    when (taskContent) {
+        is TaskContent.New -> new { populateFrom(taskContent.wip) }
+        is TaskContent.Uncommited -> uncommited(
+            wipBuilder = { populateFrom(taskContent.wip) },
+            lastCommitedBuilder = { populateFrom(taskContent.lastCommited) },
+        )
+        is TaskContent.Committed -> committed { populateFrom(taskContent.lastCommited) }
+    }
+}
+
+private fun TaskData.toBuilder(): TaskDataBuilder {
     val thisData = this
-    return TaskDataChooser().apply {
-        when (thisData) {
-            is TaskData.New -> new { populateFrom(thisData.wip) }
-            is TaskData.Uncommited -> uncommited(
-                wipBuilder = { populateFrom(thisData.wip) },
-                lastCommitedBuilder = { populateFrom(thisData.lastCommited) }
-            )
-            is TaskData.Committed -> commited { populateFrom(thisData.lastCommited) }
-        }
+    return TaskDataBuilder().apply {
+        owner = thisData.owner.id
+        name = thisData.name
+        description = thisData.description
+        sharedTo = thisData.sharedTo.ids.toMutableList()
+        content.populateFrom(thisData.content)
     }
 }
 
@@ -718,7 +748,7 @@ private fun TaskData.toBuilder(): TaskDataChooser {
  * @return the modified [Task].
  * @since %CURRENT_VERSION%
  */
-fun Task.withData(builder: TaskDataChooser.() -> Unit): Task {
+fun Task.withData(builder: TaskDataBuilder.() -> Unit): Task {
     return Task(this.id, this.createdAt, this.data.toBuilder().apply(builder).build())
 }
 
@@ -747,6 +777,7 @@ private fun ParticipantData.toBuilder(): ParticipantDataBuilder {
     return ParticipantDataBuilder().apply {
         competition = thisData.competition.id
         accessToken = thisData.accessToken
+        name = thisData.name
     }
 }
 
@@ -764,8 +795,10 @@ fun Participant.withData(builder: ParticipantDataBuilder.() -> Unit): Participan
 private fun ObserverData.toBuilder(): ObserverDataBuilder {
     val thisData = this
     return ObserverDataBuilder().apply {
+        community = thisData.community.id
         accessToken = thisData.accessToken
         competitions = thisData.competitions.ids.toMutableList()
+        name = thisData.name
     }
 }
 
@@ -784,6 +817,8 @@ private fun MultipleRoleUserData.toBuilder(): MultipleRoleUserDataBuilder {
     val thisData = this
     return MultipleRoleUserDataBuilder().apply {
         accessToken = thisData.accessToken
+        name = thisData.name
+        email = thisData.email
         roles { addAll(thisData.roles) }
     }
 }
@@ -803,6 +838,7 @@ private fun SupervisorData.toBuilder(): SupervisorDataBuilder {
     val thisData = this
     return SupervisorDataBuilder().apply {
         accessToken = thisData.accessToken
+        name = thisData.name
     }
 }
 

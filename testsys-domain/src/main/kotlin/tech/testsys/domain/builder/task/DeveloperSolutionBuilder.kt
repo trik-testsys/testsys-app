@@ -9,6 +9,7 @@ import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SolutionId
+import java.util.UUID
 
 /**
  * Builder for constructing [DeveloperSolutionData].
@@ -16,6 +17,20 @@ import tech.testsys.domain.model.task.SolutionId
  * @since %CURRENT_VERSION%
  */
 class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
+
+    /**
+     * The name of the contest.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var name: String? = null
+
+    /**
+     * The description of the contest.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var description: String? = null
 
     /**
      * The ID of the solution associated with this developer solution.
@@ -30,6 +45,8 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
      * @since %CURRENT_VERSION%
      */
     var expectedScore: Score? = null
+
+    var versionBucket: UUID? = null
 
     /**
      * Sets the [solution] from a raw ID value.
@@ -59,12 +76,18 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): DeveloperSolutionData {
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
         val solution = requireField(solution) { ::solution }
         val expectedScore = requireField(expectedScore) { ::expectedScore }
+        val versionBucket = requireField(versionBucket) { ::versionBucket }
 
         return DeveloperSolutionData(
+            name = name,
+            description = description,
             solution = solution.lazify(),
-            expectedScore = expectedScore
+            expectedScore = expectedScore,
+            versionBucket = versionBucket,
         )
     }
 

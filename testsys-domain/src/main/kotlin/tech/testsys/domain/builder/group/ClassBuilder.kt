@@ -17,12 +17,17 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
  */
 class ClassDataBuilder : Builder<ClassData> {
 
+
     /**
      * The owner of the class.
      *
      * @since %CURRENT_VERSION%
      */
     var owner: MultipleRoleUserId? = null
+
+    var name: String? = null
+
+    var description: String? = null
 
     /**
      * The list of student user IDs enrolled in this class.
@@ -77,9 +82,13 @@ class ClassDataBuilder : Builder<ClassData> {
      */
     override fun build(): ClassData {
         val owner = requireField(owner) { ::owner }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
 
         return ClassData(
             owner = owner.lazify(),
+            name = name,
+            description = description,
             students = students.lazify(),
             contests = contests.lazify(),
         )

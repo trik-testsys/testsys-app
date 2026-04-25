@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DataCapable
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
@@ -49,6 +50,13 @@ class ParticipantDataBuilder : Builder<ParticipantData> {
     var accessToken: String? = null
 
     /**
+     * The display name of the participant.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var name: String? = null
+
+    /**
      * Sets the [competition] from a raw ID value.
      *
      * @param competitionId the raw competition ID.
@@ -70,7 +78,8 @@ class ParticipantDataBuilder : Builder<ParticipantData> {
 
         return ParticipantData(
             competition = competition.lazify(),
-            accessToken = requireField(accessToken) { ::accessToken }
+            accessToken = requireField(accessToken) { ::accessToken },
+            name = requireField(name) { ::name },
         )
     }
 
@@ -116,6 +125,13 @@ class ParticipantBuilder : SingleRoleUserBuilder<Participant, ParticipantData, P
 class ObserverDataBuilder : Builder<ObserverData> {
 
     /**
+     * The community this observer is scoped to.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var community: CommunityId? = null
+
+    /**
      * The list of competitions this observer can view.
      *
      * @since %CURRENT_VERSION%
@@ -123,6 +139,23 @@ class ObserverDataBuilder : Builder<ObserverData> {
     var competitions = mutableListOf<CompetitionId>()
 
     var accessToken: String? = null
+
+    /**
+     * The display name of the observer.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var name: String? = null
+
+    /**
+     * Sets the [community] from a raw ID value.
+     *
+     * @param communityId the raw community ID.
+     * @since %CURRENT_VERSION%
+     */
+    fun community(communityId: Long) {
+        this.community = CommunityId(communityId)
+    }
 
     /**
      * Sets the [competitions] list from raw ID values.
@@ -138,12 +171,19 @@ class ObserverDataBuilder : Builder<ObserverData> {
      * Builds the [ObserverData] instance.
      *
      * @return the constructed [ObserverData].
+     * @throws IllegalArgumentException if [community] is not set.
      * @since %CURRENT_VERSION%
      */
-    override fun build() = ObserverData(
-        competitions = competitions.lazify(),
-        accessToken = requireField(accessToken) { ::accessToken },
-    )
+    override fun build(): ObserverData {
+        val community = requireField(community) { ::community }
+
+        return ObserverData(
+            community = community.lazify(),
+            competitions = competitions.lazify(),
+            accessToken = requireField(accessToken) { ::accessToken },
+            name = requireField(name) { ::name },
+        )
+    }
 
 }
 
@@ -184,13 +224,21 @@ class SupervisorDataBuilder : Builder<SupervisorData> {
     var accessToken: String? = null
 
     /**
-     * Builds the [ObserverData] instance.
+     * The display name of the supervisor.
      *
-     * @return the constructed [ObserverData].
+     * @since %CURRENT_VERSION%
+     */
+    var name: String? = null
+
+    /**
+     * Builds the [SupervisorData] instance.
+     *
+     * @return the constructed [SupervisorData].
      * @since %CURRENT_VERSION%
      */
     override fun build() = SupervisorData(
         accessToken = requireField(accessToken) { ::accessToken },
+        name = requireField(name) { ::name },
     )
 
 }

@@ -2,13 +2,12 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
-import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
-import tech.testsys.domain.model.task.VersionData
+import java.util.UUID
 
 /**
  * Builder for constructing [TestData].
@@ -18,7 +17,27 @@ import tech.testsys.domain.model.task.VersionData
 class TestDataBuilder : Builder<TestData> {
 
     private var _file: FileData? = null
-    private var _versionData: VersionData<TestId, Test>? = null
+
+    /**
+     * The name of the test.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var name: String? = null
+
+    /**
+     * The description of the test.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var description: String? = null
+
+    /**
+     * Logical identity shared by all versions of this test.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var versionBucket: UUID? = null
 
     /**
      * Sets the file data for the test.
@@ -32,17 +51,6 @@ class TestDataBuilder : Builder<TestData> {
     }
 
     /**
-     * Sets the version data for the test.
-     *
-     * @param root the ID of the root test in the version chain.
-     * @param index the version index.
-     * @since %CURRENT_VERSION%
-     */
-    fun versionData(root: TestId, index: Long) {
-        _versionData = VersionData(root.lazify(), index)
-    }
-
-    /**
      * Builds the [TestData] instance.
      *
      * @return the constructed [TestData].
@@ -51,11 +59,15 @@ class TestDataBuilder : Builder<TestData> {
      */
     override fun build(): TestData {
         val file = requireField(_file) { ::_file }
-        val versionData = requireField(_versionData) { ::_versionData }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
+        val versionBucket = requireField(versionBucket) { ::versionBucket }
 
         return TestData(
             file = file,
-            versionData = versionData,
+            name = name,
+            description = description,
+            versionBucket = versionBucket,
         )
     }
 

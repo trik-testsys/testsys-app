@@ -22,6 +22,5 @@ class DeveloperSolutionJpaEntity(
     val description: String,
     val solutionId: Long,
     val expectedScore: Int,
-    val versionBucket: UUID,
     val ownerId: Long,
 ) : SequenceJpaEntity()

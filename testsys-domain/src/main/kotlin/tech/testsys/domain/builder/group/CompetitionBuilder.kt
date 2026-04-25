@@ -18,6 +18,10 @@ import tech.testsys.domain.model.user.SingleRoleUserId
  */
 class CompetitionDataBuilder : Builder<CompetitionData> {
 
+    var name: String? = null
+
+    var description: String? = null
+
     /**
      * The owner of the competition.
      *
@@ -77,9 +81,13 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
      * @since %CURRENT_VERSION%
      */
     override fun build(): CompetitionData {
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
         val owner = requireField(owner) { ::owner }
 
         return CompetitionData(
+            name = name,
+            description = description,
             owner = owner.lazify(),
             participants = participants.lazify(),
             contests = contests.lazify(),

@@ -23,6 +23,11 @@ class CommunityDataBuilder : Builder<CommunityData> {
      */
     var owner: MultipleRoleUserId? = null
 
+    var name: String? = null
+
+    var description: String? = null
+
+
     /**
      * Sets the [owner] from a raw ID value.
      *
@@ -42,9 +47,13 @@ class CommunityDataBuilder : Builder<CommunityData> {
      */
     override fun build(): CommunityData {
         val owner = requireField(owner) { ::owner }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
 
         return CommunityData(
             owner = owner.lazify(),
+            name = name,
+            description = description,
         )
     }
 }

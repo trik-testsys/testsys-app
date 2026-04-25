@@ -2,13 +2,12 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
-import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
-import tech.testsys.domain.model.task.VersionData
+import java.util.UUID
 
 /**
  * Builder for constructing [StatementData].
@@ -18,6 +17,27 @@ import tech.testsys.domain.model.task.VersionData
 class StatementDataBuilder : Builder<StatementData> {
 
     private var _file: FileData? = null
+
+    /**
+     * The name of the statement.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var name: String? = null
+
+    /**
+     * The description of the statement.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var description: String? = null
+
+    /**
+     * Logical identity shared by all versions of this statement.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var versionBucket: UUID? = null
 
     /**
      * Sets the file data for the statement.
@@ -39,9 +59,15 @@ class StatementDataBuilder : Builder<StatementData> {
      */
     override fun build(): StatementData {
         val file = requireField(_file) { ::_file }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
+        val versionBucket = requireField(versionBucket) { ::versionBucket }
 
         return StatementData(
             file = file,
+            name = name,
+            description = description,
+            versionBucket = versionBucket,
         )
     }
 
@@ -49,24 +75,10 @@ class StatementDataBuilder : Builder<StatementData> {
 
 /**
  * Builder for constructing [Statement] domain entities.
- * Exercises support versioning via [versionData].
  *
  * @since %CURRENT_VERSION%
  */
 class StatementBuilder : DomainEntityWithDataBuilder<Statement, StatementData, StatementDataBuilder>() {
-
-    private var _versionData: VersionData<StatementId, Statement>? = null
-
-    /**
-     * Sets the version data for the statement.
-     *
-     * @param root the ID of the root statement in the version chain.
-     * @param index the version index.
-     * @since %CURRENT_VERSION%
-     */
-    fun versionData(root: StatementId, index: Long) {
-        _versionData = VersionData(root.lazify(), index)
-    }
 
     override fun dataBuilder() = StatementDataBuilder()
 
@@ -80,13 +92,11 @@ class StatementBuilder : DomainEntityWithDataBuilder<Statement, StatementData, S
     override fun build(): Statement {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val versionData = requireField(_versionData) { ::_versionData }
         val data = requireField(data) { ::data }
 
         return Statement(
             id = StatementId(id),
             createdAt = createdAt,
-            versionData = versionData,
             data = data,
         )
     }

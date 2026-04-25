@@ -18,6 +18,7 @@ class ParticipantBuilderTests : DomainEntityBuilderTests<Participant, Participan
     override fun buildDataWithAllFields() = listOf(participantData {
         competition(1)
         accessToken = "token"
+        name = "Participant"
     })
 }
 
@@ -26,9 +27,15 @@ class ObserverBuilderTests : DomainEntityBuilderTests<Observer, ObserverData, Ob
     ObserverDataBuilder()
 ) {
     override fun buildDataWithAllFields() = listOf(
-        observerData { accessToken = "token" },
         observerData {
+            community(7)
             accessToken = "token"
+            name = "Observer"
+        },
+        observerData {
+            community(7)
+            accessToken = "token"
+            name = "Observer"
             competitions(listOf(1L, 2L))
         },
     )
@@ -40,5 +47,6 @@ class SupervisorBuilderTests : DomainEntityBuilderTests<Supervisor, SupervisorDa
 ) {
     override fun buildDataWithAllFields() = listOf(supervisorData {
         accessToken = "token"
+        name = "Supervisor"
     })
 }

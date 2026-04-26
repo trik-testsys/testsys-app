@@ -18,6 +18,7 @@ junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin" }
 kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
@@ -50,7 +51,8 @@ kotlin-jpa-plugins = [
 database-implementation = [
     "spring-boot-starter-data-jpa",
     "liquibase-core",
-    "commons-lang3"
+    "commons-lang3",
+    "kotlin-reflect",
 ]
 database-test-implementation = [
     "spring-boot-starter-test",

@@ -7,6 +7,7 @@ spring = "6.2.17"
 postgresql = "42.7.7"
 liquibase = "4.32.0"
 commons-lang3 = "3.18.0"
+h2 = "2.3.232"
 
 [libraries]
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
@@ -19,8 +20,10 @@ kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref =
 kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin" }
 
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
 
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
 liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase" }
 commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 
@@ -48,6 +51,10 @@ database-implementation = [
     "spring-boot-starter-data-jpa",
     "liquibase-core",
     "commons-lang3"
+]
+database-test-implementation = [
+    "spring-boot-starter-test",
+    "h2",
 ]
 detekt-implementation = [
     "detekt-gradle-plugin",

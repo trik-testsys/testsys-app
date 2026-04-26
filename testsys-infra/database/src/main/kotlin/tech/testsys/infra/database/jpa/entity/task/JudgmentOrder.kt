@@ -1,6 +1,8 @@
 package tech.testsys.infra.database.jpa.entity.task
 
 import jakarta.persistence.Entity
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 
@@ -17,5 +19,6 @@ import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 class JudgmentOrderJpaEntity(
     val judgeId: Long,
     val verdictId: Long,
+    @field:JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     val reason: String,
 ) : SequenceJpaEntity()

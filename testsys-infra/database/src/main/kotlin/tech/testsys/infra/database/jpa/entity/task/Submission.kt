@@ -3,6 +3,8 @@ package tech.testsys.infra.database.jpa.entity.task
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 /**
@@ -82,6 +84,7 @@ class SubmissionJpaEntity(
     @Enumerated(EnumType.STRING)
     val gradingResult: GradingResultJpaEnum?,
     val gradingVerdictId: Long?,
+    @field:JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     val gradingErrorDescription: String?,
     @Enumerated(EnumType.STRING)
     val kind: SubmissionKindJpaEnum,

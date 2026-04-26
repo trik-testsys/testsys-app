@@ -2,6 +2,8 @@ package tech.testsys.infra.database.jpa.entity.task
 
 import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
@@ -81,6 +83,7 @@ class CommunityToContestJpaEntity(
 @Entity
 class ContestJpaEntity(
     val name: String,
+    @field:JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     val description: String,
     val ownerId: Long,
     val startsAt: Instant?,

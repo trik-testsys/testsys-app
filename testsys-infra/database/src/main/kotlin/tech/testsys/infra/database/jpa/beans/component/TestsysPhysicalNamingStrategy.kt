@@ -45,6 +45,8 @@ class TestsysPhysicalNamingStrategy : PhysicalNamingStrategyStandardImpl() {
             .removeSuffix(ENTITY_SUFFIX)
             .replace(CAMEL_CASE_REGEX, SNAKE_CASE_REPLACEMENT)
             .lowercase()
+            .removeSuffix("_seq")
+            .removePrefix("${TABLE_NAME_PREFIX}_")
         return Identifier.toIdentifier("${TABLE_NAME_PREFIX}_${name}_seq")
     }
 

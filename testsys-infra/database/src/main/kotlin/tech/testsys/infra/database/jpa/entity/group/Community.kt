@@ -1,6 +1,8 @@
 package tech.testsys.infra.database.jpa.entity.group
 
 import jakarta.persistence.Entity
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 /**
@@ -13,6 +15,7 @@ import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 @Entity
 class CommunityJpaEntity(
     val name: String,
+    @field:JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     val description: String,
     val ownerId: Long,
 ) : SequenceJpaEntity()

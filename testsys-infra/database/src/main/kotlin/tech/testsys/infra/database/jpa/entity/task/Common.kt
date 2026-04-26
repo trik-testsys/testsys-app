@@ -2,6 +2,8 @@ package tech.testsys.infra.database.jpa.entity.task
 
 import jakarta.persistence.Entity
 import jakarta.persistence.MappedSuperclass
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 import java.util.UUID
 
@@ -61,6 +63,7 @@ class TrikStudioVersionJpaEntity(
 @MappedSuperclass
 abstract class ResourceJpaEntity(
     val name: String,
+    @field:JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     val description: String,
     val fileDataId: Long,
     val versionBucket: UUID,

@@ -34,11 +34,3 @@ interface SequenceJpaEntityRepository<Entity : SequenceJpaEntity> : JpaRepositor
  */
 @NoRepositoryBean
 interface CompositeJpaEntityRepository<Entity : CompositeJpaEntity<ID>, ID : CompositeId> : JpaRepository<Entity, ID>
-
-/**
- * Spring Data repository for [ClassJpaEntity].
- *
- * @since %CURRENT_VERSION%
- */
-@Repository
-interface ClassRepository : SequenceJpaEntityRepository<ClassJpaEntity>

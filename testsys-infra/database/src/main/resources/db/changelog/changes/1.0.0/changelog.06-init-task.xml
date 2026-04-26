@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1.0.0-06-1" author="roman.shishkin">
+        <comment>TaskContent: a single revision of a task's payload (exercise/statement, plus joined tests/solutions/versions).</comment>
+
+        <createTable tableName="ts_task_content">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_task_content" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="exercise_id" type="BIGINT">
+                <constraints foreignKeyName="fk_task_content_exercise" references="ts_exercise(id)"/>
+            </column>
+            <column name="statement_id" type="BIGINT">
+                <constraints foreignKeyName="fk_task_content_statement" references="ts_statement(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-06-2" author="roman.shishkin">
+        <comment>Task: identity (name/description/owner/status) plus pointers to WIP and last-committed content revisions.</comment>
+
+        <createTable tableName="ts_task">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_task" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="owner_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_task_owner" references="ts_user(id)"/>
+            </column>
+            <column name="status" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="wip_content_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_task_wip_content" references="ts_task_content(id)"/>
+            </column>
+            <column name="commited_content_id" type="BIGINT">
+                <constraints unique="true"
+                             foreignKeyName="fk_task_commited_content" references="ts_task_content(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-06-3" author="roman.shishkin">
+        <comment>TestToTaskContent join: tests attached to a task content revision.</comment>
+
+        <createTable tableName="ts_test_to_task_content">
+            <column name="test_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_test_to_task_content" nullable="false"
+                             foreignKeyName="fk_test_to_task_content_test" references="ts_test(id)"/>
+            </column>
+            <column name="task_content_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_test_to_task_content" nullable="false"
+                             foreignKeyName="fk_test_to_task_content_content" references="ts_task_content(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-06-4" author="roman.shishkin">
+        <comment>DeveloperSolutionToTaskContent join: developer solutions attached to a task content revision.</comment>
+
+        <createTable tableName="ts_developer_solution_to_task_content">
+            <column name="developer_solution_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_developer_solution_to_task_content" nullable="false"
+                             foreignKeyName="fk_dev_solution_to_task_content_dev_solution" references="ts_developer_solution(id)"/>
+            </column>
+            <column name="task_content_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_developer_solution_to_task_content" nullable="false"
+                             foreignKeyName="fk_dev_solution_to_task_content_content" references="ts_task_content(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-06-5" author="roman.shishkin">
+        <comment>TrikStudioVersionToTaskContent join: TRIK Studio versions supported by a task content revision.</comment>
+
+        <createTable tableName="ts_trik_studio_version_to_task_content">
+            <column name="trik_studio_version_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_trik_studio_version_to_task_content" nullable="false"
+                             foreignKeyName="fk_tsv_to_task_content_version" references="ts_trik_studio_version(id)"/>
+            </column>
+            <column name="task_content_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_trik_studio_version_to_task_content" nullable="false"
+                             foreignKeyName="fk_tsv_to_task_content_content" references="ts_task_content(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-06-6" author="roman.shishkin">
+        <comment>CommunityToTask join: which communities a task is shared to (mirrors TaskData.sharedTo).</comment>
+
+        <createTable tableName="ts_community_to_task">
+            <column name="community_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_community_to_task" nullable="false"
+                             foreignKeyName="fk_community_to_task_community" references="ts_community(id)"/>
+            </column>
+            <column name="task_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_community_to_task" nullable="false"
+                             foreignKeyName="fk_community_to_task_task" references="ts_task(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

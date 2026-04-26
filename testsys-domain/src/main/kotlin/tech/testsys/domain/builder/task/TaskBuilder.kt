@@ -286,5 +286,4 @@ class TaskBuilder : DomainEntityWithDataBuilder<Task, TaskData, TaskDataBuilder>
             data = data,
         )
     }
-
 }

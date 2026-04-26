@@ -10,7 +10,6 @@ import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.SolutionId
 import java.util.UUID
 
-
 /**
  * Builder for constructing [SolutionData].
  *
@@ -42,6 +41,13 @@ class SolutionDataBuilder : Builder<SolutionData> {
     var versionBucket: UUID? = null
 
     /**
+     * Chooser for selecting the programming language of the solution.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    val language = LanguageChooser()
+
+    /**
      * Sets the file data for the solution.
      *
      * @param uploadedFilename the original filename of the uploaded file.
@@ -51,13 +57,6 @@ class SolutionDataBuilder : Builder<SolutionData> {
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
     }
-
-    /**
-     * Chooser for selecting the programming language of the solution.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    val language = LanguageChooser()
 
     /**
      * Builds the [SolutionData] instance.
@@ -80,7 +79,6 @@ class SolutionDataBuilder : Builder<SolutionData> {
             versionBucket = versionBucket,
         )
     }
-
 }
 
 /**
@@ -110,5 +108,4 @@ class SolutionBuilder : DomainEntityWithDataBuilder<Solution, SolutionData, Solu
             data = data,
         )
     }
-
 }

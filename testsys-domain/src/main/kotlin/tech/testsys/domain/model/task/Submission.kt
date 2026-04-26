@@ -4,13 +4,13 @@ import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
-import tech.testsys.domain.model.user.MultipleRoleUser
-import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.User
+import tech.testsys.domain.model.user.UserId
 import java.time.Instant
 
 @JvmInline
 value class VerdictId(
-    override val value: Long
+    override val value: Long,
 ) : DomainId
 
 data class VerdictData(
@@ -27,7 +27,7 @@ class Verdict(
 
 @JvmInline
 value class SubmissionId(
-    override val value: Long
+    override val value: Long,
 ) : DomainId
 
 sealed interface GradingResult {
@@ -48,7 +48,7 @@ sealed interface SubmissionKind {
 }
 
 data class SubmissionData(
-    val author: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
+    val author: LazyEntity<UserId, User<UserId>>,
     val solution: LazyEntity<SolutionId, Solution>,
     val task: LazyEntity<TaskId, Task>,
     val status: SubmissionStatus,

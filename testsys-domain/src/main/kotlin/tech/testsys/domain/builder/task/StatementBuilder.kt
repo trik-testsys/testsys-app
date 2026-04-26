@@ -70,7 +70,6 @@ class StatementDataBuilder : Builder<StatementData> {
             versionBucket = versionBucket,
         )
     }
-
 }
 
 /**
@@ -100,5 +99,4 @@ class StatementBuilder : DomainEntityWithDataBuilder<Statement, StatementData, S
             data = data,
         )
     }
-
 }

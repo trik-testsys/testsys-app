@@ -76,7 +76,6 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
             reason = reason,
         )
     }
-
 }
 
 /**
@@ -106,5 +105,4 @@ class JudgmentOrderBuilder : DomainEntityWithDataBuilder<JudgmentOrder, Judgment
             data = data,
         )
     }
-
 }

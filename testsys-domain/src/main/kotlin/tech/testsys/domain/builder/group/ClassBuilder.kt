@@ -17,7 +17,6 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
  */
 class ClassDataBuilder : Builder<ClassData> {
 
-
     /**
      * The owner of the class.
      *
@@ -93,7 +92,6 @@ class ClassDataBuilder : Builder<ClassData> {
             contests = contests.lazify(),
         )
     }
-
 }
 
 /**

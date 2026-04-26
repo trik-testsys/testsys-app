@@ -1,8 +1,8 @@
 package tech.testsys.domain.model.user
 
 import tech.testsys.domain.model.LazyEntityList
-import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.Class
+import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.Competition
@@ -15,8 +15,6 @@ import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderId
-import tech.testsys.domain.model.task.Solution
-import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.Task
@@ -44,7 +42,7 @@ class MultipleRoleUser(
 ) : User<MultipleRoleUserId>(id, createdAt, data)
 
 sealed class CompatibleUserRole(
-    val memberOf: LazyEntityList<CommunityId, Community>
+    val memberOf: LazyEntityList<CommunityId, Community>,
 )
 
 data class DeveloperData(
@@ -52,22 +50,22 @@ data class DeveloperData(
     val contests: LazyEntityList<ContestId, Contest>,
     val polygons: LazyEntityList<TestId, Test>,
     val solutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
-    val exercises: LazyEntityList<ExerciseId, Exercise>
+    val exercises: LazyEntityList<ExerciseId, Exercise>,
 )
 
 class Developer(
     memberOf: LazyEntityList<CommunityId, Community>,
-    val data: DeveloperData
+    val data: DeveloperData,
 ) : CompatibleUserRole(memberOf)
 
 data class StudentData(
     val classes: LazyEntityList<ClassId, Class>,
-    val submissions: LazyEntityList<SubmissionId, Submission>
+    val submissions: LazyEntityList<SubmissionId, Submission>,
 )
 
 class Student(
     memberOf: LazyEntityList<CommunityId, Community>,
-    val data: StudentData
+    val data: StudentData,
 ) : CompatibleUserRole(memberOf)
 
 class Administrator(
@@ -75,20 +73,20 @@ class Administrator(
 ) : CompatibleUserRole(memberOf)
 
 data class JudgeData(
-    val judgmentOrders: LazyEntityList<JudgmentOrderId, JudgmentOrder>
+    val judgmentOrders: LazyEntityList<JudgmentOrderId, JudgmentOrder>,
 )
 
 class Judge(
     memberOf: LazyEntityList<CommunityId, Community>,
-    val data: JudgeData
+    val data: JudgeData,
 ) : CompatibleUserRole(memberOf)
 
 data class ManagerData(
     val classes: LazyEntityList<ClassId, Class>,
-    val competitions: LazyEntityList<CompetitionId, Competition>
+    val competitions: LazyEntityList<CompetitionId, Competition>,
 )
 
 class Manager(
     memberOf: LazyEntityList<CommunityId, Community>,
-    val data: ManagerData
+    val data: ManagerData,
 ) : CompatibleUserRole(memberOf)

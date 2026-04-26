@@ -12,7 +12,7 @@ import java.time.Instant
 
 @JvmInline
 value class ClassId(
-    override val value: Long
+    override val value: Long,
 ) : DomainId
 
 data class ClassData(

@@ -10,7 +10,7 @@ import tech.testsys.domain.builder.util.requireField
  * @param T the type of value being chosen.
  * @since %CURRENT_VERSION%
  */
-abstract class Chooser<T>: Builder<T> {
+abstract class Chooser<T> : Builder<T> {
 
     /**
      * The currently selected value, or `null` if no choice has been made.

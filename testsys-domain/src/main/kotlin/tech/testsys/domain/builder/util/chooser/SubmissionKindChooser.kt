@@ -1,6 +1,5 @@
 package tech.testsys.domain.builder.util.chooser
 
-
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.builder.util.lazify
@@ -31,9 +30,11 @@ class SubmissionKindChooser : Chooser<SubmissionKind>() {
      *
      * @since %CURRENT_VERSION%
      */
-    fun developerSolutionTest() = makeChoice(object : Builder<SubmissionKind> {
-        override fun build() = SubmissionKind.DeveloperSolutionTest
-    })
+    fun developerSolutionTest() = makeChoice(
+        object : Builder<SubmissionKind> {
+            override fun build() = SubmissionKind.DeveloperSolutionTest
+        },
+    )
 }
 
 class GradingSubmissionKindBuilder : Builder<SubmissionKind> {
@@ -49,5 +50,3 @@ class GradingSubmissionKindBuilder : Builder<SubmissionKind> {
         return SubmissionKind.Grading(contest.lazify())
     }
 }
-
-

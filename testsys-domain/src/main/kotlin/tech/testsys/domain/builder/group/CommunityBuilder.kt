@@ -27,7 +27,6 @@ class CommunityDataBuilder : Builder<CommunityData> {
 
     var description: String? = null
 
-
     /**
      * Sets the [owner] from a raw ID value.
      *

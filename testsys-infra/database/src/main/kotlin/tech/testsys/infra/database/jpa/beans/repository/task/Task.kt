@@ -45,19 +45,26 @@ interface TestToTaskContentJpaEntityRepository : CompositeJpaEntityRepository<Te
  * @since %CURRENT_VERSION%
  */
 @Repository
-interface DeveloperSolutionToTaskContentJpaEntityRepository : CompositeJpaEntityRepository<DeveloperSolutionToTaskContentJpaEntity, DeveloperSolutionToTaskContentId> {
+interface DeveloperSolutionToTaskContentJpaEntityRepository :
+    CompositeJpaEntityRepository<DeveloperSolutionToTaskContentJpaEntity, DeveloperSolutionToTaskContentId> {
 
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.developerSolutionId = :developerSolutionId")
     fun findAllByDeveloperSolutionId(@Param("developerSolutionId") developerSolutionId: Long): List<DeveloperSolutionToTaskContentJpaEntity>
 
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.developerSolutionId = :developerSolutionId")
-    fun findAllByDeveloperSolutionId(@Param("developerSolutionId") developerSolutionId: Long, pageable: Pageable): Page<DeveloperSolutionToTaskContentJpaEntity>
+    fun findAllByDeveloperSolutionId(
+        @Param("developerSolutionId") developerSolutionId: Long,
+        pageable: Pageable,
+    ): Page<DeveloperSolutionToTaskContentJpaEntity>
 
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long): List<DeveloperSolutionToTaskContentJpaEntity>
 
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
-    fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long, pageable: Pageable): Page<DeveloperSolutionToTaskContentJpaEntity>
+    fun findAllByTaskContentId(
+        @Param("taskContentId") taskContentId: Long,
+        pageable: Pageable,
+    ): Page<DeveloperSolutionToTaskContentJpaEntity>
 }
 
 /**
@@ -66,19 +73,26 @@ interface DeveloperSolutionToTaskContentJpaEntityRepository : CompositeJpaEntity
  * @since %CURRENT_VERSION%
  */
 @Repository
-interface TrikStudioVersionToTaskContentJpaEntityRepository : CompositeJpaEntityRepository<TrikStudioVersionToTaskContentJpaEntity, TrikStudioVersionToTaskContentId> {
+interface TrikStudioVersionToTaskContentJpaEntityRepository :
+    CompositeJpaEntityRepository<TrikStudioVersionToTaskContentJpaEntity, TrikStudioVersionToTaskContentId> {
 
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.trikStudioVersionId = :trikStudioVersionId")
     fun findAllByTrikStudioVersionId(@Param("trikStudioVersionId") trikStudioVersionId: Long): List<TrikStudioVersionToTaskContentJpaEntity>
 
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.trikStudioVersionId = :trikStudioVersionId")
-    fun findAllByTrikStudioVersionId(@Param("trikStudioVersionId") trikStudioVersionId: Long, pageable: Pageable): Page<TrikStudioVersionToTaskContentJpaEntity>
+    fun findAllByTrikStudioVersionId(
+        @Param("trikStudioVersionId") trikStudioVersionId: Long,
+        pageable: Pageable,
+    ): Page<TrikStudioVersionToTaskContentJpaEntity>
 
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long): List<TrikStudioVersionToTaskContentJpaEntity>
 
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
-    fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long, pageable: Pageable): Page<TrikStudioVersionToTaskContentJpaEntity>
+    fun findAllByTaskContentId(
+        @Param("taskContentId") taskContentId: Long,
+        pageable: Pageable,
+    ): Page<TrikStudioVersionToTaskContentJpaEntity>
 }
 
 /**

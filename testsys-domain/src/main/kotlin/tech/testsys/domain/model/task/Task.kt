@@ -18,7 +18,7 @@ value class TaskId(
 sealed interface TaskContent {
 
     data class New(
-        val wip: WipTaskContent
+        val wip: WipTaskContent,
     ) : TaskContent
 
     data class Uncommited(
@@ -27,7 +27,7 @@ sealed interface TaskContent {
     ) : TaskContent
 
     data class Committed(
-        val lastCommited: CommitedTaskContent
+        val lastCommited: CommitedTaskContent,
     ) : TaskContent
 }
 

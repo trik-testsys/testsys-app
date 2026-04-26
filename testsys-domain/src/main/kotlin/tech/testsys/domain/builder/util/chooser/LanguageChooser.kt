@@ -36,5 +36,4 @@ class LanguageChooser : Chooser<TrikSupportedLanguage>() {
     fun visualLanguage() = makeChoice(object : Builder<TrikSupportedLanguage> {
         override fun build() = TrikSupportedLanguage.VisualLanguage
     })
-
 }

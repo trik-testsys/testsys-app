@@ -13,7 +13,7 @@ import java.time.Instant
 
 @JvmInline
 value class ContestId(
-    override val value: Long
+    override val value: Long,
 ) : DomainId
 
 data class ContestData(

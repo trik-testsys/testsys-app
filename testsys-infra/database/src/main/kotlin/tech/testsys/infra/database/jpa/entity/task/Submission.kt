@@ -30,13 +30,13 @@ class VerdictJpaEntity(
 enum class SubmissionStatusJpaEnum {
     QUEUED,
     IN_PROGRESS,
-    GRADED;
+    GRADED,
 }
 
 /**
  * Possible outcomes of a grading attempt.
  *
- * Only meaningful when the owning submission has [SubmissionStatusJpaEnum.GRADED] status.
+ * Populated only when the parent submission is in [SubmissionStatusJpaEnum.GRADED] state.
  *
  * @see tech.testsys.domain.model.task.GradingResult
  * @since %CURRENT_VERSION%
@@ -44,7 +44,7 @@ enum class SubmissionStatusJpaEnum {
 enum class GradingResultJpaEnum {
     SUCCESS,
     GRADING_ERROR,
-    TIMEOUT;
+    TIMEOUT,
 }
 
 /**
@@ -55,7 +55,7 @@ enum class GradingResultJpaEnum {
  */
 enum class SubmissionKindJpaEnum {
     DEVELOPER_SOLUTION_TEST,
-    GRADING;
+    GRADING,
 }
 
 /**

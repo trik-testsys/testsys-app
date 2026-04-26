@@ -90,7 +90,6 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
             versionBucket = versionBucket,
         )
     }
-
 }
 
 /**
@@ -99,8 +98,7 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
  * @since %CURRENT_VERSION%
  */
 class DeveloperSolutionBuilder :
-    DomainEntityWithDataBuilder<DeveloperSolution, DeveloperSolutionData, DeveloperSolutionDataBuilder>()
-{
+    DomainEntityWithDataBuilder<DeveloperSolution, DeveloperSolutionData, DeveloperSolutionDataBuilder>() {
 
     override fun dataBuilder() = DeveloperSolutionDataBuilder()
 
@@ -122,5 +120,4 @@ class DeveloperSolutionBuilder :
             data = data,
         )
     }
-
 }

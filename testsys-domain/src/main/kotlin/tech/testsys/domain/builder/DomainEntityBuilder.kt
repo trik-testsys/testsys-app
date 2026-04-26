@@ -62,7 +62,6 @@ interface DomainEntityBuilder<out Entity> : Builder<Entity> {
     fun createdNow() {
         createdAt = Instant.now()
     }
-
 }
 
 /**
@@ -89,7 +88,6 @@ interface DataCapable<Data, DataBuilder : Builder<Data>> {
      * @since %CURRENT_VERSION%
      */
     fun dataBuilder(): DataBuilder
-
 }
 
 /**
@@ -113,11 +111,9 @@ inline fun <Data, DataBuilder : Builder<Data>> DataCapable<Data, DataBuilder>.da
  * @since %CURRENT_VERSION%
  */
 abstract class DomainEntityWithDataBuilder<Entity, Data, DataBuilder : Builder<Data>> :
-    DomainEntityBuilder<Entity>, DataCapable<Data, DataBuilder>
-{
+    DomainEntityBuilder<Entity>, DataCapable<Data, DataBuilder> {
 
     override var id: Long? = null
     override var createdAt: Instant? = null
     override var data: Data? = null
-
 }

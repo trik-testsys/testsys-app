@@ -11,8 +11,8 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
-import java.time.Instant
 import java.time.Duration
+import java.time.Instant
 
 /**
  * Builder for constructing [ContestData].
@@ -160,5 +160,4 @@ class ContestBuilder : DomainEntityWithDataBuilder<Contest, ContestData, Contest
             data = data,
         )
     }
-
 }

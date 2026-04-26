@@ -2,8 +2,8 @@ package tech.testsys.infra.database.jpa.entity.user.single
 
 import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
-import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
+import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 /**
@@ -33,7 +33,7 @@ class CompetitionToObserverJpaEntity(
     id: CompetitionToObserverId,
 ) : CompositeJpaEntity<CompetitionToObserverId>(id) {
 
-    constructor(competitionId: Long, observerId: Long): this(CompetitionToObserverId(competitionId, observerId))
+    constructor(competitionId: Long, observerId: Long) : this(CompetitionToObserverId(competitionId, observerId))
 }
 
 /**

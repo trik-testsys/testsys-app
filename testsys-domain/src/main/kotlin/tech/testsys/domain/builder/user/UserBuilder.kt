@@ -15,5 +15,5 @@ import tech.testsys.domain.model.user.UserId
  * @param DataBuilder the builder type used to construct [Data].
  * @since %CURRENT_VERSION%
  */
-abstract class UserBuilder<UI : UserId, U: User<UI>, Data, DataBuilder: Builder<Data>>
-    : DomainEntityWithDataBuilder<U, Data, DataBuilder>()
+abstract class UserBuilder<UI : UserId, U : User<UI>, Data, DataBuilder : Builder<Data>> :
+    DomainEntityWithDataBuilder<U, Data, DataBuilder>()

@@ -41,6 +41,13 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
     var versionBucket: UUID? = null
 
     /**
+     * Chooser for selecting the programming language of the exercise.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    val language = LanguageChooser()
+
+    /**
      * Sets the file data for the exercise.
      *
      * @param uploadedFilename the original filename of the uploaded file.
@@ -50,13 +57,6 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
     }
-
-    /**
-     * Chooser for selecting the programming language of the exercise.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    val language = LanguageChooser()
 
     /**
      * Builds the [ExerciseData] instance.
@@ -79,7 +79,6 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
             versionBucket = versionBucket,
         )
     }
-
 }
 
 /**
@@ -109,5 +108,4 @@ class ExerciseBuilder : DomainEntityWithDataBuilder<Exercise, ExerciseData, Exer
             data = data,
         )
     }
-
 }

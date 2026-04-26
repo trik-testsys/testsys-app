@@ -1,7 +1,6 @@
 package tech.testsys.domain.builder.util.chooser
 
 import tech.testsys.domain.builder.Builder
-import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.GradingResult
@@ -43,7 +42,6 @@ class SubmissionStatusChooser : Chooser<SubmissionStatus>() {
     fun inProgress() = makeChoice(object : Builder<SubmissionStatus> {
         override fun build() = SubmissionStatus.InProgress
     })
-
 }
 
 class GradingSubmissionStatusBuilder : Builder<SubmissionStatus> {

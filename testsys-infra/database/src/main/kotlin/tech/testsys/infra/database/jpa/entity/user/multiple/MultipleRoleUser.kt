@@ -4,13 +4,13 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
+import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 
 /**
  * Roles a multiple-role user may take within a community.
  *
- * @see tech.testsys.domain.model.user.UserRole
+ * @see tech.testsys.domain.model.user.MultipleRoleUser
  * @since %CURRENT_VERSION%
  */
 enum class UserMultipleRoleJpaEnum {

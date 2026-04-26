@@ -1,4 +1,4 @@
- package tech.testsys.domain.builder.user
+package tech.testsys.domain.builder.user
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DataCapable
@@ -12,7 +12,6 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.JudgmentOrderId
-import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
@@ -31,46 +30,14 @@ import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.StudentData
 import java.time.Instant
 
-
- /**
-  * Abstract base builder for [CompatibleUserRole] instances without data.
-  * Provides community membership configuration common to all compatible roles.
-  *
-  * @param Role the concrete role type being built.
-  * @since %CURRENT_VERSION%
-  */
- abstract class CompatibleUserRoleBuilderWithoutData<Role : CompatibleUserRole> : Builder<Role> {
-
-     /**
-      * The list of communities this role is a member of.
-      *
-      * @since %CURRENT_VERSION%
-      */
-     var memberOf = mutableListOf<CommunityId>()
-
-     /**
-      * Sets the community membership list from raw ID values.
-      *
-      * @param communities the raw community IDs.
-      * @since %CURRENT_VERSION%
-      */
-     fun memberOf(communities: Iterable<Long>) {
-         memberOf = communities.map { CommunityId(it) }.toMutableList()
-     }
-
- }
-
 /**
- * Abstract base builder for [CompatibleUserRole] instances with data.
+ * Abstract base builder for [CompatibleUserRole] instances without data.
  * Provides community membership configuration common to all compatible roles.
  *
  * @param Role the concrete role type being built.
- * @param Data the type of associated data object.
- * @param DataBuilder the builder type used to construct [Data].
  * @since %CURRENT_VERSION%
  */
-abstract class CompatibleUserRoleBuilderWithData<Role : CompatibleUserRole, Data, DataBuilder : Builder<Data>>
-    : DomainEntityWithDataBuilder<Role, Data, DataBuilder>() {
+abstract class CompatibleUserRoleBuilderWithoutData<Role : CompatibleUserRole> : Builder<Role> {
 
     /**
      * The list of communities this role is a member of.
@@ -88,7 +55,36 @@ abstract class CompatibleUserRoleBuilderWithData<Role : CompatibleUserRole, Data
     fun memberOf(communities: Iterable<Long>) {
         memberOf = communities.map { CommunityId(it) }.toMutableList()
     }
+}
 
+/**
+ * Abstract base builder for [CompatibleUserRole] instances with data.
+ * Provides community membership configuration common to all compatible roles.
+ *
+ * @param Role the concrete role type being built.
+ * @param Data the type of associated data object.
+ * @param DataBuilder the builder type used to construct [Data].
+ * @since %CURRENT_VERSION%
+ */
+abstract class CompatibleUserRoleBuilderWithData<Role : CompatibleUserRole, Data, DataBuilder : Builder<Data>> :
+    DomainEntityWithDataBuilder<Role, Data, DataBuilder>() {
+
+    /**
+     * The list of communities this role is a member of.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    var memberOf = mutableListOf<CommunityId>()
+
+    /**
+     * Sets the community membership list from raw ID values.
+     *
+     * @param communities the raw community IDs.
+     * @since %CURRENT_VERSION%
+     */
+    fun memberOf(communities: Iterable<Long>) {
+        memberOf = communities.map { CommunityId(it) }.toMutableList()
+    }
 }
 
 /**
@@ -198,7 +194,6 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
             exercises = exercises.lazify(),
         )
     }
-
 }
 
 /**
@@ -226,7 +221,6 @@ class DeveloperBuilder : CompatibleUserRoleBuilderWithData<Developer, DeveloperD
             data = data,
         )
     }
-
 }
 
 /**
@@ -282,7 +276,6 @@ class StudentDataBuilder : Builder<StudentData> {
             submissions = submissions.lazify(),
         )
     }
-
 }
 
 /**
@@ -310,7 +303,6 @@ class StudentBuilder : CompatibleUserRoleBuilderWithData<Student, StudentData, S
             data = data,
         )
     }
-
 }
 
 /**
@@ -365,7 +357,6 @@ class JudgeDataBuilder : Builder<JudgeData> {
     override fun build() = JudgeData(
         judgmentOrders = judgmentOrders.lazify(),
     )
-
 }
 
 /**
@@ -393,7 +384,6 @@ class JudgeBuilder : CompatibleUserRoleBuilderWithData<Judge, JudgeData, JudgeDa
             data = data,
         )
     }
-
 }
 
 /**
@@ -447,7 +437,6 @@ class ManagerDataBuilder : Builder<ManagerData> {
         competitions = competitions.lazify(),
         classes = classes.lazify(),
     )
-
 }
 
 /**
@@ -475,7 +464,6 @@ class ManagerBuilder : CompatibleUserRoleBuilderWithData<Manager, ManagerData, M
             data = data,
         )
     }
-
 }
 
 private typealias Roles = MutableList<CompatibleUserRole>
@@ -592,7 +580,6 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
         name = requireField(name) { ::name },
         email = requireField(email) { ::email },
     )
-
 }
 
 /**
@@ -602,8 +589,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
  * @since %CURRENT_VERSION%
  */
 class MultipleRoleUserBuilder :
-    UserBuilder<MultipleRoleUserId, MultipleRoleUser, MultipleRoleUserData, MultipleRoleUserDataBuilder>()
-{
+    UserBuilder<MultipleRoleUserId, MultipleRoleUser, MultipleRoleUserData, MultipleRoleUserDataBuilder>() {
 
     override var id: Long? = null
     override var createdAt: Instant? = null
@@ -628,5 +614,4 @@ class MultipleRoleUserBuilder :
             data = data,
         )
     }
-
 }

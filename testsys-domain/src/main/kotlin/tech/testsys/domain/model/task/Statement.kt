@@ -20,5 +20,5 @@ class StatementData(
 class Statement(
     id: StatementId,
     createdAt: Instant,
-    val data: StatementData
+    val data: StatementData,
 ) : DomainEntity<StatementId>(id, createdAt)

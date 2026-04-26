@@ -13,8 +13,7 @@ import kotlin.reflect.KProperty0
  * @return a [LazyEntityList] backed by this list of IDs.
  * @since %CURRENT_VERSION%
  */
-fun <Id : DomainId, Entity : DomainEntity<Id>> List<Id>.lazify() =
-    LazyEntityList<Id, Entity>(this)
+fun <Id : DomainId, Entity : DomainEntity<Id>> List<Id>.lazify() = LazyEntityList<Id, Entity>(this)
 
 /**
  * Wraps a single domain ID into a [LazyEntity] for deferred entity resolution.
@@ -22,8 +21,7 @@ fun <Id : DomainId, Entity : DomainEntity<Id>> List<Id>.lazify() =
  * @return a [LazyEntity] backed by this ID.
  * @since %CURRENT_VERSION%
  */
-fun <Id : DomainId, Entity : DomainEntity<Id>> Id.lazify() =
-    LazyEntity<Id, Entity>(this)
+fun <Id : DomainId, Entity : DomainEntity<Id>> Id.lazify() = LazyEntity<Id, Entity>(this)
 
 internal fun <T> Builder<*>.requireField(value: T?, lazyField: () -> KProperty0<T?>): T = requireNotNull(value) {
     "${this::class.simpleName}: required field '${lazyField.invoke().name}' was not set"

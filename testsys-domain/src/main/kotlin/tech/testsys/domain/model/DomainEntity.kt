@@ -7,7 +7,7 @@ interface DomainId {
     val value: Long
 }
 
-abstract class DomainEntity<Id: DomainId>(
+abstract class DomainEntity<Id : DomainId>(
     val id: Id,
     val createdAt: Instant,
 ) {
@@ -26,7 +26,7 @@ abstract class DomainEntity<Id: DomainId>(
     }
 }
 
-class LazyEntity<Id: DomainId, Entity: DomainEntity<Id>>(val id: Id) {
+class LazyEntity<Id : DomainId, Entity : DomainEntity<Id>>(val id: Id) {
 
     private var value: Entity? = null
 
@@ -42,7 +42,7 @@ class LazyEntity<Id: DomainId, Entity: DomainEntity<Id>>(val id: Id) {
     }
 }
 
-class LazyNullableEntity<Id: DomainId, Event: DomainEntity<Id>>(val id: Id) {
+class LazyNullableEntity<Id : DomainId, Event : DomainEntity<Id>>(val id: Id) {
 
     private var value: Event? = null
     private var wasLoaded = false
@@ -58,7 +58,7 @@ class LazyNullableEntity<Id: DomainId, Event: DomainEntity<Id>>(val id: Id) {
     }
 }
 
-class LazyEntityList<Id: DomainId, Entity: DomainEntity<Id>>(val ids: List<Id>) {
+class LazyEntityList<Id : DomainId, Entity : DomainEntity<Id>>(val ids: List<Id>) {
     private var value: List<Entity>? = null
 
     fun load(persistence: EntityLoader<Id, Entity>, pageSize: Int = Int.MAX_VALUE, page: Int = 0): List<Entity> {

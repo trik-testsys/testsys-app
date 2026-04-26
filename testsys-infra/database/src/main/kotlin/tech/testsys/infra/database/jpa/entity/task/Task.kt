@@ -6,8 +6,8 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
-import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
+import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 /**
@@ -23,7 +23,7 @@ import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 enum class TaskStatusJpaEnum {
     NEW,
     UNCOMMITED,
-    COMMITED
+    COMMITED,
 }
 
 /**
@@ -53,7 +53,7 @@ class TestToTaskContentJpaEntity(
     id: TestToTaskContentId,
 ) : CompositeJpaEntity<TestToTaskContentId>(id) {
 
-    constructor(testId: Long, taskContentId: Long): this(TestToTaskContentId(testId, taskContentId))
+    constructor(testId: Long, taskContentId: Long) : this(TestToTaskContentId(testId, taskContentId))
 }
 
 /**
@@ -83,7 +83,7 @@ class DeveloperSolutionToTaskContentJpaEntity(
     id: DeveloperSolutionToTaskContentId,
 ) : CompositeJpaEntity<DeveloperSolutionToTaskContentId>(id) {
 
-    constructor(developerSolutionId: Long, taskContentId: Long): this(DeveloperSolutionToTaskContentId(developerSolutionId, taskContentId))
+    constructor(developerSolutionId: Long, taskContentId: Long) : this(DeveloperSolutionToTaskContentId(developerSolutionId, taskContentId))
 }
 
 /**
@@ -113,7 +113,7 @@ class TrikStudioVersionToTaskContentJpaEntity(
     id: TrikStudioVersionToTaskContentId,
 ) : CompositeJpaEntity<TrikStudioVersionToTaskContentId>(id) {
 
-    constructor(trikStudioVersionId: Long, taskContentId: Long): this(TrikStudioVersionToTaskContentId(trikStudioVersionId, taskContentId))
+    constructor(trikStudioVersionId: Long, taskContentId: Long) : this(TrikStudioVersionToTaskContentId(trikStudioVersionId, taskContentId))
 }
 
 /**
@@ -144,7 +144,7 @@ class CommunityToTaskJpaEntity(
     id: CommunityToTaskId,
 ) : CompositeJpaEntity<CommunityToTaskId>(id) {
 
-    constructor(communityId: Long, taskId: Long): this(CommunityToTaskId(communityId, taskId))
+    constructor(communityId: Long, taskId: Long) : this(CommunityToTaskId(communityId, taskId))
 }
 
 /**

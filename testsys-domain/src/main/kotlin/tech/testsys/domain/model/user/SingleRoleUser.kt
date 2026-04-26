@@ -46,7 +46,7 @@ class Observer(
 
 data class SupervisorData(
     override val accessToken: String,
-    override val name: String
+    override val name: String,
 ) : UserData
 
 class Supervisor(

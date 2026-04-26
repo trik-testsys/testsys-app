@@ -40,7 +40,8 @@ interface ContestToCompetitionJpaEntityRepository : CompositeJpaEntityRepository
  * @since %CURRENT_VERSION%
  */
 @Repository
-interface ParticipantToCompetitionJpaEntityRepository : CompositeJpaEntityRepository<ParticipantToCompetitionJpaEntity, ParticipantToCompetitionId> {
+interface ParticipantToCompetitionJpaEntityRepository :
+    CompositeJpaEntityRepository<ParticipantToCompetitionJpaEntity, ParticipantToCompetitionId> {
 
     @Query("select e from ParticipantToCompetitionJpaEntity e where e.id.participantId = :participantId")
     fun findAllByParticipantId(@Param("participantId") participantId: Long): List<ParticipantToCompetitionJpaEntity>

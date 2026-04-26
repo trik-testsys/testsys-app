@@ -22,7 +22,10 @@ interface MultipleRoleToUserJpaEntityRepository : CompositeJpaEntityRepository<M
     fun findAllByMultipleRole(@Param("multipleRole") multipleRole: UserMultipleRoleJpaEnum): List<MultipleRoleToUserJpaEntity>
 
     @Query("select e from MultipleRoleToUserJpaEntity e where e.id.multipleRole = :multipleRole")
-    fun findAllByMultipleRole(@Param("multipleRole") multipleRole: UserMultipleRoleJpaEnum, pageable: Pageable): Page<MultipleRoleToUserJpaEntity>
+    fun findAllByMultipleRole(
+        @Param("multipleRole") multipleRole: UserMultipleRoleJpaEnum,
+        pageable: Pageable,
+    ): Page<MultipleRoleToUserJpaEntity>
 
     @Query("select e from MultipleRoleToUserJpaEntity e where e.id.userId = :userId")
     fun findAllByUserId(@Param("userId") userId: Long): List<MultipleRoleToUserJpaEntity>

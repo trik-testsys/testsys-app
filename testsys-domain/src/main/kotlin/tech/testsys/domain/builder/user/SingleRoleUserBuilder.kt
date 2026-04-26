@@ -25,12 +25,11 @@ import java.time.Instant
  * @param DataBuilder the builder type used to construct [Data].
  * @since %CURRENT_VERSION%
  */
-abstract class SingleRoleUserBuilder<U: SingleRoleUser, Data, DataBuilder: Builder<Data>>
-    : UserBuilder<SingleRoleUserId, U, Data, DataBuilder>() {
+abstract class SingleRoleUserBuilder<U : SingleRoleUser, Data, DataBuilder : Builder<Data>> :
+    UserBuilder<SingleRoleUserId, U, Data, DataBuilder>() {
 
     override var id: Long? = null
     override var createdAt: Instant? = null
-
 }
 
 /**
@@ -82,7 +81,6 @@ class ParticipantDataBuilder : Builder<ParticipantData> {
             name = requireField(name) { ::name },
         )
     }
-
 }
 
 /**
@@ -114,7 +112,6 @@ class ParticipantBuilder : SingleRoleUserBuilder<Participant, ParticipantData, P
             data = data,
         )
     }
-
 }
 
 /**
@@ -184,7 +181,6 @@ class ObserverDataBuilder : Builder<ObserverData> {
             name = requireField(name) { ::name },
         )
     }
-
 }
 
 /**
@@ -220,7 +216,6 @@ class ObserverBuilder : SingleRoleUserBuilder<Observer, ObserverData, ObserverDa
 
 class SupervisorDataBuilder : Builder<SupervisorData> {
 
-
     var accessToken: String? = null
 
     /**
@@ -240,7 +235,6 @@ class SupervisorDataBuilder : Builder<SupervisorData> {
         accessToken = requireField(accessToken) { ::accessToken },
         name = requireField(name) { ::name },
     )
-
 }
 
 /**
@@ -272,5 +266,4 @@ class SupervisorBuilder : SingleRoleUserBuilder<Supervisor, SupervisorData, Supe
             data = data,
         )
     }
-
 }

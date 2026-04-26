@@ -32,10 +32,7 @@ class TaskContentChooser : Chooser<TaskContent>() {
      * @param lastCommitedBuilder configuration block applied to the last-committed content builder.
      * @since %CURRENT_VERSION%
      */
-    fun uncommited(
-        wipBuilder: WipTaskContentBuilder.() -> Unit,
-        lastCommitedBuilder: CommittedTaskContentBuilder.() -> Unit,
-    ) {
+    fun uncommited(wipBuilder: WipTaskContentBuilder.() -> Unit, lastCommitedBuilder: CommittedTaskContentBuilder.() -> Unit) {
         val currentBuilder = choice as? UncommitedTaskContentBuilder ?: UncommitedTaskContentBuilder()
         currentBuilder.wip.apply(wipBuilder)
         currentBuilder.lastCommited.apply(lastCommitedBuilder)

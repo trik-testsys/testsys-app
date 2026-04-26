@@ -25,14 +25,11 @@ import java.time.Instant
 abstract class JpaEntity(
     @CreationTimestamp
     val createdAt: Instant = Instant.now(),
-
     @UpdateTimestamp
     var updatedAt: Instant = Instant.now(),
-
     @Version
     val version: Long = 0,
 )
-
 
 /**
  * Base abstract class for composite (multi-column) primary keys used with [CompositeJpaEntity].

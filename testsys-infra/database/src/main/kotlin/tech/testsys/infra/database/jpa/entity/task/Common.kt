@@ -17,7 +17,7 @@ enum class TrikSupportedLanguageEnum {
 
     PYTHON,
     JAVA_SCRIPT,
-    VISUAL_LANGUAGE
+    VISUAL_LANGUAGE,
 }
 
 /**

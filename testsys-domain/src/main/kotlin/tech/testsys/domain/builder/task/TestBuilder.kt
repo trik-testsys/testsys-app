@@ -70,7 +70,6 @@ class TestDataBuilder : Builder<TestData> {
             versionBucket = versionBucket,
         )
     }
-
 }
 
 /**
@@ -100,5 +99,4 @@ class TestBuilder : DomainEntityWithDataBuilder<Test, TestData, TestDataBuilder>
             data = data,
         )
     }
-
 }

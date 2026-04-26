@@ -1,3 +1,5 @@
+@file:Suppress("FunctionNaming")
+
 package tech.testsys.domain.builder.api
 
 import tech.testsys.domain.builder.group.*
@@ -15,8 +17,7 @@ import tech.testsys.domain.model.user.*
  * @return the constructed [ClassData].
  * @since %CURRENT_VERSION%
  */
-inline fun classData(builder: ClassDataBuilder.() -> Unit) =
-    ClassDataBuilder().apply(builder).build()
+inline fun classData(builder: ClassDataBuilder.() -> Unit) = ClassDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [Class].
@@ -25,8 +26,7 @@ inline fun classData(builder: ClassDataBuilder.() -> Unit) =
  * @return the constructed [Class].
  * @since %CURRENT_VERSION%
  */
-inline fun `class`(builder: ClassBuilder.() -> Unit) =
-    ClassBuilder().apply(builder).build()
+inline fun `class`(builder: ClassBuilder.() -> Unit) = ClassBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [CommunityData].
@@ -35,8 +35,7 @@ inline fun `class`(builder: ClassBuilder.() -> Unit) =
  * @return the constructed [CommunityData].
  * @since %CURRENT_VERSION%
  */
-inline fun communityData(builder: CommunityDataBuilder.() -> Unit) =
-    CommunityDataBuilder().apply(builder).build()
+inline fun communityData(builder: CommunityDataBuilder.() -> Unit) = CommunityDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [Community].
@@ -45,8 +44,7 @@ inline fun communityData(builder: CommunityDataBuilder.() -> Unit) =
  * @return the constructed [Community].
  * @since %CURRENT_VERSION%
  */
-inline fun community(builder: CommunityBuilder.() -> Unit) =
-    CommunityBuilder().apply(builder).build()
+inline fun community(builder: CommunityBuilder.() -> Unit) = CommunityBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [CompetitionData].
@@ -55,8 +53,7 @@ inline fun community(builder: CommunityBuilder.() -> Unit) =
  * @return the constructed [CompetitionData].
  * @since %CURRENT_VERSION%
  */
-inline fun competitionData(builder: CompetitionDataBuilder.() -> Unit) =
-    CompetitionDataBuilder().apply(builder).build()
+inline fun competitionData(builder: CompetitionDataBuilder.() -> Unit) = CompetitionDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [Competition].
@@ -65,8 +62,7 @@ inline fun competitionData(builder: CompetitionDataBuilder.() -> Unit) =
  * @return the constructed [Competition].
  * @since %CURRENT_VERSION%
  */
-inline fun competition(builder: CompetitionBuilder.() -> Unit) =
-    CompetitionBuilder().apply(builder).build()
+inline fun competition(builder: CompetitionBuilder.() -> Unit) = CompetitionBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [ContestData].
@@ -75,8 +71,7 @@ inline fun competition(builder: CompetitionBuilder.() -> Unit) =
  * @return the constructed [ContestData].
  * @since %CURRENT_VERSION%
  */
-inline fun contestData(builder: ContestDataBuilder.() -> Unit) =
-    ContestDataBuilder().apply(builder).build()
+inline fun contestData(builder: ContestDataBuilder.() -> Unit) = ContestDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [Contest].
@@ -85,9 +80,7 @@ inline fun contestData(builder: ContestDataBuilder.() -> Unit) =
  * @return the constructed [Contest].
  * @since %CURRENT_VERSION%
  */
-inline fun contest(builder: ContestBuilder.() -> Unit) =
-    ContestBuilder().apply(builder).build()
-
+inline fun contest(builder: ContestBuilder.() -> Unit) = ContestBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [DeveloperSolutionData].
@@ -96,8 +89,7 @@ inline fun contest(builder: ContestBuilder.() -> Unit) =
  * @return the constructed [DeveloperSolutionData].
  * @since %CURRENT_VERSION%
  */
-inline fun developerSolutionData(builder: DeveloperSolutionDataBuilder.() -> Unit) =
-    DeveloperSolutionDataBuilder().apply(builder).build()
+inline fun developerSolutionData(builder: DeveloperSolutionDataBuilder.() -> Unit) = DeveloperSolutionDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [DeveloperSolution].
@@ -106,8 +98,7 @@ inline fun developerSolutionData(builder: DeveloperSolutionDataBuilder.() -> Uni
  * @return the constructed [DeveloperSolution].
  * @since %CURRENT_VERSION%
  */
-inline fun developerSolution(builder: DeveloperSolutionBuilder.() -> Unit) =
-    DeveloperSolutionBuilder().apply(builder).build()
+inline fun developerSolution(builder: DeveloperSolutionBuilder.() -> Unit) = DeveloperSolutionBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [ExerciseData].
@@ -116,8 +107,7 @@ inline fun developerSolution(builder: DeveloperSolutionBuilder.() -> Unit) =
  * @return the constructed [ExerciseData].
  * @since %CURRENT_VERSION%
  */
-inline fun exerciseData(builder: ExerciseDataBuilder.() -> Unit) =
-    ExerciseDataBuilder().apply(builder).build()
+inline fun exerciseData(builder: ExerciseDataBuilder.() -> Unit) = ExerciseDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building an [Exercise].
@@ -126,9 +116,7 @@ inline fun exerciseData(builder: ExerciseDataBuilder.() -> Unit) =
  * @return the constructed [Exercise].
  * @since %CURRENT_VERSION%
  */
-inline fun exercise(builder: ExerciseBuilder.() -> Unit) =
-    ExerciseBuilder().apply(builder).build()
-
+inline fun exercise(builder: ExerciseBuilder.() -> Unit) = ExerciseBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [JudgmentOrderData].
@@ -137,8 +125,7 @@ inline fun exercise(builder: ExerciseBuilder.() -> Unit) =
  * @return the constructed [JudgmentOrderData].
  * @since %CURRENT_VERSION%
  */
-inline fun judgmentOrderData(builder: JudgmentOrderDataBuilder.() -> Unit) =
-    JudgmentOrderDataBuilder().apply(builder).build()
+inline fun judgmentOrderData(builder: JudgmentOrderDataBuilder.() -> Unit) = JudgmentOrderDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [JudgmentOrder].
@@ -147,9 +134,7 @@ inline fun judgmentOrderData(builder: JudgmentOrderDataBuilder.() -> Unit) =
  * @return the constructed [JudgmentOrder].
  * @since %CURRENT_VERSION%
  */
-inline fun judgmentOrder(builder: JudgmentOrderBuilder.() -> Unit) =
-    JudgmentOrderBuilder().apply(builder).build()
-
+inline fun judgmentOrder(builder: JudgmentOrderBuilder.() -> Unit) = JudgmentOrderBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [SolutionData].
@@ -158,8 +143,7 @@ inline fun judgmentOrder(builder: JudgmentOrderBuilder.() -> Unit) =
  * @return the constructed [SolutionData].
  * @since %CURRENT_VERSION%
  */
-inline fun solutionData(builder: SolutionDataBuilder.() -> Unit) =
-    SolutionDataBuilder().apply(builder).build()
+inline fun solutionData(builder: SolutionDataBuilder.() -> Unit) = SolutionDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [Solution].
@@ -168,8 +152,7 @@ inline fun solutionData(builder: SolutionDataBuilder.() -> Unit) =
  * @return the constructed [Solution].
  * @since %CURRENT_VERSION%
  */
-inline fun solution(builder: SolutionBuilder.() -> Unit) =
-    SolutionBuilder().apply(builder).build()
+inline fun solution(builder: SolutionBuilder.() -> Unit) = SolutionBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [VerdictData].
@@ -204,8 +187,7 @@ fun GradingResult.graded() = SubmissionStatus.Graded(this)
  * @return the constructed [StatementData].
  * @since %CURRENT_VERSION%
  */
-inline fun statementData(builder: StatementDataBuilder.() -> Unit) =
-    StatementDataBuilder().apply(builder).build()
+inline fun statementData(builder: StatementDataBuilder.() -> Unit) = StatementDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [Statement].
@@ -214,8 +196,7 @@ inline fun statementData(builder: StatementDataBuilder.() -> Unit) =
  * @return the constructed [Statement].
  * @since %CURRENT_VERSION%
  */
-inline fun statement(builder: StatementBuilder.() -> Unit) =
-    StatementBuilder().apply(builder).build()
+inline fun statement(builder: StatementBuilder.() -> Unit) = StatementBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [SubmissionData].
@@ -224,8 +205,7 @@ inline fun statement(builder: StatementBuilder.() -> Unit) =
  * @return the constructed [SubmissionData].
  * @since %CURRENT_VERSION%
  */
-inline fun submissionData(builder: SubmissionDataBuilder.() -> Unit) =
-    SubmissionDataBuilder().apply(builder).build()
+inline fun submissionData(builder: SubmissionDataBuilder.() -> Unit) = SubmissionDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [Submission].
@@ -234,8 +214,7 @@ inline fun submissionData(builder: SubmissionDataBuilder.() -> Unit) =
  * @return the constructed [Submission].
  * @since %CURRENT_VERSION%
  */
-inline fun submission(builder: SubmissionBuilder.() -> Unit) =
-    SubmissionBuilder().apply(builder).build()
+inline fun submission(builder: SubmissionBuilder.() -> Unit) = SubmissionBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [TaskData].
@@ -244,8 +223,7 @@ inline fun submission(builder: SubmissionBuilder.() -> Unit) =
  * @return the constructed [TaskData].
  * @since %CURRENT_VERSION%
  */
-inline fun taskData(builder: TaskDataBuilder.() -> Unit) =
-    TaskDataBuilder().apply(builder).build()
+inline fun taskData(builder: TaskDataBuilder.() -> Unit) = TaskDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [TaskContent.New].
@@ -254,8 +232,7 @@ inline fun taskData(builder: TaskDataBuilder.() -> Unit) =
  * @return the constructed [TaskContent.New].
  * @since %CURRENT_VERSION%
  */
-inline fun taskContentNew(builder: WipTaskContentBuilder.() -> Unit) =
-    TaskContent.New(WipTaskContentBuilder().apply(builder).build())
+inline fun taskContentNew(builder: WipTaskContentBuilder.() -> Unit) = TaskContent.New(WipTaskContentBuilder().apply(builder).build())
 
 /**
  * DSL entry point for building [TaskContent.Committed].
@@ -278,11 +255,10 @@ inline fun taskContentCommited(builder: CommittedTaskContentBuilder.() -> Unit) 
 inline fun taskContentUncommited(
     wipBuilder: WipTaskContentBuilder.() -> Unit,
     lastCommitedBuilder: CommittedTaskContentBuilder.() -> Unit,
-) =
-    TaskContent.Uncommited(
-        WipTaskContentBuilder().apply(wipBuilder).build(),
-        CommittedTaskContentBuilder().apply(lastCommitedBuilder).build()
-    )
+) = TaskContent.Uncommited(
+    wip = WipTaskContentBuilder().apply(wipBuilder).build(),
+    lastCommited = CommittedTaskContentBuilder().apply(lastCommitedBuilder).build(),
+)
 
 /**
  * DSL entry point for building a [Task].
@@ -291,8 +267,7 @@ inline fun taskContentUncommited(
  * @return the constructed [Task].
  * @since %CURRENT_VERSION%
  */
-inline fun task(builder: TaskBuilder.() -> Unit) =
-    TaskBuilder().apply(builder).build()
+inline fun task(builder: TaskBuilder.() -> Unit) = TaskBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [TestData].
@@ -301,8 +276,7 @@ inline fun task(builder: TaskBuilder.() -> Unit) =
  * @return the constructed [TestData].
  * @since %CURRENT_VERSION%
  */
-inline fun testData(builder: TestDataBuilder.() -> Unit) =
-    TestDataBuilder().apply(builder).build()
+inline fun testData(builder: TestDataBuilder.() -> Unit) = TestDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [Test].
@@ -311,8 +285,7 @@ inline fun testData(builder: TestDataBuilder.() -> Unit) =
  * @return the constructed [Test].
  * @since %CURRENT_VERSION%
  */
-inline fun test(builder: TestBuilder.() -> Unit) =
-    TestBuilder().apply(builder).build()
+inline fun test(builder: TestBuilder.() -> Unit) = TestBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [MultipleRoleUserData].
@@ -321,8 +294,7 @@ inline fun test(builder: TestBuilder.() -> Unit) =
  * @return the constructed [MultipleRoleUserData].
  * @since %CURRENT_VERSION%
  */
-inline fun multipleRoleUserData(builder: MultipleRoleUserDataBuilder.() -> Unit) =
-    MultipleRoleUserDataBuilder().apply(builder).build()
+inline fun multipleRoleUserData(builder: MultipleRoleUserDataBuilder.() -> Unit) = MultipleRoleUserDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [MultipleRoleUser].
@@ -331,8 +303,7 @@ inline fun multipleRoleUserData(builder: MultipleRoleUserDataBuilder.() -> Unit)
  * @return the constructed [MultipleRoleUser].
  * @since %CURRENT_VERSION%
  */
-inline fun multipleRoleUser(builder: MultipleRoleUserBuilder.() -> Unit) =
-    MultipleRoleUserBuilder().apply(builder).build()
+inline fun multipleRoleUser(builder: MultipleRoleUserBuilder.() -> Unit) = MultipleRoleUserBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [ObserverData].
@@ -341,8 +312,7 @@ inline fun multipleRoleUser(builder: MultipleRoleUserBuilder.() -> Unit) =
  * @return the constructed [ObserverData].
  * @since %CURRENT_VERSION%
  */
-inline fun observerData(builder: ObserverDataBuilder.() -> Unit) =
-    ObserverDataBuilder().apply(builder).build()
+inline fun observerData(builder: ObserverDataBuilder.() -> Unit) = ObserverDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building an [Observer].
@@ -351,8 +321,7 @@ inline fun observerData(builder: ObserverDataBuilder.() -> Unit) =
  * @return the constructed [Observer].
  * @since %CURRENT_VERSION%
  */
-inline fun observer(builder: ObserverBuilder.() -> Unit) =
-    ObserverBuilder().apply(builder).build()
+inline fun observer(builder: ObserverBuilder.() -> Unit) = ObserverBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [ParticipantData].
@@ -361,8 +330,7 @@ inline fun observer(builder: ObserverBuilder.() -> Unit) =
  * @return the constructed [ParticipantData].
  * @since %CURRENT_VERSION%
  */
-inline fun participantData(builder: ParticipantDataBuilder.() -> Unit) =
-    ParticipantDataBuilder().apply(builder).build()
+inline fun participantData(builder: ParticipantDataBuilder.() -> Unit) = ParticipantDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [Participant].
@@ -371,8 +339,7 @@ inline fun participantData(builder: ParticipantDataBuilder.() -> Unit) =
  * @return the constructed [Participant].
  * @since %CURRENT_VERSION%
  */
-inline fun participant(builder: ParticipantBuilder.() -> Unit) =
-    ParticipantBuilder().apply(builder).build()
+inline fun participant(builder: ParticipantBuilder.() -> Unit) = ParticipantBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [SupervisorData].
@@ -381,8 +348,7 @@ inline fun participant(builder: ParticipantBuilder.() -> Unit) =
  * @return the constructed [SupervisorData].
  * @since %CURRENT_VERSION%
  */
-inline fun supervisorData(builder: SupervisorDataBuilder.() -> Unit) =
-    SupervisorDataBuilder().apply(builder).build()
+inline fun supervisorData(builder: SupervisorDataBuilder.() -> Unit) = SupervisorDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building a [Supervisor].
@@ -391,8 +357,7 @@ inline fun supervisorData(builder: SupervisorDataBuilder.() -> Unit) =
  * @return the constructed [Supervisor].
  * @since %CURRENT_VERSION%
  */
-inline fun supervisor(builder: SupervisorBuilder.() -> Unit) =
-    SupervisorBuilder().apply(builder).build()
+inline fun supervisor(builder: SupervisorBuilder.() -> Unit) = SupervisorBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [DeveloperData].
@@ -401,8 +366,7 @@ inline fun supervisor(builder: SupervisorBuilder.() -> Unit) =
  * @return the constructed [DeveloperData].
  * @since %CURRENT_VERSION%
  */
-inline fun developerData(builder: DeveloperDataBuilder.() -> Unit) =
-    DeveloperDataBuilder().apply(builder).build()
+inline fun developerData(builder: DeveloperDataBuilder.() -> Unit) = DeveloperDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [StudentData].
@@ -411,8 +375,7 @@ inline fun developerData(builder: DeveloperDataBuilder.() -> Unit) =
  * @return the constructed [StudentData].
  * @since %CURRENT_VERSION%
  */
-inline fun studentData(builder: StudentDataBuilder.() -> Unit) =
-    StudentDataBuilder().apply(builder).build()
+inline fun studentData(builder: StudentDataBuilder.() -> Unit) = StudentDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [JudgeData].
@@ -421,8 +384,7 @@ inline fun studentData(builder: StudentDataBuilder.() -> Unit) =
  * @return the constructed [JudgeData].
  * @since %CURRENT_VERSION%
  */
-inline fun judgeData(builder: JudgeDataBuilder.() -> Unit) =
-    JudgeDataBuilder().apply(builder).build()
+inline fun judgeData(builder: JudgeDataBuilder.() -> Unit) = JudgeDataBuilder().apply(builder).build()
 
 /**
  * DSL entry point for building [ManagerData].
@@ -431,9 +393,7 @@ inline fun judgeData(builder: JudgeDataBuilder.() -> Unit) =
  * @return the constructed [ManagerData].
  * @since %CURRENT_VERSION%
  */
-inline fun managerData(builder: ManagerDataBuilder.() -> Unit) =
-    ManagerDataBuilder().apply(builder).build()
-
+inline fun managerData(builder: ManagerDataBuilder.() -> Unit) = ManagerDataBuilder().apply(builder).build()
 
 private fun SubmissionData.toBuilder(): SubmissionDataBuilder {
     val thisData = this
@@ -444,11 +404,13 @@ private fun SubmissionData.toBuilder(): SubmissionDataBuilder {
         judgmentOrders = thisData.judgmentOrders.ids.toMutableList()
 
         when (val originStatus = thisData.status) {
-            is SubmissionStatus.Graded -> status.graded {
-                when (val originGrade = originStatus.grade) {
-                    is GradingResult.GradingError -> status.error { description = originGrade.description }
-                    is GradingResult.Success -> status.success { verdict = originGrade.verdict.id }
-                    GradingResult.Timeout -> status.timeout()
+            is SubmissionStatus.Graded -> {
+                status.graded {
+                    when (val originGrade = originStatus.grade) {
+                        is GradingResult.GradingError -> status.error { description = originGrade.description }
+                        is GradingResult.Success -> status.success { verdict = originGrade.verdict.id }
+                        GradingResult.Timeout -> status.timeout()
+                    }
                 }
             }
             SubmissionStatus.InProgress -> status.inProgress()
@@ -473,7 +435,7 @@ fun Submission.withData(builder: SubmissionDataBuilder.() -> Unit): Submission {
     return Submission(
         this.id,
         this.createdAt,
-        this.data.toBuilder().apply(builder).build()
+        this.data.toBuilder().apply(builder).build(),
     )
 }
 
@@ -722,10 +684,12 @@ private fun CommittedTaskContentBuilder.populateFrom(content: CommitedTaskConten
 private fun TaskContentChooser.populateFrom(taskContent: TaskContent) {
     when (taskContent) {
         is TaskContent.New -> new { populateFrom(taskContent.wip) }
-        is TaskContent.Uncommited -> uncommited(
-            wipBuilder = { populateFrom(taskContent.wip) },
-            lastCommitedBuilder = { populateFrom(taskContent.lastCommited) },
-        )
+        is TaskContent.Uncommited -> {
+            uncommited(
+                wipBuilder = { populateFrom(taskContent.wip) },
+                lastCommitedBuilder = { populateFrom(taskContent.lastCommited) },
+            )
+        }
         is TaskContent.Committed -> committed { populateFrom(taskContent.lastCommited) }
     }
 }

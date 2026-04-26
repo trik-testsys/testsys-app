@@ -4,8 +4,8 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
-import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
+import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 /**
@@ -35,7 +35,7 @@ class StudentToClassJpaEntity(
     id: StudentToClassId,
 ) : CompositeJpaEntity<StudentToClassId>(id) {
 
-    constructor(studentId: Long, classId: Long): this(StudentToClassId(studentId, classId))
+    constructor(studentId: Long, classId: Long) : this(StudentToClassId(studentId, classId))
 }
 
 /**
@@ -65,7 +65,7 @@ class ContestToClassJpaEntity(
     id: ContestToClassId,
 ) : CompositeJpaEntity<ContestToClassId>(id) {
 
-    constructor(contestId: Long, classId: Long): this(ContestToClassId(contestId, classId))
+    constructor(contestId: Long, classId: Long) : this(ContestToClassId(contestId, classId))
 }
 
 /**

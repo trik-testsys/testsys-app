@@ -4,8 +4,8 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
-import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.CompositeId
+import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 
 /**
@@ -32,10 +32,10 @@ data class ContestToCompetitionId(
  */
 @Entity
 class ContestToCompetitionJpaEntity(
-    id: ContestToCompetitionId
+    id: ContestToCompetitionId,
 ) : CompositeJpaEntity<ContestToCompetitionId>(id) {
 
-    constructor(contestId: Long, competitionId: Long): this(ContestToCompetitionId(contestId, competitionId))
+    constructor(contestId: Long, competitionId: Long) : this(ContestToCompetitionId(contestId, competitionId))
 }
 
 /**
@@ -62,10 +62,10 @@ data class ParticipantToCompetitionId(
  */
 @Entity
 class ParticipantToCompetitionJpaEntity(
-    id: ParticipantToCompetitionId
+    id: ParticipantToCompetitionId,
 ) : CompositeJpaEntity<ParticipantToCompetitionId>(id) {
 
-    constructor(participantId: Long, competitionId: Long): this(ParticipantToCompetitionId(participantId, competitionId))
+    constructor(participantId: Long, competitionId: Long) : this(ParticipantToCompetitionId(participantId, competitionId))
 }
 
 /**

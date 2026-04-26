@@ -14,7 +14,7 @@ import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
 enum class UserTypeJpaEnum {
 
     MULTIPLE_ROLE,
-    SINGLE_ROLE
+    SINGLE_ROLE,
 }
 
 /**

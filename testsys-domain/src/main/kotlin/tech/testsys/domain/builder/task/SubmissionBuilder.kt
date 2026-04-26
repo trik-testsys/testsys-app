@@ -2,9 +2,9 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
-import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.chooser.SubmissionKindChooser
 import tech.testsys.domain.builder.util.chooser.SubmissionStatusChooser
+import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.Score
@@ -17,6 +17,7 @@ import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.UserId
 
 /**
  * Builder for constructing [VerdictData].
@@ -84,7 +85,6 @@ class VerdictDataBuilder : Builder<VerdictData> {
             submission = submission.lazify(),
         )
     }
-
 }
 
 /**
@@ -114,7 +114,6 @@ class VerdictBuilder : DomainEntityWithDataBuilder<Verdict, VerdictData, Verdict
             data = data,
         )
     }
-
 }
 
 /**
@@ -129,17 +128,7 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
      *
      * @since %CURRENT_VERSION%
      */
-    var author: MultipleRoleUserId? = null
-
-    /**
-     * Sets the [author] from a raw ID value.
-     *
-     * @param author the raw author ID.
-     * @since %CURRENT_VERSION%
-     */
-    fun author(author: Long) {
-        this.author = MultipleRoleUserId(author)
-    }
+    var author: UserId? = null
 
     /**
      * The ID of the solution being submitted.
@@ -163,6 +152,30 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     var judgmentOrders = mutableListOf<JudgmentOrderId>()
 
     /**
+     * Chooser for selecting the submission status.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    val status = SubmissionStatusChooser()
+
+    /**
+     * Chooser for selecting the submission kind.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    val kind = SubmissionKindChooser()
+
+    /**
+     * Sets the [author] from a raw ID value.
+     *
+     * @param author the raw author ID.
+     * @since %CURRENT_VERSION%
+     */
+    fun author(author: Long) {
+        this.author = MultipleRoleUserId(author)
+    }
+
+    /**
      * Sets the [solution] from a raw ID value.
      *
      * @param solution the raw solution ID.
@@ -181,20 +194,6 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     fun task(task: Long) {
         this.task = TaskId(task)
     }
-
-    /**
-     * Chooser for selecting the submission status.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    val status = SubmissionStatusChooser()
-
-    /**
-     * Chooser for selecting the submission kind.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    val kind = SubmissionKindChooser()
 
     /**
      * Sets the [judgmentOrders] list from raw ID values.
@@ -224,10 +223,9 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
             task = task.lazify(),
             status = status.build(),
             kind = kind.build(),
-            judgmentOrders = judgmentOrders.lazify()
+            judgmentOrders = judgmentOrders.lazify(),
         )
     }
-
 }
 
 /**
@@ -257,5 +255,4 @@ class SubmissionBuilder : DomainEntityWithDataBuilder<Submission, SubmissionData
             data = data,
         )
     }
-
 }

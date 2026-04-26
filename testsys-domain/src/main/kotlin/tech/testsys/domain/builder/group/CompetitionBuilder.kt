@@ -122,5 +122,4 @@ class CompetitionBuilder : DomainEntityWithDataBuilder<Competition, CompetitionD
             data = data,
         )
     }
-
 }

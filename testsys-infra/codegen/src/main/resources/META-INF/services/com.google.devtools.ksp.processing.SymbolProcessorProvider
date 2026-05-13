@@ -1,1 +1,2 @@
 tech.testsys.infra.codegen.jpa.CompositeKeyConstructorProcessorProvider
+tech.testsys.infra.codegen.jpa.FieldNamesProcessorProvider

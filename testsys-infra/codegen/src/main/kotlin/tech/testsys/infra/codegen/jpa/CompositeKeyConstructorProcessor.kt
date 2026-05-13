@@ -156,6 +156,7 @@ internal class CompositeKeyConstructorProcessor(
     }
 
     private companion object {
+
         const val COMPOSITE_JPA_ENTITY_FQN = "tech.testsys.infra.database.jpa.entity.CompositeJpaEntity"
         const val COMPOSITE_KEY_CONSTRUCTOR_FQN = "tech.testsys.infra.codegen.jpa.CompositeKeyConstructor"
     }

@@ -2,6 +2,7 @@ package tech.testsys.infra.database.jpa.entity.user.single
 
 import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
+import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
@@ -29,12 +30,8 @@ data class CompetitionToObserverId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class CompetitionToObserverJpaEntity(
-    id: CompetitionToObserverId,
-) : CompositeJpaEntity<CompetitionToObserverId>(id) {
-
-    constructor(competitionId: Long, observerId: Long) : this(CompetitionToObserverId(competitionId, observerId))
-}
+@CompositeKeyConstructor
+class CompetitionToObserverJpaEntity(id: CompetitionToObserverId) : CompositeJpaEntity<CompetitionToObserverId>(id)
 
 /**
  * JPA entity representing the observer role data attached to a user.

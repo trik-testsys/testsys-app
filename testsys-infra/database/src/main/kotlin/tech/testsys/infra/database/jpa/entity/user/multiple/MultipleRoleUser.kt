@@ -4,6 +4,7 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 
@@ -48,9 +49,5 @@ data class MultipleRoleToUserId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class MultipleRoleToUserJpaEntity(
-    id: MultipleRoleToUserId,
-) : CompositeJpaEntity<MultipleRoleToUserId>(id) {
-
-    constructor(multipleRole: UserMultipleRoleJpaEnum, userId: Long, communityId: Long): this(MultipleRoleToUserId(multipleRole, userId, communityId))
-}
+@CompositeKeyConstructor
+class MultipleRoleToUserJpaEntity(id: MultipleRoleToUserId) : CompositeJpaEntity<MultipleRoleToUserId>(id)

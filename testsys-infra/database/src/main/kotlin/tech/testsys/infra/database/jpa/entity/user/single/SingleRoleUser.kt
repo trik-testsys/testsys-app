@@ -4,6 +4,7 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
+import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 
@@ -45,9 +46,5 @@ data class SingleRoleToUserId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class SingleRoleToUserJpaEntity(
-    id: SingleRoleToUserId,
-) : CompositeJpaEntity<SingleRoleToUserId>(id) {
-
-    constructor(singleRole: UserSingleRoleJpaEnum, userId: Long) : this(SingleRoleToUserId(singleRole, userId))
-}
+@CompositeKeyConstructor
+class SingleRoleToUserJpaEntity(id: SingleRoleToUserId) : CompositeJpaEntity<SingleRoleToUserId>(id)

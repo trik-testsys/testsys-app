@@ -4,6 +4,7 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
+import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
@@ -31,12 +32,8 @@ data class StudentToClassId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class StudentToClassJpaEntity(
-    id: StudentToClassId,
-) : CompositeJpaEntity<StudentToClassId>(id) {
-
-    constructor(studentId: Long, classId: Long) : this(StudentToClassId(studentId, classId))
-}
+@CompositeKeyConstructor
+class StudentToClassJpaEntity(id: StudentToClassId) : CompositeJpaEntity<StudentToClassId>(id)
 
 /**
  * Composite primary key for [ContestToClassJpaEntity].
@@ -61,12 +58,8 @@ data class ContestToClassId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class ContestToClassJpaEntity(
-    id: ContestToClassId,
-) : CompositeJpaEntity<ContestToClassId>(id) {
-
-    constructor(contestId: Long, classId: Long) : this(ContestToClassId(contestId, classId))
-}
+@CompositeKeyConstructor
+class ContestToClassJpaEntity(id: ContestToClassId) : CompositeJpaEntity<ContestToClassId>(id)
 
 /**
  * JPA entity representing a class domain entity.

@@ -9,6 +9,8 @@ import com.google.devtools.ksp.processing.SymbolProcessorProvider
  *
  * Discovered at runtime via the SPI file at
  * `META-INF/services/com.google.devtools.ksp.processing.SymbolProcessorProvider`.
+ *
+ * @since %CURRENT_VERSION%
  */
 class CompositeKeyConstructorProcessorProvider : SymbolProcessorProvider {
 

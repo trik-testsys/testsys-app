@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
+import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
@@ -49,12 +50,8 @@ data class TestToTaskContentId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class TestToTaskContentJpaEntity(
-    id: TestToTaskContentId,
-) : CompositeJpaEntity<TestToTaskContentId>(id) {
-
-    constructor(testId: Long, taskContentId: Long) : this(TestToTaskContentId(testId, taskContentId))
-}
+@CompositeKeyConstructor
+class TestToTaskContentJpaEntity(id: TestToTaskContentId) : CompositeJpaEntity<TestToTaskContentId>(id)
 
 /**
  * Composite primary key for [DeveloperSolutionToTaskContentJpaEntity].
@@ -79,12 +76,9 @@ data class DeveloperSolutionToTaskContentId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class DeveloperSolutionToTaskContentJpaEntity(
-    id: DeveloperSolutionToTaskContentId,
-) : CompositeJpaEntity<DeveloperSolutionToTaskContentId>(id) {
-
-    constructor(developerSolutionId: Long, taskContentId: Long) : this(DeveloperSolutionToTaskContentId(developerSolutionId, taskContentId))
-}
+@CompositeKeyConstructor
+class DeveloperSolutionToTaskContentJpaEntity(id: DeveloperSolutionToTaskContentId) :
+    CompositeJpaEntity<DeveloperSolutionToTaskContentId>(id)
 
 /**
  * Composite primary key for [TrikStudioVersionToTaskContentJpaEntity].
@@ -109,12 +103,9 @@ data class TrikStudioVersionToTaskContentId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class TrikStudioVersionToTaskContentJpaEntity(
-    id: TrikStudioVersionToTaskContentId,
-) : CompositeJpaEntity<TrikStudioVersionToTaskContentId>(id) {
-
-    constructor(trikStudioVersionId: Long, taskContentId: Long) : this(TrikStudioVersionToTaskContentId(trikStudioVersionId, taskContentId))
-}
+@CompositeKeyConstructor
+class TrikStudioVersionToTaskContentJpaEntity(id: TrikStudioVersionToTaskContentId) :
+    CompositeJpaEntity<TrikStudioVersionToTaskContentId>(id)
 
 /**
  * Composite primary key for [CommunityToTaskJpaEntity].
@@ -140,12 +131,8 @@ data class CommunityToTaskId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class CommunityToTaskJpaEntity(
-    id: CommunityToTaskId,
-) : CompositeJpaEntity<CommunityToTaskId>(id) {
-
-    constructor(communityId: Long, taskId: Long) : this(CommunityToTaskId(communityId, taskId))
-}
+@CompositeKeyConstructor
+class CommunityToTaskJpaEntity(id: CommunityToTaskId) : CompositeJpaEntity<CommunityToTaskId>(id)
 
 /**
  * JPA entity representing a single revision of a task's contents

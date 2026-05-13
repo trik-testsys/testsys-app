@@ -4,6 +4,7 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
+import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
@@ -31,12 +32,8 @@ data class ContestToCompetitionId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class ContestToCompetitionJpaEntity(
-    id: ContestToCompetitionId,
-) : CompositeJpaEntity<ContestToCompetitionId>(id) {
-
-    constructor(contestId: Long, competitionId: Long) : this(ContestToCompetitionId(contestId, competitionId))
-}
+@CompositeKeyConstructor
+class ContestToCompetitionJpaEntity(id: ContestToCompetitionId) : CompositeJpaEntity<ContestToCompetitionId>(id)
 
 /**
  * Composite primary key for [ParticipantToCompetitionJpaEntity].
@@ -61,12 +58,8 @@ data class ParticipantToCompetitionId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class ParticipantToCompetitionJpaEntity(
-    id: ParticipantToCompetitionId,
-) : CompositeJpaEntity<ParticipantToCompetitionId>(id) {
-
-    constructor(participantId: Long, competitionId: Long) : this(ParticipantToCompetitionId(participantId, competitionId))
-}
+@CompositeKeyConstructor
+class ParticipantToCompetitionJpaEntity(id: ParticipantToCompetitionId) : CompositeJpaEntity<ParticipantToCompetitionId>(id)
 
 /**
  * JPA entity representing a competition domain entity.

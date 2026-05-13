@@ -4,6 +4,7 @@ import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
+import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
 import tech.testsys.infra.database.jpa.entity.CompositeId
 import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
@@ -32,12 +33,8 @@ data class TaskToContestId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class TaskToContestJpaEntity(
-    id: TaskToContestId,
-) : CompositeJpaEntity<TaskToContestId>(id) {
-
-    constructor(taskId: Long, contestId: Long) : this(TaskToContestId(taskId, contestId))
-}
+@CompositeKeyConstructor
+class TaskToContestJpaEntity(id: TaskToContestId) : CompositeJpaEntity<TaskToContestId>(id)
 
 /**
  * Composite primary key for [CommunityToContestJpaEntity].
@@ -63,12 +60,8 @@ data class CommunityToContestId(
  * @since %CURRENT_VERSION%
  */
 @Entity
-class CommunityToContestJpaEntity(
-    id: CommunityToContestId,
-) : CompositeJpaEntity<CommunityToContestId>(id) {
-
-    constructor(communityId: Long, contestId: Long) : this(CommunityToContestId(communityId, contestId))
-}
+@CompositeKeyConstructor
+class CommunityToContestJpaEntity(id: CommunityToContestId) : CompositeJpaEntity<CommunityToContestId>(id)
 
 /**
  * JPA entity representing a contest domain entity.

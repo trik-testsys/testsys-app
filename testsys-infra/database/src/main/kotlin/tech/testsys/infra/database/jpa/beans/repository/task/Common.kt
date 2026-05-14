@@ -19,4 +19,7 @@ interface FileDataJpaEntityRepository : SequenceJpaEntityRepository<FileDataJpaE
  * @since %CURRENT_VERSION%
  */
 @Repository
-interface TrikStudioVersionJpaEntityRepository : SequenceJpaEntityRepository<TrikStudioVersionJpaEntity>
+interface TrikStudioVersionJpaEntityRepository : SequenceJpaEntityRepository<TrikStudioVersionJpaEntity> {
+
+    fun findByTag(tag: String): TrikStudioVersionJpaEntity?
+}

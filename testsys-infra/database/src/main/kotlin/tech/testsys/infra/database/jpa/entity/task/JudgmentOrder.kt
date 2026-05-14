@@ -20,4 +20,5 @@ class JudgmentOrderJpaEntity(
     val verdictId: Long,
     @field:JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     val reason: String,
-) : SequenceJpaEntity()
+    id: Long? = null,
+) : SequenceJpaEntity(id)

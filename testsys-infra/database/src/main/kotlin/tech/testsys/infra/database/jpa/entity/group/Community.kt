@@ -18,4 +18,5 @@ class CommunityJpaEntity(
     @field:JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     val description: String,
     val ownerId: Long,
-) : SequenceJpaEntity()
+    id: Long? = null,
+) : SequenceJpaEntity(id)

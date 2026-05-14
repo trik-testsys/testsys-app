@@ -83,4 +83,5 @@ class ContestJpaEntity(
     val contestDurationMillis: Long,
     val attemptDurationMillis: Long,
     val trikStudioVersionId: Long,
-) : SequenceJpaEntity()
+    id: Long? = null,
+) : SequenceJpaEntity(id)

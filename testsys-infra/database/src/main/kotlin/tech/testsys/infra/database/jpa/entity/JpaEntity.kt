@@ -24,11 +24,11 @@ import java.time.Instant
 @MappedSuperclass
 abstract class JpaEntity(
     @CreationTimestamp
-    val createdAt: Instant = Instant.now(),
+    var createdAt: Instant = Instant.now(),
     @UpdateTimestamp
     var updatedAt: Instant = Instant.now(),
     @Version
-    val version: Long = 0,
+    var version: Long = 0,
 )
 
 /**

@@ -19,7 +19,8 @@ class VerdictJpaEntity(
     val score: Int,
     val taskId: Long,
     val submissionId: Long,
-) : SequenceJpaEntity()
+    id: Long? = null,
+) : SequenceJpaEntity(id)
 
 /**
  * Possible lifecycle states of a [SubmissionJpaEntity].
@@ -89,4 +90,5 @@ class SubmissionJpaEntity(
     @Enumerated(EnumType.STRING)
     val kind: SubmissionKindJpaEnum,
     val gradingContestId: Long?,
-) : SequenceJpaEntity()
+    id: Long? = null,
+) : SequenceJpaEntity(id)

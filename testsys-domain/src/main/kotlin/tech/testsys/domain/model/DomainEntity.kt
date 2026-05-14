@@ -1,6 +1,6 @@
 package tech.testsys.domain.model
 
-import tech.testsys.domain.contract.EntityLoader
+import tech.testsys.domain.contract.persistence.repository.EntityLoader
 import java.time.Instant
 
 interface DomainId {
@@ -42,22 +42,6 @@ class LazyEntity<Id : DomainId, Entity : DomainEntity<Id>>(val id: Id) {
     }
 }
 
-class LazyNullableEntity<Id : DomainId, Event : DomainEntity<Id>>(val id: Id) {
-
-    private var value: Event? = null
-    private var wasLoaded = false
-
-    fun load(persistence: EntityLoader<Id, Event>): Event? {
-        if (wasLoaded) return value
-
-        val result = persistence.load(this)
-        value = result
-        wasLoaded = true
-
-        return result
-    }
-}
-
 class LazyEntityList<Id : DomainId, Entity : DomainEntity<Id>>(val ids: List<Id>) {
     private var value: List<Entity>? = null
 
@@ -66,7 +50,7 @@ class LazyEntityList<Id : DomainId, Entity : DomainEntity<Id>>(val ids: List<Id>
             return it
         }
 
-        val result = persistence.load(this, pageSize, page)
+        val result = persistence.load(this)
         value = result
 
         return result

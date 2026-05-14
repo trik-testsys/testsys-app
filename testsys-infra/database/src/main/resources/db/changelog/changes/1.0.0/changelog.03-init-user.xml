@@ -6,8 +6,6 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="1.0.0-03-1" author="roman.shishkin">
-        <comment>User: discriminated by type into MULTIPLE_ROLE and SINGLE_ROLE users.</comment>
-
         <createTable tableName="ts_user">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_user" nullable="false"/>
@@ -37,8 +35,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-03-3" author="roman.shishkin">
-        <comment>SingleRoleToUser: pairing (role, user) for single-role users (composite PK).</comment>
-
         <createTable tableName="ts_single_role_to_user">
             <column name="single_role" type="VARCHAR(64)">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_single_role_to_user" nullable="false"/>
@@ -61,8 +57,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-03-4" author="roman.shishkin">
-        <comment>ParticipantData: single-role data for users with role PARTICIPANT.</comment>
-
         <createTable tableName="ts_participant_data">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_participant_data" nullable="false"/>
@@ -87,8 +81,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-03-5" author="roman.shishkin">
-        <comment>ObserverData: single-role data for users with role OBSERVER.</comment>
-
         <createTable tableName="ts_observer_data">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_observer_data" nullable="false"/>
@@ -113,8 +105,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-03-6" author="roman.shishkin">
-        <comment>SupervisorData: single-role data for users with role SUPERVISOR.</comment>
-
         <createTable tableName="ts_supervisor_data">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_supervisor_data" nullable="false"/>
@@ -136,8 +126,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-03-7" author="roman.shishkin">
-        <comment>AdministratorData: multiple-role data for users with role ADMINISTRATOR.</comment>
-
         <createTable tableName="ts_administrator_data">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_administrator_data" nullable="false"/>
@@ -159,8 +147,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-03-8" author="roman.shishkin">
-        <comment>DeveloperData: multiple-role data for users with role DEVELOPER.</comment>
-
         <createTable tableName="ts_developer_data">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_developer_data" nullable="false"/>
@@ -182,8 +168,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-03-9" author="roman.shishkin">
-        <comment>JudgeData: multiple-role data for users with role JUDGE.</comment>
-
         <createTable tableName="ts_judge_data">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_judge_data" nullable="false"/>
@@ -205,8 +189,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-03-10" author="roman.shishkin">
-        <comment>ManagerData: multiple-role data for users with role MANAGER.</comment>
-
         <createTable tableName="ts_manager_data">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_manager_data" nullable="false"/>
@@ -228,8 +210,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-03-11" author="roman.shishkin">
-        <comment>StudentData: multiple-role data for users with role STUDENT.</comment>
-
         <createTable tableName="ts_student_data">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_student_data" nullable="false"/>

@@ -6,8 +6,6 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="1.0.0-06-1" author="roman.shishkin">
-        <comment>TaskContent: a single revision of a task's payload (exercise/statement, plus joined tests/solutions/versions).</comment>
-
         <createTable tableName="ts_task_content">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_task_content" nullable="false"/>
@@ -31,8 +29,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-06-2" author="roman.shishkin">
-        <comment>Task: identity (name/description/owner/status) plus pointers to WIP and last-committed content revisions.</comment>
-
         <createTable tableName="ts_task">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_task" nullable="false"/>
@@ -71,8 +67,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-06-3" author="roman.shishkin">
-        <comment>TestToTaskContent join: tests attached to a task content revision.</comment>
-
         <createTable tableName="ts_test_to_task_content">
             <column name="test_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_test_to_task_content" nullable="false"
@@ -95,8 +89,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-06-4" author="roman.shishkin">
-        <comment>DeveloperSolutionToTaskContent join: developer solutions attached to a task content revision.</comment>
-
         <createTable tableName="ts_developer_solution_to_task_content">
             <column name="developer_solution_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_developer_solution_to_task_content" nullable="false"
@@ -119,8 +111,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-06-5" author="roman.shishkin">
-        <comment>TrikStudioVersionToTaskContent join: TRIK Studio versions supported by a task content revision.</comment>
-
         <createTable tableName="ts_trik_studio_version_to_task_content">
             <column name="trik_studio_version_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_trik_studio_version_to_task_content" nullable="false"
@@ -143,8 +133,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-06-6" author="roman.shishkin">
-        <comment>CommunityToTask join: which communities a task is shared to (mirrors TaskData.sharedTo).</comment>
-
         <createTable tableName="ts_community_to_task">
             <column name="community_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_community_to_task" nullable="false"

@@ -9,18 +9,12 @@ import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.model.task.DeveloperSolution
-import tech.testsys.domain.model.task.DeveloperSolutionId
-import tech.testsys.domain.model.task.Exercise
-import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskId
-import tech.testsys.domain.model.task.Test
-import tech.testsys.domain.model.task.TestId
 import java.time.Instant
 
 data class MultipleRoleUserData(
@@ -48,9 +42,6 @@ sealed class CompatibleUserRole(
 data class DeveloperData(
     val tasks: LazyEntityList<TaskId, Task>,
     val contests: LazyEntityList<ContestId, Contest>,
-    val polygons: LazyEntityList<TestId, Test>,
-    val solutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
-    val exercises: LazyEntityList<ExerciseId, Exercise>,
 )
 
 class Developer(

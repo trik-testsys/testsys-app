@@ -84,7 +84,6 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
                     data = developerData {
                         tasks(listOf(1L))
                         contests(listOf(2L))
-                        exercises(listOf(3L))
                     }
                 }
                 student {

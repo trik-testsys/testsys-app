@@ -14,5 +14,6 @@
     <include file="db/changelog/changes/1.0.0/changelog.07-init-contest.xml"/>
     <include file="db/changelog/changes/1.0.0/changelog.08-init-submission.xml"/>
     <include file="db/changelog/changes/1.0.0/changelog.09-init-judgment-order.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.10-init-recording-logs.xml"/>
 
 </databaseChangeLog>

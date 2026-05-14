@@ -8,7 +8,6 @@ import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.SolutionId
-import java.util.UUID
 
 /**
  * Builder for constructing [SolutionData].
@@ -18,27 +17,6 @@ import java.util.UUID
 class SolutionDataBuilder : Builder<SolutionData> {
 
     private var _file: FileData? = null
-
-    /**
-     * The name of the solution.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    var name: String? = null
-
-    /**
-     * The description of the solution.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    var description: String? = null
-
-    /**
-     * Logical identity shared by all versions of this solution.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    var versionBucket: UUID? = null
 
     /**
      * Chooser for selecting the programming language of the solution.
@@ -67,16 +45,10 @@ class SolutionDataBuilder : Builder<SolutionData> {
      */
     override fun build(): SolutionData {
         val file = requireField(_file) { ::_file }
-        val name = requireField(name) { ::name }
-        val description = requireField(description) { ::description }
-        val versionBucket = requireField(versionBucket) { ::versionBucket }
 
         return SolutionData(
             file = file,
             language = language.build(),
-            name = name,
-            description = description,
-            versionBucket = versionBucket,
         )
     }
 }

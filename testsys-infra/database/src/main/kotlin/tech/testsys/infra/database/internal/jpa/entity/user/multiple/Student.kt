@@ -1,0 +1,17 @@
+package tech.testsys.infra.database.internal.jpa.entity.user.multiple
+
+import jakarta.persistence.Entity
+import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+
+/**
+ * JPA entity representing the student role data attached to a user.
+ *
+ * @see tech.testsys.domain.model.user.StudentData
+ * @since %CURRENT_VERSION%
+ */
+@Entity
+@InternalDatabaseApi
+class StudentDataJpaEntity(
+    val userId: Long,
+) : SequenceJpaEntity()

@@ -132,6 +132,7 @@ internal class CompositeKeyConstructorProcessor(
             .build()
 
         val function = FunSpec.builder(entity.simpleName.asString())
+            .addAnnotation(INTERNAL_DATABASE_API_NAME)
             .addParameters(params)
             .returns(entityClassName)
             .addCode(body)
@@ -157,7 +158,9 @@ internal class CompositeKeyConstructorProcessor(
 
     private companion object {
 
-        const val COMPOSITE_JPA_ENTITY_FQN = "tech.testsys.infra.database.jpa.entity.CompositeJpaEntity"
+        const val COMPOSITE_JPA_ENTITY_FQN = "tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity"
         const val COMPOSITE_KEY_CONSTRUCTOR_FQN = "tech.testsys.infra.codegen.jpa.CompositeKeyConstructor"
+
+        val INTERNAL_DATABASE_API_NAME = ClassName("tech.testsys.infra.database.internal", "InternalDatabaseApi")
     }
 }

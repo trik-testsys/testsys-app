@@ -9,12 +9,9 @@ import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.model.task.DeveloperSolutionId
-import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
-import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CompatibleUserRole
 import tech.testsys.domain.model.user.Developer
@@ -109,27 +106,6 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
     var contests = mutableListOf<ContestId>()
 
     /**
-     * The list of test polygons owned by the developer.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    var polygons = mutableListOf<TestId>()
-
-    /**
-     * The list of solutions owned by the developer.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    var solutions = mutableListOf<DeveloperSolutionId>()
-
-    /**
-     * The list of exercises owned by the developer.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    var exercises = mutableListOf<ExerciseId>()
-
-    /**
      * Sets the [tasks] list from raw ID values.
      *
      * @param tasks the raw task IDs.
@@ -150,36 +126,6 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
     }
 
     /**
-     * Sets the [polygons] list from raw ID values.
-     *
-     * @param polygons the raw test polygon IDs.
-     * @since %CURRENT_VERSION%
-     */
-    fun polygons(polygons: Iterable<Long>) {
-        this.polygons = polygons.map { TestId(it) }.toMutableList()
-    }
-
-    /**
-     * Sets the [solutions] list from raw ID values.
-     *
-     * @param solutions the raw solution IDs.
-     * @since %CURRENT_VERSION%
-     */
-    fun solutions(solutions: Iterable<Long>) {
-        this.solutions = solutions.map { DeveloperSolutionId(it) }.toMutableList()
-    }
-
-    /**
-     * Sets the [exercises] list from raw ID values.
-     *
-     * @param exercises the raw exercise IDs.
-     * @since %CURRENT_VERSION%
-     */
-    fun exercises(exercises: Iterable<Long>) {
-        this.exercises = exercises.map { ExerciseId(it) }.toMutableList()
-    }
-
-    /**
      * Builds the [DeveloperData] instance.
      *
      * @return the constructed [DeveloperData].
@@ -189,9 +135,6 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
         return DeveloperData(
             tasks = tasks.lazify(),
             contests = contests.lazify(),
-            polygons = polygons.lazify(),
-            solutions = solutions.lazify(),
-            exercises = exercises.lazify(),
         )
     }
 }

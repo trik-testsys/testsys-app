@@ -7,6 +7,8 @@ import tech.testsys.domain.builder.util.chooser.SubmissionStatusChooser
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.JudgmentOrderId
+import tech.testsys.domain.model.task.LogsId
+import tech.testsys.domain.model.task.RecordingId
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Submission
@@ -47,6 +49,10 @@ class VerdictDataBuilder : Builder<VerdictData> {
      */
     var submission: SubmissionId? = null
 
+    var logs: LogsId? = null
+
+    var recording: RecordingId? = null
+
     /**
      * Sets the [task] from a raw ID value.
      *
@@ -67,6 +73,14 @@ class VerdictDataBuilder : Builder<VerdictData> {
         this.submission = SubmissionId(submission)
     }
 
+    fun logs(logs: Long) {
+        this.logs = LogsId(logs)
+    }
+
+    fun recording(recording: Long) {
+        this.recording = RecordingId(recording)
+    }
+
     /**
      * Builds the [VerdictData] instance.
      *
@@ -83,6 +97,8 @@ class VerdictDataBuilder : Builder<VerdictData> {
             score = Score(score),
             task = task.lazify(),
             submission = submission.lazify(),
+            logs = logs?.lazify(),
+            recording = recording?.lazify(),
         )
     }
 }

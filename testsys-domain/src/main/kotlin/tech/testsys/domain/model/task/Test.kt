@@ -10,7 +10,7 @@ value class TestId(
     override val value: Long,
 ) : DomainId
 
-class TestData(
+data class TestData(
     val file: FileData,
     val name: String,
     val description: String,

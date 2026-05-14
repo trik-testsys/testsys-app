@@ -6,8 +6,6 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="1.0.0-01-1" author="roman.shishkin">
-        <comment>Sequences for all SequenceJpaEntity tables. Allocation size 50 matches Hibernate default.</comment>
-
         <createSequence sequenceName="ts_file_data_seq" startValue="1" incrementBy="50"/>
         <createSequence sequenceName="ts_trik_studio_version_seq" startValue="1" incrementBy="50"/>
 
@@ -37,6 +35,8 @@
         <createSequence sequenceName="ts_contest_seq" startValue="1" incrementBy="50"/>
         <createSequence sequenceName="ts_submission_seq" startValue="1" incrementBy="50"/>
         <createSequence sequenceName="ts_verdict_seq" startValue="1" incrementBy="50"/>
+        <createSequence sequenceName="ts_recording_seq" startValue="1" incrementBy="50"/>
+        <createSequence sequenceName="ts_logs_seq" startValue="1" incrementBy="50"/>
         <createSequence sequenceName="ts_judgment_order_seq" startValue="1" incrementBy="50"/>
     </changeSet>
 

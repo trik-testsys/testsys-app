@@ -10,12 +10,9 @@ value class SolutionId(
     override val value: Long,
 ) : DomainId
 
-class SolutionData(
+data class SolutionData(
     val file: FileData,
     val language: TrikSupportedLanguage,
-    val name: String,
-    val description: String,
-    val versionBucket: UUID,
 )
 
 class Solution(

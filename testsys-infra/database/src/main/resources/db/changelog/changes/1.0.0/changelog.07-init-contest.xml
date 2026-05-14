@@ -6,8 +6,6 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="1.0.0-07-1" author="roman.shishkin">
-        <comment>Contest: scheduled run of tasks pinned to a specific TRIK Studio version.</comment>
-
         <createTable tableName="ts_contest">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_contest" nullable="false"/>
@@ -46,8 +44,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-07-2" author="roman.shishkin">
-        <comment>TaskToContest join: which tasks belong to which contest.</comment>
-
         <createTable tableName="ts_task_to_contest">
             <column name="task_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_task_to_contest" nullable="false"
@@ -70,8 +66,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-07-3" author="roman.shishkin">
-        <comment>CommunityToContest join: which communities a contest is shared to (mirrors ContestData.sharedTo).</comment>
-
         <createTable tableName="ts_community_to_contest">
             <column name="community_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_community_to_contest" nullable="false"
@@ -94,8 +88,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-07-4" author="roman.shishkin">
-        <comment>ContestToClass join: which classes are linked to which contests.</comment>
-
         <createTable tableName="ts_contest_to_class">
             <column name="contest_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_contest_to_class" nullable="false"
@@ -118,8 +110,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-07-5" author="roman.shishkin">
-        <comment>ContestToCompetition join: which contests run inside which competitions.</comment>
-
         <createTable tableName="ts_contest_to_competition">
             <column name="contest_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_contest_to_competition" nullable="false"

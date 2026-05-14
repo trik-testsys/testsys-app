@@ -6,8 +6,6 @@
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="1.0.0-04-1" author="roman.shishkin">
-        <comment>Class: a class group owned by a user.</comment>
-
         <createTable tableName="ts_class">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_class" nullable="false"/>
@@ -35,8 +33,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-04-2" author="roman.shishkin">
-        <comment>Community: a community group owned by a user.</comment>
-
         <createTable tableName="ts_community">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_community" nullable="false"/>
@@ -64,8 +60,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-04-3" author="roman.shishkin">
-        <comment>Competition: a competition group owned by a user.</comment>
-
         <createTable tableName="ts_competition">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_competition" nullable="false"/>
@@ -93,8 +87,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-04-4" author="roman.shishkin">
-        <comment>StudentToClass join: which students belong to which classes.</comment>
-
         <createTable tableName="ts_student_to_class">
             <column name="student_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_student_to_class" nullable="false"
@@ -117,8 +109,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-04-5" author="roman.shishkin">
-        <comment>ParticipantToCompetition join: which participants compete in which competitions.</comment>
-
         <createTable tableName="ts_participant_to_competition">
             <column name="participant_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_participant_to_competition" nullable="false"
@@ -141,8 +131,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-04-6" author="roman.shishkin">
-        <comment>CompetitionToObserver join: which observers may watch which competitions.</comment>
-
         <createTable tableName="ts_competition_to_observer">
             <column name="competition_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_competition_to_observer" nullable="false"
@@ -165,8 +153,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-04-7" author="roman.shishkin">
-        <comment>ParticipantData.competition_id FK to Competition (deferred until ts_competition exists).</comment>
-
         <addForeignKeyConstraint constraintName="fk_participant_data_competition"
                                  baseTableName="ts_participant_data" baseColumnNames="competition_id"
                                  referencedTableName="ts_competition" referencedColumnNames="id"/>
@@ -181,8 +167,6 @@
     </changeSet>
 
     <changeSet id="1.0.0-04-9" author="roman.shishkin">
-        <comment>MultipleRoleToUser join: (role, user, community) triple. Lives here, not in 03-init-user, because it FKs to ts_community.</comment>
-
         <createTable tableName="ts_multiple_role_to_user">
             <column name="multiple_role" type="VARCHAR(64)">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_multiple_role_to_user" nullable="false"/>

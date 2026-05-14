@@ -10,7 +10,7 @@ value class StatementId(
     override val value: Long,
 ) : DomainId
 
-class StatementData(
+data class StatementData(
     val file: FileData,
     val name: String,
     val description: String,

@@ -46,8 +46,8 @@ class CompositeKeyConstructorProcessorTest {
             import jakarta.persistence.Embeddable
             import jakarta.persistence.Entity
             import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
-            import tech.testsys.infra.database.jpa.entity.CompositeId
-            import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeId
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 
             @Embeddable
             data class SampleId(val aId: Long, val bId: Long) : CompositeId
@@ -81,8 +81,8 @@ class CompositeKeyConstructorProcessorTest {
             import jakarta.persistence.EnumType
             import jakarta.persistence.Enumerated
             import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
-            import tech.testsys.infra.database.jpa.entity.CompositeId
-            import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeId
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 
             enum class Role { ADMIN, USER }
 
@@ -117,14 +117,17 @@ class CompositeKeyConstructorProcessorTest {
             import jakarta.persistence.Embeddable
             import jakarta.persistence.Entity
             import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
-            import tech.testsys.infra.database.jpa.entity.CompositeId
-            import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeId
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
+            import tech.testsys.infra.database.internal.InternalDatabaseApi
 
             @Embeddable
+            @InternalDatabaseApi
             data class SampleId(val zId: Long, val aId: Long) : CompositeId
 
             @CompositeKeyConstructor
             @Entity
+            @InternalDatabaseApi
             class SampleJpaEntity(id: SampleId) : CompositeJpaEntity<SampleId>(id)
             """.trimIndent(),
         )
@@ -168,8 +171,8 @@ class CompositeKeyConstructorProcessorTest {
             import jakarta.persistence.Embeddable
             import jakarta.persistence.Entity
             import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
-            import tech.testsys.infra.database.jpa.entity.CompositeId
-            import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeId
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 
             @Embeddable
             data class SampleId(val aId: Long, val bId: Long) : CompositeId
@@ -200,8 +203,8 @@ class CompositeKeyConstructorProcessorTest {
             import jakarta.persistence.Embeddable
             import jakarta.persistence.Entity
             import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
-            import tech.testsys.infra.database.jpa.entity.CompositeId
-            import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeId
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 
             @Embeddable
             class SampleId(val aId: Long, val bId: Long) : CompositeId
@@ -229,8 +232,8 @@ class CompositeKeyConstructorProcessorTest {
             import jakarta.persistence.Embeddable
             import jakarta.persistence.Entity
             import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
-            import tech.testsys.infra.database.jpa.entity.CompositeId
-            import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeId
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 
             @Embeddable
             data class SampleId(val aId: Long, var bId: Long) : CompositeId
@@ -254,10 +257,44 @@ class CompositeKeyConstructorProcessorTest {
             SourceFile.kotlin(
                 "Stubs.kt",
                 """
-                package tech.testsys.infra.database.jpa.entity
+                package tech.testsys.infra.database.internal.jpa.entity
                 import java.io.Serializable
                 interface CompositeId : Serializable
                 abstract class CompositeJpaEntity<T : CompositeId>(val id: T)
+                """.trimIndent(),
+            ),
+            SourceFile.kotlin(
+                "InternalJpaStub.kt",
+                """
+                package tech.testsys.infra.database.utils
+                @RequiresOptIn
+                @Target(
+                    AnnotationTarget.CLASS,
+                    AnnotationTarget.FUNCTION,
+                    AnnotationTarget.ANNOTATION_CLASS,
+                    AnnotationTarget.FIELD,
+                    AnnotationTarget.PROPERTY,
+                    AnnotationTarget.CONSTRUCTOR,
+                )
+                annotation class InternalJpa
+                """.trimIndent(),
+            ),
+            SourceFile.kotlin(
+                "InternalDatabaseApiStub.kt",
+                """
+                package tech.testsys.infra.database.internal
+                @RequiresOptIn
+                @Target(
+                    AnnotationTarget.CLASS,
+                    AnnotationTarget.FUNCTION,
+                    AnnotationTarget.ANNOTATION_CLASS,
+                    AnnotationTarget.FIELD,
+                    AnnotationTarget.PROPERTY,
+                    AnnotationTarget.CONSTRUCTOR,
+                    AnnotationTarget.TYPEALIAS,
+                )
+                @Retention(AnnotationRetention.BINARY)
+                annotation class InternalDatabaseApi
                 """.trimIndent(),
             ),
             SourceFile.kotlin(

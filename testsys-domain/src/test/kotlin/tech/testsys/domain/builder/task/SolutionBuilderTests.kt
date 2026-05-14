@@ -12,25 +12,16 @@ class SolutionBuilderTests : DomainEntityBuilderTests<Solution, SolutionData, So
 ) {
     override fun buildDataWithAllFields() = listOf(
         solutionData {
-            name = "Solution Python"
-            description = "Python solution"
             file("solution.py", byteArrayOf(1, 2, 3))
             language.python()
-            versionBucket = UUID.randomUUID()
         },
         solutionData {
-            name = "Solution JS"
-            description = "JS solution"
             file("solution.js", byteArrayOf(4, 5, 6))
             language.javaScript()
-            versionBucket = UUID.randomUUID()
         },
         solutionData {
-            name = "Solution Visual"
-            description = "Visual solution"
             file("solution.xml", byteArrayOf(7, 8, 9))
             language.visualLanguage()
-            versionBucket = UUID.randomUUID()
         },
     )
 }

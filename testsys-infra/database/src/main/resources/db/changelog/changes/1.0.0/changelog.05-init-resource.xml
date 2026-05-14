@@ -5,9 +5,31 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                             http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
-    <changeSet id="1.0.0-05-1" author="roman.shishkin">
-        <comment>Test: a polygon (test case) used by the grader. Owned by a developer.</comment>
+    <changeSet id="1.0.0-05-0" author="roman.shishkin">
+        <createTable tableName="ts_solution">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_solution" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_data_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_solution_file_data" references="ts_file_data(id)"/>
+            </column>
+            <column name="language" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
 
+    <changeSet id="1.0.0-05-1" author="roman.shishkin">
         <createTable tableName="ts_test">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_test" nullable="false"/>
@@ -34,16 +56,10 @@
             <column name="version_bucket" type="UUID">
                 <constraints nullable="false"/>
             </column>
-            <column name="owner_id" type="BIGINT">
-                <constraints nullable="false"
-                             foreignKeyName="fk_test_owner" references="ts_user(id)"/>
-            </column>
         </createTable>
     </changeSet>
 
     <changeSet id="1.0.0-05-2" author="roman.shishkin">
-        <comment>Exercise: executable scaffold delivered to participants. Has a TRIK runtime language.</comment>
-
         <createTable tableName="ts_exercise">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_exercise" nullable="false"/>
@@ -73,16 +89,10 @@
             <column name="language" type="VARCHAR(64)">
                 <constraints nullable="false"/>
             </column>
-            <column name="owner_id" type="BIGINT">
-                <constraints nullable="false"
-                             foreignKeyName="fk_exercise_owner" references="ts_user(id)"/>
-            </column>
         </createTable>
     </changeSet>
 
     <changeSet id="1.0.0-05-3" author="roman.shishkin">
-        <comment>Statement: human-readable problem description bundled with a task.</comment>
-
         <createTable tableName="ts_statement">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_statement" nullable="false"/>
@@ -112,44 +122,7 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="1.0.0-05-4" author="roman.shishkin">
-        <comment>Solution: participant-submitted source. Carries TRIK runtime language.</comment>
-
-        <createTable tableName="ts_solution">
-            <column name="id" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="pk_ts_solution" nullable="false"/>
-            </column>
-            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
-                <constraints nullable="false"/>
-            </column>
-            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
-                <constraints nullable="false"/>
-            </column>
-            <column name="version" type="BIGINT" defaultValueNumeric="0">
-                <constraints nullable="false"/>
-            </column>
-            <column name="name" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="description" type="TEXT">
-                <constraints nullable="false"/>
-            </column>
-            <column name="file_data_id" type="BIGINT">
-                <constraints nullable="false" unique="true"
-                             foreignKeyName="fk_solution_file_data" references="ts_file_data(id)"/>
-            </column>
-            <column name="version_bucket" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="language" type="VARCHAR(64)">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-
     <changeSet id="1.0.0-05-5" author="roman.shishkin">
-        <comment>DeveloperSolution: thin aggregate over a Solution carrying expected score and developer ownership.</comment>
-
         <createTable tableName="ts_developer_solution">
             <column name="id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_developer_solution" nullable="false"/>
@@ -169,16 +142,19 @@
             <column name="description" type="TEXT">
                 <constraints nullable="false"/>
             </column>
+            <column name="file_data_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_developer_solution_file_data" references="ts_file_data(id)"/>
+            </column>
+            <column name="version_bucket" type="UUID">
+                <constraints nullable="false"/>
+            </column>
             <column name="solution_id" type="BIGINT">
                 <constraints nullable="false" unique="true"
                              foreignKeyName="fk_developer_solution_solution" references="ts_solution(id)"/>
             </column>
             <column name="expected_score" type="INT">
                 <constraints nullable="false"/>
-            </column>
-            <column name="owner_id" type="BIGINT">
-                <constraints nullable="false"
-                             foreignKeyName="fk_developer_solution_owner" references="ts_user(id)"/>
             </column>
         </createTable>
     </changeSet>

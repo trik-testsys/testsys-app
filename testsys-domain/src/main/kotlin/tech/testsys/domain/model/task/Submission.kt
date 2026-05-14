@@ -9,6 +9,36 @@ import tech.testsys.domain.model.user.UserId
 import java.time.Instant
 
 @JvmInline
+value class RecordingId(
+    override val value: Long,
+) : DomainId
+
+class RecordingData(
+    val file: FileData,
+)
+
+class Recording(
+    id: RecordingId,
+    createdAt: Instant,
+    val data: RecordingData,
+) : DomainEntity<RecordingId>(id, createdAt)
+
+@JvmInline
+value class LogsId(
+    override val value: Long,
+) : DomainId
+
+class LogsData(
+    val file: FileData,
+)
+
+class Logs(
+    id: LogsId,
+    createdAt: Instant,
+    val data: LogsData,
+) : DomainEntity<LogsId>(id, createdAt)
+
+@JvmInline
 value class VerdictId(
     override val value: Long,
 ) : DomainId
@@ -17,6 +47,8 @@ data class VerdictData(
     val score: Score,
     val task: LazyEntity<TaskId, Task>,
     val submission: LazyEntity<SubmissionId, Submission>,
+    val logs: LazyEntity<LogsId, Logs>?,
+    val recording: LazyEntity<RecordingId, Recording>?,
 )
 
 class Verdict(

@@ -11,6 +11,8 @@ h2 = "2.3.232"
 ksp = "2.2.21-2.0.5"
 kotlinpoet = "2.3.0"
 kctfork = "0.12.1"
+icu = "78.1"
+mockk = "1.14.9"
 
 [libraries]
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
@@ -35,13 +37,19 @@ detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plu
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+kotlinpoet-core = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
 kctfork-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kctfork" }
+
+icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu" }
+
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 [bundles]
 test-implementation = [
     "junit-jupiter-api",
-    "junit-jupiter-params"
+    "junit-jupiter-params",
+    "mockk",
 ]
 test-runtime = [
     "junit-jupiter-engine",
@@ -69,6 +77,9 @@ database-test-implementation = [
 detekt-implementation = [
     "detekt-gradle-plugin",
     "detekt-formatting",
+]
+icu-implementation = [
+    "icu4j",
 ]
 
 [plugins]

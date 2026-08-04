@@ -19,7 +19,9 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 class DeveloperSolutionPersistenceAdapter(
     jpaEntityRepository: DeveloperSolutionJpaEntityRepository,
     private val solutionJpaEntityRepository: SolutionJpaEntityRepository,
-) : AbstractPersistenceAdapter<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution, DeveloperSolutionJpaEntity>(jpaEntityRepository),
+) : AbstractPersistenceAdapter<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution, DeveloperSolutionJpaEntity>(
+    jpaEntityRepository,
+),
     DeveloperSolutionRepository {
 
     @Transactional

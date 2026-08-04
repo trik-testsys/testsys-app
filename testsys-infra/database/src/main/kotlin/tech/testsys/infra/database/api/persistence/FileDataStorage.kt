@@ -74,8 +74,7 @@ class FileDataStorage(
      * @return [currentFileDataId] when the file is unchanged,
      * the id of the freshly-inserted [FileDataJpaEntity] otherwise.
      */
-    fun storeIfChanged(currentFileDataId: Long, file: FileData): Long =
-        storeIfChanged(currentFileDataId, file) { store(file) }
+    fun storeIfChanged(currentFileDataId: Long, file: FileData): Long = storeIfChanged(currentFileDataId, file) { store(file) }
 
     /**
      * Persists [file] only when it differs from the file referenced by [currentFileDataId];
@@ -91,13 +90,12 @@ class FileDataStorage(
 
     private fun storeIfChanged(currentFileDataId: Long, file: FileData, storeChanged: () -> Long): Long {
         val current = fileDataJpaEntityRepository.findByIdOrError(currentFileDataId)
-        val unchanged = current.uploadedFileName == file.uploadedFilename &&
-            current.contentHash == file.contentHash()
-        return if (unchanged) currentFileDataId else storeChanged()
+        val wasChanged = current.uploadedFileName != file.uploadedFilename ||
+            current.contentHash != file.contentHash()
+        return if (wasChanged) currentFileDataId else storeChanged()
     }
 
-    private fun FileData.contentHash(): String =
-        HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content))
+    private fun FileData.contentHash(): String = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content))
 
     /**
      * Loads the uploaded filename and binary content for the file referenced by [fileDataId].

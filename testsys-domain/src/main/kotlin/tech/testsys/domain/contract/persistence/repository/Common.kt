@@ -1,10 +1,10 @@
 package tech.testsys.domain.contract.persistence.repository
 
+import tech.testsys.domain.contract.DomainException.EntityNotFoundException
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
-import tech.testsys.domain.contract.DomainException.EntityNotFoundException
 
 /**
  * Interface for finding domain entities.

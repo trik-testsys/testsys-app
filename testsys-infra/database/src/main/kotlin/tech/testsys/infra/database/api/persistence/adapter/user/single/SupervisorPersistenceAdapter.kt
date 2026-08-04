@@ -66,8 +66,7 @@ class SupervisorPersistenceAdapter(
     @Transactional
     override fun removeByIds(ids: List<SingleRoleUserId>) = ids.forEach(::removeById)
 
-    override fun supports(jpaEntity: UserJpaEntity) =
-        supervisorDataJpaEntityRepository.findByUserId(jpaEntity.requireId()) != null
+    override fun supports(jpaEntity: UserJpaEntity) = supervisorDataJpaEntityRepository.findByUserId(jpaEntity.requireId()) != null
 
     override fun assemble(jpaEntity: UserJpaEntity): Supervisor {
         val userId = jpaEntity.requireId()

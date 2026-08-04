@@ -60,57 +60,56 @@ data class MultipleRoleUserRoles(
 @InternalDatabaseApi
 object MultipleRoleUserMapping {
 
-    fun toDomain(userJpaEntity: UserJpaEntity, roles: MultipleRoleUserRoles) =
-        multipleRoleUser {
-            populateFields(userJpaEntity)
-            data {
-                accessToken = userJpaEntity.accessToken
-                name = userJpaEntity.name
-                email = requireNotNull(userJpaEntity.email) {
-                    "User ${userJpaEntity.id} is MULTIPLE_ROLE but email is null"
+    fun toDomain(userJpaEntity: UserJpaEntity, roles: MultipleRoleUserRoles) = multipleRoleUser {
+        populateFields(userJpaEntity)
+        data {
+            accessToken = userJpaEntity.accessToken
+            name = userJpaEntity.name
+            email = requireNotNull(userJpaEntity.email) {
+                "User ${userJpaEntity.id} is MULTIPLE_ROLE but email is null"
+            }
+            roles {
+                roles.administrator?.let { info ->
+                    administrator { memberOf(info.memberOf.map { it.value }) }
                 }
-                roles {
-                    roles.administrator?.let { info ->
-                        administrator { memberOf(info.memberOf.map { it.value }) }
-                    }
-                    roles.developer?.let { info ->
-                        developer {
-                            memberOf(info.memberOf.map { it.value })
-                            data {
-                                tasks(info.tasks.map { it.value })
-                                contests(info.contests.map { it.value })
-                            }
+                roles.developer?.let { info ->
+                    developer {
+                        memberOf(info.memberOf.map { it.value })
+                        data {
+                            tasks(info.tasks.map { it.value })
+                            contests(info.contests.map { it.value })
                         }
                     }
-                    roles.student?.let { info ->
-                        student {
-                            memberOf(info.memberOf.map { it.value })
-                            data {
-                                classes(info.classes.map { it.value })
-                                submissions(info.submissions.map { it.value })
-                            }
+                }
+                roles.student?.let { info ->
+                    student {
+                        memberOf(info.memberOf.map { it.value })
+                        data {
+                            classes(info.classes.map { it.value })
+                            submissions(info.submissions.map { it.value })
                         }
                     }
-                    roles.judge?.let { info ->
-                        judge {
-                            memberOf(info.memberOf.map { it.value })
-                            data {
-                                judgmentOrders(info.judgmentOrders.map { it.value })
-                            }
+                }
+                roles.judge?.let { info ->
+                    judge {
+                        memberOf(info.memberOf.map { it.value })
+                        data {
+                            judgmentOrders(info.judgmentOrders.map { it.value })
                         }
                     }
-                    roles.manager?.let { info ->
-                        manager {
-                            memberOf(info.memberOf.map { it.value })
-                            data {
-                                classes(info.classes.map { it.value })
-                                competitions(info.competitions.map { it.value })
-                            }
+                }
+                roles.manager?.let { info ->
+                    manager {
+                        memberOf(info.memberOf.map { it.value })
+                        data {
+                            classes(info.classes.map { it.value })
+                            competitions(info.competitions.map { it.value })
                         }
                     }
                 }
             }
         }
+    }
 
     fun toUserJpaEntity(data: MultipleRoleUserData) = UserJpaEntity(
         name = data.name,

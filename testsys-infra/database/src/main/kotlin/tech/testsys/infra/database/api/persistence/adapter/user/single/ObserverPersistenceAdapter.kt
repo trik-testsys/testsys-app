@@ -82,8 +82,7 @@ class ObserverPersistenceAdapter(
     @Transactional
     override fun removeByIds(ids: List<SingleRoleUserId>) = ids.forEach(::removeById)
 
-    override fun supports(jpaEntity: UserJpaEntity) =
-        observerDataJpaEntityRepository.findByUserId(jpaEntity.requireId()) != null
+    override fun supports(jpaEntity: UserJpaEntity) = observerDataJpaEntityRepository.findByUserId(jpaEntity.requireId()) != null
 
     override fun assemble(jpaEntity: UserJpaEntity): Observer {
         val userId = jpaEntity.requireId()

@@ -18,7 +18,9 @@ internal fun <Entity : SequenceJpaEntity> Entity.requireId() = requireNotNull(id
 internal fun <Entity : JpaEntity> Entity?.requireById(id: Any) = requireNotNull(this) { "Entity not found by id=$id" }
 
 @InternalDatabaseApi
-internal fun <Entity : DomainEntity<Id>, Id : DomainId> Entity?.requireById(id: Id) = requireNotNull(this) { "Domain entity not found by id=$id" }
+internal fun <Entity : DomainEntity<Id>, Id : DomainId> Entity?.requireById(id: Id) = requireNotNull(
+    this,
+) { "Domain entity not found by id=$id" }
 
 @InternalDatabaseApi
 internal fun <Entity, Data, DataBuilder : Builder<Data>> DomainEntityWithDataBuilder<Entity, Data, DataBuilder>.populateFields(

@@ -2,13 +2,11 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
-import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Logs
 import tech.testsys.domain.model.task.LogsData
 import tech.testsys.domain.model.task.LogsId
-import tech.testsys.domain.model.task.VerdictId
 
 /**
  * Builder for constructing [LogsData].

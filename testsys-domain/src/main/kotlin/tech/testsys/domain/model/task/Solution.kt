@@ -3,7 +3,6 @@ package tech.testsys.domain.model.task
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import java.time.Instant
-import java.util.UUID
 
 @JvmInline
 value class SolutionId(

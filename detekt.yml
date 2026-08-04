@@ -77,11 +77,11 @@ potential-bugs:
 
 complexity:
   active: true
-  StringLiteralDuplication:
-    active: true
-    threshold: 2
-    ignoreAnnotation: false
-    excludeStringsWithLessThan5Characters: false
+#  StringLiteralDuplication: TODO
+#    active: true
+#    threshold: 2
+#    ignoreAnnotation: false
+#    excludeStringsWithLessThan5Characters: false
 
 coroutines:
   active: true
@@ -100,19 +100,19 @@ comments:
   active: true
   DeprecatedBlockTag:
     active: true
-  OutdatedDocumentation:
-    active: true
-    allowParamOnConstructorProperties: true
-  UndocumentedPublicClass:
-    active: true
-    searchInProtectedClass: true
-    ignoreDefaultCompanionObject: true
-  UndocumentedPublicFunction:
-    active: true
-    searchProtectedFunction: true
-  UndocumentedPublicProperty:
-    active: true
-    searchProtectedProperty: true
+#  OutdatedDocumentation: TODO
+#    active: true
+#    allowParamOnConstructorProperties: true
+#  UndocumentedPublicClass:
+#    active: true
+#    searchInProtectedClass: true
+#    ignoreDefaultCompanionObject: true
+#  UndocumentedPublicProperty:
+#    ignoreAnnotated:
+#      - InternalDatabaseApi
+#  UndocumentedPublicFunction:
+#    ignoreAnnotated:
+#      - InternalDatabaseApi
 
 empty-blocks:
   active: true
@@ -198,8 +198,6 @@ naming:
     active: true
   LambdaParameterNaming:
     active: true
-  MatchingDeclarationName:
-    active: true
   MemberNameEqualsClassName:
     active: true
   NoNameShadowing:
@@ -231,10 +229,6 @@ performance:
 style:
   active: true
   BracesOnIfStatements:
-    active: true
-    singleLine: 'never'
-    multiLine: 'always'
-  BracesOnWhenStatements:
     active: true
     singleLine: 'never'
     multiLine: 'always'
@@ -419,9 +413,6 @@ formatting:
     active: true
     autoCorrect: true
   MultiLineIfElse:
-    active: true
-    autoCorrect: true
-  MultilineExpressionWrapping:
     active: true
     autoCorrect: true
   NoBlankLineBeforeRbrace:

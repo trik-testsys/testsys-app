@@ -34,4 +34,4 @@ internal fun <Association, K> syncJoinTable(
 }
 
 @InternalDatabaseApi
-fun <T : JpaEntity, ID: Any> CrudRepository<T, ID>.findByIdOrError(id: ID) = findById(id).orElse(null).requireById(id)
+fun <T : JpaEntity, ID : Any> CrudRepository<T, ID>.findByIdOrError(id: ID) = findById(id).orElse(null).requireById(id)

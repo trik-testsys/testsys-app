@@ -1,8 +1,8 @@
 package tech.testsys.infra.database.api.persistence.adapter
 
 import org.springframework.data.repository.findByIdOrNull
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.transaction.annotation.Propagation
+import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.EntityRepository
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
@@ -12,7 +12,6 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
 import tech.testsys.infra.database.internal.utils.requireById
-
 
 /**
  * Base abstract class for each persistence adapter. Implements default behavior for next methods of [EntityRepository] contract:
@@ -55,14 +54,15 @@ import tech.testsys.infra.database.internal.utils.requireById
 @Suppress("CallBeanMethodFromSameClass")
 @InternalDatabaseApi
 abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEntity<Id>, JpaEntity : SequenceJpaEntity>(
-    protected val jpaEntityRepository: SequenceJpaEntityRepository<JpaEntity>
+    protected val jpaEntityRepository: SequenceJpaEntityRepository<JpaEntity>,
 ) : EntityRepository<Data, Id, Entity> {
 
     @Transactional(readOnly = true)
     override fun findById(id: Id) = jpaEntityRepository.findByIdOrNull(id.value)?.takeIf { supports(it) }?.let { assemble(it) }
 
     @Transactional(readOnly = true)
-    override fun findByIds(ids: List<Id>) = jpaEntityRepository.findAllById(ids.map { it.value }).filter { supports(it) }.map { assemble(it) }
+    override fun findByIds(ids: List<Id>) =
+        jpaEntityRepository.findAllById(ids.map { it.value }).filter { supports(it) }.map { assemble(it) }
 
     @Transactional(readOnly = true)
     override fun load(field: LazyEntity<Id, Entity>) = findById(field.id).requireById(field.id)
@@ -72,7 +72,7 @@ abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEn
         val entities = findByIds(list.ids)
         val foundIds = entities.map { it.id.value }.toSet()
         val missingIds = list.ids.filter { it.value !in foundIds }
-        if (missingIds.isNotEmpty()) error("Entities ${missingIds.map { it.value }} not found") //TODO
+        if (missingIds.isNotEmpty()) error("Entities ${missingIds.map { it.value }} not found") // TODO
         return entities
     }
 

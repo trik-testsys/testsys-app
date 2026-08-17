@@ -6,8 +6,6 @@ import org.hibernate.type.SqlTypes
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
-// TODO: video recordings, logs
-
 /**
  * JPA entity representing a judgment order domain entity.
  *

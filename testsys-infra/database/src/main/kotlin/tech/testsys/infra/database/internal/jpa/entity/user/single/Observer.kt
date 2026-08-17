@@ -2,7 +2,7 @@ package tech.testsys.infra.database.internal.jpa.entity.user.single
 
 import jakarta.persistence.Embeddable
 import jakarta.persistence.Entity
-import tech.testsys.infra.codegen.jpa.CompositeKeyConstructor
+import tech.testsys.infra.database.codegen.api.jpa.CompositeKeyConstructor
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.CompositeId
 import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity

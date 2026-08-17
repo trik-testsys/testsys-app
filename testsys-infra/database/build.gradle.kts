@@ -9,11 +9,11 @@ group = "tech.testsys.infra"
 
 dependencies {
     implementation(project(":testsys-domain"))
-    implementation(project(":testsys-infra:codegen-api"))
+    implementation(project(":testsys-infra:database:codegen-api"))
     implementation(libs.bundles.database.implementation)
     runtimeOnly(libs.postgresql)
 
-    ksp(project(":testsys-infra:codegen"))
+    ksp(project(":testsys-infra:database:codegen"))
 
     testImplementation(libs.bundles.test.implementation)
     testImplementation(libs.bundles.database.test.implementation)

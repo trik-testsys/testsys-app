@@ -35,30 +35,6 @@ data class ContestToCompetitionId(
 class ContestToCompetitionJpaEntity(id: ContestToCompetitionId) : CompositeJpaEntity<ContestToCompetitionId>(id)
 
 /**
- * Composite key of [ParticipantToCompetitionJpaEntity].
- *
- * @property participantId id of the participant.
- * @property competitionId id of the competition.
- * @since %CURRENT_VERSION%
- */
-@Embeddable
-@InternalDatabaseApi
-data class ParticipantToCompetitionId(
-    val participantId: Long,
-    val competitionId: Long,
-) : CompositeId
-
-/**
- * Join row: a participant takes part in a competition.
- *
- * @since %CURRENT_VERSION%
- */
-@Entity
-@CompositeKeyConstructor
-@InternalDatabaseApi
-class ParticipantToCompetitionJpaEntity(id: ParticipantToCompetitionId) : CompositeJpaEntity<ParticipantToCompetitionId>(id)
-
-/**
  * JPA entity of [tech.testsys.domain.model.group.Competition].
  *
  * @property name the name of the competition.

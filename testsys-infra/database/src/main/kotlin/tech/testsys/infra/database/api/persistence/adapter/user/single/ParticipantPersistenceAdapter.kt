@@ -11,7 +11,6 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.SingleRoleToUserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.UserSingleRoleJpaEnum
-import tech.testsys.infra.database.internal.jpa.repository.group.ParticipantToCompetitionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.ParticipantDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
@@ -31,7 +30,6 @@ class ParticipantPersistenceAdapter(
     jpaEntityRepository: UserJpaEntityRepository,
     private val participantDataJpaEntityRepository: ParticipantDataJpaEntityRepository,
     private val singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository,
-    private val participantToCompetitionJpaEntityRepository: ParticipantToCompetitionJpaEntityRepository,
 ) : AbstractUserPersistenceAdapter<ParticipantData, SingleRoleUserId, Participant>(jpaEntityRepository),
     ParticipantRepository {
 
@@ -69,9 +67,6 @@ class ParticipantPersistenceAdapter(
     @Transactional
     override fun removeById(id: SingleRoleUserId) {
         val dataJpaEntity = participantDataJpaEntityRepository.findByUserId(id.value) ?: return
-        participantToCompetitionJpaEntityRepository.deleteAll(
-            participantToCompetitionJpaEntityRepository.findAllByParticipantId(id.value),
-        )
         participantDataJpaEntityRepository.delete(dataJpaEntity)
         singleRoleToUserJpaEntityRepository.deleteAll(singleRoleToUserJpaEntityRepository.findAllByUserId(id.value))
         jpaEntityRepository.deleteById(id.value)

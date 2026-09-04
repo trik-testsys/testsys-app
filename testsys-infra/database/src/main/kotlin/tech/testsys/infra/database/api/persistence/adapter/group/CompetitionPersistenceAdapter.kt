@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.group.CompetitionJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.group.CompetitionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.ContestToCompetitionJpaEntityRepository
-import tech.testsys.infra.database.internal.jpa.repository.group.ParticipantToCompetitionJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.user.single.ParticipantDataJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.group.CompetitionMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireId
@@ -21,7 +21,8 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
  * Persistence adapter of [Competition] entities backed by [CompetitionJpaEntity].
- * Participant and contest membership is synced through the join tables on save and update.
+ * Contest membership is synced through the join table on save and update; participants are a read-only projection
+ * of the participant data rows pointing at the competition, so `CompetitionData.participants` is ignored on write.
  *
  * @since %CURRENT_VERSION%
  */
@@ -29,7 +30,7 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 @OptIn(InternalDatabaseApi::class)
 class CompetitionPersistenceAdapter(
     jpaEntityRepository: CompetitionJpaEntityRepository,
-    private val participantToCompetitionJpaEntityRepository: ParticipantToCompetitionJpaEntityRepository,
+    private val participantDataJpaEntityRepository: ParticipantDataJpaEntityRepository,
     private val contestToCompetitionJpaEntityRepository: ContestToCompetitionJpaEntityRepository,
 ) : AbstractPersistenceAdapter<CompetitionData, CompetitionId, Competition, CompetitionJpaEntity>(jpaEntityRepository),
     CompetitionRepository {
@@ -39,14 +40,9 @@ class CompetitionPersistenceAdapter(
         val jpaEntity = CompetitionMapping.toJpaEntity(data)
         val savedJpaEntity = jpaEntityRepository.save(jpaEntity)
         val competitionId = savedJpaEntity.requireId()
-
-        val participantAssociations = CompetitionMapping.toParticipantAssociations(competitionId, data.participants.ids)
         val contestsAssociations = CompetitionMapping.toContestAssociations(competitionId, data.contests.ids)
-
-        participantToCompetitionJpaEntityRepository.saveAll(participantAssociations)
         contestToCompetitionJpaEntityRepository.saveAll(contestsAssociations)
-
-        val domainEntity = CompetitionMapping.toDomain(savedJpaEntity, data.participants.ids, data.contests.ids)
+        val domainEntity = CompetitionMapping.toDomain(savedJpaEntity, loadParticipantIds(competitionId), data.contests.ids)
         return domainEntity
     }
 
@@ -55,37 +51,22 @@ class CompetitionPersistenceAdapter(
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val updatedJpaEntity = CompetitionMapping.toJpaEntity(entity, currentJpaEntity)
         val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
-
         val competitionId = savedJpaEntity.requireId()
-
-        syncParticipants(competitionId, entity.data.participants.ids)
         syncContests(competitionId, entity.data.contests.ids)
-
-        val domainEntity =
-            CompetitionMapping.toDomain(savedJpaEntity, entity.data.participants.ids, entity.data.contests.ids)
+        val domainEntity = CompetitionMapping.toDomain(savedJpaEntity, loadParticipantIds(competitionId), entity.data.contests.ids)
         return domainEntity
     }
 
     override fun assemble(jpaEntity: CompetitionJpaEntity): Competition {
         val competitionId = jpaEntity.requireId()
-
-        val participantIds = participantToCompetitionJpaEntityRepository.findAllByCompetitionId(competitionId)
-            .map { SingleRoleUserId(it.id.participantId) }
         val contestIds = contestToCompetitionJpaEntityRepository.findAllByCompetitionId(competitionId)
             .map { ContestId(it.id.contestId) }
-
-        val domainEntity = CompetitionMapping.toDomain(jpaEntity, participantIds, contestIds)
+        val domainEntity = CompetitionMapping.toDomain(jpaEntity, loadParticipantIds(competitionId), contestIds)
         return domainEntity
     }
 
-    private fun syncParticipants(competitionId: Long, target: List<SingleRoleUserId>) = syncJoinTable(
-        existing = participantToCompetitionJpaEntityRepository.findAllByCompetitionId(competitionId),
-        targetKeys = target,
-        keyOf = { SingleRoleUserId(it.id.participantId) },
-        buildAssociation = { CompetitionMapping.toParticipantAssociations(competitionId, listOf(it)).single() },
-        deleteAll = { participantToCompetitionJpaEntityRepository.deleteAll(it) },
-        saveAll = { participantToCompetitionJpaEntityRepository.saveAll(it) },
-    )
+    private fun loadParticipantIds(competitionId: Long): List<SingleRoleUserId> =
+        participantDataJpaEntityRepository.findAllByCompetitionId(competitionId).map { SingleRoleUserId(it.userId) }
 
     private fun syncContests(competitionId: Long, target: List<ContestId>) = syncJoinTable(
         existing = contestToCompetitionJpaEntityRepository.findAllByCompetitionId(competitionId),

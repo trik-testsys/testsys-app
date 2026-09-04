@@ -17,7 +17,8 @@ import tech.testsys.domain.model.user.SingleRoleUserId
  * @property name the name of the competition, or `null` if not set yet.
  * @property description the description of the competition, or `null` if not set yet.
  * @property owner the id of the owning manager, or `null` if not set yet.
- * @property participants the ids of the registered participants.
+ * @property participants the ids of the registered participants; persistence projects them from the participants and ignores
+ *   the value on write.
  * @property contests the ids of the contests held within the competition.
  * @since %CURRENT_VERSION%
  */

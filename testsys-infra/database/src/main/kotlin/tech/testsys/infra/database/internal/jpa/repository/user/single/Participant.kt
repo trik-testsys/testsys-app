@@ -20,4 +20,11 @@ interface ParticipantDataJpaEntityRepository : SequenceJpaEntityRepository<Parti
      * @since %CURRENT_VERSION%
      */
     fun findByUserId(userId: Long): ParticipantDataJpaEntity?
+
+    /**
+     * Finds the participant data rows of the competition [competitionId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByCompetitionId(competitionId: Long): List<ParticipantDataJpaEntity>
 }

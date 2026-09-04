@@ -108,28 +108,6 @@
         </createTable>
     </changeSet>
 
-    <changeSet id="1.0.0-04-5" author="roman.shishkin">
-        <createTable tableName="ts_participant_to_competition">
-            <column name="participant_id" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="pk_ts_participant_to_competition" nullable="false"
-                             foreignKeyName="fk_participant_to_competition_user" references="ts_user(id)"/>
-            </column>
-            <column name="competition_id" type="BIGINT">
-                <constraints primaryKey="true" primaryKeyName="pk_ts_participant_to_competition" nullable="false"
-                             foreignKeyName="fk_participant_to_competition_competition" references="ts_competition(id)"/>
-            </column>
-            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
-                <constraints nullable="false"/>
-            </column>
-            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
-                <constraints nullable="false"/>
-            </column>
-            <column name="version" type="BIGINT" defaultValueNumeric="0">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-
     <changeSet id="1.0.0-04-6" author="roman.shishkin">
         <createTable tableName="ts_competition_to_observer">
             <column name="competition_id" type="BIGINT">
@@ -189,6 +167,13 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-04-10" author="roman.shishkin">
+        <comment>Competition.participants is projected from ParticipantData.competition_id.</comment>
+        <createIndex indexName="ix_ts_participant_data_competition_id" tableName="ts_participant_data">
+            <column name="competition_id"/>
+        </createIndex>
     </changeSet>
 
 </databaseChangeLog>

@@ -9,7 +9,6 @@ import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.group.CompetitionJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.group.ContestToCompetitionJpaEntity
-import tech.testsys.infra.database.internal.jpa.entity.group.ParticipantToCompetitionJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
 
@@ -22,7 +21,7 @@ import tech.testsys.infra.database.internal.utils.populateFields
 object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
 
     /**
-     * Assembles a [Competition] from [jpaEntity] and the ids of its participants and contests.
+     * Assembles a [Competition] from [jpaEntity], the ids of the participants projected onto it and the ids of its contests.
      *
      * @since %CURRENT_VERSION%
      */
@@ -62,18 +61,6 @@ object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
     ).also {
         it.createdAt = current.createdAt
         it.version = entity.version.value
-    }
-
-    /**
-     * Creates the [ParticipantToCompetitionJpaEntity] rows linking the competition [competitionId] with [participantIds].
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun toParticipantAssociations(competitionId: Long, participantIds: List<SingleRoleUserId>) = participantIds.map {
-        ParticipantToCompetitionJpaEntity(
-            participantId = it.value,
-            competitionId = competitionId,
-        )
     }
 
     /**

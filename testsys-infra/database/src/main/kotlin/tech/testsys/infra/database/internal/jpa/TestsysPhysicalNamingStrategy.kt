@@ -3,7 +3,6 @@ package tech.testsys.infra.database.internal.jpa
 import org.hibernate.boot.model.naming.Identifier
 import org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment
-import org.springframework.stereotype.Component
 
 /**
  * Hibernate naming strategy: snake_case columns (`taskId` → `task_id`); tables and sequences also drop the
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Component
  *
  * @since %CURRENT_VERSION%
  */
-@Component
 class TestsysPhysicalNamingStrategy : PhysicalNamingStrategyStandardImpl() {
 
     override fun toPhysicalTableName(logicalName: Identifier, jdbcEnvironment: JdbcEnvironment): Identifier {

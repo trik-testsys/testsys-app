@@ -73,6 +73,12 @@
                 <constraints nullable="false"
                              foreignKeyName="fk_verdict_submission" references="ts_submission(id)"/>
             </column>
+            <column name="logs_id" type="BIGINT">
+                <constraints unique="true" uniqueConstraintName="uk_ts_verdict_logs_id"/>
+            </column>
+            <column name="recording_id" type="BIGINT">
+                <constraints unique="true" uniqueConstraintName="uk_ts_verdict_recording_id"/>
+            </column>
         </createTable>
     </changeSet>
 

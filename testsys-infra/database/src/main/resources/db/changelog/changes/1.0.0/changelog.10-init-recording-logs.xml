@@ -19,10 +19,6 @@
             <column name="version" type="BIGINT" defaultValueNumeric="0">
                 <constraints nullable="false"/>
             </column>
-            <column name="verdict_id" type="BIGINT">
-                <constraints nullable="false"
-                             foreignKeyName="fk_recording_verdict" references="ts_verdict(id)"/>
-            </column>
             <column name="file_data_id" type="BIGINT">
                 <constraints nullable="false" unique="true"
                              foreignKeyName="fk_recording_file_data" references="ts_file_data(id)"/>
@@ -44,15 +40,22 @@
             <column name="version" type="BIGINT" defaultValueNumeric="0">
                 <constraints nullable="false"/>
             </column>
-            <column name="verdict_id" type="BIGINT">
-                <constraints nullable="false"
-                             foreignKeyName="fk_logs_verdict" references="ts_verdict(id)"/>
-            </column>
             <column name="file_data_id" type="BIGINT">
                 <constraints nullable="false" unique="true"
                              foreignKeyName="fk_logs_file_data" references="ts_file_data(id)"/>
             </column>
         </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-10-3" author="roman.shishkin">
+        <comment>Verdict.logs_id / recording_id FKs (deferred until ts_logs and ts_recording exist).</comment>
+
+        <addForeignKeyConstraint constraintName="fk_verdict_logs"
+                                 baseTableName="ts_verdict" baseColumnNames="logs_id"
+                                 referencedTableName="ts_logs" referencedColumnNames="id"/>
+        <addForeignKeyConstraint constraintName="fk_verdict_recording"
+                                 baseTableName="ts_verdict" baseColumnNames="recording_id"
+                                 referencedTableName="ts_recording" referencedColumnNames="id"/>
     </changeSet>
 
 </databaseChangeLog>

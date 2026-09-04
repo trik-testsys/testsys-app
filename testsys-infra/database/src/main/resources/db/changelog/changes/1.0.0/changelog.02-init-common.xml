@@ -25,6 +25,12 @@
             <column name="stored_file_name" type="VARCHAR(512)">
                 <constraints nullable="false"/>
             </column>
+            <column name="version_bucket" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content_hash" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
     </changeSet>
 

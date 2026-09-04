@@ -1,6 +1,5 @@
 package tech.testsys.domain.contract.persistence.repository
 
-import tech.testsys.domain.contract.DomainException.EntityNotFoundException
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
@@ -48,10 +47,9 @@ interface EntityLoader<Id : DomainId, Entity : DomainEntity<Id>> {
      *
      * @param field the lazy reference held by another entity.
      * @return the referenced entity.
-     * @throws EntityNotFoundException if the referenced entity does not exist.
+     * @throws IllegalArgumentException if the referenced entity does not exist.
      * @since %CURRENT_VERSION%
      */
-    @Throws(EntityNotFoundException::class) // TODO
     fun load(field: LazyEntity<Id, Entity>): Entity
 
     /**
@@ -59,10 +57,9 @@ interface EntityLoader<Id : DomainId, Entity : DomainEntity<Id>> {
      *
      * @param list the lazy list reference held by another entity.
      * @return the referenced entities.
-     * @throws EntityNotFoundException if any referenced entity does not exist.
+     * @throws IllegalArgumentException if any referenced entity does not exist.
      * @since %CURRENT_VERSION%
      */
-    @Throws(EntityNotFoundException::class) // TODO
     fun load(list: LazyEntityList<Id, Entity>): List<Entity>
 }
 

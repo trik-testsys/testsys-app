@@ -74,7 +74,7 @@ Hexagonal: the domain module defines ports under `tech.testsys.domain.contract`,
 - Users: `MultipleRoleUser` owns a set of `CompatibleUserRole`s (Developer, Student, Administrator, Judge, Manager);
   `SingleRoleUser` is one of Participant / Observer / Supervisor.
 - Ports: `EntityRepository<Data, Id, Entity>` = `EntityFinder + EntityLoader + EntitySaver + EntityRemover`; per-entity interfaces in
-  `contract/persistence/repository/*Repositories.kt`. Also `FileBlobStorage`, `Grader`, `Pagination`/`Page`, `DomainException`.
+  `contract/persistence/repository/*Repositories.kt`. Also `FileBlobStorage`, `Grader`, `Pagination`/`Page`.
 
 ### Builder DSL (`tech.testsys.domain.builder`)
 

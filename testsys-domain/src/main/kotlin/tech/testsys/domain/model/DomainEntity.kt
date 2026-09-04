@@ -60,7 +60,7 @@ class LazyEntity<Id : DomainId, Entity : DomainEntity<Id>>(val id: Id) {
      *
      * @param persistence the loader used to fetch the entity on the first call.
      * @return the referenced entity.
-     * @throws tech.testsys.domain.contract.DomainException.EntityNotFoundException if no entity with [id] exists.
+     * @throws IllegalArgumentException if no entity with [id] exists.
      * @since %CURRENT_VERSION%
      */
     fun load(persistence: EntityLoader<Id, Entity>): Entity {
@@ -94,7 +94,7 @@ class LazyEntityList<Id : DomainId, Entity : DomainEntity<Id>>(val ids: List<Id>
      * @param pageSize reserved for future pagination; currently ignored.
      * @param page reserved for future pagination; currently ignored.
      * @return the referenced entities.
-     * @throws tech.testsys.domain.contract.DomainException.EntityNotFoundException if any of [ids] does not exist.
+     * @throws IllegalArgumentException if any of [ids] does not exist.
      * @since %CURRENT_VERSION%
      */
     fun load(persistence: EntityLoader<Id, Entity>, pageSize: Int = Int.MAX_VALUE, page: Int = 0): List<Entity> {

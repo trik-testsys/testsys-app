@@ -45,7 +45,7 @@ abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEn
         val entities = findByIds(list.ids)
         val foundIds = entities.map { it.id.value }.toSet()
         val missingIds = list.ids.filter { it.value !in foundIds }
-        if (missingIds.isNotEmpty()) error("Entities ${missingIds.map { it.value }} not found") // TODO
+        require(missingIds.isEmpty()) { "Entities not found by ids=${missingIds.map { it.value }}" }
         return entities
     }
 

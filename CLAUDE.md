@@ -70,7 +70,7 @@ Hexagonal: the domain module defines ports under `tech.testsys.domain.contract`,
   `version: EntityVersion` is an opaque optimistic-lock token: issued by persistence, passed back on `update`, never compared or modified in the domain; a stale token makes `update` fail.
 - Entities never hold references to other entities. Relations are `LazyEntity<Id, E>` / `LazyEntityList<Id, E>` (ids only) resolved through `EntityLoader.load(...)`.
   Create them with `id.lazify()` / `ids.lazify()`.
-- Variant state is modelled with sealed hierarchies, e.g. `TaskContent` (`New` / `Uncommited` / `Committed`, wip vs. last committed content),
+- Variant state is modelled with sealed hierarchies, e.g. `TaskContent` (`New` / `Uncommitted` / `Committed`, wip vs. last committed content),
   `SubmissionStatus`, `SubmissionKind`, `GradingResult`, `TrikSupportedLanguage`.
 - Users: `MultipleRoleUser` owns a set of `CompatibleUserRole`s (Developer, Student, Administrator, Judge, Manager);
   `SingleRoleUser` is one of Participant / Observer / Supervisor.

@@ -43,22 +43,22 @@ sealed interface TaskContent {
      * Content with a committed revision and pending work-in-progress changes on top of it.
      *
      * @property wip the work-in-progress revision.
-     * @property lastCommited the last committed revision.
+     * @property lastCommitted the last committed revision.
      * @since %CURRENT_VERSION%
      */
-    data class Uncommited(
+    data class Uncommitted(
         val wip: WipTaskContent,
-        val lastCommited: CommitedTaskContent,
+        val lastCommitted: CommittedTaskContent,
     ) : TaskContent
 
     /**
      * Content whose latest changes are committed: no work-in-progress revision exists.
      *
-     * @property lastCommited the last committed revision.
+     * @property lastCommitted the last committed revision.
      * @since %CURRENT_VERSION%
      */
     data class Committed(
-        val lastCommited: CommitedTaskContent,
+        val lastCommitted: CommittedTaskContent,
     ) : TaskContent
 }
 
@@ -72,7 +72,7 @@ sealed interface TaskContent {
  * @property supportedTrikStudioVersions the TRIK Studio versions the task can be run with.
  * @since %CURRENT_VERSION%
  */
-data class CommitedTaskContent(
+data class CommittedTaskContent(
     val tests: LazyEntityList<TestId, Test>,
     val exercise: LazyEntity<ExerciseId, Exercise>,
     val statement: LazyEntity<StatementId, Statement>,

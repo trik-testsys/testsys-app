@@ -6,7 +6,7 @@ import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.task.CommitedTaskContent
+import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.StatementId
@@ -88,17 +88,17 @@ abstract class TaskContentBuilder<T> : Builder<T> {
 }
 
 /**
- * Builder of [CommitedTaskContent]. Required: [exercise], [statement].
+ * Builder of [CommittedTaskContent]. Required: [exercise], [statement].
  *
  * @since %CURRENT_VERSION%
  */
-class CommittedTaskContentBuilder : TaskContentBuilder<CommitedTaskContent>() {
+class CommittedTaskContentBuilder : TaskContentBuilder<CommittedTaskContent>() {
 
-    override fun build(): CommitedTaskContent {
+    override fun build(): CommittedTaskContent {
         val exercise = requireField(exercise) { ::exercise }
         val statement = requireField(statement) { ::statement }
 
-        return CommitedTaskContent(
+        return CommittedTaskContent(
             tests = tests.lazify(),
             exercise = exercise.lazify(),
             statement = statement.lazify(),

@@ -24,27 +24,27 @@ class TaskContentChooser : Chooser<TaskContent>() {
     }
 
     /**
-     * Selects [TaskContent.Uncommited].
+     * Selects [TaskContent.Uncommitted].
      *
      * @param wipBuilder the configuration block of the work-in-progress revision.
-     * @param lastCommitedBuilder the configuration block of the last committed revision.
+     * @param lastCommittedBuilder the configuration block of the last committed revision.
      * @since %CURRENT_VERSION%
      */
-    fun uncommited(wipBuilder: WipTaskContentBuilder.() -> Unit, lastCommitedBuilder: CommittedTaskContentBuilder.() -> Unit) {
-        val currentBuilder = choice as? UncommitedTaskContentBuilder ?: UncommitedTaskContentBuilder()
+    fun uncommitted(wipBuilder: WipTaskContentBuilder.() -> Unit, lastCommittedBuilder: CommittedTaskContentBuilder.() -> Unit) {
+        val currentBuilder = choice as? UncommittedTaskContentBuilder ?: UncommittedTaskContentBuilder()
         currentBuilder.wip.apply(wipBuilder)
-        currentBuilder.lastCommited.apply(lastCommitedBuilder)
+        currentBuilder.lastCommitted.apply(lastCommittedBuilder)
         makeChoice(currentBuilder)
     }
 
     /**
-     * Selects [TaskContent.Committed] with the committed revision configured by [lastCommitedBuilder].
+     * Selects [TaskContent.Committed] with the committed revision configured by [lastCommittedBuilder].
      *
      * @since %CURRENT_VERSION%
      */
-    fun committed(lastCommitedBuilder: CommittedTaskContentBuilder.() -> Unit) {
+    fun committed(lastCommittedBuilder: CommittedTaskContentBuilder.() -> Unit) {
         val currentBuilder = choice as? CommittedTaskContentVariantBuilder ?: CommittedTaskContentVariantBuilder()
-        currentBuilder.lastCommited.apply(lastCommitedBuilder)
+        currentBuilder.lastCommitted.apply(lastCommittedBuilder)
         makeChoice(currentBuilder)
     }
 }
@@ -61,26 +61,26 @@ class NewTaskContentBuilder : Builder<TaskContent> {
 }
 
 /**
- * Builder of [TaskContent.Uncommited].
+ * Builder of [TaskContent.Uncommitted].
  *
  * @property wip the builder of the work-in-progress revision.
- * @property lastCommited the builder of the last committed revision.
+ * @property lastCommitted the builder of the last committed revision.
  * @since %CURRENT_VERSION%
  */
-class UncommitedTaskContentBuilder : Builder<TaskContent> {
+class UncommittedTaskContentBuilder : Builder<TaskContent> {
     val wip = WipTaskContentBuilder()
 
-    val lastCommited = CommittedTaskContentBuilder()
-    override fun build() = TaskContent.Uncommited(wip.build(), lastCommited.build())
+    val lastCommitted = CommittedTaskContentBuilder()
+    override fun build() = TaskContent.Uncommitted(wip.build(), lastCommitted.build())
 }
 
 /**
  * Builder of [TaskContent.Committed].
  *
- * @property lastCommited the builder of the last committed revision.
+ * @property lastCommitted the builder of the last committed revision.
  * @since %CURRENT_VERSION%
  */
 class CommittedTaskContentVariantBuilder : Builder<TaskContent> {
-    val lastCommited = CommittedTaskContentBuilder()
-    override fun build() = TaskContent.Committed(lastCommited.build())
+    val lastCommitted = CommittedTaskContentBuilder()
+    override fun build() = TaskContent.Committed(lastCommitted.build())
 }

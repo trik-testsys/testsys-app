@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.task.CommitedTaskContent
+import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
@@ -54,11 +54,16 @@ class TaskPersistenceAdapter(
     @Transactional
     override fun save(data: TaskData): Task {
         val wipContent = TaskMapping.extractWip(data.content)
-        val commitedContent = TaskMapping.extractCommited(data.content)
+        val committedContent = TaskMapping.extractCommitted(data.content)
 
-        val (wipContentId, commitedContentId) = persistContents(wipContent, commitedContent, currentWipId = null, currentCommitedId = null)
+        val (wipContentId, committedContentId) = persistContents(
+            wipContent,
+            committedContent,
+            currentWipId = null,
+            currentCommittedId = null,
+        )
 
-        val savedJpaEntity = jpaEntityRepository.save(TaskMapping.toJpaEntity(data, wipContentId, commitedContentId))
+        val savedJpaEntity = jpaEntityRepository.save(TaskMapping.toJpaEntity(data, wipContentId, committedContentId))
         val taskId = savedJpaEntity.requireId()
         communityToTaskJpaEntityRepository.saveAll(TaskMapping.toSharedToAssociations(taskId, data.sharedTo.ids))
 
@@ -71,16 +76,16 @@ class TaskPersistenceAdapter(
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
 
         val wipContent = TaskMapping.extractWip(entity.data.content)
-        val commitedContent = TaskMapping.extractCommited(entity.data.content)
+        val committedContent = TaskMapping.extractCommitted(entity.data.content)
 
-        val (wipContentId, commitedContentId) = persistContents(
+        val (wipContentId, committedContentId) = persistContents(
             wipContent = wipContent,
-            commitedContent = commitedContent,
+            committedContent = committedContent,
             currentWipId = currentJpaEntity.wipContentId,
-            currentCommitedId = currentJpaEntity.commitedContentId,
+            currentCommittedId = currentJpaEntity.committedContentId,
         )
 
-        val updatedJpaEntity = TaskMapping.toJpaEntity(entity, currentJpaEntity, wipContentId, commitedContentId)
+        val updatedJpaEntity = TaskMapping.toJpaEntity(entity, currentJpaEntity, wipContentId, committedContentId)
         val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
         val taskId = savedJpaEntity.requireId()
         syncSharedTo(taskId, entity.data.sharedTo.ids)
@@ -110,12 +115,12 @@ class TaskPersistenceAdapter(
                 TaskContent.New(wip)
             }
 
-            TaskStatusJpaEnum.UNCOMMITED -> {
+            TaskStatusJpaEnum.UNCOMMITTED -> {
                 val wipRow = taskContentJpaEntityRepository.findByIdOrError(jpaEntity.wipContentId)
-                val commitedId = requireNotNull(jpaEntity.commitedContentId) {
-                    "Task ${jpaEntity.requireId()} has status=UNCOMMITED but commitedContentId is null"
+                val committedId = requireNotNull(jpaEntity.committedContentId) {
+                    "Task ${jpaEntity.requireId()} has status=UNCOMMITTED but committedContentId is null"
                 }
-                val commitedRow = taskContentJpaEntityRepository.findByIdOrError(commitedId)
+                val committedRow = taskContentJpaEntityRepository.findByIdOrError(committedId)
 
                 val wip = TaskContentMapping.toWipDomain(
                     jpaEntity = wipRow,
@@ -123,27 +128,27 @@ class TaskPersistenceAdapter(
                     developerSolutionIds = loadDeveloperSolutionIds(wipRow.requireId()),
                     supportedVersions = loadSupportedVersions(wipRow.requireId()),
                 )
-                val lastCommited = TaskContentMapping.toCommitedDomain(
-                    jpaEntity = commitedRow,
-                    testIds = loadTestIds(commitedRow.requireId()),
-                    developerSolutionIds = loadDeveloperSolutionIds(commitedRow.requireId()),
-                    supportedVersions = loadSupportedVersions(commitedRow.requireId()),
+                val lastCommitted = TaskContentMapping.toCommittedDomain(
+                    jpaEntity = committedRow,
+                    testIds = loadTestIds(committedRow.requireId()),
+                    developerSolutionIds = loadDeveloperSolutionIds(committedRow.requireId()),
+                    supportedVersions = loadSupportedVersions(committedRow.requireId()),
                 )
-                TaskContent.Uncommited(wip = wip, lastCommited = lastCommited)
+                TaskContent.Uncommitted(wip = wip, lastCommitted = lastCommitted)
             }
 
-            TaskStatusJpaEnum.COMMITED -> {
-                val commitedId = requireNotNull(jpaEntity.commitedContentId) {
-                    "Task ${jpaEntity.requireId()} has status=COMMITED but commitedContentId is null"
+            TaskStatusJpaEnum.COMMITTED -> {
+                val committedId = requireNotNull(jpaEntity.committedContentId) {
+                    "Task ${jpaEntity.requireId()} has status=COMMITTED but committedContentId is null"
                 }
-                val commitedRow = taskContentJpaEntityRepository.findByIdOrError(commitedId)
-                val lastCommited = TaskContentMapping.toCommitedDomain(
-                    jpaEntity = commitedRow,
-                    testIds = loadTestIds(commitedRow.requireId()),
-                    developerSolutionIds = loadDeveloperSolutionIds(commitedRow.requireId()),
-                    supportedVersions = loadSupportedVersions(commitedRow.requireId()),
+                val committedRow = taskContentJpaEntityRepository.findByIdOrError(committedId)
+                val lastCommitted = TaskContentMapping.toCommittedDomain(
+                    jpaEntity = committedRow,
+                    testIds = loadTestIds(committedRow.requireId()),
+                    developerSolutionIds = loadDeveloperSolutionIds(committedRow.requireId()),
+                    supportedVersions = loadSupportedVersions(committedRow.requireId()),
                 )
-                TaskContent.Committed(lastCommited)
+                TaskContent.Committed(lastCommitted)
             }
         }
     }
@@ -167,37 +172,37 @@ class TaskPersistenceAdapter(
     }
 
     /**
-     * Replaces the wip/commited content rows of a task and returns the `(wipContentId, commitedContentId)` pair;
-     * for a `COMMITED` task (no wip) both point at the same row.
+     * Replaces the wip/committed content rows of a task and returns the `(wipContentId, committedContentId)` pair;
+     * for a `COMMITTED` task (no wip) both point at the same row.
      */
     private fun persistContents(
         wipContent: WipTaskContent?,
-        commitedContent: CommitedTaskContent?,
+        committedContent: CommittedTaskContent?,
         currentWipId: Long?,
-        currentCommitedId: Long?,
+        currentCommittedId: Long?,
     ): Pair<Long, Long?> {
         // Delete previous content rows + their associations to keep the schema tidy.
         currentWipId?.let { deleteContentCascade(it) }
-        if (currentCommitedId != null && currentCommitedId != currentWipId) {
-            deleteContentCascade(currentCommitedId)
+        if (currentCommittedId != null && currentCommittedId != currentWipId) {
+            deleteContentCascade(currentCommittedId)
         }
 
         return when {
-            wipContent != null && commitedContent != null -> {
+            wipContent != null && committedContent != null -> {
                 val wipId = insertContent(wipContent)
-                val commitedId = insertContent(commitedContent)
-                wipId to commitedId
+                val committedId = insertContent(committedContent)
+                wipId to committedId
             }
 
-            wipContent != null && commitedContent == null -> {
+            wipContent != null && committedContent == null -> {
                 val wipId = insertContent(wipContent)
                 wipId to null
             }
 
-            wipContent == null && commitedContent != null -> {
-                // COMMITED status: wip and committed reference the same row.
-                val commitedId = insertContent(commitedContent)
-                commitedId to commitedId
+            wipContent == null && committedContent != null -> {
+                // COMMITTED status: wip and committed reference the same row.
+                val committedId = insertContent(committedContent)
+                committedId to committedId
             }
 
             else -> error("TaskContent must declare either a wip, a committed payload, or both")
@@ -216,7 +221,7 @@ class TaskPersistenceAdapter(
         return contentId
     }
 
-    private fun insertContent(content: CommitedTaskContent): Long {
+    private fun insertContent(content: CommittedTaskContent): Long {
         val saved = taskContentJpaEntityRepository.save(TaskContentMapping.toJpaEntity(content))
         val contentId = saved.requireId()
         persistContentAssociations(

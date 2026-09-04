@@ -15,7 +15,7 @@ class TaskBuilderTests : DomainEntityBuilderTests<Task, TaskData, TaskDataBuilde
         description = "A test task"
     }
 
-    private fun commitedTaskContent(): CommittedTaskContentBuilder.() -> Unit = {
+    private fun committedTaskContent(): CommittedTaskContentBuilder.() -> Unit = {
         exercise(1)
         statement(1)
         supportedTrikStudioVersions(listOf("3.0.0"))
@@ -30,13 +30,13 @@ class TaskBuilderTests : DomainEntityBuilderTests<Task, TaskData, TaskDataBuilde
         },
         taskData {
             taskIdentity()
-            content.committed(commitedTaskContent())
+            content.committed(committedTaskContent())
         },
         taskData {
             taskIdentity()
-            content.uncommited(
+            content.uncommitted(
                 wipBuilder = wipTaskContent(),
-                lastCommitedBuilder = commitedTaskContent(),
+                lastCommittedBuilder = committedTaskContent(),
             )
         },
     )

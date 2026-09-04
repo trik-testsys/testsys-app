@@ -2,7 +2,7 @@ package tech.testsys.infra.database.internal.mapping.task
 
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.model.LazyEntity
-import tech.testsys.domain.model.task.CommitedTaskContent
+import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.StatementId
@@ -17,7 +17,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionToT
 import tech.testsys.infra.database.internal.utils.requireId
 
 /**
- * Mapping between one content revision of a task, [WipTaskContent] or [CommitedTaskContent], and [TaskContentJpaEntity];
+ * Mapping between one content revision of a task, [WipTaskContent] or [CommittedTaskContent], and [TaskContentJpaEntity];
  * the sealed `TaskContent` is composed by [TaskMapping].
  *
  * @since %CURRENT_VERSION%
@@ -47,24 +47,24 @@ object TaskContentMapping {
     }
 
     /**
-     * Assembles the [CommitedTaskContent] of the revision [jpaEntity] from [testIds], [developerSolutionIds]
+     * Assembles the [CommittedTaskContent] of the revision [jpaEntity] from [testIds], [developerSolutionIds]
      * and [supportedVersions]; fails when the exercise or statement reference is missing.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toCommitedDomain(
+    fun toCommittedDomain(
         jpaEntity: TaskContentJpaEntity,
         testIds: List<TestId>,
         developerSolutionIds: List<DeveloperSolutionId>,
         supportedVersions: List<TrikStudioVersion>,
-    ): CommitedTaskContent {
+    ): CommittedTaskContent {
         val exerciseId = requireNotNull(jpaEntity.exerciseId) {
             "TaskContent ${jpaEntity.requireId()} marks committed payload but exerciseId is null"
         }
         val statementId = requireNotNull(jpaEntity.statementId) {
             "TaskContent ${jpaEntity.requireId()} marks committed payload but statementId is null"
         }
-        return CommitedTaskContent(
+        return CommittedTaskContent(
             tests = testIds.lazify(),
             exercise = ExerciseId(exerciseId).lazify(),
             statement = StatementId(statementId).lazify(),
@@ -88,7 +88,7 @@ object TaskContentMapping {
      *
      * @since %CURRENT_VERSION%
      */
-    fun toJpaEntity(content: CommitedTaskContent) = TaskContentJpaEntity(
+    fun toJpaEntity(content: CommittedTaskContent) = TaskContentJpaEntity(
         exerciseId = content.exercise.id.value,
         statementId = content.statement.id.value,
     )

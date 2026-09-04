@@ -27,7 +27,7 @@ import tech.testsys.domain.builder.task.VerdictBuilder
 import tech.testsys.domain.builder.task.VerdictDataBuilder
 import tech.testsys.domain.builder.task.WipTaskContentBuilder
 import tech.testsys.domain.builder.util.chooser.TaskContentChooser
-import tech.testsys.domain.model.task.CommitedTaskContent
+import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.DeveloperSolution
@@ -225,22 +225,22 @@ inline fun taskContentNew(builder: WipTaskContentBuilder.() -> Unit) = TaskConte
  *
  * @since %CURRENT_VERSION%
  */
-inline fun taskContentCommited(builder: CommittedTaskContentBuilder.() -> Unit) =
+inline fun taskContentCommitted(builder: CommittedTaskContentBuilder.() -> Unit) =
     TaskContent.Committed(CommittedTaskContentBuilder().apply(builder).build())
 
 /**
- * Builds [TaskContent.Uncommited].
+ * Builds [TaskContent.Uncommitted].
  *
  * @param wipBuilder the [WipTaskContentBuilder] block of the work-in-progress revision.
- * @param lastCommitedBuilder the [CommittedTaskContentBuilder] block of the last committed revision.
+ * @param lastCommittedBuilder the [CommittedTaskContentBuilder] block of the last committed revision.
  * @since %CURRENT_VERSION%
  */
-inline fun taskContentUncommited(
+inline fun taskContentUncommitted(
     wipBuilder: WipTaskContentBuilder.() -> Unit,
-    lastCommitedBuilder: CommittedTaskContentBuilder.() -> Unit,
-) = TaskContent.Uncommited(
+    lastCommittedBuilder: CommittedTaskContentBuilder.() -> Unit,
+) = TaskContent.Uncommitted(
     wip = WipTaskContentBuilder().apply(wipBuilder).build(),
-    lastCommited = CommittedTaskContentBuilder().apply(lastCommitedBuilder).build(),
+    lastCommitted = CommittedTaskContentBuilder().apply(lastCommittedBuilder).build(),
 )
 
 /**
@@ -492,7 +492,7 @@ private fun WipTaskContentBuilder.populateFrom(content: WipTaskContent) {
     supportedTrikStudioVersions = content.supportedTrikStudioVersions.toMutableList()
 }
 
-private fun CommittedTaskContentBuilder.populateFrom(content: CommitedTaskContent) {
+private fun CommittedTaskContentBuilder.populateFrom(content: CommittedTaskContent) {
     tests = content.tests.ids.toMutableList()
     exercise = content.exercise.id
     statement = content.statement.id
@@ -503,13 +503,13 @@ private fun CommittedTaskContentBuilder.populateFrom(content: CommitedTaskConten
 private fun TaskContentChooser.populateFrom(taskContent: TaskContent) {
     when (taskContent) {
         is TaskContent.New -> new { populateFrom(taskContent.wip) }
-        is TaskContent.Uncommited -> {
-            uncommited(
+        is TaskContent.Uncommitted -> {
+            uncommitted(
                 wipBuilder = { populateFrom(taskContent.wip) },
-                lastCommitedBuilder = { populateFrom(taskContent.lastCommited) },
+                lastCommittedBuilder = { populateFrom(taskContent.lastCommitted) },
             )
         }
-        is TaskContent.Committed -> committed { populateFrom(taskContent.lastCommited) }
+        is TaskContent.Committed -> committed { populateFrom(taskContent.lastCommitted) }
     }
 }
 

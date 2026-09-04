@@ -3,7 +3,7 @@ package tech.testsys.infra.database.internal.mapping.task
 import tech.testsys.domain.builder.api.task
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.task.CommitedTaskContent
+import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
@@ -43,32 +43,32 @@ object TaskMapping {
     }
 
     /**
-     * Creates a new [TaskJpaEntity] row from [data] and its content revisions [wipContentId] and [commitedContentId].
+     * Creates a new [TaskJpaEntity] row from [data] and its content revisions [wipContentId] and [committedContentId].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toJpaEntity(data: TaskData, wipContentId: Long, commitedContentId: Long?) = TaskJpaEntity(
+    fun toJpaEntity(data: TaskData, wipContentId: Long, committedContentId: Long?) = TaskJpaEntity(
         name = data.name,
         description = data.description,
         ownerId = data.owner.id.value,
         status = encodeStatus(data.content),
         wipContentId = wipContentId,
-        commitedContentId = commitedContentId,
+        committedContentId = committedContentId,
     )
 
     /**
-     * Creates the [TaskJpaEntity] row replacing [current] from [entity], [wipContentId] and [commitedContentId];
+     * Creates the [TaskJpaEntity] row replacing [current] from [entity], [wipContentId] and [committedContentId];
      * keeps `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toJpaEntity(entity: Task, current: TaskJpaEntity, wipContentId: Long, commitedContentId: Long?) = TaskJpaEntity(
+    fun toJpaEntity(entity: Task, current: TaskJpaEntity, wipContentId: Long, committedContentId: Long?) = TaskJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
         ownerId = entity.data.owner.id.value,
         status = encodeStatus(entity.data.content),
         wipContentId = wipContentId,
-        commitedContentId = commitedContentId,
+        committedContentId = committedContentId,
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
@@ -91,8 +91,8 @@ object TaskMapping {
      */
     fun encodeStatus(content: TaskContent): TaskStatusJpaEnum = when (content) {
         is TaskContent.New -> TaskStatusJpaEnum.NEW
-        is TaskContent.Uncommited -> TaskStatusJpaEnum.UNCOMMITED
-        is TaskContent.Committed -> TaskStatusJpaEnum.COMMITED
+        is TaskContent.Uncommitted -> TaskStatusJpaEnum.UNCOMMITTED
+        is TaskContent.Committed -> TaskStatusJpaEnum.COMMITTED
     }
 
     /**
@@ -102,7 +102,7 @@ object TaskMapping {
      */
     fun extractWip(content: TaskContent): WipTaskContent? = when (content) {
         is TaskContent.New -> content.wip
-        is TaskContent.Uncommited -> content.wip
+        is TaskContent.Uncommitted -> content.wip
         is TaskContent.Committed -> null
     }
 
@@ -111,9 +111,9 @@ object TaskMapping {
      *
      * @since %CURRENT_VERSION%
      */
-    fun extractCommited(content: TaskContent): CommitedTaskContent? = when (content) {
+    fun extractCommitted(content: TaskContent): CommittedTaskContent? = when (content) {
         is TaskContent.New -> null
-        is TaskContent.Uncommited -> content.lastCommited
-        is TaskContent.Committed -> content.lastCommited
+        is TaskContent.Uncommitted -> content.lastCommitted
+        is TaskContent.Committed -> content.lastCommitted
     }
 }

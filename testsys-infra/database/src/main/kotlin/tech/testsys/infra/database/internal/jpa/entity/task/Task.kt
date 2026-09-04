@@ -13,16 +13,16 @@ import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * Lifecycle state of a [TaskJpaEntity]: [NEW] has no committed revision, [UNCOMMITED] has WIP changes over the last
- * one, [COMMITED] equals it.
+ * Lifecycle state of a [TaskJpaEntity]: [NEW] has no committed revision, [UNCOMMITTED] has WIP changes over the last
+ * one, [COMMITTED] equals it.
  *
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
 enum class TaskStatusJpaEnum {
     NEW,
-    UNCOMMITED,
-    COMMITED,
+    UNCOMMITTED,
+    COMMITTED,
 }
 
 /**
@@ -147,7 +147,7 @@ class TaskContentJpaEntity(
  * @property ownerId id of the developer owning the task.
  * @property status lifecycle state of the task.
  * @property wipContentId id of the WIP revision.
- * @property commitedContentId id of the last committed revision, or `null` while [status] is [TaskStatusJpaEnum.NEW].
+ * @property committedContentId id of the last committed revision, or `null` while [status] is [TaskStatusJpaEnum.NEW].
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -160,6 +160,6 @@ class TaskJpaEntity(
     @Enumerated(EnumType.STRING)
     val status: TaskStatusJpaEnum,
     val wipContentId: Long,
-    val commitedContentId: Long?,
+    val committedContentId: Long?,
     id: Long? = null,
 ) : SequenceJpaEntity(id)

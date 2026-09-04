@@ -59,9 +59,9 @@
                 <constraints nullable="false" unique="true"
                              foreignKeyName="fk_task_wip_content" references="ts_task_content(id)"/>
             </column>
-            <column name="commited_content_id" type="BIGINT">
+            <column name="committed_content_id" type="BIGINT">
                 <constraints unique="true"
-                             foreignKeyName="fk_task_commited_content" references="ts_task_content(id)"/>
+                             foreignKeyName="fk_task_committed_content" references="ts_task_content(id)"/>
             </column>
         </createTable>
     </changeSet>

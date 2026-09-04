@@ -17,7 +17,12 @@ Reported codes:
     TYPE_PARAM      type parameter without "@param Name" in the KDoc
     SUBTYPE_LINK    KDoc of a type links [Sub] where Sub extends/implements that type
     LONG_LINE       KDoc line longer than --max-line (Detekt MaxLineLength)
+    VERBOSE_DOC     summary of a public declaration has more than one paragraph or more than 3 prose lines
+    SEE_TAG         "@see" tag (link inline in the summary or drop it)
     NONPUBLIC_DOC   (info only, shown with --info) handwritten KDoc on a non-public member
+
+The final line reports the KDoc volume ("K KDoc lines, P% of source"). A brevity pass must lower it;
+a run that only adds missing blocks leaves it growing.
 """
 import argparse
 import pathlib
@@ -38,14 +43,38 @@ def strip_kdoc(text: str) -> str:
 def kdoc_before(lines, i):
     """Return (start, end) line indexes of the KDoc block right above line i (annotations allowed between), or None."""
     j = i - 1
-    while j >= 0 and lines[j].strip().startswith("@"):
-        j -= 1
+    while j >= 0:
+        s = lines[j].strip()
+        if s.startswith("@"):
+            j -= 1
+        elif s == ")":
+            # closing line of a multi-line annotation such as "@Target(\n ... \n)": skip back to its "@Name(" line
+            depth = 0
+            while j >= 0:
+                depth += lines[j].count(")") - lines[j].count("(")
+                if depth <= 0 and lines[j].strip().startswith("@"):
+                    break
+                j -= 1
+            j -= 1
+        else:
+            break
     if j < 0 or lines[j].strip() != "*/":
         return None
     k = j
     while k >= 0 and not lines[k].lstrip().startswith("/**"):
         k -= 1
     return (k, j) if k >= 0 else None
+
+
+def enclosing_kind(lines, i, indent):
+    """Return the kind of the innermost declaration enclosing line i (by indentation), or None at top level."""
+    for j in range(i - 1, -1, -1):
+        if lines[j].strip().startswith(("//", "*", "/*")):
+            continue
+        m = DECL_RE.match(lines[j])
+        if m and len(m.group("indent")) < indent:
+            return m.group("kind")
+    return None
 
 
 def is_nonpublic(mods: str) -> bool:
@@ -163,6 +192,8 @@ def check_file(path: pathlib.Path, max_line: int, info: bool):
     # ---- pass 1: declarations ----
     for i, line in enumerate(lines):
         stripped = line.strip()
+        if stripped.startswith(("/**", "*")) and len(line) > max_line:
+            report("LONG_LINE", i, f"KDoc line longer than {max_line} characters")
         if stripped.startswith(("//", "*", "/*")):
             continue
         d = DECL_RE.match(line)
@@ -173,6 +204,8 @@ def check_file(path: pathlib.Path, max_line: int, info: bool):
                 continue  # anonymous object
             if stripped.startswith("companion object"):
                 continue
+            if enclosing_kind(lines, i, len(d.group("indent"))) == "fun":
+                continue  # local declaration inside a function body: never public
             header = declaration_header(lines, i)
             doc = kdoc_before(lines, i)
             nonpublic = is_nonpublic(mods)
@@ -207,6 +240,12 @@ def check_file(path: pathlib.Path, max_line: int, info: bool):
             block = "\n".join(lines[doc[0]:doc[1] + 1])
             if "@since %CURRENT_VERSION%" not in block:
                 report("MISSING_SINCE", i, "public declaration KDoc without '@since %CURRENT_VERSION%'")
+            prose, paragraphs = summary_shape(lines, doc)
+            if paragraphs > 1 or prose > 3:
+                report("VERBOSE_DOC", doc[0],
+                       f"summary has {prose} prose lines in {paragraphs} paragraphs; keep one or two sentences")
+            if re.search(r"^\s*\*\s*@see\b", block, flags=re.M):
+                report("SEE_TAG", doc[0], "@see tag; link inline in the summary or drop it")
             for tp in tps:
                 if not re.search(rf"@param\s+{re.escape(tp)}\s", block):
                     report("TYPE_PARAM", i, f"type parameter '{tp}' is not documented with @param")
@@ -240,10 +279,6 @@ def check_file(path: pathlib.Path, max_line: int, info: bool):
             doc = kdoc_before(lines, i)
             if doc:
                 report("PROP_DOC", i, f"KDoc above property '{p.group('name')}'; document it with @property in the class KDoc")
-        # long KDoc lines
-        if stripped.startswith(("/**", "*")) and len(line) > max_line:
-            report("LONG_LINE", i, f"KDoc line longer than {max_line} characters")
-
     # ---- pass 2: parent -> subtype links ----
     for parent, (s, e) in type_docs.items():
         block = "\n".join(lines[s:e + 1])
@@ -252,6 +287,33 @@ def check_file(path: pathlib.Path, max_line: int, info: bool):
                 report("SUBTYPE_LINK", s, f"KDoc of '{parent}' links its subtype [{child}]")
 
     return sorted(problems, key=lambda t: t[1])
+
+
+def summary_shape(lines, doc):
+    """Return (prose_lines, paragraphs) of the KDoc summary, i.e. the text before the first @tag."""
+    prose, paragraphs, gap = 0, 1, False
+    for j in range(doc[0], doc[1] + 1):
+        s = lines[j].strip().lstrip("/*").strip()
+        if s.startswith("@"):
+            break
+        if s:
+            if gap:
+                paragraphs += 1  # prose resumes after a blank line: a second paragraph
+                gap = False
+            prose += 1
+        elif prose:
+            gap = True
+    return prose, paragraphs
+
+
+def kdoc_volume(files):
+    kdoc = total = 0
+    for f in files:
+        for line in f.read_text().split("\n"):
+            total += 1
+            if line.lstrip().startswith(("/**", "*")):
+                kdoc += 1
+    return kdoc, total
 
 
 def strip_parens_keep_inner(header: str) -> str:
@@ -295,7 +357,9 @@ def main():
             print(f"{f}:{lineno}: {code} {msg}")
             if code != "NONPUBLIC_DOC":
                 total += 1
-    print(f"{len(files)} files, {total} violations")
+    kdoc, all_lines = kdoc_volume(files)
+    share = (100 * kdoc // all_lines) if all_lines else 0
+    print(f"{len(files)} files, {total} violations, {kdoc} KDoc lines ({share}% of source)")
     return 1 if total else 0
 
 

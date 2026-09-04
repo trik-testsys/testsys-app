@@ -32,11 +32,10 @@ abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEn
 ) : EntityRepository<Data, Id, Entity> {
 
     @Transactional(readOnly = true)
-    override fun findById(id: Id) = jpaEntityRepository.findByIdOrNull(id.value)?.takeIf { supports(it) }?.let { assemble(it) }
+    override fun findById(id: Id) = jpaEntityRepository.findByIdOrNull(id.value)?.let { assemble(it) }
 
     @Transactional(readOnly = true)
-    override fun findByIds(ids: List<Id>) =
-        jpaEntityRepository.findAllById(ids.map { it.value }).filter { supports(it) }.map { assemble(it) }
+    override fun findByIds(ids: List<Id>) = jpaEntityRepository.findAllById(ids.map { it.value }).map { assemble(it) }
 
     @Transactional(readOnly = true)
     override fun load(field: LazyEntity<Id, Entity>) = findById(field.id).requireById(field.id)
@@ -67,12 +66,6 @@ abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEn
 
     @Transactional
     override fun remove(entityList: List<Entity>) = removeByIds(entityList.map { it.id })
-
-    /**
-     * Whether [jpaEntity] belongs to this adapter; adapters sharing a table between several entity kinds override it so
-     * [findById] and [findByIds] skip foreign rows. Defaults to `true`.
-     */
-    protected open fun supports(jpaEntity: JpaEntity): Boolean = true
 
     /**
      * Assembles an [Entity] from its [jpaEntity] row.

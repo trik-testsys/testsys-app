@@ -6,7 +6,7 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
 import tech.testsys.domain.model.user.SingleRoleUserId
-import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
+import tech.testsys.infra.database.api.persistence.adapter.user.AbstractUserPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.SingleRoleToUserJpaEntity
@@ -32,7 +32,7 @@ class ParticipantPersistenceAdapter(
     private val participantDataJpaEntityRepository: ParticipantDataJpaEntityRepository,
     private val singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository,
     private val participantToCompetitionJpaEntityRepository: ParticipantToCompetitionJpaEntityRepository,
-) : AbstractPersistenceAdapter<ParticipantData, SingleRoleUserId, Participant, UserJpaEntity>(jpaEntityRepository),
+) : AbstractUserPersistenceAdapter<ParticipantData, SingleRoleUserId, Participant>(jpaEntityRepository),
     ParticipantRepository {
 
     @Transactional

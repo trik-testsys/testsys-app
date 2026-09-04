@@ -97,9 +97,10 @@ Layers, each with `group/`, `task/`, `user/` sub-packages mirroring the domain:
   (one for new `Data`, one for updating an existing row that copies `createdAt` and `version` from the current row).
   `XMappingTest : EntityMappingTest<XMapping>` enforces the method/return-type contract via reflection.
 - `api/persistence/adapter` — `@Component XPersistenceAdapter : AbstractPersistenceAdapter<Data, Id, Entity, JpaEntity>, XRepository`.
-  The base class implements find/load/remove and the list overloads; subclasses implement `save(data)`, `update(entity)`, `assemble(jpaEntity)`
-  and, for tables shared by several domain kinds, `supports(jpaEntity)`. If `save`/`update` need non-default `@Transactional`
-  settings, override every overload (Spring AOP self-invocation caveat).
+  The base class implements find/load/remove and the list overloads; subclasses implement `save(data)`, `update(entity)` and `assemble(jpaEntity)`.
+  User adapters extend `user/AbstractUserPersistenceAdapter` instead: it fixes the JPA type to `UserJpaEntity` and adds the abstract
+  `supports(jpaEntity)` filter that keeps `findById`/`findByIds` from assembling rows of another user kind stored in the shared `ts_user` table.
+  If `save`/`update` need non-default `@Transactional` settings, override every overload (Spring AOP self-invocation caveat).
 - Join tables are reconciled with `syncJoinTable(...)` from `internal/utils/PersistenceUtils.kt`; helpers `requireId()`,
   `findByIdOrError()`, `populateFields(jpaEntity)` live in `internal/utils`.
 - `api/persistence/FileDataStorage` — files are append-only: metadata row (`FileDataJpaEntity`) + blob in `FileBlobStorage`;

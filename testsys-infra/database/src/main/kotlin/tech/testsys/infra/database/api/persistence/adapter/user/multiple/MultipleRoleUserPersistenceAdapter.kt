@@ -20,7 +20,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Student
-import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
+import tech.testsys.infra.database.api.persistence.adapter.user.AbstractUserPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
@@ -76,7 +76,7 @@ class MultipleRoleUserPersistenceAdapter(
     private val judgmentOrderJpaEntityRepository: JudgmentOrderJpaEntityRepository,
     private val classJpaEntityRepository: ClassJpaEntityRepository,
     private val competitionJpaEntityRepository: CompetitionJpaEntityRepository,
-) : AbstractPersistenceAdapter<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser, UserJpaEntity>(jpaEntityRepository),
+) : AbstractUserPersistenceAdapter<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>(jpaEntityRepository),
     MultipleRoleUserRepository {
 
     @Transactional

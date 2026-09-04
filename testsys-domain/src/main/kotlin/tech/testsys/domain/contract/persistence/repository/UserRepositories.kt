@@ -11,10 +11,30 @@ import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
 
+/**
+ * Persistence port for [MultipleRoleUser] entities.
+ *
+ * @since %CURRENT_VERSION%
+ */
 interface MultipleRoleUserRepository : EntityRepository<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>
 
+/**
+ * Persistence port for [Observer] entities.
+ *
+ * @since %CURRENT_VERSION%
+ */
 interface ObserverRepository : EntityRepository<ObserverData, SingleRoleUserId, Observer>
 
+/**
+ * Persistence port for [Participant] entities.
+ *
+ * @since %CURRENT_VERSION%
+ */
 interface ParticipantRepository : EntityRepository<ParticipantData, SingleRoleUserId, Participant>
 
+/**
+ * Persistence port for [Supervisor] entities.
+ *
+ * @since %CURRENT_VERSION%
+ */
 interface SupervisorRepository : EntityRepository<SupervisorData, SingleRoleUserId, Supervisor>

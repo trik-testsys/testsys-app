@@ -26,109 +26,85 @@ import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
 
 /**
- * DSL entry point for building [MultipleRoleUserData].
+ * Builds [MultipleRoleUserData] with a [MultipleRoleUserDataBuilder] block.
  *
- * @param builder the configuration block applied to [MultipleRoleUserDataBuilder].
- * @return the constructed [MultipleRoleUserData].
  * @since %CURRENT_VERSION%
  */
 inline fun multipleRoleUserData(builder: MultipleRoleUserDataBuilder.() -> Unit) = MultipleRoleUserDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [MultipleRoleUser].
+ * Builds a [MultipleRoleUser] with a [MultipleRoleUserBuilder] block.
  *
- * @param builder the configuration block applied to [MultipleRoleUserBuilder].
- * @return the constructed [MultipleRoleUser].
  * @since %CURRENT_VERSION%
  */
 inline fun multipleRoleUser(builder: MultipleRoleUserBuilder.() -> Unit) = MultipleRoleUserBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [ObserverData].
+ * Builds [ObserverData] with an [ObserverDataBuilder] block.
  *
- * @param builder the configuration block applied to [ObserverDataBuilder].
- * @return the constructed [ObserverData].
  * @since %CURRENT_VERSION%
  */
 inline fun observerData(builder: ObserverDataBuilder.() -> Unit) = ObserverDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building an [Observer].
+ * Builds an [Observer] with an [ObserverBuilder] block.
  *
- * @param builder the configuration block applied to [ObserverBuilder].
- * @return the constructed [Observer].
  * @since %CURRENT_VERSION%
  */
 inline fun observer(builder: ObserverBuilder.() -> Unit) = ObserverBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [ParticipantData].
+ * Builds [ParticipantData] with a [ParticipantDataBuilder] block.
  *
- * @param builder the configuration block applied to [ParticipantDataBuilder].
- * @return the constructed [ParticipantData].
  * @since %CURRENT_VERSION%
  */
 inline fun participantData(builder: ParticipantDataBuilder.() -> Unit) = ParticipantDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Participant].
+ * Builds a [Participant] with a [ParticipantBuilder] block.
  *
- * @param builder the configuration block applied to [ParticipantBuilder].
- * @return the constructed [Participant].
  * @since %CURRENT_VERSION%
  */
 inline fun participant(builder: ParticipantBuilder.() -> Unit) = ParticipantBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [SupervisorData].
+ * Builds [SupervisorData] with a [SupervisorDataBuilder] block.
  *
- * @param builder the configuration block applied to [SupervisorDataBuilder].
- * @return the constructed [SupervisorData].
  * @since %CURRENT_VERSION%
  */
 inline fun supervisorData(builder: SupervisorDataBuilder.() -> Unit) = SupervisorDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Supervisor].
+ * Builds a [Supervisor] with a [SupervisorBuilder] block.
  *
- * @param builder the configuration block applied to [SupervisorBuilder].
- * @return the constructed [Supervisor].
  * @since %CURRENT_VERSION%
  */
 inline fun supervisor(builder: SupervisorBuilder.() -> Unit) = SupervisorBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [DeveloperData].
+ * Builds [DeveloperData] with a [DeveloperDataBuilder] block.
  *
- * @param builder the configuration block applied to [DeveloperDataBuilder].
- * @return the constructed [DeveloperData].
  * @since %CURRENT_VERSION%
  */
 inline fun developerData(builder: DeveloperDataBuilder.() -> Unit) = DeveloperDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [StudentData].
+ * Builds [StudentData] with a [StudentDataBuilder] block.
  *
- * @param builder the configuration block applied to [StudentDataBuilder].
- * @return the constructed [StudentData].
  * @since %CURRENT_VERSION%
  */
 inline fun studentData(builder: StudentDataBuilder.() -> Unit) = StudentDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [JudgeData].
+ * Builds [JudgeData] with a [JudgeDataBuilder] block.
  *
- * @param builder the configuration block applied to [JudgeDataBuilder].
- * @return the constructed [JudgeData].
  * @since %CURRENT_VERSION%
  */
 inline fun judgeData(builder: JudgeDataBuilder.() -> Unit) = JudgeDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [ManagerData].
+ * Builds [ManagerData] with a [ManagerDataBuilder] block.
  *
- * @param builder the configuration block applied to [ManagerDataBuilder].
- * @return the constructed [ManagerData].
  * @since %CURRENT_VERSION%
  */
 inline fun managerData(builder: ManagerDataBuilder.() -> Unit) = ManagerDataBuilder().apply(builder).build()
@@ -143,10 +119,8 @@ private fun ParticipantData.toBuilder(): ParticipantDataBuilder {
 }
 
 /**
- * Creates copy of [Participant] with provided modifications.
+ * Returns a copy of this participant with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Participant].
- * @return the modified [Participant].
  * @since %CURRENT_VERSION%
  */
 fun Participant.withData(builder: ParticipantDataBuilder.() -> Unit): Participant {
@@ -164,10 +138,8 @@ private fun ObserverData.toBuilder(): ObserverDataBuilder {
 }
 
 /**
- * Creates copy of [Observer] with provided modifications.
+ * Returns a copy of this observer with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Observer].
- * @return the modified [Observer].
  * @since %CURRENT_VERSION%
  */
 fun Observer.withData(builder: ObserverDataBuilder.() -> Unit): Observer {
@@ -185,10 +157,8 @@ private fun MultipleRoleUserData.toBuilder(): MultipleRoleUserDataBuilder {
 }
 
 /**
- * Creates copy of [MultipleRoleUser] with provided modifications.
+ * Returns a copy of this user with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [MultipleRoleUser].
- * @return the modified [MultipleRoleUser].
  * @since %CURRENT_VERSION%
  */
 fun MultipleRoleUser.withData(builder: MultipleRoleUserDataBuilder.() -> Unit): MultipleRoleUser {
@@ -204,10 +174,8 @@ private fun SupervisorData.toBuilder(): SupervisorDataBuilder {
 }
 
 /**
- * Creates copy of [Supervisor] with provided modifications.
+ * Returns a copy of this supervisor with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Supervisor].
- * @return the modified [Supervisor].
  * @since %CURRENT_VERSION%
  */
 fun Supervisor.withData(builder: SupervisorDataBuilder.() -> Unit): Supervisor {

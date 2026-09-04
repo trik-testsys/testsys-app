@@ -16,55 +16,43 @@ import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionData
 
 /**
- * DSL entry point for building [ClassData].
+ * Builds [ClassData] with a [ClassDataBuilder] block.
  *
- * @param builder the configuration block applied to [ClassDataBuilder].
- * @return the constructed [ClassData].
  * @since %CURRENT_VERSION%
  */
 inline fun classData(builder: ClassDataBuilder.() -> Unit) = ClassDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Class].
+ * Builds a [Class] with a [ClassBuilder] block.
  *
- * @param builder the configuration block applied to [ClassBuilder].
- * @return the constructed [Class].
  * @since %CURRENT_VERSION%
  */
 inline fun `class`(builder: ClassBuilder.() -> Unit) = ClassBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [CommunityData].
+ * Builds [CommunityData] with a [CommunityDataBuilder] block.
  *
- * @param builder the configuration block applied to [CommunityDataBuilder].
- * @return the constructed [CommunityData].
  * @since %CURRENT_VERSION%
  */
 inline fun communityData(builder: CommunityDataBuilder.() -> Unit) = CommunityDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Community].
+ * Builds a [Community] with a [CommunityBuilder] block.
  *
- * @param builder the configuration block applied to [CommunityBuilder].
- * @return the constructed [Community].
  * @since %CURRENT_VERSION%
  */
 inline fun community(builder: CommunityBuilder.() -> Unit) = CommunityBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [CompetitionData].
+ * Builds [CompetitionData] with a [CompetitionDataBuilder] block.
  *
- * @param builder the configuration block applied to [CompetitionDataBuilder].
- * @return the constructed [CompetitionData].
  * @since %CURRENT_VERSION%
  */
 inline fun competitionData(builder: CompetitionDataBuilder.() -> Unit) = CompetitionDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Competition].
+ * Builds a [Competition] with a [CompetitionBuilder] block.
  *
- * @param builder the configuration block applied to [CompetitionBuilder].
- * @return the constructed [Competition].
  * @since %CURRENT_VERSION%
  */
 inline fun competition(builder: CompetitionBuilder.() -> Unit) = CompetitionBuilder().apply(builder).build()
@@ -81,10 +69,8 @@ private fun ClassData.toBuilder(): ClassDataBuilder {
 }
 
 /**
- * Creates copy of [Class] with provided modifications.
+ * Returns a copy of this class with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Class].
- * @return the modified [Class].
  * @since %CURRENT_VERSION%
  */
 fun Class.withData(builder: ClassDataBuilder.() -> Unit): Class {
@@ -101,10 +87,8 @@ private fun CommunityData.toBuilder(): CommunityDataBuilder {
 }
 
 /**
- * Creates copy of [Community] with provided modifications.
+ * Returns a copy of this community with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Community].
- * @return the modified [Community].
  * @since %CURRENT_VERSION%
  */
 fun Community.withData(builder: CommunityDataBuilder.() -> Unit): Community {
@@ -123,10 +107,8 @@ private fun CompetitionData.toBuilder(): CompetitionDataBuilder {
 }
 
 /**
- * Creates copy of [Competition] with provided modifications.
+ * Returns a copy of this competition with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Competition].
- * @return the modified [Competition].
  * @since %CURRENT_VERSION%
  */
 fun Competition.withData(builder: CompetitionDataBuilder.() -> Unit): Competition {

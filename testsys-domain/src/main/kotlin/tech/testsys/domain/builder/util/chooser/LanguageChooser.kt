@@ -4,7 +4,7 @@ import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 
 /**
- * DSL chooser for selecting a [TrikSupportedLanguage].
+ * DSL chooser of a [TrikSupportedLanguage].
  *
  * @since %CURRENT_VERSION%
  */

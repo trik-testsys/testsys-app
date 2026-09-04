@@ -10,53 +10,34 @@ import tech.testsys.domain.model.task.TestId
 import java.util.UUID
 
 /**
- * Builder for constructing [TestData].
+ * Builder of [TestData]. Required: [file], [name], [description], [versionBucket].
  *
+ * @property name the name of the test, or `null` if not set yet.
+ * @property description the description of the test, or `null` if not set yet.
+ * @property versionBucket the UUID shared by all versions of the test, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
 class TestDataBuilder : Builder<TestData> {
 
     private var _file: FileData? = null
 
-    /**
-     * The name of the test.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var name: String? = null
 
-    /**
-     * The description of the test.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var description: String? = null
 
-    /**
-     * Logical identity shared by all versions of this test.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var versionBucket: UUID? = null
 
     /**
-     * Sets the file data for the test.
+     * Sets the file.
      *
-     * @param uploadedFilename the original filename of the uploaded file.
-     * @param content the raw file content as a byte array.
+     * @param uploadedFilename the original name of the uploaded file.
+     * @param content the raw binary content of the file.
      * @since %CURRENT_VERSION%
      */
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
     }
 
-    /**
-     * Builds the [TestData] instance.
-     *
-     * @return the constructed [TestData].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): TestData {
         val file = requireField(_file) { ::_file }
         val name = requireField(name) { ::name }
@@ -73,7 +54,7 @@ class TestDataBuilder : Builder<TestData> {
 }
 
 /**
- * Builder for constructing [Test] domain entities.
+ * Builder of [Test] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -81,13 +62,6 @@ class TestBuilder : DomainEntityWithDataBuilder<Test, TestData, TestDataBuilder>
 
     override fun dataBuilder() = TestDataBuilder()
 
-    /**
-     * Builds the [Test] instance.
-     *
-     * @return the constructed [Test].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Test {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }

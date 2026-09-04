@@ -7,184 +7,160 @@ import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 
 /**
- * Interface for finding domain entities.
+ * Finds domain entities by identifier.
  *
- * @param Id domain entity id type
- * @param Entity domain entity type
- *
- * @see DomainEntity
- * @see DomainId
- *
+ * @param Id the identifier type of the entity.
+ * @param Entity the domain entity type.
  * @since %CURRENT_VERSION%
  */
 interface EntityFinder<Id : DomainId, Entity : DomainEntity<Id>> {
 
     /**
-     * Finds entity by id
+     * Finds an entity by id.
      *
-     * @param id entity id
-     *
-     * @return entity if it's existing by id `null` otherwise
+     * @param id the id of the entity.
+     * @return the entity, or `null` if it does not exist.
+     * @since %CURRENT_VERSION%
      */
     fun findById(id: Id): Entity?
 
     /**
-     * Finds entities by id list
+     * Finds entities by ids.
      *
-     * @param ids id list
-     *
-     * @return list of found entities
+     * @param ids the ids of the entities.
+     * @return the found entities; missing ids are skipped.
+     * @since %CURRENT_VERSION%
      */
     fun findByIds(ids: List<Id>): List<Entity>
 }
 
 /**
- * Interface for loading domain entities by lazy reference.
+ * Loads domain entities by lazy reference.
  *
- * @param Id domain entity id type
- * @param Entity domain entity type
- *
- * @see DomainEntity
- * @see DomainId
- * @see LazyEntity
- * @see LazyEntityList
- *
+ * @param Id the identifier type of the entity.
+ * @param Entity the domain entity type.
  * @since %CURRENT_VERSION%
  */
 interface EntityLoader<Id : DomainId, Entity : DomainEntity<Id>> {
 
     /**
-     * Loads entity by lazy reference
+     * Loads the entity behind a lazy reference.
      *
-     * @param field lazy entity reference from other entity
-     *
-     * @return loaded entity by [LazyEntity.id]
-     * @throws EntityNotFoundException if [LazyEntity.id] references to non-existence entity
+     * @param field the lazy reference held by another entity.
+     * @return the referenced entity.
+     * @throws EntityNotFoundException if the referenced entity does not exist.
+     * @since %CURRENT_VERSION%
      */
     @Throws(EntityNotFoundException::class) // TODO
     fun load(field: LazyEntity<Id, Entity>): Entity
 
     /**
-     * Loads entity list by lazy reference
+     * Loads the entities behind a lazy list reference.
      *
-     * @param list lazy entity list reference from other entity
-     *
-     * @return loaded entity list
-     *
-     * @throws EntityNotFoundException if any [LazyEntityList.ids] references to non-existence entity
+     * @param list the lazy list reference held by another entity.
+     * @return the referenced entities.
+     * @throws EntityNotFoundException if any referenced entity does not exist.
+     * @since %CURRENT_VERSION%
      */
     @Throws(EntityNotFoundException::class) // TODO
     fun load(list: LazyEntityList<Id, Entity>): List<Entity>
 }
 
 /**
- * Interface for saving domain entities
+ * Saves new and updates existing domain entities.
  *
- * @param Data domain entity data type
- * @param Id domain entity id type
- * @param Entity domain entity type
- *
- * @see DomainEntity
- * @see DomainId
- *
+ * @param Data the data type a new entity is created from.
+ * @param Id the identifier type of the entity.
+ * @param Entity the domain entity type.
  * @since %CURRENT_VERSION%
  */
 interface EntitySaver<Data, Id : DomainId, Entity : DomainEntity<Id>> {
 
     /**
-     * Saves new entity by its data
+     * Saves a new entity.
      *
-     * @param data new entity data
-     *
-     * @return saved entity
+     * @param data the data of the new entity.
+     * @return the saved entity.
+     * @since %CURRENT_VERSION%
      */
     fun save(data: Data): Entity
 
     /**
-     * Saves new entities by their data
+     * Saves new entities.
      *
-     * @param dataList new entities data list
-     *
-     * @return saved entity list
+     * @param dataList the data of the new entities.
+     * @return the saved entities.
+     * @since %CURRENT_VERSION%
      */
     fun save(dataList: List<Data>): List<Entity>
 
     /**
-     * Updates existing entity
+     * Updates an existing entity.
      *
-     * @param entity updated existing entity
-     *
-     * @return saved updated entity
+     * @param entity the entity with updated data.
+     * @return the saved entity.
+     * @since %CURRENT_VERSION%
      */
     fun update(entity: Entity): Entity
 
     /**
-     * Updates existing entities
+     * Updates existing entities.
      *
-     * @param entityList updated existing entities
-     *
-     * @return saved updated entities
+     * @param entityList the entities with updated data.
+     * @return the saved entities.
+     * @since %CURRENT_VERSION%
      */
     fun update(entityList: List<Entity>): List<Entity>
 }
 
 /**
- * Interface for removing domain entities
+ * Removes domain entities.
  *
- * @param Id domain entity id type
- * @param Entity domain entity type
- *
- * @see DomainEntity
- * @see DomainId
- *
+ * @param Id the identifier type of the entity.
+ * @param Entity the domain entity type.
  * @since %CURRENT_VERSION%
  */
 interface EntityRemover<Id : DomainId, Entity : DomainEntity<Id>> {
 
     /**
-     * Removes entity by its id
+     * Removes an entity by id.
      *
-     * @param id existing entity id
+     * @param id the id of the entity to remove.
+     * @since %CURRENT_VERSION%
      */
     fun removeById(id: Id)
 
     /**
-     * Removes entities by their ids
+     * Removes entities by ids.
      *
-     * @param ids entities ids
+     * @param ids the ids of the entities to remove.
+     * @since %CURRENT_VERSION%
      */
     fun removeByIds(ids: List<Id>)
 
     /**
-     * Removes entity
+     * Removes an entity.
      *
-     * @param entity entity to be removed
+     * @param entity the entity to remove.
+     * @since %CURRENT_VERSION%
      */
     fun remove(entity: Entity)
 
     /**
-     * Removes entities
+     * Removes entities.
      *
-     * @param entityList entities to be removed
+     * @param entityList the entities to remove.
+     * @since %CURRENT_VERSION%
      */
     fun remove(entityList: List<Entity>)
 }
 
 /**
- * Interface for each implementation of entity repository
+ * Persistence port of a domain entity: finding, loading, saving and removing.
  *
- * @param Data domain entity data type
- * @param Id domain entity id type
- * @param Entity domain entity type
- *
- * @see DomainEntity
- * @see DomainId
- *
- * @see EntitySaver
- * @see EntityLoader
- * @see EntityFinder
- * @see EntityRemover
- *
+ * @param Data the data type a new entity is created from.
+ * @param Id the identifier type of the entity.
+ * @param Entity the domain entity type.
  * @since %CURRENT_VERSION%
  */
 interface EntityRepository<Data, Id : DomainId, Entity : DomainEntity<Id>> :

@@ -22,31 +22,21 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.UserId
 
 /**
- * Builder for constructing [VerdictData].
+ * Builder of [VerdictData]. Required: [score], [task], [submission].
  *
+ * @property score the awarded score, or `null` if not set yet.
+ * @property task the id of the graded task, or `null` if not set yet.
+ * @property submission the id of the graded submission, or `null` if not set yet.
+ * @property logs the id of the grading logs, or `null` if there are none.
+ * @property recording the id of the run recording, or `null` if there is none.
  * @since %CURRENT_VERSION%
  */
 class VerdictDataBuilder : Builder<VerdictData> {
 
-    /**
-     * The score awarded by this verdict.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var score: Int? = null
 
-    /**
-     * The ID of the task this verdict is for.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var task: TaskId? = null
 
-    /**
-     * The ID of the submission this verdict is for.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var submission: SubmissionId? = null
 
     var logs: LogsId? = null
@@ -54,9 +44,8 @@ class VerdictDataBuilder : Builder<VerdictData> {
     var recording: RecordingId? = null
 
     /**
-     * Sets the [task] from a raw ID value.
+     * Sets [task] from a raw id.
      *
-     * @param task the raw task ID.
      * @since %CURRENT_VERSION%
      */
     fun task(task: Long) {
@@ -64,30 +53,32 @@ class VerdictDataBuilder : Builder<VerdictData> {
     }
 
     /**
-     * Sets the [submission] from a raw ID value.
+     * Sets [submission] from a raw id.
      *
-     * @param submission the raw submission ID.
      * @since %CURRENT_VERSION%
      */
     fun submission(submission: Long) {
         this.submission = SubmissionId(submission)
     }
 
+    /**
+     * Sets [logs] from a raw id.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun logs(logs: Long) {
         this.logs = LogsId(logs)
     }
 
+    /**
+     * Sets [recording] from a raw id.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun recording(recording: Long) {
         this.recording = RecordingId(recording)
     }
 
-    /**
-     * Builds the [VerdictData] instance.
-     *
-     * @return the constructed [VerdictData].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): VerdictData {
         val score = requireField(score) { ::score }
         val task = requireField(task) { ::task }
@@ -104,7 +95,7 @@ class VerdictDataBuilder : Builder<VerdictData> {
 }
 
 /**
- * Builder for constructing [Verdict] domain entities.
+ * Builder of [Verdict] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -112,13 +103,6 @@ class VerdictBuilder : DomainEntityWithDataBuilder<Verdict, VerdictData, Verdict
 
     override fun dataBuilder() = VerdictDataBuilder()
 
-    /**
-     * Builds the [Verdict] instance.
-     *
-     * @return the constructed [Verdict].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Verdict {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
@@ -133,58 +117,33 @@ class VerdictBuilder : DomainEntityWithDataBuilder<Verdict, VerdictData, Verdict
 }
 
 /**
- * Builder for constructing [SubmissionData].
+ * Builder of [SubmissionData]. Required: [author], [solution], [task], choices in [status] and [kind].
  *
+ * @property author the id of the submitting user, or `null` if not set yet.
+ * @property solution the id of the submitted solution, or `null` if not set yet.
+ * @property task the id of the task, or `null` if not set yet.
+ * @property judgmentOrders the ids of the judgment orders concerning the submission.
+ * @property status the chooser of the submission status.
+ * @property kind the chooser of the submission kind.
  * @since %CURRENT_VERSION%
  */
 class SubmissionDataBuilder : Builder<SubmissionData> {
 
-    /**
-     * The author of the submission.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var author: UserId? = null
 
-    /**
-     * The ID of the solution being submitted.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var solution: SolutionId? = null
 
-    /**
-     * The ID of the task this submission is for.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var task: TaskId? = null
 
-    /**
-     * The list of judgment order IDs associated with this submission.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var judgmentOrders = mutableListOf<JudgmentOrderId>()
 
-    /**
-     * Chooser for selecting the submission status.
-     *
-     * @since %CURRENT_VERSION%
-     */
     val status = SubmissionStatusChooser()
 
-    /**
-     * Chooser for selecting the submission kind.
-     *
-     * @since %CURRENT_VERSION%
-     */
     val kind = SubmissionKindChooser()
 
     /**
-     * Sets the [author] from a raw ID value.
+     * Sets [author] from a raw id as a [MultipleRoleUserId]; assign [author] directly for other [UserId] kinds.
      *
-     * @param author the raw author ID.
      * @since %CURRENT_VERSION%
      */
     fun author(author: Long) {
@@ -192,9 +151,8 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     }
 
     /**
-     * Sets the [solution] from a raw ID value.
+     * Sets [solution] from a raw id.
      *
-     * @param solution the raw solution ID.
      * @since %CURRENT_VERSION%
      */
     fun solution(solution: Long) {
@@ -202,9 +160,8 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     }
 
     /**
-     * Sets the [task] from a raw ID value.
+     * Sets [task] from a raw id.
      *
-     * @param task the raw task ID.
      * @since %CURRENT_VERSION%
      */
     fun task(task: Long) {
@@ -212,22 +169,14 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     }
 
     /**
-     * Sets the [judgmentOrders] list from raw ID values.
+     * Sets [judgmentOrders] from raw ids.
      *
-     * @param orders the raw judgment order IDs.
      * @since %CURRENT_VERSION%
      */
     fun judgmentOrders(orders: Iterable<Long>) {
         this.judgmentOrders = orders.map { JudgmentOrderId(it) }.toMutableList()
     }
 
-    /**
-     * Builds the [SubmissionData] instance.
-     *
-     * @return the constructed [SubmissionData].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): SubmissionData {
         val author = requireField(author) { ::author }
         val solution = requireField(solution) { ::solution }
@@ -245,7 +194,7 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
 }
 
 /**
- * Builder for constructing [Submission] domain entities.
+ * Builder of [Submission] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -253,13 +202,6 @@ class SubmissionBuilder : DomainEntityWithDataBuilder<Submission, SubmissionData
 
     override fun dataBuilder() = SubmissionDataBuilder()
 
-    /**
-     * Builds the [Submission] instance.
-     *
-     * @return the constructed [Submission].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Submission {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }

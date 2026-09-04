@@ -9,7 +9,7 @@ import tech.testsys.domain.model.task.RecordingData
 import tech.testsys.domain.model.task.RecordingId
 
 /**
- * Builder for constructing [RecordingData].
+ * Builder of [RecordingData]. Required: [file].
  *
  * @since %CURRENT_VERSION%
  */
@@ -18,23 +18,16 @@ class RecordingDataBuilder : Builder<RecordingData> {
     private var _file: FileData? = null
 
     /**
-     * Sets the file data for the recording.
+     * Sets the file.
      *
-     * @param uploadedFilename the original filename of the uploaded file.
-     * @param content the raw file content as a byte array.
+     * @param uploadedFilename the original name of the uploaded file.
+     * @param content the raw binary content of the file.
      * @since %CURRENT_VERSION%
      */
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
     }
 
-    /**
-     * Builds the [RecordingData] instance.
-     *
-     * @return the constructed [RecordingData].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): RecordingData {
         val file = requireField(_file) { ::_file }
 
@@ -45,7 +38,7 @@ class RecordingDataBuilder : Builder<RecordingData> {
 }
 
 /**
- * Builder for constructing [Recording] domain entities.
+ * Builder of [Recording] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -53,13 +46,6 @@ class RecordingBuilder : DomainEntityWithDataBuilder<Recording, RecordingData, R
 
     override fun dataBuilder() = RecordingDataBuilder()
 
-    /**
-     * Builds the [Recording] instance.
-     *
-     * @return the constructed [Recording].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Recording {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }

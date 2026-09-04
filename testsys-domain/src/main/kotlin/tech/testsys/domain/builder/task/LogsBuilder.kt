@@ -9,7 +9,7 @@ import tech.testsys.domain.model.task.LogsData
 import tech.testsys.domain.model.task.LogsId
 
 /**
- * Builder for constructing [LogsData].
+ * Builder of [LogsData]. Required: [file].
  *
  * @since %CURRENT_VERSION%
  */
@@ -18,23 +18,16 @@ class LogsDataBuilder : Builder<LogsData> {
     private var _file: FileData? = null
 
     /**
-     * Sets the file data for the logs.
+     * Sets the file.
      *
-     * @param uploadedFilename the original filename of the uploaded file.
-     * @param content the raw file content as a byte array.
+     * @param uploadedFilename the original name of the uploaded file.
+     * @param content the raw binary content of the file.
      * @since %CURRENT_VERSION%
      */
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
     }
 
-    /**
-     * Builds the [LogsData] instance.
-     *
-     * @return the constructed [LogsData].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): LogsData {
         val file = requireField(_file) { ::_file }
 
@@ -45,7 +38,7 @@ class LogsDataBuilder : Builder<LogsData> {
 }
 
 /**
- * Builder for constructing [Logs] domain entities.
+ * Builder of [Logs] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -53,13 +46,6 @@ class LogsBuilder : DomainEntityWithDataBuilder<Logs, LogsData, LogsDataBuilder>
 
     override fun dataBuilder() = LogsDataBuilder()
 
-    /**
-     * Builds the [Logs] instance.
-     *
-     * @return the constructed [Logs].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Logs {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }

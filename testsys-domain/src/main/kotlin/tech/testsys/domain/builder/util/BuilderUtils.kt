@@ -8,17 +8,19 @@ import tech.testsys.domain.model.LazyEntityList
 import kotlin.reflect.KProperty0
 
 /**
- * Wraps a list of domain IDs into a [LazyEntityList] for deferred entity resolution.
+ * Wraps this list of ids into a [LazyEntityList].
  *
- * @return a [LazyEntityList] backed by this list of IDs.
+ * @param Id the identifier type of the referenced entities.
+ * @param Entity the type of the referenced entities.
  * @since %CURRENT_VERSION%
  */
 fun <Id : DomainId, Entity : DomainEntity<Id>> List<Id>.lazify() = LazyEntityList<Id, Entity>(this)
 
 /**
- * Wraps a single domain ID into a [LazyEntity] for deferred entity resolution.
+ * Wraps this id into a [LazyEntity].
  *
- * @return a [LazyEntity] backed by this ID.
+ * @param Id the identifier type of the referenced entity.
+ * @param Entity the type of the referenced entity.
  * @since %CURRENT_VERSION%
  */
 fun <Id : DomainId, Entity : DomainEntity<Id>> Id.lazify() = LazyEntity<Id, Entity>(this)

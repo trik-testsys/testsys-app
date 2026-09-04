@@ -60,227 +60,179 @@ import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.WipTaskContent
 
 /**
- * DSL entry point for building [ContestData].
+ * Builds [ContestData] with a [ContestDataBuilder] block.
  *
- * @param builder the configuration block applied to [ContestDataBuilder].
- * @return the constructed [ContestData].
  * @since %CURRENT_VERSION%
  */
 inline fun contestData(builder: ContestDataBuilder.() -> Unit) = ContestDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Contest].
+ * Builds a [Contest] with a [ContestBuilder] block.
  *
- * @param builder the configuration block applied to [ContestBuilder].
- * @return the constructed [Contest].
  * @since %CURRENT_VERSION%
  */
 inline fun contest(builder: ContestBuilder.() -> Unit) = ContestBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [DeveloperSolutionData].
+ * Builds [DeveloperSolutionData] with a [DeveloperSolutionDataBuilder] block.
  *
- * @param builder the configuration block applied to [DeveloperSolutionDataBuilder].
- * @return the constructed [DeveloperSolutionData].
  * @since %CURRENT_VERSION%
  */
 inline fun developerSolutionData(builder: DeveloperSolutionDataBuilder.() -> Unit) = DeveloperSolutionDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [DeveloperSolution].
+ * Builds a [DeveloperSolution] with a [DeveloperSolutionBuilder] block.
  *
- * @param builder the configuration block applied to [DeveloperSolutionBuilder].
- * @return the constructed [DeveloperSolution].
  * @since %CURRENT_VERSION%
  */
 inline fun developerSolution(builder: DeveloperSolutionBuilder.() -> Unit) = DeveloperSolutionBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [ExerciseData].
+ * Builds [ExerciseData] with an [ExerciseDataBuilder] block.
  *
- * @param builder the configuration block applied to [ExerciseDataBuilder].
- * @return the constructed [ExerciseData].
  * @since %CURRENT_VERSION%
  */
 inline fun exerciseData(builder: ExerciseDataBuilder.() -> Unit) = ExerciseDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building an [Exercise].
+ * Builds an [Exercise] with an [ExerciseBuilder] block.
  *
- * @param builder the configuration block applied to [ExerciseBuilder].
- * @return the constructed [Exercise].
  * @since %CURRENT_VERSION%
  */
 inline fun exercise(builder: ExerciseBuilder.() -> Unit) = ExerciseBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [JudgmentOrderData].
+ * Builds [JudgmentOrderData] with a [JudgmentOrderDataBuilder] block.
  *
- * @param builder the configuration block applied to [JudgmentOrderDataBuilder].
- * @return the constructed [JudgmentOrderData].
  * @since %CURRENT_VERSION%
  */
 inline fun judgmentOrderData(builder: JudgmentOrderDataBuilder.() -> Unit) = JudgmentOrderDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [JudgmentOrder].
+ * Builds a [JudgmentOrder] with a [JudgmentOrderBuilder] block.
  *
- * @param builder the configuration block applied to [JudgmentOrderBuilder].
- * @return the constructed [JudgmentOrder].
  * @since %CURRENT_VERSION%
  */
 inline fun judgmentOrder(builder: JudgmentOrderBuilder.() -> Unit) = JudgmentOrderBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [LogsData].
+ * Builds [LogsData] with a [LogsDataBuilder] block.
  *
- * @param builder the configuration block applied to [LogsDataBuilder].
- * @return the constructed [LogsData].
  * @since %CURRENT_VERSION%
  */
 inline fun logsData(builder: LogsDataBuilder.() -> Unit) = LogsDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Logs].
+ * Builds [Logs] with a [LogsBuilder] block.
  *
- * @param builder the configuration block applied to [LogsBuilder].
- * @return the constructed [Logs].
  * @since %CURRENT_VERSION%
  */
 inline fun logs(builder: LogsBuilder.() -> Unit) = LogsBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [RecordingData].
+ * Builds [RecordingData] with a [RecordingDataBuilder] block.
  *
- * @param builder the configuration block applied to [RecordingDataBuilder].
- * @return the constructed [RecordingData].
  * @since %CURRENT_VERSION%
  */
 inline fun recordingData(builder: RecordingDataBuilder.() -> Unit) = RecordingDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Recording].
+ * Builds a [Recording] with a [RecordingBuilder] block.
  *
- * @param builder the configuration block applied to [RecordingBuilder].
- * @return the constructed [Recording].
  * @since %CURRENT_VERSION%
  */
 inline fun recording(builder: RecordingBuilder.() -> Unit) = RecordingBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [SolutionData].
+ * Builds [SolutionData] with a [SolutionDataBuilder] block.
  *
- * @param builder the configuration block applied to [SolutionDataBuilder].
- * @return the constructed [SolutionData].
  * @since %CURRENT_VERSION%
  */
 inline fun solutionData(builder: SolutionDataBuilder.() -> Unit) = SolutionDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Solution].
+ * Builds a [Solution] with a [SolutionBuilder] block.
  *
- * @param builder the configuration block applied to [SolutionBuilder].
- * @return the constructed [Solution].
  * @since %CURRENT_VERSION%
  */
 inline fun solution(builder: SolutionBuilder.() -> Unit) = SolutionBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [VerdictData].
+ * Builds [VerdictData] with a [VerdictDataBuilder] block.
  *
- * @param builder the configuration block applied to [VerdictDataBuilder].
- * @return the constructed [VerdictData].
  * @since %CURRENT_VERSION%
  */
 inline fun verdictData(builder: VerdictDataBuilder.() -> Unit) = VerdictDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Verdict].
+ * Builds a [Verdict] with a [VerdictBuilder] block.
  *
- * @param builder the configuration block applied to [VerdictBuilder].
- * @return the constructed [Verdict].
  * @since %CURRENT_VERSION%
  */
 inline fun verdict(builder: VerdictBuilder.() -> Unit) = VerdictBuilder().apply(builder).build()
 
 /**
- * Wraps this [GradingResult] into a [SubmissionStatus.Graded] status.
+ * Wraps this result into a [SubmissionStatus.Graded].
  *
- * @return the graded submission status containing this result.
  * @since %CURRENT_VERSION%
  */
 fun GradingResult.graded() = SubmissionStatus.Graded(this)
 
 /**
- * DSL entry point for building [StatementData].
+ * Builds [StatementData] with a [StatementDataBuilder] block.
  *
- * @param builder the configuration block applied to [StatementDataBuilder].
- * @return the constructed [StatementData].
  * @since %CURRENT_VERSION%
  */
 inline fun statementData(builder: StatementDataBuilder.() -> Unit) = StatementDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Statement].
+ * Builds a [Statement] with a [StatementBuilder] block.
  *
- * @param builder the configuration block applied to [StatementBuilder].
- * @return the constructed [Statement].
  * @since %CURRENT_VERSION%
  */
 inline fun statement(builder: StatementBuilder.() -> Unit) = StatementBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [SubmissionData].
+ * Builds [SubmissionData] with a [SubmissionDataBuilder] block.
  *
- * @param builder the configuration block applied to [SubmissionDataBuilder].
- * @return the constructed [SubmissionData].
  * @since %CURRENT_VERSION%
  */
 inline fun submissionData(builder: SubmissionDataBuilder.() -> Unit) = SubmissionDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Submission].
+ * Builds a [Submission] with a [SubmissionBuilder] block.
  *
- * @param builder the configuration block applied to [SubmissionBuilder].
- * @return the constructed [Submission].
  * @since %CURRENT_VERSION%
  */
 inline fun submission(builder: SubmissionBuilder.() -> Unit) = SubmissionBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [TaskData].
+ * Builds [TaskData] with a [TaskDataBuilder] block.
  *
- * @param builder the configuration block applied to [TaskDataBuilder].
- * @return the constructed [TaskData].
  * @since %CURRENT_VERSION%
  */
 inline fun taskData(builder: TaskDataBuilder.() -> Unit) = TaskDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [TaskContent.New].
+ * Builds [TaskContent.New] with a [WipTaskContentBuilder] block.
  *
- * @param builder the configuration block applied to [WipTaskContentBuilder].
- * @return the constructed [TaskContent.New].
  * @since %CURRENT_VERSION%
  */
 inline fun taskContentNew(builder: WipTaskContentBuilder.() -> Unit) = TaskContent.New(WipTaskContentBuilder().apply(builder).build())
 
 /**
- * DSL entry point for building [TaskContent.Committed].
+ * Builds [TaskContent.Committed] with a [CommittedTaskContentBuilder] block.
  *
- * @param builder the configuration block applied to [CommittedTaskContentBuilder].
- * @return the constructed [TaskContent.Committed].
  * @since %CURRENT_VERSION%
  */
 inline fun taskContentCommited(builder: CommittedTaskContentBuilder.() -> Unit) =
     TaskContent.Committed(CommittedTaskContentBuilder().apply(builder).build())
 
 /**
- * DSL entry point for building [TaskContent.Uncommited].
+ * Builds [TaskContent.Uncommited].
  *
- * @param wipBuilder the configuration block applied to [WipTaskContentBuilder] for wip.
- * @param lastCommitedBuilder the configuration block applied to [CommittedTaskContentBuilder] for lastCommited.
- * @return the constructed [TaskContent.Uncommited].
+ * @param wipBuilder the [WipTaskContentBuilder] block of the work-in-progress revision.
+ * @param lastCommitedBuilder the [CommittedTaskContentBuilder] block of the last committed revision.
  * @since %CURRENT_VERSION%
  */
 inline fun taskContentUncommited(
@@ -292,28 +244,22 @@ inline fun taskContentUncommited(
 )
 
 /**
- * DSL entry point for building a [Task].
+ * Builds a [Task] with a [TaskBuilder] block.
  *
- * @param builder the configuration block applied to [TaskBuilder].
- * @return the constructed [Task].
  * @since %CURRENT_VERSION%
  */
 inline fun task(builder: TaskBuilder.() -> Unit) = TaskBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building [TestData].
+ * Builds [TestData] with a [TestDataBuilder] block.
  *
- * @param builder the configuration block applied to [TestDataBuilder].
- * @return the constructed [TestData].
  * @since %CURRENT_VERSION%
  */
 inline fun testData(builder: TestDataBuilder.() -> Unit) = TestDataBuilder().apply(builder).build()
 
 /**
- * DSL entry point for building a [Test].
+ * Builds a [Test] with a [TestBuilder] block.
  *
- * @param builder the configuration block applied to [TestBuilder].
- * @return the constructed [Test].
  * @since %CURRENT_VERSION%
  */
 inline fun test(builder: TestBuilder.() -> Unit) = TestBuilder().apply(builder).build()
@@ -348,10 +294,8 @@ private fun SubmissionData.toBuilder(): SubmissionDataBuilder {
 }
 
 /**
- * Creates copy of [Submission] with provided modifications.
+ * Returns a copy of this submission with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Submission].
- * @return the modified [Submission].
  * @since %CURRENT_VERSION%
  */
 fun Submission.withData(builder: SubmissionDataBuilder.() -> Unit): Submission {
@@ -378,10 +322,8 @@ private fun ContestData.toBuilder(): ContestDataBuilder {
 }
 
 /**
- * Creates copy of [Contest] with provided modifications.
+ * Returns a copy of this contest with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Contest].
- * @return the modified [Contest].
  * @since %CURRENT_VERSION%
  */
 fun Contest.withData(builder: ContestDataBuilder.() -> Unit): Contest {
@@ -400,10 +342,8 @@ private fun DeveloperSolutionData.toBuilder(): DeveloperSolutionDataBuilder {
 }
 
 /**
- * Creates copy of [DeveloperSolution] with provided modifications.
+ * Returns a copy of this developer solution with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [DeveloperSolution].
- * @return the modified [DeveloperSolution].
  * @since %CURRENT_VERSION%
  */
 fun DeveloperSolution.withData(builder: DeveloperSolutionDataBuilder.() -> Unit): DeveloperSolution {
@@ -426,10 +366,8 @@ private fun ExerciseData.toBuilder(): ExerciseDataBuilder {
 }
 
 /**
- * Creates copy of [Exercise] with provided modifications.
+ * Returns a copy of this exercise with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Exercise].
- * @return the modified [Exercise].
  * @since %CURRENT_VERSION%
  */
 fun Exercise.withData(builder: ExerciseDataBuilder.() -> Unit): Exercise {
@@ -446,10 +384,8 @@ private fun JudgmentOrderData.toBuilder(): JudgmentOrderDataBuilder {
 }
 
 /**
- * Creates copy of [JudgmentOrder] with provided modifications.
+ * Returns a copy of this judgment order with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [JudgmentOrder].
- * @return the modified [JudgmentOrder].
  * @since %CURRENT_VERSION%
  */
 fun JudgmentOrder.withData(builder: JudgmentOrderDataBuilder.() -> Unit): JudgmentOrder {
@@ -464,10 +400,8 @@ private fun LogsData.toBuilder(): LogsDataBuilder {
 }
 
 /**
- * Creates copy of [Logs] with provided modifications.
+ * Returns a copy of these logs with their data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Logs].
- * @return the modified [Logs].
  * @since %CURRENT_VERSION%
  */
 fun Logs.withData(builder: LogsDataBuilder.() -> Unit): Logs {
@@ -482,10 +416,8 @@ private fun RecordingData.toBuilder(): RecordingDataBuilder {
 }
 
 /**
- * Creates copy of [Recording] with provided modifications.
+ * Returns a copy of this recording with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Recording].
- * @return the modified [Recording].
  * @since %CURRENT_VERSION%
  */
 fun Recording.withData(builder: RecordingDataBuilder.() -> Unit): Recording {
@@ -505,10 +437,8 @@ private fun SolutionData.toBuilder(): SolutionDataBuilder {
 }
 
 /**
- * Creates copy of [Solution] with provided modifications.
+ * Returns a copy of this solution with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Solution].
- * @return the modified [Solution].
  * @since %CURRENT_VERSION%
  */
 fun Solution.withData(builder: SolutionDataBuilder.() -> Unit): Solution {
@@ -526,10 +456,8 @@ private fun StatementData.toBuilder(): StatementDataBuilder {
 }
 
 /**
- * Creates copy of [Statement] with provided modifications.
+ * Returns a copy of this statement with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Statement].
- * @return the modified [Statement].
  * @since %CURRENT_VERSION%
  */
 fun Statement.withData(builder: StatementDataBuilder.() -> Unit): Statement {
@@ -547,10 +475,8 @@ private fun TestData.toBuilder(): TestDataBuilder {
 }
 
 /**
- * Creates copy of [Test] with provided modifications.
+ * Returns a copy of this test with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Test].
- * @return the modified [Test].
  * @since %CURRENT_VERSION%
  */
 fun Test.withData(builder: TestDataBuilder.() -> Unit): Test {
@@ -598,10 +524,8 @@ private fun TaskData.toBuilder(): TaskDataBuilder {
 }
 
 /**
- * Creates copy of [Task] with provided modifications.
+ * Returns a copy of this task with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Task].
- * @return the modified [Task].
  * @since %CURRENT_VERSION%
  */
 fun Task.withData(builder: TaskDataBuilder.() -> Unit): Task {
@@ -618,10 +542,8 @@ private fun VerdictData.toBuilder(): VerdictDataBuilder {
 }
 
 /**
- * Creates copy of [Verdict] with provided modifications.
+ * Returns a copy of this verdict with its data modified by [builder].
  *
- * @param builder the configuration block applied to copy of [Verdict].
- * @return the modified [Verdict].
  * @since %CURRENT_VERSION%
  */
 fun Verdict.withData(builder: VerdictDataBuilder.() -> Unit): Verdict {

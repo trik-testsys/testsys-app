@@ -10,53 +10,34 @@ import tech.testsys.domain.model.task.StatementId
 import java.util.UUID
 
 /**
- * Builder for constructing [StatementData].
+ * Builder of [StatementData]. Required: [file], [name], [description], [versionBucket].
  *
+ * @property name the name of the statement, or `null` if not set yet.
+ * @property description the description of the statement, or `null` if not set yet.
+ * @property versionBucket the UUID shared by all versions of the statement, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
 class StatementDataBuilder : Builder<StatementData> {
 
     private var _file: FileData? = null
 
-    /**
-     * The name of the statement.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var name: String? = null
 
-    /**
-     * The description of the statement.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var description: String? = null
 
-    /**
-     * Logical identity shared by all versions of this statement.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var versionBucket: UUID? = null
 
     /**
-     * Sets the file data for the statement.
+     * Sets the file.
      *
-     * @param uploadedFilename the original filename of the uploaded file.
-     * @param content the raw file content as a byte array.
+     * @param uploadedFilename the original name of the uploaded file.
+     * @param content the raw binary content of the file.
      * @since %CURRENT_VERSION%
      */
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
     }
 
-    /**
-     * Builds the [StatementData] instance.
-     *
-     * @return the constructed [StatementData].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): StatementData {
         val file = requireField(_file) { ::_file }
         val name = requireField(name) { ::name }
@@ -73,7 +54,7 @@ class StatementDataBuilder : Builder<StatementData> {
 }
 
 /**
- * Builder for constructing [Statement] domain entities.
+ * Builder of [Statement] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -81,13 +62,6 @@ class StatementBuilder : DomainEntityWithDataBuilder<Statement, StatementData, S
 
     override fun dataBuilder() = StatementDataBuilder()
 
-    /**
-     * Builds the [Statement] instance.
-     *
-     * @return the constructed [Statement].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Statement {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }

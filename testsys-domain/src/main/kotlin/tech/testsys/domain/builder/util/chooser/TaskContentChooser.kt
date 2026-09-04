@@ -6,17 +6,15 @@ import tech.testsys.domain.builder.task.WipTaskContentBuilder
 import tech.testsys.domain.model.task.TaskContent
 
 /**
- * DSL chooser for selecting a [TaskContent] variant
- * ([TaskContent.New], [TaskContent.Uncommited], or [TaskContent.Committed]).
+ * DSL chooser of a [TaskContent] variant. Repeated calls of the same variant accumulate configuration.
  *
  * @since %CURRENT_VERSION%
  */
 class TaskContentChooser : Chooser<TaskContent>() {
 
     /**
-     * Selects [TaskContent.New] populated by the given [wipBuilder] block.
+     * Selects [TaskContent.New] with the work-in-progress revision configured by [wipBuilder].
      *
-     * @param wipBuilder configuration block applied to the WIP content builder.
      * @since %CURRENT_VERSION%
      */
     fun new(wipBuilder: WipTaskContentBuilder.() -> Unit) {
@@ -26,10 +24,10 @@ class TaskContentChooser : Chooser<TaskContent>() {
     }
 
     /**
-     * Selects [TaskContent.Uncommited] populated by the given builder blocks.
+     * Selects [TaskContent.Uncommited].
      *
-     * @param wipBuilder configuration block applied to the WIP content builder.
-     * @param lastCommitedBuilder configuration block applied to the last-committed content builder.
+     * @param wipBuilder the configuration block of the work-in-progress revision.
+     * @param lastCommitedBuilder the configuration block of the last committed revision.
      * @since %CURRENT_VERSION%
      */
     fun uncommited(wipBuilder: WipTaskContentBuilder.() -> Unit, lastCommitedBuilder: CommittedTaskContentBuilder.() -> Unit) {
@@ -40,9 +38,8 @@ class TaskContentChooser : Chooser<TaskContent>() {
     }
 
     /**
-     * Selects [TaskContent.Committed] populated by the given [lastCommitedBuilder] block.
+     * Selects [TaskContent.Committed] with the committed revision configured by [lastCommitedBuilder].
      *
-     * @param lastCommitedBuilder configuration block applied to the last-committed content builder.
      * @since %CURRENT_VERSION%
      */
     fun committed(lastCommitedBuilder: CommittedTaskContentBuilder.() -> Unit) {
@@ -53,8 +50,9 @@ class TaskContentChooser : Chooser<TaskContent>() {
 }
 
 /**
- * Internal builder producing a [TaskContent.New] from a [WipTaskContentBuilder].
+ * Builder of [TaskContent.New].
  *
+ * @property wip the builder of the work-in-progress revision.
  * @since %CURRENT_VERSION%
  */
 class NewTaskContentBuilder : Builder<TaskContent> {
@@ -63,19 +61,23 @@ class NewTaskContentBuilder : Builder<TaskContent> {
 }
 
 /**
- * Internal builder producing a [TaskContent.Uncommited] from WIP and last-committed builders.
+ * Builder of [TaskContent.Uncommited].
  *
+ * @property wip the builder of the work-in-progress revision.
+ * @property lastCommited the builder of the last committed revision.
  * @since %CURRENT_VERSION%
  */
 class UncommitedTaskContentBuilder : Builder<TaskContent> {
     val wip = WipTaskContentBuilder()
+
     val lastCommited = CommittedTaskContentBuilder()
     override fun build() = TaskContent.Uncommited(wip.build(), lastCommited.build())
 }
 
 /**
- * Internal builder producing a [TaskContent.Committed] from a last-committed builder.
+ * Builder of [TaskContent.Committed].
  *
+ * @property lastCommited the builder of the last committed revision.
  * @since %CURRENT_VERSION%
  */
 class CommittedTaskContentVariantBuilder : Builder<TaskContent> {

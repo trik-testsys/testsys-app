@@ -32,8 +32,6 @@ sealed class SingleRoleUser(
 /**
  * Data of a [Participant].
  *
- * @property accessToken the access code the participant logs in with.
- * @property name the name of the participant.
  * @property competition the competition the participant belongs to.
  * @since %CURRENT_VERSION%
  */
@@ -58,8 +56,6 @@ class Participant(
 /**
  * Data of an [Observer].
  *
- * @property accessToken the access code the observer logs in with.
- * @property name the name of the observer.
  * @property community the community the observer is a member of.
  * @property competitions the competitions whose results the observer may view.
  * @since %CURRENT_VERSION%
@@ -86,8 +82,6 @@ class Observer(
 /**
  * Data of a [Supervisor].
  *
- * @property accessToken the access code the supervisor logs in with.
- * @property name the name of the supervisor.
  * @since %CURRENT_VERSION%
  */
 data class SupervisorData(

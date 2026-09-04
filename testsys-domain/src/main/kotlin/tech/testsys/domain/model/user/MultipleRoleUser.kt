@@ -20,8 +20,6 @@ import java.time.Instant
 /**
  * Data of a [MultipleRoleUser].
  *
- * @property accessToken the access code the user logs in with.
- * @property name the name of the user.
  * @property email the e-mail address of the user.
  * @property roles the roles held by the user.
  * @since %CURRENT_VERSION%

@@ -14,6 +14,12 @@ import tech.testsys.infra.database.internal.jpa.repository.task.ExerciseJpaEntit
 import tech.testsys.infra.database.internal.mapping.task.ExerciseMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 
+/**
+ * Persistence adapter of [Exercise] entities backed by [ExerciseJpaEntity].
+ * The exercise file is stored through [FileDataStorage] in the version bucket of the exercise.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class ExercisePersistenceAdapter(

@@ -14,18 +14,8 @@ import java.util.HexFormat
 import java.util.UUID
 
 /**
- * Storage for domain [FileData] shared by file-backed persistence adapters.
- *
- * A stored file is split between two backends: the [FileDataJpaEntity] row keeps
- * the metadata (uploaded and stored file names) while the binary content lives in
- * the external [FileBlobStorage]. Storage is append-only: files are never deleted
- * or overwritten, every store produces a new row and a new blob.
- *
- * Versions of the same logical file are grouped by [FileDataJpaEntity.versionBucket]:
- * callers owning a versioned resource pass its version bucket so all file versions
- * of the resource share it; unversioned files get a fresh bucket on every store.
- * An unchanged file is detected by its content hash and filename via [storeIfChanged]
- * and is not stored twice.
+ * Append-only storage of [FileData]: metadata goes to a [FileDataJpaEntity] row, content to [FileBlobStorage].
+ * Versions of one logical file share a [FileDataJpaEntity.versionBucket]; unversioned files get a fresh bucket per store.
  *
  * @since %CURRENT_VERSION%
  */
@@ -37,20 +27,18 @@ class FileDataStorage(
 ) {
 
     /**
-     * Persists the binary content of [file] and the matching [FileDataJpaEntity] row,
-     * starting a fresh version bucket. Intended for unversioned files.
+     * Stores [file] as a new row and blob in a fresh version bucket.
      *
-     * @return the id of the freshly-inserted [FileDataJpaEntity].
+     * @return the id of the inserted [FileDataJpaEntity].
+     * @since %CURRENT_VERSION%
      */
     fun store(file: FileData): Long = store(file, versionBucket = UUID.randomUUID())
 
     /**
-     * Persists the binary content of [file] and the matching [FileDataJpaEntity] row
-     * under the caller-provided [versionBucket], grouping the row with the other
-     * file versions of the same logical resource. Previous rows and blobs are kept
-     * untouched.
+     * Stores [file] as a new row and blob in [versionBucket]; previous versions are kept.
      *
-     * @return the id of the freshly-inserted [FileDataJpaEntity].
+     * @return the id of the inserted [FileDataJpaEntity].
+     * @since %CURRENT_VERSION%
      */
     fun store(file: FileData, versionBucket: UUID): Long {
         val blobRef = fileBlobStorage.store(file.content)
@@ -66,24 +54,18 @@ class FileDataStorage(
     }
 
     /**
-     * Persists [file] only when it differs from the file referenced by [currentFileDataId];
-     * a matching file (same uploaded filename and content hash) is not stored again.
+     * Stores [file] in a fresh version bucket unless it matches the row [currentFileDataId] by uploaded name and content hash.
      *
-     * A changed file is stored with a fresh version bucket. Intended for unversioned files.
-     *
-     * @return [currentFileDataId] when the file is unchanged,
-     * the id of the freshly-inserted [FileDataJpaEntity] otherwise.
+     * @return [currentFileDataId] when the file is unchanged, the id of the inserted [FileDataJpaEntity] otherwise.
+     * @since %CURRENT_VERSION%
      */
     fun storeIfChanged(currentFileDataId: Long, file: FileData): Long = storeIfChanged(currentFileDataId, file) { store(file) }
 
     /**
-     * Persists [file] only when it differs from the file referenced by [currentFileDataId];
-     * a matching file (same uploaded filename and content hash) is not stored again.
+     * Stores [file] in [versionBucket] unless it matches the row [currentFileDataId] by uploaded name and content hash.
      *
-     * A changed file is stored under the caller-provided [versionBucket].
-     *
-     * @return [currentFileDataId] when the file is unchanged,
-     * the id of the freshly-inserted [FileDataJpaEntity] otherwise.
+     * @return [currentFileDataId] when the file is unchanged, the id of the inserted [FileDataJpaEntity] otherwise.
+     * @since %CURRENT_VERSION%
      */
     fun storeIfChanged(currentFileDataId: Long, file: FileData, versionBucket: UUID): Long =
         storeIfChanged(currentFileDataId, file) { store(file, versionBucket) }
@@ -98,7 +80,9 @@ class FileDataStorage(
     private fun FileData.contentHash(): String = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content))
 
     /**
-     * Loads the uploaded filename and binary content for the file referenced by [fileDataId].
+     * Loads the uploaded filename and content of the file referenced by [fileDataId].
+     *
+     * @since %CURRENT_VERSION%
      */
     fun load(fileDataId: Long): LoadedFile {
         val fileData = fileDataJpaEntityRepository.findByIdOrError(fileDataId)
@@ -106,6 +90,13 @@ class FileDataStorage(
         return LoadedFile(uploadedFilename = fileData.uploadedFileName, content = content)
     }
 
+    /**
+     * File loaded from [FileDataStorage].
+     *
+     * @property uploadedFilename the name the file was uploaded with.
+     * @property content the binary content of the file.
+     * @since %CURRENT_VERSION%
+     */
     data class LoadedFile(val uploadedFilename: String, val content: ByteArray) {
 
         override fun equals(other: Any?): Boolean {

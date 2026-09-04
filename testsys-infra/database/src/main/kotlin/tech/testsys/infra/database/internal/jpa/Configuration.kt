@@ -7,12 +7,8 @@ import org.springframework.context.annotation.PropertySource
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 
 /**
- * Spring configuration for the JPA/Hibernate infrastructure layer.
- *
- * Loads default Hibernate properties from `classpath:hibernate-defaults.properties`,
- * registers project-wide beans such as the [org.hibernate.boot.model.naming.PhysicalNamingStrategy], and enables
- * scanning for JPA entities, Spring Data repositories, and domain-facing
- * persistence adapters within this module.
+ * Spring configuration of the JPA layer: Hibernate defaults from `classpath:hibernate-defaults.properties` and scanning
+ * of the module's entities, Spring Data repositories and persistence adapters.
  *
  * @since %CURRENT_VERSION%
  */

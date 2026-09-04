@@ -14,6 +14,12 @@ import tech.testsys.infra.database.internal.jpa.repository.task.SolutionJpaEntit
 import tech.testsys.infra.database.internal.mapping.task.SolutionMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 
+/**
+ * Persistence adapter of [Solution] entities backed by [SolutionJpaEntity].
+ * The solution file is stored through [FileDataStorage].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class SolutionPersistenceAdapter(

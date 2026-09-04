@@ -14,12 +14,11 @@ import java.io.Serializable
 import java.time.Instant
 
 /**
- * Common base class for all JPA entities, providing audit and versioning fields.
+ * Base of all JPA entities: audit timestamps and an optimistic lock version, all maintained by Hibernate.
  *
- * @property createdAt moment of record creation (UTC), populated automatically on first persist.
- * @property updatedAt moment of last update (UTC), populated automatically on each merge/flush.
- * @property version optimistic lock counter, incremented automatically on each update.
- *
+ * @property createdAt moment of the first persist (UTC).
+ * @property updatedAt moment of the last update (UTC).
+ * @property version optimistic lock counter.
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
@@ -34,10 +33,7 @@ abstract class JpaEntity(
 )
 
 /**
- * Base abstract class for composite (multi-column) primary keys used with [CompositeJpaEntity].
- *
- * Subclasses must be annotated with [Embeddable] and are recommended to be Kotlin `data class`es,
- * which automatically provide the [equals] and [hashCode] implementations required by the JPA spec.
+ * Marker of composite primary keys of [CompositeJpaEntity]; implementations are [Embeddable] data classes.
  *
  * @since %CURRENT_VERSION%
  */
@@ -45,17 +41,10 @@ abstract class JpaEntity(
 interface CompositeId : Serializable
 
 /**
- * Base abstract class for all JPA entities with a composite (multi-column) primary key.
+ * Base of JPA entities keyed by an [EmbeddedId] composite key; equality is by [id].
  *
- * Uses an [EmbeddedId] of type [T] instead of a simple auto-generated [Long] identifier.
- * Inherits audit and versioning fields from [JpaEntity].
- *
- * Subclasses should be annotated with `@Entity` and provide a concrete [CompositeId] subclass
- * as the type parameter.
- *
- * @param T the composite key type, must extend [CompositeId].
+ * @param T the composite key type.
  * @property id the composite primary key.
- *
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
@@ -75,15 +64,9 @@ abstract class CompositeJpaEntity<T : CompositeId>(
 }
 
 /**
- * Base abstract class for all JPA entities with a simple (non-composite) primary key.
+ * Base of JPA entities keyed by a sequence-generated [Long].
  *
- * Provides an auto-generated primary key using a database sequence.
- * Inherits audit and versioning fields from [JpaEntity].
- *
- * Subclasses should be annotated with `@Entity` and define their own fields and relationships.
- *
- * @property id unique entity identifier, `null` until persisted to the database.
- *
+ * @property id the primary key, `null` until persisted.
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi

@@ -5,14 +5,8 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.JpaEntity
 
 /**
- * Reconcile a join table to a desired set of foreign keys.
- *
- * Compares [existing] association rows against [targetKeys] using [keyOf],
- * inserts the rows produced by [buildAssociation] for keys not yet present,
- * and deletes rows whose key is no longer in [targetKeys]. Duplicate keys in
- * [targetKeys] are collapsed so at most one association row exists per key.
- *
- * @since %CURRENT_VERSION%
+ * Reconciles join rows with [targetKeys]: rows whose [keyOf] is absent from the target go to [deleteAll], keys without
+ * a row (deduplicated) are built by [buildAssociation] and go to [saveAll].
  */
 @InternalDatabaseApi
 internal fun <Association, K> syncJoinTable(
@@ -33,5 +27,12 @@ internal fun <Association, K> syncJoinTable(
     if (toAdd.isNotEmpty()) saveAll(toAdd)
 }
 
+/**
+ * Finds the entity with [id] or throws [IllegalArgumentException] if there is no such row.
+ *
+ * @param T the JPA entity type.
+ * @param ID the primary key type.
+ * @since %CURRENT_VERSION%
+ */
 @InternalDatabaseApi
 fun <T : JpaEntity, ID : Any> CrudRepository<T, ID>.findByIdOrError(id: ID) = findById(id).orElse(null).requireById(id)

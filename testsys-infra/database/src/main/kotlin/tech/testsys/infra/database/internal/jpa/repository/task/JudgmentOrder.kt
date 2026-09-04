@@ -16,11 +16,21 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
 @InternalDatabaseApi
 interface JudgmentOrderJpaEntityRepository : SequenceJpaEntityRepository<JudgmentOrderJpaEntity> {
 
+    /**
+     * Finds the judgment orders issued for verdicts of the submission [submissionId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query(
         "select jo from JudgmentOrderJpaEntity jo, VerdictJpaEntity v " +
             "where jo.verdictId = v.id and v.submissionId = :submissionId",
     )
     fun findAllBySubmissionId(@Param("submissionId") submissionId: Long): List<JudgmentOrderJpaEntity>
 
+    /**
+     * Finds the judgment orders issued by the judge [judgeId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun findAllByJudgeId(judgeId: Long): List<JudgmentOrderJpaEntity>
 }

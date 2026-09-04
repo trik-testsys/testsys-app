@@ -9,9 +9,19 @@ import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionJpa
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
 
+/**
+ * Mapping between [DeveloperSolution] and [DeveloperSolutionJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @InternalDatabaseApi
 object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolutionJpaEntity> {
 
+    /**
+     * Assembles a [DeveloperSolution] from [jpaEntity].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toDomain(jpaEntity: DeveloperSolutionJpaEntity) = developerSolution {
         populateFields(jpaEntity)
         data {
@@ -25,6 +35,11 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
         }
     }
 
+    /**
+     * Creates a new [DeveloperSolutionJpaEntity] row from [data] referencing the stored file [fileDataId] of its solution.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(data: DeveloperSolutionData, fileDataId: Long) = DeveloperSolutionJpaEntity(
         name = data.name,
         description = data.description,
@@ -34,6 +49,11 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
         fileDataId = fileDataId,
     )
 
+    /**
+     * Creates the [DeveloperSolutionJpaEntity] row replacing [current] from [entity], keeping its file, `createdAt` and `version`.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(entity: DeveloperSolution, current: DeveloperSolutionJpaEntity) = DeveloperSolutionJpaEntity(
         name = entity.data.name,
         description = entity.data.description,

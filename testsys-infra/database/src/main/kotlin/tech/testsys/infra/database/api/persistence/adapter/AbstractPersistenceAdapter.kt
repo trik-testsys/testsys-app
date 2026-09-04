@@ -14,42 +14,16 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
 import tech.testsys.infra.database.internal.utils.requireById
 
 /**
- * Base abstract class for each persistence adapter. Implements default behavior for next methods of [EntityRepository] contract:
+ * Base of persistence adapters: implements finding, loading, removing and the list overloads of [EntityRepository];
+ * subclasses provide [save], [update] and [assemble]. Overloads that need non-default [Transactional] settings
+ * (e.g. [Propagation.REQUIRES_NEW]) must be overridden together (Spring AOP self-invocation).
  *
- * - [EntityRepository.findById]
- * - [EntityRepository.findByIds]
- * - [EntityRepository.load]
- * - [EntityRepository.load]
- * - [EntityRepository.save] (overload with list parameter)
- * - [EntityRepository.update] (overload with list parameter)
- * - [EntityRepository.remove] (all overloads)
- * - [EntityRepository.removeById]
- * - [EntityRepository.removeByIds]
- *
- * Each implementation must implement only next methods:
- * - [EntityRepository.save] (overload with [Data] parameter) – method for saving new entity
- * - [EntityRepository.update] (overload with [Entity] parameter) – method for updating existing entity
- * - [AbstractPersistenceAdapter.assemble] – method for assembling [Entity] from [JpaEntity]
- *
- * !CAUTION!
- * If implementation of [EntityRepository.save] or [EntityRepository.update]
- * should have not simple [Transactional] annotation (e.g. with propagation = [Propagation.REQUIRES_NEW])
- * all method overloads must be overridden in the implementation for correct spring AOP working.
- *
- * @param jpaEntityRepository jpa entity repository, used for mapping and persisting domain entity.
- *
- * @param Data domain entity data type
- * @param Id domain entity id type
- * @param Entity domain entity type
- * @param JpaEntity jpa entity type representing domain entity
- *
+ * @param Data the data type a new entity is created from.
+ * @param Id the id type of the entity.
+ * @param Entity the domain entity type.
+ * @param JpaEntity the JPA entity type the entity is stored as.
+ * @property jpaEntityRepository the repository of [JpaEntity] rows.
  * @since %CURRENT_VERSION%
- *
- * @see EntityRepository
- * @see DomainId
- * @see DomainEntity,
- * @see SequenceJpaEntity
- * @see SequenceJpaEntityRepository
  */
 @Suppress("CallBeanMethodFromSameClass")
 @InternalDatabaseApi
@@ -95,17 +69,13 @@ abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEn
     override fun remove(entityList: List<Entity>) = removeByIds(entityList.map { it.id })
 
     /**
-     * Tells whether [jpaEntity] belongs to this adapter.
-     *
-     * Adapters whose [JpaEntity] table is shared by several domain entity kinds
-     * (e.g. the user table shared by all user adapters) override this so that
-     * [findById] returns `null` and [findByIds] skips rows of a foreign kind
-     * instead of failing inside [assemble]. Defaults to `true`.
+     * Whether [jpaEntity] belongs to this adapter; adapters sharing a table between several entity kinds override it so
+     * [findById] and [findByIds] skip foreign rows. Defaults to `true`.
      */
     protected open fun supports(jpaEntity: JpaEntity): Boolean = true
 
     /**
-     * Method used to assembling [Entity] object from [JpaEntity] object.
+     * Assembles an [Entity] from its [jpaEntity] row.
      */
     protected abstract fun assemble(jpaEntity: JpaEntity): Entity
 }

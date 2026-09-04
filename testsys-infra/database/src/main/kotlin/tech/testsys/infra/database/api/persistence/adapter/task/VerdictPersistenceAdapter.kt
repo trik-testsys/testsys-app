@@ -13,6 +13,11 @@ import tech.testsys.infra.database.internal.jpa.repository.task.VerdictJpaEntity
 import tech.testsys.infra.database.internal.mapping.task.VerdictMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 
+/**
+ * Persistence adapter of [Verdict] entities backed by [VerdictJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class VerdictPersistenceAdapter(

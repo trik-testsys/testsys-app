@@ -7,10 +7,11 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * JPA entity representing a community domain entity.
+ * JPA entity of [tech.testsys.domain.model.group.Community].
  *
- * @see Community
- * @see CommunityData
+ * @property name the name of the community.
+ * @property description the description of the community.
+ * @property ownerId id of the user owning the community.
  * @since %CURRENT_VERSION%
  */
 @Entity

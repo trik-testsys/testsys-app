@@ -11,8 +11,10 @@ import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * Composite primary key for [StudentToClassJpaEntity].
+ * Composite key of [StudentToClassJpaEntity].
  *
+ * @property studentId id of the student.
+ * @property classId id of the class.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -23,7 +25,7 @@ data class StudentToClassId(
 ) : CompositeId
 
 /**
- * JPA entity representing a student to class association domain entity.
+ * Join row: a student is a member of a class.
  *
  * @since %CURRENT_VERSION%
  */
@@ -33,8 +35,10 @@ data class StudentToClassId(
 class StudentToClassJpaEntity(id: StudentToClassId) : CompositeJpaEntity<StudentToClassId>(id)
 
 /**
- * Composite primary key for [ContestToClassJpaEntity].
+ * Composite key of [ContestToClassJpaEntity].
  *
+ * @property contestId id of the contest.
+ * @property classId id of the class.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -45,7 +49,7 @@ data class ContestToClassId(
 ) : CompositeId
 
 /**
- * JPA entity representing a contest to class association domain entity.
+ * Join row: a contest is assigned to a class.
  *
  * @since %CURRENT_VERSION%
  */
@@ -55,10 +59,11 @@ data class ContestToClassId(
 class ContestToClassJpaEntity(id: ContestToClassId) : CompositeJpaEntity<ContestToClassId>(id)
 
 /**
- * JPA entity representing a class domain entity.
+ * JPA entity of [tech.testsys.domain.model.group.Class].
  *
- * @see tech.testsys.domain.model.group.Class
- * @see tech.testsys.domain.model.group.ClassData
+ * @property name the name of the class.
+ * @property description the description of the class.
+ * @property ownerId id of the manager owning the class.
  * @since %CURRENT_VERSION%
  */
 @Entity

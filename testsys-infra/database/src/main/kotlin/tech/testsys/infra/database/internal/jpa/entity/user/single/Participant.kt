@@ -5,11 +5,10 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * JPA entity representing the participant role data attached to a user.
+ * JPA entity of [tech.testsys.domain.model.user.ParticipantData].
  *
- * A participant takes part in exactly one competition, referenced by [competitionId].
- *
- * @see tech.testsys.domain.model.user.ParticipantData
+ * @property userId id of the user holding the role.
+ * @property competitionId id of the competition the participant takes part in.
  * @since %CURRENT_VERSION%
  */
 @Entity

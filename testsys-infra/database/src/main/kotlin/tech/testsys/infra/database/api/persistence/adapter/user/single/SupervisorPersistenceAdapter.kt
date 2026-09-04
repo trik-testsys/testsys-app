@@ -19,6 +19,11 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
 
+/**
+ * Persistence adapter of [Supervisor] entities backed by [UserJpaEntity] rows having a supervisor data row.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class SupervisorPersistenceAdapter(

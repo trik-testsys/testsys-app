@@ -14,6 +14,12 @@ import tech.testsys.infra.database.internal.jpa.repository.task.StatementJpaEnti
 import tech.testsys.infra.database.internal.mapping.task.StatementMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 
+/**
+ * Persistence adapter of [Statement] entities backed by [StatementJpaEntity].
+ * The statement file is stored through [FileDataStorage] in the version bucket of the statement.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class StatementPersistenceAdapter(

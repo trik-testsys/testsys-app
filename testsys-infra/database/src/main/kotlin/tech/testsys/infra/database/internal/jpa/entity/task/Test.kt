@@ -5,13 +5,8 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import java.util.UUID
 
 /**
- * JPA entity representing a polygon (test) domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.Test], a single polygon the grader runs submissions against.
  *
- * A polygon is a single test case used by the grader to evaluate submissions
- * against a task. Owned by the developer who authored it ([ownerId]).
- *
- * @see tech.testsys.domain.model.task.Test
- * @see tech.testsys.domain.model.task.TestData
  * @since %CURRENT_VERSION%
  */
 @Entity

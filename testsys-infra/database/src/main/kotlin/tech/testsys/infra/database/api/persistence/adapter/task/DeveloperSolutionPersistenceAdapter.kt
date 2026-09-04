@@ -14,6 +14,12 @@ import tech.testsys.infra.database.internal.jpa.repository.task.SolutionJpaEntit
 import tech.testsys.infra.database.internal.mapping.task.DeveloperSolutionMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 
+/**
+ * Persistence adapter of [DeveloperSolution] entities backed by [DeveloperSolutionJpaEntity].
+ * The file reference is copied from the referenced solution row.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class DeveloperSolutionPersistenceAdapter(

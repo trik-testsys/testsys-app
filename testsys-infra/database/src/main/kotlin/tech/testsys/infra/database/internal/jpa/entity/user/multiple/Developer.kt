@@ -5,9 +5,9 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * JPA entity representing the developer role data attached to a user.
+ * JPA entity of [tech.testsys.domain.model.user.DeveloperData].
  *
- * @see tech.testsys.domain.model.user.DeveloperData
+ * @property userId id of the user holding the role.
  * @since %CURRENT_VERSION%
  */
 @Entity

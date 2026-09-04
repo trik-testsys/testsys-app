@@ -31,6 +31,13 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 
+/**
+ * Persistence adapter of [Task] entities backed by [TaskJpaEntity].
+ * Content revisions are replaced wholesale as task content rows on save and update;
+ * shared-community membership is synced through its join table.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class TaskPersistenceAdapter(
@@ -160,11 +167,8 @@ class TaskPersistenceAdapter(
     }
 
     /**
-     * Persists or replaces the wip/commited content rows for a task and
-     * returns the resulting `(wipContentId, commitedContentId)` pair.
-     *
-     * When the resulting status is `COMMITED` (wip is null, committed is non-null)
-     * both task FKs point at the same row.
+     * Replaces the wip/commited content rows of a task and returns the `(wipContentId, commitedContentId)` pair;
+     * for a `COMMITED` task (no wip) both point at the same row.
      */
     private fun persistContents(
         wipContent: WipTaskContent?,

@@ -13,13 +13,9 @@ import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * Lifecycle state of a [TaskJpaEntity].
+ * Lifecycle state of a [TaskJpaEntity]: [NEW] has no committed revision, [UNCOMMITED] has WIP changes over the last
+ * one, [COMMITED] equals it.
  *
- *  - [NEW]: only the WIP content exists, no committed revision yet.
- *  - [UNCOMMITED]: WIP content has unsaved changes on top of the last committed revision.
- *  - [COMMITED]: WIP content equals the last committed revision.
- *
- * @see tech.testsys.domain.model.task.TaskContent
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
@@ -30,8 +26,10 @@ enum class TaskStatusJpaEnum {
 }
 
 /**
- * Composite primary key for [TestToTaskContentJpaEntity].
+ * Composite key of [TestToTaskContentJpaEntity].
  *
+ * @property testId id of the test.
+ * @property taskContentId id of the task content revision.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -42,7 +40,7 @@ data class TestToTaskContentId(
 ) : CompositeId
 
 /**
- * JPA entity associating a polygon ([TestJpaEntity]) with a [TaskContentJpaEntity] revision.
+ * Join row: a [TestJpaEntity] belongs to a [TaskContentJpaEntity] revision.
  *
  * @since %CURRENT_VERSION%
  */
@@ -52,8 +50,10 @@ data class TestToTaskContentId(
 class TestToTaskContentJpaEntity(id: TestToTaskContentId) : CompositeJpaEntity<TestToTaskContentId>(id)
 
 /**
- * Composite primary key for [DeveloperSolutionToTaskContentJpaEntity].
+ * Composite key of [DeveloperSolutionToTaskContentJpaEntity].
  *
+ * @property developerSolutionId id of the developer solution.
+ * @property taskContentId id of the task content revision.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -64,7 +64,7 @@ data class DeveloperSolutionToTaskContentId(
 ) : CompositeId
 
 /**
- * JPA entity associating a [DeveloperSolutionJpaEntity] with a [TaskContentJpaEntity] revision.
+ * Join row: a [DeveloperSolutionJpaEntity] belongs to a [TaskContentJpaEntity] revision.
  *
  * @since %CURRENT_VERSION%
  */
@@ -75,8 +75,10 @@ class DeveloperSolutionToTaskContentJpaEntity(id: DeveloperSolutionToTaskContent
     CompositeJpaEntity<DeveloperSolutionToTaskContentId>(id)
 
 /**
- * Composite primary key for [TrikStudioVersionToTaskContentJpaEntity].
+ * Composite key of [TrikStudioVersionToTaskContentJpaEntity].
  *
+ * @property trikStudioVersionId id of the TRIK Studio version.
+ * @property taskContentId id of the task content revision.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -87,7 +89,7 @@ data class TrikStudioVersionToTaskContentId(
 ) : CompositeId
 
 /**
- * JPA entity associating a [TrikStudioVersionJpaEntity] supported by a [TaskContentJpaEntity] revision.
+ * Join row: a [TrikStudioVersionJpaEntity] is supported by a [TaskContentJpaEntity] revision.
  *
  * @since %CURRENT_VERSION%
  */
@@ -98,8 +100,10 @@ class TrikStudioVersionToTaskContentJpaEntity(id: TrikStudioVersionToTaskContent
     CompositeJpaEntity<TrikStudioVersionToTaskContentId>(id)
 
 /**
- * Composite primary key for [CommunityToTaskJpaEntity].
+ * Composite key of [CommunityToTaskJpaEntity].
  *
+ * @property communityId id of the community.
+ * @property taskId id of the task.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -110,8 +114,7 @@ data class CommunityToTaskId(
 ) : CompositeId
 
 /**
- * JPA entity representing the share-to-community relation of a task
- * (mirrors `TaskData.sharedTo` from the domain model).
+ * Join row: a task is shared to a community (`TaskData.sharedTo`).
  *
  * @since %CURRENT_VERSION%
  */
@@ -121,16 +124,11 @@ data class CommunityToTaskId(
 class CommunityToTaskJpaEntity(id: CommunityToTaskId) : CompositeJpaEntity<CommunityToTaskId>(id)
 
 /**
- * JPA entity representing a single revision of a task's contents
- * (exercise, statement, tests, developer solutions, supported TRIK Studio versions).
+ * JPA entity of [tech.testsys.domain.model.task.TaskContent], one revision of a task's payload; tests, developer
+ * solutions and TRIK Studio versions are attached through the `*ToTaskContentJpaEntity` join rows.
  *
- * Revisions are referenced from [TaskJpaEntity] as either the WIP or the last
- * committed snapshot; resource collections attached to a revision are modelled
- * by the `*ToTaskContentJpaEntity` join entities in this file.
- *
- * @see tech.testsys.domain.model.task.TaskContent
- * @see tech.testsys.domain.model.task.WipTaskContent
- * @see tech.testsys.domain.model.task.CommitedTaskContent
+ * @property exerciseId id of the [ExerciseJpaEntity], or `null` if not attached yet.
+ * @property statementId id of the [StatementJpaEntity], or `null` if not attached yet.
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -142,17 +140,14 @@ class TaskContentJpaEntity(
 ) : SequenceJpaEntity(id)
 
 /**
- * JPA entity representing a task domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.Task]; the versioned payload lives in [TaskContentJpaEntity] revisions.
  *
- * A task's identity (name, description, owner) lives on this entity, while the
- * versioned payload — exercise, statement, tests, developer solutions — is held
- * by [TaskContentJpaEntity] revisions referenced via [wipContentId] and [commitedContentId].
- *
- * [commitedContentId] is `null` while [status] is [TaskStatusJpaEnum.NEW] (no
- * revision has been committed yet).
- *
- * @see tech.testsys.domain.model.task.Task
- * @see tech.testsys.domain.model.task.TaskData
+ * @property name the name of the task.
+ * @property description the description of the task.
+ * @property ownerId id of the developer owning the task.
+ * @property status lifecycle state of the task.
+ * @property wipContentId id of the WIP revision.
+ * @property commitedContentId id of the last committed revision, or `null` while [status] is [TaskStatusJpaEnum.NEW].
  * @since %CURRENT_VERSION%
  */
 @Entity

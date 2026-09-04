@@ -9,9 +9,8 @@ import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 import java.util.UUID
 
 /**
- * Programming languages supported by the TRIK Studio runtime for solutions and exercises.
+ * Column form of [tech.testsys.domain.model.task.TrikSupportedLanguage].
  *
- * @see tech.testsys.domain.model.task.TrikSupportedLanguage
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
@@ -23,19 +22,12 @@ enum class TrikSupportedLanguageEnum {
 }
 
 /**
- * JPA entity representing a stored file domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.FileData]; the binary content lives in external storage.
  *
- * Holds the original (uploaded) name and the storage-side name; binary content
- * itself lives outside the database.
- *
- * Rows representing versions of the same logical file share a common
- * [versionBucket] UUID: files of a versioned resource carry the resource's own
- * version bucket, unversioned files get a fresh bucket on every store.
- *
- * @property versionBucket logical identity shared by all versions of this file.
- * @property contentHash SHA-256 hex digest of the binary content, used to detect
- * whether an incoming file differs from the stored one without loading the blob.
- * @see tech.testsys.domain.model.task.FileData
+ * @property uploadedFileName the name the file was uploaded with.
+ * @property storedFileName the key of the blob in the external storage.
+ * @property versionBucket identity shared by all versions of the file (that of the owning resource, if any).
+ * @property contentHash SHA-256 hex digest of the content, used to detect changes without loading the blob.
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -49,9 +41,9 @@ class FileDataJpaEntity(
 ) : SequenceJpaEntity(id)
 
 /**
- * JPA entity representing a TRIK Studio version domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.TrikStudioVersion].
  *
- * @see tech.testsys.domain.model.task.TrikStudioVersion
+ * @property tag the version tag.
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -61,17 +53,12 @@ class TrikStudioVersionJpaEntity(
 ) : SequenceJpaEntity()
 
 /**
- * Base class for task resources backed by a stored file: tests, statements,
- * exercises, solutions and developer solutions.
+ * Base of task resources backed by a [FileDataJpaEntity].
  *
- * Resources sharing the same logical identity across versions carry a common
- * [versionBucket] UUID, which lets the persistence layer group historical
- * revisions of the same logical resource together.
- *
- * @property name human-readable resource name.
- * @property description human-readable resource description.
- * @property fileDataId reference to the [FileDataJpaEntity] holding the binary content.
- * @property versionBucket logical identity shared by all versions of this resource.
+ * @property name the name of the resource.
+ * @property description the description of the resource.
+ * @property fileDataId id of the [FileDataJpaEntity] holding the content.
+ * @property versionBucket identity shared by all versions of the resource.
  * @since %CURRENT_VERSION%
  */
 @MappedSuperclass

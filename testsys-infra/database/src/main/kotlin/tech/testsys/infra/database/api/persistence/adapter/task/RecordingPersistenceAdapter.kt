@@ -14,6 +14,12 @@ import tech.testsys.infra.database.internal.jpa.repository.task.RecordingJpaEnti
 import tech.testsys.infra.database.internal.mapping.task.RecordingMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 
+/**
+ * Persistence adapter of [Recording] entities backed by [RecordingJpaEntity].
+ * The recording file is stored through [FileDataStorage].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class RecordingPersistenceAdapter(

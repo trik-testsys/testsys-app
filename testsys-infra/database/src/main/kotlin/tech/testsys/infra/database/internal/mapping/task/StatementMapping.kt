@@ -9,9 +9,19 @@ import tech.testsys.infra.database.internal.jpa.entity.task.StatementJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
 
+/**
+ * Mapping between [Statement] and [StatementJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @InternalDatabaseApi
 object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
 
+    /**
+     * Assembles a [Statement] from [jpaEntity] and its loaded file [uploadedFilename] and [content].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toDomain(jpaEntity: StatementJpaEntity, uploadedFilename: String, content: ByteArray) = statement {
         populateFields(jpaEntity)
 
@@ -24,6 +34,11 @@ object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
         }
     }
 
+    /**
+     * Creates a new [StatementJpaEntity] row from [data] referencing the stored file [fileDataId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(data: StatementData, fileDataId: Long) = StatementJpaEntity(
         name = data.name,
         description = data.description,
@@ -31,6 +46,11 @@ object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
         versionBucket = data.versionBucket,
     )
 
+    /**
+     * Creates the [StatementJpaEntity] row replacing [current] from [entity] and file [fileDataId], keeping `createdAt` and `version`.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(entity: Statement, current: StatementJpaEntity, fileDataId: Long) = StatementJpaEntity(
         name = entity.data.name,
         description = entity.data.description,

@@ -17,17 +17,19 @@ import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionToT
 import tech.testsys.infra.database.internal.utils.requireId
 
 /**
- * Mapper for a single [TaskContentJpaEntity] revision and its association rows.
- *
- * `TaskContent`'s sealed variants (`New` / `Uncommited` / `Committed`) are
- * composed at the [tech.testsys.infra.database.internal.mapping.task.TaskMapping] level; this object handles a single revision
- * in isolation.
+ * Mapping between one content revision of a task, [WipTaskContent] or [CommitedTaskContent], and [TaskContentJpaEntity];
+ * the sealed `TaskContent` is composed by [TaskMapping].
  *
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
 object TaskContentMapping {
 
+    /**
+     * Assembles the [WipTaskContent] of the revision [jpaEntity] from [testIds], [developerSolutionIds] and [supportedVersions].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toWipDomain(
         jpaEntity: TaskContentJpaEntity,
         testIds: List<TestId>,
@@ -44,6 +46,12 @@ object TaskContentMapping {
         )
     }
 
+    /**
+     * Assembles the [CommitedTaskContent] of the revision [jpaEntity] from [testIds], [developerSolutionIds]
+     * and [supportedVersions]; fails when the exercise or statement reference is missing.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toCommitedDomain(
         jpaEntity: TaskContentJpaEntity,
         testIds: List<TestId>,
@@ -65,24 +73,49 @@ object TaskContentMapping {
         )
     }
 
+    /**
+     * Creates a new [TaskContentJpaEntity] row for the WIP [content].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(content: WipTaskContent) = TaskContentJpaEntity(
         exerciseId = content.exercise?.id?.value,
         statementId = content.statement?.id?.value,
     )
 
+    /**
+     * Creates a new [TaskContentJpaEntity] row for the committed [content].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(content: CommitedTaskContent) = TaskContentJpaEntity(
         exerciseId = content.exercise.id.value,
         statementId = content.statement.id.value,
     )
 
+    /**
+     * Creates the [TestToTaskContentJpaEntity] rows linking the revision [taskContentId] with [testIds].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toTestAssociations(taskContentId: Long, testIds: List<TestId>) = testIds.map {
         TestToTaskContentJpaEntity(testId = it.value, taskContentId = taskContentId)
     }
 
+    /**
+     * Creates the [DeveloperSolutionToTaskContentJpaEntity] rows linking the revision [taskContentId] with [developerSolutionIds].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toDeveloperSolutionAssociations(taskContentId: Long, developerSolutionIds: List<DeveloperSolutionId>) = developerSolutionIds.map {
         DeveloperSolutionToTaskContentJpaEntity(developerSolutionId = it.value, taskContentId = taskContentId)
     }
 
+    /**
+     * Creates the [TrikStudioVersionToTaskContentJpaEntity] rows linking the revision [taskContentId] with [trikStudioVersionIds].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toTrikStudioVersionAssociations(taskContentId: Long, trikStudioVersionIds: List<Long>) = trikStudioVersionIds.map {
         TrikStudioVersionToTaskContentJpaEntity(trikStudioVersionId = it, taskContentId = taskContentId)
     }

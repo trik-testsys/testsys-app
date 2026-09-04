@@ -14,5 +14,10 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
 @InternalDatabaseApi
 interface ManagerDataJpaEntityRepository : SequenceJpaEntityRepository<ManagerDataJpaEntity> {
 
+    /**
+     * Finds the manager data row of the user [userId], or `null` if the user does not hold the role.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun findByUserId(userId: Long): ManagerDataJpaEntity?
 }

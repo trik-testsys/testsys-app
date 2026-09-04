@@ -14,5 +14,10 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
 @InternalDatabaseApi
 interface DeveloperDataJpaEntityRepository : SequenceJpaEntityRepository<DeveloperDataJpaEntity> {
 
+    /**
+     * Finds the developer data row of the user [userId], or `null` if the user does not hold the role.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun findByUserId(userId: Long): DeveloperDataJpaEntity?
 }

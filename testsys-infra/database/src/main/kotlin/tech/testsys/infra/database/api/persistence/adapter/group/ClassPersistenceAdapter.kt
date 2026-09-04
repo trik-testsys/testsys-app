@@ -19,6 +19,12 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 
+/**
+ * Persistence adapter of [Class] entities backed by [ClassJpaEntity].
+ * Student and contest membership is synced through the join tables on save and update.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class ClassPersistenceAdapter(

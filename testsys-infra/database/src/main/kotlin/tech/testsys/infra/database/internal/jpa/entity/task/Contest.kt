@@ -12,8 +12,10 @@ import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 import java.time.Instant
 
 /**
- * Composite primary key for [TaskToContestJpaEntity].
+ * Composite key of [TaskToContestJpaEntity].
  *
+ * @property taskId id of the task.
+ * @property contestId id of the contest.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -24,7 +26,7 @@ data class TaskToContestId(
 ) : CompositeId
 
 /**
- * JPA entity representing a task to contest association domain entity.
+ * Join row: a task belongs to a contest.
  *
  * @since %CURRENT_VERSION%
  */
@@ -34,8 +36,10 @@ data class TaskToContestId(
 class TaskToContestJpaEntity(id: TaskToContestId) : CompositeJpaEntity<TaskToContestId>(id)
 
 /**
- * Composite primary key for [CommunityToContestJpaEntity].
+ * Composite key of [CommunityToContestJpaEntity].
  *
+ * @property communityId id of the community.
+ * @property contestId id of the contest.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -46,8 +50,7 @@ data class CommunityToContestId(
 ) : CompositeId
 
 /**
- * JPA entity representing the share-to-community relation of a contest
- * (mirrors `ContestData.sharedTo` from the domain model).
+ * Join row: a contest is shared to a community (`ContestData.sharedTo`).
  *
  * @since %CURRENT_VERSION%
  */
@@ -57,13 +60,15 @@ data class CommunityToContestId(
 class CommunityToContestJpaEntity(id: CommunityToContestId) : CompositeJpaEntity<CommunityToContestId>(id)
 
 /**
- * JPA entity representing a contest domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.Contest].
  *
- * @property contestDurationMillis total contest duration in milliseconds.
+ * @property name the name of the contest.
+ * @property description the description of the contest.
+ * @property ownerId id of the developer owning the contest.
+ * @property startsAt moment the contest starts, or `null` if not scheduled yet.
+ * @property contestDurationMillis total duration in milliseconds.
  * @property attemptDurationMillis per-attempt duration in milliseconds.
- *
- * @see tech.testsys.domain.model.task.Contest
- * @see tech.testsys.domain.model.task.ContestData
+ * @property trikStudioVersionId id of the [TrikStudioVersionJpaEntity] the contest runs on.
  * @since %CURRENT_VERSION%
  */
 @Entity

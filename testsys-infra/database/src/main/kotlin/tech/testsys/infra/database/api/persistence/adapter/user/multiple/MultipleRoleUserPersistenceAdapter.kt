@@ -53,15 +53,9 @@ import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
- * Persistence adapter for [MultipleRoleUser].
- *
- * Writable state is limited to the user scalars (name, access token, email),
- * the set of held roles (per-role data rows) and the per-role community
- * memberships ([MultipleRoleToUserJpaEntity]). The role payload lists —
- * developer tasks/contests, student classes/submissions, judge judgment orders,
- * manager classes/competitions — are read-only projections derived from the
- * owning side (`Task.ownerId`, `Submission.authorId`, `JudgmentOrder.judgeId`,
- * `StudentToClass`, ...) on read and are deliberately ignored on save/update.
+ * Persistence adapter of [MultipleRoleUser] entities backed by [UserJpaEntity] rows of the multiple-role type.
+ * Writes cover the user scalars, the held roles and their community memberships ([MultipleRoleToUserJpaEntity]);
+ * the per-role id lists (tasks, classes, submissions, ...) are read-only projections of the owning side.
  *
  * @since %CURRENT_VERSION%
  */
@@ -189,13 +183,8 @@ class MultipleRoleUserPersistenceAdapter(
     }
 
     /**
-     * Reconciles the set of role-data rows and `(role, community)` memberships
-     * for [userId] with [roles].
-     *
-     * Existing role-data rows whose role is still held are left untouched
-     * (`createdAt` and `version` are preserved); only newly-acquired roles are
-     * inserted and dropped roles are removed. Memberships are diffed via
-     * [syncJoinTable] so unchanged `(role, community)` pairs survive the update.
+     * Reconciles the role-data rows and `(role, community)` memberships of [userId] with [roles]: kept roles and
+     * unchanged memberships are left untouched, new ones are inserted and dropped ones removed.
      */
     private fun syncRoles(userId: Long, roles: List<CompatibleUserRole>) {
         val targetRoleEnums = roles.map(::roleEnumOf).toSet()

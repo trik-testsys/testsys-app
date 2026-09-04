@@ -5,12 +5,8 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import java.util.UUID
 
 /**
- * JPA entity representing a task statement domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.Statement].
  *
- * A statement is the human-readable problem description bundled with a task.
- *
- * @see tech.testsys.domain.model.task.Statement
- * @see tech.testsys.domain.model.task.StatementData
  * @since %CURRENT_VERSION%
  */
 @Entity

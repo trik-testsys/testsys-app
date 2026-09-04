@@ -7,14 +7,9 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import java.util.UUID
 
 /**
- * JPA entity representing an exercise domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.Exercise].
  *
- * An exercise is the executable scaffold delivered to participants together with
- * a [StatementJpaEntity]; its programming language is captured by [language].
- * Owned by the developer who authored it ([ownerId]).
- *
- * @see tech.testsys.domain.model.task.Exercise
- * @see tech.testsys.domain.model.task.ExerciseData
+ * @property language programming language of the exercise.
  * @since %CURRENT_VERSION%
  */
 @Entity

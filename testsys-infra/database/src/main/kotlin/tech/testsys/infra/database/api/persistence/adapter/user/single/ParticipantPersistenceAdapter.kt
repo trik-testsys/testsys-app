@@ -20,6 +20,11 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
 
+/**
+ * Persistence adapter of [Participant] entities backed by [UserJpaEntity] rows having a participant data row.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class ParticipantPersistenceAdapter(

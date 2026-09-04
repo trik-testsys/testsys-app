@@ -13,6 +13,11 @@ import tech.testsys.infra.database.internal.jpa.repository.task.JudgmentOrderJpa
 import tech.testsys.infra.database.internal.mapping.task.JudgmentOrderMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 
+/**
+ * Persistence adapter of [JudgmentOrder] entities backed by [JudgmentOrderJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class JudgmentOrderPersistenceAdapter(

@@ -14,6 +14,12 @@ import tech.testsys.infra.database.internal.jpa.repository.task.TestJpaEntityRep
 import tech.testsys.infra.database.internal.mapping.task.TestMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 
+/**
+ * Persistence adapter of [Test] entities backed by [TestJpaEntity].
+ * The polygon file is stored through [FileDataStorage] in the version bucket of the test.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class TestPersistenceAdapter(

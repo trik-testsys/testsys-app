@@ -9,9 +9,19 @@ import tech.testsys.infra.database.internal.jpa.entity.group.CommunityJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
 
+/**
+ * Mapping between [Community] and [CommunityJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @InternalDatabaseApi
 object CommunityMapping : EntityMapping<Community, CommunityJpaEntity> {
 
+    /**
+     * Assembles a [Community] from [jpaEntity].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toDomain(jpaEntity: CommunityJpaEntity) = community {
         populateFields(jpaEntity)
         data {
@@ -21,12 +31,22 @@ object CommunityMapping : EntityMapping<Community, CommunityJpaEntity> {
         }
     }
 
+    /**
+     * Creates a new [CommunityJpaEntity] row from [data].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(data: CommunityData) = CommunityJpaEntity(
         name = data.name,
         description = data.description,
         ownerId = data.owner.id.value,
     )
 
+    /**
+     * Creates the [CommunityJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(entity: Community, current: CommunityJpaEntity) = CommunityJpaEntity(
         name = entity.data.name,
         description = entity.data.description,

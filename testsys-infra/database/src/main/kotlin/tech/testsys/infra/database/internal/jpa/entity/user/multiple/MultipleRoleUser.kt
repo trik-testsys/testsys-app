@@ -10,9 +10,8 @@ import tech.testsys.infra.database.internal.jpa.entity.CompositeId
 import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 
 /**
- * Roles a multiple-role user may take within a community.
+ * Roles a [tech.testsys.domain.model.user.MultipleRoleUser] may hold within a community.
  *
- * @see tech.testsys.domain.model.user.MultipleRoleUser
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
@@ -26,9 +25,11 @@ enum class UserMultipleRoleJpaEnum {
 }
 
 /**
- * Composite primary key for [MultipleRoleToUserJpaEntity], pairing a (role, user, community)
- * triple so a user can hold different roles in different communities.
+ * Composite key of [MultipleRoleToUserJpaEntity].
  *
+ * @property multipleRole the role held.
+ * @property userId id of the user.
+ * @property communityId id of the community the role is held in.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -41,7 +42,7 @@ data class MultipleRoleToUserId(
 ) : CompositeId
 
 /**
- * JPA entity representing a (role, user, community) membership for multiple-role users.
+ * Join row: a multiple-role user holds a role in a community.
  *
  * @since %CURRENT_VERSION%
  */

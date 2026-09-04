@@ -9,13 +9,13 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * JPA entity representing a verdict domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.Verdict].
  *
- * Optionally references the [LogsJpaEntity] and [RecordingJpaEntity] captured
- * while the verdict was being assigned via [logsId] and [recordingId].
- *
- * @see tech.testsys.domain.model.task.Verdict
- * @see tech.testsys.domain.model.task.VerdictData
+ * @property score the score assigned to the submission.
+ * @property taskId id of the graded task.
+ * @property submissionId id of the graded [SubmissionJpaEntity].
+ * @property logsId id of the [LogsJpaEntity] captured while grading, or `null` if none.
+ * @property recordingId id of the [RecordingJpaEntity] captured while grading, or `null` if none.
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -30,9 +30,8 @@ class VerdictJpaEntity(
 ) : SequenceJpaEntity(id)
 
 /**
- * Possible lifecycle states of a [SubmissionJpaEntity].
+ * Column form of [tech.testsys.domain.model.task.SubmissionStatus], the lifecycle state of a [SubmissionJpaEntity].
  *
- * @see tech.testsys.domain.model.task.SubmissionStatus
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
@@ -43,11 +42,8 @@ enum class SubmissionStatusJpaEnum {
 }
 
 /**
- * Possible outcomes of a grading attempt.
+ * Column form of [tech.testsys.domain.model.task.GradingResult]; set only on [SubmissionStatusJpaEnum.GRADED] submissions.
  *
- * Populated only when the parent submission is in [SubmissionStatusJpaEnum.GRADED] state.
- *
- * @see tech.testsys.domain.model.task.GradingResult
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
@@ -58,9 +54,8 @@ enum class GradingResultJpaEnum {
 }
 
 /**
- * Classifies the purpose of a submission.
+ * Column form of [tech.testsys.domain.model.task.SubmissionKind], the purpose of a [SubmissionJpaEntity].
  *
- * @see tech.testsys.domain.model.task.SubmissionKind
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
@@ -70,13 +65,9 @@ enum class SubmissionKindJpaEnum {
 }
 
 /**
- * JPA entity representing a recording domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.Recording], the runtime trace captured while grading.
  *
- * A recording is the captured runtime trace produced while a verdict was being assigned;
- * its binary payload lives in a separate [FileDataJpaEntity] referenced by [fileDataId].
- *
- * @see tech.testsys.domain.model.task.Recording
- * @see tech.testsys.domain.model.task.RecordingData
+ * @property fileDataId id of the [FileDataJpaEntity] holding the recording.
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -87,13 +78,9 @@ class RecordingJpaEntity(
 ) : SequenceJpaEntity(id)
 
 /**
- * JPA entity representing a logs domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.Logs], the textual output captured while grading.
  *
- * Logs are the textual runtime output captured while a verdict was being assigned;
- * the actual payload lives in a separate [FileDataJpaEntity] referenced by [fileDataId].
- *
- * @see tech.testsys.domain.model.task.Logs
- * @see tech.testsys.domain.model.task.LogsData
+ * @property fileDataId id of the [FileDataJpaEntity] holding the logs.
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -104,19 +91,19 @@ class LogsJpaEntity(
 ) : SequenceJpaEntity(id)
 
 /**
- * JPA entity representing a submission domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.Submission] with status, grading result and kind flattened onto it.
+ * Nullability encodes the active variant: [gradingResult] is set iff [status] is `GRADED`, [gradingVerdictId] iff the
+ * result is `SUCCESS`, [gradingErrorDescription] iff it is `GRADING_ERROR`, [gradingContestId] iff [kind] is `GRADING`.
  *
- * Status, grading result and kind payloads are flattened onto this entity because
- * they do not exist independently of a submission. Nullability of the grading and
- * kind fields encodes the active sealed-interface variant:
- *
- *  - [status] == `GRADED` ⇔ [gradingResult] is non-null;
- *  - [gradingResult] == `SUCCESS` ⇔ [gradingVerdictId] is non-null;
- *  - [gradingResult] == `GRADING_ERROR` ⇔ [gradingErrorDescription] is non-null;
- *  - [kind] == `GRADING` ⇔ [gradingContestId] is non-null.
- *
- * @see tech.testsys.domain.model.task.Submission
- * @see tech.testsys.domain.model.task.SubmissionData
+ * @property authorId id of the user who submitted the solution.
+ * @property solutionId id of the submitted solution.
+ * @property taskId id of the task the solution is submitted to.
+ * @property status lifecycle state of the submission.
+ * @property gradingResult outcome of grading, or `null` while not graded.
+ * @property gradingVerdictId id of the verdict of a successful grading, or `null` otherwise.
+ * @property gradingErrorDescription description of a grading error, or `null` otherwise.
+ * @property kind purpose of the submission.
+ * @property gradingContestId id of the contest a grading submission belongs to, or `null` otherwise.
  * @since %CURRENT_VERSION%
  */
 @Entity

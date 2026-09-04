@@ -11,7 +11,7 @@ import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRep
 import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
 
 /**
- * Spring Data repository for [CompetitionToObserverJpaEntity] association entities.
+ * Spring Data repository for [CompetitionToObserverJpaEntity].
  *
  * @since %CURRENT_VERSION%
  */
@@ -20,6 +20,11 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
 interface CompetitionToObserverJpaEntityRepository :
     CompositeJpaEntityRepository<CompetitionToObserverJpaEntity, CompetitionToObserverId> {
 
+    /**
+     * Finds the association rows of the observer [observerId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from CompetitionToObserverJpaEntity e where e.id.observerId = :observerId")
     fun findAllByObserverId(@Param("observerId") observerId: Long): List<CompetitionToObserverJpaEntity>
 }
@@ -33,5 +38,10 @@ interface CompetitionToObserverJpaEntityRepository :
 @InternalDatabaseApi
 interface ObserverDataJpaEntityRepository : SequenceJpaEntityRepository<ObserverDataJpaEntity> {
 
+    /**
+     * Finds the observer data row of the user [userId], or `null` if the user does not hold the role.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun findByUserId(userId: Long): ObserverDataJpaEntity?
 }

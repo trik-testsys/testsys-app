@@ -9,16 +9,10 @@ import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * Base Spring Data repository for entities with a simple [Long] primary key
- * (subclasses of [SequenceJpaEntity]).
+ * Base Spring Data repository of [SequenceJpaEntity] subtypes with [JpaSpecificationExecutor] support;
+ * [NoRepositoryBean], so only the concrete sub-interfaces become beans.
  *
- * Marked [NoRepositoryBean] so Spring does not try to instantiate it directly;
- * concrete sub-interfaces become repository beans.
- *
- * Mixes in [JpaSpecificationExecutor] so all concrete sub-interfaces support
- * dynamic Criteria-API queries via `Specification<Entity>`.
- *
- * @param Entity the concrete entity type stored by this repository.
+ * @param Entity the stored entity type.
  * @since %CURRENT_VERSION%
  */
 @NoRepositoryBean
@@ -28,17 +22,11 @@ interface SequenceJpaEntityRepository<Entity : SequenceJpaEntity> :
     JpaSpecificationExecutor<Entity>
 
 /**
- * Base Spring Data repository for entities with a composite primary key
- * (subclasses of [CompositeJpaEntity]).
+ * Base Spring Data repository of [CompositeJpaEntity] subtypes with [JpaSpecificationExecutor] support;
+ * [NoRepositoryBean], so only the concrete sub-interfaces become beans.
  *
- * Marked [NoRepositoryBean] so Spring does not try to instantiate it directly;
- * concrete sub-interfaces become repository beans.
- *
- * Mixes in [JpaSpecificationExecutor] so all concrete sub-interfaces support
- * dynamic Criteria-API queries via `Specification<Entity>`.
- *
- * @param Entity the concrete entity type stored by this repository.
- * @param ID the composite key type, must extend [CompositeId].
+ * @param Entity the stored entity type.
+ * @param ID the composite key type.
  * @since %CURRENT_VERSION%
  */
 @NoRepositoryBean

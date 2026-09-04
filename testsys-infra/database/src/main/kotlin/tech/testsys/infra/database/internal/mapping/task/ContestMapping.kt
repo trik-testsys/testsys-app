@@ -15,9 +15,19 @@ import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
 import java.time.Duration
 
+/**
+ * Mapping between [Contest] and [ContestJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @InternalDatabaseApi
 object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
 
+    /**
+     * Assembles a [Contest] from [jpaEntity], its resolved [trikStudioVersion] and the ids of its tasks and shared-to communities.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toDomain(
         jpaEntity: ContestJpaEntity,
         trikStudioVersion: TrikStudioVersion,
@@ -39,6 +49,11 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
         }
     }
 
+    /**
+     * Creates a new [ContestJpaEntity] row from [data] referencing the version row [trikStudioVersionId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(data: ContestData, trikStudioVersionId: Long) = ContestJpaEntity(
         name = data.name,
         description = data.description,
@@ -49,6 +64,11 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
         trikStudioVersionId = trikStudioVersionId,
     )
 
+    /**
+     * Creates the [ContestJpaEntity] row replacing [current] from [entity] and [trikStudioVersionId], keeping `createdAt` and `version`.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(entity: Contest, current: ContestJpaEntity, trikStudioVersionId: Long) = ContestJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
@@ -63,6 +83,11 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
         it.version = current.version
     }
 
+    /**
+     * Creates the [TaskToContestJpaEntity] rows linking the contest [contestId] with [taskIds].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toTaskAssociations(contestId: Long, taskIds: List<TaskId>) = taskIds.map {
         TaskToContestJpaEntity(
             taskId = it.value,
@@ -70,6 +95,11 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
         )
     }
 
+    /**
+     * Creates the [CommunityToContestJpaEntity] rows linking the contest [contestId] with [communityIds].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toCommunityAssociations(contestId: Long, communityIds: List<CommunityId>) = communityIds.map {
         CommunityToContestJpaEntity(
             communityId = it.value,

@@ -14,6 +14,12 @@ import tech.testsys.infra.database.internal.jpa.repository.task.LogsJpaEntityRep
 import tech.testsys.infra.database.internal.mapping.task.LogsMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 
+/**
+ * Persistence adapter of [Logs] entities backed by [LogsJpaEntity].
+ * The logs file is stored through [FileDataStorage].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class LogsPersistenceAdapter(

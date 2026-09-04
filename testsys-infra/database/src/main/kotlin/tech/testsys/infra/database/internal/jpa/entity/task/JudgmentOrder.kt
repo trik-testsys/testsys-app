@@ -7,10 +7,11 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * JPA entity representing a judgment order domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.JudgmentOrder].
  *
- * @see tech.testsys.domain.model.task.JudgmentOrder
- * @see tech.testsys.domain.model.task.JudgmentOrderData
+ * @property judgeId id of the judge issuing the order.
+ * @property verdictId id of the [VerdictJpaEntity] the order applies to.
+ * @property reason the reason of the order.
  * @since %CURRENT_VERSION%
  */
 @Entity

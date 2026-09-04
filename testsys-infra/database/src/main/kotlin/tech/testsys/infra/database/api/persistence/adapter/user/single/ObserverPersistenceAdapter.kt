@@ -22,6 +22,12 @@ import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 
+/**
+ * Persistence adapter of [Observer] entities backed by [UserJpaEntity] rows having an observer data row.
+ * Watched competitions are synced through the join table.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class ObserverPersistenceAdapter(

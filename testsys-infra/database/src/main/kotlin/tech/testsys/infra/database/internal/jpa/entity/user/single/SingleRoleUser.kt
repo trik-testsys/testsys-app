@@ -10,10 +10,8 @@ import tech.testsys.infra.database.internal.jpa.entity.CompositeId
 import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 
 /**
- * The single role a [tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity] of type
- * [tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum.SINGLE_ROLE] holds.
+ * The single role of a [tech.testsys.domain.model.user.SingleRoleUser].
  *
- * @see tech.testsys.domain.model.user.SingleRoleUser
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
@@ -25,8 +23,10 @@ enum class UserSingleRoleJpaEnum {
 }
 
 /**
- * Composite primary key for [SingleRoleToUserJpaEntity].
+ * Composite key of [SingleRoleToUserJpaEntity].
  *
+ * @property singleRole the role held.
+ * @property userId id of the user.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -38,7 +38,7 @@ data class SingleRoleToUserId(
 ) : CompositeId
 
 /**
- * JPA entity representing the (role, user) pairing for a single-role user.
+ * Join row: the role a single-role user holds.
  *
  * @since %CURRENT_VERSION%
  */

@@ -24,5 +24,10 @@ interface FileDataJpaEntityRepository : SequenceJpaEntityRepository<FileDataJpaE
 @InternalDatabaseApi
 interface TrikStudioVersionJpaEntityRepository : SequenceJpaEntityRepository<TrikStudioVersionJpaEntity> {
 
+    /**
+     * Finds the version with [tag], or `null` if it is not stored.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun findByTag(tag: String): TrikStudioVersionJpaEntity?
 }

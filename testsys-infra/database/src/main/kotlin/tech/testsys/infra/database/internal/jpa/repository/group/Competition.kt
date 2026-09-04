@@ -15,7 +15,7 @@ import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRep
 import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
 
 /**
- * Spring Data repository for [ContestToCompetitionJpaEntity] association entities.
+ * Spring Data repository for [ContestToCompetitionJpaEntity].
  *
  * @since %CURRENT_VERSION%
  */
@@ -24,21 +24,41 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
 interface ContestToCompetitionJpaEntityRepository :
     CompositeJpaEntityRepository<ContestToCompetitionJpaEntity, ContestToCompetitionId> {
 
+    /**
+     * Finds the association rows of the contest [contestId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ContestToCompetitionJpaEntity e where e.id.contestId = :contestId")
     fun findAllByContestId(@Param("contestId") contestId: Long): List<ContestToCompetitionJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the contest [contestId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ContestToCompetitionJpaEntity e where e.id.contestId = :contestId")
     fun findAllByContestId(@Param("contestId") contestId: Long, pageable: Pageable): Page<ContestToCompetitionJpaEntity>
 
+    /**
+     * Finds the association rows of the competition [competitionId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ContestToCompetitionJpaEntity e where e.id.competitionId = :competitionId")
     fun findAllByCompetitionId(@Param("competitionId") competitionId: Long): List<ContestToCompetitionJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the competition [competitionId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ContestToCompetitionJpaEntity e where e.id.competitionId = :competitionId")
     fun findAllByCompetitionId(@Param("competitionId") competitionId: Long, pageable: Pageable): Page<ContestToCompetitionJpaEntity>
 }
 
 /**
- * Spring Data repository for [ParticipantToCompetitionJpaEntity] association entities.
+ * Spring Data repository for [ParticipantToCompetitionJpaEntity].
  *
  * @since %CURRENT_VERSION%
  */
@@ -47,15 +67,35 @@ interface ContestToCompetitionJpaEntityRepository :
 interface ParticipantToCompetitionJpaEntityRepository :
     CompositeJpaEntityRepository<ParticipantToCompetitionJpaEntity, ParticipantToCompetitionId> {
 
+    /**
+     * Finds the association rows of the participant [participantId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ParticipantToCompetitionJpaEntity e where e.id.participantId = :participantId")
     fun findAllByParticipantId(@Param("participantId") participantId: Long): List<ParticipantToCompetitionJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the participant [participantId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ParticipantToCompetitionJpaEntity e where e.id.participantId = :participantId")
     fun findAllByParticipantId(@Param("participantId") participantId: Long, pageable: Pageable): Page<ParticipantToCompetitionJpaEntity>
 
+    /**
+     * Finds the association rows of the competition [competitionId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ParticipantToCompetitionJpaEntity e where e.id.competitionId = :competitionId")
     fun findAllByCompetitionId(@Param("competitionId") competitionId: Long): List<ParticipantToCompetitionJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the competition [competitionId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ParticipantToCompetitionJpaEntity e where e.id.competitionId = :competitionId")
     fun findAllByCompetitionId(@Param("competitionId") competitionId: Long, pageable: Pageable): Page<ParticipantToCompetitionJpaEntity>
 }
@@ -69,5 +109,10 @@ interface ParticipantToCompetitionJpaEntityRepository :
 @InternalDatabaseApi
 interface CompetitionJpaEntityRepository : SequenceJpaEntityRepository<CompetitionJpaEntity> {
 
+    /**
+     * Finds the competitions owned by the user [ownerId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun findAllByOwnerId(ownerId: Long): List<CompetitionJpaEntity>
 }

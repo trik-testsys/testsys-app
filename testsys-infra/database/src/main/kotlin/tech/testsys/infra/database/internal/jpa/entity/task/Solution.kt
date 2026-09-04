@@ -7,13 +7,10 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * JPA entity representing a participant solution domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.Solution].
  *
- * Submitted by a participant during a contest or as practice; the runtime
- * language of the source is captured by [language].
- *
- * @see tech.testsys.domain.model.task.Solution
- * @see tech.testsys.domain.model.task.SolutionData
+ * @property fileDataId id of the [FileDataJpaEntity] holding the source.
+ * @property language programming language of the source.
  * @since %CURRENT_VERSION%
  */
 @Entity

@@ -9,7 +9,7 @@ import tech.testsys.infra.database.internal.jpa.entity.user.single.SingleRoleToU
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
 
 /**
- * Spring Data repository for [SingleRoleToUserJpaEntity] association entities.
+ * Spring Data repository for [SingleRoleToUserJpaEntity].
  *
  * @since %CURRENT_VERSION%
  */
@@ -18,6 +18,11 @@ import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRep
 interface SingleRoleToUserJpaEntityRepository :
     CompositeJpaEntityRepository<SingleRoleToUserJpaEntity, SingleRoleToUserId> {
 
+    /**
+     * Finds the role rows of the user [userId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from SingleRoleToUserJpaEntity e where e.id.userId = :userId")
     fun findAllByUserId(@Param("userId") userId: Long): List<SingleRoleToUserJpaEntity>
 }

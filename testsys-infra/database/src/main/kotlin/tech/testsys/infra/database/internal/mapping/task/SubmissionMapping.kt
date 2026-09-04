@@ -19,9 +19,19 @@ import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionStatusJpaE
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
 
+/**
+ * Mapping between [Submission] and [SubmissionJpaEntity]; the sealed status and kind are flattened into nullable columns.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @InternalDatabaseApi
 object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
 
+    /**
+     * Assembles a [Submission] from [jpaEntity] and [judgmentOrderIds]; fails on inconsistent status or kind columns.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toDomain(jpaEntity: SubmissionJpaEntity, judgmentOrderIds: List<JudgmentOrderId>) = submission {
         populateFields(jpaEntity)
         data {
@@ -36,6 +46,11 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
         }
     }
 
+    /**
+     * Creates a new [SubmissionJpaEntity] row from [data].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(data: SubmissionData): SubmissionJpaEntity {
         val statusEncoded = encodeStatus(data.status)
         val kindEncoded = encodeKind(data.kind)
@@ -53,6 +68,11 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
         )
     }
 
+    /**
+     * Creates the [SubmissionJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(entity: Submission, current: SubmissionJpaEntity): SubmissionJpaEntity {
         val statusEncoded = encodeStatus(entity.data.status)
         val kindEncoded = encodeKind(entity.data.kind)

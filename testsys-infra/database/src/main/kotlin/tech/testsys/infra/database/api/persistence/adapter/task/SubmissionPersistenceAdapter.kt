@@ -16,6 +16,12 @@ import tech.testsys.infra.database.internal.mapping.task.SubmissionMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireId
 
+/**
+ * Persistence adapter of [Submission] entities backed by [SubmissionJpaEntity].
+ * Judgment order ids are projected from the judgment order table on read.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class SubmissionPersistenceAdapter(

@@ -21,6 +21,12 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 
+/**
+ * Persistence adapter of [Contest] entities backed by [ContestJpaEntity].
+ * Task and shared-community membership is synced through the join tables; the TRIK Studio version is resolved by tag.
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class ContestPersistenceAdapter(

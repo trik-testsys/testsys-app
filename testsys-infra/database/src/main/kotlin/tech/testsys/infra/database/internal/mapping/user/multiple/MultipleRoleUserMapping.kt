@@ -17,10 +17,14 @@ import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.utils.populateFields
 
 /**
- * Information collected from per-role JPA tables, grouped per the role variants
- * supported by [tech.testsys.domain.model.user.CompatibleUserRole].
+ * Role rows of a [MultipleRoleUser] collected from the per-role tables; a `null` role is not held by the user.
  *
- * Nullable variants mark roles the user does not currently hold.
+ * @property administrator the administrator role, or `null` if not held.
+ * @property developer the developer role, or `null` if not held.
+ * @property student the student role, or `null` if not held.
+ * @property judge the judge role, or `null` if not held.
+ * @property manager the manager role, or `null` if not held.
+ * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
 data class MultipleRoleUserRoles(
@@ -31,25 +35,62 @@ data class MultipleRoleUserRoles(
     val manager: ManagerRoleInfo?,
 ) {
 
+    /**
+     * Administrator role of a user.
+     *
+     * @property memberOf ids of the communities the role is held in.
+     * @since %CURRENT_VERSION%
+     */
     data class AdministratorRoleInfo(val memberOf: List<CommunityId>)
 
+    /**
+     * Developer role of a user.
+     *
+     * @property memberOf ids of the communities the role is held in.
+     * @property tasks ids of the tasks owned by the user.
+     * @property contests ids of the contests owned by the user.
+     * @since %CURRENT_VERSION%
+     */
     data class DeveloperRoleInfo(
         val memberOf: List<CommunityId>,
         val tasks: List<TaskId>,
         val contests: List<ContestId>,
     )
 
+    /**
+     * Student role of a user.
+     *
+     * @property memberOf ids of the communities the role is held in.
+     * @property classes ids of the classes the user is enrolled in.
+     * @property submissions ids of the submissions authored by the user.
+     * @since %CURRENT_VERSION%
+     */
     data class StudentRoleInfo(
         val memberOf: List<CommunityId>,
         val classes: List<ClassId>,
         val submissions: List<SubmissionId>,
     )
 
+    /**
+     * Judge role of a user.
+     *
+     * @property memberOf ids of the communities the role is held in.
+     * @property judgmentOrders ids of the judgment orders issued by the user.
+     * @since %CURRENT_VERSION%
+     */
     data class JudgeRoleInfo(
         val memberOf: List<CommunityId>,
         val judgmentOrders: List<JudgmentOrderId>,
     )
 
+    /**
+     * Manager role of a user.
+     *
+     * @property memberOf ids of the communities the role is held in.
+     * @property classes ids of the classes owned by the user.
+     * @property competitions ids of the competitions owned by the user.
+     * @since %CURRENT_VERSION%
+     */
     data class ManagerRoleInfo(
         val memberOf: List<CommunityId>,
         val classes: List<ClassId>,
@@ -57,9 +98,19 @@ data class MultipleRoleUserRoles(
     )
 }
 
+/**
+ * Mapping between [MultipleRoleUser] and [UserJpaEntity] with its [MultipleRoleUserRoles].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @InternalDatabaseApi
 object MultipleRoleUserMapping {
 
+    /**
+     * Assembles a [MultipleRoleUser] from [userJpaEntity] and its collected [roles]; fails when the e-mail is missing.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toDomain(userJpaEntity: UserJpaEntity, roles: MultipleRoleUserRoles) = multipleRoleUser {
         populateFields(userJpaEntity)
         data {
@@ -111,6 +162,11 @@ object MultipleRoleUserMapping {
         }
     }
 
+    /**
+     * Creates a new multiple-role [UserJpaEntity] row from [data].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toUserJpaEntity(data: MultipleRoleUserData) = UserJpaEntity(
         name = data.name,
         accessToken = data.accessToken,
@@ -118,6 +174,11 @@ object MultipleRoleUserMapping {
         type = UserTypeJpaEnum.MULTIPLE_ROLE,
     )
 
+    /**
+     * Creates the [UserJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toUserJpaEntity(entity: MultipleRoleUser, current: UserJpaEntity) = UserJpaEntity(
         name = entity.data.name,
         accessToken = entity.data.accessToken,

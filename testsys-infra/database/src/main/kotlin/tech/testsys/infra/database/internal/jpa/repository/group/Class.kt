@@ -15,7 +15,7 @@ import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRep
 import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
 
 /**
- * Spring Data repository for [StudentToClassJpaEntity] association entities.
+ * Spring Data repository for [StudentToClassJpaEntity].
  *
  * @since %CURRENT_VERSION%
  */
@@ -23,21 +23,41 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
 @InternalDatabaseApi
 interface StudentToClassJpaEntityRepository : CompositeJpaEntityRepository<StudentToClassJpaEntity, StudentToClassId> {
 
+    /**
+     * Finds the association rows of the student [studentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from StudentToClassJpaEntity e where e.id.studentId = :studentId")
     fun findAllByStudentId(@Param("studentId") studentId: Long): List<StudentToClassJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the student [studentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from StudentToClassJpaEntity e where e.id.studentId = :studentId")
     fun findAllByStudentId(@Param("studentId") studentId: Long, pageable: Pageable): Page<StudentToClassJpaEntity>
 
+    /**
+     * Finds the association rows of the class [classId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from StudentToClassJpaEntity e where e.id.classId = :classId")
     fun findAllByClassId(@Param("classId") classId: Long): List<StudentToClassJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the class [classId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from StudentToClassJpaEntity e where e.id.classId = :classId")
     fun findAllByClassId(@Param("classId") classId: Long, pageable: Pageable): Page<StudentToClassJpaEntity>
 }
 
 /**
- * Spring Data repository for [ContestToClassJpaEntity] association entities.
+ * Spring Data repository for [ContestToClassJpaEntity].
  *
  * @since %CURRENT_VERSION%
  */
@@ -45,15 +65,35 @@ interface StudentToClassJpaEntityRepository : CompositeJpaEntityRepository<Stude
 @InternalDatabaseApi
 interface ContestToClassJpaEntityRepository : CompositeJpaEntityRepository<ContestToClassJpaEntity, ContestToClassId> {
 
+    /**
+     * Finds the association rows of the contest [contestId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ContestToClassJpaEntity e where e.id.contestId = :contestId")
     fun findAllByContestId(@Param("contestId") contestId: Long): List<ContestToClassJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the contest [contestId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ContestToClassJpaEntity e where e.id.contestId = :contestId")
     fun findAllByContestId(@Param("contestId") contestId: Long, pageable: Pageable): Page<ContestToClassJpaEntity>
 
+    /**
+     * Finds the association rows of the class [classId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ContestToClassJpaEntity e where e.id.classId = :classId")
     fun findAllByClassId(@Param("classId") classId: Long): List<ContestToClassJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the class [classId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from ContestToClassJpaEntity e where e.id.classId = :classId")
     fun findAllByClassId(@Param("classId") classId: Long, pageable: Pageable): Page<ContestToClassJpaEntity>
 }
@@ -67,5 +107,10 @@ interface ContestToClassJpaEntityRepository : CompositeJpaEntityRepository<Conte
 @InternalDatabaseApi
 interface ClassJpaEntityRepository : SequenceJpaEntityRepository<ClassJpaEntity> {
 
+    /**
+     * Finds the classes owned by the user [ownerId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun findAllByOwnerId(ownerId: Long): List<ClassJpaEntity>
 }

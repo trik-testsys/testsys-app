@@ -5,15 +5,10 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import java.util.UUID
 
 /**
- * JPA entity representing a developer solution domain entity.
+ * JPA entity of [tech.testsys.domain.model.task.DeveloperSolution]: a [SolutionJpaEntity] plus the score it must reach.
  *
- * A developer solution is a thin aggregate over a [SolutionJpaEntity]
- * (referenced by [solutionId]) carrying an [expectedScore] used to validate
- * grading; the actual source code, file content and language live on the
- * referenced solution. Owned by the developer who authored it ([ownerId]).
- *
- * @see tech.testsys.domain.model.task.DeveloperSolution
- * @see tech.testsys.domain.model.task.DeveloperSolutionData
+ * @property solutionId id of the [SolutionJpaEntity] holding the source.
+ * @property expectedScore the score the solution is expected to reach.
  * @since %CURRENT_VERSION%
  */
 @Entity

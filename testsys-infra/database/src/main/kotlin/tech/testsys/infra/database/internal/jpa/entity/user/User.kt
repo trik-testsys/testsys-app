@@ -7,8 +7,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * Top-level discriminator between users that may hold many roles within different
- * communities ([MULTIPLE_ROLE]) and users that hold exactly one fixed role ([SINGLE_ROLE]).
+ * Whether a [UserJpaEntity] holds many roles across communities ([MULTIPLE_ROLE]) or one fixed role ([SINGLE_ROLE]).
  *
  * @since %CURRENT_VERSION%
  */
@@ -20,9 +19,12 @@ enum class UserTypeJpaEnum {
 }
 
 /**
- * JPA entity representing a user domain entity.
+ * JPA entity of [tech.testsys.domain.model.user.User].
  *
- * @see tech.testsys.domain.model.user.User
+ * @property name the name of the user.
+ * @property accessToken the token the user authenticates with.
+ * @property email the e-mail of the user, or `null` for single-role users.
+ * @property type whether the user holds multiple roles or a single one.
  * @since %CURRENT_VERSION%
  */
 @Entity

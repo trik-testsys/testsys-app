@@ -20,7 +20,7 @@ import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRep
 import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
 
 /**
- * Spring Data repository for [TestToTaskContentJpaEntity] association entities.
+ * Spring Data repository for [TestToTaskContentJpaEntity].
  *
  * @since %CURRENT_VERSION%
  */
@@ -29,21 +29,41 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
 interface TestToTaskContentJpaEntityRepository :
     CompositeJpaEntityRepository<TestToTaskContentJpaEntity, TestToTaskContentId> {
 
+    /**
+     * Finds the association rows of the polygon [testId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from TestToTaskContentJpaEntity e where e.id.testId = :testId")
     fun findAllByTestId(@Param("testId") testId: Long): List<TestToTaskContentJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the polygon [testId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from TestToTaskContentJpaEntity e where e.id.testId = :testId")
     fun findAllByTestId(@Param("testId") testId: Long, pageable: Pageable): Page<TestToTaskContentJpaEntity>
 
+    /**
+     * Finds the association rows of the task content revision [taskContentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from TestToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long): List<TestToTaskContentJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the task content revision [taskContentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from TestToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long, pageable: Pageable): Page<TestToTaskContentJpaEntity>
 }
 
 /**
- * Spring Data repository for [DeveloperSolutionToTaskContentJpaEntity] association entities.
+ * Spring Data repository for [DeveloperSolutionToTaskContentJpaEntity].
  *
  * @since %CURRENT_VERSION%
  */
@@ -52,18 +72,38 @@ interface TestToTaskContentJpaEntityRepository :
 interface DeveloperSolutionToTaskContentJpaEntityRepository :
     CompositeJpaEntityRepository<DeveloperSolutionToTaskContentJpaEntity, DeveloperSolutionToTaskContentId> {
 
+    /**
+     * Finds the association rows of the developer solution [developerSolutionId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.developerSolutionId = :developerSolutionId")
     fun findAllByDeveloperSolutionId(@Param("developerSolutionId") developerSolutionId: Long): List<DeveloperSolutionToTaskContentJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the developer solution [developerSolutionId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.developerSolutionId = :developerSolutionId")
     fun findAllByDeveloperSolutionId(
         @Param("developerSolutionId") developerSolutionId: Long,
         pageable: Pageable,
     ): Page<DeveloperSolutionToTaskContentJpaEntity>
 
+    /**
+     * Finds the association rows of the task content revision [taskContentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long): List<DeveloperSolutionToTaskContentJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the task content revision [taskContentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from DeveloperSolutionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(
         @Param("taskContentId") taskContentId: Long,
@@ -72,7 +112,7 @@ interface DeveloperSolutionToTaskContentJpaEntityRepository :
 }
 
 /**
- * Spring Data repository for [TrikStudioVersionToTaskContentJpaEntity] association entities.
+ * Spring Data repository for [TrikStudioVersionToTaskContentJpaEntity].
  *
  * @since %CURRENT_VERSION%
  */
@@ -81,18 +121,38 @@ interface DeveloperSolutionToTaskContentJpaEntityRepository :
 interface TrikStudioVersionToTaskContentJpaEntityRepository :
     CompositeJpaEntityRepository<TrikStudioVersionToTaskContentJpaEntity, TrikStudioVersionToTaskContentId> {
 
+    /**
+     * Finds the association rows of the TRIK Studio version [trikStudioVersionId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.trikStudioVersionId = :trikStudioVersionId")
     fun findAllByTrikStudioVersionId(@Param("trikStudioVersionId") trikStudioVersionId: Long): List<TrikStudioVersionToTaskContentJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the TRIK Studio version [trikStudioVersionId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.trikStudioVersionId = :trikStudioVersionId")
     fun findAllByTrikStudioVersionId(
         @Param("trikStudioVersionId") trikStudioVersionId: Long,
         pageable: Pageable,
     ): Page<TrikStudioVersionToTaskContentJpaEntity>
 
+    /**
+     * Finds the association rows of the task content revision [taskContentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long): List<TrikStudioVersionToTaskContentJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the task content revision [taskContentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from TrikStudioVersionToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
     fun findAllByTaskContentId(
         @Param("taskContentId") taskContentId: Long,
@@ -101,7 +161,7 @@ interface TrikStudioVersionToTaskContentJpaEntityRepository :
 }
 
 /**
- * Spring Data repository for [CommunityToTaskJpaEntity] association entities.
+ * Spring Data repository for [CommunityToTaskJpaEntity].
  *
  * @since %CURRENT_VERSION%
  */
@@ -110,15 +170,35 @@ interface TrikStudioVersionToTaskContentJpaEntityRepository :
 interface CommunityToTaskJpaEntityRepository :
     CompositeJpaEntityRepository<CommunityToTaskJpaEntity, CommunityToTaskId> {
 
+    /**
+     * Finds the association rows of the community [communityId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from CommunityToTaskJpaEntity e where e.id.communityId = :communityId")
     fun findAllByCommunityId(@Param("communityId") communityId: Long): List<CommunityToTaskJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the community [communityId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from CommunityToTaskJpaEntity e where e.id.communityId = :communityId")
     fun findAllByCommunityId(@Param("communityId") communityId: Long, pageable: Pageable): Page<CommunityToTaskJpaEntity>
 
+    /**
+     * Finds the association rows of the task [taskId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from CommunityToTaskJpaEntity e where e.id.taskId = :taskId")
     fun findAllByTaskId(@Param("taskId") taskId: Long): List<CommunityToTaskJpaEntity>
 
+    /**
+     * Finds one [pageable] page of the association rows of the task [taskId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     @Query("select e from CommunityToTaskJpaEntity e where e.id.taskId = :taskId")
     fun findAllByTaskId(@Param("taskId") taskId: Long, pageable: Pageable): Page<CommunityToTaskJpaEntity>
 }
@@ -141,5 +221,10 @@ interface TaskContentJpaEntityRepository : SequenceJpaEntityRepository<TaskConte
 @InternalDatabaseApi
 interface TaskJpaEntityRepository : SequenceJpaEntityRepository<TaskJpaEntity> {
 
+    /**
+     * Finds the tasks owned by the user [ownerId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun findAllByOwnerId(ownerId: Long): List<TaskJpaEntity>
 }

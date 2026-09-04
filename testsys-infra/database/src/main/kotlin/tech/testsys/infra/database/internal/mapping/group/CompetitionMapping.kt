@@ -13,9 +13,19 @@ import tech.testsys.infra.database.internal.jpa.entity.group.ParticipantToCompet
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
 
+/**
+ * Mapping between [Competition] and [CompetitionJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @InternalDatabaseApi
 object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
 
+    /**
+     * Assembles a [Competition] from [jpaEntity] and the ids of its participants and contests.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toDomain(jpaEntity: CompetitionJpaEntity, participantIds: List<SingleRoleUserId>, contestIds: List<ContestId>) = competition {
         populateFields(jpaEntity)
         data {
@@ -28,12 +38,22 @@ object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
         }
     }
 
+    /**
+     * Creates a new [CompetitionJpaEntity] row from [data].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(data: CompetitionData) = CompetitionJpaEntity(
         name = data.name,
         description = data.description,
         ownerId = data.owner.id.value,
     )
 
+    /**
+     * Creates the [CompetitionJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(entity: Competition, current: CompetitionJpaEntity) = CompetitionJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
@@ -44,6 +64,11 @@ object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
         it.version = current.version
     }
 
+    /**
+     * Creates the [ParticipantToCompetitionJpaEntity] rows linking the competition [competitionId] with [participantIds].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toParticipantAssociations(competitionId: Long, participantIds: List<SingleRoleUserId>) = participantIds.map {
         ParticipantToCompetitionJpaEntity(
             participantId = it.value,
@@ -51,6 +76,11 @@ object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
         )
     }
 
+    /**
+     * Creates the [ContestToCompetitionJpaEntity] rows linking the competition [competitionId] with [contestIds].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toContestAssociations(competitionId: Long, contestIds: List<ContestId>) = contestIds.map {
         ContestToCompetitionJpaEntity(
             contestId = it.value,

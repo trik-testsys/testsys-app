@@ -44,5 +44,10 @@ interface LogsJpaEntityRepository : SequenceJpaEntityRepository<LogsJpaEntity>
 @InternalDatabaseApi
 interface SubmissionJpaEntityRepository : SequenceJpaEntityRepository<SubmissionJpaEntity> {
 
+    /**
+     * Finds the submissions authored by the user [authorId].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun findAllByAuthorId(authorId: Long): List<SubmissionJpaEntity>
 }

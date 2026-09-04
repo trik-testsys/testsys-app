@@ -14,6 +14,11 @@ import tech.testsys.infra.database.internal.jpa.repository.group.CommunityJpaEnt
 import tech.testsys.infra.database.internal.mapping.group.CommunityMapping
 import tech.testsys.infra.database.internal.utils.requireById
 
+/**
+ * Persistence adapter of [Community] entities backed by [CommunityJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @Component
 @OptIn(InternalDatabaseApi::class)
 class CommunityPersistenceAdapter(

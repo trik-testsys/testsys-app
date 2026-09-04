@@ -9,9 +9,19 @@ import tech.testsys.infra.database.internal.jpa.entity.task.VerdictJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
 
+/**
+ * Mapping between [Verdict] and [VerdictJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
 @InternalDatabaseApi
 object VerdictMapping : EntityMapping<Verdict, VerdictJpaEntity> {
 
+    /**
+     * Assembles a [Verdict] from [jpaEntity].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toDomain(jpaEntity: VerdictJpaEntity) = verdict {
         populateFields(jpaEntity)
 
@@ -25,6 +35,11 @@ object VerdictMapping : EntityMapping<Verdict, VerdictJpaEntity> {
         }
     }
 
+    /**
+     * Creates a new [VerdictJpaEntity] row from [data].
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(data: VerdictData) = VerdictJpaEntity(
         score = data.score.value,
         taskId = data.task.id.value,
@@ -33,6 +48,11 @@ object VerdictMapping : EntityMapping<Verdict, VerdictJpaEntity> {
         recordingId = data.recording?.id?.value,
     )
 
+    /**
+     * Creates the [VerdictJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun toJpaEntity(entity: Verdict, current: VerdictJpaEntity) = VerdictJpaEntity(
         score = entity.data.score.value,
         taskId = entity.data.task.id.value,

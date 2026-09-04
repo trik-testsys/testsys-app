@@ -5,9 +5,9 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * JPA entity representing the manager role data attached to a user.
+ * JPA entity of [tech.testsys.domain.model.user.ManagerData].
  *
- * @see tech.testsys.domain.model.user.ManagerData
+ * @property userId id of the user holding the role.
  * @since %CURRENT_VERSION%
  */
 @Entity

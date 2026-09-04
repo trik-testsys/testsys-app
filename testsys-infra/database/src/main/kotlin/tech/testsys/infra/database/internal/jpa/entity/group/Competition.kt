@@ -11,8 +11,10 @@ import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
 /**
- * Composite primary key for [ContestToCompetitionJpaEntity].
+ * Composite key of [ContestToCompetitionJpaEntity].
  *
+ * @property contestId id of the contest.
+ * @property competitionId id of the competition.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -23,7 +25,7 @@ data class ContestToCompetitionId(
 ) : CompositeId
 
 /**
- * JPA entity representing a contest to competition association domain entity.
+ * Join row: a contest is assigned to a competition.
  *
  * @since %CURRENT_VERSION%
  */
@@ -33,8 +35,10 @@ data class ContestToCompetitionId(
 class ContestToCompetitionJpaEntity(id: ContestToCompetitionId) : CompositeJpaEntity<ContestToCompetitionId>(id)
 
 /**
- * Composite primary key for [ParticipantToCompetitionJpaEntity].
+ * Composite key of [ParticipantToCompetitionJpaEntity].
  *
+ * @property participantId id of the participant.
+ * @property competitionId id of the competition.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
@@ -45,7 +49,7 @@ data class ParticipantToCompetitionId(
 ) : CompositeId
 
 /**
- * JPA entity representing a participant to competition association domain entity.
+ * Join row: a participant takes part in a competition.
  *
  * @since %CURRENT_VERSION%
  */
@@ -55,10 +59,11 @@ data class ParticipantToCompetitionId(
 class ParticipantToCompetitionJpaEntity(id: ParticipantToCompetitionId) : CompositeJpaEntity<ParticipantToCompetitionId>(id)
 
 /**
- * JPA entity representing a competition domain entity.
+ * JPA entity of [tech.testsys.domain.model.group.Competition].
  *
- * @see tech.testsys.domain.model.group.Competition
- * @see tech.testsys.domain.model.group.CompetitionData
+ * @property name the name of the competition.
+ * @property description the description of the competition.
+ * @property ownerId id of the manager owning the competition.
  * @since %CURRENT_VERSION%
  */
 @Entity

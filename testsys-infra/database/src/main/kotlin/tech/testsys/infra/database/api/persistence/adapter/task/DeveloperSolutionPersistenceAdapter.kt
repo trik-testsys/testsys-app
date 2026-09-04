@@ -10,13 +10,11 @@ import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAd
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.DeveloperSolutionJpaEntityRepository
-import tech.testsys.infra.database.internal.jpa.repository.task.SolutionJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.DeveloperSolutionMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 
 /**
  * Persistence adapter of [DeveloperSolution] entities backed by [DeveloperSolutionJpaEntity].
- * The file reference is copied from the referenced solution row.
  *
  * @since %CURRENT_VERSION%
  */
@@ -24,7 +22,6 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 @OptIn(InternalDatabaseApi::class)
 class DeveloperSolutionPersistenceAdapter(
     jpaEntityRepository: DeveloperSolutionJpaEntityRepository,
-    private val solutionJpaEntityRepository: SolutionJpaEntityRepository,
 ) : AbstractPersistenceAdapter<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution, DeveloperSolutionJpaEntity>(
     jpaEntityRepository,
 ),
@@ -32,8 +29,7 @@ class DeveloperSolutionPersistenceAdapter(
 
     @Transactional
     override fun save(data: DeveloperSolutionData): DeveloperSolution {
-        val solution = solutionJpaEntityRepository.findByIdOrError(data.solution.id.value)
-        val jpaEntity = DeveloperSolutionMapping.toJpaEntity(data, solution.fileDataId)
+        val jpaEntity = DeveloperSolutionMapping.toJpaEntity(data)
         val savedJpaEntity = jpaEntityRepository.save(jpaEntity)
 
         val domainEntity = DeveloperSolutionMapping.toDomain(savedJpaEntity)

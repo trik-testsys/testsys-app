@@ -36,21 +36,20 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
     }
 
     /**
-     * Creates a new [DeveloperSolutionJpaEntity] row from [data] referencing the stored file [fileDataId] of its solution.
+     * Creates a new [DeveloperSolutionJpaEntity] row from [data].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toJpaEntity(data: DeveloperSolutionData, fileDataId: Long) = DeveloperSolutionJpaEntity(
+    fun toJpaEntity(data: DeveloperSolutionData) = DeveloperSolutionJpaEntity(
         name = data.name,
         description = data.description,
         solutionId = data.solution.id.value,
         expectedScore = data.expectedScore.value,
         versionBucket = data.versionBucket,
-        fileDataId = fileDataId,
     )
 
     /**
-     * Creates the [DeveloperSolutionJpaEntity] row replacing [current] from [entity], keeping its file, `createdAt` and `version`.
+     * Creates the [DeveloperSolutionJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
@@ -61,7 +60,6 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
         expectedScore = entity.data.expectedScore.value,
         id = entity.id.value,
         versionBucket = entity.data.versionBucket,
-        fileDataId = current.fileDataId,
     ).also {
         it.createdAt = current.createdAt
         it.version = entity.version.value

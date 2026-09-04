@@ -2,8 +2,7 @@ package tech.testsys.infra.database.internal.jpa
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.TestPropertySource
+import tech.testsys.infra.database.DatabaseIntegrationTest
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionJpaEntity
 import tech.testsys.infra.database.internal.jpa.id.SnowflakeIdGenerator
@@ -19,17 +18,7 @@ import kotlin.test.assertTrue
  * with the default node id from `hibernate-defaults.properties`.
  */
 @OptIn(InternalDatabaseApi::class)
-@SpringBootTest(classes = [SchemaValidationTestApp::class])
-@TestPropertySource(
-    properties = [
-        "spring.datasource.url=jdbc:h2:mem:testsys_snowflake_persist;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
-    ]
-)
-class SnowflakePersistTest {
+class SnowflakePersistTest : DatabaseIntegrationTest() {
 
     @Autowired
     private lateinit var repository: TrikStudioVersionJpaEntityRepository

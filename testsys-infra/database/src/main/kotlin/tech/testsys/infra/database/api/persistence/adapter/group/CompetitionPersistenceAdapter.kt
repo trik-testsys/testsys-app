@@ -1,5 +1,6 @@
 package tech.testsys.infra.database.api.persistence.adapter.group
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
@@ -21,8 +22,9 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
  * Persistence adapter of [Competition] entities backed by [CompetitionJpaEntity].
- * Contest membership is synced through the join table on save and update; participants are a read-only projection
- * of the participant data rows pointing at the competition, so `CompetitionData.participants` is ignored on write.
+ * Contest membership is synced through the join table on save and update and dropped on remove; participants are
+ * a read-only projection of the participant data rows pointing at the competition, so `CompetitionData.participants`
+ * is ignored on write.
  *
  * @since %CURRENT_VERSION%
  */
@@ -56,6 +58,17 @@ class CompetitionPersistenceAdapter(
         val domainEntity = CompetitionMapping.toDomain(savedJpaEntity, loadParticipantIds(competitionId), entity.data.contests.ids)
         return domainEntity
     }
+
+    @Transactional
+    override fun removeById(id: CompetitionId) {
+        val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val competitionId = jpaEntity.requireId()
+        contestToCompetitionJpaEntityRepository.deleteAll(contestToCompetitionJpaEntityRepository.findAllByCompetitionId(competitionId))
+        jpaEntityRepository.delete(jpaEntity)
+    }
+
+    @Transactional
+    override fun removeByIds(ids: List<CompetitionId>) = ids.forEach(::removeById)
 
     override fun assemble(jpaEntity: CompetitionJpaEntity): Competition {
         val competitionId = jpaEntity.requireId()

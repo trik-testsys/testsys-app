@@ -1,5 +1,6 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
@@ -24,8 +25,8 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
  * Persistence adapter of [Contest] entities backed by [ContestJpaEntity].
- * Task and shared-community membership is synced through the join tables; the TRIK Studio version must already be
- * registered by tag.
+ * Task and shared-community membership is synced through the join tables on save and update and dropped on remove;
+ * the TRIK Studio version must already be registered by tag.
  *
  * @since %CURRENT_VERSION%
  */
@@ -76,6 +77,18 @@ class ContestPersistenceAdapter(
         )
         return domainEntity
     }
+
+    @Transactional
+    override fun removeById(id: ContestId) {
+        val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val contestId = jpaEntity.requireId()
+        taskToContestJpaEntityRepository.deleteAll(taskToContestJpaEntityRepository.findAllByContestId(contestId))
+        communityToContestJpaEntityRepository.deleteAll(communityToContestJpaEntityRepository.findAllByContestId(contestId))
+        jpaEntityRepository.delete(jpaEntity)
+    }
+
+    @Transactional
+    override fun removeByIds(ids: List<ContestId>) = ids.forEach(::removeById)
 
     override fun assemble(jpaEntity: ContestJpaEntity): Contest {
         val contestId = jpaEntity.requireId()

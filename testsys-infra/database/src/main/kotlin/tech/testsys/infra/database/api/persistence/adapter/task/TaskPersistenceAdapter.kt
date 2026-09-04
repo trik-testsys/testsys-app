@@ -1,5 +1,6 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
@@ -33,8 +34,8 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
  * Persistence adapter of [Task] entities backed by [TaskJpaEntity].
- * Content revisions are replaced wholesale as task content rows on save and update;
- * shared-community membership is synced through its join table.
+ * Content revisions are replaced wholesale as task content rows on save and update and dropped together with the
+ * shared-community join rows on remove.
  *
  * @since %CURRENT_VERSION%
  */
@@ -93,6 +94,20 @@ class TaskPersistenceAdapter(
         val domainEntity = TaskMapping.toDomain(savedJpaEntity, entity.data.content, entity.data.sharedTo.ids)
         return domainEntity
     }
+
+    @Transactional
+    override fun removeById(id: TaskId) {
+        val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val taskId = jpaEntity.requireId()
+        communityToTaskJpaEntityRepository.deleteAll(communityToTaskJpaEntityRepository.findAllByTaskId(taskId))
+        jpaEntityRepository.delete(jpaEntity)
+        // Content rows are referenced by the task row, so they go after it.
+        deleteContentCascade(jpaEntity.wipContentId)
+        jpaEntity.committedContentId?.takeIf { it != jpaEntity.wipContentId }?.let { deleteContentCascade(it) }
+    }
+
+    @Transactional
+    override fun removeByIds(ids: List<TaskId>) = ids.forEach(::removeById)
 
     override fun assemble(jpaEntity: TaskJpaEntity): Task {
         val taskId = jpaEntity.requireId()

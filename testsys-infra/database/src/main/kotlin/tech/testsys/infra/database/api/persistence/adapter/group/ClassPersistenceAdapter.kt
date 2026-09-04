@@ -1,5 +1,6 @@
 package tech.testsys.infra.database.api.persistence.adapter.group
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
@@ -21,7 +22,7 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
  * Persistence adapter of [Class] entities backed by [ClassJpaEntity].
- * Student and contest membership is synced through the join tables on save and update.
+ * Student and contest membership is synced through the join tables on save and update and dropped on remove.
  *
  * @since %CURRENT_VERSION%
  */
@@ -64,6 +65,18 @@ class ClassPersistenceAdapter(
         val domainEntity = ClassMapping.toDomain(savedJpaEntity, entity.data.students.ids, entity.data.contests.ids)
         return domainEntity
     }
+
+    @Transactional
+    override fun removeById(id: ClassId) {
+        val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val classId = jpaEntity.requireId()
+        studentToClassJpaEntityRepository.deleteAll(studentToClassJpaEntityRepository.findAllByClassId(classId))
+        contestToClassJpaEntityRepository.deleteAll(contestToClassJpaEntityRepository.findAllByClassId(classId))
+        jpaEntityRepository.delete(jpaEntity)
+    }
+
+    @Transactional
+    override fun removeByIds(ids: List<ClassId>) = ids.forEach(::removeById)
 
     override fun assemble(jpaEntity: ClassJpaEntity): Class {
         val classId = jpaEntity.requireId()

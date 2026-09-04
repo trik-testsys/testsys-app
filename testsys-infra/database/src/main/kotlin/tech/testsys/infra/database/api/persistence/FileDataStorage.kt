@@ -74,7 +74,7 @@ class FileDataStorage(
         val current = fileDataJpaEntityRepository.findByIdOrError(currentFileDataId)
         val wasChanged = current.uploadedFileName != file.uploadedFilename ||
             current.contentHash != file.contentHash()
-        return if (wasChanged) currentFileDataId else storeChanged()
+        return if (wasChanged) storeChanged() else currentFileDataId
     }
 
     private fun FileData.contentHash(): String = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content))

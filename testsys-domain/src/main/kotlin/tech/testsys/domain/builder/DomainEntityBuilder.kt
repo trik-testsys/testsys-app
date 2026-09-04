@@ -1,10 +1,10 @@
 package tech.testsys.domain.builder
 
+import tech.testsys.domain.model.EntityVersion
 import java.time.Instant
 
 /**
- * DSL marker annotation for domain entity builder DSLs.
- * Prevents implicit access to outer builder receivers in nested builder blocks.
+ * DSL marker of the domain entity builder DSL; prevents implicit access to outer receivers in nested blocks.
  *
  * @since %CURRENT_VERSION%
  */
@@ -13,46 +13,39 @@ import java.time.Instant
 annotation class DomainEntityBuilderDsl
 
 /**
- * Base interface for all builders that construct instances of [T].
+ * Builds instances of [T]. Builders check that required fields are set but not the integrity of the data.
  *
- * NOTE: Builder does not check any data integrity when constructing the [T]
- *
- * @param T the type of object this builder produces.
+ * @param T the type of the built object.
  * @since %CURRENT_VERSION%
  */
 @DomainEntityBuilderDsl
 interface Builder<out T> {
     /**
-     * Constructs and returns the resulting instance of [T].
+     * Builds the instance.
      *
      * @return the built instance.
-     * @throws IllegalArgumentException if any required fields are not set.
+     * @throws IllegalArgumentException if a required field is not set.
      * @since %CURRENT_VERSION%
      */
     fun build(): T
 }
 
 /**
- * Builder interface for domain entities that have an [id] and [createdAt] timestamp.
+ * Builder of a domain entity.
  *
- * @param Entity the type of domain entity this builder produces.
+ * @param Entity the type of the built entity.
+ * @property id the raw identifier of the entity, or `null` if not set yet.
+ * @property createdAt the creation timestamp of the entity, or `null` if not set yet.
+ * @property version the optimistic-lock token of the entity, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
 interface DomainEntityBuilder<out Entity> : Builder<Entity> {
 
-    /**
-     * The unique identifier for the domain entity, or `null` if not yet assigned.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var id: Long?
 
-    /**
-     * The creation timestamp for the domain entity, or `null` if not yet assigned.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var createdAt: Instant?
+
+    var version: EntityVersion?
 
     /**
      * Sets [createdAt] to the current instant.
@@ -62,41 +55,35 @@ interface DomainEntityBuilder<out Entity> : Builder<Entity> {
     fun createdNow() {
         createdAt = Instant.now()
     }
-
 }
 
 /**
- * Interface for builders that support configuring an associated [Data] object
- * via a nested [DataBuilder].
+ * Builder that holds a [Data] object configurable through a nested [DataBuilder].
  *
- * @param Data the type of data object.
- * @param DataBuilder the builder type used to construct [Data].
+ * @param Data the type of the data object.
+ * @param DataBuilder the builder type of [Data].
+ * @property data the data object, or `null` if not configured yet.
  * @since %CURRENT_VERSION%
  */
 interface DataCapable<Data, DataBuilder : Builder<Data>> {
 
-    /**
-     * The data object, or `null` if not yet configured.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var data: Data?
 
     /**
-     * Creates a new instance of [DataBuilder] for configuring the data object.
+     * Creates a new [DataBuilder].
      *
-     * @return a new data builder instance.
+     * @return a fresh, unconfigured data builder.
      * @since %CURRENT_VERSION%
      */
     fun dataBuilder(): DataBuilder
-
 }
 
 /**
- * DSL function for configuring the [data][DataCapable.data] of a [DataCapable] builder
- * using a lambda applied to the [DataBuilder].
+ * Configures [DataCapable.data] with a nested builder block.
  *
- * @param builder the configuration block applied to the data builder.
+ * @param Data the type of the data object.
+ * @param DataBuilder the builder type of [Data].
+ * @param builder the configuration block applied to a fresh [DataBuilder].
  * @since %CURRENT_VERSION%
  */
 inline fun <Data, DataBuilder : Builder<Data>> DataCapable<Data, DataBuilder>.data(builder: DataBuilder.() -> Unit) {
@@ -104,20 +91,18 @@ inline fun <Data, DataBuilder : Builder<Data>> DataCapable<Data, DataBuilder>.da
 }
 
 /**
- * Abstract base class for domain entity builders that include an associated data object.
- * Provides default `null` initial values for [id], [createdAt], and [data].
+ * Base class of domain entity builders with a data object; [id], [createdAt], [version] and [data] start as `null`.
  *
- * @param Entity the type of domain entity this builder produces.
- * @param Data the type of associated data object.
- * @param DataBuilder the builder type used to construct [Data].
+ * @param Entity the type of the built entity.
+ * @param Data the type of the data object.
+ * @param DataBuilder the builder type of [Data].
  * @since %CURRENT_VERSION%
  */
 abstract class DomainEntityWithDataBuilder<Entity, Data, DataBuilder : Builder<Data>> :
-    DomainEntityBuilder<Entity>, DataCapable<Data, DataBuilder>
-{
+    DomainEntityBuilder<Entity>, DataCapable<Data, DataBuilder> {
 
     override var id: Long? = null
     override var createdAt: Instant? = null
+    override var version: EntityVersion? = null
     override var data: Data? = null
-
 }

@@ -60,5 +60,7 @@ class VerdictBuilderTests : DomainEntityBuilderTests<Verdict, VerdictData, Verdi
         score = 100
         task(1)
         submission(1)
+        logs(1)
+        recording(1)
     })
 }

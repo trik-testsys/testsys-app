@@ -11,78 +11,47 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
-import java.time.Instant
 import java.time.Duration
+import java.time.Instant
 
 /**
- * Builder for constructing [ContestData].
+ * Builder of [ContestData]. Required: [owner], [name], [description], [contestDuration], [attemptDuration],
+ * [trikStudioVersion].
  *
+ * @property owner the id of the owning developer, or `null` if not set yet.
+ * @property name the name of the contest, or `null` if not set yet.
+ * @property description the description of the contest, or `null` if not set yet.
+ * @property tasks the ids of the included tasks.
+ * @property startsAt the start moment of the contest, or `null` if not scheduled.
+ * @property contestDuration the total duration of the contest, or `null` if not set yet.
+ * @property attemptDuration the time limit of a single attempt, or `null` if not set yet.
+ * @property trikStudioVersion the TRIK Studio version of the contest, or `null` if not set yet.
+ * @property sharedTo the ids of the communities the contest is shared to.
  * @since %CURRENT_VERSION%
  */
 class ContestDataBuilder : Builder<ContestData> {
 
-    /**
-     * The owner of the contest.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var owner: MultipleRoleUserId? = null
 
-    /**
-     * The name of the contest.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var name: String? = null
 
-    /**
-     * The description of the contest.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var description: String? = null
 
-    /**
-     * The list of task IDs included in this contest.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var tasks = mutableListOf<TaskId>()
 
-    /**
-     * The start time of the contest, or `null` if not scheduled.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var startsAt: Instant? = null
 
-    /**
-     * The total duration of the contest.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var contestDuration: Duration? = null
 
-    /**
-     * The duration of each attempt within the contest.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var attemptDuration: Duration? = null
 
-    /**
-     * The TRIK Studio version required for this contest.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var trikStudioVersion: TrikStudioVersion? = null
 
     var sharedTo = mutableListOf<CommunityId>()
 
     /**
-     * Sets the [owner] from a raw ID value.
+     * Sets [owner] from a raw id.
      *
-     * @param owner the raw owner ID.
      * @since %CURRENT_VERSION%
      */
     fun owner(owner: Long) {
@@ -90,7 +59,7 @@ class ContestDataBuilder : Builder<ContestData> {
     }
 
     /**
-     * Sets the [trikStudioVersion] from image and tag strings.
+     * Sets [trikStudioVersion] from a raw version tag, e.g. `"3.0.0"`.
      *
      * @since %CURRENT_VERSION%
      */
@@ -100,21 +69,19 @@ class ContestDataBuilder : Builder<ContestData> {
         )
     }
 
+    /**
+     * Sets [sharedTo] from raw ids.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun sharedTo(sharedTo: Iterable<Long>) {
         this.sharedTo = sharedTo.map { CommunityId(it) }.toMutableList()
     }
 
-    /**
-     * Builds the [ContestData] instance.
-     *
-     * @return the constructed [ContestData].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): ContestData {
-        val owner = requireField(owner) { ::owner }
         val name = requireField(name) { ::name }
         val description = requireField(description) { ::description }
+        val owner = requireField(owner) { ::owner }
         val contestDuration = requireField(contestDuration) { ::contestDuration }
         val attemptDuration = requireField(attemptDuration) { ::attemptDuration }
         val trikStudioVersion = requireField(trikStudioVersion) { ::trikStudioVersion }
@@ -134,7 +101,7 @@ class ContestDataBuilder : Builder<ContestData> {
 }
 
 /**
- * Builder for constructing [Contest] domain entities.
+ * Builder of [Contest] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -142,23 +109,17 @@ class ContestBuilder : DomainEntityWithDataBuilder<Contest, ContestData, Contest
 
     override fun dataBuilder() = ContestDataBuilder()
 
-    /**
-     * Builds the [Contest] instance.
-     *
-     * @return the constructed [Contest].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Contest {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Contest(
             id = ContestId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }
-
 }

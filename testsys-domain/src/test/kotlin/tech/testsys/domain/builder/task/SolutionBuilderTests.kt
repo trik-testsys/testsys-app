@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.DomainEntityBuilderTests
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
+import java.util.UUID
 
 class SolutionBuilderTests : DomainEntityBuilderTests<Solution, SolutionData, SolutionDataBuilder>(
     SolutionBuilder(),

@@ -6,14 +6,13 @@ import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
 
 /**
- * Abstract base builder for [User] domain entities.
+ * Base class of [User] builders.
  *
- *
- * @param U the concrete [User] type being built.
- * @param UI the concrete [UserId] of U.
- * @param Data the type of associated data object.
- * @param DataBuilder the builder type used to construct [Data].
+ * @param UI the identifier type of the built user.
+ * @param U the type of the built user.
+ * @param Data the type of the user data.
+ * @param DataBuilder the builder type of [Data].
  * @since %CURRENT_VERSION%
  */
-abstract class UserBuilder<UI : UserId, U: User<UI>, Data, DataBuilder: Builder<Data>>
-    : DomainEntityWithDataBuilder<U, Data, DataBuilder>()
+abstract class UserBuilder<UI : UserId, U : User<UI>, Data, DataBuilder : Builder<Data>> :
+    DomainEntityWithDataBuilder<U, Data, DataBuilder>()

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1.0.0-08-1" author="roman.shishkin">
+        <createTable tableName="ts_submission">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_submission" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="author_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_submission_author" references="ts_user(id)"/>
+            </column>
+            <column name="solution_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_submission_solution" references="ts_solution(id)"/>
+            </column>
+            <column name="task_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_submission_task" references="ts_task(id)"/>
+            </column>
+            <column name="status" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="grading_result" type="VARCHAR(64)"/>
+            <column name="grading_verdict_id" type="BIGINT">
+                <constraints unique="true"/>
+            </column>
+            <column name="grading_error_description" type="TEXT"/>
+            <column name="kind" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="grading_contest_id" type="BIGINT">
+                <constraints foreignKeyName="fk_submission_grading_contest" references="ts_contest(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-08-2" author="roman.shishkin">
+        <createTable tableName="ts_verdict">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_verdict" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="score" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="task_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_verdict_task" references="ts_task(id)"/>
+            </column>
+            <column name="submission_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_verdict_submission" references="ts_submission(id)"/>
+            </column>
+            <column name="logs_id" type="BIGINT">
+                <constraints unique="true" uniqueConstraintName="uk_ts_verdict_logs_id"/>
+            </column>
+            <column name="recording_id" type="BIGINT">
+                <constraints unique="true" uniqueConstraintName="uk_ts_verdict_recording_id"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-08-3" author="roman.shishkin">
+        <addForeignKeyConstraint constraintName="fk_submission_grading_verdict"
+                                 baseTableName="ts_submission" baseColumnNames="grading_verdict_id"
+                                 referencedTableName="ts_verdict" referencedColumnNames="id"/>
+    </changeSet>
+
+</databaseChangeLog>

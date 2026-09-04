@@ -11,5 +11,7 @@ class CommunityBuilderTests : DomainEntityBuilderTests<Community, CommunityData,
 ) {
     override fun buildDataWithAllFields() = listOf(communityData {
         owner(42)
+        name = "Community"
+        description = "Community description"
     })
 }

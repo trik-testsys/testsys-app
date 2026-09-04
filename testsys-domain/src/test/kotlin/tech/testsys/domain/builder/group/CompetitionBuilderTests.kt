@@ -10,9 +10,15 @@ class CompetitionBuilderTests : DomainEntityBuilderTests<Competition, Competitio
     CompetitionDataBuilder()
 ) {
     override fun buildDataWithAllFields() = listOf(
-        competitionData { owner(42) },
         competitionData {
             owner(42)
+            name = "Competition"
+            description = "Competition description"
+        },
+        competitionData {
+            owner(42)
+            name = "Full Competition"
+            description = "Full competition description"
             participants(listOf(1L, 2L))
             contests(listOf(10L, 20L))
         },

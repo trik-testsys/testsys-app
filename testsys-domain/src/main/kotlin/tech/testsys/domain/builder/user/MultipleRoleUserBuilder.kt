@@ -1,7 +1,6 @@
- package tech.testsys.domain.builder.user
+package tech.testsys.domain.builder.user
 
 import tech.testsys.domain.builder.Builder
-import tech.testsys.domain.builder.DataCapable
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
@@ -9,12 +8,9 @@ import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.JudgmentOrderId
-import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
-import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CompatibleUserRole
 import tech.testsys.domain.model.user.Developer
@@ -30,112 +26,67 @@ import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.StudentData
 import java.time.Instant
 
-
- /**
-  * Abstract base builder for [CompatibleUserRole] instances without data.
-  * Provides community membership configuration common to all compatible roles.
-  *
-  * @param Role the concrete role type being built.
-  * @since %CURRENT_VERSION%
-  */
- abstract class CompatibleUserRoleBuilderWithoutData<Role : CompatibleUserRole> : Builder<Role> {
-
-     /**
-      * The list of communities this role is a member of.
-      *
-      * @since %CURRENT_VERSION%
-      */
-     var memberOf = mutableListOf<CommunityId>()
-
-     /**
-      * Sets the community membership list from raw ID values.
-      *
-      * @param communities the raw community IDs.
-      * @since %CURRENT_VERSION%
-      */
-     fun memberOf(communities: Iterable<Long>) {
-         memberOf = communities.map { CommunityId(it) }.toMutableList()
-     }
-
- }
-
 /**
- * Abstract base builder for [CompatibleUserRole] instances with data.
- * Provides community membership configuration common to all compatible roles.
+ * Base class of builders of [CompatibleUserRole]s without role data.
  *
- * @param Role the concrete role type being built.
- * @param Data the type of associated data object.
- * @param DataBuilder the builder type used to construct [Data].
+ * @param Role the type of the built role.
+ * @property memberOf the ids of the communities the role is a member of.
  * @since %CURRENT_VERSION%
  */
-abstract class CompatibleUserRoleBuilderWithData<Role : CompatibleUserRole, Data, DataBuilder : Builder<Data>>
-    : DomainEntityWithDataBuilder<Role, Data, DataBuilder>() {
+abstract class CompatibleUserRoleBuilderWithoutData<Role : CompatibleUserRole> : Builder<Role> {
 
-    /**
-     * The list of communities this role is a member of.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var memberOf = mutableListOf<CommunityId>()
 
     /**
-     * Sets the community membership list from raw ID values.
+     * Sets [memberOf] from raw ids.
      *
-     * @param communities the raw community IDs.
      * @since %CURRENT_VERSION%
      */
     fun memberOf(communities: Iterable<Long>) {
         memberOf = communities.map { CommunityId(it) }.toMutableList()
     }
-
 }
 
 /**
- * Builder for constructing [DeveloperData].
+ * Base class of builders of [CompatibleUserRole]s with role data.
  *
+ * @param Role the type of the built role.
+ * @param Data the type of the role data.
+ * @param DataBuilder the builder type of [Data].
+ * @property memberOf the ids of the communities the role is a member of.
+ * @since %CURRENT_VERSION%
+ */
+abstract class CompatibleUserRoleBuilderWithData<Role : CompatibleUserRole, Data, DataBuilder : Builder<Data>> :
+    DomainEntityWithDataBuilder<Role, Data, DataBuilder>() {
+
+    var memberOf = mutableListOf<CommunityId>()
+
+    /**
+     * Sets [memberOf] from raw ids.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun memberOf(communities: Iterable<Long>) {
+        memberOf = communities.map { CommunityId(it) }.toMutableList()
+    }
+}
+
+/**
+ * Builder of [DeveloperData].
+ *
+ * @property tasks the ids of the tasks authored by the developer.
+ * @property contests the ids of the contests authored by the developer.
  * @since %CURRENT_VERSION%
  */
 class DeveloperDataBuilder : Builder<DeveloperData> {
 
-    /**
-     * The list of tasks owned by the developer.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var tasks = mutableListOf<TaskId>()
 
-    /**
-     * The list of contests owned by the developer.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var contests = mutableListOf<ContestId>()
 
     /**
-     * The list of test polygons owned by the developer.
+     * Sets [tasks] from raw ids.
      *
-     * @since %CURRENT_VERSION%
-     */
-    var polygons = mutableListOf<TestId>()
-
-    /**
-     * The list of solutions owned by the developer.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    var solutions = mutableListOf<SolutionId>()
-
-    /**
-     * The list of exercises owned by the developer.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    var exercises = mutableListOf<ExerciseId>()
-
-    /**
-     * Sets the [tasks] list from raw ID values.
-     *
-     * @param tasks the raw task IDs.
      * @since %CURRENT_VERSION%
      */
     fun tasks(tasks: Iterable<Long>) {
@@ -143,66 +94,24 @@ class DeveloperDataBuilder : Builder<DeveloperData> {
     }
 
     /**
-     * Sets the [contests] list from raw ID values.
+     * Sets [contests] from raw ids.
      *
-     * @param contests the raw contest IDs.
      * @since %CURRENT_VERSION%
      */
     fun contests(contests: Iterable<Long>) {
         this.contests = contests.map { ContestId(it) }.toMutableList()
     }
 
-    /**
-     * Sets the [polygons] list from raw ID values.
-     *
-     * @param polygons the raw test polygon IDs.
-     * @since %CURRENT_VERSION%
-     */
-    fun polygons(polygons: Iterable<Long>) {
-        this.polygons = polygons.map { TestId(it) }.toMutableList()
-    }
-
-    /**
-     * Sets the [solutions] list from raw ID values.
-     *
-     * @param solutions the raw solution IDs.
-     * @since %CURRENT_VERSION%
-     */
-    fun solutions(solutions: Iterable<Long>) {
-        this.solutions = solutions.map { SolutionId(it) }.toMutableList()
-    }
-
-    /**
-     * Sets the [exercises] list from raw ID values.
-     *
-     * @param exercises the raw exercise IDs.
-     * @since %CURRENT_VERSION%
-     */
-    fun exercises(exercises: Iterable<Long>) {
-        this.exercises = exercises.map { ExerciseId(it) }.toMutableList()
-    }
-
-    /**
-     * Builds the [DeveloperData] instance.
-     *
-     * @return the constructed [DeveloperData].
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): DeveloperData {
         return DeveloperData(
             tasks = tasks.lazify(),
             contests = contests.lazify(),
-            polygons = polygons.lazify(),
-            solutions = solutions.lazify(),
-            exercises = exercises.lazify(),
         )
     }
-
 }
 
 /**
- * Builder for constructing a [Developer] role.
- * Supports configuring developer data via [DataCapable].
+ * Builder of the [Developer] role. Required: [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -211,13 +120,6 @@ class DeveloperBuilder : CompatibleUserRoleBuilderWithData<Developer, DeveloperD
     override var data: DeveloperData? = null
     override fun dataBuilder() = DeveloperDataBuilder()
 
-    /**
-     * Builds the [Developer] role instance.
-     *
-     * @return the constructed [Developer].
-     * @throws IllegalArgumentException if [data] is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Developer {
         val data = requireField(data) { ::data }
         return Developer(
@@ -225,34 +127,24 @@ class DeveloperBuilder : CompatibleUserRoleBuilderWithData<Developer, DeveloperD
             data = data,
         )
     }
-
 }
 
 /**
- * Builder for constructing [StudentData].
+ * Builder of [StudentData].
  *
+ * @property classes the ids of the classes the student is enrolled in.
+ * @property submissions the ids of the submissions made by the student.
  * @since %CURRENT_VERSION%
  */
 class StudentDataBuilder : Builder<StudentData> {
 
-    /**
-     * The list of classes the student belongs to.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var classes = mutableListOf<ClassId>()
 
-    /**
-     * The list of submissions made by the student.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var submissions = mutableListOf<SubmissionId>()
 
     /**
-     * Sets the [classes] list from raw ID values.
+     * Sets [classes] from raw ids.
      *
-     * @param classes the raw class IDs.
      * @since %CURRENT_VERSION%
      */
     fun classes(classes: Iterable<Long>) {
@@ -260,33 +152,24 @@ class StudentDataBuilder : Builder<StudentData> {
     }
 
     /**
-     * Sets the [submissions] list from raw ID values.
+     * Sets [submissions] from raw ids.
      *
-     * @param submissions the raw submission IDs.
      * @since %CURRENT_VERSION%
      */
     fun submissions(submissions: Iterable<Long>) {
         this.submissions = submissions.map { SubmissionId(it) }.toMutableList()
     }
 
-    /**
-     * Builds the [StudentData] instance.
-     *
-     * @return the constructed [StudentData].
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): StudentData {
         return StudentData(
             classes = classes.lazify(),
             submissions = submissions.lazify(),
         )
     }
-
 }
 
 /**
- * Builder for constructing a [Student] role.
- * Supports configuring student data via [DataCapable].
+ * Builder of the [Student] role. Required: [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -295,13 +178,6 @@ class StudentBuilder : CompatibleUserRoleBuilderWithData<Student, StudentData, S
     override var data: StudentData? = null
     override fun dataBuilder() = StudentDataBuilder()
 
-    /**
-     * Builds the [Student] role instance.
-     *
-     * @return the constructed [Student].
-     * @throws IllegalArgumentException if [data] is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Student {
         val data = requireField(data) { ::data }
         return Student(
@@ -309,67 +185,46 @@ class StudentBuilder : CompatibleUserRoleBuilderWithData<Student, StudentData, S
             data = data,
         )
     }
-
 }
 
 /**
- * Builder for constructing an [Administrator] role.
- * Administrators have no additional data beyond community membership.
+ * Builder of the [Administrator] role.
  *
  * @since %CURRENT_VERSION%
  */
 class AdministratorBuilder : CompatibleUserRoleBuilderWithoutData<Administrator>() {
 
-    /**
-     * Builds the [Administrator] role instance.
-     *
-     * @return the constructed [Administrator].
-     * @since %CURRENT_VERSION%
-     */
     override fun build() = Administrator(
         memberOf = memberOf.lazify(),
     )
 }
 
 /**
- * Builder for constructing [JudgeData].
+ * Builder of [JudgeData].
  *
+ * @property judgmentOrders the ids of the rulings issued by the judge.
  * @since %CURRENT_VERSION%
  */
 class JudgeDataBuilder : Builder<JudgeData> {
 
-    /**
-     * The list of judgment orders assigned to this judge.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var judgmentOrders = mutableListOf<JudgmentOrderId>()
 
     /**
-     * Sets the [judgmentOrders] list from raw ID values.
+     * Sets [judgmentOrders] from raw ids.
      *
-     * @param judgmentOrders the raw judgment order IDs.
      * @since %CURRENT_VERSION%
      */
     fun judgmentOrders(judgmentOrders: Iterable<Long>) {
         this.judgmentOrders = judgmentOrders.map { JudgmentOrderId(it) }.toMutableList()
     }
 
-    /**
-     * Builds the [JudgeData] instance.
-     *
-     * @return the constructed [JudgeData].
-     * @since %CURRENT_VERSION%
-     */
     override fun build() = JudgeData(
         judgmentOrders = judgmentOrders.lazify(),
     )
-
 }
 
 /**
- * Builder for constructing a [Judge] role.
- * Supports configuring judge data via [DataCapable].
+ * Builder of the [Judge] role. Required: [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -378,13 +233,6 @@ class JudgeBuilder : CompatibleUserRoleBuilderWithData<Judge, JudgeData, JudgeDa
     override var data: JudgeData? = null
     override fun dataBuilder() = JudgeDataBuilder()
 
-    /**
-     * Builds the [Judge] role instance.
-     *
-     * @return the constructed [Judge].
-     * @throws IllegalArgumentException if [data] is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Judge {
         val data = requireField(data) { ::data }
         return Judge(
@@ -392,34 +240,24 @@ class JudgeBuilder : CompatibleUserRoleBuilderWithData<Judge, JudgeData, JudgeDa
             data = data,
         )
     }
-
 }
 
 /**
- * Builder for constructing [ManagerData].
+ * Builder of [ManagerData].
  *
+ * @property classes the ids of the classes owned by the manager.
+ * @property competitions the ids of the competitions owned by the manager.
  * @since %CURRENT_VERSION%
  */
 class ManagerDataBuilder : Builder<ManagerData> {
 
-    /**
-     * The list of classes managed by this manager.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var classes = mutableListOf<ClassId>()
 
-    /**
-     * The list of competitions managed by this manager.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var competitions = mutableListOf<CompetitionId>()
 
     /**
-     * Sets the [classes] list from raw ID values.
+     * Sets [classes] from raw ids.
      *
-     * @param classes the raw class IDs.
      * @since %CURRENT_VERSION%
      */
     fun classes(classes: Iterable<Long>) {
@@ -427,31 +265,22 @@ class ManagerDataBuilder : Builder<ManagerData> {
     }
 
     /**
-     * Sets the [competitions] list from raw ID values.
+     * Sets [competitions] from raw ids.
      *
-     * @param competitions the raw competition IDs.
      * @since %CURRENT_VERSION%
      */
     fun competitions(competitions: Iterable<Long>) {
         this.competitions = competitions.map { CompetitionId(it) }.toMutableList()
     }
 
-    /**
-     * Builds the [ManagerData] instance.
-     *
-     * @return the constructed [ManagerData].
-     * @since %CURRENT_VERSION%
-     */
     override fun build() = ManagerData(
         competitions = competitions.lazify(),
         classes = classes.lazify(),
     )
-
 }
 
 /**
- * Builder for constructing a [Manager] role.
- * Supports configuring manager data via [DataCapable].
+ * Builder of the [Manager] role. Required: [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -460,13 +289,6 @@ class ManagerBuilder : CompatibleUserRoleBuilderWithData<Manager, ManagerData, M
     override var data: ManagerData? = null
     override fun dataBuilder() = ManagerDataBuilder()
 
-    /**
-     * Builds the [Manager] role instance.
-     *
-     * @return the constructed [Manager].
-     * @throws IllegalArgumentException if [data] is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Manager {
         val data = requireField(data) { ::data }
         return Manager(
@@ -474,14 +296,16 @@ class ManagerBuilder : CompatibleUserRoleBuilderWithData<Manager, ManagerData, M
             data = data,
         )
     }
-
 }
 
 private typealias Roles = MutableList<CompatibleUserRole>
 
 /**
- * Builder for constructing [MultipleRoleUserData], which holds a collection of compatible user roles.
+ * Builder of [MultipleRoleUserData]. Required: [accessToken], [name], [email]. Roles are added inside a [roles] block.
  *
+ * @property accessToken the access code the user logs in with, or `null` if not set yet.
+ * @property name the name of the user, or `null` if not set yet.
+ * @property email the e-mail address of the user, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
 class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
@@ -490,10 +314,13 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
 
     var accessToken: String? = null
 
+    var name: String? = null
+
+    var email: String? = null
+
     /**
-     * Configures the roles list using a DSL block.
+     * Configures the roles of the user with [builder].
      *
-     * @param builder the configuration block applied to the roles list.
      * @since %CURRENT_VERSION%
      */
     fun roles(builder: Roles.() -> Unit) {
@@ -501,9 +328,8 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     }
 
     /**
-     * Adds a [Developer] role to the roles list.
+     * Adds a [Developer] role configured by [builder].
      *
-     * @param builder the configuration block applied to [DeveloperBuilder].
      * @since %CURRENT_VERSION%
      */
     fun Roles.developer(builder: DeveloperBuilder.() -> Unit) {
@@ -514,9 +340,8 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     }
 
     /**
-     * Adds a [Student] role to the roles list.
+     * Adds a [Student] role configured by [builder].
      *
-     * @param builder the configuration block applied to [StudentBuilder].
      * @since %CURRENT_VERSION%
      */
     fun Roles.student(builder: StudentBuilder.() -> Unit) {
@@ -527,9 +352,8 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     }
 
     /**
-     * Adds a [Judge] role to the roles list.
+     * Adds a [Judge] role configured by [builder].
      *
-     * @param builder the configuration block applied to [JudgeBuilder].
      * @since %CURRENT_VERSION%
      */
     fun Roles.judge(builder: JudgeBuilder.() -> Unit) {
@@ -540,9 +364,8 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     }
 
     /**
-     * Adds a [Manager] role to the roles list.
+     * Adds a [Manager] role configured by [builder].
      *
-     * @param builder the configuration block applied to [ManagerBuilder].
      * @since %CURRENT_VERSION%
      */
     fun Roles.manager(builder: ManagerBuilder.() -> Unit) {
@@ -553,9 +376,8 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
     }
 
     /**
-     * Adds an [Administrator] role to the roles list.
+     * Adds an [Administrator] role configured by [builder].
      *
-     * @param builder the configuration block applied to [AdministratorBuilder].
      * @since %CURRENT_VERSION%
      */
     fun Roles.administrator(builder: AdministratorBuilder.() -> Unit) {
@@ -565,51 +387,38 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
             .also { add(it) }
     }
 
-    /**
-     * Builds the [MultipleRoleUserData] instance.
-     *
-     * @return the constructed [MultipleRoleUserData].
-     * @since %CURRENT_VERSION%
-     */
     override fun build() = MultipleRoleUserData(
         roles = roles,
         accessToken = requireField(accessToken) { ::accessToken },
+        name = requireField(name) { ::name },
+        email = requireField(email) { ::email },
     )
-
 }
 
 /**
- * Builder for constructing [MultipleRoleUser] domain entities.
- * Supports configuring user data (roles) via [DataCapable].
+ * Builder of [MultipleRoleUser] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
 class MultipleRoleUserBuilder :
-    UserBuilder<MultipleRoleUserId, MultipleRoleUser, MultipleRoleUserData, MultipleRoleUserDataBuilder>()
-{
+    UserBuilder<MultipleRoleUserId, MultipleRoleUser, MultipleRoleUserData, MultipleRoleUserDataBuilder>() {
 
     override var id: Long? = null
     override var createdAt: Instant? = null
     override var data: MultipleRoleUserData? = null
     override fun dataBuilder() = MultipleRoleUserDataBuilder()
 
-    /**
-     * Builds the [MultipleRoleUser] instance.
-     *
-     * @return the constructed [MultipleRoleUser].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): MultipleRoleUser {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return MultipleRoleUser(
             id = MultipleRoleUserId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }
-
 }

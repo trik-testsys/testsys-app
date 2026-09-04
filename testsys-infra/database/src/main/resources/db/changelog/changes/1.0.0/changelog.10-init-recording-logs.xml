@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1.0.0-10-1" author="roman.shishkin">
+        <createTable tableName="ts_recording">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_recording" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_data_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_recording_file_data" references="ts_file_data(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-10-2" author="roman.shishkin">
+        <createTable tableName="ts_logs">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_logs" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="file_data_id" type="BIGINT">
+                <constraints nullable="false" unique="true"
+                             foreignKeyName="fk_logs_file_data" references="ts_file_data(id)"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-10-3" author="roman.shishkin">
+        <comment>Verdict.logs_id / recording_id FKs (deferred until ts_logs and ts_recording exist).</comment>
+
+        <addForeignKeyConstraint constraintName="fk_verdict_logs"
+                                 baseTableName="ts_verdict" baseColumnNames="logs_id"
+                                 referencedTableName="ts_logs" referencedColumnNames="id"/>
+        <addForeignKeyConstraint constraintName="fk_verdict_recording"
+                                 baseTableName="ts_verdict" baseColumnNames="recording_id"
+                                 referencedTableName="ts_recording" referencedColumnNames="id"/>
+    </changeSet>
+
+</databaseChangeLog>

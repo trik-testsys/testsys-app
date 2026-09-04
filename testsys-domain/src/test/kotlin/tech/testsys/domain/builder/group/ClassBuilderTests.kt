@@ -10,9 +10,15 @@ class ClassBuilderTests : DomainEntityBuilderTests<Class, ClassData, ClassDataBu
     ClassDataBuilder()
 ) {
     override fun buildDataWithAllFields() = listOf(
-        classData { owner(42) },
         classData {
             owner(42)
+            name = "Class A"
+            description = "Class A description"
+        },
+        classData {
+            owner(42)
+            name = "Class B"
+            description = "Class B description"
             students(listOf(1L, 2L))
             contests(listOf(10L, 20L))
         },

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <include file="db/changelog/changes/1.0.0/changelog.02-init-common.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.03-init-user.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.04-init-group.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.05-init-resource.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.06-init-task.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.07-init-contest.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.08-init-submission.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.09-init-judgment-order.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.10-init-recording-logs.xml"/>
+
+</databaseChangeLog>

@@ -31,7 +31,7 @@ jobs:
           gradle-version: wrapper
 
       - name: Run Detekt
-        run: ./gradlew detekt --no-daemon
+        run: ./gradlew detektMain --no-daemon
 
       - name: Upload Detekt report
         uses: actions/upload-artifact@v4
@@ -42,12 +42,18 @@ jobs:
             **/build/reports/detekt/
           retention-days: 7
 
+      # Code scanning rejects several SARIF runs sharing one category, so every module report gets its own
+      # automation id (CodeQL derives the category from it) before the reports are uploaded together.
       - name: Collect SARIF reports
         if: always()
         run: |
           mkdir -p build/sarif
           find . -path "*/build/reports/detekt/*.sarif" | while read f; do
-            cp "$f" "build/sarif/$(echo "$f" | tr '/' '_')"
+            f="${f#./}"
+            module="${f%%/build/reports/detekt/*}"
+            category="detekt/${module}/$(basename "$f" .sarif)"
+            jq --arg category "$category" '.runs[].automationDetails.id = $category' "$f" \
+              > "build/sarif/$(echo "$f" | tr '/' '_')"
           done
 
       - name: Upload SARIF to GitHub Security tab

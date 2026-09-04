@@ -12,37 +12,31 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.SingleRoleUserId
 
 /**
- * Builder for constructing [CompetitionData].
+ * Builder of [CompetitionData]. Required: [owner], [name], [description].
  *
+ * @property name the name of the competition, or `null` if not set yet.
+ * @property description the description of the competition, or `null` if not set yet.
+ * @property owner the id of the owning manager, or `null` if not set yet.
+ * @property participants the ids of the registered participants; persistence projects them from the participants and ignores
+ *   the value on write.
+ * @property contests the ids of the contests held within the competition.
  * @since %CURRENT_VERSION%
  */
 class CompetitionDataBuilder : Builder<CompetitionData> {
 
-    /**
-     * The owner of the competition.
-     *
-     * @since %CURRENT_VERSION%
-     */
+    var name: String? = null
+
+    var description: String? = null
+
     var owner: MultipleRoleUserId? = null
 
-    /**
-     * The list of participant user IDs.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var participants = mutableListOf<SingleRoleUserId>()
 
-    /**
-     * The list of contest IDs included in this competition.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var contests = mutableListOf<ContestId>()
 
     /**
-     * Sets the [owner] from a raw ID value.
+     * Sets [owner] from a raw id.
      *
-     * @param owner the raw owner ID.
      * @since %CURRENT_VERSION%
      */
     fun owner(owner: Long) {
@@ -50,9 +44,8 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
     }
 
     /**
-     * Sets the [participants] list from raw ID values.
+     * Sets [participants] from raw ids.
      *
-     * @param participants the raw user IDs.
      * @since %CURRENT_VERSION%
      */
     fun participants(participants: Iterable<Long>) {
@@ -60,26 +53,22 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
     }
 
     /**
-     * Sets the [contests] list from raw ID values.
+     * Sets [contests] from raw ids.
      *
-     * @param contests the raw contest IDs.
      * @since %CURRENT_VERSION%
      */
     fun contests(contests: Iterable<Long>) {
         this.contests = contests.map { ContestId(it) }.toMutableList()
     }
 
-    /**
-     * Builds the [CompetitionData] instance.
-     *
-     * @return the constructed [CompetitionData].
-     * @throws IllegalArgumentException if [owner] is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): CompetitionData {
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
         val owner = requireField(owner) { ::owner }
 
         return CompetitionData(
+            name = name,
+            description = description,
             owner = owner.lazify(),
             participants = participants.lazify(),
             contests = contests.lazify(),
@@ -88,7 +77,7 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
 }
 
 /**
- * Builder for constructing [Competition] domain entities.
+ * Builder of [Competition] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -96,23 +85,17 @@ class CompetitionBuilder : DomainEntityWithDataBuilder<Competition, CompetitionD
 
     override fun dataBuilder() = CompetitionDataBuilder()
 
-    /**
-     * Builds the [Competition] instance.
-     *
-     * @return the constructed [Competition].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Competition {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Competition(
             id = CompetitionId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }
-
 }

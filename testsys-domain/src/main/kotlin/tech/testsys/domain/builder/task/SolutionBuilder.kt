@@ -9,41 +9,29 @@ import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.SolutionId
 
-
 /**
- * Builder for constructing [SolutionData].
+ * Builder of [SolutionData]. Required: [file], a choice in [language].
  *
+ * @property language the chooser of the programming language.
  * @since %CURRENT_VERSION%
  */
 class SolutionDataBuilder : Builder<SolutionData> {
 
     private var _file: FileData? = null
 
+    val language = LanguageChooser()
+
     /**
-     * Sets the file data for the solution.
+     * Sets the file.
      *
-     * @param uploadedFilename the original filename of the uploaded file.
-     * @param content the raw file content as a byte array.
+     * @param uploadedFilename the original name of the uploaded file.
+     * @param content the raw binary content of the file.
      * @since %CURRENT_VERSION%
      */
     fun file(uploadedFilename: String, content: ByteArray) {
         _file = FileData(uploadedFilename, content)
     }
 
-    /**
-     * Chooser for selecting the programming language of the solution.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    val language = LanguageChooser()
-
-    /**
-     * Builds the [SolutionData] instance.
-     *
-     * @return the constructed [SolutionData].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): SolutionData {
         val file = requireField(_file) { ::_file }
 
@@ -52,11 +40,10 @@ class SolutionDataBuilder : Builder<SolutionData> {
             language = language.build(),
         )
     }
-
 }
 
 /**
- * Builder for constructing [Solution] domain entities.
+ * Builder of [Solution] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -64,24 +51,17 @@ class SolutionBuilder : DomainEntityWithDataBuilder<Solution, SolutionData, Solu
 
     override fun dataBuilder() = SolutionDataBuilder()
 
-    /**
-     * Builds the [Solution] instance.
-     *
-     * @return the constructed [Solution].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Solution {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Solution(
             id = SolutionId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }
-
 }
-

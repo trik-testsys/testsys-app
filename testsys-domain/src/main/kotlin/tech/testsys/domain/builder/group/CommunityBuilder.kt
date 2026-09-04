@@ -10,47 +10,45 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.MultipleRoleUserId
 
 /**
- * Builder for constructing [CommunityData].
+ * Builder of [CommunityData]. Required: [owner], [name], [description].
  *
+ * @property owner the id of the owning administrator, or `null` if not set yet.
+ * @property name the name of the community, or `null` if not set yet.
+ * @property description the description of the community, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
 class CommunityDataBuilder : Builder<CommunityData> {
 
-    /**
-     * The owner of the community.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var owner: MultipleRoleUserId? = null
 
+    var name: String? = null
+
+    var description: String? = null
+
     /**
-     * Sets the [owner] from a raw ID value.
+     * Sets [owner] from a raw id.
      *
-     * @param owner the raw owner ID.
      * @since %CURRENT_VERSION%
      */
     fun owner(owner: Long) {
         this.owner = MultipleRoleUserId(owner)
     }
 
-    /**
-     * Builds the [CommunityData] instance.
-     *
-     * @return the constructed [CommunityData].
-     * @throws IllegalArgumentException if [owner] is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): CommunityData {
         val owner = requireField(owner) { ::owner }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
 
         return CommunityData(
             owner = owner.lazify(),
+            name = name,
+            description = description,
         )
     }
 }
 
 /**
- * Builder for constructing [Community] domain entities.
+ * Builder of [Community] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -58,21 +56,16 @@ class CommunityBuilder : DomainEntityWithDataBuilder<Community, CommunityData, C
 
     override fun dataBuilder() = CommunityDataBuilder()
 
-    /**
-     * Builds the [Community] instance.
-     *
-     * @return the constructed [Community].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Community {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Community(
             id = CommunityId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

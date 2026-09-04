@@ -1,36 +1,75 @@
 [versions]
 junit = "6.0.3"
 kotlin = "2.2.21"
-detekt = "1.23.6"
+detekt = "1.23.8"
+spring-boot = "3.5.13"
+spring = "6.2.17"
+postgresql = "42.7.7"
+liquibase = "4.32.0"
+commons-lang3 = "3.18.0"
+h2 = "2.3.232"
+ksp = "2.2.21-2.0.5"
+kotlinpoet = "2.3.0"
+kctfork = "0.12.1"
 
 [libraries]
-org-junit-jupiter-junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
-org-junit-jupiter-junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
-org-junit-jupiter-junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
-org-junit-platform-junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 
-org-jetbrains-kotlin-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin"}
-org-jetbrains-kotlin-kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin"}
-org-jetbrains-kotlin-kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin"}
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-allopen = { module = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin" }
+kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 
-io-gitlab-arturbosch-detekt-detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt"}
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa", version.ref = "spring-boot" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "spring-boot" }
+
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase" }
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
+
+detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+
+ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
+kctfork-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kctfork" }
 
 [bundles]
 test-implementation = [
-    "org-junit-jupiter-junit-jupiter-api",
-    "org-junit-jupiter-junit-jupiter-params"
+    "junit-jupiter-api",
+    "junit-jupiter-params"
 ]
 test-runtime = [
-    "org-junit-jupiter-junit-jupiter-engine",
-    "org-junit-platform-junit-platform-launcher"
+    "junit-jupiter-engine",
+    "junit-platform-launcher"
 ]
 kotlin-implementation = [
-    "org-jetbrains-kotlin-kotlin-gradle-plugin",
-    "org-jetbrains-kotlin-kotlin-allopen",
-    "org-jetbrains-kotlin-kotlin-noarg"
+    "kotlin-gradle-plugin",
+]
+kotlin-spring-plugins = [
+    "kotlin-allopen",
+]
+kotlin-jpa-plugins = [
+    "kotlin-noarg",
+]
+database-implementation = [
+    "spring-boot-starter-data-jpa",
+    "liquibase-core",
+    "commons-lang3",
+    "kotlin-reflect",
+]
+database-test-implementation = [
+    "spring-boot-starter-test",
+    "h2",
 ]
 detekt-implementation = [
-    "io-gitlab-arturbosch-detekt-detekt-gradle-plugin"
+    "detekt-gradle-plugin",
+    "detekt-formatting",
 ]
 
 [plugins]
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

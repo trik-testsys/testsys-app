@@ -2,93 +2,48 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
-import tech.testsys.domain.builder.util.chooser.TaskDataChooser
+import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Task
-import tech.testsys.domain.model.task.CommitedTaskContent
-import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
+import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUserId
 
 /**
- * Base builder for constructing [WipTaskContent] and [CommitedTaskContent].
+ * Base class of task content revision builders; holds the resource collections of a revision.
  *
+ * @param T the type of the built revision.
+ * @property tests the ids of the tests (polygons) of the revision.
+ * @property exercise the id of the exercise, or `null` if not set yet.
+ * @property statement the id of the statement, or `null` if not set yet.
+ * @property developerSolutions the ids of the developer solutions of the revision.
+ * @property supportedTrikStudioVersions the TRIK Studio versions supported by the revision.
  * @since %CURRENT_VERSION%
  */
 abstract class TaskContentBuilder<T> : Builder<T> {
 
-    /**
-     * The owner of the task.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    var owner: MultipleRoleUserId? = null
-
-    /**
-     * The name of the task.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    var name: String? = null
-
-    /**
-     * The description of the task.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    var description: String? = null
-
-    /**
-     * The list of test IDs associated with this task.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var tests = mutableListOf<TestId>()
 
-    /**
-     * The ID of the exercise associated with this task.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var exercise: ExerciseId? = null
 
-    /**
-     * The list of developer solution IDs for this task.
-     *
-     * @since %CURRENT_VERSION%
-     */
+    var statement: StatementId? = null
+
     var developerSolutions = mutableListOf<DeveloperSolutionId>()
 
     var supportedTrikStudioVersions = mutableListOf<TrikStudioVersion>()
 
-    var statement: StatementId? = null
-
-    var sharedTo = mutableListOf<CommunityId>()
-
-    fun statement(statement: Long) {
-        this.statement = StatementId(statement)
-    }
-
-    fun sharedTo(sharedTo: Iterable<Long>) {
-        this.sharedTo = sharedTo.map { CommunityId(it) }.toMutableList()
-    }
-
-    fun owner(owner: Long) {
-        this.owner = MultipleRoleUserId(owner)
-    }
-
     /**
-     * Sets the [tests] list from raw ID values.
+     * Sets [tests] from raw ids.
      *
-     * @param tests the raw test IDs.
      * @since %CURRENT_VERSION%
      */
     fun tests(tests: Iterable<Long>) {
@@ -96,9 +51,8 @@ abstract class TaskContentBuilder<T> : Builder<T> {
     }
 
     /**
-     * Sets the [exercise] from a raw ID value.
+     * Sets [exercise] from a raw id.
      *
-     * @param exercise the raw exercise ID.
      * @since %CURRENT_VERSION%
      */
     fun exercise(exercise: Long) {
@@ -106,115 +60,147 @@ abstract class TaskContentBuilder<T> : Builder<T> {
     }
 
     /**
-     * Sets the [developerSolutions] list from raw ID values.
+     * Sets [statement] from a raw id.
      *
-     * @param developerSolutions the raw developer solution IDs.
+     * @since %CURRENT_VERSION%
+     */
+    fun statement(statement: Long) {
+        this.statement = StatementId(statement)
+    }
+
+    /**
+     * Sets [developerSolutions] from raw ids.
+     *
      * @since %CURRENT_VERSION%
      */
     fun developerSolutions(developerSolutions: Iterable<Long>) {
         this.developerSolutions = developerSolutions.map { DeveloperSolutionId(it) }.toMutableList()
     }
 
+    /**
+     * Sets [supportedTrikStudioVersions] from raw version tags.
+     *
+     * @since %CURRENT_VERSION%
+     */
     fun supportedTrikStudioVersions(supportedTrikStudioVersions: Iterable<String>) {
         this.supportedTrikStudioVersions = supportedTrikStudioVersions.map { TrikStudioVersion(it) }.toMutableList()
     }
 }
 
 /**
- * Base builder for constructing [CommitedTaskContent].
+ * Builder of [CommittedTaskContent]. Required: [exercise], [statement].
  *
  * @since %CURRENT_VERSION%
  */
-class CommittedTaskContentBuilder : TaskContentBuilder<CommitedTaskContent>() {
+class CommittedTaskContentBuilder : TaskContentBuilder<CommittedTaskContent>() {
 
-    /**
-     * Builds the [CommitedTaskContent] instance.
-     *
-     * @return the constructed [CommitedTaskContent].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
-    override fun build(): CommitedTaskContent {
-        val owner = requireField(owner) { ::owner }
-        val name = requireField(name) { ::name }
-        val description = requireField(description) { ::description }
+    override fun build(): CommittedTaskContent {
         val exercise = requireField(exercise) { ::exercise }
-        val supportedTrikStudioVersions = requireField(supportedTrikStudioVersions) { ::supportedTrikStudioVersions }
         val statement = requireField(statement) { ::statement }
 
-        return CommitedTaskContent(
-            owner = owner.lazify(),
-            name = name,
-            description = description,
+        return CommittedTaskContent(
             tests = tests.lazify(),
             exercise = exercise.lazify(),
-            developerSolutions = developerSolutions.lazify(),
             statement = statement.lazify(),
-            sharedTo = sharedTo.lazify(),
+            developerSolutions = developerSolutions.lazify(),
             supportedTrikStudioVersions = supportedTrikStudioVersions,
         )
     }
 }
 
 /**
- * Base builder for constructing [WipTaskContent].
+ * Builder of [WipTaskContent]; [exercise] and [statement] are optional.
  *
  * @since %CURRENT_VERSION%
  */
 class WipTaskContentBuilder : TaskContentBuilder<WipTaskContent>() {
 
-    /**
-     * Builds the [WipTaskContent] instance.
-     *
-     * @return the constructed [WipTaskContent].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): WipTaskContent {
-        val owner = requireField(owner) { ::owner }
-        val name = requireField(name) { ::name }
-
         return WipTaskContent(
-            owner = owner.lazify(),
-            name = name,
-            description = description,
             tests = tests.lazify(),
             exercise = exercise?.lazify(),
-            developerSolutions = developerSolutions.lazify(),
             statement = statement?.lazify(),
-            sharedTo = sharedTo.lazify(),
+            developerSolutions = developerSolutions.lazify(),
             supportedTrikStudioVersions = supportedTrikStudioVersions,
         )
     }
 }
 
+/**
+ * Builder of [TaskData]. Required: [owner], [name], [description], a choice in [content].
+ *
+ * @property owner the id of the owning developer, or `null` if not set yet.
+ * @property name the name of the task, or `null` if not set yet.
+ * @property description the description of the task, or `null` if not set yet.
+ * @property sharedTo the ids of the communities the task is shared to.
+ * @property content the chooser of the task content variant.
+ * @since %CURRENT_VERSION%
+ */
+class TaskDataBuilder : Builder<TaskData> {
+
+    var owner: MultipleRoleUserId? = null
+
+    var name: String? = null
+
+    var description: String? = null
+
+    var sharedTo = mutableListOf<CommunityId>()
+
+    val content = TaskContentChooser()
+
+    /**
+     * Sets [owner] from a raw id.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun owner(owner: Long) {
+        this.owner = MultipleRoleUserId(owner)
+    }
+
+    /**
+     * Sets [sharedTo] from raw ids.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun sharedTo(sharedTo: Iterable<Long>) {
+        this.sharedTo = sharedTo.map { CommunityId(it) }.toMutableList()
+    }
+
+    override fun build(): TaskData {
+        val owner = requireField(owner) { ::owner }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
+
+        return TaskData(
+            owner = owner.lazify(),
+            name = name,
+            description = description,
+            sharedTo = sharedTo.lazify(),
+            content = content.build(),
+        )
+    }
+}
 
 /**
- * Builder for constructing [Task] domain entities.
+ * Builder of [Task] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
-class TaskBuilder : DomainEntityWithDataBuilder<Task, TaskData, TaskDataChooser>() {
+class TaskBuilder : DomainEntityWithDataBuilder<Task, TaskData, TaskDataBuilder>() {
 
-    override fun dataBuilder(): TaskDataChooser = TaskDataChooser()
+    override fun dataBuilder() = TaskDataBuilder()
 
-    /**
-     * Builds the [Task] instance.
-     *
-     * @return the constructed [Task].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Task {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Task(
             id = TaskId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }
-
 }

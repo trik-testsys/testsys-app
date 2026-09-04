@@ -11,37 +11,30 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.MultipleRoleUserId
 
 /**
- * Builder for constructing [ClassData].
+ * Builder of [ClassData]. Required: [owner], [name], [description].
  *
+ * @property owner the id of the owning manager, or `null` if not set yet.
+ * @property name the name of the class, or `null` if not set yet.
+ * @property description the description of the class, or `null` if not set yet.
+ * @property students the ids of the enrolled students.
+ * @property contests the ids of the assigned contests.
  * @since %CURRENT_VERSION%
  */
 class ClassDataBuilder : Builder<ClassData> {
 
-    /**
-     * The owner of the class.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var owner: MultipleRoleUserId? = null
 
-    /**
-     * The list of student user IDs enrolled in this class.
-     *
-     * @since %CURRENT_VERSION%
-     */
+    var name: String? = null
+
+    var description: String? = null
+
     var students = mutableListOf<MultipleRoleUserId>()
 
-    /**
-     * The list of contest IDs assigned to this class.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var contests = mutableListOf<ContestId>()
 
     /**
-     * Sets the [owner] from a raw ID value.
+     * Sets [owner] from a raw id.
      *
-     * @param owner the raw owner ID.
      * @since %CURRENT_VERSION%
      */
     fun owner(owner: Long) {
@@ -49,9 +42,8 @@ class ClassDataBuilder : Builder<ClassData> {
     }
 
     /**
-     * Sets the [students] list from raw ID values.
+     * Sets [students] from raw ids.
      *
-     * @param students the raw user IDs.
      * @since %CURRENT_VERSION%
      */
     fun students(students: Iterable<Long>) {
@@ -59,36 +51,31 @@ class ClassDataBuilder : Builder<ClassData> {
     }
 
     /**
-     * Sets the [contests] list from raw ID values.
+     * Sets [contests] from raw ids.
      *
-     * @param contests the raw contest IDs.
      * @since %CURRENT_VERSION%
      */
     fun contests(contests: Iterable<Long>) {
         this.contests = contests.map { ContestId(it) }.toMutableList()
     }
 
-    /**
-     * Builds the [ClassData] instance.
-     *
-     * @return the constructed [ClassData].
-     * @throws IllegalArgumentException if [owner] is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): ClassData {
         val owner = requireField(owner) { ::owner }
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
 
         return ClassData(
             owner = owner.lazify(),
+            name = name,
+            description = description,
             students = students.lazify(),
             contests = contests.lazify(),
         )
     }
-
 }
 
 /**
- * Builder for constructing [Class] domain entities.
+ * Builder of [Class] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -96,21 +83,16 @@ class ClassBuilder : DomainEntityWithDataBuilder<Class, ClassData, ClassDataBuil
 
     override fun dataBuilder() = ClassDataBuilder()
 
-    /**
-     * Builds the [Class] instance.
-     *
-     * @return the constructed [Class].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Class {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Class(
             id = ClassId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

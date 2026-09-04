@@ -3,6 +3,7 @@ package tech.testsys.domain.builder
 import org.junit.jupiter.api.Assertions
 import kotlin.test.Test
 import java.time.Instant
+import tech.testsys.domain.model.EntityVersion
 
 abstract class DomainEntityBuilderTests<Entity, Data, DataBuilder : Builder<Data>>(
     private val entityBuilder: DomainEntityWithDataBuilder<Entity, Data, DataBuilder>,
@@ -19,6 +20,7 @@ abstract class DomainEntityBuilderTests<Entity, Data, DataBuilder : Builder<Data
         return entityBuilder.apply {
             id = 42
             createdAt = Instant.ofEpochSecond(1L)
+            version = EntityVersion(0)
         }.build()
     }
 

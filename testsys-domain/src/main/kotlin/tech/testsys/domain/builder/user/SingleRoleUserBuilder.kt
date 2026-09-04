@@ -1,9 +1,9 @@
 package tech.testsys.domain.builder.user
 
 import tech.testsys.domain.builder.Builder
-import tech.testsys.domain.builder.DataCapable
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
@@ -16,69 +16,58 @@ import tech.testsys.domain.model.user.SupervisorData
 import java.time.Instant
 
 /**
- * Abstract base builder for [SingleRoleUser] entities.
- * Provides default `null` initial values for [id] and [createdAt].
+ * Base class of [SingleRoleUser] builders.
  *
- * @param U the concrete single-role user type being built.
- * @param Data the type of associated data object.
- * @param DataBuilder the builder type used to construct [Data].
+ * @param U the type of the built user.
+ * @param Data the type of the user data.
+ * @param DataBuilder the builder type of [Data].
  * @since %CURRENT_VERSION%
  */
-abstract class SingleRoleUserBuilder<U: SingleRoleUser, Data, DataBuilder: Builder<Data>>
-    : UserBuilder<SingleRoleUserId, U, Data, DataBuilder>() {
+abstract class SingleRoleUserBuilder<U : SingleRoleUser, Data, DataBuilder : Builder<Data>> :
+    UserBuilder<SingleRoleUserId, U, Data, DataBuilder>() {
 
     override var id: Long? = null
     override var createdAt: Instant? = null
-
 }
 
 /**
- * Builder for constructing [ParticipantData].
+ * Builder of [ParticipantData]. Required: [competition], [accessToken], [name].
  *
+ * @property competition the id of the competition the participant belongs to, or `null` if not set yet.
+ * @property accessToken the access code the participant logs in with, or `null` if not set yet.
+ * @property name the name of the participant, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
 class ParticipantDataBuilder : Builder<ParticipantData> {
 
-    /**
-     * The competition this participant belongs to.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var competition: CompetitionId? = null
 
     var accessToken: String? = null
 
+    var name: String? = null
+
     /**
-     * Sets the [competition] from a raw ID value.
+     * Sets [competition] from a raw id.
      *
-     * @param competitionId the raw competition ID.
      * @since %CURRENT_VERSION%
      */
     fun competition(competitionId: Long) {
         this.competition = CompetitionId(competitionId)
     }
 
-    /**
-     * Builds the [ParticipantData] instance.
-     *
-     * @return the constructed [ParticipantData].
-     * @throws IllegalArgumentException if [competition] is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): ParticipantData {
         val competition = requireField(competition) { ::competition }
 
         return ParticipantData(
             competition = competition.lazify(),
-            accessToken = requireField(accessToken) { ::accessToken }
+            accessToken = requireField(accessToken) { ::accessToken },
+            name = requireField(name) { ::name },
         )
     }
-
 }
 
 /**
- * Builder for constructing [Participant] domain entities.
- * Supports configuring participant data via [DataCapable].
+ * Builder of [Participant] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -87,69 +76,72 @@ class ParticipantBuilder : SingleRoleUserBuilder<Participant, ParticipantData, P
     override var data: ParticipantData? = null
     override fun dataBuilder() = ParticipantDataBuilder()
 
-    /**
-     * Builds the [Participant] instance.
-     *
-     * @return the constructed [Participant].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Participant {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Participant(
             id = SingleRoleUserId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }
-
 }
 
 /**
- * Builder for constructing [ObserverData].
+ * Builder of [ObserverData]. Required: [community], [accessToken], [name].
  *
+ * @property community the id of the community the observer is a member of, or `null` if not set yet.
+ * @property competitions the ids of the competitions the observer may view.
+ * @property accessToken the access code the observer logs in with, or `null` if not set yet.
+ * @property name the name of the observer, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
 class ObserverDataBuilder : Builder<ObserverData> {
 
-    /**
-     * The list of competitions this observer can view.
-     *
-     * @since %CURRENT_VERSION%
-     */
+    var community: CommunityId? = null
+
     var competitions = mutableListOf<CompetitionId>()
 
     var accessToken: String? = null
 
+    var name: String? = null
+
     /**
-     * Sets the [competitions] list from raw ID values.
+     * Sets [community] from a raw id.
      *
-     * @param competitions the raw competition IDs.
+     * @since %CURRENT_VERSION%
+     */
+    fun community(communityId: Long) {
+        this.community = CommunityId(communityId)
+    }
+
+    /**
+     * Sets [competitions] from raw ids.
+     *
      * @since %CURRENT_VERSION%
      */
     fun competitions(competitions: Iterable<Long>) {
         this.competitions = competitions.map { CompetitionId(it) }.toMutableList()
     }
 
-    /**
-     * Builds the [ObserverData] instance.
-     *
-     * @return the constructed [ObserverData].
-     * @since %CURRENT_VERSION%
-     */
-    override fun build() = ObserverData(
-        competitions = competitions.lazify(),
-        accessToken = requireField(accessToken) { ::accessToken },
-    )
+    override fun build(): ObserverData {
+        val community = requireField(community) { ::community }
 
+        return ObserverData(
+            community = community.lazify(),
+            competitions = competitions.lazify(),
+            accessToken = requireField(accessToken) { ::accessToken },
+            name = requireField(name) { ::name },
+        )
+    }
 }
 
 /**
- * Builder for constructing [Observer] domain entities.
- * Supports configuring observer data via [DataCapable].
+ * Builder of [Observer] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -158,46 +150,42 @@ class ObserverBuilder : SingleRoleUserBuilder<Observer, ObserverData, ObserverDa
     override var data: ObserverData? = null
     override fun dataBuilder() = ObserverDataBuilder()
 
-    /**
-     * Builds the [Observer] instance.
-     *
-     * @return the constructed [Observer].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Observer {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Observer(
             id = SingleRoleUserId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }
 }
 
+/**
+ * Builder of [SupervisorData]. Required: [accessToken], [name].
+ *
+ * @property accessToken the access code the supervisor logs in with, or `null` if not set yet.
+ * @property name the name of the supervisor, or `null` if not set yet.
+ * @since %CURRENT_VERSION%
+ */
 class SupervisorDataBuilder : Builder<SupervisorData> {
-
 
     var accessToken: String? = null
 
-    /**
-     * Builds the [ObserverData] instance.
-     *
-     * @return the constructed [ObserverData].
-     * @since %CURRENT_VERSION%
-     */
+    var name: String? = null
+
     override fun build() = SupervisorData(
         accessToken = requireField(accessToken) { ::accessToken },
+        name = requireField(name) { ::name },
     )
-
 }
 
 /**
- * Builder for constructing [Supervisor] domain entities.
- * Supervisors have no additional data beyond the base user fields.
+ * Builder of [Supervisor] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -206,23 +194,17 @@ class SupervisorBuilder : SingleRoleUserBuilder<Supervisor, SupervisorData, Supe
     override var data: SupervisorData? = null
     override fun dataBuilder() = SupervisorDataBuilder()
 
-    /**
-     * Builds the [Supervisor] instance.
-     *
-     * @return the constructed [Supervisor].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): Supervisor {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Supervisor(
             id = SingleRoleUserId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }
-
 }

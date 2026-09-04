@@ -1,34 +1,43 @@
 package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.DomainEntityBuilderTests
-import tech.testsys.domain.builder.api.taskDataCommited
-import tech.testsys.domain.builder.api.taskDataNew
-import tech.testsys.domain.builder.api.taskDataUncommited
-import tech.testsys.domain.builder.util.chooser.TaskDataChooser
+import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskData
 
-class TaskBuilderTests : DomainEntityBuilderTests<Task, TaskData, TaskDataChooser>(
+class TaskBuilderTests : DomainEntityBuilderTests<Task, TaskData, TaskDataBuilder>(
     TaskBuilder(),
-    TaskDataChooser()
+    TaskDataBuilder()
 ) {
-    private fun commitedTaskContent(): CommittedTaskContentBuilder.() -> Unit = {
+    private fun TaskDataBuilder.taskIdentity() {
         owner(42)
         name = "Test Task"
         description = "A test task"
-        exercise(1)
-        supportedTrikStudioVersions(listOf("3.0.0"))
-        statement(1)
     }
 
-    private fun wipTaskContent(): WipTaskContentBuilder.() -> Unit = {
-        owner(42)
-        name = "Test Task"
+    private fun committedTaskContent(): CommittedTaskContentBuilder.() -> Unit = {
+        exercise(1)
+        statement(1)
+        supportedTrikStudioVersions(listOf("3.0.0"))
     }
+
+    private fun wipTaskContent(): WipTaskContentBuilder.() -> Unit = {}
 
     override fun buildDataWithAllFields() = listOf(
-        taskDataNew(wipTaskContent()),
-        taskDataCommited(commitedTaskContent()),
-        taskDataUncommited(wipTaskContent(), commitedTaskContent()),
+        taskData {
+            taskIdentity()
+            content.new(wipTaskContent())
+        },
+        taskData {
+            taskIdentity()
+            content.committed(committedTaskContent())
+        },
+        taskData {
+            taskIdentity()
+            content.uncommitted(
+                wipBuilder = wipTaskContent(),
+                lastCommittedBuilder = committedTaskContent(),
+            )
+        },
     )
 }

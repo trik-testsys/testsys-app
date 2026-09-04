@@ -31,7 +31,7 @@ jobs:
           gradle-version: wrapper
 
       - name: Build
-        run: ./gradlew build -x detekt --no-daemon
+        run: ./gradlew build -x detekt -x detektMain --no-daemon
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

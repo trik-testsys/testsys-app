@@ -9,32 +9,33 @@ import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SolutionId
+import java.util.UUID
 
 /**
- * Builder for constructing [DeveloperSolutionData].
+ * Builder of [DeveloperSolutionData]. Required: [name], [description], [solution], [expectedScore], [versionBucket].
  *
+ * @property name the name of the developer solution, or `null` if not set yet.
+ * @property description the description of the developer solution, or `null` if not set yet.
+ * @property solution the id of the reference program, or `null` if not set yet.
+ * @property expectedScore the expected score, or `null` if not set yet.
+ * @property versionBucket the UUID shared by all versions of the developer solution, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
 class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
 
-    /**
-     * The ID of the solution associated with this developer solution.
-     *
-     * @since %CURRENT_VERSION%
-     */
+    var name: String? = null
+
+    var description: String? = null
+
     var solution: SolutionId? = null
 
-    /**
-     * The ID of the expected verdict for this developer solution.
-     *
-     * @since %CURRENT_VERSION%
-     */
     var expectedScore: Score? = null
 
+    var versionBucket: UUID? = null
+
     /**
-     * Sets the [solution] from a raw ID value.
+     * Sets [solution] from a raw id.
      *
-     * @param solution the raw solution ID.
      * @since %CURRENT_VERSION%
      */
     fun solution(solution: Long) {
@@ -42,62 +43,52 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
     }
 
     /**
-     * Sets the [expectedScore] from a raw ID value.
+     * Sets [expectedScore] from a raw score.
      *
-     * @param expectedScore the raw verdict ID.
      * @since %CURRENT_VERSION%
      */
     fun expectedScore(expectedScore: Int) {
         this.expectedScore = Score(expectedScore)
     }
 
-    /**
-     * Builds the [DeveloperSolutionData] instance.
-     *
-     * @return the constructed [DeveloperSolutionData].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): DeveloperSolutionData {
+        val name = requireField(name) { ::name }
+        val description = requireField(description) { ::description }
         val solution = requireField(solution) { ::solution }
         val expectedScore = requireField(expectedScore) { ::expectedScore }
+        val versionBucket = requireField(versionBucket) { ::versionBucket }
 
         return DeveloperSolutionData(
+            name = name,
+            description = description,
             solution = solution.lazify(),
-            expectedScore = expectedScore
+            expectedScore = expectedScore,
+            versionBucket = versionBucket,
         )
     }
-
 }
 
 /**
- * Builder for constructing [DeveloperSolution] domain entities.
+ * Builder of [DeveloperSolution] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
 class DeveloperSolutionBuilder :
-    DomainEntityWithDataBuilder<DeveloperSolution, DeveloperSolutionData, DeveloperSolutionDataBuilder>()
-{
+    DomainEntityWithDataBuilder<DeveloperSolution, DeveloperSolutionData, DeveloperSolutionDataBuilder>() {
 
     override fun dataBuilder() = DeveloperSolutionDataBuilder()
 
-    /**
-     * Builds the [DeveloperSolution] instance.
-     *
-     * @return the constructed [DeveloperSolution].
-     * @throws IllegalArgumentException if any required field is not set.
-     * @since %CURRENT_VERSION%
-     */
     override fun build(): DeveloperSolution {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return DeveloperSolution(
             id = DeveloperSolutionId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }
-
 }

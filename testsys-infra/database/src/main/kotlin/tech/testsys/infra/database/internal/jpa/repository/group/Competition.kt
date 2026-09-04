@@ -10,7 +10,7 @@ import tech.testsys.infra.database.internal.jpa.entity.group.CompetitionJpaEntit
 import tech.testsys.infra.database.internal.jpa.entity.group.ContestToCompetitionId
 import tech.testsys.infra.database.internal.jpa.entity.group.ContestToCompetitionJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [ContestToCompetitionJpaEntity].
@@ -62,7 +62,7 @@ interface ContestToCompetitionJpaEntityRepository :
  */
 @Repository
 @InternalDatabaseApi
-interface CompetitionJpaEntityRepository : SequenceJpaEntityRepository<CompetitionJpaEntity> {
+interface CompetitionJpaEntityRepository : SnowflakeJpaEntityRepository<CompetitionJpaEntity> {
 
     /**
      * Finds the competitions owned by the user [ownerId].

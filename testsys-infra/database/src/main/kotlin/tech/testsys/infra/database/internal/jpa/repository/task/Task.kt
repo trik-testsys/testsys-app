@@ -17,7 +17,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.TestToTaskContentJpa
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionToTaskContentId
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionToTaskContentJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [TestToTaskContentJpaEntity].
@@ -210,7 +210,7 @@ interface CommunityToTaskJpaEntityRepository :
  */
 @Repository
 @InternalDatabaseApi
-interface TaskContentJpaEntityRepository : SequenceJpaEntityRepository<TaskContentJpaEntity>
+interface TaskContentJpaEntityRepository : SnowflakeJpaEntityRepository<TaskContentJpaEntity>
 
 /**
  * Spring Data repository for [TaskJpaEntity].
@@ -219,7 +219,7 @@ interface TaskContentJpaEntityRepository : SequenceJpaEntityRepository<TaskConte
  */
 @Repository
 @InternalDatabaseApi
-interface TaskJpaEntityRepository : SequenceJpaEntityRepository<TaskJpaEntity> {
+interface TaskJpaEntityRepository : SnowflakeJpaEntityRepository<TaskJpaEntity> {
 
     /**
      * Finds the tasks owned by the user [ownerId].

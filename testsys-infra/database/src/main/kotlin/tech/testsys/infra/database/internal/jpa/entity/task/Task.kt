@@ -10,7 +10,7 @@ import tech.testsys.infra.database.codegen.api.jpa.CompositeKeyConstructor
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.CompositeId
 import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
-import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
 /**
  * Lifecycle state of a [TaskJpaEntity]: [NEW] has no committed revision, [UNCOMMITTED] has WIP changes over the last
@@ -137,7 +137,7 @@ class TaskContentJpaEntity(
     val exerciseId: Long?,
     val statementId: Long?,
     id: Long? = null,
-) : SequenceJpaEntity(id)
+) : SnowflakeJpaEntity(id)
 
 /**
  * JPA entity of [tech.testsys.domain.model.task.Task]; the versioned payload lives in [TaskContentJpaEntity] revisions.
@@ -162,4 +162,4 @@ class TaskJpaEntity(
     val wipContentId: Long,
     val committedContentId: Long?,
     id: Long? = null,
-) : SequenceJpaEntity(id)
+) : SnowflakeJpaEntity(id)

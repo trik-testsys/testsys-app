@@ -2,14 +2,14 @@ package tech.testsys.infra.database.internal.jpa.entity
 
 import jakarta.persistence.Embeddable
 import jakarta.persistence.EmbeddedId
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.MappedSuperclass
 import jakarta.persistence.Version
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.id.SnowflakeId
+import tech.testsys.infra.database.internal.jpa.id.SnowflakeIdGenerator
 import java.io.Serializable
 import java.time.Instant
 
@@ -64,15 +64,16 @@ abstract class CompositeJpaEntity<T : CompositeId>(
 }
 
 /**
- * Base of JPA entities keyed by a sequence-generated [Long].
+ * Base of JPA entities keyed by a Snowflake-style [Long] issued by [SnowflakeIdGenerator]: seconds since its epoch,
+ * node id and a per-second counter.
  *
  * @property id the primary key, `null` until persisted.
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
 @MappedSuperclass
-abstract class SequenceJpaEntity(
+abstract class SnowflakeJpaEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @SnowflakeId
     val id: Long? = null,
 ) : JpaEntity()

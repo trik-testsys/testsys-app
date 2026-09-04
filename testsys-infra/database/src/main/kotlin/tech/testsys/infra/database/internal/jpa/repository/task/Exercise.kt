@@ -3,7 +3,7 @@ package tech.testsys.infra.database.internal.jpa.repository.task
 import org.springframework.stereotype.Repository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.ExerciseJpaEntity
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [ExerciseJpaEntity].
@@ -12,4 +12,4 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
  */
 @Repository
 @InternalDatabaseApi
-interface ExerciseJpaEntityRepository : SequenceJpaEntityRepository<ExerciseJpaEntity>
+interface ExerciseJpaEntityRepository : SnowflakeJpaEntityRepository<ExerciseJpaEntity>

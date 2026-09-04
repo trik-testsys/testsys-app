@@ -9,8 +9,8 @@ import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.infra.database.internal.InternalDatabaseApi
-import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 import tech.testsys.infra.database.internal.utils.requireById
 
 /**
@@ -27,8 +27,8 @@ import tech.testsys.infra.database.internal.utils.requireById
  */
 @Suppress("CallBeanMethodFromSameClass")
 @InternalDatabaseApi
-abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEntity<Id>, JpaEntity : SequenceJpaEntity>(
-    protected val jpaEntityRepository: SequenceJpaEntityRepository<JpaEntity>,
+abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEntity<Id>, JpaEntity : SnowflakeJpaEntity>(
+    protected val jpaEntityRepository: SnowflakeJpaEntityRepository<JpaEntity>,
 ) : EntityRepository<Data, Id, Entity> {
 
     @Transactional(readOnly = true)

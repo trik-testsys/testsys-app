@@ -4,7 +4,7 @@ import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import tech.testsys.infra.database.internal.InternalDatabaseApi
-import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
 /**
  * JPA entity of [tech.testsys.domain.model.task.Solution].
@@ -20,4 +20,4 @@ class SolutionJpaEntity(
     @Enumerated(EnumType.STRING)
     val language: TrikSupportedLanguageEnum,
     id: Long? = null,
-) : SequenceJpaEntity(id)
+) : SnowflakeJpaEntity(id)

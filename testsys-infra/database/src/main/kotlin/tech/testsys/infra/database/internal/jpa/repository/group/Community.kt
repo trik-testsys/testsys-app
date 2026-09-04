@@ -3,7 +3,7 @@ package tech.testsys.infra.database.internal.jpa.repository.group
 import org.springframework.stereotype.Repository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.group.CommunityJpaEntity
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [CommunityJpaEntity].
@@ -12,4 +12,4 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
  */
 @Repository
 @InternalDatabaseApi
-interface CommunityJpaEntityRepository : SequenceJpaEntityRepository<CommunityJpaEntity>
+interface CommunityJpaEntityRepository : SnowflakeJpaEntityRepository<CommunityJpaEntity>

@@ -8,7 +8,7 @@ import tech.testsys.infra.database.codegen.api.jpa.CompositeKeyConstructor
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.CompositeId
 import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
-import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
 /**
  * Composite key of [StudentToClassJpaEntity].
@@ -74,4 +74,4 @@ class ClassJpaEntity(
     val description: String,
     val ownerId: Long,
     id: Long? = null,
-) : SequenceJpaEntity(id)
+) : SnowflakeJpaEntity(id)

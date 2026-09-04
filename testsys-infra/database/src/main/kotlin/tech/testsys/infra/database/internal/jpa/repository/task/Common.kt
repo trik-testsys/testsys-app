@@ -4,7 +4,7 @@ import org.springframework.stereotype.Repository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.FileDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionJpaEntity
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [FileDataJpaEntity].
@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
  */
 @Repository
 @InternalDatabaseApi
-interface FileDataJpaEntityRepository : SequenceJpaEntityRepository<FileDataJpaEntity>
+interface FileDataJpaEntityRepository : SnowflakeJpaEntityRepository<FileDataJpaEntity>
 
 /**
  * Spring Data repository for [TrikStudioVersionJpaEntity].
@@ -22,7 +22,7 @@ interface FileDataJpaEntityRepository : SequenceJpaEntityRepository<FileDataJpaE
  */
 @Repository
 @InternalDatabaseApi
-interface TrikStudioVersionJpaEntityRepository : SequenceJpaEntityRepository<TrikStudioVersionJpaEntity> {
+interface TrikStudioVersionJpaEntityRepository : SnowflakeJpaEntityRepository<TrikStudioVersionJpaEntity> {
 
     /**
      * Finds the version with [tag], or `null` if it is not stored.

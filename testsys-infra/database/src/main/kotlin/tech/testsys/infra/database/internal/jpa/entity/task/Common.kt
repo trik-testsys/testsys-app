@@ -5,7 +5,7 @@ import jakarta.persistence.MappedSuperclass
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import tech.testsys.infra.database.internal.InternalDatabaseApi
-import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 import java.util.UUID
 
 /**
@@ -38,7 +38,7 @@ class FileDataJpaEntity(
     val versionBucket: UUID,
     val contentHash: String,
     id: Long? = null,
-) : SequenceJpaEntity(id)
+) : SnowflakeJpaEntity(id)
 
 /**
  * JPA entity of [tech.testsys.domain.model.task.TrikStudioVersion].
@@ -50,7 +50,7 @@ class FileDataJpaEntity(
 @InternalDatabaseApi
 class TrikStudioVersionJpaEntity(
     val tag: String,
-) : SequenceJpaEntity()
+) : SnowflakeJpaEntity()
 
 /**
  * Base of task resources backed by a [FileDataJpaEntity].
@@ -70,4 +70,4 @@ abstract class ResourceJpaEntity(
     val fileDataId: Long,
     val versionBucket: UUID,
     id: Long? = null,
-) : SequenceJpaEntity(id)
+) : SnowflakeJpaEntity(id)

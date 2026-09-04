@@ -6,7 +6,7 @@ import jakarta.persistence.Enumerated
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import tech.testsys.infra.database.internal.InternalDatabaseApi
-import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
 /**
  * JPA entity of [tech.testsys.domain.model.task.Verdict].
@@ -27,7 +27,7 @@ class VerdictJpaEntity(
     val logsId: Long?,
     val recordingId: Long?,
     id: Long? = null,
-) : SequenceJpaEntity(id)
+) : SnowflakeJpaEntity(id)
 
 /**
  * Column form of [tech.testsys.domain.model.task.SubmissionStatus], the lifecycle state of a [SubmissionJpaEntity].
@@ -75,7 +75,7 @@ enum class SubmissionKindJpaEnum {
 class RecordingJpaEntity(
     val fileDataId: Long,
     id: Long? = null,
-) : SequenceJpaEntity(id)
+) : SnowflakeJpaEntity(id)
 
 /**
  * JPA entity of [tech.testsys.domain.model.task.Logs], the textual output captured while grading.
@@ -88,7 +88,7 @@ class RecordingJpaEntity(
 class LogsJpaEntity(
     val fileDataId: Long,
     id: Long? = null,
-) : SequenceJpaEntity(id)
+) : SnowflakeJpaEntity(id)
 
 /**
  * JPA entity of [tech.testsys.domain.model.task.Submission] with status, grading result and kind flattened onto it.
@@ -123,4 +123,4 @@ class SubmissionJpaEntity(
     val kind: SubmissionKindJpaEnum,
     val gradingContestId: Long?,
     id: Long? = null,
-) : SequenceJpaEntity(id)
+) : SnowflakeJpaEntity(id)

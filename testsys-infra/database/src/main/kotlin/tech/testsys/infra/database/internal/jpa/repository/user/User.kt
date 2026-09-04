@@ -3,7 +3,7 @@ package tech.testsys.infra.database.internal.jpa.repository.user
 import org.springframework.stereotype.Repository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [UserJpaEntity].
@@ -12,4 +12,4 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
  */
 @Repository
 @InternalDatabaseApi
-interface UserJpaEntityRepository : SequenceJpaEntityRepository<UserJpaEntity>
+interface UserJpaEntityRepository : SnowflakeJpaEntityRepository<UserJpaEntity>

@@ -6,7 +6,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.LogsJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.RecordingJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.VerdictJpaEntity
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [VerdictJpaEntity].
@@ -15,7 +15,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
  */
 @Repository
 @InternalDatabaseApi
-interface VerdictJpaEntityRepository : SequenceJpaEntityRepository<VerdictJpaEntity>
+interface VerdictJpaEntityRepository : SnowflakeJpaEntityRepository<VerdictJpaEntity>
 
 /**
  * Spring Data repository for [RecordingJpaEntity].
@@ -24,7 +24,7 @@ interface VerdictJpaEntityRepository : SequenceJpaEntityRepository<VerdictJpaEnt
  */
 @Repository
 @InternalDatabaseApi
-interface RecordingJpaEntityRepository : SequenceJpaEntityRepository<RecordingJpaEntity>
+interface RecordingJpaEntityRepository : SnowflakeJpaEntityRepository<RecordingJpaEntity>
 
 /**
  * Spring Data repository for [LogsJpaEntity].
@@ -33,7 +33,7 @@ interface RecordingJpaEntityRepository : SequenceJpaEntityRepository<RecordingJp
  */
 @Repository
 @InternalDatabaseApi
-interface LogsJpaEntityRepository : SequenceJpaEntityRepository<LogsJpaEntity>
+interface LogsJpaEntityRepository : SnowflakeJpaEntityRepository<LogsJpaEntity>
 
 /**
  * Spring Data repository for [SubmissionJpaEntity].
@@ -42,7 +42,7 @@ interface LogsJpaEntityRepository : SequenceJpaEntityRepository<LogsJpaEntity>
  */
 @Repository
 @InternalDatabaseApi
-interface SubmissionJpaEntityRepository : SequenceJpaEntityRepository<SubmissionJpaEntity> {
+interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<SubmissionJpaEntity> {
 
     /**
      * Finds the submissions authored by the user [authorId].

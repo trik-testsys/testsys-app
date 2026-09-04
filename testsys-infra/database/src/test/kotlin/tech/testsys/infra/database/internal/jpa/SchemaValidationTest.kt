@@ -15,7 +15,7 @@ import tech.testsys.domain.contract.StoredBlobRef
  *  1. Liquibase applies every changeset from `db/changelog/db.changelog-master.yaml`.
  *  2. Hibernate's `ddl-auto=validate` (configured in `hibernate-defaults.properties`)
  *     compares the resulting schema against the JPA metamodel of every entity in
- *     `tech.testsys.infra.database.jpa.entity`.
+ *     `tech.testsys.infra.database.internal.jpa.entity`.
  *
  * If either step fails — bad SQL in a migration, a column missing from an entity,
  * type or nullability mismatch — the Spring context fails to start and this test

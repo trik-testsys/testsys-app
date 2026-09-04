@@ -6,10 +6,10 @@ import org.springframework.data.repository.NoRepositoryBean
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.CompositeId
 import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
-import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
 /**
- * Base Spring Data repository of [SequenceJpaEntity] subtypes with [JpaSpecificationExecutor] support;
+ * Base Spring Data repository of [SnowflakeJpaEntity] subtypes with [JpaSpecificationExecutor] support;
  * [NoRepositoryBean], so only the concrete sub-interfaces become beans.
  *
  * @param Entity the stored entity type.
@@ -17,7 +17,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
  */
 @NoRepositoryBean
 @InternalDatabaseApi
-interface SequenceJpaEntityRepository<Entity : SequenceJpaEntity> :
+interface SnowflakeJpaEntityRepository<Entity : SnowflakeJpaEntity> :
     JpaRepository<Entity, Long>,
     JpaSpecificationExecutor<Entity>
 

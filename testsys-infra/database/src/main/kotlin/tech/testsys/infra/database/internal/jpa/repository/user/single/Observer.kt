@@ -8,7 +8,7 @@ import tech.testsys.infra.database.internal.jpa.entity.user.single.CompetitionTo
 import tech.testsys.infra.database.internal.jpa.entity.user.single.CompetitionToObserverJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ObserverDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [CompetitionToObserverJpaEntity].
@@ -36,7 +36,7 @@ interface CompetitionToObserverJpaEntityRepository :
  */
 @Repository
 @InternalDatabaseApi
-interface ObserverDataJpaEntityRepository : SequenceJpaEntityRepository<ObserverDataJpaEntity> {
+interface ObserverDataJpaEntityRepository : SnowflakeJpaEntityRepository<ObserverDataJpaEntity> {
 
     /**
      * Finds the observer data row of the user [userId], or `null` if the user does not hold the role.

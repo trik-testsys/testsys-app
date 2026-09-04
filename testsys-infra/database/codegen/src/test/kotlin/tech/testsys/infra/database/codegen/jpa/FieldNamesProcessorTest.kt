@@ -38,19 +38,19 @@ class FieldNamesProcessorTest {
     }
 
     @Test
-    fun `generates flat Fields object for SequenceJpaEntity subclass`() {
+    fun `generates flat Fields object for SnowflakeJpaEntity subclass`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
             package sample
             import jakarta.persistence.Entity
-            import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
             @Entity
             class SampleJpaEntity(
                 val name: String,
                 val score: Int,
-            ) : SequenceJpaEntity()
+            ) : SnowflakeJpaEntity()
             """.trimIndent(),
         )
 
@@ -66,7 +66,7 @@ class FieldNamesProcessorTest {
         assertTrue(text.contains("""public const val CREATED_AT: String = "createdAt""""), text)
         assertTrue(text.contains("""public const val UPDATED_AT: String = "updatedAt""""), text)
         assertTrue(text.contains("""public const val VERSION: String = "version""""), text)
-        // Inherited from SequenceJpaEntity:
+        // Inherited from SnowflakeJpaEntity:
         assertTrue(text.contains("""public const val ID: String = "id""""), text)
         // Declared on the entity:
         assertTrue(text.contains("""public const val NAME: String = "name""""), text)
@@ -121,13 +121,13 @@ class FieldNamesProcessorTest {
             package sample
             import jakarta.persistence.Entity
             import jakarta.persistence.Transient
-            import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
             @Entity
             class SampleJpaEntity(
                 val keepMe: String,
                 @Transient val skipMe: String,
-            ) : SequenceJpaEntity()
+            ) : SnowflakeJpaEntity()
             """.trimIndent(),
         )
 
@@ -147,14 +147,14 @@ class FieldNamesProcessorTest {
             """
             package sample
             import jakarta.persistence.Entity
-            import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
             @Entity
             class SampleJpaEntity(
                 val zebra: String,
                 val apple: String,
                 val mango: String,
-            ) : SequenceJpaEntity()
+            ) : SnowflakeJpaEntity()
             """.trimIndent(),
         )
 
@@ -236,13 +236,13 @@ class FieldNamesProcessorTest {
             """
             package sample
             import jakarta.persistence.Entity
-            import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
             @Entity
-            class FooJpaEntity(val foo: String) : SequenceJpaEntity()
+            class FooJpaEntity(val foo: String) : SnowflakeJpaEntity()
 
             @Entity
-            class BarJpaEntity(val bar: String) : SequenceJpaEntity()
+            class BarJpaEntity(val bar: String) : SnowflakeJpaEntity()
             """.trimIndent(),
         )
 
@@ -286,7 +286,7 @@ class FieldNamesProcessorTest {
                 @MappedSuperclass
                 abstract class CompositeJpaEntity<T : CompositeId>(val id: T) : JpaEntity()
                 @MappedSuperclass
-                abstract class SequenceJpaEntity(val id: Long? = null) : JpaEntity()
+                abstract class SnowflakeJpaEntity(val id: Long? = null) : JpaEntity()
                 """.trimIndent(),
             ),
         )

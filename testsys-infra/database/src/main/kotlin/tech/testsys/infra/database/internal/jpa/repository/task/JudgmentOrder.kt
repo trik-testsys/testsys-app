@@ -5,7 +5,7 @@ import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.JudgmentOrderJpaEntity
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [JudgmentOrderJpaEntity].
@@ -14,7 +14,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
  */
 @Repository
 @InternalDatabaseApi
-interface JudgmentOrderJpaEntityRepository : SequenceJpaEntityRepository<JudgmentOrderJpaEntity> {
+interface JudgmentOrderJpaEntityRepository : SnowflakeJpaEntityRepository<JudgmentOrderJpaEntity> {
 
     /**
      * Finds the judgment orders issued for verdicts of the submission [submissionId].

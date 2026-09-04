@@ -12,7 +12,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.ContestJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskToContestId
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskToContestJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [TaskToContestJpaEntity].
@@ -106,7 +106,7 @@ interface CommunityToContestJpaEntityRepository :
  */
 @Repository
 @InternalDatabaseApi
-interface ContestJpaEntityRepository : SequenceJpaEntityRepository<ContestJpaEntity> {
+interface ContestJpaEntityRepository : SnowflakeJpaEntityRepository<ContestJpaEntity> {
 
     /**
      * Finds the contests owned by the user [ownerId].

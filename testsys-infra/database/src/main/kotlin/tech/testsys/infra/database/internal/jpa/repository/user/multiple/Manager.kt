@@ -3,7 +3,7 @@ package tech.testsys.infra.database.internal.jpa.repository.user.multiple
 import org.springframework.stereotype.Repository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.ManagerDataJpaEntity
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [ManagerDataJpaEntity].
@@ -12,7 +12,7 @@ import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepo
  */
 @Repository
 @InternalDatabaseApi
-interface ManagerDataJpaEntityRepository : SequenceJpaEntityRepository<ManagerDataJpaEntity> {
+interface ManagerDataJpaEntityRepository : SnowflakeJpaEntityRepository<ManagerDataJpaEntity> {
 
     /**
      * Finds the manager data row of the user [userId], or `null` if the user does not hold the role.

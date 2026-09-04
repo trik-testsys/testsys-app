@@ -12,7 +12,7 @@ import tech.testsys.infra.database.internal.jpa.entity.group.ContestToClassJpaEn
 import tech.testsys.infra.database.internal.jpa.entity.group.StudentToClassId
 import tech.testsys.infra.database.internal.jpa.entity.group.StudentToClassJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
-import tech.testsys.infra.database.internal.jpa.repository.SequenceJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
  * Spring Data repository for [StudentToClassJpaEntity].
@@ -105,7 +105,7 @@ interface ContestToClassJpaEntityRepository : CompositeJpaEntityRepository<Conte
  */
 @Repository
 @InternalDatabaseApi
-interface ClassJpaEntityRepository : SequenceJpaEntityRepository<ClassJpaEntity> {
+interface ClassJpaEntityRepository : SnowflakeJpaEntityRepository<ClassJpaEntity> {
 
     /**
      * Finds the classes owned by the user [ownerId].

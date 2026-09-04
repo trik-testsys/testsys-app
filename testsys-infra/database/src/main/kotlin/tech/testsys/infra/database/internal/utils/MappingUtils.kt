@@ -9,11 +9,11 @@ import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.JpaEntity
-import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikSupportedLanguageEnum
 
 @InternalDatabaseApi
-internal fun <Entity : SequenceJpaEntity> Entity.requireId() = requireNotNull(id) { "${this::class.simpleName} has null id" }
+internal fun <Entity : SnowflakeJpaEntity> Entity.requireId() = requireNotNull(id) { "${this::class.simpleName} has null id" }
 
 @InternalDatabaseApi
 internal fun <Entity : JpaEntity> Entity?.requireById(id: Any) = requireNotNull(this) { "Entity not found by id=$id" }
@@ -25,7 +25,7 @@ internal fun <Entity : DomainEntity<Id>, Id : DomainId> Entity?.requireById(id: 
 
 @InternalDatabaseApi
 internal fun <Entity, Data, DataBuilder : Builder<Data>> DomainEntityWithDataBuilder<Entity, Data, DataBuilder>.populateFields(
-    jpaEntity: SequenceJpaEntity,
+    jpaEntity: SnowflakeJpaEntity,
 ) {
     id = jpaEntity.requireId()
     createdAt = jpaEntity.createdAt

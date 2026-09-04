@@ -89,11 +89,15 @@ Tests for builders extend `DomainEntityBuilderTests<Entity, Data, DataBuilder>` 
 
 Layers, each with `group/`, `task/`, `user/` sub-packages mirroring the domain:
 
-- `internal/jpa/entity` — JPA entities. `SequenceJpaEntity` (sequence-generated `Long? id`) for real entities,
+- `internal/jpa/entity` — JPA entities. `SnowflakeJpaEntity` (`Long? id` issued by `SnowflakeIdGenerator`: 32 bits of seconds since
+  2026-01-01, 10 bits of node id, 16 bits of a per-second counter; no DB sequences) for real entities,
   `CompositeJpaEntity<T : CompositeId>` with an `@Embeddable data class` key for join tables. Both inherit `createdAt`/`updatedAt`/`@Version`
   from `JpaEntity`. Entities store foreign keys as plain `Long` columns (`ownerId`, `wipContentId`) — no JPA associations.
-- `internal/jpa/repository` — Spring Data interfaces extending `SequenceJpaEntityRepository` / `CompositeJpaEntityRepository`
+- `internal/jpa/repository` — Spring Data interfaces extending `SnowflakeJpaEntityRepository` / `CompositeJpaEntityRepository`
   (both include `JpaSpecificationExecutor`).
+- Node id: `spring.jpa.properties.testsys.id.node-id` (default `0` in `hibernate-defaults.properties`, must differ per running
+  instance; blank/non-numeric/out-of-range fails startup). The env var `SPRING_JPA_PROPERTIES_TESTSYS_ID_NODE_ID` does NOT work,
+  Spring Boot relaxes it to `testsys.id.node.id`; use application properties, `--spring.jpa.properties...=N` or `-D...`.
 - `internal/mapping` — `object XMapping : EntityMapping<Domain, Jpa>` with `toDomain(...)` and `toJpaEntity(...)` overloads
   (one for new `Data`, one for updating an existing row that copies `createdAt` and `version` from the current row).
   `XMappingTest : EntityMappingTest<XMapping>` enforces the method/return-type contract via reflection.
@@ -108,4 +112,4 @@ Layers, each with `group/`, `task/`, `user/` sub-packages mirroring the domain:
   versions of one logical file share a `versionBucket` UUID; `storeIfChanged` dedups by filename + content hash.
 - Schema: Liquibase changelogs in `src/main/resources/db/changelog/changes/x.y.z/` (master lists them in order);
   Hibernate runs with `ddl-auto=validate`, so every entity change needs a matching changeset. Table/column names come from
-  `TestsysPhysicalNamingStrategy`. `SchemaValidationTest` (H2 in PostgreSQL mode) is currently commented out.
+  `TestsysPhysicalNamingStrategy`. `SchemaValidationTest` (H2 in PostgreSQL mode) applies the changelogs and runs that validation.

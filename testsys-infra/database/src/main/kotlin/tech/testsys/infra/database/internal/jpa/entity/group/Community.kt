@@ -4,7 +4,7 @@ import jakarta.persistence.Entity
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import tech.testsys.infra.database.internal.InternalDatabaseApi
-import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
 /**
  * JPA entity of [tech.testsys.domain.model.group.Community].
@@ -22,4 +22,4 @@ class CommunityJpaEntity(
     val description: String,
     val ownerId: Long,
     id: Long? = null,
-) : SequenceJpaEntity(id)
+) : SnowflakeJpaEntity(id)

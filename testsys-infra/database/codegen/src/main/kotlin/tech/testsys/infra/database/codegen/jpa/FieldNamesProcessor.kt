@@ -16,12 +16,8 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.writeTo
 
 /**
- * KSP processor that emits a `<EntityName>Fields` object containing string
- * constants for every JPA-mapped property of every `@jakarta.persistence.Entity`.
- *
- * Tolerant by design: never fails the build. See spec for the contract.
- *
- * @since %CURRENT_VERSION%
+ * Emits a `<Entity>Fields` object with a `const val` property name per non-transient property of every `@Entity`,
+ * plus a nested `Id` object for `CompositeJpaEntity` subclasses. Never fails the build.
  */
 internal class FieldNamesProcessor(
     private val codeGenerator: CodeGenerator,
@@ -29,7 +25,7 @@ internal class FieldNamesProcessor(
 ) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        resolver.getSymbolsWithAnnotation(JPA_ENTITY_FQN)
+        resolver.getSymbolsWithAnnotation(JpaFqns.JPA_ENTITY)
             .filterIsInstance<KSClassDeclaration>()
             .forEach { processEntity(it) }
         return emptyList()
@@ -41,17 +37,11 @@ internal class FieldNamesProcessor(
         emitFieldsObject(entity, properties, compositeIdType)
     }
 
-    /**
-     * Walks the superclass chain root-first and concatenates the
-     * `getDeclaredProperties()` of each class. This produces a stable order
-     * independent of any KSP iteration quirks: deepest ancestor's properties
-     * first, then closer ancestors, finally the entity's own properties in
-     * primary-constructor / body declaration order.
-     */
+    /** Properties of [decl] and its superclasses, root-first and in declaration order, so the output is stable. */
     private fun collectPropertiesInOrder(decl: KSClassDeclaration): List<KSPropertyDeclaration> {
         val chain = mutableListOf<KSClassDeclaration>()
         var current: KSClassDeclaration? = decl
-        while (current != null && current.qualifiedName?.asString() != KOTLIN_ANY_FQN) {
+        while (current != null && current.qualifiedName?.asString() != JpaFqns.KOTLIN_ANY) {
             chain.add(current)
             current = current.superTypes
                 .map { it.resolve().declaration }
@@ -62,19 +52,14 @@ internal class FieldNamesProcessor(
     }
 
     private fun hasTransient(prop: KSPropertyDeclaration): Boolean = prop.annotations.any {
-        it.annotationType.resolve().declaration.qualifiedName?.asString() == JPA_TRANSIENT_FQN
+        it.annotationType.resolve().declaration.qualifiedName?.asString() == JpaFqns.JPA_TRANSIENT
     }
 
-    /**
-     * Resolves the composite-id type argument `T` of `CompositeJpaEntity<T>` if
-     * the entity directly extends it. Returns `null` otherwise. Inspects only
-     * direct supertypes — matches the behaviour of
-     * [CompositeKeyConstructorProcessor.resolveCompositeIdType].
-     */
+    /** Type argument `T` when [entity] directly extends `CompositeJpaEntity<T>`, otherwise `null`. */
     private fun resolveCompositeIdType(entity: KSClassDeclaration): KSClassDeclaration? {
         val supertype = entity.superTypes
             .map { it.resolve() }
-            .firstOrNull { it.declaration.qualifiedName?.asString() == COMPOSITE_JPA_ENTITY_FQN }
+            .firstOrNull { it.declaration.qualifiedName?.asString() == JpaFqns.COMPOSITE_JPA_ENTITY }
         if (supertype == null) return null
         return supertype.arguments.firstOrNull()
             ?.type?.resolve()?.declaration as? KSClassDeclaration
@@ -120,12 +105,7 @@ internal class FieldNamesProcessor(
         )
     }
 
-    /**
-     * Builds a nested `object Id { ... }` with one `const val` per
-     * primary-constructor parameter of the composite id type. Returns `null`
-     * (and logs a warning) if the id type has no primary constructor — the
-     * outer object is still emitted by the caller.
-     */
+    /** Nested `object Id` with a constant per primary constructor parameter of [idType]; `null` with a warning if it has none. */
     private fun buildNestedIdObject(idType: KSClassDeclaration, reportNode: KSClassDeclaration): TypeSpec? {
         val ctor = idType.primaryConstructor
         if (ctor == null) {
@@ -149,26 +129,9 @@ internal class FieldNamesProcessor(
         return nested.build()
     }
 
-    /**
-     * Converts a `camelCase` or `PascalCase` Kotlin identifier into
-     * `SCREAMING_SNAKE_CASE`, required by detekt's `ObjectPropertyNaming`
-     * rule for `const val`.
-     *
-     * Examples:
-     *  - `authorId`               -> `AUTHOR_ID`
-     *  - `gradingErrorDescription` -> `GRADING_ERROR_DESCRIPTION`
-     *  - `URLValue`               -> `URL_VALUE`
-     */
+    /** `camelCase` to `SCREAMING_SNAKE_CASE` (`URLValue` becomes `URL_VALUE`), as detekt requires for `const val`. */
     private fun toScreamingSnakeCase(name: String): String = name
         .replace(Regex("([a-z0-9])([A-Z])"), "$1_$2")
         .replace(Regex("([A-Z]+)([A-Z][a-z])"), "$1_$2")
         .uppercase()
-
-    private companion object {
-
-        const val JPA_ENTITY_FQN = "jakarta.persistence.Entity"
-        const val JPA_TRANSIENT_FQN = "jakarta.persistence.Transient"
-        const val KOTLIN_ANY_FQN = "kotlin.Any"
-        const val COMPOSITE_JPA_ENTITY_FQN = "tech.testsys.infra.database.jpa.entity.CompositeJpaEntity"
-    }
 }

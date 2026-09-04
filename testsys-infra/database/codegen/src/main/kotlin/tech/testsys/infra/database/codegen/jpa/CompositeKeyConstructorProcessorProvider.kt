@@ -5,10 +5,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 
 /**
- * KSP service entry point for [CompositeKeyConstructorProcessor].
- *
- * Discovered at runtime via the SPI file at
- * `META-INF/services/com.google.devtools.ksp.processing.SymbolProcessorProvider`.
+ * KSP service entry point of [CompositeKeyConstructorProcessor], registered in `META-INF/services`.
  *
  * @since %CURRENT_VERSION%
  */

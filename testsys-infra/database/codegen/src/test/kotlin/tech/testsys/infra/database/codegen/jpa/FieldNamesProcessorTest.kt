@@ -44,7 +44,7 @@ class FieldNamesProcessorTest {
             """
             package sample
             import jakarta.persistence.Entity
-            import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
             @Entity
             class SampleJpaEntity(
@@ -81,8 +81,8 @@ class FieldNamesProcessorTest {
             package sample
             import jakarta.persistence.Embeddable
             import jakarta.persistence.Entity
-            import tech.testsys.infra.database.jpa.entity.CompositeId
-            import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeId
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 
             @Embeddable
             data class SampleId(val contestId: Long, val competitionId: Long) : CompositeId
@@ -121,7 +121,7 @@ class FieldNamesProcessorTest {
             package sample
             import jakarta.persistence.Entity
             import jakarta.persistence.Transient
-            import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
             @Entity
             class SampleJpaEntity(
@@ -147,7 +147,7 @@ class FieldNamesProcessorTest {
             """
             package sample
             import jakarta.persistence.Entity
-            import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
             @Entity
             class SampleJpaEntity(
@@ -202,8 +202,8 @@ class FieldNamesProcessorTest {
             package sample
             import jakarta.persistence.Embeddable
             import jakarta.persistence.Entity
-            import tech.testsys.infra.database.jpa.entity.CompositeId
-            import tech.testsys.infra.database.jpa.entity.CompositeJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeId
+            import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 
             @Embeddable
             class WeirdId : CompositeId {
@@ -236,7 +236,7 @@ class FieldNamesProcessorTest {
             """
             package sample
             import jakarta.persistence.Entity
-            import tech.testsys.infra.database.jpa.entity.SequenceJpaEntity
+            import tech.testsys.infra.database.internal.jpa.entity.SequenceJpaEntity
 
             @Entity
             class FooJpaEntity(val foo: String) : SequenceJpaEntity()
@@ -273,7 +273,7 @@ class FieldNamesProcessorTest {
             SourceFile.kotlin(
                 "BaseEntities.kt",
                 """
-                package tech.testsys.infra.database.jpa.entity
+                package tech.testsys.infra.database.internal.jpa.entity
                 import java.io.Serializable
                 import jakarta.persistence.MappedSuperclass
                 @MappedSuperclass

@@ -16,12 +16,11 @@ import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
+import tech.testsys.infra.database.codegen.api.jpa.CompositeKeyConstructor
 
 /**
- * KSP processor that emits a top-level "fake constructor" function for every class
- * annotated with [CompositeKeyConstructor]. See spec for the contract.
- *
- * @since %CURRENT_VERSION%
+ * Emits a top-level factory function for every class annotated with [CompositeKeyConstructor];
+ * contract violations are reported as compilation errors.
  */
 internal class CompositeKeyConstructorProcessor(
     private val codeGenerator: CodeGenerator,
@@ -89,7 +88,7 @@ internal class CompositeKeyConstructorProcessor(
         val supertype = entity.superTypes
             .map { it.resolve() }
             .firstOrNull {
-                it.declaration.qualifiedName?.asString() == COMPOSITE_JPA_ENTITY_FQN
+                it.declaration.qualifiedName?.asString() == JpaFqns.COMPOSITE_JPA_ENTITY
             }
         if (supertype == null) {
             logger.error(
@@ -147,8 +146,6 @@ internal class CompositeKeyConstructorProcessor(
             .addFunction(function)
             .build()
 
-        // kotlinpoet-ksp's `writeTo` constructs the right KSP `Dependencies` object
-        // from the originating files; no need to build it manually.
         file.writeTo(
             codeGenerator = codeGenerator,
             aggregating = false,
@@ -158,8 +155,7 @@ internal class CompositeKeyConstructorProcessor(
 
     private companion object {
 
-        const val COMPOSITE_JPA_ENTITY_FQN = "tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity"
-        const val COMPOSITE_KEY_CONSTRUCTOR_FQN = "tech.testsys.infra.database.codegen.api.jpa.CompositeKeyConstructor"
+        val COMPOSITE_KEY_CONSTRUCTOR_FQN = requireNotNull(CompositeKeyConstructor::class.qualifiedName)
 
         val INTERNAL_DATABASE_API_NAME = ClassName("tech.testsys.infra.database.internal", "InternalDatabaseApi")
     }

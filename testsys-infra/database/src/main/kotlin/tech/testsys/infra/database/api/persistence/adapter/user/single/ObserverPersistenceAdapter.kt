@@ -61,7 +61,7 @@ class ObserverPersistenceAdapter(
         val currentUserJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val currentDataJpaEntity = observerDataJpaEntityRepository.findByUserId(entity.id.value).requireById(entity.id.value)
 
-        val updatedUserJpaEntity = jpaEntityRepository.save(
+        val updatedUserJpaEntity = jpaEntityRepository.saveAndFlush(
             ObserverMapping.toUserJpaEntity(entity, currentUserJpaEntity),
         )
         val updatedDataJpaEntity = observerDataJpaEntityRepository.save(

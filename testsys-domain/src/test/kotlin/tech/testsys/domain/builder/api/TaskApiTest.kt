@@ -3,6 +3,7 @@ package tech.testsys.domain.builder.api
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.CommunityId
@@ -59,6 +60,7 @@ class TaskApiTest {
         private val origin = Submission(
             id = SubmissionId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = SubmissionData(
                 author = LazyEntity(MultipleRoleUserId(10)),
                 solution = LazyEntity(SolutionId(15)),
@@ -105,6 +107,7 @@ class TaskApiTest {
         private val origin = Contest(
             id = ContestId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = ContestData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Original Contest",
@@ -150,6 +153,7 @@ class TaskApiTest {
         private val origin = DeveloperSolution(
             id = DeveloperSolutionId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = DeveloperSolutionData(
                 name = "Reference",
                 description = "Reference solution",
@@ -187,6 +191,7 @@ class TaskApiTest {
         private val origin = Exercise(
             id = ExerciseId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = ExerciseData(
                 name = "Exercise",
                 description = "Exercise description",
@@ -225,6 +230,7 @@ class TaskApiTest {
         private val origin = JudgmentOrder(
             id = JudgmentOrderId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = JudgmentOrderData(
                 judge = LazyEntity(MultipleRoleUserId(10)),
                 verdict = LazyEntity(VerdictId(20)),
@@ -258,6 +264,7 @@ class TaskApiTest {
         private val origin = Solution(
             id = SolutionId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = SolutionData(
                 file = FileData("solution.py", byteArrayOf(4, 5, 6)),
                 language = TrikSupportedLanguage.Python,
@@ -291,6 +298,7 @@ class TaskApiTest {
         private val origin = Statement(
             id = StatementId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = StatementData(
                 file = FileData("statement.pdf", byteArrayOf(7, 8, 9)),
                 name = "Statement",
@@ -327,6 +335,7 @@ class TaskApiTest {
         private val origin = tech.testsys.domain.model.task.Test(
             id = TestId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = TestData(
                 file = FileData("test.xml", byteArrayOf(1, 2)),
                 name = "Polygon",
@@ -362,6 +371,7 @@ class TaskApiTest {
         private val origin = Verdict(
             id = VerdictId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = VerdictData(
                 score = Score(85),
                 task = LazyEntity(TaskId(10)),
@@ -396,6 +406,7 @@ class TaskApiTest {
         private val origin = Task(
             id = TaskId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = TaskData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Task Name",
@@ -467,6 +478,7 @@ class TaskApiTest {
         private val origin = Task(
             id = TaskId(2),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = TaskData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Committed Task",
@@ -533,6 +545,7 @@ class TaskApiTest {
         private val origin = Task(
             id = TaskId(3),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = TaskData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Uncommited Task",

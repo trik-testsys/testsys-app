@@ -95,7 +95,7 @@ class VerdictDataBuilder : Builder<VerdictData> {
 }
 
 /**
- * Builder of [Verdict] entities. Required: [id], [createdAt], [data].
+ * Builder of [Verdict] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -106,11 +106,13 @@ class VerdictBuilder : DomainEntityWithDataBuilder<Verdict, VerdictData, Verdict
     override fun build(): Verdict {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Verdict(
             id = VerdictId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }
@@ -194,7 +196,7 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
 }
 
 /**
- * Builder of [Submission] entities. Required: [id], [createdAt], [data].
+ * Builder of [Submission] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -205,11 +207,13 @@ class SubmissionBuilder : DomainEntityWithDataBuilder<Submission, SubmissionData
     override fun build(): Submission {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Submission(
             id = SubmissionId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

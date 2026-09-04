@@ -38,7 +38,7 @@ class RecordingDataBuilder : Builder<RecordingData> {
 }
 
 /**
- * Builder of [Recording] entities. Required: [id], [createdAt], [data].
+ * Builder of [Recording] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -49,11 +49,13 @@ class RecordingBuilder : DomainEntityWithDataBuilder<Recording, RecordingData, R
     override fun build(): Recording {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Recording(
             id = RecordingId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

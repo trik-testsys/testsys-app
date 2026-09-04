@@ -48,7 +48,7 @@ class CommunityDataBuilder : Builder<CommunityData> {
 }
 
 /**
- * Builder of [Community] entities. Required: [id], [createdAt], [data].
+ * Builder of [Community] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -59,11 +59,13 @@ class CommunityBuilder : DomainEntityWithDataBuilder<Community, CommunityData, C
     override fun build(): Community {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Community(
             id = CommunityId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

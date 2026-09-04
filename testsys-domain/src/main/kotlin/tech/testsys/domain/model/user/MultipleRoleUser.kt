@@ -1,5 +1,6 @@
 package tech.testsys.domain.model.user
 
+import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
@@ -51,8 +52,9 @@ value class MultipleRoleUserId(
 class MultipleRoleUser(
     id: MultipleRoleUserId,
     createdAt: Instant,
+    version: EntityVersion,
     val data: MultipleRoleUserData,
-) : User<MultipleRoleUserId>(id, createdAt, data)
+) : User<MultipleRoleUserId>(id, createdAt, version, data)
 
 /**
  * A non-fixed role of a [MultipleRoleUser]: one that can be held together with other roles of this kind.

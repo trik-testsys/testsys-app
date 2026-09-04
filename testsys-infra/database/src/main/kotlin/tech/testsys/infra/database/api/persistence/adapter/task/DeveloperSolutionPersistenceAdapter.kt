@@ -44,7 +44,7 @@ class DeveloperSolutionPersistenceAdapter(
     override fun update(entity: DeveloperSolution): DeveloperSolution {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val updatedJpaEntity = DeveloperSolutionMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.save(updatedJpaEntity)
+        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
 
         val domainEntity = DeveloperSolutionMapping.toDomain(savedJpaEntity)
         return domainEntity

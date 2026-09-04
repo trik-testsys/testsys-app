@@ -58,7 +58,7 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
 }
 
 /**
- * Builder of [JudgmentOrder] entities. Required: [id], [createdAt], [data].
+ * Builder of [JudgmentOrder] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -69,11 +69,13 @@ class JudgmentOrderBuilder : DomainEntityWithDataBuilder<JudgmentOrder, Judgment
     override fun build(): JudgmentOrder {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return JudgmentOrder(
             id = JudgmentOrderId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

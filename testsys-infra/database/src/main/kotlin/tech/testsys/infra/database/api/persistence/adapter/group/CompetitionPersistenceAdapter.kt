@@ -54,7 +54,7 @@ class CompetitionPersistenceAdapter(
     override fun update(entity: Competition): Competition {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val updatedJpaEntity = CompetitionMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.save(updatedJpaEntity)
+        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
 
         val competitionId = savedJpaEntity.requireId()
 

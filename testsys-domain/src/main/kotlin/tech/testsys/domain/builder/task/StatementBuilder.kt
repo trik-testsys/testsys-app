@@ -54,7 +54,7 @@ class StatementDataBuilder : Builder<StatementData> {
 }
 
 /**
- * Builder of [Statement] entities. Required: [id], [createdAt], [data].
+ * Builder of [Statement] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -65,11 +65,13 @@ class StatementBuilder : DomainEntityWithDataBuilder<Statement, StatementData, S
     override fun build(): Statement {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Statement(
             id = StatementId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

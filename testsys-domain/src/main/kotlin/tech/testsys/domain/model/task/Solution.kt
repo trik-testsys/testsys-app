@@ -2,6 +2,7 @@ package tech.testsys.domain.model.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
+import tech.testsys.domain.model.EntityVersion
 import java.time.Instant
 
 /**
@@ -35,5 +36,6 @@ data class SolutionData(
 class Solution(
     id: SolutionId,
     createdAt: Instant,
+    version: EntityVersion,
     val data: SolutionData,
-) : DomainEntity<SolutionId>(id, createdAt)
+) : DomainEntity<SolutionId>(id, createdAt, version)

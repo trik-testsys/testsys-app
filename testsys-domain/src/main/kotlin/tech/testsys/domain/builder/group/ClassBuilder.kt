@@ -75,7 +75,7 @@ class ClassDataBuilder : Builder<ClassData> {
 }
 
 /**
- * Builder of [Class] entities. Required: [id], [createdAt], [data].
+ * Builder of [Class] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -86,11 +86,13 @@ class ClassBuilder : DomainEntityWithDataBuilder<Class, ClassData, ClassDataBuil
     override fun build(): Class {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Class(
             id = ClassId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

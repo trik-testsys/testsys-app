@@ -49,6 +49,6 @@ object RecordingMapping : EntityMapping<Recording, RecordingJpaEntity> {
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = current.version
+        it.version = entity.version.value
     }
 }

@@ -81,7 +81,7 @@ class TaskPersistenceAdapter(
         )
 
         val updatedJpaEntity = TaskMapping.toJpaEntity(entity, currentJpaEntity, wipContentId, commitedContentId)
-        val savedJpaEntity = jpaEntityRepository.save(updatedJpaEntity)
+        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
         val taskId = savedJpaEntity.requireId()
         syncSharedTo(taskId, entity.data.sharedTo.ids)
 

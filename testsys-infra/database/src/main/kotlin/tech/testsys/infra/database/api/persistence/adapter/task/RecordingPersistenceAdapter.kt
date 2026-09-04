@@ -41,7 +41,7 @@ class RecordingPersistenceAdapter(
     override fun update(entity: Recording): Recording {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val newFileDataId = fileDataStorage.storeIfChanged(currentJpaEntity.fileDataId, entity.data.file)
-        val updatedJpaEntity = jpaEntityRepository.save(
+        val updatedJpaEntity = jpaEntityRepository.saveAndFlush(
             RecordingMapping.toJpaEntity(entity, currentJpaEntity, newFileDataId),
         )
 

@@ -38,7 +38,7 @@ class LogsDataBuilder : Builder<LogsData> {
 }
 
 /**
- * Builder of [Logs] entities. Required: [id], [createdAt], [data].
+ * Builder of [Logs] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -49,11 +49,13 @@ class LogsBuilder : DomainEntityWithDataBuilder<Logs, LogsData, LogsDataBuilder>
     override fun build(): Logs {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Logs(
             id = LogsId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

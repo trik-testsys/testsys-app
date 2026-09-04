@@ -92,10 +92,11 @@ interface EntitySaver<Data, Id : DomainId, Entity : DomainEntity<Id>> {
     fun save(dataList: List<Data>): List<Entity>
 
     /**
-     * Updates an existing entity.
+     * Updates an existing entity; fails when the stored entity has changed since [entity] was loaded, i.e. its
+     * [DomainEntity.version] is stale.
      *
      * @param entity the entity with updated data.
-     * @return the saved entity.
+     * @return the saved entity carrying the new version.
      * @since %CURRENT_VERSION%
      */
     fun update(entity: Entity): Entity

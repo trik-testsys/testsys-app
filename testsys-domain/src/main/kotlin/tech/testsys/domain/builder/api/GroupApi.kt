@@ -74,7 +74,7 @@ private fun ClassData.toBuilder(): ClassDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Class.withData(builder: ClassDataBuilder.() -> Unit): Class {
-    return Class(this.id, this.createdAt, this.data.toBuilder().apply(builder).build())
+    return Class(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
 }
 
 private fun CommunityData.toBuilder(): CommunityDataBuilder {
@@ -92,7 +92,7 @@ private fun CommunityData.toBuilder(): CommunityDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Community.withData(builder: CommunityDataBuilder.() -> Unit): Community {
-    return Community(this.id, this.createdAt, this.data.toBuilder().apply(builder).build())
+    return Community(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
 }
 
 private fun CompetitionData.toBuilder(): CompetitionDataBuilder {
@@ -112,5 +112,5 @@ private fun CompetitionData.toBuilder(): CompetitionDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Competition.withData(builder: CompetitionDataBuilder.() -> Unit): Competition {
-    return Competition(this.id, this.createdAt, this.data.toBuilder().apply(builder).build())
+    return Competition(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
 }

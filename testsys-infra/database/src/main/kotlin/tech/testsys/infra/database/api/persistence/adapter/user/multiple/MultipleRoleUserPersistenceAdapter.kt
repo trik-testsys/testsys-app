@@ -91,7 +91,7 @@ class MultipleRoleUserPersistenceAdapter(
     @Transactional
     override fun update(entity: MultipleRoleUser): MultipleRoleUser {
         val currentUserJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val updatedUserJpaEntity = jpaEntityRepository.save(
+        val updatedUserJpaEntity = jpaEntityRepository.saveAndFlush(
             MultipleRoleUserMapping.toUserJpaEntity(entity, currentUserJpaEntity),
         )
         val userId = updatedUserJpaEntity.requireId()

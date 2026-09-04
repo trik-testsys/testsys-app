@@ -55,7 +55,7 @@ class ParticipantPersistenceAdapter(
         val currentUserJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val currentDataJpaEntity = participantDataJpaEntityRepository.findByUserId(entity.id.value).requireById(entity.id.value)
 
-        val updatedUserJpaEntity = jpaEntityRepository.save(
+        val updatedUserJpaEntity = jpaEntityRepository.saveAndFlush(
             ParticipantMapping.toUserJpaEntity(entity, currentUserJpaEntity),
         )
         val updatedDataJpaEntity = participantDataJpaEntityRepository.save(

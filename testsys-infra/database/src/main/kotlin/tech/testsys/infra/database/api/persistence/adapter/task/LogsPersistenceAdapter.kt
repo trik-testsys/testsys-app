@@ -41,7 +41,7 @@ class LogsPersistenceAdapter(
     override fun update(entity: Logs): Logs {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val newFileDataId = fileDataStorage.storeIfChanged(currentJpaEntity.fileDataId, entity.data.file)
-        val updatedJpaEntity = jpaEntityRepository.save(
+        val updatedJpaEntity = jpaEntityRepository.saveAndFlush(
             LogsMapping.toJpaEntity(entity, currentJpaEntity, newFileDataId),
         )
 

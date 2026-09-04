@@ -66,7 +66,8 @@ Hexagonal: the domain module defines ports under `tech.testsys.domain.contract`,
 
 - Every entity extends `DomainEntity<Id>`; ids are `@JvmInline value class`es implementing `DomainId` (`TaskId`, `ContestId`, …). Equality is class + id only.
   Exception: `SingleRoleUserId` is shared by `Participant`, `Observer`, `Supervisor`.
-- Each entity is split into an immutable `X(id, createdAt, data)` and an `XData` payload. Updates produce a new instance via `X.withData { … }`.
+- Each entity is split into an immutable `X(id, createdAt, version, data)` and an `XData` payload. Updates produce a new instance via `X.withData { … }`, which keeps `version`.
+  `version: EntityVersion` is an opaque optimistic-lock token: issued by persistence, passed back on `update`, never compared or modified in the domain; a stale token makes `update` fail.
 - Entities never hold references to other entities. Relations are `LazyEntity<Id, E>` / `LazyEntityList<Id, E>` (ids only) resolved through `EntityLoader.load(...)`.
   Create them with `id.lazify()` / `ids.lazify()`.
 - Variant state is modelled with sealed hierarchies, e.g. `TaskContent` (`New` / `Uncommited` / `Committed`, wip vs. last committed content),

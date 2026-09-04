@@ -76,7 +76,7 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
 }
 
 /**
- * Builder of [Competition] entities. Required: [id], [createdAt], [data].
+ * Builder of [Competition] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -87,11 +87,13 @@ class CompetitionBuilder : DomainEntityWithDataBuilder<Competition, CompetitionD
     override fun build(): Competition {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Competition(
             id = CompetitionId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

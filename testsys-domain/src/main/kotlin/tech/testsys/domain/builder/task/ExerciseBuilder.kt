@@ -59,7 +59,7 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
 }
 
 /**
- * Builder of [Exercise] entities. Required: [id], [createdAt], [data].
+ * Builder of [Exercise] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -70,11 +70,13 @@ class ExerciseBuilder : DomainEntityWithDataBuilder<Exercise, ExerciseData, Exer
     override fun build(): Exercise {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Exercise(
             id = ExerciseId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

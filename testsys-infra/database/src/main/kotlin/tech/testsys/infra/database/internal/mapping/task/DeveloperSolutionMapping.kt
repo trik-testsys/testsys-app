@@ -64,6 +64,6 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
         fileDataId = current.fileDataId,
     ).also {
         it.createdAt = current.createdAt
-        it.version = current.version
+        it.version = entity.version.value
     }
 }

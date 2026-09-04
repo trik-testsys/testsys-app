@@ -54,7 +54,7 @@ class ClassPersistenceAdapter(
     override fun update(entity: Class): Class {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val updatedJpaEntity = ClassMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.save(updatedJpaEntity)
+        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
 
         val classId = savedJpaEntity.requireId()
 

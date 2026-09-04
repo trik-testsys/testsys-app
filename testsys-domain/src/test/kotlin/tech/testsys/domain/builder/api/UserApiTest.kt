@@ -3,6 +3,7 @@ package tech.testsys.domain.builder.api
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.CommunityId
@@ -32,6 +33,7 @@ class UserApiTest {
         private val origin = Participant(
             id = SingleRoleUserId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = ParticipantData(
                 competition = LazyEntity(CompetitionId(10)),
                 accessToken = "participant-token",
@@ -64,6 +66,7 @@ class UserApiTest {
         private val origin = Observer(
             id = SingleRoleUserId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = ObserverData(
                 community = LazyEntity(CommunityId(7)),
                 competitions = LazyEntityList(listOf(CompetitionId(10), CompetitionId(20))),
@@ -98,6 +101,7 @@ class UserApiTest {
         private val origin = MultipleRoleUser(
             id = MultipleRoleUserId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = MultipleRoleUserData(
                 accessToken = "user-token",
                 name = "Alice",
@@ -143,6 +147,7 @@ class UserApiTest {
         private val origin = Supervisor(
             id = SingleRoleUserId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = SupervisorData(
                 accessToken = "supervisor-token",
                 name = "Supervisor",

@@ -38,7 +38,7 @@ class CommunityPersistenceAdapter(
     override fun update(entity: Community): Community {
         val currentJpaEntity = jpaEntityRepository.findByIdOrNull(entity.id.value).requireById(entity.id.value)
         val updatedJpaEntity = CommunityMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.save(updatedJpaEntity)
+        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
 
         return assemble(savedJpaEntity)
     }

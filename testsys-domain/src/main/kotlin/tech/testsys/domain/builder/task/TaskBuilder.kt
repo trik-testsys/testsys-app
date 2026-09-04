@@ -182,7 +182,7 @@ class TaskDataBuilder : Builder<TaskData> {
 }
 
 /**
- * Builder of [Task] entities. Required: [id], [createdAt], [data].
+ * Builder of [Task] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -193,11 +193,13 @@ class TaskBuilder : DomainEntityWithDataBuilder<Task, TaskData, TaskDataBuilder>
     override fun build(): Task {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Task(
             id = TaskId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

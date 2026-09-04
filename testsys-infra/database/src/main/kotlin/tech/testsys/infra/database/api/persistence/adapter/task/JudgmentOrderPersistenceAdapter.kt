@@ -33,7 +33,7 @@ class JudgmentOrderPersistenceAdapter(
     override fun update(entity: JudgmentOrder): JudgmentOrder {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val updatedJpaEntity = JudgmentOrderMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.save(updatedJpaEntity)
+        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
 
         val domainEntity = JudgmentOrderMapping.toDomain(savedJpaEntity)
         return domainEntity

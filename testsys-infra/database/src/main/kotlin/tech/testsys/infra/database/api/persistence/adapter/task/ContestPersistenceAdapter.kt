@@ -59,7 +59,7 @@ class ContestPersistenceAdapter(
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val trikStudioVersion = trikStudioVersionJpaEntityRepository.findByTag(entity.data.trikStudioVersion.version) ?: TODO()
         val updatedJpaEntity = ContestMapping.toJpaEntity(entity, currentJpaEntity, trikStudioVersion.requireId())
-        val savedJpaEntity = jpaEntityRepository.save(updatedJpaEntity)
+        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
 
         val contestId = savedJpaEntity.requireId()
 

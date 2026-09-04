@@ -52,7 +52,7 @@ class SupervisorPersistenceAdapter(
         val currentUserJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val currentDataJpaEntity = supervisorDataJpaEntityRepository.findByUserId(entity.id.value).requireById(entity.id.value)
 
-        val updatedUserJpaEntity = jpaEntityRepository.save(
+        val updatedUserJpaEntity = jpaEntityRepository.saveAndFlush(
             SupervisorMapping.toUserJpaEntity(entity, currentUserJpaEntity),
         )
 

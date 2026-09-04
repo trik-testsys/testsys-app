@@ -396,7 +396,7 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
 }
 
 /**
- * Builder of [MultipleRoleUser] entities. Required: [id], [createdAt], [data].
+ * Builder of [MultipleRoleUser] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -411,11 +411,13 @@ class MultipleRoleUserBuilder :
     override fun build(): MultipleRoleUser {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return MultipleRoleUser(
             id = MultipleRoleUserId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

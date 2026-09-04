@@ -55,6 +55,6 @@ object JudgmentOrderMapping : EntityMapping<JudgmentOrder, JudgmentOrderJpaEntit
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = current.version
+        it.version = entity.version.value
     }
 }

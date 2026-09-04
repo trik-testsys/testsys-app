@@ -124,7 +124,7 @@ private fun ParticipantData.toBuilder(): ParticipantDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Participant.withData(builder: ParticipantDataBuilder.() -> Unit): Participant {
-    return Participant(this.id, this.createdAt, this.data.toBuilder().apply(builder).build())
+    return Participant(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
 }
 
 private fun ObserverData.toBuilder(): ObserverDataBuilder {
@@ -143,7 +143,7 @@ private fun ObserverData.toBuilder(): ObserverDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Observer.withData(builder: ObserverDataBuilder.() -> Unit): Observer {
-    return Observer(this.id, this.createdAt, this.data.toBuilder().apply(builder).build())
+    return Observer(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
 }
 
 private fun MultipleRoleUserData.toBuilder(): MultipleRoleUserDataBuilder {
@@ -162,7 +162,7 @@ private fun MultipleRoleUserData.toBuilder(): MultipleRoleUserDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun MultipleRoleUser.withData(builder: MultipleRoleUserDataBuilder.() -> Unit): MultipleRoleUser {
-    return MultipleRoleUser(this.id, this.createdAt, this.data.toBuilder().apply(builder).build())
+    return MultipleRoleUser(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
 }
 
 private fun SupervisorData.toBuilder(): SupervisorDataBuilder {
@@ -179,5 +179,5 @@ private fun SupervisorData.toBuilder(): SupervisorDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Supervisor.withData(builder: SupervisorDataBuilder.() -> Unit): Supervisor {
-    return Supervisor(this.id, this.createdAt, this.data.toBuilder().apply(builder).build())
+    return Supervisor(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
 }

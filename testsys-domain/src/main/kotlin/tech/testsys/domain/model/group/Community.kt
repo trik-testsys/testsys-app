@@ -2,6 +2,7 @@ package tech.testsys.domain.model.group
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
+import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -40,5 +41,6 @@ data class CommunityData(
 class Community(
     id: CommunityId,
     createdAt: Instant,
+    version: EntityVersion,
     val data: CommunityData,
-) : DomainEntity<CommunityId>(id, createdAt)
+) : DomainEntity<CommunityId>(id, createdAt, version)

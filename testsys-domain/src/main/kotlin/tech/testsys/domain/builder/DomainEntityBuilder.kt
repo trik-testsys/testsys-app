@@ -1,5 +1,6 @@
 package tech.testsys.domain.builder
 
+import tech.testsys.domain.model.EntityVersion
 import java.time.Instant
 
 /**
@@ -35,6 +36,7 @@ interface Builder<out T> {
  * @param Entity the type of the built entity.
  * @property id the raw identifier of the entity, or `null` if not set yet.
  * @property createdAt the creation timestamp of the entity, or `null` if not set yet.
+ * @property version the optimistic-lock token of the entity, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
 interface DomainEntityBuilder<out Entity> : Builder<Entity> {
@@ -42,6 +44,8 @@ interface DomainEntityBuilder<out Entity> : Builder<Entity> {
     var id: Long?
 
     var createdAt: Instant?
+
+    var version: EntityVersion?
 
     /**
      * Sets [createdAt] to the current instant.
@@ -87,7 +91,7 @@ inline fun <Data, DataBuilder : Builder<Data>> DataCapable<Data, DataBuilder>.da
 }
 
 /**
- * Base class of domain entity builders with a data object; [id], [createdAt] and [data] start as `null`.
+ * Base class of domain entity builders with a data object; [id], [createdAt], [version] and [data] start as `null`.
  *
  * @param Entity the type of the built entity.
  * @param Data the type of the data object.
@@ -99,5 +103,6 @@ abstract class DomainEntityWithDataBuilder<Entity, Data, DataBuilder : Builder<D
 
     override var id: Long? = null
     override var createdAt: Instant? = null
+    override var version: EntityVersion? = null
     override var data: Data? = null
 }

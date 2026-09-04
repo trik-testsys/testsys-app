@@ -41,7 +41,7 @@ class SolutionPersistenceAdapter(
     override fun update(entity: Solution): Solution {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val newFileDataId = fileDataStorage.storeIfChanged(currentJpaEntity.fileDataId, entity.data.file)
-        val updatedJpaEntity = jpaEntityRepository.save(
+        val updatedJpaEntity = jpaEntityRepository.saveAndFlush(
             SolutionMapping.toJpaEntity(entity, currentJpaEntity, newFileDataId),
         )
 

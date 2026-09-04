@@ -45,7 +45,7 @@ class TestPersistenceAdapter(
             entity.data.file,
             entity.data.versionBucket,
         )
-        val updatedJpaEntity = jpaEntityRepository.save(
+        val updatedJpaEntity = jpaEntityRepository.saveAndFlush(
             TestMapping.toJpaEntity(entity, currentJpaEntity, newFileDataId),
         )
 

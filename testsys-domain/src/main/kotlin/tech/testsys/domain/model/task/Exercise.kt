@@ -2,6 +2,7 @@ package tech.testsys.domain.model.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
+import tech.testsys.domain.model.EntityVersion
 import java.time.Instant
 import java.util.UUID
 
@@ -42,5 +43,6 @@ class ExerciseData(
 class Exercise(
     id: ExerciseId,
     createdAt: Instant,
+    version: EntityVersion,
     val data: ExerciseData,
-) : DomainEntity<ExerciseId>(id, createdAt)
+) : DomainEntity<ExerciseId>(id, createdAt, version)

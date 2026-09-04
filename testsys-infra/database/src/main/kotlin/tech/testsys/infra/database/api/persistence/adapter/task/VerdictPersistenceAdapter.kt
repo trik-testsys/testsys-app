@@ -32,7 +32,7 @@ class VerdictPersistenceAdapter(
     override fun update(entity: Verdict): Verdict {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val updatedJpaEntity = VerdictMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.save(updatedJpaEntity)
+        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
 
         val domainEntity = VerdictMapping.toDomain(savedJpaEntity)
         return domainEntity

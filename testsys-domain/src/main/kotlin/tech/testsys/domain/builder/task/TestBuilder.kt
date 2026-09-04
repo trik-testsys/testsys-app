@@ -54,7 +54,7 @@ class TestDataBuilder : Builder<TestData> {
 }
 
 /**
- * Builder of [Test] entities. Required: [id], [createdAt], [data].
+ * Builder of [Test] entities. Required: [id], [createdAt], [version], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -65,11 +65,13 @@ class TestBuilder : DomainEntityWithDataBuilder<Test, TestData, TestDataBuilder>
     override fun build(): Test {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
+        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Test(
             id = TestId(id),
             createdAt = createdAt,
+            version = version,
             data = data,
         )
     }

@@ -5,6 +5,7 @@ import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
+import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.JpaEntity
@@ -28,6 +29,7 @@ internal fun <Entity, Data, DataBuilder : Builder<Data>> DomainEntityWithDataBui
 ) {
     id = jpaEntity.requireId()
     createdAt = jpaEntity.createdAt
+    version = EntityVersion(jpaEntity.version)
 }
 
 @InternalDatabaseApi

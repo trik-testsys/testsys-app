@@ -15,17 +15,29 @@ interface DomainId {
 }
 
 /**
+ * Opaque optimistic-lock token of a [DomainEntity]: issued by persistence when the entity is loaded and checked
+ * when it is updated. The domain only passes it along; it is never derived, compared or modified by domain code.
+ *
+ * @property value the raw value of the token.
+ * @since %CURRENT_VERSION%
+ */
+@JvmInline
+value class EntityVersion(val value: Long)
+
+/**
  * Base class of every persisted domain entity. Two instances are equal when they have the same runtime class
- * and equal [id] values; entity data never affects identity.
+ * and equal [id] values; entity data and version never affect identity.
  *
  * @param Id the identifier type of the entity.
  * @property id the identifier of the entity.
  * @property createdAt the moment the entity was created.
+ * @property version the optimistic-lock token of the loaded state; an update with a stale token fails.
  * @since %CURRENT_VERSION%
  */
 abstract class DomainEntity<Id : DomainId>(
     val id: Id,
     val createdAt: Instant,
+    val version: EntityVersion,
 ) {
 
     override fun equals(other: Any?): Boolean {

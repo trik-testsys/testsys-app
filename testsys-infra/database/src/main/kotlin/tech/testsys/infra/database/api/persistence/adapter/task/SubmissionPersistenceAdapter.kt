@@ -46,7 +46,7 @@ class SubmissionPersistenceAdapter(
     override fun update(entity: Submission): Submission {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val updatedJpaEntity = SubmissionMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.save(updatedJpaEntity)
+        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
 
         val submissionId = savedJpaEntity.requireId()
         val judgmentOrderIds = judgmentOrderJpaEntityRepository.findAllBySubmissionId(submissionId)

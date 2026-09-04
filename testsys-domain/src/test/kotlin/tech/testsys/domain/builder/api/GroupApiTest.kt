@@ -3,6 +3,7 @@ package tech.testsys.domain.builder.api
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.Class
@@ -27,6 +28,7 @@ class GroupApiTest {
         private val origin = Class(
             id = ClassId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = ClassData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Original Class",
@@ -63,6 +65,7 @@ class GroupApiTest {
         private val origin = Community(
             id = CommunityId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = CommunityData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Original Community",
@@ -95,6 +98,7 @@ class GroupApiTest {
         private val origin = Competition(
             id = CompetitionId(1),
             createdAt = Instant.now(),
+            version = EntityVersion(0),
             data = CompetitionData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Original Competition",

@@ -11,7 +11,7 @@ import tech.testsys.infra.database.internal.jpa.entity.group.ClassJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.group.ContestToClassJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.group.StudentToClassJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
-import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.populateFields
 
 /**
  * Mapping between [Class] and [ClassJpaEntity].
@@ -27,8 +27,7 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
      * @since %CURRENT_VERSION%
      */
     fun toDomain(jpaEntity: ClassJpaEntity, studentIds: List<MultipleRoleUserId>, contestIds: List<ContestId>) = `class` {
-        id = jpaEntity.requireId()
-        createdAt = jpaEntity.createdAt
+        populateFields(jpaEntity)
         data {
             owner(jpaEntity.ownerId)
 
@@ -62,7 +61,7 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = current.version
+        it.version = entity.version.value
     }
 
     /**

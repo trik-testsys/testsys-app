@@ -31,7 +31,7 @@ jobs:
           gradle-version: wrapper
 
       - name: Run Detekt
-        run: ./gradlew detekt --no-daemon
+        run: ./gradlew detektMain --no-daemon
 
       - name: Upload Detekt report
         uses: actions/upload-artifact@v4
@@ -47,6 +47,7 @@ jobs:
         run: |
           mkdir -p build/sarif
           find . -path "*/build/reports/detekt/*.sarif" | while read f; do
+            f="${f#./}"
             cp "$f" "build/sarif/$(echo "$f" | tr '/' '_')"
           done
 

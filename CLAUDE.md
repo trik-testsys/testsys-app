@@ -18,6 +18,9 @@ Domain vocabulary (Задача, Тур, Соревнование, Полиго�
 
 ## KDoc conventions
 
+Use the `kdoc-audit` skill (`.claude/skills/kdoc-audit`) for any KDoc work: it holds the procedure, the checker
+script and the resolutions of ambiguous cases.
+
 - KDoc only on **public** classes, functions and properties. Optional on `private`/`internal`/`protected` members (only handwritten).
 - Short and dense: one or two sentences. Use `@param`/`@return` when the name alone does not explain the parameter
   or the result (ports in `contract`, `load(...)`, `file(name, content)`, functions taking two lambdas); otherwise refer

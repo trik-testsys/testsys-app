@@ -42,7 +42,7 @@ script and the resolutions of ambiguous cases.
 
 Build facts that bite:
 - `allWarningsAsErrors = true` — any Kotlin warning fails compilation.
-- `check` depends on `detektMain` (the plain `detekt` task is disabled); CI runs `./gradlew build -x detekt` and `./gradlew detektMain` separately.
+- `check` depends on `detektMain` (the plain `detekt` task is disabled); CI runs `./gradlew build -x detekt -x detektMain` and `./gradlew detektMain` separately.
 - Detekt config is `detekt.yml` at root with `buildUponDefaultConfig = false`; max line length 140. Generated sources under `build/generated/` are excluded.
 - Dependency versions live only in `gradle/libs.versions.toml`; shared config is the `testsys.conventions` plugin in `buildSrc`.
 - PRs into `dev` are accepted only from branches prefixed `sh1sh4k1n9/`, `ch3zych3z/`, `KarasssDev/`.

@@ -42,13 +42,18 @@ jobs:
             **/build/reports/detekt/
           retention-days: 7
 
+      # Code scanning rejects several SARIF runs sharing one category, so every module report gets its own
+      # automation id (CodeQL derives the category from it) before the reports are uploaded together.
       - name: Collect SARIF reports
         if: always()
         run: |
           mkdir -p build/sarif
           find . -path "*/build/reports/detekt/*.sarif" | while read f; do
             f="${f#./}"
-            cp "$f" "build/sarif/$(echo "$f" | tr '/' '_')"
+            module="${f%%/build/reports/detekt/*}"
+            category="detekt/${module}/$(basename "$f" .sarif)"
+            jq --arg category "$category" '.runs[].automationDetails.id = $category' "$f" \
+              > "build/sarif/$(echo "$f" | tr '/' '_')"
           done
 
       - name: Upload SARIF to GitHub Security tab

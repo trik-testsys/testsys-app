@@ -16,6 +16,20 @@ Domain vocabulary (Задача, Тур, Соревнование, Полиго�
 - Markdown docs (`README.md`, `docs/*.md`): **Russian**. Keep identifiers, code snippets and gradle commands untouched.
 - Every public declaration carries KDoc with `@since %CURRENT_VERSION%` — keep the literal placeholder, do not substitute a version.
 
+## KDoc conventions
+
+- KDoc only on **public** classes, functions and properties. Optional on `private`/`internal`/`protected` members (only handwritten).
+- Short and dense: one or two sentences. Use `@param`/`@return` when the name alone does not explain the parameter
+  or the result (ports in `contract`, `load(...)`, `file(name, content)`, functions taking two lambdas); otherwise refer
+  to parameters inline as `[name]`.
+- Every type parameter is documented with `@param T ...` in the KDoc of the generic class/function.
+- Properties are documented in the **class** KDoc via `@property`, never with a KDoc block above the property itself.
+  For builders, list required fields in the class summary ("Required: [owner], [name]").
+- `override` members inherit the base KDoc and get none of their own.
+- No `[links]` from a base class/interface to its subtypes, and none to unrelated dependents (e.g. `Solution` does not
+  link to `Submission`). Links **inside an aggregate** are expected: `TaskId`/`TaskData`/`TaskContent` link to `[Task]`,
+  `SubmissionStatus`/`SubmissionKind`/`GradingResult` link to `[Submission]`, role data links to its role, `DomainId` to `DomainEntity`.
+
 ## Commands
 
 ```bash

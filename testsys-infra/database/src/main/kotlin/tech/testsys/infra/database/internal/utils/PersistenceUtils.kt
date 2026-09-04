@@ -3,6 +3,8 @@ package tech.testsys.infra.database.internal.utils
 import org.springframework.data.repository.CrudRepository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.JpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionJpaEntity
+import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 
 /**
  * Reconciles join rows with [targetKeys]: rows whose [keyOf] is absent from the target go to [deleteAll], keys without
@@ -36,3 +38,11 @@ internal fun <Association, K> syncJoinTable(
  */
 @InternalDatabaseApi
 fun <T : JpaEntity, ID : Any> CrudRepository<T, ID>.findByIdOrError(id: ID) = findById(id).orElse(null).requireById(id)
+
+/**
+ * Returns the id of the [TrikStudioVersionJpaEntity] with [tag] or throws [IllegalArgumentException] if the tag is
+ * not registered; versions are registered outside the domain and never created on the fly.
+ */
+@InternalDatabaseApi
+internal fun TrikStudioVersionJpaEntityRepository.findIdByTagOrError(tag: String): Long =
+    requireNotNull(findByTag(tag)) { "TRIK Studio version with tag=$tag is not registered" }.requireId()

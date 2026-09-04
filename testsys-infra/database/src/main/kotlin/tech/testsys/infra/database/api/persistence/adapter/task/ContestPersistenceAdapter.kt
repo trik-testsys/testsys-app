@@ -18,12 +18,14 @@ import tech.testsys.infra.database.internal.jpa.repository.task.TaskToContestJpa
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.ContestMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
+import tech.testsys.infra.database.internal.utils.findIdByTagOrError
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
  * Persistence adapter of [Contest] entities backed by [ContestJpaEntity].
- * Task and shared-community membership is synced through the join tables; the TRIK Studio version is resolved by tag.
+ * Task and shared-community membership is synced through the join tables; the TRIK Studio version must already be
+ * registered by tag.
  *
  * @since %CURRENT_VERSION%
  */
@@ -39,8 +41,8 @@ class ContestPersistenceAdapter(
 
     @Transactional
     override fun save(data: ContestData): Contest {
-        val trikStudioVersion = trikStudioVersionJpaEntityRepository.findByTag(data.trikStudioVersion.version) ?: TODO()
-        val jpaEntity = ContestMapping.toJpaEntity(data, trikStudioVersion.requireId())
+        val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(data.trikStudioVersion.version)
+        val jpaEntity = ContestMapping.toJpaEntity(data, trikStudioVersionId)
         val savedJpaEntity = jpaEntityRepository.save(jpaEntity)
         val contestId = savedJpaEntity.requireId()
 
@@ -57,8 +59,8 @@ class ContestPersistenceAdapter(
     @Transactional
     override fun update(entity: Contest): Contest {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val trikStudioVersion = trikStudioVersionJpaEntityRepository.findByTag(entity.data.trikStudioVersion.version) ?: TODO()
-        val updatedJpaEntity = ContestMapping.toJpaEntity(entity, currentJpaEntity, trikStudioVersion.requireId())
+        val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(entity.data.trikStudioVersion.version)
+        val updatedJpaEntity = ContestMapping.toJpaEntity(entity, currentJpaEntity, trikStudioVersionId)
         val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
 
         val contestId = savedJpaEntity.requireId()

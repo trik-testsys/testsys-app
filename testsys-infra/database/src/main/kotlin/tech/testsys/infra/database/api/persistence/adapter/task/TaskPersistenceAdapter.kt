@@ -17,7 +17,6 @@ import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAd
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskStatusJpaEnum
-import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.CommunityToTaskJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.DeveloperSolutionToTaskContentJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TaskContentJpaEntityRepository
@@ -28,6 +27,7 @@ import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersio
 import tech.testsys.infra.database.internal.mapping.task.TaskContentMapping
 import tech.testsys.infra.database.internal.mapping.task.TaskMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
+import tech.testsys.infra.database.internal.utils.findIdByTagOrError
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 
@@ -238,7 +238,7 @@ class TaskPersistenceAdapter(
         developerSolutionToTaskContentJpaEntityRepository.saveAll(
             TaskContentMapping.toDeveloperSolutionAssociations(contentId, developerSolutionIds),
         )
-        val versionIds = versions.map(::resolveTrikStudioVersionId)
+        val versionIds = versions.map { trikStudioVersionJpaEntityRepository.findIdByTagOrError(it.version) }
         trikStudioVersionToTaskContentJpaEntityRepository.saveAll(
             TaskContentMapping.toTrikStudioVersionAssociations(contentId, versionIds),
         )
@@ -255,13 +255,6 @@ class TaskPersistenceAdapter(
         if (versions.isNotEmpty()) trikStudioVersionToTaskContentJpaEntityRepository.deleteAll(versions)
 
         taskContentJpaEntityRepository.deleteById(contentId)
-    }
-
-    private fun resolveTrikStudioVersionId(version: TrikStudioVersion): Long {
-        val existingId = trikStudioVersionJpaEntityRepository.findByTag(version.version)?.id
-        if (existingId != null) return existingId
-        val saved = trikStudioVersionJpaEntityRepository.save(TrikStudioVersionJpaEntity(tag = version.version))
-        return saved.requireId()
     }
 
     private fun syncSharedTo(taskId: Long, target: List<CommunityId>) = syncJoinTable(

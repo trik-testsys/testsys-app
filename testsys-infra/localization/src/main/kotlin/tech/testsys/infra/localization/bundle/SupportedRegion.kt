@@ -23,7 +23,8 @@ import com.ibm.icu.util.ULocale
  */
 enum class SupportedRegion {
     /** Russia — Russian language, Russian Federation conventions (`ru_RU`). */
-    RU;
+    RU,
+    ;
 
     /**
      * Maps this region to the ICU [ULocale] used by all locale-sensitive

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check Kotlin sources against the repository KDoc conventions (see CLAUDE.md, "KDoc conventions").
+"""Check Kotlin sources against the repository KDoc conventions (see docs/project/code-style.md, section "KDoc").
 
 Usage:
     check_kdoc.py PATH [PATH ...] [--max-line N] [--info]

@@ -32,11 +32,8 @@ testsys-app/
 | Модуль                               | Назначение                                                                                           | Состояние         |
 |--------------------------------------|------------------------------------------------------------------------------------------------------|-------------------|
 | `testsys-domain`                     | Доменные модели, порты (`contract`), DSL билдеров. Без Spring, JPA и любых внешних зависимостей.     | Реализован        |
-| `testsys-operation`                  | Операции — реализация пользовательских фич из [features.md](../domain/features.md), по классу на Роль. | В разработке      |
-| `testsys-infra:service`              | Сервисы, которые используют операции.                                                                | Заготовка (пусто) |
+| `testsys-operation`                  | Операции — реализация пользовательских фич из [features.md](../domain/features.md), по классу на Роль или группу Пользователей. | В разработке      |
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
-| `testsys-infra:database:codegen-api` | Аннотации (`@CompositeKeyConstructor`), обрабатываемые KSP.                                          | Реализован        |
-| `testsys-infra:database:codegen`     | KSP-процессоры, генерирующие вспомогательный код для JPA-сущностей.                                  | Реализован        |
 | `testsys-infra:grpc`                 | Связь с внешним грейдером решений TRIK Studio (реализация порта `Grader`).                           | Заготовка (пусто) |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из ICU-паттернов.                          | Реализован        |
 | `testsys-web`                        | Веб-приложение (Кабинеты): точка входа, собирающая все модули; вызывает операции.                    | Заготовка (пусто) |
@@ -83,6 +80,10 @@ testsys-app/
 ./gradlew build -Pdetekt.autoCorrect=false
 ```
 
+Detekt 1.23 не разбирает context parameters (`context(name: Type)`): правила набора `formatting` на таком файле
+падают с исключением. Файл с context parameters добавляется в `excludes` набора `formatting` в `detekt.yml`;
+остальные правила на нём продолжают работать. Сейчас так исключён `OperationFailure.kt` из `testsys-operation`.
+
 ## CI
 
 Workflow лежат в `.github/workflows`.
@@ -101,7 +102,7 @@ Workflow лежат в `.github/workflows`.
 | Новую доменную сущность                         | `domain/model/<group\|task\|user>` + билдер + порт хранения, см. [implement-entity.md](../guides/implement-entity.md) |
 | Хранение сущности в БД                          | `testsys-infra:database`, см. [implement-entity.md](../guides/implement-entity.md)               |
 | Новый внешний порт (хранилище, внешняя система) | Интерфейс в `domain/contract`, реализация — в `testsys-infra`, см. [implement-port.md](../guides/implement-port.md) |
-| Пользовательскую фичу                           | Метод с `@Feature` в `operation/user/<Role>Operations.kt`, см. [implement-feature.md](../guides/implement-feature.md) |
+| Пользовательскую фичу                           | Метод с `@Feature` в `operation/user/<Actor>Operations.kt`, см. [implement-feature.md](../guides/implement-feature.md) |
 | Переиспользуемую логику для операций            | `testsys-infra:service`                                                                           |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |

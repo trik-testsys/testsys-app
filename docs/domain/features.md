@@ -339,14 +339,16 @@ Page: **testsys.web.page.developer.resource**
 
 Для каждой записи об изменениях в таблице, Разработчик может скачать соответствующую версию файла.
 
-### testsys.user.multi.developer.task.createTask (Not implemented)
+### testsys.user.multi.developer.task.createTask (Partially implemented)
 
 Page: **testsys.web.page.developer**
 
-Разработчик имеет возможность создать новую Задачу, указав её название.
-Изначально задача находится в состоянии *new*.
+Разработчик имеет возможность создать новую Задачу, указав её название и описание.
+Изначально Задача находится в состоянии **New** (см. **testsys.entity.task**).
 
-### testsys.user.multi.developer.task.attachResource (Not implemented)
+Реализована операция; страница **testsys.web.page.developer** не реализована.
+
+### testsys.user.multi.developer.task.attachResource (Partially implemented)
 
 Page: **testsys.web.page.developer.task**
 
@@ -355,6 +357,10 @@ Page: **testsys.web.page.developer.task**
 2) К Задаче должно быть прикреплено не более 1 Упражнения для 1 языка
 
 Прикрепление к Задаче Полигона или авторского Решения является изменением Задачи (см. **testsys.entity.task**).
+
+Реализована операция прикрепления Условия. Не реализованы: прикрепление Упражнения, Полигона и авторского
+Решения; проверка того, что прикрепляемый Ресурс доступен Разработчику
+(см. **testsys.user.multi.developer.authorization**); страница **testsys.web.page.developer.task**.
 
 ### testsys.user.multi.developer.task.detachResource (Not implemented)
 
@@ -452,12 +458,21 @@ Page: **testsys.web.page.developer.task**
 
 Добавление новой поддерживаемой версии TRIK Studio является изменением Задачи (см. **testsys.entity.task**).
 
-### testsys.user.multi.developer.task.shareTask (Not implemented)
+### testsys.user.multi.developer.task.shareTask (Partially implemented)
 
 Page: **testsys.web.page.developer.task**
 
-Разработчик имеет возможность предоставить доступ к Задаче для выбранного им
-набора Сообществ.
+Разработчик имеет возможность предоставить доступ к созданной им Задаче,
+имеющей зафиксированную версию, для выбранного им набора Сообществ.
+Выбранные Сообщества добавляются к Сообществам, которым доступ был
+предоставлен ранее; отозвать предоставленный доступ нельзя.
+
+Новым в наборе может быть только Сообщество, в котором состоит Разработчик.
+Сообщества, которым доступ был предоставлен ранее, могут присутствовать в наборе.
+
+Предоставление доступа не является изменением Задачи (см. **testsys.entity.task**).
+
+Реализована операция; страница **testsys.web.page.developer.task** не реализована.
 
 ### testsys.user.multi.developer.contest.createContest (Not implemented)
 

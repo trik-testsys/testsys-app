@@ -10,6 +10,7 @@ import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
 import tech.testsys.domain.builder.user.StudentBuilder
 import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.model.EntityVersion
+import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementId
@@ -76,6 +77,17 @@ fun testCommitedTask(): Task = testTask {
     committed {
         exercise = ExerciseId(1L)
         statement = StatementId(1L)
+    }
+}
+
+fun testCommunity(communityId: Long): Community = community {
+    id = communityId
+    createdAt = Instant.MIN
+    version = EntityVersion(0)
+    data = communityData {
+        owner = MultipleRoleUserId(0)
+        name = "name"
+        description = "description"
     }
 }
 

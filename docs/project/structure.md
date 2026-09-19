@@ -92,7 +92,7 @@ Workflow лежат в `.github/workflows`.
 |---------------------------|--------------------------------|-----------------------------------------------------------------|
 | `build.yml`               | push/PR в `master`, `dev`      | `./gradlew build -x detekt -x detektMain`, артефакты и отчёты   |
 | `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detektMain`, загрузка SARIF в GitHub Security        |
-| `check-source-branch.yml` | PR в `dev`                     | Разрешает PR только из веток `sh1sh4k1n9/`, `ch3zych3z/`, `KarasssDev/` |
+| `check-source-branch.yml` | PR в `dev`                     | Разрешает PR только из веток `sh1sh4k1n9/`, `ch3zych3z/`, `KarasssDev/`, `DirewolfPrime/`, `LutovolkVPraime/` |
 | `release.yml`             | —                              | Пока пустой                                                     |
 
 ## Куда класть новый код

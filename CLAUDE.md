@@ -11,7 +11,9 @@ The project documentation (Russian) owns every rule and fact. This file and ever
 to it.
 
 - **One direction only:** Claude files link to the docs; the docs never link to or mention Claude files.
-  Never add a reference to `CLAUDE.md`, `.claude/` or a skill into any document.
+  Never add a reference to `CLAUDE.md`, `.claude/` or a skill into any document. The only exception is the root
+  `README.md`, which lists the skills and agents (see "Где лежит документация" in `docs/docs.md`); keep that list
+  in sync when a skill or agent is added, renamed or removed.
 - **Do not restate the docs here or in skills.** If a rule is missing, add it to the owning document
   (see `docs/docs.md`) and link to it from here.
 - Before any task, read the documents relevant to it from the map below; follow them over your own defaults.

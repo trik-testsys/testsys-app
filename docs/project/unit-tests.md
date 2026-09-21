@@ -24,12 +24,12 @@
 
 Каждый тест проверяет **один** сценарий одного из видов:
 
-| Вид           | Что проверяет                                                                                                                                                   | Пример имени                                                   |
-|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|
-| Happy path    | Основные успешные сценарии с корректными входными данными                                                                                                       | `should create task with provided name and description`        |
-| Edge case     | Граничные и особые входные данные: пустые коллекции, `null`, минимум и максимум, дубликаты, отсутствующие ссылки                                                | `should attach exercise for another language if task already has an exercise` |
-| Инвариант     | Правило предметной области, которое выполняется всегда (термины и правила — в [definitions.md](../domain/definitions.md), [features.md](../domain/features.md)) | `should move Committed task to Uncommitted when resource is attached` |
-| Error         | Отказ: неверные аргументы, недостаточная Роль, недопустимое состояние, устаревшая версия                                                                        | `should raise MissedDeveloperRoleError if user is not a Developer` |
+| Вид        | Что проверяет                                                                                                                                                   | Пример имени                                                                  |
+|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| Happy path | Основные успешные сценарии с корректными входными данными                                                                                                       | `should create task with provided name and description`                       |
+| Edge case  | Граничные и особые входные данные: пустые коллекции, `null`, минимум и максимум, дубликаты, отсутствующие ссылки                                                | `should attach exercise for another language if task already has an exercise` |
+| Инвариант  | Правило предметной области, которое выполняется всегда (термины и правила — в [definitions.md](../domain/definitions.md), [features.md](../domain/features.md)) | `should move Committed task to Uncommitted when resource is attached`         |
+| Error      | Отказ: неверные аргументы, недостаточная Роль, недопустимое состояние, устаревшая версия                                                                        | `should raise MissedDeveloperRoleError if user is not a Developer`            |
 
 - Метка вида в имени не пишется: из имени должно быть понятно, какой сценарий проверяется, при каких условиях
   и какой ожидается результат. Имя вроде `` `should work` `` или `` `should create task 2` `` этого не сообщает.
@@ -51,7 +51,7 @@
 // https://github.com/trik-testsys/testsys-app/issues/<N>
 @Test
 @Tag("regression")
-fun `should keep contests of a task when its name is updated`() { ... }
+fun `should keep contests of a task when its name is updated`() { /*content*/ }
 ```
 
 ## Структура теста

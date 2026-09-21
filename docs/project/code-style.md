@@ -64,7 +64,7 @@
   Нарушение внутреннего состояния — `check(...)` / `checkNotNull(...)` (`IllegalStateException`).
   Недостижимая ветка — `error("...")`.
 - Сообщение исключения содержит контекст: какая сущность, какое значение, что ожидалось. Образец —
-  `loadTaskContent` в [TaskPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/TaskPersistenceAdapter.kt).
+  `loadCommittedRevision` в [TaskPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/TaskPersistenceAdapter.kt).
 - Не ловите `Exception`/`Throwable` целиком, если можете поймать конкретный тип.
 
 Модель ошибок операций — в разделе «Ошибки» в [testsys-operation/README.md](../../testsys-operation/README.md).

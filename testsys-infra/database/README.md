@@ -52,6 +52,6 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 - Схемой управляет Liquibase: changelog'и лежат в `src/main/resources/db/changelog/changes/<версия>/`.
 - Hibernate запускается с `ddl-auto=validate`, поэтому каждое изменение JPA-сущности требует changeset.
 - Имена таблиц и колонок вычисляет `TestsysPhysicalNamingStrategy`.
-- `SchemaValidationTest` (H2 в режиме PostgreSQL) применяет changelog'и и выполняет ту же валидацию.
+- `SchemaValidationTests` (H2 в режиме PostgreSQL) применяет changelog'и и выполняет ту же валидацию.
 
 Правила написания changeset — в шаге 7 [implement-entity.md](../../docs/guides/implement-entity.md).

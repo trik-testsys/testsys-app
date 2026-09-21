@@ -3,6 +3,7 @@ import org.gradle.process.CommandLineArgumentProvider
 
 plugins {
     id("testsys.conventions")
+    idea
 }
 
 group = "tech.testsys.infra"
@@ -38,6 +39,14 @@ tasks.register<Test>("codegenTest") {
 }
 
 tasks.named("check") { dependsOn("codegenTest") }
+
+// A manually created source set is imported by IDEA as production code; mark it as test sources.
+idea {
+    module {
+        testSources.from(codegenTest.kotlin.srcDirs)
+        testResources.from(codegenTest.resources.srcDirs)
+    }
+}
 
 val generatedDir = layout.buildDirectory.dir("generated/source/localization/main/kotlin")
 val localizationResources = layout.projectDirectory.dir("src/main/resources/localization")

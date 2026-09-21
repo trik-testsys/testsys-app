@@ -8,7 +8,7 @@ import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Spring Boot application booting the database module in tests; see [DatabaseIntegrationTest] for the datasource.
+ * Spring Boot application booting the database module in tests; see [DatabaseIntegrationTests] for the datasource.
  */
 @SpringBootApplication(scanBasePackages = ["tech.testsys.infra.database"])
 class DatabaseTestApp {

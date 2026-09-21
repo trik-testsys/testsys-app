@@ -1,14 +1,14 @@
 package tech.testsys.infra.database.internal.mapping.task
 
 import tech.testsys.domain.builder.api.task
-import tech.testsys.domain.builder.util.lazify
+import tech.testsys.domain.builder.data
+import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.WipTaskContent
-import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskJpaEntity
@@ -25,22 +25,36 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 object TaskMapping {
 
     /**
-     * Assembles a [Task] from [jpaEntity], its mapped [content] and [sharedToIds].
+     * Assembles a [Task] from [jpaEntity], its stored content revisions [wip] and [committed] and [sharedToIds];
+     * fails when a revision required by the status of [jpaEntity] is missing.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDomain(jpaEntity: TaskJpaEntity, content: TaskContent, sharedToIds: List<CommunityId>): Task {
-        val builtData = TaskData(
-            owner = MultipleRoleUserId(jpaEntity.ownerId).lazify(),
-            name = jpaEntity.name,
-            description = jpaEntity.description,
-            sharedTo = sharedToIds.lazify(),
-            content = content,
-        )
-        return task {
-            populateFields(jpaEntity)
-            data = builtData
+    fun toDomain(
+        jpaEntity: TaskJpaEntity,
+        wip: TaskContentRevision?,
+        committed: TaskContentRevision?,
+        sharedToIds: List<CommunityId>,
+    ): Task = task {
+        populateFields(jpaEntity)
+        data {
+            owner(jpaEntity.ownerId)
+            name = jpaEntity.name
+            description = jpaEntity.description
+            sharedTo = sharedToIds.toMutableList()
+
+            content.decodeContent(jpaEntity, wip, committed)
         }
+    }
+
+    /**
+     * Assembles a [Task] from the just stored [jpaEntity] and the [data] it was stored from.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun toDomain(jpaEntity: TaskJpaEntity, data: TaskData): Task = task {
+        populateFields(jpaEntity)
+        this.data = data
     }
 
     /**
@@ -116,5 +130,36 @@ object TaskMapping {
         is TaskContent.New -> null
         is TaskContent.Uncommitted -> content.lastCommitted
         is TaskContent.Committed -> content.lastCommitted
+    }
+
+    private fun TaskContentChooser.decodeContent(jpaEntity: TaskJpaEntity, wip: TaskContentRevision?, committed: TaskContentRevision?) {
+        when (jpaEntity.status) {
+            TaskStatusJpaEnum.NEW -> {
+                val wipRevision = requireRevision(wip, jpaEntity, revisionName = "wip")
+                new { TaskContentMapping.populateWip(builder = this, revision = wipRevision) }
+            }
+
+            TaskStatusJpaEnum.UNCOMMITTED -> {
+                val wipRevision = requireRevision(wip, jpaEntity, revisionName = "wip")
+                val committedRevision = requireRevision(committed, jpaEntity, revisionName = "committed")
+                uncommitted(
+                    wipBuilder = { TaskContentMapping.populateWip(builder = this, revision = wipRevision) },
+                    lastCommittedBuilder = {
+                        TaskContentMapping.populateCommitted(builder = this, revision = committedRevision)
+                    },
+                )
+            }
+
+            TaskStatusJpaEnum.COMMITTED -> {
+                val committedRevision = requireRevision(committed, jpaEntity, revisionName = "committed")
+                committed { TaskContentMapping.populateCommitted(builder = this, revision = committedRevision) }
+            }
+        }
+    }
+
+    private fun requireRevision(revision: TaskContentRevision?, jpaEntity: TaskJpaEntity, revisionName: String): TaskContentRevision {
+        return requireNotNull(revision) {
+            "Task ${jpaEntity.id} has status=${jpaEntity.status} but its $revisionName content revision is missing"
+        }
     }
 }

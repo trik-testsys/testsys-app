@@ -107,7 +107,8 @@
 
 - Класс называется `XJpaEntity` и наследует `SnowflakeJpaEntity` (как выдаются идентификаторы — в разделе
   «Идентификаторы» в [database/README.md](../../testsys-infra/database/README.md)). `createdAt`, `updatedAt`
-  и `version` приходят из `JpaEntity` и ведутся Hibernate — не объявляйте их заново.
+  и `version` приходят из `JpaEntity` — не объявляйте их заново. `updatedAt` и `version` ведёт Hibernate,
+  `createdAt` выставляется при создании объекта.
 - `@InternalDatabaseApi` — на всех объявлениях в `internal`.
 - **Ассоциаций JPA (`@ManyToOne`, `@OneToMany`) в проекте нет.** Внешние ключи хранятся как обычные
   `Long`-колонки (`ownerId`, `trikStudioVersionId`), связи «многие ко многим» — отдельными join-таблицами.
@@ -166,7 +167,7 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 - Данные, которых нет в самой строке (идентификаторы из join-таблиц, значения справочников), приходят
   отдельными параметрами — маппинг ничего не читает из БД сам.
 - Для join-таблиц добавляются функции `toXAssociations(ownerId, ids)`, собирающие строки связи.
-- Имена `toDomain`/`toJpaEntity` и типы результата проверяются рефлексией в `EntityMappingTest` — не
+- Имена `toDomain`/`toJpaEntity` и типы результата проверяются рефлексией в `EntityMappingTests` — не
   переименовывайте их и не возвращайте из перегрузок посторонние типы.
 
 ## 9. Адаптер порта
@@ -196,18 +197,18 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 | Что                  | Базовый класс                          | Что писать                                                  | Образец                   |
 |----------------------|----------------------------------------|-------------------------------------------------------------|---------------------------|
 | Билдер               | `DomainEntityBuilderTests`             | Только `buildDataWithAllFields()`                           | [ContestBuilderTests.kt](../../testsys-domain/src/test/kotlin/tech/testsys/domain/builder/task/ContestBuilderTests.kt) |
-| `withData`           | `{Group,Task,User}ApiTest`             | `@Nested inner class XTests`: поля и токен `version` не теряются, поля изменяются | `ContestTests` в [TaskApiTest.kt](../../testsys-domain/src/test/kotlin/tech/testsys/domain/builder/api/TaskApiTest.kt) |
-| Маппинг              | `EntityMappingTest<XMapping>`          | Только `override val mapping = XMapping`                    | [ContestMappingTest.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/internal/mapping/task/ContestMappingTest.kt) |
-| Адаптер              | `PersistenceAdapterContractTest`       | `newData()`, `modified()`, `detached()`, `idOf()`, `assertSameData()` + свои тесты | [ContestPersistenceAdapterTest.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapterTest.kt) |
+| `withData`           | `{Group,Task,User}ApiTests`            | `@Nested inner class XTests`: поля и токен `version` не теряются, поля изменяются | `ContestTests` в [TaskApiTests.kt](../../testsys-domain/src/test/kotlin/tech/testsys/domain/builder/api/TaskApiTests.kt) |
+| Маппинг              | `EntityMappingTests<XMapping>`         | Только `override val mapping = XMapping`                    | [ContestMappingTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/internal/mapping/task/ContestMappingTests.kt) |
+| Адаптер              | `PersistenceAdapterContractTests`      | `newData()`, `modified()`, `detached()`, `idOf()`, `assertSameData()` + свои тесты | [ContestPersistenceAdapterTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapterTests.kt) |
 | Фикстура             | —                                      | Метод `fun x(...): X`                                       | [DatabaseFixtures.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/DatabaseFixtures.kt) |
 
 - `DomainEntityBuilderTests` сам проверяет, что `build()` падает без обязательных полей, а с ними — нет.
   Возвращайте из `buildDataWithAllFields()` несколько вариантов: минимальный и со всеми опциональными полями.
-- `PersistenceAdapterContractTest` даёт весь контракт репозитория (идентификаторы, версии, поиск, загрузку,
+- `PersistenceAdapterContractTests` даёт весь контракт репозитория (идентификаторы, версии, поиск, загрузку,
   оптимистическую блокировку, удаление). В `modified()` меняйте **все** изменяемые поля, включая связи,
   иначе часть `update` останется непроверенной. Специфика сущности оформляется отдельными `@Test`
   в том же классе.
 - Прочие сущности для теста создаются только через `fixtures`, а не руками; всё уникальное — через
   `fixtures.unique(...)`. Фикстура новой сущности пишется так же: через её же адаптер.
 - Тесты БД поднимают H2 в режиме совместимости с PostgreSQL, применяют changelog'и и проверяют схему
-  (`SchemaValidationTest`) — отдельный тест на changeset писать не нужно, достаточно не сломать этот.
+  (`SchemaValidationTests`) — отдельный тест на changeset писать не нужно, достаточно не сломать этот.

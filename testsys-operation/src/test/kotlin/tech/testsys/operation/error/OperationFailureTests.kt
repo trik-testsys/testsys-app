@@ -33,7 +33,7 @@ class OperationFailureTests {
         fun `should keep failure of nested operation as cause`() {
             val nested = failedNested()
 
-            val result = operation<Int, AttachStatementError> { nested.getOrRaise() }
+            val result = operation { nested.getOrRaise() }
 
             val nestedError = Assertions.assertInstanceOf(OperationResult.Error::class.java, nested)
             val error = Assertions.assertInstanceOf(OperationResult.Error::class.java, result)

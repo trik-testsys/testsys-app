@@ -1,5 +1,6 @@
 package tech.testsys.infra.database.internal.jpa.id
 
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -22,105 +23,120 @@ class SnowflakeIdGeneratorTests {
 
     private val generator = SnowflakeIdGenerator(nodeId = NODE_ID, clock = clock)
 
-    @Test
-    fun `encodes second, node id and counter into the id layout`() {
-        val first = generator.next()
-        val second = generator.next()
+    @Nested
+    inner class ConstructorTests {
 
-        assertEquals(Instant.EPOCH.plusSeconds(START_SECOND), SnowflakeIdGenerator.instantOf(first))
-        assertEquals(NODE_ID, SnowflakeIdGenerator.nodeIdOf(first))
-        assertEquals(0, SnowflakeIdGenerator.counterOf(first))
-        assertEquals(1, SnowflakeIdGenerator.counterOf(second))
-        assertEquals(0L, first ushr USED_BITS, "the sign bit and the 5 reserved bits must be zero")
+        @Test
+        fun `should reject a node id out of range`() {
+            assertFailsWith<IllegalArgumentException> { SnowflakeIdGenerator(nodeId = -1, clock = clock) }
+            assertFailsWith<IllegalArgumentException> { SnowflakeIdGenerator(nodeId = SnowflakeIdGenerator.MAX_NODE_ID + 1, clock = clock) }
+        }
+
+
+        @Test
+        fun `should accept boundary node ids and round-trip the maximal one`() {
+            val minNodeId = SnowflakeIdGenerator(nodeId = 0, clock = clock).next()
+            val maxNodeId = SnowflakeIdGenerator(nodeId = SnowflakeIdGenerator.MAX_NODE_ID, clock = clock).next()
+
+            assertEquals(0, SnowflakeIdGenerator.nodeIdOf(minNodeId))
+            assertEquals(SnowflakeIdGenerator.MAX_NODE_ID, SnowflakeIdGenerator.nodeIdOf(maxNodeId))
+            assertEquals(0L, maxNodeId ushr USED_BITS, "the maximal node id must not spill into the reserved bits")
+        }
     }
 
-    @Test
-    fun `ids strictly increase within one second`() {
-        val ids = List(SAMPLE_SIZE) { generator.next() }
+    @Nested
+    inner class NextTests {
 
-        assertEquals(ids, ids.sorted())
-        assertEquals(SAMPLE_SIZE, ids.toSet().size)
-    }
+        @Test
+        fun `should encode second, node id and counter into the id layout`() {
+            val first = generator.next()
+            val second = generator.next()
 
-    @Test
-    fun `new second resets the counter`() {
-        generator.next()
-        generator.next()
+            assertEquals(Instant.EPOCH.plusSeconds(START_SECOND), SnowflakeIdGenerator.instantOf(first))
+            assertEquals(NODE_ID, SnowflakeIdGenerator.nodeIdOf(first))
+            assertEquals(0, SnowflakeIdGenerator.counterOf(first))
+            assertEquals(1, SnowflakeIdGenerator.counterOf(second))
+            assertEquals(0L, first ushr USED_BITS, "the sign bit and the 5 reserved bits must be zero")
+        }
 
-        clock.advance(Duration.ofSeconds(1))
-        val id = generator.next()
 
-        assertEquals(Instant.EPOCH.plusSeconds(START_SECOND + 1), SnowflakeIdGenerator.instantOf(id))
-        assertEquals(0, SnowflakeIdGenerator.counterOf(id))
-    }
+        @Test
+        fun `should strictly increase ids within one second`() {
+            val ids = List(SAMPLE_SIZE) { generator.next() }
 
-    @Test
-    fun `clock going backwards keeps the logical second`() {
-        val before = generator.next()
+            assertEquals(ids, ids.sorted())
+            assertEquals(SAMPLE_SIZE, ids.toSet().size)
+        }
 
-        clock.now = Instant.EPOCH.plusSeconds(START_SECOND - BACKWARDS_JUMP_SECONDS)
-        val after = generator.next()
 
-        assertTrue(after > before)
-        assertEquals(SnowflakeIdGenerator.instantOf(before), SnowflakeIdGenerator.instantOf(after))
-        assertEquals(1, SnowflakeIdGenerator.counterOf(after))
-    }
+        @Test
+        fun `should reset the counter when a new second starts`() {
+            generator.next()
+            generator.next()
 
-    @Test
-    @Timeout(value = TEST_TIMEOUT_SECONDS, unit = TimeUnit.SECONDS)
-    fun `waits for the next second when the counter is exhausted`() {
-        var last = 0L
-        repeat(SnowflakeIdGenerator.MAX_COUNTER + 1) { last = generator.next() }
-
-        val ticker = Thread {
-            Thread.sleep(TICK_DELAY_MILLIS)
             clock.advance(Duration.ofSeconds(1))
+            val id = generator.next()
+
+            assertEquals(Instant.EPOCH.plusSeconds(START_SECOND + 1), SnowflakeIdGenerator.instantOf(id))
+            assertEquals(0, SnowflakeIdGenerator.counterOf(id))
         }
-        ticker.start()
-        val id = generator.next()
-        ticker.join()
 
-        assertEquals(Instant.EPOCH.plusSeconds(START_SECOND + 1), SnowflakeIdGenerator.instantOf(id))
-        assertEquals(0, SnowflakeIdGenerator.counterOf(id))
-        assertTrue(id > last)
-    }
 
-    @Test
-    fun `rejects node id out of range`() {
-        assertFailsWith<IllegalArgumentException> { SnowflakeIdGenerator(nodeId = -1, clock = clock) }
-        assertFailsWith<IllegalArgumentException> { SnowflakeIdGenerator(nodeId = SnowflakeIdGenerator.MAX_NODE_ID + 1, clock = clock) }
-    }
+        @Test
+        fun `should keep the logical second if the clock goes backwards`() {
+            val before = generator.next()
 
-    @Test
-    fun `fails when the clock is before the epoch`() {
-        clock.now = Instant.EPOCH.minusSeconds(1)
+            clock.now = Instant.EPOCH.plusSeconds(START_SECOND - BACKWARDS_JUMP_SECONDS)
+            val after = generator.next()
 
-        assertFailsWith<IllegalStateException> { generator.next() }
-    }
-
-    @Test
-    fun `accepts boundary node ids and round-trips the maximal one`() {
-        val minNodeId = SnowflakeIdGenerator(nodeId = 0, clock = clock).next()
-        val maxNodeId = SnowflakeIdGenerator(nodeId = SnowflakeIdGenerator.MAX_NODE_ID, clock = clock).next()
-
-        assertEquals(0, SnowflakeIdGenerator.nodeIdOf(minNodeId))
-        assertEquals(SnowflakeIdGenerator.MAX_NODE_ID, SnowflakeIdGenerator.nodeIdOf(maxNodeId))
-        assertEquals(0L, maxNodeId ushr USED_BITS, "the maximal node id must not spill into the reserved bits")
-    }
-
-    @Test
-    @Timeout(value = TEST_TIMEOUT_SECONDS, unit = TimeUnit.SECONDS)
-    fun `concurrent generation yields unique ids`() {
-        val ids = Collections.synchronizedList(ArrayList<Long>(THREADS * IDS_PER_THREAD))
-        val pool = Executors.newFixedThreadPool(THREADS)
-
-        repeat(THREADS) {
-            pool.execute { repeat(IDS_PER_THREAD) { ids.add(generator.next()) } }
+            assertTrue(after > before)
+            assertEquals(SnowflakeIdGenerator.instantOf(before), SnowflakeIdGenerator.instantOf(after))
+            assertEquals(1, SnowflakeIdGenerator.counterOf(after))
         }
-        pool.shutdown()
-        assertTrue(pool.awaitTermination(POOL_TIMEOUT_SECONDS, TimeUnit.SECONDS))
 
-        assertEquals(THREADS * IDS_PER_THREAD, ids.toSet().size)
+
+        @Test
+        @Timeout(value = TEST_TIMEOUT_SECONDS, unit = TimeUnit.SECONDS)
+        fun `should wait for the next second if the counter is exhausted`() {
+            var last = 0L
+            repeat(SnowflakeIdGenerator.MAX_COUNTER + 1) { last = generator.next() }
+
+            val ticker = Thread {
+                Thread.sleep(TICK_DELAY_MILLIS)
+                clock.advance(Duration.ofSeconds(1))
+            }
+            ticker.start()
+            val id = generator.next()
+            ticker.join()
+
+            assertEquals(Instant.EPOCH.plusSeconds(START_SECOND + 1), SnowflakeIdGenerator.instantOf(id))
+            assertEquals(0, SnowflakeIdGenerator.counterOf(id))
+            assertTrue(id > last)
+        }
+
+
+        @Test
+        fun `should fail if the clock is before the epoch`() {
+            clock.now = Instant.EPOCH.minusSeconds(1)
+
+            assertFailsWith<IllegalStateException> { generator.next() }
+        }
+
+
+        @Test
+        @Timeout(value = TEST_TIMEOUT_SECONDS, unit = TimeUnit.SECONDS)
+        fun `should generate unique ids when called concurrently`() {
+            val ids = Collections.synchronizedList(ArrayList<Long>(THREADS * IDS_PER_THREAD))
+            val pool = Executors.newFixedThreadPool(THREADS)
+
+            repeat(THREADS) {
+                pool.execute { repeat(IDS_PER_THREAD) { ids.add(generator.next()) } }
+            }
+            pool.shutdown()
+            assertTrue(pool.awaitTermination(POOL_TIMEOUT_SECONDS, TimeUnit.SECONDS))
+
+            assertEquals(THREADS * IDS_PER_THREAD, ids.toSet().size)
+        }
     }
 
     /** Clock whose instant the test moves by hand; `@Volatile` so another thread can advance it. */

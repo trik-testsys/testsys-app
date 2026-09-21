@@ -48,7 +48,8 @@ object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
     )
 
     /**
-     * Creates the [StatementJpaEntity] row replacing [current] from [entity] and file [fileDataId], keeping `createdAt` and `version`.
+     * Creates the [StatementJpaEntity] row replacing [current] from [entity] and file [fileDataId],
+     * keeping `versionBucket`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
@@ -56,7 +57,7 @@ object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
         name = entity.data.name,
         description = entity.data.description,
         fileDataId = fileDataId,
-        versionBucket = entity.data.versionBucket,
+        versionBucket = current.versionBucket,
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt

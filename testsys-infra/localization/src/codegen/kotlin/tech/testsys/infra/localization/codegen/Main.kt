@@ -10,8 +10,7 @@ import java.util.Properties
  * Loads every `*.properties` file in a directory as one bundle per region.
  *
  * The file's base name is taken as the region id (e.g. `RU.properties` → `"RU"`),
- * which must line up with [SupportedRegion]
- * entries at runtime.
+ * which must line up with the supported regions known at runtime.
  *
  * UTF-8 is enforced explicitly: [Properties.load] defaults to ISO-8859-1 when given
  * an [java.io.InputStream], which would silently mangle non-ASCII patterns.
@@ -33,16 +32,16 @@ internal class PropertiesBundleLoader {
 }
 
 /**
- * CLI entry point invoked by the `generateLocalization` Gradle task.
+ * CLI entry point invoked by the `generateLocalization` Gradle task with [args] `<resourceDir> <outputDir>`.
  *
- * Arguments: `<resourceDir> <outputDir>`. The output directory is wiped and recreated
- * so stale generated sources from removed keys never linger and confuse `compileKotlin`.
+ * @since %CURRENT_VERSION%
  */
 fun main(args: Array<String>) {
     require(args.size == 2) { "Usage: <resourceDir> <outputDir>" }
     val resourceDir = File(args[0])
     val outputDir = File(args[1])
 
+    // Wiped and recreated so stale generated sources from removed keys never linger and confuse compileKotlin.
     outputDir.deleteRecursively()
     outputDir.mkdirs()
 

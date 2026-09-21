@@ -44,14 +44,14 @@ object CommunityMapping : EntityMapping<Community, CommunityJpaEntity> {
     )
 
     /**
-     * Creates the [CommunityJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     * Creates the [CommunityJpaEntity] row replacing [current] from [entity], keeping `ownerId`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: Community, current: CommunityJpaEntity) = CommunityJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
-        ownerId = entity.data.owner.id.value,
+        ownerId = current.ownerId,
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt

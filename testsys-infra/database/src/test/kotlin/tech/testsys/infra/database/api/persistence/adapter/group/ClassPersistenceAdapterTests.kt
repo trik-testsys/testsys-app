@@ -105,4 +105,15 @@ class ClassPersistenceAdapterTests : PersistenceAdapterContractTests<ClassData, 
         assertEquals(emptyList(), found.data.students.ids)
         assertEquals(emptyList(), found.data.contests.ids)
     }
+
+    @Test
+    fun `should keep the owner if another owner is passed on update`() {
+        val saved = repository.save(newData())
+        val otherOwner = fixtures.manager().id
+
+        val updated = repository.update(saved.withData { owner = otherOwner })
+
+        assertEquals(saved.data.owner.id, updated.data.owner.id)
+        assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
+    }
 }

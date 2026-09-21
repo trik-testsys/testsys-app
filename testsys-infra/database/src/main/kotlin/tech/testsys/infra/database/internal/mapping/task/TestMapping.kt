@@ -47,7 +47,8 @@ object TestMapping : EntityMapping<Test, TestJpaEntity> {
     )
 
     /**
-     * Creates the [TestJpaEntity] row replacing [current] from [entity] and file [fileDataId], keeping `createdAt` and `version`.
+     * Creates the [TestJpaEntity] row replacing [current] from [entity] and file [fileDataId],
+     * keeping `versionBucket`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
@@ -55,7 +56,7 @@ object TestMapping : EntityMapping<Test, TestJpaEntity> {
         name = entity.data.name,
         description = entity.data.description,
         fileDataId = fileDataId,
-        versionBucket = entity.data.versionBucket,
+        versionBucket = current.versionBucket,
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt

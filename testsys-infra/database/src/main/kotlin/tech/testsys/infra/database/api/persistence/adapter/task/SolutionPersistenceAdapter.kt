@@ -12,11 +12,11 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.SolutionJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.SolutionJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.SolutionMapping
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 
 /**
  * Persistence adapter of [Solution] entities backed by [SolutionJpaEntity].
- * The solution file is stored through [FileDataStorage].
+ * The solution file is stored through [FileDataStorage] in the version bucket of the solution;
+ * a solution is fixed on creation, so [update] always fails.
  *
  * @since %CURRENT_VERSION%
  */
@@ -30,28 +30,16 @@ class SolutionPersistenceAdapter(
 
     @Transactional
     override fun save(data: SolutionData): Solution {
-        val fileDataId = fileDataStorage.store(data.file)
+        val fileDataId = fileDataStorage.store(data.file, data.versionBucket)
         val savedJpaEntity = jpaEntityRepository.save(SolutionMapping.toJpaEntity(data, fileDataId))
 
         val domainEntity = SolutionMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)
         return domainEntity
     }
 
-    @Transactional
-    override fun update(entity: Solution): Solution {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val newFileDataId = fileDataStorage.storeIfChanged(currentJpaEntity.fileDataId, entity.data.file)
-        val updatedJpaEntity = jpaEntityRepository.saveAndFlush(
-            SolutionMapping.toJpaEntity(entity, currentJpaEntity, newFileDataId),
-        )
-
-        val domainEntity = SolutionMapping.toDomain(
-            updatedJpaEntity,
-            entity.data.file.uploadedFilename,
-            entity.data.file.content,
-        )
-        return domainEntity
-    }
+    override fun update(entity: Solution): Solution = throw UnsupportedOperationException(
+        "solution ${entity.id.value} cannot be updated: every field of a solution is fixed on creation",
+    )
 
     override fun assemble(jpaEntity: SolutionJpaEntity): Solution {
         val file = fileDataStorage.load(jpaEntity.fileDataId)

@@ -133,4 +133,15 @@ class ContestPersistenceAdapterTests : PersistenceAdapterContractTests<ContestDa
 
         val STARTS_AT: Instant = Instant.parse("2026-09-04T10:00:00Z")
     }
+
+    @Test
+    fun `should keep the owner if another owner is passed on update`() {
+        val saved = repository.save(newData())
+        val otherOwner = fixtures.developer().id
+
+        val updated = repository.update(saved.withData { owner = otherOwner })
+
+        assertEquals(saved.data.owner.id, updated.data.owner.id)
+        assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
+    }
 }

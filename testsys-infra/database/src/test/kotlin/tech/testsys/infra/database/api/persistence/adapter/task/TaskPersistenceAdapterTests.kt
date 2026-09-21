@@ -240,6 +240,24 @@ class TaskPersistenceAdapterTests : PersistenceAdapterContractTests<TaskData, Ta
     }
 
     @Test
+    fun `should keep a task without description as a task with an empty description`() {
+        val ownerId = fixtures.developer().id.value
+
+        val saved = repository.save(
+            taskData {
+                owner(ownerId)
+                name = fixtures.unique("Task without description")
+                description = ""
+                content.new {}
+            },
+        )
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals("", saved.data.description)
+        assertEquals("", found.data.description)
+    }
+
+    @Test
     fun `should fail to save a task with an unregistered TRIK Studio version`() {
         val ownerId = fixtures.developer().id.value
         val exerciseId = fixtures.exercise().id.value
@@ -256,5 +274,16 @@ class TaskPersistenceAdapterTests : PersistenceAdapterContractTests<TaskData, Ta
         }
 
         assertFailsWith<IllegalArgumentException> { repository.save(data) }
+    }
+
+    @Test
+    fun `should keep the owner if another owner is passed on update`() {
+        val saved = repository.save(newData())
+        val otherOwner = fixtures.developer().id
+
+        val updated = repository.update(saved.withData { owner = otherOwner })
+
+        assertEquals(saved.data.owner.id, updated.data.owner.id)
+        assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
     }
 }

@@ -1,10 +1,8 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     id("testsys.conventions")
 }
 
-group = "tech.testsys.domain"
+group = "tech.testsys.operation"
 
 dependencies {
     implementation(project(":testsys-domain"))

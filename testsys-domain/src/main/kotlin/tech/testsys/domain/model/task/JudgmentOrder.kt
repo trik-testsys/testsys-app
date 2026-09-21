@@ -20,8 +20,8 @@ value class JudgmentOrderId(
 /**
  * Data of a [JudgmentOrder].
  *
- * @property judge the user holding the judge role who issued the order.
- * @property verdict the verdict the order applies to.
+ * @property judge the user holding the judge role who issued the order; fixed on creation and ignored on update.
+ * @property verdict the verdict the order applies to; fixed on creation and ignored on update.
  * @property reason the judge's justification of the ruling.
  * @since %CURRENT_VERSION%
  */

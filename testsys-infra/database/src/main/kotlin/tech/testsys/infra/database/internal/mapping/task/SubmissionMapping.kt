@@ -11,6 +11,7 @@ import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.SubmissionStatus
+import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.GradingResultJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionJpaEntity
@@ -29,14 +30,15 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
 
     /**
-     * Assembles a [Submission] from [jpaEntity] and [judgmentOrderIds]; fails on inconsistent status or kind columns.
+     * Assembles a [Submission] from [jpaEntity], its resolved [authorId] and [judgmentOrderIds];
+     * fails on inconsistent status or kind columns.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDomain(jpaEntity: SubmissionJpaEntity, judgmentOrderIds: List<JudgmentOrderId>) = submission {
+    fun toDomain(jpaEntity: SubmissionJpaEntity, authorId: UserId, judgmentOrderIds: List<JudgmentOrderId>) = submission {
         populateFields(jpaEntity)
         data {
-            author(jpaEntity.authorId)
+            author = authorId
             solution(jpaEntity.solutionId)
             task(jpaEntity.taskId)
 
@@ -70,24 +72,24 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
     }
 
     /**
-     * Creates the [SubmissionJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     * Creates the [SubmissionJpaEntity] row replacing [current] from [entity],
+     * keeping `authorId`, `solutionId`, `taskId`, the kind columns, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: Submission, current: SubmissionJpaEntity): SubmissionJpaEntity {
         val statusEncoded = encodeStatus(entity.data.status)
-        val kindEncoded = encodeKind(entity.data.kind)
 
         return SubmissionJpaEntity(
-            authorId = entity.data.author.id.value,
-            solutionId = entity.data.solution.id.value,
-            taskId = entity.data.task.id.value,
+            authorId = current.authorId,
+            solutionId = current.solutionId,
+            taskId = current.taskId,
             status = statusEncoded.status,
             gradingResult = statusEncoded.gradingResult,
             gradingVerdictId = statusEncoded.gradingVerdictId,
             gradingErrorDescription = statusEncoded.gradingErrorDescription,
-            kind = kindEncoded.kind,
-            gradingContestId = kindEncoded.gradingContestId,
+            kind = current.kind,
+            gradingContestId = current.gradingContestId,
             id = entity.id.value,
         ).also {
             it.createdAt = current.createdAt

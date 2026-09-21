@@ -100,7 +100,7 @@ data class WipTaskContent(
 /**
  * Data of a [Task].
  *
- * @property owner the developer who owns the task.
+ * @property owner the developer who owns the task; fixed on creation and ignored on update.
  * @property name the name of the task.
  * @property description the description of the task.
  * @property sharedTo the communities the task is shared to.

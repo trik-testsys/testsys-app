@@ -1,6 +1,7 @@
 package tech.testsys.infra.database.internal.mapping.task
 
 import tech.testsys.domain.builder.api.task
+import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.builder.data
 import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.model.group.CommunityId
@@ -13,6 +14,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskStatusJpaEnum
+import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
 import tech.testsys.infra.database.internal.utils.requireVersion
 
@@ -22,7 +24,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
-object TaskMapping {
+object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
 
     /**
      * Assembles a [Task] from [jpaEntity], its stored content revisions [wip] and [committed] and [sharedToIds];
@@ -48,14 +50,14 @@ object TaskMapping {
     }
 
     /**
-     * Assembles a [Task] from the just stored [jpaEntity] and the [data] it was stored from.
+     * Assembles a [Task] from the just stored [jpaEntity] and the [data] it was stored from; the owner comes from the row.
      *
      * @since %CURRENT_VERSION%
      */
     fun toDomain(jpaEntity: TaskJpaEntity, data: TaskData): Task = task {
         populateFields(jpaEntity)
         this.data = data
-    }
+    }.withData { owner(jpaEntity.ownerId) }
 
     /**
      * Creates a new [TaskJpaEntity] row from [data] and its content revisions [wipContentId] and [committedContentId].
@@ -73,14 +75,14 @@ object TaskMapping {
 
     /**
      * Creates the [TaskJpaEntity] row replacing [current] from [entity], [wipContentId] and [committedContentId];
-     * keeps `createdAt` and `version`.
+     * keeps `ownerId`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: Task, current: TaskJpaEntity, wipContentId: Long, committedContentId: Long?) = TaskJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
-        ownerId = entity.data.owner.id.value,
+        ownerId = current.ownerId,
         status = encodeStatus(entity.data.content),
         wipContentId = wipContentId,
         committedContentId = committedContentId,

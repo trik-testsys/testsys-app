@@ -66,14 +66,15 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
     )
 
     /**
-     * Creates the [ContestJpaEntity] row replacing [current] from [entity] and [trikStudioVersionId], keeping `createdAt` and `version`.
+     * Creates the [ContestJpaEntity] row replacing [current] from [entity] and [trikStudioVersionId],
+     * keeping `ownerId`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: Contest, current: ContestJpaEntity, trikStudioVersionId: Long) = ContestJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
-        ownerId = entity.data.owner.id.value,
+        ownerId = current.ownerId,
         startsAt = entity.data.startsAt,
         contestDurationMillis = entity.data.contestDuration.toMillis(),
         attemptDurationMillis = entity.data.attemptDuration.toMillis(),

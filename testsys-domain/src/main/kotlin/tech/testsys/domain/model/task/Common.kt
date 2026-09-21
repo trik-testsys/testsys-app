@@ -51,7 +51,8 @@ value class TrikStudioVersion(
 )
 
 /**
- * An uploaded file. Not a data class: equality is reference-based.
+ * An uploaded file, never changed once stored: a changed file is stored as a new one. Not a data class: equality is
+ * reference-based.
  *
  * @property uploadedFilename the original name of the file as it entered the system.
  * @property content the raw binary content of the file.

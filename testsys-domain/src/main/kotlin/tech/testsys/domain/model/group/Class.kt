@@ -23,7 +23,7 @@ value class ClassId(
 /**
  * Data of a [Class].
  *
- * @property owner the manager who owns the class.
+ * @property owner the manager who owns the class; fixed on creation and ignored on update.
  * @property name the name of the class.
  * @property description the description of the class.
  * @property students the students enrolled in the class.

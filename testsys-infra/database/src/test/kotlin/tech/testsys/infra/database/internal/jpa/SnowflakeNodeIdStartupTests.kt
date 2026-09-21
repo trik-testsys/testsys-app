@@ -18,7 +18,7 @@ import kotlin.test.assertTrue
 class SnowflakeNodeIdStartupTests {
 
     @Test
-    fun `invalid node id fails context startup with a message naming the setting`() {
+    fun `should fail context startup with a message naming the setting if node id is invalid`() {
         val failure = assertFailsWith<BeanCreationException> {
             // Command-line arguments outrank `hibernate-defaults.properties` (a `@PropertySource`), unlike `properties(...)`.
             SpringApplicationBuilder(DatabaseTestApp::class.java)

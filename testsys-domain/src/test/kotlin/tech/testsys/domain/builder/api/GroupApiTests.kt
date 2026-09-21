@@ -33,7 +33,7 @@ class GroupApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -42,12 +42,12 @@ class GroupApiTests {
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
-            Assertions.assertEquals(origin.data.students.ids.size, copy.data.students.ids.size)
-            Assertions.assertEquals(origin.data.contests.ids.size, copy.data.contests.ids.size)
+            Assertions.assertEquals(origin.data.students.ids, copy.data.students.ids)
+            Assertions.assertEquals(origin.data.contests.ids, copy.data.contests.ids)
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change owner if withData sets owner`() {
             val copy = origin.withData { owner(99) }
 
             Assertions.assertEquals(99L, copy.data.owner.id.value)
@@ -69,7 +69,7 @@ class GroupApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -81,7 +81,7 @@ class GroupApiTests {
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change owner if withData sets owner`() {
             val copy = origin.withData { owner(99) }
 
             Assertions.assertEquals(99L, copy.data.owner.id.value)
@@ -105,7 +105,7 @@ class GroupApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -114,12 +114,12 @@ class GroupApiTests {
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
-            Assertions.assertEquals(origin.data.participants.ids.size, copy.data.participants.ids.size)
-            Assertions.assertEquals(origin.data.contests.ids.size, copy.data.contests.ids.size)
+            Assertions.assertEquals(origin.data.participants.ids, copy.data.participants.ids)
+            Assertions.assertEquals(origin.data.contests.ids, copy.data.contests.ids)
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change owner if withData sets owner`() {
             val copy = origin.withData { owner(99) }
 
             Assertions.assertEquals(99L, copy.data.owner.id.value)

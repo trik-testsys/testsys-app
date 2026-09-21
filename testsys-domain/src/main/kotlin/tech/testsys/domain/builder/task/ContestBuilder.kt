@@ -60,6 +60,15 @@ class ContestDataBuilder : Builder<ContestData> {
     }
 
     /**
+     * Sets [tasks] from raw ids.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun tasks(tasks: Iterable<Long>) {
+        this.tasks = tasks.map { TaskId(it) }.toMutableList()
+    }
+
+    /**
      * Sets [trikStudioVersion] from a raw version tag, e.g. `"3.0.0"`.
      *
      * @since %CURRENT_VERSION%

@@ -23,6 +23,9 @@
                 <constraints nullable="false" unique="true"
                              foreignKeyName="fk_solution_file_data" references="ts_file_data(id)"/>
             </column>
+            <column name="version_bucket" type="UUID">
+                <constraints nullable="false"/>
+            </column>
             <column name="language" type="VARCHAR(64)">
                 <constraints nullable="false"/>
             </column>

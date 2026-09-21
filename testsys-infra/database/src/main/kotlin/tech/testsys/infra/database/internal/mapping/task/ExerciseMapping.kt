@@ -53,7 +53,8 @@ object ExerciseMapping : EntityMapping<Exercise, ExerciseJpaEntity> {
     )
 
     /**
-     * Creates the [ExerciseJpaEntity] row replacing [current] from [entity] and file [fileDataId], keeping `createdAt` and `version`.
+     * Creates the [ExerciseJpaEntity] row replacing [current] from [entity] and file [fileDataId],
+     * keeping `versionBucket`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
@@ -61,7 +62,7 @@ object ExerciseMapping : EntityMapping<Exercise, ExerciseJpaEntity> {
         name = entity.data.name,
         description = entity.data.description,
         fileDataId = fileDataId,
-        versionBucket = entity.data.versionBucket,
+        versionBucket = current.versionBucket,
         language = entity.data.language.toJpaEnum(),
         id = entity.id.value,
     ).also {

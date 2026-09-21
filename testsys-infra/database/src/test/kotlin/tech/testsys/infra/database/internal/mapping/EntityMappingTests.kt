@@ -21,7 +21,7 @@ abstract class EntityMappingTests<M : EntityMapping<*, *>> {
     inner class ToDomainMethodTests {
 
         @Test
-        fun `mapping should contain toDomain method`() {
+        fun `should declare a toDomain method`() {
             val containsToDomainMethod = mapping::class.memberFunctions
                 .any { it.name == TO_DOMAIN_METHOD_NAME }
 
@@ -29,7 +29,7 @@ abstract class EntityMappingTests<M : EntityMapping<*, *>> {
         }
 
         @Test
-        fun `toDomain method should return Domain-typed object`() {
+        fun `should return a Domain-typed object from toDomain`() {
             val toDomainMethod = mapping::class.memberFunctions
                 .first { it.name == TO_DOMAIN_METHOD_NAME }
 
@@ -41,7 +41,7 @@ abstract class EntityMappingTests<M : EntityMapping<*, *>> {
     inner class ToJpaEntityMethodTests {
 
         @Test
-        fun `mapping should contain toJpaEntity method`() {
+        fun `should declare a toJpaEntity method`() {
             val containsToJpaEntityMethod = mapping::class.memberFunctions
                 .any { it.name == TO_JPA_ENTITY_METHOD_NAME }
 
@@ -49,7 +49,7 @@ abstract class EntityMappingTests<M : EntityMapping<*, *>> {
         }
 
         @Test
-        fun `every toJpaEntity overload should return Jpa-typed object`() {
+        fun `should return a Jpa-typed object from every toJpaEntity overload`() {
             val overloads = mapping::class.memberFunctions
                 .filter { it.name == TO_JPA_ENTITY_METHOD_NAME }
                 .toList()

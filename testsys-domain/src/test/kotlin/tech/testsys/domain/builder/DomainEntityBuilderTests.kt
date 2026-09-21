@@ -1,6 +1,7 @@
 package tech.testsys.domain.builder
 
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Nested
 import kotlin.test.Test
 import java.time.Instant
 import tech.testsys.domain.model.DomainEntity
@@ -41,46 +42,58 @@ abstract class DomainEntityBuilderTests<Entity : DomainEntity<*>, Data, DataBuil
         }.build()
     }
 
-    @Test
-    fun `data builder should create object if all required fields are specified`() {
-        Assertions.assertDoesNotThrow { buildDataWithAllFields() }
-    }
+    @Nested
+    inner class DataBuilderTests {
 
-    @Test
-    fun `data builder should throw IllegalArgumentException if any required field is missing`() {
-        Assertions.assertThrows(IllegalArgumentException::class.java) {
-            buildDataWithMissingFields()
+        @Test
+        fun `should build data if all required fields are specified`() {
+            Assertions.assertDoesNotThrow { buildDataWithAllFields() }
         }
-    }
 
-    @Test
-    fun `entity builder should create object if all required fields are specified`() {
-        for (data in buildDataWithAllFields()) {
-            Assertions.assertDoesNotThrow { buildEntityWithAllFields(data) }
-        }
-    }
 
-    @Test
-    fun `entity builder should leave version null if version is not specified`() {
-        val entity = buildEntityWithAllFields(buildDataWithAllFields().first())
-
-        Assertions.assertNull(entity.version)
-    }
-
-    @Test
-    fun `entity builder should set version if version is specified`() {
-        val entity = buildEntityWithVersion(buildDataWithAllFields().first(), EntityVersion(7))
-
-        Assertions.assertEquals(EntityVersion(7), entity.version)
-    }
-
-    @Test
-    fun `entity builder should throw IllegalArgumentException if any required field is missing`() {
-        for (data in buildDataWithAllFields()) {
+        @Test
+        fun `should throw IllegalArgumentException if a required data field is missing`() {
             Assertions.assertThrows(IllegalArgumentException::class.java) {
-                buildEntityWithMissingField(data)
+                buildDataWithMissingFields()
+            }
+        }
+
+    }
+
+    @Nested
+    inner class EntityBuilderTests {
+
+        @Test
+        fun `should build entity if all required fields are specified`() {
+            for (data in buildDataWithAllFields()) {
+                Assertions.assertDoesNotThrow { buildEntityWithAllFields(data) }
+            }
+        }
+
+
+        @Test
+        fun `should leave version null if version is not specified`() {
+            val entity = buildEntityWithAllFields(buildDataWithAllFields().first())
+
+            Assertions.assertNull(entity.version)
+        }
+
+
+        @Test
+        fun `should set version if version is specified`() {
+            val entity = buildEntityWithVersion(buildDataWithAllFields().first(), EntityVersion(7))
+
+            Assertions.assertEquals(EntityVersion(7), entity.version)
+        }
+
+
+        @Test
+        fun `should throw IllegalArgumentException if a required entity field is missing`() {
+            for (data in buildDataWithAllFields()) {
+                Assertions.assertThrows(IllegalArgumentException::class.java) {
+                    buildEntityWithMissingField(data)
+                }
             }
         }
     }
-
 }

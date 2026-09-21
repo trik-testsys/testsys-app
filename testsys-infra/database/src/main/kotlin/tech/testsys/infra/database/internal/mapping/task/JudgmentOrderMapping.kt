@@ -45,13 +45,14 @@ object JudgmentOrderMapping : EntityMapping<JudgmentOrder, JudgmentOrderJpaEntit
     )
 
     /**
-     * Creates the [JudgmentOrderJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     * Creates the [JudgmentOrderJpaEntity] row replacing [current] from [entity],
+     * keeping `judgeId`, `verdictId`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: JudgmentOrder, current: JudgmentOrderJpaEntity) = JudgmentOrderJpaEntity(
-        judgeId = entity.data.judge.id.value,
-        verdictId = entity.data.verdict.id.value,
+        judgeId = current.judgeId,
+        verdictId = current.verdictId,
         reason = entity.data.reason,
         id = entity.id.value,
     ).also {

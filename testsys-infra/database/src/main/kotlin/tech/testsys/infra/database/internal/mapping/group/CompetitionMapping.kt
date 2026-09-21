@@ -50,14 +50,14 @@ object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
     )
 
     /**
-     * Creates the [CompetitionJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     * Creates the [CompetitionJpaEntity] row replacing [current] from [entity], keeping `ownerId`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: Competition, current: CompetitionJpaEntity) = CompetitionJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
-        ownerId = entity.data.owner.id.value,
+        ownerId = current.ownerId,
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt

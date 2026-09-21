@@ -20,7 +20,7 @@ value class CommunityId(
 /**
  * Data of a [Community]. Membership is stored on the members' side, not here.
  *
- * @property owner the administrator who owns the community.
+ * @property owner the administrator who owns the community; fixed on creation and ignored on update.
  * @property name the name of the community.
  * @property description the description of the community.
  * @since %CURRENT_VERSION%

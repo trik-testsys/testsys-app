@@ -21,7 +21,8 @@ value class StatementId(
  * @property file the uploaded statement document.
  * @property name the name of the statement.
  * @property description the description of the statement.
- * @property versionBucket the UUID shared by all versions of the same logical statement.
+ * @property versionBucket the UUID shared by all versions of the same logical statement;
+ *   fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%
  */
 data class StatementData(

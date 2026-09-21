@@ -23,7 +23,7 @@ class PersistenceUtilsTests {
     )
 
     @Test
-    fun `rows absent from the target are deleted`() {
+    fun `should delete rows absent from the target`() {
         sync(existing = listOf(Row(1), Row(2), Row(3)), target = listOf(2))
 
         assertEquals(listOf(listOf(Row(1), Row(3))), deleted)
@@ -31,7 +31,7 @@ class PersistenceUtilsTests {
     }
 
     @Test
-    fun `target keys without a row are saved once`() {
+    fun `should save target keys without a row once`() {
         sync(existing = listOf(Row(1)), target = listOf(1, 2, 2, 3))
 
         assertTrue(deleted.isEmpty())
@@ -40,7 +40,7 @@ class PersistenceUtilsTests {
     }
 
     @Test
-    fun `nothing is called when rows already match the target`() {
+    fun `should call nothing if rows already match the target`() {
         sync(existing = listOf(Row(1), Row(2)), target = listOf(2, 1))
 
         assertTrue(deleted.isEmpty())
@@ -48,7 +48,7 @@ class PersistenceUtilsTests {
     }
 
     @Test
-    fun `an empty target deletes every row`() {
+    fun `should delete every row if the target is empty`() {
         sync(existing = listOf(Row(1), Row(2)), target = emptyList())
 
         assertEquals(listOf(listOf(Row(1), Row(2))), deleted)
@@ -56,7 +56,7 @@ class PersistenceUtilsTests {
     }
 
     @Test
-    fun `rows are replaced when target and existing are disjoint`() {
+    fun `should replace rows if target and existing are disjoint`() {
         sync(existing = listOf(Row(1)), target = listOf(2))
 
         assertEquals(listOf(listOf(Row(1))), deleted)

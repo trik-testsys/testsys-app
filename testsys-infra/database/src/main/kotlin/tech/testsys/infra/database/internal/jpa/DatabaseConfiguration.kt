@@ -7,6 +7,7 @@ import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.PropertySource
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
+import tech.testsys.infra.database.internal.InternalDatabaseApi
 
 /**
  * Spring configuration of the JPA layer: Hibernate defaults from `classpath:hibernate-defaults.properties`,
@@ -15,6 +16,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
  *
  * @since %CURRENT_VERSION%
  */
+@InternalDatabaseApi
 @Configuration
 @EntityScan(basePackages = ["tech.testsys.infra.database.internal.jpa.entity"])
 @EnableJpaRepositories(basePackages = ["tech.testsys.infra.database.internal.jpa.repository"])

@@ -6,7 +6,6 @@ spring-boot = "3.5.13"
 spring = "6.2.17"
 postgresql = "42.7.7"
 liquibase = "4.32.0"
-commons-lang3 = "3.18.0"
 h2 = "2.3.232"
 ksp = "2.2.21-2.0.5"
 kotlinpoet = "2.3.0"
@@ -31,7 +30,6 @@ spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-star
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
 liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase" }
-commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 
 detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
@@ -67,7 +65,6 @@ kotlin-jpa-plugins = [
 database-implementation = [
     "spring-boot-starter-data-jpa",
     "liquibase-core",
-    "commons-lang3",
     "kotlin-reflect",
 ]
 database-test-implementation = [

@@ -97,4 +97,14 @@ class ExercisePersistenceAdapterTests : PersistenceAdapterContractTests<Exercise
 
         assertEquals(1, fileDataJpaEntityRepository.count())
     }
+
+    @Test
+    fun `should keep the version bucket if another bucket is passed on update`() {
+        val saved = repository.save(newData())
+
+        val updated = repository.update(saved.withData { versionBucket = UUID.randomUUID() })
+
+        assertEquals(saved.data.versionBucket, updated.data.versionBucket)
+        assertEquals(saved.data.versionBucket, assertNotNull(repository.findById(saved.id)).data.versionBucket)
+    }
 }

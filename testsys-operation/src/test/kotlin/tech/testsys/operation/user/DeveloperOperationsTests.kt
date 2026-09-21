@@ -1,14 +1,11 @@
 package tech.testsys.operation.user
 
 import io.mockk.every
-import io.mockk.impl.annotations.InjectMockKs
-import io.mockk.impl.annotations.MockK
-import io.mockk.junit5.MockKExtension
+import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.extension.ExtendWith
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
@@ -33,33 +30,26 @@ import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
+import tech.testsys.operation.util.savedTaskVersion
 import tech.testsys.operation.util.testAdministrator
 import tech.testsys.operation.util.testCommitedTask
 import tech.testsys.operation.util.testCommunity
 import tech.testsys.operation.util.testDeveloper
 import tech.testsys.operation.util.testNewTask
+import tech.testsys.operation.util.testSavedTask
 import tech.testsys.operation.util.testStatement
 import tech.testsys.operation.util.testUncommittedTask
 import kotlin.test.Test
 import java.time.Instant
 
-@ExtendWith(MockKExtension::class)
-@MockKExtension.ConfirmVerification
 class DeveloperOperationsTests {
 
-    @MockK
-    lateinit var taskRepository: TaskRepository
+    private val taskRepository = mockk<TaskRepository>()
+    private val statementRepository = mockk<StatementRepository>()
+    private val communityRepository = mockk<CommunityRepository>()
+    private val developerOperations = DeveloperOperations(taskRepository, statementRepository, communityRepository)
 
-    @MockK
-    lateinit var statementRepository: StatementRepository
-
-    @MockK
-    lateinit var communityRepository: CommunityRepository
-
-    @InjectMockKs
-    lateinit var developerOperations: DeveloperOperations
-
-    lateinit var developer: MultipleRoleUser
+    private lateinit var developer: MultipleRoleUser
 
     @BeforeEach
     fun beforeEach() {
@@ -115,18 +105,13 @@ class DeveloperOperationsTests {
             val result = developerOperations.createTask(developer, taskName, taskDescription).getOrThrow()
 
             val taskData = result.data
-            val taskContent = taskData.content
             Assertions.assertTrue { taskData.sharedTo.ids.isEmpty() }
-            when (taskContent) {
-                is TaskContent.New -> {
-                    Assertions.assertTrue { taskContent.wip.tests.ids.isEmpty() }
-                    Assertions.assertTrue { taskContent.wip.exercise == null }
-                    Assertions.assertTrue { taskContent.wip.statement == null }
-                    Assertions.assertTrue { taskContent.wip.developerSolutions.ids.isEmpty() }
-                    Assertions.assertTrue { taskContent.wip.supportedTrikStudioVersions.isEmpty() }
-                }
-                else -> Assertions.fail("data should be TaskData.New")
-            }
+            val taskContent = Assertions.assertInstanceOf(TaskContent.New::class.java, taskData.content)
+            Assertions.assertTrue { taskContent.wip.tests.ids.isEmpty() }
+            Assertions.assertTrue { taskContent.wip.exercise == null }
+            Assertions.assertTrue { taskContent.wip.statement == null }
+            Assertions.assertTrue { taskContent.wip.developerSolutions.ids.isEmpty() }
+            Assertions.assertTrue { taskContent.wip.supportedTrikStudioVersions.isEmpty() }
         }
 
         @Test
@@ -211,43 +196,63 @@ class DeveloperOperationsTests {
         }
 
         @Test
-        fun `should return new or uncommitted task`() {
+        fun `should attach statement to the wip revision if task is New`() {
             every { statementRepository.findById(eq(statementId)) } answers { testStatement() }
-            every { taskRepository.findById(eq(taskId)) } answers { testUncommittedTask() }
-            every { taskRepository.update(any<Task>()) } answers { arg(0) }
+            every { taskRepository.findById(eq(taskId)) } answers { testNewTask() }
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
 
             val result = developerOperations.attachStatement(developer, taskId, statementId)
                 .getOrThrow()
 
-            when (result.data.content) {
-                is TaskContent.New -> {}
-                is TaskContent.Uncommitted -> {}
-                else -> Assertions.fail("data should be TaskData.New")
-            }
+            val content = Assertions.assertInstanceOf(TaskContent.New::class.java, result.data.content)
+            Assertions.assertEquals(statementId, content.wip.statement?.id)
+        }
+
+        @Test
+        fun `should keep the last committed revision if task is Uncommitted`() {
+            every { statementRepository.findById(eq(statementId)) } answers { testStatement() }
+            every { taskRepository.findById(eq(taskId)) } answers { testUncommittedTask() }
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.attachStatement(developer, taskId, statementId)
+                .getOrThrow()
+
+            val content = Assertions.assertInstanceOf(TaskContent.Uncommitted::class.java, result.data.content)
+            Assertions.assertEquals(statementId, content.wip.statement?.id)
+            Assertions.assertEquals(ExerciseId(1L), content.lastCommitted.exercise.id)
+            Assertions.assertEquals(StatementId(1L), content.lastCommitted.statement.id)
         }
 
         @Test
         fun `should change statement`() {
             every { statementRepository.findById(eq(statementId)) } answers { testStatement() }
             every { taskRepository.findById(eq(taskId)) } answers { testUncommittedTask() }
-            every { taskRepository.update(any<Task>()) } answers { arg(0) }
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
 
             val result = developerOperations.attachStatement(developer, taskId, statementId)
                 .getOrThrow()
 
-            val actualStatementId = when (val content = result.data.content) {
-                is TaskContent.New -> content.wip.statement
-                is TaskContent.Uncommitted -> content.wip.statement
-                else -> Assertions.fail("data should be TaskData.New")
-            }
-            Assertions.assertEquals(statementId.value, actualStatementId?.id?.value)
+            val content = Assertions.assertInstanceOf(TaskContent.Uncommitted::class.java, result.data.content)
+            Assertions.assertEquals(statementId, content.wip.statement?.id)
+        }
+
+        @Test
+        fun `should return the task with the version assigned on update`() {
+            every { statementRepository.findById(eq(statementId)) } answers { testStatement() }
+            every { taskRepository.findById(eq(taskId)) } answers { testUncommittedTask() }
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.attachStatement(developer, taskId, statementId)
+                .getOrThrow()
+
+            Assertions.assertEquals(savedTaskVersion, result.version)
         }
 
         @Test
         fun `should update task`() {
             every { statementRepository.findById(eq(statementId)) } answers { testStatement() }
             every { taskRepository.findById(eq(taskId)) } answers { testUncommittedTask() }
-            every { taskRepository.update(any<Task>()) } answers { arg(0) }
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
 
             developerOperations.attachStatement(developer, taskId, statementId)
                 .getOrThrow()
@@ -271,7 +276,7 @@ class DeveloperOperationsTests {
             }
             every { communityRepository.findById(eq(firstCommunityId)) } answers { testCommunity(1L) }
             every { communityRepository.findById(eq(secondCommunityId)) } answers { testCommunity(2L) }
-            every { taskRepository.update(any<Task>()) } answers { arg(0) }
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
         }
 
         @Test
@@ -329,6 +334,16 @@ class DeveloperOperationsTests {
 
             assertRaises(CommunityAccessDeniedError(foreignCommunityId)) {
                 developerOperations.shareTask(developer, taskId, setOf(firstCommunityId, foreignCommunityId))
+            }
+        }
+
+        @Test
+        fun `should raise CommunityAccessDeniedError if developer is not a member of new community and task is New`() {
+            every { taskRepository.findById(eq(taskId)) } answers { testNewTask() }
+            every { communityRepository.findById(eq(foreignCommunityId)) } answers { testCommunity(3L) }
+
+            assertRaises(CommunityAccessDeniedError(foreignCommunityId)) {
+                developerOperations.shareTask(developer, taskId, setOf(foreignCommunityId))
             }
         }
 
@@ -418,6 +433,15 @@ class DeveloperOperationsTests {
             val content = Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content)
             Assertions.assertEquals(ExerciseId(1L), content.lastCommitted.exercise.id)
             Assertions.assertEquals(StatementId(1L), content.lastCommitted.statement.id)
+        }
+
+        @Test
+        fun `should return the task with the version assigned on update`() {
+            every { taskRepository.findById(eq(taskId)) } answers { testCommitedTask() }
+
+            val result = developerOperations.shareTask(developer, taskId, setOf(firstCommunityId)).getOrThrow()
+
+            Assertions.assertEquals(savedTaskVersion, result.version)
         }
     }
 }

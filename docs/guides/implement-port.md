@@ -114,8 +114,7 @@
 
 - **Логика адаптера в изоляции** — зависимости подменяются моками. Образец —
   [FileDataStorageTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/FileDataStorageTests.kt):
-  проверяется, что неизменённый файл не сохраняется повторно. Он исторически написан на Mockito; инструменты
-  для новых тестов — в [unit-tests.md](../project/unit-tests.md).
+  проверяется, что неизменённый файл не сохраняется повторно. Инструменты — в [unit-tests.md](../project/unit-tests.md).
 - **Работа с реальным внешним миром** — интеграционный тест. Для БД это `DatabaseIntegrationTests`
   и контрактные тесты адаптеров, см. шаг 10 в [implement-entity.md](implement-entity.md).
 - **Порт без продакшен-реализации** — тестовая реализация, объявленная бином в тестовом приложении. Образец —

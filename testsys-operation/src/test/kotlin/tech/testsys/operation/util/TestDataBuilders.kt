@@ -80,6 +80,15 @@ fun testCommitedTask(): Task = testTask {
     }
 }
 
+val savedTaskVersion = EntityVersion(1)
+
+fun testSavedTask(updatedTask: Task): Task = task {
+    id = updatedTask.id.value
+    createdAt = updatedTask.createdAt
+    version = savedTaskVersion
+    data = updatedTask.data
+}
+
 fun testCommunity(communityId: Long): Community = community {
     id = communityId
     createdAt = Instant.MIN

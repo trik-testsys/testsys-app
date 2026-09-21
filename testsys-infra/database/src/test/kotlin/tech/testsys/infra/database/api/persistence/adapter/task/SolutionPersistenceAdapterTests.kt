@@ -14,8 +14,10 @@ import tech.testsys.infra.database.DatabaseFixtures.Companion.chose
 import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
+import java.util.UUID
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
@@ -30,7 +32,10 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
     override fun newData() = solutionData {
         file(fixtures.unique("solution") + ".py", "print('solution')".toByteArray())
         language.python()
+        versionBucket = UUID.randomUUID()
     }
+
+    override val updatable = false
 
     override fun modified(entity: Solution) = entity.withData {
         file(fixtures.unique("solution") + ".js", "console.log('solution')".toByteArray())
@@ -49,6 +54,7 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
         assertEquals(expected.data.file.uploadedFilename, actual.data.file.uploadedFilename)
         assertContentEquals(expected.data.file.content, actual.data.file.content)
         assertEquals(expected.data.language, actual.data.language)
+        assertEquals(expected.data.versionBucket, actual.data.versionBucket)
     }
 
     @Test
@@ -60,6 +66,7 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
                 solutionData {
                     file(fixtures.unique("solution"), byteArrayOf(1, 2, 3))
                     this.language.chose(language)
+                    versionBucket = UUID.randomUUID()
                 },
             )
         }
@@ -68,23 +75,12 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
     }
 
     @Test
-    fun `should store a new file version on update with a changed file`() {
+    fun `should fail to update a solution and keep the stored file and language`() {
         val saved = repository.save(newData())
 
-        repository.update(saved.withData { file(saved.data.file.uploadedFilename, "changed".toByteArray()) })
+        assertFailsWith<UnsupportedOperationException> { repository.update(modified(saved)) }
 
-        val found = assertNotNull(repository.findById(saved.id))
-        assertContentEquals("changed".toByteArray(), found.data.file.content)
-        assertEquals(2, fileDataJpaEntityRepository.count())
-    }
-
-    @Test
-    fun `should keep the stored file on update with an unchanged file`() {
-        val saved = repository.save(newData())
-
-        val updated = repository.update(saved.withData { language.visualLanguage() })
-
-        assertSameEntity(updated, assertNotNull(repository.findById(saved.id)))
+        assertSameData(saved, assertNotNull(repository.findById(saved.id)))
         assertEquals(1, fileDataJpaEntityRepository.count())
     }
 }

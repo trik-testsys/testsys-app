@@ -12,6 +12,7 @@ import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.SubmissionStatus
+import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -161,5 +162,51 @@ class SubmissionPersistenceAdapterTests : PersistenceAdapterContractTests<Submis
 
         assertEquals(emptyList(), saved.data.judgmentOrders.ids)
         assertEquals(emptyList(), assertNotNull(repository.findById(saved.id)).data.judgmentOrders.ids)
+    }
+
+    @Test
+    fun `should keep the fixed-role kind of the author through a round trip`() {
+        val authorId = fixtures.participant().id
+        val taskId = fixtures.task().id.value
+        val solutionId = fixtures.solution().id.value
+
+        val saved = repository.save(
+            submissionData {
+                this.author = authorId
+                solution(solutionId)
+                task(taskId)
+                status.queued()
+                kind.developerSolutionTest()
+            },
+        )
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(authorId, saved.data.author.id)
+        assertEquals(authorId, found.data.author.id)
+        assertIs<SingleRoleUserId>(found.data.author.id)
+    }
+
+    @Test
+    fun `should keep the author, solution, task and kind if other ones are passed on update`() {
+        val saved = repository.save(newData())
+        val otherAuthor = fixtures.student().id
+        val otherSolutionId = fixtures.solution().id.value
+        val otherTaskId = fixtures.task().id.value
+        val otherContestId = fixtures.contest().id.value
+
+        repository.update(
+            saved.withData {
+                author = otherAuthor
+                solution(otherSolutionId)
+                task(otherTaskId)
+                kind.grading { contest(otherContestId) }
+            },
+        )
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(saved.data.author.id, found.data.author.id)
+        assertEquals(saved.data.solution.id, found.data.solution.id)
+        assertEquals(saved.data.task.id, found.data.task.id)
+        assertSameKind(saved.data.kind, found.data.kind)
     }
 }

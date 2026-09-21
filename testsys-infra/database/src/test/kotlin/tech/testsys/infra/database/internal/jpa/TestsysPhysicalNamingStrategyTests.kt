@@ -1,16 +1,18 @@
 package tech.testsys.infra.database.internal.jpa
 
+import io.mockk.mockk
 import org.hibernate.boot.model.naming.Identifier
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
-import org.mockito.Mockito.mock
+import tech.testsys.infra.database.internal.InternalDatabaseApi
 import kotlin.test.assertEquals
 
+@OptIn(InternalDatabaseApi::class)
 class TestsysPhysicalNamingStrategyTests {
 
     private val strategy = TestsysPhysicalNamingStrategy()
-    private val jdbcEnvironment = mock(JdbcEnvironment::class.java)
+    private val jdbcEnvironment = mockk<JdbcEnvironment>()
 
     @ParameterizedTest
     @CsvSource(
@@ -20,7 +22,7 @@ class TestsysPhysicalNamingStrategyTests {
         "Task, ts_task",
         "Class, ts_class",
     )
-    fun `table names drop the entity suffix and get the ts prefix in snake case`(logical: String, expected: String) {
+    fun `should drop the entity suffix and add the ts prefix in snake case for table names`(logical: String, expected: String) {
         val physical = strategy.toPhysicalTableName(Identifier.toIdentifier(logical), jdbcEnvironment)
 
         assertEquals(expected, physical.text)
@@ -33,7 +35,7 @@ class TestsysPhysicalNamingStrategyTests {
         "id, id",
         "contestDurationMillis, contest_duration_millis",
     )
-    fun `column names are converted to snake case`(logical: String, expected: String) {
+    fun `should convert column names to snake case`(logical: String, expected: String) {
         val physical = strategy.toPhysicalColumnName(Identifier.toIdentifier(logical), jdbcEnvironment)
 
         assertEquals(expected, physical.text)

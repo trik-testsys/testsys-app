@@ -1,6 +1,5 @@
 package tech.testsys.infra.database.codegen.jpa
 
-import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -13,7 +12,6 @@ import org.junit.jupiter.api.Test
 import java.io.File
 
 @OptIn(ExperimentalCompilerApi::class)
-@Suppress("FunctionNaming")
 class FieldNamesProcessorTests {
 
     private data class Compiled(
@@ -36,7 +34,7 @@ class FieldNamesProcessorTests {
     }
 
     @Test
-    fun `generates flat Fields object for SnowflakeJpaEntity subclass`() {
+    fun `should generate a flat Fields object if the entity is a SnowflakeJpaEntity subclass`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -72,7 +70,7 @@ class FieldNamesProcessorTests {
     }
 
     @Test
-    fun `generates nested Id object for CompositeJpaEntity subclass`() {
+    fun `should generate a nested Id object if the entity is a CompositeJpaEntity subclass`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -112,7 +110,7 @@ class FieldNamesProcessorTests {
     }
 
     @Test
-    fun `excludes Transient annotated property`() {
+    fun `should exclude a property annotated with Transient`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -139,7 +137,7 @@ class FieldNamesProcessorTests {
     }
 
     @Test
-    fun `preserves declared property order in primary constructor`() {
+    fun `should preserve the property order declared in the primary constructor`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -169,7 +167,7 @@ class FieldNamesProcessorTests {
     }
 
     @Test
-    fun `generates Fields for plain Entity not extending project base classes`() {
+    fun `should generate Fields if the entity extends no project base class`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -193,7 +191,7 @@ class FieldNamesProcessorTests {
     }
 
     @Test
-    fun `generates main object without nested Id when composite id lacks primary constructor`() {
+    fun `should generate the main object without a nested Id if the composite id lacks a primary constructor`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -228,7 +226,7 @@ class FieldNamesProcessorTests {
     }
 
     @Test
-    fun `generates independent Fields objects for multiple entities`() {
+    fun `should generate independent Fields objects if there are multiple entities`() {
         val entity = SourceFile.kotlin(
             "Multi.kt",
             """

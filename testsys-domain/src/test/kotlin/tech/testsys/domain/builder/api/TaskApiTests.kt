@@ -64,7 +64,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData {  }
 
             Assertions.assertEquals(origin.id,  copy.id)
@@ -75,17 +75,11 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
             Assertions.assertEquals(origin.data.status, copy.data.status)
             Assertions.assertEquals(origin.data.kind, copy.data.kind)
-            Assertions.assertEquals(
-                origin.data.judgmentOrders.ids.size,
-                copy.data.judgmentOrders.ids.size
-            )
-            origin.data.judgmentOrders.ids.zip(copy.data.judgmentOrders.ids).forEach { (originId, copyId) ->
-                Assertions.assertEquals(originId.value, copyId.value)
-            }
+            Assertions.assertEquals(origin.data.judgmentOrders.ids, copy.data.judgmentOrders.ids)
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change author if withData sets author`() {
             val copy = origin.withData { author(45) }
 
             Assertions.assertEquals(45L, copy.data.author.id.value)
@@ -115,7 +109,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -124,16 +118,16 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
-            Assertions.assertEquals(origin.data.tasks.ids.size, copy.data.tasks.ids.size)
+            Assertions.assertEquals(origin.data.tasks.ids, copy.data.tasks.ids)
             Assertions.assertEquals(origin.data.startsAt, copy.data.startsAt)
             Assertions.assertEquals(origin.data.contestDuration, copy.data.contestDuration)
             Assertions.assertEquals(origin.data.attemptDuration, copy.data.attemptDuration)
             Assertions.assertEquals(origin.data.trikStudioVersion, copy.data.trikStudioVersion)
-            Assertions.assertEquals(origin.data.sharedTo.ids.size, copy.data.sharedTo.ids.size)
+            Assertions.assertEquals(origin.data.sharedTo.ids, copy.data.sharedTo.ids)
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change name if withData sets name`() {
             val copy = origin.withData { name = "Updated Contest" }
 
             Assertions.assertEquals("Updated Contest", copy.data.name)
@@ -158,7 +152,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -172,7 +166,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change solution if withData sets solution`() {
             val copy = origin.withData { solution(99) }
 
             Assertions.assertEquals(99L, copy.data.solution.id.value)
@@ -197,7 +191,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -212,7 +206,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change language if withData sets language`() {
             val copy = origin.withData { language.javaScript() }
 
             Assertions.assertEquals(TrikSupportedLanguage.JavaScript, copy.data.language)
@@ -235,7 +229,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -247,7 +241,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change judge if withData sets judge`() {
             val copy = origin.withData { judge(99) }
 
             Assertions.assertEquals(99L, copy.data.judge.id.value)
@@ -267,7 +261,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -278,7 +272,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change file if withData sets file`() {
             val copy = origin.withData { file("updated.log", byteArrayOf(3, 4)) }
 
             Assertions.assertEquals("updated.log", copy.data.file.uploadedFilename)
@@ -299,7 +293,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -310,7 +304,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change file if withData sets file`() {
             val copy = origin.withData { file("updated.mp4", byteArrayOf(7, 8)) }
 
             Assertions.assertEquals("updated.mp4", copy.data.file.uploadedFilename)
@@ -321,6 +315,7 @@ class TaskApiTests {
     @Nested
     inner class SolutionTests {
 
+        private val versionBucket = UUID.randomUUID()
         private val origin = solution {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
@@ -328,11 +323,12 @@ class TaskApiTests {
             data = SolutionData(
                 file = FileData("solution.py", byteArrayOf(4, 5, 6)),
                 language = TrikSupportedLanguage.Python,
+                versionBucket = versionBucket,
             )
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -341,10 +337,11 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
             Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
             Assertions.assertEquals(origin.data.language, copy.data.language)
+            Assertions.assertEquals(origin.data.versionBucket, copy.data.versionBucket)
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change language if withData sets language`() {
             val copy = origin.withData { language.visualLanguage() }
 
             Assertions.assertEquals(TrikSupportedLanguage.VisualLanguage, copy.data.language)
@@ -369,7 +366,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -383,7 +380,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change file if withData sets file`() {
             val copy = origin.withData { file("updated.pdf", byteArrayOf(10, 11)) }
 
             Assertions.assertEquals("updated.pdf", copy.data.file.uploadedFilename)
@@ -407,7 +404,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -421,7 +418,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change file if withData sets file`() {
             val copy = origin.withData { file("updated.xml", byteArrayOf(3, 4)) }
 
             Assertions.assertEquals("updated.xml", copy.data.file.uploadedFilename)
@@ -445,7 +442,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -454,10 +451,12 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.score, copy.data.score)
             Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
             Assertions.assertEquals(origin.data.submission.id, copy.data.submission.id)
+            Assertions.assertEquals(origin.data.logs?.id, copy.data.logs?.id)
+            Assertions.assertEquals(origin.data.recording?.id, copy.data.recording?.id)
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change score if withData sets score`() {
             val copy = origin.withData { score = 50 }
 
             Assertions.assertEquals(Score(50), copy.data.score)
@@ -489,7 +488,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields for New`() {
+        fun `should keep all fields of a New task if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -498,20 +497,20 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
-            Assertions.assertEquals(origin.data.sharedTo.ids.size, copy.data.sharedTo.ids.size)
+            Assertions.assertEquals(origin.data.sharedTo.ids, copy.data.sharedTo.ids)
 
             Assertions.assertInstanceOf(TaskContent.New::class.java, copy.data.content)
             val originWip = (origin.data.content as TaskContent.New).wip
             val copyWip = (copy.data.content as TaskContent.New).wip
-            Assertions.assertEquals(originWip.tests.ids.size, copyWip.tests.ids.size)
+            Assertions.assertEquals(originWip.tests.ids, copyWip.tests.ids)
             Assertions.assertEquals(originWip.exercise?.id, copyWip.exercise?.id)
             Assertions.assertEquals(originWip.statement?.id, copyWip.statement?.id)
-            Assertions.assertEquals(originWip.developerSolutions.ids.size, copyWip.developerSolutions.ids.size)
+            Assertions.assertEquals(originWip.developerSolutions.ids, copyWip.developerSolutions.ids)
             Assertions.assertEquals(originWip.supportedTrikStudioVersions, copyWip.supportedTrikStudioVersions)
         }
 
         @Test
-        fun `withData should change modified identity fields for New`() {
+        fun `should change name of a New task if withData sets name`() {
             val copy = origin.withData {
                 name = "Updated Name"
             }
@@ -522,7 +521,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should change variant from New to Committed`() {
+        fun `should change content from New to Committed if withData commits it`() {
             val copy = origin.withData {
                 content.committed {
                     exercise(30)
@@ -562,7 +561,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields for Committed`() {
+        fun `should keep all fields of a Committed task if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -571,20 +570,20 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
-            Assertions.assertEquals(origin.data.sharedTo.ids.size, copy.data.sharedTo.ids.size)
+            Assertions.assertEquals(origin.data.sharedTo.ids, copy.data.sharedTo.ids)
 
             Assertions.assertInstanceOf(TaskContent.Committed::class.java, copy.data.content)
             val originCommitted = (origin.data.content as TaskContent.Committed).lastCommitted
             val copyCommitted = (copy.data.content as TaskContent.Committed).lastCommitted
-            Assertions.assertEquals(originCommitted.tests.ids.size, copyCommitted.tests.ids.size)
+            Assertions.assertEquals(originCommitted.tests.ids, copyCommitted.tests.ids)
             Assertions.assertEquals(originCommitted.exercise.id, copyCommitted.exercise.id)
             Assertions.assertEquals(originCommitted.statement.id, copyCommitted.statement.id)
-            Assertions.assertEquals(originCommitted.developerSolutions.ids.size, copyCommitted.developerSolutions.ids.size)
+            Assertions.assertEquals(originCommitted.developerSolutions.ids, copyCommitted.developerSolutions.ids)
             Assertions.assertEquals(originCommitted.supportedTrikStudioVersions, copyCommitted.supportedTrikStudioVersions)
         }
 
         @Test
-        fun `withData should change modified identity fields for Committed`() {
+        fun `should change name of a Committed task if withData sets name`() {
             val copy = origin.withData { name = "Updated Name" }
 
             Assertions.assertEquals("Updated Name", copy.data.name)
@@ -593,7 +592,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should change committed content`() {
+        fun `should change committed content if withData sets it`() {
             val copy = origin.withData {
                 content.committed { exercise(99) }
             }
@@ -637,7 +636,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields for Uncommitted`() {
+        fun `should keep all fields of an Uncommitted task if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -651,17 +650,17 @@ class TaskApiTests {
             val originContent = origin.data.content as TaskContent.Uncommitted
             val copyContent = copy.data.content as TaskContent.Uncommitted
 
-            Assertions.assertEquals(originContent.wip.tests.ids.size, copyContent.wip.tests.ids.size)
+            Assertions.assertEquals(originContent.wip.tests.ids, copyContent.wip.tests.ids)
             Assertions.assertEquals(originContent.wip.exercise?.id, copyContent.wip.exercise?.id)
             Assertions.assertEquals(originContent.wip.statement?.id, copyContent.wip.statement?.id)
 
-            Assertions.assertEquals(originContent.lastCommitted.tests.ids.size, copyContent.lastCommitted.tests.ids.size)
+            Assertions.assertEquals(originContent.lastCommitted.tests.ids, copyContent.lastCommitted.tests.ids)
             Assertions.assertEquals(originContent.lastCommitted.exercise.id, copyContent.lastCommitted.exercise.id)
             Assertions.assertEquals(originContent.lastCommitted.statement.id, copyContent.lastCommitted.statement.id)
         }
 
         @Test
-        fun `withData should change uncommitted content`() {
+        fun `should change uncommitted content if withData sets it`() {
             val copy = origin.withData {
                 content.uncommitted(
                     wipBuilder = { exercise(99) },
@@ -675,7 +674,7 @@ class TaskApiTests {
         }
 
         @Test
-        fun `withData should change variant from Uncommitted to New`() {
+        fun `should change content from Uncommitted to New if withData resets it`() {
             val copy = origin.withData {
                 content.new { }
             }

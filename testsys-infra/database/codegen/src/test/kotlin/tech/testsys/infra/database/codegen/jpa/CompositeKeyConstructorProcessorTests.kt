@@ -1,6 +1,5 @@
 package tech.testsys.infra.database.codegen.jpa
 
-import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
@@ -13,7 +12,6 @@ import org.junit.jupiter.api.Test
 import java.io.File
 
 @OptIn(ExperimentalCompilerApi::class)
-@Suppress("FunctionNaming")
 class CompositeKeyConstructorProcessorTests {
 
     private data class Compiled(
@@ -36,7 +34,7 @@ class CompositeKeyConstructorProcessorTests {
     }
 
     @Test
-    fun `generates factory function for canonical 2-Long id`() {
+    fun `should generate a factory function if the id has two Long fields`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -69,7 +67,7 @@ class CompositeKeyConstructorProcessorTests {
     }
 
     @Test
-    fun `generates factory for id with enum and Long fields`() {
+    fun `should generate a factory function if the id has enum and Long fields`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -107,7 +105,7 @@ class CompositeKeyConstructorProcessorTests {
     }
 
     @Test
-    fun `preserves parameter order from id primary constructor`() {
+    fun `should preserve the parameter order of the id primary constructor`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -140,7 +138,7 @@ class CompositeKeyConstructorProcessorTests {
     }
 
     @Test
-    fun `fails when annotated class does not extend CompositeJpaEntity`() {
+    fun `should fail if the annotated class does not extend CompositeJpaEntity`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -161,7 +159,7 @@ class CompositeKeyConstructorProcessorTests {
     }
 
     @Test
-    fun `fails when entity has constructor params beyond id`() {
+    fun `should fail if the entity has constructor parameters beyond the id`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -193,7 +191,7 @@ class CompositeKeyConstructorProcessorTests {
     }
 
     @Test
-    fun `fails when id type is not a data class`() {
+    fun `should fail if the id type is not a data class`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """
@@ -222,7 +220,7 @@ class CompositeKeyConstructorProcessorTests {
     }
 
     @Test
-    fun `fails when id constructor has a non-val parameter`() {
+    fun `should fail if the id constructor has a non-val parameter`() {
         val entity = SourceFile.kotlin(
             "Sample.kt",
             """

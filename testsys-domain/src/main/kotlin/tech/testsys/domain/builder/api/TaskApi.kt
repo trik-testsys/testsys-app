@@ -458,6 +458,7 @@ private fun SolutionData.toBuilder(): SolutionDataBuilder {
             TrikSupportedLanguage.JavaScript -> language.javaScript()
             TrikSupportedLanguage.VisualLanguage -> language.visualLanguage()
         }
+        versionBucket = thisData.versionBucket
     }
 }
 
@@ -579,6 +580,8 @@ private fun VerdictData.toBuilder(): VerdictDataBuilder {
         score = thisData.score.value
         task = thisData.task.id
         submission = thisData.submission.id
+        logs = thisData.logs?.id
+        recording = thisData.recording?.id
     }
 }
 

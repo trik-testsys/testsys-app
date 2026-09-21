@@ -50,14 +50,15 @@ object VerdictMapping : EntityMapping<Verdict, VerdictJpaEntity> {
     )
 
     /**
-     * Creates the [VerdictJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     * Creates the [VerdictJpaEntity] row replacing [current] from [entity],
+     * keeping `taskId`, `submissionId`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: Verdict, current: VerdictJpaEntity) = VerdictJpaEntity(
         score = entity.data.score.value,
-        taskId = entity.data.task.id.value,
-        submissionId = entity.data.submission.id.value,
+        taskId = current.taskId,
+        submissionId = current.submissionId,
         logsId = entity.data.logs?.id?.value,
         recordingId = entity.data.recording?.id?.value,
         id = entity.id.value,

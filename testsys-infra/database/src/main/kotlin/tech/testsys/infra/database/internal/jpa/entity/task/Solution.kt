@@ -5,11 +5,13 @@ import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
+import java.util.UUID
 
 /**
  * JPA entity of [tech.testsys.domain.model.task.Solution].
  *
  * @property fileDataId id of the [FileDataJpaEntity] holding the source.
+ * @property versionBucket identity shared by all versions of the solution.
  * @property language programming language of the source.
  * @since %CURRENT_VERSION%
  */
@@ -17,6 +19,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 @InternalDatabaseApi
 class SolutionJpaEntity(
     val fileDataId: Long,
+    val versionBucket: UUID,
     @Enumerated(EnumType.STRING)
     val language: TrikSupportedLanguageEnum,
     id: Long? = null,

@@ -24,7 +24,7 @@ class SnowflakePersistTests : DatabaseIntegrationTests() {
     private lateinit var repository: TrikStudioVersionJpaEntityRepository
 
     @Test
-    fun `persisted entities get increasing snowflake ids with the default node id`() {
+    fun `should assign increasing snowflake ids with the default node id when entities are persisted`() {
         val before = Instant.now()
         val first = repository.save(TrikStudioVersionJpaEntity(tag = "snowflake-persist-1"))
         val second = repository.save(TrikStudioVersionJpaEntity(tag = "snowflake-persist-2"))

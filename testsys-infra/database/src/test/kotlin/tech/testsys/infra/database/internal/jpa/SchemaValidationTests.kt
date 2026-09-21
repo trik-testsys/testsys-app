@@ -25,5 +25,5 @@ import tech.testsys.infra.database.DatabaseIntegrationTests
 class SchemaValidationTests : DatabaseIntegrationTests() {
 
     @Test
-    fun `liquibase migrations produce a schema that hibernate validate accepts`() = Unit
+    fun `should accept the schema produced by liquibase migrations when hibernate validates it`() = Unit
 }

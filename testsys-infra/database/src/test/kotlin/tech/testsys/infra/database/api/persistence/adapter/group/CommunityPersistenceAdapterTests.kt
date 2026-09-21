@@ -47,12 +47,13 @@ class CommunityPersistenceAdapterTests : PersistenceAdapterContractTests<Communi
     }
 
     @Test
-    fun `should hand the community over to another owner on update`() {
+    fun `should keep the owner if another owner is passed on update`() {
         val saved = repository.save(newData())
-        val newOwnerId = fixtures.developer().id.value
+        val otherOwnerId = fixtures.developer().id.value
 
-        repository.update(saved.withData { owner(newOwnerId) })
+        val updated = repository.update(saved.withData { owner(otherOwnerId) })
 
-        assertEquals(newOwnerId, assertNotNull(repository.findById(saved.id)).data.owner.id.value)
+        assertEquals(saved.data.owner.id, updated.data.owner.id)
+        assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
     }
 }

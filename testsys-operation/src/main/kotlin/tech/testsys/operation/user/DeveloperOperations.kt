@@ -93,8 +93,8 @@ class DeveloperOperations(
                 this.statement = newStatementId
             }.getOrRaise()
 
-            taskRepository.update(updatedTask)
-            return updatedTask.asSuccess()
+            val savedTask = taskRepository.update(updatedTask)
+            return savedTask.asSuccess()
         }
 
     /**
@@ -117,19 +117,19 @@ class DeveloperOperations(
 
             ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
 
-            ensure(task.data.content !is TaskContent.New) { TaskNotCommittedError(taskId) }
-
             val sharedCommunityIds = task.data.sharedTo.ids
             val developerCommunityIds = user.data.roles.filterIsInstance<Developer>().single().memberOf.ids
             communityIds.filterNot { communityId -> communityId in sharedCommunityIds }.forEach { communityId ->
                 ensure(communityId in developerCommunityIds) { CommunityAccessDeniedError(communityId) }
             }
 
+            ensure(task.data.content !is TaskContent.New) { TaskNotCommittedError(taskId) }
+
             val sharedTask = task.withData {
                 sharedTo = (sharedCommunityIds + communityIds).distinct().toMutableList()
             }
 
-            taskRepository.update(sharedTask)
-            return sharedTask.asSuccess()
+            val savedTask = taskRepository.update(sharedTask)
+            return savedTask.asSuccess()
         }
 }

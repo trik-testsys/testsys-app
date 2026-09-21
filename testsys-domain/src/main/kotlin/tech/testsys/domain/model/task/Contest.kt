@@ -24,7 +24,7 @@ value class ContestId(
 /**
  * Data of a [Contest].
  *
- * @property owner the developer who owns the contest.
+ * @property owner the developer who owns the contest; fixed on creation and ignored on update.
  * @property name the name of the contest.
  * @property description the description of the contest.
  * @property tasks the tasks included in the contest.

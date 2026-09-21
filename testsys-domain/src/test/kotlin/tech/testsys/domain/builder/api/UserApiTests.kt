@@ -36,7 +36,7 @@ class UserApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -48,7 +48,7 @@ class UserApiTests {
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change competition if withData sets competition`() {
             val copy = origin.withData { competition(99) }
 
             Assertions.assertEquals(99L, copy.data.competition.id.value)
@@ -71,7 +71,7 @@ class UserApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -80,11 +80,11 @@ class UserApiTests {
             Assertions.assertEquals(origin.data.community.id, copy.data.community.id)
             Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
             Assertions.assertEquals(origin.data.name, copy.data.name)
-            Assertions.assertEquals(origin.data.competitions.ids.size, copy.data.competitions.ids.size)
+            Assertions.assertEquals(origin.data.competitions.ids, copy.data.competitions.ids)
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change accessToken if withData sets accessToken`() {
             val copy = origin.withData { accessToken = "new-token" }
 
             Assertions.assertEquals("new-token", copy.data.accessToken)
@@ -118,7 +118,7 @@ class UserApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -127,11 +127,11 @@ class UserApiTests {
             Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.email, copy.data.email)
-            Assertions.assertEquals(origin.data.roles.size, copy.data.roles.size)
+            Assertions.assertEquals(origin.data.roles, copy.data.roles)
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change accessToken if withData sets accessToken`() {
             val copy = origin.withData { accessToken = "new-token" }
 
             Assertions.assertEquals("new-token", copy.data.accessToken)
@@ -152,7 +152,7 @@ class UserApiTests {
         }
 
         @Test
-        fun `withData should keep all unmodified fields`() {
+        fun `should keep all fields if withData changes nothing`() {
             val copy = origin.withData { }
 
             Assertions.assertEquals(origin.id, copy.id)
@@ -163,7 +163,7 @@ class UserApiTests {
         }
 
         @Test
-        fun `withData should change modified fields`() {
+        fun `should change accessToken if withData sets accessToken`() {
             val copy = origin.withData { accessToken = "new-token" }
 
             Assertions.assertEquals("new-token", copy.data.accessToken)

@@ -34,10 +34,14 @@ class VerdictPersistenceAdapterTests : PersistenceAdapterContractTests<VerdictDa
         }
     }
 
-    override fun modified(entity: Verdict) = entity.withData {
-        score = 42
-        logs = null
-        recording = null
+    override fun modified(entity: Verdict): Verdict {
+        val newLogsId = fixtures.logs().id
+        val newRecordingId = fixtures.recording().id
+        return entity.withData {
+            score = 42
+            logs = newLogsId
+            recording = newRecordingId
+        }
     }
 
     override fun detached(entity: Verdict) = verdict {
@@ -74,5 +78,51 @@ class VerdictPersistenceAdapterTests : PersistenceAdapterContractTests<VerdictDa
         assertNull(found.data.logs)
         assertNull(found.data.recording)
         assertEquals(0, found.data.score.value)
+    }
+
+    @Test
+    fun `should keep logs and recording when the score is updated`() {
+        val saved = repository.save(newData())
+
+        repository.update(saved.withData { score = 42 })
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(saved.data.logs?.id, found.data.logs?.id)
+        assertEquals(saved.data.recording?.id, found.data.recording?.id)
+    }
+
+    @Test
+    fun `should detach logs and recording if they are cleared on update`() {
+        val saved = repository.save(newData())
+
+        repository.update(
+            saved.withData {
+                logs = null
+                recording = null
+            },
+        )
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertNull(found.data.logs)
+        assertNull(found.data.recording)
+    }
+
+    @Test
+    fun `should keep the task and submission if other ones are passed on update`() {
+        val saved = repository.save(newData())
+        val otherSubmission = fixtures.submission()
+
+        val updated = repository.update(
+            saved.withData {
+                task = otherSubmission.data.task.id
+                submission = otherSubmission.id
+            },
+        )
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(saved.data.task.id, updated.data.task.id)
+        assertEquals(saved.data.submission.id, updated.data.submission.id)
+        assertEquals(saved.data.task.id, found.data.task.id)
+        assertEquals(saved.data.submission.id, found.data.submission.id)
     }
 }

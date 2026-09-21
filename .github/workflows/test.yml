@@ -52,7 +52,9 @@ jobs:
           check_name: Test report
           detailed_summary: true
           group_suite: true
-          include_passed: true
+          include_passed: false
+          include_skipped: true
+          verbose_summary: false
           include_time_in_summary: true
           require_tests: true
           comment: true

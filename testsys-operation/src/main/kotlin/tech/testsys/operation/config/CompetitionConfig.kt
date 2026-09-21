@@ -12,6 +12,6 @@ import tech.testsys.operation.annotation.OperationConfig
 @OperationConfig("competition")
 interface CompetitionConfig {
 
-    @ConfigProperty(dynamic = true)
+    @ConfigProperty(isDynamic = true)
     val maxParticipants: Int
 }

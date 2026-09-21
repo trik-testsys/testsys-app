@@ -5,7 +5,8 @@ package tech.testsys.operation.annotation
  * with the derived name.
  *
  * @property name the key segment of the property; empty means the kebab-case of the property name.
- * @property dynamic `true` if the value may change between calls, `false` if it is fixed for the application lifetime.
+ * @property isDynamic `true` if the value may change between calls, `false` if it is fixed for the application
+ * lifetime.
  * @since %CURRENT_VERSION%
  */
 @Target(AnnotationTarget.PROPERTY)
@@ -13,5 +14,5 @@ package tech.testsys.operation.annotation
 @MustBeDocumented
 annotation class ConfigProperty(
     val name: String = "",
-    val dynamic: Boolean = false,
+    val isDynamic: Boolean = false,
 )

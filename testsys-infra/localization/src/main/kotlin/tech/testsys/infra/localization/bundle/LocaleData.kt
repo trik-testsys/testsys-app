@@ -89,7 +89,9 @@ import java.util.Calendar
  *       add(Calendar.DAY_OF_MONTH, 7)
  *   }.time
  *   ```
+ * @since %CURRENT_VERSION%
  */
+@Suppress("VERBOSE_DOC")
 data class LocaleData(
     val numberFormatter: LocalizedNumberFormatter,
     val dateIntervalFormatter: DateIntervalFormat,
@@ -100,6 +102,11 @@ data class LocaleData(
     val calendar: Calendar,
 ) {
     companion object {
+        /**
+         * Builds the [LocaleData] of [region].
+         *
+         * @since %CURRENT_VERSION%
+         */
         fun forRegion(region: SupportedRegion): LocaleData {
             val uLocale = region.toULocale()
             return LocaleData(

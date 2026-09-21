@@ -10,16 +10,20 @@ Reported codes:
     MISSING_DOC     public class/interface/object/fun/typealias without KDoc
     MISSING_SINCE   public declaration KDoc without "@since %CURRENT_VERSION%"
     PROP_DOC        KDoc block placed directly above a property (must be @property in the class KDoc)
-    PROP_UNDOC      public property of a class not covered by @property in the class KDoc
+    PROP_UNDOC      public property of a class or object not covered by @property in the class KDoc
     OVERRIDE_DOC    KDoc above an override (overrides inherit the base KDoc)
     OVERRIDE_PROP   @property for an "override val" constructor property (the base type documents it)
     NONPUBLIC_SINCE @since inside KDoc of a private/internal/protected member
     TYPE_PARAM      type parameter without "@param Name" in the KDoc
-    SUBTYPE_LINK    KDoc of a type links [Sub] where Sub extends/implements that type
+    SUBTYPE_LINK    KDoc of a type links [Sub] where Sub extends/implements that type and is declared outside its body
     LONG_LINE       KDoc line longer than --max-line (Detekt MaxLineLength)
     VERBOSE_DOC     summary of a public declaration has more than one paragraph or more than 3 prose lines
     SEE_TAG         "@see" tag (link inline in the summary or drop it)
+    TAG_ORDER       tags not in the order @param, @property, @return/@throws, @since
     NONPUBLIC_DOC   (info only, shown with --info) handwritten KDoc on a non-public member
+
+A code is switched off for one declaration with @Suppress("CODE") above it, e.g. @Suppress("VERBOSE_DOC") on a
+declaration that needs detailed documentation.
 
 The final line reports the KDoc volume ("K KDoc lines, P% of source"). A brevity pass must lower it;
 a run that only adds missing blocks leaves it growing.
@@ -34,6 +38,7 @@ DECL_RE = re.compile(rf"^(?P<indent>\s*)(?P<mods>{MODIFIERS})(?P<kind>class|inte
 PROP_RE = re.compile(rf"^(?P<indent>\s*)(?P<mods>{MODIFIERS})(?P<kind>val|var)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)")
 CTOR_PROP_RE = re.compile(rf"^\s*(?P<mods>{MODIFIERS})(?P<kind>val|var)\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*:")
 NONPUBLIC = ("private", "internal", "protected")
+TAG_RANK = {"param": 0, "property": 1, "return": 2, "throws": 2, "since": 3}
 
 
 def strip_kdoc(text: str) -> str:
@@ -41,11 +46,12 @@ def strip_kdoc(text: str) -> str:
 
 
 def kdoc_before(lines, i):
-    """Return (start, end) line indexes of the KDoc block right above line i (annotations allowed between), or None."""
+    """Return (start, end) line indexes of the KDoc block right above line i (annotations and context parameters allowed between), or None."""
     j = i - 1
     while j >= 0:
         s = lines[j].strip()
-        if s.startswith("@"):
+        if s.startswith("@") or s.startswith("context("):
+            # annotation or context parameters line such as "context(raise: Raise<E>)"
             j -= 1
         elif s == ")":
             # closing line of a multi-line annotation such as "@Target(\n ... \n)": skip back to its "@Name(" line
@@ -66,6 +72,17 @@ def kdoc_before(lines, i):
     return (k, j) if k >= 0 else None
 
 
+def suppressed_codes(lines, i):
+    """Return the codes listed in @Suppress("...") annotations right above the declaration at line i."""
+    codes, j = set(), i - 1
+    while j >= 0 and lines[j].strip().startswith(("@", "context(")):
+        m = re.match(r"@Suppress\((.*)\)", lines[j].strip())
+        if m:
+            codes.update(re.findall(r'"([A-Z_]+)"', m.group(1)))
+        j -= 1
+    return codes
+
+
 def enclosing_kind(lines, i, indent):
     """Return the kind of the innermost declaration enclosing line i (by indentation), or None at top level."""
     for j in range(i - 1, -1, -1):
@@ -75,6 +92,19 @@ def enclosing_kind(lines, i, indent):
         if m and len(m.group("indent")) < indent:
             return m.group("kind")
     return None
+
+
+def inside_nonpublic_type(lines, i, indent):
+    """Return True when line i is nested (by indentation) in a private/internal/protected declaration."""
+    for j in range(i - 1, -1, -1):
+        if lines[j].strip().startswith(("//", "*", "/*")):
+            continue
+        m = DECL_RE.match(lines[j])
+        if m and len(m.group("indent")) < indent:
+            if is_nonpublic(m.group("mods")):
+                return True
+            indent = len(m.group("indent"))
+    return False
 
 
 def is_nonpublic(mods: str) -> bool:
@@ -185,12 +215,16 @@ def check_file(path: pathlib.Path, max_line: int, info: bool):
     problems = []
     subtypes = {}   # parent -> set(child)
     type_docs = {}  # type name -> (kdoc_start, kdoc_end)
+    type_lines = {}  # type name -> declaration line index
 
     def report(code, lineno, msg):
-        problems.append((code, lineno + 1, msg))
+        if code not in suppressed:
+            problems.append((code, lineno + 1, msg))
 
     # ---- pass 1: declarations ----
+    suppressed = set()
     for i, line in enumerate(lines):
+        suppressed = set()
         stripped = line.strip()
         if stripped.startswith(("/**", "*")) and len(line) > max_line:
             report("LONG_LINE", i, f"KDoc line longer than {max_line} characters")
@@ -208,12 +242,14 @@ def check_file(path: pathlib.Path, max_line: int, info: bool):
                 continue  # local declaration inside a function body: never public
             header = declaration_header(lines, i)
             doc = kdoc_before(lines, i)
-            nonpublic = is_nonpublic(mods)
+            suppressed = suppressed_codes(lines, i)
+            nonpublic = is_nonpublic(mods) or inside_nonpublic_type(lines, i, len(d.group("indent")))
             override = "override" in mods.split()
             if kind in ("class", "interface", "object"):
                 parsed = parse_type_decl(header)
                 if parsed:
                     name, tps, supers = parsed
+                    type_lines[name] = i
                     for s in supers:
                         subtypes.setdefault(s, set()).add(name)
                     if doc:
@@ -246,11 +282,15 @@ def check_file(path: pathlib.Path, max_line: int, info: bool):
                        f"summary has {prose} prose lines in {paragraphs} paragraphs; keep one or two sentences")
             if re.search(r"^\s*\*\s*@see\b", block, flags=re.M):
                 report("SEE_TAG", doc[0], "@see tag; link inline in the summary or drop it")
+            tags = re.findall(r"^\s*\*\s*@(param|property|return|throws|since)\b", block, flags=re.M)
+            ranks = [TAG_RANK[t] for t in tags]
+            if ranks != sorted(ranks):
+                report("TAG_ORDER", doc[0], "tags out of order; expected @param, @property, @return/@throws, @since")
             for tp in tps:
                 if not re.search(rf"@param\s+{re.escape(tp)}\s", block):
                     report("TYPE_PARAM", i, f"type parameter '{tp}' is not documented with @param")
             # properties covered by @property
-            if kind in ("class", "interface"):
+            if kind in ("class", "interface", "object"):
                 documented = set(re.findall(r"@property\s+([A-Za-z_][A-Za-z0-9_]*)", block))
                 ctor_props = []
                 for cm in CTOR_PROP_RE.finditer(strip_parens_keep_inner(header)):
@@ -280,9 +320,13 @@ def check_file(path: pathlib.Path, max_line: int, info: bool):
             if doc:
                 report("PROP_DOC", i, f"KDoc above property '{p.group('name')}'; document it with @property in the class KDoc")
     # ---- pass 2: parent -> subtype links ----
+    suppressed = set()
     for parent, (s, e) in type_docs.items():
         block = "\n".join(lines[s:e + 1])
+        body = class_body_range(lines, type_lines[parent])
         for child in sorted(subtypes.get(parent, ())):
+            if body and body[0] < type_lines.get(child, -1) < body[1]:
+                continue  # variant of a sealed type declared inside its body: the link is allowed
             if re.search(rf"\[{re.escape(child)}\]", block):
                 report("SUBTYPE_LINK", s, f"KDoc of '{parent}' links its subtype [{child}]")
 

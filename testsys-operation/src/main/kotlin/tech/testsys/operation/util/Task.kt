@@ -12,6 +12,13 @@ import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.error.raise
 
+/**
+ * Returns the work-in-progress content of this task, or fails with [onCommited] if the task has
+ * [TaskContent.Committed] content.
+ *
+ * @param E the type of the error returned for a committed task.
+ * @since %CURRENT_VERSION%
+ */
 @InternalOperationsApi
 fun <E : OperationError> Task.getWip(onCommited: E): OperationResult<WipTaskContent, E> = operation {
     return when (val content = this@getWip.data.content) {
@@ -21,6 +28,13 @@ fun <E : OperationError> Task.getWip(onCommited: E): OperationResult<WipTaskCont
     }
 }
 
+/**
+ * Returns a copy of this task with [change] applied to its work-in-progress content, or fails with [onCommited]
+ * if the task has [TaskContent.Committed] content.
+ *
+ * @param E the type of the error returned for a committed task.
+ * @since %CURRENT_VERSION%
+ */
 @InternalOperationsApi
 fun <E : OperationError> Task.changeWip(onCommited: E, change: WipTaskContentBuilder.() -> Unit): OperationResult<Task, E> = operation {
     val task = this@changeWip

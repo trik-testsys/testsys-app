@@ -19,8 +19,9 @@ import com.ibm.icu.util.ULocale
  * passing the [SupportedRegion] itself across module boundaries so callers
  * cannot smuggle in unsupported locales.
  *
- * @see LocaleData.forRegion
+ * @since %CURRENT_VERSION%
  */
+@Suppress("VERBOSE_DOC")
 enum class SupportedRegion {
     /** Russia — Russian language, Russian Federation conventions (`ru_RU`). */
     RU,
@@ -29,6 +30,8 @@ enum class SupportedRegion {
     /**
      * Maps this region to the ICU [ULocale] used by all locale-sensitive
      * facilities (formatters, collator, break iterator, calendar).
+     *
+     * @since %CURRENT_VERSION%
      */
     fun toULocale(): ULocale = when (this) {
         RU -> ULocale("ru_RU")

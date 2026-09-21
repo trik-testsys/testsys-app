@@ -1,0 +1,30 @@
+{
+  "problemMatcher": [
+    {
+      "owner": "kotlin-error",
+      "severity": "error",
+      "pattern": [
+        {
+          "regexp": "^e: file://(.+?):(\\d+):(\\d+):? (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        }
+      ]
+    },
+    {
+      "owner": "kotlin-warning",
+      "severity": "warning",
+      "pattern": [
+        {
+          "regexp": "^w: file://(.+?):(\\d+):(\\d+):? (.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "message": 4
+        }
+      ]
+    }
+  ]
+}

@@ -11,7 +11,7 @@
 
 ```
 testsys-app/
-├── .github/workflows/        # CI: build, lint (Detekt + SARIF), проверка ветки PR
+├── .github/workflows/        # CI: build, test, lint (Detekt + SARIF), проверка ветки PR
 ├── buildSrc/                 # Convention-плагин testsys.conventions
 ├── docs/                     # Документация проекта
 ├── gradle/
@@ -90,8 +90,9 @@ Workflow лежат в `.github/workflows`.
 
 | Workflow                  | Когда                          | Что делает                                                      |
 |---------------------------|--------------------------------|-----------------------------------------------------------------|
-| `build.yml`               | push/PR в `master`, `dev`      | `./gradlew build -x detekt -x detektMain`, артефакты и отчёты   |
-| `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detektMain`, загрузка SARIF в GitHub Security        |
+| `build.yml`               | push/PR в `master`, `dev`      | `./gradlew assemble` — компиляция и сборка без тестов, jar-артефакты, аннотации ошибок компиляции в PR |
+| `test.yml`                | push/PR в `master`, `dev`      | `./gradlew check -x detekt -x detektMain` — все тесты; отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
+| `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detektMain -Pdetekt.autoCorrect=false --continue` — Detekt по всем модулям без правки файлов; таблица замечаний в Summary запуска, загрузка SARIF в GitHub Security |
 | `check-source-branch.yml` | PR в `dev`                     | Разрешает PR только из веток `sh1sh4k1n9/`, `ch3zych3z/`, `KarasssDev/`, `DirewolfPrime/`, `LutovolkVPraime/` |
 | `release.yml`             | —                              | Пока пустой                                                     |
 

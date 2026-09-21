@@ -1,6 +1,7 @@
 package tech.testsys.domain.builder.user
 
 import tech.testsys.domain.builder.Builder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.CommunityId
@@ -67,7 +68,7 @@ class ParticipantDataBuilder : Builder<ParticipantData> {
 }
 
 /**
- * Builder of [Participant] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Participant] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -79,15 +80,13 @@ class ParticipantBuilder : SingleRoleUserBuilder<Participant, ParticipantData, P
     override fun build(): Participant {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Participant(
             id = SingleRoleUserId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }
 
@@ -141,7 +140,7 @@ class ObserverDataBuilder : Builder<ObserverData> {
 }
 
 /**
- * Builder of [Observer] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Observer] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -153,15 +152,13 @@ class ObserverBuilder : SingleRoleUserBuilder<Observer, ObserverData, ObserverDa
     override fun build(): Observer {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Observer(
             id = SingleRoleUserId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }
 
@@ -185,7 +182,7 @@ class SupervisorDataBuilder : Builder<SupervisorData> {
 }
 
 /**
- * Builder of [Supervisor] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Supervisor] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -197,14 +194,12 @@ class SupervisorBuilder : SingleRoleUserBuilder<Supervisor, SupervisorData, Supe
     override fun build(): Supervisor {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Supervisor(
             id = SingleRoleUserId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }

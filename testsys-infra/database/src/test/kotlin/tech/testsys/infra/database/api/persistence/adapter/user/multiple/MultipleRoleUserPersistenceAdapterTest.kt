@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.judgeData
 import tech.testsys.domain.builder.api.managerData
+import tech.testsys.domain.builder.api.multipleRoleUser
 import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.api.withData
@@ -86,6 +87,12 @@ class MultipleRoleUserPersistenceAdapterTest :
         }
     }
 
+    override fun detached(entity: MultipleRoleUser) = multipleRoleUser {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = MultipleRoleUserId(value)
 
     override fun assertSameData(expected: MultipleRoleUser, actual: MultipleRoleUser) {
@@ -125,7 +132,7 @@ class MultipleRoleUserPersistenceAdapterTest :
     private inline fun <reified Role : CompatibleUserRole> MultipleRoleUser.role(): Role = data.roles.filterIsInstance<Role>().single()
 
     @Test
-    fun `every role survives a round trip with its memberships`() {
+    fun `should keep every role with its memberships through a round trip`() {
         val first = fixtures.community().id.value
         val second = fixtures.community().id.value
         val data = multipleRoleUserData {
@@ -159,7 +166,7 @@ class MultipleRoleUserPersistenceAdapterTest :
     }
 
     @Test
-    fun `update adds and drops roles and memberships`() {
+    fun `should add and drop roles and memberships on update`() {
         val saved = repository.save(newData())
         val kept = saved.role<Developer>().memberOf.ids.single()
         val added = fixtures.community().id.value
@@ -186,7 +193,7 @@ class MultipleRoleUserPersistenceAdapterTest :
     }
 
     @Test
-    fun `developer role projects the owned tasks and contests`() {
+    fun `should project the owned tasks and contests for the Developer role`() {
         val developer = fixtures.developer()
         val task = fixtures.task(developer)
         val contest = fixtures.contest(developer)
@@ -199,7 +206,7 @@ class MultipleRoleUserPersistenceAdapterTest :
     }
 
     @Test
-    fun `student role projects the enrolled classes and authored submissions`() {
+    fun `should project the enrolled classes and authored submissions for the Student role`() {
         val student = fixtures.student()
         val studentClass = fixtures.studentClass(students = listOf(student))
         val submission = fixtures.submission(author = student)
@@ -212,7 +219,7 @@ class MultipleRoleUserPersistenceAdapterTest :
     }
 
     @Test
-    fun `judge role projects the issued judgment orders`() {
+    fun `should project the issued judgment orders for the Judge role`() {
         val judge = fixtures.judge()
         val order = fixtures.judgmentOrder(judge = judge)
         fixtures.judgmentOrder()
@@ -223,7 +230,7 @@ class MultipleRoleUserPersistenceAdapterTest :
     }
 
     @Test
-    fun `manager role projects the owned classes and competitions`() {
+    fun `should project the owned classes and competitions for the Manager role`() {
         val manager = fixtures.manager()
         val studentClass = fixtures.studentClass(owner = manager)
         val competition = fixtures.competition(owner = manager)
@@ -236,7 +243,7 @@ class MultipleRoleUserPersistenceAdapterTest :
     }
 
     @Test
-    fun `role projections given on save are ignored`() {
+    fun `should ignore role projections given on save`() {
         val saved = repository.save(
             multipleRoleUserData {
                 accessToken = fixtures.unique("token")
@@ -253,7 +260,7 @@ class MultipleRoleUserPersistenceAdapterTest :
     }
 
     @Test
-    fun `removeById deletes the user together with its role and membership rows`() {
+    fun `should delete the user together with its role and membership rows by id`() {
         val saved = repository.save(newData())
 
         repository.removeById(saved.id)
@@ -266,7 +273,7 @@ class MultipleRoleUserPersistenceAdapterTest :
     }
 
     @Test
-    fun `single-role users are invisible to the adapter`() {
+    fun `should not find single-role users`() {
         val supervisor = fixtures.supervisor()
         val user = repository.save(newData())
         val foreignId = MultipleRoleUserId(supervisor.id.value)

@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.group
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.community
 import tech.testsys.domain.builder.api.communityData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -31,6 +32,12 @@ class CommunityPersistenceAdapterTest : PersistenceAdapterContractTest<Community
         description = "Updated description"
     }
 
+    override fun detached(entity: Community) = community {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = CommunityId(value)
 
     override fun assertSameData(expected: Community, actual: Community) {
@@ -40,7 +47,7 @@ class CommunityPersistenceAdapterTest : PersistenceAdapterContractTest<Community
     }
 
     @Test
-    fun `update hands the community over to another owner`() {
+    fun `should hand the community over to another owner on update`() {
         val saved = repository.save(newData())
         val newOwnerId = fixtures.developer().id.value
 

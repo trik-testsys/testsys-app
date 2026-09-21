@@ -2,6 +2,7 @@ package tech.testsys.domain.builder.group
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.Competition
@@ -77,7 +78,7 @@ class CompetitionDataBuilder : Builder<CompetitionData> {
 }
 
 /**
- * Builder of [Competition] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Competition] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -88,14 +89,12 @@ class CompetitionBuilder : DomainEntityWithDataBuilder<Competition, CompetitionD
     override fun build(): Competition {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Competition(
             id = CompetitionId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }

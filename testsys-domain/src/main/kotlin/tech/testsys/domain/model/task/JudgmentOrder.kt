@@ -2,7 +2,6 @@ package tech.testsys.domain.model.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -41,6 +40,5 @@ data class JudgmentOrderData(
 class JudgmentOrder(
     id: JudgmentOrderId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: JudgmentOrderData,
-) : DomainEntity<JudgmentOrderId>(id, createdAt, version)
+) : DomainEntity<JudgmentOrderId>(id, createdAt)

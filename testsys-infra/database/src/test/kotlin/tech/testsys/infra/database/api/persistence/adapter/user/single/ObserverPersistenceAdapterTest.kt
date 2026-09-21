@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.user.single
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.observer
 import tech.testsys.domain.builder.api.observerData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
@@ -60,6 +61,12 @@ class ObserverPersistenceAdapterTest : PersistenceAdapterContractTest<ObserverDa
         }
     }
 
+    override fun detached(entity: Observer) = observer {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = SingleRoleUserId(value)
 
     override fun assertSameData(expected: Observer, actual: Observer) {
@@ -70,7 +77,7 @@ class ObserverPersistenceAdapterTest : PersistenceAdapterContractTest<ObserverDa
     }
 
     @Test
-    fun `duplicate competitions collapse into one join row`() {
+    fun `should collapse duplicate competitions into one join row`() {
         val communityId = fixtures.community().id.value
         val competitionId = fixtures.competition().id.value
 
@@ -89,7 +96,7 @@ class ObserverPersistenceAdapterTest : PersistenceAdapterContractTest<ObserverDa
     }
 
     @Test
-    fun `removeById deletes the user together with its role, data and join rows`() {
+    fun `should delete the user together with its role, data and join rows by id`() {
         val saved = repository.save(newData())
 
         repository.removeById(saved.id)
@@ -101,7 +108,7 @@ class ObserverPersistenceAdapterTest : PersistenceAdapterContractTest<ObserverDa
     }
 
     @Test
-    fun `users of other kinds are invisible to the adapter`() {
+    fun `should not find users of other kinds`() {
         val observer = repository.save(newData())
         val participantId = fixtures.participant().id
         val developerId = SingleRoleUserId(fixtures.developer().id.value)

@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.group
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.`class`
 import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
@@ -51,6 +52,12 @@ class ClassPersistenceAdapterTest : PersistenceAdapterContractTest<ClassData, Cl
         }
     }
 
+    override fun detached(entity: Class) = `class` {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = ClassId(value)
 
     override fun assertSameData(expected: Class, actual: Class) {
@@ -62,7 +69,7 @@ class ClassPersistenceAdapterTest : PersistenceAdapterContractTest<ClassData, Cl
     }
 
     @Test
-    fun `update reconciles the student and contest join rows`() {
+    fun `should reconcile the student and contest join rows on update`() {
         val saved = repository.save(newData())
         val keptStudent = saved.data.students.ids.first()
         val addedStudent = fixtures.student().id
@@ -83,7 +90,7 @@ class ClassPersistenceAdapterTest : PersistenceAdapterContractTest<ClassData, Cl
     }
 
     @Test
-    fun `a class without members survives a round trip`() {
+    fun `should keep a class without members through a round trip`() {
         val ownerId = fixtures.manager().id.value
 
         val saved = repository.save(

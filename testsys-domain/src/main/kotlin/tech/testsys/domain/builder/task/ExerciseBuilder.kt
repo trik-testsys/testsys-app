@@ -2,6 +2,7 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.Exercise
@@ -59,7 +60,7 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
 }
 
 /**
- * Builder of [Exercise] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Exercise] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -70,14 +71,12 @@ class ExerciseBuilder : DomainEntityWithDataBuilder<Exercise, ExerciseData, Exer
     override fun build(): Exercise {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Exercise(
             id = ExerciseId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }

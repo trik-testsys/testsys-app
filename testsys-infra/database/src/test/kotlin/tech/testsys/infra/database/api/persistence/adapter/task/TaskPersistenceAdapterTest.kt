@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.task
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
@@ -69,6 +70,12 @@ class TaskPersistenceAdapterTest : PersistenceAdapterContractTest<TaskData, Task
         }
     }
 
+    override fun detached(entity: Task) = task {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = TaskId(value)
 
     override fun assertSameData(expected: Task, actual: Task) {
@@ -125,7 +132,7 @@ class TaskPersistenceAdapterTest : PersistenceAdapterContractTest<TaskData, Task
     }
 
     @Test
-    fun `new content without exercise and statement survives a round trip`() {
+    fun `should keep new content without exercise and statement through a round trip`() {
         val data = newTaskData()
 
         val saved = repository.save(data)
@@ -137,7 +144,7 @@ class TaskPersistenceAdapterTest : PersistenceAdapterContractTest<TaskData, Task
     }
 
     @Test
-    fun `uncommitted content keeps the wip and the last committed revisions apart`() {
+    fun `should keep the wip and the last committed revisions apart for uncommitted content`() {
         val ownerId = fixtures.developer().id.value
         val committedExerciseId = fixtures.exercise().id.value
         val committedStatementId = fixtures.statement().id.value
@@ -170,7 +177,7 @@ class TaskPersistenceAdapterTest : PersistenceAdapterContractTest<TaskData, Task
     }
 
     @Test
-    fun `committing a task replaces its content rows`() {
+    fun `should replace the content rows when a task is committed`() {
         val saved = repository.save(newTaskData())
         val exerciseId = fixtures.exercise().id.value
         val statementId = fixtures.statement().id.value
@@ -192,7 +199,7 @@ class TaskPersistenceAdapterTest : PersistenceAdapterContractTest<TaskData, Task
     }
 
     @Test
-    fun `editing a committed task adds a wip revision beside the committed one`() {
+    fun `should add a wip revision beside the committed one when a committed task is edited`() {
         val saved = repository.save(newData())
         val committed = assertIs<TaskContent.Committed>(saved.data.content).lastCommitted
         val wipPolygonId = fixtures.polygon().id.value
@@ -219,7 +226,7 @@ class TaskPersistenceAdapterTest : PersistenceAdapterContractTest<TaskData, Task
     }
 
     @Test
-    fun `update reconciles the shared community rows`() {
+    fun `should reconcile the shared community rows on update`() {
         val saved = repository.save(newData())
         val kept = saved.data.sharedTo.ids.single()
         val added = fixtures.community().id
@@ -233,7 +240,7 @@ class TaskPersistenceAdapterTest : PersistenceAdapterContractTest<TaskData, Task
     }
 
     @Test
-    fun `save fails for an unregistered TRIK Studio version`() {
+    fun `should fail to save a task with an unregistered TRIK Studio version`() {
         val ownerId = fixtures.developer().id.value
         val exerciseId = fixtures.exercise().id.value
         val statementId = fixtures.statement().id.value

@@ -8,6 +8,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [DeveloperSolution] and [DeveloperSolutionJpaEntity].
@@ -62,6 +63,6 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
         versionBucket = entity.data.versionBucket,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 }

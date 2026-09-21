@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.group
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.competition
 import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
@@ -38,6 +39,12 @@ class CompetitionPersistenceAdapterTest : PersistenceAdapterContractTest<Competi
         }
     }
 
+    override fun detached(entity: Competition) = competition {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = CompetitionId(value)
 
     override fun assertSameData(expected: Competition, actual: Competition) {
@@ -49,7 +56,7 @@ class CompetitionPersistenceAdapterTest : PersistenceAdapterContractTest<Competi
     }
 
     @Test
-    fun `participants are projected from the participant rows pointing at the competition`() {
+    fun `should project participants from the participant rows pointing at the competition`() {
         val saved = repository.save(newData())
         val first = fixtures.participant(saved)
         val second = fixtures.participant(saved)
@@ -61,7 +68,7 @@ class CompetitionPersistenceAdapterTest : PersistenceAdapterContractTest<Competi
     }
 
     @Test
-    fun `participants given on save and update are ignored`() {
+    fun `should ignore participants given on save and update`() {
         val ownerId = fixtures.manager().id.value
         val unrelated = fixtures.participant()
 

@@ -2,6 +2,7 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Recording
@@ -38,7 +39,7 @@ class RecordingDataBuilder : Builder<RecordingData> {
 }
 
 /**
- * Builder of [Recording] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Recording] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -49,14 +50,12 @@ class RecordingBuilder : DomainEntityWithDataBuilder<Recording, RecordingData, R
     override fun build(): Recording {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Recording(
             id = RecordingId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }

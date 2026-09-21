@@ -1,6 +1,7 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.developerSolution
 import tech.testsys.domain.builder.api.developerSolutionData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
@@ -36,6 +37,12 @@ class DeveloperSolutionPersistenceAdapterTest :
             solution(newSolutionId)
             expectedScore(50)
         }
+    }
+
+    override fun detached(entity: DeveloperSolution) = developerSolution {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
     }
 
     override fun idOf(value: Long) = DeveloperSolutionId(value)

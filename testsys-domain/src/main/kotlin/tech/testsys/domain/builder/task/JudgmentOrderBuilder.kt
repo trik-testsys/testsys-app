@@ -2,6 +2,7 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.JudgmentOrder
@@ -58,7 +59,7 @@ class JudgmentOrderDataBuilder : Builder<JudgmentOrderData> {
 }
 
 /**
- * Builder of [JudgmentOrder] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [JudgmentOrder] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -69,14 +70,12 @@ class JudgmentOrderBuilder : DomainEntityWithDataBuilder<JudgmentOrder, Judgment
     override fun build(): JudgmentOrder {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return JudgmentOrder(
             id = JudgmentOrderId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }

@@ -11,6 +11,7 @@ import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.infra.database.DatabaseIntegrationTest
 import java.time.Duration
 import java.time.Instant
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -20,7 +21,8 @@ import kotlin.test.assertTrue
 /**
  * Contract every persistence adapter fulfils as an [EntityRepository]: ids, versions, creation time, finding,
  * loading, updating with optimistic locking and removing. Subclasses supply the adapter, fresh data, a way to
- * modify an entity and a field-level comparison; entity-specific behaviour gets its own tests there.
+ * modify an entity, a detached copy of an entity and a field-level comparison; entity-specific behaviour gets
+ * its own tests there.
  *
  * @param Data the data type a new entity is created from.
  * @param Id the id type of the entity.
@@ -39,6 +41,11 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
      * A copy of [entity] with different data but the same id and version.
      */
     protected abstract fun modified(entity: Entity): Entity
+
+    /**
+     * A copy of [entity] without the `version` token, as if the entity had never come from persistence.
+     */
+    protected abstract fun detached(entity: Entity): Entity
 
     protected abstract fun idOf(value: Long): Id
 
@@ -64,7 +71,7 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `save assigns an id, the initial version and the creation time`() {
+    fun `should assign an id, the initial version and the creation time on save`() {
         val before = Instant.now()
 
         val saved = repository.save(newData())
@@ -75,7 +82,7 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `save stores every item of a list`() {
+    fun `should store every item of a list on save`() {
         val saved = repository.save(listOf(newData(), newData()))
 
         assertEquals(2, saved.map { it.id }.distinct().size)
@@ -83,7 +90,7 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `findById returns the saved entity`() {
+    fun `should return the saved entity by id`() {
         val saved = repository.save(newData())
 
         val found = assertNotNull(repository.findById(saved.id))
@@ -92,12 +99,12 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `findById returns null for an unknown id`() {
+    fun `should return null if the id is unknown`() {
         assertNull(repository.findById(idOf(UNKNOWN_ID)))
     }
 
     @Test
-    fun `findByIds returns the found entities and skips unknown ids`() {
+    fun `should return the found entities and skip unknown ids when searching by ids`() {
         val first = repository.save(newData())
         val second = repository.save(newData())
 
@@ -108,7 +115,7 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `load resolves a lazy reference`() {
+    fun `should resolve a lazy reference on load`() {
         val saved = repository.save(newData())
 
         val loaded = repository.load(LazyEntity(saved.id))
@@ -117,12 +124,12 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `load fails for a missing reference`() {
+    fun `should fail to load a missing reference`() {
         assertFailsWith<IllegalArgumentException> { repository.load(LazyEntity(idOf(UNKNOWN_ID))) }
     }
 
     @Test
-    fun `load resolves a lazy list`() {
+    fun `should resolve a lazy list on load`() {
         val first = repository.save(newData())
         val second = repository.save(newData())
 
@@ -132,14 +139,14 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `load fails when a lazy list references a missing entity`() {
+    fun `should fail to load a lazy list if it references a missing entity`() {
         val saved = repository.save(newData())
 
         assertFailsWith<IllegalArgumentException> { repository.load(LazyEntityList(listOf(saved.id, idOf(UNKNOWN_ID)))) }
     }
 
     @Test
-    fun `update stores the modified data, keeps the creation time and bumps the version`() {
+    fun `should store the modified data, keep the creation time and bump the version on update`() {
         val saved = repository.save(newData())
         val storedCreatedAt = assertNotNull(repository.findById(saved.id)).createdAt
         val modified = modified(saved)
@@ -147,14 +154,17 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
         val updated = repository.update(modified)
 
         assertEquals(saved.id, updated.id)
-        assertTrue(updated.version.value > saved.version.value, "version ${updated.version} should be bumped")
+        assertTrue(
+            assertNotNull(updated.version).value > assertNotNull(saved.version).value,
+            "version ${updated.version} should be bumped",
+        )
         assertEquals(storedCreatedAt, updated.createdAt)
         assertSameData(modified, updated)
         assertSameEntity(updated, assertNotNull(repository.findById(saved.id)))
     }
 
     @Test
-    fun `update with a stale version fails`() {
+    fun `should fail to update an entity with a stale version`() {
         val saved = repository.save(newData())
         repository.update(modified(saved))
 
@@ -162,7 +172,16 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `update stores every item of a list`() {
+    fun `should fail to update an entity that was not obtained from persistence`() {
+        val saved = repository.save(newData())
+
+        val error = assertFailsWith<IllegalArgumentException> { repository.update(detached(saved)) }
+
+        assertContains(error.message.orEmpty(), "entity was not obtained from persistence")
+    }
+
+    @Test
+    fun `should store every item of a list on update`() {
         val saved = repository.save(listOf(newData(), newData()))
 
         val updated = repository.update(saved.map { modified(it) })
@@ -172,7 +191,7 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `removeById deletes the entity`() {
+    fun `should delete the entity by id`() {
         val saved = repository.save(newData())
 
         repository.removeById(saved.id)
@@ -181,7 +200,7 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `removeByIds deletes every entity`() {
+    fun `should delete every entity by ids`() {
         val first = repository.save(newData())
         val second = repository.save(newData())
 
@@ -191,7 +210,7 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `remove deletes the entity`() {
+    fun `should delete the given entity`() {
         val saved = repository.save(newData())
 
         repository.remove(saved)
@@ -200,7 +219,7 @@ abstract class PersistenceAdapterContractTest<Data, Id : DomainId, Entity : Doma
     }
 
     @Test
-    fun `remove deletes every entity of a list`() {
+    fun `should delete every entity of a given list`() {
         val saved = repository.save(listOf(newData(), newData()))
 
         repository.remove(saved)

@@ -2,6 +2,7 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.FileData
@@ -43,7 +44,7 @@ class SolutionDataBuilder : Builder<SolutionData> {
 }
 
 /**
- * Builder of [Solution] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Solution] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -54,14 +55,12 @@ class SolutionBuilder : DomainEntityWithDataBuilder<Solution, SolutionData, Solu
     override fun build(): Solution {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Solution(
             id = SolutionId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }

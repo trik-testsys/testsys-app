@@ -13,6 +13,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.ContestJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskToContestJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 import java.time.Duration
 
 /**
@@ -80,7 +81,7 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 
     /**

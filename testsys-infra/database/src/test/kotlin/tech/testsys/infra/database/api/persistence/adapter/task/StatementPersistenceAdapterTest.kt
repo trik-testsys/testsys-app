@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.statement
 import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
@@ -38,6 +39,12 @@ class StatementPersistenceAdapterTest : PersistenceAdapterContractTest<Statement
         file(fixtures.unique("statement") + ".pdf", "changed statement".toByteArray())
     }
 
+    override fun detached(entity: Statement) = statement {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = StatementId(value)
 
     override fun assertSameData(expected: Statement, actual: Statement) {
@@ -49,7 +56,7 @@ class StatementPersistenceAdapterTest : PersistenceAdapterContractTest<Statement
     }
 
     @Test
-    fun `update with a renamed file stores a new file version`() {
+    fun `should store a new file version on update with a renamed file`() {
         val saved = repository.save(newData())
 
         repository.update(saved.withData { file("renamed.pdf", saved.data.file.content) })
@@ -59,7 +66,7 @@ class StatementPersistenceAdapterTest : PersistenceAdapterContractTest<Statement
     }
 
     @Test
-    fun `update with an unchanged file keeps the stored file`() {
+    fun `should keep the stored file on update with an unchanged file`() {
         val saved = repository.save(newData())
 
         repository.update(saved.withData { name = fixtures.unique("Renamed statement") })

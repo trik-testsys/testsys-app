@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.contest
 import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
@@ -57,6 +58,12 @@ class ContestPersistenceAdapterTest : PersistenceAdapterContractTest<ContestData
         }
     }
 
+    override fun detached(entity: Contest) = contest {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = ContestId(value)
 
     override fun assertSameData(expected: Contest, actual: Contest) {
@@ -72,7 +79,7 @@ class ContestPersistenceAdapterTest : PersistenceAdapterContractTest<ContestData
     }
 
     @Test
-    fun `a contest without a start moment has no end moment`() {
+    fun `should leave a contest without a start moment without an end moment`() {
         val ownerId = fixtures.developer().id.value
         val version = fixtures.trikStudioVersion()
 
@@ -95,7 +102,7 @@ class ContestPersistenceAdapterTest : PersistenceAdapterContractTest<ContestData
     }
 
     @Test
-    fun `save fails for an unregistered TRIK Studio version`() {
+    fun `should fail to save a contest with an unregistered TRIK Studio version`() {
         val ownerId = fixtures.developer().id.value
 
         assertFailsWith<IllegalArgumentException> {
@@ -113,7 +120,7 @@ class ContestPersistenceAdapterTest : PersistenceAdapterContractTest<ContestData
     }
 
     @Test
-    fun `update fails for an unregistered TRIK Studio version`() {
+    fun `should fail to update a contest with an unregistered TRIK Studio version`() {
         val saved = repository.save(newData())
 
         assertFailsWith<IllegalArgumentException> {

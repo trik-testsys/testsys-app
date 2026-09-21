@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.user.single
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.supervisor
 import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
@@ -42,6 +43,12 @@ class SupervisorPersistenceAdapterTest : PersistenceAdapterContractTest<Supervis
         name = fixtures.unique("Renamed supervisor")
     }
 
+    override fun detached(entity: Supervisor) = supervisor {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = SingleRoleUserId(value)
 
     override fun assertSameData(expected: Supervisor, actual: Supervisor) {
@@ -50,7 +57,7 @@ class SupervisorPersistenceAdapterTest : PersistenceAdapterContractTest<Supervis
     }
 
     @Test
-    fun `removeById deletes the user together with its role and data rows`() {
+    fun `should delete the user together with its role and data rows by id`() {
         val saved = repository.save(newData())
 
         repository.removeById(saved.id)
@@ -61,7 +68,7 @@ class SupervisorPersistenceAdapterTest : PersistenceAdapterContractTest<Supervis
     }
 
     @Test
-    fun `users of other kinds are invisible to the adapter`() {
+    fun `should not find users of other kinds`() {
         val supervisor = repository.save(newData())
         val participantId = fixtures.participant().id
         val developerId = SingleRoleUserId(fixtures.developer().id.value)

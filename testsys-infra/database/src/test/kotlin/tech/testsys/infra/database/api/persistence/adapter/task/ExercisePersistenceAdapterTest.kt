@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.exercise
 import tech.testsys.domain.builder.api.exerciseData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
@@ -42,6 +43,12 @@ class ExercisePersistenceAdapterTest : PersistenceAdapterContractTest<ExerciseDa
         language.visualLanguage()
     }
 
+    override fun detached(entity: Exercise) = exercise {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = ExerciseId(value)
 
     override fun assertSameData(expected: Exercise, actual: Exercise) {
@@ -54,7 +61,7 @@ class ExercisePersistenceAdapterTest : PersistenceAdapterContractTest<ExerciseDa
     }
 
     @Test
-    fun `every language survives a round trip`() {
+    fun `should keep every language through a round trip`() {
         val languages = listOf(TrikSupportedLanguage.Python, TrikSupportedLanguage.JavaScript, TrikSupportedLanguage.VisualLanguage)
 
         val saved = languages.map { language ->
@@ -73,7 +80,7 @@ class ExercisePersistenceAdapterTest : PersistenceAdapterContractTest<ExerciseDa
     }
 
     @Test
-    fun `update with a changed file stores a new file version`() {
+    fun `should store a new file version on update with a changed file`() {
         val saved = repository.save(newData())
 
         repository.update(saved.withData { file(saved.data.file.uploadedFilename, "changed".toByteArray()) })
@@ -83,7 +90,7 @@ class ExercisePersistenceAdapterTest : PersistenceAdapterContractTest<ExerciseDa
     }
 
     @Test
-    fun `update with an unchanged file keeps the stored file`() {
+    fun `should keep the stored file on update with an unchanged file`() {
         val saved = repository.save(newData())
 
         repository.update(saved.withData { language.javaScript() })

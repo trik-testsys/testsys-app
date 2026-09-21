@@ -58,6 +58,8 @@
   nullable и передаются как есть, коллекции — пустой `mutableListOf()`.
 - `XBuilder` наследует `DomainEntityWithDataBuilder` и получает `id`, `createdAt`, `version`, `data`
   бесплатно; переопределяются только `dataBuilder()` и `build()`.
+- `version` необязателен: его не проверяют через `requireField`, а переносят на готовую сущность
+  вызовом `applyVersion(version)` в конце `build()` — в конструктор сущности токен не передаётся.
 - Для каждого поля-идентификатора добавляется перегрузка от «сырого» `Long` (`fun owner(owner: Long)`),
   для списков — от `Iterable<Long>`.
 - Идентификаторы превращаются в связи через `lazify()` прямо в `build()`.
@@ -79,6 +81,9 @@
 В `builder/api/{Group,Task,User}Api.kt` (файл выбирается по подпакету сущности) добавляются функции `xData { }`,
 `x { }`, приватная `XData.toBuilder()` и `X.withData { }`. Образец — функции `contestData`, `contest`
 и `Contest.withData` в [TaskApi.kt](../../testsys-domain/src/main/kotlin/tech/testsys/domain/builder/api/TaskApi.kt).
+
+`X.withData { }` создаёт новый экземпляр из `id`, `createdAt` и новых данных и переносит токен
+оптимистической блокировки тем же `applyVersion(this.version)`.
 
 `toBuilder()` **перечисляет все поля `Data` без исключения**: забытое поле молча потеряется при каждом
 `withData`. Для sealed-полей восстановление варианта пишется через `when` без ветки `else`
@@ -159,7 +164,8 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   проставляет `id`, `createdAt` и `version` из строки.
 - `toJpaEntity` всегда две перегрузки: от `Data` — для новой строки (без `id`), и от сущности плюс текущей
   строки — для обновления. Вторая обязана перенести `createdAt` из текущей строки и `version` из доменной
-  сущности: именно так до Hibernate доезжает токен оптимистической блокировки.
+  сущности через `requireVersion()`: именно так до Hibernate доезжает токен оптимистической блокировки,
+  а сущность, не полученная из хранилища, приводит к `IllegalArgumentException`.
 - Данные, которых нет в самой строке (идентификаторы из join-таблиц, значения справочников), приходят
   отдельными параметрами — маппинг ничего не читает из БД сам.
 - Для join-таблиц добавляются функции `toXAssociations(ownerId, ids)`, собирающие строки связи.
@@ -196,9 +202,9 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 | Что                  | Базовый класс                          | Что писать                                                  | Образец                   |
 |----------------------|----------------------------------------|-------------------------------------------------------------|---------------------------|
 | Билдер               | `DomainEntityBuilderTests`             | Только `buildDataWithAllFields()`                           | [ContestBuilderTests.kt](../../testsys-domain/src/test/kotlin/tech/testsys/domain/builder/task/ContestBuilderTests.kt) |
-| `withData`           | `{Group,Task,User}ApiTest`             | `@Nested inner class XTests`: поля не теряются и изменяются | `ContestTests` в [TaskApiTest.kt](../../testsys-domain/src/test/kotlin/tech/testsys/domain/builder/api/TaskApiTest.kt) |
+| `withData`           | `{Group,Task,User}ApiTest`             | `@Nested inner class XTests`: поля и токен `version` не теряются, поля изменяются | `ContestTests` в [TaskApiTest.kt](../../testsys-domain/src/test/kotlin/tech/testsys/domain/builder/api/TaskApiTest.kt) |
 | Маппинг              | `EntityMappingTest<XMapping>`          | Только `override val mapping = XMapping`                    | [ContestMappingTest.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/internal/mapping/task/ContestMappingTest.kt) |
-| Адаптер              | `PersistenceAdapterContractTest`       | `newData()`, `modified()`, `idOf()`, `assertSameData()` + свои тесты | [ContestPersistenceAdapterTest.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapterTest.kt) |
+| Адаптер              | `PersistenceAdapterContractTest`       | `newData()`, `modified()`, `detached()`, `idOf()`, `assertSameData()` + свои тесты | [ContestPersistenceAdapterTest.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapterTest.kt) |
 | Фикстура             | —                                      | Метод `fun x(...): X`                                       | [DatabaseFixtures.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/DatabaseFixtures.kt) |
 
 - `DomainEntityBuilderTests` сам проверяет, что `build()` падает без обязательных полей, а с ними — нет.

@@ -19,7 +19,7 @@
 | `api/persistence/adapter`     | Адаптеры портов хранения `XPersistenceAdapter`                                             | 9         |
 | `api/persistence`             | `FileDataStorage` — хранение файлов                                                        | —         |
 | `internal/jpa/id`             | Генератор идентификаторов                                                                  | —         |
-| `internal/utils`              | Общие помощники: `syncJoinTable`, `requireId`, `findByIdOrError`, `populateFields`          | —         |
+| `internal/utils`              | Общие помощники: `syncJoinTable`, `requireId`, `requireVersion`, `findByIdOrError`, `populateFields` | —         |
 
 Всё в `internal` помечено `@InternalDatabaseApi` (`@RequiresOptIn`): снаружи модуля используется только `api`.
 Бины регистрирует [DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/DatabaseConfiguration.kt),

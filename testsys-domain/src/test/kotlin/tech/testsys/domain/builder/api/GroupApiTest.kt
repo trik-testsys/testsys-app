@@ -6,15 +6,9 @@ import org.junit.jupiter.api.Test
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
-import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassData
-import tech.testsys.domain.model.group.ClassId
-import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityData
-import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionData
-import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.SingleRoleUserId
@@ -25,10 +19,10 @@ class GroupApiTest {
     @Nested
     inner class ClassTests {
 
-        private val origin = Class(
-            id = ClassId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = `class` {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = ClassData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Original Class",
@@ -36,7 +30,7 @@ class GroupApiTest {
                 students = LazyEntityList(listOf(MultipleRoleUserId(20), MultipleRoleUserId(30))),
                 contests = LazyEntityList(listOf(ContestId(40)))
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -44,6 +38,7 @@ class GroupApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
@@ -62,16 +57,16 @@ class GroupApiTest {
     @Nested
     inner class CommunityTests {
 
-        private val origin = Community(
-            id = CommunityId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = community {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = CommunityData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Original Community",
                 description = "Original description",
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -79,6 +74,7 @@ class GroupApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
@@ -95,10 +91,10 @@ class GroupApiTest {
     @Nested
     inner class CompetitionTests {
 
-        private val origin = Competition(
-            id = CompetitionId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = competition {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = CompetitionData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Original Competition",
@@ -106,7 +102,7 @@ class GroupApiTest {
                 participants = LazyEntityList(listOf(SingleRoleUserId(20))),
                 contests = LazyEntityList(listOf(ContestId(30)))
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -114,6 +110,7 @@ class GroupApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)

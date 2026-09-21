@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.submission
 import tech.testsys.domain.builder.api.submissionData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
@@ -36,6 +37,12 @@ class SubmissionPersistenceAdapterTest : PersistenceAdapterContractTest<Submissi
     }
 
     override fun modified(entity: Submission) = entity.withData { status.inProgress() }
+
+    override fun detached(entity: Submission) = submission {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
 
     override fun idOf(value: Long) = SubmissionId(value)
 
@@ -83,7 +90,7 @@ class SubmissionPersistenceAdapterTest : PersistenceAdapterContractTest<Submissi
     }
 
     @Test
-    fun `a contest submission is queued, picked up and graded with a verdict`() {
+    fun `should queue, pick up and grade a contest submission with a verdict`() {
         val contestId = fixtures.contest().id.value
         val queued = repository.save(gradingSubmissionData(contestId))
 
@@ -99,7 +106,7 @@ class SubmissionPersistenceAdapterTest : PersistenceAdapterContractTest<Submissi
     }
 
     @Test
-    fun `a grading error survives a round trip`() {
+    fun `should keep a grading error through a round trip`() {
         val data = newData()
 
         val saved = repository.save(data)
@@ -111,7 +118,7 @@ class SubmissionPersistenceAdapterTest : PersistenceAdapterContractTest<Submissi
     }
 
     @Test
-    fun `a grading timeout survives a round trip`() {
+    fun `should keep a grading timeout through a round trip`() {
         val saved = repository.save(newData())
 
         val timedOut = repository.update(saved.withData { status.graded { status.timeout() } })
@@ -122,7 +129,7 @@ class SubmissionPersistenceAdapterTest : PersistenceAdapterContractTest<Submissi
     }
 
     @Test
-    fun `judgment orders are projected from the orders issued for the verdicts of the submission`() {
+    fun `should project judgment orders from the orders issued for the verdicts of the submission`() {
         val saved = repository.save(newData())
         val verdict = fixtures.verdict(saved)
         val order = fixtures.judgmentOrder(verdict = verdict)
@@ -134,7 +141,7 @@ class SubmissionPersistenceAdapterTest : PersistenceAdapterContractTest<Submissi
     }
 
     @Test
-    fun `judgment orders given on save are ignored`() {
+    fun `should ignore judgment orders given on save`() {
         val author = fixtures.developer()
         val authorId = author.id
         val taskId = fixtures.task(author).id.value

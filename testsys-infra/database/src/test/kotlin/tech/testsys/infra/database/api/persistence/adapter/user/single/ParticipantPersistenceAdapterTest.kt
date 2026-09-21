@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.user.single
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.participant
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
@@ -50,6 +51,12 @@ class ParticipantPersistenceAdapterTest : PersistenceAdapterContractTest<Partici
         }
     }
 
+    override fun detached(entity: Participant) = participant {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = SingleRoleUserId(value)
 
     override fun assertSameData(expected: Participant, actual: Participant) {
@@ -59,7 +66,7 @@ class ParticipantPersistenceAdapterTest : PersistenceAdapterContractTest<Partici
     }
 
     @Test
-    fun `removeById deletes the user together with its role and data rows`() {
+    fun `should delete the user together with its role and data rows by id`() {
         val saved = repository.save(newData())
 
         repository.removeById(saved.id)
@@ -70,7 +77,7 @@ class ParticipantPersistenceAdapterTest : PersistenceAdapterContractTest<Partici
     }
 
     @Test
-    fun `users of other kinds are invisible to the adapter`() {
+    fun `should not find users of other kinds`() {
         val participant = repository.save(newData())
         val observerId = fixtures.observer().id
         val supervisorId = fixtures.supervisor().id

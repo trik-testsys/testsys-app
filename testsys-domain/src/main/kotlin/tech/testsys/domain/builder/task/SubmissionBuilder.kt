@@ -2,6 +2,7 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.chooser.SubmissionKindChooser
 import tech.testsys.domain.builder.util.chooser.SubmissionStatusChooser
 import tech.testsys.domain.builder.util.lazify
@@ -95,7 +96,7 @@ class VerdictDataBuilder : Builder<VerdictData> {
 }
 
 /**
- * Builder of [Verdict] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Verdict] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -106,15 +107,13 @@ class VerdictBuilder : DomainEntityWithDataBuilder<Verdict, VerdictData, Verdict
     override fun build(): Verdict {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Verdict(
             id = VerdictId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }
 
@@ -196,7 +195,7 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
 }
 
 /**
- * Builder of [Submission] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Submission] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -207,14 +206,12 @@ class SubmissionBuilder : DomainEntityWithDataBuilder<Submission, SubmissionData
     override fun build(): Submission {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Submission(
             id = SubmissionId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }

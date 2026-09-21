@@ -18,6 +18,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionKindJpaEnu
 import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionStatusJpaEnum
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [Submission] and [SubmissionJpaEntity]; the sealed status and kind are flattened into nullable columns.
@@ -90,7 +91,7 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
             id = entity.id.value,
         ).also {
             it.createdAt = current.createdAt
-            it.version = entity.version.value
+            it.version = entity.requireVersion()
         }
     }
 

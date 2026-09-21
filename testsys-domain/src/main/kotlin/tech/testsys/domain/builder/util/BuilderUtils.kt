@@ -3,6 +3,7 @@ package tech.testsys.domain.builder.util
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
+import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import kotlin.reflect.KProperty0
@@ -27,4 +28,8 @@ fun <Id : DomainId, Entity : DomainEntity<Id>> Id.lazify() = LazyEntity<Id, Enti
 
 internal fun <T> Builder<*>.requireField(value: T?, lazyField: () -> KProperty0<T?>): T = requireNotNull(value) {
     "${this::class.simpleName}: required field '${lazyField.invoke().name}' was not set"
+}
+
+internal fun <Entity : DomainEntity<*>> Entity.applyVersion(version: EntityVersion?): Entity = apply {
+    this.version = version
 }

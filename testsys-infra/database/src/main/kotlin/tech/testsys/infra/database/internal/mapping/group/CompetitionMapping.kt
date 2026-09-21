@@ -11,6 +11,7 @@ import tech.testsys.infra.database.internal.jpa.entity.group.CompetitionJpaEntit
 import tech.testsys.infra.database.internal.jpa.entity.group.ContestToCompetitionJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [Competition] and [CompetitionJpaEntity].
@@ -60,7 +61,7 @@ object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 
     /**

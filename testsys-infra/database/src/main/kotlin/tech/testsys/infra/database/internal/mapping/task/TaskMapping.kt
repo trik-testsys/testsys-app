@@ -14,6 +14,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskJpaEn
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskStatusJpaEnum
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [Task] and [TaskJpaEntity]; content revisions are mapped by [TaskContentMapping].
@@ -72,7 +73,7 @@ object TaskMapping {
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 
     /**

@@ -2,6 +2,7 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
@@ -182,7 +183,7 @@ class TaskDataBuilder : Builder<TaskData> {
 }
 
 /**
- * Builder of [Task] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Task] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -193,14 +194,12 @@ class TaskBuilder : DomainEntityWithDataBuilder<Task, TaskData, TaskDataBuilder>
     override fun build(): Task {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Task(
             id = TaskId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }

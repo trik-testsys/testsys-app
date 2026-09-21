@@ -1,6 +1,7 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.judgmentOrder
 import tech.testsys.domain.builder.api.judgmentOrderData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
@@ -31,6 +32,12 @@ class JudgmentOrderPersistenceAdapterTest : PersistenceAdapterContractTest<Judgm
             judge(newJudgeId)
             reason = "Reassigned to another judge"
         }
+    }
+
+    override fun detached(entity: JudgmentOrder) = judgmentOrder {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
     }
 
     override fun idOf(value: Long) = JudgmentOrderId(value)

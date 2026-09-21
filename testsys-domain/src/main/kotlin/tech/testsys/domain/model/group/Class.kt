@@ -2,7 +2,6 @@ package tech.testsys.domain.model.group
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.task.Contest
@@ -48,6 +47,5 @@ data class ClassData(
 class Class(
     id: ClassId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: ClassData,
-) : DomainEntity<ClassId>(id, createdAt, version)
+) : DomainEntity<ClassId>(id, createdAt)

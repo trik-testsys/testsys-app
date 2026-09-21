@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.test
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.TestRepository
@@ -38,6 +39,12 @@ class TestPersistenceAdapterTest : PersistenceAdapterContractTest<TestData, Test
         file(fixtures.unique("polygon") + ".xml", "<field><wall/></field>".toByteArray())
     }
 
+    override fun detached(entity: Polygon) = test {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = TestId(value)
 
     override fun assertSameData(expected: Polygon, actual: Polygon) {
@@ -49,7 +56,7 @@ class TestPersistenceAdapterTest : PersistenceAdapterContractTest<TestData, Test
     }
 
     @Test
-    fun `update with a changed file stores a new file version in the same bucket`() {
+    fun `should store a new file version in the same bucket on update with a changed file`() {
         val saved = repository.save(newData())
 
         repository.update(saved.withData { file(saved.data.file.uploadedFilename, "changed".toByteArray()) })
@@ -62,7 +69,7 @@ class TestPersistenceAdapterTest : PersistenceAdapterContractTest<TestData, Test
     }
 
     @Test
-    fun `update with an unchanged file keeps the stored file`() {
+    fun `should keep the stored file on update with an unchanged file`() {
         val saved = repository.save(newData())
 
         val updated = repository.update(saved.withData { description = "Only the description changed" })

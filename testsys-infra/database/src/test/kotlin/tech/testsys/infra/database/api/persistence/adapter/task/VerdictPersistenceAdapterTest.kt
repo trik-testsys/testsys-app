@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import tech.testsys.domain.builder.api.verdict
 import tech.testsys.domain.builder.api.verdictData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
@@ -39,6 +40,12 @@ class VerdictPersistenceAdapterTest : PersistenceAdapterContractTest<VerdictData
         recording = null
     }
 
+    override fun detached(entity: Verdict) = verdict {
+        id = entity.id.value
+        createdAt = entity.createdAt
+        data = entity.data
+    }
+
     override fun idOf(value: Long) = VerdictId(value)
 
     override fun assertSameData(expected: Verdict, actual: Verdict) {
@@ -50,7 +57,7 @@ class VerdictPersistenceAdapterTest : PersistenceAdapterContractTest<VerdictData
     }
 
     @Test
-    fun `logs and recording are optional`() {
+    fun `should save a verdict without logs and recording`() {
         val submission = fixtures.submission()
         val submissionId = submission.id.value
         val taskId = submission.data.task.id.value

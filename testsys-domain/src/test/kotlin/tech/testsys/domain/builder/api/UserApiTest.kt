@@ -12,15 +12,9 @@ import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.Developer
 import tech.testsys.domain.model.user.DeveloperData
-import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
-import tech.testsys.domain.model.user.MultipleRoleUserId
-import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
-import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
-import tech.testsys.domain.model.user.SingleRoleUserId
-import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
 import java.time.Instant
 
@@ -30,16 +24,16 @@ class UserApiTest {
     @Nested
     inner class ParticipantTests {
 
-        private val origin = Participant(
-            id = SingleRoleUserId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = participant {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = ParticipantData(
                 competition = LazyEntity(CompetitionId(10)),
                 accessToken = "participant-token",
                 name = "Participant",
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -47,6 +41,7 @@ class UserApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.competition.id, copy.data.competition.id)
             Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
             Assertions.assertEquals(origin.data.name, copy.data.name)
@@ -63,17 +58,17 @@ class UserApiTest {
     @Nested
     inner class ObserverTests {
 
-        private val origin = Observer(
-            id = SingleRoleUserId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = observer {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = ObserverData(
                 community = LazyEntity(CommunityId(7)),
                 competitions = LazyEntityList(listOf(CompetitionId(10), CompetitionId(20))),
                 accessToken = "observer-token",
                 name = "Observer",
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -81,6 +76,7 @@ class UserApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.community.id, copy.data.community.id)
             Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
             Assertions.assertEquals(origin.data.name, copy.data.name)
@@ -98,10 +94,10 @@ class UserApiTest {
     @Nested
     inner class MultipleRoleUserTests {
 
-        private val origin = MultipleRoleUser(
-            id = MultipleRoleUserId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = multipleRoleUser {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = MultipleRoleUserData(
                 accessToken = "user-token",
                 name = "Alice",
@@ -119,7 +115,7 @@ class UserApiTest {
                     )
                 )
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -127,6 +123,7 @@ class UserApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.email, copy.data.email)
@@ -144,15 +141,15 @@ class UserApiTest {
     @Nested
     inner class SupervisorTests {
 
-        private val origin = Supervisor(
-            id = SingleRoleUserId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = supervisor {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = SupervisorData(
                 accessToken = "supervisor-token",
                 name = "Supervisor",
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -160,6 +157,7 @@ class UserApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
             Assertions.assertEquals(origin.data.name, copy.data.name)
         }

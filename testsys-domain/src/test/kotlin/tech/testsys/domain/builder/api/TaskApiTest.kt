@@ -8,34 +8,27 @@ import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.CommittedTaskContent
-import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
-import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
-import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.FileData
-import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderData
 import tech.testsys.domain.model.task.JudgmentOrderId
+import tech.testsys.domain.model.task.LogsData
 import tech.testsys.domain.model.task.LogsId
+import tech.testsys.domain.model.task.RecordingData
 import tech.testsys.domain.model.task.RecordingId
 import tech.testsys.domain.model.task.Score
-import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.SolutionId
-import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
-import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.SubmissionStatus
-import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
@@ -43,7 +36,6 @@ import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
-import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.WipTaskContent
@@ -57,10 +49,10 @@ class TaskApiTest {
     @Nested
     inner class SubmissionTests {
 
-        private val origin = Submission(
-            id = SubmissionId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = submission {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = SubmissionData(
                 author = LazyEntity(MultipleRoleUserId(10)),
                 solution = LazyEntity(SolutionId(15)),
@@ -69,7 +61,7 @@ class TaskApiTest {
                 kind = SubmissionKind.DeveloperSolutionTest,
                 judgmentOrders = LazyEntityList(listOf(JudgmentOrderId(32)))
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -77,6 +69,7 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id,  copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.author.id, copy.data.author.id)
             Assertions.assertEquals(origin.data.solution.id, copy.data.solution.id)
             Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
@@ -104,10 +97,10 @@ class TaskApiTest {
     @Nested
     inner class ContestTests {
 
-        private val origin = Contest(
-            id = ContestId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = contest {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = ContestData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Original Contest",
@@ -119,7 +112,7 @@ class TaskApiTest {
                 trikStudioVersion = TrikStudioVersion("3.0.0"),
                 sharedTo = LazyEntityList(listOf(CommunityId(50)))
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -127,6 +120,7 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
@@ -150,10 +144,10 @@ class TaskApiTest {
     inner class DeveloperSolutionTests {
 
         private val versionBucket = UUID.randomUUID()
-        private val origin = DeveloperSolution(
-            id = DeveloperSolutionId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = developerSolution {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = DeveloperSolutionData(
                 name = "Reference",
                 description = "Reference solution",
@@ -161,7 +155,7 @@ class TaskApiTest {
                 expectedScore = Score(100),
                 versionBucket = versionBucket,
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -169,6 +163,7 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
             Assertions.assertEquals(origin.data.solution.id, copy.data.solution.id)
@@ -188,10 +183,10 @@ class TaskApiTest {
     inner class ExerciseTests {
 
         private val versionBucket = UUID.randomUUID()
-        private val origin = Exercise(
-            id = ExerciseId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = exercise {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = ExerciseData(
                 name = "Exercise",
                 description = "Exercise description",
@@ -199,7 +194,7 @@ class TaskApiTest {
                 language = TrikSupportedLanguage.Python,
                 versionBucket = versionBucket,
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -207,6 +202,7 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
@@ -227,16 +223,16 @@ class TaskApiTest {
     @Nested
     inner class JudgmentOrderTests {
 
-        private val origin = JudgmentOrder(
-            id = JudgmentOrderId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = judgmentOrder {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = JudgmentOrderData(
                 judge = LazyEntity(MultipleRoleUserId(10)),
                 verdict = LazyEntity(VerdictId(20)),
                 reason = "auto-grade",
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -244,6 +240,7 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.judge.id, copy.data.judge.id)
             Assertions.assertEquals(origin.data.verdict.id, copy.data.verdict.id)
             Assertions.assertEquals(origin.data.reason, copy.data.reason)
@@ -258,18 +255,16 @@ class TaskApiTest {
     }
 
     @Nested
-    inner class SolutionTests {
+    inner class LogsTests {
 
-        private val versionBucket = UUID.randomUUID()
-        private val origin = Solution(
-            id = SolutionId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
-            data = SolutionData(
-                file = FileData("solution.py", byteArrayOf(4, 5, 6)),
-                language = TrikSupportedLanguage.Python,
+        private val origin = logs {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = LogsData(
+                file = FileData("grading.log", byteArrayOf(1, 2)),
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -277,6 +272,72 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
+            Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
+            Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
+        }
+
+        @Test
+        fun `withData should change modified fields`() {
+            val copy = origin.withData { file("updated.log", byteArrayOf(3, 4)) }
+
+            Assertions.assertEquals("updated.log", copy.data.file.uploadedFilename)
+            Assertions.assertArrayEquals(byteArrayOf(3, 4), copy.data.file.content)
+        }
+    }
+
+    @Nested
+    inner class RecordingTests {
+
+        private val origin = recording {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = RecordingData(
+                file = FileData("grading.mp4", byteArrayOf(5, 6)),
+            )
+        }
+
+        @Test
+        fun `withData should keep all unmodified fields`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
+            Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
+            Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
+        }
+
+        @Test
+        fun `withData should change modified fields`() {
+            val copy = origin.withData { file("updated.mp4", byteArrayOf(7, 8)) }
+
+            Assertions.assertEquals("updated.mp4", copy.data.file.uploadedFilename)
+            Assertions.assertArrayEquals(byteArrayOf(7, 8), copy.data.file.content)
+        }
+    }
+
+    @Nested
+    inner class SolutionTests {
+
+        private val origin = solution {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = SolutionData(
+                file = FileData("solution.py", byteArrayOf(4, 5, 6)),
+                language = TrikSupportedLanguage.Python,
+            )
+        }
+
+        @Test
+        fun `withData should keep all unmodified fields`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
             Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
             Assertions.assertEquals(origin.data.language, copy.data.language)
@@ -295,17 +356,17 @@ class TaskApiTest {
     inner class StatementTests {
 
         private val versionBucket = UUID.randomUUID()
-        private val origin = Statement(
-            id = StatementId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = statement {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = StatementData(
                 file = FileData("statement.pdf", byteArrayOf(7, 8, 9)),
                 name = "Statement",
                 description = "Statement description",
                 versionBucket = versionBucket,
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -313,6 +374,7 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
             Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
             Assertions.assertEquals(origin.data.name, copy.data.name)
@@ -332,17 +394,17 @@ class TaskApiTest {
     inner class TestTests {
 
         private val versionBucket = UUID.randomUUID()
-        private val origin = tech.testsys.domain.model.task.Test(
-            id = TestId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = test {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = TestData(
                 file = FileData("test.xml", byteArrayOf(1, 2)),
                 name = "Polygon",
                 description = "Polygon description",
                 versionBucket = versionBucket,
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -350,6 +412,7 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
             Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
             Assertions.assertEquals(origin.data.name, copy.data.name)
@@ -368,10 +431,10 @@ class TaskApiTest {
     @Nested
     inner class VerdictTests {
 
-        private val origin = Verdict(
-            id = VerdictId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = verdict {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = VerdictData(
                 score = Score(85),
                 task = LazyEntity(TaskId(10)),
@@ -379,7 +442,7 @@ class TaskApiTest {
                 logs = LazyEntity(LogsId(30)),
                 recording = LazyEntity(RecordingId(40)),
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields`() {
@@ -387,6 +450,7 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.score, copy.data.score)
             Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
             Assertions.assertEquals(origin.data.submission.id, copy.data.submission.id)
@@ -403,10 +467,10 @@ class TaskApiTest {
     @Nested
     inner class TaskNewTests {
 
-        private val origin = Task(
-            id = TaskId(1),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = task {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = TaskData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Task Name",
@@ -422,7 +486,7 @@ class TaskApiTest {
                     )
                 ),
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields for New`() {
@@ -430,6 +494,7 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
@@ -475,10 +540,10 @@ class TaskApiTest {
     @Nested
     inner class TaskCommittedTests {
 
-        private val origin = Task(
-            id = TaskId(2),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = task {
+            id = 2
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = TaskData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Committed Task",
@@ -494,7 +559,7 @@ class TaskApiTest {
                     )
                 ),
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields for Committed`() {
@@ -502,6 +567,7 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
@@ -542,10 +608,10 @@ class TaskApiTest {
     @Nested
     inner class TaskUncommittedTests {
 
-        private val origin = Task(
-            id = TaskId(3),
-            createdAt = Instant.now(),
-            version = EntityVersion(0),
+        private val origin = task {
+            id = 3
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
             data = TaskData(
                 owner = LazyEntity(MultipleRoleUserId(10)),
                 name = "Uncommitted Task",
@@ -568,7 +634,7 @@ class TaskApiTest {
                     ),
                 ),
             )
-        )
+        }
 
         @Test
         fun `withData should keep all unmodified fields for Uncommitted`() {
@@ -576,6 +642,7 @@ class TaskApiTest {
 
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(EntityVersion(7), copy.version)
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)

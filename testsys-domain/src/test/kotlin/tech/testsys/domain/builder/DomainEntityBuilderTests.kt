@@ -3,9 +3,10 @@ package tech.testsys.domain.builder
 import org.junit.jupiter.api.Assertions
 import kotlin.test.Test
 import java.time.Instant
+import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.EntityVersion
 
-abstract class DomainEntityBuilderTests<Entity, Data, DataBuilder : Builder<Data>>(
+abstract class DomainEntityBuilderTests<Entity : DomainEntity<*>, Data, DataBuilder : Builder<Data>>(
     private val entityBuilder: DomainEntityWithDataBuilder<Entity, Data, DataBuilder>,
     private val dataBuilder: DataBuilder
 ) {
@@ -20,7 +21,15 @@ abstract class DomainEntityBuilderTests<Entity, Data, DataBuilder : Builder<Data
         return entityBuilder.apply {
             id = 42
             createdAt = Instant.ofEpochSecond(1L)
-            version = EntityVersion(0)
+        }.build()
+    }
+
+    private fun buildEntityWithVersion(data: Data, version: EntityVersion): Entity {
+        entityBuilder.data = data
+        return entityBuilder.apply {
+            id = 42
+            createdAt = Instant.ofEpochSecond(1L)
+            this.version = version
         }.build()
     }
 
@@ -49,6 +58,20 @@ abstract class DomainEntityBuilderTests<Entity, Data, DataBuilder : Builder<Data
         for (data in buildDataWithAllFields()) {
             Assertions.assertDoesNotThrow { buildEntityWithAllFields(data) }
         }
+    }
+
+    @Test
+    fun `entity builder should leave version null if version is not specified`() {
+        val entity = buildEntityWithAllFields(buildDataWithAllFields().first())
+
+        Assertions.assertNull(entity.version)
+    }
+
+    @Test
+    fun `entity builder should set version if version is specified`() {
+        val entity = buildEntityWithVersion(buildDataWithAllFields().first(), EntityVersion(7))
+
+        Assertions.assertEquals(EntityVersion(7), entity.version)
     }
 
     @Test

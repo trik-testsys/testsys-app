@@ -8,6 +8,7 @@ import tech.testsys.domain.builder.group.CommunityBuilder
 import tech.testsys.domain.builder.group.CommunityDataBuilder
 import tech.testsys.domain.builder.group.CompetitionBuilder
 import tech.testsys.domain.builder.group.CompetitionDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassData
 import tech.testsys.domain.model.group.Community
@@ -74,7 +75,11 @@ private fun ClassData.toBuilder(): ClassDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Class.withData(builder: ClassDataBuilder.() -> Unit): Class {
-    return Class(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Class(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun CommunityData.toBuilder(): CommunityDataBuilder {
@@ -92,7 +97,11 @@ private fun CommunityData.toBuilder(): CommunityDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Community.withData(builder: CommunityDataBuilder.() -> Unit): Community {
-    return Community(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Community(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun CompetitionData.toBuilder(): CompetitionDataBuilder {
@@ -112,5 +121,9 @@ private fun CompetitionData.toBuilder(): CompetitionDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Competition.withData(builder: CompetitionDataBuilder.() -> Unit): Competition {
-    return Competition(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Competition(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }

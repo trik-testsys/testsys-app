@@ -12,6 +12,7 @@ import tech.testsys.infra.database.internal.jpa.entity.group.ContestToClassJpaEn
 import tech.testsys.infra.database.internal.jpa.entity.group.StudentToClassJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [Class] and [ClassJpaEntity].
@@ -61,7 +62,7 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 
     /**

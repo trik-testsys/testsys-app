@@ -26,6 +26,7 @@ import tech.testsys.domain.builder.task.TestDataBuilder
 import tech.testsys.domain.builder.task.VerdictBuilder
 import tech.testsys.domain.builder.task.VerdictDataBuilder
 import tech.testsys.domain.builder.task.WipTaskContentBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.Contest
@@ -300,11 +301,10 @@ private fun SubmissionData.toBuilder(): SubmissionDataBuilder {
  */
 fun Submission.withData(builder: SubmissionDataBuilder.() -> Unit): Submission {
     return Submission(
-        this.id,
-        this.createdAt,
-        this.version,
-        this.data.toBuilder().apply(builder).build(),
-    )
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun ContestData.toBuilder(): ContestDataBuilder {
@@ -328,7 +328,11 @@ private fun ContestData.toBuilder(): ContestDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Contest.withData(builder: ContestDataBuilder.() -> Unit): Contest {
-    return Contest(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Contest(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun DeveloperSolutionData.toBuilder(): DeveloperSolutionDataBuilder {
@@ -348,7 +352,11 @@ private fun DeveloperSolutionData.toBuilder(): DeveloperSolutionDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun DeveloperSolution.withData(builder: DeveloperSolutionDataBuilder.() -> Unit): DeveloperSolution {
-    return DeveloperSolution(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return DeveloperSolution(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun ExerciseData.toBuilder(): ExerciseDataBuilder {
@@ -372,7 +380,11 @@ private fun ExerciseData.toBuilder(): ExerciseDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Exercise.withData(builder: ExerciseDataBuilder.() -> Unit): Exercise {
-    return Exercise(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Exercise(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun JudgmentOrderData.toBuilder(): JudgmentOrderDataBuilder {
@@ -390,7 +402,11 @@ private fun JudgmentOrderData.toBuilder(): JudgmentOrderDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun JudgmentOrder.withData(builder: JudgmentOrderDataBuilder.() -> Unit): JudgmentOrder {
-    return JudgmentOrder(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return JudgmentOrder(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun LogsData.toBuilder(): LogsDataBuilder {
@@ -406,7 +422,11 @@ private fun LogsData.toBuilder(): LogsDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Logs.withData(builder: LogsDataBuilder.() -> Unit): Logs {
-    return Logs(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Logs(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun RecordingData.toBuilder(): RecordingDataBuilder {
@@ -422,7 +442,11 @@ private fun RecordingData.toBuilder(): RecordingDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Recording.withData(builder: RecordingDataBuilder.() -> Unit): Recording {
-    return Recording(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Recording(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun SolutionData.toBuilder(): SolutionDataBuilder {
@@ -443,7 +467,11 @@ private fun SolutionData.toBuilder(): SolutionDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Solution.withData(builder: SolutionDataBuilder.() -> Unit): Solution {
-    return Solution(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Solution(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun StatementData.toBuilder(): StatementDataBuilder {
@@ -462,7 +490,11 @@ private fun StatementData.toBuilder(): StatementDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Statement.withData(builder: StatementDataBuilder.() -> Unit): Statement {
-    return Statement(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Statement(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun TestData.toBuilder(): TestDataBuilder {
@@ -481,7 +513,11 @@ private fun TestData.toBuilder(): TestDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Test.withData(builder: TestDataBuilder.() -> Unit): Test {
-    return Test(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Test(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun WipTaskContentBuilder.populateFrom(content: WipTaskContent) {
@@ -530,7 +566,11 @@ private fun TaskData.toBuilder(): TaskDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Task.withData(builder: TaskDataBuilder.() -> Unit): Task {
-    return Task(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Task(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun VerdictData.toBuilder(): VerdictDataBuilder {
@@ -548,5 +588,9 @@ private fun VerdictData.toBuilder(): VerdictDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Verdict.withData(builder: VerdictDataBuilder.() -> Unit): Verdict {
-    return Verdict(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Verdict(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }

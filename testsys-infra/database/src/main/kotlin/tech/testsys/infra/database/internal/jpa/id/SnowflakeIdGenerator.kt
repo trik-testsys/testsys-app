@@ -5,7 +5,7 @@ import java.time.Clock
 import java.time.Instant
 
 /**
- * Snowflake-style id source: a zero sign bit, 5 reserved zero bits, 32 bits of seconds since [EPOCH] (2026-01-01), 10 bits
+ * Snowflake-style id source: a zero sign bit, 5 reserved zero bits, 32 bits of seconds since the Unix epoch, 10 bits
  * of [nodeId] and 16 bits of a per-second counter. Ids grow monotonically per instance: a clock moving backwards keeps the last
  * logical second and an exhausted counter waits for the real clock to pass it, which after a large rollback can take long.
  *
@@ -49,8 +49,8 @@ class SnowflakeIdGenerator(
 
     private fun elapsedSeconds(): Long {
         val now = clock.instant()
-        check(!now.isBefore(EPOCH)) { "Clock $now is before the Snowflake epoch $EPOCH" }
-        val elapsed = now.epochSecond - EPOCH.epochSecond
+        val elapsed = now.epochSecond
+        check(elapsed >= 0) { "Clock $now is before the Unix epoch" }
         check(elapsed <= MAX_TIMESTAMP) { "Clock $now is beyond the Snowflake timestamp range" }
         return elapsed
     }
@@ -65,8 +65,6 @@ class SnowflakeIdGenerator(
     }
 
     companion object {
-
-        val EPOCH: Instant = Instant.parse("2026-01-01T00:00:00Z")
 
         const val TIMESTAMP_BITS = 32
         const val NODE_ID_BITS = 10
@@ -86,7 +84,7 @@ class SnowflakeIdGenerator(
          *
          * @since %CURRENT_VERSION%
          */
-        fun instantOf(id: Long): Instant = EPOCH.plusSeconds(id ushr TIMESTAMP_SHIFT)
+        fun instantOf(id: Long): Instant = Instant.ofEpochSecond(id ushr TIMESTAMP_SHIFT)
 
         /**
          * Node id encoded in [id].

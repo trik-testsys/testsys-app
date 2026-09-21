@@ -18,7 +18,7 @@ import kotlin.test.assertTrue
 @OptIn(InternalDatabaseApi::class)
 class SnowflakeIdGeneratorTest {
 
-    private val clock = MutableClock(SnowflakeIdGenerator.EPOCH.plusSeconds(START_SECOND))
+    private val clock = MutableClock(Instant.EPOCH.plusSeconds(START_SECOND))
 
     private val generator = SnowflakeIdGenerator(nodeId = NODE_ID, clock = clock)
 
@@ -27,7 +27,7 @@ class SnowflakeIdGeneratorTest {
         val first = generator.next()
         val second = generator.next()
 
-        assertEquals(SnowflakeIdGenerator.EPOCH.plusSeconds(START_SECOND), SnowflakeIdGenerator.instantOf(first))
+        assertEquals(Instant.EPOCH.plusSeconds(START_SECOND), SnowflakeIdGenerator.instantOf(first))
         assertEquals(NODE_ID, SnowflakeIdGenerator.nodeIdOf(first))
         assertEquals(0, SnowflakeIdGenerator.counterOf(first))
         assertEquals(1, SnowflakeIdGenerator.counterOf(second))
@@ -50,7 +50,7 @@ class SnowflakeIdGeneratorTest {
         clock.advance(Duration.ofSeconds(1))
         val id = generator.next()
 
-        assertEquals(SnowflakeIdGenerator.EPOCH.plusSeconds(START_SECOND + 1), SnowflakeIdGenerator.instantOf(id))
+        assertEquals(Instant.EPOCH.plusSeconds(START_SECOND + 1), SnowflakeIdGenerator.instantOf(id))
         assertEquals(0, SnowflakeIdGenerator.counterOf(id))
     }
 
@@ -58,7 +58,7 @@ class SnowflakeIdGeneratorTest {
     fun `clock going backwards keeps the logical second`() {
         val before = generator.next()
 
-        clock.now = SnowflakeIdGenerator.EPOCH.plusSeconds(START_SECOND - BACKWARDS_JUMP_SECONDS)
+        clock.now = Instant.EPOCH.plusSeconds(START_SECOND - BACKWARDS_JUMP_SECONDS)
         val after = generator.next()
 
         assertTrue(after > before)
@@ -80,7 +80,7 @@ class SnowflakeIdGeneratorTest {
         val id = generator.next()
         ticker.join()
 
-        assertEquals(SnowflakeIdGenerator.EPOCH.plusSeconds(START_SECOND + 1), SnowflakeIdGenerator.instantOf(id))
+        assertEquals(Instant.EPOCH.plusSeconds(START_SECOND + 1), SnowflakeIdGenerator.instantOf(id))
         assertEquals(0, SnowflakeIdGenerator.counterOf(id))
         assertTrue(id > last)
     }
@@ -93,7 +93,7 @@ class SnowflakeIdGeneratorTest {
 
     @Test
     fun `fails when the clock is before the epoch`() {
-        clock.now = SnowflakeIdGenerator.EPOCH.minusSeconds(1)
+        clock.now = Instant.EPOCH.minusSeconds(1)
 
         assertFailsWith<IllegalStateException> { generator.next() }
     }

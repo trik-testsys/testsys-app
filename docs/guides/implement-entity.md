@@ -152,9 +152,6 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   подключает каталог версии, а [changelog.master.xml](../../testsys-infra/database/src/main/resources/db/changelog/changes/1.0.0/changelog.master.xml)
   внутри версии перечисляет файлы в порядке применения — новый файл нужно в него добавить.
 
-> Соглашение о том, попадает ли новая сущность в существующий каталог `changes/1.0.0/` новым файлом
-> или в каталог следующей версии, пока не зафиксировано. Уточните у команды перед первым changeset.
-
 ## 8. Маппинг
 
 Образец — [ContestMapping.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/mapping/task/ContestMapping.kt).
@@ -188,14 +185,11 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   [PersistenceUtils.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/utils/PersistenceUtils.kt).
 - `assemble(jpaEntity)` — собрать доменный объект из строки, дочитав идентификаторы связей и справочники.
 
-Если у сущности есть join-таблицы, дополнительно переопределяются `removeById`/`removeByIds`: строки связей
+Если у сущности есть join-таблицы, может дополнительно потребоваться переопределить `removeById`/`removeByIds`, если строки связей
 нужно удалить до самой сущности. Для сущностей-пользователей базовый класс другой —
 [AbstractUserPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/AbstractUserPersistenceAdapter.kt),
 который дополнительно требует `supports(jpaEntity)`: все виды пользователей лежат в одной таблице `ts_user`,
 и фильтр не даёт собрать чужую строку.
-
-Про транзакции: если какой-то перегрузке нужны нестандартные настройки `@Transactional`, переопределять
-надо **все** перегрузки — вызов соседнего метода того же класса идёт мимо прокси Spring AOP.
 
 ## 10. Тесты
 

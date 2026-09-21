@@ -28,7 +28,7 @@
 ## Идентификаторы
 
 Идентификаторы сущностей выдаёт [SnowflakeIdGenerator.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/id/SnowflakeIdGenerator.kt),
-последовательностей в БД нет. Идентификатор состоит из 32 бит секунд с 2026-01-01, 10 бит node id и 16 бит
+последовательностей в БД нет. Идентификатор состоит из 32 бит секунд с начала эпохи Unix, 10 бит node id и 16 бит
 счётчика в пределах секунды.
 
 Node id задаётся свойством `spring.jpa.properties.testsys.id.node-id`:

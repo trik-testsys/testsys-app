@@ -14,27 +14,36 @@ jobs:
   detekt:
     name: Detekt
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: read
+      # Required to upload SARIF to code scanning; `actions: read` is needed for it in private repositories.
+      security-events: write
+      actions: read
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v5
         with:
           gradle-version: wrapper
 
+      # autoCorrect is off: rewriting sources during the analysis hides a part of the findings and shifts their
+      # positions away from the commit. `--continue` analyses every module instead of stopping at the first failure.
       - name: Run Detekt
-        run: ./gradlew detektMain --no-daemon
+        run: ./gradlew detektMain -Pdetekt.autoCorrect=false --continue --no-daemon
 
       - name: Upload Detekt report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: detekt-report
@@ -56,8 +65,38 @@ jobs:
               > "build/sarif/$(echo "$f" | tr '/' '_')"
           done
 
+      - name: Publish Detekt summary
+        if: always()
+        run: |
+          shopt -s nullglob
+          reports=(build/sarif/*.sarif)
+          {
+            echo "## Detekt"
+            echo
+            if [ ${#reports[@]} -eq 0 ]; then
+              echo "No Detekt reports were produced: the build failed before the analysis."
+            else
+              total=$(jq -s '[.[].runs[].results[]] | length' "${reports[@]}")
+              if [ "$total" -eq 0 ]; then
+                echo "✅ No findings."
+              else
+                echo "❌ Findings: **${total}**"
+                echo
+                echo "| Rule | Location | Message |"
+                echo "|------|----------|---------|"
+                jq -rs --arg root "file://${GITHUB_WORKSPACE}/" '
+                  .[].runs[].results[]
+                  | .locations[0].physicalLocation as $l
+                  | "| `\(.ruleId | ltrimstr("detekt."))` "
+                    + "| `\($l.artifactLocation.uri | ltrimstr($root)):\($l.region.startLine)` "
+                    + "| \(.message.text | gsub("\\|"; "\\|") | gsub("\n"; " ")) |"
+                ' "${reports[@]}"
+              fi
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && hashFiles('build/sarif/*.sarif') != ''
         with:
           sarif_file: build/sarif

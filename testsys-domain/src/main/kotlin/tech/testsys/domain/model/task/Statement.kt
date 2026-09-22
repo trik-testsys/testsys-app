@@ -2,7 +2,6 @@ package tech.testsys.domain.model.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import java.time.Instant
 import java.util.UUID
 
@@ -22,7 +21,8 @@ value class StatementId(
  * @property file the uploaded statement document.
  * @property name the name of the statement.
  * @property description the description of the statement.
- * @property versionBucket the UUID shared by all versions of the same logical statement.
+ * @property versionBucket the UUID shared by all versions of the same logical statement;
+ *   fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%
  */
 data class StatementData(
@@ -41,6 +41,5 @@ data class StatementData(
 class Statement(
     id: StatementId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: StatementData,
-) : DomainEntity<StatementId>(id, createdAt, version)
+) : DomainEntity<StatementId>(id, createdAt)

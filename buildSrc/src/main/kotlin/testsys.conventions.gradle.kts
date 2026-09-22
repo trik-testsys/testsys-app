@@ -1,5 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
@@ -31,6 +32,8 @@ tasks.test {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions {
+        freeCompilerArgs.set(listOf("-XXLanguage:+ContextParameters"))
+
         languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_2)
         apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_2)
 
@@ -46,14 +49,15 @@ tasks.withType<Detekt>().configureEach {
 
     config.setFrom("$rootDir/detekt.yml")
     buildUponDefaultConfig = false
-    autoCorrect = true
+    // `-Pdetekt.autoCorrect=false` runs Detekt without rewriting sources (read-only checks, e.g. during review).
+    autoCorrect = providers.gradleProperty("detekt.autoCorrect").map { it.toBoolean() }.getOrElse(true)
 
     // Skip KSP / KAPT / any other build-time generated sources; they are not part of
     // hand-written code and any style nits there are out of the author's control.
     // The String-pattern `exclude("...")` form resolves relative to the source root,
     // which does not include `build/generated/...` in its prefix; use the predicate
-    // form against the absolute path instead.
-    exclude { it.file.absolutePath.contains("/build/generated/") }
+    // form against the absolute path instead. `invariantSeparatorsPath` uses `/` on every OS, so the check also works on Windows.
+    exclude { it.file.invariantSeparatorsPath.contains("/build/generated/") }
 }
 
 tasks.named("detekt") {

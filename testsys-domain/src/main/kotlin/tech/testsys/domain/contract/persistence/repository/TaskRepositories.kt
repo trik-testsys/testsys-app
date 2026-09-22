@@ -80,7 +80,7 @@ interface LogsRepository : EntityRepository<LogsData, LogsId, Logs>
 interface RecordingRepository : EntityRepository<RecordingData, RecordingId, Recording>
 
 /**
- * Persistence port for [Solution] entities.
+ * Persistence port for [Solution] entities. A solution is fixed on creation, so `update` is not supported.
  *
  * @since %CURRENT_VERSION%
  */

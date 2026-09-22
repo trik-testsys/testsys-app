@@ -9,6 +9,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.ExerciseJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.chose
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.toJpaEnum
 
 /**
@@ -52,7 +53,8 @@ object ExerciseMapping : EntityMapping<Exercise, ExerciseJpaEntity> {
     )
 
     /**
-     * Creates the [ExerciseJpaEntity] row replacing [current] from [entity] and file [fileDataId], keeping `createdAt` and `version`.
+     * Creates the [ExerciseJpaEntity] row replacing [current] from [entity] and file [fileDataId],
+     * keeping `versionBucket`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
@@ -60,11 +62,11 @@ object ExerciseMapping : EntityMapping<Exercise, ExerciseJpaEntity> {
         name = entity.data.name,
         description = entity.data.description,
         fileDataId = fileDataId,
-        versionBucket = entity.data.versionBucket,
+        versionBucket = current.versionBucket,
         language = entity.data.language.toJpaEnum(),
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 }

@@ -8,6 +8,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.JudgmentOrderJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [JudgmentOrder] and [JudgmentOrderJpaEntity].
@@ -44,17 +45,18 @@ object JudgmentOrderMapping : EntityMapping<JudgmentOrder, JudgmentOrderJpaEntit
     )
 
     /**
-     * Creates the [JudgmentOrderJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     * Creates the [JudgmentOrderJpaEntity] row replacing [current] from [entity],
+     * keeping `judgeId`, `verdictId`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: JudgmentOrder, current: JudgmentOrderJpaEntity) = JudgmentOrderJpaEntity(
-        judgeId = entity.data.judge.id.value,
-        verdictId = entity.data.verdict.id.value,
+        judgeId = current.judgeId,
+        verdictId = current.verdictId,
         reason = entity.data.reason,
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 }

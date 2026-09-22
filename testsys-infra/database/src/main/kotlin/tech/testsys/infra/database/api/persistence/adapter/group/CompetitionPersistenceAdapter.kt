@@ -21,10 +21,8 @@ import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
- * Persistence adapter of [Competition] entities backed by [CompetitionJpaEntity].
- * Contest membership is synced through the join table on save and update and dropped on remove; participants are
- * a read-only projection of the participant data rows pointing at the competition, so `CompetitionData.participants`
- * is ignored on write.
+ * Persistence adapter of [Competition] entities backed by [CompetitionJpaEntity]. Participants are a read-only
+ * projection of the participant data rows, so `CompetitionData.participants` is ignored on write.
  *
  * @since %CURRENT_VERSION%
  */

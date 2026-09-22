@@ -24,6 +24,11 @@ internal fun <Entity : DomainEntity<Id>, Id : DomainId> Entity?.requireById(id: 
 ) { "Domain entity not found by id=$id" }
 
 @InternalDatabaseApi
+internal fun DomainEntity<*>.requireVersion(): Long = requireNotNull(version) {
+    "${this::class.simpleName} id=${id.value} has no version: entity was not obtained from persistence"
+}.value
+
+@InternalDatabaseApi
 internal fun <Entity, Data, DataBuilder : Builder<Data>> DomainEntityWithDataBuilder<Entity, Data, DataBuilder>.populateFields(
     jpaEntity: SnowflakeJpaEntity,
 ) {

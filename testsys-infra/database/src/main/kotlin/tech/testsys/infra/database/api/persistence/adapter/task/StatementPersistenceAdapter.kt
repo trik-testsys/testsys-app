@@ -43,7 +43,7 @@ class StatementPersistenceAdapter(
         val newFileDataId = fileDataStorage.storeIfChanged(
             currentJpaEntity.fileDataId,
             entity.data.file,
-            entity.data.versionBucket,
+            currentJpaEntity.versionBucket,
         )
         val updatedJpaEntity = jpaEntityRepository.saveAndFlush(
             StatementMapping.toJpaEntity(entity, currentJpaEntity, newFileDataId),

@@ -12,6 +12,7 @@ import tech.testsys.domain.builder.user.ParticipantDataBuilder
 import tech.testsys.domain.builder.user.StudentDataBuilder
 import tech.testsys.domain.builder.user.SupervisorBuilder
 import tech.testsys.domain.builder.user.SupervisorDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.model.user.DeveloperData
 import tech.testsys.domain.model.user.JudgeData
 import tech.testsys.domain.model.user.ManagerData
@@ -124,7 +125,11 @@ private fun ParticipantData.toBuilder(): ParticipantDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Participant.withData(builder: ParticipantDataBuilder.() -> Unit): Participant {
-    return Participant(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Participant(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun ObserverData.toBuilder(): ObserverDataBuilder {
@@ -143,7 +148,11 @@ private fun ObserverData.toBuilder(): ObserverDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Observer.withData(builder: ObserverDataBuilder.() -> Unit): Observer {
-    return Observer(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Observer(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun MultipleRoleUserData.toBuilder(): MultipleRoleUserDataBuilder {
@@ -162,7 +171,11 @@ private fun MultipleRoleUserData.toBuilder(): MultipleRoleUserDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun MultipleRoleUser.withData(builder: MultipleRoleUserDataBuilder.() -> Unit): MultipleRoleUser {
-    return MultipleRoleUser(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return MultipleRoleUser(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }
 
 private fun SupervisorData.toBuilder(): SupervisorDataBuilder {
@@ -179,5 +192,9 @@ private fun SupervisorData.toBuilder(): SupervisorDataBuilder {
  * @since %CURRENT_VERSION%
  */
 fun Supervisor.withData(builder: SupervisorDataBuilder.() -> Unit): Supervisor {
-    return Supervisor(this.id, this.createdAt, this.version, this.data.toBuilder().apply(builder).build())
+    return Supervisor(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
 }

@@ -8,7 +8,6 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Task
-import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
@@ -26,6 +25,7 @@ import tech.testsys.infra.database.internal.jpa.repository.task.TestToTaskConten
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionToTaskContentJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.TaskContentMapping
+import tech.testsys.infra.database.internal.mapping.task.TaskContentRevision
 import tech.testsys.infra.database.internal.mapping.task.TaskMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.findIdByTagOrError
@@ -68,7 +68,7 @@ class TaskPersistenceAdapter(
         val taskId = savedJpaEntity.requireId()
         communityToTaskJpaEntityRepository.saveAll(TaskMapping.toSharedToAssociations(taskId, data.sharedTo.ids))
 
-        val domainEntity = TaskMapping.toDomain(savedJpaEntity, data.content, data.sharedTo.ids)
+        val domainEntity = TaskMapping.toDomain(savedJpaEntity, data)
         return domainEntity
     }
 
@@ -91,7 +91,7 @@ class TaskPersistenceAdapter(
         val taskId = savedJpaEntity.requireId()
         syncSharedTo(taskId, entity.data.sharedTo.ids)
 
-        val domainEntity = TaskMapping.toDomain(savedJpaEntity, entity.data.content, entity.data.sharedTo.ids)
+        val domainEntity = TaskMapping.toDomain(savedJpaEntity, entity.data)
         return domainEntity
     }
 
@@ -112,60 +112,40 @@ class TaskPersistenceAdapter(
     override fun assemble(jpaEntity: TaskJpaEntity): Task {
         val taskId = jpaEntity.requireId()
         val sharedToIds = communityToTaskJpaEntityRepository.findAllByTaskId(taskId).map { CommunityId(it.id.communityId) }
-        val content = loadTaskContent(jpaEntity)
-        val domainEntity = TaskMapping.toDomain(jpaEntity, content, sharedToIds)
+        val domainEntity = TaskMapping.toDomain(
+            jpaEntity = jpaEntity,
+            wip = loadWipRevision(jpaEntity),
+            committed = loadCommittedRevision(jpaEntity),
+            sharedToIds = sharedToIds,
+        )
         return domainEntity
     }
 
-    private fun loadTaskContent(jpaEntity: TaskJpaEntity): TaskContent {
-        return when (jpaEntity.status) {
-            TaskStatusJpaEnum.NEW -> {
-                val wipRow = taskContentJpaEntityRepository.findByIdOrError(jpaEntity.wipContentId)
-                val wip = TaskContentMapping.toWipDomain(
-                    jpaEntity = wipRow,
-                    testIds = loadTestIds(wipRow.requireId()),
-                    developerSolutionIds = loadDeveloperSolutionIds(wipRow.requireId()),
-                    supportedVersions = loadSupportedVersions(wipRow.requireId()),
-                )
-                TaskContent.New(wip)
-            }
+    private fun loadWipRevision(jpaEntity: TaskJpaEntity): TaskContentRevision? = when (jpaEntity.status) {
+        TaskStatusJpaEnum.NEW, TaskStatusJpaEnum.UNCOMMITTED -> loadRevision(jpaEntity.wipContentId)
+        // A committed task has no wip: its wipContentId points at the committed row.
+        TaskStatusJpaEnum.COMMITTED -> null
+    }
 
-            TaskStatusJpaEnum.UNCOMMITTED -> {
-                val wipRow = taskContentJpaEntityRepository.findByIdOrError(jpaEntity.wipContentId)
-                val committedId = requireNotNull(jpaEntity.committedContentId) {
-                    "Task ${jpaEntity.requireId()} has status=UNCOMMITTED but committedContentId is null"
-                }
-                val committedRow = taskContentJpaEntityRepository.findByIdOrError(committedId)
-
-                val wip = TaskContentMapping.toWipDomain(
-                    jpaEntity = wipRow,
-                    testIds = loadTestIds(wipRow.requireId()),
-                    developerSolutionIds = loadDeveloperSolutionIds(wipRow.requireId()),
-                    supportedVersions = loadSupportedVersions(wipRow.requireId()),
-                )
-                val lastCommitted = TaskContentMapping.toCommittedDomain(
-                    jpaEntity = committedRow,
-                    testIds = loadTestIds(committedRow.requireId()),
-                    developerSolutionIds = loadDeveloperSolutionIds(committedRow.requireId()),
-                    supportedVersions = loadSupportedVersions(committedRow.requireId()),
-                )
-                TaskContent.Uncommitted(wip = wip, lastCommitted = lastCommitted)
+    private fun loadCommittedRevision(jpaEntity: TaskJpaEntity): TaskContentRevision? = when (jpaEntity.status) {
+        TaskStatusJpaEnum.NEW -> null
+        TaskStatusJpaEnum.UNCOMMITTED, TaskStatusJpaEnum.COMMITTED -> {
+            val committedId = requireNotNull(jpaEntity.committedContentId) {
+                "Task ${jpaEntity.requireId()} has status=${jpaEntity.status} but committedContentId is null"
             }
-
-            TaskStatusJpaEnum.COMMITTED -> {
-                val committedId = requireNotNull(jpaEntity.committedContentId) {
-                    "Task ${jpaEntity.requireId()} has status=COMMITTED but committedContentId is null"
-                }
-                val committedRow = taskContentJpaEntityRepository.findByIdOrError(committedId)
-                val lastCommitted = TaskContentMapping.toCommittedDomain(
-                    jpaEntity = committedRow,
-                    testIds = loadTestIds(committedRow.requireId()),
-                    developerSolutionIds = loadDeveloperSolutionIds(committedRow.requireId()),
-                    supportedVersions = loadSupportedVersions(committedRow.requireId()),
-                )
-                TaskContent.Committed(lastCommitted)
-            }
+            loadRevision(committedId)
         }
+    }
+
+    private fun loadRevision(taskContentId: Long): TaskContentRevision {
+        val row = taskContentJpaEntityRepository.findByIdOrError(taskContentId)
+        val rowId = row.requireId()
+        return TaskContentRevision(
+            jpaEntity = row,
+            testIds = loadTestIds(rowId),
+            developerSolutionIds = loadDeveloperSolutionIds(rowId),
+            supportedVersions = loadSupportedVersions(rowId),
+        )
     }
 
     private fun loadTestIds(taskContentId: Long): List<TestId> =

@@ -2,7 +2,6 @@ package tech.testsys.domain.model.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -21,8 +20,8 @@ value class JudgmentOrderId(
 /**
  * Data of a [JudgmentOrder].
  *
- * @property judge the user holding the judge role who issued the order.
- * @property verdict the verdict the order applies to.
+ * @property judge the user holding the judge role who issued the order; fixed on creation and ignored on update.
+ * @property verdict the verdict the order applies to; fixed on creation and ignored on update.
  * @property reason the judge's justification of the ruling.
  * @since %CURRENT_VERSION%
  */
@@ -41,6 +40,5 @@ data class JudgmentOrderData(
 class JudgmentOrder(
     id: JudgmentOrderId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: JudgmentOrderData,
-) : DomainEntity<JudgmentOrderId>(id, createdAt, version)
+) : DomainEntity<JudgmentOrderId>(id, createdAt)

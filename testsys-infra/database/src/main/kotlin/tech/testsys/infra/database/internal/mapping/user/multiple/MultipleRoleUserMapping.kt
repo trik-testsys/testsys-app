@@ -15,6 +15,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Role rows of a [MultipleRoleUser] collected from the per-role tables; a `null` role is not held by the user.
@@ -187,6 +188,6 @@ object MultipleRoleUserMapping {
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 }

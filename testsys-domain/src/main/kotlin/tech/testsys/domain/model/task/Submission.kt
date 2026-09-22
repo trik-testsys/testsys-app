@@ -2,7 +2,6 @@ package tech.testsys.domain.model.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.user.User
@@ -38,9 +37,8 @@ class RecordingData(
 class Recording(
     id: RecordingId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: RecordingData,
-) : DomainEntity<RecordingId>(id, createdAt, version)
+) : DomainEntity<RecordingId>(id, createdAt)
 
 /**
  * Identifier of [Logs].
@@ -71,9 +69,8 @@ class LogsData(
 class Logs(
     id: LogsId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: LogsData,
-) : DomainEntity<LogsId>(id, createdAt, version)
+) : DomainEntity<LogsId>(id, createdAt)
 
 /**
  * Identifier of a [Verdict].
@@ -89,8 +86,8 @@ value class VerdictId(
  * Data of a [Verdict].
  *
  * @property score the score awarded to the solution.
- * @property task the task the solution was graded against.
- * @property submission the submission the verdict was produced for.
+ * @property task the task the solution was graded against; fixed on creation and ignored on update.
+ * @property submission the submission the verdict was produced for; fixed on creation and ignored on update.
  * @property logs the grading logs, or `null` if none were produced.
  * @property recording the recording of the solution run, or `null` if none was produced.
  * @since %CURRENT_VERSION%
@@ -112,9 +109,8 @@ data class VerdictData(
 class Verdict(
     id: VerdictId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: VerdictData,
-) : DomainEntity<VerdictId>(id, createdAt, version)
+) : DomainEntity<VerdictId>(id, createdAt)
 
 /**
  * Identifier of a [Submission].
@@ -210,11 +206,11 @@ sealed interface SubmissionKind {
 /**
  * Data of a [Submission].
  *
- * @property author the user who submitted the solution.
- * @property solution the submitted program.
- * @property task the task the solution is graded against.
+ * @property author the user who submitted the solution; fixed on creation and ignored on update.
+ * @property solution the submitted program; fixed on creation and ignored on update.
+ * @property task the task the solution is graded against; fixed on creation and ignored on update.
  * @property status the position of the submission in the grading lifecycle.
- * @property kind the context of the submission.
+ * @property kind the context of the submission; fixed on creation and ignored on update.
  * @property judgmentOrders the judges' rulings concerning the submission.
  * @since %CURRENT_VERSION%
  */
@@ -236,6 +232,5 @@ data class SubmissionData(
 class Submission(
     id: SubmissionId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: SubmissionData,
-) : DomainEntity<SubmissionId>(id, createdAt, version)
+) : DomainEntity<SubmissionId>(id, createdAt)

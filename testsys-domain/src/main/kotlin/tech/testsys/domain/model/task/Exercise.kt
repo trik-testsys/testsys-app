@@ -2,7 +2,6 @@ package tech.testsys.domain.model.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import java.time.Instant
 import java.util.UUID
 
@@ -23,7 +22,8 @@ value class ExerciseId(
  * @property description the description of the exercise.
  * @property file the uploaded TRIK Studio program file.
  * @property language the programming language of the exercise program.
- * @property versionBucket the UUID shared by all versions of the same logical exercise.
+ * @property versionBucket the UUID shared by all versions of the same logical exercise;
+ *   fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%
  */
 class ExerciseData(
@@ -43,6 +43,5 @@ class ExerciseData(
 class Exercise(
     id: ExerciseId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: ExerciseData,
-) : DomainEntity<ExerciseId>(id, createdAt, version)
+) : DomainEntity<ExerciseId>(id, createdAt)

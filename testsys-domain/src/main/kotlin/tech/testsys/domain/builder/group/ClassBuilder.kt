@@ -2,6 +2,7 @@ package tech.testsys.domain.builder.group
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.Class
@@ -75,7 +76,7 @@ class ClassDataBuilder : Builder<ClassData> {
 }
 
 /**
- * Builder of [Class] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Class] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -86,14 +87,12 @@ class ClassBuilder : DomainEntityWithDataBuilder<Class, ClassData, ClassDataBuil
     override fun build(): Class {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Class(
             id = ClassId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }

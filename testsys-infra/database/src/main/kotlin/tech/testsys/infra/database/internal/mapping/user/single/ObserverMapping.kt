@@ -11,6 +11,7 @@ import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.single.CompetitionToObserverJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ObserverDataJpaEntity
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [Observer] and its [UserJpaEntity] and [ObserverDataJpaEntity] rows.
@@ -63,7 +64,7 @@ object ObserverMapping {
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 
     /**

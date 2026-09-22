@@ -2,7 +2,6 @@ package tech.testsys.domain.model.group
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -21,7 +20,7 @@ value class CommunityId(
 /**
  * Data of a [Community]. Membership is stored on the members' side, not here.
  *
- * @property owner the administrator who owns the community.
+ * @property owner the administrator who owns the community; fixed on creation and ignored on update.
  * @property name the name of the community.
  * @property description the description of the community.
  * @since %CURRENT_VERSION%
@@ -41,6 +40,5 @@ data class CommunityData(
 class Community(
     id: CommunityId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: CommunityData,
-) : DomainEntity<CommunityId>(id, createdAt, version)
+) : DomainEntity<CommunityId>(id, createdAt)

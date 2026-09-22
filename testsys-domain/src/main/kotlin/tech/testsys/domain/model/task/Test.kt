@@ -2,7 +2,6 @@ package tech.testsys.domain.model.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import java.time.Instant
 import java.util.UUID
 
@@ -22,7 +21,8 @@ value class TestId(
  * @property file the uploaded TRIK Studio world model file.
  * @property name the name of the test.
  * @property description the description of the test.
- * @property versionBucket the UUID shared by all versions of the same logical test.
+ * @property versionBucket the UUID shared by all versions of the same logical test;
+ *   fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%
  */
 data class TestData(
@@ -41,6 +41,5 @@ data class TestData(
 class Test(
     id: TestId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: TestData,
-) : DomainEntity<TestId>(id, createdAt, version)
+) : DomainEntity<TestId>(id, createdAt)

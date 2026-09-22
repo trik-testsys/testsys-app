@@ -1,11 +1,10 @@
 package tech.testsys.infra.database.internal.mapping.task
 
-import tech.testsys.domain.builder.util.lazify
-import tech.testsys.domain.model.LazyEntity
+import tech.testsys.domain.builder.task.CommittedTaskContentBuilder
+import tech.testsys.domain.builder.task.TaskContentBuilder
+import tech.testsys.domain.builder.task.WipTaskContentBuilder
 import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.DeveloperSolutionId
-import tech.testsys.domain.model.task.ExerciseId
-import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.WipTaskContent
@@ -26,51 +25,32 @@ import tech.testsys.infra.database.internal.utils.requireId
 object TaskContentMapping {
 
     /**
-     * Assembles the [WipTaskContent] of the revision [jpaEntity] from [testIds], [developerSolutionIds] and [supportedVersions].
+     * Fills [builder] with the work-in-progress [revision]; the exercise and statement references may be missing.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toWipDomain(
-        jpaEntity: TaskContentJpaEntity,
-        testIds: List<TestId>,
-        developerSolutionIds: List<DeveloperSolutionId>,
-        supportedVersions: List<TrikStudioVersion>,
-    ): WipTaskContent {
-        jpaEntity.requireId()
-        return WipTaskContent(
-            tests = testIds.lazify(),
-            exercise = jpaEntity.exerciseId?.let { LazyEntity(ExerciseId(it)) },
-            statement = jpaEntity.statementId?.let { LazyEntity(StatementId(it)) },
-            developerSolutions = developerSolutionIds.lazify(),
-            supportedTrikStudioVersions = supportedVersions,
-        )
+    fun populateWip(builder: WipTaskContentBuilder, revision: TaskContentRevision) {
+        revision.jpaEntity.requireId()
+        builder.populateResources(revision)
+        revision.jpaEntity.exerciseId?.let { exerciseId -> builder.exercise(exerciseId) }
+        revision.jpaEntity.statementId?.let { statementId -> builder.statement(statementId) }
     }
 
     /**
-     * Assembles the [CommittedTaskContent] of the revision [jpaEntity] from [testIds], [developerSolutionIds]
-     * and [supportedVersions]; fails when the exercise or statement reference is missing.
+     * Fills [builder] with the committed [revision]; fails when the exercise or statement reference is missing.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toCommittedDomain(
-        jpaEntity: TaskContentJpaEntity,
-        testIds: List<TestId>,
-        developerSolutionIds: List<DeveloperSolutionId>,
-        supportedVersions: List<TrikStudioVersion>,
-    ): CommittedTaskContent {
-        val exerciseId = requireNotNull(jpaEntity.exerciseId) {
-            "TaskContent ${jpaEntity.requireId()} marks committed payload but exerciseId is null"
+    fun populateCommitted(builder: CommittedTaskContentBuilder, revision: TaskContentRevision) {
+        val exerciseId = requireNotNull(revision.jpaEntity.exerciseId) {
+            "TaskContent ${revision.jpaEntity.requireId()} marks committed payload but exerciseId is null"
         }
-        val statementId = requireNotNull(jpaEntity.statementId) {
-            "TaskContent ${jpaEntity.requireId()} marks committed payload but statementId is null"
+        val statementId = requireNotNull(revision.jpaEntity.statementId) {
+            "TaskContent ${revision.jpaEntity.requireId()} marks committed payload but statementId is null"
         }
-        return CommittedTaskContent(
-            tests = testIds.lazify(),
-            exercise = ExerciseId(exerciseId).lazify(),
-            statement = StatementId(statementId).lazify(),
-            developerSolutions = developerSolutionIds.lazify(),
-            supportedTrikStudioVersions = supportedVersions,
-        )
+        builder.populateResources(revision)
+        builder.exercise(exerciseId)
+        builder.statement(statementId)
     }
 
     /**
@@ -119,4 +99,27 @@ object TaskContentMapping {
     fun toTrikStudioVersionAssociations(taskContentId: Long, trikStudioVersionIds: List<Long>) = trikStudioVersionIds.map {
         TrikStudioVersionToTaskContentJpaEntity(trikStudioVersionId = it, taskContentId = taskContentId)
     }
+
+    private fun TaskContentBuilder<*>.populateResources(revision: TaskContentRevision) {
+        tests = revision.testIds.toMutableList()
+        developerSolutions = revision.developerSolutionIds.toMutableList()
+        supportedTrikStudioVersions = revision.supportedVersions.toMutableList()
+    }
 }
+
+/**
+ * One stored content revision of a task: its row together with the data read from join tables and dictionaries.
+ *
+ * @property jpaEntity the row of the revision.
+ * @property testIds the ids of the tests linked to the revision.
+ * @property developerSolutionIds the ids of the developer solutions linked to the revision.
+ * @property supportedVersions the TRIK Studio versions linked to the revision.
+ * @since %CURRENT_VERSION%
+ */
+@InternalDatabaseApi
+data class TaskContentRevision(
+    val jpaEntity: TaskContentJpaEntity,
+    val testIds: List<TestId>,
+    val developerSolutionIds: List<DeveloperSolutionId>,
+    val supportedVersions: List<TrikStudioVersion>,
+)

@@ -8,6 +8,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.TestJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [Test] and [TestJpaEntity].
@@ -46,7 +47,8 @@ object TestMapping : EntityMapping<Test, TestJpaEntity> {
     )
 
     /**
-     * Creates the [TestJpaEntity] row replacing [current] from [entity] and file [fileDataId], keeping `createdAt` and `version`.
+     * Creates the [TestJpaEntity] row replacing [current] from [entity] and file [fileDataId],
+     * keeping `versionBucket`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
@@ -54,10 +56,10 @@ object TestMapping : EntityMapping<Test, TestJpaEntity> {
         name = entity.data.name,
         description = entity.data.description,
         fileDataId = fileDataId,
-        versionBucket = entity.data.versionBucket,
+        versionBucket = current.versionBucket,
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 }

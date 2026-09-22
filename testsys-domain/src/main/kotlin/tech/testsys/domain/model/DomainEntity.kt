@@ -31,14 +31,17 @@ value class EntityVersion(val value: Long)
  * @param Id the identifier type of the entity.
  * @property id the identifier of the entity.
  * @property createdAt the moment the entity was created.
- * @property version the optimistic-lock token of the loaded state; an update with a stale token fails.
+ * @property version the optimistic-lock token of the loaded state, or `null` if the entity was not obtained
+ *   from persistence; an update with a stale token fails.
  * @since %CURRENT_VERSION%
  */
 abstract class DomainEntity<Id : DomainId>(
     val id: Id,
     val createdAt: Instant,
-    val version: EntityVersion,
 ) {
+
+    var version: EntityVersion? = null
+        internal set
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

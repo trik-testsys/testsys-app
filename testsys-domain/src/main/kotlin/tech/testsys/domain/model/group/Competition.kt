@@ -2,7 +2,6 @@ package tech.testsys.domain.model.group
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.task.Contest
@@ -26,7 +25,7 @@ value class CompetitionId(
 /**
  * Data of a [Competition].
  *
- * @property owner the manager who owns the competition.
+ * @property owner the manager who owns the competition; fixed on creation and ignored on update.
  * @property name the name of the competition.
  * @property description the description of the competition.
  * @property participants the participants registered in the competition; a projection of each participant's `competition`
@@ -52,6 +51,5 @@ data class CompetitionData(
 class Competition(
     id: CompetitionId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: CompetitionData,
-) : DomainEntity<CompetitionId>(id, createdAt, version)
+) : DomainEntity<CompetitionId>(id, createdAt)

@@ -6,11 +6,12 @@ spring-boot = "3.5.13"
 spring = "6.2.17"
 postgresql = "42.7.7"
 liquibase = "4.32.0"
-commons-lang3 = "3.18.0"
 h2 = "2.3.232"
 ksp = "2.2.21-2.0.5"
 kotlinpoet = "2.3.0"
 kctfork = "0.12.1"
+icu = "78.1"
+mockk = "1.14.9"
 
 [libraries]
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
@@ -29,19 +30,24 @@ spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-star
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
 liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase" }
-commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
 
 detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
 
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
+kotlinpoet-core = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
 kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoet" }
 kctfork-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kctfork" }
+
+icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu" }
+
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 
 [bundles]
 test-implementation = [
     "junit-jupiter-api",
-    "junit-jupiter-params"
+    "junit-jupiter-params",
+    "mockk",
 ]
 test-runtime = [
     "junit-jupiter-engine",
@@ -59,7 +65,6 @@ kotlin-jpa-plugins = [
 database-implementation = [
     "spring-boot-starter-data-jpa",
     "liquibase-core",
-    "commons-lang3",
     "kotlin-reflect",
 ]
 database-test-implementation = [
@@ -69,6 +74,9 @@ database-test-implementation = [
 detekt-implementation = [
     "detekt-gradle-plugin",
     "detekt-formatting",
+]
+icu-implementation = [
+    "icu4j",
 ]
 
 [plugins]

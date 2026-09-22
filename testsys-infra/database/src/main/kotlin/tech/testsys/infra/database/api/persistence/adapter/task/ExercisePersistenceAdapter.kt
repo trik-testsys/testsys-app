@@ -43,7 +43,7 @@ class ExercisePersistenceAdapter(
         val newFileDataId = fileDataStorage.storeIfChanged(
             currentJpaEntity.fileDataId,
             entity.data.file,
-            entity.data.versionBucket,
+            currentJpaEntity.versionBucket,
         )
         val updatedJpaEntity = jpaEntityRepository.saveAndFlush(
             ExerciseMapping.toJpaEntity(entity, currentJpaEntity, newFileDataId),

@@ -9,6 +9,7 @@ import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.single.SupervisorDataJpaEntity
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [Supervisor] and its [UserJpaEntity] and [SupervisorDataJpaEntity] rows.
@@ -60,7 +61,7 @@ object SupervisorMapping {
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 
     /**

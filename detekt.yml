@@ -345,6 +345,9 @@ style:
 formatting:
   active: true
   autoCorrect: true
+  # ktlint bundled with Detekt 1.23 cannot parse context parameters (`context(name: Type)`) and crashes in
+  # formatting rules. Drop this exclude after moving to a Detekt version that supports Kotlin 2.2 syntax.
+  excludes: ['**/operation/error/OperationFailure.kt']
   AnnotationSpacing:
     active: true
     autoCorrect: true

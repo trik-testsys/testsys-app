@@ -13,6 +13,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.ContestJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskToContestJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 import java.time.Duration
 
 /**
@@ -65,14 +66,15 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
     )
 
     /**
-     * Creates the [ContestJpaEntity] row replacing [current] from [entity] and [trikStudioVersionId], keeping `createdAt` and `version`.
+     * Creates the [ContestJpaEntity] row replacing [current] from [entity] and [trikStudioVersionId],
+     * keeping `ownerId`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: Contest, current: ContestJpaEntity, trikStudioVersionId: Long) = ContestJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
-        ownerId = entity.data.owner.id.value,
+        ownerId = current.ownerId,
         startsAt = entity.data.startsAt,
         contestDurationMillis = entity.data.contestDuration.toMillis(),
         attemptDurationMillis = entity.data.attemptDuration.toMillis(),
@@ -80,7 +82,7 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 
     /**

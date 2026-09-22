@@ -2,8 +2,8 @@ package tech.testsys.domain.model.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import java.time.Instant
+import java.util.UUID
 
 /**
  * Identifier of a [Solution].
@@ -18,13 +18,15 @@ value class SolutionId(
 /**
  * Data of a [Solution].
  *
- * @property file the uploaded program file.
- * @property language the programming language of the program.
+ * @property file the uploaded program file; fixed on creation.
+ * @property language the programming language of the program; fixed on creation.
+ * @property versionBucket the UUID shared by all versions of the same logical solution; fixed on creation.
  * @since %CURRENT_VERSION%
  */
 data class SolutionData(
     val file: FileData,
     val language: TrikSupportedLanguage,
+    val versionBucket: UUID,
 )
 
 /**
@@ -36,6 +38,5 @@ data class SolutionData(
 class Solution(
     id: SolutionId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: SolutionData,
-) : DomainEntity<SolutionId>(id, createdAt, version)
+) : DomainEntity<SolutionId>(id, createdAt)

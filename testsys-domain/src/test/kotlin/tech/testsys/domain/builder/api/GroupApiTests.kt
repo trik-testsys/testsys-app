@@ -1,0 +1,129 @@
+package tech.testsys.domain.builder.api
+
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import tech.testsys.domain.model.EntityVersion
+import tech.testsys.domain.model.LazyEntity
+import tech.testsys.domain.model.LazyEntityList
+import tech.testsys.domain.model.group.ClassData
+import tech.testsys.domain.model.group.CommunityData
+import tech.testsys.domain.model.group.CompetitionData
+import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.SingleRoleUserId
+import java.time.Instant
+
+class GroupApiTests {
+
+    @Nested
+    inner class ClassTests {
+
+        private val origin = `class` {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = ClassData(
+                owner = LazyEntity(MultipleRoleUserId(10)),
+                name = "Original Class",
+                description = "Original description",
+                students = LazyEntityList(listOf(MultipleRoleUserId(20), MultipleRoleUserId(30))),
+                contests = LazyEntityList(listOf(ContestId(40)))
+            )
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
+            Assertions.assertEquals(origin.data.name, copy.data.name)
+            Assertions.assertEquals(origin.data.description, copy.data.description)
+            Assertions.assertEquals(origin.data.students.ids, copy.data.students.ids)
+            Assertions.assertEquals(origin.data.contests.ids, copy.data.contests.ids)
+        }
+
+        @Test
+        fun `should change owner if withData sets owner`() {
+            val copy = origin.withData { owner(99) }
+
+            Assertions.assertEquals(99L, copy.data.owner.id.value)
+        }
+    }
+
+    @Nested
+    inner class CommunityTests {
+
+        private val origin = community {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = CommunityData(
+                owner = LazyEntity(MultipleRoleUserId(10)),
+                name = "Original Community",
+                description = "Original description",
+            )
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
+            Assertions.assertEquals(origin.data.name, copy.data.name)
+            Assertions.assertEquals(origin.data.description, copy.data.description)
+        }
+
+        @Test
+        fun `should change owner if withData sets owner`() {
+            val copy = origin.withData { owner(99) }
+
+            Assertions.assertEquals(99L, copy.data.owner.id.value)
+        }
+    }
+
+    @Nested
+    inner class CompetitionTests {
+
+        private val origin = competition {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = CompetitionData(
+                owner = LazyEntity(MultipleRoleUserId(10)),
+                name = "Original Competition",
+                description = "Original description",
+                participants = LazyEntityList(listOf(SingleRoleUserId(20))),
+                contests = LazyEntityList(listOf(ContestId(30)))
+            )
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
+            Assertions.assertEquals(origin.data.name, copy.data.name)
+            Assertions.assertEquals(origin.data.description, copy.data.description)
+            Assertions.assertEquals(origin.data.participants.ids, copy.data.participants.ids)
+            Assertions.assertEquals(origin.data.contests.ids, copy.data.contests.ids)
+        }
+
+        @Test
+        fun `should change owner if withData sets owner`() {
+            val copy = origin.withData { owner(99) }
+
+            Assertions.assertEquals(99L, copy.data.owner.id.value)
+        }
+    }
+
+}

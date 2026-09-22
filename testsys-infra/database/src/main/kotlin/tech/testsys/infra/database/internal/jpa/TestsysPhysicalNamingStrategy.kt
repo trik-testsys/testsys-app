@@ -3,6 +3,7 @@ package tech.testsys.infra.database.internal.jpa
 import org.hibernate.boot.model.naming.Identifier
 import org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
 import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment
+import tech.testsys.infra.database.internal.InternalDatabaseApi
 
 /**
  * Hibernate naming strategy: snake_case columns (`taskId` → `task_id`); tables also drop the `JpaEntity`/`Entity`
@@ -10,6 +11,7 @@ import org.hibernate.engine.jdbc.env.spi.JdbcEnvironment
  *
  * @since %CURRENT_VERSION%
  */
+@InternalDatabaseApi
 class TestsysPhysicalNamingStrategy : PhysicalNamingStrategyStandardImpl() {
 
     override fun toPhysicalTableName(logicalName: Identifier, jdbcEnvironment: JdbcEnvironment): Identifier {

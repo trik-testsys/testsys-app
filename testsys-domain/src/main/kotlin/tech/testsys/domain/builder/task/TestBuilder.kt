@@ -2,6 +2,7 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Test
@@ -54,7 +55,7 @@ class TestDataBuilder : Builder<TestData> {
 }
 
 /**
- * Builder of [Test] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Test] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -65,14 +66,12 @@ class TestBuilder : DomainEntityWithDataBuilder<Test, TestData, TestDataBuilder>
     override fun build(): Test {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Test(
             id = TestId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }

@@ -92,20 +92,22 @@ interface EntitySaver<Data, Id : DomainId, Entity : DomainEntity<Id>> {
     fun save(dataList: List<Data>): List<Entity>
 
     /**
-     * Updates an existing entity; fails when the stored entity has changed since [entity] was loaded, i.e. its
-     * [DomainEntity.version] is stale.
+     * Updates an existing entity obtained from persistence; fails when the stored entity has changed since [entity]
+     * was loaded, i.e. its [DomainEntity.version] is stale.
      *
      * @param entity the entity with updated data.
      * @return the saved entity carrying the new version.
+     * @throws IllegalArgumentException if [entity] carries no [DomainEntity.version] token.
      * @since %CURRENT_VERSION%
      */
     fun update(entity: Entity): Entity
 
     /**
-     * Updates existing entities.
+     * Updates existing entities, each as by [update].
      *
      * @param entityList the entities with updated data.
-     * @return the saved entities.
+     * @return the saved entities carrying the new versions.
+     * @throws IllegalArgumentException if any of [entityList] carries no [DomainEntity.version] token.
      * @since %CURRENT_VERSION%
      */
     fun update(entityList: List<Entity>): List<Entity>

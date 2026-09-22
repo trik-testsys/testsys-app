@@ -36,7 +36,8 @@ interface Builder<out T> {
  * @param Entity the type of the built entity.
  * @property id the raw identifier of the entity, or `null` if not set yet.
  * @property createdAt the creation timestamp of the entity, or `null` if not set yet.
- * @property version the optimistic-lock token of the entity, or `null` if not set yet.
+ * @property version the optimistic-lock token to put on the built entity, or `null` if the entity is not assembled
+ *   from a stored row.
  * @since %CURRENT_VERSION%
  */
 interface DomainEntityBuilder<out Entity> : Builder<Entity> {
@@ -91,7 +92,8 @@ inline fun <Data, DataBuilder : Builder<Data>> DataCapable<Data, DataBuilder>.da
 }
 
 /**
- * Base class of domain entity builders with a data object; [id], [createdAt], [version] and [data] start as `null`.
+ * Base class of domain entity builders with a data object; [id], [createdAt], [data] and the optional [version]
+ * start as `null`.
  *
  * @param Entity the type of the built entity.
  * @param Data the type of the data object.

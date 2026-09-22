@@ -1,7 +1,11 @@
 # Кодогенерация для модуля `database`
 
-KSP-процессоры, генерирующие вспомогательный код для JPA-сущностей `testsys-infra/database`.
-Результат лежит в `build/generated/ksp/main/kotlin` и в репозиторий не попадает.
+Документ описывает KSP-процессоры, генерирующие вспомогательный код для JPA-сущностей `testsys-infra/database`:
+что именно генерируется и какие требования предъявляются к исходным классам. Он предназначен для тех, кто
+добавляет JPA-сущности или меняет сами процессоры. Как добавить сущность целиком — в
+[implement-entity.md](../../../docs/guides/implement-entity.md).
+
+Результат генерации лежит в `build/generated/ksp/main/kotlin` и в репозиторий не попадает.
 
 | Модуль        | Содержимое                                | Подключение к `database` |
 |---------------|-------------------------------------------|--------------------------|
@@ -17,15 +21,11 @@ KSP-процессоры, генерирующие вспомогательны�
 Класс должен иметь единственный параметр конструктора `id: T`, а `T` быть `data class` из `val`-полей.
 Нарушение является ошибкой компиляции.
 
+Образец исходного класса — `TaskToContestJpaEntity`
+в [Contest.kt](../src/main/kotlin/tech/testsys/infra/database/internal/jpa/entity/task/Contest.kt).
+Сгенерированный код в репозитории отсутствует, поэтому он показан здесь:
+
 ```kotlin
-// Исходник
-@Embeddable
-data class TaskToContestId(val taskId: Long, val contestId: Long) : CompositeId
-
-@Entity
-@CompositeKeyConstructor
-class TaskToContestJpaEntity(id: TaskToContestId) : CompositeJpaEntity<TaskToContestId>(id)
-
 // Сгенерировано: TaskToContestJpaEntity$Constructors.kt
 @InternalDatabaseApi
 public fun TaskToContestJpaEntity(taskId: Long, contestId: Long): TaskToContestJpaEntity =

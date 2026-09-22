@@ -2,6 +2,7 @@ package tech.testsys.domain.builder.task
 
 import tech.testsys.domain.builder.Builder
 import tech.testsys.domain.builder.DomainEntityWithDataBuilder
+import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.CommunityId
@@ -59,6 +60,15 @@ class ContestDataBuilder : Builder<ContestData> {
     }
 
     /**
+     * Sets [tasks] from raw ids.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun tasks(tasks: Iterable<Long>) {
+        this.tasks = tasks.map { TaskId(it) }.toMutableList()
+    }
+
+    /**
      * Sets [trikStudioVersion] from a raw version tag, e.g. `"3.0.0"`.
      *
      * @since %CURRENT_VERSION%
@@ -101,7 +111,7 @@ class ContestDataBuilder : Builder<ContestData> {
 }
 
 /**
- * Builder of [Contest] entities. Required: [id], [createdAt], [version], [data].
+ * Builder of [Contest] entities. Required: [id], [createdAt], [data].
  *
  * @since %CURRENT_VERSION%
  */
@@ -112,14 +122,12 @@ class ContestBuilder : DomainEntityWithDataBuilder<Contest, ContestData, Contest
     override fun build(): Contest {
         val id = requireField(id) { ::id }
         val createdAt = requireField(createdAt) { ::createdAt }
-        val version = requireField(version) { ::version }
         val data = requireField(data) { ::data }
 
         return Contest(
             id = ContestId(id),
             createdAt = createdAt,
-            version = version,
             data = data,
-        )
+        ).applyVersion(version)
     }
 }

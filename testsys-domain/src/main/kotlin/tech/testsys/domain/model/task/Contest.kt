@@ -2,7 +2,6 @@ package tech.testsys.domain.model.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.Community
@@ -25,7 +24,7 @@ value class ContestId(
 /**
  * Data of a [Contest].
  *
- * @property owner the developer who owns the contest.
+ * @property owner the developer who owns the contest; fixed on creation and ignored on update.
  * @property name the name of the contest.
  * @property description the description of the contest.
  * @property tasks the tasks included in the contest.
@@ -61,6 +60,5 @@ data class ContestData(
 class Contest(
     id: ContestId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: ContestData,
-) : DomainEntity<ContestId>(id, createdAt, version)
+) : DomainEntity<ContestId>(id, createdAt)

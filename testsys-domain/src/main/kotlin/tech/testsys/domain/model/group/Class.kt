@@ -2,7 +2,6 @@ package tech.testsys.domain.model.group
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.task.Contest
@@ -24,7 +23,7 @@ value class ClassId(
 /**
  * Data of a [Class].
  *
- * @property owner the manager who owns the class.
+ * @property owner the manager who owns the class; fixed on creation and ignored on update.
  * @property name the name of the class.
  * @property description the description of the class.
  * @property students the students enrolled in the class.
@@ -48,6 +47,5 @@ data class ClassData(
 class Class(
     id: ClassId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: ClassData,
-) : DomainEntity<ClassId>(id, createdAt, version)
+) : DomainEntity<ClassId>(id, createdAt)

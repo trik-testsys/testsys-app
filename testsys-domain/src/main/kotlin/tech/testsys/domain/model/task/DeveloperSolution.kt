@@ -2,7 +2,6 @@ package tech.testsys.domain.model.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import java.time.Instant
 import java.util.UUID
@@ -24,7 +23,8 @@ value class DeveloperSolutionId(
  * @property description the description of the developer solution.
  * @property solution the reference program.
  * @property expectedScore the score the reference program is expected to get when graded against the task.
- * @property versionBucket the UUID shared by all versions of the same logical developer solution.
+ * @property versionBucket the UUID shared by all versions of the same logical developer solution;
+ *   fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%
  */
 data class DeveloperSolutionData(
@@ -44,6 +44,5 @@ data class DeveloperSolutionData(
 class DeveloperSolution(
     id: DeveloperSolutionId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: DeveloperSolutionData,
-) : DomainEntity<DeveloperSolutionId>(id, createdAt, version)
+) : DomainEntity<DeveloperSolutionId>(id, createdAt)

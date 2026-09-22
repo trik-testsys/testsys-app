@@ -1,6 +1,5 @@
 package tech.testsys.domain.model.user
 
-import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.Community
@@ -27,9 +26,8 @@ value class SingleRoleUserId(
 sealed class SingleRoleUser(
     id: SingleRoleUserId,
     createdAt: Instant,
-    version: EntityVersion,
     data: UserData,
-) : User<SingleRoleUserId>(id, createdAt, version, data)
+) : User<SingleRoleUserId>(id, createdAt, data)
 
 /**
  * Data of a [Participant].
@@ -52,9 +50,8 @@ data class ParticipantData(
 class Participant(
     id: SingleRoleUserId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: ParticipantData,
-) : SingleRoleUser(id, createdAt, version, data)
+) : SingleRoleUser(id, createdAt, data)
 
 /**
  * Data of an [Observer].
@@ -79,9 +76,8 @@ data class ObserverData(
 class Observer(
     id: SingleRoleUserId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: ObserverData,
-) : SingleRoleUser(id, createdAt, version, data)
+) : SingleRoleUser(id, createdAt, data)
 
 /**
  * Data of a [Supervisor].
@@ -102,6 +98,5 @@ data class SupervisorData(
 class Supervisor(
     id: SingleRoleUserId,
     createdAt: Instant,
-    version: EntityVersion,
     val data: SupervisorData,
-) : SingleRoleUser(id, createdAt, version, data)
+) : SingleRoleUser(id, createdAt, data)

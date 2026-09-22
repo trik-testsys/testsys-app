@@ -8,6 +8,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.VerdictJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [Verdict] and [VerdictJpaEntity].
@@ -49,19 +50,20 @@ object VerdictMapping : EntityMapping<Verdict, VerdictJpaEntity> {
     )
 
     /**
-     * Creates the [VerdictJpaEntity] row replacing [current] from [entity], keeping `createdAt` and `version`.
+     * Creates the [VerdictJpaEntity] row replacing [current] from [entity],
+     * keeping `taskId`, `submissionId`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: Verdict, current: VerdictJpaEntity) = VerdictJpaEntity(
         score = entity.data.score.value,
-        taskId = entity.data.task.id.value,
-        submissionId = entity.data.submission.id.value,
+        taskId = current.taskId,
+        submissionId = current.submissionId,
         logsId = entity.data.logs?.id?.value,
         recordingId = entity.data.recording?.id?.value,
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt
-        it.version = entity.version.value
+        it.version = entity.requireVersion()
     }
 }

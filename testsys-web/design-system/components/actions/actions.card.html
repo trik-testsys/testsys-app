@@ -1,0 +1,25 @@
+<!-- @dsCard group="Components" viewport="700x300" name="Actions" -->
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../lib/dev-loader.js"></script>
+<style>body{padding:20px;background:var(--surface-page)} .l{font:500 11px var(--font-mono);color:var(--text-tertiary);margin-bottom:8px;display:block} .r{display:flex;flex-wrap:wrap;gap:10px;align-items:center}</style>
+</head><body><div id="root"><div style="padding:40px;text-align:center;font:500 12px var(--font-mono);color:var(--text-tertiary)">Загрузка…</div></div>
+<script type="text/babel">
+window.__tsReady.then(NS => {
+const { Button, IconButton, DownloadButton } = NS;
+function Demo() {
+  const [st, setSt] = React.useState('idle'); const [p, setP] = React.useState(0);
+  const start = () => { setSt('preparing'); setTimeout(() => { setSt('downloading'); let v = 0; const t = setInterval(() => { v += 8; setP(v); if (v >= 100) { clearInterval(t); setSt('done'); } }, 150); }, 1200); };
+  return <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div><span className="l">Variants</span><div className="r"><Button icon="plus">Создать</Button><Button variant="secondary" icon="list-filter">Фильтры</Button><Button variant="ghost">Подробнее</Button><Button variant="link">Ссылка</Button><Button variant="danger">Удалить</Button><Button variant="danger-soft">Исключить</Button></div></div>
+    <div><span className="l">Sizes · states</span><div className="r"><Button size="lg">Отправить решение</Button><Button size="sm">Участвовать</Button><Button loading>Отправка…</Button><Button disabled>Недоступно</Button><IconButton icon="ellipsis" label="Действия" /><IconButton icon="plus" label="Добавить" variant="secondary" /><IconButton icon="x" label="Закрыть" variant="dark" /></div></div>
+    <div><span className="l">DownloadButton · click the first one</span><div className="r"><DownloadButton state={st} progress={p} onClick={start} onCancel={() => { setSt('idle'); setP(0); }} /><DownloadButton state="preparing" /><DownloadButton state="downloading" progress={62} /><DownloadButton state="done" /><DownloadButton state="error" /><DownloadButton iconOnly state="downloading" progress={48} /></div></div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+});
+</script></body></html>

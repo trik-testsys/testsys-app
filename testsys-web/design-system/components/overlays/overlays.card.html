@@ -1,0 +1,33 @@
+<!-- @dsCard group="Components" viewport="700x420" name="Overlays" -->
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../lib/dev-loader.js"></script>
+<style>body{padding:20px;background:var(--surface-page)} .l{font:500 11px var(--font-mono);color:var(--text-tertiary);margin-bottom:8px;display:block} .r{display:flex;flex-wrap:wrap;gap:10px;align-items:center}</style>
+</head><body><div id="root"><div style="padding:40px;text-align:center;font:500 12px var(--font-mono);color:var(--text-tertiary)">Загрузка…</div></div>
+<script type="text/babel">
+window.__tsReady.then(NS => {
+const { Dialog, Drawer, Tooltip, Menu, Popover, Button, IconButton, Avatar, Tag } = NS;
+function Demo() {
+  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+    <div style={{ position: 'relative', height: 250, borderRadius: 12, overflow: 'hidden' }}>
+      <Dialog contained variant="danger" title="Завершить соревнование?" footer={<><Button variant="secondary">Отмена</Button><Button variant="danger">Завершить</Button></>}>Приём решений остановится. Отменить нельзя.</Dialog>
+    </div>
+    <div style={{ position: 'relative', height: 250, borderRadius: 12, overflow: 'hidden', background: 'var(--canvas-deep)' }}>
+      <Drawer contained width={250} title="Посылка #48213" subtitle="C. Разрезание" footer={<Button size="sm">Перепроверить</Button>}><span className="ts-muted">Детали посылки</span></Drawer>
+    </div>
+    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', paddingTop: 36 }}>
+      <Tooltip open content="Перепроверить все"><IconButton icon="refresh-cw" label="Перепроверить" variant="secondary" /></Tooltip>
+      <Tooltip static placement="right" content="Время + 20 мин за каждую неверную попытку" />
+    </div>
+    <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', height: 190 }}>
+      <Menu defaultOpen items={[{ label: 'Открыть посылку', kbd: '↵' }, { label: 'Перепроверить', kbd: 'R' }, { label: 'Скачать код', kbd: 'D' }, { separator: true }, { label: 'Дисквалифицировать', danger: true }]} />
+    </div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+});
+</script></body></html>

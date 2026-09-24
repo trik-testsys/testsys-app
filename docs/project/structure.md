@@ -22,6 +22,7 @@ testsys-app/
 ├── testsys-operation/        # Операции (сценарии фич testsys.user.*)
 ├── testsys-infra/            # Реализации портов
 ├── testsys-web/              # Веб-приложение
+│   └── design-system/        # Дизайн-система Кабинетов
 ├── detekt.yml                # Конфигурация Detekt
 ├── settings.gradle.kts       # Список модулей (корневого build.gradle.kts нет)
 └── gradlew, gradlew.bat
@@ -36,7 +37,7 @@ testsys-app/
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
 | `testsys-infra:grpc`                 | Связь с внешним грейдером решений TRIK Studio (реализация порта `Grader`).                           | Заготовка (пусто) |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из ICU-паттернов.                          | Реализован        |
-| `testsys-web`                        | Веб-приложение (Кабинеты): точка входа, собирающая все модули; вызывает операции.                    | Заготовка (пусто) |
+| `testsys-web`                        | Веб-приложение: точка входа, собирающая все модули; вызывает операции. Дизайн-система — в `design-system/`, см. [design-system/README.md](../../testsys-web/design-system/README.md). | Заготовка: кода нет, есть дизайн-система |
 
 ### Зависимости между модулями
 
@@ -106,3 +107,4 @@ Workflow лежат в `.github/workflows`.
 | Пользовательскую фичу                           | Метод с `@Feature` в `operation/user/<Actor>Operations.kt`, см. [implement-feature.md](../guides/implement-feature.md) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
+| Токены, стили, компоненты интерфейса            | `testsys-web/design-system`, см. [design-system/README.md](../../testsys-web/design-system/README.md) |

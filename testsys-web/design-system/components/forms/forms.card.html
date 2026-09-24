@@ -1,0 +1,40 @@
+<!-- @dsCard group="Components" viewport="700x560" name="Forms" -->
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../lib/dev-loader.js"></script>
+<style>body{padding:20px;background:var(--surface-page)} .l{font:500 11px var(--font-mono);color:var(--text-tertiary);margin-bottom:8px;display:block} .r{display:flex;flex-wrap:wrap;gap:10px;align-items:center}</style>
+</head><body><div id="root"><div style="padding:40px;text-align:center;font:500 12px var(--font-mono);color:var(--text-tertiary)">Загрузка…</div></div>
+<script type="text/babel">
+window.__tsReady.then(NS => {
+const { Field, Input, Textarea, Select, MultiSelect, Checkbox, Radio, Switch, SegmentedControl, FileDrop, DateRangeCalendar, Icon } = NS;
+function Demo() {
+  const [lang, setLang] = React.useState('cpp'); const [topics, setTopics] = React.useState(['graphs', 'str']);
+  const [c, setC] = React.useState(true); const [r, setR] = React.useState('ICPC'); const [sw, setSw] = React.useState(true); const [seg, setSeg] = React.useState('Код');
+  const [range, setRange] = React.useState({ start: '2026-09-10', end: '2026-09-25' });
+  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, alignItems: 'start' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <Field label="Название" hint="Будет видно участникам"><Input placeholder="Весенний кубок" /></Field>
+      <Field label="Почта" error="Введите корректный адрес"><Input error defaultValue="anna@mail" /></Field>
+      <Field label="Длительность"><Input prefix={<Icon name="clock" />} suffix="минут" mono defaultValue="300" /></Field>
+      <Field label="Язык"><Select value={lang} onChange={setLang} options={[{ value: 'cpp', label: 'C++', meta: 'GCC 13' }, { value: 'py', label: 'Python', meta: '3.12' }, { value: 'java', label: 'Java', meta: '21' }]} /></Field>
+      <Field label="Темы"><MultiSelect value={topics} onChange={setTopics} options={[{ value: 'graphs', label: 'Графы', meta: 412 }, { value: 'dp', label: 'Динамика', meta: 538 }, { value: 'str', label: 'Строки', meta: 204 }, { value: 'geo', label: 'Геометрия', meta: 131 }, { value: 'nt', label: 'Теория чисел', meta: 187 }]} maxChips={2} /></Field>
+      <div className="r" style={{ gap: 18 }}><Checkbox checked={c} onChange={setC} label="Командный зачёт" /><Checkbox indeterminate label="Частично" /></div>
+      <div className="r" style={{ gap: 18 }}>{['ICPC', 'IOI', 'Квиз'].map(f => <Radio key={f} label={f} checked={r === f} onChange={() => setR(f)} />)}</div>
+      <Switch label="Уведомления на почту" checked={sw} onChange={setSw} />
+      <SegmentedControl options={['Код', 'Файл']} value={seg} onChange={setSeg} size="sm" />
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ background: 'var(--white)', border: '1px solid var(--line)', borderRadius: 12, padding: 16 }}><DateRangeCalendar year={2026} month={8} start={range.start} end={range.end} today="2026-09-24" onChange={setRange} /></div>
+      <FileDrop hint=".zip · до 20 МБ" minHeight={110} />
+      <FileDrop state="uploading" fileName="solution.cpp" fileType="CPP" fileMeta="2.6 из 4.2 КБ" progress={62} minHeight={90} />
+      <Field label="Текст"><Textarea placeholder="Объявление" style={{ minHeight: 64 }} /></Field>
+    </div>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+});
+</script></body></html>

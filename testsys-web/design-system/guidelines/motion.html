@@ -1,0 +1,27 @@
+<!-- @dsCard group="Motion" viewport="700x300" subtitle="Enter-only, 120–240ms, ease-out" name="Motion" -->
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../styles.css">
+<style>body{padding:20px;background:var(--surface-page)}.g{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.c{background:var(--white);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:118px}.m{font:500 11px var(--font-mono);color:var(--text-tertiary)}.stage{flex:1;display:grid;place-items:center;position:relative}</style>
+</head><body>
+<div class="g" id="g"></div>
+<p class="m" style="margin:14px 0 0">Tokens: --dur-fast 120 · --dur-base 180 · --dur-slow 240 · --ease-out cubic-bezier(.16,1,.3,1). Honours prefers-reduced-motion. Click a tile to replay.</p>
+<script>
+const demos = [
+  ['Popover · 180', '<div class="ts-popover ts-pop" style="padding:8px 12px;font-size:13px">Меню</div>'],
+  ['Dialog · 240', '<div class="ts-dialog" style="width:120px;height:56px;box-shadow:var(--shadow-popover)"></div>'],
+  ['Drawer · 240', '<div class="ts-drawer ts-drawer--contained" style="width:70px;border-radius:8px 0 0 8px"></div>'],
+  ['Toast · 240', '<div class="ts-toast ts-toast--success" style="width:150px;padding:8px 10px"><span class="ts-toast__icon" style="width:18px;height:18px">✓</span><span style="font-size:12px;font-weight:600">Принято</span></div>'],
+  ['Checkbox · 120', '<span class="ts-check ts-check--on"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>'],
+  ['Switch · 180', '<span class="ts-switch" onclick="this.classList.toggle(\'ts-switch--on\');event.stopPropagation()" style="cursor:pointer"><span class="ts-switch__knob"></span></span>'],
+  ['Tab underline · 180', '<div class="ts-tabs ts-tabs--bare"><button class="ts-tab ts-tab--active">Задачи</button></div>'],
+  ['New row · 1200', '<div class="ts-flash" style="width:100%;padding:8px 10px;border-radius:6px;font:500 12px var(--font-mono)">#48241 · OK</div>'],
+  ['Live status · 2s loop', '<span class="ts-status ts-status--live"><span class="ts-status__dot"></span>Идёт</span>']
+];
+const g = document.getElementById('g');
+demos.slice(0, 8).forEach(([t, h]) => {
+  const c = document.createElement('div'); c.className = 'c'; c.style.cursor = 'pointer';
+  c.innerHTML = '<span class="m">' + t + '</span><div class="stage">' + h + '</div>';
+  c.onclick = () => { const s = c.querySelector('.stage'); const x = s.innerHTML; s.innerHTML = ''; requestAnimationFrame(() => s.innerHTML = x); };
+  g.appendChild(c);
+});
+setInterval(() => document.querySelectorAll('.c').forEach((c, i) => i !== 5 && c.onclick()), 2600);
+</script></body></html>

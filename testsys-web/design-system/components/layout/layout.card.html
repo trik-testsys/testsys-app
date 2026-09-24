@@ -1,0 +1,25 @@
+<!-- @dsCard group="Components" viewport="700x380" name="Layout" -->
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../lib/dev-loader.js"></script>
+<style>body{padding:20px;background:var(--surface-page)} .l{font:500 11px var(--font-mono);color:var(--text-tertiary);margin-bottom:8px;display:block} .r{display:flex;flex-wrap:wrap;gap:10px;align-items:center}</style>
+</head><body><div id="root"><div style="padding:40px;text-align:center;font:500 12px var(--font-mono);color:var(--text-tertiary)">Загрузка…</div></div>
+<script type="text/babel">
+window.__tsReady.then(NS => {
+const { Row, Block, Stack, Button } = NS;
+const L = ({ t }) => <span style={{ font: '500 12px var(--font-mono)', color: 'var(--text-secondary)' }}>{t}</span>;
+function Demo() {
+  return <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <Block title="Заголовок блока" subtitle="Подзаголовок или мета" actions={<Button size="sm" variant="secondary">Действие</Button>} footer={<><span className="ts-muted" style={{ flex: 1, fontSize: 13 }}>Подвал блока</span><a href="#" style={{ fontWeight: 600, fontSize: 13 }}>Все →</a></>}><L t="body · padding 20" /></Block>
+    <Row tight><Block span={8}><L t="span 8" /></Block><Block span={4}><L t="span 4" /></Block></Row>
+    <Row tight><Block span={4}><L t="span 4" /></Block><Block span={4}><L t="span 4" /></Block><Block span={4} dark><L t="span 4 · dark" /></Block></Row>
+    <Row tight><Block span={3}><L t="3" /></Block><Stack span={6}><Block><L t="stack · 6" /></Block><Block><L t="stack · 6" /></Block></Stack><Block span={3}><L t="3" /></Block></Row>
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+});
+</script></body></html>

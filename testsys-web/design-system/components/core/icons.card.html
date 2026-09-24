@@ -1,0 +1,22 @@
+<!-- @dsCard group="Components" viewport="700x150" name="Icons" -->
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../lib/dev-loader.js"></script>
+<style>body{padding:20px;background:var(--surface-page)} .l{font:500 11px var(--font-mono);color:var(--text-tertiary);margin-bottom:8px;display:block} .r{display:flex;flex-wrap:wrap;gap:10px;align-items:center}</style>
+</head><body><div id="root"><div style="padding:40px;text-align:center;font:500 12px var(--font-mono);color:var(--text-tertiary)">Загрузка…</div></div>
+<script type="text/babel">
+window.__tsReady.then(NS => {
+const { Icon } = NS;
+const names = ['search','bell','plus','check','x','upload','download','clock','file','info','triangle-alert','circle-x','circle-check','ellipsis','list-filter','calendar','flag','refresh-cw','trash','pencil','user','users','trophy','code','lock','megaphone','snowflake','settings','chevron-down','grip-vertical'];
+function Demo() {
+  return <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 1fr)', gap: 12, color: 'var(--ink-900)' }}>
+    {names.map(n => <div key={n} title={n} style={{ height: 40, display: 'grid', placeItems: 'center', background: 'var(--white)', border: '1px solid var(--line)', borderRadius: 8 }}><Icon name={n} size={18} /></div>)}
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+});
+</script></body></html>

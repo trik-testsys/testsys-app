@@ -72,6 +72,7 @@
 | [database/README.md](../testsys-infra/database/README.md)              | Справочник | Слои модуля хранения, идентификаторы, файлы, схема БД          |
 | [codegen/README.md](../testsys-infra/database/codegen/README.md)       | Справочник | KSP-кодогенерация модуля `database`                            |
 | [localization/README.md](../testsys-infra/localization/README.md)     | Справочник | Устройство локализации: формат ключей, типы, glossary          |
+| [design-system/README.md](../testsys-web/design-system/README.md)      | Справочник | Дизайн-система Кабинетов: токены, компоненты, правила интерфейса |
 | [implement-entity.md](guides/implement-entity.md)                      | Гайд       | Добавление доменной сущности и её хранения в БД                |
 | [implement-port.md](guides/implement-port.md)                          | Гайд       | Объявление порта в домене и его реализация                     |
 | [implement-feature.md](guides/implement-feature.md)                    | Гайд       | Реализация пользовательской фичи: спецификация, операция, тесты |

@@ -5,7 +5,7 @@ import type { IconName } from '../core/Icon';
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /** primary = main action (one per block); secondary = neutral; ghost = low emphasis; link = inline text action; danger / danger-soft = destructive; dark = on light overlays and accent blocks. */
   variant?: 'primary' | 'secondary' | 'ghost' | 'link' | 'danger' | 'danger-soft' | 'dark' | 'success-soft';
-  /** sm 32px (tables, block heads), md 40px (default), lg 48px (auth, hero). */
+  /** sm 26px (tables, block heads), md 32px (default), lg 38px (auth, hero). */
   size?: 'sm' | 'md' | 'lg';
   icon?: IconName;
   iconRight?: IconName;

@@ -25,7 +25,7 @@ function ProfileScreen({ go, toast }) {
         <div style={{ display: 'flex', gap: 8 }}><Button variant="secondary" icon="pencil">Редактировать</Button><IconButton icon="ellipsis" label="Ещё" /></div>
       </Block>
       <Row>
-        <Block span={8} flush title={<Tabs bare size="lg" value={tab} onChange={setTab} items={[{ value: 'all', label: 'Все посылки' }, { value: 'ok', label: 'Принятые' }, { value: 'err', label: 'С ошибками' }]} />}
+        <Block span={16} flush title={<Tabs bare size="lg" value={tab} onChange={setTab} items={[{ value: 'all', label: 'Все посылки' }, { value: 'ok', label: 'Принятые' }, { value: 'err', label: 'С ошибками' }]} />}
           actions={<div style={{ width: 150 }}><Select value={lang} onChange={setLang} options={[{ value: 'all', label: 'Язык: все' }, { value: 'C++', label: 'C++' }, { value: 'Python', label: 'Python' }]} /></div>}
           footer={<><span className="ts-muted" style={{ flex: 1, fontSize: 13 }}>{rows.length} из 1 412</span><Pagination page={1} total={57} compact /></>}>
           <DataTable rows={rows} columns={[
@@ -38,7 +38,7 @@ function ProfileScreen({ go, toast }) {
             { key: 'mem', title: 'Память', mono: true, align: 'right' }
           ]} />
         </Block>
-        <Stack span={4}>
+        <Stack span={8}>
           <Block title="Предстоящие" actions={<a href="#" style={{ fontSize: 13, fontWeight: 600 }}>Все</a>} flush>
             {[['Весенний кубок 2026', 'Зарегистрирована', 'info', 'Регистрация', '26.09 10:00'], ['Квиз по алгоритмам', 'Можно присоединиться', 'live', 'Идёт', 'до 18:00']].map(u => (
               <div key={u[0]} className="ts-list-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 8 }}>

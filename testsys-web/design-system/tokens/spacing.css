@@ -18,9 +18,9 @@
   --radius-2xl: 14px;
   --radius-pill: 999px;
 
-  --control-sm: 32px;
-  --control-md: 40px;
-  --control-lg: 48px;
+  --control-sm: 26px;
+  --control-md: 32px;
+  --control-lg: 38px;
 
   --shadow-block: 0 1px 3px rgba(22, 24, 29, 0.025), 0 6px 20px -12px rgba(22, 24, 29, 0.07);
   --shadow-block-hover: 0 2px 6px rgba(22, 24, 29, 0.03), 0 12px 32px -16px rgba(22, 24, 29, 0.14);
@@ -33,11 +33,11 @@
   /* Layout */
   --container: 1280px;
   --page-min: 1440px;
-  --header-height: 64px;
-  --grid-columns: 12;
-  --grid-gap: 24px;
-  --grid-gap-tight: 16px;
-  --row-gap: 24px;
+  --header-height: 48px;
+  --grid-columns: 24;
+  --grid-gap: 12px;
+  --grid-gap-tight: 8px;
+  --row-gap: 12px;
 
   /* Motion: short, ease-out, opacity + ≤8px travel. No bounce, no scale on press. */
   --ease: cubic-bezier(0.2, 0, 0, 1);

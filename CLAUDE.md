@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 TestSys — a Kotlin/JVM system for grading TRIK Studio solutions. Gradle multi-module build, Kotlin 2.2, JDK 21,
-Spring Boot 3.5 / Hibernate, PostgreSQL + Liquibase, KSP, Detekt.
+Spring Boot 3.5 / Hibernate (the web module: Spring Boot 4 + Vaadin 25 Flow), PostgreSQL + Liquibase, KSP, Detekt.
 
 ## Documentation is the source of truth
 
@@ -36,6 +36,7 @@ to it.
 | Persistence layers, Snowflake ids, node id, files, schema | `testsys-infra/database/README.md`                 |
 | Localization                                           | `testsys-infra/localization/README.md`                |
 | Web UI: design tokens, components, interface rules     | `testsys-web/design-system/README.md`                 |
+| Web UI in Kotlin: pages, grid, DSL components          | `testsys-web/ui/README.md`                            |
 | Operations, `@Feature`, operation error model          | `testsys-operation/README.md`                         |
 | Adding a feature / an entity / a port / a localized message | `docs/guides/implement-feature.md`, `docs/guides/implement-entity.md`, `docs/guides/implement-port.md`, `docs/guides/add-localization.md` |
 

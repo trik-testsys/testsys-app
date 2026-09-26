@@ -5,7 +5,7 @@ export interface StatCardProps {
   trend?: 'up' | 'down';
   /** Dark accent card (timer, highlight). */
   dark?: boolean;
-  /** Grid columns inside a Row (usually 3). */
+  /** Grid columns inside a Row (usually 6). */
   span?: number;
   children?: React.ReactNode;
   className?: string;

@@ -22,7 +22,8 @@ testsys-app/
 ├── testsys-operation/        # Операции (сценарии фич testsys.user.*)
 ├── testsys-infra/            # Реализации портов
 ├── testsys-web/              # Веб-приложение
-│   └── design-system/        # Дизайн-система Кабинетов
+│   ├── design-system/        # Дизайн-система Кабинетов
+│   └── ui/                   # Kotlin-DSL дизайн-системы
 ├── detekt.yml                # Конфигурация Detekt
 ├── settings.gradle.kts       # Список модулей (корневого build.gradle.kts нет)
 └── gradlew, gradlew.bat
@@ -37,7 +38,8 @@ testsys-app/
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
 | `testsys-infra:grpc`                 | Связь с внешним грейдером решений TRIK Studio (реализация порта `Grader`).                           | Заготовка (пусто) |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из ICU-паттернов.                          | Реализован        |
-| `testsys-web`                        | Веб-приложение: точка входа, собирающая все модули; вызывает операции. Дизайн-система — в `design-system/`, см. [design-system/README.md](../../testsys-web/design-system/README.md). | Заготовка: кода нет, есть дизайн-система |
+| `testsys-web`                        | Веб-приложение на Spring Boot 4 и Vaadin Flow: точка входа, тема, тексты интерфейса из локализации, страницы. Дизайн-система — в `design-system/`, см. [design-system/README.md](../../testsys-web/design-system/README.md). | Каркас: витрина `/dev/showcase`, страниц Кабинетов нет |
+| `testsys-web:ui`                     | Kotlin-DSL дизайн-системы на Vaadin Flow: сетка, блоки, компоненты, см. [ui/README.md](../../testsys-web/ui/README.md). Без Spring и домена. | В разработке |
 
 ### Зависимости между модулями
 
@@ -48,8 +50,10 @@ testsys-app/
 
 - `testsys-domain` ни от чего не зависит. Любой новый код, которому нужен Spring, JPA или сеть, живёт вне домена.
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
-- Сейчас в Gradle прописаны только связи `operation → domain`, `database → domain`, `database → codegen-api`
-  и `database → codegen` (через `ksp`). Остальные связи — целевая архитектура.
+- Сейчас в Gradle прописаны связи `operation → domain`, `database → domain`, `database → codegen-api`,
+  `database → codegen` (через `ksp`), `web → ui` и `web → localization`. Остальные связи — целевая архитектура.
+- Spring Boot 4 пока подключён только в `testsys-web`; `testsys-infra:database` остаётся на Spring Boot 3.5,
+  поэтому `testsys-web` не зависит от него до перехода всего проекта на Boot 4.
 
 ## Сборка
 
@@ -58,8 +62,9 @@ testsys-app/
   Kotlin JVM 21, `allWarningsAsErrors = true`, JUnit Platform, Detekt (`detekt.yml`, `autoCorrect = true`,
   `build/generated/` исключён). Задача `check` зависит от `detektMain`.
 - `gradle/libs.versions.toml` — версии, библиотеки и bundles. Версии зависимостей указываются только здесь.
-- В `build.gradle.kts` модуля остаются только плагины сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`)
-  и зависимости.
+- В `build.gradle.kts` модуля остаются только плагины сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`,
+  у `testsys-web` — ещё Spring Boot и Vaadin) и зависимости; исключение — задача `processResources`
+  в `testsys-web:ui`, которая копирует CSS дизайн-системы в jar.
 
 Полная сборка — компиляция, тесты и Detekt:
 
@@ -80,6 +85,19 @@ testsys-app/
 ```bash
 ./gradlew build -Pdetekt.autoCorrect=false
 ```
+
+Запуск веб-приложения для разработки (витрина компонентов — `http://localhost:8080/dev/showcase`):
+
+```bash
+./gradlew :testsys-web:bootRun --args='--spring.profiles.active=dev'
+```
+
+Режиму разработки Vaadin нужен `com.vaadin:vaadin-dev`; он подключён как `developmentOnly`, поэтому есть в classpath
+`bootRun`, но не попадает в `bootJar`. Плагин Vaadin генерирует `testsys-web/src/main/frontend/index.html`
+(хранится в git) и `src/main/frontend/generated/` (в `.gitignore`).
+
+`bootJar` собирает приложение в production-режиме. Пока своего клиентского кода нет, Vaadin использует готовый
+бандл; Node.js (плагин ставит его в `~/.vaadin`) понадобится, когда появятся собственные клиентские модули.
 
 Detekt 1.23 не разбирает context parameters (`context(name: Type)`): правила набора `formatting` на таком файле
 падают с исключением. Файл с context parameters добавляется в `excludes` набора `formatting` в `detekt.yml`;
@@ -107,4 +125,5 @@ Workflow лежат в `.github/workflows`.
 | Пользовательскую фичу                           | Метод с `@Feature` в `operation/user/<Actor>Operations.kt`, см. [implement-feature.md](../guides/implement-feature.md) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
-| Токены, стили, компоненты интерфейса            | `testsys-web/design-system`, см. [design-system/README.md](../../testsys-web/design-system/README.md) |
+| Токены, стили, эталонные React-компоненты       | `testsys-web/design-system`, см. [design-system/README.md](../../testsys-web/design-system/README.md) |
+| Kotlin-компонент интерфейса, страницу Кабинета  | Компонент — `testsys-web/ui`, страница — `testsys-web`, см. [ui/README.md](../../testsys-web/ui/README.md) |

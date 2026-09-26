@@ -12,6 +12,9 @@ kotlinpoet = "2.3.0"
 kctfork = "0.12.1"
 icu = "78.1"
 mockk = "1.14.9"
+spring-boot-web = "4.1.1"
+vaadin = "25.2.8"
+karibu-testing = "2.7.0"
 
 [libraries]
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
@@ -42,6 +45,17 @@ kctfork-ksp = { module = "dev.zacsweers.kctfork:ksp", version.ref = "kctfork" }
 icu4j = { module = "com.ibm.icu:icu4j", version.ref = "icu" }
 
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+
+spring-boot-web-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot-web" }
+spring-boot-web-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+
+vaadin-bom = { module = "com.vaadin:vaadin-bom", version.ref = "vaadin" }
+vaadin-core = { module = "com.vaadin:vaadin-core" }
+vaadin-spring-boot-starter = { module = "com.vaadin:vaadin-spring-boot-starter" }
+vaadin-dev = { module = "com.vaadin:vaadin-dev" }
+
+karibu-testing = { module = "com.github.mvysny.kaributesting:karibu-testing-v24", version.ref = "karibu-testing" }
+karibu-testing-spring = { module = "com.github.mvysny.kaributesting:karibu-testing-v10-spring", version.ref = "karibu-testing" }
 
 [bundles]
 test-implementation = [
@@ -81,3 +95,5 @@ icu-implementation = [
 
 [plugins]
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+spring-boot-web = { id = "org.springframework.boot", version.ref = "spring-boot-web" }
+vaadin = { id = "com.vaadin", version.ref = "vaadin" }

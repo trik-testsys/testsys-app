@@ -7,3 +7,9 @@ export function Row({ align = 'start', tight = false, children, className, style
 export function Stack({ span, children, className, style }) {
   return <div className={cx('ts-stack', className)} style={{ gridColumn: span ? 'span ' + span : undefined, ...style }}>{children}</div>;
 }
+export function Slot({ span, children, className, style }) {
+  return <div className={cx('ts-slot', className)} style={{ gridColumn: 'span ' + span, ...style }}>{children}</div>;
+}
+export function SlotRow({ children, className, style }) {
+  return <div className={cx('ts-slot__row', className)} style={style}>{children}</div>;
+}

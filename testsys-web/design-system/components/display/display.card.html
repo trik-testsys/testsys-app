@@ -17,7 +17,7 @@ function Demo() {
     <div className="r">{['ok', 'wa', 'tle', 'mle', 're', 'ce', 'queue'].map(v => <Verdict key={v} code={v} />)}<Verdict code="tle" showLabel /></div>
     <div className="r"><Tag>графы</Tag><Tag onRemove={() => {}}>строки</Tag><Tag variant="dark">★ 1842</Tag><Tag variant="up">+38</Tag><Tag variant="down">−12</Tag><Counter>3</Counter><Counter tone="dark">24</Counter><Difficulty level={1} /><Difficulty level={2} /><Difficulty level={3} /></div>
     <div className="r"><Avatar name="Анна Смирнова" size={40} /><Avatar name="Илья Петров" /><Avatar initials="T1" square tone="dark" size={40} /><AvatarGroup names={['Анна Смирнова', 'Илья Петров', 'Мария Ким', 'Денис Орлов', 'Олег Н']} /><div style={{ width: 160 }}><ProgressBar value={71} /></div><div style={{ width: 120 }}><ProgressBar indeterminate thin /></div><Timer seconds={5077} /><Timer seconds={462} /></div>
-    <Row tight><StatCard span={4} label="Участников" value="1 284" delta="+36 за час" trend="up" /><StatCard span={4} dark label="До окончания" value={<Timer seconds={5077} variant="text" />} /><ContestCard span={4} title="Квиз по алгоритмам" format="Квиз · 40 мин" status="Идёт" statusTone="live" when="01:24:37" people="1 284" cta="Войти" /></Row>
+    <Row tight><StatCard span={8} label="Участников" value="1 284" delta="+36 за час" trend="up" /><StatCard span={8} dark label="До окончания" value={<Timer seconds={5077} variant="text" />} /><ContestCard span={8} title="Квиз по алгоритмам" format="Квиз · 40 мин" status="Идёт" statusTone="live" when="01:24:37" people="1 284" cta="Войти" /></Row>
   </div>;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);

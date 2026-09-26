@@ -1,3 +1,26 @@
 plugins {
     id("testsys.conventions")
+    kotlin("plugin.spring")
+    alias(libs.plugins.spring.boot.web)
+    alias(libs.plugins.vaadin)
+}
+
+group = "tech.testsys.web"
+
+dependencies {
+    implementation(platform(libs.spring.boot.web.bom))
+    implementation(platform(libs.vaadin.bom))
+    implementation(project(":testsys-web:ui"))
+    implementation(project(":testsys-infra:localization"))
+    implementation(libs.bundles.icu.implementation)
+    implementation(libs.vaadin.spring.boot.starter)
+    implementation(libs.kotlin.reflect)
+    developmentOnly(platform(libs.vaadin.bom))
+    developmentOnly(libs.vaadin.dev)
+
+    testImplementation(libs.bundles.test.implementation)
+    testImplementation(libs.spring.boot.web.starter.test)
+    testImplementation(libs.karibu.testing)
+    testImplementation(libs.karibu.testing.spring)
+    testRuntimeOnly(libs.bundles.test.runtime)
 }

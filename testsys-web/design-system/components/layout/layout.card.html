@@ -14,10 +14,10 @@ const { Row, Block, Stack, Button } = NS;
 const L = ({ t }) => <span style={{ font: '500 12px var(--font-mono)', color: 'var(--text-secondary)' }}>{t}</span>;
 function Demo() {
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-    <Block title="Заголовок блока" subtitle="Подзаголовок или мета" actions={<Button size="sm" variant="secondary">Действие</Button>} footer={<><span className="ts-muted" style={{ flex: 1, fontSize: 13 }}>Подвал блока</span><a href="#" style={{ fontWeight: 600, fontSize: 13 }}>Все →</a></>}><L t="body · padding 20" /></Block>
-    <Row tight><Block span={8}><L t="span 8" /></Block><Block span={4}><L t="span 4" /></Block></Row>
-    <Row tight><Block span={4}><L t="span 4" /></Block><Block span={4}><L t="span 4" /></Block><Block span={4} dark><L t="span 4 · dark" /></Block></Row>
-    <Row tight><Block span={3}><L t="3" /></Block><Stack span={6}><Block><L t="stack · 6" /></Block><Block><L t="stack · 6" /></Block></Stack><Block span={3}><L t="3" /></Block></Row>
+    <Block title="Заголовок блока" subtitle="Подзаголовок или мета" actions={<Button size="sm" variant="secondary">Действие</Button>} footer={<><span className="ts-muted" style={{ flex: 1, fontSize: 13 }}>Подвал блока</span><a href="#" style={{ fontWeight: 600, fontSize: 13 }}>Все →</a></>}><L t="body · padding 12" /></Block>
+    <Row tight><Block span={16}><L t="span 16" /></Block><Block span={8}><L t="span 8" /></Block></Row>
+    <Row tight><Block span={8}><L t="span 8" /></Block><Block span={8}><L t="span 8" /></Block><Block span={8} dark><L t="span 8 · dark" /></Block></Row>
+    <Row tight><Block span={6}><L t="6" /></Block><Stack span={12}><Block><L t="stack · 12" /></Block><Block><L t="stack · 12" /></Block></Stack><Block span={6}><L t="6" /></Block></Row>
   </div>;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);

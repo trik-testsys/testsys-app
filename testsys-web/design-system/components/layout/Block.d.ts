@@ -2,7 +2,7 @@
  * @startingPoint section="Layout" subtitle="Block: head, body, footer container" viewport="700x280"
  */
 export interface BlockProps {
-  /** Columns in the parent Row (1–12). Omit for full width outside a Row. */
+  /** Columns in the parent Row (1–24). Omit for full width outside a Row. */
   span?: number;
   title?: React.ReactNode;
   subtitle?: React.ReactNode;

@@ -2,15 +2,15 @@
   --font-sans: 'Onest', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  --fs-display: 44px;  --lh-display: 52px;
-  --fs-h1: 36px;       --lh-h1: 44px;
-  --fs-h2: 28px;       --lh-h2: 36px;
-  --fs-h3: 18px;       --lh-h3: 26px;
+  --fs-display: 36px;  --lh-display: 44px;
+  --fs-h1: 28px;       --lh-h1: 36px;
+  --fs-h2: 22px;       --lh-h2: 30px;
+  --fs-h3: 16px;       --lh-h3: 22px;
   --fs-body: 15px;     --lh-body: 24px;
-  --fs-sm: 14px;       --lh-sm: 20px;
-  --fs-xs: 13px;       --lh-xs: 18px;
-  --fs-caption: 12px;  --lh-caption: 16px;
-  --fs-micro: 11px;
+  --fs-sm: 13px;       --lh-sm: 18px;
+  --fs-xs: 12px;       --lh-xs: 16px;
+  --fs-caption: 11px;  --lh-caption: 14px;
+  --fs-micro: 10px;
 
   --fw-regular: 400;
   --fw-medium: 500;

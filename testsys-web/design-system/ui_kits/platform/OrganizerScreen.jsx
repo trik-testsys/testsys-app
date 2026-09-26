@@ -33,7 +33,7 @@ function OrganizerScreen({ go, toast }) {
       {tab === 'problems' ? (
       <main className="ts-page" style={{ paddingTop: 24 }}>
         <Row>
-          <Block span={8} title="Порядок задач" subtitle="Перетащите задачу за ⋮⋮, буквы обновятся автоматически" actions={<Button size="sm" variant="secondary" icon="plus">Добавить из архива</Button>}>
+          <Block span={16} title="Порядок задач" subtitle="Перетащите задачу за ⋮⋮, буквы обновятся автоматически" actions={<Button size="sm" variant="secondary" icon="plus">Добавить из архива</Button>}>
             <SortableList items={probs} onChange={p => { setProbs(p); toast({ tone: 'success', title: 'Порядок задач сохранён' }); }} renderItem={(p, i) => <>
               <span className="ts-filetype" style={{ width: 28, height: 28, borderRadius: 6, fontSize: 13 }}>{'ABCDEFGH'[i]}</span>
               <b style={{ flex: 1, fontWeight: 600 }}>{p.name}</b>
@@ -41,19 +41,19 @@ function OrganizerScreen({ go, toast }) {
               <span className="ts-mono ts-muted" style={{ fontSize: 12, minWidth: 96, textAlign: 'right' }}>1 с · 256 МБ</span>
             </>} />
           </Block>
-          <Block span={4} title="Подсказка"><span className="ts-muted">Порядок влияет только на буквы и сортировку в таблице результатов. Посылки участников сохраняются за задачей.</span></Block>
+          <Block span={8} title="Подсказка"><span className="ts-muted">Порядок влияет только на буквы и сортировку в таблице результатов. Посылки участников сохраняются за задачей.</span></Block>
         </Row>
       </main>
       ) : (
       <main className="ts-page" style={{ paddingTop: 24 }}>
         <Row align="stretch">
-          <StatCard span={3} label="Участников" value="1 284" delta="+36 за час" trend="up" />
-          <StatCard span={3} label="Посылок" value="9 412" delta="≈ 140 в минуту" />
-          <StatCard span={3} label="В очереди" value="23" delta="Среднее ожидание 4 с" />
-          <StatCard span={3} dark label="До окончания" value={<Timer to={endsAt} variant="text" />}><ProgressBar value={72} thin inverse style={{ marginTop: 8 }} /></StatCard>
+          <StatCard span={6} label="Участников" value="1 284" delta="+36 за час" trend="up" />
+          <StatCard span={6} label="Посылок" value="9 412" delta="≈ 140 в минуту" />
+          <StatCard span={6} label="В очереди" value="23" delta="Среднее ожидание 4 с" />
+          <StatCard span={6} dark label="До окончания" value={<Timer to={endsAt} variant="text" />}><ProgressBar value={72} thin inverse style={{ marginTop: 8 }} /></StatCard>
         </Row>
         <Row>
-          <Block span={8} flush title="Посылки в реальном времени" actions={[['all', 'Все'], ['ok', 'Принятые'], ['err', 'Ошибки'], ['queue', 'В очереди']].map(f => <FilterChip key={f[0]} selected={vf === f[0]} onChange={() => setVf(f[0])}>{f[1]}</FilterChip>)}>
+          <Block span={16} flush title="Посылки в реальном времени" actions={[['all', 'Все'], ['ok', 'Принятые'], ['err', 'Ошибки'], ['queue', 'В очереди']].map(f => <FilterChip key={f[0]} selected={vf === f[0]} onChange={() => setVf(f[0])}>{f[1]}</FilterChip>)}>
             <DataTable rows={subs} columns={[
               { key: 'id', title: 'ID', mono: true, render: r => <a href="#" className="ts-mono">#{r.id}</a> },
               { key: 'time', title: 'Время', mono: true, muted: true },
@@ -64,7 +64,7 @@ function OrganizerScreen({ go, toast }) {
               { key: 'm', title: '', width: 52, render: r => <Menu onSelect={a => toast({ tone: 'info', title: a, description: 'Посылка #' + r.id })} items={[{ label: 'Открыть', kbd: '↵' }, { label: 'Перепроверить', kbd: 'R' }, { separator: true }, { label: 'Дисквалифицировать', danger: true }]} /> }
             ]} />
           </Block>
-          <Block span={4} flush title="Задачи" actions={<Button size="sm" variant="secondary">Изменить</Button>}>
+          <Block span={8} flush title="Задачи" actions={<Button size="sm" variant="secondary">Изменить</Button>}>
             {[['A', 'Сумма', 1190, 1240], ['B', 'Скобки', 842, 1105], ['C', 'Разрезание', 406, 980], ['D', 'Треугольники', 188, 712], ['E', 'Связность', 64, 421], ['F', 'Отрезки', 212, 530]].map(p => (
               <div key={p[0]} className="ts-list-row">
                 <span className="ts-filetype" style={{ width: 28, height: 28, fontSize: 13, borderRadius: 6 }}>{p[0]}</span>
@@ -75,7 +75,7 @@ function OrganizerScreen({ go, toast }) {
           </Block>
         </Row>
         <Row>
-          <Block span={6} flush title="Вопросы участников" actions={open ? <Counter>{open}</Counter> : null}>
+          <Block span={12} flush title="Вопросы участников" actions={open ? <Counter>{open}</Counter> : null}>
             {qs.map(q => (
               <div key={q[0]} className="ts-list-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10, padding: '16px 20px' }}>
                 <div className="ts-muted" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}><b className="ts-mono" style={{ color: 'var(--text-primary)' }}>{q[1]}</b>{q[2]} · <span className="ts-mono">{q[3]}</span><span style={{ flex: 1 }} /><StatusBadge size="sm" dot={false} tone={answered[q[0]] ? 'neutral' : 'danger'}>{answered[q[0]] || 'Новый'}</StatusBadge></div>
@@ -84,7 +84,7 @@ function OrganizerScreen({ go, toast }) {
               </div>
             ))}
           </Block>
-          <Block span={6} title="Материалы задачи D">
+          <Block span={12} title="Материалы задачи D">
             <FileDrop hint=".zip · пары input / output" minHeight={120} onSelect={() => toast({ tone: 'success', title: 'Тесты загружены' })} />
             <FileDrop state="done" fileName="tests_D_v1.zip" fileType="ZIP" fileMeta="48 тестов · 2.3 МБ" minHeight={72} />
           </Block>

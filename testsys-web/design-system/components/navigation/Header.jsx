@@ -41,15 +41,15 @@ export function Header({ brand = 'TestSys', brandMark = 'T', items = DEFAULT_ITE
         <label className="ts-header__search"><Icon name="search" /><input placeholder={searchPlaceholder} /><span className="ts-kbd">⌘K</span></label>
         {user ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button type="button" className="ts-btn ts-btn--ghost ts-btn--icon ts-bell" aria-label="Уведомления" style={{ width: 36, height: 36 }}>
+            <button type="button" className="ts-btn ts-btn--ghost ts-btn--icon ts-bell" aria-label="Уведомления" style={{ width: 30, height: 30 }}>
               <Icon name="bell" size={18} strokeWidth={1.8} />{notifications ? <span className="ts-bell__dot" /> : null}
             </button>
-            <button type="button" className="ts-header__user"><Avatar name={user.name} size={28} tone={0} />{user.short || user.name}<Icon name="chevron-down" size={14} /></button>
+            <button type="button" className="ts-header__user"><Avatar name={user.name} size={24} tone={0} />{user.short || user.name}<Icon name="chevron-down" size={14} /></button>
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>
-            <Button variant="secondary" style={{ height: 36 }} onClick={onSignIn}>Войти</Button>
-            <Button variant="primary" style={{ height: 36 }} onClick={onSignUp}>Регистрация</Button>
+            <Button variant="secondary" style={{ height: 30 }} onClick={onSignIn}>Войти</Button>
+            <Button variant="primary" style={{ height: 30 }} onClick={onSignUp}>Регистрация</Button>
           </div>
         )}
       </div>

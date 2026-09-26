@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "testsys-web-dev",
+      "runtimeExecutable": "./gradlew",
+      "runtimeArgs": [":testsys-web:bootRun", "--args=--spring.profiles.active=dev", "--console=plain"],
+      "port": 8080
+    },
+    {
+      "name": "design-system",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "5173", "--directory", "testsys-web/design-system"],
+      "port": 5173
+    }
+  ]
+}

@@ -16,7 +16,7 @@ export interface ContestCardProps {
   ctaVariant?: 'primary' | 'secondary' | 'dark';
   onClick?: () => void;
   onCta?: () => void;
-  /** Grid columns inside a Row (4 = three per row). */
+  /** Grid columns inside a Row (8 = three per row). */
   span?: number;
   className?: string;
   style?: React.CSSProperties;

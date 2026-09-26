@@ -10,7 +10,7 @@ function LoginScreen({ go, toast }) {
   return (
     <Page header={<Header active="contests" onSignIn={() => setMode('in')} onSignUp={() => setMode('up')} />}>
       <Row align="stretch">
-        <Block span={7} dark bodyStyle={{ padding: 40, gap: 28 }}>
+        <Block span={14} dark bodyStyle={{ padding: 40, gap: 28 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <span className="ts-eyebrow" style={{ color: 'var(--ink-400)' }}>Скоро на платформе</span>
             <h1 className="ts-display" style={{ maxWidth: 520 }}>Соревнования, олимпиады и квизы в одном аккаунте</h1>
@@ -25,7 +25,7 @@ function LoginScreen({ go, toast }) {
             ))}
           </div>
         </Block>
-        <Block span={5} bodyStyle={{ padding: 32, gap: 20 }}>
+        <Block span={10} bodyStyle={{ padding: 32, gap: 20 }}>
           <SegmentedControl block size="lg" value={mode} onChange={setMode} options={[{ value: 'in', label: 'Вход' }, { value: 'up', label: 'Регистрация' }]} />
           {mode === 'in' ? (
             <>

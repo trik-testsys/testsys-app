@@ -38,7 +38,7 @@ testsys-app/
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
 | `testsys-infra:grpc`                 | Связь с внешним грейдером решений TRIK Studio (реализация порта `Grader`).                           | Заготовка (пусто) |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из ICU-паттернов.                          | Реализован        |
-| `testsys-web`                        | Веб-приложение на Spring Boot 4 и Vaadin Flow: точка входа, тема, тексты интерфейса из локализации, страницы. Дизайн-система — в `design-system/`, см. [design-system/README.md](../../testsys-web/design-system/README.md). | Каркас: витрина `/dev/showcase`, страниц Кабинетов нет |
+| `testsys-web`                        | Веб-приложение на Vaadin Flow: точка входа, тема, тексты интерфейса из локализации, страницы. Дизайн-система — в `design-system/`, см. [design-system/README.md](../../testsys-web/design-system/README.md). | Каркас: витрина `/dev/showcase`, страниц Кабинетов нет |
 | `testsys-web:ui`                     | Kotlin-DSL дизайн-системы на Vaadin Flow: сетка, блоки, компоненты, см. [ui/README.md](../../testsys-web/ui/README.md). Без Spring и домена. | В разработке |
 
 ### Зависимости между модулями
@@ -52,16 +52,21 @@ testsys-app/
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
 - Сейчас в Gradle прописаны связи `operation → domain`, `database → domain`, `database → codegen-api`,
   `database → codegen` (через `ksp`), `web → ui` и `web → localization`. Остальные связи — целевая архитектура.
-- Spring Boot 4 пока подключён только в `testsys-web`; `testsys-infra:database` остаётся на Spring Boot 3.5,
-  поэтому `testsys-web` не зависит от него до перехода всего проекта на Boot 4.
 
 ## Сборка
 
 - `settings.gradle.kts` — список модулей. Модуль, не попавший в него, не собирается, и его тесты не запускаются.
 - `buildSrc/src/main/kotlin/testsys.conventions.gradle.kts` — общий плагин, который подключает каждый модуль:
   Kotlin JVM 21, `allWarningsAsErrors = true`, JUnit Platform, Detekt (`detekt.yml`, `autoCorrect = true`,
-  `build/generated/` исключён). Задача `check` зависит от `detektMain`.
+  `build/generated/` исключён). Задача `check` зависит от `detektMain`. Ещё плагин выравнивает `kotlin-stdlib*`,
+  `kotlin-reflect` и `kotlin-test*` (группа `org.jetbrains.kotlin`) во всех конфигурациях по версии компилятора
+  Kotlin: BOM Spring Boot задаёт более новые версии этих библиотек, а встроенный в Detekt компилятор не читает
+  их метаданные и ошибается в выводе типов (например, считает код после `?: return` недостижимым). Правило
+  понижает stdlib и для библиотек вне BOM, собранных под более новый Kotlin (сейчас kotlinpoet, kctfork,
+  Karibu-Testing), поэтому при обновлении таких библиотек проверяйте, что тесты и генерация кода проходят.
 - `gradle/libs.versions.toml` — версии, библиотеки и bundles. Версии зависимостей указываются только здесь.
+  Версия Spring Boot одна на весь проект. Модули со Spring подключают BOM `libs.spring.boot.bom` через
+  `platform(...)`; версии стартеров, Hibernate, Liquibase, H2 и драйвера PostgreSQL задаёт BOM, в каталоге их нет.
 - В `build.gradle.kts` модуля остаются только плагины сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`,
   у `testsys-web` — ещё Spring Boot и Vaadin) и зависимости; исключение — задача `processResources`
   в `testsys-web:ui`, которая копирует CSS дизайн-системы в jar.

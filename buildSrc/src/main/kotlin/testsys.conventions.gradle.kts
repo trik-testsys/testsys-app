@@ -1,5 +1,6 @@
 import io.gitlab.arturbosch.detekt.Detekt
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -24,6 +25,21 @@ dependencies {
 
 kotlin {
     jvmToolchain(21)
+}
+
+// The Spring Boot BOM manages newer Kotlin runtime libraries than our compiler, and Detekt's embedded compiler cannot
+// read the newer metadata, so its type resolution breaks. Align them (and kotlin-test, built against the same stdlib)
+// to the compiler version everywhere. This also downgrades the stdlib that non-BOM libraries built with a newer Kotlin
+// ask for (kotlinpoet, kctfork, Karibu-Testing), so check them when they are updated.
+val kotlinVersion = getKotlinPluginVersion()
+val compilerAlignedKotlinLibraries = listOf("kotlin-stdlib", "kotlin-reflect", "kotlin-test")
+configurations.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.jetbrains.kotlin" && compilerAlignedKotlinLibraries.any(requested.name::startsWith)) {
+            useVersion(kotlinVersion)
+            because("Kotlin runtime libraries follow the Kotlin compiler version")
+        }
+    }
 }
 
 tasks.test {

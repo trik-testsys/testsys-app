@@ -12,7 +12,7 @@ import org.springframework.test.context.TestPropertySource
  *
  * Every test class shares one cached Spring context; adapter calls run in their own transactions exactly as in
  * production, so all `ts_*` tables are truncated after each test to keep tests independent.
- * The dialect is overridden to [org.hibernate.dialect.H2Dialect], so PostgreSQL-only features are not exercised.
+ * Hibernate detects [org.hibernate.dialect.H2Dialect] from the connection, so PostgreSQL-only features are not exercised.
  */
 @SpringBootTest(classes = [DatabaseTestApp::class, DatabaseFixtures::class])
 @TestPropertySource(
@@ -21,7 +21,6 @@ import org.springframework.test.context.TestPropertySource
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
-        "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
     ],
 )
 abstract class DatabaseIntegrationTests {

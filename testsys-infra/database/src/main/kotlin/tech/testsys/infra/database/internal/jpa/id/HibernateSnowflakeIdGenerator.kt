@@ -2,16 +2,19 @@ package tech.testsys.infra.database.internal.jpa.id
 
 import org.hibernate.engine.config.spi.ConfigurationService
 import org.hibernate.engine.spi.SharedSessionContractImplementor
-import org.hibernate.id.IdentifierGenerator
-import org.hibernate.id.factory.spi.CustomIdGeneratorCreationContext
+import org.hibernate.generator.BeforeExecutionGenerator
+import org.hibernate.generator.EventType
+import org.hibernate.generator.EventTypeSets
+import org.hibernate.generator.GeneratorCreationContext
+import org.hibernate.id.Configurable
 import org.hibernate.service.ServiceRegistry
-import org.hibernate.type.Type
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import java.lang.reflect.Member
+import java.util.EnumSet
 import java.util.Properties
 
 /**
- * Hibernate [IdentifierGenerator] behind [SnowflakeId]: one [SnowflakeIdGenerator] per entity, its node id read from
+ * Hibernate [BeforeExecutionGenerator] behind [SnowflakeId]: one [SnowflakeIdGenerator] per entity, its node id read from
  * the [NODE_ID_SETTING] setting (`spring.jpa.properties.testsys.id.node-id`), `0` when absent. The constructor has the
  * `@IdGeneratorType` signature and does no work; the node id is read in [configure] since Spring masks constructor failures.
  *
@@ -21,16 +24,19 @@ import java.util.Properties
 class HibernateSnowflakeIdGenerator(
     annotation: SnowflakeId,
     member: Member,
-    context: CustomIdGeneratorCreationContext,
-) : IdentifierGenerator {
+    context: GeneratorCreationContext,
+) : BeforeExecutionGenerator, Configurable {
 
     @Volatile private lateinit var generator: SnowflakeIdGenerator
 
-    override fun configure(type: Type, parameters: Properties, serviceRegistry: ServiceRegistry) {
-        generator = SnowflakeIdGenerator(nodeId = nodeIdFrom(serviceRegistry))
+    override fun configure(creationContext: GeneratorCreationContext, parameters: Properties) {
+        generator = SnowflakeIdGenerator(nodeId = nodeIdFrom(creationContext.serviceRegistry))
     }
 
-    override fun generate(session: SharedSessionContractImplementor, owner: Any): Any = generator.next()
+    override fun generate(session: SharedSessionContractImplementor, owner: Any, currentValue: Any?, eventType: EventType): Any =
+        generator.next()
+
+    override fun getEventTypes(): EnumSet<EventType> = EventTypeSets.INSERT_ONLY
 
     companion object {
 

@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 TestSys — a Kotlin/JVM system for grading TRIK Studio solutions. Gradle multi-module build, Kotlin 2.2, JDK 21,
-Spring Boot 3.5 / Hibernate (the web module: Spring Boot 4 + Vaadin 25 Flow), PostgreSQL + Liquibase, KSP, Detekt.
+Spring Boot 4 / Hibernate 7 (the web module adds Vaadin 25 Flow), PostgreSQL + Liquibase, KSP, Detekt.
 
 ## Documentation is the source of truth
 

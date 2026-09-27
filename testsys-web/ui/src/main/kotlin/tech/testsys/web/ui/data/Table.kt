@@ -59,7 +59,7 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
  *
  * @param T the type of the rows.
  * @throws IllegalArgumentException if [pageSize] is below one or the table declares no columns.
- * @throws IllegalStateException if the block already holds rows or a table.
+ * @throws IllegalStateException if the block already holds rows, a table or an empty state.
  * @since %CURRENT_VERSION%
  */
 fun <T> BlockScope.table(

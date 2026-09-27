@@ -10,6 +10,8 @@ import tech.testsys.web.ui.DialogTexts
 import tech.testsys.web.ui.EditingTexts
 import tech.testsys.web.ui.FieldErrorTexts
 import tech.testsys.web.ui.LookupTexts
+import tech.testsys.web.ui.MenuTexts
+import tech.testsys.web.ui.NavigationTexts
 import tech.testsys.web.ui.TableTexts
 import tech.testsys.web.ui.UiTexts
 import java.time.DayOfWeek
@@ -53,6 +55,9 @@ fun buildUiTexts(region: SupportedRegion): UiTexts {
             next = ui.tableNext(),
             selectAll = ui.tableSelectAll(),
             selectRow = ui.tableSelectRow(),
+            loadFailed = ui.tableLoadFailed(),
+            loadFailedHint = ui.tableLoadFailedHint(),
+            retry = ui.tableRetry(),
         ),
         dialog = DialogTexts(
             cancel = ui.dialogCancel(),
@@ -65,6 +70,8 @@ fun buildUiTexts(region: SupportedRegion): UiTexts {
             clear = ui.lookupClear(),
             empty = ui.lookupEmpty(),
         ),
+        navigation = NavigationTexts(breadcrumbs = ui.navBreadcrumbs(), sections = ui.navSections()),
+        menu = MenuTexts(actions = ui.menuActions()),
     )
 }
 

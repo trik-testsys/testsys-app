@@ -6,6 +6,8 @@ import com.vaadin.flow.component.html.Footer
 import tech.testsys.web.ui.TestSysDsl
 import tech.testsys.web.ui.UiTexts
 
+private const val TABLE_OWNER = "a table"
+
 /**
  * Scope of a block: the rows of its body, the head actions and the footer.
  *
@@ -17,6 +19,7 @@ class BlockScope internal constructor(
     private val columns: Int,
     internal val texts: UiTexts,
     private val editState: BlockEditState,
+    internal val title: String?,
 ) {
     internal var actionsBar: Div? = null
         private set
@@ -24,17 +27,22 @@ class BlockScope internal constructor(
         private set
     internal var isFlushBody: Boolean = false
         private set
+    internal var tabsBar: Component? = null
+        private set
     private var editingSwitch: EditingSwitch? = null
     private var tablePager: TablePager? = null
+
+    /** What fills the whole body, e.g. "a table"; `null` while the body is a grid of rows. */
+    private var wholeBody: String? = null
 
     /**
      * Adds a row of the body; its elements take at most the block columns in total.
      *
-     * @throws IllegalStateException if the block holds a table.
+     * @throws IllegalStateException if the block holds a table or an empty state.
      * @since %CURRENT_VERSION%
      */
     fun row(content: BlockRowScope.() -> Unit) {
-        check(tablePager == null) { "Block holds a table; a table takes the whole body" }
+        check(wholeBody == null) { "Block holds $wholeBody; it takes the whole body" }
         val row = Div().apply { addClassName("ts-block__row") }
         BlockRowScope(row, columns, texts, editState).content()
         if (row.children.findAny().isPresent) body.add(row)
@@ -76,21 +84,41 @@ class BlockScope internal constructor(
         isFlushBody = true
     }
 
-    /** Checks that the block can take a table: it holds neither rows nor another table. */
+    /** Checks that [owner], e.g. "a table", can take the whole body: it holds neither rows nor another such content. */
+    internal fun checkWholeBodyPlace(owner: String) {
+        check(wholeBody == null) { "Block already holds $wholeBody; $owner takes the whole body" }
+        check(!body.children.findAny().isPresent) { "Block holds rows; $owner takes the whole body" }
+    }
+
+    /** Checks that the block can take a table. */
     internal fun checkTablePlace() {
-        check(tablePager == null) { "Block already holds a table; call table() once" }
-        check(!body.children.findAny().isPresent) { "Block holds rows; a table takes the whole body" }
+        checkWholeBodyPlace(TABLE_OWNER)
     }
 
     /**
-     * Makes [table] the whole flush body, which is no longer a grid, and keeps [pager] for the end of the footer;
-     * [bindPagerHost] gets its host.
+     * Keeps [tabs] for the block head.
+     *
+     * @throws IllegalStateException if the block already has tabs.
+     */
+    internal fun placeTabs(tabs: Component) {
+        check(tabsBar == null) { "Block already has tabs; call tabs() once" }
+        tabsBar = tabs
+    }
+
+    /** Makes [component] of [owner] the whole body, which is no longer a grid. */
+    internal fun placeWhole(component: Component, owner: String) {
+        checkWholeBodyPlace(owner)
+        body.removeClassName("ts-block__body--grid")
+        body.add(component)
+        wholeBody = owner
+    }
+
+    /**
+     * Makes [table] the whole flush body and keeps [pager] for the end of the footer; [bindPagerHost] gets its host.
      */
     internal fun placeTable(table: Component, pager: Component, bindPagerHost: (Component) -> Unit) {
-        checkTablePlace()
+        placeWhole(table, TABLE_OWNER)
         requestFlushBody()
-        body.removeClassName("ts-block__body--grid")
-        body.add(table)
         tablePager = TablePager(pager, bindPagerHost)
     }
 

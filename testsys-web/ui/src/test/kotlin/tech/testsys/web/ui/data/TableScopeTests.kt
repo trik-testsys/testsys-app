@@ -20,11 +20,11 @@ class TableScopeTests {
 
     @Test
     fun `should default the empty text to the table texts`() {
-        assertEquals(testTexts.table.empty, TableScope<Row>(testTexts).spec().emptyText)
+        assertEquals(testTexts.table.empty, TableScope<Row>(testTexts).spec().empty.title)
     }
 
     @Test
     fun `should use the given empty text over the default`() {
-        assertEquals("Посылок нет", TableScope<Row>(testTexts).apply { empty("Посылок нет") }.spec().emptyText)
+        assertEquals("Посылок нет", TableScope<Row>(testTexts).apply { empty("Посылок нет") }.spec().empty.title)
     }
 }

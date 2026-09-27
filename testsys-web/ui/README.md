@@ -8,11 +8,13 @@
 
 ## Устройство
 
-Модуль зависит только от Vaadin Flow (`vaadin-core`). От Spring, домена и операций он не зависит.
+Модуль зависит только от Vaadin Flow (`vaadin-core`). От Spring, домена и операций он не зависит. Логи он пишет
+через SLF4J, который приходит с зависимостями Vaadin; своей зависимости на него у модуля нет.
 
-- Статические компоненты (сетка, блоки, шапка, теги, бейджи, алерты) рендерят ту же разметку
-  с классами `.ts-*`, что и React-эталон.
-- Интерактивные (кнопки, поля, тосты, диалоги) — компоненты Vaadin под темой Lumo, связанной с токенами.
+- Статические компоненты (сетка, блоки, шапка, заголовок страницы, вкладки, пилюли, теги, бейджи, алерты, пустое
+  состояние) рендерят ту же разметку с классами `.ts-*`, что и React-эталон; ссылки в ней — `RouterLink`, кнопки
+  вкладок и пилюль — `NativeButton`.
+- Интерактивные (кнопки, поля, тосты, диалоги, меню) — компоненты Vaadin под темой Lumo, связанной с токенами.
 - Таблица — разметка `.ts-table` эталона; её страница, сортировка и выбор строк хранятся на сервере.
 - CSS дизайн-системы не копируется в репозиторий: задача `processResources` кладёт `design-system/styles.css`
   и `tokens/` в jar (`META-INF/resources/design-system/`). Собственный CSS модуля — один файл
@@ -53,6 +55,74 @@ class ProfileView(texts: UiTexts) : TestSysView(texts) {
 }
 ```
 
+Каждый вызов `page(...)` строит страницу заново: новое тело заменяет прежнее. Vaadin переиспользует экземпляр
+страницы при переходе на тот же класс (клик по текущей вкладке, другой параметр маршрута) и снова вызывает
+`beforeEnter`, поэтому страница с параметром маршрута строится там, а не в `init` (см.
+[Страницы с параметром маршрута](#страницы-с-параметром-маршрута)). Вызов `page(...)` из тела страницы, которая ещё
+строится, — `IllegalStateException`.
+
+## Заголовок страницы
+
+`head(title) { … }` в `PageScope` — полоса `.ts-page-head` между шапкой Кабинета и `main`: крошки, строка `h1`
+с бейджами, метаданными и кнопками, вкладки разделов. Образец — общий заголовок страниц витрины `showcaseHead`
+в `testsys-web/src/main/kotlin/tech/testsys/web/dev/ShowcaseHead.kt`.
+
+| Вызов в `PageHeadScope` | Что делает |
+|-------------------------|------------|
+| `crumb(label, target, parameters = RouteParameters.empty())` | Родительская страница в крошках — `RouterLink` |
+| `badge(text, tone)` | Бейдж справа от заголовка, как `badge` в `ContentScope` |
+| `meta(text)` | Приглушённый текст справа от бейджей (`.ts-page-head__meta`) |
+| `actions { }` | Кнопки справа в строке заголовка — `ContentScope`, кнопки обычного размера |
+| `tabs { }` | Вкладки разделов одного объекта — `PageTabsScope`, см. [Вкладки страницы](#вкладки-страницы) |
+
+- `head` — первый вызов тела страницы и не больше одного: после `row`, `block`, `highlightBlock` или второго `head` —
+  `IllegalStateException`.
+- `actions` и `tabs` — не больше одного раза каждый (`IllegalStateException`), `badge` и `meta` — сколько угодно,
+  в порядке вызова. В остальном порядок вызовов внутри `head` не важен.
+- Крошки — `nav.ts-crumbs` с именем `UiTexts.navigation.breadcrumbs`; последним идёт `title` с `aria-current="page"`.
+  Без `crumb` строки крошек нет.
+- Элементы заголовка (`badge`, `meta`, `actions`, `tabs`) ручек не возвращают. Чтобы изменить их, например после
+  действия, страница строится заново вызовом `page(...)`.
+
+### Вкладки страницы
+
+`tab(label, target, parameters = RouteParameters.empty(), count = null, countKind = CounterKind.Neutral)`
+в `PageTabsScope` — ссылка `a.ts-tab` на страницу раздела; вкладки стоят в `nav.ts-tabs` с именем
+`UiTexts.navigation.sections`. Адрес меняется: у каждой вкладки свой класс страницы и маршрут.
+
+- Текущая вкладка — та, чей `target` совпадает с классом строящейся страницы: `.ts-tab--active`
+  и `aria-current="page"`. Если совпадают несколько (одна страница с разными параметрами), текущая — первая,
+  если ни одна — текущей нет.
+- Счётчик выводится только при `count` больше нуля. Ручки у вкладок нет: счётчик задаётся при построении страницы.
+- Меньше двух вкладок или отрицательный `count` — `IllegalArgumentException`. Ссылка создаётся в `tab()`, поэтому
+  неверный маршрут или параметры дают ошибку Vaadin там же, при построении страницы.
+- Заголовок, общий для страниц-вкладок одного объекта, собирает функция приложения вида
+  `fun PageScope.contestHead(contest: Contest)`, которую первой вызывает каждая из этих страниц.
+
+### Страницы с параметром маршрута
+
+Параметры маршрута приходят после конструктора, поэтому такая страница строится в `beforeEnter`
+(`BeforeEnterObserver`), а не в `init`. Маршрут объявляется с именованным параметром (`@Route("…/:id")`), параметры
+читаются из `event.routeParameters`. `crumb` и `tab` принимают `RouteParameters`; перегрузок для страниц
+на `HasUrlParameter` нет.
+
+Состояние такой страницы (ручки, данные объекта) создаётся внутри `page { }`, а не в полях класса: экземпляр
+переиспользуется при переходе на другой параметр, и поля остались бы от прежнего. Шаблон:
+
+```kotlin
+@Route("contests/:contestId/questions")
+class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>) :
+    TestSysView(texts), BeforeEnterObserver {
+    override fun beforeEnter(event: BeforeEnterEvent) {
+        val contest = contests.find(event.routeParameters.getLong("contestId").orElseThrow())
+        page(<CabinetHeader>) {
+            contestHead(contest)
+            ...
+        }
+    }
+}
+```
+
 ## Сетка
 
 | Уровень | Что внутри | Правило |
@@ -61,7 +131,7 @@ class ProfileView(texts: UiTexts) : TestSysView(texts) {
 | `row` страницы | `slot(size)` | `size` от 1 до 24, сумма слотов ряда — не больше 24 |
 | `slot` | `row` | Ряды слота стоят друг под другом на колонках слота |
 | `row` слота | `block(size)`, `highlightBlock(size)`, `statCard(…)` | `size` от 1 до ширины слота, по умолчанию весь слот; сумма — не больше ширины слота |
-| `row` блока | поля, `field`, `text`, `tag`, `badge`, `counter`, `icon`, `alert`, `statCard`, `horizontal`, `vertical` | Поле занимает `labelSize + size`, остальные — `size`; без `size` элемент занимает остаток строки, после него строка закрыта; сумма — не больше размера блока |
+| `row` блока | поля, `field`, `text`, `tag`, `badge`, `counter`, `icon`, `alert`, `statCard`, `pills`, `horizontal`, `vertical` | Поле занимает `labelSize + size`, остальные — `size`; без `size` элемент занимает остаток строки, после него строка закрыта; сумма — не больше размера блока |
 
 - Неверный размер — `IllegalArgumentException`, переполнение ряда и элемент после занявшего остаток строки —
   `IllegalStateException` с перечнем размеров. Ошибка возникает при построении страницы, поэтому на каждую
@@ -79,31 +149,35 @@ class ProfileView(texts: UiTexts) : TestSysView(texts) {
 
 Каждый уровень — класс-скоуп с `@TestSysDsl` (`@DslMarker`) и `internal`-конструктором: страница не создаёт
 скоуп сама, не видит Vaadin-контейнер и не может вызвать функцию внешнего уровня. `TestSysView` маркером
-не помечен, поэтому внутри `page { … }` доступны члены самой страницы (сервисы, методы). `page(...)` вызывается один
-раз, повторный вызов — `IllegalStateException`. К `content` страница напрямую не обращается: компоненты Vaadin
-ставятся только через `custom()` (см. «Запасной выход»).
+не помечен, поэтому внутри `page { … }` доступны члены самой страницы (сервисы, методы). К `content` страница
+напрямую не обращается: компоненты Vaadin ставятся только через `custom()` (см. «Запасной выход»).
 
 | Скоуп | Доступно |
 |-------|----------|
-| `PageScope` | `row`, `block`, `highlightBlock` |
+| `PageScope` | `head` (первым вызовом), `row`, `block`, `highlightBlock` |
+| `PageHeadScope` | `crumb`, `badge`, `meta`, `actions { }`, `tabs { }` |
+| `PageTabsScope` | `tab` (вкладка-маршрут) |
 | `PageRowScope` | `slot` |
 | `SlotScope` | `row` |
 | `SlotRowScope` | `block`, `highlightBlock`, `statCard` |
-| `BlockScope` | `row` (строка тела) или `table` (всё тело), `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
-| `BlockRowScope` | поля, `field`, элементы отображения с `size`, `horizontal(size)`, `vertical(size)` |
-| `ContentScope` | `text`, действия, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical`, `custom` (без полей) |
-| `TableScope<T>` | колонки таблицы, `empty`, `onRowClick` |
+| `BlockScope` | `row` (строка тела), `table` или `emptyState` (всё тело), `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
+| `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
+| `ContentScope` | `text`, действия, `menu`, `pills`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical`, `custom` (без полей) |
+| `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
+| `TableScope<T>` | колонки таблицы, `menuColumn`, `empty`, `onRowClick` |
+| `MenuScope` | `item`, `destructiveItem` |
 | `DialogScope` | `row` (строка на 12 колонках), `footer { dialog -> }` |
 
-Содержимое тела блока кладётся только в строки или в таблицу: элемент прямо в `BlockScope` не компилируется.
-`ContentScope` — поток без размеров: шапка, подвал, группы `horizontal`/`vertical` строки блока и ячейки `column`
-таблицы.
+Содержимое тела блока кладётся только в строки, в таблицу или в пустое состояние: элемент прямо в `BlockScope`
+не компилируется. `ContentScope` — поток без размеров: шапка, подвал, группы `horizontal`/`vertical` строки блока, значение `field`,
+ячейки `column` таблицы, подвал диалога, кнопки заголовка страницы и пустого состояния.
 
-Функции содержимого — расширения скоупов в пакетах `actions`, `forms`, `display`, `feedback`, `data`, `core`;
-`toast`, `confirm` и `dialog` — функции верхнего уровня в пакетах `feedback` и `overlay`. Функции
-отображения (`text`, `icon`, `tag`, `badge`, `counter`, `alert`) объявлены и для `ContentScope`, и для
-`BlockRowScope` (с необязательным `size`), поля — только для `BlockRowScope`, действия — только для `ContentScope`.
-`statCard` в ряду слота создаёт свой блок, в строке блока — только разметку `.ts-stat`.
+Функции содержимого — расширения скоупов в пакетах `actions`, `forms`, `display`, `feedback`, `data`, `navigation`,
+`overlay`, `core`; `toast`, `confirm` и `dialog` — функции верхнего уровня в пакетах `feedback` и `overlay`. Функции
+отображения (`text`, `icon`, `tag`, `badge`, `counter`, `alert`) и `pills` объявлены и для `ContentScope`, и для
+`BlockRowScope` (с необязательным `size`), поля — только для `BlockRowScope`, действия и `menu` — только
+для `ContentScope`, `tabs` и `emptyState` — только для `BlockScope`. `statCard` в ряду слота создаёт свой блок,
+в строке блока — только разметку `.ts-stat`.
 
 ## Поля
 
@@ -130,6 +204,41 @@ class ProfileView(texts: UiTexts) : TestSysView(texts) {
 `ContentScope` (теги, бейдж, ссылка). Подпись такого поля — не `<label>`, клик по ней ничего не делает; функция
 возвращает `ElementHandle`.
 
+## Вкладки и пилюли
+
+`tabs(initial) { tab(value, label, count = null, countKind = CounterKind.Neutral) }` в `BlockScope` и
+`pills(initial) { pill(value, label) }` в `ContentScope` (например, в `actions { }` блока) и в `BlockRowScope`
+(с необязательным `size`) — группы кнопок, которые переключают значение: чаще всего фильтр того, что показывает блок.
+Адрес страницы не меняется. Таблица читает значение в `fetch`, а слушатель выбора её обновляет:
+`filter.onChange { rows.refresh(toFirstPage = true) }`. Образец — `tabsSection` и `pillsSection`
+в `testsys-web/src/main/kotlin/tech/testsys/web/dev/ShowcaseStatesView.kt`.
+
+- Вкладки блока без `title` и `subtitle` стоят на месте заголовка, справа от них — `actions { }`. С заголовком шапка
+  становится двухэтажной (`.ts-block__head--tabs`): сверху заголовок и `actions { }`, снизу вкладки. В блоке одна
+  группа вкладок, вторая — `IllegalStateException`.
+- У вкладок есть счётчик (только при `count` больше нуля), у пилюль — нет.
+- Кнопок хотя бы две, значения уникальны, `initial` — одно из них, `count` не отрицательный — иначе
+  `IllegalArgumentException`.
+- Разметка: `div.ts-tabs.ts-tabs--bare.ts-tabs--lg` или `div.ts-pills` с `role="group"`, кнопки `button.ts-tab`
+  или `button.ts-pill`. У выбранной — `.ts-tab--active` или `.ts-pill--active` и `aria-pressed="true"`, у остальных —
+  `aria-pressed="false"`. Имя группы вкладок (`aria-label`) — заголовок блока, если он есть; у пилюль имени нет.
+- Роль `tablist` не используется: она требует навигации стрелками и `tabpanel`, а здесь это фильтр. Между кнопками
+  переходят клавишей Tab.
+- Ручки — `TabsHandle` и `ChoiceHandle`, см. [Ручки и служебные свойства](#ручки-и-служебные-свойства).
+
+## Пустое состояние
+
+`emptyState(title, description = null, icon = IconName.File) { … }` в `BlockScope` — разметка `.ts-empty` эталона
+на всё тело блока: иконка, заголовок, описание и кнопки из завершающей лямбды (`ContentScope`). Возвращает
+`ElementHandle`. Образец — `emptySection` в `ShowcaseStatesView.kt` витрины.
+
+- Пустое состояние занимает всё тело блока, как таблица: блок со строками не принимает `emptyState`, а блок
+  с пустым состоянием — `row { }`, `table` и второй `emptyState` (`IllegalStateException`).
+- Кнопки маленькие, как в эталоне.
+- Варианта ошибки в блоке нет: блок строится синхронно, и отсутствие данных — ошибка страницы. Ошибку загрузки
+  показывает таблица, см. [Пустая таблица и ошибка загрузки](#пустая-таблица-и-ошибка-загрузки).
+- Текст пустого состояния — по разделу «Текст интерфейса» в [design-system/README.md](../design-system/README.md).
+
 ## Таблица
 
 `table(key, pageSize = 20, selectable = false, fetch) { … }` в `BlockScope` — таблица строк, которые `fetch` отдаёт
@@ -150,11 +259,12 @@ block(title = "Посылки") {
 ```
 
 - Таблица занимает всё тело блока: тело без отступов и без сетки, в нём ничего, кроме таблицы. Блок с таблицей
-  не принимает `row { }`, блок со строками — `table`; второй `table` в блоке — тоже `IllegalStateException`.
-  Шапка, `actions { }` и `footer { }` блока остаются.
+  не принимает `row { }` и `emptyState`, блок со строками или пустым состоянием — `table`; второй `table` в блоке —
+  тоже `IllegalStateException`. Шапка, вкладки, `actions { }` и `footer { }` блока остаются.
 - `fetch` получает `PageRequest(offset, limit, sort)` и возвращает `Page(rows, total)`; `sort` — `Sort(key,
   isDescending)` или `null`. Таблица вызывает `fetch` при построении (первая страница без сортировки), при смене
-  страницы и сортировки и при `refresh`. Исключение из `fetch` не перехватывается.
+  страницы и сортировки и при `refresh`. Исключение из `fetch` таблица показывает сама, см.
+  [Пустая таблица и ошибка загрузки](#пустая-таблица-и-ошибка-загрузки).
 - Если `total` уменьшился и текущая страница опустела, таблица переходит на последнюю непустую страницу.
 - `pageSize` меньше 1 или таблица без колонок — `IllegalArgumentException`.
 
@@ -168,17 +278,29 @@ block(title = "Посылки") {
 | `dateColumn` | `LocalDate?` | Формат `UiTexts.calendar.dateFormat` |
 | `dateTimeColumn` | `LocalDateTime?` | Дата по тому же формату и время `HH:mm` |
 | `column` | `ContentScope.(T) -> Unit` | Любое содержимое `ContentScope`: бейдж, теги, действия |
+| `menuColumn` | `MenuScope.(T) -> Unit` | Последняя узкая колонка без подписи с меню «⋯», см. [Меню](#меню) |
 
-- У всех колонок параметры `title` и `sortKey = null`; порядок объявления — порядок колонок. `null` в ячейке типовой
-  колонки выводится как «—».
+- У всех колонок, кроме `menuColumn`, параметры `title` и `sortKey = null`; порядок объявления — порядок колонок.
+  `null` в ячейке типовой колонки выводится как «—».
 - `sortKey` делает заголовок сортируемым: первый клик — по убыванию, повторный — смена направления, клик по другой
   колонке — по убыванию по ней; смена сортировки возвращает на первую страницу. Активный заголовок — `.ts-sorted`
   со стрелкой «↓» или «↑». Сортируемый заголовок получает фокус с клавиатуры, Enter и пробел сортируют как клик,
   направление сообщается атрибутом `aria-sort`.
-- `empty(text)` — текст пустого состояния, по умолчанию `UiTexts.table.empty`. Пустая таблица выводит одну строку
-  с ячейкой во всю ширину и разметкой `.ts-empty` эталона.
 - `onRowClick { row -> }` — клик по строке, строка получает курсор-указатель. Клик по элементу управления в строке
-  (флажку, кнопке, ссылке, полю) строку не «кликает».
+  (флажку, кнопке, ссылке, полю, «⋯» колонки меню) строку не «кликает».
+
+### Пустая таблица и ошибка загрузки
+
+- `empty(title, description = null, icon = IconName.File) { … }` — пустое состояние таблицы с теми же частями, что
+  у `emptyState` блока (см. [Пустое состояние](#пустое-состояние)); вызов с одной строкой задаёт только заголовок.
+  По умолчанию заголовок — `UiTexts.table.empty`. Пустая таблица выводит одну строку `.ts-row-empty` с ячейкой
+  во всю ширину и разметкой `.ts-empty` эталона.
+- Если `fetch` или содержимое ячеек при отрисовке страницы бросили `Exception`, таблица пишет его в лог уровня
+  `error` («Table page {} failed to load» с номером страницы) и вместо строк показывает пустое состояние ошибки
+  `.ts-empty--error`: `UiTexts.table.loadFailed`, `UiTexts.table.loadFailedHint` и кнопку `UiTexts.table.retry`,
+  которая запрашивает ту же страницу заново. `Error` не перехватывается.
+- Пока показана ошибка, пагинация скрыта; выбор строк сохраняется, `onSelectionChange` не вызывается.
+- Лукап использует ту же таблицу и ведёт себя так же.
 
 ### Выбор строк
 
@@ -281,8 +403,31 @@ lookup(
   - клик по строке выбирает значение и закрывает диалог; выбор и очистка крестиком — изменения значения
     пользователем (`isFromClient`);
   - Esc, крестик и клик по фону закрывают диалог без изменений.
-- `pageSize` меньше 1, `columns` без колонок или с `empty`/`onRowClick` (их задаёт сам лукап) —
+- `pageSize` меньше 1, `columns` без колонок, с `empty`/`onRowClick` (их задаёт сам лукап) или с `menuColumn` —
   `IllegalArgumentException`.
+
+## Меню
+
+`menu(label = null) { … }` в `ContentScope` — кнопка, которая по клику открывает меню действий: без `label` — иконка
+«⋯» с доступным именем `UiTexts.menu.actions` (как `iconAction`), с `label` — кнопка `action` с этим текстом.
+Возвращает `ElementHandle`. Образец — `menuSection` в `ShowcaseStatesView.kt` витрины.
+
+- `item(label, isEnabled = true) { }` — пункт меню; выключенный пункт виден, но не выбирается.
+  `destructiveItem(label) { }` — пункт, который удаляет или отменяет. Разрушительные пункты идут последними,
+  разделитель перед ними DSL ставит сам. `item` после `destructiveItem` и меню без пунктов — `IllegalStateException`.
+- Подсказок клавиш у пунктов нет: без настоящих горячих клавиш они вводили бы в заблуждение.
+- `menuColumn { row -> … }` в `TableScope` — последняя колонка шириной 52 px без подписи (имя заголовка —
+  `UiTexts.menu.actions`) с «⋯» в каждой строке; меню строится для строки при отрисовке страницы таблицы. Колонка
+  после `menuColumn` и второй `menuColumn` — `IllegalStateException`.
+- Клик по «⋯» в строке не вызывает `onRowClick`: коннектор `vaadin-context-menu` останавливает всплытие клика
+  по кнопке, которая открывает меню. Выбор пункта тоже не вызывает: меню открывается вне таблицы.
+- Меню — `ContextMenu` Vaadin, открываемое кликом; у кнопки — `aria-haspopup="menu"`. Клавиатура, роли
+  `menu`/`menuitem`, закрытие по Esc и возврат фокуса — от `vaadin-context-menu`.
+- Вид `.ts-menu` эталона задаёт `testsys-vaadin.css` селекторами `vaadin-context-menu[theme~="ts-menu"]::part(overlay)`,
+  `vaadin-context-menu[theme~="ts-menu"]::part(content)` и `vaadin-context-menu-item.ts-menu__item`
+  (`.ts-menu__item--danger` у разрушительных пунктов). Меню помечено темой `ts-menu`, а не классом: глобальное
+  правило `.ts-menu` дизайн-системы оформило бы сам элемент `vaadin-context-menu`, который Vaadin на время открытия
+  добавляет в `<body>`.
 
 ## Оформление
 
@@ -290,8 +435,9 @@ lookup(
 
 | Что | Как выбирается вид |
 |-----|--------------------|
-| Кнопки | Роль: `mainAction` — primary, `action` — secondary, `destructiveAction` — danger-soft, `linkAction` — link, `iconAction` — secondary без подписи (подпись уходит в `aria-label` и подсказку). Внутренняя роль `danger` (заливка `--danger`, как `.ts-btn--danger`) — только у кнопки действия опасного `confirm`, страницам она недоступна. Размер: в `actions { }` — sm, в группах строк блока и в `footer { }` — md |
-| Блок | `block` — обычный, `highlightBlock` — тёмный. Тело без отступов включает содержимое, которому они мешают: `table` |
+| Кнопки | Роль: `mainAction` — primary, `action` — secondary, `destructiveAction` — danger-soft, `linkAction` — link, `iconAction` — secondary без подписи (подпись уходит в `aria-label` и подсказку). Внутренняя роль `danger` (заливка `--danger`, как `.ts-btn--danger`) — только у кнопки действия опасного `confirm`, страницам она недоступна. Размер: в `actions { }` блока, в пустом состоянии и в ячейках таблицы (`column`, `menuColumn`) — sm, в заголовке страницы, группах строк блока и `footer { }` — md |
+| Блок | `block` — обычный, `highlightBlock` — тёмный. Тело без отступов включает содержимое, которому они мешают: `table`. Вкладки и пилюли в тёмном блоке светлые |
+| Вкладки, пилюли, пустое состояние, меню | Вкладки страницы и блока — всегда `.ts-tabs--bare.ts-tabs--lg`, место вкладок блока — по наличию заголовка; пустое состояние — `.ts-empty`, ошибка загрузки таблицы — `.ts-empty--error`; разрушительный пункт меню — `destructiveItem` |
 | Бейдж, тег, счётчик, алерт, тост (`toast(kind, title)` — функция верхнего уровня, вызывается из обработчиков) | Перечисления смысла: `Tone`, `TagKind`, `CounterKind`, `FeedbackKind`; текст бейджа передаёт страница |
 | Таблица, диалог | Вид ячейки — по функции колонки (см. [Колонки](#колонки)); ширина диалога — по функции: `confirm` — 440 px, `dialog` и диалог лукапа — 520 px; `isDanger` — вид `.ts-dialog--alert` |
 | Раскладка в блоке | Строки `row { }`; в строке — группы `horizontal(size) { }` и `vertical(size) { }` на своих колонках, в шапке, подвале и группах — `horizontal { }` и `vertical { }` без размера |
@@ -310,11 +456,13 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 
 | Ручка | Свойства |
 |-------|----------|
-| `ElementHandle` | `isVisible` |
+| `ElementHandle` | `isVisible` (в том числе у `emptyState` и `menu`) |
 | `TextHandle` | `isVisible`, `text` (значение `statCard`, `counter`, `text`) |
 | `ActionHandle` | `isVisible`, `isEnabled`, `isLoading`, `onClick` |
 | `BlockHandle` | `isVisible`, `isEditable` (возвращают `block` и `highlightBlock`) |
-| `TableHandle<T>` | `isVisible` (скрывает таблицу с пагинацией, блок остаётся), `refresh(toFirstPage = false)`, `selected` (ключи выбранных строк), `clearSelection()`, `onSelectionChange { keys -> }` |
+| `ChoiceHandle<V>` | `isVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает; новый слушатель заменяет прежний) — возвращает `pills` |
+| `TabsHandle<V>` | всё из `ChoiceHandle<V>` и `setCount(value, count)` (`null` и `0` скрывают счётчик) — возвращает `tabs` блока |
+| `TableHandle<T>` | `isVisible` (скрывает таблицу с пагинацией, блок остаётся), `refresh(toFirstPage = false)`, `selected` (ключи выбранных строк), `clearSelection()` (без нового запроса страницы), `onSelectionChange { keys -> }` |
 | `DialogHandle` | `open()`, `close()`, `isOpen`, `isEditable`, `onClose { }` (при любом закрытии: кнопкой, крестиком, Esc, кликом по фону) |
 | `ValueInput<T>` | `isVisible`, `isEnabled`, `isEditable` и всё из `HasValue`, `HasValidation`, `HasValidator` |
 
@@ -347,9 +495,10 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 ## Тексты
 
 Модуль не зависит от локализации. Все строки, которые компоненты показывают сами (бренд, «Войти», кнопки режима
-редактирования, календарь, ошибки полей, подписи таблицы, диалогов и лукапа), приходят в `UiTexts`. Строки таблицы,
-диалогов и лукапа собраны в группы `table`, `dialog` и `lookup` с ключами `ui.table.*`, `ui.dialog.*`
-и `ui.lookup.*`. Приложение собирает `UiTexts` функцией `buildUiTexts` в `testsys-web` из ключей `ui.*` модуля
+редактирования, календарь, ошибки полей, подписи таблицы, ошибки её загрузки, диалогов и лукапа, имена крошек,
+вкладок страницы и кнопки меню), приходят в `UiTexts`. Строки таблицы, диалогов, лукапа, навигации и меню собраны
+в группы `table`, `dialog`, `lookup`, `navigation` и `menu` с ключами `ui.table.*`, `ui.dialog.*`, `ui.lookup.*`,
+`ui.nav.*` и `ui.menu.*`. Приложение собирает `UiTexts` функцией `buildUiTexts` в `testsys-web` из ключей `ui.*` модуля
 локализации и данных ICU. Строки страницы передаются в функции DSL как `String`; правила локализации —
 в [localization/README.md](../../testsys-infra/localization/README.md).
 
@@ -371,12 +520,14 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 2. Добавьте функцию-расширение нужного скоупа в пакет группы: элемент отображения — для `ContentScope` и для
    `BlockRowScope` (с `size`), поле — для `BlockRowScope`. Параметры описывают смысл, а не вид; вид выбирается
    внутри по смыслу и `ContentScope.placement`. Функция возвращает ручку и принимает `configure`. Пакеты групп
-   зависят от `layout`, где лежат скоупы; обратная зависимость одна и намеренная: `layout.EditingSwitch` строит
-   стандартные кнопки переключателя `editing` функциями пакета `actions`.
+   зависят от `layout`, где лежат скоупы. Обратные зависимости `layout` намеренные, и их две: `EditingSwitch` строит
+   стандартные кнопки переключателя `editing` функциями пакета `actions` с иконкой из `core`, а `Page` и `PageScope`
+   берут из `navigation` шапку Кабинета и заголовок страницы.
 3. CSS: общие для React и Vaadin классы — в `design-system/tokens/components.css`, правила только для DOM
    Vaadin — в `testsys-vaadin.css`.
 4. Встроенные строки компонента добавьте в `UiTexts` и в `buildUiTexts`, а ключи — по
    [add-localization.md](../../docs/guides/add-localization.md).
 5. Тесты — Karibu-Testing (`MockVaadinTests`, `buildTestPage` в тестовых исходниках модуля): разметка совпадает
    с эталоном, смысл превращается в нужный класс или атрибут, ручка меняет состояние.
-6. Покажите компонент на витрине `/dev/showcase` (`testsys-web`, профиль `dev`) и сверьте с эталоном.
+6. Покажите компонент на витрине (`testsys-web`, профиль `dev`) и сверьте с эталоном. У витрины две страницы
+   с общим заголовком: `/dev/showcase` — «Компоненты», `/dev/showcase/states` — «Навигация и состояния».

@@ -16,6 +16,8 @@ import java.util.Locale
  * @property table the texts of data tables.
  * @property dialog the texts of dialogs.
  * @property lookup the texts of the lookup field and its dialog.
+ * @property navigation the accessible names of navigation landmarks.
+ * @property menu the texts of action menus.
  * @since %CURRENT_VERSION%
  */
 class UiTexts(
@@ -29,6 +31,8 @@ class UiTexts(
     val table: TableTexts,
     val dialog: DialogTexts,
     val lookup: LookupTexts,
+    val navigation: NavigationTexts,
+    val menu: MenuTexts,
 )
 
 /**
@@ -92,6 +96,9 @@ class EditingTexts(
  * @property next the label of the next page button.
  * @property selectAll the accessible name of the checkbox that selects all rows of a page.
  * @property selectRow the accessible name of the checkbox that selects a row.
+ * @property loadFailed the title shown instead of rows when they failed to load.
+ * @property loadFailedHint the description shown under [loadFailed].
+ * @property retry the label of the action that fetches the rows again after a failure.
  * @since %CURRENT_VERSION%
  */
 class TableTexts(
@@ -101,6 +108,9 @@ class TableTexts(
     val next: String,
     val selectAll: String,
     val selectRow: String,
+    val loadFailed: String,
+    val loadFailedHint: String,
+    val retry: String,
 )
 
 /**
@@ -131,4 +141,26 @@ class LookupTexts(
     val open: String,
     val clear: String,
     val empty: String,
+)
+
+/**
+ * Accessible names of navigation landmarks.
+ *
+ * @property breadcrumbs the name of the breadcrumb trail of a page.
+ * @property sections the name of the page tabs that switch between the sections of one object.
+ * @since %CURRENT_VERSION%
+ */
+class NavigationTexts(
+    val breadcrumbs: String,
+    val sections: String,
+)
+
+/**
+ * Texts of action menus.
+ *
+ * @property actions the accessible name of the button that opens an action menu.
+ * @since %CURRENT_VERSION%
+ */
+class MenuTexts(
+    val actions: String,
 )

@@ -51,9 +51,14 @@ internal val testTexts = UiTexts(
         next = "Вперёд",
         selectAll = "Отметить всё на странице",
         selectRow = "Отметить строку",
+        loadFailed = "Сбой загрузки",
+        loadFailedHint = "Повторите позже",
+        retry = "Ещё раз",
     ),
     dialog = DialogTexts(cancel = "Отказаться", close = "Закрыть", typeToConfirm = { name -> "Введите $name" }),
     lookup = LookupTexts(search = "Поиск", open = "Выбрать", clear = "Очистить", empty = "Не найдено"),
+    navigation = NavigationTexts(breadcrumbs = "Цепочка", sections = "Разделы страницы"),
+    menu = MenuTexts(actions = "Меню действий"),
 )
 
 /** Starts a mocked Vaadin UI with the test routes of this package before each test. */
@@ -73,6 +78,10 @@ class FirstTestView : Div()
 @Route("test/second")
 class SecondTestView : Div()
 
+/** Route target with a parameter for page tab tests. */
+@Route("test/item/:id")
+class ItemTestView : Div()
+
 internal fun Component.child(index: Int): Component = children.toList()[index]
 
 internal fun Component.classes(): Set<String> = element.classList
@@ -85,12 +94,12 @@ internal fun Component.find(cssClass: String): Component = findAll(cssClass).sin
 
 private fun Component.descendants(): List<Component> = children.toList().flatMap { child -> listOf(child) + child.descendants() }
 
-/** Builds a page with an empty header, attaches it to the current UI and returns its `main.ts-page`. */
-internal fun buildTestPage(body: PageScope.() -> Unit): Component {
+/** Builds a page of [view] with an empty header, attaches it to the current UI and returns its `main.ts-page`. */
+internal fun buildTestPage(view: Class<out Component>? = null, body: PageScope.() -> Unit): Component {
     val root = Div()
-    renderPage(root, CabinetHeader(), testTexts, body)
+    renderPage(root, CabinetHeader(), testTexts, view, body)
     UI.getCurrent().add(root)
-    return root.child(1)
+    return root.children.toList().single { child -> child.element.tag == "main" }
 }
 
 /** Builds a full-width block with one row filled by [content] and returns the row. */
@@ -106,11 +115,11 @@ internal inline fun <reified C : Component> control(label: String): C {
     return field.find("ts-field__value").child(0) as C
 }
 
+/** All buttons of the subtree of [root], shown or hidden. */
+internal fun findAllButtons(root: Component): List<Button> = (listOf(root) + root.descendants()).filterIsInstance<Button>()
+
 /** The button with [text] on the current UI, shown or hidden. */
-internal fun button(text: String): Button {
-    val ui = UI.getCurrent()
-    return (listOf<Component>(ui) + ui.descendants()).filterIsInstance<Button>().single { button -> button.text == text }
-}
+internal fun button(text: String): Button = findAllButtons(UI.getCurrent()).single { button -> button.text == text }
 
 /** Dialogs opened on the current UI after the pending round trip attached them. */
 internal fun openDialogs(): List<Dialog> {

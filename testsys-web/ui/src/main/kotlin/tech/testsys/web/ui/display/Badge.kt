@@ -20,7 +20,7 @@ fun ContentScope.badge(text: String, tone: Tone): ElementHandle = ElementHandle(
  */
 fun BlockRowScope.badge(text: String, tone: Tone, size: Int? = null): ElementHandle = ElementHandle(place(size, buildBadge(text, tone)))
 
-private fun buildBadge(text: String, tone: Tone): Span = Span().apply {
+internal fun buildBadge(text: String, tone: Tone): Span = Span().apply {
     addClassNames("ts-status", "ts-status--${tone.modifier}")
     add(Span().apply { addClassName("ts-status__dot") }, Text(text))
 }

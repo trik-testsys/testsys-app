@@ -4,8 +4,12 @@ import com.vaadin.flow.component.HasComponents
 import com.vaadin.flow.component.Text
 import tech.testsys.web.ui.TestSysDsl
 import tech.testsys.web.ui.UiTexts
+import tech.testsys.web.ui.core.IconName
+import tech.testsys.web.ui.feedback.EmptyContent
 import tech.testsys.web.ui.layout.ContentScope
 import tech.testsys.web.ui.layout.Placement
+import tech.testsys.web.ui.overlay.MenuScope
+import tech.testsys.web.ui.overlay.menu
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -16,6 +20,7 @@ internal enum class CellKind(val cssClass: String?) {
     Number("ts-num ts-right"),
     Date(null),
     Content(null),
+    Menu("ts-right"),
 }
 
 /** Column of a table: its [title], optional [sortKey] and how it fills a cell of a row. */
@@ -27,10 +32,10 @@ internal class TableColumn<T>(
 )
 
 /** Columns and settings collected by a [TableScope]. */
-internal class TableSpec<T>(val columns: List<TableColumn<T>>, val emptyText: String, val rowClick: ((T) -> Unit)?)
+internal class TableSpec<T>(val columns: List<TableColumn<T>>, val empty: EmptyContent, val rowClick: ((T) -> Unit)?)
 
 /**
- * Scope of a table: its columns in order, the empty text and the row click.
+ * Scope of a table: its columns in order, the empty state and the row click.
  *
  * @param T the type of the rows.
  * @since %CURRENT_VERSION%
@@ -38,16 +43,21 @@ internal class TableSpec<T>(val columns: List<TableColumn<T>>, val emptyText: St
 @TestSysDsl
 class TableScope<T> internal constructor(private val texts: UiTexts) {
     private val columns = mutableListOf<TableColumn<T>>()
-    private var emptyText: String = texts.table.empty
+    private var emptyContent: EmptyContent = EmptyContent(texts.table.empty)
     private var rowClick: ((T) -> Unit)? = null
 
-    /** Whether [empty] set the empty text, so that a table which sets its own can tell. */
-    internal var hasOwnEmptyText: Boolean = false
+    /** Whether [empty] set the empty state, so that a table which sets its own can tell. */
+    internal var hasOwnEmpty: Boolean = false
+        private set
+
+    /** Whether [menuColumn] added the menu column, which must stay the last one. */
+    internal var hasMenuColumn: Boolean = false
         private set
 
     /**
      * Adds a column of plain text; a column with [sortKey] can be sorted by it.
      *
+     * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
     fun textColumn(title: String, sortKey: String? = null, value: (T) -> String?) {
@@ -57,6 +67,7 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
     /**
      * Adds a column of identifiers and codes in a monospace font.
      *
+     * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
     fun codeColumn(title: String, sortKey: String? = null, value: (T) -> String?) {
@@ -66,6 +77,7 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
     /**
      * Adds a column of numbers aligned right, with digits grouped by the locale.
      *
+     * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
     fun numberColumn(title: String, sortKey: String? = null, value: (T) -> Number?) {
@@ -75,6 +87,7 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
     /**
      * Adds a column of dates in the calendar format of the locale.
      *
+     * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
     fun dateColumn(title: String, sortKey: String? = null, value: (T) -> LocalDate?) {
@@ -84,6 +97,7 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
     /**
      * Adds a column of dates with times in the calendar format of the locale.
      *
+     * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
     fun dateTimeColumn(title: String, sortKey: String? = null, value: (T) -> LocalDateTime?) {
@@ -93,22 +107,39 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
     /**
      * Adds a column whose cells hold display [content] of the row, e.g. a badge, tags or actions.
      *
+     * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
     fun column(title: String, sortKey: String? = null, content: ContentScope.(T) -> Unit) {
+        checkBeforeMenuColumn()
         columns += TableColumn(title, sortKey, CellKind.Content) { row, cell ->
-            ContentScope(cell, texts, Placement.Body).content(row)
+            ContentScope(cell, texts, Placement.Cell).content(row)
         }
     }
 
     /**
-     * Sets the [text] shown instead of rows when there are none.
+     * Adds the last, narrow column with an action menu of each row filled by [content].
+     *
+     * @throws IllegalStateException if the table already has a menu column.
+     * @since %CURRENT_VERSION%
+     */
+    fun menuColumn(content: MenuScope.(T) -> Unit) {
+        checkBeforeMenuColumn()
+        hasMenuColumn = true
+        columns += TableColumn(title = "", sortKey = null, kind = CellKind.Menu) { row, cell ->
+            ContentScope(cell, texts, Placement.Cell).menu { content(row) }
+        }
+    }
+
+    /**
+     * Sets the empty state shown instead of rows when there are none: [title], optional [description], [icon]
+     * and [actions], e.g. a reset of the filter.
      *
      * @since %CURRENT_VERSION%
      */
-    fun empty(text: String) {
-        emptyText = text
-        hasOwnEmptyText = true
+    fun empty(title: String, description: String? = null, icon: IconName = IconName.File, actions: ContentScope.() -> Unit = {}) {
+        emptyContent = EmptyContent(title, description, icon, actions)
+        hasOwnEmpty = true
     }
 
     /**
@@ -120,9 +151,14 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
         rowClick = listener
     }
 
-    internal fun spec(): TableSpec<T> = TableSpec(columns.toList(), emptyText, rowClick)
+    internal fun spec(): TableSpec<T> = TableSpec(columns.toList(), emptyContent, rowClick)
 
     private fun add(title: String, sortKey: String?, kind: CellKind, text: (T) -> String) {
+        checkBeforeMenuColumn()
         columns += TableColumn(title, sortKey, kind) { row, cell -> cell.add(Text(text(row))) }
+    }
+
+    private fun checkBeforeMenuColumn() {
+        check(!hasMenuColumn) { "The menu column must be the last and only one; declare other columns before menuColumn()" }
     }
 }

@@ -213,3 +213,24 @@ vaadin-dialog .ts-dialog { max-width: calc(100vw - 32px); }
 .ts-dialog__body .ts-table { color: var(--text-primary); }
 .ts-dialog__stack { display: flex; flex-direction: column; gap: 6px; }
 .ts-dialog--alert .ts-dialog__title { color: var(--text-primary); }
+
+/* Action menu: vaadin-context-menu styled as the .ts-menu popover of the reference; the items carry .ts-menu__item. */
+vaadin-context-menu[theme~="ts-menu"]::part(overlay) {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-popover);
+}
+vaadin-context-menu[theme~="ts-menu"]::part(content) { padding: 6px; min-width: 220px; }
+vaadin-context-menu-item.ts-menu__item {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  font: var(--fw-medium) var(--fs-sm) var(--font-sans);
+  color: var(--text-primary);
+}
+vaadin-context-menu-item.ts-menu__item:hover,
+vaadin-context-menu-item.ts-menu__item[focus-ring] { background: var(--canvas); }
+vaadin-context-menu-item.ts-menu__item--danger { color: var(--danger); }
+vaadin-context-menu-item.ts-menu__item[disabled] { color: var(--text-tertiary); cursor: default; }
+vaadin-context-menu-list-box hr { height: 1px; margin: 4px 0; border: 0; background: var(--line-subtle); }

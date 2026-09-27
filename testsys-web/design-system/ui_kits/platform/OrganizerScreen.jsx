@@ -15,17 +15,18 @@ function OrganizerScreen({ go, toast }) {
   return (
     <div className="ts-app">
       <Header active="contests" user={{ name: 'Анна Смирнова', short: 'Анна С.' }} />
-      <div style={{ background: 'var(--white)', borderBottom: '1px solid var(--line)' }}>
-        <div style={{ maxWidth: 'var(--container)', margin: '0 auto', paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div className="ts-page-head">
+        <div className="ts-page-head__inner">
           <Breadcrumbs items={[{ label: 'Мои соревнования' }, { label: 'Весенний кубок 2026' }]} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div className="ts-page-head__title-row">
             <h1 className="ts-h1">Весенний кубок 2026</h1>
             <StatusBadge tone="live">Идёт</StatusBadge>
-            <span className="ts-muted" style={{ fontSize: 13 }}>ICPC · 10:00–15:00</span>
-            <span style={{ flex: 1 }} />
-            <Button variant="secondary" icon="megaphone" onClick={() => setModal('ann')}>Объявление</Button>
-            <Button variant="secondary" icon="snowflake" onClick={() => { setFrozen(!frozen); toast({ tone: 'warning', title: frozen ? 'Таблица разморожена' : 'Таблица заморожена' }); }}>{frozen ? 'Разморозить' : 'Заморозить таблицу'}</Button>
-            <Button variant="danger" onClick={() => setModal('end')}>Завершить</Button>
+            <span className="ts-page-head__meta">ICPC · 10:00–15:00</span>
+            <div className="ts-page-head__actions">
+              <Button variant="secondary" icon="megaphone" onClick={() => setModal('ann')}>Объявление</Button>
+              <Button variant="secondary" icon="snowflake" onClick={() => { setFrozen(!frozen); toast({ tone: 'warning', title: frozen ? 'Таблица разморожена' : 'Таблица заморожена' }); }}>{frozen ? 'Разморозить' : 'Заморозить таблицу'}</Button>
+              <Button variant="danger" onClick={() => setModal('end')}>Завершить</Button>
+            </div>
           </div>
           <Tabs bare size="lg" value={tab} onChange={setTab} items={[{ value: 'overview', label: 'Обзор' }, { value: 'problems', label: 'Задачи' }, { value: 'people', label: 'Участники' }, { value: 'subs', label: 'Посылки' }, { value: 'q', label: 'Вопросы', count: open || undefined, countTone: 'danger' }, { value: 'settings', label: 'Настройки' }]} />
         </div>

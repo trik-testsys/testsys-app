@@ -27,4 +27,14 @@ class UiTextsFactoryTests {
         assertEquals("Введите «Весенний кубок», чтобы подтвердить", texts.dialog.typeToConfirm("Весенний кубок"))
         assertEquals("Ничего не найдено", texts.lookup.empty)
     }
+
+    @Test
+    fun `should take navigation, menu and load failure texts from the localization`() {
+        assertEquals("Навигационная цепочка", texts.navigation.breadcrumbs)
+        assertEquals("Разделы", texts.navigation.sections)
+        assertEquals("Действия", texts.menu.actions)
+        assertEquals("Не удалось загрузить", texts.table.loadFailed)
+        assertEquals("Попробуйте ещё раз", texts.table.loadFailedHint)
+        assertEquals("Повторить", texts.table.retry)
+    }
 }

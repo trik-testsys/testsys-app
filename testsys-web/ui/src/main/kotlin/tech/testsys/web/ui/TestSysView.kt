@@ -12,12 +12,23 @@ import tech.testsys.web.ui.navigation.CabinetHeader
  * @since %CURRENT_VERSION%
  */
 abstract class TestSysView(protected val texts: UiTexts) : Composite<Div>() {
-    private var isPageBuilt = false
+    private var isBuilding = false
 
-    /** Builds the page once: [header] and the rows and blocks built by [body]. */
+    /**
+     * Builds or rebuilds the page: [header] and the rows and blocks built by [body]. Vaadin reuses the view instance
+     * when navigating again to the same route class (e.g. between page tabs of one object with different route
+     * parameters), so a page with a route parameter (`@Route("…/:id")`) calls this from `beforeEnter` of
+     * a `BeforeEnterObserver`; the new body replaces the old one.
+     *
+     * @throws IllegalStateException if called again from inside a [body] that is still being built.
+     */
     protected fun page(header: CabinetHeader, body: PageScope.() -> Unit) {
-        check(!isPageBuilt) { "TestSysView.page() is already built for ${this::class.simpleName}; call it once" }
-        isPageBuilt = true
-        renderPage(content, header, texts, body)
+        check(!isBuilding) { "TestSysView.page() called again from inside its own body for ${this::class.simpleName}" }
+        isBuilding = true
+        try {
+            renderPage(content, header, texts, this::class.java, body)
+        } finally {
+            isBuilding = false
+        }
     }
 }

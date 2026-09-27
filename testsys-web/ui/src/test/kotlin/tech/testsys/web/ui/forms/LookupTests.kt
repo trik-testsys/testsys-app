@@ -28,6 +28,7 @@ import tech.testsys.web.ui.classes
 import tech.testsys.web.ui.control
 import tech.testsys.web.ui.find
 import tech.testsys.web.ui.findAll
+import tech.testsys.web.ui.findAllButtons
 import tech.testsys.web.ui.openDialogs
 import tech.testsys.web.ui.testTexts
 import tech.testsys.web.ui.data.Page
@@ -324,6 +325,16 @@ class LookupTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should reject a menu column in columns`() {
+        assertThrows<IllegalArgumentException> {
+            buildLookup {
+                textColumn("Название") { contest -> contest.name }
+                menuColumn { item("Открыть") {} }
+            }
+        }
+    }
+
+    @Test
     fun `should require a value with Binder asRequired`() {
         val input = buildLookup()
         val binder = Binder<Form>().apply {
@@ -357,6 +368,32 @@ class LookupTests : MockVaadinTests() {
         val foot = openDialogs().single().find("ts-dialog__foot")
         assertTrue(foot.isVisible)
         assertEquals(1, foot.findAll("ts-table-pager").size)
+    }
+
+    @Test
+    fun `should show the load failure in the dialog if the first fetch fails`() {
+        buildLookup()
+        source.failures = 1
+
+        lookupButton(testTexts.lookup.open)._click()
+
+        val state = openDialogs().single().find("ts-empty")
+        assertTrue("ts-empty--error" in state.classes())
+        assertEquals(testTexts.table.loadFailed, state.find("ts-empty__title").element.text)
+    }
+
+    @Test
+    fun `should load rows with the pager on retry after the first fetch failed`() {
+        buildLookup()
+        source.failures = 1
+        lookupButton(testTexts.lookup.open)._click()
+        val dialog = openDialogs().single()
+
+        findAllButtons(dialog).single { button -> button.text == testTexts.table.retry }._click()
+
+        assertEquals(10, rows().size)
+        assertTrue(dialog.find("ts-dialog__foot").isVisible)
+        assertTrue(dialog.find("ts-table-pager").isVisible)
     }
 
     @Test
@@ -422,13 +459,18 @@ class LookupTests : MockVaadinTests() {
 
     private class Form(var contest: Contest? = null)
 
-    /** Thirty contests in memory, cups at odd ids; records every query and request. */
+    /** Thirty contests in memory, cups at odd ids; records every query and request; the next [failures] fetches throw. */
     private class Source {
         val contests = (1..30).map { id -> Contest(id, if (id % 2 == 1) "Кубок $id" else "Турнир $id") }
         val requests = mutableListOf<Pair<String, PageRequest>>()
+        var failures = 0
 
         fun fetch(query: String, request: PageRequest): Page<Contest> {
             requests += query to request
+            if (failures > 0) {
+                failures--
+                error("Test fetch failure")
+            }
             val found = contests.filter { contest -> contest.name.contains(query, ignoreCase = true) }
             return Page(found.drop(request.offset).take(request.limit), found.size)
         }

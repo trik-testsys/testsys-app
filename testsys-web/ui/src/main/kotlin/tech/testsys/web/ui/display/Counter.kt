@@ -31,7 +31,8 @@ fun ContentScope.counter(value: Int, kind: CounterKind = CounterKind.Attention):
 fun BlockRowScope.counter(value: Int, kind: CounterKind = CounterKind.Attention, size: Int? = null): TextHandle =
     counterHandle(place(size, buildCounter(value, kind)))
 
-private fun buildCounter(value: Int, kind: CounterKind): Span =
+/** Builds the `.ts-counter` markup showing [value], coloured by [kind]. */
+internal fun buildCounter(value: Int, kind: CounterKind): Span =
     Span(value.toString()).apply { addClassNames("ts-counter", "ts-counter--${kind.tone}") }
 
 private fun counterHandle(counter: Span): TextHandle = TextHandle(counter, counter)

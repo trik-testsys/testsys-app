@@ -14,6 +14,8 @@ import tech.testsys.web.ui.MockVaadinTests
 import tech.testsys.web.ui.buildTestContent
 import tech.testsys.web.ui.buildTestPage
 import tech.testsys.web.ui.core.IconName
+import tech.testsys.web.ui.data.Page
+import tech.testsys.web.ui.data.table
 
 class ActionTests : MockVaadinTests() {
     @Nested
@@ -64,6 +66,17 @@ class ActionTests : MockVaadinTests() {
 
             assertEquals("md", _get<Button> { text = "В теле" }.element.getAttribute("data-ts-size"))
             assertEquals("md", _get<Button> { text = "В подвале" }.element.getAttribute("data-ts-size"))
+        }
+
+        @Test
+        fun `should render actions in table cells small`() {
+            buildTestPage {
+                block {
+                    table(key = { id: Int -> id }, fetch = { Page(listOf(1), total = 1) }) { column("Посылка") { action("Открыть") } }
+                }
+            }
+
+            assertEquals("sm", _get<Button> { text = "Открыть" }.element.getAttribute("data-ts-size"))
         }
     }
 

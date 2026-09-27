@@ -8,7 +8,8 @@ import tech.testsys.web.ui.TestSysDsl
 import tech.testsys.web.ui.UiTexts
 
 /**
- * Scope of block content: a group in a block row, the head actions or the footer.
+ * Scope of a flow of content without sizes: head, footer and row groups of a block, the value of a field, table cells,
+ * dialog footers, page head actions and empty state actions.
  *
  * @since %CURRENT_VERSION%
  */
@@ -57,8 +58,11 @@ class ContentScope internal constructor(
     }
 }
 
-/** Place of content inside a block; controls take a smaller size in the head. */
-internal enum class Placement {
-    Body,
-    Head,
+/** Place of content; controls of an [isCompact] place take the small size. */
+internal enum class Placement(val isCompact: Boolean) {
+    Body(isCompact = false),
+    Head(isCompact = true),
+    PageHead(isCompact = false),
+    Empty(isCompact = true),
+    Cell(isCompact = true),
 }

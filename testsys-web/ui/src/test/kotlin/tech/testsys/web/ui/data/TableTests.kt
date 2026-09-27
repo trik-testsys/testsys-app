@@ -228,6 +228,18 @@ class TableTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should show pagination when a refresh brings more rows than one page`() {
+        val source = Source(size = 3)
+        val handle = buildTable(source)
+        source.rows = (1..12).map { id -> Row(id, "Участник $id", id * 10) }
+
+        handle.refresh()
+
+        assertTrue(ui().find("ts-block__foot").isVisible)
+        assertTrue(ui().find("ts-table-pager").isVisible)
+    }
+
+    @Test
     fun `should keep the footer when it has own content`() {
         val source = Source(size = 3)
 

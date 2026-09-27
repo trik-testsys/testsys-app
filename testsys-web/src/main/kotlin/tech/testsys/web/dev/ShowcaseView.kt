@@ -45,13 +45,9 @@ import tech.testsys.web.ui.forms.textInput
 import tech.testsys.web.ui.forms.timeInput
 import tech.testsys.web.ui.layout.BlockHandle
 import tech.testsys.web.ui.layout.PageScope
-import tech.testsys.web.ui.navigation.CabinetHeader
-import tech.testsys.web.ui.navigation.HeaderUser
-import tech.testsys.web.ui.navigation.NavItem
 import java.time.Duration
 import java.time.LocalDate
 
-private const val DEV_PROFILE = "dev"
 private const val TIME_STEP_MINUTES = 30L
 private const val RULER_COLUMNS = 24
 private const val LONG_TEXT = "Дан ориентированный граф из n вершин и m рёбер. " +
@@ -74,13 +70,8 @@ private class ShowcaseProfile(var login: String = "anna", var email: String = "a
 @PageTitle("Витрина дизайн-системы")
 class ShowcaseView(texts: UiTexts, private val environment: Environment) : TestSysView(texts), BeforeEnterObserver {
     init {
-        page(
-            CabinetHeader(
-                items = listOf(NavItem(key = "showcase", label = "Витрина", target = ShowcaseView::class.java)),
-                active = "showcase",
-                user = HeaderUser("Анна Петрова"),
-            ),
-        ) {
+        page(showcaseHeader()) {
+            showcaseHead("Компоненты")
             gridSection()
             blockSection()
             fieldSection()

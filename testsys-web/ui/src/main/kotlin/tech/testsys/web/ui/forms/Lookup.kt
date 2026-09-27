@@ -17,6 +17,7 @@ import tech.testsys.web.ui.data.PageRequest
 import tech.testsys.web.ui.data.TableColumn
 import tech.testsys.web.ui.data.TableScope
 import tech.testsys.web.ui.data.TableSpec
+import tech.testsys.web.ui.feedback.EmptyContent
 import tech.testsys.web.ui.layout.BlockRowScope
 import tech.testsys.web.ui.layout.ContentScope
 import tech.testsys.web.ui.layout.Placement
@@ -36,8 +37,8 @@ internal const val LOOKUP_CLICK_FILTER: String = "!event.target.closest('vaadin-
  * rows a page; [display] gives the text of the chosen value. The label takes [labelSize] and the control [size] columns of the row.
  *
  * @param T the type of the entities.
- * @throws IllegalArgumentException if [pageSize] is below one, or [columns] declares no columns or sets its own empty
- * text or row click, which the lookup owns.
+ * @throws IllegalArgumentException if [pageSize] is below one, or [columns] declares no columns, sets its own empty
+ * state or row click, which the lookup owns, or adds a menu column.
  * @since %CURRENT_VERSION%
  */
 fun <T : Any> BlockRowScope.lookup(
@@ -55,8 +56,8 @@ fun <T : Any> BlockRowScope.lookup(
     val scope = TableScope<T>(texts).apply(columns)
     val spec = scope.spec()
     require(spec.columns.isNotEmpty()) { "Lookup '$label' must declare at least one column" }
-    require(!scope.hasOwnEmptyText && spec.rowClick == null) {
-        "Lookup '$label' columns must not set the empty text or the row click: the lookup sets them itself"
+    require(!scope.hasOwnEmpty && spec.rowClick == null && !scope.hasMenuColumn) {
+        "Lookup '$label' columns must not set the empty state, the row click or a menu column: the lookup sets the first two itself"
     }
     val control = LookupField(texts, label, display, fetch, pageSize, spec.columns)
     val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T?>> ->
@@ -149,7 +150,7 @@ internal class LookupField<T : Any>(
         openShell = shell
         shell.dialog.addOpenedChangeListener { event -> if (!event.isOpened) openShell = null }
         var query = ""
-        val spec = TableSpec(columns, texts.lookup.empty) { row ->
+        val spec = TableSpec(columns, EmptyContent(texts.lookup.empty)) { row ->
             choose(row)
             shell.close()
         }

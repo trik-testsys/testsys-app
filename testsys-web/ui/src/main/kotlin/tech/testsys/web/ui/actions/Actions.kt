@@ -6,7 +6,6 @@ import tech.testsys.web.ui.core.ICON_SIZE_SMALL
 import tech.testsys.web.ui.core.IconName
 import tech.testsys.web.ui.core.svgIcon
 import tech.testsys.web.ui.layout.ContentScope
-import tech.testsys.web.ui.layout.Placement
 
 /**
  * Adds the main action of a block; by convention a block has one.
@@ -68,7 +67,7 @@ internal fun ContentScope.dangerAction(label: String, configure: ActionHandle.()
     addAction(ActionRole.Danger, label, icon = null, configure)
 
 private fun ContentScope.addAction(role: ActionRole, label: String?, icon: IconName?, configure: ActionHandle.() -> Unit): ActionHandle {
-    val isSmall = placement == Placement.Head
+    val isSmall = placement.isCompact
     val iconComponent = icon?.let { name -> svgIcon(name, if (isSmall) ICON_SIZE_SMALL else ICON_SIZE) }
     val button = Button(label.orEmpty()).apply {
         element.setAttribute("data-ts-role", role.attribute)

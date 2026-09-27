@@ -22,6 +22,7 @@ import com.vaadin.flow.component.textfield.NumberField
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.component.timepicker.TimePicker
+import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -158,8 +159,49 @@ class ShowcaseViewTests {
             assertTrue(_get<Dialog>().isOpened)
         }
 
+        @Test
+        fun `should mark the components tab in the showcase head`() {
+            val tab = _find<RouterLink> { classes = "ts-tab" }.single { link -> link.text.startsWith("Компоненты") }
+
+            assertTrue("ts-tab--active" in tab.element.classList)
+        }
+
         private fun shownTexts(cssClass: String): List<String> =
             _find<Component> { classes = cssClass }.map { component -> component.element.textRecursively }
+    }
+
+    @Nested
+    @SpringBootTest
+    @ActiveProfiles("dev")
+    inner class StatesPageTests : MockSpringVaadinTests() {
+        @BeforeEach
+        fun openStates() {
+            UI.getCurrent().navigate("dev/showcase/states")
+        }
+
+        @Test
+        fun `should open the states page in the dev profile`() {
+            expectView<ShowcaseStatesView>()
+            assertTrue(_find<Component> { classes = "ts-page-head" }.isNotEmpty())
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["ts-tabs", "ts-pills", "ts-empty", "ts-empty--error", "ts-block__head--tabs"])
+        fun `should show every navigation and state element`(cssClass: String) {
+            assertTrue(_find<Component> { classes = cssClass }.isNotEmpty())
+        }
+
+        @Test
+        fun `should load the failing table on retry`() {
+            _get<Button> { text = "Повторить" }._click()
+
+            assertTrue(_find<Component> { classes = "ts-empty--error" }.isEmpty())
+        }
+
+        @Test
+        fun `should show menus in a block head and in table rows`() {
+            assertTrue(_find<Button>().count { button -> button.element.getAttribute("aria-haspopup") == "menu" } > 2)
+        }
     }
 
     @Nested
@@ -168,6 +210,11 @@ class ShowcaseViewTests {
         @Test
         fun `should not open the showcase without the dev profile`() {
             assertThrows<NotFoundError> { UI.getCurrent().navigate("dev/showcase") }
+        }
+
+        @Test
+        fun `should not open the states page without the dev profile`() {
+            assertThrows<NotFoundError> { UI.getCurrent().navigate("dev/showcase/states") }
         }
     }
 }

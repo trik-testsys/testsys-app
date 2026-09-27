@@ -2,20 +2,25 @@ package tech.testsys.web.ui.data
 
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.checkbox.Checkbox
-import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeTable
 import com.vaadin.flow.component.html.NativeTableBody
 import com.vaadin.flow.component.html.NativeTableCell
 import com.vaadin.flow.component.html.NativeTableHeader
 import com.vaadin.flow.component.html.NativeTableHeaderCell
 import com.vaadin.flow.component.html.NativeTableRow
-import com.vaadin.flow.component.html.Span
+import org.slf4j.LoggerFactory
 import tech.testsys.web.ui.UiTexts
+import tech.testsys.web.ui.actions.action
+import tech.testsys.web.ui.feedback.EmptyContent
+import tech.testsys.web.ui.feedback.buildEmptyState
+
+private val logger = LoggerFactory.getLogger(DataTable::class.java)
 
 private const val ARROW_DOWN = " ↓"
 private const val ARROW_UP = " ↑"
 private const val ARIA_SORT_NONE = "none"
 private const val SELECT_COLUMN_WIDTH = "52px"
+private const val MENU_COLUMN_WIDTH = "52px"
 
 /** Client-side filter of key presses on a sortable header: Enter and Space sort like a click. */
 internal const val SORT_KEY_FILTER: String = "event.key === 'Enter' || event.key === ' '"
@@ -63,7 +68,7 @@ internal class DataTable<T>(
     private var sort: Sort? = null
     private var page = 0
     private var pageCount = 1
-    private var shown: Page<T> = Page(emptyList(), 0)
+    private var isFailed = false
     private val shownRows = mutableListOf<ShownRow>()
     private val headerCheckbox = Checkbox().apply {
         setAriaLabel(texts.table.selectAll)
@@ -73,6 +78,8 @@ internal class DataTable<T>(
     /** Component whose visibility follows whether the pager is needed; the block footer if the pager is alone there. */
     var pagerHost: Component = pager.root
         set(value) {
+            // The first load may have hidden the pager while it was its own host; from now on only the new host hides.
+            if (value !== pager.root) pager.root.isVisible = true
             field = value
             updatePagerVisibility()
         }
@@ -83,17 +90,29 @@ internal class DataTable<T>(
         load(0)
     }
 
-    /** Fetches page [target] (from 0); moves to the last page with rows if the total shrank below it. */
+    /**
+     * Fetches page [target] (from 0); moves to the last page with rows if the total shrank below it. A failure of the
+     * fetch, or of cell content while rendering the result, is logged and shows the load failure with a retry of the
+     * same page instead of rows.
+     */
+    @Suppress("TooGenericExceptionCaught")
     fun load(target: Int) {
-        var result = fetchPage(target)
         page = target
-        val lastPage = pageCountOf(result.total) - 1
-        if (target > lastPage) {
-            page = lastPage
-            result = fetchPage(page)
+        try {
+            var result = fetchPage(target)
+            val lastPage = pageCountOf(result.total) - 1
+            if (target > lastPage) {
+                page = lastPage
+                result = fetchPage(page)
+            }
+            pageCount = pageCountOf(result.total)
+            isFailed = false
+            render(result)
+        } catch (error: Exception) {
+            // fetch and cell content are page code: their failure must not break the whole page.
+            logger.error("Table page {} failed to load", page, error)
+            showFailure()
         }
-        pageCount = pageCountOf(result.total)
-        render(result)
     }
 
     /** Fetches the current page again, or the first one if [toFirstPage]. */
@@ -101,10 +120,11 @@ internal class DataTable<T>(
         load(if (toFirstPage) 0 else page)
     }
 
-    /** Unselects all rows and shows the current page again without fetching it. */
+    /** Unselects all rows; row and header checkboxes update in place, without fetching or rendering the page again. */
     fun clearSelection() {
         selected.clear()
-        render(shown)
+        shownRows.forEach { shownRow -> shownRow.select(false) }
+        updateHeaderCheckbox()
         onSelectionChange(selected.toSet())
     }
 
@@ -117,6 +137,10 @@ internal class DataTable<T>(
         spec.columns.forEach { column ->
             val cell = NativeTableHeaderCell(column.title)
             if (column.kind == CellKind.Number) cell.addClassName("ts-right")
+            if (column.kind == CellKind.Menu) {
+                cell.style.set("width", MENU_COLUMN_WIDTH)
+                cell.element.setAttribute("aria-label", texts.menu.actions)
+            }
             column.sortKey?.let { sortKey ->
                 cell.addClassName("ts-sortable")
                 cell.element.setAttribute("tabindex", "0")
@@ -148,11 +172,10 @@ internal class DataTable<T>(
     }
 
     private fun render(result: Page<T>) {
-        shown = result
         shownRows.clear()
         body.removeAll()
         if (result.rows.isEmpty()) {
-            body.add(emptyRow())
+            body.add(messageRow(buildEmptyState(spec.empty, texts)))
         } else {
             result.rows.forEach { row -> body.add(rowOf(row)) }
         }
@@ -163,9 +186,24 @@ internal class DataTable<T>(
         updateHeaderCheckbox()
     }
 
-    private fun emptyRow(): NativeTableRow {
-        val empty = Div(Span(spec.emptyText).apply { addClassName("ts-empty__title") }).apply { addClassName("ts-empty") }
-        val cell = NativeTableCell(empty).apply {
+    private fun showFailure() {
+        isFailed = true
+        shownRows.clear()
+        body.removeAll()
+        body.add(messageRow(buildEmptyState(failureContent(), texts, isError = true)))
+        updatePagerVisibility()
+        updateHeaderCheckbox()
+    }
+
+    private fun failureContent(): EmptyContent = EmptyContent(
+        title = texts.table.loadFailed,
+        description = texts.table.loadFailedHint,
+        actions = { action(texts.table.retry) { onClick { reload(toFirstPage = false) } } },
+    )
+
+    /** Row of one cell over all columns that holds [content] instead of rows. */
+    private fun messageRow(content: Component): NativeTableRow {
+        val cell = NativeTableCell(content).apply {
             element.setAttribute("colspan", (spec.columns.size + if (isSelectable) 1 else 0).toString())
             style.set("padding", "0")
         }
@@ -203,7 +241,7 @@ internal class DataTable<T>(
     }
 
     private fun updatePagerVisibility() {
-        pagerHost.isVisible = isShown && pageCount > 1
+        pagerHost.isVisible = isShown && !isFailed && pageCount > 1
     }
 
     /** Row of the shown page: its [key], its markup and its selection checkbox. */

@@ -2,7 +2,6 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import tech.testsys.domain.builder.api.solution
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
@@ -33,19 +32,6 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
         language.python()
     }
 
-    override val updatable = false
-
-    override fun modified(entity: Solution) = entity.withData {
-        file(fixtures.unique("solution") + ".js", "console.log('solution')".toByteArray())
-        language.javaScript()
-    }
-
-    override fun detached(entity: Solution) = solution {
-        id = entity.id.value
-        createdAt = entity.createdAt
-        data = entity.data
-    }
-
     override fun idOf(value: Long) = SolutionId(value)
 
     override fun assertSameData(expected: Solution, actual: Solution) {
@@ -73,8 +59,12 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
     @Test
     fun `should fail to update a solution and keep the stored file and language`() {
         val saved = repository.save(newData())
+        val modified = saved.withData {
+            file(fixtures.unique("solution") + ".js", "console.log('solution')".toByteArray())
+            language.javaScript()
+        }
 
-        assertFailsWith<UnsupportedOperationException> { repository.update(modified(saved)) }
+        assertFailsWith<UnsupportedOperationException> { repository.update(modified) }
 
         assertSameData(saved, assertNotNull(repository.findById(saved.id)))
         assertEquals(1, fileDataJpaEntityRepository.count())

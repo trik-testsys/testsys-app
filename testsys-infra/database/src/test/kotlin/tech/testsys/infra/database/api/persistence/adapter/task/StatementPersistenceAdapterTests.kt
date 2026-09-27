@@ -9,7 +9,7 @@ import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import java.util.UUID
@@ -19,7 +19,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
-class StatementPersistenceAdapterTests : PersistenceAdapterContractTests<StatementData, StatementId, Statement>() {
+class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<StatementData, StatementId, Statement>() {
 
     @Autowired
     override lateinit var repository: StatementRepository

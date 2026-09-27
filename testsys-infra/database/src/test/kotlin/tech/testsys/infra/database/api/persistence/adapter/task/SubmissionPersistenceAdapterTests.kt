@@ -13,12 +13,12 @@ import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.user.SingleRoleUserId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
-class SubmissionPersistenceAdapterTests : PersistenceAdapterContractTests<SubmissionData, SubmissionId, Submission>() {
+class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<SubmissionData, SubmissionId, Submission>() {
 
     @Autowired
     override lateinit var repository: SubmissionRepository

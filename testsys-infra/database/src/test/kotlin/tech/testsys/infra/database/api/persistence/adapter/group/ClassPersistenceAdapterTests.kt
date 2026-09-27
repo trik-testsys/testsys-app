@@ -9,7 +9,7 @@ import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassData
 import tech.testsys.domain.model.group.ClassId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.group.ContestToClassJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.StudentToClassJpaEntityRepository
@@ -17,7 +17,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
-class ClassPersistenceAdapterTests : PersistenceAdapterContractTests<ClassData, ClassId, Class>() {
+class ClassPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<ClassData, ClassId, Class>() {
 
     @Autowired
     override lateinit var repository: ClassRepository

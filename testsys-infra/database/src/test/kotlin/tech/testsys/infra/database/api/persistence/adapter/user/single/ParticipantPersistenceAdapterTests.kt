@@ -9,7 +9,7 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
 import tech.testsys.domain.model.user.SingleRoleUserId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.ParticipantDataJpaEntityRepository
@@ -19,7 +19,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(InternalDatabaseApi::class)
-class ParticipantPersistenceAdapterTests : PersistenceAdapterContractTests<ParticipantData, SingleRoleUserId, Participant>() {
+class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<ParticipantData, SingleRoleUserId, Participant>() {
 
     @Autowired
     override lateinit var repository: ParticipantRepository

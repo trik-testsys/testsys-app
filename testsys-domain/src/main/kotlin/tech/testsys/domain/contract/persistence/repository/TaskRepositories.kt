@@ -45,8 +45,9 @@ import tech.testsys.domain.model.task.VerdictId
 interface ContestRepository : EntityRepository<ContestData, ContestId, Contest>
 
 /**
- * Persistence port for [DeveloperSolution] entities. The solution is fixed on creation: `update` with another solution
- * throws [UnsupportedOperationException], a new version is saved as a new developer solution in the same version bucket.
+ * Persistence port for [DeveloperSolution] entities. The solution and expected score are fixed on creation: `update`
+ * with another value throws [UnsupportedOperationException], a new version is saved as a new developer solution in
+ * the same version bucket.
  *
  * @since %CURRENT_VERSION%
  */

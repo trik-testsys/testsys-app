@@ -9,11 +9,11 @@ import tech.testsys.domain.contract.persistence.repository.JudgmentOrderReposito
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderData
 import tech.testsys.domain.model.task.JudgmentOrderId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class JudgmentOrderPersistenceAdapterTests : PersistenceAdapterContractTests<JudgmentOrderData, JudgmentOrderId, JudgmentOrder>() {
+class JudgmentOrderPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<JudgmentOrderData, JudgmentOrderId, JudgmentOrder>() {
 
     @Autowired
     override lateinit var repository: JudgmentOrderRepository

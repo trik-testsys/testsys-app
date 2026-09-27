@@ -8,7 +8,7 @@ import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import java.util.UUID
@@ -19,7 +19,7 @@ import kotlin.test.assertNotNull
 import tech.testsys.domain.model.task.Test as Polygon
 
 @OptIn(InternalDatabaseApi::class)
-class TestPersistenceAdapterTests : PersistenceAdapterContractTests<TestData, TestId, Polygon>() {
+class TestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<TestData, TestId, Polygon>() {
 
     @Autowired
     override lateinit var repository: TestRepository

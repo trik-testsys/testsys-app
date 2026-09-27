@@ -15,7 +15,8 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 
 /**
  * Persistence adapter of [DeveloperSolution] entities backed by [DeveloperSolutionJpaEntity].
- * The solution is fixed on creation: [update] with another solution throws [UnsupportedOperationException].
+ * The solution and the expected score are fixed on creation: [update] with another one throws
+ * [UnsupportedOperationException].
  *
  * @since %CURRENT_VERSION%
  */
@@ -43,6 +44,10 @@ class DeveloperSolutionPersistenceAdapter(
         val solutionId = entity.data.solution.id.value
         entity.requireUnchanged("solution", solutionId == currentJpaEntity.solutionId, currentJpaEntity.versionBucket) {
             "from id=${currentJpaEntity.solutionId} to id=$solutionId"
+        }
+        val expectedScore = entity.data.expectedScore.value
+        entity.requireUnchanged("expectedScore", expectedScore == currentJpaEntity.expectedScore, currentJpaEntity.versionBucket) {
+            "from ${currentJpaEntity.expectedScore} to $expectedScore"
         }
 
         val updatedJpaEntity = DeveloperSolutionMapping.toJpaEntity(entity, currentJpaEntity)

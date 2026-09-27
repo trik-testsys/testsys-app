@@ -11,8 +11,6 @@ import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.FileDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
-import java.security.MessageDigest
-import java.util.HexFormat
 import java.util.Optional
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -50,7 +48,7 @@ class FileDataStorageTests {
             val savedRow = savedRows.single()
             assertEquals(CURRENT_NAME, savedRow.uploadedFileName)
             assertEquals(STORED_KEY, savedRow.storedFileName)
-            assertEquals(sha256Hex(CURRENT_CONTENT), savedRow.contentHash)
+            assertEquals(CURRENT_CONTENT_HASH, savedRow.contentHash)
         }
     }
 
@@ -89,12 +87,9 @@ class FileDataStorageTests {
     private fun currentRow() = FileDataJpaEntity(
         uploadedFileName = CURRENT_NAME,
         storedFileName = STORED_KEY,
-        contentHash = sha256Hex(CURRENT_CONTENT),
+        contentHash = CURRENT_CONTENT_HASH,
         id = CURRENT_ID,
     )
-
-    private fun sha256Hex(content: ByteArray): String =
-        HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content))
 
     companion object {
 
@@ -103,6 +98,7 @@ class FileDataStorageTests {
         private const val CURRENT_NAME = "solution.qrs"
         private const val RENAMED_NAME = "renamed.txt"
         private const val STORED_KEY = "stored-key"
+        private const val CURRENT_CONTENT_HASH = "97b0560280ed60a5a1eaa1bc45492543c8a986ad5a25b468c427eb83c3e88191"
         private val CURRENT_CONTENT = "current".toByteArray()
     }
 }

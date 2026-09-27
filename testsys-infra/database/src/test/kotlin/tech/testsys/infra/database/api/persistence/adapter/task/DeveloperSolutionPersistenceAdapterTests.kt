@@ -9,14 +9,14 @@ import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepo
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 class DeveloperSolutionPersistenceAdapterTests :
-    PersistenceAdapterContractTests<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution>() {
+    UpdatablePersistenceAdapterContractTests<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution>() {
 
     @Autowired
     override lateinit var repository: DeveloperSolutionRepository
@@ -35,7 +35,6 @@ class DeveloperSolutionPersistenceAdapterTests :
     override fun modified(entity: DeveloperSolution) = entity.withData {
         name = fixtures.unique("Renamed developer solution")
         description = "Updated description"
-        expectedScore(50)
     }
 
     override fun detached(entity: DeveloperSolution) = developerSolution {
@@ -75,6 +74,15 @@ class DeveloperSolutionPersistenceAdapterTests :
     }
 
     @Test
+    fun `should fail to update a developer solution if the expected score changed`() {
+        val saved = repository.save(newData())
+
+        assertFailsWith<UnsupportedOperationException> { repository.update(saved.withData { expectedScore(50) }) }
+
+        assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
+    }
+
+    @Test
     fun `should keep the solution of the previous version when a new version is saved in the same bucket`() {
         val previous = repository.save(newData())
         val nextSolutionId = fixtures.solution().id.value
@@ -92,5 +100,24 @@ class DeveloperSolutionPersistenceAdapterTests :
         assertSameEntity(previous, assertNotNull(repository.findById(previous.id)))
         assertSameEntity(next, assertNotNull(repository.findById(next.id)))
         assertEquals(previous.data.versionBucket, next.data.versionBucket)
+    }
+
+    @Test
+    fun `should keep the expected score of the previous version when a new version shares its solution`() {
+        val previous = repository.save(newData())
+
+        val next = repository.save(
+            developerSolutionData {
+                name = previous.data.name
+                description = previous.data.description
+                solution(previous.data.solution.id.value)
+                expectedScore(50)
+                versionBucket = previous.data.versionBucket
+            },
+        )
+
+        assertSameEntity(previous, assertNotNull(repository.findById(previous.id)))
+        assertSameEntity(next, assertNotNull(repository.findById(next.id)))
+        assertEquals(previous.data.solution.id, next.data.solution.id)
     }
 }

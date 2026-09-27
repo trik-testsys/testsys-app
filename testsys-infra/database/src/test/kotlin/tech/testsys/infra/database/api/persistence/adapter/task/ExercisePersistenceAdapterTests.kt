@@ -11,7 +11,7 @@ import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.infra.database.DatabaseFixtures.Companion.chose
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import java.util.UUID
@@ -21,7 +21,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
-class ExercisePersistenceAdapterTests : PersistenceAdapterContractTests<ExerciseData, ExerciseId, Exercise>() {
+class ExercisePersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<ExerciseData, ExerciseId, Exercise>() {
 
     @Autowired
     override lateinit var repository: ExerciseRepository

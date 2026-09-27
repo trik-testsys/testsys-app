@@ -50,8 +50,8 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
     )
 
     /**
-     * Creates the [DeveloperSolutionJpaEntity] row replacing [current] from [entity], keeping `solutionId`, `versionBucket`,
-     * `createdAt` and `version`.
+     * Creates the [DeveloperSolutionJpaEntity] row replacing [current] from [entity], keeping `solutionId`,
+     * `expectedScore`, `versionBucket`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
@@ -59,7 +59,7 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
         name = entity.data.name,
         description = entity.data.description,
         solutionId = current.solutionId,
-        expectedScore = entity.data.expectedScore.value,
+        expectedScore = current.expectedScore,
         id = entity.id.value,
         versionBucket = current.versionBucket,
     ).also {

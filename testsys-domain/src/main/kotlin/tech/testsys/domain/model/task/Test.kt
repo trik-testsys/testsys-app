@@ -18,7 +18,7 @@ value class TestId(
 /**
  * Data of a [Test].
  *
- * @property file the uploaded TRIK Studio world model file.
+ * @property file the uploaded TRIK Studio world model file; fixed on creation; update fails if it differs.
  * @property name the name of the test.
  * @property description the description of the test.
  * @property versionBucket the UUID shared by all versions of the same logical test;

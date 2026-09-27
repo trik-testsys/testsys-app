@@ -2,7 +2,6 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import tech.testsys.domain.builder.api.solution
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
@@ -14,7 +13,6 @@ import tech.testsys.infra.database.DatabaseFixtures.Companion.chose
 import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
-import java.util.UUID
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -32,20 +30,6 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
     override fun newData() = solutionData {
         file(fixtures.unique("solution") + ".py", "print('solution')".toByteArray())
         language.python()
-        versionBucket = UUID.randomUUID()
-    }
-
-    override val updatable = false
-
-    override fun modified(entity: Solution) = entity.withData {
-        file(fixtures.unique("solution") + ".js", "console.log('solution')".toByteArray())
-        language.javaScript()
-    }
-
-    override fun detached(entity: Solution) = solution {
-        id = entity.id.value
-        createdAt = entity.createdAt
-        data = entity.data
     }
 
     override fun idOf(value: Long) = SolutionId(value)
@@ -54,7 +38,6 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
         assertEquals(expected.data.file.uploadedFilename, actual.data.file.uploadedFilename)
         assertContentEquals(expected.data.file.content, actual.data.file.content)
         assertEquals(expected.data.language, actual.data.language)
-        assertEquals(expected.data.versionBucket, actual.data.versionBucket)
     }
 
     @Test
@@ -66,7 +49,6 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
                 solutionData {
                     file(fixtures.unique("solution"), byteArrayOf(1, 2, 3))
                     this.language.chose(language)
-                    versionBucket = UUID.randomUUID()
                 },
             )
         }
@@ -77,8 +59,12 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
     @Test
     fun `should fail to update a solution and keep the stored file and language`() {
         val saved = repository.save(newData())
+        val modified = saved.withData {
+            file(fixtures.unique("solution") + ".js", "console.log('solution')".toByteArray())
+            language.javaScript()
+        }
 
-        assertFailsWith<UnsupportedOperationException> { repository.update(modified(saved)) }
+        assertFailsWith<UnsupportedOperationException> { repository.update(modified) }
 
         assertSameData(saved, assertNotNull(repository.findById(saved.id)))
         assertEquals(1, fileDataJpaEntityRepository.count())

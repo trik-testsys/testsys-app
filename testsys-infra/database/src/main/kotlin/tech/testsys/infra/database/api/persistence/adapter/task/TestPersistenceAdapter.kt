@@ -16,7 +16,8 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 
 /**
  * Persistence adapter of [Test] entities backed by [TestJpaEntity].
- * The polygon file is stored through [FileDataStorage] in the version bucket of the test.
+ * The polygon file is stored through [FileDataStorage] and fixed on creation: [update] with another file throws
+ * [UnsupportedOperationException].
  *
  * @since %CURRENT_VERSION%
  */
@@ -30,7 +31,7 @@ class TestPersistenceAdapter(
 
     @Transactional
     override fun save(data: TestData): Test {
-        val fileDataId = fileDataStorage.store(data.file, data.versionBucket)
+        val fileDataId = fileDataStorage.store(data.file)
         val savedJpaEntity = jpaEntityRepository.save(TestMapping.toJpaEntity(data, fileDataId))
 
         val domainEntity = TestMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)
@@ -40,14 +41,8 @@ class TestPersistenceAdapter(
     @Transactional
     override fun update(entity: Test): Test {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val newFileDataId = fileDataStorage.storeIfChanged(
-            currentJpaEntity.fileDataId,
-            entity.data.file,
-            currentJpaEntity.versionBucket,
-        )
-        val updatedJpaEntity = jpaEntityRepository.saveAndFlush(
-            TestMapping.toJpaEntity(entity, currentJpaEntity, newFileDataId),
-        )
+        fileDataStorage.requireSameFile(entity, entity.data.file, currentJpaEntity)
+        val updatedJpaEntity = jpaEntityRepository.saveAndFlush(TestMapping.toJpaEntity(entity, currentJpaEntity))
 
         val domainEntity = TestMapping.toDomain(
             updatedJpaEntity,

@@ -18,7 +18,7 @@ value class StatementId(
 /**
  * Data of a [Statement].
  *
- * @property file the uploaded statement document.
+ * @property file the uploaded statement document; fixed on creation; update fails if it differs.
  * @property name the name of the statement.
  * @property description the description of the statement.
  * @property versionBucket the UUID shared by all versions of the same logical statement;

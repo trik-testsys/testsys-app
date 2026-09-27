@@ -315,7 +315,6 @@ class TaskApiTests {
     @Nested
     inner class SolutionTests {
 
-        private val versionBucket = UUID.randomUUID()
         private val origin = solution {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
@@ -323,7 +322,6 @@ class TaskApiTests {
             data = SolutionData(
                 file = FileData("solution.py", byteArrayOf(4, 5, 6)),
                 language = TrikSupportedLanguage.Python,
-                versionBucket = versionBucket,
             )
         }
 
@@ -337,7 +335,6 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
             Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
             Assertions.assertEquals(origin.data.language, copy.data.language)
-            Assertions.assertEquals(origin.data.versionBucket, copy.data.versionBucket)
         }
 
         @Test

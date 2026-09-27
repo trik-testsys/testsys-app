@@ -12,11 +12,10 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.LogsJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.LogsJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.LogsMapping
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 
 /**
  * Persistence adapter of [Logs] entities backed by [LogsJpaEntity].
- * The logs file is stored through [FileDataStorage].
+ * The logs file is stored through [FileDataStorage]; logs are fixed on creation, so [update] always fails.
  *
  * @since %CURRENT_VERSION%
  */
@@ -37,21 +36,9 @@ class LogsPersistenceAdapter(
         return domainEntity
     }
 
-    @Transactional
-    override fun update(entity: Logs): Logs {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val newFileDataId = fileDataStorage.storeIfChanged(currentJpaEntity.fileDataId, entity.data.file)
-        val updatedJpaEntity = jpaEntityRepository.saveAndFlush(
-            LogsMapping.toJpaEntity(entity, currentJpaEntity, newFileDataId),
-        )
-
-        val domainEntity = LogsMapping.toDomain(
-            updatedJpaEntity,
-            entity.data.file.uploadedFilename,
-            entity.data.file.content,
-        )
-        return domainEntity
-    }
+    override fun update(entity: Logs): Logs = throw UnsupportedOperationException(
+        "logs ${entity.id.value} cannot be updated: every field of logs is fixed on creation",
+    )
 
     override fun assemble(jpaEntity: LogsJpaEntity): Logs {
         val file = fileDataStorage.load(jpaEntity.fileDataId)

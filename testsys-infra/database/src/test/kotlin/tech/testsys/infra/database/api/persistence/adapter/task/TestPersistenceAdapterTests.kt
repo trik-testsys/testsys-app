@@ -8,17 +8,18 @@ import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import java.util.UUID
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import tech.testsys.domain.model.task.Test as Polygon
 
 @OptIn(InternalDatabaseApi::class)
-class TestPersistenceAdapterTests : PersistenceAdapterContractTests<TestData, TestId, Polygon>() {
+class TestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<TestData, TestId, Polygon>() {
 
     @Autowired
     override lateinit var repository: TestRepository
@@ -36,7 +37,6 @@ class TestPersistenceAdapterTests : PersistenceAdapterContractTests<TestData, Te
     override fun modified(entity: Polygon) = entity.withData {
         name = fixtures.unique("Renamed polygon")
         description = "Updated description"
-        file(fixtures.unique("polygon") + ".xml", "<field><wall/></field>".toByteArray())
     }
 
     override fun detached(entity: Polygon) = test {
@@ -56,16 +56,46 @@ class TestPersistenceAdapterTests : PersistenceAdapterContractTests<TestData, Te
     }
 
     @Test
-    fun `should store a new file version in the same bucket on update with a changed file`() {
+    fun `should fail to update a test if the file content changed`() {
         val saved = repository.save(newData())
 
-        repository.update(saved.withData { file(saved.data.file.uploadedFilename, "changed".toByteArray()) })
+        assertFailsWith<UnsupportedOperationException> {
+            repository.update(saved.withData { file(saved.data.file.uploadedFilename, "<field><wall/></field>".toByteArray()) })
+        }
 
-        val found = assertNotNull(repository.findById(saved.id))
-        assertContentEquals("changed".toByteArray(), found.data.file.content)
-        assertEquals(saved.data.versionBucket, found.data.versionBucket)
+        assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
+        assertEquals(1, fileDataJpaEntityRepository.count())
+    }
+
+    @Test
+    fun `should fail to update a test if the file was renamed`() {
+        val saved = repository.save(newData())
+
+        assertFailsWith<UnsupportedOperationException> {
+            repository.update(saved.withData { file("renamed.xml", saved.data.file.content) })
+        }
+
+        assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
+        assertEquals(1, fileDataJpaEntityRepository.count())
+    }
+
+    @Test
+    fun `should keep the file of the previous version when a new version is saved in the same bucket`() {
+        val previous = repository.save(newData())
+
+        val next = repository.save(
+            testData {
+                name = previous.data.name
+                description = previous.data.description
+                file(fixtures.unique("polygon") + ".xml", "<field><wall/></field>".toByteArray())
+                versionBucket = previous.data.versionBucket
+            },
+        )
+
+        assertSameEntity(previous, assertNotNull(repository.findById(previous.id)))
+        assertSameEntity(next, assertNotNull(repository.findById(next.id)))
+        assertEquals(previous.data.versionBucket, next.data.versionBucket)
         assertEquals(2, fileDataJpaEntityRepository.count())
-        assertEquals(setOf(saved.data.versionBucket), fileDataJpaEntityRepository.findAll().map { it.versionBucket }.toSet())
     }
 
     @Test

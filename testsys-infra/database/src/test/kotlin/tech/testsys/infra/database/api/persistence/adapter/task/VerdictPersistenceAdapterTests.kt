@@ -9,12 +9,12 @@ import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class VerdictPersistenceAdapterTests : PersistenceAdapterContractTests<VerdictData, VerdictId, Verdict>() {
+class VerdictPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<VerdictData, VerdictId, Verdict>() {
 
     @Autowired
     override lateinit var repository: VerdictRepository

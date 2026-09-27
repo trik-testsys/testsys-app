@@ -2,7 +2,6 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import tech.testsys.domain.builder.api.recording
 import tech.testsys.domain.builder.api.recordingData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
@@ -14,6 +13,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
@@ -27,14 +27,6 @@ class RecordingPersistenceAdapterTests : PersistenceAdapterContractTests<Recordi
 
     override fun newData() = recordingData { file(fixtures.unique("recording") + ".mp4", byteArrayOf(1, 2, 3)) }
 
-    override fun modified(entity: Recording) = entity.withData { file(fixtures.unique("recording") + ".mp4", byteArrayOf(4, 5, 6)) }
-
-    override fun detached(entity: Recording) = recording {
-        id = entity.id.value
-        createdAt = entity.createdAt
-        data = entity.data
-    }
-
     override fun idOf(value: Long) = RecordingId(value)
 
     override fun assertSameData(expected: Recording, actual: Recording) {
@@ -43,12 +35,13 @@ class RecordingPersistenceAdapterTests : PersistenceAdapterContractTests<Recordi
     }
 
     @Test
-    fun `should store a new file version on update with a changed file`() {
+    fun `should fail to update a recording and keep the stored file`() {
         val saved = repository.save(newData())
+        val modified = saved.withData { file(fixtures.unique("recording") + ".mp4", byteArrayOf(4, 5, 6)) }
 
-        repository.update(saved.withData { file(saved.data.file.uploadedFilename, byteArrayOf(9)) })
+        assertFailsWith<UnsupportedOperationException> { repository.update(modified) }
 
-        assertContentEquals(byteArrayOf(9), assertNotNull(repository.findById(saved.id)).data.file.content)
-        assertEquals(2, fileDataJpaEntityRepository.count())
+        assertSameData(saved, assertNotNull(repository.findById(saved.id)))
+        assertEquals(1, fileDataJpaEntityRepository.count())
     }
 }

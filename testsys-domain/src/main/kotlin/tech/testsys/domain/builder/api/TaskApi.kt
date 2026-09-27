@@ -458,7 +458,6 @@ private fun SolutionData.toBuilder(): SolutionDataBuilder {
             TrikSupportedLanguage.JavaScript -> language.javaScript()
             TrikSupportedLanguage.VisualLanguage -> language.visualLanguage()
         }
-        versionBucket = thisData.versionBucket
     }
 }
 

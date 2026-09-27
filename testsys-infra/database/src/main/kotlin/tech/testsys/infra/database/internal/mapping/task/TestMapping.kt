@@ -47,15 +47,15 @@ object TestMapping : EntityMapping<Test, TestJpaEntity> {
     )
 
     /**
-     * Creates the [TestJpaEntity] row replacing [current] from [entity] and file [fileDataId],
-     * keeping `versionBucket`, `createdAt` and `version`.
+     * Creates the [TestJpaEntity] row replacing [current] from [entity], keeping `fileDataId`, `versionBucket`,
+     * `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toJpaEntity(entity: Test, current: TestJpaEntity, fileDataId: Long) = TestJpaEntity(
+    fun toJpaEntity(entity: Test, current: TestJpaEntity) = TestJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
-        fileDataId = fileDataId,
+        fileDataId = current.fileDataId,
         versionBucket = current.versionBucket,
         id = entity.id.value,
     ).also {

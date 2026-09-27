@@ -50,15 +50,16 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
     )
 
     /**
-     * Creates the [DeveloperSolutionJpaEntity] row replacing [current] from [entity], keeping `versionBucket`, `createdAt` and `version`.
+     * Creates the [DeveloperSolutionJpaEntity] row replacing [current] from [entity], keeping `solutionId`,
+     * `expectedScore`, `versionBucket`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: DeveloperSolution, current: DeveloperSolutionJpaEntity) = DeveloperSolutionJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
-        solutionId = entity.data.solution.id.value,
-        expectedScore = entity.data.expectedScore.value,
+        solutionId = current.solutionId,
+        expectedScore = current.expectedScore,
         id = entity.id.value,
         versionBucket = current.versionBucket,
     ).also {

@@ -21,7 +21,7 @@ value class RecordingId(
 /**
  * Data of a [Recording].
  *
- * @property file the recording file.
+ * @property file the recording file; fixed on creation.
  * @since %CURRENT_VERSION%
  */
 class RecordingData(
@@ -53,7 +53,7 @@ value class LogsId(
 /**
  * Data of [Logs].
  *
- * @property file the log file.
+ * @property file the log file; fixed on creation.
  * @since %CURRENT_VERSION%
  */
 class LogsData(

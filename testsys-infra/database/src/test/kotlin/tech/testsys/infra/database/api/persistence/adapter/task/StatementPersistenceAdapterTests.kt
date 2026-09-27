@@ -9,16 +9,17 @@ import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import java.util.UUID
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
-class StatementPersistenceAdapterTests : PersistenceAdapterContractTests<StatementData, StatementId, Statement>() {
+class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<StatementData, StatementId, Statement>() {
 
     @Autowired
     override lateinit var repository: StatementRepository
@@ -36,7 +37,6 @@ class StatementPersistenceAdapterTests : PersistenceAdapterContractTests<Stateme
     override fun modified(entity: Statement) = entity.withData {
         name = fixtures.unique("Renamed statement")
         description = "Updated description"
-        file(fixtures.unique("statement") + ".pdf", "changed statement".toByteArray())
     }
 
     override fun detached(entity: Statement) = statement {
@@ -56,12 +56,45 @@ class StatementPersistenceAdapterTests : PersistenceAdapterContractTests<Stateme
     }
 
     @Test
-    fun `should store a new file version on update with a renamed file`() {
+    fun `should fail to update a statement if the file content changed`() {
         val saved = repository.save(newData())
 
-        repository.update(saved.withData { file("renamed.pdf", saved.data.file.content) })
+        assertFailsWith<UnsupportedOperationException> {
+            repository.update(saved.withData { file(saved.data.file.uploadedFilename, "changed statement".toByteArray()) })
+        }
 
-        assertEquals("renamed.pdf", assertNotNull(repository.findById(saved.id)).data.file.uploadedFilename)
+        assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
+        assertEquals(1, fileDataJpaEntityRepository.count())
+    }
+
+    @Test
+    fun `should fail to update a statement if the file was renamed`() {
+        val saved = repository.save(newData())
+
+        assertFailsWith<UnsupportedOperationException> {
+            repository.update(saved.withData { file("renamed.pdf", saved.data.file.content) })
+        }
+
+        assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
+        assertEquals(1, fileDataJpaEntityRepository.count())
+    }
+
+    @Test
+    fun `should keep the file of the previous version when a new version is saved in the same bucket`() {
+        val previous = repository.save(newData())
+
+        val next = repository.save(
+            statementData {
+                name = previous.data.name
+                description = previous.data.description
+                file(fixtures.unique("statement") + ".pdf", "changed statement".toByteArray())
+                versionBucket = previous.data.versionBucket
+            },
+        )
+
+        assertSameEntity(previous, assertNotNull(repository.findById(previous.id)))
+        assertSameEntity(next, assertNotNull(repository.findById(next.id)))
+        assertEquals(previous.data.versionBucket, next.data.versionBucket)
         assertEquals(2, fileDataJpaEntityRepository.count())
     }
 

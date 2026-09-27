@@ -48,15 +48,15 @@ object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
     )
 
     /**
-     * Creates the [StatementJpaEntity] row replacing [current] from [entity] and file [fileDataId],
-     * keeping `versionBucket`, `createdAt` and `version`.
+     * Creates the [StatementJpaEntity] row replacing [current] from [entity], keeping `fileDataId`, `versionBucket`,
+     * `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toJpaEntity(entity: Statement, current: StatementJpaEntity, fileDataId: Long) = StatementJpaEntity(
+    fun toJpaEntity(entity: Statement, current: StatementJpaEntity) = StatementJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
-        fileDataId = fileDataId,
+        fileDataId = current.fileDataId,
         versionBucket = current.versionBucket,
         id = entity.id.value,
     ).also {

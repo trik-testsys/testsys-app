@@ -30,7 +30,6 @@ object SolutionMapping : EntityMapping<Solution, SolutionJpaEntity> {
             file(uploadedFilename, content)
 
             language.chose(jpaEntity.language)
-            versionBucket = jpaEntity.versionBucket
         }
     }
 
@@ -41,7 +40,6 @@ object SolutionMapping : EntityMapping<Solution, SolutionJpaEntity> {
      */
     fun toJpaEntity(data: SolutionData, fileDataId: Long) = SolutionJpaEntity(
         fileDataId = fileDataId,
-        versionBucket = data.versionBucket,
         language = data.language.toJpaEnum(),
     )
 }

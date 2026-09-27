@@ -13,7 +13,7 @@ import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.WipTaskContent
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.CommunityToTaskJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TaskContentJpaEntityRepository
@@ -24,7 +24,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
-class TaskPersistenceAdapterTests : PersistenceAdapterContractTests<TaskData, TaskId, Task>() {
+class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<TaskData, TaskId, Task>() {
 
     @Autowired
     override lateinit var repository: TaskRepository

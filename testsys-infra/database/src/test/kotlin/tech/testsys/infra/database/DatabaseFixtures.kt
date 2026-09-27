@@ -192,14 +192,10 @@ class DatabaseFixtures(
         return TrikStudioVersion(tag)
     }
 
-    fun solution(
-        language: TrikSupportedLanguage = TrikSupportedLanguage.Python,
-        versionBucket: UUID = UUID.randomUUID(),
-    ): Solution = solutions.save(
+    fun solution(language: TrikSupportedLanguage = TrikSupportedLanguage.Python): Solution = solutions.save(
         solutionData {
             file(unique("solution") + ".py", "print('solution')".toByteArray())
             this.language.chose(language)
-            this.versionBucket = versionBucket
         },
     )
 
@@ -239,7 +235,7 @@ class DatabaseFixtures(
                 description = "Developer solution description"
                 solution(solutionId)
                 expectedScore(100)
-                versionBucket = solution.data.versionBucket
+                versionBucket = UUID.randomUUID()
             },
         )
     }

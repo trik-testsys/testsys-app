@@ -14,7 +14,6 @@ import tech.testsys.infra.database.DatabaseFixtures.Companion.chose
 import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
-import java.util.UUID
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -32,7 +31,6 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
     override fun newData() = solutionData {
         file(fixtures.unique("solution") + ".py", "print('solution')".toByteArray())
         language.python()
-        versionBucket = UUID.randomUUID()
     }
 
     override val updatable = false
@@ -54,7 +52,6 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
         assertEquals(expected.data.file.uploadedFilename, actual.data.file.uploadedFilename)
         assertContentEquals(expected.data.file.content, actual.data.file.content)
         assertEquals(expected.data.language, actual.data.language)
-        assertEquals(expected.data.versionBucket, actual.data.versionBucket)
     }
 
     @Test
@@ -66,7 +63,6 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
                 solutionData {
                     file(fixtures.unique("solution"), byteArrayOf(1, 2, 3))
                     this.language.chose(language)
-                    versionBucket = UUID.randomUUID()
                 },
             )
         }

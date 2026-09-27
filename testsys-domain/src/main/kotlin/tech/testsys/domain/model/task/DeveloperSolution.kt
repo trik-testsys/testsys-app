@@ -21,7 +21,7 @@ value class DeveloperSolutionId(
  *
  * @property name the name of the developer solution.
  * @property description the description of the developer solution.
- * @property solution the reference program.
+ * @property solution the reference program; fixed on creation; update fails if it differs.
  * @property expectedScore the score the reference program is expected to get when graded against the task.
  * @property versionBucket the UUID shared by all versions of the same logical developer solution;
  *   fixed on creation and ignored on update.

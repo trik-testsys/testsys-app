@@ -45,14 +45,16 @@ import tech.testsys.domain.model.task.VerdictId
 interface ContestRepository : EntityRepository<ContestData, ContestId, Contest>
 
 /**
- * Persistence port for [DeveloperSolution] entities.
+ * Persistence port for [DeveloperSolution] entities. The solution is fixed on creation: `update` with another solution
+ * throws [UnsupportedOperationException], a new version is saved as a new developer solution in the same version bucket.
  *
  * @since %CURRENT_VERSION%
  */
 interface DeveloperSolutionRepository : EntityRepository<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution>
 
 /**
- * Persistence port for [Exercise] entities.
+ * Persistence port for [Exercise] entities. The file and language are fixed on creation: `update` with another value
+ * throws [UnsupportedOperationException], a new version is saved as a new exercise in the same version bucket.
  *
  * @since %CURRENT_VERSION%
  */
@@ -66,14 +68,14 @@ interface ExerciseRepository : EntityRepository<ExerciseData, ExerciseId, Exerci
 interface JudgmentOrderRepository : EntityRepository<JudgmentOrderData, JudgmentOrderId, JudgmentOrder>
 
 /**
- * Persistence port for [Logs] entities.
+ * Persistence port for [Logs] entities. Logs are fixed on creation, so `update` is not supported.
  *
  * @since %CURRENT_VERSION%
  */
 interface LogsRepository : EntityRepository<LogsData, LogsId, Logs>
 
 /**
- * Persistence port for [Recording] entities.
+ * Persistence port for [Recording] entities. A recording is fixed on creation, so `update` is not supported.
  *
  * @since %CURRENT_VERSION%
  */
@@ -87,7 +89,8 @@ interface RecordingRepository : EntityRepository<RecordingData, RecordingId, Rec
 interface SolutionRepository : EntityRepository<SolutionData, SolutionId, Solution>
 
 /**
- * Persistence port for [Statement] entities.
+ * Persistence port for [Statement] entities. The file is fixed on creation: `update` with another file
+ * throws [UnsupportedOperationException], a new version is saved as a new statement in the same version bucket.
  *
  * @since %CURRENT_VERSION%
  */
@@ -115,7 +118,8 @@ interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict>
 interface TaskRepository : EntityRepository<TaskData, TaskId, Task>
 
 /**
- * Persistence port for [Test] entities.
+ * Persistence port for [Test] entities. The file is fixed on creation: `update` with another file
+ * throws [UnsupportedOperationException], a new version is saved as a new test in the same version bucket.
  *
  * @since %CURRENT_VERSION%
  */

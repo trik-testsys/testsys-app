@@ -8,7 +8,6 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.RecordingJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
-import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [Recording] and [RecordingJpaEntity].
@@ -39,17 +38,4 @@ object RecordingMapping : EntityMapping<Recording, RecordingJpaEntity> {
     fun toJpaEntity(data: RecordingData, fileDataId: Long) = RecordingJpaEntity(
         fileDataId = fileDataId,
     )
-
-    /**
-     * Creates the [RecordingJpaEntity] row replacing [current] from [entity] and file [fileDataId], keeping `createdAt` and `version`.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun toJpaEntity(entity: Recording, current: RecordingJpaEntity, fileDataId: Long) = RecordingJpaEntity(
-        fileDataId = fileDataId,
-        id = entity.id.value,
-    ).also {
-        it.createdAt = current.createdAt
-        it.version = entity.requireVersion()
-    }
 }

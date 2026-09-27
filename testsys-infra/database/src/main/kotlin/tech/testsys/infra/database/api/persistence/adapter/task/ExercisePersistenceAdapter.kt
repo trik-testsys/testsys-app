@@ -13,10 +13,12 @@ import tech.testsys.infra.database.internal.jpa.entity.task.ExerciseJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.ExerciseJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.ExerciseMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
+import tech.testsys.infra.database.internal.utils.toJpaEnum
 
 /**
  * Persistence adapter of [Exercise] entities backed by [ExerciseJpaEntity].
- * The exercise file is stored through [FileDataStorage] in the version bucket of the exercise.
+ * The exercise file is stored through [FileDataStorage]; the file and the language are fixed on creation:
+ * [update] with another one throws [UnsupportedOperationException].
  *
  * @since %CURRENT_VERSION%
  */
@@ -30,7 +32,7 @@ class ExercisePersistenceAdapter(
 
     @Transactional
     override fun save(data: ExerciseData): Exercise {
-        val fileDataId = fileDataStorage.store(data.file, data.versionBucket)
+        val fileDataId = fileDataStorage.store(data.file)
         val savedJpaEntity = jpaEntityRepository.save(ExerciseMapping.toJpaEntity(data, fileDataId))
 
         val domainEntity = ExerciseMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)
@@ -40,14 +42,12 @@ class ExercisePersistenceAdapter(
     @Transactional
     override fun update(entity: Exercise): Exercise {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val newFileDataId = fileDataStorage.storeIfChanged(
-            currentJpaEntity.fileDataId,
-            entity.data.file,
-            currentJpaEntity.versionBucket,
-        )
-        val updatedJpaEntity = jpaEntityRepository.saveAndFlush(
-            ExerciseMapping.toJpaEntity(entity, currentJpaEntity, newFileDataId),
-        )
+        fileDataStorage.requireSameFile(entity, entity.data.file, currentJpaEntity)
+        val language = entity.data.language.toJpaEnum()
+        entity.requireUnchanged("language", language == currentJpaEntity.language, currentJpaEntity.versionBucket) {
+            "from ${currentJpaEntity.language} to $language"
+        }
+        val updatedJpaEntity = jpaEntityRepository.saveAndFlush(ExerciseMapping.toJpaEntity(entity, currentJpaEntity))
 
         val domainEntity = ExerciseMapping.toDomain(
             updatedJpaEntity,

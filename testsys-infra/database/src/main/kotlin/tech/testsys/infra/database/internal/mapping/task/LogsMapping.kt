@@ -8,7 +8,6 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.LogsJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
-import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Mapping between [Logs] and [LogsJpaEntity].
@@ -39,17 +38,4 @@ object LogsMapping : EntityMapping<Logs, LogsJpaEntity> {
     fun toJpaEntity(data: LogsData, fileDataId: Long) = LogsJpaEntity(
         fileDataId = fileDataId,
     )
-
-    /**
-     * Creates the [LogsJpaEntity] row replacing [current] from [entity] and file [fileDataId], keeping `createdAt` and `version`.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun toJpaEntity(entity: Logs, current: LogsJpaEntity, fileDataId: Long) = LogsJpaEntity(
-        fileDataId = fileDataId,
-        id = entity.id.value,
-    ).also {
-        it.createdAt = current.createdAt
-        it.version = entity.requireVersion()
-    }
 }

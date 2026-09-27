@@ -14,6 +14,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
@@ -26,6 +27,8 @@ class RecordingPersistenceAdapterTests : PersistenceAdapterContractTests<Recordi
     private lateinit var fileDataJpaEntityRepository: FileDataJpaEntityRepository
 
     override fun newData() = recordingData { file(fixtures.unique("recording") + ".mp4", byteArrayOf(1, 2, 3)) }
+
+    override val updatable = false
 
     override fun modified(entity: Recording) = entity.withData { file(fixtures.unique("recording") + ".mp4", byteArrayOf(4, 5, 6)) }
 
@@ -43,12 +46,12 @@ class RecordingPersistenceAdapterTests : PersistenceAdapterContractTests<Recordi
     }
 
     @Test
-    fun `should store a new file version on update with a changed file`() {
+    fun `should fail to update a recording and keep the stored file`() {
         val saved = repository.save(newData())
 
-        repository.update(saved.withData { file(saved.data.file.uploadedFilename, byteArrayOf(9)) })
+        assertFailsWith<UnsupportedOperationException> { repository.update(modified(saved)) }
 
-        assertContentEquals(byteArrayOf(9), assertNotNull(repository.findById(saved.id)).data.file.content)
-        assertEquals(2, fileDataJpaEntityRepository.count())
+        assertSameData(saved, assertNotNull(repository.findById(saved.id)))
+        assertEquals(1, fileDataJpaEntityRepository.count())
     }
 }

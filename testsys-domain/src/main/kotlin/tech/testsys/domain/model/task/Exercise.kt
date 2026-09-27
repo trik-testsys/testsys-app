@@ -20,8 +20,8 @@ value class ExerciseId(
  *
  * @property name the name of the exercise.
  * @property description the description of the exercise.
- * @property file the uploaded TRIK Studio program file.
- * @property language the programming language of the exercise program.
+ * @property file the uploaded TRIK Studio program file; fixed on creation; update fails if it differs.
+ * @property language the programming language of the exercise program; fixed on creation; update fails if it differs.
  * @property versionBucket the UUID shared by all versions of the same logical exercise;
  *   fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%

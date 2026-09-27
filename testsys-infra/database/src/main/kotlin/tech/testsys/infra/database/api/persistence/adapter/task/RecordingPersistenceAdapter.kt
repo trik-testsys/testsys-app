@@ -12,11 +12,10 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.RecordingJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.RecordingJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.RecordingMapping
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 
 /**
  * Persistence adapter of [Recording] entities backed by [RecordingJpaEntity].
- * The recording file is stored through [FileDataStorage].
+ * The recording file is stored through [FileDataStorage]; a recording is fixed on creation, so [update] always fails.
  *
  * @since %CURRENT_VERSION%
  */
@@ -37,21 +36,9 @@ class RecordingPersistenceAdapter(
         return domainEntity
     }
 
-    @Transactional
-    override fun update(entity: Recording): Recording {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val newFileDataId = fileDataStorage.storeIfChanged(currentJpaEntity.fileDataId, entity.data.file)
-        val updatedJpaEntity = jpaEntityRepository.saveAndFlush(
-            RecordingMapping.toJpaEntity(entity, currentJpaEntity, newFileDataId),
-        )
-
-        val domainEntity = RecordingMapping.toDomain(
-            updatedJpaEntity,
-            entity.data.file.uploadedFilename,
-            entity.data.file.content,
-        )
-        return domainEntity
-    }
+    override fun update(entity: Recording): Recording = throw UnsupportedOperationException(
+        "recording ${entity.id.value} cannot be updated: every field of a recording is fixed on creation",
+    )
 
     override fun assemble(jpaEntity: RecordingJpaEntity): Recording {
         val file = fileDataStorage.load(jpaEntity.fileDataId)

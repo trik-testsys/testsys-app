@@ -187,6 +187,10 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   с `current`, сохранить через `saveAndFlush` (иначе конфликт версий всплывёт не там, где ожидается),
   затем синхронизировать join-таблицы через `syncJoinTable(...)` из
   [PersistenceUtils.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/utils/PersistenceUtils.kt).
+  Поле, при изменении которого `update` должен падать (раздел «Модель» в
+  [testsys-domain/README.md](../../testsys-domain/README.md)), проверяется до сохранения через `requireUnchanged`,
+  файл Ресурса — через `requireSameFile` из
+  [FixedFieldGuards.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/FixedFieldGuards.kt).
 - `assemble(jpaEntity)` — собрать доменный объект из строки, дочитав идентификаторы связей и справочники.
 
 Если у сущности есть join-таблицы, может дополнительно потребоваться переопределить `removeById`/`removeByIds`, если строки связей
@@ -210,7 +214,10 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 - `PersistenceAdapterContractTests` даёт весь контракт репозитория (идентификаторы, версии, поиск, загрузку,
   оптимистическую блокировку, удаление). В `modified()` меняйте **все** изменяемые поля, включая связи,
   иначе часть `update` останется непроверенной. Поля, фиксируемые при создании, в `modified()` не меняются:
-  для них пишется отдельный `@Test`, что `update` с другим значением оставляет сохранённое. Если при создании
+  для них пишется отдельный `@Test`, что `update` с другим значением оставляет сохранённое. Если `update`
+  с другим значением такого поля падает (файл версионируемого Ресурса, см. раздел «Модель» в
+  [testsys-domain/README.md](../../testsys-domain/README.md)), отдельный `@Test` проверяет отказ и то, что
+  сохранённое не изменилось (образец — `TestPersistenceAdapterTests`). Если при создании
   фиксируются все поля сущности, её адаптер не поддерживает `update`: тест объявляет `updatable = false`
   и отдельным `@Test` проверяет отказ (образец — `SolutionPersistenceAdapterTests`). Специфика сущности
   оформляется отдельными `@Test` в том же классе.

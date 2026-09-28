@@ -163,7 +163,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `PageRowScope` | `slot` |
 | `SlotScope` | `row` |
 | `SlotRowScope` | `block`, `highlightBlock`, `statCard` |
-| `BlockScope` | `row` (строка тела), `table` или `emptyState` (всё тело), `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
+| `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
 | `ContentScope` | `text`, действия, `menu`, `pills`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical`, `custom` (без полей) |
 | `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
@@ -238,8 +238,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 - Пустое состояние занимает всё тело блока, как таблица: блок со строками не принимает `emptyState`, а блок
   с пустым состоянием — `row { }`, `table` и второй `emptyState` (`IllegalStateException`).
 - Кнопки маленькие, как в эталоне.
-- Варианта ошибки в блоке нет: блок строится синхронно, и отсутствие данных — ошибка страницы. Ошибку загрузки
-  показывает таблица, см. [Пустая таблица и ошибка загрузки](#пустая-таблица-и-ошибка-загрузки).
+- Ошибку загрузки блока показывает `load`, см. [Живые обновления](#живые-обновления).
 - Текст пустого состояния — по разделу «Текст интерфейса» в [design-system/README.md](../design-system/README.md).
 
 ## Таблица
@@ -300,7 +299,7 @@ block(title = "Посылки") {
   во всю ширину и разметкой `.ts-empty` эталона.
 - Если `fetch` или содержимое ячеек при отрисовке страницы бросили `Exception`, таблица пишет его в лог уровня
   `error` («Table page {} failed to load» с номером страницы) и вместо строк показывает пустое состояние ошибки
-  `.ts-empty--error`: `UiTexts.table.loadFailed`, `UiTexts.table.loadFailedHint` и кнопку `UiTexts.table.retry`,
+  `.ts-empty--error`: `UiTexts.load.failed`, `UiTexts.load.failedHint` и кнопку `UiTexts.load.retry`,
   которая запрашивает ту же страницу заново. `Error` не перехватывается.
 - Пока показана ошибка, пагинация скрыта; выбор строк сохраняется, `onSelectionChange` не вызывается.
 - Лукап использует ту же таблицу и ведёт себя так же.
@@ -432,6 +431,91 @@ lookup(
   правило `.ts-menu` дизайн-системы оформило бы сам элемент `vaadin-context-menu`, который Vaadin на время открытия
   добавляет в `<body>`.
 
+## Живые обновления
+
+Страница обновляется без действия пользователя: `AppShell` приложения (`testsys-web`) отмечен `@Push` Vaadin
+со значениями по умолчанию. Правило потоков: ручки меняются только в UI-потоке. Из фонового потока доступны
+привязка ручки к сигналу (доставляется сама), `TableHandle.refresh()` и `LoadHandle.reload()` (потокобезопасны,
+см. ниже) либо явный `ui.access`. Эксплуатация push — раздел «Сборка» в
+[structure.md](../../docs/project/structure.md).
+
+### Привязки к сигналам
+
+Часть ручек умеет следовать значению `com.vaadin.flow.signals.Signal<T>`: `bindX(signal): SignalBinding<T>` —
+те же имена и то же поведение, что у привязок самого Vaadin (`Component.bindVisible`, `HasText.bindText`, …).
+Значение применяется сразу при вызове и на каждое новое значение сигнала, пока компонент прикреплён; отвязки нет —
+привязка живёт, пока жив компонент. Ручной сеттер того же свойства, пока привязка активна, и повторная привязка —
+`BindingActiveException`. Изменение сигнала в UI-потоке применяет привязку синхронно; из фонового потока Vaadin сам
+переносит его через `ui.access` и push. Какая ручка что привязывает — таблица в
+[Ручки и служебные свойства](#ручки-и-служебные-свойства).
+
+`text(signal)` в `ContentScope` и `text(signal, size)` в `BlockRowScope` — то же, что `text(String)`, но текст
+следует сигналу; ручной `TextHandle.text` после этого бросает `BindingActiveException`. Образец — часы витрины
+в разделе «Живые обновления», `liveSection` в `ShowcaseStatesView.kt`.
+
+### Фоновая загрузка блока
+
+`load(fetch, skeletonRows = 3) { data -> … }` в `BlockScope` занимает всё тело блока, как `table`/`emptyState`:
+блок со строками, таблицей, пустым состоянием или вторым `load` не принимает `load` (`IllegalStateException`),
+блок с `load` — их. `content` строит тело так же, как обычный `BlockScope`, но только тело: `actions { }`,
+`footer { }`, `editing`, вкладки и вложенный `load` внутри него — `IllegalStateException` (эта ошибка возникает
+в `content` и потому показывается как ошибка загрузки, см. ниже). Таблица внутри `content` получает пагинацию
+в подвале блока, как обычная. Шапка блока, `actions { }`, `editing` и вкладки самого блока видны сразу, ещё до
+первой загрузки. `skeletonRows` меньше 1 — `IllegalArgumentException`.
+
+```kotlin
+block(title = "Туры") {
+    load({ contests.findActive() }, skeletonRows = 3) { list ->
+        list.forEach { contest -> row { text(contest.name) } }
+    }
+}
+```
+
+- `fetch` выполняется в фоне на исполнителе сервиса Vaadin, результат применяется в UI-потоке. Пока грузится —
+  скелетон разметки эталонной `SkeletonRows` (`.ts-list-row.ts-skel-row`), скрытый от вспомогательных технологий
+  (`aria-hidden`), тело блока помечено `aria-busy="true"`. Если `content` ничего не добавил (например, пустой
+  список строк), тело скрывается, как у блока без строк.
+- Исполнитель выбирает Vaadin 25.3: без бинов Spring `TaskExecutor` — виртуальные потоки, при одном бине — он.
+  Из нескольких берётся бин с именем или аннотацией `@VaadinTaskExecutor`; если такого нет, отбрасываются бины
+  `TaskScheduler` и `applicationTaskExecutor`, а при оставшейся неоднозначности сервис не стартует
+  (`IllegalStateException`). Сейчас это `applicationTaskExecutor` автоконфигурации Spring Boot. На этом же
+  исполнителе Vaadin доставляет эффекты сигналов, изменённых из фона: блокирующие вызовы БД в `fetch` занимают
+  его потоки.
+- Исключение из `fetch` или из `content` пишется в лог уровня `error` («Block load failed») и вместо тела
+  показывает пустое состояние ошибки: `UiTexts.load.failed`, `UiTexts.load.failedHint` и кнопку
+  `UiTexts.load.retry`, которая загружает снова. `Error` не перехватывается.
+- `LoadHandle.isVisible`/`bindVisible` скрывают тело блока вместе с пагинацией загруженной таблицы; шапка
+  и собственный подвал блока остаются. `reload()` снова показывает скелетон и загружает заново; его можно
+  вызывать из любого потока — сама загрузка стартует в UI-потоке блока, а закрытая страница вызов игнорирует.
+  Из двух незавершённых загрузок применяется результат более поздней.
+- Блок, откреплённый от UI (например, после перехода на другой маршрут), не начинает загрузку по `reload()`
+  и отбрасывает пришедший результат; если тот же экземпляр страницы снова прикрепят, блок один раз загрузится
+  заново.
+
+### Живая таблица
+
+`TableHandle.refresh(toFirstPage = false)` можно вызывать из любого потока: вызов из фонового потока сам
+переносится в UI-поток, закрытая страница его игнорирует. Откреплённая от UI таблица (например, после перехода
+на другой маршрут) ничего не запрашивает; если тот же экземпляр страницы снова прикрепят, она один раз обновится
+(на первую страницу, если об этом просил хотя бы один пропущенный вызов). После `refresh(toFirstPage = false)`
+строки текущей страницы, чьих ключей не было на предыдущей отрисовке этой таблицы, получают класс `.ts-row-new`
+(разовая подсветка эталона, 1.2 с). Поэтому, если строки удалили, строка, сдвинувшаяся со следующей страницы,
+тоже считается новой и подсвечивается. Первая загрузка таблицы, `refresh(toFirstPage = true)`, смена страницы,
+сортировка и повтор после ошибки не подсвечивают; если после `refresh` страница опустела и таблица переходит
+на последнюю непустую, подсветки тоже нет.
+
+### Тестирование
+
+После действия, выполненного в фоновом потоке (вызов `refresh`/`reload` оттуда или ожидание фоновой загрузки
+`load`), тест дожидается завершения фоновой задачи и вызывает `MockVaadin.clientRoundtrip()`, который выполняет
+накопленные вызовы `ui.access`. Изменение сигнала и ручной вызов привязанной ручки в UI-потоке применяются
+синхронно и `clientRoundtrip` не требуют.
+
+Подменить фоновый исполнитель можно только в тестах самого `testsys-web:ui`: `Background.executorOverride`
+внутренний. Поэтому тесты страниц в `testsys-web` проверяют скелетон и структуру блока с `load`, как
+`ShowcaseViewTests`, а поведение DSL (загрузка, ошибка, повтор, `reload`, `refresh`, подсветка) покрыто тестами
+модуля. Образцы — `LoadTests` и `TableLiveTests` в `testsys-web/ui/src/test/kotlin/tech/testsys/web/ui/`.
+
 ## Оформление
 
 Страница не задаёт стили: вид выбирает DSL по смыслу элемента и месту.
@@ -439,8 +523,8 @@ lookup(
 | Что | Как выбирается вид |
 |-----|--------------------|
 | Кнопки | Роль: `mainAction` — primary, `action` — secondary, `destructiveAction` — danger-soft, `linkAction` — link, `iconAction` — secondary без подписи (подпись уходит в `aria-label` и подсказку). Внутренняя роль `danger` (заливка `--danger`, как `.ts-btn--danger`) — только у кнопки действия опасного `confirm`, страницам она недоступна. Размер: в `actions { }` блока, в пустом состоянии и в ячейках таблицы (`column`, `menuColumn`) — sm, в заголовке страницы, группах строк блока и `footer { }` — md |
-| Блок | `block` — обычный, `highlightBlock` — тёмный. Тело без отступов включает содержимое, которому они мешают: `table`. Вкладки и пилюли в тёмном блоке светлые |
-| Вкладки, пилюли, пустое состояние, меню | Вкладки страницы и блока — всегда `.ts-tabs--bare.ts-tabs--lg`, место вкладок блока — по наличию заголовка; пустое состояние — `.ts-empty`, ошибка загрузки таблицы — `.ts-empty--error`; разрушительный пункт меню — `destructiveItem` |
+| Блок | `block` — обычный, `highlightBlock` — тёмный. Тело без отступов включает содержимое, которому они мешают: `table` и скелетон `load`. Вкладки и пилюли в тёмном блоке светлые |
+| Вкладки, пилюли, пустое состояние, меню | Вкладки страницы и блока — всегда `.ts-tabs--bare.ts-tabs--lg`, место вкладок блока — по наличию заголовка; пустое состояние — `.ts-empty`, ошибка загрузки таблицы и `load` — `.ts-empty--error`; разрушительный пункт меню — `destructiveItem` |
 | Бейдж, тег, счётчик, алерт, тост (`toast(kind, title)` — функция верхнего уровня, вызывается из обработчиков) | Перечисления смысла: `Tone`, `TagKind`, `CounterKind`, `FeedbackKind`; текст бейджа передаёт страница |
 | Таблица, диалог | Вид ячейки — по функции колонки (см. [Колонки](#колонки)); ширина диалога — по функции: `confirm` — 440 px, `dialog` и диалог лукапа — 520 px; `isDanger` — вид `.ts-dialog--alert` |
 | Раскладка в блоке | Строки `row { }`; в строке — группы `horizontal(size) { }` и `vertical(size) { }` на своих колонках, в шапке, подвале и группах — `horizontal { }` и `vertical { }` без размера |
@@ -459,28 +543,39 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 
 | Ручка | Свойства |
 |-------|----------|
-| `ElementHandle` | `isVisible` (в том числе у `emptyState` и `menu`) |
-| `TextHandle` | `isVisible`, `text` (значение `statCard`, `counter`, `text`) |
-| `ActionHandle` | `isVisible`, `isEnabled`, `isLoading`, `onClick` |
-| `BlockHandle` | `isVisible`, `isEditable` (возвращают `block` и `highlightBlock`) |
-| `ChoiceHandle<V>` | `isVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает; новый слушатель заменяет прежний) — возвращает `pills` |
-| `TabsHandle<V>` | всё из `ChoiceHandle<V>` и `setCount(value, count)` (`null` и `0` скрывают счётчик) — возвращает `tabs` блока |
-| `TableHandle<T>` | `isVisible` (скрывает таблицу с пагинацией, блок остаётся), `refresh(toFirstPage = false)`, `selected` (ключи выбранных строк), `clearSelection()` (без нового запроса страницы), `onSelectionChange { keys -> }` |
+| `ElementHandle` | `isVisible`, `bindVisible(signal)` (в том числе у `emptyState` и `menu`) |
+| `TextHandle` | `isVisible`, `bindVisible`, `text`, `bindText(signal)` (значение `statCard`, `counter`, `text`) |
+| `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick` |
+| `BlockHandle` | `isVisible`, `bindVisible`, `isEditable`, `bindEditable(signal)` (возвращают `block` и `highlightBlock`) |
+| `ChoiceHandle<V>` | `isVisible`, `bindVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает; новый слушатель заменяет прежний) — возвращает `pills` |
+| `TabsHandle<V>` | всё из `ChoiceHandle<V>` и `setCount(value, count)`, `bindCount(value, signal)` (`null` и `0` скрывают счётчик) — возвращает `tabs` блока |
+| `TableHandle<T>` | `isVisible`, `bindVisible` (скрывает таблицу с пагинацией, блок остаётся), `refresh(toFirstPage = false)` (из любого потока), `selected` (ключи выбранных строк), `clearSelection()` (без нового запроса страницы), `onSelectionChange { keys -> }` |
+| `LoadHandle` | `isVisible`, `bindVisible` (скрывает тело блока с пагинацией загруженной таблицы; шапка и собственный подвал блока остаются), `reload()` (из любого потока) — возвращает `load`, см. [Живые обновления](#живые-обновления) |
 | `DialogHandle` | `open()`, `close()`, `isOpen`, `isEditable`, `onClose { }` (при любом закрытии: кнопкой, крестиком, Esc, кликом по фону) |
-| `ValueInput<T>` | `isVisible`, `isEnabled`, `isEditable` и всё из `HasValue`, `HasValidation`, `HasValidator` |
+| `ValueInput<T>` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isEditable`, `bindEditable(signal)` и всё из `HasValue`, `HasValidation`, `HasValidator`, включая `bindValue(signal, writeCallback)`, `bindReadOnly(signal)`, `bindRequiredIndicatorVisible(signal)` |
 
 `ValueInput` привязывается к `Binder` как обычное поле: `binder.forField(input)`. Ручка не является компонентом
 Vaadin, поэтому `Binder` не пропускает скрытое поле сам: чтобы не проверять его, пока оно скрыто, вызовите
 у привязки `setIsAppliedPredicate { input.isVisible }`. Ограничения полей (`min`, `max`,
-`step`, диапазон дат) проверяет валидатор по умолчанию, сообщения об ошибках берутся из `UiTexts`.
+`step`, диапазон дат) проверяет валидатор по умолчанию, сообщения об ошибках берутся из `UiTexts`. Поле
+поддерживает все привязки `HasValue`: `bindValue(signal, writeCallback)` — `writeCallback = null` даёт привязку
+только для чтения (ручной `setValue` тогда бросает `IllegalStateException`), иначе ручная правка вызывает
+`writeCallback`, а действующим остаётся значение сигнала («сигнал побеждает», поведение самого Vaadin). Оба правила
+действуют, пока поле прикреплено: неприкреплённое поле (например, в диалоге до `open()`) принимает ручное значение
+молча, без исключения и без `writeCallback`. `bindReadOnly` делит состояние с `bindEditable` (обратный сигнал,
+но `onChange` её привязки получает значения самого сигнала) — обе привязки сразу бросают `BindingActiveException`.
+Пока привязаны `isEditable`/`bindEditable` или `isRequiredIndicatorVisible`, `Binder.setReadOnly`
+и `Binder.asRequired` тоже бросают `BindingActiveException`: они меняют то же свойство вручную.
 
 ### Редактируемость
 
-Поле редактируемо, только если редактируемы и оно само (`ValueInput.isEditable`), и его блок
-(`BlockHandle.isEditable`); по умолчанию оба `true`. Нередактируемое поле — `readOnly` в Vaadin: тип и формат
-значения сохраняются, значение можно выделить и скопировать, из кода оно читается и записывается; вид — пунктирная
-рамка без заливки. Выключенное поле (`isEnabled = false`) остаётся серым, даже если оно ещё и нередактируемо.
-`Binder.setReadOnly` работает через `isEditable`.
+Поле редактируемо, только если редактируемы и оно само (`ValueInput.isEditable`/`bindEditable`), и его блок
+(`BlockHandle.isEditable`/`bindEditable`); по умолчанию оба `true`, и правило действует при любом сочетании ручных
+значений и привязок. Нередактируемое поле — `readOnly` в Vaadin: тип и формат значения сохраняются, значение можно
+выделить и скопировать, из кода оно читается и записывается; вид — пунктирная рамка без заливки. Выключенное поле
+(`isEnabled = false`) остаётся серым, даже если оно ещё и нередактируемо. `Binder.setReadOnly` работает через
+`isEditable`. `BlockHandle.bindEditable(signal)` бросает `IllegalStateException`, если у блока уже есть переключатель
+`editing(onSave, onCancel)`: режимом блока управляет либо он, либо привязка, не оба сразу.
 
 `editing(onSave, onCancel)` в `BlockScope` — стандартный переключатель режима блока, в том числе у `highlightBlock`:
 
@@ -498,11 +593,12 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 ## Тексты
 
 Модуль не зависит от локализации. Все строки, которые компоненты показывают сами (бренд, «Войти», кнопки режима
-редактирования, календарь, ошибки полей, подписи таблицы, ошибки её загрузки, диалогов и лукапа, имена крошек,
-вкладок страницы и кнопки меню), приходят в `UiTexts`. Строки таблицы, диалогов, лукапа, навигации и меню собраны
-в группы `table`, `dialog`, `lookup`, `navigation` и `menu` с ключами `ui.table.*`, `ui.dialog.*`, `ui.lookup.*`,
-`ui.nav.*` и `ui.menu.*`. Приложение собирает `UiTexts` функцией `buildUiTexts` в `testsys-web` из ключей `ui.*` модуля
-локализации и данных ICU. Строки страницы передаются в функции DSL как `String`; правила локализации —
+редактирования, календарь, ошибки полей, подписи таблицы, ошибки загрузки таблицы или блока, диалогов и лукапа,
+имена крошек, вкладок страницы и кнопки меню), приходят в `UiTexts`. Строки таблицы, загрузки, диалогов, лукапа,
+навигации и меню собраны в группы `table`, `load`, `dialog`, `lookup`, `navigation` и `menu` с ключами `ui.table.*`,
+`ui.load.*`, `ui.dialog.*`, `ui.lookup.*`, `ui.nav.*` и `ui.menu.*`. Приложение собирает `UiTexts` функцией
+`buildUiTexts` в `testsys-web` из ключей `ui.*` модуля локализации и данных ICU. Строки страницы передаются
+в функции DSL как `String`; правила локализации —
 в [localization/README.md](../../testsys-infra/localization/README.md).
 
 Страницы берут строки из локализации; исключение для витрины — в разделе «Чего не делаем»

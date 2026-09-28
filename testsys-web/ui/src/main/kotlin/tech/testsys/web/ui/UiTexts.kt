@@ -14,6 +14,7 @@ import java.util.Locale
  * @property dateRangeReversed the error shown when a date range ends before it starts.
  * @property editing the labels of the block editing switch.
  * @property table the texts of data tables.
+ * @property load the texts of content that failed to load.
  * @property dialog the texts of dialogs.
  * @property lookup the texts of the lookup field and its dialog.
  * @property navigation the accessible names of navigation landmarks.
@@ -29,6 +30,7 @@ class UiTexts(
     val dateRangeReversed: String,
     val editing: EditingTexts,
     val table: TableTexts,
+    val load: LoadTexts,
     val dialog: DialogTexts,
     val lookup: LookupTexts,
     val navigation: NavigationTexts,
@@ -96,9 +98,6 @@ class EditingTexts(
  * @property next the label of the next page button.
  * @property selectAll the accessible name of the checkbox that selects all rows of a page.
  * @property selectRow the accessible name of the checkbox that selects a row.
- * @property loadFailed the title shown instead of rows when they failed to load.
- * @property loadFailedHint the description shown under [loadFailed].
- * @property retry the label of the action that fetches the rows again after a failure.
  * @since %CURRENT_VERSION%
  */
 class TableTexts(
@@ -108,8 +107,19 @@ class TableTexts(
     val next: String,
     val selectAll: String,
     val selectRow: String,
-    val loadFailed: String,
-    val loadFailedHint: String,
+)
+
+/**
+ * Texts of content that failed to load: a table page or a block loaded in the background.
+ *
+ * @property failed the title of the load failure.
+ * @property failedHint the hint under the title.
+ * @property retry the label of the action that loads again.
+ * @since %CURRENT_VERSION%
+ */
+class LoadTexts(
+    val failed: String,
+    val failedHint: String,
     val retry: String,
 )
 

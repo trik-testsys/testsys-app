@@ -1,5 +1,6 @@
 package tech.testsys.web.ui.display
 
+import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -17,6 +18,31 @@ import tech.testsys.web.ui.find
 import tech.testsys.web.ui.findAll
 
 class DisplayTests : MockVaadinTests() {
+    @Nested
+    inner class TextTests {
+        @Test
+        fun `should show the paragraph following a signal`() {
+            val signal = ValueSignal("Первый")
+            lateinit var handle: TextHandle
+            val page = buildTestContent { handle = text(signal) }
+
+            signal.set("Второй")
+
+            assertEquals("Второй", handle.text)
+            assertEquals("Второй", page.child(0).element.textRecursively)
+        }
+
+        @Test
+        fun `should place a signal-bound paragraph on its size in a block row`() {
+            val signal = ValueSignal("Значение")
+
+            val paragraph = buildTestRow { text(signal, size = 4) }.child(0)
+
+            assertEquals("Значение", paragraph.element.textRecursively)
+            assertEquals("span 4", paragraph.element.style.get("grid-column"))
+        }
+    }
+
     @Nested
     inner class TagTests {
         @Test

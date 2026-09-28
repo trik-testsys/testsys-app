@@ -4,10 +4,13 @@ import com.github.mvysny.kaributesting.v10._click
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.signals.BindingActiveException
+import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import tech.testsys.web.ui.MockVaadinTests
@@ -216,6 +219,76 @@ class ChoiceGroupTests : MockVaadinTests() {
         buildTestPage { block { row { pills(initial = 1, size = 12) { pill(1, "Все"); pill(2, "Квизы") }; text("x") } } }
 
         assertEquals("span 12", ui().find("ts-pills").element.style.get("grid-column"))
+    }
+
+    @Nested
+    inner class BindCountTests {
+        @Test
+        fun `should show the counter of the signal`() {
+            val handle = buildTabs()
+            val signal = ValueSignal<Int?>(3)
+            handle.bindCount(Filter.Accepted, signal)
+
+            signal.set(UPDATED_COUNT)
+
+            assertEquals(UPDATED_COUNT.toString(), tabs()[1].find("ts-counter").element.text)
+            assertTrue(tabs()[1].find("ts-counter").isVisible)
+        }
+
+        @Test
+        fun `should hide the counter when the signal has no count`() {
+            val handle = buildTabs(counts = mapOf(Filter.Accepted to 3))
+            val signal = ValueSignal<Int?>(3)
+            handle.bindCount(Filter.Accepted, signal)
+
+            signal.set(null)
+
+            assertFalse(tabs()[1].find("ts-counter").isVisible)
+        }
+
+        @Test
+        fun `should hide the counter when the signal has zero`() {
+            val handle = buildTabs(counts = mapOf(Filter.Accepted to 3))
+            val signal = ValueSignal<Int?>(3)
+            handle.bindCount(Filter.Accepted, signal)
+
+            signal.set(0)
+
+            assertFalse(tabs()[1].find("ts-counter").isVisible)
+        }
+
+        @Test
+        fun `should reject a value that is not among the tabs`() {
+            val handle = buildTabs(values = listOf(Filter.All, Filter.Accepted))
+
+            assertThrows<IllegalArgumentException> { handle.bindCount(Filter.Failed, ValueSignal<Int?>(1)) }
+        }
+
+        @Test
+        fun `should reject a manual count of the bound tab`() {
+            val handle = buildTabs()
+            handle.bindCount(Filter.Accepted, ValueSignal<Int?>(1))
+
+            assertThrows<BindingActiveException> { handle.setCount(Filter.Accepted, 2) }
+        }
+
+        @Test
+        fun `should reject a second binding of a tab`() {
+            val handle = buildTabs()
+            handle.bindCount(Filter.Accepted, ValueSignal<Int?>(1))
+
+            assertThrows<BindingActiveException> { handle.bindCount(Filter.Accepted, ValueSignal<Int?>(2)) }
+        }
+
+        @Test
+        fun `should let the page set the count of another tab while one is bound`() {
+            val handle = buildTabs()
+            handle.bindCount(Filter.Accepted, ValueSignal<Int?>(1))
+
+            handle.setCount(Filter.Failed, UPDATED_COUNT)
+
+            assertEquals(UPDATED_COUNT.toString(), tabs()[2].find("ts-counter").element.text)
+        }
     }
 
     private fun buildTabs(

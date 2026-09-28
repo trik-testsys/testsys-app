@@ -35,7 +35,8 @@ internal const val ROW_CLICK_FILTER: String = "!event.target.closest('$ROW_CONTR
 /**
  * Paged table of rows fetched by [fetch], [pageSize] rows a page: the `.ts-table` markup, sorting by column keys,
  * a [pager] and, if [isSelectable], a checkbox column; all state lives on the server. [key] identifies a row;
- * [highlighted] rows are shown as selected besides the checked ones, e.g. the current value of a lookup.
+ * [highlighted] rows are shown as selected besides the checked ones, e.g. the current value of a lookup. A reload
+ * may mark the rows new to the page with `.ts-row-new`, which flashes them once.
  */
 internal class DataTable<T>(
     private val texts: UiTexts,
@@ -70,6 +71,9 @@ internal class DataTable<T>(
     private var pageCount = 1
     private var isFailed = false
     private val shownRows = mutableListOf<ShownRow>()
+
+    /** Keys of the rows of the last successful rendering; a failure keeps them. */
+    private var renderedKeys: Set<Any> = emptySet()
     private val headerCheckbox = Checkbox().apply {
         setAriaLabel(texts.table.selectAll)
         addValueChangeListener { event -> if (event.isFromClient) selectPage(event.value) }
@@ -92,23 +96,25 @@ internal class DataTable<T>(
     }
 
     /**
-     * Fetches page [target] (from 0); moves to the last page with rows if the total shrank below it. A failure of the
-     * fetch, or of cell content while rendering the result, is logged and shows the load failure with a retry of the
-     * same page instead of rows.
+     * Fetches page [target] (from 0); moves to the last page with rows if the total shrank below it. If
+     * [highlightNew] and the page stayed, rows whose keys the last successful rendering did not show get
+     * `.ts-row-new`. A failure of the fetch, or of cell content while rendering the result, is logged and shows the
+     * load failure with a retry of the same page instead of rows.
      */
     @Suppress("TooGenericExceptionCaught")
-    fun load(target: Int) {
+    fun load(target: Int, highlightNew: Boolean = false) {
         page = target
         try {
             var result = fetchPage(target)
             val lastPage = pageCountOf(result.total) - 1
-            if (target > lastPage) {
+            val isMoved = target > lastPage
+            if (isMoved) {
                 page = lastPage
                 result = fetchPage(page)
             }
             pageCount = pageCountOf(result.total)
             isFailed = false
-            render(result)
+            render(result, highlightNew = highlightNew && !isMoved)
         } catch (error: Exception) {
             // fetch and cell content are page code: their failure must not break the whole page.
             logger.error("Table page {} failed to load", page, error)
@@ -116,9 +122,9 @@ internal class DataTable<T>(
         }
     }
 
-    /** Fetches the current page again, or the first one if [toFirstPage]. */
-    fun reload(toFirstPage: Boolean) {
-        load(if (toFirstPage) 0 else page)
+    /** Fetches the current page again, or the first one if [toFirstPage]; [highlightNew] as in [load]. */
+    fun reload(toFirstPage: Boolean, highlightNew: Boolean = false) {
+        load(if (toFirstPage) 0 else page, highlightNew)
     }
 
     /** Unselects all rows; row and header checkboxes update in place, without fetching or rendering the page again. */
@@ -172,19 +178,21 @@ internal class DataTable<T>(
         load(0)
     }
 
-    private fun render(result: Page<T>) {
+    /** Shows [result] in rows built anew, so `.ts-row-new` of [highlightNew] marks only this rendering. */
+    private fun render(result: Page<T>, highlightNew: Boolean) {
         shownRows.clear()
         body.removeAll()
         if (result.rows.isEmpty()) {
             body.add(messageRow(buildEmptyState(spec.empty, texts)))
         } else {
-            result.rows.forEach { row -> body.add(rowOf(row)) }
+            result.rows.forEach { row -> body.add(rowOf(row, highlightNew)) }
         }
         val first = page * pageSize
         val from = if (result.rows.isEmpty()) 0 else first + 1
         pager.show(page = page, pageCount = pageCount, from = from, to = first + result.rows.size, total = result.total)
         updatePagerVisibility()
         updateHeaderCheckbox()
+        renderedKeys = shownRows.mapTo(hashSetOf()) { shownRow -> shownRow.key }
     }
 
     private fun showFailure() {
@@ -197,9 +205,9 @@ internal class DataTable<T>(
     }
 
     private fun failureContent(): EmptyContent = EmptyContent(
-        title = texts.table.loadFailed,
-        description = texts.table.loadFailedHint,
-        actions = { action(texts.table.retry) { onClick { reload(toFirstPage = false) } } },
+        title = texts.load.failed,
+        description = texts.load.failedHint,
+        actions = { action(texts.load.retry) { onClick { reload(toFirstPage = false) } } },
     )
 
     /** Row of one cell over all columns that holds [content] instead of rows. */
@@ -211,9 +219,10 @@ internal class DataTable<T>(
         return TableRow(cell).apply { addClassName("ts-row-empty") }
     }
 
-    private fun rowOf(row: T): TableRow = TableRow().apply {
+    private fun rowOf(row: T, highlightNew: Boolean): TableRow = TableRow().apply {
         val shownRow = ShownRow(key = key(row), row = this, isHighlighted = highlighted(row))
         shownRows += shownRow
+        if (highlightNew && shownRow.key !in renderedKeys) addClassName("ts-row-new")
         if (isSelectable) add(TableDataCell(shownRow.checkbox))
         shownRow.update()
         spec.columns.forEach { column ->

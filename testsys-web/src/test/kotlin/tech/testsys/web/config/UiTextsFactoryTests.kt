@@ -33,8 +33,8 @@ class UiTextsFactoryTests {
         assertEquals("Навигационная цепочка", texts.navigation.breadcrumbs)
         assertEquals("Разделы", texts.navigation.sections)
         assertEquals("Действия", texts.menu.actions)
-        assertEquals("Не удалось загрузить", texts.table.loadFailed)
-        assertEquals("Попробуйте ещё раз", texts.table.loadFailedHint)
-        assertEquals("Повторить", texts.table.retry)
+        assertEquals("Не удалось загрузить", texts.load.failed)
+        assertEquals("Попробуйте ещё раз", texts.load.failedHint)
+        assertEquals("Повторить", texts.load.retry)
     }
 }

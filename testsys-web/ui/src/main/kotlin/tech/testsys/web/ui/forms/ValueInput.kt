@@ -6,7 +6,12 @@ import com.vaadin.flow.component.HasValue
 import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.binder.ValidationStatusChangeListener
 import com.vaadin.flow.data.binder.Validator
+import com.vaadin.flow.dom.SignalBinding
+import com.vaadin.flow.function.SerializableConsumer
 import com.vaadin.flow.shared.Registration
+import com.vaadin.flow.signals.BindingActiveException
+import com.vaadin.flow.signals.Signal
+import tech.testsys.web.ui.Bindable
 import tech.testsys.web.ui.ElementHandle
 import tech.testsys.web.ui.layout.BlockEditState
 import tech.testsys.web.ui.layout.FieldParts
@@ -17,9 +22,11 @@ import tech.testsys.web.ui.layout.FieldParts
  * `setIsAppliedPredicate { input.isVisible }` on the binding to skip it.
  *
  * @param T the type of the field value.
- * @property isEnabled whether the field is enabled; a disabled field is greyed out and ignores input.
+ * @property isEnabled whether the field is enabled; a disabled field is greyed out and ignores input. A manual change
+ * while [bindEnabled] is bound, and a second binding, throw [BindingActiveException].
  * @property isEditable whether the user can change the value; a field is editable only if it and its block are,
- * otherwise it is read-only.
+ * otherwise it is read-only. A manual change while [bindEditable] or `bindReadOnly` is bound, and a second binding,
+ * throw [BindingActiveException].
  * @since %CURRENT_VERSION%
  */
 class ValueInput<T> internal constructor(
@@ -31,32 +38,68 @@ class ValueInput<T> internal constructor(
 ) : ElementHandle(parts.field), HasValue<HasValue.ValueChangeEvent<T>, T>, HasValidation, HasValidator<T> {
     private val fieldComponent: AbstractField<*, T> = component
 
-    var isEnabled: Boolean
-        get() = fieldComponent.isEnabled
-        set(value) {
-            fieldComponent.isEnabled = value
-            parts.field.setClassName("ts-field--disabled", !value)
-        }
-
-    var isEditable: Boolean = true
-        set(value) {
-            field = value
-            applyReadOnly()
-        }
+    private val enabled = Bindable(parts.field.element, initial = component.isEnabled) { value ->
+        fieldComponent.isEnabled = value
+        parts.field.setClassName("ts-field--disabled", !value)
+    }
 
     private var isBlockEditable = true
 
+    private val editable = Bindable(parts.field.element, initial = true) { value ->
+        showReadOnly(isFieldEditable = value, isInEditableBlock = isBlockEditable)
+    }
+
+    private val requiredIndicator =
+        Bindable(parts.field.element, initial = component.isRequiredIndicatorVisible) { value ->
+            fieldComponent.isRequiredIndicatorVisible = value
+            parts.requiredMark.isVisible = value
+        }
+
+    var isEnabled: Boolean
+        get() = fieldComponent.isEnabled
+        set(value) {
+            enabled.value = value
+        }
+
+    var isEditable: Boolean
+        get() = editable.value
+        set(value) {
+            editable.value = value
+        }
+
     /** Makes the field follow the edit mode of its block. */
     internal fun followBlock(state: BlockEditState) {
-        state.follow { editable ->
-            isBlockEditable = editable
-            applyReadOnly()
+        state.follow { blockEditable ->
+            isBlockEditable = blockEditable
+            showReadOnly(isFieldEditable = editable.value, isInEditableBlock = blockEditable)
         }
     }
 
-    private fun applyReadOnly() {
-        fieldComponent.isReadOnly = !(isEditable && isBlockEditable)
-    }
+    /**
+     * Binds [isEnabled] to [signal]: every value it produces is applied at once. A manual [isEnabled] while bound,
+     * and a second binding, throw [BindingActiveException].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun bindEnabled(signal: Signal<Boolean>): SignalBinding<Boolean> = enabled.bind(signal)
+
+    /**
+     * Binds [isEditable] to [signal]: every value it produces is applied at once, and the field stays read-only while
+     * its block is not editable. A manual [isEditable] or `readOnly` while bound, and a second binding, including
+     * `bindReadOnly`, throw [BindingActiveException].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun bindEditable(signal: Signal<Boolean>): SignalBinding<Boolean> = editable.bind(signal)
+
+    override fun bindReadOnly(readOnlySignal: Signal<Boolean>): SignalBinding<Boolean> =
+        editable.bind(readOnlySignal) { readOnly -> !readOnly }
+
+    override fun bindRequiredIndicatorVisible(requiredSignal: Signal<Boolean>): SignalBinding<Boolean> =
+        requiredIndicator.bind(requiredSignal)
+
+    override fun bindValue(valueSignal: Signal<T>, writeCallback: SerializableConsumer<T>?): SignalBinding<T> =
+        fieldComponent.bindValue(valueSignal, writeCallback)
 
     override fun setValue(value: T) {
         fieldComponent.value = value
@@ -76,8 +119,7 @@ class ValueInput<T> internal constructor(
     override fun isReadOnly(): Boolean = fieldComponent.isReadOnly
 
     override fun setRequiredIndicatorVisible(requiredIndicatorVisible: Boolean) {
-        fieldComponent.isRequiredIndicatorVisible = requiredIndicatorVisible
-        parts.requiredMark.isVisible = requiredIndicatorVisible
+        requiredIndicator.value = requiredIndicatorVisible
     }
 
     override fun isRequiredIndicatorVisible(): Boolean = fieldComponent.isRequiredIndicatorVisible
@@ -102,4 +144,9 @@ class ValueInput<T> internal constructor(
 
     override fun addValidationStatusChangeListener(listener: ValidationStatusChangeListener<T>): Registration? =
         validator.addValidationStatusChangeListener(listener)
+
+    /** Makes the control read-only unless both the field and its block are editable. */
+    private fun showReadOnly(isFieldEditable: Boolean, isInEditableBlock: Boolean) {
+        fieldComponent.isReadOnly = !(isFieldEditable && isInEditableBlock)
+    }
 }

@@ -334,8 +334,9 @@ a.ts-tab { text-decoration:none; }
 .ts-empty__title { font:var(--fw-semibold) 16px var(--font-sans); }
 .ts-empty__desc { font:var(--fw-regular) var(--fs-xs)/20px var(--font-sans); color:var(--text-secondary); max-width:320px; text-wrap:pretty; }
 .ts-empty__actions { display:flex; gap:var(--space-2); margin-top:4px; }
-.ts-skel { background:var(--muted); border-radius:var(--radius-xs); animation:ts-pulse 1.6s ease-in-out infinite; }
+.ts-skel { display:block; background:var(--muted); border-radius:var(--radius-xs); animation:ts-pulse 1.6s ease-in-out infinite; }
 .ts-skel--circle { border-radius:50%; }
+.ts-skel--badge { border-radius:var(--radius-sm); }
 
 /* ---------- Overlays ---------- */
 .ts-overlay { position:fixed; inset:0; background:var(--overlay); display:grid; place-items:center; z-index:90; }
@@ -478,6 +479,9 @@ a.ts-tab { text-decoration:none; }
 .ts-divider { height:1px; background:var(--border-default); border:0; margin:0; }
 .ts-list-row { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3); border-bottom:1px solid var(--line-subtle); }
 .ts-list-row:last-child { border-bottom:0; }
+/* Skeleton list row (SkeletonRows): avatar, two lines, value and badge placeholders. */
+.ts-skel-row { display:grid; grid-template-columns:28px 1fr 80px 64px; gap:var(--space-4); }
+.ts-skel-row__lines { display:flex; flex-direction:column; gap:6px; }
 
 /* ---------- Motion ---------- */
 /* Enter-only animations: elements appear softly, disappear instantly. */

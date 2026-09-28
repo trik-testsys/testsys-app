@@ -5,6 +5,8 @@ import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.NotFoundException
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
+import com.vaadin.flow.signals.Signal
+import com.vaadin.flow.signals.local.ValueSignal
 import org.springframework.core.env.Environment
 import tech.testsys.web.ui.TestSysView
 import tech.testsys.web.ui.TextHandle
@@ -21,17 +23,43 @@ import tech.testsys.web.ui.display.badge
 import tech.testsys.web.ui.display.text
 import tech.testsys.web.ui.feedback.FeedbackKind
 import tech.testsys.web.ui.feedback.emptyState
+import tech.testsys.web.ui.feedback.load
 import tech.testsys.web.ui.feedback.toast
 import tech.testsys.web.ui.layout.PageScope
+import tech.testsys.web.ui.layout.SlotRowScope
 import tech.testsys.web.ui.navigation.TabsScope
 import tech.testsys.web.ui.navigation.pills
 import tech.testsys.web.ui.navigation.tabs
 import tech.testsys.web.ui.overlay.menu
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import kotlin.concurrent.thread
 
 private const val ROW_COUNT = 36
 private const val PAGE_SIZE = 8
 private const val ACCEPTED_EVERY = 3
 private const val HALF = 12
+private const val LIVE_ROW_COUNT = 5
+private const val LIVE_SUBMISSION_ID_START = 900_000L
+private const val LIVE_SUBMISSION_SCORE = 87
+private val LOAD_DELAY: Duration = Duration.ofSeconds(1)
+private val NEW_ROW_DELAY: Duration = Duration.ofSeconds(2)
+private val CLOCK_PERIOD: Duration = Duration.ofSeconds(1)
+private val CLOCK_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+private val LOAD_SAMPLE_ROWS = listOf(
+    "Тур «Весенний кубок» опубликован",
+    "Участнику начислено 82 балла",
+    "Открыта регистрация на «Летний марафон»",
+)
+private val liveSubmissionId: AtomicLong = AtomicLong(LIVE_SUBMISSION_ID_START)
 
 /** Filter of the showcase rows by their verdict. */
 private enum class RowFilter(val label: String) {
@@ -57,14 +85,18 @@ private class StateRow(val id: Int, val author: String) {
 private val ROWS: List<StateRow> = (1..ROW_COUNT).map { id -> StateRow(id, "Участник $id") }
 
 /**
- * Second showcase page: page head, block tabs and pills, empty states, the load failure of a table and action menus;
- * it opens only in the `dev` profile.
+ * Second showcase page: page head, block tabs and pills, empty states, the load failure of a table, action menus
+ * and live updates (a clock bound to a signal, background block loads and table refreshes); it opens only in the `dev`
+ * profile.
  *
  * @since %CURRENT_VERSION%
  */
 @Route("dev/showcase/states")
 @PageTitle("Витрина: навигация и состояния")
 class ShowcaseStatesView(texts: UiTexts, private val environment: Environment) : TestSysView(texts), BeforeEnterObserver {
+    private val clock = ValueSignal(currentClockText())
+    private var clockExecutor: ScheduledExecutorService? = null
+
     init {
         page(showcaseHeader()) {
             showcaseHead("Навигация и состояния")
@@ -73,11 +105,43 @@ class ShowcaseStatesView(texts: UiTexts, private val environment: Environment) :
             emptySection()
             failureSection()
             menuSection()
+            liveSection(clock)
         }
+        addAttachListener { startClock() }
+        addDetachListener { stopClock() }
     }
 
     override fun beforeEnter(event: BeforeEnterEvent) {
         if (!environment.matchesProfiles(DEV_PROFILE)) event.rerouteToError(NotFoundException::class.java)
+    }
+
+    /** Starts the clock executor, unless it is already running: an attach without a detach in between is a no-op. */
+    private fun startClock() {
+        if (clockExecutor != null) return
+        val executor = Executors.newSingleThreadScheduledExecutor { runnable ->
+            Thread(runnable, "showcase-clock").apply { isDaemon = true }
+        }
+        val periodMillis = CLOCK_PERIOD.toMillis()
+        executor.scheduleAtFixedRate({ clock.set(currentClockText()) }, periodMillis, periodMillis, TimeUnit.MILLISECONDS)
+        clockExecutor = executor
+    }
+
+    /** Stops the clock executor, unless it is not running: a detach without a matching attach is a no-op. */
+    private fun stopClock() {
+        clockExecutor?.shutdownNow()
+        clockExecutor = null
+    }
+}
+
+/** The current time as `HH:mm:ss`. */
+private fun currentClockText(): String = LocalTime.now().format(CLOCK_FORMAT)
+
+/** Blocks the current thread for [duration]; simulates the latency of a real fetch in showcase loads. */
+private fun pause(duration: Duration) {
+    try {
+        Thread.sleep(duration.toMillis())
+    } catch (interrupted: InterruptedException) {
+        Thread.currentThread().interrupt()
     }
 }
 
@@ -244,3 +308,73 @@ private fun PageScope.menuSection() {
         }
     }
 }
+
+/** Showcase of `load()`, a table refreshed from the background and a clock following a [Signal]. */
+private fun PageScope.liveSection(clock: Signal<String>) {
+    row {
+        slot(size = HALF) { row { loadBlock() } }
+        slot(size = HALF) { row { loadFailureBlock() } }
+    }
+    row {
+        slot(size = HALF) { row { liveSubmissionsBlock() } }
+        slot(size = HALF) { row { clockBlock(clock) } }
+    }
+}
+
+private fun SlotRowScope.loadBlock() {
+    block(title = "Загрузка", subtitle = "Скелетон, пока фоновый запрос выполняется") {
+        val handle = load({
+            pause(LOAD_DELAY)
+            LOAD_SAMPLE_ROWS
+        }) { rows -> rows.forEach { line -> row { text(line) } } }
+        actions { action("Загрузить снова") { onClick { handle.reload() } } }
+    }
+}
+
+private fun SlotRowScope.loadFailureBlock() {
+    val attempts = AtomicInteger()
+    block(title = "Ошибка загрузки", subtitle = "Первая загрузка падает, «Повторить» показывает успех") {
+        load({
+            pause(LOAD_DELAY)
+            if (attempts.getAndIncrement() == 0) error("Showcase load failure")
+            LOAD_SAMPLE_ROWS
+        }) { rows -> rows.forEach { line -> row { text(line) } } }
+    }
+}
+
+private fun SlotRowScope.liveSubmissionsBlock() {
+    val submissions: MutableList<ShowcaseSubmission> = CopyOnWriteArrayList(SUBMISSIONS.take(LIVE_ROW_COUNT))
+    block(title = "Посылки", subtitle = "«Новая посылка» добавляет строку в фоне; новая строка подсвечивается") {
+        val rows = table(
+            key = { row -> row.id },
+            fetch = { request -> Page(submissions.drop(request.offset).take(request.limit), submissions.size) },
+        ) { submissionColumns() }
+        actions {
+            action("Новая посылка через 2 с") {
+                onClick {
+                    thread(isDaemon = true, name = "showcase-new-submission") {
+                        pause(NEW_ROW_DELAY)
+                        submissions.add(0, nextLiveSubmission())
+                        rows.refresh()
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun SlotRowScope.clockBlock(clock: Signal<String>) {
+    block(title = "Часы", subtitle = "Обновляются раз в секунду через ValueSignal") {
+        row { text(clock) }
+    }
+}
+
+/** A freshly "arrived" submission for the live table, with a unique id of its own range. */
+private fun nextLiveSubmission(): ShowcaseSubmission = ShowcaseSubmission(
+    id = liveSubmissionId.incrementAndGet(),
+    author = "Новый участник",
+    task = "E. Новая задача",
+    verdict = ShowcaseVerdict.Accepted,
+    score = LIVE_SUBMISSION_SCORE,
+    sentAt = LocalDateTime.now(),
+)

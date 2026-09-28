@@ -4,6 +4,10 @@ import com.vaadin.flow.component.Text
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.dom.SignalBinding
+import com.vaadin.flow.signals.BindingActiveException
+import com.vaadin.flow.signals.Signal
+import tech.testsys.web.ui.Bindable
 import tech.testsys.web.ui.ElementHandle
 import tech.testsys.web.ui.TestSysDsl
 import tech.testsys.web.ui.display.CounterKind
@@ -90,14 +94,31 @@ open class ChoiceHandle<V> internal constructor(private val group: ChoiceGroup<V
  * @since %CURRENT_VERSION%
  */
 class TabsHandle<V> internal constructor(private val tabs: ChoiceGroup<V>) : ChoiceHandle<V>(tabs) {
+    private val counts = mutableMapOf<V, Bindable<Int?>>()
+
     /**
      * Shows [count] next to the tab of [value]; `null` or zero hides the counter.
      *
      * @throws IllegalArgumentException if no tab has [value] or [count] is negative.
+     * @throws BindingActiveException if the counter of [value] is bound by [bindCount].
      * @since %CURRENT_VERSION%
      */
     fun setCount(value: V, count: Int?) {
-        tabs.setCount(value, count)
+        counter(value).value = count
+    }
+
+    /**
+     * Binds the counter of the tab of [value] to [signal]: every count it produces is shown at once, `null` or zero
+     * hides the counter. A manual [setCount] of that tab while bound, and a second binding of it, throw
+     * [BindingActiveException]; the other tabs keep their own counters.
+     *
+     * @throws IllegalArgumentException if no tab has [value].
+     * @since %CURRENT_VERSION%
+     */
+    fun bindCount(value: V, signal: Signal<Int?>): SignalBinding<Int?> = counter(value).bind(signal)
+
+    private fun counter(value: V): Bindable<Int?> = counts.getOrPut(value) {
+        Bindable(tabs.root.element, initial = tabs.count(value)) { count -> tabs.setCount(value, count) }
     }
 }
 
@@ -194,9 +215,13 @@ internal class ChoiceGroup<V>(
 
     fun setCount(target: V, count: Int?) {
         require(count == null || count >= 0) { "Count must not be negative, got $count" }
-        val counter = requireNotNull(counters[target]) { "Value $target is not among the tabs" }
-        showCount(counter, count)
+        showCount(counter(target), count)
     }
+
+    /** The count shown next to [target], or `null` if its counter is empty. */
+    fun count(target: V): Int? = counter(target).text.toIntOrNull()
+
+    private fun counter(target: V): Span = requireNotNull(counters[target]) { "Value $target is not among the tabs" }
 
     private fun button(option: ChoiceOption<V>, buttonClass: String): NativeButton = NativeButton().apply {
         addClassName(buttonClass)

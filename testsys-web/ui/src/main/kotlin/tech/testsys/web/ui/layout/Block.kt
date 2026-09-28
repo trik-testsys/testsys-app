@@ -30,7 +30,7 @@ internal fun buildBlock(
         addClassNames("ts-block", "ts-block--grid")
         if (highlight) addClassName("ts-block--dark")
         if (span != null) style.set("grid-column", "span $span")
-        blockHead(heading, scope.actionsBar, scope.tabsBar)?.let { head -> add(head) }
+        blockHead(heading = heading, actions = scope.actionsBar, tabs = scope.tabsBar)?.let { head -> add(head) }
         if (body.children.findAny().isPresent) {
             if (scope.isFlushBody) body.addClassName("ts-block__body--flush")
             add(body)

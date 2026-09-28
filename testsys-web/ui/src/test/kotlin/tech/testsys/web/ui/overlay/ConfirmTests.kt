@@ -97,7 +97,7 @@ class ConfirmTests : MockVaadinTests() {
             confirm(title = "Закрыть тур?", action = "Закрыть тур") {}
 
             val dialog = openDialogs().single()
-            assertEquals("dialog", dialog.role)
+            assertEquals("dialog", dialog.ariaRole.orElse(null))
             assertEquals("Закрыть тур?", dialog.element.getProperty("ariaLabel"))
             assertFalse(dialog.find("ts-dialog").element.hasAttribute("role"))
         }
@@ -107,7 +107,7 @@ class ConfirmTests : MockVaadinTests() {
             confirm(title = "Удалить тур?", action = "Удалить", isDanger = true) {}
 
             val dialog = openDialogs().single()
-            assertEquals("alertdialog", dialog.role)
+            assertEquals("alertdialog", dialog.ariaRole.orElse(null))
             assertEquals("Удалить тур?", dialog.element.getProperty("ariaLabel"))
             assertFalse(dialog.find("ts-dialog").element.hasAttribute("role"))
         }

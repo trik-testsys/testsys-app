@@ -59,12 +59,10 @@ testsys-app/
 - `settings.gradle.kts` — список модулей. Модуль, не попавший в него, не собирается, и его тесты не запускаются.
 - `buildSrc/src/main/kotlin/testsys.conventions.gradle.kts` — общий плагин, который подключает каждый модуль:
   Kotlin JVM 21, `allWarningsAsErrors = true`, JUnit Platform, Detekt (`detekt.yml`, `autoCorrect = true`,
-  `build/generated/` исключён). Задача `check` зависит от `detektMain`. Ещё плагин выравнивает `kotlin-stdlib*`,
-  `kotlin-reflect` и `kotlin-test*` (группа `org.jetbrains.kotlin`) во всех конфигурациях по версии компилятора
-  Kotlin: BOM Spring Boot задаёт более новые версии этих библиотек, а встроенный в Detekt компилятор не читает
-  их метаданные и ошибается в выводе типов (например, считает код после `?: return` недостижимым). Правило
-  понижает stdlib и для библиотек вне BOM, собранных под более новый Kotlin (сейчас kotlinpoet, kctfork,
-  Karibu-Testing), поэтому при обновлении таких библиотек проверяйте, что тесты и генерация кода проходят.
+  `build/generated/` исключён). Задача `check` зависит от `detektMain`. Detekt — версии 2 (плагин `dev.detekt`,
+  пока альфа — единственная ветка Detekt с поддержкой Kotlin 2.4); вместо `build.maxIssues` сборку валит
+  `failOnSeverity = FailOnSeverity.Info` (падает на замечании любой значимости), а правила ktlint подключены через
+  `dev.detekt:detekt-rules-ktlint-wrapper` вместо устаревшего `detekt-formatting`.
 - `gradle/libs.versions.toml` — версии, библиотеки и bundles. Версии зависимостей указываются только здесь.
   Версия Spring Boot одна на весь проект. Модули со Spring подключают BOM `libs.spring.boot.bom` через
   `platform(...)`; версии стартеров, Hibernate, Liquibase, H2 и драйвера PostgreSQL задаёт BOM, в каталоге их нет.
@@ -114,12 +112,8 @@ dev-режим кладёт в `build/` — так задаёт `vaadin.build.fo
 
 Production-сборку фронтенда (`vaadinBuildFrontend`) выполняют только запуски с `bootJar` или `bootBuildImage`
 (`assemble` и `build` включают `bootJar`); `bootRun`, тесты и `check` её пропускают. Условие проверяет граф задач
-в `testsys-web/build.gradle.kts`: плагин Vaadin 25.2 включает production-режим, если задача `bootJar` просто есть
+в `testsys-web/build.gradle.kts`: плагин Vaadin 25.2–25.3 включает production-режим, если задача `bootJar` просто есть
 в проекте, и без условия собирал бы фронтенд перед каждым запуском и тестами.
-
-Detekt 1.23 не разбирает context parameters (`context(name: Type)`): правила набора `formatting` на таком файле
-падают с исключением. Файл с context parameters добавляется в `excludes` набора `formatting` в `detekt.yml`;
-остальные правила на нём продолжают работать. Сейчас так исключён `OperationFailure.kt` из `testsys-operation`.
 
 ## CI
 

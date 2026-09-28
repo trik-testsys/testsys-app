@@ -113,7 +113,13 @@ class TabsHandle<V> internal constructor(private val tabs: ChoiceGroup<V>) : Cho
 fun <V> BlockScope.tabs(initial: V, content: TabsScope<V>.() -> Unit): TabsHandle<V> {
     val root = Div().apply { addClassNames("ts-tabs", "ts-tabs--bare", "ts-tabs--lg") }
     title?.let { name -> root.element.setAttribute("aria-label", name) }
-    val group = ChoiceGroup(TabsScope<V>().apply(content).options, initial, root, "ts-tab", "ts-tab--active")
+    val group = ChoiceGroup(
+        options = TabsScope<V>().apply(content).options,
+        initial = initial,
+        root = root,
+        buttonClass = "ts-tab",
+        activeClass = "ts-tab--active",
+    )
     placeTabs(root)
     return TabsHandle(group)
 }
@@ -144,8 +150,13 @@ fun <V> BlockRowScope.pills(initial: V, size: Int? = null, content: PillsScope<V
     return ChoiceHandle(group)
 }
 
-private fun <V> pillGroup(initial: V, content: PillsScope<V>.() -> Unit): ChoiceGroup<V> =
-    ChoiceGroup(PillsScope<V>().apply(content).options, initial, Div().apply { addClassName("ts-pills") }, "ts-pill", "ts-pill--active")
+private fun <V> pillGroup(initial: V, content: PillsScope<V>.() -> Unit): ChoiceGroup<V> = ChoiceGroup(
+    options = PillsScope<V>().apply(content).options,
+    initial = initial,
+    root = Div().apply { addClassName("ts-pills") },
+    buttonClass = "ts-pill",
+    activeClass = "ts-pill--active",
+)
 
 /**
  * Buttons of [options] in [root] with [initial] chosen; the chosen button carries [activeClass] and `aria-pressed`.

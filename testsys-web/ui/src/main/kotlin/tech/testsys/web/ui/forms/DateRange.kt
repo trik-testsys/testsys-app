@@ -46,7 +46,7 @@ internal class DateRangeField(
         }
     }
 
-    override fun generateModelValue(): DateRange = DateRange(start.value, end.value)
+    override fun generateModelValue(): DateRange = DateRange(from = start.value, to = end.value)
 
     override fun setPresentationValue(newPresentationValue: DateRange?) {
         isPresenting = true

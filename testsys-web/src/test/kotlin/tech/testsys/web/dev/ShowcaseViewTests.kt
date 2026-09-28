@@ -14,8 +14,8 @@ import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.datepicker.DatePicker
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.dialog.Dialog
-import com.vaadin.flow.component.html.NativeTable
 import com.vaadin.flow.component.html.Section
+import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.IntegerField
 import com.vaadin.flow.component.textfield.NumberField
@@ -131,7 +131,7 @@ class ShowcaseViewTests {
 
         @Test
         fun `should show a paged table`() {
-            assertTrue(_find<NativeTable> { classes = "ts-table" }.isNotEmpty())
+            assertTrue(_find<Table> { classes = "ts-table" }.isNotEmpty())
         }
 
         @Test

@@ -28,7 +28,7 @@ fun SlotRowScope.statCard(label: String, value: String, size: Int? = null, delta
     val block = place(size, BlockHeading(title = null, subtitle = null), highlight = false) {
         row { place(size = null, stat.card) }
     }
-    return TextHandle(stat.value, block.component)
+    return TextHandle(holder = stat.value, component = block.component)
 }
 
 /**

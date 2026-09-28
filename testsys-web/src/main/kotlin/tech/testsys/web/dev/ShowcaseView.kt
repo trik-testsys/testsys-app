@@ -406,15 +406,15 @@ private fun PageScope.displaySection() {
         slot(size = 12) {
             row {
                 Trend.entries.forEach { trend ->
-                    statCard("Тренд ${trend.name}", "1 842", size = 6, delta = "+38", trend = trend)
+                    statCard(label = "Тренд ${trend.name}", value = "1 842", size = 6, delta = "+38", trend = trend)
                 }
             }
-            row { statCard("Без изменения", "42") }
+            row { statCard(label = "Без изменения", value = "42") }
             row {
                 block(title = "Метрики в строке блока") {
                     row {
-                        statCard("Решено", "42", size = 6, delta = "+3", trend = Trend.Up)
-                        statCard("Попытки", "118", size = 6, delta = "−2", trend = Trend.Down)
+                        statCard(label = "Решено", value = "42", size = 6, delta = "+3", trend = Trend.Up)
+                        statCard(label = "Попытки", value = "118", size = 6, delta = "−2", trend = Trend.Down)
                     }
                 }
             }
@@ -428,7 +428,9 @@ private fun PageScope.feedbackSection() {
         row {
             horizontal {
                 FeedbackKind.entries.forEach { kind ->
-                    action("Тост ${kind.name}") { onClick { toast(kind, "Тост ${kind.name}", "Описание тоста") } }
+                    action("Тост ${kind.name}") {
+                        onClick { toast(kind = kind, title = "Тост ${kind.name}", description = "Описание тоста") }
+                    }
                 }
             }
         }

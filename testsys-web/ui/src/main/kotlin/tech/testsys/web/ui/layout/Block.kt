@@ -24,9 +24,10 @@ internal fun buildBlock(
     content: BlockScope.() -> Unit,
 ): BlockHandle {
     val body = Div().apply { addClassNames("ts-block__body", "ts-block__body--grid") }
-    val editState = BlockEditState()
+    val block = Section()
+    val editState = BlockEditState(block.element)
     val scope = BlockScope(body, columns, texts, editState, heading.title).apply(content).apply { finish() }
-    val block = Section().apply {
+    with(block) {
         addClassNames("ts-block", "ts-block--grid")
         if (highlight) addClassName("ts-block--dark")
         if (span != null) style.set("grid-column", "span $span")
@@ -37,7 +38,8 @@ internal fun buildBlock(
         }
         scope.footerBar?.let { footer -> add(footer) }
     }
-    return BlockHandle(block, editState)
+    scope.start()
+    return BlockHandle(block, editState, hasEditingSwitch = scope.hasEditingSwitch)
 }
 
 private fun blockHead(heading: BlockHeading, actions: Div?, tabs: Component?): Header? {

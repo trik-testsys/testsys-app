@@ -100,7 +100,7 @@ fun dialog(title: String, subtitle: String? = null, content: DialogScope.() -> U
     val texts = currentTexts()
     val shell = DialogShell(texts, title, subtitle, isWide = true, isAlert = false)
     shell.content.addClassName("ts-dialog__grid")
-    val editState = BlockEditState()
+    val editState = BlockEditState(shell.dialog.element)
     val handle = DialogHandle(shell, editState)
     DialogScope(shell, texts, editState, handle).content()
     return handle

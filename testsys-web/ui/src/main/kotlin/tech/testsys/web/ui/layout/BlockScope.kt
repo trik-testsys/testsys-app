@@ -20,6 +20,7 @@ class BlockScope internal constructor(
     internal val texts: UiTexts,
     private val editState: BlockEditState,
     internal val title: String?,
+    private val isLoadContent: Boolean = false,
 ) {
     internal var actionsBar: Div? = null
         private set
@@ -30,7 +31,16 @@ class BlockScope internal constructor(
     internal var tabsBar: Component? = null
         private set
     private var editingSwitch: EditingSwitch? = null
-    private var tablePager: TablePager? = null
+
+    /** Whether [editing] installed the standard switch of the block mode. */
+    internal val hasEditingSwitch: Boolean
+        get() = editingSwitch != null
+
+    /** Pagination of the table that fills the body, kept for the end of the footer. */
+    internal var tablePager: TablePager? = null
+        private set
+
+    private var loadedBody: LoadedBody? = null
 
     /** What fills the whole body, e.g. "a table"; `null` while the body is a grid of rows. */
     private var wholeBody: String? = null
@@ -38,7 +48,7 @@ class BlockScope internal constructor(
     /**
      * Adds a row of the body; its elements take at most the block columns in total.
      *
-     * @throws IllegalStateException if the block holds a table or an empty state.
+     * @throws IllegalStateException if the block holds a table, an empty state or a load.
      * @since %CURRENT_VERSION%
      */
     fun row(content: BlockRowScope.() -> Unit) {
@@ -51,18 +61,22 @@ class BlockScope internal constructor(
     /**
      * Fills the right side of the block head: filters, badges and small actions.
      *
+     * @throws IllegalStateException if this is the content of a load.
      * @since %CURRENT_VERSION%
      */
     fun actions(content: ContentScope.() -> Unit) {
+        checkBlockLevel("actions { }")
         ContentScope(headBar(), texts, Placement.Head).content()
     }
 
     /**
      * Fills the footer of the block, shown under the body on a sunken background.
      *
+     * @throws IllegalStateException if this is the content of a load.
      * @since %CURRENT_VERSION%
      */
     fun footer(content: ContentScope.() -> Unit) {
+        checkBlockLevel("footer { }")
         ContentScope(footBar(), texts, Placement.Body).content()
     }
 
@@ -70,10 +84,11 @@ class BlockScope internal constructor(
      * Opens the block in view mode and puts the standard edit, cancel and save actions at the end of its head.
      * [onSave] returns whether the values were saved; otherwise the block stays in edit mode. [onCancel] restores the values.
      *
-     * @throws IllegalStateException if the block already has an editing switch.
+     * @throws IllegalStateException if the block already has an editing switch, or this is the content of a load.
      * @since %CURRENT_VERSION%
      */
     fun editing(onSave: () -> Boolean, onCancel: () -> Unit) {
+        checkBlockLevel("editing()")
         check(editingSwitch == null) { "Block already has an editing switch; call editing() once" }
         editingSwitch = EditingSwitch(onSave, onCancel)
         editState.isEditable = false
@@ -101,6 +116,7 @@ class BlockScope internal constructor(
      * @throws IllegalStateException if the block already has tabs.
      */
     internal fun placeTabs(tabs: Component) {
+        checkBlockLevel("tabs()")
         check(tabsBar == null) { "Block already has tabs; call tabs() once" }
         tabsBar = tabs
     }
@@ -123,17 +139,44 @@ class BlockScope internal constructor(
     }
 
     /**
+     * Makes the whole body a body that [owner], e.g. "a load", fills after the block is built.
+     *
+     * @throws IllegalStateException if the block holds anything in its body, or this is the content of a load.
+     */
+    internal fun placeLoad(owner: String): LoadedBody {
+        checkBlockLevel("load()")
+        checkWholeBodyPlace(owner)
+        wholeBody = owner
+        return LoadedBody(body, columns, texts, editState, title).also { loaded -> loadedBody = loaded }
+    }
+
+    /**
      * Completes the block after its content: the editing switch goes after the head actions and the table pagination
-     * to the end of the footer; the footer hides with the pagination if nothing else is in it.
+     * to the end of the footer; the footer hides with the pagination if nothing else is in it. A loaded body gets the
+     * footer for the pagination of a table it may load, hidden while the block has no footer content of its own.
      */
     internal fun finish() {
         editingSwitch?.install(headBar(), texts, editState)
         tablePager?.let { placed ->
             val isOwnFooter = footerBar == null
-            val bar = footBar()
-            bar.add(placed.pager)
-            placed.bindHost(if (isOwnFooter) bar else placed.pager)
+            placed.placeInto(footBar(), isOwnFooter)
         }
+        loadedBody?.let { loaded ->
+            val isOwnFooter = footerBar == null
+            val bar = footBar()
+            if (isOwnFooter) bar.isVisible = false
+            loaded.useFooter(bar, isOwnFooter)
+        }
+    }
+
+    /** Starts what fills the body once the block is built, e.g. the first fetch of a load. */
+    internal fun start() {
+        loadedBody?.start()
+    }
+
+    /** Checks that what [call] adds belongs to the block itself: the content of a load fills the body only. */
+    private fun checkBlockLevel(call: String) {
+        check(!isLoadContent) { "Content of a load fills the block body only; call $call on the block itself" }
     }
 
     private fun footBar(): Footer = footerBar ?: Footer().apply { addClassName("ts-block__foot") }.also { created -> footerBar = created }
@@ -142,4 +185,16 @@ class BlockScope internal constructor(
 }
 
 /** Pagination of the table of a block and the callback that gets the component to show and hide with it. */
-private class TablePager(val pager: Component, val bindHost: (Component) -> Unit)
+internal class TablePager(private val pager: Component, private val bindHost: (Component) -> Unit) {
+    /** Puts the pagination at the end of [footer]; it shows and hides the whole [footer] if that is its own. */
+    fun placeInto(footer: Footer, isOwnFooter: Boolean) {
+        footer.add(pager)
+        bindHost(if (isOwnFooter) footer else pager)
+    }
+
+    /** Takes the pagination out of [footer]; its table no longer shows or hides the footer. */
+    fun takeOutOf(footer: Footer) {
+        bindHost(pager)
+        footer.remove(pager)
+    }
+}

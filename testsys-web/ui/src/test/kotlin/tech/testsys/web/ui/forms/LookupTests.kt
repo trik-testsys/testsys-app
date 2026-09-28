@@ -379,7 +379,7 @@ class LookupTests : MockVaadinTests() {
 
         val state = openDialogs().single().find("ts-empty")
         assertTrue("ts-empty--error" in state.classes())
-        assertEquals(testTexts.table.loadFailed, state.find("ts-empty__title").element.text)
+        assertEquals(testTexts.load.failed, state.find("ts-empty__title").element.text)
     }
 
     @Test
@@ -389,7 +389,7 @@ class LookupTests : MockVaadinTests() {
         lookupButton(testTexts.lookup.open)._click()
         val dialog = openDialogs().single()
 
-        findAllButtons(dialog).single { button -> button.text == testTexts.table.retry }._click()
+        findAllButtons(dialog).single { button -> button.text == testTexts.load.retry }._click()
 
         assertEquals(10, rows().size)
         assertTrue(dialog.find("ts-dialog__foot").isVisible)

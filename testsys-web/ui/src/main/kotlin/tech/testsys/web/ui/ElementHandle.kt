@@ -2,6 +2,9 @@ package tech.testsys.web.ui
 
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.HasText
+import com.vaadin.flow.dom.SignalBinding
+import com.vaadin.flow.signals.BindingActiveException
+import com.vaadin.flow.signals.Signal
 
 /**
  * Handle of a design system element that a page can show or hide after building it.
@@ -11,11 +14,19 @@ import com.vaadin.flow.component.HasText
  */
 @TestSysDsl
 open class ElementHandle internal constructor(internal val component: Component) {
-    var isVisible: Boolean
+    open var isVisible: Boolean
         get() = component.isVisible
         set(value) {
             component.isVisible = value
         }
+
+    /**
+     * Binds [isVisible] to [signal]: every value it produces is shown at once. A manual [isVisible] while bound, and
+     * a second binding, throw [BindingActiveException].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    open fun bindVisible(signal: Signal<Boolean>): SignalBinding<Boolean> = component.bindVisible(signal)
 }
 
 /**
@@ -30,4 +41,12 @@ class TextHandle internal constructor(private val holder: HasText, component: Co
         set(value) {
             holder.text = value
         }
+
+    /**
+     * Binds [text] to [signal]: every value it produces is shown at once. A manual [text] while bound, and a second
+     * binding, throw [BindingActiveException].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun bindText(signal: Signal<String>): SignalBinding<String> = holder.bindText(signal)
 }

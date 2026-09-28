@@ -42,7 +42,7 @@ internal fun buildEmptyState(content: EmptyContent, texts: UiTexts, isError: Boo
  * Fills the whole block body with an empty state: [title], optional [description], [icon] and [actions],
  * e.g. a way to where the missing things are made.
  *
- * @throws IllegalStateException if the block already holds rows, a table or an empty state.
+ * @throws IllegalStateException if the block already holds rows, a table, an empty state or a load.
  * @since %CURRENT_VERSION%
  */
 fun BlockScope.emptyState(

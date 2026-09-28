@@ -2,6 +2,7 @@ package tech.testsys.web.ui.layout
 
 import com.github.mvysny.kaributesting.v10._click
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -144,5 +145,14 @@ class EditingTests : MockVaadinTests() {
                 }
             }
         }
+    }
+
+    @Test
+    fun `should reject a signal binding of a block with an editing switch`() {
+        val handle = buildEditingBlock()
+
+        val error = assertThrows<IllegalStateException> { handle.bindEditable(ValueSignal(true)) }
+
+        assertTrue("editing switch" in error.message.orEmpty())
     }
 }

@@ -4,12 +4,15 @@ import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.signals.BindingActiveException
+import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import tech.testsys.web.ui.MockVaadinTests
 import tech.testsys.web.ui.buildTestContent
 import tech.testsys.web.ui.buildTestPage
@@ -138,6 +141,112 @@ class ActionTests : MockVaadinTests() {
             val button = _get<Button> { text = "Отправить" }
             assertTrue("ts-icon" in button.icon.element.classList)
             assertNull(button.element.getAttribute("aria-busy"))
+        }
+    }
+
+    @Nested
+    inner class BindingTests {
+        @Test
+        fun `should apply the enabled signal value at once`() {
+            buildTestContent { mainAction("Отправить") { bindEnabled(ValueSignal(false)) } }
+
+            assertFalse(_get<Button> { text = "Отправить" }.isEnabled)
+        }
+
+        @Test
+        fun `should follow the enabled signal while attached`() {
+            lateinit var handle: ActionHandle
+            buildTestContent { handle = mainAction("Отправить") }
+            val signal = ValueSignal(true)
+            handle.bindEnabled(signal)
+
+            signal.set(false)
+
+            assertFalse(_get<Button> { text = "Отправить" }.isEnabled)
+        }
+
+        @Test
+        fun `should reject a manual enabled value while bound`() {
+            lateinit var handle: ActionHandle
+            buildTestContent { handle = mainAction("Отправить") }
+            handle.bindEnabled(ValueSignal(true))
+
+            assertThrows<BindingActiveException> { handle.isEnabled = false }
+        }
+
+        @Test
+        fun `should reject a second enabled binding`() {
+            lateinit var handle: ActionHandle
+            buildTestContent { handle = mainAction("Отправить") }
+            handle.bindEnabled(ValueSignal(true))
+
+            assertThrows<BindingActiveException> { handle.bindEnabled(ValueSignal(false)) }
+        }
+
+        @Test
+        fun `should show spinner and mark busy from the loading signal at once`() {
+            buildTestContent { mainAction("Отправить", icon = IconName.Upload) { bindLoading(ValueSignal(true)) } }
+
+            val button = _get<Button> { text = "Отправить" }
+            assertTrue("ts-spinner" in button.icon.element.classList)
+            assertEquals("true", button.element.getAttribute("aria-busy"))
+        }
+
+        @Test
+        fun `should restore icon and clear busy when the loading signal turns false`() {
+            lateinit var handle: ActionHandle
+            buildTestContent { handle = mainAction("Отправить", icon = IconName.Upload) }
+            val signal = ValueSignal(true)
+            handle.bindLoading(signal)
+
+            signal.set(false)
+
+            val button = _get<Button> { text = "Отправить" }
+            assertTrue("ts-icon" in button.icon.element.classList)
+            assertNull(button.element.getAttribute("aria-busy"))
+        }
+
+        @Test
+        fun `should report loading values of the bound signal to change callbacks`() {
+            lateinit var handle: ActionHandle
+            buildTestContent { handle = mainAction("Отправить") }
+            val signal = ValueSignal(true)
+            val reported = mutableListOf<Pair<Boolean, Boolean>>()
+            handle.bindLoading(signal).onChange { context -> reported += context.oldValue to context.newValue }
+
+            signal.set(false)
+
+            assertEquals(listOf(true to true, true to false), reported)
+        }
+
+        @Test
+        fun `should ignore clicks while loading from the signal`() {
+            var clicks = 0
+            lateinit var handle: ActionHandle
+            buildTestContent { handle = mainAction("Отправить") { onClick { clicks++ } } }
+            handle.bindLoading(ValueSignal(true))
+
+            _get<Button> { text = "Отправить" }._click()
+
+            assertEquals(0, clicks)
+        }
+
+        @Test
+        fun `should reject a manual loading value while bound`() {
+            lateinit var handle: ActionHandle
+            buildTestContent { handle = mainAction("Отправить") }
+            handle.bindLoading(ValueSignal(true))
+
+            assertThrows<BindingActiveException> { handle.isLoading = false }
+        }
+
+        @Test
+        fun `should reject a second loading binding`() {
+            lateinit var handle: ActionHandle
+            buildTestContent { handle = mainAction("Отправить") }
+            handle.bindLoading(ValueSignal(true))
+
+            assertThrows<BindingActiveException> { handle.bindLoading(ValueSignal(false)) }
         }
     }
 }

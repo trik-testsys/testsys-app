@@ -5,6 +5,8 @@ import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.signals.BindingActiveException
+import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -426,6 +428,43 @@ class TableTests : MockVaadinTests() {
 
         assertFalse(ui().find("ts-table").isVisible)
         assertFalse(ui().find("ts-block__foot").isVisible)
+    }
+
+    @Test
+    fun `should hide the table and its pagination from the visible signal at once`() {
+        val handle = buildTable(Source(size = 12))
+
+        handle.bindVisible(ValueSignal(false))
+
+        assertFalse(ui().find("ts-table").isVisible)
+        assertFalse(ui().find("ts-block__foot").isVisible)
+    }
+
+    @Test
+    fun `should follow the visible signal while attached`() {
+        val handle = buildTable(Source(size = 12))
+        val signal = ValueSignal(true)
+        handle.bindVisible(signal)
+
+        signal.set(false)
+
+        assertFalse(ui().find("ts-table").isVisible)
+    }
+
+    @Test
+    fun `should reject a manual visible value while bound`() {
+        val handle = buildTable(Source(size = 12))
+        handle.bindVisible(ValueSignal(true))
+
+        assertThrows<BindingActiveException> { handle.isVisible = false }
+    }
+
+    @Test
+    fun `should reject a second visible binding`() {
+        val handle = buildTable(Source(size = 12))
+        handle.bindVisible(ValueSignal(true))
+
+        assertThrows<BindingActiveException> { handle.bindVisible(ValueSignal(false)) }
     }
 
     @Test

@@ -9,6 +9,7 @@ import tech.testsys.web.ui.CalendarTexts
 import tech.testsys.web.ui.DialogTexts
 import tech.testsys.web.ui.EditingTexts
 import tech.testsys.web.ui.FieldErrorTexts
+import tech.testsys.web.ui.LoadTexts
 import tech.testsys.web.ui.LookupTexts
 import tech.testsys.web.ui.MenuTexts
 import tech.testsys.web.ui.NavigationTexts
@@ -55,9 +56,11 @@ fun buildUiTexts(region: SupportedRegion): UiTexts {
             next = ui.tableNext(),
             selectAll = ui.tableSelectAll(),
             selectRow = ui.tableSelectRow(),
-            loadFailed = ui.tableLoadFailed(),
-            loadFailedHint = ui.tableLoadFailedHint(),
-            retry = ui.tableRetry(),
+        ),
+        load = LoadTexts(
+            failed = ui.loadFailed(),
+            failedHint = ui.loadFailedHint(),
+            retry = ui.loadRetry(),
         ),
         dialog = DialogTexts(
             cancel = ui.dialogCancel(),

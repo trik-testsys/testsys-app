@@ -52,7 +52,7 @@ private val SEASONS = listOf("Весенний", "Летний", "Осенний
 private val CONTEST_KINDS = listOf("кубок", "тур", "марафон")
 
 /** Verdict of a showcase submission with its badge tone. */
-private enum class ShowcaseVerdict(val label: String, val tone: Tone) {
+internal enum class ShowcaseVerdict(val label: String, val tone: Tone) {
     Accepted("Принято", Tone.Success),
     WrongAnswer("Неверный ответ", Tone.Danger),
     TimeLimit("Превышено время", Tone.Warning),
@@ -60,7 +60,7 @@ private enum class ShowcaseVerdict(val label: String, val tone: Tone) {
 }
 
 /** Submission row of the showcase tables; a running submission has no score yet. */
-private class ShowcaseSubmission(
+internal class ShowcaseSubmission(
     val id: Long,
     val author: String,
     val task: String,
@@ -78,7 +78,7 @@ private class ShowcaseTour(var name: String = "", var period: DateRange = DateRa
 /** Form of the required showcase lookup. */
 private class ShowcaseChoice(var contest: ShowcaseContest? = null)
 
-private val SUBMISSIONS: List<ShowcaseSubmission> = (0 until SUBMISSION_COUNT).map { index ->
+internal val SUBMISSIONS: List<ShowcaseSubmission> = (0 until SUBMISSION_COUNT).map { index ->
     val verdict = ShowcaseVerdict.entries[index % ShowcaseVerdict.entries.size]
     ShowcaseSubmission(
         id = FIRST_SUBMISSION_ID + index,
@@ -280,7 +280,7 @@ private fun BlockRowScope.contestLookup(
     configure = configure,
 )
 
-private fun TableScope<ShowcaseSubmission>.submissionColumns() {
+internal fun TableScope<ShowcaseSubmission>.submissionColumns() {
     codeColumn("ID") { row -> "#${row.id}" }
     textColumn("Участник") { row -> row.author }
     textColumn("Задача") { row -> row.task }

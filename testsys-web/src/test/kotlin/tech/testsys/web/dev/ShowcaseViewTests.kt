@@ -202,6 +202,33 @@ class ShowcaseViewTests {
         fun `should show menus in a block head and in table rows`() {
             assertTrue(_find<Button>().count { button -> button.element.getAttribute("aria-haspopup") == "menu" } > 2)
         }
+
+        @Test
+        fun `should show the live updates blocks`() {
+            val titles = _find<Component> { classes = "ts-block__title" }.map { component -> component.element.text }
+
+            assertTrue("Загрузка" in titles)
+            assertTrue("Посылки" in titles)
+            assertTrue("Часы" in titles)
+        }
+
+        @Test
+        fun `should show a skeleton in the live load blocks right after navigation`() {
+            assertTrue(_find<Component> { classes = "ts-skel" }.isNotEmpty())
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Загрузить снова", "Новая посылка через 2 с"])
+        fun `should show a live updates action`(text: String) {
+            assertTrue(_find<Button>().any { button -> button.text == text })
+        }
+
+        @Test
+        fun `should show the current time in the clock block right after navigation`() {
+            val texts = _find<Component>().map { component -> component.element.textRecursively }
+
+            assertTrue(texts.any { text -> Regex("""\d\d:\d\d:\d\d""").matches(text) })
+        }
     }
 
     @Nested

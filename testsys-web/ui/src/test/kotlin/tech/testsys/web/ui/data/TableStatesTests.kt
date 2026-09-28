@@ -49,8 +49,8 @@ class TableStatesTests : MockVaadinTests() {
 
         val state = ui().find("ts-empty")
         assertTrue("ts-empty--error" in state.classes())
-        assertEquals(testTexts.table.loadFailed, state.find("ts-empty__title").element.text)
-        assertEquals(testTexts.table.loadFailedHint, state.find("ts-empty__desc").element.text)
+        assertEquals(testTexts.load.failed, state.find("ts-empty__title").element.text)
+        assertEquals(testTexts.load.failedHint, state.find("ts-empty__desc").element.text)
         assertTrue("ts-row-empty" in state.parent.orElseThrow().parent.orElseThrow().classes())
     }
 
@@ -82,7 +82,7 @@ class TableStatesTests : MockVaadinTests() {
         val source = Source(size = 12, failures = 1)
         buildTable(source::fetch)
 
-        button(testTexts.table.retry)._click()
+        button(testTexts.load.retry)._click()
 
         assertEquals(5, rows().size)
     }
@@ -92,7 +92,7 @@ class TableStatesTests : MockVaadinTests() {
         val source = Source(size = 12, failures = 1)
         buildTable(source::fetch)
 
-        button(testTexts.table.retry)._click()
+        button(testTexts.load.retry)._click()
 
         assertTrue(ui().find("ts-block__foot").isVisible)
         assertTrue(ui().find("ts-table-pager").isVisible)
@@ -106,7 +106,7 @@ class TableStatesTests : MockVaadinTests() {
         source.failures = 1
         handle.refresh()
 
-        button(testTexts.table.retry)._click()
+        button(testTexts.load.retry)._click()
 
         assertEquals(5, source.requests.last().offset)
     }
@@ -119,7 +119,7 @@ class TableStatesTests : MockVaadinTests() {
         source.failures = 1
         handle.refresh()
 
-        button(testTexts.table.retry)._click()
+        button(testTexts.load.retry)._click()
 
         assertEquals(setOf<Any>(1), handle.selected)
     }
@@ -163,7 +163,7 @@ class TableStatesTests : MockVaadinTests() {
         handle.refresh()
         source.requests.clear()
 
-        button(testTexts.table.retry)._click()
+        button(testTexts.load.retry)._click()
 
         assertEquals(listOf(5), source.requests.map { request -> request.offset })
     }

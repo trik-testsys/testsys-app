@@ -17,6 +17,7 @@ testsys-app/
 ├── gradle/
 │   ├── libs.versions.toml    # Каталог версий зависимостей (единственное место с версиями)
 │   └── wrapper/
+├── gradle.properties         # Параметры JVM Gradle-демона (память)
 ├── scripts/                  # Вспомогательные скрипты: проверка KDoc (см. code-style.md)
 ├── testsys-domain/           # Доменная модель и порты
 ├── testsys-operation/        # Операции (сценарии фич testsys.user.*)
@@ -67,9 +68,14 @@ testsys-app/
 - `gradle/libs.versions.toml` — версии, библиотеки и bundles. Версии зависимостей указываются только здесь.
   Версия Spring Boot одна на весь проект. Модули со Spring подключают BOM `libs.spring.boot.bom` через
   `platform(...)`; версии стартеров, Hibernate, Liquibase, H2 и драйвера PostgreSQL задаёт BOM, в каталоге их нет.
-- В `build.gradle.kts` модуля остаются только плагины сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`,
-  у `testsys-web` — ещё Spring Boot и Vaadin) и зависимости; исключение — задача `processResources`
-  в `testsys-web:ui`, которая копирует CSS дизайн-системы в jar.
+- `gradle.properties` — память Gradle-демона (`org.gradle.jvmargs`): значений Gradle по умолчанию полной сборке
+  с KSP, Vaadin и Detekt не хватает. Демон Kotlin наследует эти параметры.
+- В `build.gradle.kts` модуля, кроме плагинов сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`, у `testsys-web` —
+  ещё Spring Boot и Vaadin) и зависимостей, может быть и модуль-специфичная логика сборки — она остаётся в скрипте
+  своего модуля. Так, в `testsys-infra/localization` это кодогенерация (см.
+  [localization/README.md](../../testsys-infra/localization/README.md)), в `testsys-web:ui` — копирование CSS
+  дизайн-системы в jar и сохранение временных меток его файлов, в `testsys-web` — условие задачи
+  `vaadinBuildFrontend` (см. ниже).
 
 Полная сборка — компиляция, тесты и Detekt:
 
@@ -99,10 +105,17 @@ testsys-app/
 
 Режиму разработки Vaadin нужен `com.vaadin:vaadin-dev`; он подключён как `developmentOnly`, поэтому есть в classpath
 `bootRun`, но не попадает в `bootJar`. Плагин Vaadin генерирует `testsys-web/src/main/frontend/index.html`
-(хранится в git) и `src/main/frontend/generated/` (в `.gitignore`).
+(хранится в git) и `src/main/frontend/generated/` (в `.gitignore`). Свои файлы (в том числе настройки dev-сервера)
+dev-режим кладёт в `build/` — так задаёт `vaadin.build.folder` в `application.yml`; без него, при запуске без
+токен-файла Gradle-плагина, использовался бы каталог Maven `target/`.
 
 `bootJar` собирает приложение в production-режиме. Пока своего клиентского кода нет, Vaadin использует готовый
 бандл; Node.js (плагин ставит его в `~/.vaadin`) понадобится, когда появятся собственные клиентские модули.
+
+Production-сборку фронтенда (`vaadinBuildFrontend`) выполняют только запуски с `bootJar` или `bootBuildImage`
+(`assemble` и `build` включают `bootJar`); `bootRun`, тесты и `check` её пропускают. Условие проверяет граф задач
+в `testsys-web/build.gradle.kts`: плагин Vaadin 25.2 включает production-режим, если задача `bootJar` просто есть
+в проекте, и без условия собирал бы фронтенд перед каждым запуском и тестами.
 
 Detekt 1.23 не разбирает context parameters (`context(name: Type)`): правила набора `formatting` на таком файле
 падают с исключением. Файл с context parameters добавляется в `excludes` набора `formatting` в `detekt.yml`;

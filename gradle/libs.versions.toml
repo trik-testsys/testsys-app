@@ -1,15 +1,15 @@
 [versions]
 junit = "6.0.3"
-kotlin = "2.2.21"
-detekt = "1.23.8"
+kotlin = "2.4.20"
+detekt = "2.0.0-alpha.6"
 spring-boot = "4.1.1"
-ksp = "2.2.21-2.0.5"
-kotlinpoet = "2.3.0"
-kctfork = "0.12.1"
+ksp = "2.3.12"
+kotlinpoet = "2.4.0"
+kctfork = "0.14.0"
 icu = "78.1"
 mockk = "1.14.9"
-vaadin = "25.2.8"
-karibu-testing = "2.7.0"
+vaadin = "25.3.0"
+karibu-testing = "2.7.3"
 
 [libraries]
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
@@ -30,8 +30,8 @@ spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-star
 postgresql = { module = "org.postgresql:postgresql" }
 h2 = { module = "com.h2database:h2" }
 
-detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
-detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+detekt-gradle-plugin = { module = "dev.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+detekt-rules-ktlint-wrapper = { module = "dev.detekt:detekt-rules-ktlint-wrapper", version.ref = "detekt" }
 
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 kotlinpoet-core = { module = "com.squareup:kotlinpoet", version.ref = "kotlinpoet" }
@@ -58,7 +58,9 @@ test-implementation = [
 ]
 test-runtime = [
     "junit-jupiter-engine",
-    "junit-platform-launcher"
+    "junit-platform-launcher",
+    # MockK alone would pull an older kotlin-reflect than the compiler; keep reflection on the compiler version.
+    "kotlin-reflect",
 ]
 kotlin-implementation = [
     "kotlin-gradle-plugin",
@@ -80,7 +82,6 @@ database-test-implementation = [
 ]
 detekt-implementation = [
     "detekt-gradle-plugin",
-    "detekt-formatting",
 ]
 icu-implementation = [
     "icu4j",

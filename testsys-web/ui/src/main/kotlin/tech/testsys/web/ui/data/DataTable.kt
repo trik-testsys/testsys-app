@@ -2,12 +2,12 @@ package tech.testsys.web.ui.data
 
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.checkbox.Checkbox
-import com.vaadin.flow.component.html.NativeTable
-import com.vaadin.flow.component.html.NativeTableBody
-import com.vaadin.flow.component.html.NativeTableCell
-import com.vaadin.flow.component.html.NativeTableHeader
-import com.vaadin.flow.component.html.NativeTableHeaderCell
-import com.vaadin.flow.component.html.NativeTableRow
+import com.vaadin.flow.component.html.Table
+import com.vaadin.flow.component.html.TableBody
+import com.vaadin.flow.component.html.TableDataCell
+import com.vaadin.flow.component.html.TableHead
+import com.vaadin.flow.component.html.TableHeaderCell
+import com.vaadin.flow.component.html.TableRow
 import org.slf4j.LoggerFactory
 import tech.testsys.web.ui.UiTexts
 import tech.testsys.web.ui.actions.action
@@ -46,7 +46,7 @@ internal class DataTable<T>(
     private val spec: TableSpec<T>,
     private val highlighted: (T) -> Boolean = { false },
 ) {
-    val table: NativeTable = NativeTable().apply { addClassName("ts-table") }
+    val table: Table = Table().apply { addClassName("ts-table") }
     val pager: Pager = Pager(texts) { target -> load(target) }
 
     /** Keys of the selected rows, kept across pages, sorting and reloads. */
@@ -63,7 +63,7 @@ internal class DataTable<T>(
             updatePagerVisibility()
         }
 
-    private val body = NativeTableBody()
+    private val body = TableBody()
     private val sortHeaders = mutableListOf<SortHeader>()
     private var sort: Sort? = null
     private var page = 0
@@ -86,7 +86,8 @@ internal class DataTable<T>(
 
     init {
         require(pageSize >= 1) { "Table page size must be at least 1, got $pageSize" }
-        table.add(NativeTableHeader(headerRow()), body)
+        table.setHead(TableHead(headerRow()))
+        table.addBody(body)
         load(0)
     }
 
@@ -132,10 +133,10 @@ internal class DataTable<T>(
 
     private fun fetchPage(target: Int): Page<T> = fetch(PageRequest(offset = target * pageSize, limit = pageSize, sort = sort))
 
-    private fun headerRow(): NativeTableRow = NativeTableRow().apply {
-        if (isSelectable) add(NativeTableHeaderCell(headerCheckbox).apply { style.set("width", SELECT_COLUMN_WIDTH) })
+    private fun headerRow(): TableRow = TableRow().apply {
+        if (isSelectable) add(TableHeaderCell(headerCheckbox).apply { style.set("width", SELECT_COLUMN_WIDTH) })
         spec.columns.forEach { column ->
-            val cell = NativeTableHeaderCell(column.title)
+            val cell = TableHeaderCell(column.title)
             if (column.kind == CellKind.Number) cell.addClassName("ts-right")
             if (column.kind == CellKind.Menu) {
                 cell.style.set("width", MENU_COLUMN_WIDTH)
@@ -202,21 +203,21 @@ internal class DataTable<T>(
     )
 
     /** Row of one cell over all columns that holds [content] instead of rows. */
-    private fun messageRow(content: Component): NativeTableRow {
-        val cell = NativeTableCell(content).apply {
+    private fun messageRow(content: Component): TableRow {
+        val cell = TableDataCell(content).apply {
             element.setAttribute("colspan", (spec.columns.size + if (isSelectable) 1 else 0).toString())
             style.set("padding", "0")
         }
-        return NativeTableRow(cell).apply { addClassName("ts-row-empty") }
+        return TableRow(cell).apply { addClassName("ts-row-empty") }
     }
 
-    private fun rowOf(row: T): NativeTableRow = NativeTableRow().apply {
-        val shownRow = ShownRow(key(row), this, isHighlighted = highlighted(row))
+    private fun rowOf(row: T): TableRow = TableRow().apply {
+        val shownRow = ShownRow(key = key(row), row = this, isHighlighted = highlighted(row))
         shownRows += shownRow
-        if (isSelectable) add(NativeTableCell(shownRow.checkbox))
+        if (isSelectable) add(TableDataCell(shownRow.checkbox))
         shownRow.update()
         spec.columns.forEach { column ->
-            val cell = NativeTableCell()
+            val cell = TableDataCell()
             column.kind.cssClass?.split(' ')?.forEach { cssClass -> cell.addClassName(cssClass) }
             column.fill(row, cell)
             add(cell)
@@ -245,7 +246,7 @@ internal class DataTable<T>(
     }
 
     /** Row of the shown page: its [key], its markup and its selection checkbox. */
-    private inner class ShownRow(val key: Any, private val row: NativeTableRow, private val isHighlighted: Boolean) {
+    private inner class ShownRow(val key: Any, private val row: TableRow, private val isHighlighted: Boolean) {
         val checkbox = Checkbox(key in selected).apply {
             setAriaLabel(texts.table.selectRow)
             addValueChangeListener { event ->
@@ -269,5 +270,5 @@ internal class DataTable<T>(
     }
 
     /** Header cell of a sortable column with its plain [title]. */
-    private class SortHeader(val sortKey: String, val title: String, val cell: NativeTableHeaderCell)
+    private class SortHeader(val sortKey: String, val title: String, val cell: TableHeaderCell)
 }

@@ -25,7 +25,7 @@ internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, isW
         modality = ModalityMode.STRICT
         isCloseOnEsc = true
         isCloseOnOutsideClick = true
-        role = if (isAlert) "alertdialog" else "dialog"
+        setAriaRole(if (isAlert) "alertdialog" else "dialog")
         // Dialog.setAriaLabel is protected; it only sets this property.
         element.setProperty("ariaLabel", title)
     }

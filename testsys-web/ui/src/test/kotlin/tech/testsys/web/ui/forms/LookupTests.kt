@@ -9,8 +9,8 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.html.NativeButton
-import com.vaadin.flow.component.html.NativeTableBody
-import com.vaadin.flow.component.html.NativeTableRow
+import com.vaadin.flow.component.html.TableBody
+import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.internal.PendingJavaScriptInvocation
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.binder.Binder
@@ -432,8 +432,8 @@ class LookupTests : MockVaadinTests() {
 
     /** Rows of the table body in the open dialog. */
     private fun rows(): List<Component> = openDialogs().single().find("ts-table").children.toList()
-        .filterIsInstance<NativeTableBody>().single()
-        .children.toList().filterIsInstance<NativeTableRow>()
+        .filterIsInstance<TableBody>().single()
+        .children.toList().filterIsInstance<TableRow>()
 
     /**
      * Takes the JavaScript calls queued since the last call, flushing the queue as the response would do;

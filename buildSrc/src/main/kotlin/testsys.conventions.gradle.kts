@@ -1,11 +1,11 @@
-import io.gitlab.arturbosch.detekt.Detekt
+import dev.detekt.gradle.Detekt
+import dev.detekt.gradle.extensions.FailOnSeverity
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm")
-    id("io.gitlab.arturbosch.detekt")
+    id("dev.detekt")
 }
 
 group = "tech.testsys"
@@ -20,26 +20,11 @@ repositories {
 // Accessing libs.versions.toml from buildSrc is complicated, so avoid declaring dependencies here.
 dependencies {
     testImplementation(kotlin("test"))
-    detektPlugins(libs.findLibrary("detekt-formatting").get())
+    detektPlugins(libs.findLibrary("detekt-rules-ktlint-wrapper").get())
 }
 
 kotlin {
     jvmToolchain(21)
-}
-
-// The Spring Boot BOM manages newer Kotlin runtime libraries than our compiler, and Detekt's embedded compiler cannot
-// read the newer metadata, so its type resolution breaks. Align them (and kotlin-test, built against the same stdlib)
-// to the compiler version everywhere. This also downgrades the stdlib that non-BOM libraries built with a newer Kotlin
-// ask for (kotlinpoet, kctfork, Karibu-Testing), so check them when they are updated.
-val kotlinVersion = getKotlinPluginVersion()
-val compilerAlignedKotlinLibraries = listOf("kotlin-stdlib", "kotlin-reflect", "kotlin-test")
-configurations.configureEach {
-    resolutionStrategy.eachDependency {
-        if (requested.group == "org.jetbrains.kotlin" && compilerAlignedKotlinLibraries.any(requested.name::startsWith)) {
-            useVersion(kotlinVersion)
-            because("Kotlin runtime libraries follow the Kotlin compiler version")
-        }
-    }
 }
 
 tasks.test {
@@ -48,10 +33,8 @@ tasks.test {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions {
-        freeCompilerArgs.set(listOf("-XXLanguage:+ContextParameters"))
-
-        languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_2)
-        apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_2)
+        languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_4)
+        apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_4)
 
         allWarningsAsErrors = true
         jvmTarget = JvmTarget.JVM_21
@@ -67,6 +50,10 @@ tasks.withType<Detekt>().configureEach {
     buildUponDefaultConfig = false
     // `-Pdetekt.autoCorrect=false` runs Detekt without rewriting sources (read-only checks, e.g. during review).
     autoCorrect = providers.gradleProperty("detekt.autoCorrect").map { it.toBoolean() }.getOrElse(true)
+    // detekt 2 dropped `build.maxIssues` (`config.warningsAsErrors` in detekt.yml still exists); failure is now
+    // driven by severity instead of an issue count. The project used to fail the build on any finding
+    // (`maxIssues: 0`), so fail on the lowest severity (Info) to keep that behaviour.
+    failOnSeverity = FailOnSeverity.Info
 
     // Skip KSP / KAPT / any other build-time generated sources; they are not part of
     // hand-written code and any style nits there are out of the author's control.

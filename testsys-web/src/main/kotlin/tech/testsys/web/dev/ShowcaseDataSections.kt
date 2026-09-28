@@ -251,7 +251,7 @@ private fun tourDialog(): DialogHandle {
                 onClick {
                     val tour = ShowcaseTour()
                     if (binder.writeBeanIfValid(tour)) {
-                        toast(FeedbackKind.Success, "Тур создан", tour.name)
+                        toast(kind = FeedbackKind.Success, title = "Тур создан", description = tour.name)
                         handle.close()
                     }
                 }

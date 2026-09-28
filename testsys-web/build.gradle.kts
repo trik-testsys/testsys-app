@@ -24,3 +24,10 @@ dependencies {
     testImplementation(libs.karibu.testing.spring)
     testRuntimeOnly(libs.bundles.test.runtime)
 }
+
+// Vaadin 25.2 turns production mode on whenever the project has a bootJar task, so it also builds the production
+// frontend before bootRun and tests. Only a jar or an image needs the production bundle.
+gradle.taskGraph.whenReady {
+    val packaged = hasTask("${project.path}:bootJar") || hasTask("${project.path}:bootBuildImage")
+    tasks.named("vaadinBuildFrontend") { enabled = packaged }
+}

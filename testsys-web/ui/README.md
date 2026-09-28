@@ -61,6 +61,9 @@ class ProfileView(texts: UiTexts) : TestSysView(texts) {
 [Страницы с параметром маршрута](#страницы-с-параметром-маршрута)). Вызов `page(...)` из тела страницы, которая ещё
 строится, — `IllegalStateException`.
 
+Заголовок вкладки браузера страница задаёт через `@PageTitle` или `HasDynamicTitle`. Без своего заголовка страница
+сохраняет заголовок приложения — имя бренда из локализации (`ui.brand`), которое задаёт `AppShell` в `testsys-web`.
+
 ## Заголовок страницы
 
 `head(title) { … }` в `PageScope` — полоса `.ts-page-head` между шапкой Кабинета и `main`: крошки, строка `h1`
@@ -501,6 +504,9 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 `ui.nav.*` и `ui.menu.*`. Приложение собирает `UiTexts` функцией `buildUiTexts` в `testsys-web` из ключей `ui.*` модуля
 локализации и данных ICU. Строки страницы передаются в функции DSL как `String`; правила локализации —
 в [localization/README.md](../../testsys-infra/localization/README.md).
+
+Страницы берут строки из локализации; исключение для витрины — в разделе «Чего не делаем»
+[localization/README.md](../../testsys-infra/localization/README.md).
 
 Функции верхнего уровня (`confirm`, `dialog`) не видят скоупов DSL, поэтому `page(...)` привязывает `UiTexts`
 страницы к текущему `UI`, а диалоги берут их оттуда (см. [Диалоги](#диалоги)).

@@ -3,3 +3,7 @@ spring:
     name: testsys-web
 vaadin:
   launch-browser: false
+  # Dev mode writes its files into the build folder; without a token file from the Gradle plugin it defaults to
+  # Maven's target/.
+  build:
+    folder: build

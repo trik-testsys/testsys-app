@@ -26,7 +26,8 @@
 | `tokens/colors.css`               | Акцент, ink, нейтральные, семантические цвета, алиасы                                       |
 | `tokens/typography.css`           | Семейства шрифтов, шкала кеглей, начертания                                                 |
 | `tokens/spacing.css`              | Отступы, радиусы, высоты контролов, тени, сетка, анимации                                   |
-| `tokens/fonts.css`                | Onest и JetBrains Mono (Google Fonts, OFL)                                                  |
+| `tokens/fonts.css`                | `@font-face` Onest и JetBrains Mono из `tokens/fonts/`                                      |
+| `tokens/fonts/`                   | Variable-шрифты woff2 (латиница и кириллица) и их лицензии OFL; источник — Fontsource       |
 | `tokens/base.css`                 | Сброс стилей `body`, ссылки, keyframes, reduced-motion                                      |
 | `tokens/components.css`           | Классы `.ts-*`, на которых построены React-компоненты; работают и без React                 |
 | `guidelines/`                     | Карточки-образцы: цвета, типографика, отступы, радиусы, тени, сетка, контролы, анимации, бренд |

@@ -117,6 +117,7 @@ class PageTabsScope internal constructor(private val view: Class<out Component>?
 
     /**
      * Adds a tab named [label] that opens [target] with [parameters]; a [count] above zero shows a counter of [countKind].
+     * [activeOn] lists additional pages of this section; an exact target match takes priority.
      *
      * @throws IllegalArgumentException if [count] is negative.
      * @since %CURRENT_VERSION%
@@ -127,16 +128,18 @@ class PageTabsScope internal constructor(private val view: Class<out Component>?
         parameters: RouteParameters = RouteParameters.empty(),
         count: Int? = null,
         countKind: CounterKind = CounterKind.Neutral,
+        activeOn: Set<Class<out Component>> = emptySet(),
     ) {
         require(count == null || count >= 0) { "Page tab '$label' count must not be negative, got $count" }
         val link = RouterLink(label, target, parameters).apply { addClassName("ts-tab") }
         if (count != null && count > 0) link.add(buildCounter(count, countKind))
-        tabs += PageTab(link, target)
+        tabs += PageTab(link, target, activeOn.toSet())
     }
 
     internal fun build(ariaLabel: String): Nav {
         require(tabs.size >= MIN_PAGE_TABS) { "Page tabs need at least $MIN_PAGE_TABS tabs, got ${tabs.size}" }
         val current = tabs.firstOrNull { tab -> tab.target == view }
+            ?: tabs.firstOrNull { tab -> view in tab.activeOn }
         return Nav().apply {
             addClassNames("ts-tabs", "ts-tabs--bare", "ts-tabs--lg")
             element.setAttribute("aria-label", ariaLabel)
@@ -147,10 +150,10 @@ class PageTabsScope internal constructor(private val view: Class<out Component>?
     private fun mark(tab: PageTab, isCurrent: Boolean): RouterLink = tab.link.apply {
         if (isCurrent) {
             addClassName("ts-tab--active")
-            element.setAttribute("aria-current", "page")
+            element.setAttribute("aria-current", if (tab.target == view) "page" else "location")
         }
     }
 }
 
 /** Tab of the page head: its ready-made [link] and the route it opens, used to find the current tab. */
-private class PageTab(val link: RouterLink, val target: Class<out Component>)
+private class PageTab(val link: RouterLink, val target: Class<out Component>, val activeOn: Set<Class<out Component>>)

@@ -3,6 +3,7 @@ package tech.testsys.web.ui.forms
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.datepicker.DatePicker
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.binder.ValidationResult
 import com.vaadin.flow.data.binder.ValidationStatusChangeEvent
@@ -11,6 +12,7 @@ import com.vaadin.flow.data.binder.Validator
 import com.vaadin.flow.data.binder.ValueContext
 import com.vaadin.flow.shared.Registration
 import java.time.LocalDate
+import java.util.UUID
 
 /**
  * Range of days with optional ends.
@@ -29,11 +31,16 @@ internal class DateRangeField(
     private val start: DatePicker,
     private val end: DatePicker,
     private val reversedMessage: String,
+    requiredMessage: String,
 ) : CustomField<DateRange>(DateRange()), HasValidator<DateRange> {
     private var isPresenting = false
+    private val requiredDescription = Span(requiredMessage).apply {
+        setId("ts-range-required-${UUID.randomUUID()}")
+        element.setAttribute("hidden", true)
+    }
 
     init {
-        add(Div(start, end).apply { addClassName("ts-date-range") })
+        add(Div(start, end).apply { addClassName("ts-date-range") }, requiredDescription)
         start.setManualValidation(true)
         end.setManualValidation(true)
         start.addValueChangeListener { event ->
@@ -44,6 +51,13 @@ internal class DateRangeField(
             start.max = event.value
             if (!isPresenting) updateValue()
         }
+    }
+
+    override fun setRequiredIndicatorVisible(requiredIndicatorVisible: Boolean) {
+        super.setRequiredIndicatorVisible(requiredIndicatorVisible)
+        val description = requiredDescription.id.orElseThrow().takeIf { requiredIndicatorVisible }
+        start.setAriaDescribedBy(description)
+        end.setAriaDescribedBy(description)
     }
 
     override fun generateModelValue(): DateRange = DateRange(from = start.value, to = end.value)

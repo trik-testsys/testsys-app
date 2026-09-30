@@ -1,7 +1,6 @@
 package tech.testsys.web.dev
 
 import com.github.mvysny.kaributesting.v10.MockVaadin
-import com.github.mvysny.kaributesting.v10.NotFoundError
 import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
@@ -33,7 +32,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
@@ -41,6 +39,7 @@ import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import tech.testsys.web.MockSpringVaadinTests
+import tech.testsys.web.error.NotFoundView
 import tech.testsys.web.ui.display.CounterKind
 import tech.testsys.web.ui.display.TagKind
 import tech.testsys.web.ui.display.Tone
@@ -303,6 +302,23 @@ class ShowcaseViewTests {
         }
     }
 
+    @Nested
+    @SpringBootTest
+    @ActiveProfiles("dev")
+    inner class NestedPageTests : MockSpringVaadinTests() {
+        @Test
+        fun `should mark states section and expose compound focus examples`() {
+            UI.getCurrent().navigate("dev/showcase/states/accessibility")
+
+            expectView<ShowcaseNestedView>()
+            val current = _find<RouterLink>().single { link -> link.element.getAttribute("aria-current") == "location" }
+            assertEquals("dev/showcase/states", current.href)
+            assertTrue(_find<DateTimePicker>().isNotEmpty())
+            assertEquals(listOf("Период: с", "Период: по"), _find<DatePicker>().mapNotNull { picker -> picker.ariaLabel.orElse(null) })
+            assertTrue(_find<Button>().any { button -> button.text == "Сохранить явно" })
+        }
+    }
+
     /** The block titled [title] on the open page. */
     private fun block(title: String): Section = _find<Section> { classes = "ts-block" }
         .single { section -> section._find<H3> { classes = "ts-block__title" }.any { heading -> heading.text == title } }
@@ -315,12 +331,23 @@ class ShowcaseViewTests {
     inner class DefaultProfileTests : MockSpringVaadinTests() {
         @Test
         fun `should not open the showcase without the dev profile`() {
-            assertThrows<NotFoundError> { UI.getCurrent().navigate("dev/showcase") }
+            UI.getCurrent().navigate("dev/showcase")
+
+            expectView<NotFoundView>()
+        }
+
+        @Test
+        fun `should not open accessibility examples without the dev profile`() {
+            UI.getCurrent().navigate("dev/showcase/states/accessibility")
+
+            expectView<NotFoundView>()
         }
 
         @Test
         fun `should not open the states page without the dev profile`() {
-            assertThrows<NotFoundError> { UI.getCurrent().navigate("dev/showcase/states") }
+            UI.getCurrent().navigate("dev/showcase/states")
+
+            expectView<NotFoundView>()
         }
     }
 }

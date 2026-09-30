@@ -69,6 +69,8 @@ fun BlockRowScope.dateTimeInput(
     val control = DateTimePicker().apply {
         locale = texts.locale
         setDatePickerI18n(datePickerI18n(texts))
+        setDateAriaLabel(texts.dateFields.date)
+        setTimeAriaLabel(texts.dateFields.time)
         i18n = DateTimePicker.DateTimePickerI18n()
             .setBadInputErrorMessage(texts.fieldErrors.badInput)
             .setIncompleteInputErrorMessage(texts.fieldErrors.badInput)
@@ -91,7 +93,12 @@ fun BlockRowScope.dateRangeInput(
     hint: String? = null,
     configure: ValueInput<DateRange>.() -> Unit = {},
 ): ValueInput<DateRange> {
-    val control = DateRangeField(datePicker(texts), datePicker(texts), texts.dateRangeReversed)
+    val control = DateRangeField(
+        start = datePicker(texts).apply { setAriaLabel(texts.dateFields.rangeFrom(label)) },
+        end = datePicker(texts).apply { setAriaLabel(texts.dateFields.rangeTo(label)) },
+        reversedMessage = texts.dateRangeReversed,
+        requiredMessage = texts.dateFields.rangeRequired,
+    )
     val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<DateRange>> ->
         control.addValueChangeListener { event -> listener.valueChanged(event) }
     }

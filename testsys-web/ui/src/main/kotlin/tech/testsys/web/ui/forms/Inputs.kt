@@ -43,6 +43,7 @@ internal fun <C, T> BlockRowScope.placeInput(
     where C : AbstractField<*, T>, C : HasValidation, C : HasValidator<T> {
     (control as? HasHelper)?.helperText = hint
     nameControl(control, label)
+    control.element.setAttribute("data-ts-input", true)
     // A native label toggles its checkbox on a click and focuses any other control.
     val labelAction = if (control is Checkbox) LabelAction.Click else LabelAction.Focus
     val parts = placeField(label, labelSize, size, control, labelAction)
@@ -62,6 +63,7 @@ internal fun <C, T> ContentScope.addLabelLessInput(
 ): ValueInput<T>
     where C : AbstractField<C, T>, C : HasValidation, C : HasValidator<T> {
     nameControl(control, label)
+    control.element.setAttribute("data-ts-input", true)
     control.element.setAttribute("data-ts-size", if (placement.isCompact) "sm" else "md")
     add(control)
     return ValueInput(parts = null, control, control, control, valueChanges(control)).apply(configure)

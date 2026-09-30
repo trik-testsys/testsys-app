@@ -370,6 +370,7 @@ a.ts-tab { text-decoration:none; }
 .ts-tipwrap > .ts-tooltip--left { right:calc(100% + 8px); top:50%; transform:translateY(-50%); }
 
 /* ---------- Data ---------- */
+.ts-table-scroll { width:100%; max-width:100%; min-width:0; overflow-x:auto; }
 .ts-table { width:100%; border-collapse:collapse; font:var(--fw-regular) var(--fs-sm) var(--font-sans); }
 .ts-table th { text-align:left; padding:6px var(--space-3); font:var(--fw-medium) var(--fs-caption) var(--font-sans); color:var(--text-secondary); background:var(--sunken); border-bottom:1px solid var(--border-default); white-space:nowrap; }
 .ts-table th:first-child, .ts-table td:first-child { padding-left:var(--space-3); }

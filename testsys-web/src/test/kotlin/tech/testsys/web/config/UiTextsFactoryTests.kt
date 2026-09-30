@@ -9,6 +9,23 @@ class UiTextsFactoryTests {
     private val texts = buildUiTexts(SupportedRegion.RU)
 
     @Test
+    fun `should localize compound date names and required range instruction`() {
+        assertEquals("дата", texts.dateFields.date)
+        assertEquals("время", texts.dateFields.time)
+        assertEquals("Период: с", texts.dateFields.rangeFrom("Период"))
+        assertEquals("Период: по", texts.dateFields.rangeTo("Период"))
+        assertEquals("Укажите хотя бы одну границу периода", texts.dateFields.rangeRequired)
+    }
+
+    @Test
+    fun `should localize not found screen and brand in page title`() {
+        assertEquals("Страница не найдена", texts.notFound.title)
+        assertEquals("Проверьте адрес или вернитесь на предыдущую страницу.", texts.notFound.description)
+        assertEquals("Назад", texts.notFound.back)
+        assertEquals("Страница не найдена — TestSys", texts.notFound.pageTitle)
+    }
+
+    @Test
     fun `should take calendar names and first weekday from ICU`() {
         assertEquals(12, texts.calendar.monthNames.size)
         assertEquals("Январь", texts.calendar.monthNames.first())

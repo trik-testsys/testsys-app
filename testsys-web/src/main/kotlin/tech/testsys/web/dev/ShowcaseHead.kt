@@ -15,7 +15,7 @@ import tech.testsys.web.ui.navigation.NavItem
 internal const val DEV_PROFILE = "dev"
 
 /** Sections of the navigation and states page, shown as the counter of its tab. */
-private const val STATES_SECTION_COUNT = 7
+private const val STATES_SECTION_COUNT = 8
 
 /** Cabinet header of the showcase pages. */
 internal fun showcaseHeader(): CabinetHeader = CabinetHeader(
@@ -37,7 +37,13 @@ internal fun PageScope.showcaseHead(title: String) {
         }
         tabs {
             tab("Компоненты", ShowcaseView::class.java)
-            tab("Навигация и состояния", ShowcaseStatesView::class.java, count = STATES_SECTION_COUNT, countKind = CounterKind.Neutral)
+            tab(
+                "Навигация и состояния",
+                ShowcaseStatesView::class.java,
+                count = STATES_SECTION_COUNT,
+                countKind = CounterKind.Neutral,
+                activeOn = setOf(ShowcaseNestedView::class.java),
+            )
         }
     }
 }

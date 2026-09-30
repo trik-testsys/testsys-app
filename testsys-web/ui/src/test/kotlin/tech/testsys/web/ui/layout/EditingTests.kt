@@ -1,6 +1,8 @@
 package tech.testsys.web.ui.layout
 
 import com.github.mvysny.kaributesting.v10._click
+import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.internal.PendingJavaScriptInvocation
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -19,6 +21,57 @@ import tech.testsys.web.ui.forms.textInput
 class EditingTests : MockVaadinTests() {
     private var saves = 0
     private var cancels = 0
+
+    @Test
+    fun `should request focus in current body only after starting editing`() {
+        buildEditingBlock()
+        pendingJavaScript()
+
+        button("Изменить")._click()
+
+        val cancel = button("Отменить")
+        assertTrue(pendingJavaScript().any { call -> call.owner == cancel.element.node && "focus" in call.invocation.expression })
+    }
+
+    @Test
+    fun `should not request focus when mode changes programmatically`() {
+        val handle = buildEditingBlock()
+        pendingJavaScript()
+
+        handle.isEditable = true
+
+        assertTrue(pendingJavaScript().none { call -> "focus" in call.invocation.expression })
+    }
+
+    @Test
+    fun `should request fallback focus even when block body is detached`() {
+        buildTestPage { block { editing(onSave = { true }, onCancel = {}) } }
+        pendingJavaScript()
+
+        button("Изменить")._click()
+
+        val cancel = button("Отменить")
+        assertTrue(pendingJavaScript().any { call -> call.owner == cancel.element.node && "focus" in call.invocation.expression })
+    }
+
+    @Test
+    fun `should not request focus when mode follows a signal`() {
+        val editable = ValueSignal(false)
+        buildTestPage {
+            block { row { textInput("Логин", labelSize = 4, size = 20) } }.bindEditable(editable)
+        }
+        pendingJavaScript()
+
+        editable.set(true)
+
+        assertTrue(pendingJavaScript().none { call -> "focus" in call.invocation.expression })
+    }
+
+    private fun pendingJavaScript(): List<PendingJavaScriptInvocation> {
+        val internals = UI.getCurrent().internals
+        internals.stateTree.runExecutionsBeforeClientResponse()
+        return internals.dumpPendingJavaScriptInvocations()
+    }
 
     private fun buildEditingBlock(isSaved: Boolean = true): BlockHandle {
         lateinit var handle: BlockHandle

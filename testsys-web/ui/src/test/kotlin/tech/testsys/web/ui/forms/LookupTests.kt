@@ -64,6 +64,19 @@ class LookupTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should keep lookup search and pagination outside the table viewport`() {
+        buildLookup()
+
+        lookupButton(testTexts.lookup.open)._click()
+
+        val dialog = openDialogs().single()
+        val viewport = dialog.find("ts-table-scroll")
+        assertEquals(listOf(dialog.find("ts-table")), viewport.children.toList())
+        assertTrue(dialog.find("ts-dialog__foot").find("ts-table-pager").isVisible)
+        assertFalse(viewport.children.toList().contains(dialog._find<TextField>().single()))
+    }
+
+    @Test
     fun `should open the lookup dialog on a click on the field`() {
         buildLookup()
 

@@ -1,5 +1,6 @@
 package tech.testsys.web.dev
 
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.NotFoundException
@@ -103,6 +104,11 @@ class ShowcaseStatesView(texts: UiTexts, private val environment: Environment) :
     init {
         page(showcaseHeader()) {
             showcaseHead("Навигация и состояния")
+            block(title = "Доступность") {
+                actions {
+                    action("Открыть примеры доступности") { onClick { UI.getCurrent().navigate(ShowcaseNestedView::class.java) } }
+                }
+            }
             tabsSection()
             pillsSection()
             paginationSection()
@@ -320,7 +326,7 @@ private fun PageScope.menuSection() {
                         codeColumn("ID") { row -> row.id.toString() }
                         textColumn("Автор") { row -> row.author }
                         onRowClick { row -> toast(FeedbackKind.Info, "Строка ${row.id}") }
-                        menuColumn { row ->
+                        menuColumn(ariaLabel = { row -> "Действия с посылкой №${row.id}" }) { row ->
                             item("Открыть") { toast(FeedbackKind.Info, "Открыть ${row.id}") }
                             item("Перепроверить") { toast(FeedbackKind.Info, "Перепроверить ${row.id}") }
                             destructiveItem("Дисквалифицировать") { toast(FeedbackKind.Error, "Дисквалифицировать ${row.id}") }

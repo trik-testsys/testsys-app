@@ -25,7 +25,7 @@ internal const val DEFAULT_PAGE_SIZE: Int = 20
  */
 @TestSysDsl
 class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
-    private val visible = Bindable(table.table.element, initial = true) { value -> table.isShown = value }
+    private val visible = Bindable(table.root.element, initial = true) { value -> table.isShown = value }
 
     // The UI that shows the table: the current one while the page is built, then the one it is attached to. Kept here
     // because refresh may run in a thread without a current UI, where the component tree must not be read.
@@ -37,7 +37,7 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
     private var isSkippedToFirstPage = false
 
     init {
-        table.table.addAttachListener { event ->
+        table.root.addAttachListener { event ->
             ui = event.ui
             if (hasSkippedRefresh) reloadNow(isSkippedToFirstPage)
         }
@@ -98,7 +98,7 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
 
     /** Refreshes an attached table; a detached one keeps the refresh for its next attach, the first page winning. */
     private fun refreshIfAttached(toFirstPage: Boolean) {
-        if (table.table.isAttached) {
+        if (table.root.isAttached) {
             reloadNow(toFirstPage)
         } else {
             hasSkippedRefresh = true
@@ -114,7 +114,7 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
 }
 
 /**
- * Fills the whole block body with a table of rows fetched by [fetch] page by page, [pageSize] rows a page;
+ * Fills the block body with a horizontally scrollable table fetched by [fetch], [pageSize] rows a page;
  * [key] identifies a row, and a [selectable] table adds a checkbox column. The pagination goes to the end of the block footer.
  *
  * @param T the type of the rows.
@@ -133,6 +133,6 @@ fun <T> BlockScope.table(
     require(spec.columns.isNotEmpty()) { "Table must declare at least one column" }
     checkTablePlace()
     val table = DataTable(texts, key, pageSize, selectable, fetch, spec)
-    placeTable(table.table, table.pager.root) { host -> table.pagerHost = host }
+    placeTable(table = table.root, pager = table.pager.root) { host -> table.pagerHost = host }
     return TableHandle(table)
 }

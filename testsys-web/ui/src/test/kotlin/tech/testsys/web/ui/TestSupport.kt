@@ -65,6 +65,19 @@ internal val testTexts = UiTexts(
     ),
     navigation = NavigationTexts(breadcrumbs = "Цепочка", sections = "Разделы страницы"),
     menu = MenuTexts(actions = "Меню действий"),
+    dateFields = DateFieldTexts(
+        date = "дата",
+        time = "время",
+        rangeFrom = { label -> "$label: с" },
+        rangeTo = { label -> "$label: по" },
+        rangeRequired = "Укажите хотя бы одну границу периода",
+    ),
+    notFound = NotFoundTexts(
+        title = "Страница не найдена",
+        description = "Проверьте адрес",
+        back = "Назад",
+        pageTitle = "Страница не найдена — TestSys",
+    ),
 )
 
 /** Starts a mocked Vaadin UI with the test routes of this package before each test. */

@@ -18,8 +18,8 @@ import tech.testsys.web.ui.layout.FieldParts
 
 /**
  * Handle of a form field whose visibility covers the label and the control, or of a label-less control; it binds to
- * a Vaadin `Binder` like any field and shows its errors. `Binder` does not skip a hidden handle, since it is not a component: call
- * `setIsAppliedPredicate { input.isVisible }` on the binding to skip it.
+ * a Vaadin `Binder` like any field and shows its errors. Opt into [skipWhenHidden] on a binding to exclude hidden
+ * fields from general Binder validation and explicit writes; reading and automatic writes keep Vaadin behaviour.
  *
  * @param T the type of the field value.
  * @property isEnabled whether the field is enabled; a disabled field is greyed out and ignores input. A manual change

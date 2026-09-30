@@ -9,7 +9,7 @@ import tech.testsys.web.ui.feedback.EmptyContent
 import tech.testsys.web.ui.layout.ContentScope
 import tech.testsys.web.ui.layout.Placement
 import tech.testsys.web.ui.overlay.MenuScope
-import tech.testsys.web.ui.overlay.menu
+import tech.testsys.web.ui.overlay.iconMenu
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -129,10 +129,20 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
      * @since %CURRENT_VERSION%
      */
     fun menuColumn(content: MenuScope.(T) -> Unit) {
+        menuColumn(ariaLabel = { texts.menu.actions }, content)
+    }
+
+    /**
+     * Adds the last action menu column with a complete accessible name from [ariaLabel] for each row.
+     *
+     * @throws IllegalStateException if the table already has a menu column.
+     * @since %CURRENT_VERSION%
+     */
+    fun menuColumn(ariaLabel: (T) -> String, content: MenuScope.(T) -> Unit) {
         checkBeforeMenuColumn()
         hasMenuColumn = true
         columns += TableColumn(title = "", sortKey = null, width = ColumnWidth.Auto, kind = CellKind.Menu) { row, cell ->
-            ContentScope(cell, texts, Placement.Cell).menu { content(row) }
+            ContentScope(cell, texts, Placement.Cell).iconMenu(ariaLabel(row)) { content(row) }
         }
     }
 

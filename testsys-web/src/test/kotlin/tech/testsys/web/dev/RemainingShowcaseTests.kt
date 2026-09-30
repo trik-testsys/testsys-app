@@ -50,6 +50,17 @@ class RemainingShowcaseTests {
         }
 
         @Test
+        fun `should expose header route and observable notification controls`() {
+            UI.getCurrent().navigate("dev/showcase/header")
+            val action = _find<Button>().single { button -> button.text == "Добавить уведомление" }
+
+            action._click()
+
+            expectView<ShowcaseHeaderView>()
+            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Добавлено уведомление 1" })
+        }
+
+        @Test
         fun `should expose neutral data and display examples in display route`() {
             UI.getCurrent().navigate("dev/showcase/display")
 
@@ -62,7 +73,7 @@ class RemainingShowcaseTests {
     @SpringBootTest
     inner class OutsideDevTests : MockSpringVaadinTests() {
         @ParameterizedTest
-        @ValueSource(strings = ["dev/showcase/forms", "dev/showcase/overlays", "dev/showcase/display"])
+        @ValueSource(strings = ["dev/showcase/forms", "dev/showcase/overlays", "dev/showcase/display", "dev/showcase/header"])
         fun `should reject remaining showcase routes outside dev profile`(route: String) {
             UI.getCurrent().navigate(route)
 

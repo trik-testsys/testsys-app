@@ -315,3 +315,16 @@ vaadin-upload-file::part(status) { color:var(--text-secondary); }
 vaadin-date-picker[data-ts-range-part]::part(toggle-button) { display:none; }
 
 vaadin-custom-field[invalid] .ts-code { outline:1px solid var(--danger); }
+
+/* Header overlays keep every Vaadin background within the same rounded boundary. */
+vaadin-popover[theme~="ts-header-popup"]::part(overlay) { border:1px solid var(--border-default); border-radius:var(--radius-xl); background:var(--surface-card); box-shadow:var(--shadow-popover); overflow:hidden; max-width:calc(100vw - 24px); }
+vaadin-popover[theme~="ts-header-popup"]::part(content) { padding:0; border-radius:inherit; background:var(--surface-card); overflow:auto; }
+vaadin-popover[theme~="ts-header-search-popup"]::part(overlay), vaadin-popover[theme~="ts-header-notifications-popup"]::part(overlay) { width:360px; }
+vaadin-popover[theme~="ts-header-mega"] { --vaadin-popover-offset-top:0px; }
+vaadin-popover[theme~="ts-header-mega"]::part(overlay) { width:min(960px,calc(100vw - 24px)); max-height:calc(100vh - 70px); }
+vaadin-popover[theme~="ts-header-popup"]::part(overlay) { animation:ts-pop-in var(--dur-base) var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { vaadin-popover[theme~="ts-header-popup"]::part(overlay) { animation:none; } }
+
+/* Only header arrival cards occupy the space below the header; ordinary toasts retain their native position. */
+vaadin-notification-card[theme~="ts-header-arrival"] { position:fixed; top:calc(var(--header-height) + var(--space-3)); right:var(--space-6); margin:0; max-width:calc(100vw - 2 * var(--space-6)); }
+vaadin-notification-card[theme~="ts-header-arrival"]::part(overlay) { border-radius:var(--radius-xl); overflow:hidden; }

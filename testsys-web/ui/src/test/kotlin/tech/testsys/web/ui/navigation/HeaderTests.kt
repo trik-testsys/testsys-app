@@ -1,10 +1,17 @@
 package tech.testsys.web.ui.navigation
 
+import com.github.mvysny.kaributesting.v10._click
+import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.component.popover.Popover
+import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import tech.testsys.web.ui.FirstTestView
+import tech.testsys.web.ui.ItemTestView
 import tech.testsys.web.ui.MockVaadinTests
 import tech.testsys.web.ui.SecondTestView
 import tech.testsys.web.ui.classes
@@ -17,6 +24,56 @@ class HeaderTests : MockVaadinTests() {
         NavItem(key = "first", label = "Первый", target = FirstTestView::class.java),
         NavItem(key = "second", label = "Второй", target = SecondTestView::class.java),
     )
+
+    @Test
+    fun `should render mega menu destinations with route parameters and working actions`() {
+        val calls = mutableListOf<String>()
+        val section = MegaMenuItem(
+            key = "menu",
+            label = "Menu",
+            menu = HeaderMegaMenu(
+                columns = listOf(
+                    HeaderMegaColumn(
+                        title = "Group",
+                        links = listOf(
+                            HeaderMegaLink("Route", HeaderDestination.Route(ItemTestView::class.java, RouteParameters("id", "7"))),
+                            HeaderMegaLink("Action", HeaderDestination.Action { calls.add("action") }),
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val header = buildHeader(CabinetHeader(items = listOf(section)), testTexts)
+        UI.getCurrent().add(header)
+        val targets = header.findAll("ts-mega__link")
+
+        assertInstanceOf(NativeButton::class.java, targets[1])._click()
+
+        assertEquals("test/item/7", targets[0].element.getAttribute("href"))
+        assertEquals(listOf("action"), calls)
+    }
+
+    @Test
+    fun `should keep only the latest header popup open`() {
+        val header = buildHeader(
+            CabinetHeader(
+                items = listOf(MegaMenuItem(key = "menu", label = "Menu", menu = HeaderMegaMenu(emptyList()))),
+                search = HeaderSearch { emptyList() },
+            ),
+            testTexts,
+        )
+        UI.getCurrent().add(header)
+        val mega = header.find("ts-header-mega-trigger").children.toList().filterIsInstance<Popover>().single()
+        val search = header.find("ts-header__search").children.toList().filterIsInstance<Popover>().single()
+        mega.open()
+
+        search.open()
+
+        assertFalse(mega.isOpened)
+        assertTrue(search.isOpened)
+        assertTrue(mega.isOpenOnHover)
+        assertTrue(mega.isOpenOnClick)
+    }
 
     @Test
     fun `should render brand with its first letter as the mark`() {

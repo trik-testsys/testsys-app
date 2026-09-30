@@ -9,6 +9,20 @@ class UiTextsFactoryTests {
     private val texts = buildUiTexts(SupportedRegion.RU)
 
     @Test
+    fun `should localize header accessible names with application labels and counts`() {
+        assertEquals("Поиск задач, соревнований…", texts.header.search)
+        assertEquals("Найдено: 12", texts.header.searchCount(12))
+        assertEquals("Уведомления: непрочитанных 2", texts.header.unreadCount(2))
+        assertEquals("Тур опубликован — не прочитано", texts.header.unreadItem("Тур опубликован"))
+        assertEquals("Меню пользователя: Анна", texts.header.userMenu("Анна"))
+        assertEquals("Прочитать все", texts.header.readAll)
+        assertEquals("Получено 3 новых уведомления", texts.header.arrivalCount(3))
+        assertEquals("Получено 5 новых уведомлений", texts.header.arrivalCount(5))
+        assertEquals("Открыть", texts.header.arrivalOpen)
+        assertEquals("Закрыть уведомление", texts.header.arrivalClose)
+    }
+
+    @Test
     fun `should localize compound date names and required range instruction`() {
         assertEquals("дата", texts.dateFields.date)
         assertEquals("время", texts.dateFields.time)

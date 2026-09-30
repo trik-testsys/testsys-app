@@ -13,6 +13,7 @@ import tech.testsys.web.ui.DateFieldTexts
 import tech.testsys.web.ui.DialogTexts
 import tech.testsys.web.ui.EditingTexts
 import tech.testsys.web.ui.FieldErrorTexts
+import tech.testsys.web.ui.HeaderTexts
 import tech.testsys.web.ui.LoadTexts
 import tech.testsys.web.ui.LookupTexts
 import tech.testsys.web.ui.MenuTexts
@@ -143,6 +144,24 @@ fun buildUiTexts(region: SupportedRegion): UiTexts {
             avatarOverflow = { count -> ui.componentsAvatarOverflow(count = count) },
             transferBytes = { count -> ui.componentsTransferBytes(count = count) },
             question = { number -> ui.componentsQuestion(number = number) },
+        ),
+        header = HeaderTexts(
+            search = ui.headerSearch(),
+            searchLoading = ui.headerSearchLoading(),
+            searchEmpty = ui.headerSearchEmpty(),
+            searchFailed = ui.headerSearchFailed(),
+            searchCount = { count -> ui.headerSearchCount(count = count) },
+            retry = ui.headerRetry(),
+            notifications = ui.headerNotifications(),
+            notificationsEmpty = ui.headerNotificationsEmpty(),
+            readAll = ui.headerReadAll(),
+            unreadCount = { count -> ui.headerUnreadCount(count = count) },
+            unreadItem = { label -> ui.headerUnreadItem(label = label) },
+            userMenu = { name -> ui.headerUserMenu(name = name) },
+            arrivalOpen = ui.headerArrivalOpen(),
+            arrivalClose = ui.headerArrivalClose(),
+            arrivalCount = { count -> ui.headerArrivalCount(count = count) },
+            arrivalBatchHint = ui.headerArrivalBatchHint(),
         ),
         notFound = NotFoundTexts(
             title = ui.notFoundTitle(),

@@ -21,6 +21,15 @@ tasks.processResources {
     }
 }
 
+// React references remain canonical; only the jar contains the adapters' transitive reference sources.
+tasks.processResources {
+    from(layout.projectDirectory.dir("../design-system")) {
+        include("components/forms/DateRangeCalendar.jsx", "components/data/SortableList.jsx",
+            "components/actions/IconButton.jsx", "components/core/Icon.jsx")
+        into("META-INF/frontend/testsys-ui/reference")
+    }
+}
+
 // Browsers revalidate the stylesheets by their Last-Modified date, which Vaadin takes from the jar entry. A reproducible
 // jar stamps every entry with one fixed date, so a changed stylesheet looked unchanged and stale styles stayed cached.
 tasks.jar {

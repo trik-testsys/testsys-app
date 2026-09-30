@@ -5,11 +5,14 @@ import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._setValue
 import com.vaadin.flow.component.datepicker.DatePicker
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
+import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.timepicker.TimePicker
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -35,6 +38,7 @@ class DateInputTests : MockVaadinTests() {
             assertEquals(listOf("dd.MM.yyyy"), i18n.dateFormats)
             assertEquals(1, i18n.firstDayOfWeek)
             assertEquals(testTexts.fieldErrors.badInput, i18n.badInputErrorMessage)
+            assertNull(control<DatePicker>("Начало").prefixComponent)
         }
 
         @Test
@@ -84,7 +88,24 @@ class DateInputTests : MockVaadinTests() {
         fun `should name both range ends in the field context`() {
             buildTestRow { dateRangeInput("Период", labelSize = 4, size = 20) }
 
-            assertEquals(listOf("Период: с", "Период: по"), _find<DatePicker>().map { picker -> picker.ariaLabel.orElse(null) })
+            assertEquals(listOf("Период: с", "Период: до"), _find<DatePicker>().map { picker -> picker.ariaLabel.orElse(null) })
+            val prefixes = _find<DatePicker>().map { picker -> picker.prefixComponent as Span }
+            assertEquals(listOf("С", "До"), prefixes.map { prefix -> prefix.text })
+            assertTrue(prefixes.all { prefix -> prefix.element.getAttribute("slot") == "prefix" })
+            assertTrue(prefixes.all { prefix -> prefix.element.getAttribute("aria-hidden") == "true" })
+        }
+
+        @Test
+        fun `should retain boundary prefixes after setting a filled range`() {
+            lateinit var input: ValueInput<DateRange>
+            buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
+            val pickers = _find<DatePicker>()
+            val prefixes = pickers.map(DatePicker::getPrefixComponent)
+
+            input.value = DateRange(start, end)
+
+            prefixes.forEachIndexed { index, prefix -> assertSame(prefix, pickers[index].prefixComponent) }
+            assertEquals(listOf("С", "До"), prefixes.map { prefix -> (prefix as Span).text })
         }
 
         @Test

@@ -21,6 +21,7 @@ import java.util.Locale
  * @property navigation the accessible names of navigation landmarks.
  * @property menu the texts of action menus.
  * @property dateFields the accessible names and instructions of compound date fields.
+ * @property components the texts of selections, overlays and transfers.
  * @property notFound the texts of the missing page screen.
  * @since %CURRENT_VERSION%
  */
@@ -41,6 +42,7 @@ class UiTexts(
     val menu: MenuTexts,
     val dateFields: DateFieldTexts,
     val notFound: NotFoundTexts,
+    val components: ComponentTexts,
 )
 
 /**
@@ -200,12 +202,14 @@ class MenuTexts(
 )
 
 /**
- * Accessible names and instructions of compound date fields.
+ * Accessible names, permanent boundary prefixes and instructions of compound date fields.
  *
  * @property date the suffix of the date part of a date-time field.
  * @property time the suffix of the time part of a date-time field.
  * @property rangeFrom the name of the start picker, from the field label.
  * @property rangeTo the name of the end picker, from the field label.
+ * @property rangeFromPrefix the permanent visible prefix inside the start picker.
+ * @property rangeToPrefix the permanent visible prefix inside the end picker.
  * @property rangeRequired the instruction for a required range with optional ends.
  * @since %CURRENT_VERSION%
  */
@@ -214,6 +218,8 @@ class DateFieldTexts(
     val time: String,
     val rangeFrom: (String) -> String,
     val rangeTo: (String) -> String,
+    val rangeFromPrefix: String,
+    val rangeToPrefix: String,
     val rangeRequired: String,
 )
 
@@ -231,4 +237,70 @@ class NotFoundTexts(
     val description: String,
     val back: String,
     val pageTitle: String,
+)
+
+/**
+ * Built-in labels of selections, calendars, displays and file transfers.
+ *
+ * @property selectAll the action selecting all visible options.
+ * @property previousMonth the previous month action.
+ * @property nextMonth the next month action.
+ * @property calendar the action opening the range calendar.
+ * @property drag the accessible instruction for reordering.
+ * @property upload the action selecting files.
+ * @property drop the hint for dropping files.
+ * @property cancel the action cancelling a transfer.
+ * @property preparing the download preparation label.
+ * @property downloading the transfer label.
+ * @property done the completed transfer label.
+ * @property failed the failed transfer label.
+ * @property retry the retry action.
+ * @property downloadAgain the action starting another download.
+ * @property uploadRejected the error of files outside the limits.
+ * @property loading the accessible name of a skeleton.
+ * @property openCalendar the contextual accessible name of a calendar trigger.
+ * @property uploadLimits the human-readable file count and size limits.
+ * @property difficultyLabels the easy, medium and hard difficulty labels.
+ * @property questionStatus the question number and answered/flagged statuses.
+ * @property reorderPosition the reorder item and current position announcement.
+ * @property downloadLabel the contextual accessible label from an action name and state caption.
+ * @property percent the progress percentage.
+ * @property byteUnits the localized byte-size unit labels.
+ * @property timerUnits the labels of days, hours, minutes and seconds.
+ * @property avatarOverflow the accessible count of hidden avatars.
+ * @property transferBytes the accessible transferred byte count.
+ * @property question the accessible question number.
+ * @property overflow the label of the remaining avatars.
+ * @since %CURRENT_VERSION%
+ */
+class ComponentTexts(
+    val selectAll: String,
+    val previousMonth: String,
+    val nextMonth: String,
+    val calendar: String,
+    val drag: String,
+    val upload: String,
+    val drop: String,
+    val cancel: String,
+    val preparing: String,
+    val downloading: String,
+    val done: String,
+    val failed: String,
+    val retry: String,
+    val downloadAgain: String,
+    val uploadRejected: String,
+    val loading: String,
+    val overflow: String,
+    val openCalendar: (String) -> String,
+    val uploadLimits: (Int, Long) -> String,
+    val difficultyLabels: List<String>,
+    val questionStatus: (Int, Boolean, Boolean) -> String,
+    val reorderPosition: (String, Int, Int) -> String,
+    val downloadLabel: (String, String) -> String,
+    val percent: (Int) -> String,
+    val byteUnits: List<String>,
+    val timerUnits: List<String>,
+    val avatarOverflow: (Int) -> String,
+    val transferBytes: (Long) -> String,
+    val question: (Int) -> String,
 )

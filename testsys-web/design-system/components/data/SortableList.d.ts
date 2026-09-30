@@ -12,5 +12,8 @@ export interface SortableListProps<T = any> {
   /** Gap between rows, px. Default 8. */
   gap?: number;
   disabled?: boolean;
+  renderDragItem?: (item: T) => React.ReactNode;
+  handleLabel?: string;
+  announcement?: (item: T, position: number, total: number) => string;
   className?: string;
 }

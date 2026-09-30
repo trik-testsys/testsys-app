@@ -12,5 +12,13 @@ export interface DateRangeCalendarProps {
   onChange?: (v: { start: string | null; end: string | null }) => void;
   onPrev?: () => void;
   onNext?: () => void;
+  months?: string[];
+  weekdays?: string[];
+  previousLabel?: string;
+  nextLabel?: string;
+  firstDay?: number;
+  locale?: string;
+  /** Keyboard navigation into a neighbouring month. */
+  onMonthChange?: (year: number, month: number) => void;
   className?: string;
 }

@@ -11,6 +11,7 @@ import tech.testsys.web.ui.Bindable
 import tech.testsys.web.ui.ElementHandle
 import tech.testsys.web.ui.TestSysDsl
 import tech.testsys.web.ui.display.CounterKind
+import tech.testsys.web.ui.display.buildCounter
 import tech.testsys.web.ui.layout.BlockRowScope
 import tech.testsys.web.ui.layout.BlockScope
 import tech.testsys.web.ui.layout.ContentScope
@@ -228,7 +229,7 @@ internal class ChoiceGroup<V>(
         element.setAttribute("type", "button")
         add(Text(option.label))
         option.countKind?.let { kind ->
-            val counter = Span().apply { addClassNames("ts-counter", "ts-counter--${kind.tone}") }
+            val counter = buildCounter(option.count ?: 0, kind)
             showCount(counter, option.count)
             counters[option.value] = counter
             add(counter)

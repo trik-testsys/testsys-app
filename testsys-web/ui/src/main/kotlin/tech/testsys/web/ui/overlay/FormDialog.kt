@@ -1,6 +1,9 @@
 package tech.testsys.web.ui.overlay
 
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.dom.SignalBinding
+import com.vaadin.flow.signals.BindingActiveException
+import com.vaadin.flow.signals.Signal
 import tech.testsys.web.ui.TestSysDsl
 import tech.testsys.web.ui.UiTexts
 import tech.testsys.web.ui.currentTexts
@@ -16,7 +19,7 @@ internal const val DIALOG_COLUMNS: Int = 12
  * Handle of a dialog built once and opened any number of times; field values stay between openings.
  *
  * @property isOpen whether the dialog is shown.
- * @property isEditable whether the fields of the dialog can be edited.
+ * @property isEditable whether the fields of the dialog can be edited; manual changes while bound throw [BindingActiveException].
  * @since %CURRENT_VERSION%
  */
 @TestSysDsl
@@ -29,6 +32,14 @@ class DialogHandle internal constructor(private val shell: DialogShell, private 
         set(value) {
             editState.isEditable = value
         }
+
+    /**
+     * Binds [isEditable] to [signal], including before opening; fields keep their own read-only state.
+     *
+     * @throws BindingActiveException if the mode is already bound.
+     * @since %CURRENT_VERSION%
+     */
+    fun bindEditable(signal: Signal<Boolean>): SignalBinding<Boolean> = editState.bind(signal)
 
     /**
      * Shows the dialog.

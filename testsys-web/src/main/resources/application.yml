@@ -3,6 +3,8 @@ spring:
     name: testsys-web
 vaadin:
   launch-browser: false
+  # Resolve the initial route before sending HTML, preserving the error handler HTTP status.
+  eagerServerLoad: true
   # Dev mode writes its files into the build folder; without a token file from the Gradle plugin it defaults to
   # Maven's target/.
   build:

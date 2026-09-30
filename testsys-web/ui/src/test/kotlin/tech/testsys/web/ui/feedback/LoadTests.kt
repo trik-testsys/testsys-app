@@ -4,6 +4,7 @@ import com.github.mvysny.kaributesting.v10.MockVaadin
 import com.github.mvysny.kaributesting.v10._click
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.internal.PendingJavaScriptInvocation
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.local.ValueSignal
@@ -50,6 +51,37 @@ class LoadTests : MockVaadinTests() {
     @AfterEach
     fun resetExecutor() {
         Background.executorOverride = null
+    }
+
+    @Test
+    fun `should request focus in replaced body only when user starts editing`() {
+        lateinit var handle: LoadHandle
+        var revision = 0
+        buildTestPage {
+            block {
+                editing(onSave = { true }, onCancel = {})
+                handle = load({ ++revision }) { value -> row { textInput("Поле $value", labelSize = 4, size = 20) } }
+            }
+        }
+        queue.runAll()
+        val old = control<TextField>("Поле 1")
+        pendingJavaScript()
+        handle.reload()
+        queue.runAll()
+        val current = control<TextField>("Поле 2")
+        pendingJavaScript()
+
+        button("Изменить")._click()
+
+        assertFalse(old.isAttached)
+        assertTrue(current.isAttached)
+        assertTrue(pendingJavaScript().any { call -> call.owner == button("Отменить").element.node && "focus" in call.invocation.expression })
+    }
+
+    private fun pendingJavaScript(): List<PendingJavaScriptInvocation> {
+        val internals = UI.getCurrent().internals
+        internals.stateTree.runExecutionsBeforeClientResponse()
+        return internals.dumpPendingJavaScriptInvocations()
     }
 
     @Nested
@@ -201,6 +233,23 @@ class LoadTests : MockVaadinTests() {
 
     @Nested
     inner class TableContentTests {
+        @Test
+        fun `should replace the complete table viewport on reload and keep pager in footer`() {
+            lateinit var handle: LoadHandle
+            buildTestPage { block { handle = load({ (1..12).toList() }) { ids -> idTable(ids) } } }
+            queue.runAll()
+            val old = ui().find("ts-table-scroll")
+            handle.reload()
+
+            queue.runAll()
+
+            assertFalse(old.isAttached)
+            val viewport = ui().find("ts-table-scroll")
+            assertTrue(viewport.isAttached)
+            assertEquals(listOf(ui().find("ts-table")), viewport.children.toList())
+            assertTrue(ui().find("ts-block__foot").find("ts-table-pager").isVisible)
+        }
+
         @Test
         fun `should put the pagination of a loaded table into the block footer`() {
             buildTestPage { block { load({ (1..12).toList() }) { ids -> idTable(ids) } } }

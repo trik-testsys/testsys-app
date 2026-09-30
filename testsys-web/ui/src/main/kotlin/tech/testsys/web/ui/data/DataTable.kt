@@ -2,6 +2,7 @@ package tech.testsys.web.ui.data
 
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.checkbox.Checkbox
+import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableDataCell
@@ -51,6 +52,12 @@ internal class DataTable<T>(
     initialSelection: Set<Any> = emptySet(),
 ) {
     val table: Table = Table().apply { addClassName("ts-table") }
+
+    /** Viewport that contains only the table, keeping horizontal overflow away from its siblings and the pager. */
+    val root: Div = Div(table).apply {
+        addClassName("ts-table-scroll")
+        element.setAttribute("tabindex", "0")
+    }
     val pager: Pager = Pager(texts) { target -> load(target) }
 
     /** Keys of the selected rows, kept across pages, sorting and reloads. */
@@ -68,7 +75,7 @@ internal class DataTable<T>(
     var isShown: Boolean = true
         set(value) {
             field = value
-            table.isVisible = value
+            root.isVisible = value
             updatePagerVisibility()
         }
 

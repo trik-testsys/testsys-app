@@ -183,6 +183,33 @@ class MenuTests : MockVaadinTests() {
         }
     }
 
+    @Test
+    fun `should name each row menu and keep its handler separate from row click`() {
+        val chosen = mutableListOf<Int>()
+        val clicked = mutableListOf<Int>()
+        buildTestPage {
+            block {
+                table<Int>(key = { row -> row }, fetch = { Page(listOf(41, 42), 2) }) {
+                    textColumn("Номер") { row -> "$row" }
+                    menuColumn(ariaLabel = { row -> "Действия с посылкой №$row" }) { row ->
+                        item("Открыть") { chosen += row }
+                    }
+                    onRowClick { row -> clicked += row }
+                }
+            }
+        }
+        val triggers = findAllButtons(UI.getCurrent()).filter { button -> button.element.hasAttribute("aria-haspopup") }
+
+        menuOf(triggers[1])._clickItemWithCaption("Открыть")
+
+        assertEquals(
+            listOf("Действия с посылкой №41", "Действия с посылкой №42"),
+            triggers.map { trigger -> trigger.ariaLabel.orElseThrow() },
+        )
+        assertEquals(listOf(42), chosen)
+        assertTrue(clicked.isEmpty())
+    }
+
     private fun buildMenuTable(
         extra: TableScope<Int>.() -> Unit = {},
         content: MenuScope.(Int) -> Unit,

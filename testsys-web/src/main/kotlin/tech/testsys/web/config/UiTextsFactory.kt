@@ -6,6 +6,7 @@ import com.ibm.icu.util.ULocale
 import tech.testsys.infra.localization.Localization
 import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.web.ui.CalendarTexts
+import tech.testsys.web.ui.DateFieldTexts
 import tech.testsys.web.ui.DialogTexts
 import tech.testsys.web.ui.EditingTexts
 import tech.testsys.web.ui.FieldErrorTexts
@@ -13,6 +14,7 @@ import tech.testsys.web.ui.LoadTexts
 import tech.testsys.web.ui.LookupTexts
 import tech.testsys.web.ui.MenuTexts
 import tech.testsys.web.ui.NavigationTexts
+import tech.testsys.web.ui.NotFoundTexts
 import tech.testsys.web.ui.PaginationTexts
 import tech.testsys.web.ui.TableTexts
 import tech.testsys.web.ui.UiTexts
@@ -83,6 +85,19 @@ fun buildUiTexts(region: SupportedRegion): UiTexts {
         ),
         navigation = NavigationTexts(breadcrumbs = ui.navBreadcrumbs(), sections = ui.navSections()),
         menu = MenuTexts(actions = ui.menuActions()),
+        dateFields = DateFieldTexts(
+            date = ui.dateTimeDate(),
+            time = ui.dateTimeTime(),
+            rangeFrom = { label -> ui.dateRangeFrom(label = label) },
+            rangeTo = { label -> ui.dateRangeTo(label = label) },
+            rangeRequired = ui.dateRangeRequired(),
+        ),
+        notFound = NotFoundTexts(
+            title = ui.notFoundTitle(),
+            description = ui.notFoundDescription(),
+            back = ui.notFoundBack(),
+            pageTitle = ui.notFoundPageTitle(brand = ui.brand()),
+        ),
     )
 }
 

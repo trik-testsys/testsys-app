@@ -469,7 +469,7 @@ class TableTests : MockVaadinTests() {
 
         handle.isVisible = false
 
-        assertFalse(ui().find("ts-table").isVisible)
+        assertFalse(ui().find("ts-table-scroll").isVisible)
         assertFalse(ui().find("ts-block__foot").isVisible)
     }
 
@@ -479,7 +479,7 @@ class TableTests : MockVaadinTests() {
 
         handle.bindVisible(ValueSignal(false))
 
-        assertFalse(ui().find("ts-table").isVisible)
+        assertFalse(ui().find("ts-table-scroll").isVisible)
         assertFalse(ui().find("ts-block__foot").isVisible)
     }
 
@@ -491,7 +491,21 @@ class TableTests : MockVaadinTests() {
 
         signal.set(false)
 
-        assertFalse(ui().find("ts-table").isVisible)
+        assertFalse(ui().find("ts-table-scroll").isVisible)
+    }
+
+    @Test
+    fun `should restore the table viewport and keep pagination outside it`() {
+        val handle = buildTable(Source(size = 12))
+        handle.isVisible = false
+
+        handle.isVisible = true
+
+        val viewport = ui().find("ts-table-scroll")
+        assertTrue(viewport.isVisible)
+        assertEquals(listOf(ui().find("ts-table")), viewport.children.toList())
+        assertTrue(ui().find("ts-block__foot").isVisible)
+        assertTrue(ui().find("ts-block__foot").find("ts-table-pager").isVisible)
     }
 
     @Test

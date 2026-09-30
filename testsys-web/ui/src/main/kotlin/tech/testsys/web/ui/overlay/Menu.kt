@@ -57,7 +57,15 @@ class MenuScope internal constructor(private val menu: ContextMenu) {
  * @since %CURRENT_VERSION%
  */
 fun ContentScope.menu(label: String? = null, content: MenuScope.() -> Unit): ElementHandle {
-    val trigger = if (label == null) iconAction(IconName.Ellipsis, texts.menu.actions) else action(label)
+    if (label == null) return iconMenu(texts.menu.actions, content)
+    val trigger = action(label)
+    attachMenu(trigger.button, content)
+    return ElementHandle(trigger.button)
+}
+
+/** Adds the compact ellipsis trigger with the complete accessible name [ariaLabel]. */
+internal fun ContentScope.iconMenu(ariaLabel: String, content: MenuScope.() -> Unit): ElementHandle {
+    val trigger = iconAction(IconName.Ellipsis, ariaLabel)
     attachMenu(trigger.button, content)
     return ElementHandle(trigger.button)
 }

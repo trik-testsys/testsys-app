@@ -7,6 +7,7 @@ import com.vaadin.flow.component.datepicker.DatePicker
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.timepicker.TimePicker
 import com.vaadin.flow.data.binder.Binder
+import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -60,6 +61,14 @@ class DateInputTests : MockVaadinTests() {
     @Nested
     inner class DateTimeInputTests {
         @Test
+        fun `should use localized suffixes for date and time parts`() {
+            buildTestRow { dateTimeInput("Начало", labelSize = 4, size = 20) }
+
+            assertEquals("дата", control<DateTimePicker>("Начало").dateAriaLabel.orElse(null))
+            assertEquals("время", control<DateTimePicker>("Начало").timeAriaLabel.orElse(null))
+        }
+
+        @Test
         fun `should name the control through its accessible name property`() {
             buildTestRow { dateTimeInput("Начало", labelSize = 4, size = 20) }
 
@@ -70,6 +79,71 @@ class DateInputTests : MockVaadinTests() {
     @Nested
     inner class DateRangeInputTests {
         private inner class Form(var period: DateRange = DateRange())
+
+        @Test
+        fun `should name both range ends in the field context`() {
+            buildTestRow { dateRangeInput("Период", labelSize = 4, size = 20) }
+
+            assertEquals(listOf("Период: с", "Период: по"), _find<DatePicker>().map { picker -> picker.ariaLabel.orElse(null) })
+        }
+
+        @Test
+        fun `should describe required range without requiring either end`() {
+            lateinit var input: ValueInput<DateRange>
+            buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
+
+            input.isRequiredIndicatorVisible = true
+
+            val pickers = _find<DatePicker>()
+            assertTrue(pickers.all { picker -> picker.ariaDescribedBy.isPresent })
+            assertTrue(pickers.none { picker -> picker.isRequiredIndicatorVisible })
+            assertEquals(pickers[0].ariaDescribedBy, pickers[1].ariaDescribedBy)
+        }
+
+        @Test
+        fun `should remove required description when signal clears the indicator`() {
+            lateinit var input: ValueInput<DateRange>
+            buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
+            val required = ValueSignal(true)
+            input.bindRequiredIndicatorVisible(required)
+            assertTrue(_find<DatePicker>().all { picker -> picker.ariaDescribedBy.isPresent })
+
+            required.set(false)
+
+            assertTrue(_find<DatePicker>().none { picker -> picker.ariaDescribedBy.isPresent })
+        }
+
+        @Test
+        fun `should accept either open boundary and reject empty required range`() {
+            lateinit var input: ValueInput<DateRange>
+            buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
+            val binder = Binder<Form>().apply {
+                forField(input).asRequired("Период обязателен").bind({ form -> form.period }, { form, value -> form.period = value })
+            }
+            assertFalse(binder.validate().isOk)
+
+            input.value = DateRange(from = start)
+            assertTrue(binder.validate().isOk)
+            input.value = DateRange(to = end)
+            assertTrue(binder.validate().isOk)
+            input.value = DateRange(from = start, to = end)
+            assertTrue(binder.validate().isOk)
+        }
+
+        @Test
+        fun `should allow a separate validator to require both ends`() {
+            lateinit var input: ValueInput<DateRange>
+            buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
+            val binder = Binder<Form>().apply {
+                forField(input).withValidator({ value -> value.from != null && value.to != null }, "Обе границы")
+                    .bind({ form -> form.period }, { form, value -> form.period = value })
+            }
+
+            input.value = DateRange(from = start)
+
+            assertFalse(binder.validate().isOk)
+        }
+
 
         @Test
         fun `should name the control through its accessible name property`() {

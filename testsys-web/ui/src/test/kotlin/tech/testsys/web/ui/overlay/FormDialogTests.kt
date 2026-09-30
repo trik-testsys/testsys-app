@@ -5,6 +5,8 @@ import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._setValue
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.signals.BindingActiveException
+import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -25,6 +27,52 @@ import tech.testsys.web.ui.openDialogs
 import tech.testsys.web.ui.testTexts
 
 class FormDialogTests : MockVaadinTests() {
+    @Test
+    fun `should bind edit mode before opening and preserve own read-only fields`() {
+        val editable = ValueSignal(false)
+        val handle = dialog(title = "Тур") {
+            row { textInput("Название", labelSize = 4, size = 8) }
+            row { textInput("Код", labelSize = 4, size = 8) { isEditable = false } }
+        }
+        handle.bindEditable(editable)
+        handle.open()
+        openDialogs()
+        assertTrue(control<TextField>("Название").isReadOnly)
+
+        editable.set(true)
+
+        assertFalse(control<TextField>("Название").isReadOnly)
+        assertTrue(control<TextField>("Код").isReadOnly)
+    }
+
+    @Test
+    fun `should reject manual mode and second binding while dialog mode is bound`() {
+        val handle = dialog(title = "Тур") {}
+        handle.bindEditable(ValueSignal(false))
+
+        assertThrows(BindingActiveException::class.java) { handle.isEditable = true }
+        assertThrows(BindingActiveException::class.java) { handle.bindEditable(ValueSignal(true)) }
+    }
+
+    @Test
+    fun `should apply current signal on reopening without resetting values`() {
+        val editable = ValueSignal(true)
+        val handle = dialog(title = "Тур") { row { textInput("Название", labelSize = 4, size = 8) } }
+        handle.bindEditable(editable)
+        handle.open()
+        openDialogs()
+        control<TextField>("Название")._setValue("Весенний кубок")
+        handle.close()
+        openDialogs()
+        editable.set(false)
+
+        handle.open()
+
+        openDialogs()
+        assertTrue(control<TextField>("Название").isReadOnly)
+        assertEquals("Весенний кубок", control<TextField>("Название").value)
+    }
+
     @BeforeEach
     fun setUpPage() {
         buildTestPage {}

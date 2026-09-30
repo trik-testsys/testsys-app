@@ -211,7 +211,7 @@ internal class LookupDialog<T : Any>(
                 table.reload(toFirstPage = true)
             }
         }
-        shell.content.add(search, table.table)
+        shell.content.add(search, table.root)
     }
 
     fun open() {

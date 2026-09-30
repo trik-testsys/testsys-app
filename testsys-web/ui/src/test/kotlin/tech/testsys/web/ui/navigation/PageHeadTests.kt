@@ -241,6 +241,40 @@ class PageHeadTests : MockVaadinTests() {
         }
     }
 
+    @Test
+    fun `should mark first matching section while keeping its parameterized link`() {
+        buildTestPage(view = SecondTestView::class.java) {
+            head("Тур") {
+                tabs {
+                    tab(
+                        "Обзор",
+                        ItemTestView::class.java,
+                        RouteParameters("id", "42"),
+                        activeOn = setOf(FirstTestView::class.java, SecondTestView::class.java),
+                    )
+                    tab("Другое", FirstTestView::class.java, activeOn = setOf(SecondTestView::class.java))
+                }
+            }
+        }
+
+        assertEquals(listOf("location", null), pageTabs().map { tab -> tab.element.getAttribute("aria-current") })
+        assertEquals("test/item/42", pageTabs()[0].element.getAttribute("href"))
+    }
+
+    @Test
+    fun `should prefer exact target over earlier matching section`() {
+        buildTestPage(view = SecondTestView::class.java) {
+            head("Тур") {
+                tabs {
+                    tab("Обзор", FirstTestView::class.java, activeOn = setOf(SecondTestView::class.java))
+                    tab("Задачи", SecondTestView::class.java)
+                }
+            }
+        }
+
+        assertEquals(listOf(null, "page"), pageTabs().map { tab -> tab.element.getAttribute("aria-current") })
+    }
+
     private fun PageHeadScope.twoTabs() {
         tabs {
             tab("Первая", FirstTestView::class.java)

@@ -20,6 +20,8 @@ import java.util.Locale
  * @property lookup the texts of the lookup field and its dialog.
  * @property navigation the accessible names of navigation landmarks.
  * @property menu the texts of action menus.
+ * @property dateFields the accessible names and instructions of compound date fields.
+ * @property notFound the texts of the missing page screen.
  * @since %CURRENT_VERSION%
  */
 class UiTexts(
@@ -37,6 +39,8 @@ class UiTexts(
     val lookup: LookupTexts,
     val navigation: NavigationTexts,
     val menu: MenuTexts,
+    val dateFields: DateFieldTexts,
+    val notFound: NotFoundTexts,
 )
 
 /**
@@ -193,4 +197,38 @@ class NavigationTexts(
  */
 class MenuTexts(
     val actions: String,
+)
+
+/**
+ * Accessible names and instructions of compound date fields.
+ *
+ * @property date the suffix of the date part of a date-time field.
+ * @property time the suffix of the time part of a date-time field.
+ * @property rangeFrom the name of the start picker, from the field label.
+ * @property rangeTo the name of the end picker, from the field label.
+ * @property rangeRequired the instruction for a required range with optional ends.
+ * @since %CURRENT_VERSION%
+ */
+class DateFieldTexts(
+    val date: String,
+    val time: String,
+    val rangeFrom: (String) -> String,
+    val rangeTo: (String) -> String,
+    val rangeRequired: String,
+)
+
+/**
+ * Texts of the missing page screen.
+ *
+ * @property title the screen heading.
+ * @property description the explanation of the missing page.
+ * @property back the label of the action returning through browser history.
+ * @property pageTitle the browser title including the brand.
+ * @since %CURRENT_VERSION%
+ */
+class NotFoundTexts(
+    val title: String,
+    val description: String,
+    val back: String,
+    val pageTitle: String,
 )

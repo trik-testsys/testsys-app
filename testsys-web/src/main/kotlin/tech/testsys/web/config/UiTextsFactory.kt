@@ -13,6 +13,7 @@ import tech.testsys.web.ui.LoadTexts
 import tech.testsys.web.ui.LookupTexts
 import tech.testsys.web.ui.MenuTexts
 import tech.testsys.web.ui.NavigationTexts
+import tech.testsys.web.ui.PaginationTexts
 import tech.testsys.web.ui.TableTexts
 import tech.testsys.web.ui.UiTexts
 import java.time.DayOfWeek
@@ -52,10 +53,13 @@ fun buildUiTexts(region: SupportedRegion): UiTexts {
         table = TableTexts(
             empty = ui.tableEmpty(),
             range = { from, to, total -> ui.tableRange(from = from, to = to, total = total) },
-            previous = ui.tablePrevious(),
-            next = ui.tableNext(),
             selectAll = ui.tableSelectAll(),
             selectRow = ui.tableSelectRow(),
+        ),
+        pagination = PaginationTexts(
+            previous = ui.paginationPrevious(),
+            next = ui.paginationNext(),
+            page = { page -> ui.paginationPage(page = page) },
         ),
         load = LoadTexts(
             failed = ui.loadFailed(),
@@ -72,6 +76,10 @@ fun buildUiTexts(region: SupportedRegion): UiTexts {
             open = ui.lookupOpen(),
             clear = ui.lookupClear(),
             empty = ui.lookupEmpty(),
+            remove = { value -> ui.lookupRemove(value = value) },
+            reset = ui.lookupReset(),
+            apply = ui.lookupApply(),
+            selectedCount = { count -> ui.lookupSelectedCount(count = count) },
         ),
         navigation = NavigationTexts(breadcrumbs = ui.navBreadcrumbs(), sections = ui.navSections()),
         menu = MenuTexts(actions = ui.menuActions()),

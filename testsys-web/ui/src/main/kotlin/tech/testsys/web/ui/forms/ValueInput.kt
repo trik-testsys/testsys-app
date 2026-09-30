@@ -17,42 +17,42 @@ import tech.testsys.web.ui.layout.BlockEditState
 import tech.testsys.web.ui.layout.FieldParts
 
 /**
- * Handle of a form field whose visibility covers the label and the control; it binds to a Vaadin `Binder` like any
- * field and shows its errors. `Binder` does not skip a hidden handle, since it is not a component: call
+ * Handle of a form field whose visibility covers the label and the control, or of a label-less control; it binds to
+ * a Vaadin `Binder` like any field and shows its errors. `Binder` does not skip a hidden handle, since it is not a component: call
  * `setIsAppliedPredicate { input.isVisible }` on the binding to skip it.
  *
  * @param T the type of the field value.
  * @property isEnabled whether the field is enabled; a disabled field is greyed out and ignores input. A manual change
  * while [bindEnabled] is bound, and a second binding, throw [BindingActiveException].
- * @property isEditable whether the user can change the value; a field is editable only if it and its block are,
- * otherwise it is read-only. A manual change while [bindEditable] or `bindReadOnly` is bound, and a second binding,
+ * @property isEditable whether the user can change the value, otherwise the control is read-only; a field of a block row
+ * is editable only if it and its block are. A manual change while [bindEditable] or `bindReadOnly` is bound, and a second binding,
  * throw [BindingActiveException].
  * @since %CURRENT_VERSION%
  */
 class ValueInput<T> internal constructor(
-    private val parts: FieldParts,
+    private val parts: FieldParts?,
     component: AbstractField<*, T>,
     private val validation: HasValidation,
     private val validator: HasValidator<T>,
     private val subscribe: (HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T>>) -> Registration,
-) : ElementHandle(parts.field), HasValue<HasValue.ValueChangeEvent<T>, T>, HasValidation, HasValidator<T> {
+) : ElementHandle(parts?.field ?: component), HasValue<HasValue.ValueChangeEvent<T>, T>, HasValidation, HasValidator<T> {
     private val fieldComponent: AbstractField<*, T> = component
 
-    private val enabled = Bindable(parts.field.element, initial = component.isEnabled) { value ->
+    private val enabled = Bindable(this.component.element, initial = component.isEnabled) { value ->
         fieldComponent.isEnabled = value
-        parts.field.setClassName("ts-field--disabled", !value)
+        parts?.field?.setClassName("ts-field--disabled", !value)
     }
 
     private var isBlockEditable = true
 
-    private val editable = Bindable(parts.field.element, initial = true) { value ->
+    private val editable = Bindable(this.component.element, initial = true) { value ->
         showReadOnly(isFieldEditable = value, isInEditableBlock = isBlockEditable)
     }
 
     private val requiredIndicator =
-        Bindable(parts.field.element, initial = component.isRequiredIndicatorVisible) { value ->
+        Bindable(this.component.element, initial = component.isRequiredIndicatorVisible) { value ->
             fieldComponent.isRequiredIndicatorVisible = value
-            parts.requiredMark.isVisible = value
+            parts?.requiredMark?.isVisible = value
         }
 
     var isEnabled: Boolean
@@ -84,8 +84,8 @@ class ValueInput<T> internal constructor(
     fun bindEnabled(signal: Signal<Boolean>): SignalBinding<Boolean> = enabled.bind(signal)
 
     /**
-     * Binds [isEditable] to [signal]: every value it produces is applied at once, and the field stays read-only while
-     * its block is not editable. A manual [isEditable] or `readOnly` while bound, and a second binding, including
+     * Binds [isEditable] to [signal]: every value it produces is applied at once, and a field of a block row stays
+     * read-only while its block is not editable. A manual [isEditable] or `readOnly` while bound, and a second binding, including
      * `bindReadOnly`, throw [BindingActiveException].
      *
      * @since %CURRENT_VERSION%

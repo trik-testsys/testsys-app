@@ -152,6 +152,17 @@ vaadin-button > .ts-spinner { display: inline-block; }
   width: 100%;
   padding-block: 0;
 }
+/* Label-less select in a line or a block head: no room for a label above; the small one matches small buttons. */
+vaadin-select[data-ts-size] { padding-block: 0; }
+/* The frame takes its height from --lumo-text-field-size and the value button inside from --lumo-size-m; the border
+   adds 2px. */
+vaadin-select[data-ts-size="sm"] {
+  --lumo-text-field-size: calc(var(--control-sm) - 2px);
+  --lumo-size-m: calc(var(--control-sm) - 2px);
+  --vaadin-input-field-value-font-size: var(--fs-xs);
+}
+/* A compact select keeps its height: the error shows as the red border, and its text stays the accessible description. */
+vaadin-select[data-ts-size="sm"]::part(error-message) { display: none; }
 .ts-field__value > vaadin-checkbox { display: flex; align-items: center; min-height: var(--control-md); }
 vaadin-text-field[data-ts-mono] > input, vaadin-integer-field > input, vaadin-number-field > input {
   font-family: var(--font-mono);
@@ -199,6 +210,15 @@ vaadin-custom-field[disabled] .ts-lookup {
 }
 .ts-block--dark vaadin-custom-field[readonly]:not([disabled]) .ts-lookup { color: var(--white); border-color: rgba(255, 255, 255, .3); }
 .ts-lookup-search { padding-top: 0; margin-bottom: var(--space-3); }
+/* Multi-value lookup: .ts-chip values as in MultiSelect; the value button stays first in the DOM, as the input the label
+   focuses, and the chips are shown before it. The pager goes under the table, the footer holds the count and the actions. */
+.ts-lookup--many { height: auto; min-height: var(--control-md); padding-block: 3px; }
+.ts-lookup--many:has(.ts-chip) { padding-left: 6px; }
+.ts-lookup__chips { order: -1; display: flex; flex-wrap: wrap; gap: var(--space-1); min-width: 0; }
+.ts-lookup__chips .ts-chip { white-space: nowrap; }
+vaadin-custom-field[disabled] .ts-lookup__chips .ts-chip { background: var(--muted); color: var(--text-disabled); }
+.ts-lookup-pager { margin-top: var(--space-3); }
+.ts-lookup-count { flex: 1; font-size: var(--fs-sm); }
 
 /* Toast: the notification card is only a positioner, the .ts-toast markup draws the card. */
 vaadin-notification-card[theme~="ts-toast"]::part(overlay) { background: none; box-shadow: none; padding: 0; }

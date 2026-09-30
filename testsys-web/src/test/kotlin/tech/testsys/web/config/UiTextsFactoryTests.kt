@@ -29,6 +29,21 @@ class UiTextsFactoryTests {
     }
 
     @Test
+    fun `should take pagination texts from the localization`() {
+        assertEquals("Назад", texts.pagination.previous)
+        assertEquals("Вперёд", texts.pagination.next)
+        assertEquals("Страница 1 412", texts.pagination.page(1412))
+    }
+
+    @Test
+    fun `should take multi-value lookup texts from the localization`() {
+        assertEquals("Убрать Кубок 1", texts.lookup.remove("Кубок 1"))
+        assertEquals("Сбросить", texts.lookup.reset)
+        assertEquals("Применить", texts.lookup.apply)
+        assertEquals("Выбрано: 1 412", texts.lookup.selectedCount(1412))
+    }
+
+    @Test
     fun `should take navigation, menu and load failure texts from the localization`() {
         assertEquals("Навигационная цепочка", texts.navigation.breadcrumbs)
         assertEquals("Разделы", texts.navigation.sections)

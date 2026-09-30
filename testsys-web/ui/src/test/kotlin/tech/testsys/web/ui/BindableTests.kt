@@ -6,6 +6,8 @@ import com.vaadin.flow.dom.Element
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -67,6 +69,18 @@ class BindableTests : MockVaadinTests() {
         bindable.bind(ValueSignal(true))
 
         assertThrows<BindingActiveException> { bindable.bind(ValueSignal(1)) { count -> count > 0 } }
+    }
+
+    @Test
+    fun `should not be bound before a binding`() {
+        assertFalse(bindable.isBound)
+    }
+
+    @Test
+    fun `should be bound after a binding`() {
+        bindable.bind(ValueSignal(true))
+
+        assertTrue(bindable.isBound)
     }
 
     @Test

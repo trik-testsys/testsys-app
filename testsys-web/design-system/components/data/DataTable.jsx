@@ -1,6 +1,7 @@
 import React from 'react';
 import { Checkbox } from '../forms/Checkbox.jsx';
 const cx = (...a) => a.filter(Boolean).join(' ');
+const SEMANTIC_WIDTHS = ['narrow', 'medium', 'wide', 'fill'];
 
 export function DataTable({ columns = [], rows = [], rowKey = 'id', selectable = false, selected = [], onSelectChange, sort, onSortChange, compact = false, onRowClick, empty, newKeys = [] }) {
   const keys = rows.map((r, i) => r[rowKey] != null ? r[rowKey] : i);
@@ -14,8 +15,9 @@ export function DataTable({ columns = [], rows = [], rowKey = 'id', selectable =
           {selectable ? <th style={{ width: 52 }}><Checkbox checked={all} indeterminate={some} onChange={() => onSelectChange && onSelectChange(all ? [] : keys)} /></th> : null}
           {columns.map(c => {
             const sorted = sort && sort.key === c.key;
+            const semantic = SEMANTIC_WIDTHS.includes(c.width);
             return (
-              <th key={c.key} style={{ width: c.width }} className={cx(c.align && 'ts-' + c.align, c.sortable && 'ts-sortable', sorted && 'ts-sorted')}
+              <th key={c.key} style={semantic ? undefined : { width: c.width }} className={cx(c.align && 'ts-' + c.align, semantic && 'ts-col--' + c.width, c.sortable && 'ts-sortable', sorted && 'ts-sorted')}
                 onClick={c.sortable && onSortChange ? () => onSortChange({ key: c.key, dir: sorted && sort.dir === 'desc' ? 'asc' : 'desc' }) : undefined}>
                 {c.title}{sorted ? (sort.dir === 'desc' ? ' ↓' : ' ↑') : ''}
               </th>

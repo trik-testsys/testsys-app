@@ -28,6 +28,7 @@ import tech.testsys.web.ui.feedback.toast
 import tech.testsys.web.ui.layout.PageScope
 import tech.testsys.web.ui.layout.SlotRowScope
 import tech.testsys.web.ui.navigation.TabsScope
+import tech.testsys.web.ui.navigation.pagination
 import tech.testsys.web.ui.navigation.pills
 import tech.testsys.web.ui.navigation.tabs
 import tech.testsys.web.ui.overlay.menu
@@ -50,6 +51,8 @@ private const val HALF = 12
 private const val LIVE_ROW_COUNT = 5
 private const val LIVE_SUBMISSION_ID_START = 900_000L
 private const val LIVE_SUBMISSION_SCORE = 87
+private const val PAGINATION_PAGES = 20
+private const val PAGINATION_ROWS = 3
 private val LOAD_DELAY: Duration = Duration.ofSeconds(1)
 private val NEW_ROW_DELAY: Duration = Duration.ofSeconds(2)
 private val CLOCK_PERIOD: Duration = Duration.ofSeconds(1)
@@ -85,8 +88,8 @@ private class StateRow(val id: Int, val author: String) {
 private val ROWS: List<StateRow> = (1..ROW_COUNT).map { id -> StateRow(id, "Участник $id") }
 
 /**
- * Second showcase page: page head, block tabs and pills, empty states, the load failure of a table, action menus
- * and live updates (a clock bound to a signal, background block loads and table refreshes); it opens only in the `dev`
+ * Second showcase page: page head, block tabs and pills, a pagination, empty states, the load failure of a table,
+ * action menus and live updates (a clock bound to a signal, background block loads and table refreshes); it opens only in the `dev`
  * profile.
  *
  * @since %CURRENT_VERSION%
@@ -102,6 +105,7 @@ class ShowcaseStatesView(texts: UiTexts, private val environment: Environment) :
             showcaseHead("Навигация и состояния")
             tabsSection()
             pillsSection()
+            paginationSection()
             emptySection()
             failureSection()
             menuSection()
@@ -213,6 +217,25 @@ private fun PageScope.pillsSection() {
         }
         row { chosen = text("Выбрано в шапке: ${Category.All.label}") }
         row { pills(initial = Category.Contests, size = HALF) { Category.entries.forEach { value -> pill(value, value.label) } } }
+    }
+}
+
+/** A pagination of many pages bound to a [ValueSignal] of the page, which the rows below follow. */
+private fun PageScope.paginationSection() {
+    val page = ValueSignal(1)
+    block(title = "Пагинация", subtitle = "Длинный диапазон — с пропусками; страница хранится в сигнале") {
+        row {
+            horizontal {
+                pagination(pageCount = PAGINATION_PAGES) {
+                    bindPage(page)
+                    onChange { chosen -> page.set(chosen) }
+                }
+            }
+        }
+        row { text(page.map { current -> "Страница $current из $PAGINATION_PAGES" }) }
+        for (line in 1..PAGINATION_ROWS) {
+            row { text(page.map { current -> "Участник ${(current - 1) * PAGINATION_ROWS + line}" }) }
+        }
     }
 }
 

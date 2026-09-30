@@ -8,6 +8,8 @@ import com.vaadin.flow.component.html.TableDataCell
 import com.vaadin.flow.component.html.TableHead
 import com.vaadin.flow.component.html.TableHeaderCell
 import com.vaadin.flow.component.html.TableRow
+import com.vaadin.flow.signals.Signal
+import com.vaadin.flow.signals.local.ValueSignal
 import org.slf4j.LoggerFactory
 import tech.testsys.web.ui.UiTexts
 import tech.testsys.web.ui.actions.action
@@ -35,8 +37,8 @@ internal const val ROW_CLICK_FILTER: String = "!event.target.closest('$ROW_CONTR
 /**
  * Paged table of rows fetched by [fetch], [pageSize] rows a page: the `.ts-table` markup, sorting by column keys,
  * a [pager] and, if [isSelectable], a checkbox column; all state lives on the server. [key] identifies a row;
- * [highlighted] rows are shown as selected besides the checked ones, e.g. the current value of a lookup. A reload
- * may mark the rows new to the page with `.ts-row-new`, which flashes them once.
+ * [highlighted] rows are shown as selected besides the checked ones, e.g. the current value of a lookup. The keys of
+ * [initialSelection] start selected. A reload may mark the rows new to the page with `.ts-row-new`, which flashes them once.
  */
 internal class DataTable<T>(
     private val texts: UiTexts,
@@ -46,15 +48,21 @@ internal class DataTable<T>(
     private val fetch: (PageRequest) -> Page<T>,
     private val spec: TableSpec<T>,
     private val highlighted: (T) -> Boolean = { false },
+    initialSelection: Set<Any> = emptySet(),
 ) {
     val table: Table = Table().apply { addClassName("ts-table") }
     val pager: Pager = Pager(texts) { target -> load(target) }
 
     /** Keys of the selected rows, kept across pages, sorting and reloads. */
-    val selected: MutableSet<Any> = linkedSetOf()
+    val selected: MutableSet<Any> = LinkedHashSet(initialSelection)
 
     /** Called with the keys of the selected rows after every change of the selection. */
     var onSelectionChange: (Set<Any>) -> Unit = {}
+
+    private val selectionSignal = ValueSignal<Set<Any>>(selected.toSet())
+
+    /** Keys of the selected rows as a read-only signal; changes together with [onSelectionChange]. */
+    val selection: Signal<Set<Any>> = selectionSignal.asReadonly()
 
     /** Whether the table and its pagination are shown. */
     var isShown: Boolean = true
@@ -127,12 +135,25 @@ internal class DataTable<T>(
         load(if (toFirstPage) 0 else page, highlightNew)
     }
 
+    /** Selects the row of [rowKey] if it is not selected and unselects it otherwise, as a click on its checkbox does. */
+    fun toggle(rowKey: Any) {
+        val isSelected = rowKey !in selected
+        val shownRow = shownRows.firstOrNull { row -> row.key == rowKey }
+        when {
+            shownRow != null -> shownRow.select(isSelected)
+            isSelected -> selected += rowKey
+            else -> selected -= rowKey
+        }
+        updateHeaderCheckbox()
+        notifySelectionChange()
+    }
+
     /** Unselects all rows; row and header checkboxes update in place, without fetching or rendering the page again. */
     fun clearSelection() {
         selected.clear()
         shownRows.forEach { shownRow -> shownRow.select(false) }
         updateHeaderCheckbox()
-        onSelectionChange(selected.toSet())
+        notifySelectionChange()
     }
 
     private fun pageCountOf(total: Int): Int = maxOf(1, (total + pageSize - 1) / pageSize)
@@ -144,6 +165,7 @@ internal class DataTable<T>(
         spec.columns.forEach { column ->
             val cell = TableHeaderCell(column.title)
             if (column.kind == CellKind.Number) cell.addClassName("ts-right")
+            column.width.cssClass?.let { cssClass -> cell.addClassName(cssClass) }
             if (column.kind == CellKind.Menu) {
                 cell.style.set("width", MENU_COLUMN_WIDTH)
                 cell.element.setAttribute("aria-label", texts.menu.actions)
@@ -239,7 +261,14 @@ internal class DataTable<T>(
 
     private fun selectPage(isSelected: Boolean) {
         shownRows.forEach { shownRow -> shownRow.select(isSelected) }
-        onSelectionChange(selected.toSet())
+        notifySelectionChange()
+    }
+
+    /** Publishes the current selection to [selection] and [onSelectionChange]. */
+    private fun notifySelectionChange() {
+        val keys = selected.toSet()
+        selectionSignal.set(keys)
+        onSelectionChange(keys)
     }
 
     private fun updateHeaderCheckbox() {
@@ -262,7 +291,7 @@ internal class DataTable<T>(
                 if (event.isFromClient) {
                     select(event.value)
                     updateHeaderCheckbox()
-                    onSelectionChange(selected.toSet())
+                    notifySelectionChange()
                 }
             }
         }

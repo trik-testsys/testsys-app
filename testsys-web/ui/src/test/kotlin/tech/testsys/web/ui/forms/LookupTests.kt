@@ -85,7 +85,7 @@ class LookupTests : MockVaadinTests() {
     fun `should search with the typed query from the first page`() {
         buildLookup()
         lookupButton(testTexts.lookup.open)._click()
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
 
         searchField()._setValue(" кубок ")
 

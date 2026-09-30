@@ -16,7 +16,10 @@ import com.vaadin.flow.signals.Signal
  */
 internal class Bindable<T>(private val element: Element, initial: T, private val apply: (T) -> Unit) {
     private var current: T = initial
-    private var isBound: Boolean = false
+
+    /** Whether [bind] is active. */
+    var isBound: Boolean = false
+        private set
 
     /** The current value; setting it while [bind] is active throws [BindingActiveException]. */
     var value: T

@@ -39,6 +39,11 @@
   --grid-gap-tight: 8px;
   --row-gap: 12px;
 
+  /* Table columns: width by what a column holds (IDs and dates / names and statuses / titles). */
+  --col-narrow: 80px;
+  --col-medium: 160px;
+  --col-wide: 280px;
+
   /* Motion: short, ease-out, opacity + ≤8px travel. No bounce, no scale on press. */
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);

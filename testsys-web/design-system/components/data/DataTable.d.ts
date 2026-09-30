@@ -1,7 +1,8 @@
 export interface DataTableColumn<T = any> {
   key: string;
   title: React.ReactNode;
-  width?: number | string;
+  /** Pixels, or a width by what the column holds: `narrow` IDs, scores, dates; `medium` names, statuses; `wide` titles; `fill` the rest of the row. */
+  width?: number | 'narrow' | 'medium' | 'wide' | 'fill';
   align?: 'right' | 'center';
   /** JetBrains Mono cell (IDs, times, numbers). */
   mono?: boolean;

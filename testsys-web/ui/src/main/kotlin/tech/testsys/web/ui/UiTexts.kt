@@ -14,6 +14,7 @@ import java.util.Locale
  * @property dateRangeReversed the error shown when a date range ends before it starts.
  * @property editing the labels of the block editing switch.
  * @property table the texts of data tables.
+ * @property pagination the texts of page switchers.
  * @property load the texts of content that failed to load.
  * @property dialog the texts of dialogs.
  * @property lookup the texts of the lookup field and its dialog.
@@ -30,6 +31,7 @@ class UiTexts(
     val dateRangeReversed: String,
     val editing: EditingTexts,
     val table: TableTexts,
+    val pagination: PaginationTexts,
     val load: LoadTexts,
     val dialog: DialogTexts,
     val lookup: LookupTexts,
@@ -94,8 +96,6 @@ class EditingTexts(
  *
  * @property empty the text of a table without rows.
  * @property range the pagination label of shown rows, e.g. "1–20 of 1 412", from `from`, `to` and `total`.
- * @property previous the label of the previous page button.
- * @property next the label of the next page button.
  * @property selectAll the accessible name of the checkbox that selects all rows of a page.
  * @property selectRow the accessible name of the checkbox that selects a row.
  * @since %CURRENT_VERSION%
@@ -103,10 +103,22 @@ class EditingTexts(
 class TableTexts(
     val empty: String,
     val range: (from: Int, to: Int, total: Int) -> String,
-    val previous: String,
-    val next: String,
     val selectAll: String,
     val selectRow: String,
+)
+
+/**
+ * Texts of page switchers: the full pagination and the compact pager of data tables.
+ *
+ * @property previous the accessible name of the previous page button.
+ * @property next the accessible name of the next page button.
+ * @property page the accessible name of the button of a page, from its number.
+ * @since %CURRENT_VERSION%
+ */
+class PaginationTexts(
+    val previous: String,
+    val next: String,
+    val page: (page: Int) -> String,
 )
 
 /**
@@ -144,6 +156,10 @@ class DialogTexts(
  * @property open the label of the button that opens the lookup dialog.
  * @property clear the label of the button that clears the value.
  * @property empty the text shown when the search finds nothing.
+ * @property remove the label of the button that removes one value of a multi-value lookup, from the value.
+ * @property reset the label of the action that unchecks all rows of the multi-value lookup dialog.
+ * @property apply the label of the action that makes the checked rows the value of a multi-value lookup.
+ * @property selectedCount the count of checked rows of the multi-value lookup dialog, from the count.
  * @since %CURRENT_VERSION%
  */
 class LookupTexts(
@@ -151,6 +167,10 @@ class LookupTexts(
     val open: String,
     val clear: String,
     val empty: String,
+    val remove: (value: String) -> String,
+    val reset: String,
+    val apply: String,
+    val selectedCount: (count: Int) -> String,
 )
 
 /**

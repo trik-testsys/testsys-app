@@ -19,6 +19,8 @@ internal const val DEFAULT_PAGE_SIZE: Int = 20
  * @property isVisible whether the table and its pagination are shown; the block stays. A manual change while
  * [bindVisible] is bound, and a second binding, throw [BindingActiveException].
  * @property selected the keys of the selected rows, kept across pages.
+ * @property selection the keys of the selected rows as a read-only signal; changes with every change of the
+ * selection, including [clearSelection].
  * @since %CURRENT_VERSION%
  */
 @TestSysDsl
@@ -49,6 +51,8 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
 
     val selected: Set<Any>
         get() = table.selected.toSet()
+
+    val selection: Signal<Set<Any>> = table.selection
 
     /**
      * Binds [isVisible] to [signal]: every value it produces is shown at once. A manual [isVisible] while bound,

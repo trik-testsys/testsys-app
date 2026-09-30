@@ -16,6 +16,7 @@ import tech.testsys.web.ui.MockVaadinTests
 import tech.testsys.web.ui.buildTestPage
 import tech.testsys.web.ui.child
 import tech.testsys.web.ui.classes
+import tech.testsys.web.ui.display.text
 import tech.testsys.web.ui.find
 import tech.testsys.web.ui.findAll
 import tech.testsys.web.ui.testTexts
@@ -100,9 +101,9 @@ class TableSelectionTests : MockVaadinTests() {
     fun `should keep the selection across pages`() {
         val handle = buildTable(Source(size = 12))
         rowCheckbox(0)._setValue(true)
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
 
-        pagerButton(testTexts.table.previous)._click()
+        pagerButton(testTexts.pagination.previous)._click()
 
         assertTrue(rowCheckbox(0).value)
         assertTrue("ts-row-selected" in rows()[0].classes())
@@ -136,9 +137,9 @@ class TableSelectionTests : MockVaadinTests() {
     @Test
     fun `should unselect only the rows of the page with the header checkbox`() {
         val handle = buildTable(Source(size = 12))
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
         rowCheckbox(0)._setValue(true)
-        pagerButton(testTexts.table.previous)._click()
+        pagerButton(testTexts.pagination.previous)._click()
         headerCheckbox()._setValue(true)
 
         headerCheckbox()._setValue(false)
@@ -174,7 +175,7 @@ class TableSelectionTests : MockVaadinTests() {
         buildTable(Source(size = 12))
         headerCheckbox()._setValue(true)
 
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
 
         assertFalse(headerCheckbox().value)
         assertFalse(headerCheckbox().isIndeterminate)
@@ -227,6 +228,76 @@ class TableSelectionTests : MockVaadinTests() {
         handle.clearSelection()
 
         assertEquals(emptySet<Any>(), seen)
+    }
+
+    @Test
+    fun `should start the selection signal with an empty set`() {
+        val handle = buildTable(Source(size = 12))
+
+        assertEquals(emptySet<Any>(), handle.selection.peek())
+    }
+
+    @Test
+    fun `should put the key of a row selected by its checkbox into the selection signal`() {
+        val handle = buildTable(Source(size = 12))
+
+        rowCheckbox(1)._setValue(true)
+
+        assertEquals(setOf<Any>(2), handle.selection.peek())
+    }
+
+    @Test
+    fun `should put the keys of the page selected by the header checkbox into the selection signal`() {
+        val handle = buildTable(Source(size = 12))
+
+        headerCheckbox()._setValue(true)
+
+        assertEquals(setOf<Any>(1, 2, 3, 4, 5), handle.selection.peek())
+    }
+
+    @Test
+    fun `should empty the selection signal when the selection is cleared`() {
+        val handle = buildTable(Source(size = 12))
+        headerCheckbox()._setValue(true)
+
+        handle.clearSelection()
+
+        assertEquals(emptySet<Any>(), handle.selection.peek())
+    }
+
+    @Test
+    fun `should update a text in the block actions bound to the selection signal when rows are selected`() {
+        val source = Source(size = 12)
+        buildTestPage {
+            block(title = "Посылки") {
+                val handle = table(key = { row -> row.id }, pageSize = 5, selectable = true, fetch = source::fetch) {
+                    textColumn("Участник") { row -> row.name }
+                }
+                actions { text(handle.selection.map { keys -> "Выбрано: ${keys.size}" }) }
+            }
+        }
+
+        rowCheckbox(0)._setValue(true)
+        rowCheckbox(2)._setValue(true)
+
+        assertEquals("Выбрано: 2", ui().find("ts-block__actions").child(0).element.text)
+    }
+
+    @Test
+    fun `should keep the selection signal empty if the table is not selectable`() {
+        lateinit var handle: TableHandle<Row>
+        val source = Source(size = 12)
+        buildTestPage {
+            block(title = "Посылки") {
+                handle = table(key = { row -> row.id }, pageSize = 5, fetch = source::fetch) {
+                    textColumn("Участник") { row -> row.name }
+                }
+            }
+        }
+
+        handle.refresh()
+
+        assertEquals(emptySet<Any>(), handle.selection.peek())
     }
 
     @Test

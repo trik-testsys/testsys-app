@@ -9,6 +9,7 @@ import java.util.Locale
  * @property locale the locale of dates, times and numbers.
  * @property brand the product name in the header.
  * @property signIn the label of the header sign-in link.
+ * @property header the texts of interactive header layers.
  * @property calendar the texts of date pickers.
  * @property fieldErrors the messages of the built-in field constraints.
  * @property dateRangeReversed the error shown when a date range ends before it starts.
@@ -43,6 +44,7 @@ class UiTexts(
     val dateFields: DateFieldTexts,
     val notFound: NotFoundTexts,
     val components: ComponentTexts,
+    val header: HeaderTexts,
 )
 
 /**
@@ -303,4 +305,44 @@ class ComponentTexts(
     val avatarOverflow: (Int) -> String,
     val transferBytes: (Long) -> String,
     val question: (Int) -> String,
+)
+
+/**
+ * Built-in header labels and announcements; application data labels remain with the application.
+ *
+ * @property search the search field name and placeholder.
+ * @property searchLoading the announcement of a pending request.
+ * @property searchEmpty the empty result message.
+ * @property searchFailed the provider failure message.
+ * @property searchCount the announcement of the result count.
+ * @property retry the retry action.
+ * @property notifications the notification popup heading.
+ * @property notificationsEmpty the empty notification message.
+ * @property readAll the read-all action.
+ * @property unreadCount the accessible name of the bell including the unread count.
+ * @property unreadItem the accessible name of an unread notification.
+ * @property userMenu the accessible name of the user menu trigger.
+ * @property arrivalOpen the action of the arrival card.
+ * @property arrivalClose the accessible name of its dismiss button.
+ * @property arrivalCount the summary of a batch of arrivals.
+ * @property arrivalBatchHint the instruction accompanying a batch summary.
+ * @since %CURRENT_VERSION%
+ */
+class HeaderTexts(
+    val search: String,
+    val searchLoading: String,
+    val searchEmpty: String,
+    val searchFailed: String,
+    val searchCount: (Int) -> String,
+    val retry: String,
+    val notifications: String,
+    val notificationsEmpty: String,
+    val readAll: String,
+    val unreadCount: (Int) -> String,
+    val unreadItem: (String) -> String,
+    val userMenu: (String) -> String,
+    val arrivalOpen: String,
+    val arrivalClose: String,
+    val arrivalCount: (Int) -> String,
+    val arrivalBatchHint: String,
 )

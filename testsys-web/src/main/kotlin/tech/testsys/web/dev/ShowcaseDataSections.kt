@@ -1,29 +1,30 @@
 package tech.testsys.web.dev
 
 import com.vaadin.flow.data.binder.Binder
-import tech.testsys.web.ui.TextHandle
 import tech.testsys.web.ui.actions.action
 import tech.testsys.web.ui.actions.destructiveAction
 import tech.testsys.web.ui.actions.mainAction
+import tech.testsys.web.ui.data.ColumnWidth
 import tech.testsys.web.ui.data.Page
 import tech.testsys.web.ui.data.PageRequest
-import tech.testsys.web.ui.data.TableHandle
 import tech.testsys.web.ui.data.TableScope
 import tech.testsys.web.ui.data.table
-import tech.testsys.web.ui.display.CounterKind
 import tech.testsys.web.ui.display.Tone
 import tech.testsys.web.ui.display.badge
-import tech.testsys.web.ui.display.counter
+import tech.testsys.web.ui.display.text
 import tech.testsys.web.ui.feedback.FeedbackKind
 import tech.testsys.web.ui.feedback.toast
 import tech.testsys.web.ui.forms.DateRange
 import tech.testsys.web.ui.forms.ValueInput
 import tech.testsys.web.ui.forms.dateRangeInput
 import tech.testsys.web.ui.forms.lookup
+import tech.testsys.web.ui.forms.lookupMany
+import tech.testsys.web.ui.forms.select
 import tech.testsys.web.ui.forms.textArea
 import tech.testsys.web.ui.forms.textInput
 import tech.testsys.web.ui.layout.BlockRowScope
 import tech.testsys.web.ui.layout.PageScope
+import tech.testsys.web.ui.navigation.filterChip
 import tech.testsys.web.ui.overlay.DialogHandle
 import tech.testsys.web.ui.overlay.confirm
 import tech.testsys.web.ui.overlay.dialog
@@ -43,6 +44,8 @@ private const val DESCRIPTION_LINES = 4
 private const val SCORE_SORT = "score"
 private const val TIME_SORT = "time"
 private const val DANGER_TOUR_NAME = "Весенний кубок"
+private const val TASK_COUNT = 24
+private const val TOUR_TASK_COUNT = 5
 
 private val SHOWCASE_START: LocalDateTime = LocalDateTime.parse("2026-09-01T10:00")
 private val CONTESTS_START: LocalDate = LocalDate.parse("2025-01-13")
@@ -50,13 +53,16 @@ private val AUTHORS = listOf("Анна Петрова", "Иван Смирнов
 private val TASKS = listOf("A. Кратчайший путь", "B. Робот в лабиринте", "C. Движение по линии", "D. Сумма чисел")
 private val SEASONS = listOf("Весенний", "Летний", "Осенний", "Зимний", "Открытый")
 private val CONTEST_KINDS = listOf("кубок", "тур", "марафон")
+private val TASK_TITLES =
+    listOf("Кратчайший путь", "Робот в лабиринте", "Движение по линии", "Сумма чисел", "Обход препятствий", "Поиск выхода")
+private val TASK_TOPICS = listOf("Графы", "Алгоритмы", "Датчики", "Арифметика")
 
-/** Verdict of a showcase submission with its badge tone. */
-internal enum class ShowcaseVerdict(val label: String, val tone: Tone) {
-    Accepted("Принято", Tone.Success),
-    WrongAnswer("Неверный ответ", Tone.Danger),
-    TimeLimit("Превышено время", Tone.Warning),
-    Running("Проверяется", Tone.Info),
+/** Verdict of a showcase submission with its badge tone; [isError] marks a failed solution. */
+internal enum class ShowcaseVerdict(val label: String, val tone: Tone, val isError: Boolean) {
+    Accepted("Принято", Tone.Success, isError = false),
+    WrongAnswer("Неверный ответ", Tone.Danger, isError = true),
+    TimeLimit("Превышено время", Tone.Warning, isError = true),
+    Running("Проверяется", Tone.Info, isError = false),
 }
 
 /** Submission row of the showcase tables; a running submission has no score yet. */
@@ -75,6 +81,9 @@ private class ShowcaseContest(val id: Int, val name: String, val startsOn: Local
 /** Tour created by the showcase form dialog. */
 private class ShowcaseTour(var name: String = "", var period: DateRange = DateRange(), var description: String = "")
 
+/** Task chosen by the showcase lookups of several values; a data class, since they match values by `equals`. */
+private data class ShowcaseTask(val id: Int, val name: String, val topic: String)
+
 /** Form of the required showcase lookup. */
 private class ShowcaseChoice(var contest: ShowcaseContest? = null)
 
@@ -90,6 +99,14 @@ internal val SUBMISSIONS: List<ShowcaseSubmission> = (0 until SUBMISSION_COUNT).
     )
 }
 
+private val SHOWCASE_TASKS: List<ShowcaseTask> = (0 until TASK_COUNT).map { index ->
+    ShowcaseTask(
+        id = index + 1,
+        name = "${TASK_TITLES[index % TASK_TITLES.size]} ${index / TASK_TITLES.size + 1}",
+        topic = TASK_TOPICS[index % TASK_TOPICS.size],
+    )
+}
+
 private val CONTESTS: List<ShowcaseContest> = (0 until SEASONS.size * CONTEST_KINDS.size * CONTEST_YEARS).map { index ->
     val season = SEASONS[index % SEASONS.size]
     val kind = CONTEST_KINDS[index / SEASONS.size % CONTEST_KINDS.size]
@@ -102,43 +119,46 @@ private val CONTESTS: List<ShowcaseContest> = (0 until SEASONS.size * CONTEST_KI
     )
 }
 
-/** Paged, filterable and selectable table of submissions, an empty table and a table of one page. */
+/**
+ * Paged table of submissions with column widths, head filters by verdict and by errors, row selection with a recheck of
+ * the selected rows; an empty table and a table of one page.
+ */
 internal fun PageScope.tableSection() {
     var verdict: ShowcaseVerdict? = null
-    lateinit var submissions: TableHandle<ShowcaseSubmission>
-    lateinit var selectedCount: TextHandle
-    block(title = "Посылки", subtitle = "Сортировка по баллам и времени, фильтр по вердикту, выбор строк") {
-        actions {
-            selectedCount = counter(value = 0, kind = CounterKind.Neutral)
-            action("Все") {
-                onClick {
-                    verdict = null
-                    submissions.refresh(toFirstPage = true)
-                }
-            }
-            ShowcaseVerdict.entries.forEach { option ->
-                action(option.label) {
-                    onClick {
-                        verdict = option
-                        submissions.refresh(toFirstPage = true)
-                    }
-                }
-            }
-        }
-        submissions = table(
+    var isErrorsOnly = false
+    block(title = "Посылки", subtitle = "Ширины колонок, сортировка по баллам и времени, фильтры в шапке, выбор строк") {
+        val submissions = table(
             key = { row -> row.id },
             selectable = true,
-            fetch = { request -> submissionPage(SUBMISSIONS.filter { row -> verdict == null || row.verdict == verdict }, request) },
+            fetch = { request -> submissionPage(SUBMISSIONS.filter { row -> row.matches(verdict, isErrorsOnly) }, request) },
         ) {
             submissionColumns()
             onRowClick { row -> toast(FeedbackKind.Info, "Посылка #${row.id}") }
         }
+        actions {
+            select("Вердикт", items = ShowcaseVerdict.entries, itemLabel = ShowcaseVerdict::label, emptyLabel = "Все вердикты") {
+                addValueChangeListener { event ->
+                    verdict = event.value
+                    submissions.refresh(toFirstPage = true)
+                }
+            }
+            filterChip("С ошибками") {
+                onChange { isOn ->
+                    isErrorsOnly = isOn
+                    submissions.refresh(toFirstPage = true)
+                }
+            }
+            text(submissions.selection.map { keys -> "Выбрано: ${keys.size}" })
+            action("Перепроверить") {
+                bindEnabled(submissions.selection.map { keys -> keys.isNotEmpty() })
+                onClick {
+                    val count = submissions.selected.size
+                    toast(kind = FeedbackKind.Success, title = "Отправлено на перепроверку", description = "Посылок: $count")
+                    submissions.clearSelection()
+                }
+            }
+        }
     }
-    submissions.onSelectionChange { keys ->
-        selectedCount.text = "${keys.size}"
-        selectedCount.isVisible = keys.isNotEmpty()
-    }
-    selectedCount.isVisible = false
     row {
         slot(size = 12) {
             row {
@@ -201,11 +221,11 @@ internal fun PageScope.dialogSection() {
     }
 }
 
-/** Lookups of a contest: optional, required and read-only with a chosen value. */
+/** Lookups of a contest (optional, required and read-only with a chosen value) and of several tasks (empty and chosen). */
 internal fun PageScope.lookupSection() {
     val choice = ShowcaseChoice()
     val binder = Binder<ShowcaseChoice>()
-    block(title = "Лукап", subtitle = "Выбор тура в диалоге с поиском по названию") {
+    block(title = "Лукап", subtitle = "Выбор тура или нескольких задач в диалоге с поиском по названию") {
         row { contestLookup("Тур", hint = "Поиск по части названия") }
         row {
             contestLookup("Обязательный") {
@@ -220,6 +240,8 @@ internal fun PageScope.lookupSection() {
                 isEditable = false
             }
         }
+        row { taskLookup("Задачи", hint = "Несколько задач; отметки сохраняются при поиске и листании") }
+        row { taskLookup("Задачи тура") { value = SHOWCASE_TASKS.take(TOUR_TASK_COUNT).toSet() } }
         footer { mainAction("Проверить") { onClick { binder.writeBeanIfValid(choice) } } }
     }
     binder.readBean(choice)
@@ -268,7 +290,7 @@ private fun BlockRowScope.contestLookup(
     label,
     labelSize = 4,
     size = 8,
-    fetch = { query, request -> contestPage(CONTESTS.filter { contest -> contest.name.contains(query, ignoreCase = true) }, request) },
+    fetch = { query, request -> pageOf(CONTESTS.filter { contest -> contest.name.contains(query, ignoreCase = true) }, request) },
     display = { contest -> contest.name },
     columns = {
         codeColumn("ID") { contest -> "${contest.id}" }
@@ -280,14 +302,37 @@ private fun BlockRowScope.contestLookup(
     configure = configure,
 )
 
+private fun BlockRowScope.taskLookup(
+    label: String,
+    hint: String? = null,
+    configure: ValueInput<Set<ShowcaseTask>>.() -> Unit = {},
+): ValueInput<Set<ShowcaseTask>> = lookupMany(
+    label,
+    labelSize = 4,
+    size = 8,
+    fetch = { query, request -> pageOf(SHOWCASE_TASKS.filter { task -> task.name.contains(query, ignoreCase = true) }, request) },
+    display = { task -> task.name },
+    columns = {
+        codeColumn("ID", width = ColumnWidth.Narrow) { task -> "${task.id}" }
+        textColumn("Название", width = ColumnWidth.Fill) { task -> task.name }
+        textColumn("Тема", width = ColumnWidth.Medium) { task -> task.topic }
+    },
+    hint = hint,
+    configure = configure,
+)
+
 internal fun TableScope<ShowcaseSubmission>.submissionColumns() {
-    codeColumn("ID") { row -> "#${row.id}" }
-    textColumn("Участник") { row -> row.author }
-    textColumn("Задача") { row -> row.task }
-    column("Вердикт") { row -> badge(row.verdict.label, row.verdict.tone) }
-    numberColumn("Баллы", sortKey = SCORE_SORT) { row -> row.score }
-    dateTimeColumn("Время", sortKey = TIME_SORT) { row -> row.sentAt }
+    codeColumn("ID", width = ColumnWidth.Narrow) { row -> "#${row.id}" }
+    textColumn("Участник", width = ColumnWidth.Medium) { row -> row.author }
+    textColumn("Задача", width = ColumnWidth.Fill) { row -> row.task }
+    column("Вердикт", width = ColumnWidth.Medium) { row -> badge(row.verdict.label, row.verdict.tone) }
+    numberColumn("Баллы", sortKey = SCORE_SORT, width = ColumnWidth.Narrow) { row -> row.score }
+    dateTimeColumn("Время", sortKey = TIME_SORT, width = ColumnWidth.Medium) { row -> row.sentAt }
 }
+
+/** Whether the submission passes the head filters: [verdict] if one is chosen, and a failed verdict if [isErrorsOnly]. */
+private fun ShowcaseSubmission.matches(verdict: ShowcaseVerdict?, isErrorsOnly: Boolean): Boolean =
+    (verdict == null || this.verdict == verdict) && (!isErrorsOnly || this.verdict.isError)
 
 /** The page of [rows] asked by [request], sorted by the showcase sort keys. */
 private fun submissionPage(rows: List<ShowcaseSubmission>, request: PageRequest): Page<ShowcaseSubmission> {
@@ -301,5 +346,4 @@ private fun submissionPage(rows: List<ShowcaseSubmission>, request: PageRequest)
 }
 
 /** The page of [rows] asked by [request] in their natural order. */
-private fun contestPage(rows: List<ShowcaseContest>, request: PageRequest): Page<ShowcaseContest> =
-    Page(rows.drop(request.offset).take(request.limit), rows.size)
+private fun <T> pageOf(rows: List<T>, request: PageRequest): Page<T> = Page(rows.drop(request.offset).take(request.limit), rows.size)

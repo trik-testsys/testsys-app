@@ -10,6 +10,7 @@ import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.shared.Registration
 import tech.testsys.web.ui.layout.BlockRowScope
+import tech.testsys.web.ui.layout.ContentScope
 import tech.testsys.web.ui.layout.LabelAction
 import tech.testsys.web.ui.layout.placeField
 
@@ -23,10 +24,7 @@ internal fun <C, T> BlockRowScope.addInput(
     configure: ValueInput<T>.() -> Unit,
 ): ValueInput<T>
     where C : AbstractField<C, T>, C : HasValidation, C : HasValidator<T> {
-    val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T>> ->
-        control.addValueChangeListener { event -> listener.valueChanged(event) }
-    }
-    return placeInput(label, labelSize, size, control, hint, subscribe, configure)
+    return placeInput(label, labelSize, size, control, hint, valueChanges(control), configure)
 }
 
 /**
@@ -53,7 +51,30 @@ internal fun <C, T> BlockRowScope.placeInput(
     return input.apply(configure)
 }
 
+/**
+ * Adds [control] without a visible label, e.g. a filter in a block head: [label] is only its accessible name, and the
+ * control takes the small size in a compact place.
+ */
+internal fun <C, T> ContentScope.addLabelLessInput(
+    label: String,
+    control: C,
+    configure: ValueInput<T>.() -> Unit,
+): ValueInput<T>
+    where C : AbstractField<C, T>, C : HasValidation, C : HasValidator<T> {
+    nameControl(control, label)
+    control.element.setAttribute("data-ts-size", if (placement.isCompact) "sm" else "md")
+    add(control)
+    return ValueInput(parts = null, control, control, control, valueChanges(control)).apply(configure)
+}
+
 /** Gives [control] the accessible name [label], since the visible label of a grid field is not its own. */
 internal fun nameControl(control: Component, label: String) {
     if (control is HasAriaLabel) control.setAriaLabel(label) else control.element.setProperty("accessibleName", label)
+}
+
+/** Passes the value changes of [control] to a listener of the handle. */
+private fun <C : AbstractField<C, T>, T> valueChanges(
+    control: C,
+): (HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T>>) -> Registration {
+    return { listener -> control.addValueChangeListener { event -> listener.valueChanged(event) } }
 }

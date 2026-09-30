@@ -376,6 +376,10 @@ a.ts-tab { text-decoration:none; }
 .ts-table th:last-child, .ts-table td:last-child { padding-right:var(--space-3); }
 .ts-table th.ts-sortable { cursor:pointer; display:table-cell; position:static; }
 .ts-table th.ts-sorted { color:var(--text-primary); }
+.ts-table th.ts-col--narrow { width:var(--col-narrow); min-width:var(--col-narrow); }
+.ts-table th.ts-col--medium { width:var(--col-medium); min-width:var(--col-medium); }
+.ts-table th.ts-col--wide { width:var(--col-wide); min-width:var(--col-wide); }
+.ts-table th.ts-col--fill { width:100%; }
 .ts-table td { padding:8px var(--space-3); border-bottom:1px solid var(--line-subtle); vertical-align:middle; }
 .ts-table tbody tr:hover { background:var(--sunken); }
 .ts-table tr.ts-row-selected, .ts-table tr.ts-row-selected:hover { background:var(--accent-softer); }

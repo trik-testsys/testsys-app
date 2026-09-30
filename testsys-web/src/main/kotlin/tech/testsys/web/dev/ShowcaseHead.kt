@@ -15,7 +15,7 @@ import tech.testsys.web.ui.navigation.NavItem
 internal const val DEV_PROFILE = "dev"
 
 /** Sections of the navigation and states page, shown as the counter of its tab. */
-private const val STATES_SECTION_COUNT = 5
+private const val STATES_SECTION_COUNT = 7
 
 /** Cabinet header of the showcase pages. */
 internal fun showcaseHeader(): CabinetHeader = CabinetHeader(

@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.web.ui.MockVaadinTests
 import tech.testsys.web.ui.buildTestPage
 import tech.testsys.web.ui.child
@@ -22,6 +24,9 @@ import tech.testsys.web.ui.find
 import tech.testsys.web.ui.findAll
 import tech.testsys.web.ui.testTexts
 import tools.jackson.databind.ObjectMapper
+
+/** Number of columns that [TableTests.buildTable] declares before the columns of a test: ID, name and score. */
+private const val BUILT_COLUMN_COUNT = 3
 
 class TableTests : MockVaadinTests() {
     @Test
@@ -162,11 +167,49 @@ class TableTests : MockVaadinTests() {
         assertFalse("ts-right" in nameHeader().classes())
     }
 
+    @ParameterizedTest
+    @CsvSource("Narrow, ts-col--narrow", "Medium, ts-col--medium", "Wide, ts-col--wide", "Fill, ts-col--fill")
+    fun `should mark the header with the class of the column width`(width: ColumnWidth, cssClass: String) {
+        buildTable(Source(size = 3)) { textColumn("Комментарий", width = width) { row -> row.name } }
+
+        assertTrue(cssClass in addedHeader().classes())
+    }
+
+    @Test
+    fun `should leave the header of an auto width column without a width class`() {
+        buildTable(Source(size = 3)) { textColumn("Комментарий", width = ColumnWidth.Auto) { row -> row.name } }
+
+        assertEquals(emptyList<String>(), widthClasses(addedHeader()))
+    }
+
+    @Test
+    fun `should leave the menu column header without a width class`() {
+        buildTable(Source(size = 3)) { menuColumn { item("Открыть") {} } }
+
+        assertEquals(emptyList<String>(), widthClasses(addedHeader()))
+    }
+
+    @Test
+    fun `should mark the header of every kind of column with its width`() {
+        buildTable(Source(size = 3)) {
+            codeColumn("Код", width = ColumnWidth.Narrow) { row -> row.id.toString() }
+            numberColumn("Место", width = ColumnWidth.Narrow) { row -> row.id }
+            dateColumn("Дата", width = ColumnWidth.Medium) { null }
+            dateTimeColumn("Отправлена", width = ColumnWidth.Medium) { null }
+            column("Задача", width = ColumnWidth.Fill) { row -> text(row.name) }
+        }
+
+        assertEquals(
+            listOf("ts-col--narrow", "ts-col--narrow", "ts-col--medium", "ts-col--medium", "ts-col--fill"),
+            addedHeaders().map { header -> widthClasses(header).single() },
+        )
+    }
+
     @Test
     fun `should go back to the first page when the sort changes`() {
         val source = Source(size = 12)
         buildTable(source)
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
 
         scoreHeader()._fireDomEvent("click")
 
@@ -186,7 +229,7 @@ class TableTests : MockVaadinTests() {
         val source = Source(size = 12)
         buildTable(source)
 
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
 
         assertEquals(5, source.requests.last().offset)
         assertEquals("2 / 3", ui().find("ts-pager__label").element.textRecursively)
@@ -196,9 +239,9 @@ class TableTests : MockVaadinTests() {
     fun `should go to the previous page`() {
         val source = Source(size = 12)
         buildTable(source)
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
 
-        pagerButton(testTexts.table.previous)._click()
+        pagerButton(testTexts.pagination.previous)._click()
 
         assertEquals(0, source.requests.last().offset)
     }
@@ -207,19 +250,19 @@ class TableTests : MockVaadinTests() {
     fun `should disable previous on the first page`() {
         buildTable(Source(size = 12))
 
-        assertFalse(pagerButton(testTexts.table.previous).isEnabled)
-        assertTrue(pagerButton(testTexts.table.next).isEnabled)
+        assertFalse(pagerButton(testTexts.pagination.previous).isEnabled)
+        assertTrue(pagerButton(testTexts.pagination.next).isEnabled)
     }
 
     @Test
     fun `should disable next on the last page`() {
         buildTable(Source(size = 12))
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
 
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
 
-        assertTrue(pagerButton(testTexts.table.previous).isEnabled)
-        assertFalse(pagerButton(testTexts.table.next).isEnabled)
+        assertTrue(pagerButton(testTexts.pagination.previous).isEnabled)
+        assertFalse(pagerButton(testTexts.pagination.next).isEnabled)
     }
 
     @Test
@@ -296,7 +339,7 @@ class TableTests : MockVaadinTests() {
     fun `should refresh the current page`() {
         val source = Source(size = 12)
         val handle = buildTable(source)
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
 
         handle.refresh()
 
@@ -307,7 +350,7 @@ class TableTests : MockVaadinTests() {
     fun `should refresh to the first page`() {
         val source = Source(size = 12)
         val handle = buildTable(source)
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
 
         handle.refresh(toFirstPage = true)
 
@@ -318,8 +361,8 @@ class TableTests : MockVaadinTests() {
     fun `should move to the last page with rows when the total shrinks`() {
         val source = Source(size = 12)
         val handle = buildTable(source)
-        pagerButton(testTexts.table.next)._click()
-        pagerButton(testTexts.table.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
+        pagerButton(testTexts.pagination.next)._click()
         source.rows = source.rows.take(6)
 
         handle.refresh()
@@ -510,6 +553,15 @@ class TableTests : MockVaadinTests() {
     private fun nameHeader(): Component = headers()[1]
 
     private fun scoreHeader(): Component = headers()[2]
+
+    /** Headers of the columns that a test adds after the ID, name and score columns of [buildTable]. */
+    private fun addedHeaders(): List<Component> = headers().drop(BUILT_COLUMN_COUNT)
+
+    /** Header of the last column, the one a test adds after the columns of [buildTable]. */
+    private fun addedHeader(): Component = headers().last()
+
+    /** Classes of [header] that set the width of its column. */
+    private fun widthClasses(header: Component): List<String> = header.classes().filter { cssClass -> cssClass.startsWith("ts-col--") }
 
     private fun pagerButton(label: String): NativeButton =
         ui().findAll("ts-pager__btn").single { button -> button.element.getAttribute("aria-label") == label } as NativeButton

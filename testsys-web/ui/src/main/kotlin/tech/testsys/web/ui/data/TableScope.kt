@@ -23,10 +23,11 @@ internal enum class CellKind(val cssClass: String?) {
     Menu("ts-right"),
 }
 
-/** Column of a table: its [title], optional [sortKey] and how it fills a cell of a row. */
+/** Column of a table: its [title], optional [sortKey], [width] and how it fills a cell of a row. */
 internal class TableColumn<T>(
     val title: String,
     val sortKey: String?,
+    val width: ColumnWidth,
     val kind: CellKind,
     val fill: (T, HasComponents) -> Unit,
 )
@@ -55,64 +56,68 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
         private set
 
     /**
-     * Adds a column of plain text; a column with [sortKey] can be sorted by it.
+     * Adds a column of plain text; a column with [sortKey] can be sorted by it, and [width] is chosen by what the
+     * column holds.
      *
      * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun textColumn(title: String, sortKey: String? = null, value: (T) -> String?) {
-        add(title, sortKey, CellKind.Text) { row -> value(row) ?: EMPTY_CELL }
+    fun textColumn(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, value: (T) -> String?) {
+        add(title, sortKey, width, CellKind.Text) { row -> value(row) ?: EMPTY_CELL }
     }
 
     /**
-     * Adds a column of identifiers and codes in a monospace font.
+     * Adds a column of identifiers and codes in a monospace font. [sortKey] and [width] are as in [textColumn].
      *
      * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun codeColumn(title: String, sortKey: String? = null, value: (T) -> String?) {
-        add(title, sortKey, CellKind.Code) { row -> value(row) ?: EMPTY_CELL }
+    fun codeColumn(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, value: (T) -> String?) {
+        add(title, sortKey, width, CellKind.Code) { row -> value(row) ?: EMPTY_CELL }
     }
 
     /**
-     * Adds a column of numbers aligned right, with digits grouped by the locale.
+     * Adds a column of numbers aligned right, with digits grouped by the locale. [sortKey] and [width] are as in
+     * [textColumn].
      *
      * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun numberColumn(title: String, sortKey: String? = null, value: (T) -> Number?) {
-        add(title, sortKey, CellKind.Number) { row -> formatNumber(value(row), texts) }
+    fun numberColumn(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, value: (T) -> Number?) {
+        add(title, sortKey, width, CellKind.Number) { row -> formatNumber(value(row), texts) }
     }
 
     /**
-     * Adds a column of dates in the calendar format of the locale.
+     * Adds a column of dates in the calendar format of the locale. [sortKey] and [width] are as in [textColumn].
      *
      * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun dateColumn(title: String, sortKey: String? = null, value: (T) -> LocalDate?) {
-        add(title, sortKey, CellKind.Date) { row -> formatDate(value(row), texts) }
+    fun dateColumn(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, value: (T) -> LocalDate?) {
+        add(title, sortKey, width, CellKind.Date) { row -> formatDate(value(row), texts) }
     }
 
     /**
-     * Adds a column of dates with times in the calendar format of the locale.
+     * Adds a column of dates with times in the calendar format of the locale. [sortKey] and [width] are as in
+     * [textColumn].
      *
      * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun dateTimeColumn(title: String, sortKey: String? = null, value: (T) -> LocalDateTime?) {
-        add(title, sortKey, CellKind.Date) { row -> formatDateTime(value(row), texts) }
+    fun dateTimeColumn(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, value: (T) -> LocalDateTime?) {
+        add(title, sortKey, width, CellKind.Date) { row -> formatDateTime(value(row), texts) }
     }
 
     /**
-     * Adds a column whose cells hold display [content] of the row, e.g. a badge, tags or actions.
+     * Adds a column whose cells hold display [content] of the row, e.g. a badge, tags or actions. [sortKey] and [width]
+     * are as in [textColumn].
      *
      * @throws IllegalStateException if the menu column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun column(title: String, sortKey: String? = null, content: ContentScope.(T) -> Unit) {
+    fun column(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, content: ContentScope.(T) -> Unit) {
         checkBeforeMenuColumn()
-        columns += TableColumn(title, sortKey, CellKind.Content) { row, cell ->
+        columns += TableColumn(title, sortKey, width, CellKind.Content) { row, cell ->
             ContentScope(cell, texts, Placement.Cell).content(row)
         }
     }
@@ -126,7 +131,7 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
     fun menuColumn(content: MenuScope.(T) -> Unit) {
         checkBeforeMenuColumn()
         hasMenuColumn = true
-        columns += TableColumn(title = "", sortKey = null, kind = CellKind.Menu) { row, cell ->
+        columns += TableColumn(title = "", sortKey = null, width = ColumnWidth.Auto, kind = CellKind.Menu) { row, cell ->
             ContentScope(cell, texts, Placement.Cell).menu { content(row) }
         }
     }
@@ -153,9 +158,9 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
 
     internal fun spec(): TableSpec<T> = TableSpec(columns.toList(), emptyContent, rowClick)
 
-    private fun add(title: String, sortKey: String?, kind: CellKind, text: (T) -> String) {
+    private fun add(title: String, sortKey: String?, width: ColumnWidth, kind: CellKind, text: (T) -> String) {
         checkBeforeMenuColumn()
-        columns += TableColumn(title, sortKey, kind) { row, cell -> cell.add(Text(text(row))) }
+        columns += TableColumn(title, sortKey, width, kind) { row, cell -> cell.add(Text(text(row))) }
     }
 
     private fun checkBeforeMenuColumn() {

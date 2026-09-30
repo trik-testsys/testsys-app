@@ -14,8 +14,12 @@ import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.datepicker.DatePicker
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.dialog.Dialog
+import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.H3
+import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Table
+import com.vaadin.flow.component.html.TableHeaderCell
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.IntegerField
 import com.vaadin.flow.component.textfield.NumberField
@@ -23,12 +27,15 @@ import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.component.timepicker.TimePicker
 import com.vaadin.flow.router.RouterLink
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.boot.test.context.SpringBootTest
@@ -140,6 +147,56 @@ class ShowcaseViewTests {
         }
 
         @ParameterizedTest
+        @CsvSource(
+            "ID, ts-col--narrow",
+            "Участник, ts-col--medium",
+            "Задача, ts-col--fill",
+            "Вердикт, ts-col--medium",
+            "Баллы, ts-col--narrow",
+            "Время, ts-col--medium",
+        )
+        fun `should mark the submission table headers with their column widths`(title: String, cssClass: String) {
+            val header = block("Посылки")._find<TableHeaderCell>().single { cell -> cell.text == title }
+
+            assertTrue(cssClass in header.element.classList)
+        }
+
+        @Test
+        fun `should show a verdict select in the submissions head`() {
+            assertEquals("Вердикт", blockActions("Посылки")._get<Select<*>>().ariaLabel.orElseThrow())
+        }
+
+        @Test
+        fun `should offer all verdicts as the empty item of the verdict select`() {
+            val select = blockActions("Посылки")._get<Select<*>>()
+
+            assertTrue(select.isEmptySelectionAllowed)
+            assertEquals("Все вердикты", select.emptySelectionCaption)
+        }
+
+        @Test
+        fun `should show an errors filter chip in the submissions head`() {
+            assertEquals("С ошибками", blockActions("Посылки")._get<NativeButton> { classes = "ts-filter" }.text)
+        }
+
+        @Test
+        fun `should count no selected submissions right after navigation`() {
+            assertTrue(blockActions("Посылки")._find<Div>().any { text -> text.text == "Выбрано: 0" })
+        }
+
+        @Test
+        fun `should disable the recheck action while no submission is selected`() {
+            assertFalse(blockActions("Посылки")._get<Button> { text = "Перепроверить" }.isEnabled)
+        }
+
+        @Test
+        fun `should show a lookup of several tasks`() {
+            val fields = block("Лукап")._find<CustomField<*>>()
+
+            assertTrue(fields.any { field -> field._find<Component> { classes = "ts-lookup--many" }.isNotEmpty() })
+        }
+
+        @ParameterizedTest
         @ValueSource(strings = ["Подтвердить", "Удалить тур", "Удалить с вводом названия", "Новый тур"])
         fun `should open a dialog from the dialog action`(text: String) {
             _get<Button> { this.text = text }._click()
@@ -199,6 +256,21 @@ class ShowcaseViewTests {
         }
 
         @Test
+        fun `should show a pagination of twenty pages on the first page`() {
+            val buttons = block("Пагинация")._find<NativeButton> { classes = "ts-pager__btn" }
+
+            assertEquals("1", buttons.single { button -> "ts-pager__btn--active" in button.element.classList }.text)
+            assertTrue(buttons.any { button -> button.text == "20" })
+        }
+
+        @Test
+        fun `should show the chosen page in the text under the pagination`() {
+            block("Пагинация")._get<NativeButton> { classes = "ts-pager__btn"; text = "2" }._click()
+
+            assertTrue(block("Пагинация")._find<Div>().any { text -> text.text == "Страница 2 из 20" })
+        }
+
+        @Test
         fun `should show menus in a block head and in table rows`() {
             assertTrue(_find<Button>().count { button -> button.element.getAttribute("aria-haspopup") == "menu" } > 2)
         }
@@ -230,6 +302,13 @@ class ShowcaseViewTests {
             assertTrue(texts.any { text -> Regex("""\d\d:\d\d:\d\d""").matches(text) })
         }
     }
+
+    /** The block titled [title] on the open page. */
+    private fun block(title: String): Section = _find<Section> { classes = "ts-block" }
+        .single { section -> section._find<H3> { classes = "ts-block__title" }.any { heading -> heading.text == title } }
+
+    /** The head actions of the block titled [title] on the open page. */
+    private fun blockActions(title: String): Div = block(title)._get<Div> { classes = "ts-block__actions" }
 
     @Nested
     @SpringBootTest

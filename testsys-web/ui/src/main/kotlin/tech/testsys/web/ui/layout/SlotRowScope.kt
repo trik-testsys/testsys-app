@@ -34,6 +34,14 @@ class SlotRowScope internal constructor(
     fun highlightBlock(size: Int? = null, title: String? = null, subtitle: String? = null, content: BlockScope.() -> Unit): BlockHandle =
         place(size, BlockHeading(title, subtitle), highlight = true, content)
 
+    internal fun <C : com.vaadin.flow.component.Component> placeElement(size: Int?, component: C): C {
+        val columns = size ?: slotSize
+        track.take(columns)
+        component.element.style.set("grid-column", "span $columns")
+        row.add(component)
+        return component
+    }
+
     internal fun place(size: Int?, heading: BlockHeading, highlight: Boolean, content: BlockScope.() -> Unit): BlockHandle {
         val columns = size ?: slotSize
         track.take(columns)

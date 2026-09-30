@@ -314,7 +314,7 @@ class ShowcaseViewTests {
             val current = _find<RouterLink>().single { link -> link.element.getAttribute("aria-current") == "location" }
             assertEquals("dev/showcase/states", current.href)
             assertTrue(_find<DateTimePicker>().isNotEmpty())
-            assertEquals(listOf("Период: с", "Период: по"), _find<DatePicker>().mapNotNull { picker -> picker.ariaLabel.orElse(null) })
+            assertEquals(listOf("Период: с", "Период: до"), _find<DatePicker>().mapNotNull { picker -> picker.ariaLabel.orElse(null) })
             assertTrue(_find<Button>().any { button -> button.text == "Сохранить явно" })
         }
     }

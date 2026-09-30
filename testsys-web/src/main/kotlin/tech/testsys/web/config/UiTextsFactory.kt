@@ -4,8 +4,11 @@ import com.ibm.icu.text.DateFormatSymbols
 import com.ibm.icu.util.Calendar
 import com.ibm.icu.util.ULocale
 import tech.testsys.infra.localization.Localization
+import tech.testsys.infra.localization.Ui.ComponentsQuestionStatusAnswered
+import tech.testsys.infra.localization.Ui.ComponentsQuestionStatusFlagged
 import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.web.ui.CalendarTexts
+import tech.testsys.web.ui.ComponentTexts
 import tech.testsys.web.ui.DateFieldTexts
 import tech.testsys.web.ui.DialogTexts
 import tech.testsys.web.ui.EditingTexts
@@ -90,7 +93,56 @@ fun buildUiTexts(region: SupportedRegion): UiTexts {
             time = ui.dateTimeTime(),
             rangeFrom = { label -> ui.dateRangeFrom(label = label) },
             rangeTo = { label -> ui.dateRangeTo(label = label) },
+            rangeFromPrefix = ui.dateRangeFromPrefix(),
+            rangeToPrefix = ui.dateRangeToPrefix(),
             rangeRequired = ui.dateRangeRequired(),
+        ),
+        components = ComponentTexts(
+            selectAll = ui.componentsSelectAll(),
+            previousMonth = ui.componentsPreviousMonth(),
+            nextMonth = ui.componentsNextMonth(),
+            calendar = ui.componentsCalendar(),
+            drag = ui.componentsDrag(),
+            upload = ui.componentsUpload(),
+            drop = ui.componentsDrop(),
+            cancel = ui.componentsCancel(),
+            preparing = ui.componentsPreparing(),
+            downloading = ui.componentsDownloading(),
+            done = ui.componentsDone(),
+            failed = ui.componentsFailed(),
+            retry = ui.componentsRetry(),
+            downloadAgain = ui.componentsDownloadAgain(),
+            uploadRejected = ui.componentsUploadRejected(),
+            loading = ui.componentsLoading(),
+            overflow = ui.componentsOverflow(),
+            openCalendar = { label -> ui.componentsOpenCalendar(label = label) },
+            uploadLimits = { count, bytes -> ui.componentsUploadLimits(count = count, bytes = bytes) },
+            difficultyLabels = listOf(ui.componentsDifficultyEasy(), ui.componentsDifficultyMedium(), ui.componentsDifficultyHard()),
+            questionStatus = { number, answered, flagged ->
+                ui.componentsQuestionStatus(
+                    number = number,
+                    answered = if (answered) ComponentsQuestionStatusAnswered.TRUE else ComponentsQuestionStatusAnswered.OTHER,
+                    flagged = if (flagged) ComponentsQuestionStatusFlagged.TRUE else ComponentsQuestionStatusFlagged.OTHER,
+                )
+            },
+            reorderPosition = { label, position, total -> ui.componentsReorderPosition(label = label, position = position, total = total) },
+            downloadLabel = { label, state -> ui.componentsDownloadLabel(label = label, state = state) },
+            percent = { value -> ui.componentsPercent(value = value) },
+            byteUnits = listOf(
+                ui.componentsByteUnit(),
+                ui.componentsKilobyteUnit(),
+                ui.componentsMegabyteUnit(),
+                ui.componentsGigabyteUnit(),
+            ),
+            timerUnits = listOf(
+                ui.componentsTimerDays(),
+                ui.componentsTimerHours(),
+                ui.componentsTimerMinutes(),
+                ui.componentsTimerSeconds(),
+            ),
+            avatarOverflow = { count -> ui.componentsAvatarOverflow(count = count) },
+            transferBytes = { count -> ui.componentsTransferBytes(count = count) },
+            question = { number -> ui.componentsQuestion(number = number) },
         ),
         notFound = NotFoundTexts(
             title = ui.notFoundTitle(),

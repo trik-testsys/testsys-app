@@ -188,6 +188,7 @@ vaadin-checkbox[readonly]:not([disabled]) {
 /* Date range: two pickers side by side inside one field. */
 .ts-date-range { display: flex; align-items: center; gap: var(--space-2); }
 .ts-date-range > vaadin-date-picker { flex: 1; min-width: 0; padding-block: 0; }
+.ts-date-range__prefix { flex:none; margin-inline-end:var(--space-1); color:var(--text-secondary); font:inherit; white-space:nowrap; }
 .ts-field__value vaadin-date-time-picker > :is([slot="date-picker"], [slot="time-picker"]) { padding-block: 0; }
 
 /* Lookup: a box like .ts-input holding the value button and the clear and open actions. */
@@ -224,9 +225,10 @@ vaadin-custom-field[disabled] .ts-lookup__chips .ts-chip { background: var(--mut
 vaadin-notification-card[theme~="ts-toast"]::part(overlay) { background: none; box-shadow: none; padding: 0; }
 vaadin-notification-card[theme~="ts-toast"]::part(content) { padding: 0; }
 
-/* Dialog: vaadin-dialog only positions, traps focus and dims the page, the .ts-dialog markup draws the card. */
-vaadin-dialog[theme~="ts-dialog"]::part(overlay) { background: none; box-shadow: none; border-radius: 0; }
-vaadin-dialog[theme~="ts-dialog"]::part(content) { padding: 0; }
+/* Dialog: the rounded overlay carries the shadow outside scrollable content; .ts-dialog draws the card. */
+vaadin-dialog[theme~="ts-dialog"]::part(overlay) { background: none; box-shadow: var(--shadow-dialog); border-radius: var(--radius-2xl); overflow: hidden; }
+vaadin-dialog[theme~="ts-dialog"]::part(content) { padding: 0; border-radius: inherit; }
+vaadin-dialog[theme~="ts-dialog"] .ts-dialog { box-shadow: none; }
 /* The overlay takes the width of the card, so the card limits itself by the viewport rather than its parent. */
 vaadin-dialog .ts-dialog { max-width: calc(100vw - 32px); }
 /* Tables in a dialog body keep the primary text colour of a table, not the secondary one of dialog text. */
@@ -254,3 +256,62 @@ vaadin-context-menu-item.ts-menu__item[focus-ring] { background: var(--canvas); 
 vaadin-context-menu-item.ts-menu__item--danger { color: var(--danger); }
 vaadin-context-menu-item.ts-menu__item[disabled] { color: var(--text-tertiary); cursor: default; }
 vaadin-context-menu-list-box hr { height: 1px; margin: 4px 0; border: 0; background: var(--line-subtle); }
+
+/* Native radio/segmented composites retain form modes from their CustomField. */
+.ts-radio-group { display:flex; flex-wrap:wrap; gap:var(--space-3); }
+button.ts-choice { border:0; background:none; padding:0; text-align:left; }
+.ts-radio:not(.ts-radio--on) .ts-radio__dot { display:none; }
+vaadin-custom-field[readonly] .ts-seg, vaadin-custom-field[readonly] .ts-radio-group { background:transparent; border:1px dashed var(--border-strong); border-radius:var(--radius-md); }
+vaadin-custom-field[readonly] button:disabled { color:inherit; opacity:1; cursor:default; }
+vaadin-custom-field[disabled] .ts-seg { opacity:.55; }
+vaadin-custom-field.ts-seg--sm .ts-seg__item { height:22px; padding:0 10px; }
+
+/* The native switch keeps canonical track and knob markup with real switch semantics. */
+button.ts-switch { border:0; box-sizing:border-box; cursor:pointer; }
+button.ts-switch:focus-visible { outline:2px solid var(--border-focus); outline-offset:3px; }
+button.ts-switch:disabled { cursor:default; opacity:.5; }
+vaadin-custom-field[readonly]:not([disabled]) button.ts-switch:disabled { opacity:1; }
+
+/* The line gutter follows the actual textarea scroll inside Vaadin. */
+.ts-code__lines { overflow:hidden; max-height:100%; flex:none; }
+textarea.ts-code__area { margin:0; min-width:0; width:100%; }
+.ts-multiselect__clear { flex:none; width:auto; border:0; border-radius:var(--radius-xs); padding:0 var(--space-1); background:transparent; color:inherit; font:inherit; font-size:var(--fs-sm); line-height:var(--lh-sm); white-space:nowrap; cursor:pointer; }
+.ts-multiselect__clear:hover { background:var(--canvas); }
+vaadin-custom-field[readonly] .ts-code { outline:1px dashed var(--border-strong); }
+vaadin-custom-field[disabled] .ts-code { opacity:.55; }
+
+/* Vaadin positions the popup; the reference provides its surface and content. */
+vaadin-popover[theme~="ts-popover"]::part(overlay) { background:var(--surface-card); border:1px solid var(--border-default); border-radius:var(--radius-xl); box-shadow:var(--shadow-popover); min-width:260px; overflow:hidden; }
+vaadin-popover[theme~="ts-popover"]::part(content) { padding:0; border-radius:inherit; background:var(--surface-card); }
+vaadin-popover .ts-pop { padding:var(--space-4); border-radius:inherit; background:transparent; }
+testsys-date-range-calendar { display:block; padding:var(--space-4); box-sizing:border-box; }
+vaadin-popover .ts-popover__search { width:100%; box-sizing:border-box; }
+vaadin-popover .ts-options { min-width:300px; }
+vaadin-popover .ts-popover__foot { white-space:nowrap; }
+vaadin-popover .ts-popover__foot > span { flex:1; }
+
+/* Drawer is a modal Flow Dialog placed at the viewport edge. */
+vaadin-dialog[theme~="ts-drawer"] { align-items:stretch; justify-content:flex-end; padding:0; }
+vaadin-dialog[theme~="ts-drawer"]::part(overlay) { width:480px; max-width:100vw; height:100%; max-height:100%; margin:0; background:var(--surface-card); border-radius:var(--radius-xl); overflow:hidden; box-shadow:var(--shadow-drawer); }
+vaadin-dialog[theme~="ts-drawer"]::part(content) { height:100%; border-radius:inherit; overflow:hidden; }
+vaadin-dialog[theme~="ts-drawer"] .ts-dialog { width:480px; max-width:100vw; height:100%; max-height:100%; display:flex; flex-direction:column; border-radius:var(--radius-xl); overflow:hidden; }
+vaadin-dialog[theme~="ts-drawer"] .ts-dialog__body { flex:1; overflow:auto; }
+vaadin-dialog[theme~="ts-drawer"] .ts-dialog__foot { border-radius:0; }
+vaadin-tooltip-overlay::part(overlay) { background:var(--ink-900); color:var(--white); font:var(--fw-medium) var(--fs-caption)/18px var(--font-sans); border-radius:var(--radius-sm); padding:6px 10px; max-width:240px; }
+
+/* Upload keeps the browser's native transport and file-list accessibility. */
+vaadin-upload.ts-drop { width:100%; box-sizing:border-box; }
+vaadin-upload.ts-drop[dragover] { border-color:var(--accent); background:var(--accent-softer); }
+vaadin-upload.ts-drop[disabled] { cursor:default; background:var(--canvas); color:var(--text-disabled); }
+vaadin-upload-file::part(name) { font:var(--fw-semibold) var(--fs-sm) var(--font-sans); }
+vaadin-upload-file::part(status) { color:var(--text-secondary); }
+.ts-filedrop { display:flex; flex-direction:column; gap:var(--space-2); min-width:0; }
+.ts-filedrop > span:first-child { font:var(--fw-semibold) var(--fs-sm) var(--font-sans); }
+.ts-date-range { gap:var(--space-2); }
+.ts-date-range > button { flex:none; }
+.ts-block--dark .ts-progress { background:rgba(255,255,255,.15); }
+.ts-block--dark .ts-progress__bar { background:var(--white); }
+
+vaadin-date-picker[data-ts-range-part]::part(toggle-button) { display:none; }
+
+vaadin-custom-field[invalid] .ts-code { outline:1px solid var(--danger); }

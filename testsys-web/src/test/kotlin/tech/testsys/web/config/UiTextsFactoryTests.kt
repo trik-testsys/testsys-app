@@ -13,7 +13,9 @@ class UiTextsFactoryTests {
         assertEquals("дата", texts.dateFields.date)
         assertEquals("время", texts.dateFields.time)
         assertEquals("Период: с", texts.dateFields.rangeFrom("Период"))
-        assertEquals("Период: по", texts.dateFields.rangeTo("Период"))
+        assertEquals("Период: до", texts.dateFields.rangeTo("Период"))
+        assertEquals("С", texts.dateFields.rangeFromPrefix)
+        assertEquals("До", texts.dateFields.rangeToPrefix)
         assertEquals("Укажите хотя бы одну границу периода", texts.dateFields.rangeRequired)
     }
 

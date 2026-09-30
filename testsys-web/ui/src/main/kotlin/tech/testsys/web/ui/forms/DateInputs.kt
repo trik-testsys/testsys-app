@@ -98,6 +98,8 @@ fun BlockRowScope.dateRangeInput(
         end = datePicker(texts).apply { setAriaLabel(texts.dateFields.rangeTo(label)) },
         reversedMessage = texts.dateRangeReversed,
         requiredMessage = texts.dateFields.rangeRequired,
+        texts = texts,
+        calendarName = texts.components.openCalendar(label),
     )
     val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<DateRange>> ->
         control.addValueChangeListener { event -> listener.valueChanged(event) }

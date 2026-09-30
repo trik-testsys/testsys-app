@@ -2,74 +2,69 @@ import React from 'react';
 import { Icon } from '../core/Icon.jsx';
 const cx = (...a) => a.filter(Boolean).join(' ');
 
-export function SortableList({ items = [], getKey = (it, i) => (it && it.id != null ? it.id : i), onChange, renderItem, gap = 8, disabled = false, className }) {
+export function SortableList({ items = [], getKey = (it, i) => (it && it.id != null ? it.id : i), onChange, renderItem, renderDragItem, handleLabel = 'Перетащить', announcement, gap = 8, disabled = false, className }) {
   const [drag, setDrag] = React.useState(null);
   const [dropped, setDropped] = React.useState(null);
-  const refs = React.useRef({});
+  const refs = React.useRef(Object.create(null));
   const rects = React.useRef([]);
   const keys = items.map(getKey);
-
-  const targetIndex = (d, y) => {
-    const center = y - d.offset + d.height / 2;
-    let idx = 0;
-    rects.current.forEach(r => { if (r.key !== d.key && center > r.top + r.height / 2) idx++; });
-    return idx;
+  const timer = React.useRef();
+  const dragRef = React.useRef();
+  dragRef.current = drag;
+  React.useEffect(() => { setDrag(null); }, [items, disabled]);
+  React.useEffect(() => () => clearTimeout(timer.current), []);
+  const commit = d => {
+    if (!d) return;
+    const rest = items.filter((_, i) => keys[i] !== d.key);
+    rest.splice(d.index, 0, items[keys.indexOf(d.key)]);
+    if (d.index !== d.from && onChange) onChange(rest);
+    setDropped(d.key); clearTimeout(timer.current); timer.current = setTimeout(() => setDropped(null), 1200);
+    setDrag(null);
   };
-
   React.useEffect(() => {
-    if (!drag) return;
-    const move = e => setDrag(d => d && { ...d, y: e.clientY, index: targetIndex(d, e.clientY) });
-    const up = () => setDrag(d => {
-      if (d) {
-        const rest = items.filter((_, i) => keys[i] !== d.key);
-        const moved = items[keys.indexOf(d.key)];
-        rest.splice(d.index, 0, moved);
-        if (d.index !== d.from && onChange) onChange(rest);
-        setDropped(d.key); setTimeout(() => setDropped(null), 1200);
-      }
-      return null;
+    if (!drag || drag.mode !== 'pointer') return;
+    const move = e => setDrag(d => {
+      if (!d) return null;
+      const center = e.clientY - d.offset + d.height / 2;
+      let index = 0;
+      rects.current.forEach(r => { if (r.key !== d.key && center > r.top + r.height / 2) index++; });
+      return {...d, y: e.clientY, index};
     });
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', up, { once: true });
+    const up = () => commit(dragRef.current);
+    const cancel = () => setDrag(null);
+    const escape = e => { if (e.key === 'Escape') cancel(); };
+    window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', cancel); window.addEventListener('keydown', escape);
     document.body.classList.add('ts-dragging');
-    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); document.body.classList.remove('ts-dragging'); };
-  }, [drag && drag.key]);
-
+    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', cancel); window.removeEventListener('keydown', escape); document.body.classList.remove('ts-dragging'); };
+  }, [drag && drag.key, drag && drag.mode, items]);
   const start = (e, key, i) => {
     if (disabled || e.button !== 0) return;
     e.preventDefault();
-    rects.current = keys.map(k => { const r = refs.current[k].getBoundingClientRect(); return { key: k, top: r.top, height: r.height }; });
+    rects.current = keys.map(k => { const r = refs.current[k].getBoundingClientRect(); return {key:k, top:r.top, height:r.height}; });
     const r = refs.current[key].getBoundingClientRect();
-    setDrag({ key, from: i, index: i, y: e.clientY, offset: e.clientY - r.top, height: r.height, width: r.width, left: r.left });
+    setDrag({key, from:i, index:i, y:e.clientY, offset:e.clientY-r.top, height:r.height, width:r.width, left:r.left, mode:'pointer'});
   };
-
-  const row = (it, i, extra) => (
-    <div className={cx('ts-sort-item', extra)} >
-      <span className="ts-sort-handle" onPointerDown={e => start(e, getKey(it, i), i)} aria-label="Перетащить"><Icon name="grip-vertical" size={16} /></span>
-      <div className="ts-sort-content">{renderItem ? renderItem(it, i) : String(it)}</div>
-    </div>
-  );
-
-  let view = items.map((it, i) => ({ it, key: keys[i] }));
-  let draggedItem = null;
-  if (drag) {
-    draggedItem = items[keys.indexOf(drag.key)];
-    view = view.filter(v => v.key !== drag.key);
-    view.splice(drag.index, 0, { slot: true, key: '__slot' });
-  }
-  let pos = 0;
-  return (
-    <div className={cx('ts-sortable', className)} style={{ gap }}>
-      {view.map(v => {
-        if (v.slot) { pos++; return <div key="__slot" className="ts-sort-slot" style={{ height: drag.height }} />; }
-        const i = pos++;
-        return <div key={v.key} ref={el => { if (el) refs.current[v.key] = el; }}>{row(v.it, i, dropped === v.key && 'ts-sort-item--dropped')}</div>;
-      })}
-      {drag ? (
-        <div className="ts-sort-ghost" style={{ top: drag.y - drag.offset, left: drag.left, width: drag.width }}>
-          {row(draggedItem, drag.index)}
-        </div>
-      ) : null}
-    </div>
-  );
+  const keyboard = (e, key, i) => {
+    if (disabled) return;
+    if (e.key === 'Escape') { e.preventDefault(); setDrag(null); return; }
+    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); if (drag?.mode === 'keyboard') commit(drag); else setDrag({key, from:i, index:i, mode:'keyboard'}); }
+    if (drag?.key === key && drag.mode === 'keyboard' && ['ArrowUp','ArrowDown','Home','End'].includes(e.key)) {
+      e.preventDefault(); setDrag({...drag, index:e.key === 'Home' ? 0 : e.key === 'End' ? items.length-1 : Math.max(0, Math.min(items.length-1, drag.index + (e.key === 'ArrowUp' ? -1 : 1)))});
+    }
+  };
+  let view = items.map((it, i) => ({it, key:keys[i]}));
+  if (drag) { const moved = view.splice(keys.indexOf(drag.key), 1)[0]; view.splice(drag.index, 0, moved); }
+  const row = (it, i, key) => <div className={cx('ts-sort-item', dropped === key && 'ts-sort-item--dropped')}>
+    <button type="button" className="ts-sort-handle" disabled={disabled} aria-label={handleLabel} aria-pressed={drag?.key === key} onPointerDown={e => start(e, key, keys.indexOf(key))} onKeyDown={e => keyboard(e, key, keys.indexOf(key))}><Icon name="grip-vertical" size={16} /></button>
+    <div className="ts-sort-content">{renderItem ? renderItem(it, i) : String(it)}</div>
+  </div>;
+  const live = drag ? (announcement ? announcement(items[keys.indexOf(drag.key)], drag.index + 1, items.length) : '') : '';
+  return <div className={cx('ts-sortable', className)} style={{gap}}>
+    <span className="ts-sr-only" role="status" aria-live="polite">{live}</span>
+    {view.map((v, i) => <div key={v.key} ref={el => { if (el) refs.current[v.key] = el; else delete refs.current[v.key]; }} className={drag?.mode === 'pointer' && drag.key === v.key ? 'ts-sort-slot' : undefined} style={drag?.mode === 'pointer' && drag.key === v.key ? {height:drag.height} : undefined}>
+      <div style={drag?.mode === 'pointer' && drag.key === v.key ? {visibility:'hidden'} : undefined}>{row(v.it, i, v.key)}</div>
+    </div>)}
+    {drag?.mode === 'pointer' ? <div className="ts-sort-ghost" aria-hidden="true" style={{top:drag.y-drag.offset,left:drag.left,width:drag.width}}><div className="ts-sort-item"><span className="ts-sort-handle"><Icon name="grip-vertical" size={16} /></span><div className="ts-sort-content">{renderDragItem ? renderDragItem(items[keys.indexOf(drag.key)]) : String(items[keys.indexOf(drag.key)])}</div></div></div> : null}
+  </div>;
 }

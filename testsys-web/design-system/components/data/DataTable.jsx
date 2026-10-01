@@ -17,7 +17,7 @@ export function DataTable({ columns = [], rows = [], rowKey = 'id', selectable =
             const sorted = sort && sort.key === c.key;
             const semantic = SEMANTIC_WIDTHS.includes(c.width);
             return (
-              <th key={c.key} style={semantic ? undefined : { width: c.width }} className={cx(c.align && 'ts-' + c.align, semantic && 'ts-col--' + c.width, c.sortable && 'ts-sortable', sorted && 'ts-sorted')}
+              <th aria-sort={sorted ? sort.dir === 'asc' ? 'ascending' : 'descending' : undefined} tabIndex={c.sortable ? 0 : undefined} onKeyDown={e => { if (c.sortable && ['Enter', ' '].includes(e.key)) { e.preventDefault(); onSortChange?.({ key: c.key, dir: sorted && sort.dir === 'desc' ? 'asc' : 'desc' }); } }} key={c.key} style={semantic ? undefined : { width: c.width }} className={cx(c.align && 'ts-' + c.align, semantic && 'ts-col--' + c.width, c.sortable && 'ts-sortable', sorted && 'ts-sorted')}
                 onClick={c.sortable && onSortChange ? () => onSortChange({ key: c.key, dir: sorted && sort.dir === 'desc' ? 'asc' : 'desc' }) : undefined}>
                 {c.title}{sorted ? (sort.dir === 'desc' ? ' ↓' : ' ↑') : ''}
               </th>

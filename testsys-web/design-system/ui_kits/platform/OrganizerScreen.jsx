@@ -1,105 +1,34 @@
-function OrganizerScreen({ go, toast }) {
-  const { SortableList, Header, Row, Block, StatCard, Timer, ProgressBar, Breadcrumbs, StatusBadge, Button, Tabs, FilterChip, DataTable, Verdict, Menu, Counter, FileDrop, Dialog, Field, Input, Textarea } = window.TS;
-  const [tab, setTab] = React.useState('overview');
-  const [vf, setVf] = React.useState('all');
-  const [frozen, setFrozen] = React.useState(false);
-  const [modal, setModal] = React.useState(null);
-  const [answered, setAnswered] = React.useState({});
-  const [probs, setProbs] = React.useState([['Сумма', 'Лёгкая'], ['Скобки', 'Лёгкая'], ['Разрезание', 'Средняя'], ['Треугольники', 'Средняя'], ['Связность', 'Сложная'], ['Отрезки', 'Сложная']].map((p, i) => ({ id: i, name: p[0], lvl: p[1] })));
-  const endsAt = React.useMemo(() => Date.now() + (3600 + 24 * 60 + 37) * 1000, []);
-  const subs = [['48241', '14:36:02', 'Команда «Сигма»', 'E', 'C++ 17', 'queue'], ['48240', '14:35:47', 'Илья Петров', 'E', 'C++ 17', 'wa'], ['48238', '14:35:10', 'Мария Ким', 'D', 'Java 21', 'tle'], ['48235', '14:34:31', 'Анна Смирнова', 'F', 'C++ 17', 'ok'], ['48233', '14:33:58', 'Денис Орлов', 'C', 'Python', 'ce'], ['48230', '14:33:12', 'Елена Волкова', 'B', 'Python', 'ok']]
-    .map(r => ({ id: r[0], time: r[1], who: r[2], p: r[3], lang: r[4], v: r[5] }))
-    .filter(r => vf === 'all' || (vf === 'ok' ? r.v === 'ok' : vf === 'queue' ? r.v === 'queue' : r.v !== 'ok' && r.v !== 'queue'));
-  const qs = [[1, 'D', 'Мария Ким', '14:21', 'Может ли n быть равно нулю во входных данных?'], [2, 'E', 'Команда «Сигма»', '14:05', 'Гарантируется ли, что граф связный?']];
-  const open = qs.filter(q => !answered[q[0]]).length;
-  return (
-    <div className="ts-app">
-      <Header active="contests" user={{ name: 'Анна Смирнова', short: 'Анна С.' }} />
-      <div className="ts-page-head">
-        <div className="ts-page-head__inner">
-          <Breadcrumbs items={[{ label: 'Мои соревнования' }, { label: 'Весенний кубок 2026' }]} />
-          <div className="ts-page-head__title-row">
-            <h1 className="ts-h1">Весенний кубок 2026</h1>
-            <StatusBadge tone="live">Идёт</StatusBadge>
-            <span className="ts-page-head__meta">ICPC · 10:00–15:00</span>
-            <div className="ts-page-head__actions">
-              <Button variant="secondary" icon="megaphone" onClick={() => setModal('ann')}>Объявление</Button>
-              <Button variant="secondary" icon="snowflake" onClick={() => { setFrozen(!frozen); toast({ tone: 'warning', title: frozen ? 'Таблица разморожена' : 'Таблица заморожена' }); }}>{frozen ? 'Разморозить' : 'Заморозить таблицу'}</Button>
-              <Button variant="danger" onClick={() => setModal('end')}>Завершить</Button>
-            </div>
-          </div>
-          <Tabs bare size="lg" value={tab} onChange={setTab} items={[{ value: 'overview', label: 'Обзор' }, { value: 'problems', label: 'Задачи' }, { value: 'people', label: 'Участники' }, { value: 'subs', label: 'Посылки' }, { value: 'q', label: 'Вопросы', count: open || undefined, countTone: 'danger' }, { value: 'settings', label: 'Настройки' }]} />
-        </div>
-      </div>
-      {tab === 'problems' ? (
-      <main className="ts-page" style={{ paddingTop: 24 }}>
-        <Row>
-          <Block span={16} title="Порядок задач" subtitle="Перетащите задачу за ⋮⋮, буквы обновятся автоматически" actions={<Button size="sm" variant="secondary" icon="plus">Добавить из архива</Button>}>
-            <SortableList items={probs} onChange={p => { setProbs(p); toast({ tone: 'success', title: 'Порядок задач сохранён' }); }} renderItem={(p, i) => <>
-              <span className="ts-filetype" style={{ width: 28, height: 28, borderRadius: 6, fontSize: 13 }}>{'ABCDEFGH'[i]}</span>
-              <b style={{ flex: 1, fontWeight: 600 }}>{p.name}</b>
-              <span className="ts-muted" style={{ fontSize: 13 }}>{p.lvl}</span>
-              <span className="ts-mono ts-muted" style={{ fontSize: 12, minWidth: 96, textAlign: 'right' }}>1 с · 256 МБ</span>
-            </>} />
-          </Block>
-          <Block span={8} title="Подсказка"><span className="ts-muted">Порядок влияет только на буквы и сортировку в таблице результатов. Посылки участников сохраняются за задачей.</span></Block>
-        </Row>
-      </main>
-      ) : (
-      <main className="ts-page" style={{ paddingTop: 24 }}>
-        <Row align="stretch">
-          <StatCard span={6} label="Участников" value="1 284" delta="+36 за час" trend="up" />
-          <StatCard span={6} label="Посылок" value="9 412" delta="≈ 140 в минуту" />
-          <StatCard span={6} label="В очереди" value="23" delta="Среднее ожидание 4 с" />
-          <StatCard span={6} dark label="До окончания" value={<Timer to={endsAt} variant="text" />}><ProgressBar value={72} thin inverse style={{ marginTop: 8 }} /></StatCard>
-        </Row>
-        <Row>
-          <Block span={16} flush title="Посылки в реальном времени" actions={[['all', 'Все'], ['ok', 'Принятые'], ['err', 'Ошибки'], ['queue', 'В очереди']].map(f => <FilterChip key={f[0]} selected={vf === f[0]} onChange={() => setVf(f[0])}>{f[1]}</FilterChip>)}>
-            <DataTable rows={subs} columns={[
-              { key: 'id', title: 'ID', mono: true, render: r => <a href="#" className="ts-mono">#{r.id}</a> },
-              { key: 'time', title: 'Время', mono: true, muted: true },
-              { key: 'who', title: 'Участник', render: r => <b style={{ fontWeight: 600 }}>{r.who}</b> },
-              { key: 'p', title: 'Задача', mono: true },
-              { key: 'lang', title: 'Язык', muted: true },
-              { key: 'v', title: 'Вердикт', render: r => <Verdict code={r.v} /> },
-              { key: 'm', title: '', width: 52, render: r => <Menu onSelect={a => toast({ tone: 'info', title: a, description: 'Посылка #' + r.id })} items={[{ label: 'Открыть', kbd: '↵' }, { label: 'Перепроверить', kbd: 'R' }, { separator: true }, { label: 'Дисквалифицировать', danger: true }]} /> }
-            ]} />
-          </Block>
-          <Block span={8} flush title="Задачи" actions={<Button size="sm" variant="secondary">Изменить</Button>}>
-            {[['A', 'Сумма', 1190, 1240], ['B', 'Скобки', 842, 1105], ['C', 'Разрезание', 406, 980], ['D', 'Треугольники', 188, 712], ['E', 'Связность', 64, 421], ['F', 'Отрезки', 212, 530]].map(p => (
-              <div key={p[0]} className="ts-list-row">
-                <span className="ts-filetype" style={{ width: 28, height: 28, fontSize: 13, borderRadius: 6 }}>{p[0]}</span>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}><b style={{ fontWeight: 600 }}>{p[1]}</b><ProgressBar value={p[2] / p[3] * 100} tone="success" thin /></div>
-                <span className="ts-mono ts-muted" style={{ fontSize: 12, minWidth: 72, textAlign: 'right' }}>{p[2]} / {p[3]}</span>
-              </div>
-            ))}
-          </Block>
-        </Row>
-        <Row>
-          <Block span={12} flush title="Вопросы участников" actions={open ? <Counter>{open}</Counter> : null}>
-            {qs.map(q => (
-              <div key={q[0]} className="ts-list-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 10, padding: '16px 20px' }}>
-                <div className="ts-muted" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}><b className="ts-mono" style={{ color: 'var(--text-primary)' }}>{q[1]}</b>{q[2]} · <span className="ts-mono">{q[3]}</span><span style={{ flex: 1 }} /><StatusBadge size="sm" dot={false} tone={answered[q[0]] ? 'neutral' : 'danger'}>{answered[q[0]] || 'Новый'}</StatusBadge></div>
-                <span>{q[4]}</span>
-                {!answered[q[0]] ? <div style={{ display: 'flex', gap: 8 }}><Button size="sm" onClick={() => { setAnswered({ ...answered, [q[0]]: 'Отвечено' }); toast({ tone: 'success', title: 'Ответ отправлен', description: q[2] }); }}>Ответить</Button><Button size="sm" variant="secondary" onClick={() => setAnswered({ ...answered, [q[0]]: 'Без комментариев' })}>Без комментариев</Button></div> : null}
-              </div>
-            ))}
-          </Block>
-          <Block span={12} title="Материалы задачи D">
-            <FileDrop hint=".zip · пары input / output" minHeight={120} onSelect={() => toast({ tone: 'success', title: 'Тесты загружены' })} />
-            <FileDrop state="done" fileName="tests_D_v1.zip" fileType="ZIP" fileMeta="48 тестов · 2.3 МБ" minHeight={72} />
-          </Block>
-        </Row>
-      </main>
-      )}
-      <Dialog open={modal === 'end'} variant="danger" title="Завершить соревнование?" onClose={() => setModal(null)} footer={<><Button variant="secondary" onClick={() => setModal(null)}>Отмена</Button><Button variant="danger" onClick={() => { setModal(null); toast({ tone: 'success', title: 'Соревнование завершено', description: 'Итоговая таблица опубликована' }); }}>Завершить</Button></>}>
-        Приём решений остановится, таблица будет разморожена. Отменить действие нельзя.
-      </Dialog>
-      <Dialog open={modal === 'ann'} size="md" title="Новое объявление" onClose={() => setModal(null)} footer={<><span className="ts-muted" style={{ flex: 1, fontSize: 13 }}>Увидят 1 284 участника</span><Button variant="secondary" onClick={() => setModal(null)}>Отмена</Button><Button onClick={() => { setModal(null); toast({ tone: 'info', title: 'Объявление опубликовано' }); }}>Опубликовать</Button></>}>
-        <Field label="Заголовок"><Input placeholder="Уточнение к задаче D" /></Field>
-        <Field label="Текст"><Textarea placeholder="Текст объявления" /></Field>
-      </Dialog>
-    </div>
-  );
+function OrganizerScreen({ go, state, dispatch, route, actor: user, selection, updateSelection, searchQuery, onSearch }) {
+  const { Page, PageHead, Header, Row, Slot, SlotRow, Block, BlockRow, Field, Input, Select, Button, Tabs, DataTable, Verdict, Alert, DownloadButton, EmptyState, StatCard, Dialog, StatusBadge } = window.TS;
+  const competitions = state.competitions.filter(c => c.organizerId === user.id);
+  const competitionId = selection.competitionId;
+  const setCompetitionId = competitionId => updateSelection({ competitionId, tourId: null });
+  const competition = competitions.find(c => c.id === competitionId) || competitions[0] || { id: '', name: 'Мои соревнования', participantIds: [], tourIds: [] };
+  const tab = route.sectionKey === 'competitions' ? 'overview' : route.sectionKey;
+  const setTab = tab => go('organizer.' + (tab === 'overview' ? 'competitions' : tab));
+  const [name, setName] = React.useState('');
+  const newTourId = selection.newTourId;
+  const setNewTourId = newTourId => updateSelection({ newTourId });
+  const tourId = selection.tourId;
+  const setTourId = tourId => updateSelection({ tourId });
+  const [exported, setExported] = React.useState('');
+  const [materials, setMaterials] = React.useState(null);
+  const tours = state.tours.filter(t => competition.tourIds.includes(t.id));
+  const tour = tours.find(t => t.id === tourId) || tours[0];
+  const participants = state.users.filter(u => competition.participantIds.includes(u.id));
+  const availableTours = window.DemoModel.getOrganizerAvailableTours(state, user).filter(tour => !competition.tourIds.includes(tour.id));
+  const chosenNewTour = availableTours.find(t => t.id === newTourId) || availableTours[0];
+  const tasks = state.tasks.filter(t => tour?.taskIds.includes(t.id));
+  const csv = () => { window.DemoModel.downloadDemoFile('results-' + tour.id + '.csv', window.DemoModel.buildResultsCsv(state, competition.id, tour.id), 'text/csv;charset=utf-8'); setExported('Подготовлена полная матрица: results-' + tour.id + '.csv'); };
+  const resultColumns = [{ key: 'id', title: 'ID', width: 'narrow', mono: true }, { key: 'alias', title: 'Псевдоним', width: 'medium' }, ...tasks.map(task => ({ key: task.id, title: task.id + ' · ' + task.name, width: 'wide', render: participant => { const best = window.DemoModel.getBestScore(state.solutions, participant.id, task.id); const count = state.solutions.filter(s => s.userId === participant.id && s.taskId === task.id).length; return <div className="ts-vstack">{best == null ? <span>Нет результата</span> : <Verdict score={best} label="баллов" />}<span className="ts-mono ts-muted">Решений: {count}</span></div>; } }))];
+  return <Page header={<PrototypeHeader searchQuery={searchQuery} onSearch={onSearch} route={route} go={go} state={state} actor={user} />} head={<PageHead title={route.title} breadcrumbs={PrototypeBreadcrumbs(route, go)} badges={<StatusBadge tone="info">{user.role}</StatusBadge>} />}>
+    <Row><Slot span={24}><SlotRow><Block span={24} grid title="Соревнования организатора"><BlockRow><Field label="Соревнование" labelSize={3} size={9}><Select disabled={!competitions.length} options={competitions.map(c => ({ value: c.id, label: c.name }))} value={competition.id} onChange={setCompetitionId} /></Field><Field label="Новое название" labelSize={3} size={6}><Input value={name} onChange={e => setName(e.target.value)} /></Field><div style={{ gridColumn: 'span 3' }}><Button onClick={() => { dispatch({ type: 'createCompetition', name }); if (name.trim()) setCompetitionId('competition' + state.nextId); }}>Создать</Button></div></BlockRow><PrototypeInfoFields fields={[{ label: 'ID соревнования', value: competition.id || 'Соревнование не выбрано', mono: true }, { label: 'Название', value: competition.id ? competition.name : 'Нет собственных соревнований' }]} /></Block></SlotRow></Slot></Row>
+    {state.message ? <Block><Alert tone={state.message.tone} title={state.message.text} /></Block> : null}
+    {tab === 'overview' ? <Row><Slot span={12}><SlotRow><Block span={12} grid title="Сведения"><PrototypeInfoFields columns={12} fields={[{ label: 'Организатор', value: user.alias }, { label: 'Участников', value: participants.length, mono: true }, { label: 'Туров', value: tours.length, mono: true }]} /><div className="ts-vstack" style={{ gridColumn: '1 / -1' }}>{!competition.id ? <p>Пока нет собственных соревнований. Укажите название и создайте первое.</p> : null}<p>Соревнование объединяет участников и туры. Результаты доступны по каждому туру.</p><div className="ts-hstack"><Button onClick={() => setTab('participants')}>Открыть участников</Button><Button variant="secondary" onClick={() => setTab('results')}>Открыть результаты</Button></div></div></Block></SlotRow></Slot><Slot span={12}><SlotRow><Block span={12} title="Демонстрационные данные"><p>Создание участников выдаёт каждому отдельный код-доступа. Проверенные решения имеют числовой балл; ошибки и тайм-ауты показаны отдельно.</p><p>Материалы доступны для просмотра. Редактирование ресурсов относится к кабинету разработчика.</p></Block></SlotRow></Slot></Row> : null}
+    {tab === 'participants' ? <Block title="Участники" actions={<Button disabled={!competition.id} onClick={() => dispatch({ type: 'createParticipants', competitionId: competition.id })}>Создать 3 участников</Button>} flush><div className="ts-table-scroll"><DataTable rows={participants} columns={[{ key: 'id', title: 'ID', width: 'narrow', mono: true }, { key: 'alias', title: 'Псевдоним', width: 'fill' }, { key: 'lastLogin', title: 'Последний вход', width: 'medium', mono: true }, { key: 'accessCode', title: 'Код-доступа', mono: true }]} empty={<EmptyState title="Участников пока нет" description="Создайте демонстрационных участников с кодами-доступа." action={<Button disabled={!competition.id} onClick={() => dispatch({ type: 'createParticipants', competitionId: competition.id })}>Создать участников</Button>} />} /></div></Block> : null}
+    {tab === 'tours' ? <><Block title="Добавить доступный тур"><div className="ts-hstack"><Select aria-label="Доступный тур" value={chosenNewTour?.id} options={availableTours.map(t => ({ value: t.id, label: t.name }))} onChange={setNewTourId} disabled={!availableTours.length} /><Button disabled={!chosenNewTour || !competition.id} onClick={() => dispatch({ type: 'addTour', competitionId: competition.id, tourId: chosenNewTour.id })}>Добавить тур</Button></div>{!availableTours.length ? <p>Все доступные туры уже добавлены.</p> : null}</Block><Block title="Туры соревнования" flush><DataTable rows={tours} columns={[{ key: 'name', title: 'Название', width: 'fill' }, { key: 'startsAt', title: 'Начало', width: 'medium', mono: true }, { key: 'endsAt', title: 'Конец', width: 'medium', mono: true }, { key: 'durationMinutes', title: 'Минут', mono: true }, { key: 'open', title: 'Действие', render: t => <Button size="sm" variant="secondary" onClick={() => { setTourId(t.id); setTab('results'); }}>Результаты тура</Button> }]} empty={<EmptyState title="Туров пока нет" description="Добавьте доступный тур в соревнование." />} /></Block></> : null}
+    {tab === 'results' ? tour ? <><Block grid title="Тур и материалы"><BlockRow><div style={{ gridColumn: '1 / -1' }}><Field label="Тур"><Select value={tour.id} onChange={setTourId} options={tours.map(t => ({ value: t.id, label: t.name }))} /></Field></div></BlockRow><PrototypeInfoFields fields={[{ label: 'Название тура', value: tour.name }, { label: 'Начало', value: tour.startsAt, mono: true }, { label: 'Конец', value: tour.endsAt, mono: true }, { label: 'Длительность', value: tour.durationMinutes + ' минут', mono: true }]} /><BlockRow><div className="ts-vstack" style={{ gridColumn: '1 / -1' }}><p>{tour.description}</p><div className="ts-hstack">{tasks.map(task => <Button key={task.id} variant="secondary" onClick={() => setMaterials(task)}>Материалы: {task.name}</Button>)}</div></div></BlockRow></Block><Block title="Участник × задача" subtitle="Лучший балл и количество решений; CSV содержит полную матрицу" flush actions={<DownloadButton labels={{ idle: 'Скачать CSV' }} onClick={csv} />}><p role="status" style={{ padding: 12 }}>{exported}</p><div className="ts-table-scroll"><DataTable rows={participants} columns={resultColumns} empty={<EmptyState title="Нет участников" description="Создайте участников на соответствующей вкладке." action={<Button onClick={() => setTab('participants')}>Открыть участников</Button>} />} /></div></Block></> : <Block><EmptyState title="Нет доступных туров" description="Добавьте тур для просмотра результатов." action={<Button onClick={() => setTab('tours')}>Добавить тур</Button>} /></Block> : null}
+    <Dialog open={!!materials} title={materials?.name} onClose={() => setMaterials(null)} footer={<Button variant="secondary" onClick={() => setMaterials(null)}>Закрыть</Button>}><p>{materials?.description}</p><p>Просмотр материалов · редактирование доступно разработчику</p><div className="ts-vstack">{materials ? [{ category: 'Условие', name: materials.id + '-statement.txt' }, { category: 'Полигон', name: materials.id + '-polygon-demo.xml' }, { category: 'Упражнение', name: materials.id + '-exercise-demo.qrs' }, ...materials.authorSolutionKinds.map(kind => ({ category: 'Авторское решение · ' + window.DemoModel.solutionKindLabels[kind], name: materials.id + '-author-demo.' + (kind === 'Python' ? 'py' : kind === 'JavaScript' ? 'js' : 'qrs') }))].map(resource => <div key={resource.name} className="ts-hstack"><span style={{ flex: 1 }}>{resource.category} · <span className="ts-mono">{resource.name}</span></span><DownloadButton size="sm" labels={{ idle: 'Скачать пример' }} onClick={() => { window.DemoModel.downloadDemoFile(resource.name, 'TestSys demo resource: ' + resource.category + '\n' + materials.description); setExported('Подготовлен пример: ' + resource.name); }} /></div>) : null}</div><p role="status">{exported}</p><a href="../../components/forms/forms.card.html">Отдельный пример редактора ресурсов для разработчика</a></Dialog>
+  </Page>;
 }
 window.OrganizerScreen = OrganizerScreen;

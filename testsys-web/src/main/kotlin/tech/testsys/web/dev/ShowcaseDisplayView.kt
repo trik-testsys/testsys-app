@@ -1,18 +1,24 @@
 package tech.testsys.web.dev
 
+import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.NotFoundException
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import org.springframework.core.env.Environment
+import tech.testsys.web.ui.RawVaadin
+import tech.testsys.web.ui.SelectionHandle
 import tech.testsys.web.ui.TestSysView
+import tech.testsys.web.ui.TextHandle
 import tech.testsys.web.ui.UiTexts
+import tech.testsys.web.ui.actions.action
 import tech.testsys.web.ui.data.LeaderboardCell
 import tech.testsys.web.ui.data.LeaderboardCellState
 import tech.testsys.web.ui.data.LeaderboardColumn
 import tech.testsys.web.ui.data.LeaderboardData
 import tech.testsys.web.ui.data.LeaderboardRow
+import tech.testsys.web.ui.data.SortableListHandle
 import tech.testsys.web.ui.data.leaderboard
 import tech.testsys.web.ui.data.sortableList
 import tech.testsys.web.ui.display.AvatarData
@@ -29,9 +35,12 @@ import tech.testsys.web.ui.display.difficulty
 import tech.testsys.web.ui.display.progressBar
 import tech.testsys.web.ui.display.text
 import tech.testsys.web.ui.display.timer
+import tech.testsys.web.ui.display.verdict
+import tech.testsys.web.ui.feedback.FeedbackKind
 import tech.testsys.web.ui.feedback.SkeletonShape
 import tech.testsys.web.ui.feedback.skeleton
 import tech.testsys.web.ui.feedback.skeletonRows
+import tech.testsys.web.ui.feedback.toast
 import tech.testsys.web.ui.layout.PageScope
 import tech.testsys.web.ui.navigation.StepData
 import tech.testsys.web.ui.navigation.StepperData
@@ -47,6 +56,7 @@ import java.time.Instant
 private const val HALF_WIDTH = 12
 private const val FULL_WIDTH = 24
 private const val DEMO_PROGRESS_PERCENT = 65.0
+private const val COMPLETE_PROGRESS_PERCENT = 100.0
 private const val LIVE_TIMER_SECONDS = 65L
 private const val STATIC_TIMER_SECONDS = 3725L
 private const val SKELETON_ROW_COUNT = 3
@@ -73,6 +83,7 @@ class ShowcaseDisplayView(texts: UiTexts, private val environment: Environment) 
                         val names = listOf("Анна Петрова", "Иван Иванов", "Мария Соколова", "Пётр Сергеев")
                         avatarGroup(names.map { name -> AvatarData(name) })
                         DifficultyLevel.entries.forEach { level -> difficulty(level) }
+                        difficulty(DifficultyLevel.Easy, showLabel = false)
                     }
                 }
             }
@@ -85,6 +96,18 @@ class ShowcaseDisplayView(texts: UiTexts, private val environment: Environment) 
                     row { timer("Осталось времени", TimerValue.Static(Duration.ofSeconds(STATIC_TIMER_SECONDS)), variant = variant) }
                 }
                 row { timer("Живой таймер", TimerValue.Until(Instant.now().plusSeconds(LIVE_TIMER_SECONDS))) }
+                row { timer("Завершённый таймер", TimerValue.Static(Duration.ZERO)) }
+                row {
+                    progressBar("Начало", ProgressValue.Determinate(0.0), size = HALF_WIDTH)
+                    progressBar("Готово", ProgressValue.Determinate(COMPLETE_PROGRESS_PERCENT), size = HALF_WIDTH, tone = Tone.Success)
+                }
+                row {
+                    horizontal {
+                        listOf(Tone.Info, Tone.Success, Tone.Warning, Tone.Danger).forEach { tone ->
+                            progressBar("Прогресс ${tone.name}", ProgressValue.Determinate(DEMO_PROGRESS_PERCENT), tone = tone)
+                        }
+                    }
+                }
             }
             block(title = "Skeleton") {
                 row { horizontal { SkeletonShape.entries.forEach { shape -> skeleton(shape) } } }
@@ -92,44 +115,9 @@ class ShowcaseDisplayView(texts: UiTexts, private val environment: Environment) 
             }
             contestCards()
             block(title = "Leaderboard") { leaderboard(demoLeaderboard()) }
-            block(title = "SortableList", subtitle = "Мышь: перетащите ручку. Клавиатура: Space, стрелки, Enter; Escape отменяет") {
-                row {
-                    vertical {
-                        sortableList(
-                            items = listOf("Первый", "Второй", "Третий"),
-                            itemKey = { value -> value },
-                            itemLabel = { value -> value },
-                            content = { value -> text(value) },
-                        )
-                    }
-                }
-            }
-            block(title = "Stepper, QuizOption, QuestionNav") {
-                row {
-                    val steps = listOf(
-                        StepData("Начало"),
-                        StepData("Вопросы"),
-                        StepData("Результат", isSelectable = false),
-                    )
-                    stepper(StepperData(steps, current = 1))
-                }
-                row {
-                    vertical {
-                        quizOption(QuizOptionData(label = "Обычный ответ", letter = "A"))
-                        quizOption(QuizOptionData(label = "Несколько ответов", letter = "B", isSelected = true, isMultiple = true))
-                        quizOption(QuizOptionData(label = "Верный ответ", letter = "C", result = QuizResult.Correct))
-                        quizOption(QuizOptionData(label = "Неверный ответ", letter = "D", result = QuizResult.Wrong))
-                        val navigation = QuestionNavData(
-                            total = QUESTION_COUNT,
-                            current = CURRENT_QUESTION,
-                            answered = setOf(1, 2),
-                            flagged = setOf(FLAGGED_QUESTION),
-                            unavailable = setOf(QUESTION_COUNT),
-                        )
-                        questionNav(navigation)
-                    }
-                }
-            }
+            numericVerdicts()
+            orderingExamples()
+            questionExamples()
         }
     }
 
@@ -154,7 +142,10 @@ private fun PageScope.contestCards() {
                         actionLabel = "Участвовать",
                     ),
                     size = HALF_WIDTH,
-                )
+                ) {
+                    onClick { toast(FeedbackKind.Info, "Открыта карточка практики") }
+                    onAction { toast(FeedbackKind.Success, "Выбрано участие в практике") }
+                }
                 contestCard(
                     ContestCardData(
                         title = "Завершённая тренировка",
@@ -204,3 +195,111 @@ private fun demoLeaderboard(): LeaderboardData = LeaderboardData(
         ),
     ),
 )
+
+@OptIn(RawVaadin::class)
+private fun PageScope.numericVerdicts() {
+    block(title = "Verdict: числовой результат") {
+        row {
+            horizontal {
+                verdict(0.0)
+                verdict(DEMO_PROGRESS_PERCENT, label = "баллов")
+                text("Число не задаёт порог успешности; очередь, ошибка и тайм-аут — отдельные статусы")
+            }
+        }
+        row { verdict(0.0, label = "баллов", size = HALF_WIDTH) }
+    }
+    block(title = "Legacy Verdict: совместимость", subtitle = "Коды олимпиадного программирования; отдельный custom-образец") {
+        row {
+            horizontal {
+                listOf("ok", "wa", "tle", "mle", "re", "ce", "queue").forEach { code ->
+                    custom(
+                        Span(if (code == "queue") "…" else code.uppercase()).apply {
+                            addClassNames("ts-verdict", "ts-verdict--$code")
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun PageScope.orderingExamples() {
+    val initial = listOf("Первый", "Второй", "Третий")
+    lateinit var result: TextHandle
+    lateinit var order: SortableListHandle<String>
+    block(title = "SortableList", subtitle = "Мышь: ручка; клавиатура: Space, стрелки, Enter; Escape отменяет") {
+        row {
+            vertical {
+                order = sortableList(
+                    items = initial,
+                    itemKey = { value -> value },
+                    itemLabel = { value -> value },
+                    content = { value -> text(value) },
+                ) {
+                    onChange { values -> result.text = "Порядок: ${values.joinToString(" → ")}" }
+                }
+            }
+        }
+        row { result = text("Порядок: ${initial.joinToString(" → ")}") }
+        actions {
+            action("Сбросить порядок") {
+                onClick {
+                    order.items = initial
+                    result.text = "Порядок: ${initial.joinToString(" → ")}"
+                }
+            }
+            action("Переключить доступность порядка") { onClick { order.isEnabled = !order.isEnabled } }
+        }
+    }
+}
+
+private fun PageScope.questionExamples() {
+    lateinit var stepResult: TextHandle
+    lateinit var answerResult: TextHandle
+    lateinit var questionResult: TextHandle
+    lateinit var steps: SelectionHandle<StepperData>
+    lateinit var option: SelectionHandle<QuizOptionData>
+    lateinit var questions: SelectionHandle<QuestionNavData>
+    val stepData = StepperData(
+        steps = listOf(StepData("Начало"), StepData("Вопросы"), StepData("Результат", isSelectable = false)),
+        current = 1,
+    )
+    val navigation = QuestionNavData(
+        total = QUESTION_COUNT,
+        current = CURRENT_QUESTION,
+        answered = setOf(1, 2),
+        flagged = setOf(FLAGGED_QUESTION),
+        unavailable = setOf(QUESTION_COUNT),
+    )
+    block(title = "Stepper, QuizOption, QuestionNav") {
+        row { steps = stepper(stepData) { onChange { value -> stepResult.text = "Выбран шаг: ${value.current + 1}" } } }
+        row { stepResult = text("Выбран шаг: 2") }
+        row {
+            vertical {
+                option = quizOption(QuizOptionData(label = "Обычный ответ", letter = "A")) {
+                    onChange { value -> answerResult.text = "Ответ выбран: ${value.isSelected}" }
+                }
+                quizOption(QuizOptionData(label = "Несколько ответов", letter = "B", isSelected = true, isMultiple = true)) {
+                    onChange { value -> answerResult.text = "Несколько ответов: ${value.isSelected}" }
+                }
+                quizOption(QuizOptionData(label = "Верный ответ", letter = "C", result = QuizResult.Correct))
+                quizOption(QuizOptionData(label = "Неверный ответ", letter = "D", result = QuizResult.Wrong))
+                questions = questionNav(navigation) { onChange { value -> questionResult.text = "Текущий вопрос: ${value.current}" } }
+            }
+        }
+        row { answerResult = text("Ответ выбран: false") }
+        row { questionResult = text("Текущий вопрос: $CURRENT_QUESTION") }
+        actions {
+            action("Сбросить выборы") {
+                onClick {
+                    steps.data = stepData
+                    option.data = option.data.copy(isSelected = false)
+                    questions.data = navigation
+                    stepResult.text = "Выбран шаг: 2"
+                    answerResult.text = "Ответ выбран: false"
+                    questionResult.text = "Текущий вопрос: $CURRENT_QUESTION"
+                }
+            }
+        }
+    }
+}

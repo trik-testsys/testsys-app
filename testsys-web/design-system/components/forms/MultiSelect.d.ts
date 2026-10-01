@@ -2,6 +2,10 @@
  * @startingPoint section="Forms" subtitle="Multi-select dropdown with search, chips and select-all" viewport="700x460"
  */
 export interface MultiSelectProps {
+  id?: string;
+  'aria-label'?: string;
+  'aria-describedby'?: string;
+  'aria-invalid'?: boolean;
   options: Array<{ value: string; label: React.ReactNode; meta?: React.ReactNode } | string>;
   value: string[];
   onChange: (value: string[]) => void;

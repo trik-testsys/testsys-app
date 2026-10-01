@@ -9,7 +9,7 @@ export function ContestCard({ title, format, status, statusTone = 'info', when, 
   const cover = COVER[statusTone] || 'neutral';
   const v = ctaVariant || (cover === 'live' ? 'dark' : cover === 'info' ? 'primary' : 'secondary');
   return (
-    <div className={cx('ts-ccard', className)} onClick={onClick} style={{ gridColumn: span ? 'span ' + span : undefined, ...style }}>
+    <div role={onClick ? 'group' : undefined} aria-label={title} tabIndex={onClick ? 0 : undefined} onKeyDown={e => { if (e.target === e.currentTarget && ['Enter', ' '].includes(e.key)) { e.preventDefault(); onClick?.(); } }} className={cx('ts-ccard', className)} onClick={onClick} style={{ gridColumn: span ? 'span ' + span : undefined, ...style }}>
       <div className={'ts-ccard__cover ts-ccard__cover--' + cover}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="ts-ccard__fmt">{format}</span>

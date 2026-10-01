@@ -12,6 +12,7 @@ import tech.testsys.web.ui.data.table
 import tech.testsys.web.ui.display.Tone
 import tech.testsys.web.ui.display.badge
 import tech.testsys.web.ui.display.text
+import tech.testsys.web.ui.display.verdict
 import tech.testsys.web.ui.feedback.FeedbackKind
 import tech.testsys.web.ui.feedback.toast
 import tech.testsys.web.ui.forms.DateRange
@@ -326,7 +327,9 @@ internal fun TableScope<ShowcaseSubmission>.submissionColumns() {
     textColumn("Участник", width = ColumnWidth.Medium) { row -> row.author }
     textColumn("Задача", width = ColumnWidth.Fill) { row -> row.task }
     column("Вердикт", width = ColumnWidth.Medium) { row -> badge(row.verdict.label, row.verdict.tone) }
-    numberColumn("Баллы", sortKey = SCORE_SORT, width = ColumnWidth.Narrow) { row -> row.score }
+    column("Баллы", sortKey = SCORE_SORT, width = ColumnWidth.Narrow) { row ->
+        row.score?.let { score -> verdict(score.toDouble()) } ?: text("—")
+    }
     dateTimeColumn("Время", sortKey = TIME_SORT, width = ColumnWidth.Medium) { row -> row.sentAt }
 }
 

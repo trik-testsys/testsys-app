@@ -2,3 +2,5 @@ Dark mono code area with line numbers — solution submission, code in questions
 ```jsx
 <Block title="Отправить решение" flush footer={<Button>Отправить</Button>}><CodeEditor value={code} onChange={setCode} /></Block>
 ```
+
+Provide `label` for the textarea accessible name; `id` supports Field linking.

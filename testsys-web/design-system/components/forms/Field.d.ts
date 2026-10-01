@@ -6,6 +6,12 @@ export interface FieldProps {
   /** Right side of the label row, e.g. a "Забыли пароль?" link. */
   aside?: React.ReactNode;
   disabled?: boolean;
+  /** Together with size enables horizontal subgrid layout. */
+  labelSize?: number;
+  /** Control columns; total field span is labelSize + size. */
+  size?: number;
+  controlId?: string;
+  required?: boolean;
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;

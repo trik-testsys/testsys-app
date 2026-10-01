@@ -4,7 +4,7 @@ import { Checkbox } from './Checkbox.jsx';
 import { Button } from '../actions/Button.jsx';
 const cx = (...a) => a.filter(Boolean).join(' ');
 
-export function MultiSelect({ options = [], value = [], onChange, placeholder = 'Выберите', label, display = 'chips', maxChips = 3, searchable = true, searchPlaceholder = 'Найти', showSelectAll = true, onApply, error = false, disabled = false, defaultOpen = false, className }) {
+export function MultiSelect({ options = [], value = [], onChange, placeholder = 'Выберите', label, display = 'chips', maxChips = 3, searchable = true, searchPlaceholder = 'Найти', showSelectAll = true, onApply, error = false, disabled = false, defaultOpen = false, className, id, ...rest }) {
   const [open, setOpen] = React.useState(defaultOpen);
   const [q, setQ] = React.useState('');
   const ref = React.useRef(null);
@@ -21,8 +21,8 @@ export function MultiSelect({ options = [], value = [], onChange, placeholder = 
   const selected = opts.filter(o => value.includes(o.value));
   const shown = selected.slice(0, maxChips);
   return (
-    <div ref={ref} style={{ position: 'relative' }} className={className}>
-      <div role="button" tabIndex={disabled ? -1 : 0} onClick={() => !disabled && setOpen(!open)}
+    <div ref={ref} onKeyDown={e => { if (e.key === 'Escape' && open) { e.stopPropagation(); e.preventDefault(); setOpen(false); ref.current.querySelector('[role="button"]')?.focus(); } }} style={{ position: 'relative' }} className={className}>
+      <div id={id} {...rest} aria-label={rest['aria-label'] || label || placeholder} aria-expanded={open} aria-disabled={disabled} onKeyDown={e => { if (e.target !== e.currentTarget) return; if (!disabled && ['Enter', ' ', 'ArrowDown'].includes(e.key)) { e.preventDefault(); setOpen(true); } if (e.key === 'Escape') setOpen(false); }} role="button" tabIndex={disabled ? -1 : 0} onClick={() => !disabled && setOpen(!open)}
         className={cx('ts-trigger', open && 'ts-trigger--open', error && 'ts-trigger--error', disabled && 'ts-trigger--disabled')} style={{ paddingLeft: selected.length && display === 'chips' ? 6 : 12 }}>
         {selected.length === 0 ? <span className="ts-trigger__placeholder">{placeholder}</span> : display === 'count' ? (
           <><span>{label || placeholder}</span><span className="ts-counter ts-counter--accent">{selected.length}</span></>
@@ -43,17 +43,17 @@ export function MultiSelect({ options = [], value = [], onChange, placeholder = 
       </div>
       {open ? (
         <div className="ts-popover ts-dropdown">
-          {searchable ? <div className="ts-popover__search"><div><Icon name="search" /><input value={q} onChange={e => setQ(e.target.value)} placeholder={searchPlaceholder} autoFocus /></div></div> : null}
+          {searchable ? <div className="ts-popover__search"><div><Icon name="search" /><input aria-label={searchPlaceholder} value={q} onChange={e => setQ(e.target.value)} placeholder={searchPlaceholder} autoFocus /></div></div> : null}
           <div className="ts-options">
             {showSelectAll && vis.length > 1 ? (
-              <div className="ts-option" style={{ fontWeight: 600 }} onClick={() => set(allOn ? value.filter(v => !vis.some(o => o.value === v)) : [...new Set([...value, ...vis.map(o => o.value)])])}>
+              <button type="button" className="ts-option" style={{ fontWeight: 600 }} onClick={() => set(allOn ? value.filter(v => !vis.some(o => o.value === v)) : [...new Set([...value, ...vis.map(o => o.value)])])}>
                 <Checkbox checked={allOn} indeterminate={some} /> Выбрать все
-              </div>
+              </button>
             ) : null}
             {vis.map(o => (
-              <div key={o.value} className="ts-option" onClick={() => toggle(o.value)}>
+              <button type="button" aria-pressed={value.includes(o.value)} key={o.value} className="ts-option" onClick={() => toggle(o.value)}>
                 <Checkbox checked={value.includes(o.value)} /><span>{o.label}</span>{o.meta != null ? <span className="ts-option__meta">{o.meta}</span> : null}
-              </div>
+              </button>
             ))}
             {vis.length === 0 ? <div style={{ padding: '16px 10px', textAlign: 'center', color: 'var(--text-secondary)' }}>Ничего не найдено</div> : null}
           </div>

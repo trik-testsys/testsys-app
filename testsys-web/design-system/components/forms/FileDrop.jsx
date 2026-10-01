@@ -3,7 +3,7 @@ import { Icon } from '../core/Icon.jsx';
 import { ProgressBar } from '../display/ProgressBar.jsx';
 const cx = (...a) => a.filter(Boolean).join(' ');
 
-export function FileDrop({ state = 'empty', title = 'Перетащите файл', hint = 'или выберите · до 256 КБ', fileName, fileType, fileMeta, progress = 0, error, accept, multiple = false, onSelect, minHeight = 150, className }) {
+export function FileDrop({ state = 'empty', title = 'Перетащите файл', hint = 'или выберите · до 256 КБ', fileName, fileType, fileMeta, progress = 0, error, accept, multiple = false, onSelect, minHeight = 150, className, id, ...rest }) {
   const [drag, setDrag] = React.useState(false);
   const input = React.useRef(null);
   const st = drag ? 'drag' : state;
@@ -24,11 +24,11 @@ export function FileDrop({ state = 'empty', title = 'Перетащите фай
   }
   const pick = files => { setDrag(false); if (files && files.length && onSelect) onSelect(Array.from(files)); };
   return (
-    <div className={cx('ts-drop', st === 'drag' && 'ts-drop--drag', st === 'error' && 'ts-drop--error', className)} style={{ minHeight }}
+    <div id={id} role="button" tabIndex={0} aria-label={title} {...rest} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.current?.click(); } }} className={cx('ts-drop', st === 'drag' && 'ts-drop--drag', st === 'error' && 'ts-drop--error', className)} style={{ minHeight }}
       onClick={() => input.current && input.current.click()}
       onDragOver={e => { e.preventDefault(); setDrag(true); }} onDragLeave={() => setDrag(false)}
       onDrop={e => { e.preventDefault(); pick(e.dataTransfer.files); }}>
-      <input ref={input} type="file" hidden accept={accept} multiple={multiple} onChange={e => pick(e.target.files)} />
+      <input ref={input} type="file" hidden accept={accept} multiple={multiple} onChange={e => { pick(e.target.files); e.target.value = ''; }} />
       {st === 'error' ? (
         <><span className="ts-drop__title">{error || 'Не удалось загрузить файл'}</span><span className="ts-hint" style={{ color: 'inherit' }}>{hint}</span></>
       ) : (

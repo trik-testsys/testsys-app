@@ -15,7 +15,7 @@
 - Проверки — через `org.junit.jupiter.api.Assertions`.
 - Тестовые данные создаются через DSL билдеров и тестовые хелперы, а не через конструкторы.
 - UI-тесты `testsys-web` пишутся на **Karibu-Testing** (Vaadin без браузера, `MockVaadin`), страницы — вместе
-  с `@SpringBootTest`. Тестовые хелперы — в [ui/README.md](../../testsys-web/ui/README.md).
+  с `@SpringBootTest`. Тестовые хелперы — в [components/README.md](../../testsys-web/components/README.md).
 
 ## Расположение и имена
 

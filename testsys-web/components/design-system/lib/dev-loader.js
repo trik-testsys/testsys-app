@@ -16,7 +16,7 @@
     }
     if (ns) return ns;
     var scope = {};
-    Object.assign(scope, await import(base + 'lib/search-text.mjs'), await import(base + 'lib/popover-geometry.mjs'));
+    Object.assign(scope, await import(base + 'lib/search-text.mjs'), await import(base + 'lib/popover-geometry.mjs'), await import(base + 'lib/brand-assets.mjs'));
     for (var p of ORDER) {
       var src = await (await fetch(base + 'components/' + p + '.jsx')).text();
       src = src.replace(/^import[^\n]*\n/gm, '').replace(/^export function /gm, 'function ');

@@ -32,7 +32,7 @@ class NotFoundViewTests : MockSpringVaadinTests() {
 
         expectView<NotFoundView>()
         assertEquals("Страница не найдена", _get<H1>().text)
-        assertEquals("TestSys", _get<Span> { classes = "ts-brand" }.text)
+        assertEquals("TestSys", _get<Span> { classes = "ts-brand" }.element.getAttribute("aria-label"))
         assertEquals("Страница не найдена — TestSys", _get<NotFoundView>().pageTitle)
         val content = UI.getCurrent().element.textRecursively
         assertFalse(content.contains("missing-sensitive-route"))

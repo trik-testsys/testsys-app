@@ -6,9 +6,9 @@ import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Header
 import com.vaadin.flow.component.html.Main
 import com.vaadin.flow.component.html.Section
-import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.router.HasDynamicTitle
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.buildBrand
 
 /**
  * Branded missing-route screen available in every profile, with browser-history navigation only.
@@ -25,7 +25,7 @@ open class NotFoundPage(private val texts: UiTexts) : Div(), HasDynamicTitle {
 
     init {
         addClassName("ts-app")
-        val brand = Span(texts.brand).apply { addClassName("ts-brand") }
+        val brand = buildBrand(texts.brand)
         val bar = Div(brand).apply { addClassName("ts-header__bar") }
         val header = Header(bar).apply { addClassName("ts-header") }
         val heading = H1(texts.notFound.title).apply { addClassName("ts-h1") }

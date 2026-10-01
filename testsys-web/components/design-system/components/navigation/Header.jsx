@@ -4,6 +4,7 @@ import { Avatar } from '../display/Avatar.jsx';
 import { Button } from '../actions/Button.jsx';
 import { splitSearchMatches } from '../../lib/search-text.mjs';
 import { getPopoverBounds } from '../../lib/popover-geometry.mjs';
+import { brandAssets } from '../../lib/brand-assets.mjs';
 const cx = (...a) => a.filter(Boolean).join(' ');
 
 const DEFAULT_ITEMS = [
@@ -23,7 +24,9 @@ const DEFAULT_ITEMS = [
   { key: 'community', label: 'Сообщество' }
 ];
 
-export function Header({ brand = 'TestSys', brandMark = 'T', brandTarget, items = DEFAULT_ITEMS, active, currentTarget, user, notifications = false, searchPlaceholder = 'Поиск задач, соревнований…', compact = false, sticky = false, onNavigate, onSignIn, onSignUp, pinned, searchItems = [], notificationItems = [], userMenuItems = [], searchMenuKey, searchValue, onSearch }) {
+export function Header({ brand, brandMark, brandTarget, items = DEFAULT_ITEMS, active, currentTarget, user, notifications = false, searchPlaceholder = 'Поиск задач, соревнований…', compact = false, sticky = false, onNavigate, onSignIn, onSignUp, pinned, searchItems = [], notificationItems = [], userMenuItems = [], searchMenuKey, searchValue, onSearch }) {
+  const brandName = brand ?? 'TestSys';
+  const customBrand = brand != null || brandMark != null;
   const [open, setOpen] = React.useState(pinned || null);
   const [panel, setPanel] = React.useState(null);
   const [innerQuery, setInnerQuery] = React.useState('');
@@ -122,7 +125,7 @@ export function Header({ brand = 'TestSys', brandMark = 'T', brandTarget, items 
   };
   return <div ref={root} className={cx('ts-header', compact && 'ts-header--compact', sticky && 'ts-header--sticky', searchMenuKey && 'ts-header--unified-search')} onKeyDown={event => { if (event.key === 'Escape' && (panel || cur)) { event.stopPropagation(); closePanels(); } }} onMouseLeave={() => { if (!root.current.querySelector('.ts-mega')?.contains(document.activeElement) && !(searchMenuKey && searchField.current?.contains(document.activeElement))) setOpen(pinned || null); }}>
     <div className="ts-header__bar">
-      <a href={brandTarget ? '#' + brandTarget : '#'} className="ts-brand" onClick={event => { event.preventDefault(); navigate(brandTarget || 'home'); }}><span className="ts-brand__mark">{brandMark}</span>{brand}</a>
+      <a href={brandTarget ? '#' + brandTarget : '#'} className="ts-brand" aria-label={brandName} onClick={event => { event.preventDefault(); navigate(brandTarget || 'home'); }}>{customBrand ? <><span className="ts-brand__mark">{brandMark ?? 'T'}</span>{brandName}</> : <><img className="ts-brand__emblem" src={brandAssets.emblem} alt="" /><img className="ts-brand__wordmark" src={brandAssets.wordmark} alt="" /></>}</a>
       <nav className="ts-nav" aria-label="Разделы">
         {items.map(item => {
           const split = item.target != null && item.menu;

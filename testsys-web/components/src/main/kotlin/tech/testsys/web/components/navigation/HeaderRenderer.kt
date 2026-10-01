@@ -2,12 +2,11 @@ package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.Text
-import com.vaadin.flow.component.html.Anchor
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Nav
-import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.router.RouterLink
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.buildBrand
 
 private val WORD_SEPARATOR = Regex("\\s+")
 private const val INITIALS_LENGTH = 2
@@ -16,7 +15,7 @@ private const val INITIALS_LENGTH = 2
 internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
     val interactions = HeaderInteractions()
     val bar = Div().apply { addClassName("ts-header__bar") }
-    bar.add(brand(texts.brand), navigation(header, texts, interactions), Div().apply { addClassName("ts-header__spacer") })
+    bar.add(buildBrand(texts.brand, href = "."), navigation(header, texts, interactions), Div().apply { addClassName("ts-header__spacer") })
     header.search?.let { search -> bar.add(HeaderSearchController(search, texts.header, interactions).component) }
     val user = header.user
     val signIn = header.signIn
@@ -37,10 +36,6 @@ internal fun initials(name: String): String = name.split(WORD_SEPARATOR)
     .take(INITIALS_LENGTH)
     .joinToString("") { word -> word.take(1) }
     .uppercase()
-
-private fun brand(name: String): Anchor = Anchor(".", Span(name.take(1)).apply { addClassName("ts-brand__mark") }, Text(name)).apply {
-    addClassName("ts-brand")
-}
 
 private fun navigation(header: CabinetHeader, texts: UiTexts, interactions: HeaderInteractions): Nav = Nav().apply {
     addClassName("ts-nav")

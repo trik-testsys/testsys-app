@@ -29,3 +29,6 @@ The complete prototype example and its route configuration are in
   Titles use weight 600, rows 400. Navigation hover cannot replace an active identity panel.
 
 Optional `sticky` keeps the bar at top:0 as the page scrolls, using the existing layer order. Its dropdown panels are height-bounded and scroll internally on short viewports. The prototype enables it only for its main header; the demonstration toolbar and default Header instances remain in normal flow.
+
+The default TestSys brand uses the canonical transparent SVG emblem and outlined wordmark side by side,
+with a single accessible name and decorative images. Custom `brand` or `brandMark` opts into text branding.

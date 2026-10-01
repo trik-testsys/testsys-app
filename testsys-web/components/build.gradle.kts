@@ -15,10 +15,10 @@ dependencies {
     testRuntimeOnly(libs.bundles.test.runtime)
 }
 
-// The design system folder is the single copy of the CSS; the jar serves it from META-INF/resources.
+// The design system folder is the single copy of the CSS and brand assets served from META-INF/resources.
 tasks.processResources {
     from(layout.projectDirectory.dir("design-system")) {
-        include("styles.css", "tokens/**")
+        include("styles.css", "tokens/**", "assets/brand/**")
         into("META-INF/resources/design-system")
     }
 }

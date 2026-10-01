@@ -25,7 +25,7 @@ TestSys — система проверки решений для TRIK Studio: �
 | [/review-changes](.claude/skills/review-changes/SKILL.md)  | [reviewer](.claude/agents/reviewer.md), [review-verifier](.claude/agents/review-verifier.md)     | Строгое ревью изменений без правки файлов: незакоммиченные изменения, PR, диапазон коммитов, пути |
 | [/fix-review](.claude/skills/fix-review/SKILL.md)          | [fixer](.claude/agents/fixer.md)                                                                 | Исправление выбранных замечаний из отчёта ревью, затем сборка и тесты                             |
 | [/implement](.claude/skills/implement/SKILL.md)            | [coder](.claude/agents/coder.md)                                                                 | Реализация задачи по гайдам из `docs/guides` с самопроверкой по чек-листам, затем сборка и тесты  |
-| [/testsys-design](.claude/skills/testsys-design/SKILL.md)  | —                                                                                                | Проектирование и вёрстка интерфейсов Кабинетов по дизайн-системе: прототипы в HTML или код        |
+| [/testsys-design](.claude/skills/testsys-design/SKILL.md)  | —                                                                                                | Интерфейсы Кабинетов на Vaadin/Kotlin-DSL; React/HTML — для явно запрошенных макетов        |
 
 Как устроен каждый скил и агент, описано в файлах по ссылкам. Ограничения агентов на запись и команды
 обеспечивают хуки в `.claude/hooks/`.
@@ -40,6 +40,6 @@ TestSys — система проверки решений для TRIK Studio: �
 | [/review-changes](.agents/skills/review-changes/SKILL.md) | [reviewer](.codex/agents/reviewer.toml), [review-verifier](.codex/agents/review-verifier.toml) | Ревью изменений без правки файлов и независимая проверка замечаний |
 | [/fix-review](.agents/skills/fix-review/SKILL.md) | [fixer](.codex/agents/fixer.toml) | Исправление выбранных замечаний ревью, сборка и тесты |
 | [/implement](.agents/skills/implement/SKILL.md) | [coder](.codex/agents/coder.toml) | Реализация задачи по гайдам проекта с самопроверкой, сборкой и тестами |
-| [/testsys-design](.agents/skills/testsys-design/SKILL.md) | — | Проектирование и вёрстка интерфейсов Кабинетов по дизайн-системе |
+| [/testsys-design](.agents/skills/testsys-design/SKILL.md) | — | Интерфейсы Кабинетов на Vaadin/Kotlin-DSL; React/HTML — для явно запрошенных макетов |
 
 Агенты не делают коммитов и не меняют состояние git. Формат работы каждого скила и агента описан по ссылкам.

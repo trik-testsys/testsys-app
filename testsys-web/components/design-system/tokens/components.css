@@ -235,6 +235,8 @@
 .ts-brand { display:flex; align-items:center; gap:10px; color:var(--text-primary); font:var(--fw-bold) 16px var(--font-sans); letter-spacing:-0.01em; text-decoration:none; white-space:nowrap; }
 .ts-brand:hover { color:var(--text-primary); text-decoration:none; }
 .ts-brand__mark { width:28px; height:28px; border-radius:7px; background:var(--ink-900); color:var(--white); display:grid; place-items:center; font:var(--fw-semibold) 13px var(--font-mono); }
+.ts-brand__emblem { display:block; width:32px; height:32px; object-fit:contain; flex-shrink:0; }
+.ts-brand__wordmark { display:block; height:24px; width:auto; object-fit:contain; flex-shrink:0; }
 .ts-nav { display:flex; align-items:stretch; height:var(--header-height); gap:2px; }
 .ts-nav__item { position:relative; display:flex; align-items:center; gap:6px; height:100%; padding:0 var(--space-3); border:0; background:transparent; font:var(--fw-medium) var(--fs-sm) var(--font-sans); color:var(--text-primary); cursor:pointer; white-space:nowrap; }
 .ts-nav__item:hover { color:var(--accent); }

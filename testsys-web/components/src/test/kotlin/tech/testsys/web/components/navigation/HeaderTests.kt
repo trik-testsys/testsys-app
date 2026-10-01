@@ -14,6 +14,7 @@ import tech.testsys.web.components.FirstTestView
 import tech.testsys.web.components.ItemTestView
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.SecondTestView
+import tech.testsys.web.components.TestSysBrand
 import tech.testsys.web.components.classes
 import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
@@ -76,11 +77,15 @@ class HeaderTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should render brand with its first letter as the mark`() {
+    fun `should render decorative brand graphics with the localized accessible name`() {
         val header = buildHeader(CabinetHeader(), testTexts)
 
-        assertEquals("TTestSys", header.find("ts-brand").element.textRecursively)
-        assertEquals("T", header.find("ts-brand__mark").element.textRecursively)
+        assertEquals(testTexts.brand, header.find("ts-brand").element.getAttribute("aria-label"))
+        assertEquals(".", header.find("ts-brand").element.getAttribute("href"))
+        assertEquals(TestSysBrand.EMBLEM, header.find("ts-brand__emblem").element.getAttribute("src"))
+        assertEquals(TestSysBrand.WORDMARK, header.find("ts-brand__wordmark").element.getAttribute("src"))
+        assertEquals("", header.find("ts-brand__emblem").element.getAttribute("alt"))
+        assertEquals("", header.find("ts-brand__wordmark").element.getAttribute("alt"))
     }
 
     @Test

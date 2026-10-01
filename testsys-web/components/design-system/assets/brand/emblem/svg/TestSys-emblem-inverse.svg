@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" width="768" height="768" viewBox="0 0 768 768" role="img" aria-labelledby="artwork-title artwork-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="559.568457" height="615.999951" viewBox="104.215625 75.999951 559.568457 615.999951" role="img" aria-labelledby="artwork-title artwork-description">
   <title id="artwork-title">TestSys — emblem</title>
-  <desc id="artwork-description">Standalone TestSys emblem, extracted from the approved vector logo. Gear, shield, trophy base and circuit nodes retain the original vector geometry. No wordmark is included. Square canvas, centered with uniform scaling. Brand palette: #243B8F and #FFF0C9.</desc>
-  <rect id="background" x="0" y="0" width="768" height="768" fill="#FFF0C9" />
-  <g id="artwork" fill="#243B8F" color="#243B8F" transform="matrix(1.410788728355 0 0 1.410788728355 -609.9256300866 -21.6267303625)">
+  <desc id="artwork-description">Standalone TestSys emblem, extracted from the approved vector logo. Gear, shield, trophy base and circuit nodes retain the original vector geometry. No wordmark is included. Canvas fitted to the visible artwork for interface use; original vector geometry and uniform scaling retained. Brand palette: #243B8F and #FFF0C9.</desc>
+  <rect id="background" x="0" y="0" width="768" height="768" fill="#243B8F" />
+  <g id="artwork" fill="#FFF0C9" color="#FFF0C9" transform="matrix(1.410788728355 0 0 1.410788728355 -609.9256300866 -21.6267303625)">
     <g id="emblem">
       <path id="gear-and-left-base" d="M697 72.0354 L677.2441 72.0354 L669.5636 104.4004 A158 158 0 0 0 642.9608 111.5286 L620.1268 87.3399 L585.9086 107.0958 L595.4396 138.965 A158 158 0 0 0 575.965 158.4396 L544.0958 148.9086 L524.3399 183.1268 L548.5286 205.9608 A158 158 0 0 0 541.4004 232.5636 L509.0354 240.2441 L509.0354 279.7559 L541.4004 287.4364 A158 158 0 0 0 548.5286 314.0392 L524.3399 336.8732 L544.0958 371.0914 L575.965 361.5604 A158 158 0 0 0 595.4396 381.035 L585.9086 412.9042 L620.1268 432.6601 L642.9608 408.4714 A158 158 0 0 0 669.5636 415.5996 L674.1818 441.7906 A30 30 0 0 1 644.6375 477 A10 10 0 0 0 634.6375 487 V503 H697 V386 A126 126 0 0 1 697 134 Z" />
       <path id="letter-T-in-emblem" d="M630 165 H697 V366 H680 V198 H630 Z" />

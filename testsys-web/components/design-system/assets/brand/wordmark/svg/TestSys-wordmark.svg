@@ -1,7 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" width="768" height="768" viewBox="0 0 768 768" role="img" aria-labelledby="artwork-title artwork-description">
+<svg xmlns="http://www.w3.org/2000/svg" width="616.000098" height="150.508203" viewBox="76.000098 308.745898 616.000098 150.508203" role="img" aria-labelledby="artwork-title artwork-description">
   <title id="artwork-title">TestSys — wordmark</title>
-  <desc id="artwork-description">Standalone TestSys wordmark, extracted from the approved vector logo. Lettering consists entirely of outlined paths and does not require fonts. No emblem is included. Square canvas, centered with uniform scaling. Brand palette: #243B8F and #FFF0C9.</desc>
+  <desc id="artwork-description">Standalone TestSys wordmark, extracted from the approved vector logo. Lettering consists entirely of outlined paths and does not require fonts. No emblem is included. Canvas fitted to the visible artwork for interface use; original vector geometry and uniform scaling retained. Brand palette: #243B8F and #FFF0C9.</desc>
+  <rect id="background" x="0" y="0" width="768" height="768" fill="#FFF0C9" />
   <g id="artwork" fill="#243B8F" color="#243B8F" transform="matrix(1.040205303678 0 0 1.040205303678 -348.5645851155 -266.6484174508)">
     <g id="wordmark" fill-rule="evenodd">
       <path id="letter-T" d="M412 559H501V575H466V665H447V575H412Z" />

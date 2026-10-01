@@ -5,6 +5,7 @@ export interface HeaderItem { key: string; label: string; /** With menu, opts in
  * @startingPoint section="Navigation" subtitle="Top navigation with mega-menu, search, user" viewport="1440x380"
  */
 export interface HeaderProps {
+  /** Custom text brand; omit with brandMark to show the canonical TestSys graphics. */
   brand?: string;
   /** Optional prototype route; legacy brand still sends home. */
   brandTarget?: string;
@@ -12,7 +13,7 @@ export interface HeaderProps {
   compact?: boolean;
   /** Opt-in: keep the bar at the viewport top while its page scrolls. */
   sticky?: boolean;
-  /** 1–2 characters in the dark square mark (placeholder until a logo exists). */
+  /** Custom 1–2 character mark; opts into text branding. */
   brandMark?: string;
   items?: HeaderItem[];
   /** Key of the current section (accent underline). */

@@ -9,13 +9,17 @@ import com.vaadin.flow.router.Route
 import com.vaadin.flow.signals.local.ValueSignal
 import org.springframework.core.env.Environment
 import tech.testsys.web.ui.TestSysView
+import tech.testsys.web.ui.TextHandle
 import tech.testsys.web.ui.UiTexts
 import tech.testsys.web.ui.actions.DownloadContent
 import tech.testsys.web.ui.actions.DownloadContext
+import tech.testsys.web.ui.actions.action
 import tech.testsys.web.ui.actions.downloadAction
 import tech.testsys.web.ui.actions.iconDownloadAction
 import tech.testsys.web.ui.display.text
+import tech.testsys.web.ui.forms.MultiSelectDisplay
 import tech.testsys.web.ui.forms.UploadLimits
+import tech.testsys.web.ui.forms.ValueInput
 import tech.testsys.web.ui.forms.codeEditor
 import tech.testsys.web.ui.forms.dateRangeInput
 import tech.testsys.web.ui.forms.fileDrop
@@ -77,6 +81,8 @@ class ShowcaseFormsView(texts: UiTexts, private val environment: Environment) : 
                     }
                 }
             }
+            remainingFieldStates()
+            resourceEditorExample()
             fileExamples()
         }
     }
@@ -87,19 +93,31 @@ class ShowcaseFormsView(texts: UiTexts, private val environment: Environment) : 
 }
 
 private fun PageScope.ordinaryFields() {
+    lateinit var result: TextHandle
+    lateinit var format: ValueInput<String?>
+    lateinit var publication: ValueInput<Boolean>
+    lateinit var mode: ValueInput<String?>
     block(title = "Обычные поля") {
         row {
-            radio(
+            format = radio(
                 label = "Формат",
                 labelSize = LABEL_COLUMNS,
                 size = VALUE_COLUMNS,
                 items = listOf("Практика", "Контест"),
                 itemLabel = { value -> value },
-            ) { value = "Практика" }
+            ) {
+                value = "Практика"
+                addValueChangeListener { event -> result.text = "Формат: ${event.value}" }
+            }
         }
-        row { switchInput("Публикация", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) { value = true } }
         row {
-            segmentedControl(
+            publication = switchInput("Публикация", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) {
+                value = true
+                addValueChangeListener { event -> result.text = "Публикация: ${event.value}" }
+            }
+        }
+        row {
+            mode = segmentedControl(
                 label = "Режим",
                 labelSize = LABEL_COLUMNS,
                 size = VALUE_COLUMNS,
@@ -107,6 +125,7 @@ private fun PageScope.ordinaryFields() {
                 itemLabel = { value -> value },
             ) {
                 value = "Неделя"
+                addValueChangeListener { event -> result.text = "Режим: ${event.value}" }
             }
         }
         row { codeEditor("Код", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) { value = "fun main() {\n    println(42)\n}" } }
@@ -122,6 +141,17 @@ private fun PageScope.ordinaryFields() {
             }
         }
         row { dateRangeInput("Период", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) }
+        row { result = text("Выборы ещё не менялись") }
+        footer {
+            action("Сбросить поля выбора") {
+                onClick {
+                    format.value = "Практика"
+                    publication.value = true
+                    mode.value = "Неделя"
+                    result.text = "Выборы ещё не менялись"
+                }
+            }
+        }
     }
 }
 
@@ -195,6 +225,54 @@ private fun demoDownload(context: DownloadContext, knownLength: Boolean): Downlo
                 val count = minOf(size, TRANSFER_CHUNK_BYTES, remaining.toInt())
                 repeat(count) { index -> bytes[offset + index] = read().toByte() }
                 return count
+            }
+        }
+    }
+}
+
+private fun PageScope.resourceEditorExample() {
+    val initial = "print(42)"
+    lateinit var source: ValueInput<String>
+    lateinit var result: TextHandle
+    block(
+        title = "Кабинет разработчика: пример редактора ресурса",
+        subtitle = "Отдельная локальная демонстрация авторского решения Python",
+    ) {
+        row {
+            source = codeEditor("author-solution-demo.py", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) {
+                value = initial
+            }
+        }
+        row { result = text("Текст примера ещё не сохранён") }
+        footer {
+            action("Сохранить текст примера") { onClick { result.text = "Сохранён текст ресурса: ${source.value}" } }
+            action("Сбросить текст примера") {
+                onClick {
+                    source.value = initial
+                    result.text = "Текст примера ещё не сохранён"
+                }
+            }
+        }
+    }
+}
+
+private fun PageScope.remainingFieldStates() {
+    block(title = "MultiSelect Count и пустой CodeEditor") {
+        row {
+            multiSelect(
+                label = "Количество ресурсов",
+                labelSize = LABEL_COLUMNS,
+                size = VALUE_COLUMNS,
+                items = listOf("Условие", "Полигон", "Упражнение", "Решение"),
+                itemLabel = { value -> value },
+                display = MultiSelectDisplay.Count,
+            ) { value = setOf("Условие", "Полигон") }
+        }
+        row { codeEditor("Пустое решение", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) }
+        row {
+            codeEditor("Текст только для чтения", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) {
+                value = "print(42)"
+                isEditable = false
             }
         }
     }

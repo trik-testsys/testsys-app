@@ -1,6 +1,6 @@
 <!-- @dsCard group="Components" viewport="700x640" name="Data" -->
 <!doctype html>
-<html><head><meta charset="utf-8">
+<html lang="ru"><head><meta charset="utf-8">
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
@@ -8,10 +8,13 @@
 <script src="../../lib/dev-loader.js"></script>
 <style>body{padding:20px;background:var(--surface-page)} .l{font:500 11px var(--font-mono);color:var(--text-tertiary);margin-bottom:8px;display:block} .r{display:flex;flex-wrap:wrap;gap:10px;align-items:center}</style>
 </head><body><div id="root"><div style="padding:40px;text-align:center;font:500 12px var(--font-mono);color:var(--text-tertiary)">Загрузка…</div></div>
+<script src="../../lib/catalog-nav.js"></script>
+<script type="text/babel" src="../../lib/CatalogExamples.jsx"></script>
 <script type="text/babel">
 window.__tsReady.then(NS => {
 const { DataTable, Leaderboard, Block, Verdict, Pagination, SortableList } = NS;
 function Demo() {
+  const [notice, setNotice] = React.useState('Исходные варианты');
   const [sel, setSel] = React.useState(['48190']);
   const rows = [{ id: '48213', p: 'C. Разрезание', lang: 'C++ 17', v: 'wa', t: '—' }, { id: '48190', p: 'B. Скобки', lang: 'Python', v: 'ok', t: '48 мс' }, { id: '48102', p: 'B. Скобки', lang: 'Python', v: 'tle', t: '1000 мс' }];
   const [probs, setProbs] = React.useState([{ id: 1, n: 'Сумма' }, { id: 2, n: 'Скобки' }, { id: 3, n: 'Разрезание' }, { id: 4, n: 'Треугольники' }]);
@@ -27,6 +30,10 @@ function Demo() {
     </Block>
   </div>;
 }
-ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+function Card() {
+  const [version, setVersion] = React.useState(0);
+  return <><NS.Button variant="secondary" size="sm" onClick={() => setVersion(version + 1)}>Сбросить всю карточку</NS.Button><><div onClick={e => { const target = e.target.closest('button, a'); if (target && !target.disabled) { const status = document.getElementById('card-action-status'); status.textContent = 'Действие: ' + (target.textContent.trim() || target.getAttribute('aria-label') || 'выбор'); } }}><Demo key={version} /><p id="card-action-status" role="status">Выберите действие в образцах</p></div><CatalogExamples key={'states-' + version} group="data" namespace={NS} /></></>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Card />);
 });
 </script></body></html>

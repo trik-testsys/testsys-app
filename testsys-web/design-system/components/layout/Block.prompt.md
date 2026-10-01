@@ -5,3 +5,5 @@ The universal container; every piece of content on a page lives in a Block insid
 </Block>
 ```
 White, 1px line, radius 12. Head 8/12 padding, body 12, footer on sunken.
+
+With `grid`, put horizontal fields inside `BlockRow`: body and rows continue the page subgrid.

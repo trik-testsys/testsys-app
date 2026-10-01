@@ -1,56 +1,37 @@
-function LoginScreen({ go, toast }) {
-  const { Page, Header, Row, Block, StatusBadge, SegmentedControl, Field, Input, Checkbox, Button } = window.TS;
-  const [mode, setMode] = React.useState('in');
-  const [remember, setRemember] = React.useState(true);
-  const upcoming = [
-    ['Весенний кубок 2026', 'ICPC · 5 часов · команды до 3 человек', 'info', 'Регистрация', 'через 2 д'],
-    ['Квиз по алгоритмам', '30 вопросов · 40 минут', 'live', 'Идёт', 'до 18:00'],
-    ['Школьная олимпиада · 2 тур', 'IOI · 4 задачи · подзадачи', 'neutral', 'Скоро', '3 окт']
-  ];
-  return (
-    <Page header={<Header active="contests" onSignIn={() => setMode('in')} onSignUp={() => setMode('up')} />}>
-      <Row align="stretch">
-        <Block span={14} dark bodyStyle={{ padding: 40, gap: 28 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <span className="ts-eyebrow" style={{ color: 'var(--ink-400)' }}>Скоро на платформе</span>
-            <h1 className="ts-display" style={{ maxWidth: 520 }}>Соревнования, олимпиады и квизы в одном аккаунте</h1>
-          </div>
-          <div>
-            {upcoming.map(u => (
-              <div key={u[0]} style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) auto auto', gap: 20, alignItems: 'center', padding: '16px 0', borderTop: '1px solid rgba(255,255,255,.12)' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}><span style={{ font: '600 16px var(--font-sans)' }}>{u[0]}</span><span style={{ fontSize: 13, color: 'var(--ink-400)' }}>{u[1]}</span></div>
-                <StatusBadge tone={u[2]} size="sm">{u[3]}</StatusBadge>
-                <span className="ts-mono" style={{ fontWeight: 600, minWidth: 96, textAlign: 'right' }}>{u[4]}</span>
-              </div>
-            ))}
-          </div>
-        </Block>
-        <Block span={10} bodyStyle={{ padding: 32, gap: 20 }}>
-          <SegmentedControl block size="lg" value={mode} onChange={setMode} options={[{ value: 'in', label: 'Вход' }, { value: 'up', label: 'Регистрация' }]} />
-          {mode === 'in' ? (
-            <>
-              <Field label="Почта или логин"><Input size="lg" placeholder="anna@example.com" /></Field>
-              <Field label="Пароль" aside={<a href="#" style={{ fontSize: 13 }}>Забыли пароль?</a>}><Input size="lg" type="password" defaultValue="password" /></Field>
-              <Checkbox checked={remember} onChange={setRemember} label="Запомнить меня" />
-              <Button size="lg" block onClick={() => { toast({ tone: 'success', title: 'Вы вошли', description: 'Добро пожаловать, Анна' }); go('profile'); }}>Войти</Button>
-            </>
-          ) : (
-            <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <Field label="Имя"><Input size="lg" placeholder="Анна" /></Field>
-                <Field label="Фамилия"><Input size="lg" placeholder="Смирнова" /></Field>
-              </div>
-              <Field label="Почта" error="Введите корректный адрес почты"><Input size="lg" error defaultValue="anna@mail" /></Field>
-              <Field label="Пароль" hint="Средний пароль · добавьте цифры и символы"><Input size="lg" type="password" defaultValue="password12" /></Field>
-              <Checkbox checked label={<span className="ts-muted" style={{ fontSize: 13 }}>Принимаю <a href="#">условия использования</a></span>} />
-              <Button size="lg" block onClick={() => toast({ tone: 'info', title: 'Письмо отправлено', description: 'Подтвердите почту, чтобы продолжить' })}>Создать аккаунт</Button>
-            </>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, color: 'var(--text-tertiary)' }}><span style={{ flex: 1, height: 1, background: 'var(--line)' }} />или<span style={{ flex: 1, height: 1, background: 'var(--line)' }} /></div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}><Button variant="secondary" size="lg">GitHub</Button><Button variant="secondary" size="lg">Яндекс ID</Button></div>
-        </Block>
-      </Row>
-    </Page>
-  );
+function LoginScreen({ go, state, dispatch, route, authMode, onAuthModeChange, searchQuery, onSearch }) {
+  const { Page, Header, Row, Slot, SlotRow, Block, StatusBadge, SegmentedControl, Field, Input, Button, Select, Alert } = window.TS;
+  const [mode, setMode] = React.useState(authMode || 'in');
+  const [code, setCode] = React.useState('STUDENT-2026');
+  const [alias, setAlias] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [role, setRole] = React.useState('Ученик');
+  const [confirmation, setConfirmation] = React.useState('');
+  React.useEffect(() => { setMode(authMode || 'in'); }, [authMode]);
+  const changeMode = next => { onAuthModeChange?.(next); setMode(next); dispatch({ type: 'clearMessage' }); };
+  const user = state.users.find(u => u.id === state.sessionUserId);
+  const submit = e => {
+    e.preventDefault();
+    if (mode === 'in') { const next = window.DemoModel.reduceDemoState(state, { type: 'login', code }); dispatch({ type: 'login', code }); if (next.message.tone === 'success') { const signedIn = next.users.find(u => u.id === next.sessionUserId); const destination = window.DemoModel.getCabinetScreen(signedIn.role); if (destination) go(destination); } }
+    if (mode === 'up') dispatch({ type: state.pendingRegistration ? 'confirmRegistration' : 'register', alias, email, role, code: confirmation });
+    if (mode === 'restore') dispatch({ type: 'requestRecovery', email });
+  };
+  return <Page header={<PrototypeHeader searchQuery={searchQuery} onSearch={onSearch} route={route} go={go} state={state} />}>
+    <Row><Slot span={14}><SlotRow><Block span={14} dark title="Решения для TRIK Studio" bodyStyle={{ padding: 32 }}>
+      <h1 className="ts-display">Задачи и туры в TestSys</h1><p>Кабинет ученика показывает классы, доступные туры и собственные решения. Организатор управляет своим соревнованием и просматривает результаты.</p>
+      {state.tours.map(tour => <div key={tour.id} className="ts-list-row"><div className="ts-vstack" style={{ flex: 1 }}><b>{tour.name}</b><span className="ts-mono">{tour.startsAt} — {tour.endsAt}</span><span>{tour.durationMinutes} минут · TRIK Studio {tour.trikVersion}</span></div><StatusBadge tone="info">Демонстрация</StatusBadge></div>)}
+      <p>Все коды и письма ниже демонстрационные. Данные сохраняются при переключении экранов и сбрасываются верхней кнопкой.</p>
+    </Block></SlotRow></Slot><Slot span={10}><SlotRow><Block span={10} title={mode === 'restore' ? 'Восстановление доступа' : 'Доступ в кабинет'} bodyStyle={{ padding: 24 }}>
+      <SegmentedControl block value={mode} onChange={changeMode} options={[{ value: 'in', label: 'Вход' }, { value: 'up', label: 'Регистрация' }, { value: 'restore', label: 'Восстановить' }]} />
+      <form className="ts-vstack" onSubmit={submit}>
+        {mode === 'in' ? <><Field label="Код-доступа" required hint="Пример: STUDENT-2026 или ORG-2026"><Input mono value={code} onChange={e => setCode(e.target.value)} /></Field><Button type="submit" block>Войти</Button></> : mode === 'up' ? state.pendingRegistration ? <>
+          <Alert tone="info" title="Демонстрационное письмо"><Field label="Получатель письма"><Input readOnly value={state.pendingRegistration.email} /></Field><Field label="Код из демонстрационного письма"><Input readOnly mono value={state.pendingRegistration.confirmationCode} /></Field></Alert>
+          <Field label="Код подтверждения" required><Input mono value={confirmation} onChange={e => setConfirmation(e.target.value)} /></Field><Button type="submit">Подтвердить почту</Button>
+        </> : <><Field label="Псевдоним" required><Input value={alias} onChange={e => setAlias(e.target.value)} /></Field><Field label="Почта" required><Input type="email" value={email} onChange={e => setEmail(e.target.value)} /></Field><Field label="Роль" required><Select value={role} onChange={setRole} options={['Ученик', 'Организатор']} /></Field><Button type="submit">Получить код подтверждения</Button></> : <><Field label="Привязанная почта" required hint="Пример: anna@example.com"><Input type="email" value={email} onChange={e => setEmail(e.target.value)} /></Field><Button type="submit">Подготовить письмо</Button></>}
+      </form>
+      {mode === 'restore' && state.recovery ? <Alert tone="info" title="Демонстрационное письмо">{state.recovery.completed ? <Field label="Новый код-доступа"><Input readOnly mono value={state.recovery.accessCode} /></Field> : <><p>Ссылка на восстановление доступа:</p><a href={'#' + state.recovery.token} onClick={e => { e.preventDefault(); dispatch({ type: 'restoreAccess', token: state.recovery.token }); }}>Получить новый код-доступа</a></>}</Alert> : null}
+      {state.message ? <Alert tone={state.message.tone} title={state.message.text} /> : null}
+      {user && state.message?.tone === 'success' && mode !== 'restore' ? <><Field label="Псевдоним"><Input readOnly value={user.alias} /></Field><Field label="Роль"><Input readOnly value={user.role} /></Field><Field label="Код-доступа"><Input readOnly mono value={user.accessCode} /></Field>{window.DemoModel.getCabinetScreen(user.role) ? <Button onClick={() => go(window.DemoModel.getCabinetScreen(user.role))}>Открыть кабинет</Button> : null}</> : null}
+    </Block></SlotRow></Slot></Row>
+  </Page>;
 }
 window.LoginScreen = LoginScreen;

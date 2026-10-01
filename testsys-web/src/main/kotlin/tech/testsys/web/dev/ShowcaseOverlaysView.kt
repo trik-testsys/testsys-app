@@ -11,6 +11,8 @@ import tech.testsys.web.ui.TextHandle
 import tech.testsys.web.ui.UiTexts
 import tech.testsys.web.ui.actions.action
 import tech.testsys.web.ui.display.text
+import tech.testsys.web.ui.feedback.FeedbackKind
+import tech.testsys.web.ui.feedback.toast
 import tech.testsys.web.ui.forms.textInput
 import tech.testsys.web.ui.overlay.TooltipPlacement
 import tech.testsys.web.ui.overlay.dialog
@@ -36,7 +38,14 @@ class ShowcaseOverlaysView(texts: UiTexts, private val environment: Environment)
                 val editor = drawer(title = "Параметры", subtitle = "Значения сохраняются между открытиями") {
                     row { textInput("Название", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) { value = "Сохранённое значение" } }
                     row { vertical { popover("Вложенный попап") { text("Попап внутри Drawer") } } }
-                    footer { handle -> action("Готово") { onClick { handle.close() } } }
+                    footer { handle ->
+                        action("Готово") {
+                            onClick {
+                                toast(FeedbackKind.Success, "Значения Drawer сохранены")
+                                handle.close()
+                            }
+                        }
+                    }
                 }
                 row { horizontal { action("Открыть Drawer") { onClick { editor.open() } } } }
             }

@@ -7,6 +7,8 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.component.html.Span
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -67,6 +69,50 @@ class RemainingShowcaseTests {
             expectView<ShowcaseDisplayView>()
             assertTrue(_find<NativeButton>().any { button -> "ts-qopt" in button.element.classList })
         }
+        @Test
+        fun `should render numeric zero and legacy compatibility separately`() {
+            UI.getCurrent().navigate("dev/showcase/display")
+
+            val scores = _find<Span>().filter { span -> "ts-verdict--score" in span.element.classList }
+            assertEquals(listOf("0", "65баллов", "0баллов"), scores.map { score -> score.element.textRecursively })
+            assertEquals(7, _find<Span>().count { span -> "ts-verdict" in span.element.classList && "ts-verdict--score" !in span.element.classList })
+        }
+
+        @Test
+        fun `should show selected step and reset it`() {
+            UI.getCurrent().navigate("dev/showcase/display")
+            val first = _find<NativeButton>().single { button -> button.element.getAttribute("aria-label") == "Начало" }
+
+            first._click()
+
+            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Выбран шаг: 1" })
+            _find<Button>().single { button -> button.text == "Сбросить выборы" }._click()
+            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Выбран шаг: 2" })
+        }
+
+        @Test
+        fun `should show selected answer and reset it`() {
+            UI.getCurrent().navigate("dev/showcase/display")
+            val answer = _find<NativeButton>().single { button -> "ts-qopt" in button.element.classList && button.element.textRecursively.contains("Обычный ответ") }
+
+            answer._click()
+
+            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Ответ выбран: true" })
+            _find<Button>().single { button -> button.text == "Сбросить выборы" }._click()
+            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Ответ выбран: false" })
+        }
+
+        @Test
+        fun `should show selected question and keep unavailable question disabled`() {
+            UI.getCurrent().navigate("dev/showcase/display")
+            val question = _find<NativeButton>().single { button -> "ts-qnav__cell" in button.element.classList && button.text == "4" }
+
+            question._click()
+
+            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Текущий вопрос: 4" })
+            assertTrue(_find<NativeButton>().single { button -> "ts-qnav__cell" in button.element.classList && button.text == "10" }.isEnabled.not())
+        }
+
     }
 
     @Nested

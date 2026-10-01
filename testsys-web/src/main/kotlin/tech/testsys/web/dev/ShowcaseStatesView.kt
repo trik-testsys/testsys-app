@@ -178,7 +178,11 @@ private fun PageScope.tabsSection() {
             row {
                 block(title = "Посылки тура", subtitle = "Заголовок и вкладки второй строкой") {
                     val filter = tabs(initial = RowFilter.All) { filterTabs() }
-                    actions { action("Экспорт", IconName.Download) }
+                    actions {
+                        action("Экспорт", IconName.Download) {
+                            onClick { toast(FeedbackKind.Info, "Экспорт демонстрационной таблицы") }
+                        }
+                    }
                     val rows = table(
                         key = { row -> row.id },
                         pageSize = PAGE_SIZE,
@@ -222,7 +226,11 @@ private fun PageScope.pillsSection() {
             category.onChange { value -> chosen.text = "Выбрано в шапке: ${value.label}" }
         }
         row { chosen = text("Выбрано в шапке: ${Category.All.label}") }
-        row { pills(initial = Category.Contests, size = HALF) { Category.entries.forEach { value -> pill(value, value.label) } } }
+        row {
+            pills(initial = Category.Contests, size = HALF) {
+                Category.entries.forEach { value -> pill(value, value.label) }
+            }.onChange { value -> chosen.text = "Выбрано в строке: ${value.label}" }
+        }
     }
 }
 

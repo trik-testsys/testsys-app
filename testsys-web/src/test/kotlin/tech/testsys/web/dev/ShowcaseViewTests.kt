@@ -62,6 +62,12 @@ class ShowcaseViewTests {
             assertTrue(_find<Section>().isNotEmpty())
         }
 
+        @Test
+        fun `should show neutral numeric verdicts including zero`() {
+            assertTrue("0" in shownTexts("ts-verdict--score"))
+            assertTrue("87баллов" in shownTexts("ts-verdict--score"))
+        }
+
         @ParameterizedTest
         @EnumSource(TagKind::class)
         fun `should show a tag of every kind`(kind: TagKind) {

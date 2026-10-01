@@ -2,8 +2,10 @@
  * @startingPoint section="Layout" subtitle="Block: head, body, footer container" viewport="700x280"
  */
 export interface BlockProps {
-  /** Columns in the parent Row (1–24). Omit for full width outside a Row. */
+  /** Columns of the parent SlotRow; legacy placement directly in Row is supported. Omit for a page block. */
   span?: number;
+  /** Continue the page columns through the body and BlockRow children. */
+  grid?: boolean;
   title?: React.ReactNode;
   subtitle?: React.ReactNode;
   /** Right side of the head: tabs, filters, buttons. */
@@ -17,6 +19,12 @@ export interface BlockProps {
   flush?: boolean;
   bodyStyle?: React.CSSProperties;
   children?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export interface BlockRowProps {
+  children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 }

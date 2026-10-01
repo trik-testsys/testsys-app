@@ -3,13 +3,13 @@ export interface RowProps {
   align?: 'start' | 'stretch';
   /** 8px gap instead of 12px. */
   tight?: boolean;
-  /** Slots whose span values take at most 24 in total (older screens: Blocks and Stacks). */
+  /** Slots whose span values take at most 24 in total; Blocks and Stacks are legacy-compatible. */
   children: React.ReactNode;
   className?: string;
   style?: React.CSSProperties;
 }
 export interface StackProps {
-  /** Grid columns this vertical stack occupies in its Row. */
+  /** Legacy vertical stack on Row columns; prefer Slot and SlotRow in new layouts. */
   span?: number;
   children: React.ReactNode;
   className?: string;

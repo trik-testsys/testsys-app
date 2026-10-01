@@ -1,6 +1,6 @@
 <!-- @dsCard group="Components" viewport="700x380" name="Layout" -->
 <!doctype html>
-<html><head><meta charset="utf-8">
+<html lang="ru"><head><meta charset="utf-8">
 <link rel="stylesheet" href="../../styles.css">
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
@@ -8,11 +8,14 @@
 <script src="../../lib/dev-loader.js"></script>
 <style>body{padding:20px;background:var(--surface-page)} .l{font:500 11px var(--font-mono);color:var(--text-tertiary);margin-bottom:8px;display:block} .r{display:flex;flex-wrap:wrap;gap:10px;align-items:center}</style>
 </head><body><div id="root"><div style="padding:40px;text-align:center;font:500 12px var(--font-mono);color:var(--text-tertiary)">Загрузка…</div></div>
+<script src="../../lib/catalog-nav.js"></script>
+<script type="text/babel" src="../../lib/CatalogExamples.jsx"></script>
 <script type="text/babel">
 window.__tsReady.then(NS => {
 const { Row, Block, Stack, Button } = NS;
 const L = ({ t }) => <span style={{ font: '500 12px var(--font-mono)', color: 'var(--text-secondary)' }}>{t}</span>;
 function Demo() {
+  const [notice, setNotice] = React.useState('Исходные варианты');
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
     <Block title="Заголовок блока" subtitle="Подзаголовок или мета" actions={<Button size="sm" variant="secondary">Действие</Button>} footer={<><span className="ts-muted" style={{ flex: 1, fontSize: 13 }}>Подвал блока</span><a href="#" style={{ fontWeight: 600, fontSize: 13 }}>Все →</a></>}><L t="body · padding 12" /></Block>
     <Row tight><Block span={16}><L t="span 16" /></Block><Block span={8}><L t="span 8" /></Block></Row>
@@ -20,6 +23,10 @@ function Demo() {
     <Row tight><Block span={6}><L t="6" /></Block><Stack span={12}><Block><L t="stack · 12" /></Block><Block><L t="stack · 12" /></Block></Stack><Block span={6}><L t="6" /></Block></Row>
   </div>;
 }
-ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+function Card() {
+  const [version, setVersion] = React.useState(0);
+  return <><NS.Button variant="secondary" size="sm" onClick={() => setVersion(version + 1)}>Сбросить всю карточку</NS.Button><><div onClick={e => { const target = e.target.closest('button, a'); if (target && !target.disabled) { const status = document.getElementById('card-action-status'); status.textContent = 'Действие: ' + (target.textContent.trim() || target.getAttribute('aria-label') || 'выбор'); } }}><Demo key={version} /><p id="card-action-status" role="status">Выберите действие в образцах</p></div><CatalogExamples key={'states-' + version} group="layout" namespace={NS} /></></>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Card />);
 });
 </script></body></html>

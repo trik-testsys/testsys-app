@@ -28,6 +28,7 @@ import tech.testsys.web.ui.display.field
 import tech.testsys.web.ui.display.statCard
 import tech.testsys.web.ui.display.tag
 import tech.testsys.web.ui.display.text
+import tech.testsys.web.ui.display.verdict
 import tech.testsys.web.ui.feedback.FeedbackKind
 import tech.testsys.web.ui.feedback.alert
 import tech.testsys.web.ui.feedback.toast
@@ -50,6 +51,8 @@ import java.time.LocalDate
 
 private const val TIME_STEP_MINUTES = 30L
 private const val RULER_COLUMNS = 24
+private const val DEMO_VERDICT_SCORE = 87.0
+private const val ICONS_PER_ROW = 4
 private const val LONG_TEXT = "Дан ориентированный граф из n вершин и m рёбер. " +
     "Найдите кратчайший путь от вершины 1 до вершины n. " +
     "Если пути нет, выведите −1. " +
@@ -79,6 +82,7 @@ class ShowcaseView(texts: UiTexts, private val environment: Environment) : TestS
             actionSection()
             propertySection()
             displaySection()
+            iconGallery()
             feedbackSection()
             tableSection()
             dialogSection()
@@ -152,13 +156,13 @@ private fun PageScope.blockSection() {
                 block(title = "Шапка с действиями и подвал") {
                     actions {
                         badge("Идёт", Tone.Success)
-                        action("Фильтр", icon = IconName.ListFilter)
-                        iconAction(IconName.Settings, "Настройки")
+                        action("Фильтр", icon = IconName.ListFilter) { onClick { toast(FeedbackKind.Info, "Фильтр: действие выполнено") } }
+                        iconAction(IconName.Settings, "Настройки") { onClick { toast(FeedbackKind.Info, "Настройки: действие выполнено") } }
                     }
                     row { text("Кнопки шапки — маленькие, в теле и подвале — обычные") }
                     footer {
-                        linkAction("Подробнее")
-                        mainAction("Сохранить")
+                        linkAction("Подробнее") { onClick { toast(FeedbackKind.Info, "Подробнее: действие выполнено") } }
+                        mainAction("Сохранить") { onClick { toast(FeedbackKind.Info, "Сохранить: действие выполнено") } }
                     }
                 }
             }
@@ -305,19 +309,19 @@ private fun PageScope.editingSection() {
 private fun PageScope.actionSection() {
     block(title = "Кнопки", subtitle = "Роли, размеры и состояния") {
         actions {
-            mainAction("Главная")
-            action("Обычная", icon = IconName.ListFilter)
-            destructiveAction("Удалить")
-            linkAction("Ссылка")
-            iconAction(IconName.Settings, "Настройки")
+            mainAction("Главная") { onClick { toast(FeedbackKind.Info, "Главная: действие выполнено") } }
+            action("Обычная", icon = IconName.ListFilter) { onClick { toast(FeedbackKind.Info, "Обычная: действие выполнено") } }
+            destructiveAction("Удалить") { onClick { toast(FeedbackKind.Info, "Удалить: действие выполнено") } }
+            linkAction("Ссылка") { onClick { toast(FeedbackKind.Info, "Ссылка: действие выполнено") } }
+            iconAction(IconName.Settings, "Настройки") { onClick { toast(FeedbackKind.Info, "Настройки: действие выполнено") } }
         }
         row {
             horizontal {
-                mainAction("Главная", icon = IconName.Check)
-                action("Обычная")
-                destructiveAction("Удалить", icon = IconName.Trash)
-                linkAction("Подробнее")
-                iconAction(IconName.Settings, "Настройки")
+                mainAction("Главная", icon = IconName.Check) { onClick { toast(FeedbackKind.Info, "Главная: действие выполнено") } }
+                action("Обычная") { onClick { toast(FeedbackKind.Info, "Обычная: действие выполнено") } }
+                destructiveAction("Удалить", icon = IconName.Trash) { onClick { toast(FeedbackKind.Info, "Удалить: действие выполнено") } }
+                linkAction("Подробнее") { onClick { toast(FeedbackKind.Info, "Подробнее: действие выполнено") } }
+                iconAction(IconName.Settings, "Настройки") { onClick { toast(FeedbackKind.Info, "Настройки: действие выполнено") } }
             }
         }
         row {
@@ -336,8 +340,8 @@ private fun PageScope.actionSection() {
             }
         }
         footer {
-            action("Отмена")
-            mainAction("В подвале")
+            action("Отмена") { onClick { toast(FeedbackKind.Info, "Отмена: действие выполнено") } }
+            mainAction("В подвале") { onClick { toast(FeedbackKind.Info, "В подвале: действие выполнено") } }
         }
     }
 }
@@ -393,6 +397,12 @@ private fun PageScope.displaySection() {
                     row { text("Обычный текст абзаца на всю ширину блока") }
                     row {
                         horizontal {
+                            verdict(0.0)
+                            verdict(DEMO_VERDICT_SCORE, label = "баллов")
+                        }
+                    }
+                    row {
+                        horizontal {
                             icon(IconName.Trophy)
                             text("Иконка рядом с текстом")
                         }
@@ -430,6 +440,21 @@ private fun PageScope.feedbackSection() {
                 FeedbackKind.entries.forEach { kind ->
                     action("Тост ${kind.name}") {
                         onClick { toast(kind = kind, title = "Тост ${kind.name}", description = "Описание тоста") }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun PageScope.iconGallery() {
+    block(title = "Icon: поддерживаемые имена") {
+        IconName.entries.chunked(ICONS_PER_ROW).forEach { names ->
+            row {
+                names.forEach { name ->
+                    horizontal(size = 6) {
+                        icon(name)
+                        text(name.name)
                     }
                 }
             }

@@ -856,6 +856,7 @@ Escape и закрытие снаружи отменяют черновик. У�
 
 | Функция | Данные и ручка |
 |---------|----------------|
+| `verdict` | Нейтральный числовой балл `Double` (включая 0), необязательная подпись; `DataHandle<Double>`, configure и размещение в строке через `size` |
 | `avatar`, `avatarGroup` | `AvatarData` и список идентичностей; доступное имя сохраняется при сокращении до инициалов |
 | `progressBar` | `ProgressValue.Determinate` (0–100) или `Indeterminate`; доступное имя обязательно |
 | `difficulty` | `DifficultyLevel`; локализованная подпись по умолчанию, собственная подпись или `showLabel=false` |
@@ -867,6 +868,12 @@ Escape и закрытие снаружи отменяют черновик. У�
 | `stepper` | `StepperData`, индекс с нуля, доступность отдельного шага задаёт приложение |
 | `quizOption` | `QuizOptionData`; `Correct`/`Wrong` блокируют выбор, UI не вычисляет правильность |
 | `questionNav` | `QuestionNavData`, номера с единицы, answered/flagged/unavailable задаёт приложение |
+
+`verdict` не зависит от домена и не вычисляет успешность: конечное число показывается с нейтральным цветом.
+Статусы очереди, проверки, ошибки и тайм-аута остаются отдельными бейджами. Образец нового API и custom-показ
+legacy-кодов — [ShowcaseDisplayView.kt](../src/main/kotlin/tech/testsys/web/dev/ShowcaseDisplayView.kt).
+Выбор Stepper/QuizOption/QuestionNav и перестановка показывают результат, имеют сброс; карточки разделяют открытие
+и CTA. React-каталог описан в [design-system/README.md](../design-system/README.md), раздел «Экраны».
 
 Отображение с изменяемыми данными возвращает `DataHandle<T>` (`data`, `bindData`); компоненты выбора —
 `SelectionHandle<T>` с теми же данными и `onChange`/`isEnabled`. Программная запись не вызывает callback.

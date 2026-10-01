@@ -12,12 +12,14 @@ export function Toast({ tone = 'info', title, description, onClose }) {
 }
 export function useToasts(timeout = 4000) {
   const [list, setList] = React.useState([]);
+  const timers = React.useRef(new Map());
+  React.useEffect(() => () => { timers.current.forEach(clearTimeout); timers.current.clear(); }, []);
   const push = React.useCallback((t) => {
     const id = Math.random().toString(36).slice(2);
     setList(l => [...l, { id, ...t }]);
-    if (timeout) setTimeout(() => setList(l => l.filter(x => x.id !== id)), timeout);
+    if (timeout) timers.current.set(id, setTimeout(() => { timers.current.delete(id); setList(l => l.filter(x => x.id !== id)); }, timeout));
   }, [timeout]);
-  const remove = id => setList(l => l.filter(x => x.id !== id));
+  const remove = id => { clearTimeout(timers.current.get(id)); timers.current.delete(id); setList(l => l.filter(x => x.id !== id)); };
   const node = <div className="ts-toaster">{list.map(t => <Toast key={t.id} {...t} onClose={() => remove(t.id)} />)}</div>;
   return [push, node];
 }

@@ -22,9 +22,11 @@ testsys-app/
 ├── testsys-domain/           # Доменная модель и порты
 ├── testsys-operation/        # Операции (сценарии фич testsys.user.*)
 ├── testsys-infra/            # Реализации портов
-├── testsys-web/              # Веб-приложение
-│   ├── design-system/        # Дизайн-система Кабинетов
-│   └── ui/                   # Kotlin-DSL дизайн-системы
+├── testsys-web/              # Контейнер веб-модулей
+│   ├── components/           # Kotlin-DSL, общие тексты и экран 404
+│   │   └── design-system/    # Токены, React-эталон, каталог и макеты
+│   ├── app/                  # Основное приложение
+│   └── dev-app/              # Независимая витрина компонентов
 ├── detekt.yml                # Конфигурация Detekt
 ├── settings.gradle.kts       # Список модулей (корневого build.gradle.kts нет)
 └── gradlew, gradlew.bat
@@ -39,14 +41,17 @@ testsys-app/
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
 | `testsys-infra:grpc`                 | Связь с внешним грейдером решений TRIK Studio (реализация порта `Grader`).                           | Заготовка (пусто) |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из ICU-паттернов.                          | Реализован        |
-| `testsys-web`                        | Веб-приложение на Vaadin Flow: точка входа, тема, тексты интерфейса из локализации, страницы. Дизайн-система — в `design-system/`, см. [design-system/README.md](../../testsys-web/design-system/README.md). | Каркас: dev-витрина, собственная 404, страниц Кабинетов нет |
-| `testsys-web:ui`                     | Kotlin-DSL дизайн-системы на Vaadin Flow: сетка, блоки, компоненты, см. [ui/README.md](../../testsys-web/ui/README.md). Без Spring и домена. | В разработке |
+| `testsys-web:app` | Основное приложение Vaadin Flow: точка входа, конфигурация и маршрутизация ошибок, см. [app/README.md](../../testsys-web/app/README.md). | Каркас; предметных страниц Кабинетов нет |
+| `testsys-web:components` | Kotlin-DSL, общая фабрика текстов и визуальная часть 404, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. React-эталон — внутри `components/design-system/`. | Реализован |
+| `testsys-web:dev-app` | Самостоятельная витрина компонентов и демонстраций, см. [dev-app/README.md](../../testsys-web/dev-app/README.md). | Реализован |
 
-Отсутствующие маршруты обрабатывает `testsys-web/src/main/kotlin/tech/testsys/web/error/NotFoundView.kt`
+Отсутствующие маршруты обрабатывает `testsys-web/app/src/main/kotlin/tech/testsys/web/app/error/NotFoundView.kt`
 через штатный `HasErrorParameter<NotFoundException>` с кодом 404 во всех профилях. Экран показывает бренд,
 локализованные заголовок, пояснение и действие «Назад» по истории браузера; до определения истории и без предыдущей
 записи кнопка недоступна. Ссылки на выдуманную главную, подробностей исключения и списка dev-маршрутов нет.
-Страницы витрины вне профиля `dev` также переходят на этот экран.
+У `dev-app` есть собственный тонкий обработчик той же страницы; общая визуальная реализация —
+`components.error.NotFoundPage`. В `app` витрины нет даже с профилем `dev`. В `dev-app`
+страницы витрины вне профиля `dev` также переходят на экран 404.
 `vaadin.eagerServerLoad=true` в `application.yml` включает начальную серверную маршрутизацию до отправки HTML:
 код 404 получает и первый HTTP-запрос, а не только последующая навигация. Это создаёт сессию и UI уже при первом
 запросе страницы; без этой настройки Vaadin отдаёт HTML с кодом 200 и разрешает маршрут позднее.
@@ -61,7 +66,8 @@ testsys-app/
 - `testsys-domain` ни от чего не зависит. Любой новый код, которому нужен Spring, JPA или сеть, живёт вне домена.
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
 - Сейчас в Gradle прописаны связи `operation → domain`, `database → domain`, `database → codegen-api`,
-  `database → codegen` (через `ksp`), `web → ui` и `web → localization`. Остальные связи — целевая архитектура.
+  `database → codegen` (через `ksp`), `app → components`, `dev-app → components`,
+  `components → localization`, `app → localization` и `dev-app → localization`. Остальные связи — целевая архитектура.
 
 ## Сборка
 
@@ -77,11 +83,11 @@ testsys-app/
   `platform(...)`; версии стартеров, Hibernate, Liquibase, H2 и драйвера PostgreSQL задаёт BOM, в каталоге их нет.
 - `gradle.properties` — память Gradle-демона (`org.gradle.jvmargs`): значений Gradle по умолчанию полной сборке
   с KSP, Vaadin и Detekt не хватает. Демон Kotlin наследует эти параметры.
-- В `build.gradle.kts` модуля, кроме плагинов сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`, у `testsys-web` —
-  ещё Spring Boot и Vaadin) и зависимостей, может быть и модуль-специфичная логика сборки — она остаётся в скрипте
+- В `build.gradle.kts` модуля, кроме плагинов сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`, у веб-приложений —
+  ещё Spring Boot и Vaadin в `app` и `dev-app`) и зависимостей, может быть и модуль-специфичная логика сборки — она остаётся в скрипте
   своего модуля. Так, в `testsys-infra/localization` это кодогенерация (см.
-  [localization/README.md](../../testsys-infra/localization/README.md)), в `testsys-web:ui` — копирование CSS
-  и канонического React дизайн-системы в jar и сохранение временных меток его файлов, в `testsys-web` — условие задачи
+  [localization/README.md](../../testsys-infra/localization/README.md)), в `testsys-web:components` — копирование CSS
+  и канонического React дизайн-системы в jar и сохранение временных меток его файлов, в `app` и `dev-app` — условие задачи
   `vaadinBuildFrontend` (см. ниже).
 
 Полная сборка — компиляция, тесты и Detekt:
@@ -104,33 +110,49 @@ testsys-app/
 ./gradlew build -Pdetekt.autoCorrect=false
 ```
 
-Запуск веб-приложения для разработки (витрина компонентов — `http://localhost:8080/dev/showcase`):
+Запуск основного приложения (порт 8080; пока доступны только обработчики отсутствующих маршрутов):
 
 ```bash
-./gradlew :testsys-web:bootRun --args='--spring.profiles.active=dev'
+./gradlew :testsys-web:app:bootRun -Pdetekt.autoCorrect=false
 ```
 
+Запуск витрины компонентов (`http://localhost:8081/dev/showcase`):
+
+```bash
+./gradlew :testsys-web:dev-app:bootRun -Pdetekt.autoCorrect=false --args='--spring.profiles.active=dev'
+```
+
+Корневой `testsys-web` не содержит запускаемого приложения; у каждого приложения свой `src/main/frontend/`
+и собственные generated/build-результаты.
+
 Режиму разработки Vaadin нужен `com.vaadin:vaadin-dev`; он подключён как `developmentOnly`, поэтому есть в classpath
-`bootRun`, но не попадает в `bootJar`. Плагин Vaadin генерирует `testsys-web/src/main/frontend/index.html`
+`bootRun`, но не попадает в `bootJar`. Плагин Vaadin генерирует `app/src/main/frontend/index.html` и `dev-app/src/main/frontend/index.html`
 (хранится в git) и `src/main/frontend/generated/` (в `.gitignore`). Свои файлы (в том числе настройки dev-сервера)
 dev-режим кладёт в `build/` — так задаёт `vaadin.build.folder` в `application.yml`; без него, при запуске без
 токен-файла Gradle-плагина, использовался бы каталог Maven `target/`.
 
 Приложение обновляет открытые страницы без действия пользователя через push Vaadin по WebSocket (`/VAADIN/push`),
-см. раздел «Живые обновления» в [ui/README.md](../../testsys-web/ui/README.md). Реверс-прокси перед приложением
+см. раздел «Живые обновления» в [components/README.md](../../testsys-web/components/README.md). Реверс-прокси перед приложением
 должен пропускать заголовки `Upgrade`/`Connection` для этого пути. При нескольких экземплярах приложения нужны
 sticky sessions: сессия Vaadin и состояние её UI живут в памяти одного экземпляра. Живые обновления между
 экземплярами не распространяются: фоновые `refresh`/`reload` и локальные сигналы действуют только на страницы
 своего экземпляра.
 
-`bootJar` собирает приложение в production-режиме, включая собственные клиентские адаптеры из jar UI.
+`bootJar` собирает приложение в production-режиме, включая собственные клиентские адаптеры из jar `components`.
 Node.js плагин устанавливает в `~/.vaadin`; упаковка канонического React описана в
-[ui/README.md](../../testsys-web/ui/README.md), раздел «Упаковка React».
+[components/README.md](../../testsys-web/components/README.md), раздел «Упаковка React».
 
 Production-сборку фронтенда (`vaadinBuildFrontend`) выполняют только запуски с `bootJar` или `bootBuildImage`
 (`assemble` и `build` включают `bootJar`); `bootRun`, тесты и `check` её пропускают. Условие проверяет граф задач
-в `testsys-web/build.gradle.kts`: плагин Vaadin 25.2–25.3 включает production-режим, если задача `bootJar` просто есть
+в `testsys-web/app/build.gradle.kts` и `testsys-web/dev-app/build.gradle.kts`: плагин Vaadin 25.2–25.3 включает production-режим, если задача `bootJar` просто есть
 в проекте, и без условия собирал бы фронтенд перед каждым запуском и тестами.
+
+
+Vaadin 25.3 регистрирует сервис восстановления production-токена `vaadinBuildFrontendToken` один раз
+на весь Gradle build. При сборке двух приложений он восстанавливает токен только первого: второй JAR
+может ошибочно запускаться в dev-режиме. Поэтому `bootJar` каждого приложения отдельно включает
+свой `build/cached-flow-build-info.json` под именем `META-INF/VAADIN/config/flow-build-info.json`.
+Это не меняет токен запуска `bootRun`; обход можно удалить после исправления сервиса в плагине.
 
 ## CI
 
@@ -154,5 +176,5 @@ Workflow лежат в `.github/workflows`.
 | Пользовательскую фичу                           | Метод с `@Feature` в `operation/user/<Actor>Operations.kt`, см. [implement-feature.md](../guides/implement-feature.md) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
-| Токены, стили, эталонные React-компоненты       | `testsys-web/design-system`, см. [design-system/README.md](../../testsys-web/design-system/README.md) |
-| Kotlin-компонент интерфейса, страницу Кабинета  | Компонент — `testsys-web/ui`, страница — `testsys-web`, см. [ui/README.md](../../testsys-web/ui/README.md) |
+| Токены, стили, эталонные React-компоненты       | `testsys-web/components/design-system`, см. [design-system/README.md](../../testsys-web/components/design-system/README.md) |
+| Kotlin-компонент интерфейса, страницу Кабинета  | Компонент — `testsys-web/components`, рабочая страница — `testsys-web/app`, витрина — `testsys-web/dev-app`, см. [components/README.md](../../testsys-web/components/README.md) |

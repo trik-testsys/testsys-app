@@ -12,16 +12,16 @@ to this skill directory; source paths mentioned in the documents are relative to
 
 ## Choose the deliverable
 
-Use Vaadin Flow and the Kotlin-DSL in `testsys-web:ui` by default, including requests that do not name a technology.
+Use Vaadin Flow and the Kotlin-DSL in `testsys-web:components` by default, including requests that do not name a technology.
 Use React/HTML when the user explicitly requests a mockup, prototype or standalone HTML artifact. Preserve an
 explicit technology choice. Ask only for missing requirements that affect the screen: purpose, Role, data,
 actions or states. Do not reopen a settled choice of format.
 
 ## Read the relevant sources
 
-- For every interface, read [design-system/README.md](../../../testsys-web/design-system/README.md) for visual
+- For every interface, read [design-system/README.md](../../../testsys-web/components/design-system/README.md) for visual
   rules and [definitions.md](../../../docs/domain/definitions.md) for domain terms and Roles.
-- For Kotlin code, read [ui/README.md](../../../testsys-web/ui/README.md) for page composition, scopes, component
+- For Kotlin code, read [components/README.md](../../../testsys-web/components/README.md) for page composition, scopes, component
   APIs, handles and examples; [structure.md](../../../docs/project/structure.md) for placement and build commands;
   and [code-style.md](../../../docs/project/code-style.md) for Kotlin and KDoc conventions.
 - For a new or changed business scenario, consult [features.md](../../../docs/domain/features.md) and the
@@ -31,12 +31,12 @@ actions or states. Do not reopen a settled choice of format.
 ## Build Kotlin-DSL interfaces
 
 Use existing DSL components and inspect their source signatures before composing the page. Start with the page
-examples linked from `ui/README.md` and the relevant thematic views under `testsys-web/src/main/kotlin/tech/testsys/web/dev/`.
+examples linked from `components/README.md` and the relevant thematic views under `testsys-web/dev-app/src/main/kotlin/`.
 Treat those views as UI examples; their demonstration data and profile restrictions are not production behavior.
 Use the README sections for page headers, parameterized routes, grids, editing, binding and live updates as needed.
 
-If the requested component is missing, follow `ui/README.md`, section "Как добавить компонент", and inspect its
-React reference under `testsys-web/design-system/components/<group>/` (`.jsx`, `.d.ts`, `.prompt.md`). Follow the
+If the requested component is missing, follow `components/README.md`, section "Как добавить компонент", and inspect its
+React reference under `testsys-web/components/design-system/components/<group>/` (`.jsx`, `.d.ts`, `.prompt.md`). Follow the
 same section for shared CSS versus Vaadin-specific overrides. If no React reference exists, use the nearest
 existing component as a starting point and resolve missing visual or interaction requirements with the user.
 Do not introduce another frontend stack merely
@@ -48,14 +48,14 @@ follow [add-localization.md](../../../docs/guides/add-localization.md). Keep dem
 ## Build explicitly requested mockups
 
 Read the selected React components' `.d.ts` and `.prompt.md`; reuse the reference screens under
-`testsys-web/design-system/ui_kits/platform/` and the full catalogue at `testsys-web/design-system/components/index.html`.
+`testsys-web/components/design-system/ui_kits/platform/` and the full catalogue at `testsys-web/components/design-system/components/index.html`.
 Use the canonical styles and tokens. Keep the artifact identifiable as a prototype and do not turn its sample
 data or navigation into application behavior without a corresponding request.
 
 ## Verify and hand over
 
 For Kotlin changes, follow [unit-tests.md](../../../docs/project/unit-tests.md) and the verification guidance in
-`ui/README.md`; build the affected modules using `structure.md`. Check the rendered interface and relevant
+`components/README.md`; build the affected modules using `structure.md`. Check the rendered interface and relevant
 interactions against the reference. For mockups, check the artifact in a browser and run relevant existing checks.
 
 Report what changed, what was verified and any remaining limitation. Keep commits and progression to another

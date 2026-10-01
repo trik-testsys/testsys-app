@@ -2,8 +2,9 @@ rootProject.name = "testsys-app"
 
 include(":testsys-domain")
 include(":testsys-operation")
-include(":testsys-web")
-include(":testsys-web:ui")
+include(":testsys-web:components")
+include(":testsys-web:app")
+include(":testsys-web:dev-app")
 include(":testsys-infra:database")
 include(":testsys-infra:database:codegen-api")
 include(":testsys-infra:database:codegen")

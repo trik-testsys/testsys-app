@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="768" height="768" viewBox="320 0 768 768" role="img" aria-labelledby="logo-title logo-description">
+  <title id="logo-title">TestSys</title>
+  <desc id="logo-description">TestSys logo reconstructed as editable vector geometry. Gear teeth follow a regular 30-degree pitch. Gear, shield and handle curves use circular SVG arcs; circuit nodes are exact circles. The wordmark is outlined. Brand palette: #243B8F and #FFF0C9. No embedded bitmap or external font is used.</desc>
+  <rect id="background" x="320" y="0" width="768" height="768" fill="#FFF0C9"/>
+  <g id="logo" fill="#243B8F" color="#243B8F">
+    <g id="emblem">
+      <path id="gear-and-left-base" d="M697 72.0354 L677.2441 72.0354 L669.5636 104.4004 A158 158 0 0 0 642.9608 111.5286 L620.1268 87.3399 L585.9086 107.0958 L595.4396 138.965 A158 158 0 0 0 575.965 158.4396 L544.0958 148.9086 L524.3399 183.1268 L548.5286 205.9608 A158 158 0 0 0 541.4004 232.5636 L509.0354 240.2441 L509.0354 279.7559 L541.4004 287.4364 A158 158 0 0 0 548.5286 314.0392 L524.3399 336.8732 L544.0958 371.0914 L575.965 361.5604 A158 158 0 0 0 595.4396 381.035 L585.9086 412.9042 L620.1268 432.6601 L642.9608 408.4714 A158 158 0 0 0 669.5636 415.5996 L674.1818 441.7906 A30 30 0 0 1 644.6375 477 A10 10 0 0 0 634.6375 487 V503 H697 V386 A126 126 0 0 1 697 134 Z"/>
+      <path id="letter-T-in-emblem" d="M630 165 H697 V366 H680 V198 H630 Z"/>
+      <g id="circuit-traces" fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="butt" stroke-linejoin="miter">
+        <path id="trace-left-and-branch" d="M608 274 V313 L638 343"/>
+        <path id="trace-bottom" d="M638 313 V379"/>
+        <path id="trace-upper" d="M648 239 V267 L665 284 V361"/>
+      </g>
+      <path id="trace-left-top" d="M602.5 206 L613.5 195 V252 H602.5 Z"/>
+      <g id="circuit-nodes" fill="none" stroke="currentColor" stroke-width="8.5">
+        <circle id="node-left" cx="608" cy="263" r="11.75"/>
+        <circle id="node-upper" cx="648" cy="228" r="11.75"/>
+        <circle id="node-bottom" cx="638" cy="302" r="11.75"/>
+      </g>
+      <g id="shield-and-right-base">
+        <path id="shield-top-band" d="M711 102 A322 322 0 0 1 833 126.0067 V215 H800 V149.0455 A289 289 0 0 0 711 135 Z"/>
+        <path id="trophy-handle" d="M846 143 H899.3481 A222 222 0 0 1 795.6421 348.2667 L783.9839 329.6096 A200 200 0 0 0 877.9375 165 H846 Z"/>
+        <path id="letter-S-in-emblem" d="M711 165 H779 V198 H744 V245 H833.4434 A221 221 0 0 1 711 437.8352 V309 H744 V374.3568 A188 188 0 0 0 796.6195 278 H711 Z"/>
+        <path id="right-base" d="M711 451 L733.3625 438 V447 A30 30 0 0 0 763.3625 477 A10 10 0 0 1 773.3625 487 V503 H711 Z"/>
+      </g>
+    </g>
+  <g id="wordmark" fill-rule="evenodd">
+    <path id="letter-T" d="M412 559H501V575H466V665H447V575H412Z"/>
+    <path id="letter-e" d="M585 630H520C522 643 531 650 546 650C555 650 562 647 569 641L580 653C571 662 559 666 545 666C519 666 501 649 501 624C501 600 519 582 544 582C569 582 586 599 586 625L585 630ZM520 617H567C565 604 557 597 544 597C531 597 523 604 520 617Z"/>
+    <path id="letter-s1" d="M659 604C650 599 642 597 633 597C621 597 615 600 615 607C615 613 622 615 635 617C654 620 667 624 667 641C667 657 653 666 632 666C617 666 604 663 595 656L602 641C610 647 622 650 632 650C644 650 650 647 650 641C650 635 643 633 631 631C612 628 598 624 598 608C598 592 612 582 634 582C646 582 657 585 664 590Z"/>
+    <path id="letter-t" d="M687 565H706V584H728V600H706V638C706 646 710 650 717 650C721 650 724 649 727 647L733 661C728 664 721 666 714 666C696 666 687 656 687 639V600H674V584H687Z"/>
+    <path id="letter-S" d="M816 583C806 577 797 574 787 574C772 574 764 580 764 588C764 597 773 600 789 604C810 609 827 615 827 636C827 654 812 666 786 666C768 666 753 661 742 653L749 637C759 645 773 650 786 650C800 650 808 645 808 637C808 628 799 625 784 621C763 616 745 610 745 589C745 570 761 557 787 557C801 557 813 560 823 567Z"/>
+    <path id="letter-y" d="M833 584H853L877 641L902 584H921L883 671C876 687 868 694 853 694C845 694 838 692 832 688L839 673C843 677 848 679 853 679C860 679 864 675 868 666Z"/>
+    <path id="letter-s2" transform="translate(329.5 0)" d="M659 604C650 599 642 597 633 597C621 597 615 600 615 607C615 613 622 615 635 617C654 620 667 624 667 641C667 657 653 666 632 666C617 666 604 663 595 656L602 641C610 647 622 650 632 650C644 650 650 647 650 641C650 635 643 633 631 631C612 628 598 624 598 608C598 592 612 582 634 582C646 582 657 585 664 590Z"/>
+  </g>
+  </g>
+</svg>

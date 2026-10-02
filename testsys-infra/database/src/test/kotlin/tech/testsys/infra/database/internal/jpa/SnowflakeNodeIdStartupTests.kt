@@ -28,7 +28,6 @@ class SnowflakeNodeIdStartupTests {
                     "--spring.datasource.driver-class-name=org.h2.Driver",
                     "--spring.datasource.username=sa",
                     "--spring.datasource.password=",
-                    "--spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
                     "--spring.jpa.properties.${HibernateSnowflakeIdGenerator.NODE_ID_SETTING}=node-1",
                 )
                 .close()

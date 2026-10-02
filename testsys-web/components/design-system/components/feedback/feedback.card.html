@@ -1,0 +1,42 @@
+<!-- @dsCard group="Components" viewport="700x420" name="Feedback" -->
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="../../lib/dev-loader.js"></script>
+<style>body{padding:20px;background:var(--surface-page)} .l{font:500 11px var(--font-mono);color:var(--text-tertiary);margin-bottom:8px;display:block} .r{display:flex;flex-wrap:wrap;gap:10px;align-items:center}</style>
+<link rel="icon" type="image/svg+xml" sizes="any" href="../../assets/brand/emblem/svg/TestSys-emblem.svg">
+</head><body><div id="root"><div style="padding:40px;text-align:center;font:500 12px var(--font-mono);color:var(--text-tertiary)">Загрузка…</div></div>
+<script src="../../lib/catalog-nav.js"></script>
+<script type="text/babel" src="../../lib/CatalogExamples.jsx"></script>
+<script type="text/babel">
+window.__tsReady.then(NS => {
+const { Toast, Alert, EmptyState, SkeletonRows, Block, Button } = NS;
+function Demo() {
+  const [notice, setNotice] = React.useState('Исходные варианты');
+  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, alignItems: 'start' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {notice !== 'Toast закрыт' ? <Toast tone="success" title="Задача C принята" description="124 мс · 8.2 МБ" onClose={() => setNotice('Toast закрыт')} /> : <Button onClick={() => setNotice('Исходные варианты')}>Вернуть Toast</Button>}
+      <Toast tone="error" title="Неверный ответ на тесте 7" description="Задача C · попытка 3" onClose={() => setNotice('Ошибка закрыта')} />
+      <Toast tone="info" title="Объявление жюри" description="Уточнение к задаче D" />
+      <Toast tone="warning" title="Осталось 10 минут" description="Таблица будет заморожена" />
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <Alert tone="info" title="Регистрация закроется за час до старта" />
+      <Alert tone="warning" title="Таблица заморожена">Результаты откроются после окончания.</Alert>
+      <Alert tone="danger" title="Ошибка компиляции">main.cpp:14:5: expected ';'</Alert>
+      <Alert tone="dark" badge="Новое" title="Уточнение к задаче D" action={<a href="#" style={{ color: '#fff', fontWeight: 600, fontSize: 13 }}>Открыть</a>} />
+    </div>
+    <Block><EmptyState title="Посылок пока нет" description="Отправьте решение любой задачи." action={<Button size="sm">К задачам</Button>} /></Block>
+    <Block flush><SkeletonRows rows={3} /></Block>
+  </div>;
+}
+function Card() {
+  const [version, setVersion] = React.useState(0);
+  return <><NS.Button variant="secondary" size="sm" onClick={() => setVersion(version + 1)}>Сбросить всю карточку</NS.Button><><div onClick={e => { const target = e.target.closest('button, a'); if (target && !target.disabled) { const status = document.getElementById('card-action-status'); status.textContent = 'Действие: ' + (target.textContent.trim() || target.getAttribute('aria-label') || 'выбор'); } }}><Demo key={version} /><p id="card-action-status" role="status">Выберите действие в образцах</p></div><CatalogExamples key={'states-' + version} group="feedback" namespace={NS} /></></>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Card />);
+});
+</script></body></html>

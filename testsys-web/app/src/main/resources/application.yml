@@ -1,0 +1,17 @@
+server:
+  port: 8080
+  servlet:
+    session:
+      cookie:
+        name: TESTSYS_APP_SESSION
+spring:
+  application:
+    name: testsys-web-app
+vaadin:
+  launch-browser: false
+  # Resolve the initial route before sending HTML, preserving the error handler HTTP status.
+  eagerServerLoad: true
+  # Dev mode writes its files into the build folder; without a token file from the Gradle plugin it defaults to
+  # Maven's target/.
+  build:
+    folder: build

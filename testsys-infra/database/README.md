@@ -57,7 +57,13 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 
 - Схемой управляет Liquibase: changelog'и лежат в `src/main/resources/db/changelog/changes/<версия>/`.
 - Hibernate запускается с `ddl-auto=validate`, поэтому каждое изменение JPA-сущности требует changeset.
+- Диалект SQL не задаётся: Hibernate определяет его по соединению (PostgreSQL в продакшене, H2 в тестах).
 - Имена таблиц и колонок вычисляет `TestsysPhysicalNamingStrategy`.
 - `SchemaValidationTests` (H2 в режиме PostgreSQL) применяет changelog'и и выполняет ту же валидацию.
 
 Правила написания changeset — в шаге 7 [implement-entity.md](../../docs/guides/implement-entity.md).
+
+Версию Liquibase задаёт BOM Spring Boot (раздел «Сборка» в [structure.md](../../docs/project/structure.md)).
+С версии 5.0 Liquibase Community распространяется под Functional Source License (FSL) вместо Apache 2.0.
+Использование в разработке, тестах и продакшене свободное; запрещено только строить на Liquibase конкурирующий
+коммерческий сервис. Каждая версия через два года после выхода переходит на Apache 2.0.

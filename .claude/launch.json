@@ -1,0 +1,38 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "testsys-web-app",
+      "runtimeExecutable": "./gradlew",
+      "runtimeArgs": [
+        ":testsys-web:app:bootRun",
+        "-Pdetekt.autoCorrect=false",
+        "--console=plain"
+      ],
+      "port": 8080
+    },
+    {
+      "name": "testsys-web-dev-app",
+      "runtimeExecutable": "./gradlew",
+      "runtimeArgs": [
+        ":testsys-web:dev-app:bootRun",
+        "-Pdetekt.autoCorrect=false",
+        "--args=--spring.profiles.active=dev",
+        "--console=plain"
+      ],
+      "port": 8081
+    },
+    {
+      "name": "design-system",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5173",
+        "--directory",
+        "testsys-web/components/design-system"
+      ],
+      "port": 5173
+    }
+  ]
+}

@@ -2,7 +2,6 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import tech.testsys.domain.builder.api.verdict
 import tech.testsys.domain.builder.api.verdictData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
@@ -10,13 +9,13 @@ import tech.testsys.domain.model.task.TestVerdict
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
-import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class VerdictPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<VerdictData, VerdictId, Verdict>() {
+class VerdictPersistenceAdapterTests : PersistenceAdapterContractTests<VerdictData, VerdictId, Verdict>() {
 
     @Autowired
     override lateinit var repository: VerdictRepository
@@ -45,27 +44,6 @@ class VerdictPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
                 logs(secondLogsId)
             }
         }
-    }
-
-    override val updatable = false
-
-    override fun modified(entity: Verdict): Verdict {
-        val polygonId = fixtures.polygon().id.value
-        val logsId = fixtures.logs().id.value
-        return entity.withData {
-            testVerdicts.clear()
-            testVerdict {
-                score = 42
-                test(polygonId)
-                logs(logsId)
-            }
-        }
-    }
-
-    override fun detached(entity: Verdict) = verdict {
-        id = entity.id.value
-        createdAt = entity.createdAt
-        data = entity.data
     }
 
     override fun idOf(value: Long) = VerdictId(value)
@@ -132,8 +110,18 @@ class VerdictPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
     @Test
     fun `should fail to update a verdict and keep the stored test outcomes`() {
         val saved = repository.save(newData())
+        val polygonId = fixtures.polygon().id.value
+        val logsId = fixtures.logs().id.value
+        val modified = saved.withData {
+            testVerdicts.clear()
+            testVerdict {
+                score = 42
+                test(polygonId)
+                logs(logsId)
+            }
+        }
 
-        assertFailsWith<UnsupportedOperationException> { repository.update(modified(saved)) }
+        assertFailsWith<UnsupportedOperationException> { repository.update(modified) }
 
         assertSameData(saved, assertNotNull(repository.findById(saved.id)))
     }

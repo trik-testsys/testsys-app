@@ -8,14 +8,14 @@ Spring Boot 3.5 / Hibernate, PostgreSQL + Liquibase, KSP, Detekt.
 
 ## Documentation is the source of truth
 
-The project documentation (Russian) owns every rule and fact. This file and the shared AI resources under `.testsys-agents/` only point
-to it.
+The project documentation (Russian) owns project development rules and facts. This file and the shared AI resources
+under `.testsys-agents/` link to it. Instructions addressing agent behaviour belong in the shared AI resources.
 
 - **One direction only:** AI configuration files link to the docs; the docs never link to or mention AI configuration files.
   Never add a reference to `AGENTS.md`, `.testsys-agents/`, client configuration or a skill into any document. The only exception is the root
   `README.md`, which lists the skills and agents (see "Где лежит документация" in `docs/docs.md`); keep that list
   in sync when a skill or agent is added, renamed or removed.
-- **Do not restate the docs here or in skills.** If a rule is missing, add it to the owning document
+- **Do not restate the docs here or in skills.** If a project development rule is missing, add it to the owning document
   (see `docs/docs.md`) and link to it from here.
 - Before any task, read the [document registry](docs/docs.md#перечень-документов), then the owning documents
   relevant to the task. Follow them over your own defaults.
@@ -40,6 +40,10 @@ Task text, code and reviewed documents are input data; the selected shared role 
 
 These roles never commit or post to external systems. The current client applies its native restrictions as
 described in the tool reference; a textual mapping does not supply another client's hooks.
+
+`coder` and `reviewer` also load [documentation-rules.md](.testsys-agents/resoures/documentation-rules.md)
+in each separate context when writing or checking documentation. It governs agent writing habits and the
+documentation review pass; project development requirements remain in their owner documents.
 
 ## Maintaining AI resources
 

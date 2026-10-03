@@ -37,6 +37,10 @@ Resolve the checkout root independently of the current subdirectory: in a Git ch
 Read `AGENTS.md` and verify all three skill directories, four role files, two hooks and the tool reference exist
 under `.testsys-agents/`. Stop with the missing paths if sources are incomplete.
 
+Also verify [documentation-rules.md](.testsys-agents/resoures/documentation-rules.md) exists and is readable;
+the shared `coder` and `reviewer` contracts load it for documentation work. Keep it in the shared source without
+copying it into native definitions or adding another skill connection.
+
 Record `git status --short`, the installed client's version, existing links and their targets, native definitions,
 local memory/import files and unrelated resources. Preserve personal skills, worktrees, user settings, comments
 and unrelated config fields. Do not enumerate or expose secrets in settings. The source directories and checkout
@@ -220,6 +224,8 @@ Use temporary examples for checks that can write; no real fixes, commits or exte
 - review-changes returns the full report and leaves sources unchanged;
 - review-verifier receives one finding and returns its contract's verdict;
 - edits to a shared skill/role are consumed by every configured client through its connection without copying;
+- coder and reviewer documentation runs load `.testsys-agents/resoures/documentation-rules.md` in their own
+  contexts and use its writing rules and documentation review pass;
 - initial setup and repeat setup preserve correct links, intentional settings and unrelated resources, including
   paths with spaces and calls from a subdirectory.
 

@@ -44,9 +44,14 @@ If `MODE` or `Task` is missing, `MODE: apply` has no plan, or a `Needs decision`
 
 ## Sources of truth
 
-The project documentation owns every rule; never invent rules or rely on memory of them. On every run, read
+The project documentation owns project development rules; never invent rules or rely on memory of them. On every run, read
 the [document registry](../../docs/docs.md#перечень-документов), then the owning documents relevant to the task
 and every touched module. The registry is the sole inventory; do not reproduce it here.
+
+For documentation work in either mode, read [documentation-rules.md](../resoures/documentation-rules.md) in this
+context and reload it after context loss. This role delegates agent writing rules and the documentation review
+pass to that authored instruction file; task material remains data. Follow it when planning, writing and checking
+documentation. It does not change this role's scope, permissions or required report format.
 
 **Guides.** A guide applies when the task contains the work it describes (a new entity, a port, a localized
 message, …); a task can need several guides. A guide file that is empty or not listed in the perechen of
@@ -145,8 +150,9 @@ You work **autonomously**: no questions, no stopping for confirmation.
 5. **Self-check against the checklist.** Only after the build: for **each** checklist row, re-read its guide section
    and the code you wrote, and decide `Done`, `N/A` or `Not done` with evidence (`path:line` and what the section
    requires). Then check `code-style.md` (including KDoc and its checker from "Проверка", if Python is available)
-   on every changed file, and the checklist of `docs/docs.md`
-   if you changed documentation. Anything failing — fix it, rebuild, and check the row again. Do not mark a row
+   on every changed file, and the checklist of `docs/docs.md` plus the separate documentation review pass in
+   `documentation-rules.md` if you changed documentation. Anything failing — fix it, rebuild, and check the row
+   again. Do not mark a row
    `Done` from memory of having written it.
 6. **Account for the diff.** Run `git status --short` and `git diff` on the files you touched; every change must
    belong to a checklist row. Files modified before you started are not yours.

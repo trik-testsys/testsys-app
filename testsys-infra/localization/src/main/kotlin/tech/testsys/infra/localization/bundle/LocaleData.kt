@@ -7,7 +7,12 @@ import com.ibm.icu.text.Collator
 import com.ibm.icu.text.DateIntervalFormat
 import com.ibm.icu.text.Normalizer2
 import com.ibm.icu.text.RelativeDateTimeFormatter
+import tech.testsys.infra.localization.InternalLocalizationApi
+import tech.testsys.infra.localization.runtime.icuZone
+import java.time.ZoneId
 import java.util.Calendar
+import java.util.TimeZone
+import com.ibm.icu.util.TimeZone as IcuTimeZone
 
 /**
  * Region-bound bundle of ICU text and formatting facilities.
@@ -15,11 +20,12 @@ import java.util.Calendar
  * A [LocaleData] groups the ICU APIs whose behaviour is locale-sensitive — number
  * formatting, date/time interval and relative formatting, Unicode
  * normalisation, collation, text segmentation, and calendar arithmetic — into
- * a single value object configured for one [SupportedRegion]. Build one per
- * region via [forRegion] and pass it to call sites that need
+ * a single value object configured for one [SupportedRegion] and time zone. Build one per
+ * region, zone and thread via [forRegion] and pass it to call sites of that thread that need
  * locale-aware behaviour, instead of re-deriving the underlying formatters on
  * every call. This guarantees every component shares a consistent view of the
- * region and avoids repeated ICU resource lookups.
+ * region and avoids repeated ICU resource lookups. The held ICU objects are not
+ * thread-safe, so an instance is never shared between threads.
  *
  * Per-call stateful APIs (e.g. `StringSearch`, which is parameterised by a
  * pattern and target) and pure static utilities (e.g. `UCharacter`) are
@@ -32,18 +38,20 @@ import java.util.Calendar
  *   ```
  *   val text = locale.numberFormatter
  *       .unit(NoUnit.PERCENT)
+ *       .scale(Scale.powerOfTen(2))
  *       .precision(Precision.fixedFraction(1))
  *       .format(0.872)
  *       .toString() // "87,2 %"
  *   ```
- * @property dateIntervalFormatter Formats date or date-time ranges with
- *   region-correct separators and field ordering.
- *   Example — render a contest's open window:
+ * @property dateIntervalFormatter Formats date-time ranges with
+ *   region-correct separators and field ordering in the zone of this
+ *   [LocaleData].
+ *   Example — render a contest's open window in `Europe/Moscow`:
  *   ```
- *   val from = Calendar.getInstance().apply { set(2026, Calendar.JANUARY, 5) }
- *   val to = Calendar.getInstance().apply { set(2026, Calendar.JANUARY, 7) }
- *   locale.dateIntervalFormatter.format(DateInterval(from.timeInMillis, to.timeInMillis))
- *   // "5–7 янв. 2026 г."
+ *   val from = Instant.parse("2026-01-05T09:00:00Z").toEpochMilli()
+ *   val to = Instant.parse("2026-01-07T15:30:00Z").toEpochMilli()
+ *   locale.dateIntervalFormatter.format(DateInterval(from, to))
+ *   // "5 янв. 2026 г., 12:00 – 7 янв. 2026 г., 18:30"
  *   ```
  * @property relativeDateTimeFormatter Produces phrases like "через 3 дня" or
  *   "2 минуты назад" in the region's language.
@@ -82,7 +90,7 @@ import java.util.Calendar
  *   }
  *   ```
  * @property calendar Calendar system used for date arithmetic and field
- *   extraction (year, month, week-of-year) in the region.
+ *   extraction (year, month, week-of-year) in the region and zone.
  *   Example — compute a submission's deadline 7 days from now:
  *   ```
  *   val deadline = (locale.calendar.clone() as Calendar).apply {
@@ -103,20 +111,24 @@ data class LocaleData(
 ) {
     companion object {
         /**
-         * Builds the [LocaleData] of [region].
+         * Builds the [LocaleData] of [region] whose interval formatter and calendar work in [timeZone].
          *
          * @since %CURRENT_VERSION%
          */
-        fun forRegion(region: SupportedRegion): LocaleData {
+        @OptIn(InternalLocalizationApi::class)
+        fun forRegion(region: SupportedRegion, timeZone: ZoneId): LocaleData {
             val uLocale = region.toULocale()
+            val zone = icuZone(timeZone)
             return LocaleData(
                 numberFormatter = NumberFormatter.withLocale(uLocale),
-                dateIntervalFormatter = DateIntervalFormat.getInstance("yMMMdHm", uLocale),
+                dateIntervalFormatter = DateIntervalFormat.getInstance("yMMMdHm", uLocale).apply {
+                    setTimeZone(IcuTimeZone.getTimeZone(zone.id))
+                },
                 relativeDateTimeFormatter = RelativeDateTimeFormatter.getInstance(uLocale),
                 normalizer = Normalizer2.getNFCInstance(),
                 collator = Collator.getInstance(uLocale),
                 breakIterator = BreakIterator.getWordInstance(uLocale),
-                calendar = Calendar.getInstance(uLocale.toLocale()),
+                calendar = Calendar.getInstance(TimeZone.getTimeZone(zone), uLocale.toLocale()),
             )
         }
     }

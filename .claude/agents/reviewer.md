@@ -150,7 +150,7 @@ Produce the report in the format below. It is your final message and your only o
 | Architecture   | Module boundaries and dependencies, domain without external dependencies, domain objects created only via DSL, `api` vs `internal`, port rules | `docs/project/structure.md`, `testsys-domain/README.md`, `docs/guides/implement-port.md` |
 | Persistence    | JPA entity ↔ Liquibase changeset consistency (names, nullability, keys), transactions, optimistic locking, join-table sync, already applied changesets not modified | `testsys-infra/database/README.md`, `docs/guides/implement-entity.md` |
 | Security       | Authorization of operations against Roles and access rules in `features.md`, data exposure, query injection, file handling | `docs/domain/features.md`, `docs/domain/definitions.md` |
-| Localization   | User-visible strings only through the localization module and its rules                                        | `testsys-infra/localization/README.md` |
+| Localization   | User-visible strings only through the localization module and its rules                                        | `testsys-infra/localization/README.md`, `docs/guides/add-localization.md` |
 
 **Checklists.** If a guide applies to the change, verify **every** checklist step: the step is done, done in the
 documented place, and done per the guide's section. A missing or incorrectly done step is a finding.

@@ -41,8 +41,11 @@ jobs:
       - name: Register Kotlin problem matcher
         run: echo "::add-matcher::.github/kotlin-problem-matcher.json"
 
+      # Detekt runs in the Lint workflow, including the extra source sets of the localization module.
       - name: Test
-        run: ./gradlew check -x detekt -x detektMain --no-daemon
+        run: >-
+          ./gradlew check -x detekt -x detektMain -x :testsys-infra:localization:detektTest
+          -x :testsys-infra:localization:detektCodegen -x :testsys-infra:localization:detektCodegenTest --no-daemon
 
       - name: Publish test report
         uses: mikepenz/action-junit-report@v6

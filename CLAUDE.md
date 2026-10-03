@@ -34,14 +34,12 @@ to it.
 | Tests: tools, naming, scenario kinds, structure        | `docs/project/unit-tests.md`                          |
 | Domain model, ports, builder DSL                       | `testsys-domain/README.md`                            |
 | Persistence layers, Snowflake ids, node id, files, schema | `testsys-infra/database/README.md`                 |
-| Localization                                           | `testsys-infra/localization/README.md`                |
+| Localization: module design, our code vs ICU4J         | `testsys-infra/localization/README.md`                |
+| Localization: message format, types, restrictions      | `docs/guides/add-localization.md`                     |
 | Operations, `@Feature`, operation error model          | `testsys-operation/README.md`                         |
 | Adding a feature / an entity / a port / a localized message | `docs/guides/implement-feature.md`, `docs/guides/implement-entity.md`, `docs/guides/implement-port.md`, `docs/guides/add-localization.md` |
 
 ## Skills and agents
-
-Before creating or changing an agent, skill or hook, read `.claude/agent-authoring.md` (platform facts, environment
-quirks, patterns and best practices).
 
 - `/review-changes` skill → `reviewer` agent (+ `review-verifier`) — strict read-only review of changes with a structured
   report. The agents are guarded by `.claude/hooks/review-readonly-guard.sh`; keep its allowlist in sync with the

@@ -35,7 +35,7 @@ testsys-app/
 | `testsys-operation`                  | Операции — реализация пользовательских фич из [features.md](../domain/features.md), по классу на Роль или группу Пользователей. | В разработке      |
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
 | `testsys-infra:grpc`                 | Связь с внешним грейдером решений TRIK Studio (реализация порта `Grader`).                           | Заготовка (пусто) |
-| `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из ICU-паттернов.                          | Реализован        |
+| `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
 | `testsys-web`                        | Веб-приложение (Кабинеты): точка входа, собирающая все модули; вызывает операции.                    | Заготовка (пусто) |
 
 ### Зависимости между модулями
@@ -91,8 +91,8 @@ Workflow лежат в `.github/workflows`.
 | Workflow                  | Когда                          | Что делает                                                      |
 |---------------------------|--------------------------------|-----------------------------------------------------------------|
 | `build.yml`               | push/PR в `master`, `dev`      | `./gradlew assemble` — компиляция и сборка без тестов, jar-артефакты, аннотации ошибок компиляции в PR |
-| `test.yml`                | push/PR в `master`, `dev`      | `./gradlew check -x detekt -x detektMain` — все тесты; отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
-| `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detektMain -Pdetekt.autoCorrect=false --continue` — Detekt по всем модулям без правки файлов; таблица замечаний в Summary запуска, загрузка SARIF в GitHub Security |
+| `test.yml`                | push/PR в `master`, `dev`      | `./gradlew check -x detekt -x detektMain` и `-x` для `detektTest`, `detektCodegen`, `detektCodegenTest` модуля `:testsys-infra:localization` — все тесты без Detekt; отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
+| `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detektMain` и `detektTest`, `detektCodegen`, `detektCodegenTest` модуля `:testsys-infra:localization` с `-Pdetekt.autoCorrect=false --continue` — Detekt по всем модулям без правки файлов, в модуле локализации — ещё по тестам и кодгену; таблица замечаний в Summary запуска, загрузка SARIF в GitHub Security |
 | `check-source-branch.yml` | PR в `dev`                     | Разрешает PR только из веток `sh1sh4k1n9/`, `ch3zych3z/`, `KarasssDev/`, `DirewolfPrime/`, `LutovolkVPraime/` |
 | `release.yml`             | —                              | Пока пустой                                                     |
 

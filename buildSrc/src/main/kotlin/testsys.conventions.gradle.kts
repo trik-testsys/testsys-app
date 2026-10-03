@@ -30,6 +30,12 @@ tasks.test {
     useJUnitPlatform()
 }
 
+// The Detekt tasks of extra source sets take their config from the extension, not from the task settings below.
+detekt {
+    config.setFrom("$rootDir/detekt.yml")
+    buildUponDefaultConfig = false
+}
+
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions {
         freeCompilerArgs.set(listOf("-XXLanguage:+ContextParameters"))

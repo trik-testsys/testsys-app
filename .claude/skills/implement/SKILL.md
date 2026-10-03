@@ -17,7 +17,7 @@ runs the implementation, which asks nothing. The rules of work, guide handling a
    - text — use verbatim;
    - feature — find the codifier in `docs/domain/features.md` and take its entry verbatim; if it does not exist, tell
      the user and ask for a text description instead;
-   - file — `Read` it; if it holds several tasks (for example `TODO.md`), ask which item.
+   - file — `Read` it; if it holds several tasks, ask which item.
 
 2. **Check the working tree.** Run `git status --short`. If there are uncommitted changes, tell the user they will be
    mixed with the implementation in one diff and ask whether to continue.

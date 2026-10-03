@@ -30,7 +30,13 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// The Detekt tasks of extra source sets take their config from the extension, not from the task settings below.
+tasks.register("testAll") {
+    group = "verification"
+    description = "Runs every test suite, including those registered by modules."
+    dependsOn(tasks.withType<Test>())
+}
+
+// The plugin-created tasks of every source set inherit these shared settings.
 detekt {
     config.setFrom("$rootDir/detekt.yml")
     buildUponDefaultConfig = false
@@ -53,8 +59,6 @@ tasks.withType<Detekt>().configureEach {
         sarif.required.set(true)
     }
 
-    config.setFrom("$rootDir/detekt.yml")
-    buildUponDefaultConfig = false
     // `-Pdetekt.autoCorrect=false` runs Detekt without rewriting sources (read-only checks, e.g. during review).
     autoCorrect = providers.gradleProperty("detekt.autoCorrect").map { it.toBoolean() }.getOrElse(true)
 
@@ -66,10 +70,12 @@ tasks.withType<Detekt>().configureEach {
     exclude { it.file.invariantSeparatorsPath.contains("/build/generated/") }
 }
 
-tasks.named("detekt") {
-    enabled = false
+tasks.named<Detekt>("detekt") {
+    // Source-set tasks already analyse the sources with their own classpaths; avoid a second pass here.
+    setSource(files())
+    dependsOn(tasks.withType<Detekt>().matching { task -> task.name != "detekt" })
 }
 
 tasks.named("check") {
-    dependsOn(tasks.named("detektMain"))
+    dependsOn(tasks.named("detekt"))
 }

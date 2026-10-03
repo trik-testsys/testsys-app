@@ -53,6 +53,9 @@
 `src/main/resources/localization` с пакетом продукта `tech.testsys.infra.localization`. Задача
 `generateLocalizationExamples` запускается перед `compileTestKotlin` и тем же `Main.kt` генерирует API набора примеров
 `src/test/examples/localization` в пакет `tech.testsys.infra.localization.examples`, который видят только тесты.
+Оба каталога остаются входами задач генерации. Исходные `localization/**`, включая `regions.properties`
+и файлы сообщений, не упаковываются в jar: сведения о регионах и сообщения встроены в сгенерированный код,
+а рантайм не читает исходные файлы.
 Конвейер `LocalizationCodegen`:
 
 | # | Шаг                                                                                                        | Чей код                   | Где                                  |
@@ -157,7 +160,8 @@ preview зависит один файл.
   остальной код ссылается на объекты и константы.
 - ICU закреплён на `78.1`. Обновление ICU начинается с тестов `mf2/icu` и `OptionHonouredTests`: они покажут,
   какие обходы стали лишними и какие опции ICU начал или перестал применять.
-- Задача `check` модуля запускает Detekt на всех source set'ах: `main`, `test`, `codegen`, `codegenTest`.
+- Source set модуля `main`, `test`, `codegen`, `codegenTest` проверяются общим механизмом Detekt;
+  устройство агрегаторов и команды проверки — в разделе «Сборка» [structure.md](../../docs/project/structure.md).
 - Сгенерированный код в `build/generated/` (API продукта и API набора примеров) не правится и не коммитится: он
   перегенерируется при каждой сборке.
 

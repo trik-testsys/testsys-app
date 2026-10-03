@@ -310,7 +310,7 @@ NaN и бесконечности сохраняют форматировани�
 Тесты модуля запускаются командой:
 
 ```bash
-./gradlew :testsys-infra:localization:check
+./gradlew :testsys-infra:localization:check -Pdetekt.autoCorrect=false
 ```
 
 Общие команды сборки — в разделе «Сборка» в [structure.md](../project/structure.md).

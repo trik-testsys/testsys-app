@@ -44,13 +44,17 @@ tasks.register<Test>("codegenTest") {
 }
 
 tasks.test {
+    // A fixed JVM zone makes tests reproducible; explicit context zones reveal accidental use of the JVM zone.
     jvmArgs("-Duser.timezone=UTC")
 }
 
 tasks.named("check") {
     dependsOn("codegenTest")
-    // The conventions check only the main source set; this module checks the codegen and the tests too.
-    dependsOn("detektTest", "detektCodegen", "detektCodegenTest")
+}
+
+tasks.processResources {
+    // The generated API embeds messages and regions; the runtime does not read the original files.
+    exclude("localization/**")
 }
 
 // A manually created source set is imported by IDEA as production code; mark it as test sources.

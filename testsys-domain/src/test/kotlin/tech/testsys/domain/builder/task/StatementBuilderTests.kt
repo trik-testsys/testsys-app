@@ -8,12 +8,14 @@ import java.util.UUID
 
 class StatementBuilderTests : DomainEntityBuilderTests<Statement, StatementData, StatementDataBuilder>(
     StatementBuilder(),
-    StatementDataBuilder()
+    StatementDataBuilder(),
 ) {
-    override fun buildDataWithAllFields() = listOf(statementData {
-        name = "Statement"
-        description = "Statement description"
-        file("statement.pdf", byteArrayOf(1, 2, 3))
-        versionBucket = UUID.randomUUID()
-    })
+    override fun buildDataWithAllFields() = listOf(
+        statementData {
+            name = "Statement"
+            description = "Statement description"
+            file("statement.pdf", byteArrayOf(1, 2, 3))
+            versionBucket = UUID.randomUUID()
+        },
+    )
 }

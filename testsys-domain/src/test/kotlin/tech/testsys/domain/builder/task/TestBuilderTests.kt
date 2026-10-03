@@ -8,12 +8,14 @@ import java.util.UUID
 
 class TestBuilderTests : DomainEntityBuilderTests<Test, TestData, TestDataBuilder>(
     TestBuilder(),
-    TestDataBuilder()
+    TestDataBuilder(),
 ) {
-    override fun buildDataWithAllFields() = listOf(testData {
-        name = "Polygon"
-        description = "Polygon description"
-        file("test.txt", byteArrayOf(1, 2, 3))
-        versionBucket = UUID.randomUUID()
-    })
+    override fun buildDataWithAllFields() = listOf(
+        testData {
+            name = "Polygon"
+            description = "Polygon description"
+            file("test.txt", byteArrayOf(1, 2, 3))
+            versionBucket = UUID.randomUUID()
+        },
+    )
 }

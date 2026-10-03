@@ -10,7 +10,7 @@ import tech.testsys.domain.model.task.VerdictData
 
 class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionData, SubmissionDataBuilder>(
     SubmissionBuilder(),
-    SubmissionDataBuilder()
+    SubmissionDataBuilder(),
 ) {
     override fun buildDataWithAllFields() = listOf(
         submissionData {
@@ -31,7 +31,7 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
             author(42)
             solution(1)
             task(1)
-            status.graded { status.success { verdict(100) }  }
+            status.graded { status.success { verdict(100) } }
             kind.grading { contest(10) }
             judgmentOrders(listOf(1L, 2L))
         },
@@ -54,13 +54,15 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
 
 class VerdictBuilderTests : DomainEntityBuilderTests<Verdict, VerdictData, VerdictDataBuilder>(
     VerdictBuilder(),
-    VerdictDataBuilder()
+    VerdictDataBuilder(),
 ) {
-    override fun buildDataWithAllFields() = listOf(verdictData {
-        score = 100
-        task(1)
-        submission(1)
-        logs(1)
-        recording(1)
-    })
+    override fun buildDataWithAllFields() = listOf(
+        verdictData {
+            score = 100
+            task(1)
+            submission(1)
+            logs(1)
+            recording(1)
+        },
+    )
 }

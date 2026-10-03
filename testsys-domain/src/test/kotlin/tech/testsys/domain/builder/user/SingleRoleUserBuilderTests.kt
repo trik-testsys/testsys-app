@@ -13,18 +13,20 @@ import tech.testsys.domain.model.user.SupervisorData
 
 class ParticipantBuilderTests : DomainEntityBuilderTests<Participant, ParticipantData, ParticipantDataBuilder>(
     ParticipantBuilder(),
-    ParticipantDataBuilder()
+    ParticipantDataBuilder(),
 ) {
-    override fun buildDataWithAllFields() = listOf(participantData {
-        competition(1)
-        accessToken = "token"
-        name = "Participant"
-    })
+    override fun buildDataWithAllFields() = listOf(
+        participantData {
+            competition(1)
+            accessToken = "token"
+            name = "Participant"
+        },
+    )
 }
 
 class ObserverBuilderTests : DomainEntityBuilderTests<Observer, ObserverData, ObserverDataBuilder>(
     ObserverBuilder(),
-    ObserverDataBuilder()
+    ObserverDataBuilder(),
 ) {
     override fun buildDataWithAllFields() = listOf(
         observerData {
@@ -43,10 +45,12 @@ class ObserverBuilderTests : DomainEntityBuilderTests<Observer, ObserverData, Ob
 
 class SupervisorBuilderTests : DomainEntityBuilderTests<Supervisor, SupervisorData, SupervisorDataBuilder>(
     SupervisorBuilder(),
-    SupervisorDataBuilder()
+    SupervisorDataBuilder(),
 ) {
-    override fun buildDataWithAllFields() = listOf(supervisorData {
-        accessToken = "token"
-        name = "Supervisor"
-    })
+    override fun buildDataWithAllFields() = listOf(
+        supervisorData {
+            accessToken = "token"
+            name = "Supervisor"
+        },
+    )
 }

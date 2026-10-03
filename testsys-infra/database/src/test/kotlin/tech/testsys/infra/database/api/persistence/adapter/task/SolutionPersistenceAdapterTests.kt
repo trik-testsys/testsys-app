@@ -42,7 +42,8 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
 
     @Test
     fun `should keep every language through a round trip`() {
-        val languages = listOf(TrikSupportedLanguage.Python, TrikSupportedLanguage.JavaScript, TrikSupportedLanguage.VisualLanguage)
+        val languages =
+            listOf(TrikSupportedLanguage.Python, TrikSupportedLanguage.JavaScript, TrikSupportedLanguage.VisualLanguage)
 
         val saved = languages.map { language ->
             repository.save(

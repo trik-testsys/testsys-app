@@ -8,13 +8,15 @@ import java.util.UUID
 
 class DeveloperSolutionBuilderTests : DomainEntityBuilderTests<DeveloperSolution, DeveloperSolutionData, DeveloperSolutionDataBuilder>(
     DeveloperSolutionBuilder(),
-    DeveloperSolutionDataBuilder()
+    DeveloperSolutionDataBuilder(),
 ) {
-    override fun buildDataWithAllFields() = listOf(developerSolutionData {
-        name = "Developer Solution"
-        description = "Developer solution description"
-        solution(42)
-        expectedScore(100)
-        versionBucket = UUID.randomUUID()
-    })
+    override fun buildDataWithAllFields() = listOf(
+        developerSolutionData {
+            name = "Developer Solution"
+            description = "Developer solution description"
+            solution(42)
+            expectedScore(100)
+            versionBucket = UUID.randomUUID()
+        },
+    )
 }

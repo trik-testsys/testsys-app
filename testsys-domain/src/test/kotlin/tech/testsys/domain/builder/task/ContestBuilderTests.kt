@@ -9,7 +9,7 @@ import java.time.Instant
 
 class ContestBuilderTests : DomainEntityBuilderTests<Contest, ContestData, ContestDataBuilder>(
     ContestBuilder(),
-    ContestDataBuilder()
+    ContestDataBuilder(),
 ) {
     override fun buildDataWithAllFields() = listOf(
         contestData {

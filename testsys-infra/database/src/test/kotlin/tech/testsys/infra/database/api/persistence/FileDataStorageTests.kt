@@ -62,23 +62,23 @@ class FileDataStorageTests {
 
         @Test
         fun `should match the stored file if name and content are equal`() {
-            val result = storage.matches(CURRENT_ID, fileData(CURRENT_NAME, CURRENT_CONTENT))
+            val isMatch = storage.matches(CURRENT_ID, fileData(CURRENT_NAME, CURRENT_CONTENT))
 
-            assertTrue(result)
+            assertTrue(isMatch)
         }
 
         @Test
         fun `should not match the stored file if the content changed`() {
-            val result = storage.matches(CURRENT_ID, fileData(CURRENT_NAME, "changed".toByteArray()))
+            val isMatch = storage.matches(CURRENT_ID, fileData(CURRENT_NAME, "changed".toByteArray()))
 
-            assertFalse(result)
+            assertFalse(isMatch)
         }
 
         @Test
         fun `should not match the stored file if the filename changed`() {
-            val result = storage.matches(CURRENT_ID, fileData(RENAMED_NAME, CURRENT_CONTENT))
+            val isMatch = storage.matches(CURRENT_ID, fileData(RENAMED_NAME, CURRENT_CONTENT))
 
-            assertFalse(result)
+            assertFalse(isMatch)
         }
     }
 

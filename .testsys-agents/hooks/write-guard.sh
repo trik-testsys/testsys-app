@@ -10,7 +10,7 @@
 # boundary: command wrappers (`bash -c`, `eval`, `xargs`, `env`, ...) and command substitution are blocked because
 # they would hide the real command from the checks below.
 #
-# Edit/Write: blocked only for `.claude/hooks/` and `.claude/settings*`.
+# Edit/Write: blocked for canonical hooks and client guard/settings paths.
 # Bash: per segment (split on `&&`, `||`, `;`, `|`, `&`, newlines) — git only read-only subcommands, gh only reads,
 # no recursive rm, no `find -delete/-exec`, Gradle only with -Pdetekt.autoCorrect=false.
 
@@ -18,7 +18,7 @@ trap 'echo "write guard: internal error, call blocked" >&2; exit 2' ERR
 set -o pipefail
 
 block() {
-    echo "write guard: blocked - $1. See section \"Limits\" of your agent file." >&2
+    echo "write guard: blocked - $1. See section \"Limits\" of your .testsys-agents/roles/ contract." >&2
     exit 2
 }
 
@@ -27,15 +27,15 @@ input=$(cat | tr -d '\r') || block "cannot read hook input"
 tool=$(printf '%s' "$input" | sed -nE 's/.*"tool_name"[[:space:]]*:[[:space:]]*"([^"]*)".*/\1/p' | head -n 1)
 [ -n "$tool" ] || block "cannot parse the tool name"
 
-protected_path() { # $1 = text; succeeds if it mentions a protected Claude path
-    printf '%s' "$1" | grep -qiE '\.claude([\\/]+)(hooks|settings)'
+protected_path() { # $1 = text; succeeds if it mentions canonical hooks or client guard/settings paths
+    printf '%s' "$1" | grep -qiE '(\.claude([\\/]+)(hooks|settings)|\.(testsys-agents|agents)([\\/]+)hooks|\.codex([\\/]+)(settings|config\.toml))'
 }
 
 case "$tool" in
     Edit|Write|MultiEdit|NotebookEdit)
         path=$(printf '%s' "$input" | sed -nE 's/.*"(file_path|notebook_path)"[[:space:]]*:[[:space:]]*"(([^"\\]|\\.)*)".*/\2/p' | head -n 1)
         [ -n "$path" ] || block "cannot parse the file path"
-        protected_path "$path" && block "writing agents must not modify .claude/hooks or .claude/settings"
+        protected_path "$path" && block "writing agents must not modify canonical hooks or client guard/settings paths"
         exit 0 ;;
     Bash) ;;
     *) block "tool '$tool' is not allowed for writing agents" ;;
@@ -55,7 +55,7 @@ case "$cmd" in
     *'`'*|*'$('*|*'<('*|*'>('*) block "command and process substitution are not allowed; run the inner command separately" ;;
 esac
 
-protected_path "$cmd" && block "Bash commands must not reference .claude/hooks or .claude/settings"
+protected_path "$cmd" && block "Bash commands must not reference canonical hooks or client guard/settings paths"
 
 segments=$(printf '%s' "$cmd" | sed -E -e 's/&&|\|\||;|\||&/\n/g')
 

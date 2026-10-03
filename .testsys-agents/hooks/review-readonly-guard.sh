@@ -14,7 +14,7 @@ trap 'echo "review guard: internal error, command blocked" >&2; exit 2' ERR
 set -o pipefail
 
 block() {
-    echo "review guard: blocked - $1. The review agents are read-only; see .claude/agents/reviewer.md, section \"Read-only contract\"." >&2
+    echo "review guard: blocked - $1. The review agents are read-only; see .testsys-agents/roles/reviewer.md, section \"Read-only contract\"." >&2
     exit 2
 }
 

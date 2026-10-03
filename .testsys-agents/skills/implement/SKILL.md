@@ -7,22 +7,22 @@ description: Implement a TestSys task (free text, a testsys.* feature from featu
 
 This skill collects the task, runs the `coder` agent in plan mode, resolves **all** questions with the user, and then
 runs the implementation, which asks nothing. The rules of work, guide handling and report formats live in
-`.claude/agents/coder.md`. The skill itself never edits files, never commits and never posts anything.
+[coder role](../../roles/coder.md). The skill itself never edits files, never commits and never posts anything.
 
 ## Steps
 
-1. **Get the task.** If the request states it, use it. Otherwise ask one `AskUserQuestion`: **Describe in text**,
-   **Feature from features.md** (codifier in the "Other" field) or **Task from a file** (path in the "Other" field).
+1. **Get the task.** If the request states it, use it. Otherwise ask one question: **Describe in text**,
+   **Feature from features.md** (codifier in accompanying free text) or **Task from a file** (path in accompanying free text).
    Resolve it:
    - text — use verbatim;
    - feature — find the codifier in `docs/domain/features.md` and take its entry verbatim; if it does not exist, tell
      the user and ask for a text description instead;
-   - file — `Read` it; if it holds several tasks, ask which item.
+   - file — read it; if it holds several tasks, ask which item.
 
 2. **Check the working tree.** Run `git status --short`. If there are uncommitted changes, tell the user they will be
    mixed with the implementation in one diff and ask whether to continue.
 
-3. **Plan.** Launch `Agent` with `subagent_type: coder` and the prompt:
+3. **Plan.** Launch the named `coder` agent in a separate context with the prompt:
 
    ```text
    MODE: plan
@@ -36,13 +36,13 @@ runs the implementation, which asks nothing. The rules of work, guide handling a
 4. **Resolve everything now.** This is the last point where the user is asked anything.
    1. Show a compact plan: guides used (or **No guide**), the checklist rows, assumptions, documentation changes
       (quote the exact text for `features.md` / `definitions.md`), out of scope.
-   2. Ask every `Needs decision` item with `AskUserQuestion`, using the agent's question and options, recommended
-      option first; batch up to 4 questions per call.
-   3. Ask one final `AskUserQuestion`: **Approve the plan** / **Correct the plan** (corrections in the "Other" field)
+   2. Ask every `Needs decision` item with a question, using the agent's question and options, recommended
+      option first; batch questions within the current question tool's supported limit.
+   3. Ask one final question: **Approve the plan** / **Correct the plan** (corrections in accompanying free text)
       / **Cancel**. Corrections that change the scope, guides or checklist → repeat step 3 with the corrections in
       `User notes` and the previous answers; small corrections (an assumption, a name) → pass them in `Decisions`.
 
-5. **Implement.** Launch a new `Agent` with `subagent_type: coder` and the prompt:
+5. **Implement.** Launch a new named `coder` agent in a separate context with the prompt:
 
    ```text
    MODE: apply
@@ -56,5 +56,5 @@ runs the implementation, which asks nothing. The rules of work, guide handling a
    Do not interrupt the run with questions.
 
 6. **Show the result.** Output the agent's report verbatim. Point out rows marked `Not done`, a failed build and
-   the decisions the agent made on its own. Suggest reviewing `git diff` and running `/review-changes`, and
-   `/fix-review` for its findings; do not commit.
+   the decisions the agent made on its own. Suggest reviewing `git diff` and running `review-changes`, and
+   `fix-review` for its findings; do not commit.

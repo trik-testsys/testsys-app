@@ -6,15 +6,15 @@ description: Run a strict read-only review of TestSys changes (uncommitted chang
 # Review changes
 
 This skill only collects the review scope and hands it to the `reviewer` agent. The review itself, its rules and the
-report format live in `.claude/agents/reviewer.md`. The skill never edits files, never fixes findings and never
-posts anything, even if asked in the same request: after the report it offers `/fix-review` for fixing.
+report format live in [reviewer role](../../roles/reviewer.md). The skill never edits files, never fixes findings and never
+posts anything, even if asked in the same request: after the report it offers `fix-review` for fixing.
 
 ## Steps
 
 1. **Determine the scope.** If the user's request already states it unambiguously, use it. Otherwise ask exactly one
-   `AskUserQuestion` with these options:
+   question with these options:
    - **Uncommitted changes** — staged, unstaged and untracked files in the working tree;
-   - **Pull request** — ask for the number in the same question (the "Other" field);
+   - **Pull request** — ask for the number in the same question with free text;
    - **Commits or paths** — a commit range (for example `dev..HEAD`) or a list of files and directories.
 
    Do not ask anything else: no questions about depth, dimensions or format.
@@ -24,7 +24,7 @@ posts anything, even if asked in the same request: after the report it offers `/
    - pull request: `gh pr view <n> --json number,title,baseRefName,headRefName,changedFiles` (stop if it does not exist);
    - commit range: `git rev-parse` both ends; paths: check that they exist.
 
-3. **Launch the agent.** Call the `Agent` tool with `subagent_type: reviewer` and a prompt of this form:
+3. **Launch the agent.** Launch the named `reviewer` agent in a separate context with a prompt of this form:
 
    ```text
    Review scope: <Uncommitted changes | Pull request #<n> (<base> <- <head>) | Commit range <a>..<b> | Paths: <list>>

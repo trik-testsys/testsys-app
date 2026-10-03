@@ -131,10 +131,9 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     }
 
     @Test
-    fun `should project judgment orders from the orders issued for the verdicts of the submission`() {
+    fun `should project judgment orders from the orders issued for the submission`() {
         val saved = repository.save(newData())
-        val verdict = fixtures.verdict(saved)
-        val order = fixtures.judgmentOrder(verdict = verdict)
+        val order = fixtures.judgmentOrder(submission = saved)
         fixtures.judgmentOrder()
 
         val found = assertNotNull(repository.findById(saved.id))

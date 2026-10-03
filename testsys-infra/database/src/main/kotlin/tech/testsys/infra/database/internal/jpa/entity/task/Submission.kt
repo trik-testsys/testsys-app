@@ -11,20 +11,35 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 /**
  * JPA entity of [tech.testsys.domain.model.task.Verdict].
  *
- * @property score the score assigned to the submission.
  * @property taskId id of the graded task.
  * @property submissionId id of the graded [SubmissionJpaEntity].
- * @property logsId id of the [LogsJpaEntity] captured while grading, or `null` if none.
- * @property recordingId id of the [RecordingJpaEntity] captured while grading, or `null` if none.
  * @since %CURRENT_VERSION%
  */
 @Entity
 @InternalDatabaseApi
 class VerdictJpaEntity(
-    val score: Int,
     val taskId: Long,
     val submissionId: Long,
-    val logsId: Long?,
+    id: Long? = null,
+) : SnowflakeJpaEntity(id)
+
+/**
+ * JPA entity of [tech.testsys.domain.model.task.TestVerdict], the outcome of a single test run of a [VerdictJpaEntity].
+ *
+ * @property verdictId id of the [VerdictJpaEntity] the outcome belongs to.
+ * @property testId id of the test the solution was run on.
+ * @property score the score awarded for the test.
+ * @property logsId id of the [LogsJpaEntity] captured while running the test.
+ * @property recordingId id of the [RecordingJpaEntity] captured while running the test, or `null` if none.
+ * @since %CURRENT_VERSION%
+ */
+@Entity
+@InternalDatabaseApi
+class TestVerdictJpaEntity(
+    val verdictId: Long,
+    val testId: Long,
+    val score: Int,
+    val logsId: Long,
     val recordingId: Long?,
     id: Long? = null,
 ) : SnowflakeJpaEntity(id)

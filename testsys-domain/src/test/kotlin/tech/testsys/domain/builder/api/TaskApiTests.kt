@@ -34,10 +34,10 @@ import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TestVerdict
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VerdictData
-import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Duration
@@ -223,7 +223,8 @@ class TaskApiTests {
             version = EntityVersion(7)
             data = JudgmentOrderData(
                 judge = LazyEntity(MultipleRoleUserId(10)),
-                verdict = LazyEntity(VerdictId(20)),
+                submission = LazyEntity(SubmissionId(20)),
+                score = Score(30),
                 reason = "auto-grade",
             )
         }
@@ -236,7 +237,8 @@ class TaskApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.judge.id, copy.data.judge.id)
-            Assertions.assertEquals(origin.data.verdict.id, copy.data.verdict.id)
+            Assertions.assertEquals(origin.data.submission.id, copy.data.submission.id)
+            Assertions.assertEquals(origin.data.score, copy.data.score)
             Assertions.assertEquals(origin.data.reason, copy.data.reason)
         }
 
@@ -245,6 +247,13 @@ class TaskApiTests {
             val copy = origin.withData { judge(99) }
 
             Assertions.assertEquals(99L, copy.data.judge.id.value)
+        }
+
+        @Test
+        fun `should change score if withData sets score`() {
+            val copy = origin.withData { score = 75 }
+
+            Assertions.assertEquals(Score(75), copy.data.score)
         }
     }
 
@@ -430,11 +439,16 @@ class TaskApiTests {
             createdAt = Instant.ofEpochSecond(1)
             version = EntityVersion(7)
             data = VerdictData(
-                score = Score(85),
                 task = LazyEntity(TaskId(10)),
                 submission = LazyEntity(SubmissionId(20)),
-                logs = LazyEntity(LogsId(30)),
-                recording = LazyEntity(RecordingId(40)),
+                testVerdicts = listOf(
+                    TestVerdict(
+                        score = Score(85),
+                        test = LazyEntity(TestId(50)),
+                        logs = LazyEntity(LogsId(30)),
+                        recording = LazyEntity(RecordingId(40)),
+                    ),
+                ),
             )
         }
 
@@ -445,18 +459,47 @@ class TaskApiTests {
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
-            Assertions.assertEquals(origin.data.score, copy.data.score)
             Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
             Assertions.assertEquals(origin.data.submission.id, copy.data.submission.id)
-            Assertions.assertEquals(origin.data.logs?.id, copy.data.logs?.id)
-            Assertions.assertEquals(origin.data.recording?.id, copy.data.recording?.id)
+            Assertions.assertEquals(origin.data.testVerdicts, copy.data.testVerdicts)
         }
 
         @Test
-        fun `should change score if withData sets score`() {
-            val copy = origin.withData { score = 50 }
+        fun `should replace test verdicts if withData clears them and adds a new one`() {
+            val copy = origin.withData {
+                testVerdicts.clear()
+                testVerdict {
+                    score = 50
+                    test(60)
+                    logs(70)
+                }
+            }
 
-            Assertions.assertEquals(Score(50), copy.data.score)
+            val testVerdict = copy.data.testVerdicts.single()
+            Assertions.assertEquals(Score(50), testVerdict.score)
+            Assertions.assertEquals(TestId(60), testVerdict.test.id)
+            Assertions.assertEquals(LogsId(70), testVerdict.logs.id)
+            Assertions.assertNull(testVerdict.recording)
+        }
+
+        @Test
+        fun `should keep existing test verdicts if withData adds a new one`() {
+            val copy = origin.withData {
+                testVerdict {
+                    score = 50
+                    test(60)
+                    logs(70)
+                }
+            }
+
+            Assertions.assertEquals(2, copy.data.testVerdicts.size)
+            Assertions.assertEquals(origin.data.testVerdicts.single(), copy.data.testVerdicts.first())
+            val added = copy.data.testVerdicts.last()
+            Assertions.assertEquals(Score(50), added.score)
+            Assertions.assertEquals(TestId(60), added.test.id)
+            Assertions.assertEquals(LogsId(70), added.logs.id)
+            Assertions.assertNull(added.recording)
+            Assertions.assertEquals(1, origin.data.testVerdicts.size)
         }
     }
 

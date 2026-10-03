@@ -286,25 +286,32 @@ class DatabaseFixtures(
         )
     }
 
-    fun verdict(submission: Submission = submission()): Verdict {
+    fun verdict(submission: Submission = submission(), polygon: Polygon = polygon()): Verdict {
         val submissionId = submission.id.value
         val taskId = submission.data.task.id.value
+        val polygonId = polygon.id.value
+        val logsId = logs().id.value
         return verdicts.save(
             verdictData {
-                score = 100
                 task(taskId)
                 submission(submissionId)
+                testVerdict {
+                    score = 100
+                    test(polygonId)
+                    logs(logsId)
+                }
             },
         )
     }
 
-    fun judgmentOrder(judge: MultipleRoleUser = judge(), verdict: Verdict = verdict()): JudgmentOrder {
+    fun judgmentOrder(judge: MultipleRoleUser = judge(), submission: Submission = submission()): JudgmentOrder {
         val judgeId = judge.id.value
-        val verdictId = verdict.id.value
+        val submissionId = submission.id.value
         return judgmentOrders.save(
             judgmentOrderData {
                 judge(judgeId)
-                verdict(verdictId)
+                submission(submissionId)
+                score = 50
                 reason = "Manual review"
             },
         )

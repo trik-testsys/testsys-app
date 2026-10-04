@@ -1,5 +1,18 @@
 package tech.testsys.domain.model.task
 
+import java.util.UUID
+
+/**
+ * Globally unique identifier shared by all versions of one logical resource, across all resource types.
+ *
+ * @property value the raw identifier of the version chain.
+ * @since %CURRENT_VERSION%
+ */
+@JvmInline
+value class VersionBucket(
+    val value: UUID,
+)
+
 /**
  * Programming language of a TRIK Studio program.
  *

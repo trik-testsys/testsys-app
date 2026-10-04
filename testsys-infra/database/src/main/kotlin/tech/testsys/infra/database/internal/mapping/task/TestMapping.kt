@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.api.test
 import tech.testsys.domain.builder.data
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.TestJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
@@ -30,7 +31,7 @@ object TestMapping : EntityMapping<Test, TestJpaEntity> {
 
             name = jpaEntity.name
             description = jpaEntity.description
-            versionBucket = jpaEntity.versionBucket
+            versionBucket = VersionBucket(jpaEntity.versionBucket)
         }
     }
 
@@ -43,7 +44,7 @@ object TestMapping : EntityMapping<Test, TestJpaEntity> {
         name = data.name,
         description = data.description,
         fileDataId = fileDataId,
-        versionBucket = data.versionBucket,
+        versionBucket = data.versionBucket.value,
     )
 
     /**

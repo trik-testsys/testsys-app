@@ -15,6 +15,7 @@ import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Instant
@@ -52,6 +53,7 @@ fun testTask(choose: TaskContentChooser.() -> Unit): Task = task {
         name = "name"
         description = "description"
         content.choose()
+        uploadedResources = mutableSetOf(testStatement().data.versionBucket)
     }
 }
 
@@ -96,14 +98,14 @@ fun testCommunity(communityId: Long): Community = community {
     }
 }
 
-fun testStatement(): Statement = statement {
-    id = 0L
+fun testStatement(statementId: Long = 0L): Statement = statement {
+    id = statementId
     createdAt = Instant.MIN
     version = EntityVersion(0)
     data = statementData {
         name = "name"
         description = "description"
-        versionBucket = UUID.fromString("00000000-0000-0000-0000-000000000000")
+        versionBucket = VersionBucket(UUID.fromString("00000000-0000-0000-0000-000000000000"))
         file("file.pdf", "".toByteArray())
     }
 }

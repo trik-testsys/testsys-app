@@ -12,6 +12,7 @@ import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -24,6 +25,7 @@ import tech.testsys.infra.database.internal.jpa.repository.task.TaskJpaEntityRep
 import tech.testsys.infra.database.internal.jpa.repository.task.TestToTaskContentJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionToTaskContentJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.VersionBucketToTaskJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.TaskContentMapping
 import tech.testsys.infra.database.internal.mapping.task.TaskContentRevision
 import tech.testsys.infra.database.internal.mapping.task.TaskMapping
@@ -35,7 +37,7 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 /**
  * Persistence adapter of [Task] entities backed by [TaskJpaEntity].
  * Content revisions are replaced wholesale as task content rows on save and update and dropped together with the
- * shared-community join rows on remove.
+ * shared-community and uploaded-resource join rows on remove.
  *
  * @since %CURRENT_VERSION%
  */
@@ -45,6 +47,7 @@ class TaskPersistenceAdapter(
     jpaEntityRepository: TaskJpaEntityRepository,
     private val taskContentJpaEntityRepository: TaskContentJpaEntityRepository,
     private val communityToTaskJpaEntityRepository: CommunityToTaskJpaEntityRepository,
+    private val versionBucketToTaskJpaEntityRepository: VersionBucketToTaskJpaEntityRepository,
     private val testToTaskContentJpaEntityRepository: TestToTaskContentJpaEntityRepository,
     private val developerSolutionToTaskContentJpaEntityRepository: DeveloperSolutionToTaskContentJpaEntityRepository,
     private val trikStudioVersionToTaskContentJpaEntityRepository: TrikStudioVersionToTaskContentJpaEntityRepository,
@@ -67,6 +70,7 @@ class TaskPersistenceAdapter(
         val savedJpaEntity = jpaEntityRepository.save(TaskMapping.toJpaEntity(data, wipContentId, committedContentId))
         val taskId = savedJpaEntity.requireId()
         communityToTaskJpaEntityRepository.saveAll(TaskMapping.toSharedToAssociations(taskId, data.sharedTo.ids))
+        versionBucketToTaskJpaEntityRepository.saveAll(TaskMapping.toUploadedResourceAssociations(taskId, data.uploadedResources))
 
         val domainEntity = TaskMapping.toDomain(savedJpaEntity, data)
         return domainEntity
@@ -90,6 +94,7 @@ class TaskPersistenceAdapter(
         val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
         val taskId = savedJpaEntity.requireId()
         syncSharedTo(taskId, entity.data.sharedTo.ids)
+        syncUploadedResources(taskId, entity.data.uploadedResources)
 
         val domainEntity = TaskMapping.toDomain(savedJpaEntity, entity.data)
         return domainEntity
@@ -100,6 +105,7 @@ class TaskPersistenceAdapter(
         val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
         val taskId = jpaEntity.requireId()
         communityToTaskJpaEntityRepository.deleteAll(communityToTaskJpaEntityRepository.findAllByTaskId(taskId))
+        versionBucketToTaskJpaEntityRepository.deleteAll(versionBucketToTaskJpaEntityRepository.findAllByTaskId(taskId))
         jpaEntityRepository.delete(jpaEntity)
         // Content rows are referenced by the task row, so they go after it.
         deleteContentCascade(jpaEntity.wipContentId)
@@ -117,6 +123,8 @@ class TaskPersistenceAdapter(
             wip = loadWipRevision(jpaEntity),
             committed = loadCommittedRevision(jpaEntity),
             sharedToIds = sharedToIds,
+            uploadedResourceBuckets = versionBucketToTaskJpaEntityRepository.findAllByTaskId(taskId)
+                .map { VersionBucket(it.id.versionBucket) }.toSet(),
         )
         return domainEntity
     }
@@ -256,6 +264,15 @@ class TaskPersistenceAdapter(
 
         taskContentJpaEntityRepository.deleteById(contentId)
     }
+
+    private fun syncUploadedResources(taskId: Long, target: Set<VersionBucket>) = syncJoinTable(
+        existing = versionBucketToTaskJpaEntityRepository.findAllByTaskId(taskId),
+        targetKeys = target.toList(),
+        keyOf = { VersionBucket(it.id.versionBucket) },
+        buildAssociation = { TaskMapping.toUploadedResourceAssociations(taskId, setOf(it)).single() },
+        deleteAll = { versionBucketToTaskJpaEntityRepository.deleteAll(it) },
+        saveAll = { versionBucketToTaskJpaEntityRepository.saveAll(it) },
+    )
 
     private fun syncSharedTo(taskId: Long, target: List<CommunityId>) = syncJoinTable(
         existing = communityToTaskJpaEntityRepository.findAllByTaskId(taskId),

@@ -9,6 +9,7 @@ import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepo
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -28,7 +29,7 @@ class DeveloperSolutionPersistenceAdapterTests :
             description = "Developer solution description"
             solution(solutionId)
             expectedScore(100)
-            versionBucket = UUID.randomUUID()
+            versionBucket = VersionBucket(UUID.randomUUID())
         }
     }
 
@@ -57,7 +58,7 @@ class DeveloperSolutionPersistenceAdapterTests :
     fun `should keep the version bucket if another bucket is passed on update`() {
         val saved = repository.save(newData())
 
-        val updated = repository.update(saved.withData { versionBucket = UUID.randomUUID() })
+        val updated = repository.update(saved.withData { versionBucket = VersionBucket(UUID.randomUUID()) })
 
         assertEquals(saved.data.versionBucket, updated.data.versionBucket)
         assertEquals(saved.data.versionBucket, assertNotNull(repository.findById(saved.id)).data.versionBucket)

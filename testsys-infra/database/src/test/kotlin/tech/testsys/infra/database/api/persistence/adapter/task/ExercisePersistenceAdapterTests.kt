@@ -10,6 +10,7 @@ import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.DatabaseFixtures.Companion.chose
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -34,7 +35,7 @@ class ExercisePersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         description = "Exercise description"
         file(fixtures.unique("exercise") + ".qrs", "exercise".toByteArray())
         language.python()
-        versionBucket = UUID.randomUUID()
+        versionBucket = VersionBucket(UUID.randomUUID())
     }
 
     override fun modified(entity: Exercise) = entity.withData {
@@ -71,7 +72,7 @@ class ExercisePersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
                     description = "Exercise description"
                     file(fixtures.unique("exercise"), byteArrayOf(1, 2, 3))
                     this.language.chose(language)
-                    versionBucket = UUID.randomUUID()
+                    versionBucket = VersionBucket(UUID.randomUUID())
                 },
             )
         }
@@ -145,7 +146,7 @@ class ExercisePersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
     fun `should keep the version bucket if another bucket is passed on update`() {
         val saved = repository.save(newData())
 
-        val updated = repository.update(saved.withData { versionBucket = UUID.randomUUID() })
+        val updated = repository.update(saved.withData { versionBucket = VersionBucket(UUID.randomUUID()) })
 
         assertEquals(saved.data.versionBucket, updated.data.versionBucket)
         assertEquals(saved.data.versionBucket, assertNotNull(repository.findById(saved.id)).data.versionBucket)

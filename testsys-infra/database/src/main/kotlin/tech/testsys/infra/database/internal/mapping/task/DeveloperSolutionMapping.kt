@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.api.developerSolution
 import tech.testsys.domain.builder.data
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
@@ -32,7 +33,7 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
             solution(jpaEntity.solutionId)
             expectedScore(jpaEntity.expectedScore)
 
-            versionBucket = jpaEntity.versionBucket
+            versionBucket = VersionBucket(jpaEntity.versionBucket)
         }
     }
 
@@ -46,7 +47,7 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
         description = data.description,
         solutionId = data.solution.id.value,
         expectedScore = data.expectedScore.value,
-        versionBucket = data.versionBucket,
+        versionBucket = data.versionBucket.value,
     )
 
     /**

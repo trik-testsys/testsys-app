@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.DomainEntityBuilderTests
 import tech.testsys.domain.builder.api.developerSolutionData
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
+import tech.testsys.domain.model.task.VersionBucket
 import java.util.UUID
 
 class DeveloperSolutionBuilderTests : DomainEntityBuilderTests<DeveloperSolution, DeveloperSolutionData, DeveloperSolutionDataBuilder>(
@@ -16,7 +17,7 @@ class DeveloperSolutionBuilderTests : DomainEntityBuilderTests<DeveloperSolution
             description = "Developer solution description"
             solution(42)
             expectedScore(100)
-            versionBucket = UUID.randomUUID()
+            versionBucket = VersionBucket(UUID.randomUUID())
         },
     )
 }

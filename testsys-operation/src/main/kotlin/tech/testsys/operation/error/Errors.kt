@@ -34,6 +34,14 @@ sealed interface AccessDeniedError : OperationError
  * @since %CURRENT_VERSION%
  */
 sealed interface MissedRequiredRoleError : OperationError
+
+/**
+ * The user has no access to resource in current context
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ResourceAccessError : OperationError
+
 // endregion
 
 // region DeveloperOperations
@@ -84,6 +92,16 @@ data class TaskNotExistsError(val taskId: TaskId) : EntityNotExistsError, Attach
  * @since %CURRENT_VERSION%
  */
 data class StatementNotExistsError(val statementId: StatementId) : EntityNotExistsError, AttachStatementError
+
+/**
+ * The statement's version chain is not uploaded to the task.
+ *
+ * @property taskId the id of the task.
+ * @property statementId the id of the statement that cannot be attached.
+ * @since %CURRENT_VERSION%
+ */
+data class StatementNotUploadedToTaskError(val taskId: TaskId, val statementId: StatementId) : AttachStatementError,
+    ResourceAccessError
 
 /**
  * The task already has a statement.

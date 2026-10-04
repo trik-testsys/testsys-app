@@ -10,7 +10,7 @@ import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SolutionId
-import java.util.UUID
+import tech.testsys.domain.model.task.VersionBucket
 
 /**
  * Builder of [DeveloperSolutionData]. Required: [name], [description], [solution], [expectedScore], [versionBucket].
@@ -19,7 +19,7 @@ import java.util.UUID
  * @property description the description of the developer solution, or `null` if not set yet.
  * @property solution the id of the reference program, or `null` if not set yet.
  * @property expectedScore the expected score, or `null` if not set yet.
- * @property versionBucket the UUID shared by all versions of the developer solution, or `null` if not set yet.
+ * @property versionBucket the version chain shared by all versions of the developer solution, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
 class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
@@ -32,7 +32,7 @@ class DeveloperSolutionDataBuilder : Builder<DeveloperSolutionData> {
 
     var expectedScore: Score? = null
 
-    var versionBucket: UUID? = null
+    var versionBucket: VersionBucket? = null
 
     /**
      * Sets [solution] from a raw id.

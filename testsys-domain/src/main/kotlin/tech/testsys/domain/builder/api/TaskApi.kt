@@ -566,6 +566,7 @@ private fun TaskData.toBuilder(): TaskDataBuilder {
         name = thisData.name
         description = thisData.description
         sharedTo = thisData.sharedTo.ids.toMutableList()
+        uploadedResources = thisData.uploadedResources.toMutableSet()
         content.populateFrom(thisData.content)
     }
 }

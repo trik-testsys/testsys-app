@@ -11,6 +11,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.CompositeId
 import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
+import java.util.UUID
 
 /**
  * Lifecycle state of a [TaskJpaEntity]: [NEW] has no committed revision, [UNCOMMITTED] has WIP changes over the last
@@ -163,3 +164,27 @@ class TaskJpaEntity(
     val committedContentId: Long?,
     id: Long? = null,
 ) : SnowflakeJpaEntity(id)
+
+/**
+ * Composite key of [VersionBucketToTaskJpaEntity].
+ *
+ * @property taskId id of the task.
+ * @property versionBucket the uploaded resource version chain.
+ * @since %CURRENT_VERSION%
+ */
+@Embeddable
+@InternalDatabaseApi
+data class VersionBucketToTaskId(
+    val taskId: Long,
+    val versionBucket: UUID,
+) : CompositeId
+
+/**
+ * Join row recording the task to which a resource version chain is currently uploaded.
+ *
+ * @since %CURRENT_VERSION%
+ */
+@Entity
+@CompositeKeyConstructor
+@InternalDatabaseApi
+class VersionBucketToTaskJpaEntity(id: VersionBucketToTaskId) : CompositeJpaEntity<VersionBucketToTaskId>(id)

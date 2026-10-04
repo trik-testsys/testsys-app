@@ -23,6 +23,7 @@ import tech.testsys.domain.builder.task.TaskBuilder
 import tech.testsys.domain.builder.task.TaskDataBuilder
 import tech.testsys.domain.builder.task.TestBuilder
 import tech.testsys.domain.builder.task.TestDataBuilder
+import tech.testsys.domain.builder.task.TestVerdictBuilder
 import tech.testsys.domain.builder.task.VerdictBuilder
 import tech.testsys.domain.builder.task.VerdictDataBuilder
 import tech.testsys.domain.builder.task.WipTaskContentBuilder
@@ -55,6 +56,7 @@ import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
+import tech.testsys.domain.model.task.TestVerdict
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
@@ -157,6 +159,13 @@ inline fun solutionData(builder: SolutionDataBuilder.() -> Unit) = SolutionDataB
  * @since %CURRENT_VERSION%
  */
 inline fun solution(builder: SolutionBuilder.() -> Unit) = SolutionBuilder().apply(builder).build()
+
+/**
+ * Builds a [TestVerdict] with a [TestVerdictBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun testVerdict(builder: TestVerdictBuilder.() -> Unit) = TestVerdictBuilder().apply(builder).build()
 
 /**
  * Builds [VerdictData] with a [VerdictDataBuilder] block.
@@ -391,7 +400,8 @@ private fun JudgmentOrderData.toBuilder(): JudgmentOrderDataBuilder {
     val thisData = this
     return JudgmentOrderDataBuilder().apply {
         judge = thisData.judge.id
-        verdict = thisData.verdict.id
+        submission = thisData.submission.id
+        score = thisData.score.value
         reason = thisData.reason
     }
 }
@@ -576,11 +586,9 @@ fun Task.withData(builder: TaskDataBuilder.() -> Unit): Task {
 private fun VerdictData.toBuilder(): VerdictDataBuilder {
     val thisData = this
     return VerdictDataBuilder().apply {
-        score = thisData.score.value
         task = thisData.task.id
         submission = thisData.submission.id
-        logs = thisData.logs?.id
-        recording = thisData.recording?.id
+        testVerdicts = thisData.testVerdicts.toMutableList()
     }
 }
 

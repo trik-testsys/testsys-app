@@ -23,9 +23,12 @@
                 <constraints nullable="false"
                              foreignKeyName="fk_judgment_order_judge" references="ts_user(id)"/>
             </column>
-            <column name="verdict_id" type="BIGINT">
-                <constraints nullable="false" unique="true"
-                             foreignKeyName="fk_judgment_order_verdict" references="ts_verdict(id)"/>
+            <column name="submission_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_judgment_order_submission" references="ts_submission(id)"/>
+            </column>
+            <column name="score" type="INT">
+                <constraints nullable="false"/>
             </column>
             <column name="reason" type="TEXT">
                 <constraints nullable="false"/>

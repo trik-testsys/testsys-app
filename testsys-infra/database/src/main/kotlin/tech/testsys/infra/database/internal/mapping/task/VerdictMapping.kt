@@ -2,16 +2,17 @@ package tech.testsys.infra.database.internal.mapping.task
 
 import tech.testsys.domain.builder.api.verdict
 import tech.testsys.domain.builder.data
+import tech.testsys.domain.model.task.TestVerdict
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.task.TestVerdictJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.VerdictJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
-import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
- * Mapping between [Verdict] and [VerdictJpaEntity].
+ * Mapping between [Verdict] and [VerdictJpaEntity]; the outcome of every test run is kept in [TestVerdictJpaEntity] rows.
  *
  * @since %CURRENT_VERSION%
  */
@@ -19,20 +20,26 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 object VerdictMapping : EntityMapping<Verdict, VerdictJpaEntity> {
 
     /**
-     * Assembles a [Verdict] from [jpaEntity].
+     * Assembles a [Verdict] from [jpaEntity] and the rows [testVerdictJpaEntities] holding the outcome of its test runs.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDomain(jpaEntity: VerdictJpaEntity) = verdict {
+    fun toDomain(jpaEntity: VerdictJpaEntity, testVerdictJpaEntities: List<TestVerdictJpaEntity>) = verdict {
         populateFields(jpaEntity)
 
         data {
-            score = jpaEntity.score
-
             task(jpaEntity.taskId)
             submission(jpaEntity.submissionId)
-            jpaEntity.logsId?.let { logs(it) }
-            jpaEntity.recordingId?.let { recording(it) }
+
+            testVerdictJpaEntities.forEach { row ->
+                testVerdict {
+                    score = row.score
+
+                    test(row.testId)
+                    logs(row.logsId)
+                    row.recordingId?.let { recording(it) }
+                }
+            }
         }
     }
 
@@ -42,28 +49,22 @@ object VerdictMapping : EntityMapping<Verdict, VerdictJpaEntity> {
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(data: VerdictData) = VerdictJpaEntity(
-        score = data.score.value,
         taskId = data.task.id.value,
         submissionId = data.submission.id.value,
-        logsId = data.logs?.id?.value,
-        recordingId = data.recording?.id?.value,
     )
 
     /**
-     * Creates the [VerdictJpaEntity] row replacing [current] from [entity],
-     * keeping `taskId`, `submissionId`, `createdAt` and `version`.
+     * Creates the [TestVerdictJpaEntity] rows holding [testVerdicts] of the verdict [verdictId].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toJpaEntity(entity: Verdict, current: VerdictJpaEntity) = VerdictJpaEntity(
-        score = entity.data.score.value,
-        taskId = current.taskId,
-        submissionId = current.submissionId,
-        logsId = entity.data.logs?.id?.value,
-        recordingId = entity.data.recording?.id?.value,
-        id = entity.id.value,
-    ).also {
-        it.createdAt = current.createdAt
-        it.version = entity.requireVersion()
+    fun toTestVerdictAssociations(verdictId: Long, testVerdicts: List<TestVerdict>) = testVerdicts.map {
+        TestVerdictJpaEntity(
+            verdictId = verdictId,
+            testId = it.test.id.value,
+            score = it.score.value,
+            logsId = it.logs.id.value,
+            recordingId = it.recording?.id?.value,
+        )
     }
 }

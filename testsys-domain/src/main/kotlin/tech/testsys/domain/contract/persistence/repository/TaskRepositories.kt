@@ -105,7 +105,7 @@ interface StatementRepository : EntityRepository<StatementData, StatementId, Sta
 interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, Submission>
 
 /**
- * Persistence port for [Verdict] entities.
+ * Persistence port for [Verdict] entities. A verdict is fixed on creation, so `update` is not supported.
  *
  * @since %CURRENT_VERSION%
  */

@@ -100,7 +100,8 @@ data class StatementNotExistsError(val statementId: StatementId) : EntityNotExis
  * @property statementId the id of the statement that cannot be attached.
  * @since %CURRENT_VERSION%
  */
-data class StatementNotUploadedToTaskError(val taskId: TaskId, val statementId: StatementId) : AttachStatementError,
+data class StatementNotUploadedToTaskError(val taskId: TaskId, val statementId: StatementId) :
+    AttachStatementError,
     ResourceAccessError
 
 /**

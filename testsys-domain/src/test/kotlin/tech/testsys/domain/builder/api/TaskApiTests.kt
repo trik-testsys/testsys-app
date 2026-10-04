@@ -59,15 +59,15 @@ class TaskApiTests {
                 task = LazyEntity(TaskId(9)),
                 status = SubmissionStatus.InProgress,
                 kind = SubmissionKind.DeveloperSolutionTest,
-                judgmentOrders = LazyEntityList(listOf(JudgmentOrderId(32)))
+                judgmentOrders = LazyEntityList(listOf(JudgmentOrderId(32))),
             )
         }
 
         @Test
         fun `should keep all fields if withData changes nothing`() {
-            val copy = origin.withData {  }
+            val copy = origin.withData { }
 
-            Assertions.assertEquals(origin.id,  copy.id)
+            Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.author.id, copy.data.author.id)
@@ -104,7 +104,7 @@ class TaskApiTests {
                 contestDuration = Duration.ofHours(2),
                 attemptDuration = Duration.ofMinutes(30),
                 trikStudioVersion = TrikStudioVersion("3.0.0"),
-                sharedTo = LazyEntityList(listOf(CommunityId(50)))
+                sharedTo = LazyEntityList(listOf(CommunityId(50))),
             )
         }
 
@@ -479,7 +479,7 @@ class TaskApiTests {
                         statement = LazyEntity(StatementId(40)),
                         developerSolutions = LazyEntityList(listOf(DeveloperSolutionId(50))),
                         supportedTrikStudioVersions = listOf(TrikStudioVersion("3.0.0")),
-                    )
+                    ),
                 ),
             )
         }
@@ -552,7 +552,7 @@ class TaskApiTests {
                         statement = LazyEntity(StatementId(40)),
                         developerSolutions = LazyEntityList(listOf(DeveloperSolutionId(50))),
                         supportedTrikStudioVersions = listOf(TrikStudioVersion("3.0.0")),
-                    )
+                    ),
                 ),
             )
         }

@@ -7,7 +7,7 @@ import tech.testsys.domain.model.task.TaskData
 
 class TaskBuilderTests : DomainEntityBuilderTests<Task, TaskData, TaskDataBuilder>(
     TaskBuilder(),
-    TaskDataBuilder()
+    TaskDataBuilder(),
 ) {
     private fun TaskDataBuilder.taskIdentity() {
         owner(42)

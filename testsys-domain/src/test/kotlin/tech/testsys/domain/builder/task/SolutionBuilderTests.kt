@@ -7,7 +7,7 @@ import tech.testsys.domain.model.task.SolutionData
 
 class SolutionBuilderTests : DomainEntityBuilderTests<Solution, SolutionData, SolutionDataBuilder>(
     SolutionBuilder(),
-    SolutionDataBuilder()
+    SolutionDataBuilder(),
 ) {
     override fun buildDataWithAllFields() = listOf(
         solutionData {

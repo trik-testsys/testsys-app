@@ -25,5 +25,7 @@ import tech.testsys.infra.database.DatabaseIntegrationTests
 class SchemaValidationTests : DatabaseIntegrationTests() {
 
     @Test
-    fun `should accept the schema produced by liquibase migrations when hibernate validates it`() = Unit
+    fun `should accept the schema produced by liquibase migrations when hibernate validates it`() {
+        // A successful Spring context load proves that Liquibase and Hibernate agree on the schema.
+    }
 }

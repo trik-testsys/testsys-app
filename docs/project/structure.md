@@ -35,7 +35,7 @@ testsys-app/
 | `testsys-operation`                  | Операции — реализация пользовательских фич из [features.md](../domain/features.md), по классу на Роль или группу Пользователей. | В разработке      |
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
 | `testsys-infra:grpc`                 | Связь с внешним грейдером решений TRIK Studio (реализация порта `Grader`).                           | Заготовка (пусто) |
-| `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из ICU-паттернов.                          | Реализован        |
+| `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
 | `testsys-web`                        | Веб-приложение (Кабинеты): точка входа, собирающая все модули; вызывает операции.                    | Заготовка (пусто) |
 
 ### Зависимости между модулями
@@ -55,10 +55,18 @@ testsys-app/
 - `settings.gradle.kts` — список модулей. Модуль, не попавший в него, не собирается, и его тесты не запускаются.
 - `buildSrc/src/main/kotlin/testsys.conventions.gradle.kts` — общий плагин, который подключает каждый модуль:
   Kotlin JVM 21, `allWarningsAsErrors = true`, JUnit Platform, Detekt (`detekt.yml`, `autoCorrect = true`,
-  `build/generated/` исключён). Задача `check` зависит от `detektMain`.
+  `build/generated/` исключён). Задача `check` зависит от общего агрегатора `detekt`.
 - `gradle/libs.versions.toml` — версии, библиотеки и bundles. Версии зависимостей указываются только здесь.
 - В `build.gradle.kts` модуля остаются только плагины сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`)
   и зависимости.
+
+Агрегатор `detekt` лениво подключает все задачи анализа source set, автоматически создаваемые плагином Detekt,
+включая тесты и дополнительные source set, объявленные модулем после применения конвенций. Каждая такая задача
+проверяет свои исходники со своим classpath и разрешением типов; у агрегатора источник пуст, поэтому повторного
+анализа нет. Конфигурация задаётся через расширение Detekt, отчёты SARIF включены для всех задач анализа.
+
+Агрегатор `testAll` лениво подключает все задачи типа `Test`, включая дополнительные наборы тестов модулей.
+Он запускает тесты без Detekt; `build` и `check` сохраняют полную проверку.
 
 Полная сборка — компиляция, тесты и Detekt:
 
@@ -70,7 +78,7 @@ testsys-app/
 просмотрите `git diff`:
 
 ```bash
-./gradlew detektMain
+./gradlew detekt
 ```
 
 Чтобы проверить код, не изменяя файлы (например, при ревью), передайте свойство `detekt.autoCorrect=false`.
@@ -78,6 +86,12 @@ testsys-app/
 
 ```bash
 ./gradlew build -Pdetekt.autoCorrect=false
+```
+
+Все тесты без анализа кода:
+
+```bash
+./gradlew testAll -Pdetekt.autoCorrect=false
 ```
 
 Detekt 1.23 не разбирает context parameters (`context(name: Type)`): правила набора `formatting` на таком файле
@@ -91,8 +105,8 @@ Workflow лежат в `.github/workflows`.
 | Workflow                  | Когда                          | Что делает                                                      |
 |---------------------------|--------------------------------|-----------------------------------------------------------------|
 | `build.yml`               | push/PR в `master`, `dev`      | `./gradlew assemble` — компиляция и сборка без тестов, jar-артефакты, аннотации ошибок компиляции в PR |
-| `test.yml`                | push/PR в `master`, `dev`      | `./gradlew check -x detekt -x detektMain` — все тесты; отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
-| `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detektMain -Pdetekt.autoCorrect=false --continue` — Detekt по всем модулям без правки файлов; таблица замечаний в Summary запуска, загрузка SARIF в GitHub Security |
+| `test.yml`                | push/PR в `master`, `dev`      | `./gradlew testAll -Pdetekt.autoCorrect=false --no-daemon` — все тесты без Detekt; отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
+| `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detekt -Pdetekt.autoCorrect=false --continue --no-daemon` — все source set всех модулей без правки файлов; таблица замечаний в Summary запуска, загрузка SARIF в GitHub Security с отдельной категорией на модуль и задачу |
 | `check-source-branch.yml` | PR в `dev`                     | Разрешает PR только из веток `sh1sh4k1n9/`, `ch3zych3z/`, `KarasssDev/`, `DirewolfPrime/`, `LutovolkVPraime/` |
 | `release.yml`             | —                              | Пока пустой                                                     |
 

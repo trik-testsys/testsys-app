@@ -22,10 +22,10 @@ abstract class EntityMappingTests<M : EntityMapping<*, *>> {
 
         @Test
         fun `should declare a toDomain method`() {
-            val containsToDomainMethod = mapping::class.memberFunctions
+            val hasToDomainMethod = mapping::class.memberFunctions
                 .any { it.name == TO_DOMAIN_METHOD_NAME }
 
-            assertTrue(containsToDomainMethod)
+            assertTrue(hasToDomainMethod)
         }
 
         @Test
@@ -42,10 +42,10 @@ abstract class EntityMappingTests<M : EntityMapping<*, *>> {
 
         @Test
         fun `should declare a toJpaEntity method`() {
-            val containsToJpaEntityMethod = mapping::class.memberFunctions
+            val hasToJpaEntityMethod = mapping::class.memberFunctions
                 .any { it.name == TO_JPA_ENTITY_METHOD_NAME }
 
-            assertTrue(containsToJpaEntityMethod)
+            assertTrue(hasToJpaEntityMethod)
         }
 
         @Test

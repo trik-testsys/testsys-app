@@ -1,56 +1,37 @@
 package tech.testsys.infra.localization.codegen
 
-import tech.testsys.infra.localization.codegen.emitter.KotlinEmitter
-import tech.testsys.infra.localization.codegen.parser.SignatureMerger
+import tech.testsys.infra.localization.codegen.source.RegionFiles
 import java.io.File
-import java.nio.charset.StandardCharsets
-import java.util.Properties
+import kotlin.system.exitProcess
+
+private const val RESOURCE_DIR = 0
+private const val OUTPUT_DIR = 1
+private const val PACKAGE = 2
+private const val ARGUMENTS = 3
 
 /**
- * Loads every `*.properties` file in a directory as one bundle per region.
- *
- * The file's base name is taken as the region id (e.g. `RU.properties` → `"RU"`),
- * which must line up with the supported regions known at runtime.
- *
- * UTF-8 is enforced explicitly: [Properties.load] defaults to ISO-8859-1 when given
- * an [java.io.InputStream], which would silently mangle non-ASCII patterns.
- */
-internal class PropertiesBundleLoader {
-
-    fun load(resourceDir: File): Map<String, Map<String, String>> {
-        if (!resourceDir.isDirectory) return emptyMap()
-        val files = resourceDir.listFiles { _, name -> name.endsWith(".properties") }.orEmpty()
-        // Sorted so codegen output (and any error messages) are deterministic across filesystems.
-        return files.associateTo(sortedMapOf()) { file -> file.nameWithoutExtension to readProps(file) }
-    }
-
-    private fun readProps(file: File): Map<String, String> {
-        val props = Properties()
-        file.inputStream().use { it.reader(StandardCharsets.UTF_8).use(props::load) }
-        return props.entries.associate { (k, v) -> k.toString() to v.toString() }
-    }
-}
-
-/**
- * CLI entry point invoked by the `generateLocalization` Gradle task with [args] `<resourceDir> <outputDir>`.
+ * CLI entry point invoked by the localization generation Gradle tasks with [args] `<resourceDir> <outputDir>
+ * <package>`: the API of the resource directory is generated into the package.
  *
  * @since %CURRENT_VERSION%
  */
 fun main(args: Array<String>) {
-    require(args.size == 2) { "Usage: <resourceDir> <outputDir>" }
-    val resourceDir = File(args[0])
-    val outputDir = File(args[1])
+    require(args.size == ARGUMENTS) { "Expected the arguments <resourceDir> <outputDir> <package>, got ${args.size}" }
+    val resourceDir = File(args[RESOURCE_DIR])
+    val outputDir = File(args[OUTPUT_DIR])
+    val packageName = args[PACKAGE]
 
     // Wiped and recreated so stale generated sources from removed keys never linger and confuse compileKotlin.
     outputDir.deleteRecursively()
     outputDir.mkdirs()
 
-    val perRegion = PropertiesBundleLoader().load(resourceDir)
-    if (perRegion.isEmpty()) {
-        println("No localization bundles found in $resourceDir; skipping codegen.")
-        return
+    val files = resourceDir.walkTopDown()
+        .filter { file -> file.isFile && file.name.endsWith(RegionFiles.EXTENSION) }
+        .associateTo(sortedMapOf()) { it.relativeTo(resourceDir).invariantSeparatorsPath to it.readBytes() }
+    try {
+        LocalizationCodegen.generate(files, packageName).forEach { it.writeTo(outputDir) }
+    } catch (e: LocalizationCodegenException) {
+        System.err.println(e.message)
+        exitProcess(1)
     }
-    SignatureMerger().merge(perRegion)
-        .let(KotlinEmitter()::emit)
-        .forEach { it.writeTo(outputDir) }
 }

@@ -2,10 +2,11 @@
 """Check Kotlin sources against the repository KDoc conventions (see docs/project/code-style.md, section "KDoc").
 
 Usage:
-    check_kdoc.py PATH [PATH ...] [--max-line N] [--info]
+    check_kdoc.py PATH [PATH ...] [--max-line N] [--info] [--generated]
     check_kdoc.py --strip FILE          # print FILE without KDoc blocks (to diff code only)
 
 Exit code 1 when at least one violation is reported.
+The explicit --generated mode disables only MISSING_SINCE for generated declarations.
 Reported codes:
     MISSING_DOC     public class/interface/object/fun/typealias without KDoc
     MISSING_SINCE   public declaration KDoc without "@since %CURRENT_VERSION%"
@@ -209,7 +210,7 @@ def class_body_range(lines, i):
     return None
 
 
-def check_file(path: pathlib.Path, max_line: int, info: bool):
+def check_file(path: pathlib.Path, max_line: int, info: bool, generated: bool = False):
     text = path.read_text()
     lines = text.split("\n")
     problems = []
@@ -274,7 +275,7 @@ def check_file(path: pathlib.Path, max_line: int, info: bool):
                 report("MISSING_DOC", i, f"public {kind} without KDoc")
                 continue
             block = "\n".join(lines[doc[0]:doc[1] + 1])
-            if "@since %CURRENT_VERSION%" not in block:
+            if not generated and "@since %CURRENT_VERSION%" not in block:
                 report("MISSING_SINCE", i, "public declaration KDoc without '@since %CURRENT_VERSION%'")
             prose, paragraphs = summary_shape(lines, doc)
             if paragraphs > 1 or prose > 3:
@@ -381,6 +382,7 @@ def main():
     ap.add_argument("paths", nargs="*")
     ap.add_argument("--max-line", type=int, default=140)
     ap.add_argument("--info", action="store_true", help="also report informational findings")
+    ap.add_argument("--generated", action="store_true", help="disable only MISSING_SINCE for explicitly selected generated sources")
     ap.add_argument("--strip", metavar="FILE", help="print FILE with KDoc blocks removed and exit")
     args = ap.parse_args()
 
@@ -397,7 +399,7 @@ def main():
 
     total = 0
     for f in files:
-        for code, lineno, msg in check_file(f, args.max_line, args.info):
+        for code, lineno, msg in check_file(f, args.max_line, args.info, args.generated):
             print(f"{f}:{lineno}: {code} {msg}")
             if code != "NONPUBLIC_DOC":
                 total += 1

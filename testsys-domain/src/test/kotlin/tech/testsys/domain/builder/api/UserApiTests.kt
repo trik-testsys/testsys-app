@@ -20,7 +20,6 @@ import java.time.Instant
 
 class UserApiTests {
 
-
     @Nested
     inner class ParticipantTests {
 
@@ -108,12 +107,12 @@ class UserApiTests {
                         data = DeveloperData(
                             tasks = LazyEntityList(listOf(TaskId(1))),
                             contests = LazyEntityList(emptyList()),
-                        )
+                        ),
                     ),
                     Administrator(
-                        memberOf = LazyEntityList(emptyList())
-                    )
-                )
+                        memberOf = LazyEntityList(emptyList()),
+                    ),
+                ),
             )
         }
 
@@ -169,5 +168,4 @@ class UserApiTests {
             Assertions.assertEquals("new-token", copy.data.accessToken)
         }
     }
-
 }

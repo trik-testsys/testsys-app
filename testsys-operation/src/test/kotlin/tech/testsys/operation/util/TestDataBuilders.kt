@@ -32,17 +32,13 @@ fun testMultipleRoleUser(builder: MultipleRoleUserDataBuilder.() -> Unit): Multi
     }
 }
 
-fun testDeveloper(builder: DeveloperBuilder.() -> Unit): MultipleRoleUser =
-    testMultipleRoleUser { roles { developer(builder) } }
+fun testDeveloper(builder: DeveloperBuilder.() -> Unit): MultipleRoleUser = testMultipleRoleUser { roles { developer(builder) } }
 
-fun testStudent(builder: StudentBuilder.() -> Unit): MultipleRoleUser =
-    testMultipleRoleUser { roles { student(builder) } }
+fun testStudent(builder: StudentBuilder.() -> Unit): MultipleRoleUser = testMultipleRoleUser { roles { student(builder) } }
 
-fun testJudge(builder: JudgeBuilder.() -> Unit): MultipleRoleUser =
-    testMultipleRoleUser { roles { judge(builder) } }
+fun testJudge(builder: JudgeBuilder.() -> Unit): MultipleRoleUser = testMultipleRoleUser { roles { judge(builder) } }
 
-fun testManager(builder: ManagerBuilder.() -> Unit): MultipleRoleUser =
-    testMultipleRoleUser { roles { manager(builder) } }
+fun testManager(builder: ManagerBuilder.() -> Unit): MultipleRoleUser = testMultipleRoleUser { roles { manager(builder) } }
 
 fun testAdministrator(builder: AdministratorBuilder.() -> Unit): MultipleRoleUser =
     testMultipleRoleUser { roles { administrator(builder) } }
@@ -69,7 +65,7 @@ fun testUncommittedTask(): Task = testTask {
         lastCommittedBuilder = {
             exercise = ExerciseId(1L)
             statement = StatementId(1L)
-        }
+        },
     )
 }
 

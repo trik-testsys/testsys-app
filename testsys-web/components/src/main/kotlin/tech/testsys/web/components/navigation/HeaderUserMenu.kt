@@ -7,6 +7,7 @@ import tech.testsys.web.components.HeaderTexts
 import tech.testsys.web.components.core.ICON_SIZE_SMALL
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.svgIcon
+import tech.testsys.web.components.display.avatarInitials
 
 /**
  * User menu supplied by the application; destructive items follow ordinary items.
@@ -39,12 +40,12 @@ data class HeaderUserMenuItem(
     val isDestructive: Boolean = false,
 )
 
-internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: HeaderInteractions): Div {
+internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: HeaderInteractions, locale: java.util.Locale): Div {
     val trigger = NativeButton().apply {
         addClassName("ts-header__user")
         element.setAttribute("aria-label", texts.userMenu(user.name))
         add(
-            userAvatar(user.name),
+            userAvatar(user.name, locale),
             Span(user.name).apply { addClassName("ts-header-user-name") },
             svgIcon(IconName.ChevronDown, ICON_SIZE_SMALL),
         )
@@ -78,6 +79,6 @@ internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: Header
     return Div(trigger, popup)
 }
 
-internal fun userAvatar(name: String): Span = Span(initials(name)).apply {
+internal fun userAvatar(name: String, locale: java.util.Locale): Span = Span(avatarInitials(name, locale)).apply {
     addClassNames("ts-avatar", "ts-avatar--t0", "ts-header__avatar")
 }

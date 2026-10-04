@@ -8,7 +8,6 @@ import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.layout.Placement
 
 /**
  * One application-controlled step of a stepper.
@@ -99,4 +98,4 @@ fun BlockRowScope.stepper(
     data: StepperData,
     size: Int? = null,
     configure: SelectionHandle<StepperData>.() -> Unit = {},
-): SelectionHandle<StepperData> = ContentScope(place(size, Div()), texts, Placement.Body).stepper(data, configure)
+): SelectionHandle<StepperData> = placeContent(size, Div()).stepper(data, configure)

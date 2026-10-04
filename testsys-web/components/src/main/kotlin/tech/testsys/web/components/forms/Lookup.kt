@@ -4,8 +4,8 @@ import com.vaadin.flow.component.HasValue
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
-import tech.testsys.web.components.data.TableColumn
 import tech.testsys.web.components.data.TableScope
+import tech.testsys.web.components.data.TableSpec
 import tech.testsys.web.components.layout.BlockRowScope
 
 /**
@@ -30,7 +30,7 @@ fun <T : Any> BlockRowScope.lookup(
     configure: ValueInput<T?>.() -> Unit = {},
 ): ValueInput<T?> {
     val tableColumns = lookupColumns(label, pageSize, columns)
-    val control = LookupField(texts, label, display, fetch, pageSize, tableColumns)
+    val control = LookupField(texts, label, display, fetch, pageSize, tableColumns, gridColumns = size)
     val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T?>> ->
         control.addValueChangeListener { event -> listener.valueChanged(event) }
     }
@@ -48,8 +48,9 @@ internal class LookupField<T : Any>(
     private val display: (T) -> String,
     private val fetch: (String, PageRequest) -> Page<T>,
     private val pageSize: Int,
-    private val columns: List<TableColumn<T>>,
-) : LookupFrame<T?>(texts, title, emptyValue = null) {
+    private val columns: TableSpec<T>,
+    gridColumns: Int,
+) : LookupFrame<T?>(texts, title, emptyValue = null, gridColumns = gridColumns) {
     init {
         updateView(value)
     }

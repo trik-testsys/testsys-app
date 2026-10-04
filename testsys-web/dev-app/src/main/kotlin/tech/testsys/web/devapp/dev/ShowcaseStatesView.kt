@@ -26,6 +26,7 @@ import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.emptyState
 import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.feedback.toast
+import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.layout.SlotRowScope
 import tech.testsys.web.components.navigation.TabsScope
@@ -110,6 +111,7 @@ class ShowcaseStatesView(texts: UiTexts, private val environment: Environment) :
                 }
             }
             tabsSection()
+            wideMatrixSection()
             pillsSection()
             paginationSection()
             emptySection()
@@ -167,7 +169,7 @@ private fun PageScope.tabsSection() {
                         pageSize = PAGE_SIZE,
                         fetch = { request -> filtered(filter.value, request) },
                     ) {
-                        codeColumn("ID") { row -> row.id.toString() }
+                        codeColumn("ID", size = 3) { row -> row.id.toString() }
                         textColumn("Автор") { row -> row.author }
                     }
                     filter.onChange { rows.refresh(toFirstPage = true) }
@@ -188,7 +190,7 @@ private fun PageScope.tabsSection() {
                         pageSize = PAGE_SIZE,
                         fetch = { request -> filtered(filter.value, request) },
                     ) {
-                        codeColumn("ID") { row -> row.id.toString() }
+                        codeColumn("ID", size = 3) { row -> row.id.toString() }
                         textColumn("Автор") { row -> row.author }
                     }
                     filter.onChange { rows.refresh(toFirstPage = true) }
@@ -293,7 +295,7 @@ private fun PageScope.failureSection() {
                 filtered(RowFilter.All, request)
             },
         ) {
-            codeColumn("ID") { row -> row.id.toString() }
+            codeColumn("ID", size = 3) { row -> row.id.toString() }
             textColumn("Автор") { row -> row.author }
         }
         footer {
@@ -331,8 +333,9 @@ private fun PageScope.menuSection() {
             row {
                 block(title = "Меню в строках") {
                     table(key = { row -> row.id }, pageSize = PAGE_SIZE, fetch = { request -> filtered(RowFilter.All, request) }) {
-                        codeColumn("ID") { row -> row.id.toString() }
-                        textColumn("Автор") { row -> row.author }
+                        codeColumn("ID", size = 3) { row -> row.id.toString() }
+                        textColumn("Автор", size = 5) { row -> row.author }
+                        column("Выбор", size = 3) { select("Статус", listOf("Новый", "Принят"), { label -> label }) }
                         onRowClick { row -> toast(FeedbackKind.Info, "Строка ${row.id}") }
                         menuColumn(ariaLabel = { row -> "Действия с посылкой №${row.id}" }) { row ->
                             item("Открыть") { toast(FeedbackKind.Info, "Открыть ${row.id}") }
@@ -415,3 +418,28 @@ private fun nextLiveSubmission(): ShowcaseSubmission = ShowcaseSubmission(
     score = LIVE_SUBMISSION_SCORE,
     sentAt = LocalDateTime.now(),
 )
+
+private fun PageScope.wideMatrixSection() {
+    val rows = (1..WideMatrix.ROW_COUNT).toList()
+    block(title = "Широкая матрица результатов", subtitle = "Все результатные столбцы сохраняются; прокрутка остаётся внутри блока") {
+        table(
+            key = { id: Int -> id },
+            pageSize = WideMatrix.PAGE_SIZE,
+            gridColumns = WideMatrix.IDENTITY_SIZE + WideMatrix.TASK_COUNT * WideMatrix.RESULT_SIZE,
+            fetch = { request -> Page(rows.drop(request.offset).take(request.limit), rows.size) },
+        ) {
+            textColumn("Участник", size = WideMatrix.IDENTITY_SIZE) { id -> "Группа $id" }
+            repeat(WideMatrix.TASK_COUNT) { index ->
+                numberColumn("Задача ${index + 1}", size = WideMatrix.RESULT_SIZE) { id -> id * (index + 1) }
+            }
+        }
+    }
+}
+
+private object WideMatrix {
+    const val ROW_COUNT = 2
+    const val TASK_COUNT = 30
+    const val IDENTITY_SIZE = 6
+    const val RESULT_SIZE = 2
+    const val PAGE_SIZE = 1
+}

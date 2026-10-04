@@ -19,3 +19,18 @@ test('ISO boundaries retain signed years and literal calendar months', () => {
   assert.equal(calendarIso(10000, 0, 1), '+10000-01-01');
   assert.equal(calendarIso(2026, 9, 2), '2026-10-02');
 });
+
+const behavior = await import('../../main/resources/META-INF/frontend/testsys-ui/calendar-date.ts');
+test('signed civil ranges complete and highlight chronologically', () => {
+  for (const [start, day, end] of [
+    ['-0002-12-30', '-0002-12-31', '-0001-01-01'],
+    ['9999-12-30', '9999-12-31', '+10000-01-01'],
+    ['2026-10-01', '2026-10-02', '2026-10-03'],
+  ]) {
+    assert.deepEqual(behavior.pickCalendarDate(start, null, end), {start, end});
+    assert.equal(behavior.inCalendarRange(day, start, end), true);
+    assert.equal(behavior.inCalendarRange(start, start, end), false);
+    assert.deepEqual(behavior.pickCalendarDate(end, null, start), {start, end:null});
+    assert.deepEqual(behavior.pickCalendarDate(start, end, day), {start:day, end:null});
+  }
+});

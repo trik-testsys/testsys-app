@@ -1,32 +1,37 @@
 package tech.testsys.web.devapp.demo
 
 import tech.testsys.web.components.actions.action
-import tech.testsys.web.components.data.ColumnWidth
 import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.display.verdict
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.PageScope
 
-/** Shared participant-by-task result matrix for organizer and observer contexts. */
+/** Shared result matrix that fills the grid and expands to keep task columns readable. */
 internal fun BlockScope.demoResultMatrix(context: DemoContext, actor: DemoUser, tour: DemoTour, participants: List<DemoUser>) {
     val tasks = tour.taskIds.map { id -> context.state.tasks.first { it.id == id } }
     val rows = participants.map { DemoRow(id = it.id, title = it.alias) }
     demoTable(
         state = context.table("${actor.id}:${tour.id}:matrix"),
         rows = rows,
+        gridColumns = maxOf(ResultGrid.CAPACITY, ResultGrid.IDENTITY_SIZE + tasks.size * ResultGrid.RESULT_SIZE),
         columns = {
-            textColumn("Участник", width = ColumnWidth.Medium) { it.title }
-            tasks.forEach { task ->
-                column(task.name, width = ColumnWidth.Narrow) { row ->
-                    val score = bestScore(solutions = context.state.solutions, userId = row.id, taskId = task.id)
-                    if (score == null) {
-                        text("Нет результата")
-                    } else {
-                        verdict(score.toDouble(), "баллов")
+            textColumn("Участник", size = ResultGrid.IDENTITY_SIZE.takeIf { tasks.isNotEmpty() }) { it.title }
+            if (tasks.isNotEmpty()) {
+                val remainingColumns = gridColumns - ResultGrid.IDENTITY_SIZE
+                val taskSize = remainingColumns / tasks.size
+                val remainder = remainingColumns % tasks.size
+                tasks.forEachIndexed { index, task ->
+                    column(task.name, size = taskSize + if (index < remainder) 1 else 0) { row ->
+                        val score = bestScore(solutions = context.state.solutions, userId = row.id, taskId = task.id)
+                        if (score == null) {
+                            text("Нет результата")
+                        } else {
+                            verdict(score.toDouble(), "баллов")
+                        }
+                        val count = attemptCount(solutions = context.state.solutions, userId = row.id, taskId = task.id)
+                        text("Решений: $count")
                     }
-                    val count = attemptCount(solutions = context.state.solutions, userId = row.id, taskId = task.id)
-                    text("Решений: $count")
                 }
             }
         },
@@ -90,4 +95,10 @@ internal fun PageScope.demoObserverResults(context: DemoContext, actor: DemoUser
     val participantIds = objects.competitions.filter { tour.id in it.tourIds }.flatMap { it.participantIds }
     val participants = context.state.users.filter { it.id in participantIds }
     block("Обзор результата") { demoResultMatrix(context, actor, tour, participants) }
+}
+
+private object ResultGrid {
+    const val CAPACITY = 24
+    const val IDENTITY_SIZE = 6
+    const val RESULT_SIZE = 2
 }

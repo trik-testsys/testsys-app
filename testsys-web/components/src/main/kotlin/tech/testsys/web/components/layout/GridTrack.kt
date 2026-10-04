@@ -15,7 +15,7 @@ internal class GridTrack(private val capacity: Int, private val owner: String) {
         checkOpen()
         require(size in 1..capacity) { "$owner accepts sizes in 1..$capacity columns, got $size" }
         val taken = sizes + size
-        val total = taken.sum()
+        val total = taken.sumOf { value -> value.toLong() }
         check(total <= capacity) {
             "$owner overflow: sizes ${taken.joinToString("+")} = $total exceed $capacity columns"
         }

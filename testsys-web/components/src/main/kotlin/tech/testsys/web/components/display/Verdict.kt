@@ -35,9 +35,4 @@ fun BlockRowScope.verdict(
     label: String? = null,
     size: Int? = null,
     configure: DataHandle<Double>.() -> Unit = {},
-): DataHandle<Double> {
-    val holder = Span()
-    val handle = ContentScope(holder, texts, tech.testsys.web.components.layout.Placement.Body).verdict(score, label, configure)
-    place(size, holder)
-    return handle
-}
+): DataHandle<Double> = placeContent(size, Span()).verdict(score, label, configure)

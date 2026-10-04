@@ -45,6 +45,34 @@ import tools.jackson.databind.ObjectMapper
 class LookupManyTests : MockVaadinTests() {
     private val source = Source()
 
+    // Review report, Issue 6: an unavailable lookup must discard its open dialog and delayed choice.
+    @ParameterizedTest
+    @CsvSource("false,true", "true,false")
+    @org.junit.jupiter.api.Tag("regression")
+    fun `should close an open lookup when choice becomes unavailable and ignore delayed choice`(
+        enabled: Boolean,
+        editable: Boolean,
+    ) {
+        val input = buildLookupMany()
+        val form = Form()
+        Binder<Form>().apply {
+            forField(input).bind({ bean -> bean.contests }, { bean, value -> bean.contests = value })
+            setBean(form)
+        }
+        var changes = 0
+        input.addValueChangeListener { changes++ }
+        lookupButton(testTexts.lookup.open)._click()
+        rows()[1]._fireDomEvent("click", rowClick())
+        val apply = dialogButton(testTexts.lookup.apply)
+        input.isEnabled = enabled
+        input.isEditable = editable
+        assertTrue(openDialogs().isEmpty())
+        apply.click()
+        assertEquals(emptySet<Contest>(), input.value)
+        assertEquals(0, changes)
+        assertEquals(emptySet<Contest>(), form.contests)
+    }
+
     @Nested
     inner class FieldTests {
         @Test

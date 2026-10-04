@@ -98,7 +98,7 @@ class DialogScope internal constructor(
      * @since %CURRENT_VERSION%
      */
     fun footer(content: ContentScope.(DialogHandle) -> Unit) {
-        ContentScope(shell.foot, texts, Placement.Body).content(handle)
+        ContentScope(shell.foot, texts, Placement.Body, DIALOG_COLUMNS).content(handle)
     }
 }
 

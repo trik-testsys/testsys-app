@@ -43,7 +43,7 @@ internal class HeaderInteractions {
 @JsModule("./testsys-ui/header-interactions.ts")
 internal class HeaderRoot : Div() {
     init {
-        addClassName("ts-header")
+        addClassNames("ts-header", "ts-header--sticky")
         addAttachListener { element.executeJs("window.testsysHeader.attach(this)") }
         addDetachListener { element.executeJs("window.testsysHeader.detach(this)") }
     }

@@ -21,6 +21,10 @@ fun ContentScope.leaderboard(data: LeaderboardData, configure: DataHandle<Leader
     fun render(value: LeaderboardData) {
         root.element.removeAllChildren()
         val table = Element("table").apply { setAttribute("aria-label", value.label) }
+        resolveTableLayout(
+            value.gridColumns ?: gridColumns,
+            listOf(value.placeSize, value.identitySize) + value.columns.map { column -> column.size },
+        ).applyTo(table)
         val headings = Element("tr")
         (listOf(value.placeLabel, value.identityLabel) + value.columns.map { column -> column.label }).forEach { caption ->
             headings.appendChild(
@@ -89,7 +93,7 @@ fun BlockRowScope.leaderboard(
     data: LeaderboardData,
     size: Int? = null,
     configure: DataHandle<LeaderboardData>.() -> Unit = {},
-): DataHandle<LeaderboardData> = ContentScope(place(size, Div()), texts, Placement.Body).leaderboard(data, configure)
+): DataHandle<LeaderboardData> = placeContent(size, Div()).leaderboard(data, configure)
 
 /**
  * Adds a leaderboard directly to the block body with no inner padding.
@@ -101,7 +105,7 @@ fun tech.testsys.web.components.layout.BlockScope.leaderboard(
     configure: DataHandle<LeaderboardData>.() -> Unit = {},
 ): DataHandle<LeaderboardData> {
     val container = Div()
-    val handle = ContentScope(container, texts, Placement.Body).leaderboard(data, configure)
+    val handle = ContentScope(container, texts, Placement.Body, columns).leaderboard(data, configure)
     placeWhole(container, "a leaderboard")
     requestFlushBody()
     return handle

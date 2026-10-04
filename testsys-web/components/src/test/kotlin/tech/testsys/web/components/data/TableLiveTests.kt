@@ -322,8 +322,8 @@ class TableLiveTests : MockVaadinTests() {
         val main = buildTestPage {
             block(title = "Посылки") {
                 handle = table(key = { row -> row.id }, pageSize = 5, selectable = selectable, fetch = source::fetch) {
-                    codeColumn("ID") { row -> row.id.toString() }
-                    numberColumn("Баллы", sortKey = "score") { row -> row.score }
+                    codeColumn("ID", size = 1) { row -> row.id.toString() }
+                    numberColumn("Баллы", sortKey = "score", size = 1) { row -> row.score }
                 }
             }
         }

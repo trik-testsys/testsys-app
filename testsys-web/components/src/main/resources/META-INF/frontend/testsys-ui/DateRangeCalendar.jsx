@@ -1,6 +1,6 @@
 import React from 'react';
 import { IconButton } from './client-icons.jsx';
-import { calendarIso as iso, civilDate as civil } from './calendar-date.ts';
+import { calendarIso as iso, civilDate as civil, pickCalendarDate, inCalendarRange } from './calendar-date.ts';
 const cx = (...a) => a.filter(Boolean).join(' ');
 
 export function DateRangeCalendar({ year, month, start, end, today, onChange, onPrev, onNext, months, weekdays, previousLabel, nextLabel, firstDay, locale, onMonthChange }) {
@@ -29,15 +29,13 @@ export function DateRangeCalendar({ year, month, start, end, today, onChange, on
   const count = civil(year, month + 1, 0).getUTCDate();
   const pick = d => {
     if (!onChange) return;
-    if (!start || end) return onChange({ start: d, end: null });
-    if (d < start) return onChange({ start: d, end: null });
-    onChange({ start, end: d });
+    onChange(pickCalendarDate(start, end, d));
   };
   const cells = [];
   for (let i = 0; i < offset; i++) cells.push(<span key={'b' + i} className="ts-cal__blank" />);
   for (let d = 1; d <= count; d++) {
     const k = iso(year, month, d);
-    const isS = k === start, isE = k === end, inR = start && end && k > start && k < end;
+    const isS = k === start, isE = k === end, inR = inCalendarRange(k, start, end);
     cells.push(
       <button type="button" key={k} onClick={() => pick(k)} aria-label={civil(year, month, d).toLocaleDateString(locale, { timeZone: 'UTC', year: 'numeric', month: 'long', day: 'numeric' })} aria-pressed={!!(isS || isE)} tabIndex={k === focusDay ? 0 : -1} data-date={k} onFocus={() => setFocusDay(k)} onKeyDown={e => navigate(e, d)} className={cx('ts-cal__day', [0,6].includes(civil(year, month, d).getUTCDay()) && 'ts-cal__day--weekend', k === today && !isS && !isE && !inR && 'ts-cal__day--today', inR && 'ts-cal__day--in', (isS || isE) && 'ts-cal__day--edge', isS && end && end !== start && 'ts-cal__day--start', isE && start !== end && 'ts-cal__day--end')}>{d}</button>
     );

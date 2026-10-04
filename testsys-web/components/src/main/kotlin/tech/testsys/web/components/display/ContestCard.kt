@@ -9,7 +9,6 @@ import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.layout.Placement
 
 /**
  * Application data of a contest card; the UI calculates no contest state.
@@ -93,7 +92,7 @@ fun ContentScope.contestCard(data: ContestCardData, configure: ContestCardHandle
  * @since %CURRENT_VERSION%
  */
 fun BlockRowScope.contestCard(data: ContestCardData, size: Int? = null, configure: ContestCardHandle.() -> Unit = {}): ContestCardHandle =
-    ContentScope(place(size, Div()), texts, Placement.Body).contestCard(data, configure)
+    placeContent(size, Div()).contestCard(data, configure)
 
 internal class ContestCardDisplay(initial: ContestCardData) : Div() {
     var selected: (() -> Unit)? = null

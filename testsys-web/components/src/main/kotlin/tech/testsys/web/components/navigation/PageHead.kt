@@ -14,6 +14,7 @@ import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.buildBadge
 import tech.testsys.web.components.display.buildCounter
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
 
 private const val MIN_PAGE_TABS = 2
@@ -66,7 +67,7 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
     fun actions(content: ContentScope.() -> Unit) {
         check(actionsBar == null) { "Page head already has actions; call actions() once" }
         val bar = Div().apply { addClassName("ts-page-head__actions") }
-        ContentScope(bar, texts, Placement.PageHead).content()
+        ContentScope(bar, texts, Placement.PageHead, GRID_COLUMNS).content()
         actionsBar = bar
     }
 

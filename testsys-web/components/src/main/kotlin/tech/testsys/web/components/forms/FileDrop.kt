@@ -1,6 +1,7 @@
 package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.upload.Upload
@@ -280,7 +281,7 @@ fun ContentScope.fileDrop(
     consume: (UploadedFile) -> Unit,
     configure: FileDropHandle.() -> Unit = {},
 ): FileDropHandle {
-    val drop = FileDropDisplay(texts, label, limits, consume)
+    val drop = FileDropDisplay(texts, label, limits, consume, gridColumns)
     add(drop)
     return FileDropHandle(drop).apply(configure)
 }
@@ -299,15 +300,22 @@ fun BlockRowScope.fileDrop(
     consume: (UploadedFile) -> Unit,
     configure: FileDropHandle.() -> Unit = {},
 ): FileDropHandle {
-    val drop = FileDropDisplay(texts, label, limits, consume)
-    place(size, drop)
+    val placed = placeWithSize(size) { columns -> FileDropDisplay(texts, label, limits, consume, columns) }
+    val drop = placed.component
     return FileDropHandle(drop).apply {
         followBlock(this@fileDrop.editState)
         configure()
     }
 }
 
-internal class FileDropDisplay(texts: UiTexts, label: String, limits: UploadLimits, consume: (UploadedFile) -> Unit) : Div() {
+@JsModule("./testsys-ui/file-drop-transfers.ts")
+internal class FileDropDisplay(
+    texts: UiTexts,
+    label: String,
+    limits: UploadLimits,
+    consume: (UploadedFile) -> Unit,
+    gridColumns: Int,
+) : Div() {
     val state = ValueSignal<FileUploadState>(FileUploadState.Idle)
     private var attachedUi: UI? = null
     private var isAllowed = true
@@ -325,6 +333,7 @@ internal class FileDropDisplay(texts: UiTexts, label: String, limits: UploadLimi
             override fun handleUploadRequest(event: UploadEvent) {
                 try {
                     engine.receive(
+                        transferId = event.request.getHeader(UploadIdentity.HEADER).orEmpty(),
                         filename = event.fileName,
                         mime = event.contentType,
                         declared = event.fileSize,
@@ -397,13 +406,13 @@ internal class FileDropDisplay(texts: UiTexts, label: String, limits: UploadLimi
     private val clearAction: ActionHandle
 
     init {
-        val controls = ContentScope(actions, texts, Placement.Head)
+        val controls = ContentScope(actions, texts, Placement.Head, gridColumns)
         cancelAction = controls.action(texts.components.cancel) { onClick { this@FileDropDisplay.cancel() } }
         clearAction = controls.action(texts.lookup.clear) { onClick { this@FileDropDisplay.clear() } }
-        upload.addFileRemovedListener { event ->
-            engine.remove(event.fileName)
+        upload.element.addEventListener("testsys-transfer-remove") { event ->
+            engine.remove(event.eventData.get("event.detail.identity").asString())
             if (engine.fileCount() == 0) state.set(FileUploadState.Idle)
-        }
+        }.addEventData("event.detail.identity")
         addClassName("ts-filedrop")
         val limitsHint = Span(texts.components.uploadLimits(limits.maxFiles, limits.maxFileBytes.toLong())).apply {
             addClassName("ts-hint")
@@ -418,8 +427,11 @@ internal class FileDropDisplay(texts: UiTexts, label: String, limits: UploadLimi
         addAttachListener { event ->
             attachedUi = event.ui
             engine.allow(isAllowed)
+            upload.element.setAttribute("data-ts-upload-generation", engine.generation().toString())
+            upload.element.executeJs("window.testsysFileTransfers.attach(this)")
         }
         addDetachListener {
+            upload.element.executeJs("window.testsysFileTransfers.detach(this)")
             engine.cancel()
             engine.allow(false)
             attachedUi = null
@@ -450,6 +462,7 @@ internal class FileDropDisplay(texts: UiTexts, label: String, limits: UploadLimi
         val previous = state.peek()
         val hadActive = engine.hasActive()
         engine.cancel()
+        upload.element.setAttribute("data-ts-upload-generation", engine.generation().toString())
         upload.interruptUpload()
         if (hadActive || previous is FileUploadState.Uploading || previous is FileUploadState.Processing) {
             state.set(FileUploadState.Cancelled)
@@ -458,9 +471,16 @@ internal class FileDropDisplay(texts: UiTexts, label: String, limits: UploadLimi
 
     fun clear() {
         engine.clear()
+        upload.element.setAttribute("data-ts-upload-generation", engine.generation().toString())
         upload.clearFileList()
         state.set(FileUploadState.Idle)
     }
+}
+
+/** Transport identity is a generation plus a random UUID, never a filename. */
+private object UploadIdentity {
+    const val HEADER = "X-TestSys-Transfer"
+    val PATTERN = Regex("^(\\d+):[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 }
 
 internal class UploadRejectedException(message: String) : IOException(message)
@@ -470,11 +490,17 @@ internal class BoundedUploads(
     private val consume: (UploadedFile) -> Unit,
     private val publish: (FileUploadState, () -> Boolean) -> Unit,
 ) {
-    private data class Active(val filename: String, val generation: Long, val cancelled: AtomicBoolean, val stream: InputStream)
+    private data class Active(
+        val identity: String,
+        val filename: String,
+        val generation: Long,
+        val cancelled: AtomicBoolean,
+        val stream: InputStream,
+    )
     private val lock = Any()
     private val epoch = AtomicLong()
     private val active = ConcurrentHashMap<Long, Active>()
-    private val slots = mutableMapOf<Long, String>()
+    private val slots = mutableMapOf<String, Long>()
     private val sequence = AtomicLong()
     private val lastEvent = AtomicLong()
     private var memory = 0L
@@ -490,10 +516,10 @@ internal class BoundedUploads(
 
     fun generation(): Long = epoch.get()
 
-    fun receive(filename: String, mime: String, declared: Long, stream: InputStream) {
+    fun receive(transferId: String, filename: String, mime: String, declared: Long, stream: InputStream) {
         val id = sequence.incrementAndGet()
         lastEvent.updateAndGet { current -> maxOf(current, id) }
-        val eventEpoch = epoch.get()
+        val eventEpoch = UploadIdentity.PATTERN.matchEntire(transferId)?.groupValues?.get(1)?.toLongOrNull()
         var token: Active? = null
         var isReserved = false
         var isSuccessful = false
@@ -502,16 +528,17 @@ internal class BoundedUploads(
         try {
             reservationGateOverride?.invoke()
             val current = synchronized(lock) {
+                if (eventEpoch == null) throw UploadRejectedException("Invalid transfer identity")
                 if (eventEpoch != epoch.get()) throw InterruptedIOException("Upload '$filename' was cancelled before reservation")
-                if (!isEnabled || declared > limits.maxFileBytes || !accepts(
+                if (transferId in slots || !isEnabled || declared > limits.maxFileBytes || !accepts(
                         filename,
                         mime,
                     ) || slots.size >= limits.maxFiles || memory + limits.maxFileBytes > limits.maxMemoryBytes
                 ) {
                     throw UploadRejectedException("Upload '$filename' rejected by server quotas or types")
                 }
-                val created = Active(filename, epoch.get(), AtomicBoolean(false), stream)
-                slots[id] = filename
+                val created = Active(transferId, filename, epoch.get(), AtomicBoolean(false), stream)
+                slots[transferId] = id
                 memory += limits.maxFileBytes
                 isReserved = true
                 active[id] = created
@@ -579,7 +606,7 @@ internal class BoundedUploads(
             if (isReserved) {
                 synchronized(lock) {
                     memory -= limits.maxFileBytes
-                    if (!isSuccessful) slots.remove(id)
+                    if (!isSuccessful) slots.remove(transferId, id)
                 }
             }
         }
@@ -589,7 +616,7 @@ internal class BoundedUploads(
         val cancelled = synchronized(lock) {
             epoch.incrementAndGet()
             active.entries.map { (id, token) ->
-                slots.remove(id)
+                slots.remove(token.identity, id)
                 token.cancelled.set(true)
                 token
             }
@@ -608,12 +635,11 @@ internal class BoundedUploads(
         synchronized(lock) { slots.clear() }
     }
 
-    fun remove(filename: String) {
-        val cancelled = synchronized(lock) {
-            slots.entries.removeIf { entry -> entry.value == filename }
-            active.values.filter { token -> token.filename == filename }.onEach { token -> token.cancelled.set(true) }
+    fun remove(transferId: String) {
+        val token = synchronized(lock) {
+            slots.remove(transferId)?.let { id -> active[id] }?.also { current -> current.cancelled.set(true) }
         }
-        cancelled.forEach { token ->
+        if (token != null) {
             try {
                 token.stream.close()
             } catch (_: IOException) {

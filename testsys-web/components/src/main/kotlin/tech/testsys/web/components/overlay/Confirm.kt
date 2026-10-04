@@ -36,7 +36,7 @@ fun confirm(
             width = "100%"
         }.also { field -> shell.content.add(field) }
     }
-    val foot = ContentScope(shell.foot, texts, Placement.Body)
+    val foot = ContentScope(shell.foot, texts, Placement.Body, DIALOG_COLUMNS)
     foot.action(texts.dialog.cancel) { onClick { shell.close() } }
     val run: ActionHandle.() -> Unit = {
         onClick {

@@ -174,7 +174,7 @@ internal class BlockLoader<T>(
             description = texts.load.failedHint,
             actions = { action(texts.load.retry) { onClick { reload() } } },
         )
-        slot.showWhole(buildEmptyState(failure, texts, isError = true), isFlush = false)
+        slot.showWhole(buildEmptyState(failure, texts, gridColumns = slot.columns, isError = true), isFlush = false)
         slot.isBusy = false
     }
 

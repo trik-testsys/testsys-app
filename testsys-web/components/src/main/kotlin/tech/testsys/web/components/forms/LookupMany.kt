@@ -12,11 +12,12 @@ import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
-import tech.testsys.web.components.data.TableColumn
 import tech.testsys.web.components.data.TableScope
+import tech.testsys.web.components.data.TableSpec
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
+import tech.testsys.web.components.overlay.DIALOG_COLUMNS
 
 /** Number of values shown as chips; the rest is counted in one more chip. */
 private const val MAX_CHIPS = 3
@@ -42,8 +43,8 @@ fun <T : Any> BlockRowScope.lookupMany(
     pageSize: Int = LOOKUP_PAGE_SIZE,
     configure: ValueInput<Set<T>>.() -> Unit = {},
 ): ValueInput<Set<T>> {
-    val tableColumns = lookupColumns(label, pageSize, columns)
-    val control = LookupManyField(texts, label, display, fetch, pageSize, tableColumns)
+    val tableColumns = lookupColumns(label, pageSize, columns, isSelectable = true)
+    val control = LookupManyField(texts, label, display, fetch, pageSize, tableColumns, gridColumns = size)
     val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<Set<T>>> ->
         control.addValueChangeListener { event -> listener.valueChanged(event) }
     }
@@ -63,8 +64,9 @@ internal class LookupManyField<T : Any>(
     private val display: (T) -> String,
     private val fetch: (String, PageRequest) -> Page<T>,
     private val pageSize: Int,
-    private val columns: List<TableColumn<T>>,
-) : LookupFrame<Set<T>>(texts, title, emptyValue = emptySet()) {
+    private val columns: TableSpec<T>,
+    gridColumns: Int,
+) : LookupFrame<Set<T>>(texts, title, emptyValue = emptySet(), gridColumns = gridColumns) {
     private val chips = Div().apply { addClassName("ts-lookup__chips") }
 
     init {
@@ -119,7 +121,7 @@ internal class LookupManyField<T : Any>(
         dialog.table.pager.root.addClassName("ts-lookup-pager")
         dialog.shell.content.add(dialog.table.pager.root)
         dialog.shell.foot.add(count)
-        val foot = ContentScope(dialog.shell.foot, texts, Placement.Body)
+        val foot = ContentScope(dialog.shell.foot, texts, Placement.Body, DIALOG_COLUMNS)
         foot.action(texts.lookup.reset) { onClick { dialog.table.clearSelection() } }
         foot.mainAction(texts.lookup.apply) {
             onClick {

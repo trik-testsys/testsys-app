@@ -18,5 +18,68 @@ class TestSysThemeTests {
         assertNotNull(resource(TestSysTheme.VAADIN_OVERRIDES))
     }
 
+    @Test
+    fun `should use canonical typography focus and motion tokens`() {
+        val components = resource("testsys-ui/tokens/components.css")!!.readText()
+        val overrides = resource(TestSysTheme.VAADIN_OVERRIDES)!!.readText()
+        val typography = resource("testsys-ui/tokens/typography.css")!!.readText()
+        assertTrue(rule(components, ".ts-h1").getValue("font").contains("var(--fs-h1)"))
+        assertTrue(rule(components, ".ts-block__title").getValue("font").contains("var(--fw-bold)"))
+        assertTrue(rule(components, ".ts-dialog__title").getValue("font").contains("var(--fw-bold)"))
+        assertEquals("0 0 0 3px var(--accent-ring)", rule(components, ".ts-header__search:focus-within")["box-shadow"])
+        val defined = Regex("(--fs-[a-z0-9-]+)\\s*:").findAll(typography).map { it.groupValues[1] }.toSet()
+        val used = Regex("var\\((--fs-[a-z0-9-]+)\\)").findAll(components).map { it.groupValues[1] }.toSet()
+        assertTrue(defined.containsAll(used), "Undefined size tokens: ${used - defined}")
+        assertTrue(!components.contains("var(--ease)"))
+        val drawer = "vaadin-dialog[theme~=\"ts-drawer\"]::part(overlay)"
+        assertTrue(rule(overrides, drawer).getValue("animation").contains("ts-drawer-in"))
+        assertEquals("none", rule(overrides, "vaadin-dialog[theme~=\"ts-drawer\"] .ts-dialog")["animation"])
+        assertTrue(overrides.substringAfter("@media (prefers-reduced-motion: reduce)", "").contains(drawer))
+    }
+
+    @Test
+    fun `should share editor geometry and retain opaque disabled controls`() {
+        val components = resource("testsys-ui/tokens/components.css")!!.readText()
+        val overrides = resource(TestSysTheme.VAADIN_OVERRIDES)!!.readText()
+        val box = rule(components, ".ts-code")
+        assertTrue(box.getValue("--ts-code-height").contains("--ts-code-min-lines"))
+        assertCodeGeometry(components, ".ts-code__lines")
+        assertCodeGeometry(components, ".ts-code__area")
+        assertOpaqueDisabled(overrides, "vaadin-custom-field[disabled] .ts-code")
+        assertOpaqueDisabled(overrides, "vaadin-custom-field[disabled] .ts-seg")
+        assertOpaqueDisabled(overrides, "button.ts-switch:disabled")
+    }
+
+    @Test
+    fun `should retain fixed readable fractions and local table scrolling`() {
+        val css = resource("testsys-ui/tokens/components.css")!!.readText()
+        val layout = rule(css, ".ts-table.ts-table-grid, .ts-leaderboard table.ts-table-grid")
+
+        assertEquals("fixed", layout["table-layout"])
+        assertEquals("var(--ts-table-width)", layout["width"])
+        assertEquals("calc(var(--ts-table-used) * 52px)", layout["min-width"])
+        assertEquals("auto", rule(css, ".ts-table-scroll")["overflow-x"])
+        assertEquals("anywhere", rule(css, ".ts-table-grid th, .ts-table-grid td")["overflow-wrap"])
+        assertEquals("auto", rule(css, ".ts-brand-image")["width"])
+    }
+
+    private fun assertCodeGeometry(css: String, selector: String) {
+        val declarations = rule(css, selector)
+        assertTrue(declarations.getValue("font").contains("--ts-code-line-height"))
+        assertTrue(declarations.getValue("padding").contains("--ts-code-padding-y"))
+    }
+
+    private fun assertOpaqueDisabled(css: String, selector: String) {
+        val declarations = rule(css, selector)
+        assertEquals(null, declarations["opacity"])
+        assertTrue(declarations.containsKey("background"))
+    }
+
+    private fun rule(css: String, selector: String): Map<String, String> =
+        Regex(Regex.escape(selector) + "\\s*\\{([^}]+)}").find(css)!!.groupValues[1].split(';')
+            .mapNotNull { declaration ->
+                declaration.split(':', limit = 2).takeIf { it.size == 2 }?.let { it[0].trim() to it[1].trim() }
+            }.toMap()
+
     private fun resource(path: String) = javaClass.getResource("/META-INF/resources/$path")
 }

@@ -9,8 +9,8 @@ import tech.testsys.web.components.core.IconName
 /** Edit, cancel and save actions of a block head; they switch the edit mode of the block. */
 internal class EditingSwitch(private val onSave: () -> Boolean, private val onCancel: () -> Unit) {
     /** Adds the actions to the end of the head [bar] and shows the ones of the current mode of [state]. */
-    fun install(bar: Div, texts: UiTexts, state: BlockEditState, body: Div) {
-        val head = ContentScope(bar, texts, Placement.Head)
+    fun install(bar: Div, texts: UiTexts, state: BlockEditState, body: Div, columns: Int) {
+        val head = ContentScope(bar, texts, Placement.Head, columns)
         val start = head.action(texts.editing.start, icon = IconName.Pencil)
         val cancel = head.action(texts.editing.cancel) {
             onClick {

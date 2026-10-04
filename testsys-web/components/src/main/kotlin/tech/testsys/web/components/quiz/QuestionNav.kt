@@ -6,7 +6,6 @@ import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.SelectionHandle
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.layout.Placement
 
 /**
  * Navigation between one-based question numbers; progress is supplied by the application.
@@ -70,7 +69,7 @@ fun ContentScope.questionNav(
                                 addClassName("ts-qnav__flag")
                                 element.setAttribute(
                                     "aria-hidden",
-                                    true,
+                                    "true",
                                 )
                             },
                         )
@@ -102,4 +101,4 @@ fun BlockRowScope.questionNav(
     data: QuestionNavData,
     size: Int? = null,
     configure: SelectionHandle<QuestionNavData>.() -> Unit = {},
-): SelectionHandle<QuestionNavData> = ContentScope(place(size, Div()), texts, Placement.Body).questionNav(data, configure)
+): SelectionHandle<QuestionNavData> = placeContent(size, Div()).questionNav(data, configure)

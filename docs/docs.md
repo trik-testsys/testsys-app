@@ -80,6 +80,7 @@
 | [implement-port.md](guides/implement-port.md)                          | Гайд       | Объявление порта в домене и его реализация                     |
 | [implement-feature.md](guides/implement-feature.md)                    | Гайд       | Реализация пользовательской фичи: спецификация, операция, тесты |
 | [add-localization.md](guides/add-localization.md)                      | Гайд       | Добавление локализованного сообщения или региона               |
+| [add-web-component.md](guides/add-web-component.md) | Гайд | Добавление компонента Kotlin DSL и примера использования |
 | [definitions.md](domain/definitions.md)                                | Реестр     | Термины предметной области (Роли, Задача, Тур, Соревнование …) |
 | [features.md](domain/features.md)                                      | Реестр     | Фичи системы с кодификаторами `testsys.*`                      |
 

@@ -115,7 +115,8 @@ class TableHandle<T> internal constructor(internal val table: DataTable<T>) {
 
 /**
  * Fills the block body with a horizontally scrollable table fetched by [fetch], [pageSize] rows a page;
- * [key] identifies a row, and a [selectable] table adds a checkbox column. The pagination goes to the end of the block footer.
+ * [key] identifies a row; [selectable] adds a checkbox column on [selectionSize] fractions.
+ * [gridColumns] defaults to the containing block. The pagination goes to the end of the block footer.
  *
  * @param T the type of the rows.
  * @throws IllegalArgumentException if [pageSize] is below one or the table declares no columns.
@@ -126,10 +127,17 @@ fun <T> BlockScope.table(
     key: (T) -> Any,
     pageSize: Int = DEFAULT_PAGE_SIZE,
     selectable: Boolean = false,
+    gridColumns: Int? = null,
+    selectionSize: Int = 1,
     fetch: (PageRequest) -> Page<T>,
     content: TableScope<T>.() -> Unit,
 ): TableHandle<T> {
-    val spec = TableScope<T>(texts).apply(content).spec()
+    require(selectionSize > 0) { "Table selection size must be positive, got $selectionSize" }
+    val spec = TableScope<T>(
+        texts,
+        gridColumns = gridColumns ?: columns,
+        selectionSize = if (selectable) selectionSize else 0,
+    ).apply(content).spec()
     require(spec.columns.isNotEmpty()) { "Table must declare at least one column" }
     checkTablePlace()
     val table = DataTable(texts, key, pageSize, selectable, fetch, spec)

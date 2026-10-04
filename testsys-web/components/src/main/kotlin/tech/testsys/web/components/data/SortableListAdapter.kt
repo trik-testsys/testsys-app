@@ -17,6 +17,7 @@ internal class SortableListAdapter<T : Any>(
     private val itemKey: (T) -> String,
     private val itemLabel: (T) -> String,
     private val content: ContentScope.(T) -> Unit,
+    private val gridColumns: Int,
 ) : ReactAdapterComponent() {
     var items: List<T> = emptyList()
         private set
@@ -54,7 +55,7 @@ internal class SortableListAdapter<T : Any>(
             val key = itemKey(item)
             if (known[key]?.first !== item) {
                 val holder = Div()
-                ContentScope(holder, texts, Placement.Body).content(item)
+                ContentScope(holder, texts, Placement.Body, gridColumns).content(item)
                 getContentElement(slot(key)).removeAllChildren()
                 getContentElement(slot(key)).appendChild(holder.element)
                 known[key] = item to holder

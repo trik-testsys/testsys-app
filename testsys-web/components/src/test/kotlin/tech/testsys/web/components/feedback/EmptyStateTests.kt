@@ -52,7 +52,7 @@ class EmptyStateTests : MockVaadinTests() {
 
     @Test
     fun `should draw an error state red`() {
-        val state = buildEmptyState(EmptyContent("Сбой"), testTexts, isError = true)
+        val state = buildEmptyState(EmptyContent("Сбой"), testTexts, gridColumns = 24, isError = true)
 
         assertTrue("ts-empty--error" in state.classes())
         val svg = state.find("ts-empty__icon").child(0).element.getProperty("innerHTML")

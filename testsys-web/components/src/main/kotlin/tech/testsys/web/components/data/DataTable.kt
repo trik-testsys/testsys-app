@@ -22,15 +22,13 @@ private val logger = LoggerFactory.getLogger(DataTable::class.java)
 private const val ARROW_DOWN = " ↓"
 private const val ARROW_UP = " ↑"
 private const val ARIA_SORT_NONE = "none"
-private const val SELECT_COLUMN_WIDTH = "52px"
-private const val MENU_COLUMN_WIDTH = "52px"
 
 /** Client-side filter of key presses on a sortable header: Enter and Space sort like a click. */
 internal const val SORT_KEY_FILTER: String = "event.key === 'Enter' || event.key === ' '"
 
 /** Controls inside a row whose clicks are their own. */
 private const val ROW_CONTROLS =
-    "vaadin-checkbox, vaadin-button, vaadin-text-field, button, a, input, label, select, textarea, [role=button]"
+    "[data-ts-input], vaadin-checkbox, vaadin-button, vaadin-text-field, button, a, input, label, select, textarea, [role=button]"
 
 /** Client-side filter of row clicks: clicks on controls inside a row do not click the row itself. */
 internal const val ROW_CLICK_FILTER: String = "!event.target.closest('$ROW_CONTROLS')"
@@ -107,6 +105,7 @@ internal class DataTable<T>(
         require(pageSize >= 1) { "Table page size must be at least 1, got $pageSize" }
         table.setHead(TableHead(headerRow()))
         table.addBody(body)
+        spec.layout.applyTo(table.element)
         load(0)
     }
 
@@ -168,13 +167,11 @@ internal class DataTable<T>(
     private fun fetchPage(target: Int): Page<T> = fetch(PageRequest(offset = target * pageSize, limit = pageSize, sort = sort))
 
     private fun headerRow(): TableRow = TableRow().apply {
-        if (isSelectable) add(TableHeaderCell(headerCheckbox).apply { style.set("width", SELECT_COLUMN_WIDTH) })
+        if (isSelectable) add(TableHeaderCell(headerCheckbox).apply { element.setAttribute("scope", "col") })
         spec.columns.forEach { column ->
-            val cell = TableHeaderCell(column.title)
+            val cell = TableHeaderCell(column.title).apply { element.setAttribute("scope", "col") }
             if (column.kind == CellKind.Number) cell.addClassName("ts-right")
-            column.width.cssClass?.let { cssClass -> cell.addClassName(cssClass) }
             if (column.kind == CellKind.Menu) {
-                cell.style.set("width", MENU_COLUMN_WIDTH)
                 cell.element.setAttribute("aria-label", texts.menu.actions)
             }
             column.sortKey?.let { sortKey ->
@@ -212,7 +209,7 @@ internal class DataTable<T>(
         shownRows.clear()
         body.removeAll()
         if (result.rows.isEmpty()) {
-            body.add(messageRow(buildEmptyState(spec.empty, texts)))
+            body.add(messageRow(buildEmptyState(spec.empty, texts, gridColumns = spec.layout.sizes.sum())))
         } else {
             result.rows.forEach { row -> body.add(rowOf(row, highlightNew)) }
         }
@@ -228,7 +225,7 @@ internal class DataTable<T>(
         isFailed = true
         shownRows.clear()
         body.removeAll()
-        body.add(messageRow(buildEmptyState(failureContent(), texts, isError = true)))
+        body.add(messageRow(buildEmptyState(failureContent(), texts, gridColumns = spec.layout.sizes.sum(), isError = true)))
         updatePagerVisibility()
         updateHeaderCheckbox()
     }
@@ -254,10 +251,10 @@ internal class DataTable<T>(
         if (highlightNew && shownRow.key !in renderedKeys) addClassName("ts-row-new")
         if (isSelectable) add(TableDataCell(shownRow.checkbox))
         shownRow.update()
-        spec.columns.forEach { column ->
+        spec.columns.forEachIndexed { index, column ->
             val cell = TableDataCell()
             column.kind.cssClass?.split(' ')?.forEach { cssClass -> cell.addClassName(cssClass) }
-            column.fill(row, cell)
+            column.fill(row, cell, spec.layout.sizes[index + if (isSelectable) 1 else 0])
             add(cell)
         }
         spec.rowClick?.let { listener ->

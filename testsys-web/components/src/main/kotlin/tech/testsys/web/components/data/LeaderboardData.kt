@@ -6,9 +6,10 @@ package tech.testsys.web.components.data
  * @property key the stable unique column key.
  * @property label the accessible heading.
  * @property isMetric whether this is an aggregate metric column.
+ * @property size the grid fractions, or `null` to take the remainder as the last column.
  * @since %CURRENT_VERSION%
  */
-data class LeaderboardColumn(val key: String, val label: String, val isMetric: Boolean = false)
+data class LeaderboardColumn(val key: String, val label: String, val isMetric: Boolean = false, val size: Int? = 1)
 
 /**
  * Semantic appearance of an application-provided leaderboard cell.
@@ -59,6 +60,9 @@ data class LeaderboardRow(
  * @property identityLabel the identity column heading.
  * @property columns named cell and metric columns.
  * @property rows the ordered application rows.
+ * @property placeSize the fractions of the rank column.
+ * @property identitySize the fractions of the participant column.
+ * @property gridColumns the logical capacity, or `null` to inherit the containing grid.
  * @since %CURRENT_VERSION%
  */
 data class LeaderboardData(
@@ -67,8 +71,13 @@ data class LeaderboardData(
     val identityLabel: String,
     val columns: List<LeaderboardColumn>,
     val rows: List<LeaderboardRow>,
+    val placeSize: Int = 2,
+    val identitySize: Int = 6,
+    val gridColumns: Int? = null,
 ) {
     init {
+        require(placeSize > 0 && identitySize > 0) { "Leaderboard identity sizes must be positive" }
+        require(gridColumns == null || gridColumns > 0) { "Leaderboard grid capacity must be positive, got $gridColumns" }
         require(columns.map { column -> column.key }.distinct().size == columns.size) { "Leaderboard column keys must be unique" }
         require(rows.map { row -> row.key }.distinct().size == rows.size) { "Leaderboard row keys must be unique" }
         val keys = columns.map { column -> column.key }.toSet()

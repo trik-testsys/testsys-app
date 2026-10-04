@@ -7,6 +7,7 @@ import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.feedback.EmptyContent
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.overlay.MenuScope
 import tech.testsys.web.components.overlay.iconMenu
@@ -18,31 +19,41 @@ internal enum class CellKind(val cssClass: String?) {
     Text(null),
     Code("ts-num"),
     Number("ts-num ts-right"),
-    Date(null),
+    Date("ts-num"),
     Content(null),
     Menu("ts-right"),
 }
 
-/** Column of a table: its [title], optional [sortKey], [width] and how it fills a cell of a row. */
+/** Column of a table: its [title], optional [sortKey], [size] and how it fills a cell of a row. */
 internal class TableColumn<T>(
     val title: String,
     val sortKey: String?,
-    val width: ColumnWidth,
+    val size: Int?,
     val kind: CellKind,
-    val fill: (T, HasComponents) -> Unit,
+    val fill: (T, HasComponents, Int) -> Unit,
 )
 
 /** Columns and settings collected by a [TableScope]. */
-internal class TableSpec<T>(val columns: List<TableColumn<T>>, val empty: EmptyContent, val rowClick: ((T) -> Unit)?)
+internal class TableSpec<T>(
+    val columns: List<TableColumn<T>>,
+    val empty: EmptyContent,
+    val layout: TableLayout,
+    val rowClick: ((T) -> Unit)?,
+)
 
 /**
  * Scope of a table: its columns in order, the empty state and the row click.
  *
  * @param T the type of the rows.
+ * @property gridColumns the inherited or explicitly expanded logical capacity for reusable column builders.
  * @since %CURRENT_VERSION%
  */
 @TestSysDsl
-class TableScope<T> internal constructor(private val texts: UiTexts) {
+class TableScope<T> internal constructor(
+    private val texts: UiTexts,
+    val gridColumns: Int = GRID_COLUMNS,
+    private val selectionSize: Int = 0,
+) {
     private val columns = mutableListOf<TableColumn<T>>()
     private var emptyContent: EmptyContent = EmptyContent(texts.table.empty)
     private var rowClick: ((T) -> Unit)? = null
@@ -56,93 +67,94 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
         private set
 
     /**
-     * Adds a column of plain text; a column with [sortKey] can be sorted by it, and [width] is chosen by what the
-     * column holds.
+     * Adds a plain text column on [size] grid fractions; `null` takes the remainder and ends ordinary columns.
+     * [sortKey] enables sorting by an application key.
      *
-     * @throws IllegalStateException if the menu column is already added.
+     * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun textColumn(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, value: (T) -> String?) {
-        add(title, sortKey, width, CellKind.Text) { row -> value(row) ?: EMPTY_CELL }
+    fun textColumn(title: String, sortKey: String? = null, size: Int? = null, value: (T) -> String?) {
+        add(title, sortKey, size, CellKind.Text) { row -> value(row) ?: EMPTY_CELL }
     }
 
     /**
-     * Adds a column of identifiers and codes in a monospace font. [sortKey] and [width] are as in [textColumn].
+     * Adds a column of identifiers and codes in a monospace font. [sortKey] and [size] are as in [textColumn].
      *
-     * @throws IllegalStateException if the menu column is already added.
+     * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun codeColumn(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, value: (T) -> String?) {
-        add(title, sortKey, width, CellKind.Code) { row -> value(row) ?: EMPTY_CELL }
+    fun codeColumn(title: String, sortKey: String? = null, size: Int? = null, value: (T) -> String?) {
+        add(title, sortKey, size, CellKind.Code) { row -> value(row) ?: EMPTY_CELL }
     }
 
     /**
-     * Adds a column of numbers aligned right, with digits grouped by the locale. [sortKey] and [width] are as in
+     * Adds a column of numbers aligned right, with digits grouped by the locale. [sortKey] and [size] are as in
      * [textColumn].
      *
-     * @throws IllegalStateException if the menu column is already added.
+     * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun numberColumn(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, value: (T) -> Number?) {
-        add(title, sortKey, width, CellKind.Number) { row -> formatNumber(value(row), texts) }
+    fun numberColumn(title: String, sortKey: String? = null, size: Int? = null, value: (T) -> Number?) {
+        add(title, sortKey, size, CellKind.Number) { row -> formatNumber(value(row), texts) }
     }
 
     /**
-     * Adds a column of dates in the calendar format of the locale. [sortKey] and [width] are as in [textColumn].
+     * Adds a monospace column of dates in the calendar format of the locale. [sortKey] and [size] are as in [textColumn].
      *
-     * @throws IllegalStateException if the menu column is already added.
+     * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun dateColumn(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, value: (T) -> LocalDate?) {
-        add(title, sortKey, width, CellKind.Date) { row -> formatDate(value(row), texts) }
+    fun dateColumn(title: String, sortKey: String? = null, size: Int? = null, value: (T) -> LocalDate?) {
+        add(title, sortKey, size, CellKind.Date) { row -> formatDate(value(row), texts) }
     }
 
     /**
-     * Adds a column of dates with times in the calendar format of the locale. [sortKey] and [width] are as in
+     * Adds a monospace column of dates with times in the calendar format of the locale. [sortKey] and [size] are as in
      * [textColumn].
      *
-     * @throws IllegalStateException if the menu column is already added.
+     * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun dateTimeColumn(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, value: (T) -> LocalDateTime?) {
-        add(title, sortKey, width, CellKind.Date) { row -> formatDateTime(value(row), texts) }
+    fun dateTimeColumn(title: String, sortKey: String? = null, size: Int? = null, value: (T) -> LocalDateTime?) {
+        add(title, sortKey, size, CellKind.Date) { row -> formatDateTime(value(row), texts) }
     }
 
     /**
-     * Adds a column whose cells hold display [content] of the row, e.g. a badge, tags or actions. [sortKey] and [width]
+     * Adds a column whose cells hold display [content] of the row, e.g. a badge, tags or actions. [sortKey] and [size]
      * are as in [textColumn].
      *
-     * @throws IllegalStateException if the menu column is already added.
+     * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun column(title: String, sortKey: String? = null, width: ColumnWidth = ColumnWidth.Auto, content: ContentScope.(T) -> Unit) {
+    fun column(title: String, sortKey: String? = null, size: Int? = null, content: ContentScope.(T) -> Unit) {
         checkBeforeMenuColumn()
-        columns += TableColumn(title, sortKey, width, CellKind.Content) { row, cell ->
-            ContentScope(cell, texts, Placement.Cell).content(row)
+        columns += TableColumn(title, sortKey, size, CellKind.Content) { row, cell, columns ->
+            ContentScope(cell, texts, Placement.Cell, columns).content(row)
         }
     }
 
     /**
-     * Adds the last, narrow column with an action menu of each row filled by [content].
+     * Adds the last column on [size] fractions with an action menu of each row filled by [content].
      *
      * @throws IllegalStateException if the table already has a menu column.
      * @since %CURRENT_VERSION%
      */
-    fun menuColumn(content: MenuScope.(T) -> Unit) {
-        menuColumn(ariaLabel = { texts.menu.actions }, content)
+    fun menuColumn(size: Int = 1, content: MenuScope.(T) -> Unit) {
+        menuColumn(ariaLabel = { texts.menu.actions }, size = size, content = content)
     }
 
     /**
-     * Adds the last action menu column with a complete accessible name from [ariaLabel] for each row.
+     * Adds the last action menu column on [size] fractions with a complete accessible name from [ariaLabel].
      *
      * @throws IllegalStateException if the table already has a menu column.
      * @since %CURRENT_VERSION%
      */
-    fun menuColumn(ariaLabel: (T) -> String, content: MenuScope.(T) -> Unit) {
-        checkBeforeMenuColumn()
+    fun menuColumn(ariaLabel: (T) -> String, size: Int = 1, content: MenuScope.(T) -> Unit) {
+        check(!hasMenuColumn) { "Table already has a menu column" }
+        require(size in 1..gridColumns) { "Table menu size must be in 1..$gridColumns, got $size" }
         hasMenuColumn = true
-        columns += TableColumn(title = "", sortKey = null, width = ColumnWidth.Auto, kind = CellKind.Menu) { row, cell ->
-            ContentScope(cell, texts, Placement.Cell).iconMenu(ariaLabel(row)) { content(row) }
+        columns += TableColumn(title = "", sortKey = null, size = size, kind = CellKind.Menu) { row, cell, columns ->
+            ContentScope(cell, texts, Placement.Cell, columns).iconMenu(ariaLabel(row)) { content(row) }
         }
     }
 
@@ -166,14 +178,22 @@ class TableScope<T> internal constructor(private val texts: UiTexts) {
         rowClick = listener
     }
 
-    internal fun spec(): TableSpec<T> = TableSpec(columns.toList(), emptyContent, rowClick)
+    internal fun spec(): TableSpec<T> {
+        val ordinary = columns.filter { column -> column.kind != CellKind.Menu }
+        val menuSize = columns.firstOrNull { column -> column.kind == CellKind.Menu }?.size ?: 0
+        val layout = resolveTableLayout(gridColumns, ordinary.map { column -> column.size }, selectionSize, menuSize)
+        return TableSpec(columns.toList(), emptyContent, layout, rowClick)
+    }
 
-    private fun add(title: String, sortKey: String?, width: ColumnWidth, kind: CellKind, text: (T) -> String) {
+    private fun add(title: String, sortKey: String?, size: Int?, kind: CellKind, text: (T) -> String) {
         checkBeforeMenuColumn()
-        columns += TableColumn(title, sortKey, width, kind) { row, cell -> cell.add(Text(text(row))) }
+        columns += TableColumn(title, sortKey, size, kind) { row, cell, _ -> cell.add(Text(text(row))) }
     }
 
     private fun checkBeforeMenuColumn() {
+        check(columns.all { column -> column.kind == CellKind.Menu || column.size != null }) {
+            "Table is full: an ordinary column without a size already takes the rest of the grid"
+        }
         check(!hasMenuColumn) { "The menu column must be the last and only one; declare other columns before menuColumn()" }
     }
 }

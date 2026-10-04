@@ -99,7 +99,7 @@ fun BlockScope.filters(
         style.set("grid-template-columns", "repeat($columns, minmax(0, 1fr))")
     }
     val actions = Div().apply { addClassName("ts-table-filters__actions") }
-    val bar = ContentScope(actions, texts, Placement.Body)
+    val bar = ContentScope(actions, texts, Placement.Body, columns)
     bar.action(texts.tableFilters.reset) {
         onClick {
             onReset()

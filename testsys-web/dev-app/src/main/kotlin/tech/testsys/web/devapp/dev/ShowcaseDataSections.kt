@@ -5,7 +5,6 @@ import com.vaadin.flow.signals.local.ValueSignal
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.destructiveAction
 import tech.testsys.web.components.actions.mainAction
-import tech.testsys.web.components.data.ColumnWidth
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.TableScope
@@ -182,9 +181,9 @@ internal fun PageScope.tableSection() {
             row {
                 block(title = "Маленькая таблица", subtitle = "Одна страница — без пагинации") {
                     table(key = { row -> row.id }, fetch = { request -> submissionPage(SUBMISSIONS.take(SMALL_TABLE_ROWS), request) }) {
-                        codeColumn("ID") { row -> "#${row.id}" }
-                        textColumn("Участник") { row -> row.author }
-                        column("Вердикт") { row -> badge(row.verdict.label, row.verdict.tone) }
+                        codeColumn("ID", size = 2) { row -> "#${row.id}" }
+                        textColumn("Участник", size = 6) { row -> row.author }
+                        column("Вердикт", size = 4) { row -> badge(row.verdict.label, row.verdict.tone) }
                     }
                 }
             }
@@ -424,10 +423,10 @@ private fun BlockRowScope.contestLookup(
     fetch = { query, request -> pageOf(CONTESTS.filter { contest -> contest.name.contains(query, ignoreCase = true) }, request) },
     display = { contest -> contest.name },
     columns = {
-        codeColumn("ID") { contest -> "${contest.id}" }
-        textColumn("Название") { contest -> contest.name }
-        dateColumn("Начало") { contest -> contest.startsOn }
-        numberColumn("Задач") { contest -> contest.taskCount }
+        codeColumn("ID", size = 2) { contest -> "${contest.id}" }
+        textColumn("Название", size = 5) { contest -> contest.name }
+        dateColumn("Начало", size = 3) { contest -> contest.startsOn }
+        numberColumn("Задач", size = 1) { contest -> contest.taskCount }
     },
     hint = hint,
     configure = configure,
@@ -444,23 +443,26 @@ private fun BlockRowScope.taskLookup(
     fetch = { query, request -> pageOf(SHOWCASE_TASKS.filter { task -> task.name.contains(query, ignoreCase = true) }, request) },
     display = { task -> task.name },
     columns = {
-        codeColumn("ID", width = ColumnWidth.Narrow) { task -> "${task.id}" }
-        textColumn("Название", width = ColumnWidth.Fill) { task -> task.name }
-        textColumn("Тема", width = ColumnWidth.Medium) { task -> task.topic }
+        codeColumn("ID", size = 2) { task -> "${task.id}" }
+        textColumn("Название", size = 5) { task -> task.name }
+        textColumn("Тема", size = 4) { task -> task.topic }
     },
     hint = hint,
     configure = configure,
 )
 
 internal fun TableScope<ShowcaseSubmission>.submissionColumns() {
-    codeColumn("ID", width = ColumnWidth.Narrow) { row -> "#${row.id}" }
-    textColumn("Участник", width = ColumnWidth.Medium) { row -> row.author }
-    textColumn("Задача", width = ColumnWidth.Fill) { row -> row.task }
-    column("Вердикт", width = ColumnWidth.Medium) { row -> badge(row.verdict.label, row.verdict.tone) }
-    column("Баллы", sortKey = SCORE_SORT, width = ColumnWidth.Narrow) { row ->
+    val fraction = gridColumns / SubmissionGrid.PARTS
+    val shortSize = maxOf(SubmissionGrid.MIN_COLUMN_SIZE, fraction)
+    val titleSize = if (fraction == 1) shortSize else fraction * SubmissionGrid.TITLE_PARTS
+    codeColumn("ID", size = shortSize) { row -> "#${row.id}" }
+    textColumn("Участник", size = fraction * 2) { row -> row.author }
+    textColumn("Задача", size = titleSize) { row -> row.task }
+    column("Вердикт", size = fraction * 2) { row -> badge(row.verdict.label, row.verdict.tone) }
+    column("Баллы", sortKey = SCORE_SORT, size = shortSize) { row ->
         row.score?.let { score -> verdict(score.toDouble()) } ?: text("—")
     }
-    dateTimeColumn("Время", sortKey = TIME_SORT, width = ColumnWidth.Medium) { row -> row.sentAt }
+    dateTimeColumn("Время", sortKey = TIME_SORT) { row -> row.sentAt }
 }
 
 /** Whether the submission passes the head filters: [verdict] if one is chosen, and a failed verdict if [isErrorsOnly]. */
@@ -480,3 +482,9 @@ private fun submissionPage(rows: List<ShowcaseSubmission>, request: PageRequest)
 
 /** The page of [rows] asked by [request] in their natural order. */
 private fun <T> pageOf(rows: List<T>, request: PageRequest): Page<T> = Page(rows.drop(request.offset).take(request.limit), rows.size)
+
+private object SubmissionGrid {
+    const val MIN_COLUMN_SIZE = 2
+    const val PARTS = 12
+    const val TITLE_PARTS = 3
+}

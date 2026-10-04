@@ -22,7 +22,7 @@ internal class EmptyContent(
 )
 
 /** Builds the `.ts-empty` markup of [content]; an [isError] state is red and shows the alert icon instead. */
-internal fun buildEmptyState(content: EmptyContent, texts: UiTexts, isError: Boolean = false): Div {
+internal fun buildEmptyState(content: EmptyContent, texts: UiTexts, gridColumns: Int, isError: Boolean = false): Div {
     val icon = svgIcon(if (isError) IconName.TriangleAlert else content.icon, EMPTY_ICON_SIZE)
     val state = Div(
         Span(icon).apply { addClassName("ts-empty__icon") },
@@ -33,7 +33,7 @@ internal fun buildEmptyState(content: EmptyContent, texts: UiTexts, isError: Boo
     }
     content.description?.let { description -> state.add(Span(description).apply { addClassName("ts-empty__desc") }) }
     val actions = Div().apply { addClassName("ts-empty__actions") }
-    ContentScope(actions, texts, Placement.Empty).apply(content.actions)
+    ContentScope(actions, texts, Placement.Empty, gridColumns).apply(content.actions)
     if (actions.children.findAny().isPresent) state.add(actions)
     return state
 }
@@ -52,7 +52,7 @@ fun BlockScope.emptyState(
     actions: ContentScope.() -> Unit = {},
 ): ElementHandle {
     checkWholeBodyPlace(EMPTY_STATE_OWNER)
-    val state = buildEmptyState(EmptyContent(title, description, icon, actions), texts)
+    val state = buildEmptyState(EmptyContent(title, description, icon, actions), texts, columns)
     placeWhole(state, EMPTY_STATE_OWNER)
     return ElementHandle(state)
 }

@@ -6,8 +6,8 @@ import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import tech.testsys.web.components.FirstTestView
@@ -25,6 +25,35 @@ class HeaderTests : MockVaadinTests() {
         NavItem(key = "first", label = "Первый", target = FirstTestView::class.java),
         NavItem(key = "second", label = "Второй", target = SecondTestView::class.java),
     )
+
+    @Test
+    fun `should keep the shared header sticky and derive initials using UI locale`() {
+        val texts = tech.testsys.web.components.UiTexts(
+            locale = java.util.Locale.forLanguageTag("tr"),
+            brand = testTexts.brand,
+            signIn = testTexts.signIn,
+            calendar = testTexts.calendar,
+            fieldErrors = testTexts.fieldErrors,
+            dateRangeReversed = testTexts.dateRangeReversed,
+            editing = testTexts.editing,
+            table = testTexts.table,
+            pagination = testTexts.pagination,
+            load = testTexts.load,
+            dialog = testTexts.dialog,
+            lookup = testTexts.lookup,
+            navigation = testTexts.navigation,
+            menu = testTexts.menu,
+            dateFields = testTexts.dateFields,
+            notFound = testTexts.notFound,
+            components = testTexts.components,
+            header = testTexts.header,
+            footer = testTexts.footer,
+            tableFilters = testTexts.tableFilters,
+        )
+        val header = buildHeader(CabinetHeader(user = HeaderUser("istanbul izmir")), texts)
+        assertTrue("ts-header--sticky" in header.classes())
+        assertEquals("İİ", header.find("ts-header__avatar").element.text)
+    }
 
     @Test
     fun `should route guest sign in using explicit parameters`() {

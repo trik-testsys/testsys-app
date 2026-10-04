@@ -9,9 +9,6 @@ import com.vaadin.flow.router.RouterLink
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.buildBrand
 
-private val WORD_SEPARATOR = Regex("\\s+")
-private const val INITIALS_LENGTH = 2
-
 /** Builds the `.ts-header` markup of [header]. */
 internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
     val interactions = HeaderInteractions()
@@ -34,7 +31,7 @@ internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
         header.notifications?.let { notifications ->
             bar.add(HeaderNotificationsController(notifications, texts.header, interactions).component)
         }
-        bar.add(if (user.menu == null) userChip(user) else userMenu(user, texts.header, interactions))
+        bar.add(if (user.menu == null) userChip(user, texts.locale) else userMenu(user, texts.header, interactions, texts.locale))
     } else if (signIn != null) {
         bar.add(signInLink(texts.signIn, signIn, header.signInParameters))
     }
@@ -43,13 +40,6 @@ internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
         header.menuSearchKey?.let { key -> menus.getValue(key).fullAnchor(this) }
     }
 }
-
-/** Initials of [name]: the first letters of its first two words, upper-cased. */
-internal fun initials(name: String): String = name.split(WORD_SEPARATOR)
-    .filter { word -> word.isNotBlank() }
-    .take(INITIALS_LENGTH)
-    .joinToString("") { word -> word.take(1) }
-    .uppercase()
 
 private fun navigation(header: CabinetHeader, texts: UiTexts, menus: Map<String, MegaMenuHandle>): Nav = Nav().apply {
     addClassName("ts-nav")
@@ -70,8 +60,8 @@ private fun navLink(item: NavItem, active: Boolean): RouterLink = RouterLink(ite
     if (active) addClassName("ts-nav__item--active")
 }
 
-private fun userChip(user: HeaderUser): Div {
-    val avatar = userAvatar(user.name)
+private fun userChip(user: HeaderUser, locale: java.util.Locale): Div {
+    val avatar = userAvatar(user.name, locale)
     return Div(avatar, Text(user.name)).apply { addClassName("ts-header__user") }
 }
 

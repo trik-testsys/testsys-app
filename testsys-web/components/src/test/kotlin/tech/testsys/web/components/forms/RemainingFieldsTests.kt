@@ -13,6 +13,14 @@ import tech.testsys.web.components.testTexts
 
 class RemainingFieldsTests : MockVaadinTests() {
     @Test
+    fun `should pass only the desired line count to the common code geometry`() {
+        val root = tech.testsys.web.components.buildTestRow { codeEditor("Code", 4, 20, minLines = 6) }
+        val box = root.find("ts-code")
+        assertEquals("6", box.element.style.get("--ts-code-min-lines"))
+        assertEquals(null, box.element.style.get("height"))
+    }
+
+    @Test
     fun `should clear accepted multiselect values through visible clear caption`() {
         lateinit var input: ValueInput<Set<String>>
         buildTestRow { input = multiSelect("Items", 4, 8, listOf("a", "b"), { value -> value }) }

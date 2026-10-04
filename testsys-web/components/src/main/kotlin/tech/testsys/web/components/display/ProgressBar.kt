@@ -5,7 +5,6 @@ import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.DataHandle
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.layout.Placement
 
 private const val PERCENT_MAX = 100.0
 private const val DIFFICULTY_INDICATORS = 3
@@ -88,7 +87,7 @@ fun BlockRowScope.progressBar(
     size: Int? = null,
     tone: Tone = Tone.Info,
     configure: DataHandle<ProgressValue>.() -> Unit = {},
-): DataHandle<ProgressValue> = ContentScope(place(size, Div()), texts, Placement.Body).progressBar(label, value, tone, configure)
+): DataHandle<ProgressValue> = placeContent(size, Div()).progressBar(label, value, tone, configure)
 
 /**
  * Difficulty with one, two or three filled indicators.
@@ -147,7 +146,7 @@ fun ContentScope.difficulty(
                 },
             )
         }
-        marks.element.setAttribute("aria-hidden", true)
+        marks.element.setAttribute("aria-hidden", "true")
         root.add(marks)
         if (showLabel) root.add(Span(caption))
     }
@@ -167,4 +166,4 @@ fun BlockRowScope.difficulty(
     size: Int? = null,
     showLabel: Boolean = true,
     configure: DataHandle<DifficultyLevel>.() -> Unit = {},
-): DataHandle<DifficultyLevel> = ContentScope(place(size, Div()), texts, Placement.Body).difficulty(level, label, showLabel, configure)
+): DataHandle<DifficultyLevel> = placeContent(size, Div()).difficulty(level, label, showLabel, configure)

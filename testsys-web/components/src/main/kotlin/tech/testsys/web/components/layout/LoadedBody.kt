@@ -18,7 +18,7 @@ private const val ARIA_BUSY = "aria-busy"
  */
 internal class LoadedBody(
     private val body: Div,
-    private val columns: Int,
+    val columns: Int,
     private val texts: UiTexts,
     private val editState: BlockEditState,
     private val title: String?,

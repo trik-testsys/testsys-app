@@ -7,10 +7,23 @@ import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
 
-private const val AVATAR_COMPACT_PIXELS = 28
-private const val AVATAR_REGULAR_PIXELS = 32
-private const val INITIAL_FONT_RATIO = 0.36
-private const val AVATAR_TONE_COUNT = 4
+/** Defaults shared by avatar composition and initial derivation. */
+private object AvatarDefaults {
+    const val MAX_VISIBLE = 3
+    const val INITIALS_LENGTH = 2
+    const val TONE_COUNT = 4
+    val WORD_SEPARATOR = Regex("\\s+")
+}
+
+/** Derives two initials from [name] using the explicitly supplied [locale]. */
+internal fun avatarInitials(name: String, locale: java.util.Locale): String = name.trim()
+    .split(AvatarDefaults.WORD_SEPARATOR).filter(String::isNotEmpty).take(AvatarDefaults.INITIALS_LENGTH)
+    .joinToString("") { word -> word.take(1) }.uppercase(locale)
+
+/** Selects the common geometry for ordinary and overflow avatars. */
+private fun Span.avatarGeometry(placement: Placement) {
+    setClassName("ts-avatar--compact", placement.isCompact)
+}
 
 /**
  * Identity presented as initials; [name] remains its accessible name.
@@ -28,18 +41,13 @@ data class AvatarData(val name: String, val initials: String? = null, val isSqua
  * @since %CURRENT_VERSION%
  */
 fun ContentScope.avatar(data: AvatarData, configure: DataHandle<AvatarData>.() -> Unit = {}): DataHandle<AvatarData> {
-    val pixels = if (placement.isCompact) AVATAR_COMPACT_PIXELS else AVATAR_REGULAR_PIXELS
-    val root = Span().apply {
-        element.style.set("width", "${pixels}px")
-        element.style.set("height", "${pixels}px")
-        element.style.set("font-size", "${pixels * INITIAL_FONT_RATIO}px")
-    }
+    val root = Span()
 
     fun render(value: AvatarData) {
-        root.text = value.initials ?: value.name.trim().split(Regex("\\s+")).filter(String::isNotEmpty)
-            .take(2).joinToString("") { word -> word.take(1) }.uppercase(texts.locale)
+        root.text = value.initials ?: avatarInitials(value.name, texts.locale)
         root.element.classList.clear()
-        root.addClassNames("ts-avatar", "ts-avatar--t${Math.floorMod(value.name.sumOf { char -> char.code }, AVATAR_TONE_COUNT)}")
+        root.addClassNames("ts-avatar", "ts-avatar--t${Math.floorMod(value.name.sumOf { char -> char.code }, AvatarDefaults.TONE_COUNT)}")
+        root.avatarGeometry(placement)
         root.setClassName("ts-avatar--square", value.isSquare)
         root.element.setAttribute("role", "img")
         root.element.setAttribute("aria-label", value.name)
@@ -56,7 +64,7 @@ fun ContentScope.avatar(data: AvatarData, configure: DataHandle<AvatarData>.() -
  * @since %CURRENT_VERSION%
  */
 fun BlockRowScope.avatar(data: AvatarData, size: Int? = null, configure: DataHandle<AvatarData>.() -> Unit = {}): DataHandle<AvatarData> =
-    ContentScope(place(size, Div()), texts, Placement.Body).avatar(data, configure)
+    placeContent(size, Div()).avatar(data, configure)
 
 /**
  * Adds the first [maxVisible] avatars of [data], with an accessible count for the rest.
@@ -65,21 +73,20 @@ fun BlockRowScope.avatar(data: AvatarData, size: Int? = null, configure: DataHan
  */
 fun ContentScope.avatarGroup(
     data: List<AvatarData>,
-    maxVisible: Int = 3,
+    maxVisible: Int = AvatarDefaults.MAX_VISIBLE,
     configure: DataHandle<List<AvatarData>>.() -> Unit = {},
 ): DataHandle<List<AvatarData>> {
     require(maxVisible > 0) { "Avatar group visible count must be positive, got $maxVisible" }
     val root = Div().apply { addClassName("ts-avatars") }
     fun render(values: List<AvatarData>) {
         root.removeAll()
-        values.take(maxVisible).forEach { value -> ContentScope(root, texts, placement).avatar(value) }
+        values.take(maxVisible).forEach { value -> ContentScope(root, texts, placement, gridColumns).avatar(value) }
         if (values.size > maxVisible) {
             root.add(
                 Span("+${values.size - maxVisible}").apply {
                     addClassNames("ts-avatar", "ts-avatar--t3")
-                    element.style.set("width", "32px")
-                    element.style.set("height", "32px")
-                    element.style.set("font-size", "12px")
+                    avatarGeometry(placement)
+                    element.setAttribute("role", "img")
                     element.setAttribute("aria-label", texts.components.avatarOverflow(values.size - maxVisible))
                     element.setAttribute(
                         "title",
@@ -102,6 +109,6 @@ fun ContentScope.avatarGroup(
 fun BlockRowScope.avatarGroup(
     data: List<AvatarData>,
     size: Int? = null,
-    maxVisible: Int = 3,
+    maxVisible: Int = AvatarDefaults.MAX_VISIBLE,
     configure: DataHandle<List<AvatarData>>.() -> Unit = {},
-): DataHandle<List<AvatarData>> = ContentScope(place(size, Div()), texts, Placement.Body).avatarGroup(data, maxVisible, configure)
+): DataHandle<List<AvatarData>> = placeContent(size, Div()).avatarGroup(data, maxVisible, configure)

@@ -26,19 +26,46 @@ import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestRow
 import tech.testsys.web.components.classes
 import tech.testsys.web.components.control
+import tech.testsys.web.components.data.Page
+import tech.testsys.web.components.data.PageRequest
+import tech.testsys.web.components.data.ROW_CLICK_FILTER
+import tech.testsys.web.components.data.TableScope
 import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.findAllButtons
 import tech.testsys.web.components.openDialogs
 import tech.testsys.web.components.testTexts
-import tech.testsys.web.components.data.Page
-import tech.testsys.web.components.data.PageRequest
-import tech.testsys.web.components.data.ROW_CLICK_FILTER
-import tech.testsys.web.components.data.TableScope
 import tools.jackson.databind.ObjectMapper
 
 class LookupTests : MockVaadinTests() {
     private val source = Source()
+
+    // Review report, Issue 6: an unavailable lookup must discard its open dialog and delayed choice.
+    @ParameterizedTest
+    @CsvSource("false,true", "true,false")
+    @org.junit.jupiter.api.Tag("regression")
+    fun `should close an open lookup when choice becomes unavailable and ignore delayed choice`(
+        enabled: Boolean,
+        editable: Boolean,
+    ) {
+        val input = buildLookup()
+        val form = Form()
+        Binder<Form>().apply {
+            forField(input).bind({ bean -> bean.contest }, { bean, value -> bean.contest = value })
+            setBean(form)
+        }
+        var changes = 0
+        input.addValueChangeListener { changes++ }
+        lookupButton(testTexts.lookup.open)._click()
+        val oldRow = rows()[1]
+        input.isEnabled = enabled
+        input.isEditable = editable
+        assertTrue(openDialogs().isEmpty())
+        oldRow._fireDomEvent("click", rowClick())
+        assertEquals(null, input.value)
+        assertEquals(0, changes)
+        assertEquals(null, form.contest)
+    }
 
     @Test
     fun `should show the chosen value by its display text`() {

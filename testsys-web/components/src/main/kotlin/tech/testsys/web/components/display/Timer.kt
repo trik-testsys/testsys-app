@@ -10,7 +10,6 @@ import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.layout.Placement
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -104,7 +103,7 @@ fun BlockRowScope.timer(
         DEFAULT_DANGER_MINUTES,
     ),
     configure: TimerHandle.() -> Unit = {},
-): TimerHandle = ContentScope(place(size, Div()), texts, Placement.Body).timer(label, value, variant, dangerBelow, configure)
+): TimerHandle = placeContent(size, Div()).timer(label, value, variant, dangerBelow, configure)
 
 /**
  * Handle of a countdown and its read-only remaining-seconds signal.

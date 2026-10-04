@@ -1,7 +1,7 @@
 # Kotlin-DSL дизайн-системы
 
 Документ описывает модуль `:testsys-web:components`: как на его DSL строится страница Кабинета, какие правила сетки
-и оформления DSL проверяет сам и как добавить в него компонент. Он предназначен для тех, кто пишет страницы
+и оформления DSL проверяет сам. Он предназначен для тех, кто пишет страницы
 `testsys-web` или компоненты дизайн-системы на Kotlin. Визуальные правила —
 в [ui-design.md](../../docs/project/ui-design.md), место модуля в проекте — в
 [structure.md](../../docs/project/structure.md), оформление тестов — в [unit-tests.md](../../docs/project/unit-tests.md).
@@ -25,6 +25,9 @@
   `Last-Modified` из jar, и с одинаковой датой воспроизводимой сборки браузер держал бы старый CSS после пересборки.
 - Приложение подключает стили через `@StyleSheet` на `AppShellConfigurator` в порядке: `Lumo.STYLESHEET`,
   `TestSysTheme.DESIGN_SYSTEM`, `TestSysTheme.VAADIN_OVERRIDES`.
+
+Пакеты компонентов используют скоупы из `layout`. Намеренные обратные зависимости: `EditingSwitch` использует
+действия из `actions` и иконки `core`, а `Page`/`PageScope` — шапку и заголовок из `navigation`.
 
 ## Страница
 
@@ -187,7 +190,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 Каждый уровень — класс-скоуп с `@TestSysDsl` (`@DslMarker`) и `internal`-конструктором: страница не создаёт
 скоуп сама, не видит Vaadin-контейнер и не может вызвать функцию внешнего уровня. `TestSysView` маркером
 не помечен, поэтому внутри `page { … }` доступны члены самой страницы (сервисы, методы). К `content` страница
-напрямую не обращается: компоненты Vaadin ставятся только через `custom()` (см. «Запасной выход»).
+напрямую не обращается: страница задаёт только смысловую конфигурацию поддерживаемых компонентов (см. «Граница конфигурации»).
 
 | Скоуп | Доступно |
 |-------|----------|
@@ -199,7 +202,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `SlotRowScope` | `block`, `highlightBlock`, `statCard` |
 | `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
-| `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, `select` без подписи, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical`, `custom` (без полей с подписью) |
+| `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, `select` без подписи, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` (без полей с подписью) |
 | `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
 | `TableScope<T>` | колонки таблицы, `menuColumn`, `empty`, `onRowClick` |
 | `MenuScope` | `item`, `destructiveItem` |
@@ -415,8 +418,8 @@ Signal-привязками. Отдельного семейства полей 
 ```kotlin
 block(title = "Посылки") {
     table(key = { it.id }, selectable = true, fetch = { request -> submissions.find(filter, request) }) {
-        codeColumn("ID") { "#${it.id}" }
-        numberColumn("Баллы", sortKey = "score") { it.score }
+        codeColumn("ID", size = 3) { "#${it.id}" }
+        numberColumn("Баллы", sortKey = "score", size = 3) { it.score }
         column("Вердикт") { row -> badge(row.verdict, row.tone) }
         empty("Посылок пока нет")
         onRowClick { row -> openSubmission(row) }
@@ -451,19 +454,16 @@ block(title = "Посылки") {
 | `column` | `ContentScope.(T) -> Unit` | Любое содержимое `ContentScope`: бейдж, теги, действия |
 | `menuColumn` | `MenuScope.(T) -> Unit` | Последняя узкая колонка без подписи с меню «⋯», см. [Меню](#меню) |
 
-- У всех колонок, кроме `menuColumn`, параметры `title`, `sortKey = null` и `width = ColumnWidth.Auto`; порядок
-  объявления — порядок колонок. `null` в ячейке типовой колонки выводится как «—».
-- `width` задаёт ширину колонки по смыслу того, что в ней лежит, классом заголовка `th`; сами ширины — токены
-  `--col-*` дизайн-системы (раздел «Состав» в [ui-design.md](../../docs/project/ui-design.md)). У `menuColumn`
-  ширина фиксированная, параметра `width` нет.
-
-  | `ColumnWidth` | Класс `th` | Для чего |
-  |---------------|------------|----------|
-  | `Auto` | — | По умолчанию: ширина по содержимому |
-  | `Narrow` | `.ts-col--narrow` | Короткие значения: идентификаторы, баллы, даты |
-  | `Medium` | `.ts-col--medium` | Значения средней длины: имена людей, статусы |
-  | `Wide` | `.ts-col--wide` | Длинные значения: названия |
-  | `Fill` | `.ts-col--fill` | Остаток строки таблицы |
+- Колонки принимают `size: Int? = null`: число долей общей сетки. По умолчанию таблица наследует вместимость
+  содержащего блока; `gridColumns` задаёт расширенную логическую сетку для широкой матрицы.
+  Неизменяемое свойство `TableScope.gridColumns` позволяет переиспользуемым Kotlin-билдерам вычислять размеры по текущей вместимости. Лукап использует
+  12 долей сетки диалога. Размер должен быть положительным и не превышать вместимость.
+- Колонка без `size` занимает остаток и завершает объявления обычных колонок. `menuColumn(size = 1)` допускается
+  после неё: ядро резервирует место меню до вычисления остатка. Checkbox при `selectable = true` занимает
+  `selectionSize = 1` долю той же сетки. Переполнение — `IllegalStateException` при построении.
+- Явные размеры с неполной суммой сохраняют свободное место справа. Размеры не подменяются шириной по содержимому:
+  ядро определяет фиксированную раскладку, минимальный читаемый холст, перенос текста и локальную прокрутку.
+- `null` в значении типовой колонки выводится как «—»; порядок объявления — порядок колонок.
 - `sortKey` делает заголовок сортируемым: первый клик — по убыванию, повторный — смена направления, клик по другой
   колонке — по убыванию по ней; смена сортировки возвращает на первую страницу. Активный заголовок — `.ts-sorted`
   со стрелкой «↓» или «↑». Сортируемый заголовок получает фокус с клавиатуры, Enter и пробел сортируют как клик,
@@ -662,7 +662,8 @@ lookup(
   `destructiveItem(label) { }` — пункт, который удаляет или отменяет. Разрушительные пункты идут последними,
   разделитель перед ними DSL ставит сам. `item` после `destructiveItem` и меню без пунктов — `IllegalStateException`.
 - Подсказок клавиш у пунктов нет: без настоящих горячих клавиш они вводили бы в заблуждение.
-- `menuColumn { row -> … }` в `TableScope` — последняя колонка шириной 52 px без подписи (имя заголовка —
+- `menuColumn(size = 1) { row -> … }` в `TableScope` — последняя колонка без подписи; её размер следует
+  [контракту сетки колонок](#колонки) (имя заголовка —
   `UiTexts.menu.actions`) с «⋯» в каждой строке; меню строится для строки при отрисовке страницы таблицы. Колонка
   после `menuColumn` и второй `menuColumn` — `IllegalStateException`.
   Перегрузка `menuColumn(ariaLabel = { row -> … }) { row -> … }` задаёт полную локализованную фразу для доступного
@@ -769,17 +770,20 @@ block(title = "Туры") {
 
 | Что | Как выбирается вид |
 |-----|--------------------|
-| Кнопки | Роль: `mainAction` — primary, `action` — secondary, `destructiveAction` — danger-soft, `linkAction` — link, `iconAction` — secondary без подписи (подпись уходит в `aria-label` и подсказку). Внутренняя роль `danger` (заливка `--danger`, как `.ts-btn--danger`) — только у кнопки действия опасного `confirm`, страницам она недоступна. Размер: в `actions { }` блока, в пустом состоянии и в ячейках таблицы (`column`, `menuColumn`) — sm, в заголовке страницы, группах строк блока и `footer { }` — md; так же по месту выбирается размер `select` без подписи |
+| Кнопки | Роль: `mainAction` — primary, `action` — secondary, `destructiveAction` — danger-soft, `linkAction` — link, `iconAction` — secondary, `mainIconAction` — primary и `destructiveIconAction` — danger-soft без подписи (подпись уходит в `aria-label` и подсказку). Внутренняя роль `danger` (заливка `--danger`, как `.ts-btn--danger`) — только у кнопки действия опасного `confirm`, страницам она недоступна. Размер: в `actions { }` блока, в пустом состоянии и в ячейках таблицы (`column`, `menuColumn`) — sm, в заголовке страницы, группах строк блока и `footer { }` — md; так же по месту выбирается размер `select` без подписи |
 | Блок | `block` — обычный, `highlightBlock` — тёмный. Тело без отступов включает содержимое, которому они мешают: `table` и скелетон `load`. Вкладки и пилюли в тёмном блоке светлые |
 | Вкладки, пилюли, пустое состояние, меню | Вкладки страницы и блока — всегда `.ts-tabs--bare.ts-tabs--lg`, место вкладок блока — по наличию заголовка; пустое состояние — `.ts-empty`, ошибка загрузки таблицы и `load` — `.ts-empty--error`; разрушительный пункт меню — `destructiveItem` |
 | Бейдж, тег, счётчик, алерт, тост (`toast(kind, title)` — функция верхнего уровня, вызывается из обработчиков) | Перечисления смысла: `Tone`, `TagKind`, `CounterKind`, `FeedbackKind`; текст бейджа передаёт страница |
-| Таблица, диалог | Вид ячейки — по функции колонки, ширина колонки — по `ColumnWidth` (см. [Колонки](#колонки)); ширина диалога — по функции: `confirm` — 440 px, `dialog` и диалоги лукапов — 520 px; `isDanger` — вид `.ts-dialog--alert` |
+| Таблица, диалог | Вид ячейки — по функции колонки, ширина колонки — по долям сетки (см. [Колонки](#колонки)); ширина диалога — по функции: `confirm` — 440 px, `dialog` и диалоги лукапов — 520 px; `isDanger` — вид `.ts-dialog--alert` |
 | Раскладка в блоке | Строки `row { }`; в строке — группы `horizontal(size) { }` и `vertical(size) { }` на своих колонках, в шапке, подвале и группах — `horizontal { }` и `vertical { }` без размера |
 
 ## Ручки и служебные свойства
 
+Соглашение об изменяемом состоянии — в [code-style.md](../../docs/project/code-style.md#неизменяемость).
+
 Функции возвращают ручку. Действия и поля ввода принимают завершающую лямбду `configure` с ней же; элементы
-отображения (`text`, `tag`, `badge`, `counter`, `statCard`, …) и `field { }` возвращают ручку без `configure`:
+отображения (`text`, `tag`, `badge`, `counter`, `statCard`, …) и `field { }` возвращают ручку без `configure`. Расширенные представления `foundationSamples`, `brandImage`
+и компоненты с `DataHandle` принимают необязательный `configure` для настройки своей ручки:
 
 ```kotlin
 mainAction("Отправить решение", icon = IconName.Upload) {
@@ -874,33 +878,28 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 Функции верхнего уровня (`confirm`, `dialog`) не видят скоупов DSL, поэтому `page(...)` привязывает `UiTexts`
 страницы к текущему `UI`, а диалоги берут их оттуда (см. [Диалоги](#диалоги)).
 
-## Запасной выход
+## Граница конфигурации
 
-`custom(component)` в `ContentScope` ставит на страницу любой компонент Vaadin; в строке блока он кладётся в группу
-`horizontal`/`vertical`. Функция помечена
-`@RequiresOptIn` аннотацией `RawVaadin`: странице нужен `@OptIn(RawVaadin::class)`, и это видно на ревью.
-Если компонент нужен больше чем на одной странице, его добавляют в DSL.
+Страница конфигурируется человекочитаемыми Kotlin-параметрами, методами и свойствами: смысл элемента,
+данные, доступное имя, размеры по сетке и обработчики. HTML-теги, CSS-классы, имена CSS-свойств и переменных,
+пиксельная геометрия и клиентские команды полностью принадлежат ядру components и применяются им автоматически.
+Публичного `custom(Component)` или opt-in обхода нет. Новое представление добавляется в поддерживаемый DSL.
 
-## Как добавить компонент
+Маршруты Vaadin, Binder, Signals, URL предметных ресурсов и Spring lifecycle остаются интеграциями приложения.
+Унаследованный API Vaadin у `TestSysView` технически существует, но поддерживаемая конфигурация страниц им
+не пользуется. Архитектурный тест `dev-app/src/test/kotlin/tech/testsys/web/devapp/PageConfigurationTests.kt`
+проверяет исходники обоих приложений на прямые обращения к разметке, DOM и стилям.
+`initializeUiLocale(ui, texts)` настраивает язык UI и документа внутри ядра; приложения подключают его
+через свой обычный lifecycle.
 
-1. Определите контракт по требованиям и ближайшему существующему компоненту: разметка `.ts-*` (статический
-   компонент) или компонентом Vaadin (ввод, фокус, клавиатура, оверлеи). Сложный интерактивный компонент без аналога
-   в Vaadin подключается как React через `ReactAdapterElement`.
-2. Добавьте функцию-расширение нужного скоупа в пакет группы: элемент отображения — для `ContentScope` и для
-   `BlockRowScope` (с `size`), поле — для `BlockRowScope`. Параметры описывают смысл, а не вид; вид выбирается
-   внутри по смыслу и `ContentScope.placement`. Функция возвращает ручку и принимает `configure`. Пакеты групп
-   зависят от `layout`, где лежат скоупы. Обратные зависимости `layout` намеренные, и их две: `EditingSwitch` строит
-   стандартные кнопки переключателя `editing` функциями пакета `actions` с иконкой из `core`, а `Page` и `PageScope`
-   берут из `navigation` шапку Кабинета и заголовок страницы.
-3. CSS: общие для React и Vaadin классы — в `src/main/resources/META-INF/resources/testsys-ui/tokens/components.css`, правила только для DOM
-   Vaadin — в `testsys-ui/styles/vaadin.css`.
-4. Встроенные строки компонента добавьте в `UiTexts` и в `buildUiTexts`, а ключи — по
-   [add-localization.md](../../docs/guides/add-localization.md).
-5. Тесты — Karibu-Testing (`MockVaadinTests`, `buildTestPage` в тестовых исходниках модуля): разметка совпадает
-   с контрактом, смысл превращается в нужный класс или атрибут, ручка меняет состояние.
-6. Покажите компонент на витрине (`testsys-web`, профиль `dev`) как пример использования; внешний вид проверяйте по правилам и общим стилям. В `dev-app` общий заголовок объединяет
-   `/dev/showcase`, `/dev/showcase/states` и тематические страницы полей, оверлеев и отображения, описанные ниже.
-   Вложенная `/dev/showcase/states/accessibility` показывает фокус, составные даты, Binder и режим диалога.
+`BlockScope.foundationSamples(category, sampleText)` иллюстрирует канонические токены категорий
+`FoundationCategory.Palette`, `Typography` и `Layout`; каталог читается внутри components.
+`brandImage(asset, label)` использует `BrandAsset` с сохранёнными ресурсами, пропорциями и доступным именем.
+Примеры — [ShowcaseFoundationsView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/dev/ShowcaseFoundationsView.kt).
+
+## Добавление компонентов
+
+Процедура — в [add-web-component.md](../../docs/guides/add-web-component.md).
 
 ## Остальные поля и локальный выбор
 
@@ -945,7 +944,7 @@ Escape и закрытие снаружи отменяют черновик. У�
 | `difficulty` | `DifficultyLevel`; локализованная подпись по умолчанию, собственная подпись или `showLabel=false` |
 | `timer` | `TimerValue.Static(Duration)` либо `Until(Instant)`, варианты `Chip`, `Hero`, `Tiles`, `Text`; `TimerHandle.remainingSeconds` — сигнал только для чтения |
 | `contestCard` | `ContestCardData`; отдельные `onClick` и `onAction`, необязательное CTA; есть размещение в слоте страницы |
-| `skeleton`, `skeletonRows` | Декоративные формы `Text`, `Circle`, `Badge`, `Rectangle` и строки внутри одного доступного статуса загрузки |
+| `skeleton`, `skeletonRows` | Геометрия в ядре; страница выбирает форму, число строк и `size`. Декоративные формы `Text`, `Circle`, `Badge`, `Rectangle` и строки внутри одного доступного статуса загрузки |
 | `leaderboard` | `LeaderboardData`: устойчивые ключи строк и колонок, переданные места, ячейки, метрики и явная подсветка |
 | `sortableList` | Уникальные `itemKey`, подпись и Flow-renderer; `SortableListHandle.items`, `bindItems`, `onChange` |
 | `stepper` | `StepperData`, индекс с нуля, доступность отдельного шага задаёт приложение |
@@ -953,8 +952,8 @@ Escape и закрытие снаружи отменяют черновик. У�
 | `questionNav` | `QuestionNavData`, номера с единицы, answered/flagged/unavailable задаёт приложение |
 
 `verdict` не зависит от домена и не вычисляет успешность: конечное число показывается с нейтральным цветом.
-Статусы очереди, проверки, ошибки и тайм-аута остаются отдельными бейджами. Образец нового API и custom-показ
-legacy-кодов — [ShowcaseDisplayView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/dev/ShowcaseDisplayView.kt).
+Статусы очереди, проверки, ошибки и тайм-аута остаются отдельными бейджами. Образец числового API и типизированный показ
+`legacyVerdict(LegacyVerdict)` для кодов совместимости — [ShowcaseDisplayView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/dev/ShowcaseDisplayView.kt).
 Выбор Stepper/QuizOption/QuestionNav и перестановка показывают результат, имеют сброс; карточки разделяют открытие
 и CTA. Другие демонстрационные сценарии описаны в [dev-app/README.md](../dev-app/README.md).
 
@@ -965,7 +964,9 @@ legacy-кодов — [ShowcaseDisplayView.kt](../dev-app/src/main/kotlin/tech/t
 при attach, останавливается при detach и достижении нуля, пересчитывается при повторном attach.
 
 Leaderboard не знает правил подсчёта результатов, штрафов или других состояний Соревнования. Варианты ячеек —
-`None`, `Success`, `HighlightedSuccess`, `Error`, `Pending`. Таблица прокручивается внутри собственного блока.
+`None`, `Success`, `HighlightedSuccess`, `Error`, `Pending`. `placeSize`, `identitySize` и `LeaderboardColumn.size` задают доли общей сетки;
+`gridColumns = null` наследует содержащую сетку, явное число расширяет логическую вместимость.
+Остаток и ошибки размеров следуют [контракту таблицы](#колонки). Таблица прокручивается внутри собственного блока.
 `BlockScope.leaderboard` занимает всё тело блока без отступов, поэтому рядом с ним нельзя добавить обычную строку.
 
 SortableList использует клиентскую React-реализацию и именованные keyed slots для Flow-содержимого: перестановка сохраняет
@@ -987,7 +988,8 @@ SortableList использует клиентскую React-реализаци�
 за дальнейшее владение данными, которые оно явно скопировало. Постоянное хранение компонент не делает.
 `state` — сигнал последнего события `Idle`, `Uploading`, `Processing`, `Done`, `Error`, `Cancelled`.
 `cancel` отменяет действующие передачи, `clear` также сбрасывает список и квоту числа файлов; удаление из списка
-освобождает соответствующие серверные места. Ошибка и отмена освобождают место для повторной попытки.
+освобождает место именно выбранной передачи; одноимённые файлы имеют независимую идентичность.
+Ошибка и отмена освобождают место для повторной попытки.
 
 `downloadAction` и `iconDownloadAction` запускают настоящий `DownloadHandler`. Производитель получает
 `DownloadContext` и возвращает `DownloadContent` с filename, contentType, необязательной length и фабрикой нового

@@ -20,7 +20,6 @@ import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.layout.Placement
 import java.io.IOException
 import java.io.InputStream
 import java.io.InterruptedIOException
@@ -235,7 +234,7 @@ fun BlockRowScope.downloadAction(
     size: Int? = null,
     produce: (DownloadContext) -> DownloadContent,
     configure: DownloadHandle.() -> Unit = {},
-): DownloadHandle = ContentScope(place(size, Div()), texts, Placement.Body).downloadAction(label, produce, configure)
+): DownloadHandle = placeContent(size, Div()).downloadAction(label, produce, configure)
 
 private fun ContentScope.download(
     label: String,

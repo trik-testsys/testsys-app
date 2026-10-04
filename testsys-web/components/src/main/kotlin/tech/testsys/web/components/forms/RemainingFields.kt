@@ -14,8 +14,6 @@ import tech.testsys.web.components.layout.ContentScope
 
 private const val MAX_SEGMENTED_CHOICES = 4
 private const val DEFAULT_EDITOR_LINES = 10
-private const val EDITOR_LINE_PIXELS = 21
-private const val EDITOR_VERTICAL_PADDING = 28
 
 /**
  * Adds one radio choice from [items] shown by [itemLabel] on [size] columns, beside [labelSize] label columns.
@@ -289,20 +287,12 @@ internal class CodeEditorField(label: String, minLines: Int) : CustomField<Strin
         element.setAttribute("aria-describedby", "${description.id.orElseThrow()} ${helperDescription.id.orElseThrow()}")
         element.setAttribute("spellcheck", false)
         element.setProperty("value", "")
-        element.style.set("min-height", "0")
-        element.style.set("height", "100%")
-        element.style.set("resize", "none")
-        element.style.set("box-sizing", "border-box")
     }
 
     init {
-        val height = minLines * EDITOR_LINE_PIXELS + EDITOR_VERTICAL_PADDING
         val box = Div(numbers, area).apply {
             addClassName("ts-code")
-            element.style.set("min-height", "${height}px")
-            element.style.set("height", "${height}px")
-            element.style.set("resize", "vertical")
-            element.style.set("overflow", "hidden")
+            element.style.set("--ts-code-min-lines", minLines.toString())
         }
         add(box, description, helperDescription)
         area.element.addPropertyChangeListener("value", "input") { event ->

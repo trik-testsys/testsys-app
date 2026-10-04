@@ -104,10 +104,10 @@ private fun PageScope.demoResources(context: DemoContext, actor: DemoUser, objec
                 state = context.table("${actor.id}:${resource.id}:history"),
                 rows = revisions,
                 columns = {
-                    textColumn("Изменён") { it.id }
-                    textColumn("Файл") { it.title }
-                    textColumn("Комментарий") { it.detail }
-                    column("Версия") { revision ->
+                    textColumn("Изменён", size = 4) { it.id }
+                    textColumn("Файл", size = 6) { it.title }
+                    textColumn("Комментарий", size = 11) { it.detail }
+                    column("Версия", size = 3) { revision ->
                         demoDownload(filename = revision.title, content = "Демонстрационный ресурс: ${resource.name}")
                     }
                 },

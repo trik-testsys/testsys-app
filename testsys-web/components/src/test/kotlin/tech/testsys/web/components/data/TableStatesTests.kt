@@ -56,7 +56,7 @@ class TableStatesTests : MockVaadinTests() {
 
     @Test
     fun `should show the load failure if cell content throws`() {
-        buildTable(Source(size = 12)::fetch) { column("Вердикт") { error("Test cell failure") } }
+        buildTable(Source(size = 12)::fetch) { column("Вердикт", size = 1) { error("Test cell failure") } }
 
         assertTrue("ts-empty--error" in ui().find("ts-empty").classes())
     }
@@ -177,7 +177,7 @@ class TableStatesTests : MockVaadinTests() {
         buildTestPage {
             block(title = "Посылки") {
                 handle = table(key = { row -> row.id }, pageSize = 5, selectable = selectable, fetch = fetch) {
-                    textColumn("Участник") { row -> row.name }
+                    textColumn("Участник", size = 1) { row -> row.name }
                     extra()
                 }
             }

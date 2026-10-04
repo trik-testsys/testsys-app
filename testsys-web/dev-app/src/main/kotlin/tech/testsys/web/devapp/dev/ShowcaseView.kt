@@ -13,9 +13,11 @@ import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.destructiveAction
+import tech.testsys.web.components.actions.destructiveIconAction
 import tech.testsys.web.components.actions.iconAction
 import tech.testsys.web.components.actions.linkAction
 import tech.testsys.web.components.actions.mainAction
+import tech.testsys.web.components.actions.mainIconAction
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.icon
 import tech.testsys.web.components.display.CounterKind
@@ -327,6 +329,8 @@ private fun PageScope.actionSection() {
                 destructiveAction("Удалить", icon = IconName.Trash) { onClick { toast(FeedbackKind.Info, "Удалить: действие выполнено") } }
                 linkAction("Подробнее") { onClick { toast(FeedbackKind.Info, "Подробнее: действие выполнено") } }
                 iconAction(IconName.Settings, "Настройки") { onClick { toast(FeedbackKind.Info, "Настройки: действие выполнено") } }
+                mainIconAction(IconName.Plus, "Добавить объект") { onClick { toast(FeedbackKind.Success, "Объект добавлен") } }
+                destructiveIconAction(IconName.Trash, "Удалить объект") { onClick { toast(FeedbackKind.Info, "Объект удалён") } }
             }
         }
         row {

@@ -1,13 +1,11 @@
 package tech.testsys.web.devapp.dev
 
-import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.NotFoundException
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import org.springframework.core.env.Environment
-import tech.testsys.web.components.RawVaadin
 import tech.testsys.web.components.SelectionHandle
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.TextHandle
@@ -24,6 +22,7 @@ import tech.testsys.web.components.data.sortableList
 import tech.testsys.web.components.display.AvatarData
 import tech.testsys.web.components.display.ContestCardData
 import tech.testsys.web.components.display.DifficultyLevel
+import tech.testsys.web.components.display.LegacyVerdict
 import tech.testsys.web.components.display.ProgressValue
 import tech.testsys.web.components.display.TimerValue
 import tech.testsys.web.components.display.TimerVariant
@@ -32,6 +31,7 @@ import tech.testsys.web.components.display.avatar
 import tech.testsys.web.components.display.avatarGroup
 import tech.testsys.web.components.display.contestCard
 import tech.testsys.web.components.display.difficulty
+import tech.testsys.web.components.display.legacyVerdict
 import tech.testsys.web.components.display.progressBar
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.display.timer
@@ -165,10 +165,12 @@ private fun demoLeaderboard(): LeaderboardData = LeaderboardData(
     label = "Таблица результатов",
     placeLabel = "Место",
     identityLabel = "Участник",
+    placeSize = 2,
+    identitySize = 8,
     columns = listOf(
-        LeaderboardColumn(key = "a", label = "A"),
-        LeaderboardColumn(key = "b", label = "B"),
-        LeaderboardColumn(key = "total", label = "Итого", isMetric = true),
+        LeaderboardColumn(key = "a", label = "A", size = 4),
+        LeaderboardColumn(key = "b", label = "B", size = 4),
+        LeaderboardColumn(key = "total", label = "Итого", isMetric = true, size = null),
     ),
     rows = listOf(
         LeaderboardRow(
@@ -196,7 +198,6 @@ private fun demoLeaderboard(): LeaderboardData = LeaderboardData(
     ),
 )
 
-@OptIn(RawVaadin::class)
 private fun PageScope.numericVerdicts() {
     block(title = "Verdict: числовой результат") {
         row {
@@ -208,16 +209,10 @@ private fun PageScope.numericVerdicts() {
         }
         row { verdict(0.0, label = "баллов", size = HALF_WIDTH) }
     }
-    block(title = "Legacy Verdict: совместимость", subtitle = "Коды олимпиадного программирования; отдельный custom-образец") {
+    block(title = "Legacy Verdict: совместимость", subtitle = "Коды олимпиадного программирования; типизированный пример") {
         row {
             horizontal {
-                listOf("ok", "wa", "tle", "mle", "re", "ce", "queue").forEach { code ->
-                    custom(
-                        Span(if (code == "queue") "…" else code.uppercase()).apply {
-                            addClassNames("ts-verdict", "ts-verdict--$code")
-                        },
-                    )
-                }
+                LegacyVerdict.entries.forEach { value -> legacyVerdict(value) }
             }
         }
     }
@@ -264,6 +259,7 @@ private fun PageScope.questionExamples() {
         steps = listOf(StepData("Начало"), StepData("Вопросы"), StepData("Результат", isSelectable = false)),
         current = 1,
     )
+
     val navigation = QuestionNavData(
         total = QUESTION_COUNT,
         current = CURRENT_QUESTION,

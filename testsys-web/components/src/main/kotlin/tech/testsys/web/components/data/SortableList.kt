@@ -7,7 +7,6 @@ import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.layout.Placement
 
 /**
  * Handle of a keyed list reordered by pointer or keyboard; programmatic updates never invoke its change callback.
@@ -78,7 +77,7 @@ fun <T : Any> ContentScope.sortableList(
     content: ContentScope.(T) -> Unit,
     configure: SortableListHandle<T>.() -> Unit = {},
 ): SortableListHandle<T> {
-    val adapter = SortableListAdapter(texts, items, itemKey, itemLabel, content)
+    val adapter = SortableListAdapter(texts, items, itemKey, itemLabel, content, gridColumns)
     add(adapter)
     return SortableListHandle(adapter, items).apply(configure)
 }
@@ -98,7 +97,7 @@ fun <T : Any> BlockRowScope.sortableList(
     size: Int? = null,
     content: ContentScope.(T) -> Unit,
     configure: SortableListHandle<T>.() -> Unit = {},
-): SortableListHandle<T> = ContentScope(place(size, Div()), texts, Placement.Body).sortableList(
+): SortableListHandle<T> = placeContent(size, Div()).sortableList(
     items,
     itemKey,
     itemLabel,

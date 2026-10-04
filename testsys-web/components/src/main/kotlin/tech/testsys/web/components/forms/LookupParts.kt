@@ -14,13 +14,13 @@ import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.data.DataTable
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
-import tech.testsys.web.components.data.TableColumn
 import tech.testsys.web.components.data.TableScope
 import tech.testsys.web.components.data.TableSpec
 import tech.testsys.web.components.feedback.EmptyContent
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
+import tech.testsys.web.components.overlay.DIALOG_COLUMNS
 import tech.testsys.web.components.overlay.DialogShell
 
 /** Default number of rows on a page of the lookup dialog. */
@@ -41,15 +41,20 @@ internal const val LOOKUP_CLICK_FILTER: String = "!event.target.closest('$LOOKUP
  * @throws IllegalArgumentException if [pageSize] is below one, or [columns] declares no columns, sets its own empty
  * state or row click, which the lookup owns, or adds a menu column.
  */
-internal fun <T : Any> BlockRowScope.lookupColumns(label: String, pageSize: Int, columns: TableScope<T>.() -> Unit): List<TableColumn<T>> {
+internal fun <T : Any> BlockRowScope.lookupColumns(
+    label: String,
+    pageSize: Int,
+    columns: TableScope<T>.() -> Unit,
+    isSelectable: Boolean = false,
+): TableSpec<T> {
     require(pageSize >= 1) { "Lookup '$label' page size must be at least 1, got $pageSize" }
-    val scope = TableScope<T>(texts).apply(columns)
+    val scope = TableScope<T>(texts, gridColumns = DIALOG_COLUMNS, selectionSize = if (isSelectable) 1 else 0).apply(columns)
     val spec = scope.spec()
     require(spec.columns.isNotEmpty()) { "Lookup '$label' must declare at least one column" }
     require(!scope.hasOwnEmpty && spec.rowClick == null && !scope.hasMenuColumn) {
         "Lookup '$label' columns must not set the empty state, the row click or a menu column: the lookup sets the first two itself"
     }
-    return spec.columns
+    return spec
 }
 
 /**
@@ -63,6 +68,7 @@ internal abstract class LookupFrame<V>(
     protected val texts: UiTexts,
     private val title: String,
     emptyValue: V,
+    gridColumns: Int,
 ) : CustomField<V>(emptyValue, true), HasValidator<V> {
     protected val valueButton: NativeButton = NativeButton().apply {
         addClassName("ts-lookup__text")
@@ -71,10 +77,10 @@ internal abstract class LookupFrame<V>(
     protected val box: Div = Div(valueButton).apply { addClassName("ts-lookup") }
     private val clearAction: ActionHandle
     private val openAction: ActionHandle
-    private var isDialogOpen = false
+    private var currentDialog: LookupDialog<*>? = null
 
     init {
-        val actions = ContentScope(box, texts, Placement.Head)
+        val actions = ContentScope(box, texts, Placement.Head, gridColumns)
         clearAction = actions.iconAction(IconName.X, texts.lookup.clear) { onClick { clearByUser() } }
         openAction = actions.iconAction(IconName.Search, texts.lookup.open) { onClick { openDialog() } }
         openAction.button.tabIndex = -1
@@ -92,11 +98,13 @@ internal abstract class LookupFrame<V>(
     override fun setReadOnly(readOnly: Boolean) {
         super.setReadOnly(readOnly)
         element.setAttribute("readonly", readOnly)
+        if (!isChoosable()) currentDialog?.shell?.close()
         updateView(value)
     }
 
     override fun onEnabledStateChanged(enabled: Boolean) {
         super.onEnabledStateChanged(enabled)
+        if (!enabled) currentDialog?.shell?.close()
         updateView(value)
     }
 
@@ -137,6 +145,7 @@ internal abstract class LookupFrame<V>(
 
     /** Sets [newValue] as a value chosen by the user. */
     protected fun choose(newValue: V) {
+        if (!isChoosable()) return
         setModelValue(newValue, true)
         updateView(value)
     }
@@ -152,10 +161,10 @@ internal abstract class LookupFrame<V>(
     }
 
     private fun openDialog() {
-        if (!isChoosable() || isDialogOpen) return
+        if (!isChoosable() || currentDialog != null) return
         val dialog = buildDialog()
-        isDialogOpen = true
-        dialog.onClose { isDialogOpen = false }
+        currentDialog = dialog
+        dialog.onClose { if (currentDialog === dialog) currentDialog = null }
         dialog.open()
     }
 }
@@ -175,7 +184,7 @@ internal class LookupDialog<T : Any>(
     title: String,
     fetch: (String, PageRequest) -> Page<T>,
     pageSize: Int,
-    columns: List<TableColumn<T>>,
+    columns: TableSpec<T>,
     isSelectable: Boolean,
     selected: Set<T>,
     highlighted: (T) -> Boolean,
@@ -187,7 +196,8 @@ internal class LookupDialog<T : Any>(
 
     init {
         var query = ""
-        val spec = TableSpec(columns, EmptyContent(texts.lookup.empty)) { row -> onRowClick(this, row) }
+        val spec =
+            TableSpec(columns.columns, EmptyContent(texts.lookup.empty), columns.layout) { row -> onRowClick(this, row) }
         table = DataTable(
             texts,
             key = { row -> row },

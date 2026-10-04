@@ -137,11 +137,11 @@ class MenuTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should add a last narrow menu column named for screen readers to a table`() {
+    fun `should add a last shared grid menu column named for screen readers to a table`() {
         buildMenuTable { item("Открыть") {} }
 
         val header = UI.getCurrent().find("ts-table").children.toList()[0].children.toList()[0].children.toList().last()
-        assertEquals("52px", header.style.get("width"))
+        assertEquals("50.0%", UI.getCurrent().find("ts-table").element.getChild(0).children.toList().last().style.get("width"))
         assertEquals(testTexts.menu.actions, header.element.getAttribute("aria-label"))
     }
 
@@ -165,14 +165,14 @@ class MenuTests : MockVaadinTests() {
     @Test
     fun `should reject a text column after the menu column`() {
         assertThrows<IllegalStateException> {
-            buildMenuTable(extra = { textColumn("Ещё") { row -> "$row" } }) { item("Открыть") {} }
+            buildMenuTable(extra = { textColumn("Ещё", size = 1) { row -> "$row" } }) { item("Открыть") {} }
         }
     }
 
     @Test
     fun `should reject a content column after the menu column`() {
         assertThrows<IllegalStateException> {
-            buildMenuTable(extra = { column("Ещё") {} }) { item("Открыть") {} }
+            buildMenuTable(extra = { column("Ещё", size = 1) {} }) { item("Открыть") {} }
         }
     }
 
@@ -190,7 +190,7 @@ class MenuTests : MockVaadinTests() {
         buildTestPage {
             block {
                 table<Int>(key = { row -> row }, fetch = { Page(listOf(41, 42), 2) }) {
-                    textColumn("Номер") { row -> "$row" }
+                    textColumn("Номер", size = 1) { row -> "$row" }
                     menuColumn(ariaLabel = { row -> "Действия с посылкой №$row" }) { row ->
                         item("Открыть") { chosen += row }
                     }
@@ -217,8 +217,8 @@ class MenuTests : MockVaadinTests() {
         buildTestPage {
             block {
                 table<Int>(key = { row -> row }, fetch = { Page(listOf(1, 2, 3), 3) }) {
-                    textColumn("Номер") { row -> "$row" }
-                    menuColumn(content)
+                    textColumn("Номер", size = 1) { row -> "$row" }
+                    menuColumn(content = content)
                     extra()
                 }
             }

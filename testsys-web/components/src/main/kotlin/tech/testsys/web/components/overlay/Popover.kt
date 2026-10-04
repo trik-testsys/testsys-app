@@ -5,6 +5,8 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.component.popover.PopoverPosition
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.actions.ActionRole
+import tech.testsys.web.components.actions.buildActionButton
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
@@ -101,8 +103,7 @@ fun ContentScope.popover(
     content: ContentScope.() -> Unit,
 ): PopoverHandle {
     val root = Div()
-    val trigger = Button(label).apply {
-        addClassNames("ts-btn", "ts-btn--secondary")
+    val trigger = buildActionButton(ActionRole.Neutral, label).apply {
         element.setAttribute("aria-haspopup", "dialog")
     }
     val popup = Popover().apply {
@@ -116,7 +117,7 @@ fun ContentScope.popover(
         addThemeName("ts-popover")
     }
     val body = Div().apply { addClassName("ts-pop") }
-    ContentScope(body, texts, Placement.Body).content()
+    ContentScope(body, texts, Placement.Body, gridColumns).content()
     popup.add(body)
     root.add(trigger, popup)
     add(root)
@@ -136,7 +137,4 @@ fun BlockRowScope.popover(
     alignment: PopoverAlignment = PopoverAlignment.Start,
     configure: PopoverHandle.() -> Unit = {},
     content: ContentScope.() -> Unit,
-): PopoverHandle {
-    val root = place(size, Div())
-    return ContentScope(root, texts, Placement.Body).popover(label, alignment, configure, content)
-}
+): PopoverHandle = placeContent(size, Div()).popover(label, alignment, configure, content)

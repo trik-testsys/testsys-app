@@ -8,7 +8,6 @@ import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.layout.Placement
 
 /**
  * Application-provided checked result; the UI calculates no answer correctness.
@@ -89,4 +88,4 @@ fun BlockRowScope.quizOption(
     size: Int? = null,
     configure: SelectionHandle<QuizOptionData>.() -> Unit = {
     },
-): SelectionHandle<QuizOptionData> = ContentScope(place(size, Div()), texts, Placement.Body).quizOption(data, configure)
+): SelectionHandle<QuizOptionData> = placeContent(size, Div()).quizOption(data, configure)

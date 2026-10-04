@@ -8,10 +8,20 @@ class TableScopeTests {
     private class Row(val id: String, val score: Int?)
 
     @Test
+    fun `should render both civil date column kinds in monospace`() {
+        val columns = TableScope<Row>(testTexts).apply {
+            dateColumn("Date", size = 1) { java.time.LocalDate.of(2026, 10, 4) }
+            dateTimeColumn("Time", size = 1) { java.time.LocalDateTime.of(2026, 10, 4, 12, 0) }
+        }.spec().columns
+        assertEquals(listOf(CellKind.Date, CellKind.Date), columns.map { column -> column.kind })
+        assertEquals("ts-num", CellKind.Date.cssClass)
+    }
+
+    @Test
     fun `should keep columns in declaration order with their sort keys`() {
         val spec = TableScope<Row>(testTexts).apply {
-            codeColumn("ID") { row -> row.id }
-            numberColumn("Баллы", sortKey = "score") { row -> row.score }
+            codeColumn("ID", size = 1) { row -> row.id }
+            numberColumn("Баллы", sortKey = "score", size = 1) { row -> row.score }
         }.spec()
 
         assertEquals(listOf("ID", "Баллы"), spec.columns.map { column -> column.title })

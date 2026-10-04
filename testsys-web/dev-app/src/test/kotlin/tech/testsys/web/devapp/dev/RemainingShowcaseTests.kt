@@ -25,6 +25,35 @@ class RemainingShowcaseTests {
     @ActiveProfiles("dev")
     inner class DevTests : MockSpringVaadinTests() {
         @Test
+        fun `should build foundations from packaged tokens and brand`() {
+            UI.getCurrent().navigate("dev/showcase/foundations")
+            expectView<ShowcaseFoundationsView>()
+            assertEquals(
+                listOf("Палитра", "Типографика", "Отступы, радиусы, тени и движение", "Состояния движения", "Бренд"),
+                _find<com.vaadin.flow.component.html.H3>().filter { "ts-block__title" in it.element.classList }.map { it.text },
+            )
+            assertTrue(_find<Div>().any { it.text == "--accent" })
+            assertTrue(_find<com.vaadin.flow.component.html.Image>().any { it.src.contains("brand/") })
+        }
+
+        @Test
+        fun `should retain all columns and pagination in the wide matrix example`() {
+            UI.getCurrent().navigate("dev/showcase/states")
+            val table = _find<com.vaadin.flow.component.html.Table>().single { candidate ->
+                candidate.element.style.get("--ts-table-used") == "66"
+            }
+
+            val group = table.element.children.toList().single { child -> child.tag == "colgroup" }
+            assertEquals(31, group.childCount)
+            assertTrue(table.element.textRecursively.contains("Задача 30"))
+            assertTrue(table.element.textRecursively.contains("Группа 1"))
+            val block = table.parent.orElseThrow().parent.orElseThrow().parent.orElseThrow()
+            val next = block._find<NativeButton>().single { button -> button.element.getAttribute("aria-label") == "Вперёд" }
+            next._click()
+            assertTrue(table.element.textRecursively.contains("Группа 2"))
+        }
+
+        @Test
         fun `should expose all new field and transfer examples in forms route`() {
             UI.getCurrent().navigate("dev/showcase/forms")
 
@@ -119,7 +148,7 @@ class RemainingShowcaseTests {
     @SpringBootTest
     inner class OutsideDevTests : MockSpringVaadinTests() {
         @ParameterizedTest
-        @ValueSource(strings = ["dev/showcase/forms", "dev/showcase/overlays", "dev/showcase/display", "dev/showcase/header"])
+        @ValueSource(strings = ["dev/showcase/forms", "dev/showcase/overlays", "dev/showcase/display", "dev/showcase/header", "dev/showcase/foundations"])
         fun `should reject remaining showcase routes outside dev profile`(route: String) {
             UI.getCurrent().navigate(route)
 

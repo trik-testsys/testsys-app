@@ -104,7 +104,7 @@ class RemainingDisplayTests : MockVaadinTests() {
         assertFalse(root.find("ts-progress").element.hasAttribute("aria-valuenow"))
     }
     @Test
-    fun `should retain positive skeleton dimensions in intrinsic horizontal flows`() {
+    fun `should expose semantic skeleton shapes in intrinsic horizontal flows`() {
         val placeholders = mutableListOf<ElementHandle>()
         buildTestContent {
             horizontal { SkeletonShape.entries.forEach { shape -> placeholders += skeleton(shape) } }
@@ -112,15 +112,9 @@ class RemainingDisplayTests : MockVaadinTests() {
 
         assertEquals(SkeletonShape.entries.size, placeholders.size)
         placeholders.forEach { handle ->
-            assertTrue(handle.component.element.style.get("min-width").removeSuffix("px").toInt() > 0)
+            assertTrue(handle.component.element.classList.contains("ts-skeleton"))
         }
     }
 
-    @Test
-    fun `should reject zero explicit skeleton dimensions`() {
-        assertThrows(IllegalArgumentException::class.java) {
-            buildTestContent { skeleton(SkeletonShape.Rectangle, width = 0) }
-        }
-    }
 
 }

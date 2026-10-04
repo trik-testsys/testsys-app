@@ -151,19 +151,14 @@ class ShowcaseViewTests {
             assertTrue(_find<CustomField<*>>().any { field -> field._find<Component> { classes = "ts-lookup" }.isNotEmpty() })
         }
 
-        @ParameterizedTest
-        @CsvSource(
-            "ID, ts-col--narrow",
-            "Участник, ts-col--medium",
-            "Задача, ts-col--fill",
-            "Вердикт, ts-col--medium",
-            "Баллы, ts-col--narrow",
-            "Время, ts-col--medium",
-        )
-        fun `should mark the submission table headers with their column widths`(title: String, cssClass: String) {
-            val header = block("Посылки")._find<TableHeaderCell>().single { cell -> cell.text == title }
+        @Test
+        fun `should allocate the submission table including selection on the common grid`() {
+            val table = block("Посылки")._get<Table>()
+            val group = table.element.children.toList().single { child -> child.tag == "colgroup" }
 
-            assertTrue(cssClass in header.element.classList)
+            assertEquals(7, group.childCount)
+            assertEquals("24", table.element.style.get("--ts-table-used"))
+            assertTrue(table.element.classList.contains("ts-table-grid"))
         }
 
         @Test

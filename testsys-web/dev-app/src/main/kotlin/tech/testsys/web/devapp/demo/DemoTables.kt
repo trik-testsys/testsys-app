@@ -61,6 +61,7 @@ internal fun demoPage(rows: List<DemoRow>, criteria: DemoCriteria, request: Page
 internal fun BlockScope.demoTable(
     state: DemoTableState,
     rows: List<DemoRow>,
+    gridColumns: Int? = null,
     columns: TableScope<DemoRow>.() -> Unit = { demoDefaultColumns() },
     onSelect: (DemoRow) -> Unit = {},
 ) {
@@ -74,6 +75,7 @@ internal fun BlockScope.demoTable(
     handle = table(
         key = DemoRow::id,
         pageSize = DEMO_PAGE_SIZE,
+        gridColumns = gridColumns,
         fetch = {
             demoPage(rows, state.applied, it)
         },
@@ -183,8 +185,8 @@ internal fun BlockScope.demoTable(
 
 /** Columns of a generic scoped demonstration projection. */
 private fun TableScope<DemoRow>.demoDefaultColumns() {
-    codeColumn("ID") { row -> row.id }
-    textColumn("Название") { row -> row.title }
-    textColumn("Тип / состояние") { row -> row.category }
+    codeColumn("ID", size = 4) { row -> row.id }
+    textColumn("Название", size = 7) { row -> row.title }
+    textColumn("Тип / состояние", size = 5) { row -> row.category }
     textColumn("Сведения") { row -> row.detail }
 }

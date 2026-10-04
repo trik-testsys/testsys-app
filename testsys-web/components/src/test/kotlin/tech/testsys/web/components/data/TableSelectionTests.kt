@@ -19,9 +19,27 @@ import tech.testsys.web.components.classes
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
+import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.testTexts
 
 class TableSelectionTests : MockVaadinTests() {
+    @Test
+    fun `should protect every DSL input host including select from row clicks`() {
+        assertTrue(ROW_CLICK_FILTER.contains("[data-ts-input]"))
+        var clicks = 0
+        val root = buildTestPage {
+            block {
+                table(key = { value: String -> value }, fetch = { Page(listOf("row"), 1) }) {
+                    column("Choice", size = 1) { select("Choice", listOf("One", "Two"), { it }) }
+                    onRowClick { clicks++ }
+                }
+            }
+        }
+        assertTrue(root.findAll("ts-table").isNotEmpty())
+        root.find("ts-table").findAll("ts-row-clickable").single()._fireDomEvent("click", tools.jackson.databind.ObjectMapper().createObjectNode().put(ROW_CLICK_FILTER, true))
+        assertEquals(1, clicks)
+    }
+
     @Test
     fun `should add a checkbox column with a header checkbox`() {
         buildTable(Source(size = 12))
@@ -271,7 +289,7 @@ class TableSelectionTests : MockVaadinTests() {
         buildTestPage {
             block(title = "Посылки") {
                 val handle = table(key = { row -> row.id }, pageSize = 5, selectable = true, fetch = source::fetch) {
-                    textColumn("Участник") { row -> row.name }
+                    textColumn("Участник", size = 1) { row -> row.name }
                 }
                 actions { text(handle.selection.map { keys -> "Выбрано: ${keys.size}" }) }
             }
@@ -290,7 +308,7 @@ class TableSelectionTests : MockVaadinTests() {
         buildTestPage {
             block(title = "Посылки") {
                 handle = table(key = { row -> row.id }, pageSize = 5, fetch = source::fetch) {
-                    textColumn("Участник") { row -> row.name }
+                    textColumn("Участник", size = 1) { row -> row.name }
                 }
             }
         }
@@ -324,7 +342,7 @@ class TableSelectionTests : MockVaadinTests() {
     @Test
     fun `should keep a highlighted row marked when its checkbox is unchecked`() {
         val source = Source(size = 12)
-        val spec = TableScope<Row>(testTexts).apply { textColumn("Участник") { row -> row.name } }.spec()
+        val spec = TableScope<Row>(testTexts, selectionSize = 1).apply { textColumn("Участник", size = 1) { row -> row.name } }.spec()
         val highlighted = { row: Row -> row.id == 3 }
         val table = DataTable(testTexts, { row -> row.id }, 5, isSelectable = true, source::fetch, spec, highlighted)
         UI.getCurrent().add(table.table)
@@ -341,8 +359,8 @@ class TableSelectionTests : MockVaadinTests() {
         buildTestPage {
             block(title = "Посылки") {
                 handle = table(key = { row -> row.id }, pageSize = 5, selectable = true, fetch = source::fetch) {
-                    codeColumn("ID", sortKey = "id") { row -> row.id.toString() }
-                    textColumn("Участник") { row -> row.name }
+                    codeColumn("ID", sortKey = "id", size = 1) { row -> row.id.toString() }
+                    textColumn("Участник", size = 1) { row -> row.name }
                     extra()
                 }
             }

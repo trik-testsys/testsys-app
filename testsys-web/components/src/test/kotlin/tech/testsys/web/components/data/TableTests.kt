@@ -2,6 +2,7 @@ package tech.testsys.web.components.data
 
 import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._fireDomEvent
+import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.NativeButton
@@ -167,42 +168,13 @@ class TableTests : MockVaadinTests() {
         assertFalse("ts-right" in nameHeader().classes())
     }
 
-    @ParameterizedTest
-    @CsvSource("Narrow, ts-col--narrow", "Medium, ts-col--medium", "Wide, ts-col--wide", "Fill, ts-col--fill")
-    fun `should mark the header with the class of the column width`(width: ColumnWidth, cssClass: String) {
-        buildTable(Source(size = 3)) { textColumn("Комментарий", width = width) { row -> row.name } }
-
-        assertTrue(cssClass in addedHeader().classes())
-    }
-
     @Test
-    fun `should leave the header of an auto width column without a width class`() {
-        buildTable(Source(size = 3)) { textColumn("Комментарий", width = ColumnWidth.Auto) { row -> row.name } }
+    fun `should resolve explicit fractions and the remaining fraction in declaration order`() {
+        buildTable(Source(size = 3)) { textColumn("Комментарий") { row -> row.name } }
 
-        assertEquals(emptyList<String>(), widthClasses(addedHeader()))
-    }
-
-    @Test
-    fun `should leave the menu column header without a width class`() {
-        buildTable(Source(size = 3)) { menuColumn { item("Открыть") {} } }
-
-        assertEquals(emptyList<String>(), widthClasses(addedHeader()))
-    }
-
-    @Test
-    fun `should mark the header of every kind of column with its width`() {
-        buildTable(Source(size = 3)) {
-            codeColumn("Код", width = ColumnWidth.Narrow) { row -> row.id.toString() }
-            numberColumn("Место", width = ColumnWidth.Narrow) { row -> row.id }
-            dateColumn("Дата", width = ColumnWidth.Medium) { null }
-            dateTimeColumn("Отправлена", width = ColumnWidth.Medium) { null }
-            column("Задача", width = ColumnWidth.Fill) { row -> text(row.name) }
-        }
-
-        assertEquals(
-            listOf("ts-col--narrow", "ts-col--narrow", "ts-col--medium", "ts-col--medium", "ts-col--fill"),
-            addedHeaders().map { header -> widthClasses(header).single() },
-        )
+        val cols = _get<com.vaadin.flow.component.html.Table>().element.getChild(0).children.toList()
+        assertEquals(listOf("4.166666666666666%", "4.166666666666666%", "4.166666666666666%", "87.5%"),
+            cols.map { col -> col.style.get("width") })
     }
 
     @Test
@@ -292,7 +264,7 @@ class TableTests : MockVaadinTests() {
             block(title = "Посылки") {
                 footer { text("Итого") }
                 table(key = { row: Row -> row.id }, pageSize = 5, fetch = source::fetch) {
-                    textColumn("Участник") { row -> row.name }
+                    textColumn("Участник", size = 1) { row -> row.name }
                 }
             }
         }
@@ -309,7 +281,7 @@ class TableTests : MockVaadinTests() {
             block(title = "Посылки") {
                 footer { text("Итого") }
                 table(key = { row: Row -> row.id }, pageSize = 5, fetch = source::fetch) {
-                    textColumn("Участник") { row -> row.name }
+                    textColumn("Участник", size = 1) { row -> row.name }
                 }
             }
         }
@@ -325,7 +297,7 @@ class TableTests : MockVaadinTests() {
         buildTestPage {
             block(title = "Посылки") {
                 table(key = { row: Row -> row.id }, pageSize = 5, fetch = source::fetch) {
-                    textColumn("Участник") { row -> row.name }
+                    textColumn("Участник", size = 1) { row -> row.name }
                 }
                 footer { text("Итого") }
             }
@@ -429,7 +401,7 @@ class TableTests : MockVaadinTests() {
             buildTestPage {
                 block {
                     row { text("…") }
-                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник") { row -> row.name } }
+                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
                 }
             }
         }
@@ -442,7 +414,7 @@ class TableTests : MockVaadinTests() {
         assertThrows<IllegalStateException> {
             buildTestPage {
                 block {
-                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник") { row -> row.name } }
+                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
                     row { text("…") }
                 }
             }
@@ -456,8 +428,8 @@ class TableTests : MockVaadinTests() {
         assertThrows<IllegalStateException> {
             buildTestPage {
                 block {
-                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник") { row -> row.name } }
-                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник") { row -> row.name } }
+                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
+                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
                 }
             }
         }
@@ -543,9 +515,9 @@ class TableTests : MockVaadinTests() {
         buildTestPage {
             block(title = "Посылки") {
                 handle = table(key = { row -> row.id }, pageSize = pageSize, fetch = source::fetch) {
-                    codeColumn("ID", sortKey = "id") { row -> row.id.toString() }
-                    textColumn("Участник") { row -> row.name }
-                    numberColumn("Баллы", sortKey = "score") { row -> row.score }
+                    codeColumn("ID", sortKey = "id", size = 1) { row -> row.id.toString() }
+                    textColumn("Участник", size = 1) { row -> row.name }
+                    numberColumn("Баллы", sortKey = "score", size = 1) { row -> row.score }
                     extra()
                 }
             }
@@ -574,8 +546,6 @@ class TableTests : MockVaadinTests() {
     /** Header of the last column, the one a test adds after the columns of [buildTable]. */
     private fun addedHeader(): Component = headers().last()
 
-    /** Classes of [header] that set the width of its column. */
-    private fun widthClasses(header: Component): List<String> = header.classes().filter { cssClass -> cssClass.startsWith("ts-col--") }
 
     private fun pagerButton(label: String): NativeButton =
         ui().findAll("ts-pager__btn").single { button -> button.element.getAttribute("aria-label") == label } as NativeButton

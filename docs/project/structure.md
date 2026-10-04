@@ -85,8 +85,8 @@ testsys-app/
 - В `build.gradle.kts` модуля, кроме плагинов сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`, у веб-приложений —
   ещё Spring Boot и Vaadin в `app` и `dev-app`) и зависимостей, может быть и модуль-специфичная логика сборки — она остаётся в скрипте
   своего модуля. Так, в `testsys-infra/localization` это кодогенерация (см.
-  [localization/README.md](../../testsys-infra/localization/README.md)), в `testsys-web:components` — упаковка UI-ресурсов и клиентских реализаций компонентов в jar и сохранение временных меток его файлов, в `app` и `dev-app` — условие задачи
-  `vaadinBuildFrontend` (см. ниже).
+  [localization/README.md](../../testsys-infra/localization/README.md)), в `testsys-web:components` — сохранение временных
+  меток файлов jar. Общая политика frontend применяется helper-ом; см. [Сборка веб-приложений](#сборка-веб-приложений).
 
 Полная сборка — компиляция, тесты и Detekt:
 
@@ -107,6 +107,8 @@ testsys-app/
 ```bash
 ./gradlew build -Pdetekt.autoCorrect=false
 ```
+
+### Сборка веб-приложений
 
 Запуск основного приложения (порт 8080; пока доступны только обработчики отсутствующих маршрутов):
 
@@ -141,10 +143,10 @@ Node.js плагин устанавливает в `~/.vaadin`; упаковка
 [components/README.md](../../testsys-web/components/README.md), раздел «Клиентская реализация компонентов».
 
 Production-сборку фронтенда (`vaadinBuildFrontend`) выполняют только запуски с `bootJar` или `bootBuildImage`
-(`assemble` и `build` включают `bootJar`); `bootRun`, тесты и `check` её пропускают. Условие проверяет граф задач
-в `testsys-web/app/build.gradle.kts` и `testsys-web/dev-app/build.gradle.kts`: плагин Vaadin 25.2–25.3 включает production-режим, если задача `bootJar` просто есть
-в проекте, и без условия собирал бы фронтенд перед каждым запуском и тестами.
-
+(`assemble` и `build` включают `bootJar`); `bootRun`, тесты и `check` её пропускают. Условие реализует
+`configureWebFrontend` в [WebFrontend.kt](../../buildSrc/src/main/kotlin/WebFrontend.kt), применяемый обоими приложениями.
+Плагин Vaadin 25.2–25.3 включает production-режим, если задача `bootJar` просто есть в проекте,
+и без условия собирал бы фронтенд перед каждым запуском и тестами.
 
 Vaadin 25.3 регистрирует сервис восстановления production-токена `vaadinBuildFrontendToken` один раз
 на весь Gradle build. При сборке двух приложений он восстанавливает токен только первого: второй JAR

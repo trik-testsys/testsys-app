@@ -1,12 +1,10 @@
 package tech.testsys.web.components.layout
 
-import com.vaadin.flow.component.html.Span
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import tech.testsys.web.components.MockVaadinTests
-import tech.testsys.web.components.RawVaadin
 import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.child
 import tech.testsys.web.components.classes
@@ -107,10 +105,9 @@ class BlockTests : MockVaadinTests() {
     }
 
     @Test
-    @OptIn(RawVaadin::class)
-    fun `should add a raw Vaadin component through the escape hatch`() {
-        val group = buildTestPage { block { row { horizontal { custom(Span("сырой")) } } } }.child(0).find("ts-hstack")
+    fun `should add semantic content through a horizontal group`() {
+        val group = buildTestPage { block { row { horizontal { text("Содержимое") } } } }.child(0).find("ts-hstack")
 
-        assertEquals("сырой", group.child(0).element.textRecursively)
+        assertEquals("Содержимое", group.child(0).element.textRecursively)
     }
 }

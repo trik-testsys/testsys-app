@@ -44,12 +44,33 @@ fun ContentScope.linkAction(label: String, icon: IconName? = null, configure: Ac
  *
  * @since %CURRENT_VERSION%
  */
-fun ContentScope.iconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle {
-    val handle = addAction(ActionRole.Neutral, label = null, icon, configure = {})
-    val button = handle.button
-    button.setAriaLabel(label)
-    button.setTooltipText(label)
-    button.element.setAttribute("data-ts-icon-only", true)
+fun ContentScope.iconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
+    addIconAction(ActionRole.Neutral, icon, label, configure)
+
+/**
+ * Adds the main action as an icon; [label] provides its accessible name and tooltip.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun ContentScope.mainIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
+    addIconAction(ActionRole.Main, icon, label, configure)
+
+/**
+ * Adds a destructive action as an icon; [label] provides its accessible name and tooltip.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun ContentScope.destructiveIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
+    addIconAction(ActionRole.Destructive, icon, label, configure)
+
+private fun ContentScope.addIconAction(role: ActionRole, icon: IconName, label: String, configure: ActionHandle.() -> Unit): ActionHandle {
+    require(label.isNotBlank()) { "Icon action accessible name must not be blank" }
+    val handle = addAction(role, label = null, icon, configure = {})
+    handle.button.apply {
+        setAriaLabel(label)
+        setTooltipText(label)
+        element.setAttribute("data-ts-icon-only", true)
+    }
     return handle.apply(configure)
 }
 
@@ -67,6 +88,13 @@ internal fun ContentScope.dangerAction(label: String, configure: ActionHandle.()
     addAction(ActionRole.Danger, label, icon = null, configure)
 
 private fun ContentScope.addAction(role: ActionRole, label: String?, icon: IconName?, configure: ActionHandle.() -> Unit): ActionHandle {
+    val button = buildActionButton(role, label, icon)
+    add(button)
+    return ActionHandle(button, button.icon).apply(configure)
+}
+
+/** Builds a button whose semantic role and size follow this scope's placement. */
+internal fun ContentScope.buildActionButton(role: ActionRole, label: String?, icon: IconName? = null): Button {
     val isSmall = placement.isCompact
     val iconComponent = icon?.let { name -> svgIcon(name, if (isSmall) ICON_SIZE_SMALL else ICON_SIZE) }
     val button = Button(label.orEmpty()).apply {
@@ -74,6 +102,5 @@ private fun ContentScope.addAction(role: ActionRole, label: String?, icon: IconN
         element.setAttribute("data-ts-size", if (isSmall) "sm" else "md")
         setIcon(iconComponent)
     }
-    add(button)
-    return ActionHandle(button, iconComponent).apply(configure)
+    return button
 }

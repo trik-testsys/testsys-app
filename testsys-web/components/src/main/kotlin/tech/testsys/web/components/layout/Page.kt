@@ -11,7 +11,7 @@ import tech.testsys.web.components.navigation.buildHeader
 
 /**
  * Replaces the content of [root] with `.ts-app`: the header, the page head if the body declares one and
- * `main.ts-page` built by [body]; [view] is the class of the page, whose tab the page head marks. Binds [texts]
+ * `main.ts-page` built by [body], and the footer; [view] is the class of the page, whose tab the page head marks. Binds [texts]
  * to the current UI for dialogs opened later from its handlers.
  */
 internal fun renderPage(root: Div, header: CabinetHeader, texts: UiTexts, view: Class<out Component>?, body: PageScope.() -> Unit) {
@@ -20,5 +20,6 @@ internal fun renderPage(root: Div, header: CabinetHeader, texts: UiTexts, view: 
     root.removeAll()
     root.setClassName("ts-app")
     root.add(buildHeader(header, texts), main)
-    PageScope(main, texts, view) { head -> root.addComponentAtIndex(1, head) }.body()
+    val scope = PageScope(main, texts, view) { head -> root.addComponentAtIndex(1, head) }.apply(body)
+    root.add(scope.buildFooter())
 }

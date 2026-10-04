@@ -5,7 +5,9 @@ import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.expectView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.Footer
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Image
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.router.ErrorParameter
 import com.vaadin.flow.router.Location
@@ -19,6 +21,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.web.devapp.MockSpringVaadinTests
+import tech.testsys.web.components.TestSysBrand
 import tools.jackson.databind.node.BooleanNode
 
 @SpringBootTest
@@ -34,6 +37,10 @@ class NotFoundViewTests : MockSpringVaadinTests() {
         assertEquals("Страница не найдена", _get<H1>().text)
         assertEquals("TestSys", _get<Span> { classes = "ts-brand" }.element.getAttribute("aria-label"))
         assertEquals("Страница не найдена — TestSys", _get<NotFoundView>().pageTitle)
+        assertEquals(_get<Footer> { classes = "ts-footer" }, _get<NotFoundView>().children.toList().last())
+        val footerLogo = _get<Image> { classes = "ts-footer__logo" }
+        assertEquals(TestSysBrand.FOOTER, footerLogo.element.getAttribute("src"))
+        assertEquals("TestSys", footerLogo.element.getAttribute("alt"))
         val content = UI.getCurrent().element.textRecursively
         assertFalse(content.contains("missing-sensitive-route"))
         assertFalse(content.contains("dev/showcase"))

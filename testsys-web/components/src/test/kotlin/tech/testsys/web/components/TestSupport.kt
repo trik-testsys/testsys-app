@@ -24,6 +24,7 @@ internal val testTexts = UiTexts(
     locale = Locale.forLanguageTag("ru-RU"),
     brand = "TestSys",
     signIn = "Войти",
+    footer = FooterTexts(year = { year -> year.toString() }, links = "Ссылки подвала"),
     calendar = CalendarTexts(
         monthNames = listOf(
             "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",

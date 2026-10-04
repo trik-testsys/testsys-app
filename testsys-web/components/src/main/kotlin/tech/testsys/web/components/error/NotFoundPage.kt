@@ -9,6 +9,7 @@ import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.router.HasDynamicTitle
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.buildBrand
+import tech.testsys.web.components.layout.buildPageFooter
 
 /**
  * Branded missing-route screen available in every profile, with browser-history navigation only.
@@ -36,7 +37,7 @@ open class NotFoundPage(private val texts: UiTexts) : Div(), HasDynamicTitle {
         val actions = Div(back).apply { addClassName("ts-empty__actions") }
         val content = Div(heading, description, actions).apply { addClassName("ts-empty") }
         val block = Section(content).apply { addClassName("ts-block") }
-        add(header, Main(block).apply { addClassName("ts-page") })
+        add(header, Main(block).apply { addClassName("ts-page") }, buildPageFooter(texts))
     }
 
     /**

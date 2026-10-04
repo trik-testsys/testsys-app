@@ -7,7 +7,8 @@ import java.util.Locale
  * Built-in texts of the design system components, resolved by the application from its localization.
  *
  * @property locale the locale of dates, times and numbers.
- * @property brand the product name in the header.
+ * @property brand the accessible product name in the header and footer.
+ * @property footer the texts of the page footer.
  * @property signIn the label of the header sign-in link.
  * @property header the texts of interactive header layers.
  * @property calendar the texts of date pickers.
@@ -45,7 +46,17 @@ class UiTexts(
     val notFound: NotFoundTexts,
     val components: ComponentTexts,
     val header: HeaderTexts,
+    val footer: FooterTexts,
 )
+
+/**
+ * Texts of the page footer.
+ *
+ * @property year formats the displayed year without digit grouping.
+ * @property links the accessible name of the footer navigation.
+ * @since %CURRENT_VERSION%
+ */
+class FooterTexts(val year: (Int) -> String, val links: String)
 
 /**
  * Texts of the date picker calendar.

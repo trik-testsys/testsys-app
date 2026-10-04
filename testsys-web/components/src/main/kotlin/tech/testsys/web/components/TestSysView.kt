@@ -15,7 +15,8 @@ abstract class TestSysView(protected val texts: UiTexts) : Composite<Div>() {
     private var isBuilding = false
 
     /**
-     * Builds or rebuilds the page: [header] and the rows and blocks built by [body]. Vaadin reuses the view instance
+     * Builds or rebuilds the page: [header], the rows and blocks built by [body], and the automatic footer. Vaadin reuses
+     * the view instance
      * when navigating again to the same route class (e.g. between page tabs of one object with different route
      * parameters), so a page with a route parameter (`@Route("…/:id")`) calls this from `beforeEnter` of
      * a `BeforeEnterObserver`; the new body replaces the old one.

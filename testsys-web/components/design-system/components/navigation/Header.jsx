@@ -125,7 +125,7 @@ export function Header({ brand, brandMark, brandTarget, items = DEFAULT_ITEMS, a
   };
   return <div ref={root} className={cx('ts-header', compact && 'ts-header--compact', sticky && 'ts-header--sticky', searchMenuKey && 'ts-header--unified-search')} onKeyDown={event => { if (event.key === 'Escape' && (panel || cur)) { event.stopPropagation(); closePanels(); } }} onMouseLeave={() => { if (!root.current.querySelector('.ts-mega')?.contains(document.activeElement) && !(searchMenuKey && searchField.current?.contains(document.activeElement))) setOpen(pinned || null); }}>
     <div className="ts-header__bar">
-      <a href={brandTarget ? '#' + brandTarget : '#'} className="ts-brand" aria-label={brandName} onClick={event => { event.preventDefault(); navigate(brandTarget || 'home'); }}>{customBrand ? <><span className="ts-brand__mark">{brandMark ?? 'T'}</span>{brandName}</> : <><img className="ts-brand__emblem" src={brandAssets.emblem} alt="" /><img className="ts-brand__wordmark" src={brandAssets.wordmark} alt="" /></>}</a>
+      <a href={brandTarget ? '#' + brandTarget : '#'} className="ts-brand" aria-label={brandName} onClick={event => { event.preventDefault(); navigate(brandTarget || 'home'); }}>{customBrand ? <><span className="ts-brand__mark">{brandMark ?? 'T'}</span>{brandName}</> : <img className="ts-brand__logo" src={brandAssets.header} alt="" />}</a>
       <nav className="ts-nav" aria-label="Разделы">
         {items.map(item => {
           const split = item.target != null && item.menu;

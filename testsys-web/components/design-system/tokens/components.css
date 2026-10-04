@@ -172,8 +172,17 @@
 .ts-difficulty i { width:6px; height:14px; border-radius:2px; background:var(--line); display:block; }
 
 /* ---------- Layout ---------- */
-.ts-app { min-width:var(--page-min); min-height:100vh; background:var(--surface-page); }
-.ts-page { max-width:var(--container); margin:0 auto; padding:var(--space-4) 0 80px; display:flex; flex-direction:column; gap:var(--row-gap); }
+.ts-app { min-width:var(--page-min); min-height:100vh; background:var(--surface-page); display:flex; flex-direction:column; }
+.ts-page { width:100%; max-width:var(--container); margin:0 auto; padding:var(--space-4) 0; display:flex; flex-direction:column; gap:var(--row-gap); flex:1 0 auto; }
+.ts-footer { flex:none; border-top:1px solid var(--line); background:var(--surface-card); }
+.ts-footer__inner { max-width:var(--container); margin:0 auto; padding:var(--space-3) 0; display:flex; align-items:center; justify-content:space-between; gap:var(--space-4); }
+.ts-footer__brand { display:flex; align-items:center; gap:var(--space-3); }
+.ts-footer__logo { display:block; height:32px; width:auto; object-fit:contain; }
+.ts-footer__year { color:var(--text-tertiary); font:var(--fw-regular) var(--fs-sm) var(--font-mono); }
+.ts-footer__links { display:flex; align-items:center; gap:var(--space-4); font-size:var(--fs-sm); }
+.ts-footer__link { color:var(--text-secondary); }
+.ts-footer__link:hover { color:var(--text-primary); }
+.ts-footer__link:focus-visible { outline:2px solid var(--accent); outline-offset:3px; border-radius:var(--radius-sm); }
 .ts-row { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); gap:var(--grid-gap); align-items:start; }
 .ts-row--stretch { align-items:stretch; }
 .ts-row--tight { gap:var(--grid-gap-tight); }
@@ -237,6 +246,7 @@
 .ts-brand__mark { width:28px; height:28px; border-radius:7px; background:var(--ink-900); color:var(--white); display:grid; place-items:center; font:var(--fw-semibold) 13px var(--font-mono); }
 .ts-brand__emblem { display:block; width:32px; height:32px; object-fit:contain; flex-shrink:0; }
 .ts-brand__wordmark { display:block; height:24px; width:auto; object-fit:contain; flex-shrink:0; }
+.ts-brand__logo { display:block; height:40px; width:auto; object-fit:contain; border-radius:var(--radius-md); flex-shrink:0; }
 .ts-nav { display:flex; align-items:stretch; height:var(--header-height); gap:2px; }
 .ts-nav__item { position:relative; display:flex; align-items:center; gap:6px; height:100%; padding:0 var(--space-3); border:0; background:transparent; font:var(--fw-medium) var(--fs-sm) var(--font-sans); color:var(--text-primary); cursor:pointer; white-space:nowrap; }
 .ts-nav__item:hover { color:var(--accent); }

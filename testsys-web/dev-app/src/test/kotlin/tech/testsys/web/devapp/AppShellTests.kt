@@ -17,7 +17,7 @@ class AppShellTests {
 
         AppShell(texts).configurePage(settings)
 
-        verify { settings.addFavIcon("icon", TestSysBrand.FAVICON, "any") }
+        verify { settings.addFavIcon("icon", TestSysBrand.FAVICON_URL, "any") }
     }
 
     @Test

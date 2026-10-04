@@ -2,13 +2,14 @@ package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.Footer
 import com.vaadin.flow.component.html.Main
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.navigation.PageHeadScope
 
 /**
- * Scope of a page body: the page head, rows and full-width blocks stacked vertically with the standard gap.
+ * Scope of a page: the head, rows and full-width blocks, and the links of its footer.
  *
  * @since %CURRENT_VERSION%
  */
@@ -20,6 +21,7 @@ class PageScope internal constructor(
     private val placeHead: (Component) -> Unit,
 ) {
     private var isHeadAllowed = true
+    private var footerLinks: PageFooterScope? = null
 
     /**
      * Adds the page head under the Cabinet header: breadcrumbs that end with [title], the title with badges, notes and
@@ -32,6 +34,18 @@ class PageScope internal constructor(
         check(isHeadAllowed) { "head() must be the first call of the page body and made once" }
         isHeadAllowed = false
         placeHead(PageHeadScope(texts, view).apply(content).build(title))
+    }
+
+    /**
+     * Configures the links of the automatic page footer, which stays after the page body.
+     *
+     * @throws IllegalStateException if the footer links have already been configured.
+     * @since %CURRENT_VERSION%
+     */
+    fun footer(content: PageFooterScope.() -> Unit) {
+        check(footerLinks == null) { "Page footer already has links; call footer() once" }
+        isHeadAllowed = false
+        footerLinks = PageFooterScope().apply(content)
     }
 
     /**
@@ -61,6 +75,8 @@ class PageScope internal constructor(
      */
     fun highlightBlock(title: String? = null, subtitle: String? = null, content: BlockScope.() -> Unit): BlockHandle =
         place(BlockHeading(title, subtitle), highlight = true, content)
+
+    internal fun buildFooter(): Footer = buildPageFooter(texts, footerLinks ?: PageFooterScope())
 
     private fun place(heading: BlockHeading, highlight: Boolean, content: BlockScope.() -> Unit): BlockHandle {
         isHeadAllowed = false

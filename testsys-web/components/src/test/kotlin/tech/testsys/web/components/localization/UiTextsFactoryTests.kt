@@ -9,6 +9,12 @@ class UiTextsFactoryTests {
     private val texts = buildUiTexts(SupportedRegion.RU)
 
     @Test
+    internal fun `should format footer years without grouping and name its navigation`() {
+        assertEquals("2037", texts.footer.year(2037))
+        assertEquals("Ссылки футтера", texts.footer.links)
+    }
+
+    @Test
     fun `should localize header accessible names with application labels and counts`() {
         assertEquals("Поиск задач, соревнований…", texts.header.search)
         assertEquals("Найдено: 12", texts.header.searchCount(12))

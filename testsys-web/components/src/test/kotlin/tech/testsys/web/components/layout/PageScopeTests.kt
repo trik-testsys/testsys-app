@@ -11,6 +11,28 @@ import tech.testsys.web.components.classes
 
 class PageScopeTests : MockVaadinTests() {
     @Test
+    internal fun `should reject repeated footer configuration even if its first configuration is empty`() {
+        val error = assertThrows<IllegalStateException> {
+            buildTestPage {
+                footer {}
+                footer {}
+            }
+        }
+
+        assertTrue(error.message.orEmpty().contains("footer() once"))
+    }
+
+    @Test
+    internal fun `should reject a page head declared after footer configuration`() {
+        assertThrows<IllegalStateException> {
+            buildTestPage {
+                footer {}
+                head("Late head")
+            }
+        }
+    }
+
+    @Test
     fun `should stack full-width blocks and rows in order`() {
         val main = buildTestPage {
             block(title = "Профиль") {}

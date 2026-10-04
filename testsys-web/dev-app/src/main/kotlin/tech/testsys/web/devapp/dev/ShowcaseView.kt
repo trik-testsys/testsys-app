@@ -75,6 +75,10 @@ class ShowcaseView(texts: UiTexts, private val environment: Environment) : TestS
     init {
         page(showcaseHeader()) {
             showcaseHead("Компоненты")
+            footer {
+                link("Поля и файлы", ShowcaseFormsView::class.java)
+                link(label = "Исходный код", href = "https://github.com/trik-testsys/testsys-app")
+            }
             gridSection()
             blockSection()
             fieldSection()

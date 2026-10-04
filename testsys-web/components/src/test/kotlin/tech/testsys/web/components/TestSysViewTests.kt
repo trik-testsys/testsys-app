@@ -52,8 +52,14 @@ class TestSysViewTests : MockVaadinTests() {
 
     private class RepeatedPageView : TestSysView(testTexts) {
         init {
-            page(CabinetHeader()) { block { row { text("first") } } }
-            page(CabinetHeader()) { block { row { text("second") } } }
+            page(CabinetHeader()) {
+                footer { link(label = "First", href = "/first") }
+                block { row { text("first") } }
+            }
+            page(CabinetHeader()) {
+                footer { link(label = "Second", href = "/second") }
+                block { row { text("second") } }
+            }
         }
     }
 
@@ -65,6 +71,7 @@ class TestSysViewTests : MockVaadinTests() {
         assertTrue("ts-header" in root.child(0).classes())
         assertEquals("main", root.child(1).element.tag)
         assertTrue("ts-page" in root.child(1).classes())
+        assertEquals("footer", root.child(2).element.tag)
     }
 
     @Test
@@ -81,6 +88,21 @@ class TestSysViewTests : MockVaadinTests() {
         val rows = root.findAll("ts-block__row")
         assertEquals(1, rows.size)
         assertEquals("second", rows.single().element.textRecursively)
+        assertEquals(1, root.findAll("ts-footer").size)
+        assertEquals(listOf("/second"), root.findAll("ts-footer__link").map { link -> link.element.getAttribute("href") })
+    }
+
+    @Test
+    internal fun `should place the footer after main when the page also has a head`() {
+        val root = SampleView {
+            head("Sample")
+            footer { link("Other view", SecondTestView::class.java) }
+            block {}
+        }.child(0)
+
+        assertEquals("main", root.child(2).element.tag)
+        assertEquals("footer", root.child(3).element.tag)
+        assertEquals("test/second", root.find("ts-footer__link").element.getAttribute("href"))
     }
 
     @Test

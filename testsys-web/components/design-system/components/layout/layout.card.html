@@ -7,17 +7,19 @@
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
 <script src="../../lib/dev-loader.js"></script>
 <style>body{padding:20px;background:var(--surface-page)} .l{font:500 11px var(--font-mono);color:var(--text-tertiary);margin-bottom:8px;display:block} .r{display:flex;flex-wrap:wrap;gap:10px;align-items:center}</style>
-<link rel="icon" type="image/svg+xml" sizes="any" href="../../assets/brand/emblem/svg/TestSys-emblem.svg">
+<link rel="icon" type="image/svg+xml" sizes="any" href="../../assets/brand/emblem/svg/TestSys-mono-emblem.svg?v=rounded-96">
 </head><body><div id="root"><div style="padding:40px;text-align:center;font:500 12px var(--font-mono);color:var(--text-tertiary)">Загрузка…</div></div>
 <script src="../../lib/catalog-nav.js"></script>
 <script type="text/babel" src="../../lib/CatalogExamples.jsx"></script>
 <script type="text/babel">
 window.__tsReady.then(NS => {
-const { Row, Block, Stack, Button } = NS;
+const { Row, Block, Stack, Button, Footer, Page } = NS;
 const L = ({ t }) => <span style={{ font: '500 12px var(--font-mono)', color: 'var(--text-secondary)' }}>{t}</span>;
 function Demo() {
   const [notice, setNotice] = React.useState('Исходные варианты');
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <Page style={{ minWidth: 0, minHeight: 240 }} footer={<Footer links={[{ label: 'Каталог компонентов', href: '../index.html' }]} />}><Block title="Короткая страница">Футтер у нижнего края оболочки.</Block></Page>
+    <Page style={{ minWidth: 0, minHeight: 240 }}><Block title="Длинная страница" bodyStyle={{ minHeight: 320 }}>Футтер после содержимого, без перекрытия.</Block></Page>
     <Block title="Заголовок блока" subtitle="Подзаголовок или мета" actions={<Button size="sm" variant="secondary">Действие</Button>} footer={<><span className="ts-muted" style={{ flex: 1, fontSize: 13 }}>Подвал блока</span><a href="#" style={{ fontWeight: 600, fontSize: 13 }}>Все →</a></>}><L t="body · padding 12" /></Block>
     <Row tight><Block span={16}><L t="span 16" /></Block><Block span={8}><L t="span 8" /></Block></Row>
     <Row tight><Block span={8}><L t="span 8" /></Block><Block span={8}><L t="span 8" /></Block><Block span={8} dark><L t="span 8 · dark" /></Block></Row>

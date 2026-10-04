@@ -19,8 +19,10 @@ import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.CounterKind
+import tech.testsys.web.components.display.ProgressValue
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.badge
+import tech.testsys.web.components.display.progressBar
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.emptyState
@@ -64,6 +66,11 @@ private val LOAD_SAMPLE_ROWS = listOf(
     "Участнику начислено 82 балла",
     "Открыта регистрация на «Летний марафон»",
 )
+private object HighlightTableSamples {
+    const val COLUMN_SIZE = 6
+    const val PROGRESS_PERCENT = 50.0
+    val ROWS = listOf("Первая строка", "Вторая строка")
+}
 private val liveSubmissionId: AtomicLong = AtomicLong(LIVE_SUBMISSION_ID_START)
 
 /** Filter of the showcase rows by their verdict. */
@@ -112,6 +119,7 @@ class ShowcaseStatesView(texts: UiTexts, private val environment: Environment) :
             }
             tabsSection()
             wideMatrixSection()
+            highlightedTableSection()
             pillsSection()
             paginationSection()
             emptySection()
@@ -147,6 +155,30 @@ class ShowcaseStatesView(texts: UiTexts, private val environment: Environment) :
 
 /** The current time as `HH:mm:ss`. */
 private fun currentClockText(): String = LocalTime.now().format(CLOCK_FORMAT)
+
+/** Shows the shared table surface and readonly controls inside an inverse block. */
+private fun PageScope.highlightedTableSection() {
+    highlightBlock(title = "Таблица в выделенном блоке") {
+        table(key = { row: String -> row }, fetch = { Page(rows = HighlightTableSamples.ROWS, total = HighlightTableSamples.ROWS.size) }) {
+            textColumn("Значение", size = HighlightTableSamples.COLUMN_SIZE) { row -> row }
+            column("Поле только для чтения", size = HighlightTableSamples.COLUMN_SIZE) { row ->
+                select("Список: $row", items = listOf(row), itemLabel = { item -> item }) {
+                    value = row
+                    isEditable = false
+                }
+            }
+            column("Ход", size = HighlightTableSamples.COLUMN_SIZE) { row ->
+                progressBar(label = "Ход: $row", value = ProgressValue.Determinate(percent = HighlightTableSamples.PROGRESS_PERCENT))
+            }
+            column("Варианты", size = HighlightTableSamples.COLUMN_SIZE) {
+                pills(initial = "first") {
+                    pill(value = "first", label = "Первый")
+                    pill(value = "second", label = "Второй")
+                }
+            }
+        }
+    }
+}
 
 /** Blocks the current thread for [duration]; simulates the latency of a real fetch in showcase loads. */
 private fun pause(duration: Duration) {

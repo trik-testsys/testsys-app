@@ -1,7 +1,7 @@
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Div
-import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.FieldHandle
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
@@ -13,8 +13,9 @@ import tech.testsys.web.components.layout.placeField
  *
  * @since %CURRENT_VERSION%
  */
-fun BlockRowScope.field(label: String, labelSize: Int, size: Int, content: ContentScope.() -> Unit): ElementHandle {
+fun BlockRowScope.field(label: String, labelSize: Int, size: Int, content: ContentScope.() -> Unit): FieldHandle {
     val value = Div().apply { addClassName("ts-field__content") }
     ContentScope(value, texts, Placement.Body, size).content()
-    return ElementHandle(placeField(label, labelSize, size, value, labelAction = null).field)
+    val parts = placeField(label, labelSize, size, value, labelAction = null)
+    return FieldHandle(component = parts.field, valueArea = parts.valueCell)
 }

@@ -143,7 +143,7 @@ internal class ChoiceField<T : Any>(
                 element.setAttribute("role", "radio")
                 if (isSegmented) {
                     addClassName("ts-seg__item")
-                    text = itemLabel(item)
+                    add(Span(itemLabel(item)).apply { addClassName("ts-obscured-value") })
                 } else {
                     addClassName("ts-choice")
                     add(
@@ -378,11 +378,8 @@ internal fun <T, C> ContentScope.placeComposite(
     configure: ValueInput<T>.() -> Unit,
 ): ValueInput<T>
     where C : CustomField<T>, C : HasValidator<T> {
-    nameControl(field, label)
-    field.element.setAttribute("data-ts-input", true)
-    add(field)
     val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T>> ->
         field.addValueChangeListener { event -> listener.valueChanged(event) }
     }
-    return ValueInput(parts = null, field, field, field, subscribe).apply(configure)
+    return placeLabelLessInput(label, field, subscribe, configure)
 }

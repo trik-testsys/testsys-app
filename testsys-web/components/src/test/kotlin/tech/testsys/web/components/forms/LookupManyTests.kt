@@ -98,7 +98,7 @@ class LookupManyTests : MockVaadinTests() {
 
             input.value = setOf(source.contests[0], source.contests[1])
 
-            assertEquals(listOf("Кубок 1", "Турнир 2"), chips().map { chip -> chip.element.text })
+            assertEquals(listOf("Кубок 1", "Турнир 2"), chips().map { chip -> chip.element.textRecursively })
             assertTrue(field().findAll("ts-chip--more").isEmpty())
             assertTrue(lookupButton(testTexts.lookup.clear).isVisible)
         }
@@ -109,7 +109,7 @@ class LookupManyTests : MockVaadinTests() {
 
             input.value = source.contests.take(5).toSet()
 
-            assertEquals(listOf("Кубок 1", "Турнир 2", "Кубок 3"), chips().map { chip -> chip.element.text })
+            assertEquals(listOf("Кубок 1", "Турнир 2", "Кубок 3"), chips().map { chip -> chip.element.textRecursively })
             assertEquals("+2", field().find("ts-chip--more").element.text)
         }
 
@@ -133,7 +133,7 @@ class LookupManyTests : MockVaadinTests() {
 
             assertEquals(setOf(source.contests[1]), input.value)
             assertEquals(listOf(true), fromClient)
-            assertEquals(listOf("Турнир 2"), chips().map { chip -> chip.element.text })
+            assertEquals(listOf("Турнир 2"), chips().map { chip -> chip.element.textRecursively })
         }
 
         @Test
@@ -363,7 +363,7 @@ class LookupManyTests : MockVaadinTests() {
             assertEquals(setOf(source.contests[0], source.contests[2]), input.value)
             assertEquals(listOf(true), fromClient)
             assertTrue(openDialogs().isEmpty())
-            assertEquals(listOf("Кубок 1", "Кубок 3"), chips().map { chip -> chip.element.text })
+            assertEquals(listOf("Кубок 1", "Кубок 3"), chips().map { chip -> chip.element.textRecursively })
         }
 
         @Test
@@ -573,7 +573,7 @@ class LookupManyTests : MockVaadinTests() {
 
             assertSame(fresh, input.value.single())
             assertSame(fresh, form.contests.single())
-            assertEquals(listOf("Кубок 1"), chips().map { chip -> chip.element.text })
+            assertEquals(listOf("Кубок 1"), chips().map { chip -> chip.element.textRecursively })
             assertEquals(listOf(true), fromClient)
             assertTrue(openDialogs().isEmpty())
         }
@@ -589,7 +589,7 @@ class LookupManyTests : MockVaadinTests() {
             dialogButton(testTexts.lookup.apply)._click()
 
             assertTrue(changes.isEmpty())
-            assertEquals(listOf("Турнир 2", "Кубок 1"), chips().map { chip -> chip.element.text })
+            assertEquals(listOf("Турнир 2", "Кубок 1"), chips().map { chip -> chip.element.textRecursively })
         }
 
         @Test

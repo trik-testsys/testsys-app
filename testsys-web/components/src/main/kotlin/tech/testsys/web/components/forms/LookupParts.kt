@@ -71,7 +71,7 @@ internal abstract class LookupFrame<V>(
     gridColumns: Int,
 ) : CustomField<V>(emptyValue, true), HasValidator<V> {
     protected val valueButton: NativeButton = NativeButton().apply {
-        addClassName("ts-lookup__text")
+        addClassNames("ts-lookup__text", "ts-obscured-value")
         element.setAttribute("type", "button")
     }
     protected val box: Div = Div(valueButton).apply { addClassName("ts-lookup") }

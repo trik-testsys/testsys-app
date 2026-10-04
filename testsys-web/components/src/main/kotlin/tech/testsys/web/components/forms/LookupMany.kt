@@ -93,7 +93,7 @@ internal class LookupManyField<T : Any>(
         chips.removeAll()
         current.take(MAX_CHIPS).forEach { item -> chips.add(chipOf(item, isChoosable)) }
         if (current.size > MAX_CHIPS) {
-            chips.add(Span("+${current.size - MAX_CHIPS}").apply { addClassNames("ts-chip", "ts-chip--more") })
+            chips.add(Span("+${current.size - MAX_CHIPS}").apply { addClassNames("ts-chip", "ts-chip--more", "ts-obscured-value") })
         }
         chips.isVisible = current.isNotEmpty()
     }
@@ -135,7 +135,7 @@ internal class LookupManyField<T : Any>(
     /** Chip of [item]; the remove button only if [isRemovable], named after the value it removes. */
     private fun chipOf(item: T, isRemovable: Boolean): Span {
         val name = display(item)
-        val chip = Span(name).apply { addClassName("ts-chip") }
+        val chip = Span(Span(name).apply { addClassName("ts-obscured-value") }).apply { addClassName("ts-chip") }
         if (isRemovable) {
             chip.add(
                 NativeButton().apply {

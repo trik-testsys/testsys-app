@@ -92,7 +92,7 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
                     value = task.authorSolutionKinds.first()
                 }
             }
-            footer {
+            row {
                 fileDrop(
                     "Файл решения (демонстрация)",
                     UploadLimits(maxFiles = 1, maxFileBytes = DEMO_FILE_BYTES, maxMemoryBytes = DEMO_FILE_BYTES.toLong()),
@@ -100,6 +100,8 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
                         filename = file.filename
                     },
                 )
+            }
+            footer {
                 mainAction("Отправить решение") {
                     onClick {
                         if (

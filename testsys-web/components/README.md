@@ -251,7 +251,25 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 
 `field(label, labelSize, size) { }` — поле с нетиповым значением: та же подпись, а значение — поток элементов
 `ContentScope` (теги, бейдж, ссылка). Подпись такого поля — не `<label>`, клик по ней ничего не делает; функция
-возвращает `ElementHandle`.
+возвращает `FieldHandle`.
+
+### Скрытые значения
+
+`FieldHandle.isObscured` управляет визуальным скрытием значения, default — `false`.
+Свойство доступно у `field { }`, всех `ValueInput`, в том числе у полей без подписи, и `FileDropHandle`.
+`bindObscured(signal)` применяет сигнал сразу; ручная запись при активной привязке и повторная привязка
+бросают `BindingActiveException`, как у остальных свойств ручек.
+
+Режим не меняет `value`, доступность, редактируемость, `isVisible`, проверку и запись Binder.
+Это визуальное представление, а не ограничение доступа: значение остаётся в контроле и доступно
+вспомогательным технологиям. `skipWhenHidden` по-прежнему относится только к полному скрытию через `isVisible`.
+Область значения доступна через Tab даже у информационного или отключённого поля; после выключения режима
+её прежний tab-порядок восстанавливается. В составном поле фокус любой части раскрывает значение.
+У полей без подписи область значения также является отдельным контейнером; режимы остаются на самом контроле,
+а наведение и фокус контейнера раскрывают даже отключённое значение. Видимость ручки скрывает эту композицию целиком.
+У загрузчика скрываются только имена файлов. Действия внутри информационного `field { }` также остаются читаемыми.
+Оформление и раскрытие принадлежат [ui-design.md](../../docs/project/ui-design.md), раздел «Визуальные основы».
+Пример всех семейств полей — [ShowcaseObscuredFields.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/dev/ShowcaseObscuredFields.kt).
 
 ## Вкладки и пилюли
 
@@ -795,6 +813,7 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | Ручка | Свойства |
 |-------|----------|
 | `ElementHandle` | `isVisible`, `bindVisible(signal)` (в том числе у `emptyState` и `menu`) |
+| `FieldHandle` | всё из `ElementHandle` и `isObscured`, `bindObscured(signal)`, см. [Скрытые значения](#скрытые-значения) |
 | `TextHandle` | `isVisible`, `bindVisible`, `text`, `bindText(signal)` (значение `statCard`, `counter`, `text`) |
 | `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick` |
 | `BlockHandle` | `isVisible`, `bindVisible`, `isEditable`, `bindEditable(signal)` (возвращают `block` и `highlightBlock`) |
@@ -805,7 +824,7 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | `PaginationHandle` | `isVisible`, `bindVisible`, `page` (запись из кода не вызывает `onChange`), `pageCount`, `bindPage(signal)`, `onChange { page -> }` — возвращает `pagination`, см. [Пагинация](#пагинация) |
 | `LoadHandle` | `isVisible`, `bindVisible` (скрывает тело блока с пагинацией загруженной таблицы; шапка и собственный подвал блока остаются), `reload()` (из любого потока) — возвращает `load`, см. [Живые обновления](#живые-обновления) |
 | `DialogHandle` | `open()`, `close()`, `isOpen`, `isEditable`, `bindEditable(signal)`, `onClose { }` (при любом закрытии: кнопкой, крестиком, Esc, кликом по фону) |
-| `ValueInput<T>` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isEditable`, `bindEditable(signal)` и всё из `HasValue`, `HasValidation`, `HasValidator`, включая `bindValue(signal, writeCallback)`, `bindReadOnly(signal)`, `bindRequiredIndicatorVisible(signal)` |
+| `ValueInput<T>` | всё из `FieldHandle`, `isEnabled`, `bindEnabled(signal)`, `isEditable`, `bindEditable(signal)` и всё из `HasValue`, `HasValidation`, `HasValidator`, включая `bindValue(signal, writeCallback)`, `bindReadOnly(signal)`, `bindRequiredIndicatorVisible(signal)` |
 
 `ValueInput` привязывается к `Binder` как обычное поле: `binder.forField(input)`. Ручка не является компонентом
 Vaadin, поэтому `Binder` не пропускает скрытое поле сам. Явный хелпер `binding.skipWhenHidden()` исключает привязку
@@ -978,6 +997,9 @@ SortableList использует клиентскую React-реализаци�
 ## Настоящая передача файлов
 
 `fileDrop(label, limits, consume)` — действие приёма с `FileDropHandle`, а не значение Binder.
+Ручка наследует `FieldHandle`; её состояние и обработчики одинаковы в `BlockRowScope` и `ContentScope`.
+Компактное представление использует штатные кнопку, drag-and-drop и список Vaadin Upload;
+правила оформления — в [ui-design.md](../../docs/project/ui-design.md), раздел «Визуальные основы».
 `UploadLimits` ограничивает число принятых файлов после последней очистки, размер каждого и суммарную память
 одновременно работающих обработчиков. MIME и расширения при одновременном задании проверяются как AND;
 проверяются фактически полученные байты, включая XHR с неизвестной длиной. Размер буфера резервируется до чтения,

@@ -1,6 +1,7 @@
 package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.AbstractField
+import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.HasValidation
 import com.vaadin.flow.component.HasValue
 import com.vaadin.flow.data.binder.HasValidator
@@ -12,7 +13,7 @@ import com.vaadin.flow.shared.Registration
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.Bindable
-import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.FieldHandle
 import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.FieldParts
 
@@ -35,7 +36,11 @@ class ValueInput<T> internal constructor(
     private val validation: HasValidation,
     private val validator: HasValidator<T>,
     private val subscribe: (HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T>>) -> Registration,
-) : ElementHandle(parts?.field ?: component), HasValue<HasValue.ValueChangeEvent<T>, T>, HasValidation, HasValidator<T> {
+    valueArea: Component,
+) : FieldHandle(component = parts?.field ?: valueArea, valueArea = valueArea),
+    HasValue<HasValue.ValueChangeEvent<T>, T>,
+    HasValidation,
+    HasValidator<T> {
     private val fieldComponent: AbstractField<*, T> = component
 
     private val enabled = Bindable(this.component.element, initial = component.isEnabled) { value ->

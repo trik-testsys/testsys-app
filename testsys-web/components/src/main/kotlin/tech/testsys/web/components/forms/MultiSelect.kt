@@ -198,7 +198,7 @@ internal class MultiSelectField<T : Any>(
         chips.removeAll()
         val visible = items.filter { item -> item in selected }.take(if (display == MultiSelectDisplay.Chips) maxChips else 0)
         visible.forEach { item ->
-            val chip = Span(itemLabel(item)).apply { addClassName("ts-chip") }
+            val chip = Span(Span(itemLabel(item)).apply { addClassName("ts-obscured-value") }).apply { addClassName("ts-chip") }
             if (choosable()) {
                 val remove = NativeButton().apply {
                     add(svgIcon(IconName.X, ICON_SIZE_TINY))
@@ -211,12 +211,14 @@ internal class MultiSelectField<T : Any>(
             chips.add(chip)
         }
         if (display == MultiSelectDisplay.Count && selected.isNotEmpty()) {
-            val counter = Span(texts.lookup.selectedCount(selected.size)).apply { addClassNames("ts-counter", "ts-counter--accent") }
+            val counter = Span(texts.lookup.selectedCount(selected.size)).apply {
+                addClassNames("ts-counter", "ts-counter--accent", "ts-obscured-value")
+            }
             chips.add(counter)
         }
         if (display == MultiSelectDisplay.Chips && selected.size > maxChips) {
             val more = Span("+${selected.size - maxChips}").apply {
-                addClassNames("ts-chip", "ts-chip--more")
+                addClassNames("ts-chip", "ts-chip--more", "ts-obscured-value")
                 element.setAttribute("aria-label", texts.lookup.selectedCount(selected.size - maxChips))
             }
             chips.add(more)

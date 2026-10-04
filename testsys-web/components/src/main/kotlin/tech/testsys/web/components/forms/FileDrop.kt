@@ -13,7 +13,7 @@ import com.vaadin.flow.signals.Signal
 import com.vaadin.flow.signals.local.ValueSignal
 import tech.testsys.web.components.Background
 import tech.testsys.web.components.Bindable
-import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.FieldHandle
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
@@ -206,7 +206,7 @@ sealed interface FileUploadState {
  * @property state the read-only signal of the latest transfer lifecycle event.
  * @since %CURRENT_VERSION%
  */
-class FileDropHandle internal constructor(private val drop: FileDropDisplay) : ElementHandle(drop) {
+class FileDropHandle internal constructor(private val drop: FileDropDisplay) : FieldHandle(component = drop, valueArea = drop) {
     private var isBlockEditable = true
     private val enabled: Bindable<Boolean>
     private val editable: Bindable<Boolean>
@@ -324,6 +324,7 @@ internal class FileDropDisplay(
     }
 
     private val status = Span().apply {
+        addClassName("ts-filedrop__status")
         element.setAttribute("role", "status")
         element.setAttribute("aria-live", "polite")
     }
@@ -401,7 +402,7 @@ internal class FileDropDisplay(
             .setUnits(texts.components.byteUnits)
     }
 
-    private val actions = Div().apply { addClassName("ts-hstack") }
+    private val actions = Div().apply { addClassNames("ts-hstack", "ts-filedrop__actions") }
     private val cancelAction: ActionHandle
     private val clearAction: ActionHandle
 
@@ -414,10 +415,12 @@ internal class FileDropDisplay(
             if (engine.fileCount() == 0) state.set(FileUploadState.Idle)
         }.addEventData("event.detail.identity")
         addClassName("ts-filedrop")
+        element.setAttribute("role", "group")
+        element.setAttribute("aria-label", label)
         val limitsHint = Span(texts.components.uploadLimits(limits.maxFiles, limits.maxFileBytes.toLong())).apply {
             addClassName("ts-hint")
         }
-        add(Span(label), upload, limitsHint, status, actions)
+        add(Span(label), upload, Div(limitsHint, status, actions).apply { addClassName("ts-filedrop__meta") })
         com.vaadin.flow.dom.ElementEffect.bind(element, state) { _, value ->
             cancelAction.isVisible = value is FileUploadState.Uploading || value is FileUploadState.Processing
             clearAction.isVisible = value != FileUploadState.Idle

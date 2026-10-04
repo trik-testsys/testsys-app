@@ -21,6 +21,7 @@
   --control-sm: 26px;
   --control-md: 32px;
   --control-lg: 38px;
+  --field-value-blur: 4px;
 
   --shadow-block: 0 1px 3px rgba(22, 24, 29, 0.025), 0 6px 20px -12px rgba(22, 24, 29, 0.07);
   --shadow-block-hover: 0 2px 6px rgba(22, 24, 29, 0.03), 0 12px 32px -16px rgba(22, 24, 29, 0.14);

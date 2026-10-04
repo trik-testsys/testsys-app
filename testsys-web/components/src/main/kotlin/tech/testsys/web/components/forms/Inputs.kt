@@ -12,6 +12,7 @@ import com.vaadin.flow.shared.Registration
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.LabelAction
+import tech.testsys.web.components.layout.fieldValueArea
 import tech.testsys.web.components.layout.placeField
 
 /** Adds [control] as a grid field of [label] with the helper [hint] and returns its configured handle. */
@@ -47,7 +48,14 @@ internal fun <C, T> BlockRowScope.placeInput(
     // A native label toggles its checkbox on a click and focuses any other control.
     val labelAction = if (control is Checkbox) LabelAction.Click else LabelAction.Focus
     val parts = placeField(label, labelSize, size, control, labelAction)
-    val input = ValueInput(parts, control, control, control, subscribe)
+    val input = ValueInput(
+        parts = parts,
+        component = control,
+        validation = control,
+        validator = control,
+        subscribe = subscribe,
+        valueArea = parts.valueCell,
+    )
     input.followBlock(editState)
     return input.apply(configure)
 }
@@ -62,11 +70,30 @@ internal fun <C, T> ContentScope.addLabelLessInput(
     configure: ValueInput<T>.() -> Unit,
 ): ValueInput<T>
     where C : AbstractField<C, T>, C : HasValidation, C : HasValidator<T> {
+    control.element.setAttribute("data-ts-size", if (placement.isCompact) "sm" else "md")
+    return placeLabelLessInput(label, control, valueChanges(control), configure)
+}
+
+/** Places a label-less control in a value area whose focus and hover remain independent of its edit and enabled modes. */
+internal fun <C, T> ContentScope.placeLabelLessInput(
+    label: String,
+    control: C,
+    subscribe: (HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T>>) -> Registration,
+    configure: ValueInput<T>.() -> Unit,
+): ValueInput<T>
+    where C : AbstractField<*, T>, C : HasValidation, C : HasValidator<T> {
     nameControl(control, label)
     control.element.setAttribute("data-ts-input", true)
-    control.element.setAttribute("data-ts-size", if (placement.isCompact) "sm" else "md")
-    add(control)
-    return ValueInput(parts = null, control, control, control, valueChanges(control)).apply(configure)
+    val area = fieldValueArea(label, control).apply { addClassName("ts-field__value--inline") }
+    add(area)
+    return ValueInput(
+        parts = null,
+        component = control,
+        validation = control,
+        validator = control,
+        subscribe = subscribe,
+        valueArea = area,
+    ).apply(configure)
 }
 
 /** Gives [control] the accessible name [label], since the visible label of a grid field is not its own. */

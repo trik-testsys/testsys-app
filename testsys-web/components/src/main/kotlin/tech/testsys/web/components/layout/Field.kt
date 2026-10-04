@@ -7,7 +7,7 @@ import com.vaadin.flow.component.html.NativeLabel
 import com.vaadin.flow.component.html.Span
 
 /** Parts of a grid field that its handle changes: the whole field and the required mark of its label. */
-internal class FieldParts(val field: Div, val requiredMark: Span)
+internal class FieldParts(val field: Div, val requiredMark: Span, val valueCell: Div)
 
 /** What a click on the label of a form field does to its control in the browser, named by the control method. */
 internal enum class LabelAction(val method: String) {
@@ -31,13 +31,19 @@ internal fun BlockRowScope.placeField(label: String, labelSize: Int, size: Int, 
     caption.style.set("grid-column", "span $labelSize")
     caption.add(Span(label).apply { addClassName("ts-field__text") }, requiredMark)
     if (labelAction != null) runOnLabelClick(caption, value, labelAction)
-    val valueCell = Div(value).apply {
-        addClassName("ts-field__value")
+    val valueCell = fieldValueArea(label, value).apply {
         style.set("grid-column", "span $size")
     }
     val field = Div(caption, valueCell).apply { addClassNames("ts-field", "ts-field--grid") }
     place(labelSize + size, field)
-    return FieldParts(field, requiredMark)
+    return FieldParts(field = field, requiredMark = requiredMark, valueCell = valueCell)
+}
+
+/** Wraps [value] in an independently focusable field value area named by [label]. */
+internal fun fieldValueArea(label: String, value: Component): Div = Div(value).apply {
+    addClassName("ts-field__value")
+    element.setAttribute("role", "group")
+    element.setAttribute("aria-label", label)
 }
 
 /**

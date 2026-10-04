@@ -62,6 +62,21 @@ class RemainingShowcaseTests {
         }
 
         @Test
+        fun `should expose obscured values and retain informative field actions`() {
+            UI.getCurrent().navigate("dev/showcase/forms")
+            val obscuredText = _find<com.vaadin.flow.component.textfield.TextField>().single { field ->
+                field.ariaLabel.orElse("") == "Скрытый текст"
+            }
+            val valueArea = obscuredText.parent.orElseThrow()
+
+            assertTrue(valueArea.element.hasAttribute("data-ts-obscured"))
+            assertEquals("Подсказка остаётся читаемой", obscuredText.helperText)
+            assertTrue(_find<Button>().any { action -> action.text == "Проверить действие" && action.isEnabled })
+            assertTrue(_find<Div>().any { value -> value.element.hasAttribute("data-ts-obscured") &&
+                value.element.getAttribute("aria-label") == "Скрытая информация" })
+        }
+
+        @Test
         fun `should expose reusable overlay examples in overlays route`() {
             UI.getCurrent().navigate("dev/showcase/overlays")
 

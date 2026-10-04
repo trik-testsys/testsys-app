@@ -227,7 +227,8 @@ class ChoiceTests : MockVaadinTests() {
 
             input.isVisible = false
 
-            assertFalse(control.isVisible)
+            assertFalse(input.isVisible)
+            assertFalse(control.parent.orElseThrow().isVisible)
         }
 
         private fun ContentScope.languageSelect(

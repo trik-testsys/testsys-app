@@ -57,6 +57,7 @@ class ShowcaseFormsView(texts: UiTexts, private val environment: Environment) : 
         page(showcaseHeader()) {
             showcaseHead("Поля и файлы")
             ordinaryFields()
+            obscuredFields()
             block(title = "Режимы поля") {
                 editing(onSave = { true }, onCancel = {})
                 row {
@@ -175,7 +176,7 @@ private fun PageScope.fileExamples() {
                     if (file.filename == "fail.txt") throw IOException("Demonstration handler failure")
                     ui.access { status.set("Получено: ${file.filename}, ${content.size} байт") }
                 },
-            )
+            ) { isObscured = true }
         }
         row { vertical { text("Статус").bindText(status) } }
     }

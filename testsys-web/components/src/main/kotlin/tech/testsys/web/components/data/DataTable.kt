@@ -28,7 +28,8 @@ internal const val SORT_KEY_FILTER: String = "event.key === 'Enter' || event.key
 
 /** Controls inside a row whose clicks are their own. */
 private const val ROW_CONTROLS =
-    "[data-ts-input], vaadin-checkbox, vaadin-button, vaadin-text-field, button, a, input, label, select, textarea, [role=button]"
+    "[data-ts-input], vaadin-checkbox, vaadin-button, vaadin-text-field, button, a, input, label, select, textarea, [role=button], " +
+        ".ts-field__value--inline"
 
 /** Client-side filter of row clicks: clicks on controls inside a row do not click the row itself. */
 internal const val ROW_CLICK_FILTER: String = "!event.target.closest('$ROW_CONTROLS')"

@@ -141,12 +141,16 @@ vaadin-button > .ts-spinner { display: inline-block; }
   /* Lumo greys a read-only value through this part; the value keeps the primary text colour. */
   color: var(--text-primary);
 }
-/* Read-only field in a dark block: a white value and a dashed border more visible than the 12% white lines
-   used elsewhere in dark blocks, since a dashed 1px border needs more contrast against the dark fill. */
-.ts-block--dark :is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
-    vaadin-integer-field, vaadin-number-field)[readonly]:not([disabled])::part(input-field) {
-  color: var(--white);
-  border-color: rgba(255, 255, 255, .3);
+/* Inverse read-only controls stop at tables, which own a neutral surface and reuse normal field styling. */
+@scope (.ts-block--dark) to (.ts-table, .ts-leaderboard table) {
+  :scope :is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+      vaadin-integer-field, vaadin-number-field)[readonly]:not([disabled])::part(input-field) {
+    color: var(--white);
+    border-color: rgba(255, 255, 255, .3);
+  }
+  :scope vaadin-custom-field[readonly]:not([disabled]) .ts-lookup { color:var(--white); border-color:rgba(255,255,255,.3); }
+  :scope .ts-progress { background:rgba(255,255,255,.15); }
+  :scope .ts-progress__bar { background:var(--white); }
 }
 .ts-field__value > :is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-date-time-picker, vaadin-integer-field, vaadin-number-field, vaadin-custom-field) {
@@ -165,6 +169,13 @@ vaadin-select[data-ts-size="sm"] {
 /* A compact select keeps its height: the error shows as the red border, and its text stays the accessible description. */
 vaadin-select[data-ts-size="sm"]::part(error-message) { display: none; }
 .ts-field__value > vaadin-checkbox { display: flex; align-items: center; min-height: var(--control-md); }
+/* Native values remain separate from the shadow field frame, clear/toggle buttons, hints and errors. */
+:is(vaadin-text-field, vaadin-text-area, vaadin-date-picker, vaadin-time-picker,
+    vaadin-integer-field, vaadin-number-field) > :is(input, textarea),
+vaadin-select > [slot="value"], .ts-code__area, .ts-choice > span, .ts-switch {
+  filter:var(--ts-value-filter, none);
+}
+vaadin-checkbox::part(checkbox) { filter:var(--ts-value-filter, none); }
 vaadin-text-field[data-ts-mono] > input, vaadin-integer-field > input, vaadin-number-field > input {
   font-family: var(--font-mono);
 }
@@ -210,7 +221,6 @@ vaadin-custom-field[readonly]:not([disabled]) .ts-lookup { background: transpare
 vaadin-custom-field[disabled] .ts-lookup {
   background: var(--canvas); border-color: var(--border-default); color: var(--text-disabled); cursor: default;
 }
-.ts-block--dark vaadin-custom-field[readonly]:not([disabled]) .ts-lookup { color: var(--white); border-color: rgba(255, 255, 255, .3); }
 .ts-lookup-search { padding-top: 0; margin-bottom: var(--space-3); }
 /* Multi-value lookup: .ts-chip values as in MultiSelect; the value button stays first in the DOM, as the input the label
    focuses, and the chips are shown before it. The pager goes under the table, the footer holds the count and the actions. */
@@ -233,7 +243,6 @@ vaadin-dialog[theme~="ts-dialog"] .ts-dialog { box-shadow: none; }
 /* The overlay takes the width of the card, so the card limits itself by the viewport rather than its parent. */
 vaadin-dialog .ts-dialog { max-width: calc(100vw - 32px); }
 /* Tables in a dialog body keep the primary text colour of a table, not the secondary one of dialog text. */
-.ts-dialog__body .ts-table { color: var(--text-primary); }
 .ts-dialog__stack { display: flex; flex-direction: column; gap: 6px; }
 .ts-dialog--alert .ts-dialog__title { color: var(--text-primary); }
 
@@ -305,16 +314,19 @@ vaadin-tooltip-overlay::part(overlay) { background:var(--ink-900); color:var(--w
 
 /* Upload keeps the browser's native transport and file-list accessibility. */
 vaadin-upload.ts-drop { width:100%; box-sizing:border-box; }
+vaadin-upload.ts-drop::part(primary-buttons) { flex-wrap:wrap; gap:var(--space-2); }
+vaadin-upload.ts-drop::part(drop-label) { font:var(--fw-regular) var(--fs-xs)/var(--lh-xs) var(--font-sans); }
+vaadin-upload.ts-drop > vaadin-upload-file-list[slot="file-list"]:not(:has(vaadin-upload-file)) { display:none; }
 vaadin-upload.ts-drop[dragover] { border-color:var(--accent); background:var(--accent-softer); }
 vaadin-upload.ts-drop[disabled] { cursor:default; background:var(--canvas); color:var(--text-disabled); }
-vaadin-upload-file::part(name) { font:var(--fw-semibold) var(--fs-sm) var(--font-sans); }
+vaadin-upload-file::part(name) { font:var(--fw-semibold) var(--fs-sm) var(--font-sans); filter:var(--ts-value-filter, none); }
 vaadin-upload-file::part(status) { color:var(--text-secondary); }
 .ts-filedrop { display:flex; flex-direction:column; gap:var(--space-2); min-width:0; }
 .ts-filedrop > span:first-child { font:var(--fw-semibold) var(--fs-sm) var(--font-sans); }
+.ts-filedrop__meta { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); font:var(--fw-regular) var(--fs-xs) var(--font-sans); }
+.ts-filedrop__status:empty, .ts-filedrop__actions:empty { display:none; }
 .ts-date-range { gap:var(--space-2); }
 .ts-date-range > button { flex:none; }
-.ts-block--dark .ts-progress { background:rgba(255,255,255,.15); }
-.ts-block--dark .ts-progress__bar { background:var(--white); }
 
 vaadin-date-picker[data-ts-range-part]::part(toggle-button) { display:none; }
 

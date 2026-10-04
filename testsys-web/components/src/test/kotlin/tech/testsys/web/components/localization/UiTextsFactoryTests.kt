@@ -9,6 +9,13 @@ class UiTextsFactoryTests {
     private val texts = buildUiTexts(SupportedRegion.RU)
 
     @Test
+    internal fun `should localize the filter disclosure and its actions`() {
+        assertEquals("Фильтры", texts.tableFilters.title)
+        assertEquals("Применить", texts.tableFilters.apply)
+        assertEquals("Сбросить", texts.tableFilters.reset)
+    }
+
+    @Test
     internal fun `should format footer years without grouping and name its navigation`() {
         assertEquals("2037", texts.footer.year(2037))
         assertEquals("Ссылки футтера", texts.footer.links)

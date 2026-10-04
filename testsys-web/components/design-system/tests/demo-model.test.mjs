@@ -97,3 +97,23 @@ test('should preserve participant identity without substituting a student cabine
   assert.equal(getCabinetScreen('Ученик'), 'student.overview');
   assert.equal(getCabinetScreen('Организатор'), 'organizer.overview');
 });
+
+test('should create the requested number of participants and advance the ID sequence', () => {
+  const initial = createDemoState();
+  const created = reduceDemoState(initial, { type: 'createParticipants', competitionId: 'competition1', count: 7 });
+  assert.equal(created.users.length - initial.users.length, 7);
+  assert.equal(created.nextId, initial.nextId + 7);
+  assert.equal(new Set(created.users.map(user => user.id)).size, created.users.length);
+  assert.equal(new Set(created.users.map(user => user.accessCode)).size, created.users.length);
+  assert.equal(created.competitions[0].participantIds.length - initial.competitions[0].participantIds.length, 7);
+});
+for (const count of [0, -1, 1.5, 101, NaN, '4']) {
+  test(`should reject invalid demo participant count ${String(count)} without creating records`, () => {
+    const initial = createDemoState();
+    const rejected = reduceDemoState(initial, { type: 'createParticipants', competitionId: 'competition1', count });
+    assert.deepEqual(rejected.users, initial.users);
+    assert.deepEqual(rejected.competitions, initial.competitions);
+    assert.equal(rejected.nextId, initial.nextId);
+    assert.equal(rejected.message.tone, 'danger');
+  });
+}

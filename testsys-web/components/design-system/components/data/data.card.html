@@ -20,6 +20,7 @@ function Demo() {
   const rows = [{ id: '48213', p: 'C. Разрезание', lang: 'C++ 17', v: 'wa', t: '—' }, { id: '48190', p: 'B. Скобки', lang: 'Python', v: 'ok', t: '48 мс' }, { id: '48102', p: 'B. Скобки', lang: 'Python', v: 'tle', t: '1000 мс' }];
   const [probs, setProbs] = React.useState([{ id: 1, n: 'Сумма' }, { id: 2, n: 'Скобки' }, { id: 3, n: 'Разрезание' }, { id: 4, n: 'Треугольники' }]);
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    <TableFiltersExample namespace={NS} />
     <Block title="Порядок задач" subtitle="Перетащите за ⋮⋮">
       <SortableList items={probs} onChange={setProbs} renderItem={(p, i) => <><span className="ts-filetype" style={{ width: 28, height: 28, borderRadius: 6, fontSize: 13 }}>{'ABCD'[i]}</span><b style={{ flex: 1, fontWeight: 600 }}>{p.n}</b><span className="ts-mono ts-muted" style={{ fontSize: 12 }}>1 с · 256 МБ</span></>} />
     </Block>

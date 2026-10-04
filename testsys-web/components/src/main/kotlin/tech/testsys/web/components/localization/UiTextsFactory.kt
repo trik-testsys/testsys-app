@@ -21,6 +21,7 @@ import tech.testsys.web.components.MenuTexts
 import tech.testsys.web.components.NavigationTexts
 import tech.testsys.web.components.NotFoundTexts
 import tech.testsys.web.components.PaginationTexts
+import tech.testsys.web.components.TableFiltersTexts
 import tech.testsys.web.components.TableTexts
 import tech.testsys.web.components.UiTexts
 import java.time.DayOfWeek
@@ -40,6 +41,7 @@ fun buildUiTexts(region: SupportedRegion): UiTexts {
         brand = ui.brand(),
         signIn = ui.signIn(),
         footer = FooterTexts(year = { year -> ui.footerYear(year = year) }, links = ui.footerLinks()),
+        tableFilters = TableFiltersTexts(title = ui.tableFiltersTitle(), apply = ui.tableFiltersApply(), reset = ui.tableFiltersReset()),
         calendar = CalendarTexts(
             monthNames = symbols.getMonths(DateFormatSymbols.STANDALONE, DateFormatSymbols.WIDE)
                 .map { month -> month.replaceFirstChar { letter -> letter.titlecase(locale) } },

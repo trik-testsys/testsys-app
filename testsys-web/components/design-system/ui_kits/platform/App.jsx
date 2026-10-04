@@ -51,4 +51,4 @@ function App() {
   else screen = <CabinetScreen key={context} {...props} />;
   return <><div className="ts-demo-bar"><span className="ts-mono">TestSys · демонстрация</span><Button size="sm" variant="secondary" onClick={() => go('login')}>Вход и регистрация</Button><a href="../../components/index.html">Все компоненты</a><span style={{ flex: 1 }} /><Button size="sm" variant="secondary" onClick={reset}>Сбросить данные</Button></div>{screen}{toaster}</>;
 }
-Promise.all([window.__tsReady, window.__demoReady, window.__navigationReady]).then(([namespace, model, navigation]) => { window.TS = namespace; window.DemoModel = model; window.PrototypeNavigation = navigation; ReactDOM.createRoot(document.getElementById('root')).render(<App />); });
+Promise.all([window.__tsReady, window.__demoReady, window.__navigationReady, window.__tablesReady]).then(([namespace, model, navigation, tables]) => { window.TS = namespace; window.DemoModel = model; window.PrototypeNavigation = navigation; window.PrototypeTables = tables; ReactDOM.createRoot(document.getElementById('root')).render(<App />); });

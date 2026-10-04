@@ -1,3 +1,4 @@
+export const DEMO_PARTICIPANT_LIMIT = 100;
 // Deterministic fixtures and transitions for the reference prototype; no server operations.
 export const solutionKindLabels = { VisualLanguage: 'Визуальная программа TRIK Studio', Python: 'Python', JavaScript: 'JavaScript' };
 export const solutionStatusLabels = { Queue: 'В очереди', Checking: 'Проверяется', Checked: 'Проверено', Error: 'Ошибка проверки', Timeout: 'Тайм-аут' };
@@ -116,10 +117,12 @@ export function reduceDemoState(state, action) {
       return success({ competitions: state.competitions.map(c => c.id === competition.id ? { ...c, tourIds: [...c.tourIds, action.tourId] } : c) }, 'Тур добавлен');
     }
     case 'createParticipants': {
+      const count = action.count ?? 3;
+      if (!Number.isInteger(count) || count < 1 || count > DEMO_PARTICIPANT_LIMIT) return fail('Укажите целое количество от 1 до 100 (предел демонстрации)');
       const competition = state.competitions.find(c => c.id === action.competitionId && c.organizerId === organizerId);
       if (!competition) return fail('Соревнование недоступно');
-      const participants = Array.from({ length: 3 }, (_, i) => ({ id: `p${state.nextId + i}`, alias: `Участник ${state.nextId + i}`, role: 'Участник', accessCode: `PART-${state.nextId + i}`, lastLogin: '—', communityIds: [competition.communityId] }));
-      return success({ users: [...state.users, ...participants], competitions: state.competitions.map(c => c.id === competition.id ? { ...c, participantIds: [...c.participantIds, ...participants.map(p => p.id)] } : c), nextId: state.nextId + 3 }, 'Созданы 3 участника с кодами-доступа');
+      const participants = Array.from({ length: count }, (_, i) => ({ id: `p${state.nextId + i}`, alias: `Участник ${state.nextId + i}`, role: 'Участник', accessCode: `PART-${state.nextId + i}`, lastLogin: '—', communityIds: [competition.communityId] }));
+      return success({ users: [...state.users, ...participants], competitions: state.competitions.map(c => c.id === competition.id ? { ...c, participantIds: [...c.participantIds, ...participants.map(p => p.id)] } : c), nextId: state.nextId + count }, `Созданы участники: ${count}; каждому выдан код-доступа`);
     }
     case 'submitSolution': {
       const task = state.tasks.find(t => t.id === action.taskId);

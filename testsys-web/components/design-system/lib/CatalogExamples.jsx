@@ -57,3 +57,45 @@ function CatalogExamples({ group, namespace: N }) {
   return <Block title="Работающие состояния и совместимость" actions={<Button size="sm" variant="secondary" onClick={reset}>Сбросить пример</Button>}><div className="ts-vstack">{content}<p role="status">{message}</p></div></Block>;
 }
 window.CatalogExamples = CatalogExamples;
+
+function TableFiltersExample({ namespace: N }) {
+  const { Block, BlockRow, Field, Input, Select, Checkbox, Button, TableFilters, DataTable, Pagination } = N;
+  const defaults = { author: '', verdict: 'all', minScore: '20', from: '', to: '', errorsOnly: false };
+  const [draft, setDraft] = React.useState(() => ({ ...defaults }));
+  const [applied, setApplied] = React.useState(() => ({ ...defaults, minScore: 20 }));
+  const [errors, setErrors] = React.useState({});
+  const [page, setPage] = React.useState(1);
+  const [refreshes, setRefreshes] = React.useState(0);
+  const [selected, setSelected] = React.useState([]);
+  const source = Array.from({ length: 24 }, (_, index) => ({ id: index + 1, author: ['Анна Петрова', 'Иван Смирнов', 'Мария Козлова'][index % 3], verdict: ['accepted', 'error', 'running'][index % 3], score: index * 17 % 101, sentAt: '2026-09-' + String(index % 14 + 1).padStart(2, '0') }));
+  const rows = source.filter(row => row.author.toLocaleLowerCase().includes(applied.author.toLocaleLowerCase()) && (applied.verdict === 'all' || row.verdict === applied.verdict) && (applied.minScore == null || row.score >= applied.minScore) && (!applied.errorsOnly || row.verdict === 'error') && (!applied.from || row.sentAt >= applied.from) && (!applied.to || row.sentAt <= applied.to));
+  const pages = Math.max(1, Math.ceil(rows.length / 5));
+  const change = (name, value) => setDraft(current => ({ ...current, [name]: value }));
+  const apply = () => {
+    const score = draft.minScore === '' ? null : Number(draft.minScore);
+    const nextErrors = {};
+    if (score != null && (!Number.isInteger(score) || score < 0 || score > 100)) nextErrors.score = 'Укажите целое число от 0 до 100';
+    if (draft.from && draft.to && draft.from > draft.to) nextErrors.period = 'Конец периода раньше начала';
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return false;
+    setApplied({ ...draft, minScore: score });
+    return true;
+  };
+  const reset = () => { setDraft({ ...defaults }); setApplied({ ...defaults, minScore: 20 }); setErrors({}); };
+  const refresh = () => { setPage(1); setRefreshes(count => count + 1); };
+  const filters = <TableFilters columns={12} onApply={apply} onReset={reset} onRefresh={refresh}>
+    <BlockRow>
+      <Field label="Участник" labelSize={2} size={4} hint="Часть имени"><Input value={draft.author} onChange={event => change('author', event.target.value)} /></Field>
+      <Field label="Вердикт" labelSize={2} size={4}><Select value={draft.verdict} onChange={value => change('verdict', value)} options={[{ value: 'all', label: 'Все вердикты' }, { value: 'accepted', label: 'Принято' }, { value: 'error', label: 'Ошибка' }, { value: 'running', label: 'Проверяется' }]} /></Field>
+    </BlockRow>
+    <BlockRow>
+      <Field label="Минимум баллов" labelSize={2} size={4} error={errors.score} hint="По умолчанию 20"><Input type="number" min={0} max={100} error={!!errors.score} value={draft.minScore} onChange={event => change('minScore', event.target.value)} /></Field>
+      <Field label="Только ошибки" labelSize={2} size={4}><Checkbox checked={draft.errorsOnly} onChange={value => change('errorsOnly', value)} /></Field>
+    </BlockRow>
+    <BlockRow><Field label="Период отправки" labelSize={2} size={10} error={errors.period}><div className="ts-hstack" style={{ flexWrap: 'nowrap' }}><span className="ts-muted">С</span><Input style={{ flex: '1 1 0', width: 'auto', minWidth: 0 }} type="date" aria-label="Период отправки: с" value={draft.from} onChange={event => change('from', event.target.value)} /><span className="ts-muted">До</span><Input style={{ flex: '1 1 0', width: 'auto', minWidth: 0 }} type="date" aria-label="Период отправки: до" value={draft.to} onChange={event => change('to', event.target.value)} /></div></Field></BlockRow>
+  </TableFilters>;
+  return <Block title="Посылки: фильтры полями" subtitle={'Применено: минимум ' + (applied.minScore ?? 'любой') + ', участник ' + (applied.author || 'любой') + ' · обновлений ' + refreshes} flush filters={filters} actions={<Button size="sm" variant="secondary" onClick={() => setRefreshes(count => count + 1)}>Обновить выборку</Button>} footer={<><span className="ts-muted">Записей: {rows.length}</span><Pagination page={page} total={pages} onChange={setPage} compact /></>}>
+    <DataTable selectable selected={selected} onSelectChange={setSelected} rows={rows.slice((page - 1) * 5, page * 5)} columns={[{ key: 'id', title: 'ID', mono: true }, { key: 'author', title: 'Участник' }, { key: 'verdict', title: 'Вердикт', render: row => ({ accepted: 'Принято', error: 'Ошибка', running: 'Проверяется' })[row.verdict] }, { key: 'score', title: 'Баллы', mono: true }, { key: 'sentAt', title: 'Отправка' }]} />
+  </Block>;
+}
+window.TableFiltersExample = TableFiltersExample;

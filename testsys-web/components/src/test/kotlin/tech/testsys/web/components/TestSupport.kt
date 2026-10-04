@@ -25,6 +25,7 @@ internal val testTexts = UiTexts(
     brand = "TestSys",
     signIn = "Войти",
     footer = FooterTexts(year = { year -> year.toString() }, links = "Ссылки подвала"),
+    tableFilters = TableFiltersTexts(title = "Фильтры", apply = "Применить", reset = "Сбросить"),
     calendar = CalendarTexts(
         monthNames = listOf(
             "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",

@@ -16,7 +16,7 @@ private const val TABLE_OWNER = "a table"
 @TestSysDsl
 class BlockScope internal constructor(
     private val body: Div,
-    private val columns: Int,
+    internal val columns: Int,
     internal val texts: UiTexts,
     private val editState: BlockEditState,
     internal val title: String?,
@@ -29,6 +29,8 @@ class BlockScope internal constructor(
     internal var isFlushBody: Boolean = false
         private set
     internal var tabsBar: Component? = null
+        private set
+    internal var filtersBar: Component? = null
         private set
     private var editingSwitch: EditingSwitch? = null
 
@@ -119,6 +121,12 @@ class BlockScope internal constructor(
         checkBlockLevel("tabs()")
         check(tabsBar == null) { "Block already has tabs; call tabs() once" }
         tabsBar = tabs
+    }
+
+    internal fun placeFilters(filters: Component) {
+        checkBlockLevel("filters()")
+        check(filtersBar == null) { "Block already has filters; call filters() once" }
+        filtersBar = filters
     }
 
     /** Makes [component] of [owner] the whole body, which is no longer a grid. */

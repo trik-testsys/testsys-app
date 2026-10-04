@@ -10,6 +10,8 @@ export interface BlockProps {
   subtitle?: React.ReactNode;
   /** Right side of the head: tabs, filters, buttons. */
   actions?: React.ReactNode;
+  /** TableFilters placed after the head and before the body. */
+  filters?: React.ReactNode;
   footer?: React.ReactNode;
   /** Ink background — timers, highlights. Max one per row. */
   dark?: boolean;

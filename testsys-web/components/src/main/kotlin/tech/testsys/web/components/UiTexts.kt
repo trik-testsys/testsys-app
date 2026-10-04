@@ -9,6 +9,7 @@ import java.util.Locale
  * @property locale the locale of dates, times and numbers.
  * @property brand the accessible product name in the header and footer.
  * @property footer the texts of the page footer.
+ * @property tableFilters the texts of the table filter panel.
  * @property signIn the label of the header sign-in link.
  * @property header the texts of interactive header layers.
  * @property calendar the texts of date pickers.
@@ -47,7 +48,18 @@ class UiTexts(
     val components: ComponentTexts,
     val header: HeaderTexts,
     val footer: FooterTexts,
+    val tableFilters: TableFiltersTexts,
 )
+
+/**
+ * Texts of the table filter panel.
+ *
+ * @property title the disclosure label and accessible panel name.
+ * @property apply the label of the action that applies a validated draft.
+ * @property reset the label of the action that restores the page defaults.
+ * @since %CURRENT_VERSION%
+ */
+class TableFiltersTexts(val title: String, val apply: String, val reset: String)
 
 /**
  * Texts of the page footer.

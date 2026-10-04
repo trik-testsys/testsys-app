@@ -29,9 +29,11 @@ internal fun buildBlock(
     val scope = BlockScope(body, columns, texts, editState, heading.title).apply(content).apply { finish() }
     with(block) {
         addClassNames("ts-block", "ts-block--grid")
+        if (scope.filtersBar != null) addClassName("ts-block--filters")
         if (highlight) addClassName("ts-block--dark")
         if (span != null) style.set("grid-column", "span $span")
         blockHead(heading = heading, actions = scope.actionsBar, tabs = scope.tabsBar)?.let { head -> add(head) }
+        scope.filtersBar?.let { filters -> add(filters) }
         if (body.children.findAny().isPresent) {
             if (scope.isFlushBody) body.addClassName("ts-block__body--flush")
             add(body)

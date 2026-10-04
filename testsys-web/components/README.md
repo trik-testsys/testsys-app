@@ -192,7 +192,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `PageRowScope` | `slot` |
 | `SlotScope` | `row` |
 | `SlotRowScope` | `block`, `highlightBlock`, `statCard` |
-| `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
+| `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
 | `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, `select` без подписи, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical`, `custom` (без полей с подписью) |
 | `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
@@ -360,6 +360,46 @@ block(title = "Посылки") {
 - Ошибку загрузки блока показывает `load`, см. [Живые обновления](#живые-обновления).
 - Текст пустого состояния — по разделу «Текст интерфейса» в [design-system/README.md](design-system/README.md).
 
+## Поля фильтров таблицы
+
+`filters(onApply, onReset, onRefresh) { row { … } }` на `BlockScope` добавляет раскрываемую панель над телом блока.
+`TableFiltersScope.row` передаёт обычный `BlockRowScope`: используются те же `textInput`, `select`, `integerInput`,
+`dateRangeInput`, `checkbox` и остальные поля с теми же `labelSize`, `size`, `configure`, `ValueInput`, Binder и
+Signal-привязками. Отдельного семейства полей фильтра нет.
+
+| Callback | Контракт страницы |
+|----------|-------------------|
+| `onApply: () -> Boolean` | Проверить черновик; только при успехе опубликовать новый applied-снимок и вернуть `true` |
+| `onReset: () -> Unit` | Восстановить defaults в черновике и applied-снимке; defaults могут быть непустыми |
+| `onRefresh: () -> Unit` | Обновить первую страницу таблицы, например `rows.refresh(toFirstPage = true)` |
+
+Компонент вызывает `onRefresh` ровно один раз после успешного `onApply` и после `onReset`. При `false` таблица
+и её текущая страница не меняются; ошибки показывают обычные поля. Компонент не копирует beans и не задаёт
+условия запроса. `fetch` читает только применённый снимок; обычное ручное обновление таблицы также использует его.
+Для Binder подходит `readBean` в поля и `writeBeanIfValid` в новый builder-кандидат при применении. Привязывать
+`setBean` непосредственно к applied-снимку нельзя: изменения полей тогда сразу изменят запрос.
+
+Панель изначально свёрнута. `TableFiltersHandle.isExpanded` управляет раскрытием; закрытие сохраняет поля,
+черновик и ошибки, применение и сброс не закрывают панель. Меняется только DOM-видимость содержимого:
+`skipWhenHidden` не исключает поля из-за сворачивания панели. Обычная логическая видимость самого поля и
+его настройки disabled/readOnly продолжают работать по правилам полей.
+
+Порядок элементов: заголовок с actions/tabs → панель фильтров → body с table/load → footer/pager.
+Порядок объявления `filters` относительно `table` не меняет это размещение. Панель имеет собственный editable-state:
+`editing`/`bindEditable` блока и `TableHandle.isVisible` не делают её поля read-only и не скрывают её.
+Режим и Signal-привязки каждого `ValueInput` по-прежнему учитываются.
+
+Панель может соседствовать с `load`; она остаётся снаружи заменяемого body, поэтому reload сохраняет черновик.
+`onRefresh` в таком случае может вызывать `LoadHandle.reload`; новый экземпляр таблицы начнёт с первой страницы.
+Внутри content самого `load` объявлять панель нельзя, как actions/tabs/footer. Повторный `filters` в одном блоке
+тоже приводит к `IllegalStateException`. Сортировка и выбор сохраняются по контракту `TableHandle.refresh`;
+`load.reload` сохраняет собственное существующее поведение замены тела.
+
+Реализация — [TableFilters.kt](src/main/kotlin/tech/testsys/web/components/data/TableFilters.kt).
+Работающий пример с отдельными defaults, Binder-кандидатом и applied-снимком — таблица «Посылки: фильтры полями»
+в [ShowcaseDataSections.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/dev/ShowcaseDataSections.kt).
+Компактный `ContentScope.select` и `filterChip` из раздела «Фильтры в шапке» остаются отдельными средствами.
+
 ## Таблица
 
 `table(key, pageSize = 20, selectable = false, fetch) { … }` в `BlockScope` — таблица строк, которые `fetch` отдаёт
@@ -503,6 +543,14 @@ confirm(
   регистра, совпадает с `typeToConfirm`.
 - Кнопка действия вызывает `onConfirm` и закрывает диалог; если `onConfirm` бросил исключение, диалог остаётся
   открытым. «Отмена», крестик, Esc и клик по фону закрывают диалог без вызова.
+
+### Создание из списка
+
+Команда создания размещается в `actions { }` блока со списком и открывает обычный `dialog` с полями.
+Расположение, подтверждение, отмена и отличие добавления существующего объекта определены в
+[design-system/README.md](design-system/README.md), раздел «Создание сущностей из списков».
+Для будущих рабочих страниц применяется это правило; новый вариант компонента для создания не нужен.
+Пример общей формы Dialog на DSL — в следующем разделе.
 
 ### Диалог с формой
 
@@ -809,6 +857,7 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 Группы `dateFields` и `notFound` содержат имена и инструкцию составных дат (`ui.date_time.*`, `ui.date_range.*`)
 и тексты страницы 404 (`ui.not_found.*`), включая заголовок браузера с брендом.
 Группа `footer` содержит год и доступное имя ссылок (`ui.footer.*`).
+Группа `tableFilters` содержит подписи панели и её действий (`ui.table_filters.*`).
 Приложение собирает `UiTexts` функцией
 `buildUiTexts` в пакете `tech.testsys.web.components.localization` из ключей `ui.*` модуля локализации и данных ICU. Строки страницы передаются
 в функции DSL как `String`; правила локализации —

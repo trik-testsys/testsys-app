@@ -6,6 +6,7 @@ import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepo
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionJpaEntity
@@ -28,6 +29,8 @@ class DeveloperSolutionPersistenceAdapter(
     jpaEntityRepository,
 ),
     DeveloperSolutionRepository {
+
+    private val resourceVersionRepository: DeveloperSolutionJpaEntityRepository = jpaEntityRepository
 
     @Transactional
     override fun save(data: DeveloperSolutionData): DeveloperSolution {
@@ -55,6 +58,11 @@ class DeveloperSolutionPersistenceAdapter(
 
         val domainEntity = DeveloperSolutionMapping.toDomain(savedJpaEntity)
         return domainEntity
+    }
+
+    @Transactional(readOnly = true)
+    override fun findLatestByVersionBucket(versionBucket: VersionBucket): DeveloperSolution? {
+        return resourceVersionRepository.findFirstByVersionBucketOrderByCreatedAtDescIdDesc(versionBucket.value)?.let { assemble(it) }
     }
 
     override fun assemble(jpaEntity: DeveloperSolutionJpaEntity) = DeveloperSolutionMapping.toDomain(jpaEntity)

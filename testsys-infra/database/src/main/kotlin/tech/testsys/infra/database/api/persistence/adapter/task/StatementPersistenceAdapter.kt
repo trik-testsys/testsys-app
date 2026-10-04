@@ -6,6 +6,7 @@ import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.api.persistence.FileDataStorage
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -29,6 +30,8 @@ class StatementPersistenceAdapter(
 ) : AbstractPersistenceAdapter<StatementData, StatementId, Statement, StatementJpaEntity>(jpaEntityRepository),
     StatementRepository {
 
+    private val resourceVersionRepository: StatementJpaEntityRepository = jpaEntityRepository
+
     @Transactional
     override fun save(data: StatementData): Statement {
         val fileDataId = fileDataStorage.store(data.file)
@@ -50,6 +53,11 @@ class StatementPersistenceAdapter(
             entity.data.file.content,
         )
         return domainEntity
+    }
+
+    @Transactional(readOnly = true)
+    override fun findLatestByVersionBucket(versionBucket: VersionBucket): Statement? {
+        return resourceVersionRepository.findFirstByVersionBucketOrderByCreatedAtDescIdDesc(versionBucket.value)?.let { assemble(it) }
     }
 
     override fun assemble(jpaEntity: StatementJpaEntity): Statement {

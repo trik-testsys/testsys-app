@@ -36,6 +36,7 @@ import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
+import tech.testsys.domain.model.task.VersionBucket
 
 /**
  * Persistence port for [Contest] entities.
@@ -51,7 +52,18 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest>
  *
  * @since %CURRENT_VERSION%
  */
-interface DeveloperSolutionRepository : EntityRepository<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution>
+interface DeveloperSolutionRepository : EntityRepository<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution> {
+
+    /**
+     * Finds the latest version in [versionBucket], ordered by creation time and then by id, both descending.
+     * Metadata updates do not change this order.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return the latest version, or `null` if the chain has no versions.
+     * @since %CURRENT_VERSION%
+     */
+    fun findLatestByVersionBucket(versionBucket: VersionBucket): DeveloperSolution?
+}
 
 /**
  * Persistence port for [Exercise] entities. The file and language are fixed on creation: `update` with another value
@@ -59,7 +71,18 @@ interface DeveloperSolutionRepository : EntityRepository<DeveloperSolutionData, 
  *
  * @since %CURRENT_VERSION%
  */
-interface ExerciseRepository : EntityRepository<ExerciseData, ExerciseId, Exercise>
+interface ExerciseRepository : EntityRepository<ExerciseData, ExerciseId, Exercise> {
+
+    /**
+     * Finds the latest version in [versionBucket], ordered by creation time and then by id, both descending.
+     * Metadata updates do not change this order.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return the latest version, or `null` if the chain has no versions.
+     * @since %CURRENT_VERSION%
+     */
+    fun findLatestByVersionBucket(versionBucket: VersionBucket): Exercise?
+}
 
 /**
  * Persistence port for [JudgmentOrder] entities.
@@ -95,7 +118,18 @@ interface SolutionRepository : EntityRepository<SolutionData, SolutionId, Soluti
  *
  * @since %CURRENT_VERSION%
  */
-interface StatementRepository : EntityRepository<StatementData, StatementId, Statement>
+interface StatementRepository : EntityRepository<StatementData, StatementId, Statement> {
+
+    /**
+     * Finds the latest version in [versionBucket], ordered by creation time and then by id, both descending.
+     * Metadata updates do not change this order.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return the latest version, or `null` if the chain has no versions.
+     * @since %CURRENT_VERSION%
+     */
+    fun findLatestByVersionBucket(versionBucket: VersionBucket): Statement?
+}
 
 /**
  * Persistence port for [Submission] entities.
@@ -124,4 +158,15 @@ interface TaskRepository : EntityRepository<TaskData, TaskId, Task>
  *
  * @since %CURRENT_VERSION%
  */
-interface TestRepository : EntityRepository<TestData, TestId, Test>
+interface TestRepository : EntityRepository<TestData, TestId, Test> {
+
+    /**
+     * Finds the latest version in [versionBucket], ordered by creation time and then by id, both descending.
+     * Metadata updates do not change this order.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return the latest version, or `null` if the chain has no versions.
+     * @since %CURRENT_VERSION%
+     */
+    fun findLatestByVersionBucket(versionBucket: VersionBucket): Test?
+}

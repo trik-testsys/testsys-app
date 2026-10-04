@@ -11,16 +11,23 @@ import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
+import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.repository.task.DeveloperSolutionJpaEntityRepository
+import java.time.Instant
 import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
+@OptIn(InternalDatabaseApi::class)
 class DeveloperSolutionPersistenceAdapterTests :
     UpdatablePersistenceAdapterContractTests<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution>() {
 
     @Autowired
     override lateinit var repository: DeveloperSolutionRepository
+
+    @Autowired
+    private lateinit var jpaEntityRepository: DeveloperSolutionJpaEntityRepository
 
     override fun newData(): DeveloperSolutionData {
         val solutionId = fixtures.solution().id.value
@@ -120,5 +127,61 @@ class DeveloperSolutionPersistenceAdapterTests :
         assertSameEntity(previous, assertNotNull(repository.findById(previous.id)))
         assertSameEntity(next, assertNotNull(repository.findById(next.id)))
         assertEquals(previous.data.solution.id, next.data.solution.id)
+    }
+
+    @Test
+    fun `should find the latest version by creation time even with a lower id`() {
+        val first = repository.save(newData())
+        val second = repository.save(first.withData { name = "Another version" }.data)
+        setCreatedAt(id = first.id, createdAt = Instant.ofEpochSecond(20))
+        setCreatedAt(id = second.id, createdAt = Instant.ofEpochSecond(10))
+
+        val latest = repository.findLatestByVersionBucket(first.data.versionBucket)
+
+        assertEquals(first.id, latest?.id)
+    }
+
+    @Test
+    fun `should choose the higher id when creation times are equal`() {
+        val first = repository.save(newData())
+        val second = repository.save(first.withData { name = "Another version" }.data)
+        setCreatedAt(id = first.id, createdAt = Instant.EPOCH)
+        setCreatedAt(id = second.id, createdAt = Instant.EPOCH)
+
+        val latest = repository.findLatestByVersionBucket(first.data.versionBucket)
+
+        assertEquals(second.id, latest?.id)
+    }
+
+    @Test
+    fun `should keep the latest version after an older version is renamed`() {
+        val first = repository.save(newData())
+        val second = repository.save(first.withData { name = "Another version" }.data)
+        setCreatedAt(id = first.id, createdAt = Instant.ofEpochSecond(10))
+        setCreatedAt(id = second.id, createdAt = Instant.ofEpochSecond(20))
+        val loadedFirst = assertNotNull(repository.findById(first.id))
+        repository.update(loadedFirst.withData { name = "Renamed older version" })
+
+        val latest = repository.findLatestByVersionBucket(first.data.versionBucket)
+
+        assertEquals(second.id, latest?.id)
+    }
+
+    @Test
+    fun `should isolate version chains and return null for a missing chain`() {
+        val first = repository.save(newData())
+        repository.save(newData())
+
+        val latest = repository.findLatestByVersionBucket(first.data.versionBucket)
+        val missing = repository.findLatestByVersionBucket(VersionBucket(UUID(0, 99)))
+
+        assertEquals(first.id, latest?.id)
+        assertEquals(null, missing)
+    }
+
+    private fun setCreatedAt(id: DeveloperSolutionId, createdAt: Instant) {
+        val entity = jpaEntityRepository.findById(id.value).orElseThrow()
+        entity.createdAt = createdAt
+        jpaEntityRepository.saveAndFlush(entity)
     }
 }

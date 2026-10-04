@@ -6,6 +6,7 @@ import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.api.persistence.FileDataStorage
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -29,6 +30,8 @@ class ExercisePersistenceAdapter(
     private val fileDataStorage: FileDataStorage,
 ) : AbstractPersistenceAdapter<ExerciseData, ExerciseId, Exercise, ExerciseJpaEntity>(jpaEntityRepository),
     ExerciseRepository {
+
+    private val resourceVersionRepository: ExerciseJpaEntityRepository = jpaEntityRepository
 
     @Transactional
     override fun save(data: ExerciseData): Exercise {
@@ -55,6 +58,11 @@ class ExercisePersistenceAdapter(
             entity.data.file.content,
         )
         return domainEntity
+    }
+
+    @Transactional(readOnly = true)
+    override fun findLatestByVersionBucket(versionBucket: VersionBucket): Exercise? {
+        return resourceVersionRepository.findFirstByVersionBucketOrderByCreatedAtDescIdDesc(versionBucket.value)?.let { assemble(it) }
     }
 
     override fun assemble(jpaEntity: ExerciseJpaEntity): Exercise {

@@ -47,7 +47,7 @@ class FilterChipTests : MockVaadinTests() {
             assertEquals("true", chip().element.getAttribute("aria-pressed"))
             assertTrue("ts-filter--on" in chip().classes())
             val svg = chip().find("ts-icon").element.getProperty("innerHTML")
-            assertTrue(svg.contains("""<path d="M20 6 9 17l-5-5"/>"""))
+            assertTrue(svg.contains("""testsys-ui/icons.svg#check"""))
             assertTrue(svg.contains("""width="12""""))
             assertTrue(svg.contains("""stroke-width="3""""))
         }

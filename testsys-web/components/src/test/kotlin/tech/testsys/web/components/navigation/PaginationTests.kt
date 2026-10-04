@@ -114,8 +114,8 @@ class PaginationTests : MockVaadinTests() {
             val previous = arrow(testTexts.pagination.previous)
             val next = arrow(testTexts.pagination.next)
             assertEquals(listOf("button", "button"), listOf(previous, next).map { button -> button.element.getAttribute("type") })
-            assertTrue(previous.iconSvg().contains("""<path d="m15 18-6-6 6-6"/>"""))
-            assertTrue(next.iconSvg().contains("""<path d="m9 18 6-6-6-6"/>"""))
+            assertTrue(previous.iconSvg().contains("""testsys-ui/icons.svg#chevron-left"""))
+            assertTrue(next.iconSvg().contains("""testsys-ui/icons.svg#chevron-right"""))
             assertTrue(previous.iconSvg().contains("""width="14""""))
             assertTrue(next.iconSvg().contains("""width="14""""))
         }

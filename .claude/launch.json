@@ -21,18 +21,6 @@
         "--console=plain"
       ],
       "port": 8081
-    },
-    {
-      "name": "design-system",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": [
-        "-m",
-        "http.server",
-        "5173",
-        "--directory",
-        "testsys-web/components/design-system"
-      ],
-      "port": 5173
     }
   ]
 }

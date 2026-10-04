@@ -28,7 +28,7 @@ internal const val ICON_STROKE_BOLD: Int = 3
 internal fun svgIcon(name: IconName, size: Int = ICON_SIZE, strokeWidth: Int = ICON_STROKE): Svg = Svg(
     """<svg xmlns="http://www.w3.org/2000/svg" width="$size" height="$size" viewBox="0 0 24 24" fill="none" """ +
         """stroke="currentColor" stroke-width="$strokeWidth" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">""" +
-        name.paths + "</svg>",
+        """<use href="testsys-ui/icons.svg#${name.key}"/></svg>""",
 ).apply { element.classList.add("ts-icon") }
 
 /** Builds an arrow button of a pager: a `.ts-pager__btn` with the small icon [name] and the accessible name [label]. */

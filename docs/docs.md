@@ -72,7 +72,7 @@
 | [database/README.md](../testsys-infra/database/README.md)              | Справочник | Слои модуля хранения, идентификаторы, файлы, схема БД          |
 | [codegen/README.md](../testsys-infra/database/codegen/README.md)       | Справочник | KSP-кодогенерация модуля `database`                            |
 | [localization/README.md](../testsys-infra/localization/README.md)     | Справочник | Устройство локализации: формат ключей, типы, glossary          |
-| [design-system/README.md](../testsys-web/components/design-system/README.md)      | Справочник | Дизайн-система Кабинетов: токены, компоненты, правила интерфейса |
+| [ui-design.md](project/ui-design.md) | Справочник | Общие правила оформления веб-интерфейса |
 | [components/README.md](../testsys-web/components/README.md)                            | Справочник | Kotlin-DSL дизайн-системы: страница, сетка, скоупы, компоненты  |
 | [app/README.md](../testsys-web/app/README.md) | Справочник | Основное веб-приложение: запуск и границы ответственности |
 | [dev-app/README.md](../testsys-web/dev-app/README.md) | Справочник | Самостоятельная витрина компонентов: запуск и демонстрации |

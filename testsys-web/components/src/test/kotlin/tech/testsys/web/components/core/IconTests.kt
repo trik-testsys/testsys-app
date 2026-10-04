@@ -16,7 +16,9 @@ class IconTests : MockVaadinTests() {
         val icon = buildTestContent { icon(IconName.ChevronDown) }.find("ts-icon")
 
         val svg = icon.element.getProperty("innerHTML")
-        assertTrue(svg.contains("""<path d="m6 9 6 6 6-6"/>"""))
+        assertTrue(svg.contains("""href="testsys-ui/icons.svg#chevron-down"""))
+        val sprite = javaClass.getResource("/META-INF/resources/testsys-ui/icons.svg")!!.readText()
+        assertTrue(sprite.contains("""<path d="m6 9 6 6 6-6"/>"""))
         assertTrue(svg.contains("""width="16""""))
         assertTrue(svg.contains("""stroke="currentColor""""))
     }
@@ -32,5 +34,8 @@ class IconTests : MockVaadinTests() {
     @Test
     fun `should cover the icon subset of the design system`() {
         assertEquals(37, IconName.entries.size)
+        val sprite = javaClass.getResource("/META-INF/resources/testsys-ui/icons.svg")!!.readText()
+        assertEquals(37, Regex("<symbol ").findAll(sprite).count())
+        IconName.entries.forEach { name -> assertTrue(sprite.contains("<symbol id=\"${name.key}\"")) }
     }
 }

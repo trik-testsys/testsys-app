@@ -76,6 +76,7 @@ class ShowcaseView(texts: UiTexts, private val environment: Environment) : TestS
         page(showcaseHeader()) {
             showcaseHead("Компоненты")
             footer {
+                link("Демонстрация сценариев", tech.testsys.web.devapp.demo.DemoView::class.java)
                 link("Поля и файлы", ShowcaseFormsView::class.java)
                 link(label = "Исходный код", href = "https://github.com/trik-testsys/testsys-app")
             }

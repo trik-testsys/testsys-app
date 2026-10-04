@@ -2,7 +2,7 @@ import React from 'react';
 import {ConnectedReactAdapterElement} from './connected-react-adapter';
 import { type RenderHooks } from 'Frontend/generated/flow/ReactAdapter';
 import { ServerSnapshot } from './server-snapshot';
-import { DateRangeCalendar } from './reference/components/forms/DateRangeCalendar.jsx';
+import { DateRangeCalendar } from './DateRangeCalendar.jsx';
 function viewMonth(value?: string) {
   const parts = value?.match(/^([+-]?\d+)-(\d{2})-\d{2}$/);
   if (parts) return {year: Number(parts[1]), month: Number(parts[2])-1};

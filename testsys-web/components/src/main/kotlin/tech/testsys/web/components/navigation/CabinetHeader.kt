@@ -1,6 +1,7 @@
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Component
+import com.vaadin.flow.router.RouteParameters
 
 /**
  * Section of the Cabinet header.
@@ -48,6 +49,8 @@ data class HeaderUser(val name: String, val menu: HeaderUserMenu? = null)
  * @property signIn the route of the sign-in page shown to a guest, or `null` to hide the link.
  * @property search the optional background search, also available to guests.
  * @property notifications the optional application-owned notifications, shown only to signed-in users.
+ * @property menuSearchKey the optional mega-menu key filtered by the search field instead of a provider search.
+ * @property signInParameters route parameters of the guest sign-in link, empty by default.
  * @since %CURRENT_VERSION%
  */
 data class CabinetHeader(
@@ -57,4 +60,6 @@ data class CabinetHeader(
     val signIn: Class<out Component>? = null,
     val search: HeaderSearch? = null,
     val notifications: HeaderNotifications? = null,
+    val menuSearchKey: String? = null,
+    val signInParameters: RouteParameters = RouteParameters.empty(),
 )

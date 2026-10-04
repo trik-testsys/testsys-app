@@ -18,11 +18,11 @@ private const val RECTANGLE_MIN_WIDTH = 160
 private const val RECTANGLE_HEIGHT = 80
 private const val BADGE_MIN_WIDTH = 64
 
-/** Widths in percent of the two lines of a skeleton row, repeated by row; the table of the reference `SkeletonRows`. */
+/** Widths in percent of the two lines of a skeleton row, repeated by row; the skeleton row pattern. */
 private val LINE_WIDTHS = listOf(62 to 40, 80 to 30, 55 to 45, 72 to 25, 66 to 38)
 
 /**
- * Builds the markup of the reference `SkeletonRows`: [rows] list rows of pulsing shapes, hidden from assistive
+ * Builds the skeleton row markup: [rows] list rows of pulsing shapes, hidden from assistive
  * technologies.
  */
 internal fun buildSkeletonRows(rows: Int): Div = Div().apply {

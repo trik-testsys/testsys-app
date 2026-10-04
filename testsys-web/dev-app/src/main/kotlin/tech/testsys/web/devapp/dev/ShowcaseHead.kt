@@ -36,6 +36,7 @@ internal fun PageScope.showcaseHead(title: String) {
             }
         }
         tabs {
+            tab("Визуальные основы", ShowcaseFoundationsView::class.java)
             tab("Поля и файлы", ShowcaseFormsView::class.java)
             tab("Оверлеи", ShowcaseOverlaysView::class.java)
             tab("Шапка", ShowcaseHeaderView::class.java)

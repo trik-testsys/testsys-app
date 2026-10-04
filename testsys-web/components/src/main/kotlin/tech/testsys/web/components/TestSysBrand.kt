@@ -17,14 +17,14 @@ import com.vaadin.flow.component.html.Span
  * @since %CURRENT_VERSION%
  */
 object TestSysBrand {
-    const val EMBLEM: String = "design-system/assets/brand/emblem/svg/TestSys-mono-emblem-transparent.svg"
-    const val WORDMARK: String = "design-system/assets/brand/wordmark/svg/TestSys-mono-wordmark-transparent.svg"
+    const val EMBLEM: String = "testsys-ui/brand/emblem/svg/TestSys-mono-emblem-transparent.svg"
+    const val WORDMARK: String = "testsys-ui/brand/wordmark/svg/TestSys-mono-wordmark-transparent.svg"
     const val HEADER: String =
-        "design-system/assets/brand/horizontal-large-type/png/TestSys-mono-horizontal-large-type-05-split-cream.png"
-    const val FAVICON: String = "design-system/assets/brand/emblem/svg/TestSys-mono-emblem.svg"
+        "testsys-ui/brand/horizontal-large-type/png/TestSys-mono-horizontal-large-type-05-split-cream.png"
+    const val FAVICON: String = "testsys-ui/brand/emblem/svg/TestSys-mono-emblem.svg"
     const val FAVICON_URL: String = FAVICON + "?v=rounded-96"
     const val FOOTER: String =
-        "design-system/assets/brand/horizontal-large-type/svg/TestSys-mono-horizontal-large-type-07-transparent-blue.svg"
+        "testsys-ui/brand/horizontal-large-type/svg/TestSys-mono-horizontal-large-type-07-transparent-blue.svg"
 }
 
 internal fun buildBrand(name: String, href: String? = null): HtmlContainer {

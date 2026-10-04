@@ -1,0 +1,334 @@
+/*
+ * Vaadin-specific part of the TestSys design system. Tokens and .ts-* classes live in testsys-ui/tokens/;
+ * this file only maps Lumo onto the tokens and covers DOM that differs from the shared markup.
+ */
+html {
+  --lumo-font-family: var(--font-sans);
+  --lumo-primary-color: var(--accent);
+  --lumo-primary-text-color: var(--accent);
+  --lumo-primary-color-50pct: var(--accent-ring);
+  --lumo-error-color: var(--danger);
+  --lumo-error-text-color: var(--danger);
+  --lumo-success-color: var(--success);
+  --lumo-body-text-color: var(--text-primary);
+  --lumo-header-text-color: var(--text-primary);
+  --lumo-secondary-text-color: var(--text-secondary);
+  --lumo-border-radius-m: var(--radius-md);
+  --lumo-size-m: var(--control-md);
+  --lumo-size-s: var(--control-sm);
+  --lumo-size-l: var(--control-lg);
+  --lumo-size-xs: var(--control-sm);
+  --lumo-space-xs: var(--space-1);
+  --lumo-space-s: var(--space-2);
+  --lumo-space-m: var(--space-3);
+  --lumo-space-l: var(--space-4);
+  --lumo-font-size-m: var(--fs-sm);
+  --lumo-font-size-s: var(--fs-xs);
+  --lumo-font-size-xs: var(--fs-caption);
+  --lumo-font-size-xxs: var(--fs-micro);
+  --lumo-font-size-l: var(--fs-body);
+  --lumo-base-color: var(--surface-card);
+}
+
+/* Vaadin wraps inline SVG into a div. */
+.ts-icon { display: inline-flex; flex: none; line-height: 0; }
+
+/* Header: Vaadin renders links where the shared markup renders buttons. */
+.ts-header__spacer { flex: 1 1 0; min-width: 0; }
+.ts-header__action { height: 30px; }
+.ts-header__avatar { width: 24px; height: 24px; font-size: 9px; }
+a.ts-brand:hover, a.ts-nav__item:hover, a.ts-btn:hover { text-decoration: none; }
+
+/* Block titles: override Lumo's header text color to prevent dark-on-dark. */
+.ts-block__title { color: inherit; }
+
+/* Actions: roles and sizes of vaadin-button, mirroring .ts-btn variants. */
+vaadin-button[data-ts-role] {
+  --vaadin-button-height: var(--control-md);
+  --vaadin-button-min-width: 0;
+  --vaadin-button-padding: 0 var(--space-3);
+  --vaadin-button-margin: 0;
+  --vaadin-button-border: 1px solid transparent;
+  --vaadin-button-border-radius: var(--radius-md);
+  --vaadin-button-font-size: var(--fs-sm);
+  --vaadin-button-font-weight: var(--fw-semibold);
+  --vaadin-button-gap: var(--space-2);
+}
+vaadin-button[data-ts-role]:not([disabled]):not([aria-busy="true"]) { cursor:pointer; }
+vaadin-button[data-ts-size="sm"] {
+  --vaadin-button-height: var(--control-sm);
+  --vaadin-button-padding: 0 var(--space-2);
+  --vaadin-button-font-size: var(--fs-xs);
+}
+vaadin-button[data-ts-role="main"] { --vaadin-button-background: var(--accent); --vaadin-button-text-color: var(--text-on-accent); }
+vaadin-button[data-ts-role="main"]:hover { --vaadin-button-background: var(--accent-hover); }
+vaadin-button[data-ts-role="neutral"] {
+  --vaadin-button-background: var(--surface-card);
+  --vaadin-button-text-color: var(--text-primary);
+  --vaadin-button-border: 1px solid var(--border-strong);
+}
+vaadin-button[data-ts-role="neutral"]:hover { --vaadin-button-background: var(--canvas); }
+vaadin-button[data-ts-role="destructive"] {
+  --vaadin-button-background: var(--danger-bg);
+  --vaadin-button-text-color: var(--danger-fg);
+  --vaadin-button-border: 1px solid var(--danger-border);
+}
+vaadin-button[data-ts-role="destructive"]:hover { --vaadin-button-background: #F7D9D6; }
+vaadin-button[data-ts-role="link"] { --vaadin-button-background: transparent; --vaadin-button-text-color: var(--accent); }
+vaadin-button[data-ts-role="link"]:hover { --vaadin-button-background: var(--info-bg); }
+/* Danger: the confirming action of a dangerous dialog, mirroring .ts-btn--danger; pages have no such role. */
+vaadin-button[data-ts-role="danger"] { --vaadin-button-background: var(--danger); --vaadin-button-text-color: var(--white); }
+vaadin-button[data-ts-role="danger"]:hover { --vaadin-button-background: var(--danger-hover); }
+vaadin-button[data-ts-icon-only] { --vaadin-button-padding: 0; width: var(--control-md); }
+vaadin-button[data-ts-icon-only][data-ts-size="sm"] { width: var(--control-sm); }
+/* Disabled action of any role, mirroring .ts-btn:disabled: Lumo only greys the text, which is unreadable on a filled role. */
+vaadin-button[data-ts-role][disabled] {
+  --vaadin-button-background: var(--canvas);
+  /* Lumo paints the text of a disabled button with this colour, not with --vaadin-button-text-color. */
+  --lumo-disabled-text-color: var(--text-tertiary);
+  --vaadin-button-border: 1px solid var(--border-default);
+}
+vaadin-button[data-ts-role="link"][disabled] {
+  --vaadin-button-background: transparent;
+  --vaadin-button-border: 1px solid transparent;
+}
+vaadin-button[aria-busy="true"] { cursor: progress; }
+vaadin-button > .ts-spinner { display: inline-block; }
+/* A column keeps buttons at their own width, like the line does. */
+.ts-vstack > vaadin-button { align-self: flex-start; }
+
+/* Fields: label, helper and error typography and the shared white bordered input appearance. */
+:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-date-time-picker, vaadin-integer-field, vaadin-number-field, vaadin-custom-field) {
+  --vaadin-input-field-label-font-size: var(--fs-xs);
+  --vaadin-input-field-label-font-weight: var(--fw-medium);
+  --vaadin-input-field-label-color: var(--text-primary);
+  --vaadin-input-field-helper-font-size: var(--fs-caption);
+  --vaadin-input-field-helper-color: var(--text-secondary);
+  --vaadin-input-field-error-font-size: var(--fs-caption);
+  --vaadin-input-field-error-color: var(--danger);
+  --vaadin-input-field-value-font-size: var(--fs-sm);
+  /* The input-field part draws a 1px border outside this height; keep the whole control at --control-md. */
+  --lumo-text-field-size: calc(var(--control-md) - 2px);
+}
+:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-integer-field, vaadin-number-field)::part(input-field) {
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+}
+:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-integer-field, vaadin-number-field)[focused]::part(input-field) {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-integer-field, vaadin-number-field)[invalid]::part(input-field) {
+  border-color: var(--danger);
+}
+:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-integer-field, vaadin-number-field)[disabled]::part(input-field) {
+  background: var(--canvas);
+  border-color: var(--border-default);
+}
+/* Read-only field: the value keeps its type and can be copied; the dashed border tells it apart from an input. */
+:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-integer-field, vaadin-number-field)[readonly]:not([disabled])::part(input-field) {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--border-strong);
+  box-shadow: none;
+  /* Lumo greys a read-only value through this part; the value keeps the primary text colour. */
+  color: var(--text-primary);
+}
+/* Read-only field in a dark block: a white value and a dashed border more visible than the 12% white lines
+   used elsewhere in dark blocks, since a dashed 1px border needs more contrast against the dark fill. */
+.ts-block--dark :is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-integer-field, vaadin-number-field)[readonly]:not([disabled])::part(input-field) {
+  color: var(--white);
+  border-color: rgba(255, 255, 255, .3);
+}
+.ts-field__value > :is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+    vaadin-date-time-picker, vaadin-integer-field, vaadin-number-field, vaadin-custom-field) {
+  width: 100%;
+  padding-block: 0;
+}
+/* Label-less select in a line or a block head: no room for a label above; the small one matches small buttons. */
+vaadin-select[data-ts-size] { padding-block: 0; }
+/* The frame takes its height from --lumo-text-field-size and the value button inside from --lumo-size-m; the border
+   adds 2px. */
+vaadin-select[data-ts-size="sm"] {
+  --lumo-text-field-size: calc(var(--control-sm) - 2px);
+  --lumo-size-m: calc(var(--control-sm) - 2px);
+  --vaadin-input-field-value-font-size: var(--fs-xs);
+}
+/* A compact select keeps its height: the error shows as the red border, and its text stays the accessible description. */
+vaadin-select[data-ts-size="sm"]::part(error-message) { display: none; }
+.ts-field__value > vaadin-checkbox { display: flex; align-items: center; min-height: var(--control-md); }
+vaadin-text-field[data-ts-mono] > input, vaadin-integer-field > input, vaadin-number-field > input {
+  font-family: var(--font-mono);
+}
+vaadin-checkbox {
+  --vaadin-checkbox-size: 18px;
+  --vaadin-checkbox-background: var(--surface-card);
+  --vaadin-input-field-border-width: 1.5px;
+  --vaadin-input-field-border-color: var(--ink-300);
+  --vaadin-checkbox-checkmark-color: var(--white);
+}
+vaadin-checkbox[checked] { --vaadin-input-field-border-color: var(--accent); }
+vaadin-checkbox[invalid] { --vaadin-input-field-border-color: var(--danger); }
+vaadin-checkbox[disabled] { --vaadin-input-field-border-color: var(--border-default); }
+vaadin-checkbox[readonly]:not([disabled]) {
+  --vaadin-checkbox-background: transparent;
+  --vaadin-input-field-border-color: var(--border-strong);
+}
+
+/* Table selection: the row checkbox sits on the middle line of its cell. */
+.ts-table vaadin-checkbox { vertical-align: middle; }
+
+/* Date range: two pickers side by side inside one field. */
+.ts-date-range { display: flex; align-items: center; gap: var(--space-2); }
+.ts-date-range > vaadin-date-picker { flex: 1; min-width: 0; padding-block: 0; }
+.ts-date-range__prefix { flex:none; margin-inline-end:var(--space-1); color:var(--text-secondary); font:inherit; white-space:nowrap; }
+.ts-field__value vaadin-date-time-picker > :is([slot="date-picker"], [slot="time-picker"]) { padding-block: 0; }
+
+/* Lookup: a bordered field box holding the value button and the clear and open actions. */
+.ts-lookup {
+  display: flex; align-items: center; gap: var(--space-2); height: var(--control-md); box-sizing: border-box;
+  padding: 0 var(--space-1) 0 var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-md);
+  background: var(--surface-card); cursor: pointer;
+}
+.ts-lookup__text {
+  flex: 1; min-width: 0; padding: 0; border: 0; background: none; outline: none;
+  /* The field host sets a tall line height; the value keeps the text line of the other fields. */
+  font: inherit; font-size: var(--fs-sm); line-height: var(--lh-sm); color: inherit; text-align: left; cursor: inherit;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ts-lookup:has(.ts-lookup__text:focus-visible) { border-color: var(--border-focus); box-shadow: 0 0 0 3px var(--accent-ring); }
+vaadin-custom-field[invalid] .ts-lookup { border-color: var(--danger); }
+vaadin-custom-field[readonly]:not([disabled]) .ts-lookup { background: transparent; border-style: dashed; cursor: default; }
+vaadin-custom-field[disabled] .ts-lookup {
+  background: var(--canvas); border-color: var(--border-default); color: var(--text-disabled); cursor: default;
+}
+.ts-block--dark vaadin-custom-field[readonly]:not([disabled]) .ts-lookup { color: var(--white); border-color: rgba(255, 255, 255, .3); }
+.ts-lookup-search { padding-top: 0; margin-bottom: var(--space-3); }
+/* Multi-value lookup: .ts-chip values as in MultiSelect; the value button stays first in the DOM, as the input the label
+   focuses, and the chips are shown before it. The pager goes under the table, the footer holds the count and the actions. */
+.ts-lookup--many { height: auto; min-height: var(--control-md); padding-block: 3px; }
+.ts-lookup--many:has(.ts-chip) { padding-left: 6px; }
+.ts-lookup__chips { order: -1; display: flex; flex-wrap: wrap; gap: var(--space-1); min-width: 0; }
+.ts-lookup__chips .ts-chip { white-space: nowrap; }
+vaadin-custom-field[disabled] .ts-lookup__chips .ts-chip { background: var(--muted); color: var(--text-disabled); }
+.ts-lookup-pager { margin-top: var(--space-3); }
+.ts-lookup-count { flex: 1; font-size: var(--fs-sm); }
+
+/* Toast: the notification card is only a positioner, the .ts-toast markup draws the card. */
+vaadin-notification-card[theme~="ts-toast"]::part(overlay) { background: none; box-shadow: none; padding: 0; }
+vaadin-notification-card[theme~="ts-toast"]::part(content) { padding: 0; }
+
+/* Dialog: the rounded overlay carries the shadow outside scrollable content; .ts-dialog draws the card. */
+vaadin-dialog[theme~="ts-dialog"]::part(overlay) { background: none; box-shadow: var(--shadow-dialog); border-radius: var(--radius-2xl); overflow: hidden; }
+vaadin-dialog[theme~="ts-dialog"]::part(content) { padding: 0; border-radius: inherit; }
+vaadin-dialog[theme~="ts-dialog"] .ts-dialog { box-shadow: none; }
+/* The overlay takes the width of the card, so the card limits itself by the viewport rather than its parent. */
+vaadin-dialog .ts-dialog { max-width: calc(100vw - 32px); }
+/* Tables in a dialog body keep the primary text colour of a table, not the secondary one of dialog text. */
+.ts-dialog__body .ts-table { color: var(--text-primary); }
+.ts-dialog__stack { display: flex; flex-direction: column; gap: 6px; }
+.ts-dialog--alert .ts-dialog__title { color: var(--text-primary); }
+
+/* Action menu: vaadin-context-menu styled as the .ts-menu popover of the shared styling; the items carry .ts-menu__item. */
+vaadin-context-menu[theme~="ts-menu"]::part(overlay) {
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-popover);
+}
+vaadin-context-menu[theme~="ts-menu"]::part(content) { padding: 6px; min-width: 220px; }
+vaadin-context-menu-item.ts-menu__item {
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  font: var(--fw-medium) var(--fs-sm) var(--font-sans);
+  color: var(--text-primary);
+}
+vaadin-context-menu-item.ts-menu__item:hover,
+vaadin-context-menu-item.ts-menu__item[focus-ring] { background: var(--canvas); }
+vaadin-context-menu-item.ts-menu__item--danger { color: var(--danger); }
+vaadin-context-menu-item.ts-menu__item[disabled] { color: var(--text-tertiary); cursor: default; }
+vaadin-context-menu-list-box hr { height: 1px; margin: 4px 0; border: 0; background: var(--line-subtle); }
+
+/* Native radio/segmented composites retain form modes from their CustomField. */
+.ts-radio-group { display:flex; flex-wrap:wrap; gap:var(--space-3); }
+button.ts-choice { border:0; background:none; padding:0; text-align:left; }
+.ts-radio:not(.ts-radio--on) .ts-radio__dot { display:none; }
+vaadin-custom-field[readonly] .ts-seg, vaadin-custom-field[readonly] .ts-radio-group { background:transparent; border:1px dashed var(--border-strong); border-radius:var(--radius-md); }
+vaadin-custom-field[readonly] button:disabled { color:inherit; opacity:1; cursor:default; }
+vaadin-custom-field[disabled] .ts-seg { opacity:.55; }
+vaadin-custom-field.ts-seg--sm .ts-seg__item { height:22px; padding:0 10px; }
+
+/* The native switch keeps canonical track and knob markup with real switch semantics. */
+button.ts-switch { border:0; box-sizing:border-box; cursor:pointer; }
+button.ts-switch:focus-visible { outline:2px solid var(--border-focus); outline-offset:3px; }
+button.ts-switch:disabled { cursor:default; opacity:.5; }
+vaadin-custom-field[readonly]:not([disabled]) button.ts-switch:disabled { opacity:1; }
+
+/* The line gutter follows the actual textarea scroll inside Vaadin. */
+.ts-code__lines { overflow:hidden; max-height:100%; flex:none; }
+textarea.ts-code__area { margin:0; min-width:0; width:100%; }
+.ts-multiselect__clear { flex:none; width:auto; border:0; border-radius:var(--radius-xs); padding:0 var(--space-1); background:transparent; color:inherit; font:inherit; font-size:var(--fs-sm); line-height:var(--lh-sm); white-space:nowrap; cursor:pointer; }
+.ts-multiselect__clear:hover { background:var(--canvas); }
+vaadin-custom-field[readonly] .ts-code { outline:1px dashed var(--border-strong); }
+vaadin-custom-field[disabled] .ts-code { opacity:.55; }
+
+/* Vaadin positions the popup; the shared styling provides its surface and content. */
+vaadin-popover[theme~="ts-popover"]::part(overlay) { background:var(--surface-card); border:1px solid var(--border-default); border-radius:var(--radius-xl); box-shadow:var(--shadow-popover); min-width:260px; overflow:hidden; }
+vaadin-popover[theme~="ts-popover"]::part(content) { padding:0; border-radius:inherit; background:var(--surface-card); }
+vaadin-popover .ts-pop { padding:var(--space-4); border-radius:inherit; background:transparent; }
+testsys-date-range-calendar { display:block; padding:var(--space-4); box-sizing:border-box; }
+vaadin-popover .ts-popover__search { width:100%; box-sizing:border-box; }
+vaadin-popover .ts-options { min-width:300px; }
+vaadin-popover .ts-popover__foot { white-space:nowrap; }
+vaadin-popover .ts-popover__foot > span { flex:1; }
+
+/* Drawer is a modal Flow Dialog placed at the viewport edge. */
+vaadin-dialog[theme~="ts-drawer"] { align-items:stretch; justify-content:flex-end; padding:0; }
+vaadin-dialog[theme~="ts-drawer"]::part(overlay) { width:480px; max-width:100vw; height:100%; max-height:100%; margin:0; background:var(--surface-card); border-radius:var(--radius-xl); overflow:hidden; box-shadow:var(--shadow-drawer); }
+vaadin-dialog[theme~="ts-drawer"]::part(content) { height:100%; border-radius:inherit; overflow:hidden; }
+vaadin-dialog[theme~="ts-drawer"] .ts-dialog { width:480px; max-width:100vw; height:100%; max-height:100%; display:flex; flex-direction:column; border-radius:var(--radius-xl); overflow:hidden; }
+vaadin-dialog[theme~="ts-drawer"] .ts-dialog__body { flex:1; overflow:auto; }
+vaadin-dialog[theme~="ts-drawer"] .ts-dialog__foot { border-radius:0; }
+vaadin-tooltip-overlay::part(overlay) { background:var(--ink-900); color:var(--white); font:var(--fw-medium) var(--fs-caption)/18px var(--font-sans); border-radius:var(--radius-sm); padding:6px 10px; max-width:240px; }
+
+/* Upload keeps the browser's native transport and file-list accessibility. */
+vaadin-upload.ts-drop { width:100%; box-sizing:border-box; }
+vaadin-upload.ts-drop[dragover] { border-color:var(--accent); background:var(--accent-softer); }
+vaadin-upload.ts-drop[disabled] { cursor:default; background:var(--canvas); color:var(--text-disabled); }
+vaadin-upload-file::part(name) { font:var(--fw-semibold) var(--fs-sm) var(--font-sans); }
+vaadin-upload-file::part(status) { color:var(--text-secondary); }
+.ts-filedrop { display:flex; flex-direction:column; gap:var(--space-2); min-width:0; }
+.ts-filedrop > span:first-child { font:var(--fw-semibold) var(--fs-sm) var(--font-sans); }
+.ts-date-range { gap:var(--space-2); }
+.ts-date-range > button { flex:none; }
+.ts-block--dark .ts-progress { background:rgba(255,255,255,.15); }
+.ts-block--dark .ts-progress__bar { background:var(--white); }
+
+vaadin-date-picker[data-ts-range-part]::part(toggle-button) { display:none; }
+
+vaadin-custom-field[invalid] .ts-code { outline:1px solid var(--danger); }
+
+/* Header overlays keep every Vaadin background within the same rounded boundary. */
+vaadin-popover[theme~="ts-header-popup"]::part(overlay) { border:1px solid var(--border-default); border-radius:var(--radius-xl); background:var(--surface-card); box-shadow:var(--shadow-popover); overflow:hidden; max-width:calc(100vw - 24px); }
+vaadin-popover[theme~="ts-header-popup"]::part(content) { padding:0; border-radius:inherit; background:var(--surface-card); overflow:auto; }
+vaadin-popover[theme~="ts-header-search-popup"]::part(overlay), vaadin-popover[theme~="ts-header-notifications-popup"]::part(overlay) { width:360px; }
+vaadin-popover[theme~="ts-header-mega"] { --vaadin-popover-offset-top:0px; }
+vaadin-popover[theme~="ts-header-mega"]::part(overlay) { width:min(960px,calc(100vw - 24px)); max-height:calc(100vh - 70px); }
+vaadin-popover[theme~="ts-header-popup"]::part(overlay) { animation:ts-pop-in var(--dur-base) var(--ease-out); }
+@media (prefers-reduced-motion: reduce) { vaadin-popover[theme~="ts-header-popup"]::part(overlay) { animation:none; } }
+
+/* Only header arrival cards occupy the space below the header; ordinary toasts retain their native position. */
+vaadin-notification-card[theme~="ts-header-arrival"] { position:fixed; top:calc(var(--header-height) + var(--space-3)); right:var(--space-6); margin:0; max-width:calc(100vw - 2 * var(--space-6)); }
+vaadin-notification-card[theme~="ts-header-arrival"]::part(overlay) { border-radius:var(--radius-xl); overflow:hidden; }
+
+/* The menu-search mode sizes the existing popup to its visible groups. */
+vaadin-popover[theme~="ts-header-menu-search"]::part(overlay) { width:min(calc(var(--ts-menu-columns,4) * var(--col-wide) + 2 * var(--space-3) + (var(--ts-menu-columns,4) - 1) * var(--space-3)),calc(100vw - 24px)); min-width:0; }

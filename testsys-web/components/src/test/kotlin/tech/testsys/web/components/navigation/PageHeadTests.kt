@@ -25,6 +25,20 @@ import tech.testsys.web.components.testTexts
 
 class PageHeadTests : MockVaadinTests() {
     @Test
+    fun `should select exact parameterized page tabs without changing class based default`() {
+        com.vaadin.flow.component.UI.getCurrent().navigate(tech.testsys.web.components.ItemTestView::class.java, RouteParameters("id", "8"))
+        val scope = PageHeadScope(testTexts, ItemTestView::class.java)
+        scope.tabs(matchRouteParameters = true) {
+            tab("Семь", tech.testsys.web.components.ItemTestView::class.java, RouteParameters("id", "7"))
+            tab("Восемь", tech.testsys.web.components.ItemTestView::class.java, RouteParameters("id", "8"))
+        }
+        val head = scope.build("Кабинет")
+        val links = head.findAll("ts-tab")
+        assertEquals(listOf(null, "page"), links.map { it.element.getAttribute("aria-current") })
+        assertEquals(listOf(false, true), links.map { "ts-tab--active" in it.element.classList })
+    }
+
+    @Test
     fun `should put the head between the header and the page body`() {
         val main = buildTestPage { head("Весенний кубок") }
 

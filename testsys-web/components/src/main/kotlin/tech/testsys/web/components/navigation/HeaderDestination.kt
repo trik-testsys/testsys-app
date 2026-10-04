@@ -3,6 +3,8 @@ package tech.testsys.web.components.navigation
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.router.HighlightAction
+import com.vaadin.flow.router.HighlightConditions
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
 
@@ -48,4 +50,12 @@ internal fun destinationLink(label: String, destination: HeaderDestination, befo
             destination.onSelect()
         }
     }
+}
+
+/** Applies exact route highlighting and initializes freshly attached links from the active UI location. */
+internal fun configureExactRoute(link: RouterLink, mark: (RouterLink, Boolean) -> Unit) {
+    link.highlightCondition = HighlightConditions.sameLocation()
+    link.highlightAction = HighlightAction<RouterLink> { target, isCurrent -> mark(target, isCurrent) }
+    mark(link, UI.getCurrent()?.internals?.activeViewLocation?.path == link.href)
+    link.addAttachListener { event -> mark(link, event.ui.internals.activeViewLocation.path == link.href) }
 }

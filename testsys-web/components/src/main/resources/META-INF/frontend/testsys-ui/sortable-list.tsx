@@ -2,7 +2,7 @@ import React from 'react';
 import {ConnectedReactAdapterElement} from './connected-react-adapter';
 import {type RenderHooks} from 'Frontend/generated/flow/ReactAdapter';
 import {ServerSnapshot} from './server-snapshot';
-import {SortableList} from './reference/components/data/SortableList.jsx';
+import {SortableList} from './SortableList.jsx';
 function Slot({name, hooks}: {name: string, hooks: RenderHooks}) { return hooks.useContent(name); }
 class SortableAdapter extends ConnectedReactAdapterElement {
   private readonly snapshot = new ServerSnapshot<any>(this, 'list');

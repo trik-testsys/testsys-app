@@ -27,6 +27,15 @@ class HeaderTests : MockVaadinTests() {
     )
 
     @Test
+    fun `should route guest sign in using explicit parameters`() {
+        val header = buildHeader(
+            CabinetHeader(signIn = ItemTestView::class.java, signInParameters = RouteParameters("id", "7")),
+            testTexts,
+        )
+        assertTrue(header.findAll("ts-header__action").single().element.getAttribute("href").endsWith("/7"))
+    }
+
+    @Test
     fun `should render mega menu destinations with route parameters and working actions`() {
         val calls = mutableListOf<String>()
         val section = MegaMenuItem(

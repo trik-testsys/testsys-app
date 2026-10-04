@@ -12,6 +12,7 @@ class TestSysBrandTests : MockVaadinTests() {
 
         val resources = assets.map { asset -> javaClass.getResource("/META-INF/resources/$asset") }
 
+        assets.forEach { asset -> org.junit.jupiter.api.Assertions.assertTrue(asset.startsWith("testsys-ui/brand/")) }
         resources.forEach { resource -> assertNotNull(resource) }
     }
 

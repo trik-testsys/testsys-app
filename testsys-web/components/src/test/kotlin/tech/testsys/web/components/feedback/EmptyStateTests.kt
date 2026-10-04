@@ -30,7 +30,7 @@ class EmptyStateTests : MockVaadinTests() {
         val state = ui().find("ts-empty")
         assertEquals("Посылок пока нет", state.find("ts-empty__title").element.text)
         val svg = state.find("ts-empty__icon").child(0).element.getProperty("innerHTML")
-        assertTrue(svg.contains(IconName.File.paths))
+        assertTrue(svg.contains("testsys-ui/icons.svg#file"))
         assertTrue(state.findAll("ts-empty__desc").isEmpty())
         assertTrue(state.findAll("ts-empty__actions").isEmpty())
         assertFalse("ts-empty--error" in state.classes())
@@ -56,7 +56,7 @@ class EmptyStateTests : MockVaadinTests() {
 
         assertTrue("ts-empty--error" in state.classes())
         val svg = state.find("ts-empty__icon").child(0).element.getProperty("innerHTML")
-        assertTrue(svg.contains(IconName.TriangleAlert.paths))
+        assertTrue(svg.contains("testsys-ui/icons.svg#triangle-alert"))
     }
 
     @Test

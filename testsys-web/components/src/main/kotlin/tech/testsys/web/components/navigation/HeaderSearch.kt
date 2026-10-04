@@ -8,8 +8,6 @@ import com.vaadin.flow.component.html.Span
 import org.slf4j.LoggerFactory
 import tech.testsys.web.components.Background
 import tech.testsys.web.components.HeaderTexts
-import tech.testsys.web.components.core.IconName
-import tech.testsys.web.components.core.svgIcon
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
@@ -51,18 +49,13 @@ internal class HeaderSearchController(
     private var query = ""
     private var state: SearchState = SearchState.Hidden
     private var activeIndex = -1
-    val field = HeaderSearchInput().apply {
-        element.setAttribute("type", "search")
-        element.setAttribute("placeholder", texts.search)
-        element.setAttribute("aria-label", texts.search)
+    private val input = headerSearchField(texts.search)
+    val field = input.field.apply {
         element.setAttribute("role", "combobox")
         element.setAttribute("aria-autocomplete", "list")
         element.setAttribute("aria-controls", listId)
-        element.setAttribute("autocomplete", "off")
     }
-    val component = Div(svgIcon(IconName.Search), field, Span("⌘K").apply { addClassName("ts-kbd") }).apply {
-        addClassName("ts-header__search")
-    }
+    val component = input.component
     val popup = interactions.popup(component, label = texts.search, theme = "ts-header-search-popup").apply {
         isOpenOnClick = false
         isTabFocusEnabled = true

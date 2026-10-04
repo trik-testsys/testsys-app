@@ -24,7 +24,6 @@ testsys-app/
 ├── testsys-infra/            # Реализации портов
 ├── testsys-web/              # Контейнер веб-модулей
 │   ├── components/           # Kotlin-DSL, общие тексты и экран 404
-│   │   └── design-system/    # Токены, React-эталон, каталог и макеты
 │   ├── app/                  # Основное приложение
 │   └── dev-app/              # Независимая витрина компонентов
 ├── detekt.yml                # Конфигурация Detekt
@@ -42,7 +41,7 @@ testsys-app/
 | `testsys-infra:grpc`                 | Связь с внешним грейдером решений TRIK Studio (реализация порта `Grader`).                           | Заготовка (пусто) |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из ICU-паттернов.                          | Реализован        |
 | `testsys-web:app` | Основное приложение Vaadin Flow: точка входа, конфигурация и маршрутизация ошибок, см. [app/README.md](../../testsys-web/app/README.md). | Каркас; предметных страниц Кабинетов нет |
-| `testsys-web:components` | Kotlin-DSL, общая фабрика текстов и визуальная часть 404, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. React-эталон — внутри `components/design-system/`. | Реализован |
+| `testsys-web:components` | Kotlin-DSL, общая фабрика текстов и визуальная часть 404, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
 | `testsys-web:dev-app` | Самостоятельная витрина компонентов и демонстраций, см. [dev-app/README.md](../../testsys-web/dev-app/README.md). | Реализован |
 
 Отсутствующие маршруты обрабатывает `testsys-web/app/src/main/kotlin/tech/testsys/web/app/error/NotFoundView.kt`
@@ -86,8 +85,7 @@ testsys-app/
 - В `build.gradle.kts` модуля, кроме плагинов сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`, у веб-приложений —
   ещё Spring Boot и Vaadin в `app` и `dev-app`) и зависимостей, может быть и модуль-специфичная логика сборки — она остаётся в скрипте
   своего модуля. Так, в `testsys-infra/localization` это кодогенерация (см.
-  [localization/README.md](../../testsys-infra/localization/README.md)), в `testsys-web:components` — копирование CSS
-  и канонического React дизайн-системы в jar и сохранение временных меток его файлов, в `app` и `dev-app` — условие задачи
+  [localization/README.md](../../testsys-infra/localization/README.md)), в `testsys-web:components` — упаковка UI-ресурсов и клиентских реализаций компонентов в jar и сохранение временных меток его файлов, в `app` и `dev-app` — условие задачи
   `vaadinBuildFrontend` (см. ниже).
 
 Полная сборка — компиляция, тесты и Detekt:
@@ -139,8 +137,8 @@ sticky sessions: сессия Vaadin и состояние её UI живут в
 своего экземпляра.
 
 `bootJar` собирает приложение в production-режиме, включая собственные клиентские адаптеры из jar `components`.
-Node.js плагин устанавливает в `~/.vaadin`; упаковка канонического React описана в
-[components/README.md](../../testsys-web/components/README.md), раздел «Упаковка React».
+Node.js плагин устанавливает в `~/.vaadin`; упаковка клиентских компонентов описана в
+[components/README.md](../../testsys-web/components/README.md), раздел «Клиентская реализация компонентов».
 
 Production-сборку фронтенда (`vaadinBuildFrontend`) выполняют только запуски с `bootJar` или `bootBuildImage`
 (`assemble` и `build` включают `bootJar`); `bootRun`, тесты и `check` её пропускают. Условие проверяет граф задач
@@ -176,5 +174,6 @@ Workflow лежат в `.github/workflows`.
 | Пользовательскую фичу                           | Метод с `@Feature` в `operation/user/<Actor>Operations.kt`, см. [implement-feature.md](../guides/implement-feature.md) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
-| Токены, стили, эталонные React-компоненты       | `testsys-web/components/design-system`, см. [design-system/README.md](../../testsys-web/components/design-system/README.md) |
+| Токены, стили, бренд и иконки | `components/src/main/resources/META-INF/resources/testsys-ui/`, правила — [ui-design.md](ui-design.md) |
+| Необходимая клиентская реализация компонента | `components/src/main/resources/META-INF/frontend/testsys-ui/`, API — components/README.md |
 | Kotlin-компонент интерфейса, страницу Кабинета  | Компонент — `testsys-web/components`, рабочая страница — `testsys-web/app`, витрина — `testsys-web/dev-app`, см. [components/README.md](../../testsys-web/components/README.md) |

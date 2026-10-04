@@ -102,7 +102,7 @@ class LoadTests : MockVaadinTests() {
         }
 
         @Test
-        fun `should draw a skeleton row as the reference list row`() {
+        fun `should draw a skeleton list row`() {
             buildTestPage { block { load({ 1 }, skeletonRows = 2) { value -> row { text("Всего: $value") } } } }
 
             val row = ui().findAll("ts-skel-row")[1]

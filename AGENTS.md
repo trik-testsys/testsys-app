@@ -35,7 +35,7 @@ only point to it.
 | Domain model, ports, builder DSL                       | `testsys-domain/README.md`                            |
 | Persistence layers, Snowflake ids, node id, files, schema | `testsys-infra/database/README.md`                 |
 | Localization                                           | `testsys-infra/localization/README.md`                |
-| Web UI: design tokens, components, interface rules     | `testsys-web/components/design-system/README.md`                 |
+| Web UI: design tokens and interface rules              | `docs/project/ui-design.md`                           |
 | Web UI in Kotlin: pages, grid, DSL components          | `testsys-web/components/README.md`                            |
 | Operations, `@Feature`, operation error model          | `testsys-operation/README.md`                         |
 | Adding a feature / an entity / a port / a localized message | `docs/guides/implement-feature.md`, `docs/guides/implement-entity.md`, `docs/guides/implement-port.md`, `docs/guides/add-localization.md` |
@@ -54,5 +54,5 @@ There are no repository-local Codex hooks; follow the limits in the agent defini
 - `/implement` skill → `coder` agent — implements a task following the guides in `docs/guides` with a checklist
   self-check: `MODE: plan` (checklist-based plan; all questions asked by the skill) then `MODE: apply` (autonomous,
   no questions; build and tests). Never commits; limits are in `.codex/agents/coder.toml`.
-- `/testsys-design` skill (no agent) — designs and builds web UI with the design system in
-  `testsys-web/components/design-system/`, as a throwaway HTML artifact or production code.
+- `/testsys-design` skill (no agent) — designs and builds web UI with the components in
+  `testsys-web/components/`, following `docs/project/ui-design.md`.

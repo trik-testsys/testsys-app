@@ -1,3 +1,4 @@
+const menuSearches = new WeakMap<HTMLInputElement, () => void>();
 import './header-arrivals.ts';
 
 const headers = new WeakMap<HTMLElement, () => void>();
@@ -42,7 +43,9 @@ function send(input: HTMLInputElement, name: string, detail: object) {
         .find(button => (button.nextElementSibling as any)?.opened);
       if (!trigger) return;
       const popup = trigger.nextElementSibling as any;
-      requestAnimationFrame(() => { if (!popup.opened && trigger.isConnected) trigger.focus(); });
+      const menuInput = Array.from(root.querySelectorAll<HTMLInputElement>('.ts-header__search input'))
+        .find(input => input.getAttribute('aria-controls') === popup.id);
+      requestAnimationFrame(() => { if (!popup.opened && trigger.isConnected) (menuInput ?? trigger).focus(); });
     };
     const readAllFocus = (event: MouseEvent) => {
       const button = (event.composedPath()[0] as HTMLElement).closest<HTMLButtonElement>('.ts-header-read-all');
@@ -62,7 +65,10 @@ function send(input: HTMLInputElement, name: string, detail: object) {
       document.removeEventListener('keydown', restoreMegaFocus, true);
       document.removeEventListener('keydown', keydown);
       observer.disconnect();
-      root.querySelectorAll<HTMLInputElement>('.ts-header__search input').forEach(input => this.searchDetach(input));
+      root.querySelectorAll<HTMLInputElement>('.ts-header__search input').forEach(input => {
+        this.searchDetach(input);
+        this.menuSearchDetach(input);
+      });
     });
   },
   detach(root: HTMLElement) { headers.get(root)?.(); headers.delete(root); },
@@ -113,5 +119,51 @@ function send(input: HTMLInputElement, name: string, detail: object) {
       popup.removeEventListener('pointerdown', pointerdown);
     });
   },
-  searchDetach(input: HTMLInputElement) { searches.get(input)?.(); searches.delete(input); }
+  searchDetach(input: HTMLInputElement) { searches.get(input)?.(); searches.delete(input); },
+  menuSearchAttach(input: HTMLInputElement, popup: any, trigger: HTMLElement) {
+    this.menuSearchDetach(input);
+    let suppressFocus = false;
+    const show = () => { if (!suppressFocus) send(input, 'header-menu-input', {query: input.value}); };
+    const close = () => { popup.opened = false; send(input, 'header-menu-close', {}); };
+    const links = () => Array.from(popup.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'));
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault(); suppressFocus = true; close(); input.focus(); suppressFocus = false;
+      }
+      else if (event.target === input && event.key === 'Enter') {
+        event.preventDefault(); links()[0]?.click();
+      }
+      else if (event.target === input && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
+        event.preventDefault(); show();
+        requestAnimationFrame(() => { const entries = links(); (event.key === 'ArrowUp' ? entries.at(-1) : entries[0])?.focus(); });
+      }
+      else if (event.target !== input && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+        event.preventDefault();
+        const entries = links();
+        const target = (event.composedPath()[0] as HTMLElement).closest<HTMLElement>('a[href], button');
+        const index = entries.indexOf(target!);
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? entries.length - 1 :
+          (index + (event.key === 'ArrowUp' ? -1 : 1) + entries.length) % entries.length;
+        entries[next]?.focus();
+      }
+    };
+    const outside = (event: PointerEvent) => {
+      const path = event.composedPath();
+      if (popup.opened && !path.includes(input) && !path.includes(popup) && !path.includes(popup.target) && !path.includes(trigger) &&
+          !path.some(node => node instanceof Node && popup.contains(node))) close();
+    };
+    input.addEventListener('focus', show);
+    input.addEventListener('input', show);
+    input.addEventListener('keydown', keydown);
+    popup.addEventListener('keydown', keydown);
+    document.addEventListener('pointerdown', outside, true);
+    menuSearches.set(input, () => {
+      input.removeEventListener('focus', show);
+      input.removeEventListener('input', show);
+      input.removeEventListener('keydown', keydown);
+      popup.removeEventListener('keydown', keydown);
+      document.removeEventListener('pointerdown', outside, true);
+    });
+  },
+  menuSearchDetach(input: HTMLInputElement) { menuSearches.get(input)?.(); menuSearches.delete(input); }
 };

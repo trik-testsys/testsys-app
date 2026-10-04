@@ -78,8 +78,19 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
      * @since %CURRENT_VERSION%
      */
     fun tabs(content: PageTabsScope.() -> Unit) {
+        tabs(matchRouteParameters = false, content = content)
+    }
+
+    /**
+     * Adds page tabs with optional exact route matching, including route parameters; the default overload matches classes.
+     *
+     * @throws IllegalArgumentException if there are fewer than two tabs.
+     * @throws IllegalStateException if the head already has tabs.
+     * @since %CURRENT_VERSION%
+     */
+    fun tabs(matchRouteParameters: Boolean, content: PageTabsScope.() -> Unit) {
         check(tabsNav == null) { "Page head already has tabs; call tabs() once" }
-        tabsNav = PageTabsScope(view).apply(content).build(texts.navigation.sections)
+        tabsNav = PageTabsScope(view, matchRouteParameters).apply(content).build(texts.navigation.sections)
     }
 
     internal fun build(title: String): Div {
@@ -112,7 +123,10 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
  * @since %CURRENT_VERSION%
  */
 @TestSysDsl
-class PageTabsScope internal constructor(private val view: Class<out Component>?) {
+class PageTabsScope internal constructor(
+    private val view: Class<out Component>?,
+    private val isRouteExactMatch: Boolean = false,
+) {
     private val tabs = mutableListOf<PageTab>()
 
     /**
@@ -143,7 +157,17 @@ class PageTabsScope internal constructor(private val view: Class<out Component>?
         return Nav().apply {
             addClassNames("ts-tabs", "ts-tabs--bare", "ts-tabs--lg")
             element.setAttribute("aria-label", ariaLabel)
-            tabs.forEach { tab -> add(mark(tab, isCurrent = tab === current)) }
+            tabs.forEach { tab ->
+                if (isRouteExactMatch && tabs.any { it.target == view }) {
+                    configureExactRoute(tab.link) { link, isCurrent ->
+                        link.element.classList.set("ts-tab--active", isCurrent)
+                        if (isCurrent) link.element.setAttribute("aria-current", "page") else link.element.removeAttribute("aria-current")
+                    }
+                    add(tab.link)
+                } else {
+                    add(mark(tab, isCurrent = tab === current))
+                }
+            }
         }
     }
 

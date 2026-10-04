@@ -1,0 +1,101 @@
+package tech.testsys.web.devapp.demo
+
+/** Immutable user fixture of the UI demonstration; not a domain entity. */
+internal data class DemoUser(
+    val id: String,
+    val alias: String,
+    val role: String,
+    val accessCode: String,
+    val communityIds: List<String>,
+    val email: String? = null,
+    val lastLogin: String = "—",
+)
+
+/** Immutable community fixture of the UI demonstration; not a domain entity. */
+internal data class DemoCommunity(
+    val id: String,
+    val name: String,
+)
+
+/** Immutable history fixture of the UI demonstration; not a domain entity. */
+internal data class DemoHistory(
+    val modifiedAt: String,
+    val fileName: String,
+    val comment: String,
+)
+
+/** Immutable resource fixture of the UI demonstration; not a domain entity. */
+internal data class DemoResource(
+    val id: String,
+    val ownerId: String,
+    val taskId: String,
+    val name: String,
+    val category: String,
+    val fileName: String,
+    val modifiedAt: String,
+    val history: List<DemoHistory>,
+)
+
+/** Immutable group fixture of the UI demonstration; not a domain entity. */
+internal data class DemoGroup(
+    val id: String,
+    val name: String,
+    val studentIds: List<String>,
+    val tourIds: List<String>,
+)
+
+/** Immutable competition fixture of the UI demonstration; not a domain entity. */
+internal data class DemoCompetition(
+    val id: String,
+    val name: String,
+    val organizerId: String,
+    val communityId: String,
+    val participantIds: List<String>,
+    val tourIds: List<String>,
+)
+
+/** Immutable tour fixture of the UI demonstration; not a domain entity. */
+internal data class DemoTour(
+    val id: String,
+    val name: String,
+    val description: String,
+    val startsAt: String,
+    val endsAt: String,
+    val durationMinutes: Int,
+    val remainingSeconds: Int,
+    val trikVersion: String,
+    val taskIds: List<String>,
+    val ownerId: String,
+    val communityIds: List<String>,
+)
+
+/** Immutable task fixture of the UI demonstration; not a domain entity. */
+internal data class DemoTask(
+    val id: String,
+    val name: String,
+    val description: String,
+    val authorSolutionKinds: List<String>,
+    val ownerId: String,
+    val communityIds: List<String>,
+    val state: String,
+    val trikVersions: List<String>,
+)
+
+/** Immutable solution fixture of the UI demonstration; not a domain entity. */
+internal data class DemoSolution(
+    val id: String,
+    val userId: String,
+    val taskId: String,
+    val fileName: String,
+    val kind: String,
+    val submittedAt: String,
+    val status: String,
+    val score: Int? = null,
+)
+
+/** Immutable observerscope fixture of the UI demonstration; not a domain entity. */
+internal data class DemoObserverScope(
+    val userId: String,
+    val competitionId: String,
+    val tourIds: List<String>,
+)

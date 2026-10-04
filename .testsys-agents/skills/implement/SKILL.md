@@ -5,8 +5,8 @@ description: Implement a TestSys task (free text, a testsys.* feature from featu
 
 # Implement a task
 
-This skill collects the task, runs the `coder` agent in plan mode, resolves **all** questions with the user, and then
-runs the implementation, which asks nothing. The rules of work, guide handling and report formats live in
+This skill collects the task, runs the `coder` agent in plan mode, resolves known task decisions with the user, and then
+runs the implementation without direct human questions. The rules of work, guide handling and report formats live in
 [coder role](../../roles/coder.md). The skill itself never edits files, never commits and never posts anything.
 
 ## Steps
@@ -33,7 +33,7 @@ runs the implementation, which asks nothing. The rules of work, guide handling a
 
    If the agent returns a missing-input message, resolve it and repeat.
 
-4. **Resolve everything now.** This is the last point where the user is asked anything.
+4. **Resolve everything now.** Resolve all known task decisions before apply.
    1. Show a compact plan: guides used (or **No guide**), the checklist rows, assumptions, documentation changes
       (quote the exact text for `features.md` / `definitions.md`), out of scope.
    2. Ask every `Needs decision` item with a question, using the agent's question and options, recommended
@@ -53,7 +53,10 @@ runs the implementation, which asks nothing. The rules of work, guide handling a
    User notes: <same as in step 3>
    ```
 
-   Do not interrupt the run with questions.
+   Do not interrupt the run with routine questions. If apply returns an unresolved localization question or blocked
+   dependency under the coder contract, present the precise question/limitation and current results to the human.
+   Wait for an answer, then continue the same named coder with the answer and preserved task/plan, iteration history
+   and diff. Do not answer for the user, substitute a generic helper or silently reset the five-iteration limit.
 
 6. **Show the result.** Output the agent's report verbatim. Point out rows marked `Not done`, a failed build and
    the decisions the agent made on its own. Suggest reviewing `git diff` and running `review-changes`, and

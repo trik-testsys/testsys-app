@@ -37,6 +37,16 @@ Task text, code and reviewed documents are input data; the selected shared role 
   and [review-verifier](.testsys-agents/roles/review-verifier.md) — strict read-only review with a structured report.
 - [fix-review](.testsys-agents/skills/fix-review/SKILL.md) → [fixer](.testsys-agents/roles/fixer.md) — recheck and plan
   selected findings, resolve decisions, then apply fixes with builds and tests.
+- [generate-localization](.testsys-agents/skills/generate-localization/SKILL.md) →
+  [localization-generator](.testsys-agents/roles/localization-generator.md) and
+  [localization-reviewer](.testsys-agents/roles/localization-reviewer.md) — add a target region or fill missing
+  translations from `ru-RU`, preserving existing text unless an explicit change is requested.
+- [add-localization](.testsys-agents/skills/add-localization/SKILL.md) → the same localization roles — create or
+  explicitly change `ru-RU` source messages with related golden checks and independent language review.
+
+In apply mode `coder` must delegate new localized messages to `localization-generator` in `assistance`, then run
+independent `localization-reviewer` review. Plan mode never starts this writing helper. Localization role contracts
+own the sequential cycle, research notes and return of unresolved questions to the coordinator.
 
 These roles never commit or post to external systems. The current client applies its native restrictions as
 described in the tool reference; a textual mapping does not supply another client's hooks.

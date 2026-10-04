@@ -12,8 +12,8 @@ It owns client connections and native settings; workflows and role contracts rem
 |---|------|--------|
 | 1 | Select the client | The user's requested client is known. |
 | 2 | Find the root and inventory | Shared sources exist; local resources and intentional edits are recorded. |
-| 3 | Apply the Claude Code example, if selected | Instructions, three skills, four native roles and native hooks are connected. |
-| 4 | Apply the Codex example, if selected | Instructions, three skills and four native roles are connected. |
+| 3 | Apply the Claude Code example, if selected | Instructions, five skills, six native roles and native hooks are connected. |
+| 4 | Apply the Codex example, if selected | Instructions, five skills and six native roles are connected. |
 | 5 | Synchronize again | Correct links are retained; intentional local settings remain intact. |
 | 6 | Verify a fresh context | Discovery and workflow checks are reported as confirmed or unavailable. |
 
@@ -34,7 +34,7 @@ do not assume another client's tools or guards exist.
 
 Resolve the checkout root independently of the current subdirectory: in a Git checkout run
 `git rev-parse --show-toplevel`; otherwise locate the nearest parent with `AGENTS.md` and `.testsys-agents/`.
-Read `AGENTS.md` and verify all three skill directories, four role files, two hooks and the tool reference exist
+Read `AGENTS.md` and verify all five skill directories, six role files, two hooks and the tool reference exist
 under `.testsys-agents/`. Stop with the missing paths if sources are incomplete.
 
 Also verify [documentation-rules.md](.testsys-agents/resoures/documentation-rules.md) exists and is readable;
@@ -46,8 +46,9 @@ local memory/import files and unrelated resources. Preserve personal skills, wor
 and unrelated config fields. Do not enumerate or expose secrets in settings. The source directories and checkout
 paths can contain spaces; use literal paths and shell-appropriate quoting throughout.
 
-The three skills are `implement`, `review-changes` and `fix-review`; the four roles are `coder`, `reviewer`,
-`review-verifier` and `fixer`. Each connection is per skill, not a replacement of an entire skills directory.
+The five skills are `implement`, `review-changes`, `fix-review`, `generate-localization` and `add-localization`;
+the six roles are `coder`, `reviewer`, `review-verifier`, `fixer`, `localization-generator` and
+`localization-reviewer`. Each connection is per skill, not a replacement of an entire skills directory.
 Before replacing an ordinary directory, compare every resource with the canonical source. Show substantive
 differences and preserve or merge intentional edits first. If the difference conflicts with the shared workflow,
 ask for a decision before replacement. Before replacing an ordinary directory, keep a recoverable copy at a
@@ -71,7 +72,7 @@ local memory file has intentional content, preserve it and resolve the conflict 
 discard rules. If direct loading is verified later, retire the generated import so the root instructions are not
 loaded twice. Do not force a client upgrade or change global/session settings to make loading work.
 
-Connect `.claude/skills/<skill>` to `.testsys-agents/skills/<skill>` for each of the three names. On Windows create
+Connect `.claude/skills/<skill>` to `.testsys-agents/skills/<skill>` for each of the five names. On Windows create
 a directory junction with `New-Item -ItemType Junction -Path <absolute-link> -Target <absolute-source>`; on systems
 with directory symlinks use `ln -s <source> <link>`. Use absolute, quoted paths for junctions. A relative symlink
 from `.claude/skills/` points to `../../.testsys-agents/skills/<skill>`. Leave a correctly targeted link untouched.
@@ -89,6 +90,8 @@ effort, color, tool lists and hook connections exactly as specified; do not copy
 | `reviewer` | Strict read-only reviewer of TestSys changes with a structured report. Requires explicit scope; never edits files. | `opus` | `xhigh` | `red` |
 | `review-verifier` | Independently attempts to refute one review finding, returning CONFIRMED, REFUTED or UNCERTAIN. Read-only. | `opus` | `xhigh` | `orange` |
 | `fixer` | Rechecks and fixes selected TestSys review findings in plan/apply modes, with builds and tests. Never commits or changes Git state; the fix-review skill collects required inputs. | `opus` | `high` | `green` |
+| `localization-generator` | Writes selected-region translations or ru-RU source messages in generate/assistance modes, with related golden checks and sourced research. Never edits other code, commits or delegates. | `inherit` | `high` | `cyan` |
+| `localization-reviewer` | Independently reviews localization meaning, language and applicable risks in a fresh read-only context; returns findings and sourced research. Never writes files or delegates. | `inherit` | `xhigh` | `purple` |
 
 Set `name` to the role name and `tools` to the corresponding exact comma-separated list:
 
@@ -97,8 +100,23 @@ Set `name` to the role name and `tools` to the corresponding exact comma-separat
 | `coder`, `fixer` | `Read, Edit, Write, Grep, Glob, Bash, mcp__idea__search_symbol, mcp__idea__search_text, mcp__idea__search_regex, mcp__idea__search_file, mcp__idea__get_symbol_info, mcp__idea__analyze_calls, mcp__idea__get_file_problems, mcp__idea__lint_files, mcp__idea__read_file, mcp__idea__list_directory_tree, mcp__idea__get_project_modules, mcp__idea__get_project_dependencies` |
 | `reviewer` | `Read, Grep, Glob, Bash, Agent(reviewer, review-verifier), mcp__idea__search_symbol, mcp__idea__search_text, mcp__idea__search_regex, mcp__idea__search_file, mcp__idea__get_symbol_info, mcp__idea__analyze_calls, mcp__idea__get_file_problems, mcp__idea__lint_files, mcp__idea__read_file, mcp__idea__list_directory_tree, mcp__idea__get_project_modules, mcp__idea__get_project_dependencies, mcp__idea__get_repositories, mcp__idea__git_status, mcp__idea__build_project` |
 | `review-verifier` | `Read, Grep, Glob, Bash, mcp__idea__search_symbol, mcp__idea__search_text, mcp__idea__search_regex, mcp__idea__search_file, mcp__idea__get_symbol_info, mcp__idea__analyze_calls, mcp__idea__get_file_problems, mcp__idea__read_file, mcp__idea__list_directory_tree, mcp__idea__get_project_modules` |
+| `localization-generator` | `Read, Edit, Write, Grep, Glob, Bash, WebSearch, WebFetch` |
+| `localization-reviewer` | `Read, Grep, Glob, WebSearch, WebFetch` |
 
-For `coder` and `fixer`, add this native `hooks` frontmatter:
+For `coder` append only `Agent(localization-generator, localization-reviewer)` to its listed tools; keep `fixer`
+unchanged. This type restriction is enforced for a role started as the main agent through `--agent`. Nested
+subagents ignore the type list, so the authored contract restricts their role choices. Do not describe nested
+delegation as technically limited by that list; see the
+[official restriction](https://code.claude.com/docs/en/sub-agents#restrict-which-subagents-can-be-spawned).
+Localization helpers have neither `Agent` nor `AskUserQuestion`; the coordinator owns questions and the common
+five-iteration counter. Do not set `maxTurns: 5` or `isolation: worktree` for this workflow.
+
+`WebSearch` and `WebFetch` are platform tools; verify their availability in the actual selected session. CLI
+installation or an allowlist alone does not prove a live research run. Do not add wildcard MCP access to these
+roles. Research notes stay in `.testsys-agents/resoures/localization/<language-tag>.md`, outside native agent
+directories; no empty language profiles are created during setup.
+
+For `coder`, `fixer` and `localization-generator`, add this native `hooks` frontmatter:
 
 ```yaml
 hooks:
@@ -113,7 +131,7 @@ hooks:
           command: "echo 'write guard: blocked - use Edit/Write for changes and Bash for builds' >&2; exit 2"
 ```
 
-For `reviewer` and `review-verifier`, use:
+For `reviewer`, `review-verifier` and `localization-reviewer`, use:
 
 ```yaml
 hooks:
@@ -149,6 +167,10 @@ preserve the Git, external-system and command restrictions described in the shar
 is a denylist, not a complete security boundary; filesystem permissions and role scope still apply. Verify loaded,
 trusted hooks in an interactive session. Noninteractive CLI checks alone do not prove they enforce that session.
 Never bypass an active denial or relax the allowlist merely to complete setup or a check.
+
+Keep the localization reviewer's Bash matcher even though its minimal tools omit Bash; absence of Bash is the
+first protection layer. Its write-tool matcher denies `Edit`, `Write`, `MultiEdit`, `NotebookEdit`, `PowerShell`
+and listed writing IDEA tools. `permissionMode` is not a read-only guarantee. Reuse existing guards unchanged.
 
 ## 4. Connect Codex
 
@@ -206,14 +228,14 @@ the diff. Setup itself does not stage, untrack, commit or push.
 ## 6. Verify a fresh context
 
 Check the links' targets and content, YAML/TOML syntax, required fields, shared Markdown links and ignore rules
-with `git check-ignore --no-index -v <paths>` independently of the current index. Verify all four native loaders
+with `git check-ignore --no-index -v <paths>` independently of the current index. Verify all six native loaders
 contain only bootstrap instructions and resolve the prefixed root paths. For a client connected to the shared hooks,
 check those guards with `bash -n` and controlled JSON inputs on disposable local fixtures at a safe permitted
 location; exclude fixtures locally when they are inside the checkout. Cover allowed reads/build commands,
 forbidden Git writes, wrappers, protected guard paths, malformed input and Gradle without its mandatory property.
 
 Restart/open a fresh client context after setup so discovery and native definitions are reloaded. Confirm the
-three names occur once and all four named roles are available. Confirm the root instructions loaded once (the
+five skill names occur once and all six named roles are available. Confirm the root instructions loaded once (the
 Claude fallback import supplies them when needed). From a subdirectory start a named role and confirm it reads
 the correct shared contract independently of the parent. Do not treat a CLI inventory as proof of role execution.
 
@@ -228,6 +250,16 @@ Use temporary examples for checks that can write; no real fixes, commits or exte
   contexts and use its writing rules and documentation review pass;
 - initial setup and repeat setup preserve correct links, intentional settings and unrelated resources, including
   paths with spaces and calls from a subdirectory.
+- localization roles reject missing required input without writing; omitted assistance keys/parameters and an
+  absent research file are valid;
+- generate-localization waits for an omitted region, fills missing bundles/keys/forms by codegen diagnostics,
+  preserves existing/manual translations, and changes existing text only on explicit request;
+- add-localization and coder assistance write only ru-RU plus related golden tests/research, report expected missing
+  translations as failures, distinguish generated/proposed API, and explain actual MF2 to human callers;
+- both localization roles reuse notes, research applicable ambiguity/offensive usage/Russian translation risks,
+  and return sourced findings; only the generator and coordinator save notes, sequentially;
+- each language review is fresh and read-only in the working checkout; defects need evidence, uncertainty returns
+  early, optional preferences do not block, and unresolved repairs stop at the common fifth iteration.
 
 Record confirmed and untested scenarios separately. If a client, trusted session, parser, tool or permission is
 unavailable, report that exact limitation; static source checks do not prove the workflow executed. Extend support

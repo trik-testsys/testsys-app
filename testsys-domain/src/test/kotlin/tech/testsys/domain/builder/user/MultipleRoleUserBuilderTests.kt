@@ -11,7 +11,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserData
 
 class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, MultipleRoleUserData, MultipleRoleUserDataBuilder>(
     MultipleRoleUserBuilder(),
-    MultipleRoleUserDataBuilder()
+    MultipleRoleUserDataBuilder(),
 ) {
     override fun buildDataWithAllFields() = listOf(
         multipleRoleUserData {

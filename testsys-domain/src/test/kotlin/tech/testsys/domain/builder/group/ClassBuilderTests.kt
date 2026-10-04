@@ -7,7 +7,7 @@ import tech.testsys.domain.model.group.ClassData
 
 class ClassBuilderTests : DomainEntityBuilderTests<Class, ClassData, ClassDataBuilder>(
     ClassBuilder(),
-    ClassDataBuilder()
+    ClassDataBuilder(),
 ) {
     override fun buildDataWithAllFields() = listOf(
         classData {

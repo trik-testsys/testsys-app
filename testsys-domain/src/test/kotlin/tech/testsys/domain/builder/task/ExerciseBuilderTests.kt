@@ -8,8 +8,8 @@ import java.util.UUID
 
 class ExerciseBuilderTests : DomainEntityBuilderTests<Exercise, ExerciseData, ExerciseDataBuilder>(
     ExerciseBuilder(),
-    ExerciseDataBuilder()
-)  {
+    ExerciseDataBuilder(),
+) {
     override fun buildDataWithAllFields() = listOf(
         exerciseData {
             name = "Exercise Python"

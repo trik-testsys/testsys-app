@@ -102,7 +102,10 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val found = assertNotNull(repository.findById(queued.id))
         assertSameEntity(graded, found)
         assertEquals(SubmissionStatus.InProgress, inProgress.data.status)
-        assertEquals(verdictId, assertIs<GradingResult.Success>(assertIs<SubmissionStatus.Graded>(found.data.status).grade).verdict.id.value)
+        assertEquals(
+            verdictId,
+            assertIs<GradingResult.Success>(assertIs<SubmissionStatus.Graded>(found.data.status).grade).verdict.id.value,
+        )
         assertEquals(contestId, assertIs<SubmissionKind.Grading>(found.data.kind).contest.id.value)
     }
 

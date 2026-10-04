@@ -39,8 +39,8 @@ import tech.testsys.operation.util.testNewTask
 import tech.testsys.operation.util.testSavedTask
 import tech.testsys.operation.util.testStatement
 import tech.testsys.operation.util.testUncommittedTask
-import kotlin.test.Test
 import java.time.Instant
+import kotlin.test.Test
 
 class DeveloperOperationsTests {
 
@@ -53,11 +53,14 @@ class DeveloperOperationsTests {
 
     @BeforeEach
     fun beforeEach() {
-        developer = testDeveloper { data = developerData { }}
+        developer = testDeveloper { data = developerData { } }
     }
 
     @Nested
     inner class CreateTaskTests {
+
+        private val taskName = "testTask"
+        private val taskDescription = "testTaskDescription"
 
         @BeforeEach
         fun beforeEach() {
@@ -70,9 +73,6 @@ class DeveloperOperationsTests {
                 }
             }
         }
-
-        private val taskName = "testTask"
-        private val taskDescription = "testTaskDescription"
 
         @Test
         fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
@@ -123,7 +123,7 @@ class DeveloperOperationsTests {
     }
 
     @Nested
-    inner class AttachStatementTests  {
+    inner class AttachStatementTests {
         val taskId = TaskId(1L)
         val statementId = StatementId(1)
 
@@ -175,7 +175,7 @@ class DeveloperOperationsTests {
                 testUncommittedTask().withData {
                     content.uncommitted(
                         wipBuilder = { statement = statementId },
-                        lastCommittedBuilder = {}
+                        lastCommittedBuilder = {},
                     )
                 }
             }

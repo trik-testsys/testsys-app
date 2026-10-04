@@ -129,11 +129,6 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
         assertEquals(saved.data.trikStudioVersion, assertNotNull(repository.findById(saved.id)).data.trikStudioVersion)
     }
 
-    private companion object {
-
-        val STARTS_AT: Instant = Instant.parse("2026-09-04T10:00:00Z")
-    }
-
     @Test
     fun `should keep the owner if another owner is passed on update`() {
         val saved = repository.save(newData())
@@ -143,5 +138,10 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
 
         assertEquals(saved.data.owner.id, updated.data.owner.id)
         assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
+    }
+
+    private companion object {
+
+        val STARTS_AT: Instant = Instant.parse("2026-09-04T10:00:00Z")
     }
 }

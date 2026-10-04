@@ -1,0 +1,63 @@
+---
+name: implement
+description: Implement a TestSys task (free text, a testsys.* feature from features.md, or a task from a file) with the coder agent - build a guide-based plan, resolve every question with the user up front, then implement autonomously with a checklist self-check, build and tests. Use when the user asks to implement, add or build a feature, entity, port, localized message or other code change. Never commits.
+---
+
+# Implement a task
+
+This skill collects the task, runs the `coder` agent in plan mode, resolves known task decisions with the user, and then
+runs the implementation without direct human questions. The rules of work, guide handling and report formats live in
+[coder role](../../roles/coder.md). The skill itself never edits files, never commits and never posts anything.
+
+## Steps
+
+1. **Get the task.** If the request states it, use it. Otherwise ask one question: **Describe in text**,
+   **Feature from features.md** (codifier in accompanying free text) or **Task from a file** (path in accompanying free text).
+   Resolve it:
+   - text — use verbatim;
+   - feature — find the codifier in `docs/domain/features.md` and take its entry verbatim; if it does not exist, tell
+     the user and ask for a text description instead;
+   - file — read it; if it holds several tasks, ask which item.
+
+2. **Check the working tree.** Run `git status --short`. If there are uncommitted changes, tell the user they will be
+   mixed with the implementation in one diff and ask whether to continue.
+
+3. **Plan.** Launch the named `coder` agent in a separate context with the prompt:
+
+   ```text
+   MODE: plan
+   Task source: <Text | Feature <codifier> | File <path>[, item <…>]>
+   Task: <verbatim>
+   User notes: <anything else the user said, verbatim, or "none">
+   ```
+
+   If the agent returns a missing-input message, resolve it and repeat.
+
+4. **Resolve everything now.** Resolve all known task decisions before apply.
+   1. Show a compact plan: guides used (or **No guide**), the checklist rows, assumptions, documentation changes
+      (quote the exact text for `features.md` / `definitions.md`), out of scope.
+   2. Ask every `Needs decision` item with a question, using the agent's question and options, recommended
+      option first; batch questions within the current question tool's supported limit.
+   3. Ask one final question: **Approve the plan** / **Correct the plan** (corrections in accompanying free text)
+      / **Cancel**. Corrections that change the scope, guides or checklist → repeat step 3 with the corrections in
+      `User notes` and the previous answers; small corrections (an assumption, a name) → pass them in `Decisions`.
+
+5. **Implement.** Launch a new named `coder` agent in a separate context with the prompt:
+
+   ```text
+   MODE: apply
+   Task source: <same as in step 3>
+   Task: <same as in step 3>
+   Plan: <the approved plan, verbatim>
+   Decisions: <D1: chosen option; …; corrections to assumptions, verbatim; or "none">
+   User notes: <same as in step 3>
+   ```
+
+   Do not interrupt the run with routine questions. If apply returns an unresolved localization question or blocked
+   dependency under the coder contract, present the precise question/limitation and current results to the human.
+   Wait for an answer, then continue the same named coder with the answer and preserved task/plan, iteration history
+   and diff. Do not answer for the user, substitute a generic helper or silently reset the five-iteration limit.
+
+6. **Show the result.** Output the agent's report verbatim. Point out rows marked `Not done`, a failed build and
+   the decisions the agent made on its own. Suggest reviewing `git diff` and running `review-changes`, and
+   `fix-review` for its findings; do not commit.

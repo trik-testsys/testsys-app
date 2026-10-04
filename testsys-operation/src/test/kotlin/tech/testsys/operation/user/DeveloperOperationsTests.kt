@@ -24,6 +24,7 @@ import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
 import tech.testsys.operation.error.MissedDeveloperRoleError
 import tech.testsys.operation.error.StatementNotExistsError
+import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
@@ -106,6 +107,7 @@ class DeveloperOperationsTests {
 
             val taskData = result.data
             Assertions.assertTrue { taskData.sharedTo.ids.isEmpty() }
+            Assertions.assertEquals(emptySet<tech.testsys.domain.model.task.VersionBucket>(), taskData.uploadedResources)
             val taskContent = Assertions.assertInstanceOf(TaskContent.New::class.java, taskData.content)
             Assertions.assertTrue { taskContent.wip.tests.ids.isEmpty() }
             Assertions.assertTrue { taskContent.wip.exercise == null }
@@ -126,6 +128,45 @@ class DeveloperOperationsTests {
     inner class AttachStatementTests {
         val taskId = TaskId(1L)
         val statementId = StatementId(1)
+
+        @Test
+        fun `should reject a statement not uploaded to the task before checking committed content`() {
+            every { taskRepository.findById(taskId) } returns testCommitedTask().withData { uploadedResources.clear() }
+            every { statementRepository.findById(statementId) } returns testStatement()
+
+            assertRaises(StatementNotUploadedToTaskError(taskId = taskId, statementId = statementId)) {
+                developerOperations.attachStatement(developer, taskId, statementId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a statement whose chain is uploaded to another task`() {
+            val foreign = testNewTask()
+            val target = testNewTask().withData { uploadedResources.clear() }
+            every { taskRepository.findById(taskId) } returns target
+            every { statementRepository.findById(statementId) } returns testStatement()
+            Assertions.assertTrue(testStatement().data.versionBucket in foreign.data.uploadedResources)
+
+            assertRaises(StatementNotUploadedToTaskError(taskId = taskId, statementId = statementId)) {
+                developerOperations.attachStatement(developer, taskId, statementId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should attach another version from an uploaded statement chain`() {
+            val anotherVersionId = StatementId(2)
+            every { taskRepository.findById(taskId) } returns testNewTask()
+            every { statementRepository.findById(anotherVersionId) } returns testStatement(2)
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.attachStatement(developer, taskId, anotherVersionId).getOrThrow()
+
+            val content = Assertions.assertInstanceOf(TaskContent.New::class.java, result.data.content)
+            Assertions.assertEquals(anotherVersionId, content.wip.statement?.id)
+            Assertions.assertEquals(testNewTask().data.uploadedResources, result.data.uploadedResources)
+        }
 
         @Test
         fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
@@ -160,7 +201,10 @@ class DeveloperOperationsTests {
         fun `should raise TaskAccessDeniedError if task is owned by another user`() {
             every { statementRepository.findById(eq(statementId)) } answers { testStatement() }
             every { taskRepository.findById(eq(taskId)) } answers {
-                testUncommittedTask().withData { owner = MultipleRoleUserId(1L) }
+                testUncommittedTask().withData {
+                    owner = MultipleRoleUserId(1L)
+                    uploadedResources.clear()
+                }
             }
 
             assertRaises(TaskAccessDeniedError(taskId)) {

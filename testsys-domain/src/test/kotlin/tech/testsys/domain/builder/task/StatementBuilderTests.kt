@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.DomainEntityBuilderTests
 import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
+import tech.testsys.domain.model.task.VersionBucket
 import java.util.UUID
 
 class StatementBuilderTests : DomainEntityBuilderTests<Statement, StatementData, StatementDataBuilder>(
@@ -15,7 +16,7 @@ class StatementBuilderTests : DomainEntityBuilderTests<Statement, StatementData,
             name = "Statement"
             description = "Statement description"
             file("statement.pdf", byteArrayOf(1, 2, 3))
-            versionBucket = UUID.randomUUID()
+            versionBucket = VersionBucket(UUID.randomUUID())
         },
     )
 }

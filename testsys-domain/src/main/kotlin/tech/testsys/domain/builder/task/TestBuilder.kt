@@ -8,14 +8,14 @@ import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
-import java.util.UUID
+import tech.testsys.domain.model.task.VersionBucket
 
 /**
  * Builder of [TestData]. Required: [file], [name], [description], [versionBucket].
  *
  * @property name the name of the test, or `null` if not set yet.
  * @property description the description of the test, or `null` if not set yet.
- * @property versionBucket the UUID shared by all versions of the test, or `null` if not set yet.
+ * @property versionBucket the version chain shared by all versions of the test, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
 class TestDataBuilder : Builder<TestData> {
@@ -26,7 +26,7 @@ class TestDataBuilder : Builder<TestData> {
 
     var description: String? = null
 
-    var versionBucket: UUID? = null
+    var versionBucket: VersionBucket? = null
 
     /**
      * Sets the file.

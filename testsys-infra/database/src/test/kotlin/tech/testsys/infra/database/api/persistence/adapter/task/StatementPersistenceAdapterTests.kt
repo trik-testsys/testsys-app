@@ -9,6 +9,7 @@ import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
@@ -31,7 +32,7 @@ class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
         name = fixtures.unique("Statement")
         description = "Statement description"
         file(fixtures.unique("statement") + ".pdf", "statement".toByteArray())
-        versionBucket = UUID.randomUUID()
+        versionBucket = VersionBucket(UUID.randomUUID())
     }
 
     override fun modified(entity: Statement) = entity.withData {
@@ -111,7 +112,7 @@ class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
     fun `should keep the version bucket if another bucket is passed on update`() {
         val saved = repository.save(newData())
 
-        val updated = repository.update(saved.withData { versionBucket = UUID.randomUUID() })
+        val updated = repository.update(saved.withData { versionBucket = VersionBucket(UUID.randomUUID()) })
 
         assertEquals(saved.data.versionBucket, updated.data.versionBucket)
         assertEquals(saved.data.versionBucket, assertNotNull(repository.findById(saved.id)).data.versionBucket)

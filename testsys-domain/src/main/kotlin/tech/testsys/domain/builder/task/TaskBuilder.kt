@@ -16,6 +16,7 @@ import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUserId
 
@@ -135,6 +136,7 @@ class WipTaskContentBuilder : TaskContentBuilder<WipTaskContent>() {
  * @property description the description of the task, or `null` if not set yet.
  * @property sharedTo the ids of the communities the task is shared to.
  * @property content the chooser of the task content variant.
+ * @property uploadedResources the version chains uploaded to the task, including unattached resources.
  * @since %CURRENT_VERSION%
  */
 class TaskDataBuilder : Builder<TaskData> {
@@ -148,6 +150,8 @@ class TaskDataBuilder : Builder<TaskData> {
     var sharedTo = mutableListOf<CommunityId>()
 
     val content = TaskContentChooser()
+
+    var uploadedResources = mutableSetOf<VersionBucket>()
 
     /**
      * Sets [owner] from a raw id.
@@ -178,6 +182,7 @@ class TaskDataBuilder : Builder<TaskData> {
             description = description,
             sharedTo = sharedTo.lazify(),
             content = content.build(),
+            uploadedResources = uploadedResources.toSet(),
         )
     }
 }

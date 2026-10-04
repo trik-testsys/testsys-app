@@ -80,11 +80,11 @@ data class CommittedTaskContent(
 )
 
 /**
- * A work-in-progress revision of [Task] content; the exercise and the statement may not be uploaded yet.
+ * A work-in-progress revision of [Task] content; the exercise and the statement may not be attached yet.
  *
  * @property tests the tests (TRIK Studio world models) solutions are graded against.
- * @property exercise the exercise given to solvers, or `null` if not uploaded yet.
- * @property statement the statement describing the task, or `null` if not uploaded yet.
+ * @property exercise the exercise given to solvers, or `null` if not attached yet.
+ * @property statement the statement describing the task, or `null` if not attached yet.
  * @property developerSolutions the developer's reference solutions.
  * @property supportedTrikStudioVersions the TRIK Studio versions the task can be run with.
  * @since %CURRENT_VERSION%
@@ -105,6 +105,7 @@ data class WipTaskContent(
  * @property description the description of the task.
  * @property sharedTo the communities the task is shared to.
  * @property content the versioned content of the task.
+ * @property uploadedResources the version chains uploaded to the task, including unattached resources.
  * @since %CURRENT_VERSION%
  */
 data class TaskData(
@@ -113,6 +114,7 @@ data class TaskData(
     val description: String,
     val sharedTo: LazyEntityList<CommunityId, Community>,
     val content: TaskContent,
+    val uploadedResources: Set<VersionBucket>,
 )
 
 /**

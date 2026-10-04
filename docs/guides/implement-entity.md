@@ -152,6 +152,7 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 - [db.changelog-master.yaml](../../testsys-infra/database/src/main/resources/db/changelog/db.changelog-master.yaml)
   подключает каталог версии, а [changelog.master.xml](../../testsys-infra/database/src/main/resources/db/changelog/changes/1.0.0/changelog.master.xml)
   внутри версии перечисляет файлы в порядке применения — новый файл нужно в него добавить.
+  В `include` указывайте полный путь от корня ресурсов (`db/changelog/changes/<версия>/...`).
 
 ## 8. Маппинг
 

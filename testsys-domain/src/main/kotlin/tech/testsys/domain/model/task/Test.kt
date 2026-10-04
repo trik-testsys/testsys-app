@@ -3,7 +3,6 @@ package tech.testsys.domain.model.task
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import java.time.Instant
-import java.util.UUID
 
 /**
  * Identifier of a [Test].
@@ -21,7 +20,7 @@ value class TestId(
  * @property file the uploaded TRIK Studio world model file; fixed on creation; update fails if it differs.
  * @property name the name of the test.
  * @property description the description of the test.
- * @property versionBucket the UUID shared by all versions of the same logical test;
+ * @property versionBucket the version chain shared by all versions of the same logical test;
  *   fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%
  */
@@ -29,7 +28,7 @@ data class TestData(
     val file: FileData,
     val name: String,
     val description: String,
-    val versionBucket: UUID,
+    val versionBucket: VersionBucket,
 )
 
 /**

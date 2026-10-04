@@ -2,7 +2,11 @@ package tech.testsys.operation.user
 
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.slot
+import io.mockk.unmockkStatic
 import io.mockk.verify
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
@@ -12,6 +16,7 @@ import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
+import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
@@ -21,17 +26,26 @@ import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.DeveloperSolution
+import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Exercise
+import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
+import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.Score
+import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.Statement
+import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.operation.annotation.InternalOperationsApi
@@ -82,6 +96,7 @@ class DeveloperOperationsTests {
     private val exerciseRepository = mockk<ExerciseRepository>()
     private val testRepository = mockk<TestRepository>()
     private val developerSolutionRepository = mockk<DeveloperSolutionRepository>()
+    private val solutionRepository = mockk<SolutionRepository>()
     private val developerOperations = DeveloperOperations(
         taskRepository,
         statementRepository,
@@ -89,9 +104,17 @@ class DeveloperOperationsTests {
         exerciseRepository,
         testRepository,
         developerSolutionRepository,
+        solutionRepository,
     )
 
     private lateinit var developer: MultipleRoleUser
+
+    private val uploadTaskId = TaskId(1)
+    private val uploadName = "new resource"
+    private val uploadFile = FileData(uploadedFilename = "uploaded.bin", content = byteArrayOf(0, 1, -1))
+    private val uploadUuid = UUID(0, 10)
+    private val uploadBucket = VersionBucket(uploadUuid)
+    private val uploadScore = Score(42)
 
     @BeforeEach
     fun beforeEach() {
@@ -131,6 +154,641 @@ class DeveloperOperationsTests {
         Assertions.assertEquals(expected.statement.id, content.lastCommitted.statement.id)
         Assertions.assertEquals(expected.developerSolutions.ids, content.lastCommitted.developerSolutions.ids)
         Assertions.assertEquals(expected.supportedTrikStudioVersions, content.lastCommitted.supportedTrikStudioVersions)
+    }
+
+    private fun prepareUpload(original: Task = testNewTask()) {
+        every { taskRepository.findById(uploadTaskId) } returns original
+        every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+        every { statementRepository.save(any<StatementData>()) } answers {
+            statement {
+                id = 11
+                createdAt = Instant.MIN
+                version = EntityVersion(1)
+                data = firstArg<StatementData>()
+            }
+        }
+        every { exerciseRepository.save(any<ExerciseData>()) } answers {
+            exercise {
+                id = 12
+                createdAt = Instant.MIN
+                version = EntityVersion(1)
+                data = firstArg<ExerciseData>()
+            }
+        }
+        every { testRepository.save(any<TestData>()) } answers {
+            test {
+                id = 13
+                createdAt = Instant.MIN
+                version = EntityVersion(1)
+                data = firstArg<TestData>()
+            }
+        }
+        every { solutionRepository.save(any<SolutionData>()) } answers {
+            solution {
+                id = 14
+                createdAt = Instant.MIN
+                version = EntityVersion(1)
+                data = firstArg<SolutionData>()
+            }
+        }
+        every { developerSolutionRepository.save(any<DeveloperSolutionData>()) } answers {
+            developerSolution {
+                id = 15
+                createdAt = Instant.MIN
+                version = EntityVersion(1)
+                data = firstArg<DeveloperSolutionData>()
+            }
+        }
+    }
+
+    private fun assertNoUploadWrites() {
+        verify(exactly = 0) { statementRepository.save(any<StatementData>()) }
+        verify(exactly = 0) { exerciseRepository.save(any<ExerciseData>()) }
+        verify(exactly = 0) { testRepository.save(any<TestData>()) }
+        verify(exactly = 0) { solutionRepository.save(any<SolutionData>()) }
+        verify(exactly = 0) { developerSolutionRepository.save(any<DeveloperSolutionData>()) }
+        verify(exactly = 0) { taskRepository.update(any<Task>()) }
+    }
+
+    private fun assertUploadedTask(original: Task, buckets: Set<VersionBucket> = setOf(uploadBucket)) {
+        val saved = slot<Task>()
+        verify(exactly = 1) { taskRepository.update(capture(saved)) }
+        val updated = saved.captured
+        Assertions.assertEquals(original.id, updated.id)
+        Assertions.assertEquals(original.createdAt, updated.createdAt)
+        Assertions.assertEquals(original.version, updated.version)
+        Assertions.assertEquals(original.data.owner.id, updated.data.owner.id)
+        Assertions.assertEquals(original.data.name, updated.data.name)
+        Assertions.assertEquals(original.data.description, updated.data.description)
+        Assertions.assertEquals(original.data.sharedTo.ids, updated.data.sharedTo.ids)
+        Assertions.assertEquals(original.data.uploadedResources + buckets, updated.data.uploadedResources)
+        Assertions.assertEquals(original.data.content::class, updated.data.content::class)
+        when (val expected = original.data.content) {
+            is TaskContent.New -> {
+                val actual = Assertions.assertInstanceOf(TaskContent.New::class.java, updated.data.content)
+                assertWipUnchanged(expected.wip, actual.wip)
+            }
+            is TaskContent.Uncommitted -> {
+                val actual = Assertions.assertInstanceOf(TaskContent.Uncommitted::class.java, updated.data.content)
+                assertWipUnchanged(expected.wip, actual.wip)
+                assertCommittedRevisionUnchanged(expected.lastCommitted, actual.lastCommitted)
+            }
+            is TaskContent.Committed -> {
+                val actual = Assertions.assertInstanceOf(TaskContent.Committed::class.java, updated.data.content)
+                assertCommittedRevisionUnchanged(expected.lastCommitted, actual.lastCommitted)
+            }
+        }
+    }
+
+    private fun assertWipUnchanged(expected: WipTaskContent, actual: WipTaskContent) {
+        Assertions.assertEquals(expected.tests.ids, actual.tests.ids)
+        Assertions.assertEquals(expected.exercise?.id, actual.exercise?.id)
+        Assertions.assertEquals(expected.statement?.id, actual.statement?.id)
+        Assertions.assertEquals(expected.developerSolutions.ids, actual.developerSolutions.ids)
+        Assertions.assertEquals(expected.supportedTrikStudioVersions, actual.supportedTrikStudioVersions)
+    }
+
+    private fun assertCommittedRevisionUnchanged(expected: CommittedTaskContent, actual: CommittedTaskContent) {
+        Assertions.assertEquals(expected.tests.ids, actual.tests.ids)
+        Assertions.assertEquals(expected.exercise.id, actual.exercise.id)
+        Assertions.assertEquals(expected.statement.id, actual.statement.id)
+        Assertions.assertEquals(expected.developerSolutions.ids, actual.developerSolutions.ids)
+        Assertions.assertEquals(expected.supportedTrikStudioVersions, actual.supportedTrikStudioVersions)
+    }
+
+    private fun assertUploadedFile(actual: FileData) {
+        Assertions.assertEquals(uploadFile.uploadedFilename, actual.uploadedFilename)
+        Assertions.assertArrayEquals(uploadFile.content, actual.content)
+    }
+
+    private fun uploadLanguage(language: String): TrikSupportedLanguage = when (language) {
+        "Python" -> TrikSupportedLanguage.Python
+        "JavaScript" -> TrikSupportedLanguage.JavaScript
+        "VisualLanguage" -> TrikSupportedLanguage.VisualLanguage
+        else -> error("Unsupported test language: $language")
+    }
+
+    @Nested
+    inner class AddStatementTests {
+
+        @BeforeEach
+        fun mockUuid() {
+            mockkStatic(UUID::class)
+            every { UUID.randomUUID() } returns uploadUuid
+        }
+
+        @AfterEach
+        fun unmockUuid() {
+            unmockkStatic(UUID::class)
+        }
+
+        @Test
+        fun `should reject upload before accessing storage if user is not a Developer`() {
+            val user = testAdministrator { }
+
+            assertRaises(MissedDeveloperRoleError) { upload(user) }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should reject upload without saving if task does not exist`() {
+            every { taskRepository.findById(uploadTaskId) } returns null
+
+            assertRaises(TaskNotExistsError(uploadTaskId)) { upload() }
+
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should reject upload without saving if task belongs to another user even when shared`() {
+            val original = testNewTask().withData {
+                owner(99)
+                sharedTo(listOf(4))
+            }
+            every { taskRepository.findById(uploadTaskId) } returns original
+
+            assertRaises(TaskAccessDeniedError(uploadTaskId)) { upload() }
+
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should save a new resource and return the stored version`() {
+            val original = testNewTask()
+            prepareUpload(original)
+
+            val result = upload().getOrThrow()
+
+            Assertions.assertEquals(StatementId(11), result.id)
+            Assertions.assertEquals(EntityVersion(1), result.version)
+            Assertions.assertEquals(uploadName, result.data.name)
+            Assertions.assertEquals("", result.data.description)
+            Assertions.assertEquals(uploadBucket, result.data.versionBucket)
+            assertUploadedFile(result.data.file)
+
+            verify(exactly = 1) { statementRepository.save(any<StatementData>()) }
+            assertUploadedTask(original)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should register upload without attaching or changing any task revision`(state: String) {
+            val original = taskInState(state)
+            prepareUpload(original)
+
+            upload().getOrThrow()
+
+            assertUploadedTask(original)
+            Assertions.assertEquals(setOf(testStatement().data.versionBucket), original.data.uploadedResources)
+        }
+
+        @Test
+        fun `should create separate chains for repeated names and files`() {
+            val original = testNewTask()
+            prepareUpload(original)
+            val expectedBuckets = setOf(testStatement().data.versionBucket, uploadBucket, VersionBucket(UUID(0, 20)))
+            every { UUID.randomUUID() } returnsMany listOf(uploadUuid, UUID(0, 20))
+            every { taskRepository.update(any<Task>()) } answers {
+                val saved = testSavedTask(firstArg())
+                every { taskRepository.findById(uploadTaskId) } returns saved
+                saved
+            }
+
+            val first = upload().getOrThrow()
+            val second = upload().getOrThrow()
+
+            Assertions.assertEquals(uploadBucket, first.data.versionBucket)
+            Assertions.assertEquals(VersionBucket(UUID(0, 20)), second.data.versionBucket)
+            verify(exactly = 1) {
+                taskRepository.update(
+                    match<Task> { updated ->
+                        updated.data.uploadedResources == expectedBuckets
+                    },
+                )
+            }
+        }
+
+        @Test
+        fun `should propagate storage exception if task registration fails`() {
+            prepareUpload()
+            val failure = IllegalStateException("Task registration failed")
+            every { taskRepository.update(any<Task>()) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+
+            Assertions.assertSame(failure, thrown)
+            verify(exactly = 1) { statementRepository.save(any<StatementData>()) }
+        }
+
+        private fun upload(user: MultipleRoleUser = developer) = developerOperations.addStatement(
+            user = user,
+            taskId = uploadTaskId,
+            resourceName = uploadName,
+            file = uploadFile,
+        )
+    }
+
+    @Nested
+    inner class AddExerciseTests {
+
+        @BeforeEach
+        fun mockUuid() {
+            mockkStatic(UUID::class)
+            every { UUID.randomUUID() } returns uploadUuid
+        }
+
+        @AfterEach
+        fun unmockUuid() {
+            unmockkStatic(UUID::class)
+        }
+
+        @Test
+        fun `should reject upload before accessing storage if user is not a Developer`() {
+            val user = testAdministrator { }
+
+            assertRaises(MissedDeveloperRoleError) { upload(user) }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should reject upload without saving if task does not exist`() {
+            every { taskRepository.findById(uploadTaskId) } returns null
+
+            assertRaises(TaskNotExistsError(uploadTaskId)) { upload() }
+
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should reject upload without saving if task belongs to another user even when shared`() {
+            val original = testNewTask().withData {
+                owner(99)
+                sharedTo(listOf(4))
+            }
+            every { taskRepository.findById(uploadTaskId) } returns original
+
+            assertRaises(TaskAccessDeniedError(uploadTaskId)) { upload() }
+
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should save a new resource and return the stored version`() {
+            val original = testNewTask()
+            prepareUpload(original)
+
+            val result = upload().getOrThrow()
+
+            Assertions.assertEquals(ExerciseId(12), result.id)
+            Assertions.assertEquals(EntityVersion(1), result.version)
+            Assertions.assertEquals(uploadName, result.data.name)
+            Assertions.assertEquals("", result.data.description)
+            Assertions.assertEquals(uploadBucket, result.data.versionBucket)
+            assertUploadedFile(result.data.file)
+
+            verify(exactly = 1) { exerciseRepository.save(any<ExerciseData>()) }
+            assertUploadedTask(original)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should register upload without attaching or changing any task revision`(state: String) {
+            val original = taskInState(state)
+            prepareUpload(original)
+
+            upload().getOrThrow()
+
+            assertUploadedTask(original)
+            Assertions.assertEquals(setOf(testStatement().data.versionBucket), original.data.uploadedResources)
+        }
+
+        @Test
+        fun `should create separate chains for repeated names and files`() {
+            val original = testNewTask()
+            prepareUpload(original)
+            val expectedBuckets = setOf(testStatement().data.versionBucket, uploadBucket, VersionBucket(UUID(0, 20)))
+            every { UUID.randomUUID() } returnsMany listOf(uploadUuid, UUID(0, 20))
+            every { taskRepository.update(any<Task>()) } answers {
+                val saved = testSavedTask(firstArg())
+                every { taskRepository.findById(uploadTaskId) } returns saved
+                saved
+            }
+
+            val first = upload().getOrThrow()
+            val second = upload().getOrThrow()
+
+            Assertions.assertEquals(uploadBucket, first.data.versionBucket)
+            Assertions.assertEquals(VersionBucket(UUID(0, 20)), second.data.versionBucket)
+            verify(exactly = 1) {
+                taskRepository.update(
+                    match<Task> { updated ->
+                        updated.data.uploadedResources == expectedBuckets
+                    },
+                )
+            }
+        }
+
+        @Test
+        fun `should propagate storage exception if task registration fails`() {
+            prepareUpload()
+            val failure = IllegalStateException("Task registration failed")
+            every { taskRepository.update(any<Task>()) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+
+            Assertions.assertSame(failure, thrown)
+            verify(exactly = 1) { exerciseRepository.save(any<ExerciseData>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Python", "JavaScript", "VisualLanguage"])
+        fun `should preserve every explicitly selected language`(language: String) {
+            prepareUpload()
+            val selected = uploadLanguage(language)
+
+            val result = upload(language = selected).getOrThrow()
+
+            Assertions.assertEquals(selected, result.data.language)
+        }
+
+        private fun upload(user: MultipleRoleUser = developer, language: TrikSupportedLanguage = TrikSupportedLanguage.Python) =
+            developerOperations.addExercise(
+                user = user,
+                taskId = uploadTaskId,
+                resourceName = uploadName,
+                file = uploadFile,
+                language = language,
+            )
+    }
+
+    @Nested
+    inner class AddTestTests {
+
+        @BeforeEach
+        fun mockUuid() {
+            mockkStatic(UUID::class)
+            every { UUID.randomUUID() } returns uploadUuid
+        }
+
+        @AfterEach
+        fun unmockUuid() {
+            unmockkStatic(UUID::class)
+        }
+
+        @Test
+        fun `should reject upload before accessing storage if user is not a Developer`() {
+            val user = testAdministrator { }
+
+            assertRaises(MissedDeveloperRoleError) { upload(user) }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should reject upload without saving if task does not exist`() {
+            every { taskRepository.findById(uploadTaskId) } returns null
+
+            assertRaises(TaskNotExistsError(uploadTaskId)) { upload() }
+
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should reject upload without saving if task belongs to another user even when shared`() {
+            val original = testNewTask().withData {
+                owner(99)
+                sharedTo(listOf(4))
+            }
+            every { taskRepository.findById(uploadTaskId) } returns original
+
+            assertRaises(TaskAccessDeniedError(uploadTaskId)) { upload() }
+
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should save a new resource and return the stored version`() {
+            val original = testNewTask()
+            prepareUpload(original)
+
+            val result = upload().getOrThrow()
+
+            Assertions.assertEquals(tech.testsys.domain.model.task.TestId(13), result.id)
+            Assertions.assertEquals(EntityVersion(1), result.version)
+            Assertions.assertEquals(uploadName, result.data.name)
+            Assertions.assertEquals("", result.data.description)
+            Assertions.assertEquals(uploadBucket, result.data.versionBucket)
+            assertUploadedFile(result.data.file)
+
+            verify(exactly = 1) { testRepository.save(any<TestData>()) }
+            assertUploadedTask(original)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should register upload without attaching or changing any task revision`(state: String) {
+            val original = taskInState(state)
+            prepareUpload(original)
+
+            upload().getOrThrow()
+
+            assertUploadedTask(original)
+            Assertions.assertEquals(setOf(testStatement().data.versionBucket), original.data.uploadedResources)
+        }
+
+        @Test
+        fun `should create separate chains for repeated names and files`() {
+            val original = testNewTask()
+            prepareUpload(original)
+            val expectedBuckets = setOf(testStatement().data.versionBucket, uploadBucket, VersionBucket(UUID(0, 20)))
+            every { UUID.randomUUID() } returnsMany listOf(uploadUuid, UUID(0, 20))
+            every { taskRepository.update(any<Task>()) } answers {
+                val saved = testSavedTask(firstArg())
+                every { taskRepository.findById(uploadTaskId) } returns saved
+                saved
+            }
+
+            val first = upload().getOrThrow()
+            val second = upload().getOrThrow()
+
+            Assertions.assertEquals(uploadBucket, first.data.versionBucket)
+            Assertions.assertEquals(VersionBucket(UUID(0, 20)), second.data.versionBucket)
+            verify(exactly = 1) {
+                taskRepository.update(
+                    match<Task> { updated ->
+                        updated.data.uploadedResources == expectedBuckets
+                    },
+                )
+            }
+        }
+
+        @Test
+        fun `should propagate storage exception if task registration fails`() {
+            prepareUpload()
+            val failure = IllegalStateException("Task registration failed")
+            every { taskRepository.update(any<Task>()) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+
+            Assertions.assertSame(failure, thrown)
+            verify(exactly = 1) { testRepository.save(any<TestData>()) }
+        }
+
+        private fun upload(user: MultipleRoleUser = developer) = developerOperations.addTest(
+            user = user,
+            taskId = uploadTaskId,
+            resourceName = uploadName,
+            file = uploadFile,
+        )
+    }
+
+    @Nested
+    inner class AddDeveloperSolutionTests {
+
+        @BeforeEach
+        fun mockUuid() {
+            mockkStatic(UUID::class)
+            every { UUID.randomUUID() } returns uploadUuid
+        }
+
+        @AfterEach
+        fun unmockUuid() {
+            unmockkStatic(UUID::class)
+        }
+
+        @Test
+        fun `should reject upload before accessing storage if user is not a Developer`() {
+            val user = testAdministrator { }
+
+            assertRaises(MissedDeveloperRoleError) { upload(user) }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should reject upload without saving if task does not exist`() {
+            every { taskRepository.findById(uploadTaskId) } returns null
+
+            assertRaises(TaskNotExistsError(uploadTaskId)) { upload() }
+
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should reject upload without saving if task belongs to another user even when shared`() {
+            val original = testNewTask().withData {
+                owner(99)
+                sharedTo(listOf(4))
+            }
+            every { taskRepository.findById(uploadTaskId) } returns original
+
+            assertRaises(TaskAccessDeniedError(uploadTaskId)) { upload() }
+
+            assertNoUploadWrites()
+        }
+
+        @Test
+        fun `should save a new resource and return the stored version`() {
+            val original = testNewTask()
+            prepareUpload(original)
+
+            val result = upload().getOrThrow()
+
+            Assertions.assertEquals(DeveloperSolutionId(15), result.id)
+            Assertions.assertEquals(EntityVersion(1), result.version)
+            Assertions.assertEquals(uploadName, result.data.name)
+            Assertions.assertEquals("", result.data.description)
+            Assertions.assertEquals(uploadBucket, result.data.versionBucket)
+            Assertions.assertEquals(tech.testsys.domain.model.task.SolutionId(14), result.data.solution.id)
+            Assertions.assertEquals(uploadScore, result.data.expectedScore)
+            val storedSolution = slot<SolutionData>()
+            verify(exactly = 1) { solutionRepository.save(capture(storedSolution)) }
+            assertUploadedFile(storedSolution.captured.file)
+            Assertions.assertEquals(TrikSupportedLanguage.Python, storedSolution.captured.language)
+
+            verify(exactly = 1) { developerSolutionRepository.save(any<DeveloperSolutionData>()) }
+            assertUploadedTask(original)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should register upload without attaching or changing any task revision`(state: String) {
+            val original = taskInState(state)
+            prepareUpload(original)
+
+            upload().getOrThrow()
+
+            assertUploadedTask(original)
+            Assertions.assertEquals(setOf(testStatement().data.versionBucket), original.data.uploadedResources)
+        }
+
+        @Test
+        fun `should create separate chains for repeated names and files`() {
+            val original = testNewTask()
+            prepareUpload(original)
+            val expectedBuckets = setOf(testStatement().data.versionBucket, uploadBucket, VersionBucket(UUID(0, 20)))
+            every { UUID.randomUUID() } returnsMany listOf(uploadUuid, UUID(0, 20))
+            every { taskRepository.update(any<Task>()) } answers {
+                val saved = testSavedTask(firstArg())
+                every { taskRepository.findById(uploadTaskId) } returns saved
+                saved
+            }
+
+            val first = upload().getOrThrow()
+            val second = upload().getOrThrow()
+
+            Assertions.assertEquals(uploadBucket, first.data.versionBucket)
+            Assertions.assertEquals(VersionBucket(UUID(0, 20)), second.data.versionBucket)
+            verify(exactly = 1) {
+                taskRepository.update(
+                    match<Task> { updated ->
+                        updated.data.uploadedResources == expectedBuckets
+                    },
+                )
+            }
+        }
+
+        @Test
+        fun `should propagate storage exception if task registration fails`() {
+            prepareUpload()
+            val failure = IllegalStateException("Task registration failed")
+            every { taskRepository.update(any<Task>()) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+
+            Assertions.assertSame(failure, thrown)
+            verify(exactly = 1) { developerSolutionRepository.save(any<DeveloperSolutionData>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Python", "JavaScript", "VisualLanguage"])
+        fun `should preserve every explicitly selected language`(language: String) {
+            prepareUpload()
+            val selected = uploadLanguage(language)
+
+            val result = upload(language = selected).getOrThrow()
+
+            Assertions.assertEquals(tech.testsys.domain.model.task.SolutionId(14), result.data.solution.id)
+            val saved = slot<SolutionData>()
+            verify(exactly = 1) { solutionRepository.save(capture(saved)) }
+            Assertions.assertEquals(selected, saved.captured.language)
+        }
+
+        private fun upload(user: MultipleRoleUser = developer, language: TrikSupportedLanguage = TrikSupportedLanguage.Python) =
+            developerOperations.addDeveloperSolution(
+                user = user,
+                taskId = uploadTaskId,
+                resourceName = uploadName,
+                file = uploadFile,
+                language = language,
+                expectedScore = uploadScore,
+            )
     }
 
     @Nested

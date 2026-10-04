@@ -57,6 +57,16 @@
 
 Образец — [DeveloperOperations.kt](src/main/kotlin/tech/testsys/operation/user/DeveloperOperations.kt).
 
+Методы `addStatement`, `addExercise`, `addTest` и `addDeveloperSolution` класса `DeveloperOperations`
+сохраняют новый Ресурс и добавляют его цепочку в `TaskData.uploadedResources`. Прикрепление выполняют
+отдельные операции `attach*`. Условия загрузки — в фиче `testsys.user.multi.developer.resource.addResource`
+в [features.md](../docs/domain/features.md).
+
+Сохранение Ресурса и обновление Задачи — отдельные вызовы портов без общей транзакции.
+`addDeveloperSolution` сначала сохраняет Решение через `SolutionRepository`.
+Исключения хранилища выходят из операции. Если последующий вызов завершится ошибкой, уже сохранённые
+Решение или Ресурс могут остаться без регистрации в Задаче.
+
 ## Конфигурация
 
 **Конфигурация операций** — значения, которые настраиваются при развёртывании системы и нужны самим операциям,

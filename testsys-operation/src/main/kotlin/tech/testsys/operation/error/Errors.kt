@@ -51,6 +51,34 @@ sealed interface ResourceAccessError : OperationError
 // region DeveloperOperations
 
 /**
+ * Failure of uploading a new statement to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AddStatementError : OperationError
+
+/**
+ * Failure of uploading a new exercise to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AddExerciseError : OperationError
+
+/**
+ * Failure of uploading a new polygon to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AddTestError : OperationError
+
+/**
+ * Failure of uploading a new developer solution to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AddDeveloperSolutionError : OperationError
+
+/**
  * Failure of creating a task.
  *
  * @since %CURRENT_VERSION%
@@ -101,6 +129,10 @@ sealed interface ShareTaskError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedDeveloperRoleError :
+    AddStatementError,
+    AddExerciseError,
+    AddTestError,
+    AddDeveloperSolutionError,
     MissedRequiredRoleError,
     CreateTaskError,
     AttachStatementError,
@@ -116,6 +148,10 @@ data object MissedDeveloperRoleError :
  * @since %CURRENT_VERSION%
  */
 data class TaskNotExistsError(val taskId: TaskId) :
+    AddStatementError,
+    AddExerciseError,
+    AddTestError,
+    AddDeveloperSolutionError,
     EntityNotExistsError,
     AttachStatementError,
     ShareTaskError,
@@ -164,6 +200,10 @@ data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExis
  * @since %CURRENT_VERSION%
  */
 data class TaskAccessDeniedError(val taskId: TaskId) :
+    AddStatementError,
+    AddExerciseError,
+    AddTestError,
+    AddDeveloperSolutionError,
     AccessDeniedError,
     AttachStatementError,
     ShareTaskError,

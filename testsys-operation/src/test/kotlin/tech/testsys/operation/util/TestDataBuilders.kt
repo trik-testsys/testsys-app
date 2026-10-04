@@ -105,7 +105,7 @@ fun testStatement(statementId: Long = 0L): Statement = statement {
     data = statementData {
         name = "name"
         description = "description"
-        versionBucket = VersionBucket(UUID.fromString("00000000-0000-0000-0000-000000000000"))
+        versionBucket = VersionBucket(UUID(0, 0))
         file("file.pdf", "".toByteArray())
     }
 }

@@ -1,25 +1,43 @@
 package tech.testsys.operation.user
 
+import tech.testsys.domain.builder.api.developerSolutionData
+import tech.testsys.domain.builder.api.exerciseData
+import tech.testsys.domain.builder.api.solutionData
+import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.taskData
+import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
+import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionId
+import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseId
+import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.Score
+import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.Developer
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
+import tech.testsys.operation.error.AddDeveloperSolutionError
+import tech.testsys.operation.error.AddExerciseError
+import tech.testsys.operation.error.AddStatementError
+import tech.testsys.operation.error.AddTestError
 import tech.testsys.operation.error.AttachDeveloperSolutionError
 import tech.testsys.operation.error.AttachExerciseError
 import tech.testsys.operation.error.AttachStatementError
@@ -53,8 +71,8 @@ import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.changeEditableContent
 import tech.testsys.operation.util.getEditableContent
-import tech.testsys.operation.util.getWip
 import tech.testsys.operation.util.hasRole
+import java.util.UUID
 
 /**
  * Operations of a user with the [Developer] role.
@@ -69,6 +87,7 @@ class DeveloperOperations(
     private val exerciseRepository: ExerciseRepository,
     private val testRepository: TestRepository,
     private val developerSolutionRepository: DeveloperSolutionRepository,
+    private val solutionRepository: SolutionRepository,
 ) {
     /**
      * Creates a new task owned by [user] with [taskName] and [taskDescription]. The created task has
@@ -91,6 +110,143 @@ class DeveloperOperations(
             val task = taskRepository.save(taskData)
             return task.asSuccess()
         }
+
+    /**
+     * Uploads [file] as a new statement named [resourceName] to [taskId] owned by [user].
+     * Registers a new resource chain without attaching it or changing task revisions.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.addResource")
+    fun addStatement(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        resourceName: String,
+        file: FileData,
+    ): OperationResult<Statement, AddStatementError> = operation<Statement, AddStatementError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+
+        val resource = statementRepository.save(
+            statementData {
+                name = resourceName
+                description = ""
+                versionBucket = VersionBucket(UUID.randomUUID())
+                file(file.uploadedFilename, file.content)
+            },
+        )
+        taskRepository.update(task.withData { uploadedResources.add(resource.data.versionBucket) })
+        return resource.asSuccess()
+    }
+
+    /**
+     * Uploads [file] as a new polygon named [resourceName] to [taskId] owned by [user].
+     * Registers a new resource chain without attaching it or changing task revisions.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.addResource")
+    fun addTest(user: MultipleRoleUser, taskId: TaskId, resourceName: String, file: FileData): OperationResult<Test, AddTestError> =
+        operation<Test, AddTestError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+
+            val resource = testRepository.save(
+                testData {
+                    name = resourceName
+                    description = ""
+                    versionBucket = VersionBucket(UUID.randomUUID())
+                    file(file.uploadedFilename, file.content)
+                },
+            )
+            taskRepository.update(task.withData { uploadedResources.add(resource.data.versionBucket) })
+            return resource.asSuccess()
+        }
+
+    /**
+     * Uploads [file] as a new exercise named [resourceName] to [taskId] owned by [user] using [language].
+     * Registers a new resource chain without attaching it or changing task revisions.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.addResource")
+    fun addExercise(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        resourceName: String,
+        file: FileData,
+        language: TrikSupportedLanguage,
+    ): OperationResult<Exercise, AddExerciseError> = operation<Exercise, AddExerciseError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+
+        val resource = exerciseRepository.save(
+            exerciseData {
+                name = resourceName
+                description = ""
+                versionBucket = VersionBucket(UUID.randomUUID())
+                file(file.uploadedFilename, file.content)
+                when (language) {
+                    TrikSupportedLanguage.Python -> this.language.python()
+                    TrikSupportedLanguage.JavaScript -> this.language.javaScript()
+                    TrikSupportedLanguage.VisualLanguage -> this.language.visualLanguage()
+                }
+            },
+        )
+        taskRepository.update(task.withData { uploadedResources.add(resource.data.versionBucket) })
+        return resource.asSuccess()
+    }
+
+    /**
+     * Uploads [file] as a new developer solution named [resourceName] to [taskId] owned by [user],
+     * using [language] and [expectedScore]; registers a new chain without changing task revisions.
+     * The uploaded resource is not attached to task content.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.addResource")
+    fun addDeveloperSolution(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        resourceName: String,
+        file: FileData,
+        language: TrikSupportedLanguage,
+        expectedScore: Score,
+    ): OperationResult<DeveloperSolution, AddDeveloperSolutionError> = operation<DeveloperSolution, AddDeveloperSolutionError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+
+        val solution = solutionRepository.save(
+            solutionData {
+                file(file.uploadedFilename, file.content)
+                when (language) {
+                    TrikSupportedLanguage.Python -> this.language.python()
+                    TrikSupportedLanguage.JavaScript -> this.language.javaScript()
+                    TrikSupportedLanguage.VisualLanguage -> this.language.visualLanguage()
+                }
+            },
+        )
+
+        val resource = developerSolutionRepository.save(
+            developerSolutionData {
+                name = resourceName
+                description = ""
+                versionBucket = VersionBucket(UUID.randomUUID())
+                this.solution = solution.id
+                this.expectedScore = expectedScore
+            },
+        )
+        taskRepository.update(task.withData { uploadedResources.add(resource.data.versionBucket) })
+        return resource.asSuccess()
+    }
 
     /**
      * Attaches the statement with [newStatementId] to the work-in-progress version of the task with [taskId] on

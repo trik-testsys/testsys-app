@@ -1,5 +1,6 @@
 package tech.testsys.domain.contract.persistence.repository
 
+import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
@@ -63,6 +64,36 @@ interface DeveloperSolutionRepository : EntityRepository<DeveloperSolutionData, 
      * @since %CURRENT_VERSION%
      */
     fun findLatestByVersionBucket(versionBucket: VersionBucket): DeveloperSolution?
+
+    /**
+     * Synchronously finds all existing versions in [versionBucket].
+     * Repeated calls reflect current metadata and may load files; they do not change stored state.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return existing versions, or an empty list for a missing chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<DeveloperSolution>
+
+    /**
+     * Synchronously checks whether [versionBucket] contains a version, without reading file contents.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return whether any version exists in the chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun existsByVersionBucket(versionBucket: VersionBucket): Boolean
+
+    /**
+     * Synchronously returns the existing file reference of [id], without reading bytes or changing stored state.
+     * Repeated calls return the same reference for an existing version.
+     *
+     * @param versionBucket the chain the requested version must belong to.
+     * @param id the typed version identifier.
+     * @return the persisted reference, or `null` if the version is missing or belongs to another chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun findFileRef(versionBucket: VersionBucket, id: DeveloperSolutionId): StoredBlobRef?
 }
 
 /**
@@ -82,6 +113,36 @@ interface ExerciseRepository : EntityRepository<ExerciseData, ExerciseId, Exerci
      * @since %CURRENT_VERSION%
      */
     fun findLatestByVersionBucket(versionBucket: VersionBucket): Exercise?
+
+    /**
+     * Synchronously finds all existing versions in [versionBucket].
+     * Repeated calls reflect current metadata and may load files; they do not change stored state.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return existing versions, or an empty list for a missing chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<Exercise>
+
+    /**
+     * Synchronously checks whether [versionBucket] contains a version, without reading file contents.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return whether any version exists in the chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun existsByVersionBucket(versionBucket: VersionBucket): Boolean
+
+    /**
+     * Synchronously returns the existing file reference of [id], without reading bytes or changing stored state.
+     * Repeated calls return the same reference for an existing version.
+     *
+     * @param versionBucket the chain the requested version must belong to.
+     * @param id the typed version identifier.
+     * @return the persisted reference, or `null` if the version is missing or belongs to another chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun findFileRef(versionBucket: VersionBucket, id: ExerciseId): StoredBlobRef?
 }
 
 /**
@@ -129,6 +190,36 @@ interface StatementRepository : EntityRepository<StatementData, StatementId, Sta
      * @since %CURRENT_VERSION%
      */
     fun findLatestByVersionBucket(versionBucket: VersionBucket): Statement?
+
+    /**
+     * Synchronously finds all existing versions in [versionBucket].
+     * Repeated calls reflect current metadata and may load files; they do not change stored state.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return existing versions, or an empty list for a missing chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<Statement>
+
+    /**
+     * Synchronously checks whether [versionBucket] contains a version, without reading file contents.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return whether any version exists in the chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun existsByVersionBucket(versionBucket: VersionBucket): Boolean
+
+    /**
+     * Synchronously returns the existing file reference of [id], without reading bytes or changing stored state.
+     * Repeated calls return the same reference for an existing version.
+     *
+     * @param versionBucket the chain the requested version must belong to.
+     * @param id the typed version identifier.
+     * @return the persisted reference, or `null` if the version is missing or belongs to another chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun findFileRef(versionBucket: VersionBucket, id: StatementId): StoredBlobRef?
 }
 
 /**
@@ -169,4 +260,34 @@ interface TestRepository : EntityRepository<TestData, TestId, Test> {
      * @since %CURRENT_VERSION%
      */
     fun findLatestByVersionBucket(versionBucket: VersionBucket): Test?
+
+    /**
+     * Synchronously finds all existing versions in [versionBucket].
+     * Repeated calls reflect current metadata and may load files; they do not change stored state.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return existing versions, or an empty list for a missing chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<Test>
+
+    /**
+     * Synchronously checks whether [versionBucket] contains a version, without reading file contents.
+     *
+     * @param versionBucket the resource version chain to search.
+     * @return whether any version exists in the chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun existsByVersionBucket(versionBucket: VersionBucket): Boolean
+
+    /**
+     * Synchronously returns the existing file reference of [id], without reading bytes or changing stored state.
+     * Repeated calls return the same reference for an existing version.
+     *
+     * @param versionBucket the chain the requested version must belong to.
+     * @param id the typed version identifier.
+     * @return the persisted reference, or `null` if the version is missing or belongs to another chain.
+     * @since %CURRENT_VERSION%
+     */
+    fun findFileRef(versionBucket: VersionBucket, id: TestId): StoredBlobRef?
 }

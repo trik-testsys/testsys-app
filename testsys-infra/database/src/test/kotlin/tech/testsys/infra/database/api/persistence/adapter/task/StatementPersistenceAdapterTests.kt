@@ -1,10 +1,15 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import tech.testsys.domain.builder.api.statement
 import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.FileBlobStorage
+import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
@@ -32,6 +37,9 @@ class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
 
     @Autowired
     private lateinit var jpaEntityRepository: StatementJpaEntityRepository
+
+    @Autowired
+    private lateinit var fileBlobStorage: FileBlobStorage
 
     override fun newData() = statementData {
         name = fixtures.unique("Statement")
@@ -171,6 +179,81 @@ class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
 
         assertEquals(first.id, latest?.id)
         assertEquals(null, missing)
+    }
+
+    @Test
+    fun `should return history including older file versions`() {
+        val first = repository.save(newData())
+        val second = repository.save(first.withData { name = "Another version" }.data)
+
+        val history = repository.findVersionsByVersionBucket(first.data.versionBucket)
+
+        assertEquals(setOf(first.id, second.id), history.map { it.id }.toSet())
+        assertSameData(first, history.single { it.id == first.id })
+        assertSameData(second, history.single { it.id == second.id })
+    }
+
+    @Test
+    fun `should return current version name without changing creation time after rename`() {
+        val saved = repository.save(newData())
+        setCreatedAt(id = saved.id, createdAt = Instant.EPOCH)
+        val loaded = assertNotNull(repository.findById(saved.id))
+        repository.update(loaded.withData { name = "Renamed version" })
+
+        val history = repository.findVersionsByVersionBucket(saved.data.versionBucket)
+
+        assertEquals("Renamed version", history.single().data.name)
+        assertEquals(Instant.EPOCH, history.single().createdAt)
+        assertEquals(saved.id, history.single().id)
+    }
+
+    @Test
+    fun `should return an empty history for an absent chain`() {
+        repository.save(newData())
+
+        val history = repository.findVersionsByVersionBucket(VersionBucket(UUID(0, 99)))
+
+        assertEquals(emptyList(), history)
+    }
+
+    @Test
+    fun `should report that a missing chain has no versions`() {
+        val hasVersions = repository.existsByVersionBucket(VersionBucket(UUID(0, 99)))
+
+        assertFalse(hasVersions)
+    }
+
+    @Test
+    fun `should return an old version file reference and check existence without reading its missing blob`() {
+        val old = repository.save(newData())
+        repository.save(old.withData { name = "Another version" }.data)
+        val row = jpaEntityRepository.findById(old.id.value).orElseThrow()
+        val fileId = row.fileDataId
+        val file = fileDataJpaEntityRepository.findById(fileId).orElseThrow()
+        val expected = StoredBlobRef(file.storedFileName)
+        fileBlobStorage.delete(expected)
+
+        val reference = repository.findFileRef(old.data.versionBucket, old.id)
+        val hasVersions = repository.existsByVersionBucket(old.data.versionBucket)
+
+        assertEquals(expected, reference)
+        assertTrue(hasVersions)
+    }
+
+    @Test
+    fun `should reject a file reference for a version outside the requested chain`() {
+        val saved = repository.save(newData())
+
+        val reference = repository.findFileRef(VersionBucket(UUID(0, 99)), saved.id)
+
+        assertNull(reference)
+    }
+
+    @Test
+    fun `should return null for a missing version file reference`() {
+        val reference = repository.findFileRef(VersionBucket(UUID(0, 99)), StatementId(99))
+
+        assertNull(reference)
     }
 
     private fun setCreatedAt(id: StatementId, createdAt: Instant) {

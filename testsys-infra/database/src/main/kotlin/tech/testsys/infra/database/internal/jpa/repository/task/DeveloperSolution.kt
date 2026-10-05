@@ -21,4 +21,18 @@ interface DeveloperSolutionJpaEntityRepository : SnowflakeJpaEntityRepository<De
      * @since %CURRENT_VERSION%
      */
     fun findFirstByVersionBucketOrderByCreatedAtDescIdDesc(versionBucket: UUID): DeveloperSolutionJpaEntity?
+
+    /**
+     * Finds versions in [versionBucket] without loading file contents.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByVersionBucket(versionBucket: UUID): List<DeveloperSolutionJpaEntity>
+
+    /**
+     * Checks whether [versionBucket] contains a version, without loading file contents.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun existsByVersionBucket(versionBucket: UUID): Boolean
 }

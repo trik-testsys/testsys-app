@@ -46,8 +46,8 @@ class TestSysThemeTests {
         assertCodeGeometry(components, ".ts-code__lines")
         assertCodeGeometry(components, ".ts-code__area")
         assertOpaqueDisabled(overrides, "vaadin-custom-field[disabled] .ts-code")
-        assertOpaqueDisabled(overrides, "vaadin-custom-field[disabled] .ts-seg")
-        assertOpaqueDisabled(overrides, "button.ts-switch:disabled")
+        assertOpaqueDisabled(overrides, "vaadin-radio-group.ts-seg[disabled]::part(group-field)")
+        assertOpaqueDisabled(overrides, "vaadin-switch[disabled]::part(switch)")
     }
 
     @Test
@@ -71,7 +71,7 @@ class TestSysThemeTests {
 
     private fun assertOpaqueDisabled(css: String, selector: String) {
         val declarations = rule(css, selector)
-        assertEquals(null, declarations["opacity"])
+        assertTrue(declarations["opacity"] == null || declarations["opacity"] == "1")
         assertTrue(declarations.containsKey("background"))
     }
 

@@ -1,7 +1,6 @@
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Component
-import com.vaadin.flow.component.Tag
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
@@ -34,9 +33,6 @@ data class HeaderSearchResult(
     val destination: HeaderDestination,
     val description: String? = null,
 )
-
-@Tag("input")
-internal class HeaderSearchInput : Component()
 
 /** Owns the search lifecycle in Flow; the client only debounces input and forwards keyboard commands. */
 internal class HeaderSearchController(

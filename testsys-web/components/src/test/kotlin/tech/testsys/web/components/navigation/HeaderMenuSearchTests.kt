@@ -2,11 +2,13 @@ package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.Div
-import com.vaadin.flow.component.popover.PopoverPosition
 import com.vaadin.flow.component.popover.Popover
+import com.vaadin.flow.component.popover.PopoverPosition
+import com.vaadin.flow.internal.nodefeature.ElementListenerMap
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -23,6 +25,19 @@ class HeaderMenuSearchTests : MockVaadinTests() {
         HeaderMegaColumn("Ученик", listOf(HeaderMegaLink("Решения", destination)), destination, "Кабинет ученика"),
         HeaderMegaColumn("Организатор", listOf(HeaderMegaLink("Соревнования", destination), HeaderMegaLink("Участники", destination))),
     )
+
+    @Test
+    fun `should preserve search attributes without native value synchronization`() {
+        val menu = MegaMenuHandle(MegaMenuItem("menu", "Меню", HeaderMegaMenu(columns)), HeaderInteractions())
+        val search = HeaderMenuSearchController(menu, testTexts.header)
+        val field = search.field.element
+
+        assertEquals("search", field.getAttribute("type"))
+        assertEquals(testTexts.header.search, field.getAttribute("placeholder"))
+        assertEquals(testTexts.header.search, field.getAttribute("aria-label"))
+        assertEquals("off", field.getAttribute("autocomplete"))
+        assertNull(field.node.getFeature(ElementListenerMap::class.java).getPropertySynchronizationMode("value"))
+    }
 
     @Test
     fun `should anchor full menu to the header edge and compact results to the search right edge`() {

@@ -1,6 +1,7 @@
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.Input
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.HeaderTexts
 import tech.testsys.web.components.core.IconName
@@ -8,10 +9,10 @@ import tech.testsys.web.components.core.svgIcon
 import java.util.UUID
 
 /** Common native input and visual shell for both supported search modes. */
-internal class HeaderSearchField(val field: HeaderSearchInput, val component: Div)
+internal class HeaderSearchField(val field: Input, val component: Div)
 
 internal fun headerSearchField(label: String): HeaderSearchField {
-    val field = HeaderSearchInput().apply {
+    val field = Input(null).apply {
         element.setAttribute("type", "search")
         element.setAttribute("placeholder", label)
         element.setAttribute("aria-label", label)

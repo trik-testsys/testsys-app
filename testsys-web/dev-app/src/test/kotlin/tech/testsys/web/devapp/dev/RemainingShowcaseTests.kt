@@ -5,6 +5,7 @@ import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10.expectView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.checkbox.Switch
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
@@ -58,7 +59,7 @@ class RemainingShowcaseTests {
             UI.getCurrent().navigate("dev/showcase/forms")
 
             expectView<ShowcaseFormsView>()
-            assertTrue(_find<NativeButton>().any { button -> button.element.getAttribute("role") == "switch" })
+            assertTrue(_find<Switch>().any { field -> field.ariaLabel.orElse("") == "Публикация" })
         }
 
         @Test

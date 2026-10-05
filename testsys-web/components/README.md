@@ -924,6 +924,14 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 
 `radio`, `switchInput`, `segmentedControl`, `codeEditor` и `multiSelect` добавляются в `BlockRowScope` и возвращают
 `ValueInput`: обычные режимы, сигналы, обязательность и Binder действуют так же, как у других полей.
+`radio` и `segmentedControl` используют `RadioButtonGroup`, `switchInput` — штатный `Switch`.
+Тонкая настройка radio-группы проверяет локальные варианты; `META-INF/frontend/testsys-ui/segmented-choice.ts`
+добавляет только выбор Home/End. Его клиентские сценарии проверяются на Node 24:
+
+```bash
+node --test testsys-web/components/src/test/frontend/segmented-choice.test.mjs
+```
+
 `segmentedControl` и `multiSelect` из `ContentScope` служат компактными фильтрами и не зависят от режима блока.
 Образцы вызовов — в [ShowcaseFormsView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/dev/ShowcaseFormsView.kt) модуля приложения.
 

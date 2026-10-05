@@ -1,9 +1,11 @@
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.internal.nodefeature.ElementListenerMap
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -28,6 +30,18 @@ class HeaderSearchTests : MockVaadinTests() {
     @AfterEach
     fun restoreExecutor() {
         Background.executorOverride = null
+    }
+
+    @Test
+    fun `should preserve search attributes without native value synchronization`() {
+        val search = search { emptyList() }
+        val field = search.field.element
+
+        assertEquals("search", field.getAttribute("type"))
+        assertEquals(testTexts.header.search, field.getAttribute("placeholder"))
+        assertEquals(testTexts.header.search, field.getAttribute("aria-label"))
+        assertEquals("off", field.getAttribute("autocomplete"))
+        assertNull(field.node.getFeature(ElementListenerMap::class.java).getPropertySynchronizationMode("value"))
     }
 
     @Test

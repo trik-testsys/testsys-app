@@ -172,10 +172,10 @@ vaadin-select[data-ts-size="sm"]::part(error-message) { display: none; }
 /* Native values remain separate from the shadow field frame, clear/toggle buttons, hints and errors. */
 :is(vaadin-text-field, vaadin-text-area, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field) > :is(input, textarea),
-vaadin-select > [slot="value"], .ts-code__area, .ts-choice > span, .ts-switch {
+vaadin-select > [slot="value"], .ts-code__area, vaadin-radio-button > label {
   filter:var(--ts-value-filter, none);
 }
-vaadin-checkbox::part(checkbox) { filter:var(--ts-value-filter, none); }
+vaadin-checkbox::part(checkbox), vaadin-radio-button::part(radio), vaadin-switch::part(switch) { filter:var(--ts-value-filter, none); }
 vaadin-text-field[data-ts-mono] > input, vaadin-integer-field > input, vaadin-number-field > input {
   font-family: var(--font-mono);
 }
@@ -267,22 +267,66 @@ vaadin-context-menu-item.ts-menu__item--danger { color: var(--danger); }
 vaadin-context-menu-item.ts-menu__item[disabled] { color: var(--text-tertiary); cursor: default; }
 vaadin-context-menu-list-box hr { height: 1px; margin: 4px 0; border: 0; background: var(--line-subtle); }
 
-/* Native radio/segmented composites retain form modes from their CustomField. */
-.ts-radio-group { display:flex; flex-wrap:wrap; gap:var(--space-3); }
-button.ts-choice { border:0; background:none; padding:0; text-align:left; }
-.ts-radio:not(.ts-radio--on) .ts-radio__dot { display:none; }
-vaadin-custom-field[readonly] .ts-seg, vaadin-custom-field[readonly] .ts-radio-group { background:transparent; border:1px dashed var(--border-strong); border-radius:var(--radius-md); }
-vaadin-custom-field[readonly] button:disabled { color:inherit; opacity:1; cursor:default; }
-vaadin-custom-field[disabled] .ts-seg { background:var(--muted); color:var(--text-tertiary); border-color:var(--border-default); }
-vaadin-custom-field[disabled] .ts-seg__item { color:var(--text-tertiary); }
-vaadin-custom-field.ts-seg--sm .ts-seg__item { height:22px; padding:0 10px; }
-
-/* The native switch keeps canonical track and knob markup with real switch semantics. */
-button.ts-switch { border:0; box-sizing:border-box; cursor:pointer; }
-button.ts-switch:focus-visible { outline:2px solid var(--border-focus); outline-offset:3px; }
-button.ts-switch:disabled { cursor:default; background:var(--muted); }
-vaadin-custom-field[readonly]:not([disabled]) button.ts-switch:disabled { background:var(--border-strong); }
-vaadin-custom-field[readonly]:not([disabled]) button.ts-switch--on:disabled { background:var(--accent); }
+/* Radio groups and switches use Vaadin state and focus with the canonical control geometry. */
+vaadin-radio-group[data-ts-input], vaadin-switch[data-ts-input] { padding-block:0; }
+vaadin-radio-group.ts-radio-group::part(group-field) { display:flex; flex-wrap:wrap; gap:var(--space-3); }
+vaadin-radio-button {
+  --vaadin-radio-button-size:18px;
+  --vaadin-radio-button-dot-size:8px;
+  --vaadin-radio-button-background:var(--surface-card);
+  --vaadin-radio-button-background-hover:var(--surface-card);
+  --vaadin-radio-button-dot-color:var(--accent);
+  --vaadin-radio-button-disabled-background:var(--muted);
+  --vaadin-radio-button-disabled-dot-color:var(--text-tertiary);
+  --vaadin-radio-button-label-color:var(--text-primary);
+  --vaadin-radio-button-label-font-size:var(--fs-sm);
+  margin:0;
+}
+vaadin-radio-button::part(radio) { border:1.5px solid var(--ink-300); box-sizing:border-box; }
+vaadin-radio-button[checked]::part(radio) { border-color:var(--accent); }
+vaadin-radio-button[focus-ring]::part(radio) { outline:2px solid var(--border-focus); outline-offset:3px; }
+vaadin-radio-button[disabled]::part(radio), vaadin-radio-button[disabled] > label { opacity:1; }
+.ts-choice-label { display:inline-flex; align-items:center; gap:10px; }
+vaadin-radio-group.ts-seg { padding:0; background:none; border-radius:0; }
+vaadin-radio-group.ts-seg::part(group-field) { display:flex; gap:2px; padding:3px; border-radius:var(--radius-lg); background:var(--muted); }
+vaadin-radio-group.ts-seg > vaadin-radio-button {
+  display:flex; flex:1; align-items:center; justify-content:center; height:26px; padding:0 var(--space-3);
+  border-radius:7px; color:var(--text-secondary); font:var(--fw-semibold) var(--fs-xs) var(--font-sans);
+  white-space:nowrap; cursor:pointer;
+  --vaadin-radio-button-label-padding:0;
+  --vaadin-radio-button-label-color:inherit;
+  --vaadin-radio-button-label-font-size:inherit;
+  transition:background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+/* Keep the native radio input focusable while hiding its marker in segmented controls. */
+vaadin-radio-group.ts-seg > vaadin-radio-button::part(radio) { position:absolute; width:1px; height:1px; padding:0; border:0; overflow:hidden; clip-path:inset(50%); }
+vaadin-radio-group.ts-seg > vaadin-radio-button[checked] { background:var(--surface-card); color:var(--text-primary); box-shadow:var(--shadow-segment); }
+vaadin-radio-group.ts-seg > vaadin-radio-button[focus-ring] { outline:2px solid var(--border-focus); outline-offset:1px; }
+vaadin-radio-group.ts-seg--sm > vaadin-radio-button { height:22px; padding:0 10px; font-size:var(--fs-caption); }
+vaadin-radio-group[readonly]::part(group-field) { background:transparent; border:1px dashed var(--border-strong); border-radius:var(--radius-md); }
+vaadin-radio-group[readonly] > vaadin-radio-button { cursor:default; }
+vaadin-radio-group[readonly]:not([disabled]) > vaadin-radio-button > label { color:inherit; }
+vaadin-radio-group.ts-seg[disabled]::part(group-field) { background:var(--muted); color:var(--text-tertiary); border-color:var(--border-default); }
+vaadin-radio-group[disabled] > vaadin-radio-button { color:var(--text-tertiary); cursor:default; }
+vaadin-radio-group[disabled] > vaadin-radio-button > label { color:var(--text-tertiary); }
+vaadin-switch[data-ts-input] {
+  --vaadin-switch-width:36px;
+  --vaadin-switch-height:20px;
+  --vaadin-switch-background:var(--line-strong);
+  --vaadin-switch-border-width:0;
+  --vaadin-switch-border-radius:var(--radius-pill);
+  --vaadin-switch-marker-width:16px;
+  --vaadin-switch-marker-height:16px;
+  --vaadin-switch-marker-color:var(--white);
+  --vaadin-switch-marker-border-width:0;
+  --vaadin-switch-marker-border-radius:50%;
+  --vaadin-switch-marker-scale:1;
+}
+vaadin-switch[checked] { --vaadin-switch-background:var(--accent); }
+vaadin-switch[focus-ring]::part(switch) { outline:2px solid var(--border-focus); outline-offset:3px; }
+vaadin-switch[disabled]::part(switch) { background:var(--muted); opacity:1; }
+vaadin-switch[readonly]:not([disabled])::part(switch) { background:var(--border-strong); }
+vaadin-switch[readonly][checked]:not([disabled])::part(switch) { background:var(--accent); }
 
 /* The line gutter follows the actual textarea scroll inside Vaadin. */
 .ts-code__lines { overflow:hidden; max-height:100%; flex:none; }

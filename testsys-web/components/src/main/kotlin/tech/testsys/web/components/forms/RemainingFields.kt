@@ -3,12 +3,14 @@ package tech.testsys.web.components.forms
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.HasValue
 import com.vaadin.flow.component.Tag
+import com.vaadin.flow.component.checkbox.Switch
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.html.Div
-import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.radiobutton.RadioButtonGroup
 import com.vaadin.flow.data.binder.HasValidator
+import com.vaadin.flow.data.renderer.ComponentRenderer
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -40,7 +42,7 @@ fun <T : Any> BlockRowScope.radio(
 )
 
 /**
- * Adds a isSegmented choice from [items] shown by [itemLabel] on [size] columns beside [labelSize] label columns.
+ * Adds a segmented choice from [items] shown by [itemLabel] on [size] columns beside [labelSize] label columns.
  *
  * @param T the type of the choices.
  * @since %CURRENT_VERSION%
@@ -75,7 +77,7 @@ fun BlockRowScope.switchInput(
     hint: String? = null,
     configure: ValueInput<Boolean>.() -> Unit = {},
 ): ValueInput<Boolean> {
-    val field = SwitchField(label)
+    val field = Switch()
     val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<Boolean>> ->
         field.addValueChangeListener { event -> listener.valueChanged(event) }
     }
@@ -117,150 +119,43 @@ private fun <T : Any> BlockRowScope.choiceInput(
     return placeInput(label, labelSize, size, field, hint, subscribe, configure)
 }
 
+@JsModule("./testsys-ui/segmented-choice.ts")
 internal class ChoiceField<T : Any>(
     label: String,
-    private val items: List<T>,
+    private val choices: List<T>,
     itemLabel: (T) -> String,
     itemMeta: ((T) -> String)?,
-    private val isSegmented: Boolean,
-) : CustomField<T?>(null, true), HasValidator<T?> {
-    private val group = Div().apply {
+    isSegmented: Boolean,
+) : RadioButtonGroup<T?>() {
+    init {
+        require(
+            !isSegmented || choices.size in 2..MAX_SEGMENTED_CHOICES,
+        ) { "Segmented controls require two to four choices, got ${choices.size}" }
+        require(choices.distinct().size == choices.size) { "Choice items must be unique" }
+        setAriaLabel(label)
         addClassName(if (isSegmented) "ts-seg" else "ts-radio-group")
-        element.setAttribute("role", "radiogroup")
-        element.setAttribute("aria-label", label)
-    }
-
-    private val buttons: List<NativeButton>
-
-    init {
-        require(
-            !isSegmented || items.size in 2..MAX_SEGMENTED_CHOICES,
-        ) { "Segmented controls require two to four choices, got ${items.size}" }
-        require(items.distinct().size == items.size) { "Choice items must be unique" }
-        buttons = items.map { item ->
-            NativeButton().apply {
-                element.setAttribute("type", "button")
-                element.setAttribute("role", "radio")
-                if (isSegmented) {
-                    addClassName("ts-seg__item")
-                    add(Span(itemLabel(item)).apply { addClassName("ts-obscured-value") })
-                } else {
-                    addClassName("ts-choice")
-                    add(
-                        Span().apply {
-                            addClassName("ts-radio")
-                            add(Span().apply { addClassName("ts-radio__dot") })
-                        },
-                        Span(itemLabel(item)),
-                    )
-                }
-                itemMeta?.let { meta -> add(Span(meta(item)).apply { addClassName("ts-option__meta") }) }
-                addClickListener {
-                    if (isEnabled && !isReadOnly) {
-                        setModelValue(item, true)
-                        show(item)
+        setItemLabelGenerator { item -> itemLabel(requireNotNull(item)) }
+        if (isSegmented || itemMeta != null) {
+            setRenderer(
+                ComponentRenderer<Span, T?> { item ->
+                    val choice = requireNotNull(item)
+                    Span(Span(itemLabel(choice))).apply {
+                        addClassName("ts-choice-label")
+                        itemMeta?.let { meta -> add(Span(meta(choice)).apply { addClassName("ts-option__meta") }) }
                     }
-                }
-            }
+                },
+            )
         }
-        buttons.forEach(group::add)
-        group.element.executeJs(
-            """
-            this.addEventListener('keydown', e => {
-              if (!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key)) return;
-              const bs = [...this.querySelectorAll('button:not([disabled])')]; if (!bs.length) return;
-              let i = bs.indexOf(e.target); if (i < 0) return; e.preventDefault();
-              i = e.key === 'Home' ? 0 : e.key === 'End' ? bs.length-1 :
-                (i + (['ArrowLeft','ArrowUp'].includes(e.key) ? -1 : 1) + bs.length) % bs.length;
-              bs[i].focus(); bs[i].click();
-            });
-        """,
-        )
-        add(group)
-        show(null)
-    }
-
-    override fun generateModelValue(): T? = value
-
-    override fun setPresentationValue(newPresentationValue: T?) {
-        require(
-            newPresentationValue == null || newPresentationValue in items,
-        ) { "Choice value '$newPresentationValue' is outside its items" }
-        show(newPresentationValue)
-    }
-
-    override fun setReadOnly(readOnly: Boolean) {
-        super.setReadOnly(readOnly)
-        element.setAttribute("readonly", readOnly)
-        show(value)
-    }
-
-    override fun onEnabledStateChanged(enabled: Boolean) {
-        super.onEnabledStateChanged(enabled)
-        show(value)
-    }
-
-    private fun show(selected: T?) {
-        buttons.forEachIndexed { index, button ->
-            val isChecked = items[index] == selected
-            button.element.setAttribute("aria-checked", isChecked.toString())
-            button.element.setAttribute("tabindex", if (isChecked || (selected == null && index == 0)) "0" else "-1")
-            button.isEnabled = isEnabled && !isReadOnly
-            if (isSegmented) {
-                button.setClassName("ts-seg__item--active", isChecked)
-            } else {
-                val glyph = button.children.findFirst().orElseThrow().element
-                if (isChecked) {
-                    glyph.classList.add("ts-radio--on")
-                } else {
-                    glyph.classList.remove("ts-radio--on")
-                }
-            }
+        setItems(choices)
+        if (isSegmented) {
+            addAttachListener { element.executeJs("window.testsysSegmentedChoice.attach(this)") }
+            addDetachListener { element.executeJs("window.testsysSegmentedChoice.detach(this)") }
         }
     }
-}
 
-internal class SwitchField(label: String) : CustomField<Boolean>(false, true), HasValidator<Boolean> {
-    private val trigger = NativeButton().apply {
-        addClassName("ts-switch")
-        element.setAttribute("type", "button")
-        element.setAttribute("role", "switch")
-        element.setAttribute("aria-label", label)
-        add(Span().apply { addClassName("ts-switch__knob") })
-    }
-
-    init {
-        add(trigger)
-        trigger.addClickListener {
-            if (isEnabled && !isReadOnly) {
-                setModelValue(!value, true)
-                present(value)
-            }
-        }
-        present(false)
-    }
-
-    override fun generateModelValue(): Boolean = value
-
-    override fun setPresentationValue(newPresentationValue: Boolean) {
-        present(newPresentationValue)
-    }
-
-    override fun setReadOnly(readOnly: Boolean) {
-        super.setReadOnly(readOnly)
-        element.setAttribute("readonly", readOnly)
-        present(value)
-    }
-
-    override fun onEnabledStateChanged(enabled: Boolean) {
-        super.onEnabledStateChanged(enabled)
-        present(value)
-    }
-
-    private fun present(selected: Boolean) {
-        trigger.setClassName("ts-switch--on", selected)
-        trigger.element.setAttribute("aria-checked", selected.toString())
-        trigger.isEnabled = isEnabled && !isReadOnly
+    override fun setValue(value: T?) {
+        require(value == null || value in choices) { "Choice value '$value' is outside its items" }
+        super.setValue(value)
     }
 }
 
@@ -369,7 +264,7 @@ fun <T : Any> ContentScope.segmentedControl(
 ): ValueInput<T?> {
     val field = ChoiceField(label, items, itemLabel, null, isSegmented = true)
     if (placement.isCompact) field.addClassName("ts-seg--sm")
-    return placeComposite(label, field, configure)
+    return addLabelLessInput(label, field, configure)
 }
 
 internal fun <T, C> ContentScope.placeComposite(

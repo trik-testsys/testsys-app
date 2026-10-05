@@ -84,6 +84,7 @@ import tech.testsys.operation.error.UpdateStatementError
 import tech.testsys.operation.error.UpdateTestError
 import tech.testsys.operation.error.ViewResourceError
 import tech.testsys.operation.error.ViewResourcesError
+import tech.testsys.operation.error.ViewTaskError
 import tech.testsys.operation.error.ViewTasksError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
@@ -121,6 +122,21 @@ class DeveloperOperations(
         val developer = user.data.roles.filterIsInstance<Developer>().single()
         val tasks = taskRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = developer.memberOf.ids.toSet())
         return tasks.asSuccess()
+    }
+
+    /**
+     * Returns the task with [taskId] owned by [user], preserving its state and both content revisions.
+     * Missing role, task and ownership are expected failures; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.viewTask")
+    fun viewTask(user: MultipleRoleUser, taskId: TaskId): OperationResult<Task, ViewTaskError> = operation<Task, ViewTaskError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        return task.asSuccess()
     }
 
     /**

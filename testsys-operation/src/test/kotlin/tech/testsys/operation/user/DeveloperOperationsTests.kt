@@ -229,6 +229,95 @@ class DeveloperOperationsTests {
     }
 
     @Nested
+    inner class ViewTaskTests {
+
+        private val taskId = TaskId(42)
+
+        @Test
+        fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+            assertRaises(MissedDeveloperRoleError) { developerOperations.viewTask(testAdministrator {}, taskId) }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+        }
+
+        @Test
+        fun `should raise TaskNotExistsError if task does not exist`() {
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) { developerOperations.viewTask(developer, taskId) }
+        }
+
+        @Test
+        fun `should raise TaskAccessDeniedError if task belongs to another user`() {
+            val otherTask = testNewTask().withData { owner = MultipleRoleUserId(99) }
+            every { taskRepository.findById(taskId) } returns otherTask
+
+            assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.viewTask(developer, taskId) }
+        }
+
+        @Test
+        fun `should deny viewing another owner's task shared to the Developer community`() {
+            val user = testDeveloper {
+                memberOf(listOf(4))
+                data = developerData {}
+            }
+            val sharedTask = testCommitedTask().withData {
+                owner = MultipleRoleUserId(99)
+                sharedTo(listOf(4))
+            }
+            every { taskRepository.findById(taskId) } returns sharedTask
+
+            assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.viewTask(user, taskId) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should return owned task data and retain revisions and state when viewing a task`(state: String) {
+            val original = task {
+                id = taskId.value
+                createdAt = Instant.MIN
+                version = EntityVersion(7)
+                data = taskInState(state).withData {
+                    name = "Viewed task"
+                    description = "Task details"
+                }.data
+            }
+            every { taskRepository.findById(taskId) } returns original
+
+            val result = developerOperations.viewTask(developer, taskId).getOrThrow()
+
+            Assertions.assertSame(original, result)
+            Assertions.assertEquals(taskId, result.id)
+            Assertions.assertEquals("Viewed task", result.data.name)
+            Assertions.assertEquals("Task details", result.data.description)
+            Assertions.assertSame(original.data.content, result.data.content)
+            Assertions.assertEquals(EntityVersion(7), result.version)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { taskRepository.save(any<TaskData>()) }
+        }
+
+        @Test
+        fun `should return owned task even when it is absent from the Developer task list`() {
+            val ownedTask = testNewTask()
+            every { taskRepository.findById(taskId) } returns ownedTask
+
+            val result = developerOperations.viewTask(developer, taskId).getOrThrow()
+
+            Assertions.assertSame(ownedTask, result)
+        }
+
+        @Test
+        fun `should propagate a storage exception when viewing a task`() {
+            val failure = IllegalStateException("Task storage unavailable")
+            every { taskRepository.findById(taskId) } throws failure
+
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) { developerOperations.viewTask(developer, taskId) }
+
+            Assertions.assertSame(failure, actual)
+        }
+    }
+
+    @Nested
     inner class ViewResourcesTests {
 
         @Test

@@ -60,6 +60,13 @@ sealed interface ResourceAccessError : OperationError
 sealed interface ViewTasksError : OperationError
 
 /**
+ * Failure of viewing a task owned by the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewTaskError : OperationError
+
+/**
  * Failure of listing the developer's resources.
  *
  * @since %CURRENT_VERSION%
@@ -215,6 +222,7 @@ sealed interface DetachDeveloperSolutionError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedDeveloperRoleError :
+    ViewTaskError,
     ViewTasksError,
     DetachStatementError,
     DetachExerciseError,
@@ -246,6 +254,7 @@ data object MissedDeveloperRoleError :
  * @since %CURRENT_VERSION%
  */
 data class TaskNotExistsError(val taskId: TaskId) :
+    ViewTaskError,
     DetachStatementError,
     DetachExerciseError,
     DetachTestError,
@@ -314,6 +323,7 @@ data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExis
  * @since %CURRENT_VERSION%
  */
 data class TaskAccessDeniedError(val taskId: TaskId) :
+    ViewTaskError,
     DetachStatementError,
     DetachExerciseError,
     DetachTestError,

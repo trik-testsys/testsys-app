@@ -62,6 +62,11 @@
 выходят из операции. Условия доступа и оставшаяся часть интерфейса — в фиче
 `testsys.user.multi.developer.task.viewTasks` в [features.md](../docs/domain/features.md).
 
+Метод `viewTask` возвращает `Task` через `TaskRepository.findById`, сохраняя обе версии содержимого
+и ссылки на прикреплённые Ресурсы. Исключения хранилища выходят из операции. Условия доступа
+и нереализованные части — в фиче `testsys.user.multi.developer.task.viewTask`
+в [features.md](../docs/domain/features.md).
+
 Метод `viewResources` возвращает последние версии доступных цепочек существующими доменными сущностями.
 Дата последнего изменения Ресурса — `createdAt` его последней версии. Метод `viewResource` возвращает
 существующие версии выбранной цепочки. Метод `downloadResourceVersion` возвращает сохранённый `StoredBlobRef`

@@ -553,7 +553,7 @@ Page: **testsys.web.page.developer**
 Реализована операция получения списка доступных Задач. Страницы
 **testsys.web.page.developer**, **testsys.web.page.developer.task** и переход между ними не реализованы.
 
-### testsys.user.multi.developer.task.viewTask (Not implemented)
+### testsys.user.multi.developer.task.viewTask (Partially implemented)
 
 Page: **testsys.web.page.developer.task**
 
@@ -568,6 +568,13 @@ Page: **testsys.web.page.developer.task**
    - Дата и время тестирования
    - Найденные ошибки
 7) Прикрепленные файлы
+
+Операция отклоняется, если у Пользователя нет Роли Разработчика, Задача не существует
+или принадлежит другому Пользователю.
+Просмотр не изменяет состояние Задачи.
+
+Реализована операция получения Задачи с её данными и ссылками на прикреплённые Ресурсы в обеих версиях.
+История тестирований и страница **testsys.web.page.developer.task** не реализованы.
 
 ### testsys.user.multi.developer.task.editTaskInfo (Not implemented)
 

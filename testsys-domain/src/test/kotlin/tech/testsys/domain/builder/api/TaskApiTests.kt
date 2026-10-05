@@ -34,10 +34,11 @@ import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TestVerdict
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VerdictData
-import tech.testsys.domain.model.task.VerdictId
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Duration
@@ -59,15 +60,15 @@ class TaskApiTests {
                 task = LazyEntity(TaskId(9)),
                 status = SubmissionStatus.InProgress,
                 kind = SubmissionKind.DeveloperSolutionTest,
-                judgmentOrders = LazyEntityList(listOf(JudgmentOrderId(32)))
+                judgmentOrders = LazyEntityList(listOf(JudgmentOrderId(32))),
             )
         }
 
         @Test
         fun `should keep all fields if withData changes nothing`() {
-            val copy = origin.withData {  }
+            val copy = origin.withData { }
 
-            Assertions.assertEquals(origin.id,  copy.id)
+            Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.author.id, copy.data.author.id)
@@ -104,7 +105,7 @@ class TaskApiTests {
                 contestDuration = Duration.ofHours(2),
                 attemptDuration = Duration.ofMinutes(30),
                 trikStudioVersion = TrikStudioVersion("3.0.0"),
-                sharedTo = LazyEntityList(listOf(CommunityId(50)))
+                sharedTo = LazyEntityList(listOf(CommunityId(50))),
             )
         }
 
@@ -137,7 +138,7 @@ class TaskApiTests {
     @Nested
     inner class DeveloperSolutionTests {
 
-        private val versionBucket = UUID.randomUUID()
+        private val versionBucket = VersionBucket(UUID.randomUUID())
         private val origin = developerSolution {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
@@ -176,7 +177,7 @@ class TaskApiTests {
     @Nested
     inner class ExerciseTests {
 
-        private val versionBucket = UUID.randomUUID()
+        private val versionBucket = VersionBucket(UUID.randomUUID())
         private val origin = exercise {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
@@ -223,7 +224,8 @@ class TaskApiTests {
             version = EntityVersion(7)
             data = JudgmentOrderData(
                 judge = LazyEntity(MultipleRoleUserId(10)),
-                verdict = LazyEntity(VerdictId(20)),
+                submission = LazyEntity(SubmissionId(20)),
+                score = Score(30),
                 reason = "auto-grade",
             )
         }
@@ -236,7 +238,8 @@ class TaskApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.judge.id, copy.data.judge.id)
-            Assertions.assertEquals(origin.data.verdict.id, copy.data.verdict.id)
+            Assertions.assertEquals(origin.data.submission.id, copy.data.submission.id)
+            Assertions.assertEquals(origin.data.score, copy.data.score)
             Assertions.assertEquals(origin.data.reason, copy.data.reason)
         }
 
@@ -245,6 +248,13 @@ class TaskApiTests {
             val copy = origin.withData { judge(99) }
 
             Assertions.assertEquals(99L, copy.data.judge.id.value)
+        }
+
+        @Test
+        fun `should change score if withData sets score`() {
+            val copy = origin.withData { score = 75 }
+
+            Assertions.assertEquals(Score(75), copy.data.score)
         }
     }
 
@@ -315,7 +325,6 @@ class TaskApiTests {
     @Nested
     inner class SolutionTests {
 
-        private val versionBucket = UUID.randomUUID()
         private val origin = solution {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
@@ -323,7 +332,6 @@ class TaskApiTests {
             data = SolutionData(
                 file = FileData("solution.py", byteArrayOf(4, 5, 6)),
                 language = TrikSupportedLanguage.Python,
-                versionBucket = versionBucket,
             )
         }
 
@@ -337,7 +345,6 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
             Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
             Assertions.assertEquals(origin.data.language, copy.data.language)
-            Assertions.assertEquals(origin.data.versionBucket, copy.data.versionBucket)
         }
 
         @Test
@@ -352,7 +359,7 @@ class TaskApiTests {
     @Nested
     inner class StatementTests {
 
-        private val versionBucket = UUID.randomUUID()
+        private val versionBucket = VersionBucket(UUID.randomUUID())
         private val origin = statement {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
@@ -390,7 +397,7 @@ class TaskApiTests {
     @Nested
     inner class TestTests {
 
-        private val versionBucket = UUID.randomUUID()
+        private val versionBucket = VersionBucket(UUID.randomUUID())
         private val origin = test {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
@@ -433,11 +440,16 @@ class TaskApiTests {
             createdAt = Instant.ofEpochSecond(1)
             version = EntityVersion(7)
             data = VerdictData(
-                score = Score(85),
                 task = LazyEntity(TaskId(10)),
                 submission = LazyEntity(SubmissionId(20)),
-                logs = LazyEntity(LogsId(30)),
-                recording = LazyEntity(RecordingId(40)),
+                testVerdicts = listOf(
+                    TestVerdict(
+                        score = Score(85),
+                        test = LazyEntity(TestId(50)),
+                        logs = LazyEntity(LogsId(30)),
+                        recording = LazyEntity(RecordingId(40)),
+                    ),
+                ),
             )
         }
 
@@ -448,18 +460,47 @@ class TaskApiTests {
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
-            Assertions.assertEquals(origin.data.score, copy.data.score)
             Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
             Assertions.assertEquals(origin.data.submission.id, copy.data.submission.id)
-            Assertions.assertEquals(origin.data.logs?.id, copy.data.logs?.id)
-            Assertions.assertEquals(origin.data.recording?.id, copy.data.recording?.id)
+            Assertions.assertEquals(origin.data.testVerdicts, copy.data.testVerdicts)
         }
 
         @Test
-        fun `should change score if withData sets score`() {
-            val copy = origin.withData { score = 50 }
+        fun `should replace test verdicts if withData clears them and adds a new one`() {
+            val copy = origin.withData {
+                testVerdicts.clear()
+                testVerdict {
+                    score = 50
+                    test(60)
+                    logs(70)
+                }
+            }
 
-            Assertions.assertEquals(Score(50), copy.data.score)
+            val testVerdict = copy.data.testVerdicts.single()
+            Assertions.assertEquals(Score(50), testVerdict.score)
+            Assertions.assertEquals(TestId(60), testVerdict.test.id)
+            Assertions.assertEquals(LogsId(70), testVerdict.logs.id)
+            Assertions.assertNull(testVerdict.recording)
+        }
+
+        @Test
+        fun `should keep existing test verdicts if withData adds a new one`() {
+            val copy = origin.withData {
+                testVerdict {
+                    score = 50
+                    test(60)
+                    logs(70)
+                }
+            }
+
+            Assertions.assertEquals(2, copy.data.testVerdicts.size)
+            Assertions.assertEquals(origin.data.testVerdicts.single(), copy.data.testVerdicts.first())
+            val added = copy.data.testVerdicts.last()
+            Assertions.assertEquals(Score(50), added.score)
+            Assertions.assertEquals(TestId(60), added.test.id)
+            Assertions.assertEquals(LogsId(70), added.logs.id)
+            Assertions.assertNull(added.recording)
+            Assertions.assertEquals(1, origin.data.testVerdicts.size)
         }
     }
 
@@ -475,6 +516,7 @@ class TaskApiTests {
                 name = "Task Name",
                 description = "Task Description",
                 sharedTo = LazyEntityList(listOf(CommunityId(60))),
+                uploadedResources = setOf(VersionBucket(UUID(0, 1))),
                 content = TaskContent.New(
                     wip = WipTaskContent(
                         tests = LazyEntityList(listOf(TestId(20))),
@@ -482,7 +524,7 @@ class TaskApiTests {
                         statement = LazyEntity(StatementId(40)),
                         developerSolutions = LazyEntityList(listOf(DeveloperSolutionId(50))),
                         supportedTrikStudioVersions = listOf(TrikStudioVersion("3.0.0")),
-                    )
+                    ),
                 ),
             )
         }
@@ -498,6 +540,7 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
             Assertions.assertEquals(origin.data.sharedTo.ids, copy.data.sharedTo.ids)
+            Assertions.assertEquals(origin.data.uploadedResources, copy.data.uploadedResources)
 
             Assertions.assertInstanceOf(TaskContent.New::class.java, copy.data.content)
             val originWip = (origin.data.content as TaskContent.New).wip
@@ -548,6 +591,7 @@ class TaskApiTests {
                 name = "Committed Task",
                 description = "Committed Description",
                 sharedTo = LazyEntityList(listOf(CommunityId(60))),
+                uploadedResources = setOf(VersionBucket(UUID(0, 1))),
                 content = TaskContent.Committed(
                     lastCommitted = CommittedTaskContent(
                         tests = LazyEntityList(listOf(TestId(20))),
@@ -555,7 +599,7 @@ class TaskApiTests {
                         statement = LazyEntity(StatementId(40)),
                         developerSolutions = LazyEntityList(listOf(DeveloperSolutionId(50))),
                         supportedTrikStudioVersions = listOf(TrikStudioVersion("3.0.0")),
-                    )
+                    ),
                 ),
             )
         }
@@ -571,6 +615,7 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
             Assertions.assertEquals(origin.data.sharedTo.ids, copy.data.sharedTo.ids)
+            Assertions.assertEquals(origin.data.uploadedResources, copy.data.uploadedResources)
 
             Assertions.assertInstanceOf(TaskContent.Committed::class.java, copy.data.content)
             val originCommitted = (origin.data.content as TaskContent.Committed).lastCommitted
@@ -616,6 +661,7 @@ class TaskApiTests {
                 name = "Uncommitted Task",
                 description = "Uncommitted Description",
                 sharedTo = LazyEntityList(emptyList()),
+                uploadedResources = setOf(VersionBucket(UUID(0, 1))),
                 content = TaskContent.Uncommitted(
                     wip = WipTaskContent(
                         tests = LazyEntityList(listOf(TestId(20))),
@@ -645,6 +691,7 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.owner.id, copy.data.owner.id)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
+            Assertions.assertEquals(origin.data.uploadedResources, copy.data.uploadedResources)
 
             Assertions.assertInstanceOf(TaskContent.Uncommitted::class.java, copy.data.content)
             val originContent = origin.data.content as TaskContent.Uncommitted
@@ -681,5 +728,36 @@ class TaskApiTests {
 
             Assertions.assertInstanceOf(TaskContent.New::class.java, copy.data.content)
         }
+    }
+
+    @Test
+    fun `should change uploaded resources without mutating the original task`() {
+        val first = VersionBucket(UUID(0, 1))
+        val second = VersionBucket(UUID(0, 2))
+        val origin = task {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = taskData {
+                owner(10)
+                name = "Task"
+                description = "Description"
+                content.new {}
+                uploadedResources.add(first)
+            }
+        }
+
+        val copy = origin.withData {
+            uploadedResources.clear()
+            uploadedResources.add(second)
+        }
+
+        Assertions.assertEquals(setOf(first), origin.data.uploadedResources)
+        Assertions.assertEquals(setOf(second), copy.data.uploadedResources)
+        Assertions.assertEquals(origin.version, copy.version)
+        val content = Assertions.assertInstanceOf(TaskContent.New::class.java, copy.data.content)
+        Assertions.assertEquals(emptyList<TestId>(), content.wip.tests.ids)
+        Assertions.assertNull(content.wip.exercise)
+        Assertions.assertNull(content.wip.statement)
     }
 }

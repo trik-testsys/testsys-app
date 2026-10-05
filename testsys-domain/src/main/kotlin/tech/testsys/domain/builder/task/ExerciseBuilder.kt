@@ -9,14 +9,14 @@ import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.FileData
-import java.util.UUID
+import tech.testsys.domain.model.task.VersionBucket
 
 /**
  * Builder of [ExerciseData]. Required: [file], [name], [description], [versionBucket], a choice in [language].
  *
  * @property name the name of the exercise, or `null` if not set yet.
  * @property description the description of the exercise, or `null` if not set yet.
- * @property versionBucket the UUID shared by all versions of the exercise, or `null` if not set yet.
+ * @property versionBucket the version chain shared by all versions of the exercise, or `null` if not set yet.
  * @property language the chooser of the programming language.
  * @since %CURRENT_VERSION%
  */
@@ -28,7 +28,7 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
 
     var description: String? = null
 
-    var versionBucket: UUID? = null
+    var versionBucket: VersionBucket? = null
 
     val language = LanguageChooser()
 

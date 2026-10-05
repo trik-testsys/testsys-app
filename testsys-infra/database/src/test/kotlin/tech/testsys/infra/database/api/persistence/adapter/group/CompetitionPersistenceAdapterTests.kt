@@ -9,11 +9,11 @@ import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionData
 import tech.testsys.domain.model.group.CompetitionId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class CompetitionPersistenceAdapterTests : PersistenceAdapterContractTests<CompetitionData, CompetitionId, Competition>() {
+class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<CompetitionData, CompetitionId, Competition>() {
 
     @Autowired
     override lateinit var repository: CompetitionRepository

@@ -21,7 +21,7 @@ value class RecordingId(
 /**
  * Data of a [Recording].
  *
- * @property file the recording file.
+ * @property file the recording file; fixed on creation.
  * @since %CURRENT_VERSION%
  */
 class RecordingData(
@@ -53,7 +53,7 @@ value class LogsId(
 /**
  * Data of [Logs].
  *
- * @property file the log file.
+ * @property file the log file; fixed on creation.
  * @since %CURRENT_VERSION%
  */
 class LogsData(
@@ -83,25 +83,44 @@ value class VerdictId(
 ) : DomainId
 
 /**
- * Data of a [Verdict].
+ * The outcome of running a graded solution on a single test of a [Verdict].
  *
- * @property score the score awarded to the solution.
- * @property task the task the solution was graded against; fixed on creation and ignored on update.
- * @property submission the submission the verdict was produced for; fixed on creation and ignored on update.
- * @property logs the grading logs, or `null` if none were produced.
- * @property recording the recording of the solution run, or `null` if none was produced.
+ * @property score the score awarded for the test.
+ * @property test the test the solution was run on.
+ * @property logs the grading logs of the run; every run produces them.
+ * @property recording the recording of the run, or `null` if none was produced.
  * @since %CURRENT_VERSION%
  */
-data class VerdictData(
+data class TestVerdict(
     val score: Score,
-    val task: LazyEntity<TaskId, Task>,
-    val submission: LazyEntity<SubmissionId, Submission>,
-    val logs: LazyEntity<LogsId, Logs>?,
+    val test: LazyEntity<TestId, Test>,
+    val logs: LazyEntity<LogsId, Logs>,
     val recording: LazyEntity<RecordingId, Recording>?,
 )
 
 /**
- * The result of grading a submitted solution: a score plus optional grading artefacts.
+ * Data of a [Verdict]; the total score of the verdict is the sum of the scores of [testVerdicts].
+ *
+ * @property task the task the solution was graded against; fixed on creation.
+ * @property submission the submission the verdict was produced for; fixed on creation.
+ * @property testVerdicts the non-empty list of outcomes of the runs on the task tests; fixed on creation.
+ * @throws IllegalArgumentException if [testVerdicts] is empty.
+ * @since %CURRENT_VERSION%
+ */
+data class VerdictData(
+    val task: LazyEntity<TaskId, Task>,
+    val submission: LazyEntity<SubmissionId, Submission>,
+    val testVerdicts: List<TestVerdict>,
+) {
+    init {
+        require(testVerdicts.isNotEmpty()) {
+            "Verdict for submission ${submission.id.value} must contain at least one test outcome"
+        }
+    }
+}
+
+/**
+ * The result of grading a submitted solution: a score and grading logs per test plus an optional recording.
  *
  * @property data the data of the verdict.
  * @since %CURRENT_VERSION%

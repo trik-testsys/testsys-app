@@ -15,6 +15,7 @@ import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Instant
@@ -32,17 +33,13 @@ fun testMultipleRoleUser(builder: MultipleRoleUserDataBuilder.() -> Unit): Multi
     }
 }
 
-fun testDeveloper(builder: DeveloperBuilder.() -> Unit): MultipleRoleUser =
-    testMultipleRoleUser { roles { developer(builder) } }
+fun testDeveloper(builder: DeveloperBuilder.() -> Unit): MultipleRoleUser = testMultipleRoleUser { roles { developer(builder) } }
 
-fun testStudent(builder: StudentBuilder.() -> Unit): MultipleRoleUser =
-    testMultipleRoleUser { roles { student(builder) } }
+fun testStudent(builder: StudentBuilder.() -> Unit): MultipleRoleUser = testMultipleRoleUser { roles { student(builder) } }
 
-fun testJudge(builder: JudgeBuilder.() -> Unit): MultipleRoleUser =
-    testMultipleRoleUser { roles { judge(builder) } }
+fun testJudge(builder: JudgeBuilder.() -> Unit): MultipleRoleUser = testMultipleRoleUser { roles { judge(builder) } }
 
-fun testManager(builder: ManagerBuilder.() -> Unit): MultipleRoleUser =
-    testMultipleRoleUser { roles { manager(builder) } }
+fun testManager(builder: ManagerBuilder.() -> Unit): MultipleRoleUser = testMultipleRoleUser { roles { manager(builder) } }
 
 fun testAdministrator(builder: AdministratorBuilder.() -> Unit): MultipleRoleUser =
     testMultipleRoleUser { roles { administrator(builder) } }
@@ -56,6 +53,7 @@ fun testTask(choose: TaskContentChooser.() -> Unit): Task = task {
         name = "name"
         description = "description"
         content.choose()
+        uploadedResources = mutableSetOf(testStatement().data.versionBucket)
     }
 }
 
@@ -69,7 +67,7 @@ fun testUncommittedTask(): Task = testTask {
         lastCommittedBuilder = {
             exercise = ExerciseId(1L)
             statement = StatementId(1L)
-        }
+        },
     )
 }
 
@@ -100,14 +98,14 @@ fun testCommunity(communityId: Long): Community = community {
     }
 }
 
-fun testStatement(): Statement = statement {
-    id = 0L
+fun testStatement(statementId: Long = 0L): Statement = statement {
+    id = statementId
     createdAt = Instant.MIN
     version = EntityVersion(0)
     data = statementData {
         name = "name"
         description = "description"
-        versionBucket = UUID.fromString("00000000-0000-0000-0000-000000000000")
+        versionBucket = VersionBucket(UUID.fromString("00000000-0000-0000-0000-000000000000"))
         file("file.pdf", "".toByteArray())
     }
 }

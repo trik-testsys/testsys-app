@@ -32,7 +32,6 @@ class SnowflakeIdGeneratorTests {
             assertFailsWith<IllegalArgumentException> { SnowflakeIdGenerator(nodeId = SnowflakeIdGenerator.MAX_NODE_ID + 1, clock = clock) }
         }
 
-
         @Test
         fun `should accept boundary node ids and round-trip the maximal one`() {
             val minNodeId = SnowflakeIdGenerator(nodeId = 0, clock = clock).next()
@@ -59,7 +58,6 @@ class SnowflakeIdGeneratorTests {
             assertEquals(0L, first ushr USED_BITS, "the sign bit and the 5 reserved bits must be zero")
         }
 
-
         @Test
         fun `should strictly increase ids within one second`() {
             val ids = List(SAMPLE_SIZE) { generator.next() }
@@ -67,7 +65,6 @@ class SnowflakeIdGeneratorTests {
             assertEquals(ids, ids.sorted())
             assertEquals(SAMPLE_SIZE, ids.toSet().size)
         }
-
 
         @Test
         fun `should reset the counter when a new second starts`() {
@@ -81,7 +78,6 @@ class SnowflakeIdGeneratorTests {
             assertEquals(0, SnowflakeIdGenerator.counterOf(id))
         }
 
-
         @Test
         fun `should keep the logical second if the clock goes backwards`() {
             val before = generator.next()
@@ -93,7 +89,6 @@ class SnowflakeIdGeneratorTests {
             assertEquals(SnowflakeIdGenerator.instantOf(before), SnowflakeIdGenerator.instantOf(after))
             assertEquals(1, SnowflakeIdGenerator.counterOf(after))
         }
-
 
         @Test
         @Timeout(value = TEST_TIMEOUT_SECONDS, unit = TimeUnit.SECONDS)
@@ -114,14 +109,12 @@ class SnowflakeIdGeneratorTests {
             assertTrue(id > last)
         }
 
-
         @Test
         fun `should fail if the clock is before the epoch`() {
             clock.now = Instant.EPOCH.minusSeconds(1)
 
             assertFailsWith<IllegalStateException> { generator.next() }
         }
-
 
         @Test
         @Timeout(value = TEST_TIMEOUT_SECONDS, unit = TimeUnit.SECONDS)

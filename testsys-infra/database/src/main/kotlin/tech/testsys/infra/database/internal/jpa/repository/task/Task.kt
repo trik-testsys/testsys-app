@@ -16,6 +16,8 @@ import tech.testsys.infra.database.internal.jpa.entity.task.TestToTaskContentId
 import tech.testsys.infra.database.internal.jpa.entity.task.TestToTaskContentJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionToTaskContentId
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionToTaskContentJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.task.VersionBucketToTaskId
+import tech.testsys.infra.database.internal.jpa.entity.task.VersionBucketToTaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
@@ -227,4 +229,23 @@ interface TaskJpaEntityRepository : SnowflakeJpaEntityRepository<TaskJpaEntity> 
      * @since %CURRENT_VERSION%
      */
     fun findAllByOwnerId(ownerId: Long): List<TaskJpaEntity>
+}
+
+/**
+ * Spring Data repository for [VersionBucketToTaskJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
+@Repository
+@InternalDatabaseApi
+interface VersionBucketToTaskJpaEntityRepository :
+    CompositeJpaEntityRepository<VersionBucketToTaskJpaEntity, VersionBucketToTaskId> {
+
+    /**
+     * Finds the uploaded resource associations of the task [taskId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query("select e from VersionBucketToTaskJpaEntity e where e.id.taskId = :taskId")
+    fun findAllByTaskId(@Param("taskId") taskId: Long): List<VersionBucketToTaskJpaEntity>
 }

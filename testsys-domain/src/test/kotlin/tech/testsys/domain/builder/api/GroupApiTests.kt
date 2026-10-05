@@ -28,7 +28,7 @@ class GroupApiTests {
                 name = "Original Class",
                 description = "Original description",
                 students = LazyEntityList(listOf(MultipleRoleUserId(20), MultipleRoleUserId(30))),
-                contests = LazyEntityList(listOf(ContestId(40)))
+                contests = LazyEntityList(listOf(ContestId(40))),
             )
         }
 
@@ -100,7 +100,7 @@ class GroupApiTests {
                 name = "Original Competition",
                 description = "Original description",
                 participants = LazyEntityList(listOf(SingleRoleUserId(20))),
-                contests = LazyEntityList(listOf(ContestId(30)))
+                contests = LazyEntityList(listOf(ContestId(30))),
             )
         }
 
@@ -125,5 +125,4 @@ class GroupApiTests {
             Assertions.assertEquals(99L, copy.data.owner.id.value)
         }
     }
-
 }

@@ -4,12 +4,11 @@ import com.vaadin.flow.server.AppShellSettings
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
-import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.web.components.TestSysBrand
 import tech.testsys.web.components.localization.buildUiTexts
 
 class AppShellTests {
-    private val texts = buildUiTexts(SupportedRegion.RU)
+    private val texts = buildUiTexts()
 
     @Test
     fun `should use the TestSys emblem as favicon`() {

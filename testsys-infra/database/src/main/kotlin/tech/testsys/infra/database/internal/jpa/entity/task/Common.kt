@@ -26,7 +26,6 @@ enum class TrikSupportedLanguageEnum {
  *
  * @property uploadedFileName the name the file was uploaded with.
  * @property storedFileName the key of the blob in the external storage.
- * @property versionBucket identity shared by all versions of the file (that of the owning resource, if any).
  * @property contentHash SHA-256 hex digest of the content, used to detect changes without loading the blob.
  * @since %CURRENT_VERSION%
  */
@@ -35,7 +34,6 @@ enum class TrikSupportedLanguageEnum {
 class FileDataJpaEntity(
     val uploadedFileName: String,
     val storedFileName: String,
-    val versionBucket: UUID,
     val contentHash: String,
     id: Long? = null,
 ) : SnowflakeJpaEntity(id)

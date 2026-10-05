@@ -4,8 +4,10 @@
 
 # TestSys Application
 
-TestSys — система проверки решений для TRIK Studio: Задачи, Туры, Соревнования, отправка Решений и Вердикты.
-Этот файл — точка входа в репозиторий для всех, кто начинает работать с проектом.
+TestSys — система для проведения онлайн соревнований по робототехнике.
+
+`testsys-app` — основной репозиторий проекта. Здесь разрабатывается приложение,
+предоставляющее пользователям веб-интерфейс и API для работы с TestSys.
 
 С чего начать:
 
@@ -14,32 +16,18 @@ TestSys — система проверки решений для TRIK Studio: �
 - что делает система — [features.md](docs/domain/features.md);
 - перечень всей документации и правила её написания — [docs.md](docs/docs.md).
 
-## Скилы и агенты Claude Code
+Если вы используете LLM в разработке, ознакомьтесь с [инструкцией](README_LLM_USAGE.md).
 
-В репозитории настроены скилы и агенты для [Claude Code](https://claude.com/claude-code). Скил вызывается командой
-в сессии Claude Code, собирает у пользователя входные данные и решения и запускает агента, если он указан.
-Ни один из них не делает коммитов и не меняет состояние git. Общие инструкции для Claude — в [CLAUDE.md](CLAUDE.md).
+## Скилы и роли
 
-| Скил                                                       | Агенты                                                                                           | Назначение                                                                                        |
-|------------------------------------------------------------|--------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| [/review-changes](.claude/skills/review-changes/SKILL.md)  | [reviewer](.claude/agents/reviewer.md), [review-verifier](.claude/agents/review-verifier.md)     | Строгое ревью изменений без правки файлов: незакоммиченные изменения, PR, диапазон коммитов, пути |
-| [/fix-review](.claude/skills/fix-review/SKILL.md)          | [fixer](.claude/agents/fixer.md)                                                                 | Исправление выбранных замечаний из отчёта ревью, затем сборка и тесты                             |
-| [/implement](.claude/skills/implement/SKILL.md)            | [coder](.claude/agents/coder.md)                                                                 | Реализация задачи по гайдам из `docs/guides` с самопроверкой по чек-листам, затем сборка и тесты  |
-| [/testsys-design](.claude/skills/testsys-design/SKILL.md)  | —                                                                                                | Интерфейсы Кабинетов на Vaadin/Kotlin-DSL; React/HTML — для явно запрошенных макетов        |
+Общие инструкции — в [AGENTS.md](AGENTS.md). Подключение клиента описано в
+[README_LLM_USAGE.md](README_LLM_USAGE.md).
 
-Как устроен каждый скил и агент, описано в файлах по ссылкам. Ограничения агентов на запись и команды
-обеспечивают хуки в `.claude/hooks/`.
-
-## Скилы и агенты Codex
-
-Общие инструкции для Codex — в [AGENTS.md](AGENTS.md). Скилы находятся в `.agents/skills/`, определения агентов —
-в `.codex/agents/`. Ограничения каждого агента указаны в его определении; локальных хуков Codex в репозитории нет.
-
-| Скил | Агенты | Назначение |
-|------|--------|------------|
-| [/review-changes](.agents/skills/review-changes/SKILL.md) | [reviewer](.codex/agents/reviewer.toml), [review-verifier](.codex/agents/review-verifier.toml) | Ревью изменений без правки файлов и независимая проверка замечаний |
-| [/fix-review](.agents/skills/fix-review/SKILL.md) | [fixer](.codex/agents/fixer.toml) | Исправление выбранных замечаний ревью, сборка и тесты |
-| [/implement](.agents/skills/implement/SKILL.md) | [coder](.codex/agents/coder.toml) | Реализация задачи по гайдам проекта с самопроверкой, сборкой и тестами |
-| [/testsys-design](.agents/skills/testsys-design/SKILL.md) | — | Интерфейсы Кабинетов на Vaadin/Kotlin-DSL; React/HTML — для явно запрошенных макетов |
-
-Агенты не делают коммитов и не меняют состояние git. Формат работы каждого скила и агента описан по ссылкам.
+| Скилл  |  Роли  |  Назначение |
+| ------- | ------ | ------------ |
+| [implement](.testsys-agents/skills/implement/SKILL.md)  |  [coder](.testsys-agents/roles/coder.md)  |  Планирование задачи по гайдам, согласование решений, реализация и самопроверка со сборкой и тестами |
+| [review-changes](.testsys-agents/skills/review-changes/SKILL.md)  |  [reviewer](.testsys-agents/roles/reviewer.md), [review-verifier](.testsys-agents/roles/review-verifier.md)  |  Строгое ревью незакоммиченных изменений, PR, коммитов или путей без правок исходников |
+| [fix-review](.testsys-agents/skills/fix-review/SKILL.md)  |  [fixer](.testsys-agents/roles/fixer.md)  |  Перепроверка и исправление выбранных замечаний отчёта, сборка и тесты |
+| [generate-localization](.testsys-agents/skills/generate-localization/SKILL.md)  |  [localization-generator](.testsys-agents/roles/localization-generator.md), [localization-reviewer](.testsys-agents/roles/localization-reviewer.md)  |  Добавление региона или заполнение недостающих переводов с `ru-RU`; существующие переводы меняются только по явному запросу |
+| [add-localization](.testsys-agents/skills/add-localization/SKILL.md)  |  Те же роли локализации  |  Создание и явное изменение исходных сообщений `ru-RU`, golden-проверки и независимое языковое ревью |
+| [testsys-design](.testsys-agents/skills/testsys-design/SKILL.md) | — | Интерфейсы на Vaadin/Kotlin DSL и явно запрошенные самостоятельные макеты |

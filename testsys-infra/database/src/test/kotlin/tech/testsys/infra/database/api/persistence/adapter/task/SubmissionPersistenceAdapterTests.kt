@@ -13,12 +13,12 @@ import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.user.SingleRoleUserId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
-class SubmissionPersistenceAdapterTests : PersistenceAdapterContractTests<SubmissionData, SubmissionId, Submission>() {
+class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<SubmissionData, SubmissionId, Submission>() {
 
     @Autowired
     override lateinit var repository: SubmissionRepository
@@ -102,7 +102,10 @@ class SubmissionPersistenceAdapterTests : PersistenceAdapterContractTests<Submis
         val found = assertNotNull(repository.findById(queued.id))
         assertSameEntity(graded, found)
         assertEquals(SubmissionStatus.InProgress, inProgress.data.status)
-        assertEquals(verdictId, assertIs<GradingResult.Success>(assertIs<SubmissionStatus.Graded>(found.data.status).grade).verdict.id.value)
+        assertEquals(
+            verdictId,
+            assertIs<GradingResult.Success>(assertIs<SubmissionStatus.Graded>(found.data.status).grade).verdict.id.value,
+        )
         assertEquals(contestId, assertIs<SubmissionKind.Grading>(found.data.kind).contest.id.value)
     }
 
@@ -131,10 +134,9 @@ class SubmissionPersistenceAdapterTests : PersistenceAdapterContractTests<Submis
     }
 
     @Test
-    fun `should project judgment orders from the orders issued for the verdicts of the submission`() {
+    fun `should project judgment orders from the orders issued for the submission`() {
         val saved = repository.save(newData())
-        val verdict = fixtures.verdict(saved)
-        val order = fixtures.judgmentOrder(verdict = verdict)
+        val order = fixtures.judgmentOrder(submission = saved)
         fixtures.judgmentOrder()
 
         val found = assertNotNull(repository.findById(saved.id))

@@ -10,7 +10,7 @@ import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.TrikStudioVersion
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import java.time.Duration
 import java.time.Instant
 import kotlin.test.assertEquals
@@ -18,7 +18,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
-class ContestPersistenceAdapterTests : PersistenceAdapterContractTests<ContestData, ContestId, Contest>() {
+class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<ContestData, ContestId, Contest>() {
 
     @Autowired
     override lateinit var repository: ContestRepository
@@ -129,11 +129,6 @@ class ContestPersistenceAdapterTests : PersistenceAdapterContractTests<ContestDa
         assertEquals(saved.data.trikStudioVersion, assertNotNull(repository.findById(saved.id)).data.trikStudioVersion)
     }
 
-    private companion object {
-
-        val STARTS_AT: Instant = Instant.parse("2026-09-04T10:00:00Z")
-    }
-
     @Test
     fun `should keep the owner if another owner is passed on update`() {
         val saved = repository.save(newData())
@@ -143,5 +138,10 @@ class ContestPersistenceAdapterTests : PersistenceAdapterContractTests<ContestDa
 
         assertEquals(saved.data.owner.id, updated.data.owner.id)
         assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
+    }
+
+    private companion object {
+
+        val STARTS_AT: Instant = Instant.parse("2026-09-04T10:00:00Z")
     }
 }

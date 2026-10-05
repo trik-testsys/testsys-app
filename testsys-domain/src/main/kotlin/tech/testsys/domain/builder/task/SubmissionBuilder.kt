@@ -16,6 +16,8 @@ import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TestVerdict
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
@@ -23,43 +25,31 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.UserId
 
 /**
- * Builder of [VerdictData]. Required: [score], [task], [submission].
+ * Builder of [TestVerdict]. Required: [score], [test], [logs].
  *
- * @property score the awarded score, or `null` if not set yet.
- * @property task the id of the graded task, or `null` if not set yet.
- * @property submission the id of the graded submission, or `null` if not set yet.
- * @property logs the id of the grading logs, or `null` if there are none.
+ * @property score the score awarded for the test, or `null` if not set yet.
+ * @property test the id of the test the solution was run on, or `null` if not set yet.
+ * @property logs the id of the grading logs of the run, or `null` if not set yet.
  * @property recording the id of the run recording, or `null` if there is none.
  * @since %CURRENT_VERSION%
  */
-class VerdictDataBuilder : Builder<VerdictData> {
+class TestVerdictBuilder : Builder<TestVerdict> {
 
     var score: Int? = null
 
-    var task: TaskId? = null
-
-    var submission: SubmissionId? = null
+    var test: TestId? = null
 
     var logs: LogsId? = null
 
     var recording: RecordingId? = null
 
     /**
-     * Sets [task] from a raw id.
+     * Sets [test] from a raw id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun task(task: Long) {
-        this.task = TaskId(task)
-    }
-
-    /**
-     * Sets [submission] from a raw id.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun submission(submission: Long) {
-        this.submission = SubmissionId(submission)
+    fun test(test: Long) {
+        this.test = TestId(test)
     }
 
     /**
@@ -80,17 +70,71 @@ class VerdictDataBuilder : Builder<VerdictData> {
         this.recording = RecordingId(recording)
     }
 
-    override fun build(): VerdictData {
+    override fun build(): TestVerdict {
         val score = requireField(score) { ::score }
+        val test = requireField(test) { ::test }
+        val logs = requireField(logs) { ::logs }
+
+        return TestVerdict(
+            score = Score(score),
+            test = test.lazify(),
+            logs = logs.lazify(),
+            recording = recording?.lazify(),
+        )
+    }
+}
+
+/**
+ * Builder of [VerdictData]. Required: [task], [submission], non-empty [testVerdicts].
+ *
+ * @property task the id of the graded task, or `null` if not set yet.
+ * @property submission the id of the graded submission, or `null` if not set yet.
+ * @property testVerdicts the outcomes of the runs on the task tests; at least one is required.
+ * @since %CURRENT_VERSION%
+ */
+class VerdictDataBuilder : Builder<VerdictData> {
+
+    var task: TaskId? = null
+
+    var submission: SubmissionId? = null
+
+    var testVerdicts = mutableListOf<TestVerdict>()
+
+    /**
+     * Sets [task] from a raw id.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun task(task: Long) {
+        this.task = TaskId(task)
+    }
+
+    /**
+     * Sets [submission] from a raw id.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun submission(submission: Long) {
+        this.submission = SubmissionId(submission)
+    }
+
+    /**
+     * Adds a [TestVerdict] built with a [TestVerdictBuilder] block to [testVerdicts].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun testVerdict(builder: TestVerdictBuilder.() -> Unit) {
+        testVerdicts.add(TestVerdictBuilder().apply(builder).build())
+    }
+
+    override fun build(): VerdictData {
         val task = requireField(task) { ::task }
         val submission = requireField(submission) { ::submission }
 
         return VerdictData(
-            score = Score(score),
             task = task.lazify(),
             submission = submission.lazify(),
-            logs = logs?.lazify(),
-            recording = recording?.lazify(),
+            testVerdicts = testVerdicts.toList(),
         )
     }
 }

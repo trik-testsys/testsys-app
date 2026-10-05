@@ -12,7 +12,6 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.localization.buildUiTexts
 import tech.testsys.web.components.navigation.CabinetHeader
@@ -94,7 +93,7 @@ class DemoResultMatrixTests {
         }
         session.state = session.state.copy(tasks = tasks, solutions = solutions)
         val context = DemoContext(session, "organizer.results", {}, {})
-        val view = object : TestSysView(buildUiTexts(SupportedRegion.RU)) {
+        val view = object : TestSysView(buildUiTexts()) {
             init {
                 page(CabinetHeader()) {
                     block("Результаты") { demoResultMatrix(context, actor, tour, listOf(participant)) }

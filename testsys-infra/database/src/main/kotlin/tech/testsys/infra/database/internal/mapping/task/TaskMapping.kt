@@ -9,11 +9,13 @@ import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskStatusJpaEnum
+import tech.testsys.infra.database.internal.jpa.entity.task.VersionBucketToTaskJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
 import tech.testsys.infra.database.internal.utils.populateFields
 import tech.testsys.infra.database.internal.utils.requireVersion
@@ -27,7 +29,8 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
 
     /**
-     * Assembles a [Task] from [jpaEntity], its stored content revisions [wip] and [committed] and [sharedToIds];
+     * Assembles a [Task] from [jpaEntity], its revisions [wip] and [committed], [sharedToIds] and
+     * the uploaded chains [uploadedResourceBuckets];
      * fails when a revision required by the status of [jpaEntity] is missing.
      *
      * @since %CURRENT_VERSION%
@@ -37,6 +40,7 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
         wip: TaskContentRevision?,
         committed: TaskContentRevision?,
         sharedToIds: List<CommunityId>,
+        uploadedResourceBuckets: Set<VersionBucket>,
     ): Task = task {
         populateFields(jpaEntity)
         data {
@@ -44,6 +48,7 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
             name = jpaEntity.name
             description = jpaEntity.description
             sharedTo = sharedToIds.toMutableList()
+            uploadedResources = uploadedResourceBuckets.toMutableSet()
 
             content.decodeContent(jpaEntity, wip, committed)
         }
@@ -100,6 +105,14 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
     fun toSharedToAssociations(taskId: Long, communityIds: List<CommunityId>) = communityIds.map {
         CommunityToTaskJpaEntity(communityId = it.value, taskId = taskId)
     }
+
+    /**
+     * Creates the [VersionBucketToTaskJpaEntity] rows linking [taskId] with [versionBuckets].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun toUploadedResourceAssociations(taskId: Long, versionBuckets: Set<VersionBucket>): List<VersionBucketToTaskJpaEntity> =
+        versionBuckets.map { VersionBucketToTaskJpaEntity(taskId = taskId, versionBucket = it.value) }
 
     /**
      * Maps the sealed variant of [content] to its [TaskStatusJpaEnum] discriminator.

@@ -3,7 +3,6 @@ package tech.testsys.domain.model.task
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import java.time.Instant
-import java.util.UUID
 
 /**
  * Identifier of an [Exercise].
@@ -20,9 +19,9 @@ value class ExerciseId(
  *
  * @property name the name of the exercise.
  * @property description the description of the exercise.
- * @property file the uploaded TRIK Studio program file.
- * @property language the programming language of the exercise program.
- * @property versionBucket the UUID shared by all versions of the same logical exercise;
+ * @property file the uploaded TRIK Studio program file; fixed on creation; update fails if it differs.
+ * @property language the programming language of the exercise program; fixed on creation; update fails if it differs.
+ * @property versionBucket the version chain shared by all versions of the same logical exercise;
  *   fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%
  */
@@ -31,7 +30,7 @@ class ExerciseData(
     val description: String,
     val file: FileData,
     val language: TrikSupportedLanguage,
-    val versionBucket: UUID,
+    val versionBucket: VersionBucket,
 )
 
 /**

@@ -7,7 +7,7 @@ import tech.testsys.domain.model.group.CompetitionData
 
 class CompetitionBuilderTests : DomainEntityBuilderTests<Competition, CompetitionData, CompetitionDataBuilder>(
     CompetitionBuilder(),
-    CompetitionDataBuilder()
+    CompetitionDataBuilder(),
 ) {
     override fun buildDataWithAllFields() = listOf(
         competitionData {

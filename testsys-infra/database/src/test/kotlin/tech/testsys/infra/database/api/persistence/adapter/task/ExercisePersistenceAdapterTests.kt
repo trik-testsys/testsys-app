@@ -10,17 +10,19 @@ import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.DatabaseFixtures.Companion.chose
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import java.util.UUID
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
-class ExercisePersistenceAdapterTests : PersistenceAdapterContractTests<ExerciseData, ExerciseId, Exercise>() {
+class ExercisePersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<ExerciseData, ExerciseId, Exercise>() {
 
     @Autowired
     override lateinit var repository: ExerciseRepository
@@ -33,14 +35,12 @@ class ExercisePersistenceAdapterTests : PersistenceAdapterContractTests<Exercise
         description = "Exercise description"
         file(fixtures.unique("exercise") + ".qrs", "exercise".toByteArray())
         language.python()
-        versionBucket = UUID.randomUUID()
+        versionBucket = VersionBucket(UUID.randomUUID())
     }
 
     override fun modified(entity: Exercise) = entity.withData {
         name = fixtures.unique("Renamed exercise")
         description = "Updated description"
-        file(fixtures.unique("exercise") + ".qrs", "changed exercise".toByteArray())
-        language.visualLanguage()
     }
 
     override fun detached(entity: Exercise) = exercise {
@@ -62,7 +62,8 @@ class ExercisePersistenceAdapterTests : PersistenceAdapterContractTests<Exercise
 
     @Test
     fun `should keep every language through a round trip`() {
-        val languages = listOf(TrikSupportedLanguage.Python, TrikSupportedLanguage.JavaScript, TrikSupportedLanguage.VisualLanguage)
+        val languages =
+            listOf(TrikSupportedLanguage.Python, TrikSupportedLanguage.JavaScript, TrikSupportedLanguage.VisualLanguage)
 
         val saved = languages.map { language ->
             repository.save(
@@ -71,7 +72,7 @@ class ExercisePersistenceAdapterTests : PersistenceAdapterContractTests<Exercise
                     description = "Exercise description"
                     file(fixtures.unique("exercise"), byteArrayOf(1, 2, 3))
                     this.language.chose(language)
-                    versionBucket = UUID.randomUUID()
+                    versionBucket = VersionBucket(UUID.randomUUID())
                 },
             )
         }
@@ -80,12 +81,55 @@ class ExercisePersistenceAdapterTests : PersistenceAdapterContractTests<Exercise
     }
 
     @Test
-    fun `should store a new file version on update with a changed file`() {
+    fun `should fail to update an exercise if the file content changed`() {
         val saved = repository.save(newData())
 
-        repository.update(saved.withData { file(saved.data.file.uploadedFilename, "changed".toByteArray()) })
+        assertFailsWith<UnsupportedOperationException> {
+            repository.update(saved.withData { file(saved.data.file.uploadedFilename, "changed exercise".toByteArray()) })
+        }
 
-        assertContentEquals("changed".toByteArray(), assertNotNull(repository.findById(saved.id)).data.file.content)
+        assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
+        assertEquals(1, fileDataJpaEntityRepository.count())
+    }
+
+    @Test
+    fun `should fail to update an exercise if the file was renamed`() {
+        val saved = repository.save(newData())
+
+        assertFailsWith<UnsupportedOperationException> {
+            repository.update(saved.withData { file("renamed.qrs", saved.data.file.content) })
+        }
+
+        assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
+        assertEquals(1, fileDataJpaEntityRepository.count())
+    }
+
+    @Test
+    fun `should fail to update an exercise if the language changed`() {
+        val saved = repository.save(newData())
+
+        assertFailsWith<UnsupportedOperationException> { repository.update(saved.withData { language.javaScript() }) }
+
+        assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
+    }
+
+    @Test
+    fun `should keep the file of the previous version when a new version is saved in the same bucket`() {
+        val previous = repository.save(newData())
+
+        val next = repository.save(
+            exerciseData {
+                name = previous.data.name
+                description = previous.data.description
+                file(fixtures.unique("exercise") + ".qrs", "changed exercise".toByteArray())
+                language.visualLanguage()
+                versionBucket = previous.data.versionBucket
+            },
+        )
+
+        assertSameEntity(previous, assertNotNull(repository.findById(previous.id)))
+        assertSameEntity(next, assertNotNull(repository.findById(next.id)))
+        assertEquals(previous.data.versionBucket, next.data.versionBucket)
         assertEquals(2, fileDataJpaEntityRepository.count())
     }
 
@@ -93,7 +137,7 @@ class ExercisePersistenceAdapterTests : PersistenceAdapterContractTests<Exercise
     fun `should keep the stored file on update with an unchanged file`() {
         val saved = repository.save(newData())
 
-        repository.update(saved.withData { language.javaScript() })
+        repository.update(saved.withData { description = "Only the description changed" })
 
         assertEquals(1, fileDataJpaEntityRepository.count())
     }
@@ -102,7 +146,7 @@ class ExercisePersistenceAdapterTests : PersistenceAdapterContractTests<Exercise
     fun `should keep the version bucket if another bucket is passed on update`() {
         val saved = repository.save(newData())
 
-        val updated = repository.update(saved.withData { versionBucket = UUID.randomUUID() })
+        val updated = repository.update(saved.withData { versionBucket = VersionBucket(UUID.randomUUID()) })
 
         assertEquals(saved.data.versionBucket, updated.data.versionBucket)
         assertEquals(saved.data.versionBucket, assertNotNull(repository.findById(saved.id)).data.versionBucket)

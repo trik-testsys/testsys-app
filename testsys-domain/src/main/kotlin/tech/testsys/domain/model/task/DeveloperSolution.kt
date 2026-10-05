@@ -4,7 +4,6 @@ import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import java.time.Instant
-import java.util.UUID
 
 /**
  * Identifier of a [DeveloperSolution].
@@ -21,9 +20,10 @@ value class DeveloperSolutionId(
  *
  * @property name the name of the developer solution.
  * @property description the description of the developer solution.
- * @property solution the reference program.
- * @property expectedScore the score the reference program is expected to get when graded against the task.
- * @property versionBucket the UUID shared by all versions of the same logical developer solution;
+ * @property solution the reference program; fixed on creation; update fails if it differs.
+ * @property expectedScore the score the reference program is expected to get when graded against the task;
+ *   fixed on creation; update fails if it differs.
+ * @property versionBucket the version chain shared by all versions of the same logical developer solution;
  *   fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%
  */
@@ -32,7 +32,7 @@ data class DeveloperSolutionData(
     val description: String,
     val solution: LazyEntity<SolutionId, Solution>,
     val expectedScore: Score,
-    val versionBucket: UUID,
+    val versionBucket: VersionBucket,
 )
 
 /**

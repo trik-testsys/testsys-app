@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.api.statement
 import tech.testsys.domain.builder.data
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.StatementJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
@@ -31,7 +32,7 @@ object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
 
             name = jpaEntity.name
             description = jpaEntity.description
-            versionBucket = jpaEntity.versionBucket
+            versionBucket = VersionBucket(jpaEntity.versionBucket)
         }
     }
 
@@ -44,19 +45,19 @@ object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
         name = data.name,
         description = data.description,
         fileDataId = fileDataId,
-        versionBucket = data.versionBucket,
+        versionBucket = data.versionBucket.value,
     )
 
     /**
-     * Creates the [StatementJpaEntity] row replacing [current] from [entity] and file [fileDataId],
-     * keeping `versionBucket`, `createdAt` and `version`.
+     * Creates the [StatementJpaEntity] row replacing [current] from [entity], keeping `fileDataId`, `versionBucket`,
+     * `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toJpaEntity(entity: Statement, current: StatementJpaEntity, fileDataId: Long) = StatementJpaEntity(
+    fun toJpaEntity(entity: Statement, current: StatementJpaEntity) = StatementJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
-        fileDataId = fileDataId,
+        fileDataId = current.fileDataId,
         versionBucket = current.versionBucket,
         id = entity.id.value,
     ).also {

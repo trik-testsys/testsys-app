@@ -11,7 +11,6 @@ dependencies {
     implementation(platform(libs.spring.boot.bom))
     implementation(platform(libs.vaadin.bom))
     implementation(project(":testsys-web:components"))
-    implementation(project(":testsys-infra:localization"))
     implementation(libs.vaadin.spring.boot.starter)
     implementation(libs.kotlin.reflect)
     developmentOnly(platform(libs.vaadin.bom))

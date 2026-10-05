@@ -4,7 +4,7 @@ import java.time.DayOfWeek
 import java.util.Locale
 
 /**
- * Built-in texts of the design system components, resolved by the application from its localization.
+ * Built-in texts of the design system components, supplied by the application.
  *
  * @property locale the locale of dates, times and numbers.
  * @property brand the accessible product name in the header and footer.

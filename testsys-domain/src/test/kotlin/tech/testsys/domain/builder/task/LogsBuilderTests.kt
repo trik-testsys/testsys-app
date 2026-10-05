@@ -7,9 +7,11 @@ import tech.testsys.domain.model.task.LogsData
 
 class LogsBuilderTests : DomainEntityBuilderTests<Logs, LogsData, LogsDataBuilder>(
     LogsBuilder(),
-    LogsDataBuilder()
+    LogsDataBuilder(),
 ) {
-    override fun buildDataWithAllFields() = listOf(logsData {
-        file("logs.txt", byteArrayOf(1, 2, 3))
-    })
+    override fun buildDataWithAllFields() = listOf(
+        logsData {
+            file("logs.txt", byteArrayOf(1, 2, 3))
+        },
+    )
 }

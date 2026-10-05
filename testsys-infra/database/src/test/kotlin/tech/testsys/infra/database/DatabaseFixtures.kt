@@ -61,6 +61,7 @@ import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
@@ -192,14 +193,10 @@ class DatabaseFixtures(
         return TrikStudioVersion(tag)
     }
 
-    fun solution(
-        language: TrikSupportedLanguage = TrikSupportedLanguage.Python,
-        versionBucket: UUID = UUID.randomUUID(),
-    ): Solution = solutions.save(
+    fun solution(language: TrikSupportedLanguage = TrikSupportedLanguage.Python): Solution = solutions.save(
         solutionData {
             file(unique("solution") + ".py", "print('solution')".toByteArray())
             this.language.chose(language)
-            this.versionBucket = versionBucket
         },
     )
 
@@ -208,7 +205,7 @@ class DatabaseFixtures(
             name = unique("Polygon")
             description = "Polygon description"
             file(unique("polygon") + ".xml", "<field/>".toByteArray())
-            versionBucket = UUID.randomUUID()
+            versionBucket = VersionBucket(UUID.randomUUID())
         },
     )
 
@@ -218,7 +215,7 @@ class DatabaseFixtures(
             description = "Exercise description"
             file(unique("exercise") + ".qrs", "exercise".toByteArray())
             this.language.chose(language)
-            versionBucket = UUID.randomUUID()
+            versionBucket = VersionBucket(UUID.randomUUID())
         },
     )
 
@@ -227,7 +224,7 @@ class DatabaseFixtures(
             name = unique("Statement")
             description = "Statement description"
             file(unique("statement") + ".pdf", "statement".toByteArray())
-            versionBucket = UUID.randomUUID()
+            versionBucket = VersionBucket(UUID.randomUUID())
         },
     )
 
@@ -239,18 +236,21 @@ class DatabaseFixtures(
                 description = "Developer solution description"
                 solution(solutionId)
                 expectedScore(100)
-                versionBucket = solution.data.versionBucket
+                versionBucket = VersionBucket(UUID.randomUUID())
             },
         )
     }
 
     fun task(owner: MultipleRoleUser = developer()): Task {
         val ownerId = owner.id.value
-        val exerciseId = exercise().id.value
-        val statementId = statement().id.value
+        val uploadedExercise = exercise()
+        val uploadedStatement = statement()
+        val exerciseId = uploadedExercise.id.value
+        val statementId = uploadedStatement.id.value
         return tasks.save(
             taskData {
                 owner(ownerId)
+                uploadedResources = mutableSetOf(uploadedExercise.data.versionBucket, uploadedStatement.data.versionBucket)
                 name = unique("Task")
                 description = "Task description"
                 content.committed {
@@ -290,25 +290,32 @@ class DatabaseFixtures(
         )
     }
 
-    fun verdict(submission: Submission = submission()): Verdict {
+    fun verdict(submission: Submission = submission(), polygon: Polygon = polygon()): Verdict {
         val submissionId = submission.id.value
         val taskId = submission.data.task.id.value
+        val polygonId = polygon.id.value
+        val logsId = logs().id.value
         return verdicts.save(
             verdictData {
-                score = 100
                 task(taskId)
                 submission(submissionId)
+                testVerdict {
+                    score = 100
+                    test(polygonId)
+                    logs(logsId)
+                }
             },
         )
     }
 
-    fun judgmentOrder(judge: MultipleRoleUser = judge(), verdict: Verdict = verdict()): JudgmentOrder {
+    fun judgmentOrder(judge: MultipleRoleUser = judge(), submission: Submission = submission()): JudgmentOrder {
         val judgeId = judge.id.value
-        val verdictId = verdict.id.value
+        val submissionId = submission.id.value
         return judgmentOrders.save(
             judgmentOrderData {
                 judge(judgeId)
-                verdict(verdictId)
+                submission(submissionId)
+                score = 50
                 reason = "Manual review"
             },
         )

@@ -15,8 +15,7 @@ import tech.testsys.infra.database.internal.mapping.task.SolutionMapping
 
 /**
  * Persistence adapter of [Solution] entities backed by [SolutionJpaEntity].
- * The solution file is stored through [FileDataStorage] in the version bucket of the solution;
- * a solution is fixed on creation, so [update] always fails.
+ * The solution file is stored through [FileDataStorage]; a solution is fixed on creation, so [update] always fails.
  *
  * @since %CURRENT_VERSION%
  */
@@ -30,7 +29,7 @@ class SolutionPersistenceAdapter(
 
     @Transactional
     override fun save(data: SolutionData): Solution {
-        val fileDataId = fileDataStorage.store(data.file, data.versionBucket)
+        val fileDataId = fileDataStorage.store(data.file)
         val savedJpaEntity = jpaEntityRepository.save(SolutionMapping.toJpaEntity(data, fileDataId))
 
         val domainEntity = SolutionMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)

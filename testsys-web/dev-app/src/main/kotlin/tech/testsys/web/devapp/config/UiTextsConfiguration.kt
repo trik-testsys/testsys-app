@@ -2,7 +2,6 @@ package tech.testsys.web.devapp.config
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.localization.buildUiTexts
 
@@ -19,5 +18,5 @@ class UiTextsConfiguration {
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun uiTexts(): UiTexts = buildUiTexts(SupportedRegion.RU)
+    fun uiTexts(): UiTexts = buildUiTexts()
 }

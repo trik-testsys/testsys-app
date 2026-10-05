@@ -9,11 +9,11 @@ import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityData
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class CommunityPersistenceAdapterTests : PersistenceAdapterContractTests<CommunityData, CommunityId, Community>() {
+class CommunityPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<CommunityData, CommunityId, Community>() {
 
     @Autowired
     override lateinit var repository: CommunityRepository

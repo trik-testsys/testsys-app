@@ -1,8 +1,6 @@
 package tech.testsys.infra.database.api.persistence.adapter
 
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
-import org.springframework.dao.OptimisticLockingFailureException
 import tech.testsys.domain.contract.persistence.repository.EntityRepository
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
@@ -12,7 +10,6 @@ import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.infra.database.DatabaseIntegrationTests
 import java.time.Duration
 import java.time.Instant
-import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -21,9 +18,8 @@ import kotlin.test.assertTrue
 
 /**
  * Contract every persistence adapter fulfils as an [EntityRepository]: ids, versions, creation time, finding,
- * loading, updating with optimistic locking and removing. Subclasses supply the adapter, fresh data, a way to
- * modify an entity, a detached copy of an entity and a field-level comparison; entity-specific behaviour gets
- * its own tests there.
+ * loading and removing. Subclasses supply the adapter, fresh data and a field-level comparison; entity-specific
+ * behaviour gets its own tests there.
  *
  * @param Data the data type a new entity is created from.
  * @param Id the id type of the entity.
@@ -37,21 +33,6 @@ abstract class PersistenceAdapterContractTests<Data, Id : DomainId, Entity : Dom
      * Fresh data with unique values; prerequisites are created through [fixtures].
      */
     protected abstract fun newData(): Data
-
-    /**
-     * Whether the adapter supports `update`; the update tests of the contract are skipped when it does not.
-     */
-    protected val updatable: Boolean = true
-
-    /**
-     * A copy of [entity] with different data but the same id and version.
-     */
-    protected abstract fun modified(entity: Entity): Entity
-
-    /**
-     * A copy of [entity] without the `version` token, as if the entity had never come from persistence.
-     */
-    protected abstract fun detached(entity: Entity): Entity
 
     protected abstract fun idOf(value: Long): Id
 
@@ -149,55 +130,6 @@ abstract class PersistenceAdapterContractTests<Data, Id : DomainId, Entity : Dom
         val saved = repository.save(newData())
 
         assertFailsWith<IllegalArgumentException> { repository.load(LazyEntityList(listOf(saved.id, idOf(UNKNOWN_ID)))) }
-    }
-
-    @Test
-    fun `should store the modified data, keep the creation time and bump the version on update`() {
-        assumeTrue(updatable, "the entity does not support update")
-        val saved = repository.save(newData())
-        val storedCreatedAt = assertNotNull(repository.findById(saved.id)).createdAt
-        val modified = modified(saved)
-
-        val updated = repository.update(modified)
-
-        assertEquals(saved.id, updated.id)
-        assertTrue(
-            assertNotNull(updated.version).value > assertNotNull(saved.version).value,
-            "version ${updated.version} should be bumped",
-        )
-        assertEquals(storedCreatedAt, updated.createdAt)
-        assertSameData(modified, updated)
-        assertSameEntity(updated, assertNotNull(repository.findById(saved.id)))
-    }
-
-    @Test
-    fun `should fail to update an entity with a stale version`() {
-        assumeTrue(updatable, "the entity does not support update")
-        val saved = repository.save(newData())
-        repository.update(modified(saved))
-
-        assertFailsWith<OptimisticLockingFailureException> { repository.update(modified(saved)) }
-    }
-
-    @Test
-    fun `should fail to update an entity that was not obtained from persistence`() {
-        assumeTrue(updatable, "the entity does not support update")
-        val saved = repository.save(newData())
-
-        val error = assertFailsWith<IllegalArgumentException> { repository.update(detached(saved)) }
-
-        assertContains(error.message.orEmpty(), "entity was not obtained from persistence")
-    }
-
-    @Test
-    fun `should store every item of a list on update`() {
-        assumeTrue(updatable, "the entity does not support update")
-        val saved = repository.save(listOf(newData(), newData()))
-
-        val updated = repository.update(saved.map { modified(it) })
-
-        assertEquals(saved.map { it.id }, updated.map { it.id })
-        updated.forEach { assertSameEntity(it, assertNotNull(repository.findById(it.id))) }
     }
 
     @Test

@@ -2,11 +2,12 @@ package tech.testsys.web.components.localization
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import tech.testsys.infra.localization.bundle.SupportedRegion
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import java.time.DayOfWeek
 
 class UiTextsFactoryTests {
-    private val texts = buildUiTexts(SupportedRegion.RU)
+    private val texts = buildUiTexts()
 
     @Test
     internal fun `should localize the filter disclosure and its actions`() {
@@ -55,17 +56,20 @@ class UiTextsFactoryTests {
     }
 
     @Test
-    fun `should take calendar names and first weekday from ICU`() {
+    fun `should take calendar names and first weekday from the standard locale data`() {
         assertEquals(12, texts.calendar.monthNames.size)
         assertEquals("Январь", texts.calendar.monthNames.first())
         assertEquals(7, texts.calendar.weekdays.size)
         assertEquals(7, texts.calendar.weekdaysShort.size)
+        assertEquals("воскресенье", texts.calendar.weekdays.first())
+        assertEquals("вс", texts.calendar.weekdaysShort.first())
+        assertEquals("пн", texts.calendar.weekdaysShort[1])
         assertEquals(DayOfWeek.MONDAY, texts.calendar.firstDayOfWeek)
         assertEquals("dd.MM.yyyy", texts.calendar.dateFormat)
     }
 
     @Test
-    fun `should take built-in texts from the localization`() {
+    fun `should take built-in texts from the Russian text factory`() {
         assertEquals("Войти", texts.signIn)
         assertEquals("Изменить", texts.editing.start)
         assertEquals("Нет данных", texts.table.empty)
@@ -75,14 +79,14 @@ class UiTextsFactoryTests {
     }
 
     @Test
-    fun `should take pagination texts from the localization`() {
+    fun `should take pagination texts from the Russian text factory`() {
         assertEquals("Назад", texts.pagination.previous)
         assertEquals("Вперёд", texts.pagination.next)
         assertEquals("Страница 1 412", texts.pagination.page(1412))
     }
 
     @Test
-    fun `should take multi-value lookup texts from the localization`() {
+    fun `should take multi-value lookup texts from the Russian text factory`() {
         assertEquals("Убрать Кубок 1", texts.lookup.remove("Кубок 1"))
         assertEquals("Сбросить", texts.lookup.reset)
         assertEquals("Применить", texts.lookup.apply)
@@ -90,12 +94,54 @@ class UiTextsFactoryTests {
     }
 
     @Test
-    fun `should take navigation, menu and load failure texts from the localization`() {
+    fun `should take navigation, menu and load failure texts from the Russian text factory`() {
         assertEquals("Навигационная цепочка", texts.navigation.breadcrumbs)
         assertEquals("Разделы", texts.navigation.sections)
         assertEquals("Действия", texts.menu.actions)
         assertEquals("Не удалось загрузить", texts.load.failed)
         assertEquals("Попробуйте ещё раз", texts.load.failedHint)
         assertEquals("Повторить", texts.load.retry)
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "0, Ещё 0 участников",
+        "1, Ещё 1 участник",
+        "2, Ещё 2 участника",
+        "5, Ещё 5 участников",
+        "11, Ещё 11 участников",
+        "21, Ещё 21 участник",
+        "22, Ещё 22 участника",
+        "25, Ещё 25 участников",
+        "1412, Ещё 1 412 участников",
+    )
+    internal fun `should preserve Russian avatar count forms at plural boundaries`(count: Int, expected: String) {
+        assertEquals(expected, texts.components.avatarOverflow(count))
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "0, Получено 0 новых уведомлений",
+        "1, Получено 1 новое уведомление",
+        "2, Получено 2 новых уведомления",
+        "5, Получено 5 новых уведомлений",
+        "11, Получено 11 новых уведомлений",
+        "21, Получено 21 новое уведомление",
+        "22, Получено 22 новых уведомления",
+        "25, Получено 25 новых уведомлений",
+    )
+    internal fun `should preserve Russian arrival count forms at plural boundaries`(count: Int, expected: String) {
+        assertEquals(expected, texts.header.arrivalCount(count))
+    }
+
+    @ParameterizedTest
+    @CsvSource("1, файла", "2, файлов", "5, файлов", "11, файлов", "21, файла", "22, файлов", "25, файлов")
+    internal fun `should preserve Russian upload limit forms and byte grouping`(count: Int, files: String) {
+        assertEquals("До $count $files, до 1 412 Б каждый", texts.components.uploadLimits(count, 1412))
+    }
+
+    @Test
+    internal fun `should format transferred byte counts beyond the integer range`() {
+        assertEquals("Передано: 2 147 483 648 Б", texts.components.transferBytes(2_147_483_648))
     }
 }

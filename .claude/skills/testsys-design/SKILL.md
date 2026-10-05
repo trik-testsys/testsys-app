@@ -1,1 +1,0 @@
-../../../.agents/skills/testsys-design/SKILL.md

@@ -152,6 +152,7 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 - [db.changelog-master.yaml](../../testsys-infra/database/src/main/resources/db/changelog/db.changelog-master.yaml)
   подключает каталог версии, а [changelog.master.xml](../../testsys-infra/database/src/main/resources/db/changelog/changes/1.0.0/changelog.master.xml)
   внутри версии перечисляет файлы в порядке применения — новый файл нужно в него добавить.
+  В `include` указывайте полный путь от корня ресурсов (`db/changelog/changes/<версия>/...`).
 
 ## 8. Маппинг
 
@@ -187,6 +188,10 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   с `current`, сохранить через `saveAndFlush` (иначе конфликт версий всплывёт не там, где ожидается),
   затем синхронизировать join-таблицы через `syncJoinTable(...)` из
   [PersistenceUtils.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/utils/PersistenceUtils.kt).
+  Поле, при изменении которого `update` должен падать (раздел «Модель» в
+  [testsys-domain/README.md](../../testsys-domain/README.md)), проверяется до сохранения через `requireUnchanged`,
+  файл Ресурса — через `requireSameFile` из
+  [FixedFieldGuards.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/FixedFieldGuards.kt).
 - `assemble(jpaEntity)` — собрать доменный объект из строки, дочитав идентификаторы связей и справочники.
 
 Если у сущности есть join-таблицы, может дополнительно потребоваться переопределить `removeById`/`removeByIds`, если строки связей
@@ -202,17 +207,21 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 | Билдер               | `DomainEntityBuilderTests`             | Только `buildDataWithAllFields()`                           | [ContestBuilderTests.kt](../../testsys-domain/src/test/kotlin/tech/testsys/domain/builder/task/ContestBuilderTests.kt) |
 | `withData`           | `{Group,Task,User}ApiTests`            | `@Nested inner class XTests`: поля и токен `version` не теряются, поля изменяются | `ContestTests` в [TaskApiTests.kt](../../testsys-domain/src/test/kotlin/tech/testsys/domain/builder/api/TaskApiTests.kt) |
 | Маппинг              | `EntityMappingTests<XMapping>`         | Только `override val mapping = XMapping`                    | [ContestMappingTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/internal/mapping/task/ContestMappingTests.kt) |
-| Адаптер              | `PersistenceAdapterContractTests`      | `newData()`, `modified()`, `detached()`, `idOf()`, `assertSameData()` + свои тесты | [ContestPersistenceAdapterTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapterTests.kt) |
+| Адаптер              | `UpdatablePersistenceAdapterContractTests` | `newData()`, `modified()`, `detached()`, `idOf()`, `assertSameData()` + свои тесты | [ContestPersistenceAdapterTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapterTests.kt) |
 | Фикстура             | —                                      | Метод `fun x(...): X`                                       | [DatabaseFixtures.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/DatabaseFixtures.kt) |
 
 - `DomainEntityBuilderTests` сам проверяет, что `build()` падает без обязательных полей, а с ними — нет.
   Возвращайте из `buildDataWithAllFields()` несколько вариантов: минимальный и со всеми опциональными полями.
-- `PersistenceAdapterContractTests` даёт весь контракт репозитория (идентификаторы, версии, поиск, загрузку,
-  оптимистическую блокировку, удаление). В `modified()` меняйте **все** изменяемые поля, включая связи,
+- `UpdatablePersistenceAdapterContractTests` даёт весь контракт репозитория (идентификаторы, версии, поиск,
+  загрузку, оптимистическую блокировку, удаление). В `modified()` меняйте **все** изменяемые поля, включая связи,
   иначе часть `update` останется непроверенной. Поля, фиксируемые при создании, в `modified()` не меняются:
-  для них пишется отдельный `@Test`, что `update` с другим значением оставляет сохранённое. Если при создании
-  фиксируются все поля сущности, её адаптер не поддерживает `update`: тест объявляет `updatable = false`
-  и отдельным `@Test` проверяет отказ (образец — `SolutionPersistenceAdapterTests`). Специфика сущности
+  для них пишется отдельный `@Test`, что `update` с другим значением оставляет сохранённое. Если `update`
+  с другим значением такого поля падает (файл версионируемого Ресурса, см. раздел «Модель» в
+  [testsys-domain/README.md](../../testsys-domain/README.md)), отдельный `@Test` проверяет отказ и то, что
+  сохранённое не изменилось (образец — `TestPersistenceAdapterTests`). Если при создании
+  фиксируются все поля сущности, её адаптер не поддерживает `update`: тест наследует
+  `PersistenceAdapterContractTests` — тот же контракт без `update` — и отдельным `@Test` проверяет отказ
+  (образец — `SolutionPersistenceAdapterTests`). Специфика сущности
   оформляется отдельными `@Test` в том же классе.
 - Прочие сущности для теста создаются только через `fixtures`, а не руками; всё уникальное — через
   `fixtures.unique(...)`. Фикстура новой сущности пишется так же: через её же адаптер.

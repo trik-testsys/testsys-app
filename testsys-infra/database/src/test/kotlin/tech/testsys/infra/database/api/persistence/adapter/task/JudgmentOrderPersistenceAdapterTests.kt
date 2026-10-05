@@ -9,26 +9,30 @@ import tech.testsys.domain.contract.persistence.repository.JudgmentOrderReposito
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderData
 import tech.testsys.domain.model.task.JudgmentOrderId
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
-class JudgmentOrderPersistenceAdapterTests : PersistenceAdapterContractTests<JudgmentOrderData, JudgmentOrderId, JudgmentOrder>() {
+class JudgmentOrderPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<JudgmentOrderData, JudgmentOrderId, JudgmentOrder>() {
 
     @Autowired
     override lateinit var repository: JudgmentOrderRepository
 
     override fun newData(): JudgmentOrderData {
         val judgeId = fixtures.judge().id.value
-        val verdictId = fixtures.verdict().id.value
+        val submissionId = fixtures.submission().id.value
         return judgmentOrderData {
             judge(judgeId)
-            verdict(verdictId)
+            submission(submissionId)
+            score = 50
             reason = "Manual review"
         }
     }
 
-    override fun modified(entity: JudgmentOrder) = entity.withData { reason = "Clarified after an appeal" }
+    override fun modified(entity: JudgmentOrder) = entity.withData {
+        score = 75
+        reason = "Clarified after an appeal"
+    }
 
     override fun detached(entity: JudgmentOrder) = judgmentOrder {
         id = entity.id.value
@@ -40,27 +44,28 @@ class JudgmentOrderPersistenceAdapterTests : PersistenceAdapterContractTests<Jud
 
     override fun assertSameData(expected: JudgmentOrder, actual: JudgmentOrder) {
         assertEquals(expected.data.judge.id, actual.data.judge.id)
-        assertEquals(expected.data.verdict.id, actual.data.verdict.id)
+        assertEquals(expected.data.submission.id, actual.data.submission.id)
+        assertEquals(expected.data.score, actual.data.score)
         assertEquals(expected.data.reason, actual.data.reason)
     }
 
     @Test
-    fun `should keep the judge and verdict if other ones are passed on update`() {
+    fun `should keep the judge and submission if other ones are passed on update`() {
         val saved = repository.save(newData())
         val otherJudgeId = fixtures.judge().id.value
-        val otherVerdictId = fixtures.verdict().id.value
+        val otherSubmissionId = fixtures.submission().id.value
 
         val updated = repository.update(
             saved.withData {
                 judge(otherJudgeId)
-                verdict(otherVerdictId)
+                submission(otherSubmissionId)
             },
         )
 
         val found = assertNotNull(repository.findById(saved.id))
         assertEquals(saved.data.judge.id, updated.data.judge.id)
-        assertEquals(saved.data.verdict.id, updated.data.verdict.id)
+        assertEquals(saved.data.submission.id, updated.data.submission.id)
         assertEquals(saved.data.judge.id, found.data.judge.id)
-        assertEquals(saved.data.verdict.id, found.data.verdict.id)
+        assertEquals(saved.data.submission.id, found.data.submission.id)
     }
 }

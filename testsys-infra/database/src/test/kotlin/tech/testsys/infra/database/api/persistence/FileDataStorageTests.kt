@@ -2,8 +2,8 @@ package tech.testsys.infra.database.api.persistence
 
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import tech.testsys.domain.builder.api.logsData
 import tech.testsys.domain.contract.FileBlobStorage
@@ -11,13 +11,11 @@ import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.FileDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
-import java.security.MessageDigest
-import java.util.HexFormat
 import java.util.Optional
-import java.util.UUID
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 @OptIn(InternalDatabaseApi::class)
 class FileDataStorageTests {
@@ -26,54 +24,62 @@ class FileDataStorageTests {
     private val fileBlobStorage = mockk<FileBlobStorage>()
     private val storage = FileDataStorage(fileDataJpaEntityRepository, fileBlobStorage)
 
-    private val storedContents = mutableListOf<ByteArray>()
-    private val savedRows = mutableListOf<FileDataJpaEntity>()
+    @Nested
+    inner class StoreTests {
 
-    @BeforeEach
-    fun setUp() {
-        every { fileDataJpaEntityRepository.findById(CURRENT_ID) } returns Optional.of(currentRow())
-        every { fileBlobStorage.store(capture(storedContents)) } returns StoredBlobRef(STORED_KEY)
-        every { fileDataJpaEntityRepository.save(capture(savedRows)) } answers {
-            val row = firstArg<FileDataJpaEntity>()
-            FileDataJpaEntity(row.uploadedFileName, row.storedFileName, row.versionBucket, row.contentHash, id = NEW_ID)
+        private val storedContents = mutableListOf<ByteArray>()
+        private val savedRows = mutableListOf<FileDataJpaEntity>()
+
+        @BeforeEach
+        fun setUp() {
+            every { fileBlobStorage.store(capture(storedContents)) } returns StoredBlobRef(STORED_KEY)
+            every { fileDataJpaEntityRepository.save(capture(savedRows)) } answers {
+                val row = firstArg<FileDataJpaEntity>()
+                FileDataJpaEntity(row.uploadedFileName, row.storedFileName, row.contentHash, id = NEW_ID)
+            }
+        }
+
+        @Test
+        fun `should store the content as a blob and a row with the name, blob key and content hash`() {
+            val result = storage.store(fileData(CURRENT_NAME, CURRENT_CONTENT))
+
+            assertEquals(NEW_ID, result)
+            assertContentEquals(CURRENT_CONTENT, storedContents.single())
+            val savedRow = savedRows.single()
+            assertEquals(CURRENT_NAME, savedRow.uploadedFileName)
+            assertEquals(STORED_KEY, savedRow.storedFileName)
+            assertEquals(CURRENT_CONTENT_HASH, savedRow.contentHash)
         }
     }
 
-    @Test
-    fun `should return the current id and store nothing if the file is unchanged`() {
-        val result = storage.storeIfChanged(CURRENT_ID, fileData(CURRENT_NAME, CURRENT_CONTENT))
+    @Nested
+    inner class MatchesTests {
 
-        assertEquals(CURRENT_ID, result)
-        verify(exactly = 0) { fileBlobStorage.store(any()) }
-        verify(exactly = 0) { fileDataJpaEntityRepository.save(any()) }
-    }
+        @BeforeEach
+        fun setUp() {
+            every { fileDataJpaEntityRepository.findById(CURRENT_ID) } returns Optional.of(currentRow())
+        }
 
-    @Test
-    fun `should store once and return a new id if the content changed`() {
-        val changedContent = "changed".toByteArray()
+        @Test
+        fun `should match the stored file if name and content are equal`() {
+            val isMatch = storage.matches(CURRENT_ID, fileData(CURRENT_NAME, CURRENT_CONTENT))
 
-        val result = storage.storeIfChanged(CURRENT_ID, fileData(CURRENT_NAME, changedContent))
+            assertTrue(isMatch)
+        }
 
-        assertEquals(NEW_ID, result)
-        assertContentEquals(changedContent, storedContents.single())
-        val savedRow = savedRows.single()
-        assertEquals(CURRENT_NAME, savedRow.uploadedFileName)
-        assertEquals(STORED_KEY, savedRow.storedFileName)
-        assertEquals(sha256Hex(changedContent), savedRow.contentHash)
-        assertNotEquals(CURRENT_BUCKET, savedRow.versionBucket)
-    }
+        @Test
+        fun `should not match the stored file if the content changed`() {
+            val isMatch = storage.matches(CURRENT_ID, fileData(CURRENT_NAME, "changed".toByteArray()))
 
-    @Test
-    fun `should store once and return a new id if the filename changed`() {
-        val result = storage.storeIfChanged(CURRENT_ID, fileData(RENAMED_NAME, CURRENT_CONTENT))
+            assertFalse(isMatch)
+        }
 
-        assertEquals(NEW_ID, result)
-        assertContentEquals(CURRENT_CONTENT, storedContents.single())
-        val savedRow = savedRows.single()
-        assertEquals(RENAMED_NAME, savedRow.uploadedFileName)
-        assertEquals(STORED_KEY, savedRow.storedFileName)
-        assertEquals(sha256Hex(CURRENT_CONTENT), savedRow.contentHash)
-        assertNotEquals(CURRENT_BUCKET, savedRow.versionBucket)
+        @Test
+        fun `should not match the stored file if the filename changed`() {
+            val isMatch = storage.matches(CURRENT_ID, fileData(RENAMED_NAME, CURRENT_CONTENT))
+
+            assertFalse(isMatch)
+        }
     }
 
     private fun fileData(name: String, content: ByteArray) = logsData { file(name, content) }.file
@@ -81,13 +87,9 @@ class FileDataStorageTests {
     private fun currentRow() = FileDataJpaEntity(
         uploadedFileName = CURRENT_NAME,
         storedFileName = STORED_KEY,
-        versionBucket = CURRENT_BUCKET,
-        contentHash = sha256Hex(CURRENT_CONTENT),
+        contentHash = CURRENT_CONTENT_HASH,
         id = CURRENT_ID,
     )
-
-    private fun sha256Hex(content: ByteArray): String =
-        HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content))
 
     companion object {
 
@@ -96,7 +98,7 @@ class FileDataStorageTests {
         private const val CURRENT_NAME = "solution.qrs"
         private const val RENAMED_NAME = "renamed.txt"
         private const val STORED_KEY = "stored-key"
+        private const val CURRENT_CONTENT_HASH = "97b0560280ed60a5a1eaa1bc45492543c8a986ad5a25b468c427eb83c3e88191"
         private val CURRENT_CONTENT = "current".toByteArray()
-        private val CURRENT_BUCKET: UUID = UUID.fromString("00000000-0000-0000-0000-000000000001")
     }
 }

@@ -19,7 +19,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Student
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.AdministratorDataJpaEntityRepository
@@ -34,7 +34,7 @@ import kotlin.test.assertTrue
 
 @OptIn(InternalDatabaseApi::class)
 class MultipleRoleUserPersistenceAdapterTests :
-    PersistenceAdapterContractTests<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>() {
+    UpdatablePersistenceAdapterContractTests<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>() {
 
     @Autowired
     override lateinit var repository: MultipleRoleUserRepository

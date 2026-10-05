@@ -39,14 +39,14 @@ testsys-app/
 | `testsys-operation`                  | Операции — реализация пользовательских фич из [features.md](../domain/features.md), по классу на Роль или группу Пользователей. | В разработке      |
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
 | `testsys-infra:grpc`                 | Связь с внешним грейдером решений TRIK Studio (реализация порта `Grader`).                           | Заготовка (пусто) |
-| `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из ICU-паттернов.                          | Реализован        |
+| `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
 | `testsys-web:app` | Основное приложение Vaadin Flow: точка входа, конфигурация и маршрутизация ошибок, см. [app/README.md](../../testsys-web/app/README.md). | Каркас; предметных страниц Кабинетов нет |
 | `testsys-web:components` | Kotlin-DSL, общая фабрика текстов и визуальная часть 404, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
 | `testsys-web:dev-app` | Самостоятельная витрина компонентов и демонстраций, см. [dev-app/README.md](../../testsys-web/dev-app/README.md). | Реализован |
 
 Отсутствующие маршруты обрабатывает `testsys-web/app/src/main/kotlin/tech/testsys/web/app/error/NotFoundView.kt`
 через штатный `HasErrorParameter<NotFoundException>` с кодом 404 во всех профилях. Экран показывает бренд,
-локализованные заголовок, пояснение и действие «Назад» по истории браузера; до определения истории и без предыдущей
+русские заголовок, пояснение и действие «Назад» по истории браузера; до определения истории и без предыдущей
 записи кнопка недоступна. Ссылки на выдуманную главную, подробностей исключения и списка dev-маршрутов нет.
 У `dev-app` есть собственный тонкий обработчик той же страницы; общая визуальная реализация —
 `components.error.NotFoundPage`. В `app` витрины нет даже с профилем `dev`. В `dev-app`
@@ -65,15 +65,16 @@ testsys-app/
 - `testsys-domain` ни от чего не зависит. Любой новый код, которому нужен Spring, JPA или сеть, живёт вне домена.
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
 - Сейчас в Gradle прописаны связи `operation → domain`, `database → domain`, `database → codegen-api`,
-  `database → codegen` (через `ksp`), `app → components`, `dev-app → components`,
-  `components → localization`, `app → localization` и `dev-app → localization`. Остальные связи — целевая архитектура.
+  `database → codegen` (через `ksp`), `app → components` и `dev-app → components`.
+  Остальные связи — целевая архитектура.
 
 ## Сборка
 
 - `settings.gradle.kts` — список модулей. Модуль, не попавший в него, не собирается, и его тесты не запускаются.
 - `buildSrc/src/main/kotlin/testsys.conventions.gradle.kts` — общий плагин, который подключает каждый модуль:
   Kotlin JVM 21, `allWarningsAsErrors = true`, JUnit Platform, Detekt (`detekt.yml`, `autoCorrect = true`,
-  `build/generated/` исключён). Задача `check` зависит от `detektMain`. Detekt — версии 2 (плагин `dev.detekt`,
+  `build/generated/` исключён). Задача `check` зависит от общего агрегатора `detekt`.
+  Detekt — версии 2 (плагин `dev.detekt`,
   пока альфа — единственная ветка Detekt с поддержкой Kotlin 2.4); вместо `build.maxIssues` сборку валит
   `failOnSeverity = FailOnSeverity.Info` (падает на замечании любой значимости), а правила ktlint подключены через
   `dev.detekt:detekt-rules-ktlint-wrapper` вместо устаревшего `detekt-formatting`.
@@ -88,6 +89,14 @@ testsys-app/
   [localization/README.md](../../testsys-infra/localization/README.md)), в `testsys-web:components` — сохранение временных
   меток файлов jar. Общая политика frontend применяется helper-ом; см. [Сборка веб-приложений](#сборка-веб-приложений).
 
+Агрегатор `detekt` лениво подключает все задачи анализа source set, автоматически создаваемые плагином Detekt,
+включая тесты и дополнительные source set, объявленные модулем после применения конвенций. Каждая такая задача
+проверяет свои исходники со своим classpath и разрешением типов; у агрегатора источник пуст, поэтому повторного
+анализа нет. Конфигурация задаётся через расширение Detekt, отчёты SARIF включены для всех задач анализа.
+
+Агрегатор `testAll` лениво подключает все задачи типа `Test`, включая дополнительные наборы тестов модулей.
+Он запускает тесты без Detekt; `build` и `check` сохраняют полную проверку.
+
 Полная сборка — компиляция, тесты и Detekt:
 
 ```bash
@@ -98,7 +107,7 @@ testsys-app/
 просмотрите `git diff`:
 
 ```bash
-./gradlew detektMain
+./gradlew detekt
 ```
 
 Чтобы проверить код, не изменяя файлы (например, при ревью), передайте свойство `detekt.autoCorrect=false`.
@@ -106,6 +115,12 @@ testsys-app/
 
 ```bash
 ./gradlew build -Pdetekt.autoCorrect=false
+```
+
+Все тесты без анализа кода:
+
+```bash
+./gradlew testAll -Pdetekt.autoCorrect=false
 ```
 
 ### Сборка веб-приложений
@@ -161,8 +176,8 @@ Workflow лежат в `.github/workflows`.
 | Workflow                  | Когда                          | Что делает                                                      |
 |---------------------------|--------------------------------|-----------------------------------------------------------------|
 | `build.yml`               | push/PR в `master`, `dev`      | `./gradlew assemble` — компиляция и сборка без тестов, jar-артефакты, аннотации ошибок компиляции в PR |
-| `test.yml`                | push/PR в `master`, `dev`      | `./gradlew check -x detekt -x detektMain` — все тесты; отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
-| `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detektMain -Pdetekt.autoCorrect=false --continue` — Detekt по всем модулям без правки файлов; таблица замечаний в Summary запуска, загрузка SARIF в GitHub Security |
+| `test.yml`                | push/PR в `master`, `dev`      | `./gradlew testAll -Pdetekt.autoCorrect=false --no-daemon` — все тесты без Detekt; отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
+| `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detekt -Pdetekt.autoCorrect=false --continue --no-daemon` — все source set всех модулей без правки файлов; таблица замечаний в Summary запуска, загрузка SARIF в GitHub Security с отдельной категорией на модуль и задачу |
 | `check-source-branch.yml` | PR в `dev`                     | Разрешает PR только из веток `sh1sh4k1n9/`, `ch3zych3z/`, `KarasssDev/`, `DirewolfPrime/`, `LutovolkVPraime/` |
 | `release.yml`             | —                              | Пока пустой                                                     |
 

@@ -196,6 +196,8 @@ naming:
       - 'Default.*'
   FunctionNaming:
     active: true
+    # Test names are sentences in backticks (docs/project/unit-tests.md).
+    ignoreAnnotated: ['Test', 'ParameterizedTest']
   FunctionParameterNaming:
     active: true
   InvalidPackageDeclaration:
@@ -270,6 +272,8 @@ style:
     active: true
     ignoreEnums: true
     ignoreExtensionFunctions: false
+    # Test data states its expected values literally (docs/project/unit-tests.md).
+    excludes: ['**/test/**', '**/codegenTest/**']
   MandatoryBracesLoops:
     active: true
   MaxLineLength:
@@ -323,6 +327,8 @@ style:
     active: true
   UnnecessaryInnerClass:
     active: true
+    # Tests of one method are grouped in `@Nested inner class` (docs/project/unit-tests.md).
+    ignoreAnnotated: ['Nested']
   UnnecessaryLet:
     active: true
   UnusedImport:

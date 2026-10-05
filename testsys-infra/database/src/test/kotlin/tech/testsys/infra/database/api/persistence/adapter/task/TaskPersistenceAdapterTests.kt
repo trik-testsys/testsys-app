@@ -2,9 +2,11 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.dao.DataIntegrityViolationException
 import tech.testsys.domain.builder.api.task
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.Task
@@ -13,18 +15,19 @@ import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.WipTaskContent
-import tech.testsys.infra.database.api.persistence.adapter.PersistenceAdapterContractTests
+import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.CommunityToTaskJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TaskContentJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TestToTaskContentJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.VersionBucketToTaskJpaEntityRepository
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
-class TaskPersistenceAdapterTests : PersistenceAdapterContractTests<TaskData, TaskId, Task>() {
+class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<TaskData, TaskId, Task>() {
 
     @Autowired
     override lateinit var repository: TaskRepository
@@ -37,6 +40,12 @@ class TaskPersistenceAdapterTests : PersistenceAdapterContractTests<TaskData, Ta
 
     @Autowired
     private lateinit var communityToTaskJpaEntityRepository: CommunityToTaskJpaEntityRepository
+
+    @Autowired
+    private lateinit var versionBucketToTaskJpaEntityRepository: VersionBucketToTaskJpaEntityRepository
+
+    @Autowired
+    private lateinit var statementRepository: StatementRepository
 
     override fun newData(): TaskData {
         val ownerId = fixtures.developer().id.value
@@ -67,6 +76,7 @@ class TaskPersistenceAdapterTests : PersistenceAdapterContractTests<TaskData, Ta
             name = fixtures.unique("Renamed task")
             description = "Updated description"
             sharedTo = mutableListOf(communityId)
+            uploadedResources = mutableSetOf(fixtures.statement().data.versionBucket)
         }
     }
 
@@ -83,6 +93,7 @@ class TaskPersistenceAdapterTests : PersistenceAdapterContractTests<TaskData, Ta
         assertEquals(expected.data.name, actual.data.name)
         assertEquals(expected.data.description, actual.data.description)
         assertEquals(expected.data.sharedTo.ids.toSet(), actual.data.sharedTo.ids.toSet())
+        assertEquals(expected.data.uploadedResources, actual.data.uploadedResources)
         assertSameContent(expected.data.content, actual.data.content)
     }
 
@@ -285,5 +296,81 @@ class TaskPersistenceAdapterTests : PersistenceAdapterContractTests<TaskData, Ta
 
         assertEquals(saved.data.owner.id, updated.data.owner.id)
         assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
+    }
+
+    @Test
+    fun `should keep unattached uploaded resource chains through a round trip`() {
+        val statement = fixtures.statement()
+        val data = newTaskData()
+        val saved = repository.save(
+            taskData {
+                owner = data.owner.id
+                name = data.name
+                description = data.description
+                content.new {}
+                uploadedResources.add(statement.data.versionBucket)
+            },
+        )
+
+        val found = assertNotNull(repository.findById(saved.id))
+
+        assertEquals(setOf(statement.data.versionBucket), saved.data.uploadedResources)
+        assertEquals(saved.data.uploadedResources, found.data.uploadedResources)
+        assertSameContent(saved.data.content, found.data.content)
+    }
+
+    @Test
+    fun `should add uploaded chains without changing committed content`() {
+        val saved = repository.save(newData())
+        val added = fixtures.statement().data.versionBucket
+
+        val updated = repository.update(saved.withData { uploadedResources.add(added) })
+
+        assertEquals(saved.data.uploadedResources + added, updated.data.uploadedResources)
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(updated.data.uploadedResources, found.data.uploadedResources)
+        assertSameContent(saved.data.content, found.data.content)
+    }
+
+    @Test
+    fun `should remove an uploaded chain used in content without changing content`() {
+        val saved = fixtures.task()
+        val removed = saved.data.uploadedResources.first()
+        val expected = saved.data.uploadedResources - removed
+
+        val updated = repository.update(saved.withData { uploadedResources.remove(removed) })
+
+        assertEquals(expected, updated.data.uploadedResources)
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(expected, found.data.uploadedResources)
+        assertSameContent(saved.data.content, found.data.content)
+        assertEquals(1, versionBucketToTaskJpaEntityRepository.findAllByTaskId(saved.id.value).size)
+    }
+
+    @Test
+    fun `should reject uploading the same chain to two tasks simultaneously`() {
+        val first = fixtures.task()
+        val second = fixtures.task()
+        val bucket = first.data.uploadedResources.first()
+
+        assertFailsWith<DataIntegrityViolationException> {
+            repository.update(second.withData { uploadedResources.add(bucket) })
+        }
+        assertEquals(first.data.uploadedResources, assertNotNull(repository.findById(first.id)).data.uploadedResources)
+        assertEquals(second.data.uploadedResources, assertNotNull(repository.findById(second.id)).data.uploadedResources)
+    }
+
+    @Test
+    fun `should remove memberships while preserving resource versions when a task is removed`() {
+        val saved = fixtures.task()
+        val statementId = assertIs<TaskContent.Committed>(saved.data.content).lastCommitted.statement.id
+        val statement = assertNotNull(statementRepository.findById(statementId))
+
+        repository.removeById(saved.id)
+
+        assertEquals(emptyList(), versionBucketToTaskJpaEntityRepository.findAllByTaskId(saved.id.value))
+        val retained = assertNotNull(statementRepository.findById(statementId))
+        assertEquals(statement.data.versionBucket, retained.data.versionBucket)
+        assertEquals(statement.data.file.content.toList(), retained.data.file.content.toList())
     }
 }

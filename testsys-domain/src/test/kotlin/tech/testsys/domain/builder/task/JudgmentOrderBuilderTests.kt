@@ -7,11 +7,14 @@ import tech.testsys.domain.model.task.JudgmentOrderData
 
 class JudgmentOrderBuilderTests : DomainEntityBuilderTests<JudgmentOrder, JudgmentOrderData, JudgmentOrderDataBuilder>(
     JudgmentOrderBuilder(),
-    JudgmentOrderDataBuilder()
+    JudgmentOrderDataBuilder(),
 ) {
-    override fun buildDataWithAllFields() = listOf(judgmentOrderData {
-        judge(42)
-        verdict(1)
-        reason = "manual override"
-    })
+    override fun buildDataWithAllFields() = listOf(
+        judgmentOrderData {
+            judge(42)
+            submission(1)
+            score = 50
+            reason = "manual override"
+        },
+    )
 }

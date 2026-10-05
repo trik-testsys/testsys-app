@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.api.developerSolution
 import tech.testsys.domain.builder.data
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMapping
@@ -32,7 +33,7 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
             solution(jpaEntity.solutionId)
             expectedScore(jpaEntity.expectedScore)
 
-            versionBucket = jpaEntity.versionBucket
+            versionBucket = VersionBucket(jpaEntity.versionBucket)
         }
     }
 
@@ -46,19 +47,20 @@ object DeveloperSolutionMapping : EntityMapping<DeveloperSolution, DeveloperSolu
         description = data.description,
         solutionId = data.solution.id.value,
         expectedScore = data.expectedScore.value,
-        versionBucket = data.versionBucket,
+        versionBucket = data.versionBucket.value,
     )
 
     /**
-     * Creates the [DeveloperSolutionJpaEntity] row replacing [current] from [entity], keeping `versionBucket`, `createdAt` and `version`.
+     * Creates the [DeveloperSolutionJpaEntity] row replacing [current] from [entity], keeping `solutionId`,
+     * `expectedScore`, `versionBucket`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: DeveloperSolution, current: DeveloperSolutionJpaEntity) = DeveloperSolutionJpaEntity(
         name = entity.data.name,
         description = entity.data.description,
-        solutionId = entity.data.solution.id.value,
-        expectedScore = entity.data.expectedScore.value,
+        solutionId = current.solutionId,
+        expectedScore = current.expectedScore,
         id = entity.id.value,
         versionBucket = current.versionBucket,
     ).also {

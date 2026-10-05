@@ -1,12 +1,5 @@
 package tech.testsys.web.components.localization
 
-import com.ibm.icu.text.DateFormatSymbols
-import com.ibm.icu.util.Calendar
-import com.ibm.icu.util.ULocale
-import tech.testsys.infra.localization.Localization
-import tech.testsys.infra.localization.Ui.ComponentsQuestionStatusAnswered
-import tech.testsys.infra.localization.Ui.ComponentsQuestionStatusFlagged
-import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.web.components.CalendarTexts
 import tech.testsys.web.components.ComponentTexts
 import tech.testsys.web.components.DateFieldTexts
@@ -24,162 +17,182 @@ import tech.testsys.web.components.PaginationTexts
 import tech.testsys.web.components.TableFiltersTexts
 import tech.testsys.web.components.TableTexts
 import tech.testsys.web.components.UiTexts
+import java.text.NumberFormat
 import java.time.DayOfWeek
+import java.time.Month
+import java.time.format.TextStyle
+import java.time.temporal.WeekFields
+import java.util.Locale
+import kotlin.math.absoluteValue
 
 /**
- * Builds the design system texts of [region] from the localization bundles and the ICU locale data.
+ * Builds the current Russian design system texts with the standard locale data.
  *
  * @since %CURRENT_VERSION%
  */
-fun buildUiTexts(region: SupportedRegion): UiTexts {
-    val ui = Localization.forRegion(region).ui
-    val uLocale = region.toULocale()
-    val locale = uLocale.toLocale()
-    val symbols = DateFormatSymbols(uLocale)
+fun buildUiTexts(): UiTexts {
+    val locale = Locale.forLanguageTag("ru-RU")
+    val weekdays = DayOfWeek.entries.sortedBy { day -> day.value % DayOfWeek.entries.size }
     return UiTexts(
         locale = locale,
-        brand = ui.brand(),
-        signIn = ui.signIn(),
-        footer = FooterTexts(year = { year -> ui.footerYear(year = year) }, links = ui.footerLinks()),
-        tableFilters = TableFiltersTexts(title = ui.tableFiltersTitle(), apply = ui.tableFiltersApply(), reset = ui.tableFiltersReset()),
+        brand = "TestSys",
+        signIn = "Войти",
+        footer = FooterTexts(year = { year -> year.toString() }, links = "Ссылки футтера"),
+        tableFilters = TableFiltersTexts(title = "Фильтры", apply = "Применить", reset = "Сбросить"),
         calendar = CalendarTexts(
-            monthNames = symbols.getMonths(DateFormatSymbols.STANDALONE, DateFormatSymbols.WIDE)
-                .map { month -> month.replaceFirstChar { letter -> letter.titlecase(locale) } },
-            weekdays = symbols.getWeekdays(DateFormatSymbols.FORMAT, DateFormatSymbols.WIDE).drop(1),
-            weekdaysShort = symbols.getWeekdays(DateFormatSymbols.STANDALONE, DateFormatSymbols.SHORT).drop(1),
-            firstDayOfWeek = firstDayOfWeek(uLocale),
-            dateFormat = dateFormat(region),
-            today = ui.calendarToday(),
-            cancel = ui.calendarCancel(),
+            monthNames = Month.entries.map { month ->
+                month.getDisplayName(TextStyle.FULL_STANDALONE, locale).replaceFirstChar { letter -> letter.titlecase(locale) }
+            },
+            weekdays = weekdays.map { day -> day.getDisplayName(TextStyle.FULL, locale) },
+            weekdaysShort = weekdays.map { day -> day.getDisplayName(TextStyle.SHORT_STANDALONE, locale) },
+            firstDayOfWeek = WeekFields.of(locale).firstDayOfWeek,
+            dateFormat = "dd.MM.yyyy",
+            today = "Сегодня",
+            cancel = "Отмена",
         ),
         fieldErrors = FieldErrorTexts(
-            badInput = ui.fieldBadInput(),
-            belowMin = ui.fieldBelowMin(),
-            aboveMax = ui.fieldAboveMax(),
-            stepMismatch = ui.fieldStepMismatch(),
+            badInput = "Проверьте формат значения",
+            belowMin = "Значение меньше допустимого",
+            aboveMax = "Значение больше допустимого",
+            stepMismatch = "Значение не соответствует шагу",
         ),
-        dateRangeReversed = ui.dateRangeReversed(),
-        editing = EditingTexts(start = ui.editStart(), save = ui.editSave(), cancel = ui.editCancel()),
+        dateRangeReversed = "Дата окончания раньше даты начала",
+        editing = EditingTexts(start = "Изменить", save = "Сохранить", cancel = "Отмена"),
         table = TableTexts(
-            empty = ui.tableEmpty(),
-            range = { from, to, total -> ui.tableRange(from = from, to = to, total = total) },
-            selectAll = ui.tableSelectAll(),
-            selectRow = ui.tableSelectRow(),
+            empty = "Нет данных",
+            range = { from, to, total -> "${formatNumber(from)}–${formatNumber(to)} из ${formatNumber(total)}" },
+            selectAll = "Выбрать все строки страницы",
+            selectRow = "Выбрать строку",
         ),
         pagination = PaginationTexts(
-            previous = ui.paginationPrevious(),
-            next = ui.paginationNext(),
-            page = { page -> ui.paginationPage(page = page) },
+            previous = "Назад",
+            next = "Вперёд",
+            page = { page -> "Страница ${formatNumber(page)}" },
         ),
         load = LoadTexts(
-            failed = ui.loadFailed(),
-            failedHint = ui.loadFailedHint(),
-            retry = ui.loadRetry(),
+            failed = "Не удалось загрузить",
+            failedHint = "Попробуйте ещё раз",
+            retry = "Повторить",
         ),
         dialog = DialogTexts(
-            cancel = ui.dialogCancel(),
-            close = ui.dialogClose(),
-            typeToConfirm = { name -> ui.dialogTypeToConfirm(name = name) },
+            cancel = "Отмена",
+            close = "Закрыть",
+            typeToConfirm = { name -> "Введите «$name», чтобы подтвердить" },
         ),
         lookup = LookupTexts(
-            search = ui.lookupSearch(),
-            open = ui.lookupOpen(),
-            clear = ui.lookupClear(),
-            empty = ui.lookupEmpty(),
-            remove = { value -> ui.lookupRemove(value = value) },
-            reset = ui.lookupReset(),
-            apply = ui.lookupApply(),
-            selectedCount = { count -> ui.lookupSelectedCount(count = count) },
+            search = "Поиск",
+            open = "Выбрать",
+            clear = "Очистить",
+            empty = "Ничего не найдено",
+            remove = { value -> "Убрать $value" },
+            reset = "Сбросить",
+            apply = "Применить",
+            selectedCount = { count -> "Выбрано: ${formatNumber(count)}" },
         ),
-        navigation = NavigationTexts(breadcrumbs = ui.navBreadcrumbs(), sections = ui.navSections()),
-        menu = MenuTexts(actions = ui.menuActions()),
+        navigation = NavigationTexts(breadcrumbs = "Навигационная цепочка", sections = "Разделы"),
+        menu = MenuTexts(actions = "Действия"),
         dateFields = DateFieldTexts(
-            date = ui.dateTimeDate(),
-            time = ui.dateTimeTime(),
-            rangeFrom = { label -> ui.dateRangeFrom(label = label) },
-            rangeTo = { label -> ui.dateRangeTo(label = label) },
-            rangeFromPrefix = ui.dateRangeFromPrefix(),
-            rangeToPrefix = ui.dateRangeToPrefix(),
-            rangeRequired = ui.dateRangeRequired(),
+            date = "дата",
+            time = "время",
+            rangeFrom = { label -> "$label: с" },
+            rangeTo = { label -> "$label: до" },
+            rangeFromPrefix = "С",
+            rangeToPrefix = "До",
+            rangeRequired = "Укажите хотя бы одну границу периода",
         ),
         components = ComponentTexts(
-            selectAll = ui.componentsSelectAll(),
-            previousMonth = ui.componentsPreviousMonth(),
-            nextMonth = ui.componentsNextMonth(),
-            calendar = ui.componentsCalendar(),
-            drag = ui.componentsDrag(),
-            upload = ui.componentsUpload(),
-            drop = ui.componentsDrop(),
-            cancel = ui.componentsCancel(),
-            preparing = ui.componentsPreparing(),
-            downloading = ui.componentsDownloading(),
-            done = ui.componentsDone(),
-            failed = ui.componentsFailed(),
-            retry = ui.componentsRetry(),
-            downloadAgain = ui.componentsDownloadAgain(),
-            uploadRejected = ui.componentsUploadRejected(),
-            loading = ui.componentsLoading(),
-            overflow = ui.componentsOverflow(),
-            openCalendar = { label -> ui.componentsOpenCalendar(label = label) },
-            uploadLimits = { count, bytes -> ui.componentsUploadLimits(count = count, bytes = bytes) },
-            difficultyLabels = listOf(ui.componentsDifficultyEasy(), ui.componentsDifficultyMedium(), ui.componentsDifficultyHard()),
-            questionStatus = { number, answered, flagged ->
-                ui.componentsQuestionStatus(
-                    number = number,
-                    answered = if (answered) ComponentsQuestionStatusAnswered.TRUE else ComponentsQuestionStatusAnswered.OTHER,
-                    flagged = if (flagged) ComponentsQuestionStatusFlagged.TRUE else ComponentsQuestionStatusFlagged.OTHER,
-                )
+            selectAll = "Выбрать все",
+            previousMonth = "Предыдущий месяц",
+            nextMonth = "Следующий месяц",
+            calendar = "Открыть календарь",
+            drag = "Переместить: пробел, затем стрелки; Enter применяет, Escape отменяет",
+            upload = "Выбрать файлы",
+            drop = "Перетащите файлы сюда",
+            cancel = "Отменить",
+            preparing = "Подготовка",
+            downloading = "Передача",
+            done = "Передано сервером",
+            failed = "Ошибка передачи",
+            retry = "Повторить",
+            downloadAgain = "Скачать снова",
+            uploadRejected = "Файл не соответствует ограничениям",
+            loading = "Загрузка",
+            overflow = "Другие участники",
+            openCalendar = { label -> "Открыть календарь: $label" },
+            uploadLimits = { count, bytes ->
+                val files = plural(count, one = "файла", few = "файлов", many = "файлов")
+                "До ${formatNumber(count)} $files, до ${formatNumber(bytes)} Б каждый"
             },
-            reorderPosition = { label, position, total -> ui.componentsReorderPosition(label = label, position = position, total = total) },
-            downloadLabel = { label, state -> ui.componentsDownloadLabel(label = label, state = state) },
-            percent = { value -> ui.componentsPercent(value = value) },
+            difficultyLabels = listOf("Лёгкая", "Средняя", "Сложная"),
+            questionStatus = { number, answered, flagged ->
+                buildString {
+                    append("Вопрос ${formatNumber(number)}")
+                    if (answered) append(", отвечен")
+                    if (flagged) append(", отмечен")
+                }
+            },
+            reorderPosition = { label, position, total -> "$label: позиция ${formatNumber(position)} из ${formatNumber(total)}" },
+            downloadLabel = { label, state -> "$label: $state" },
+            percent = { value -> "${formatNumber(value)}%" },
             byteUnits = listOf(
-                ui.componentsByteUnit(),
-                ui.componentsKilobyteUnit(),
-                ui.componentsMegabyteUnit(),
-                ui.componentsGigabyteUnit(),
+                "Б",
+                "КБ",
+                "МБ",
+                "ГБ",
             ),
             timerUnits = listOf(
-                ui.componentsTimerDays(),
-                ui.componentsTimerHours(),
-                ui.componentsTimerMinutes(),
-                ui.componentsTimerSeconds(),
+                "дни",
+                "часы",
+                "минуты",
+                "секунды",
             ),
-            avatarOverflow = { count -> ui.componentsAvatarOverflow(count = count) },
-            transferBytes = { count -> ui.componentsTransferBytes(count = count) },
-            question = { number -> ui.componentsQuestion(number = number) },
+            avatarOverflow = { count ->
+                val participants = plural(count, one = "участник", few = "участника", many = "участников")
+                "Ещё ${formatNumber(count)} $participants"
+            },
+            transferBytes = { count -> "Передано: ${formatNumber(count)} Б" },
+            question = { number -> "Вопрос ${formatNumber(number)}" },
         ),
         header = HeaderTexts(
-            search = ui.headerSearch(),
-            searchLoading = ui.headerSearchLoading(),
-            searchEmpty = ui.headerSearchEmpty(),
-            searchFailed = ui.headerSearchFailed(),
-            searchCount = { count -> ui.headerSearchCount(count = count) },
-            retry = ui.headerRetry(),
-            notifications = ui.headerNotifications(),
-            notificationsEmpty = ui.headerNotificationsEmpty(),
-            readAll = ui.headerReadAll(),
-            unreadCount = { count -> ui.headerUnreadCount(count = count) },
-            unreadItem = { label -> ui.headerUnreadItem(label = label) },
-            userMenu = { name -> ui.headerUserMenu(name = name) },
-            arrivalOpen = ui.headerArrivalOpen(),
-            arrivalClose = ui.headerArrivalClose(),
-            arrivalCount = { count -> ui.headerArrivalCount(count = count) },
-            arrivalBatchHint = ui.headerArrivalBatchHint(),
+            search = "Поиск задач, соревнований…",
+            searchLoading = "Поиск…",
+            searchEmpty = "Ничего не найдено",
+            searchFailed = "Не удалось выполнить поиск",
+            searchCount = { count -> "Найдено: ${formatNumber(count)}" },
+            retry = "Повторить",
+            notifications = "Уведомления",
+            notificationsEmpty = "Нет уведомлений",
+            readAll = "Прочитать все",
+            unreadCount = { count -> "Уведомления: непрочитанных ${formatNumber(count)}" },
+            unreadItem = { label -> "$label — не прочитано" },
+            userMenu = { name -> "Меню пользователя: $name" },
+            arrivalOpen = "Открыть",
+            arrivalClose = "Закрыть уведомление",
+            arrivalCount = { count ->
+                val notifications =
+                    plural(count, one = "новое уведомление", few = "новых уведомления", many = "новых уведомлений")
+                "Получено ${formatNumber(count)} $notifications"
+            },
+            arrivalBatchHint = "Откройте список уведомлений, чтобы посмотреть новые сообщения.",
         ),
         notFound = NotFoundTexts(
-            title = ui.notFoundTitle(),
-            description = ui.notFoundDescription(),
-            back = ui.notFoundBack(),
-            pageTitle = ui.notFoundPageTitle(brand = ui.brand()),
+            title = "Страница не найдена",
+            description = "Проверьте адрес или вернитесь на предыдущую страницу.",
+            back = "Назад",
+            pageTitle = "Страница не найдена — TestSys",
         ),
     )
 }
 
-// ICU numbers weekdays from Sunday = 1; java.time starts from Monday.
-private fun firstDayOfWeek(locale: ULocale): DayOfWeek =
-    DayOfWeek.SUNDAY.plus((Calendar.getInstance(locale).firstDayOfWeek - Calendar.SUNDAY).toLong())
+private fun formatNumber(value: Number): String = NumberFormat.getNumberInstance(Locale.forLanguageTag("ru-RU")).format(value)
 
-private fun dateFormat(region: SupportedRegion): String = when (region) {
-    SupportedRegion.RU -> "dd.MM.yyyy"
+@Suppress("MagicNumber")
+private fun plural(count: Int, one: String, few: String, many: String): String {
+    val absoluteCount = count.toLong().absoluteValue
+    return when {
+        absoluteCount % 100 in 11..14 -> many
+        absoluteCount % 10 == 1L -> one
+        absoluteCount % 10 in 2..4 -> few
+        else -> many
+    }
 }

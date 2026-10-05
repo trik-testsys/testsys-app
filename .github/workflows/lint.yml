@@ -39,8 +39,10 @@ jobs:
 
       # autoCorrect is off: rewriting sources during the analysis hides a part of the findings and shifts their
       # positions away from the commit. `--continue` analyses every module instead of stopping at the first failure.
+      # The common entry point includes every source set, including tests and codegen.
       - name: Run Detekt
-        run: ./gradlew detektMain -Pdetekt.autoCorrect=false --continue --no-daemon
+        run: >-
+          ./gradlew detekt -Pdetekt.autoCorrect=false --continue --no-daemon
 
       - name: Upload Detekt report
         uses: actions/upload-artifact@v7

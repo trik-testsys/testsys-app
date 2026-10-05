@@ -55,3 +55,8 @@ replay_pid*
 *.iml
 
 **/.kotlin
+
+# Local LLM client setup; shared sources are in .testsys-agents/
+/.claude/
+/.codex/
+/.agents/

@@ -9,7 +9,8 @@
 Зависимости модулей перечислены в structure.md; связи с dev-приложением нет.
 Предметные страницы Кабинетов, подключение операций и безопасность пока не реализованы.
 
-Общие тексты создаются фабрикой `buildUiTexts` из components. Обработчик `NotFoundView` использует общий `NotFoundPage`; контракт маршрутизации — в
+Общие тексты создаются фабрикой `buildUiTexts()` из components; контракт — в
+[components/README.md](../components/README.md#тексты). Обработчик `NotFoundView` использует общий `NotFoundPage`; контракт маршрутизации — в
 [structure.md](../../docs/project/structure.md#модули).
 
 ## Запуск и проверка

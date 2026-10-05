@@ -27,8 +27,9 @@ object JudgmentOrderMapping : EntityMapping<JudgmentOrder, JudgmentOrderJpaEntit
         populateFields(jpaEntity)
         data {
             judge(jpaEntity.judgeId)
-            verdict(jpaEntity.verdictId)
+            submission(jpaEntity.submissionId)
 
+            score = jpaEntity.score
             reason = jpaEntity.reason
         }
     }
@@ -40,19 +41,21 @@ object JudgmentOrderMapping : EntityMapping<JudgmentOrder, JudgmentOrderJpaEntit
      */
     fun toJpaEntity(data: JudgmentOrderData) = JudgmentOrderJpaEntity(
         judgeId = data.judge.id.value,
-        verdictId = data.verdict.id.value,
+        submissionId = data.submission.id.value,
+        score = data.score.value,
         reason = data.reason,
     )
 
     /**
      * Creates the [JudgmentOrderJpaEntity] row replacing [current] from [entity],
-     * keeping `judgeId`, `verdictId`, `createdAt` and `version`.
+     * keeping `judgeId`, `submissionId`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
     fun toJpaEntity(entity: JudgmentOrder, current: JudgmentOrderJpaEntity) = JudgmentOrderJpaEntity(
         judgeId = current.judgeId,
-        verdictId = current.verdictId,
+        submissionId = current.submissionId,
+        score = entity.data.score.value,
         reason = entity.data.reason,
         id = entity.id.value,
     ).also {

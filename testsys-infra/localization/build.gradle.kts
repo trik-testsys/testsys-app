@@ -10,6 +10,9 @@ group = "tech.testsys.infra"
 
 dependencies {
     implementation(libs.bundles.icu.implementation)
+
+    testImplementation(libs.bundles.test.implementation)
+    testRuntimeOnly(libs.bundles.test.runtime)
 }
 
 val codegen by sourceSets.creating
@@ -25,8 +28,8 @@ dependencies {
     "codegenTestRuntimeOnly"(libs.bundles.test.runtime)
 }
 
-// `internal` in Kotlin is per-compilation. Associating codegenTest with codegen
-// gives tests friend-path access to internal classes (MessagePatternAnalyzer etc.).
+// `internal` in Kotlin is per-compilation. Associating codegenTest with codegen gives tests friend-path access to
+// internal classes.
 kotlin.target.compilations.getByName("codegenTest")
     .associateWith(kotlin.target.compilations.getByName("codegen"))
 
@@ -36,9 +39,23 @@ tasks.register<Test>("codegenTest") {
     testClassesDirs = codegenTest.output.classesDirs
     classpath = codegenTest.runtimeClasspath
     useJUnitPlatform()
+    // The option-honoured tests format java.util.Date operands, which ICU shows in the JVM zone.
+    jvmArgs("-Duser.timezone=UTC")
 }
 
-tasks.named("check") { dependsOn("codegenTest") }
+tasks.test {
+    // A fixed JVM zone makes tests reproducible; explicit context zones reveal accidental use of the JVM zone.
+    jvmArgs("-Duser.timezone=UTC")
+}
+
+tasks.named("check") {
+    dependsOn("codegenTest")
+}
+
+tasks.processResources {
+    // The generated API embeds messages and regions; the runtime does not read the original files.
+    exclude("localization/**")
+}
 
 // A manually created source set is imported by IDEA as production code; mark it as test sources.
 idea {
@@ -51,25 +68,58 @@ idea {
 val generatedDir = layout.buildDirectory.dir("generated/source/localization/main/kotlin")
 val localizationResources = layout.projectDirectory.dir("src/main/resources/localization")
 
-val generateLocalization = tasks.register<JavaExec>("generateLocalization") {
+// Runs the codegen over the resource directory [resources] and writes the API of [packageName] into [outputDir].
+fun generateLocalizationTask(
+    name: String,
+    taskDescription: String,
+    resources: Directory,
+    outputDir: Provider<Directory>,
+    packageName: String,
+) = tasks.register<JavaExec>(name) {
     group = "localization"
-    description = "Generate type-safe Localization API from *.properties files."
+    description = taskDescription
 
     classpath = codegen.runtimeClasspath
     mainClass.set("tech.testsys.infra.localization.codegen.MainKt")
 
-    inputs.dir(localizationResources).withPathSensitivity(PathSensitivity.RELATIVE)
-    outputs.dir(generatedDir)
+    inputs.dir(resources).withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.property("packageName", packageName)
+    outputs.dir(outputDir)
 
     argumentProviders.add(
         CommandLineArgumentProvider {
             listOf(
-                localizationResources.asFile.absolutePath,
-                generatedDir.get().asFile.absolutePath,
+                resources.asFile.absolutePath,
+                outputDir.get().asFile.absolutePath,
+                packageName,
             )
         }
     )
 }
 
+val generateLocalization = generateLocalizationTask(
+    name = "generateLocalization",
+    taskDescription = "Generate type-safe Localization API from *.properties files.",
+    resources = localizationResources,
+    outputDir = generatedDir,
+    packageName = "tech.testsys.infra.localization",
+)
+
 kotlin.sourceSets["main"].kotlin.srcDir(generatedDir)
 tasks.named("compileKotlin") { dependsOn(generateLocalization) }
+
+// The example set shows every supported function and construct; the tests render its API, which stays out of the
+// product API. It is not a resource root, so its regions file never reaches the test classpath.
+val generatedExamplesDir = layout.buildDirectory.dir("generated/source/localization/test/kotlin")
+val exampleResources = layout.projectDirectory.dir("src/test/examples/localization")
+
+val generateLocalizationExamples = generateLocalizationTask(
+    name = "generateLocalizationExamples",
+    taskDescription = "Generate the Localization API of the example set for the tests.",
+    resources = exampleResources,
+    outputDir = generatedExamplesDir,
+    packageName = "tech.testsys.infra.localization.examples",
+)
+
+kotlin.sourceSets["test"].kotlin.srcDir(generatedExamplesDir)
+tasks.named("compileTestKotlin") { dependsOn(generateLocalizationExamples) }

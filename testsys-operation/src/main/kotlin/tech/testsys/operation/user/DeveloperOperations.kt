@@ -22,6 +22,7 @@ import tech.testsys.operation.error.MissedDeveloperRoleError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ShareTaskError
 import tech.testsys.operation.error.StatementNotExistsError
+import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
@@ -47,7 +48,7 @@ class DeveloperOperations(
 ) {
     /**
      * Creates a new task owned by [user] with [taskName] and [taskDescription]. The created task has
-     * [TaskContent.New] content.
+     * [TaskContent.New] content and no uploaded resources.
      *
      * @since %CURRENT_VERSION%
      */
@@ -69,7 +70,7 @@ class DeveloperOperations(
 
     /**
      * Attaches the statement with [newStatementId] to the work-in-progress version of the task with [taskId] on
-     * behalf of [user]. A task can have at most one statement.
+     * behalf of [user]. Its version chain must be uploaded to the task, which can have at most one statement.
      *
      * @since %CURRENT_VERSION%
      */
@@ -85,6 +86,10 @@ class DeveloperOperations(
             ensure(statement != null) { StatementNotExistsError(newStatementId) }
 
             ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+
+            ensure(statement.data.versionBucket in task.data.uploadedResources) {
+                StatementNotUploadedToTaskError(taskId = taskId, statementId = newStatementId)
+            }
 
             val wipContent = task.getWip(TaskAlreadyHasStatementError).getOrRaise()
             ensure(wipContent.statement == null, TaskAlreadyHasStatementError)

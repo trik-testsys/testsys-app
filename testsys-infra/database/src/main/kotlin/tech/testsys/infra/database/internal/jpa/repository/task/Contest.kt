@@ -67,6 +67,13 @@ interface CommunityToContestJpaEntityRepository :
     CompositeJpaEntityRepository<CommunityToContestJpaEntity, CommunityToContestId> {
 
     /**
+     * Finds contest-sharing associations for any of [communityIds] in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByIdCommunityIdIn(communityIds: Set<Long>): List<CommunityToContestJpaEntity>
+
+    /**
      * Finds the association rows of the community [communityId].
      *
      * @since %CURRENT_VERSION%

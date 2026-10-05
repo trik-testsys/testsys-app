@@ -46,7 +46,19 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
  *
  * @since %CURRENT_VERSION%
  */
-interface ContestRepository : EntityRepository<ContestData, ContestId, Contest>
+interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> {
+
+    /**
+     * Synchronously finds contests owned by [ownerId] or shared to any of [communityIds], without changing stored state.
+     * Repeated calls reflect current data; storage exceptions propagate to the caller.
+     *
+     * @param ownerId the developer whose own contests are included.
+     * @param communityIds the communities granting access; an empty set searches only by owner.
+     * @return existing contests without duplicates or guaranteed order, or an empty list if none are available.
+     * @since %CURRENT_VERSION%
+     */
+    fun findAvailableToDeveloper(ownerId: MultipleRoleUserId, communityIds: Set<CommunityId>): List<Contest>
+}
 
 /**
  * Persistence port for [DeveloperSolution] entities. The solution and expected score are fixed on creation: `update`

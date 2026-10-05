@@ -1,5 +1,6 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
@@ -8,10 +9,12 @@ import tech.testsys.domain.builder.api.contest
 import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.TrikStudioVersion
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import java.time.Duration
 import java.time.Instant
@@ -24,6 +27,54 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
 
     @Autowired
     override lateinit var repository: ContestRepository
+
+    @Nested
+    inner class FindAvailableToDeveloperTests {
+
+        @Test
+        fun `should find owned and shared contests while excluding inaccessible contests`() {
+            val owner = fixtures.developer().id
+            val otherOwner = fixtures.developer().id
+            val community = fixtures.community().id
+            val unrelatedCommunity = fixtures.community().id
+            val owned = saveContest(ownerId = owner, communityIds = emptyList())
+            val shared = saveContest(ownerId = otherOwner, communityIds = listOf(community))
+            saveContest(ownerId = otherOwner, communityIds = emptyList())
+            saveContest(ownerId = otherOwner, communityIds = listOf(unrelatedCommunity))
+
+            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = setOf(community))
+
+            assertEquals(setOf(owned.id, shared.id), result.map { it.id }.toSet())
+            assertSameData(owned, result.single { it.id == owned.id })
+            assertSameData(shared, result.single { it.id == shared.id })
+            assertEquals(shared.version, result.single { it.id == shared.id }.version)
+        }
+
+        @Test
+        fun `should return contests once when ownership and shared communities overlap`() {
+            val owner = fixtures.developer().id
+            val communities = listOf(fixtures.community().id, fixtures.community().id)
+            val owned = saveContest(ownerId = owner, communityIds = communities)
+            val shared = saveContest(ownerId = fixtures.developer().id, communityIds = communities)
+
+            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = communities.toSet())
+
+            assertEquals(2, result.size)
+            assertEquals(setOf(owned.id, shared.id), result.map { it.id }.toSet())
+        }
+
+        @Test
+        fun `should find only owned contests when no communities grant access`() {
+            val owner = fixtures.developer().id
+            val community = fixtures.community().id
+            val owned = saveContest(ownerId = owner, communityIds = listOf(community))
+            saveContest(ownerId = fixtures.developer().id, communityIds = listOf(community))
+
+            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = emptySet())
+
+            assertEquals(listOf(owned.id), result.map { it.id })
+        }
+    }
 
     override fun newData(): ContestData = newDataWithLimits(total = Duration.ofHours(2), attempt = Duration.ofMinutes(30))
 
@@ -180,6 +231,17 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
             sharedTo(communityIds)
         }
     }
+
+    private fun saveContest(ownerId: MultipleRoleUserId, communityIds: List<CommunityId>): Contest = repository.save(
+        contestData {
+            owner = ownerId
+            name = fixtures.unique("Available contest")
+            description = "Available contest description"
+            trikStudioVersion = fixtures.trikStudioVersion()
+            tasks = mutableListOf(fixtures.task().id)
+            sharedTo = communityIds.toMutableList()
+        },
+    )
 
     private companion object {
 

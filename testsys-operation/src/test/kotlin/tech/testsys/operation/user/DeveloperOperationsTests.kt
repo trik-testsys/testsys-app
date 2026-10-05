@@ -148,6 +148,224 @@ class DeveloperOperationsTests {
     private val uploadScore = Score(42)
 
     @Nested
+    inner class ViewContestsTests {
+
+        @Test
+        fun `should consider shared communities only from the Developer role`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    developer {
+                        memberOf(listOf(1))
+                        data = developerData {}
+                    }
+                    student {
+                        memberOf(listOf(2))
+                        data = studentData {}
+                    }
+                    administrator { memberOf(listOf(3)) }
+                }
+            }
+            every {
+                contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(1)))
+            } returns emptyList()
+
+            val result = developerOperations.viewContests(user).getOrThrow()
+
+            Assertions.assertEquals(emptyList<Contest>(), result)
+        }
+
+        @Test
+        fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+            assertRaises(MissedDeveloperRoleError) { developerOperations.viewContests(testAdministrator {}) }
+
+            verify(exactly = 0) { contestRepository.findAvailableToDeveloper(any(), any()) }
+        }
+
+        @Test
+        fun `should return an empty list when developer has no contests`() {
+            every { contestRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet()) } returns emptyList()
+
+            val result = developerOperations.viewContests(developer).getOrThrow()
+
+            Assertions.assertEquals(emptyList<Contest>(), result)
+        }
+
+        @Test
+        fun `should return contest information including task count and shared communities`() {
+            val user = testDeveloper { data = developerData { contests(listOf(19)) } }
+            val original = testContest {
+                name = "Viewed contest"
+                tasks(listOf(1, 2))
+                sharedTo(listOf(3, 4))
+            }
+            every { contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = emptySet()) } returns listOf(original)
+
+            val result = developerOperations.viewContests(user).getOrThrow().single()
+
+            Assertions.assertSame(original, result)
+            Assertions.assertEquals(ContestId(19), result.id)
+            Assertions.assertEquals("Viewed contest", result.data.name)
+            Assertions.assertEquals(2, result.data.tasks.ids.size)
+            Assertions.assertEquals(listOf(CommunityId(3), CommunityId(4)), result.data.sharedTo.ids)
+            Assertions.assertEquals(EntityVersion(0), result.version)
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+        }
+
+        @Test
+        fun `should return available contests absent from the Developer contest list`() {
+            val user = testDeveloper { data = developerData {} }
+            val original = testContest()
+            every { contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = emptySet()) } returns listOf(original)
+
+            val result = developerOperations.viewContests(user).getOrThrow()
+
+            Assertions.assertEquals(listOf(original), result)
+        }
+
+        @Test
+        fun `should include another owner's contest shared to the Developer community`() {
+            val user = testDeveloper {
+                memberOf(listOf(4))
+                data = developerData {}
+            }
+            val foreign = testContest {
+                owner = MultipleRoleUserId(99)
+                sharedTo(listOf(4))
+            }
+            every {
+                contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(4)))
+            } returns listOf(foreign)
+
+            val result = developerOperations.viewContests(user).getOrThrow()
+
+            Assertions.assertEquals(listOf(foreign), result)
+        }
+
+        @Test
+        fun `should propagate a storage exception when listing contests`() {
+            val failure = IllegalStateException("Contest storage unavailable")
+            every { contestRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet()) } throws failure
+
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) { developerOperations.viewContests(developer) }
+
+            Assertions.assertSame(failure, actual)
+        }
+    }
+
+    @Nested
+    inner class ViewContestTests {
+
+        private val contestId = ContestId(19)
+
+        @Test
+        fun `should deny a contest shared only to communities of other roles`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    developer {
+                        memberOf(listOf(1))
+                        data = developerData {}
+                    }
+                    student {
+                        memberOf(listOf(2))
+                        data = studentData {}
+                    }
+                    administrator { memberOf(listOf(3)) }
+                }
+            }
+            val foreign = testContest {
+                owner = MultipleRoleUserId(99)
+                sharedTo(listOf(2, 3))
+            }
+            every { contestRepository.findById(contestId) } returns foreign
+
+            assertRaises(ContestAccessDeniedError(contestId)) { developerOperations.viewContest(user, contestId) }
+        }
+
+        @Test
+        fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+            assertRaises(MissedDeveloperRoleError) { developerOperations.viewContest(testAdministrator {}, contestId) }
+
+            verify(exactly = 0) { contestRepository.findById(any()) }
+        }
+
+        @Test
+        fun `should raise ContestNotExistsError if contest does not exist`() {
+            every { contestRepository.findById(contestId) } returns null
+
+            assertRaises(ContestNotExistsError(contestId)) { developerOperations.viewContest(developer, contestId) }
+        }
+
+        @Test
+        fun `should raise ContestAccessDeniedError if contest belongs to another user`() {
+            val foreign = testContest { owner = MultipleRoleUserId(99) }
+            every { contestRepository.findById(contestId) } returns foreign
+
+            assertRaises(ContestAccessDeniedError(contestId)) { developerOperations.viewContest(developer, contestId) }
+        }
+
+        @Test
+        fun `should allow viewing another owner's contest shared to the Developer community`() {
+            val user = testDeveloper {
+                memberOf(listOf(4))
+                data = developerData {}
+            }
+            val foreign = testContest {
+                owner = MultipleRoleUserId(99)
+                sharedTo(listOf(4))
+            }
+            every { contestRepository.findById(contestId) } returns foreign
+
+            val result = developerOperations.viewContest(user, contestId).getOrThrow()
+
+            Assertions.assertSame(foreign, result)
+        }
+
+        @Test
+        fun `should return owned contest data and preserve task references and shared communities`() {
+            val original = testContest {
+                name = "Viewed contest"
+                tasks(listOf(2, 1))
+                sharedTo(listOf(3, 4))
+            }
+            every { contestRepository.findById(contestId) } returns original
+
+            val result = developerOperations.viewContest(developer, contestId).getOrThrow()
+
+            Assertions.assertSame(original, result)
+            Assertions.assertEquals(contestId, result.id)
+            Assertions.assertEquals("Viewed contest", result.data.name)
+            Assertions.assertEquals(listOf(TaskId(2), TaskId(1)), result.data.tasks.ids)
+            Assertions.assertEquals(listOf(CommunityId(3), CommunityId(4)), result.data.sharedTo.ids)
+            Assertions.assertEquals(EntityVersion(0), result.version)
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+        }
+
+        @Test
+        fun `should return an owned contest absent from the Developer contest list`() {
+            val original = testContest()
+            every { contestRepository.findById(contestId) } returns original
+
+            val result = developerOperations.viewContest(developer, contestId).getOrThrow()
+
+            Assertions.assertSame(original, result)
+        }
+
+        @Test
+        fun `should propagate a storage exception when viewing a contest`() {
+            val failure = IllegalStateException("Contest storage unavailable")
+            every { contestRepository.findById(contestId) } throws failure
+
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.viewContest(developer, contestId)
+            }
+
+            Assertions.assertSame(failure, actual)
+        }
+    }
+
+    @Nested
     inner class CreateContestTests {
 
         private val version = TrikStudioVersion("3.0.0")

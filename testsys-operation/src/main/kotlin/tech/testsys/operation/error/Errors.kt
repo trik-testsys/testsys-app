@@ -57,6 +57,20 @@ sealed interface ResourceAccessError : OperationError
 // region DeveloperOperations
 
 /**
+ * Failure of listing contests available to the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewContestsError : OperationError
+
+/**
+ * Failure of viewing a contest available to the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewContestError : OperationError
+
+/**
  * Failure of listing tasks available to the developer.
  *
  * @since %CURRENT_VERSION%
@@ -262,6 +276,8 @@ sealed interface DetachDeveloperSolutionError : OperationError
  */
 data object MissedDeveloperRoleError :
     AttachTaskError,
+    ViewContestsError,
+    ViewContestError,
     ShareContestError,
     EditContestError,
     EditTaskInfoError,
@@ -334,15 +350,15 @@ data class AttemptDurationExceedsContestDurationError(
  * @property contestId the id of the missing contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestNotExistsError(val contestId: ContestId) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError
+data class ContestNotExistsError(val contestId: ContestId) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
 
 /**
- * The user is not the owner of the contest.
+ * The user has no access to the contest for the requested operation.
  *
  * @property contestId the id of the contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestAccessDeniedError(val contestId: ContestId) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError
+data class ContestAccessDeniedError(val contestId: ContestId) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
 
 /**
  * The contest is shared to at least one community.

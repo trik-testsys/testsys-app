@@ -101,6 +101,8 @@ import tech.testsys.operation.error.UpdateDeveloperSolutionError
 import tech.testsys.operation.error.UpdateExerciseError
 import tech.testsys.operation.error.UpdateStatementError
 import tech.testsys.operation.error.UpdateTestError
+import tech.testsys.operation.error.ViewContestError
+import tech.testsys.operation.error.ViewContestsError
 import tech.testsys.operation.error.ViewResourceError
 import tech.testsys.operation.error.ViewResourcesError
 import tech.testsys.operation.error.ViewTaskError
@@ -131,6 +133,40 @@ class DeveloperOperations(
     private val solutionRepository: SolutionRepository,
     private val contestRepository: ContestRepository,
 ) {
+
+    /**
+     * Returns contests owned by [user] or shared to communities of their [Developer] role, without changing contest state.
+     * Missing developer role is an expected failure; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.contest.viewContests")
+    fun viewContests(user: MultipleRoleUser): OperationResult<List<Contest>, ViewContestsError> =
+        operation<List<Contest>, ViewContestsError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val developer = user.data.roles.filterIsInstance<Developer>().single()
+            val contests = contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = developer.memberOf.ids.toSet())
+            return contests.asSuccess()
+        }
+
+    /**
+     * Returns [contestId] owned by [user] or shared to communities of their [Developer] role, preserving its data.
+     * Missing role, contest and access are expected failures; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.contest.viewContest")
+    fun viewContest(user: MultipleRoleUser, contestId: ContestId): OperationResult<Contest, ViewContestError> =
+        operation<Contest, ViewContestError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val contest = contestRepository.findById(contestId)
+            ensure(contest != null) { ContestNotExistsError(contestId) }
+            val developer = user.data.roles.filterIsInstance<Developer>().single()
+            ensure(contest.data.owner.id == user.id || contest.data.sharedTo.ids.any { it in developer.memberOf.ids }) {
+                ContestAccessDeniedError(contestId)
+            }
+            return contest.asSuccess()
+        }
 
     /**
      * Creates a contest owned by [user] with [contestName], [contestDescription] and [trikStudioVersion].

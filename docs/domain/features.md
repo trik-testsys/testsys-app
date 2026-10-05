@@ -294,7 +294,8 @@ TODO: Столбцы
 ### testsys.user.multi.developer.authorization (Not implemented)
 
 Разработчику доступны созданные им Ресурсы, Задачи, Туры, 
-а также Задачи, к которым был предоставлен доступ Сообществам (в которых состоит Разработчик). 
+а также Задачи и Туры, к которым был предоставлен доступ Сообществам,
+в которых он состоит в Роли Разработчика.
 
 ### testsys.user.multi.developer.resource.addResource (Partially implemented)
 
@@ -665,7 +666,7 @@ Page: **testsys.web.page.developer.contest**
 Реализована операция редактирования Тура.
 Страница **testsys.web.page.developer.contest** не реализована.
 
-### testsys.user.multi.developer.contest.viewContests (Not implemented)
+### testsys.user.multi.developer.contest.viewContests (Partially implemented)
 
 Page: **testsys.web.page.developer**
 
@@ -678,7 +679,10 @@ Page: **testsys.web.page.developer**
 
 Для каждого из этих Туров он может перейти на страницу **testsys.web.page.developer.contest**
 
-### testsys.user.multi.developer.contest.viewContest (Not implemented)
+Реализована операция просмотра списка доступных Разработчику Туров.
+Страница **testsys.web.page.developer** не реализована.
+
+### testsys.user.multi.developer.contest.viewContest (Partially implemented)
 
 Page: **testsys.web.page.developer.contest**
 
@@ -690,6 +694,9 @@ Page: **testsys.web.page.developer.contest**
     - Идентификатор
     - Название
 4) Сообщества для которых доступен
+
+Реализована операция просмотра доступного Разработчику Тура.
+Страница **testsys.web.page.developer.contest** не реализована.
 
 ### testsys.user.multi.developer.contest.attachTask (Partially implemented)
 

@@ -19,11 +19,25 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
     SubmissionBuilder(),
     SubmissionDataBuilder(),
 ) {
+    @Test
+    fun `should throw IllegalArgumentException if TRIK Studio version is missing`() {
+        Assertions.assertThrows(IllegalArgumentException::class.java) {
+            submissionData {
+                author(42)
+                solution(1)
+                task(1)
+                status.queued()
+                kind.developerSolutionTest()
+            }
+        }
+    }
+
     override fun buildDataWithAllFields() = listOf(
         submissionData {
             author(42)
             solution(1)
             task(1)
+            trikStudioVersion("3.0.0")
             status.queued()
             kind.developerSolutionTest()
         },
@@ -31,6 +45,7 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
             author(42)
             solution(1)
             task(1)
+            trikStudioVersion("3.0.0")
             status.inProgress()
             kind.grading { contest(10) }
         },
@@ -38,6 +53,7 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
             author(42)
             solution(1)
             task(1)
+            trikStudioVersion("3.0.0")
             status.graded { status.success { verdict(100) } }
             kind.grading { contest(10) }
             judgmentOrders(listOf(1L, 2L))
@@ -46,6 +62,7 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
             author(42)
             solution(1)
             task(1)
+            trikStudioVersion("3.0.0")
             status.graded { status.error { description = "description" } }
             kind.developerSolutionTest()
         },
@@ -53,6 +70,7 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
             author(42)
             solution(1)
             task(1)
+            trikStudioVersion("3.0.0")
             status.graded { status.timeout() }
             kind.grading { contest(10) }
         },

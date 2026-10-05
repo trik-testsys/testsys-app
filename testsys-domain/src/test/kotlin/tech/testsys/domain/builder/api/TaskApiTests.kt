@@ -58,6 +58,7 @@ class TaskApiTests {
                 author = LazyEntity(MultipleRoleUserId(10)),
                 solution = LazyEntity(SolutionId(15)),
                 task = LazyEntity(TaskId(9)),
+                trikStudioVersion = TrikStudioVersion("3.0.0"),
                 status = SubmissionStatus.InProgress,
                 kind = SubmissionKind.DeveloperSolutionTest,
                 judgmentOrders = LazyEntityList(listOf(JudgmentOrderId(32))),
@@ -74,9 +75,18 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.author.id, copy.data.author.id)
             Assertions.assertEquals(origin.data.solution.id, copy.data.solution.id)
             Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
+            Assertions.assertEquals(origin.data.trikStudioVersion, copy.data.trikStudioVersion)
             Assertions.assertEquals(origin.data.status, copy.data.status)
             Assertions.assertEquals(origin.data.kind, copy.data.kind)
             Assertions.assertEquals(origin.data.judgmentOrders.ids, copy.data.judgmentOrders.ids)
+        }
+
+        @Test
+        fun `should change TRIK Studio version if withData sets version`() {
+            val copy = origin.withData { trikStudioVersion("4.0.0") }
+
+            Assertions.assertEquals(TrikStudioVersion("4.0.0"), copy.data.trikStudioVersion)
+            Assertions.assertEquals(origin.version, copy.version)
         }
 
         @Test

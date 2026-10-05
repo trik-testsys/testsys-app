@@ -275,7 +275,12 @@ class DatabaseFixtures(
         )
     }
 
-    fun submission(author: MultipleRoleUser = developer(), task: Task = task(author), solution: Solution = solution()): Submission {
+    fun submission(
+        author: MultipleRoleUser = developer(),
+        task: Task = task(author),
+        solution: Solution = solution(),
+        version: TrikStudioVersion = trikStudioVersion(),
+    ): Submission {
         val authorId = author.id
         val taskId = task.id.value
         val solutionId = solution.id.value
@@ -284,6 +289,7 @@ class DatabaseFixtures(
                 this.author = authorId
                 solution(solutionId)
                 task(taskId)
+                trikStudioVersion = version
                 status.queued()
                 kind.developerSolutionTest()
             },

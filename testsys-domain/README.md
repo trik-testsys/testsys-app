@@ -31,7 +31,7 @@
   Домен передаёт токен обратно в `update` и никогда не сравнивает и не изменяет. Устаревший токен приводит
   к ошибке `update`.
 - Часть полей `XData` фиксируется при создании: `owner` у Задачи, Тура, Класса, Соревнования и Сообщества;
-  `author`, `solution`, `task` и `kind` у Посылки; `judge` и `submission`
+  `author`, `solution`, `task`, `trikStudioVersion` и `kind` у Посылки; `judge` и `submission`
   у Судейского вердикта (`JudgmentOrder`); `versionBucket` у Полигона, Условия, Упражнения и Авторского
   Решения. `save` их записывает, а `update` игнорирует значение из переданной сущности и оставляет сохранённое.
   В KDoc такое поле помечено «fixed on creation and ignored on update».

@@ -65,7 +65,7 @@ fun testUncommittedTask(): Task = testTask {
     uncommitted(
         wipBuilder = {},
         lastCommittedBuilder = {
-            exercise = ExerciseId(1L)
+            exercises = mutableListOf(ExerciseId(1L))
             statement = StatementId(1L)
         },
     )
@@ -73,7 +73,7 @@ fun testUncommittedTask(): Task = testTask {
 
 fun testCommitedTask(): Task = testTask {
     committed {
-        exercise = ExerciseId(1L)
+        exercises = mutableListOf(ExerciseId(1L))
         statement = StatementId(1L)
     }
 }

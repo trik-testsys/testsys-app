@@ -7,6 +7,7 @@ import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
 
 /**
@@ -474,11 +475,16 @@ data class ResourceAlreadyAttachedError(
     AttachDeveloperSolutionError
 
 /**
- * The editable task revision already contains an exercise.
+ * Another exercise in the editable task revision already uses the requested programming language.
  *
+ * @property taskId the id of the task.
+ * @property language the programming language already occupied in the revision.
  * @since %CURRENT_VERSION%
  */
-data object TaskAlreadyHasExerciseError : AttachExerciseError
+data class ExerciseLanguageAlreadyAttachedError(
+    val taskId: TaskId,
+    val language: TrikSupportedLanguage,
+) : AttachExerciseError
 
 /**
  * The requested resource version is absent from the task's editable revision.

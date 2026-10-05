@@ -62,10 +62,10 @@ sealed interface TaskContent {
 }
 
 /**
- * A committed revision of [Task] content; both the exercise and the statement are present.
+ * A committed revision of [Task] content; at least one exercise and the statement are present.
  *
  * @property tests the tests (TRIK Studio world models) solutions are graded against.
- * @property exercise the exercise (TRIK Studio program with a locked world model) given to solvers.
+ * @property exercises the exercises (TRIK Studio programs with locked world models) given to solvers.
  * @property statement the statement (PDF/TXT document) describing the task.
  * @property developerSolutions the developer's reference solutions.
  * @property supportedTrikStudioVersions the TRIK Studio versions the task can be run with.
@@ -73,17 +73,17 @@ sealed interface TaskContent {
  */
 data class CommittedTaskContent(
     val tests: LazyEntityList<TestId, Test>,
-    val exercise: LazyEntity<ExerciseId, Exercise>,
+    val exercises: LazyEntityList<ExerciseId, Exercise>,
     val statement: LazyEntity<StatementId, Statement>,
     val developerSolutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
     val supportedTrikStudioVersions: List<TrikStudioVersion>,
 )
 
 /**
- * A work-in-progress revision of [Task] content; the exercise and the statement may not be attached yet.
+ * A work-in-progress revision of [Task] content; exercises and the statement may not be attached yet.
  *
  * @property tests the tests (TRIK Studio world models) solutions are graded against.
- * @property exercise the exercise given to solvers, or `null` if not attached yet.
+ * @property exercises the exercises given to solvers, empty if none are attached yet.
  * @property statement the statement describing the task, or `null` if not attached yet.
  * @property developerSolutions the developer's reference solutions.
  * @property supportedTrikStudioVersions the TRIK Studio versions the task can be run with.
@@ -91,7 +91,7 @@ data class CommittedTaskContent(
  */
 data class WipTaskContent(
     val tests: LazyEntityList<TestId, Test>,
-    val exercise: LazyEntity<ExerciseId, Exercise>?,
+    val exercises: LazyEntityList<ExerciseId, Exercise>,
     val statement: LazyEntity<StatementId, Statement>?,
     val developerSolutions: LazyEntityList<DeveloperSolutionId, DeveloperSolution>,
     val supportedTrikStudioVersions: List<TrikStudioVersion>,

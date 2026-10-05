@@ -60,6 +60,7 @@ import tech.testsys.operation.error.CommunityNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotUploadedToTaskError
 import tech.testsys.operation.error.DeveloperSolutionVersionNotLatestError
+import tech.testsys.operation.error.ExerciseLanguageAlreadyAttachedError
 import tech.testsys.operation.error.ExerciseNotExistsError
 import tech.testsys.operation.error.ExerciseNotUploadedToTaskError
 import tech.testsys.operation.error.ExerciseVersionNotLatestError
@@ -73,7 +74,6 @@ import tech.testsys.operation.error.StatementNotExistsError
 import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.StatementVersionNotLatestError
 import tech.testsys.operation.error.TaskAccessDeniedError
-import tech.testsys.operation.error.TaskAlreadyHasExerciseError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
@@ -624,7 +624,7 @@ class DeveloperOperationsTests {
     private fun assertCommittedUnchanged(expected: CommittedTaskContent, result: Task) {
         val content = Assertions.assertInstanceOf(TaskContent.Uncommitted::class.java, result.data.content)
         Assertions.assertEquals(expected.tests.ids, content.lastCommitted.tests.ids)
-        Assertions.assertEquals(expected.exercise.id, content.lastCommitted.exercise.id)
+        Assertions.assertEquals(expected.exercises.ids, content.lastCommitted.exercises.ids)
         Assertions.assertEquals(expected.statement.id, content.lastCommitted.statement.id)
         Assertions.assertEquals(expected.developerSolutions.ids, content.lastCommitted.developerSolutions.ids)
         Assertions.assertEquals(expected.supportedTrikStudioVersions, content.lastCommitted.supportedTrikStudioVersions)
@@ -716,7 +716,7 @@ class DeveloperOperationsTests {
 
     private fun assertWipUnchanged(expected: WipTaskContent, actual: WipTaskContent) {
         Assertions.assertEquals(expected.tests.ids, actual.tests.ids)
-        Assertions.assertEquals(expected.exercise?.id, actual.exercise?.id)
+        Assertions.assertEquals(expected.exercises.ids, actual.exercises.ids)
         Assertions.assertEquals(expected.statement?.id, actual.statement?.id)
         Assertions.assertEquals(expected.developerSolutions.ids, actual.developerSolutions.ids)
         Assertions.assertEquals(expected.supportedTrikStudioVersions, actual.supportedTrikStudioVersions)
@@ -724,7 +724,7 @@ class DeveloperOperationsTests {
 
     private fun assertCommittedRevisionUnchanged(expected: CommittedTaskContent, actual: CommittedTaskContent) {
         Assertions.assertEquals(expected.tests.ids, actual.tests.ids)
-        Assertions.assertEquals(expected.exercise.id, actual.exercise.id)
+        Assertions.assertEquals(expected.exercises.ids, actual.exercises.ids)
         Assertions.assertEquals(expected.statement.id, actual.statement.id)
         Assertions.assertEquals(expected.developerSolutions.ids, actual.developerSolutions.ids)
         Assertions.assertEquals(expected.supportedTrikStudioVersions, actual.supportedTrikStudioVersions)
@@ -1318,7 +1318,7 @@ class DeveloperOperationsTests {
             Assertions.assertEquals(emptySet<VersionBucket>(), taskData.uploadedResources)
             val taskContent = Assertions.assertInstanceOf(TaskContent.New::class.java, taskData.content)
             Assertions.assertTrue { taskContent.wip.tests.ids.isEmpty() }
-            Assertions.assertTrue { taskContent.wip.exercise == null }
+            Assertions.assertTrue { taskContent.wip.exercises.ids.isEmpty() }
             Assertions.assertTrue { taskContent.wip.statement == null }
             Assertions.assertTrue { taskContent.wip.developerSolutions.ids.isEmpty() }
             Assertions.assertTrue { taskContent.wip.supportedTrikStudioVersions.isEmpty() }
@@ -1505,7 +1505,7 @@ class DeveloperOperationsTests {
 
             val content = Assertions.assertInstanceOf(TaskContent.Uncommitted::class.java, result.data.content)
             Assertions.assertEquals(statementId, content.wip.statement?.id)
-            Assertions.assertEquals(ExerciseId(1L), content.lastCommitted.exercise.id)
+            Assertions.assertEquals(listOf(ExerciseId(1L)), content.lastCommitted.exercises.ids)
             Assertions.assertEquals(StatementId(1L), content.lastCommitted.statement.id)
         }
 
@@ -1763,7 +1763,7 @@ class DeveloperOperationsTests {
                 )
                 "Committed" -> content.committed {
                     statement = StatementId(1)
-                    exercise = ExerciseId(1)
+                    exercises = mutableListOf(ExerciseId(1))
                     configureContent(attached)
                 }
                 else -> error("Unsupported test state: $state")
@@ -1831,7 +1831,7 @@ class DeveloperOperationsTests {
             val before = original.getEditableContent()
             val after = updated.getEditableContent()
             Assertions.assertEquals(StatementId(31), after.statement?.id)
-            Assertions.assertEquals(before.exercise?.id, after.exercise?.id)
+            Assertions.assertEquals(before.exercises.ids, after.exercises.ids)
             Assertions.assertEquals(before.tests.ids, after.tests.ids)
             Assertions.assertEquals(before.developerSolutions.ids, after.developerSolutions.ids)
             Assertions.assertEquals(before.supportedTrikStudioVersions, after.supportedTrikStudioVersions)
@@ -1879,7 +1879,7 @@ class DeveloperOperationsTests {
 
         @Test
         fun `should save new version without filling an empty WIP slot`() {
-            prepare(taskForUpdate("New").withData { content.new { exercise = null } })
+            prepare(taskForUpdate("New").withData { content.new { exercises.clear() } })
 
             val result = request(file = uploadFile).getOrThrow()
 
@@ -2039,7 +2039,7 @@ class DeveloperOperationsTests {
         fun `should leave existing WIP unchanged when chain remains only in last committed revision`() {
             val original = taskForUpdate("Uncommitted").withData {
                 content.uncommitted(
-                    wipBuilder = { exercise = ExerciseId(9) },
+                    wipBuilder = { exercises = mutableListOf(ExerciseId(9), ExerciseId(11)) },
                     lastCommittedBuilder = {},
                 )
             }
@@ -2088,7 +2088,7 @@ class DeveloperOperationsTests {
                 )
                 "Committed" -> content.committed {
                     statement = StatementId(1)
-                    exercise = ExerciseId(1)
+                    exercises = mutableListOf(ExerciseId(1))
                     configureContent(attached)
                 }
                 else -> error("Unsupported test state: $state")
@@ -2097,9 +2097,9 @@ class DeveloperOperationsTests {
 
         private fun tech.testsys.domain.builder.task.TaskContentBuilder<*>.configureContent(attached: Boolean) {
             if (attached) {
-                exercise = ExerciseId(10)
+                exercises = mutableListOf(ExerciseId(10), ExerciseId(11))
             } else {
-                exercise = ExerciseId(9)
+                exercises = mutableListOf(ExerciseId(9), ExerciseId(11))
             }
         }
 
@@ -2116,9 +2116,11 @@ class DeveloperOperationsTests {
                     data = firstArg<ExerciseData>()
                 }
             }
-            every { exerciseRepository.load(any<LazyEntity<ExerciseId, Exercise>>()) } answers {
-                val attachedId = firstArg<LazyEntity<ExerciseId, Exercise>>().id
-                resource(attachedId.value, if (attachedId.value == 10L) bucket else VersionBucket(UUID(0, 9)))
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } answers {
+                firstArg<LazyEntityList<ExerciseId, Exercise>>().ids.map { attachedId ->
+                    resource(attachedId.value, if (attachedId.value == 10L) bucket else VersionBucket(UUID(0, 9)))
+                        .withData { if (attachedId.value == 11L) language.javaScript() }
+                }
             }
         }
 
@@ -2156,7 +2158,7 @@ class DeveloperOperationsTests {
             val updated = captured.captured
             val before = original.getEditableContent()
             val after = updated.getEditableContent()
-            Assertions.assertEquals(ExerciseId(31), after.exercise?.id)
+            Assertions.assertEquals(listOf(ExerciseId(31), ExerciseId(11)), after.exercises.ids)
             Assertions.assertEquals(before.statement?.id, after.statement?.id)
             Assertions.assertEquals(before.tests.ids, after.tests.ids)
             Assertions.assertEquals(before.developerSolutions.ids, after.developerSolutions.ids)
@@ -2382,7 +2384,7 @@ class DeveloperOperationsTests {
                 )
                 "Committed" -> content.committed {
                     statement = StatementId(1)
-                    exercise = ExerciseId(1)
+                    exercises = mutableListOf(ExerciseId(1))
                     configureContent(attached)
                 }
                 else -> error("Unsupported test state: $state")
@@ -2452,7 +2454,7 @@ class DeveloperOperationsTests {
             val after = updated.getEditableContent()
             Assertions.assertEquals(listOf(TestId(9), TestId(31), TestId(11)), after.tests.ids)
             Assertions.assertEquals(before.statement?.id, after.statement?.id)
-            Assertions.assertEquals(before.exercise?.id, after.exercise?.id)
+            Assertions.assertEquals(before.exercises.ids, after.exercises.ids)
             Assertions.assertEquals(before.developerSolutions.ids, after.developerSolutions.ids)
             Assertions.assertEquals(before.supportedTrikStudioVersions, after.supportedTrikStudioVersions)
             Assertions.assertEquals(original.id, updated.id)
@@ -2772,7 +2774,7 @@ class DeveloperOperationsTests {
                 )
                 "Committed" -> content.committed {
                     statement = StatementId(1)
-                    exercise = ExerciseId(1)
+                    exercises = mutableListOf(ExerciseId(1))
                     configureContent(attached)
                 }
                 else -> error("Unsupported test state: $state")
@@ -2864,7 +2866,7 @@ class DeveloperOperationsTests {
                 after.developerSolutions.ids,
             )
             Assertions.assertEquals(before.statement?.id, after.statement?.id)
-            Assertions.assertEquals(before.exercise?.id, after.exercise?.id)
+            Assertions.assertEquals(before.exercises.ids, after.exercises.ids)
             Assertions.assertEquals(before.tests.ids, after.tests.ids)
             Assertions.assertEquals(before.supportedTrikStudioVersions, after.supportedTrikStudioVersions)
             Assertions.assertEquals(original.id, updated.id)
@@ -3041,7 +3043,7 @@ class DeveloperOperationsTests {
             val result = developerOperations.shareTask(developer, taskId, setOf(firstCommunityId)).getOrThrow()
 
             val content = Assertions.assertInstanceOf(TaskContent.Uncommitted::class.java, result.data.content)
-            Assertions.assertEquals(ExerciseId(1L), content.lastCommitted.exercise.id)
+            Assertions.assertEquals(listOf(ExerciseId(1L)), content.lastCommitted.exercises.ids)
             Assertions.assertEquals(StatementId(1L), content.lastCommitted.statement.id)
             Assertions.assertNull(content.wip.statement)
         }
@@ -3053,7 +3055,7 @@ class DeveloperOperationsTests {
             val result = developerOperations.shareTask(developer, taskId, setOf(firstCommunityId)).getOrThrow()
 
             val content = Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content)
-            Assertions.assertEquals(ExerciseId(1L), content.lastCommitted.exercise.id)
+            Assertions.assertEquals(listOf(ExerciseId(1L)), content.lastCommitted.exercises.ids)
             Assertions.assertEquals(StatementId(1L), content.lastCommitted.statement.id)
         }
 
@@ -3090,9 +3092,10 @@ class DeveloperOperationsTests {
             every { taskRepository.findById(taskId) } returns testNewTask().withData { uploadedResources.add(bucket) }
             every { exerciseRepository.findById(resourceId) } returns resource()
             every { exerciseRepository.findLatestByVersionBucket(bucket) } returns resource()
-            every { exerciseRepository.load(any<LazyEntity<ExerciseId, Exercise>>()) } answers {
-                val reference = firstArg<LazyEntity<ExerciseId, Exercise>>()
-                resource(reference.id.value, VersionBucket(UUID(0, 3)))
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } answers {
+                firstArg<LazyEntityList<ExerciseId, Exercise>>().ids.map { attachedId ->
+                    resource(attachedId.value, VersionBucket(UUID(0, 3)))
+                }
             }
             every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
         }
@@ -3153,9 +3156,12 @@ class DeveloperOperationsTests {
         fun `should reject another version of an already attached chain`() {
             every { taskRepository.findById(taskId) } returns testNewTask().withData {
                 uploadedResources.add(bucket)
-                content.new { exercise(1) }
+                content.new { exercises(listOf(3, 1)) }
             }
-            every { exerciseRepository.load(any<LazyEntity<ExerciseId, Exercise>>()) } returns resource(1)
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } returns listOf(
+                resource(3, VersionBucket(UUID(0, 3))).withData { language.javaScript() },
+                resource(1),
+            )
 
             assertRaises(ResourceAlreadyAttachedError(taskId, bucket)) {
                 developerOperations.attachExercise(developer, taskId, resourceId)
@@ -3178,7 +3184,7 @@ class DeveloperOperationsTests {
         private fun assertAttachedContent(original: Task, result: Task, attachedId: ExerciseId) {
             val before = original.getEditableContent()
             val after = result.getEditableContent()
-            Assertions.assertEquals(attachedId, after.exercise?.id)
+            Assertions.assertEquals(before.exercises.ids + attachedId, after.exercises.ids)
             Assertions.assertEquals(before.tests.ids, after.tests.ids)
             Assertions.assertEquals(before.developerSolutions.ids, after.developerSolutions.ids)
             Assertions.assertEquals(before.statement?.id, after.statement?.id)
@@ -3197,32 +3203,43 @@ class DeveloperOperationsTests {
         }
 
         @Test
-        fun `should reject an occupied exercise slot with the same language`() {
+        fun `should reject another exercise for the same language`() {
             every { taskRepository.findById(taskId) } returns testNewTask().withData {
                 uploadedResources.add(bucket)
-                content.new { exercise(1) }
+                content.new { exercises(listOf(1)) }
             }
-            every { exerciseRepository.load(any<LazyEntity<ExerciseId, Exercise>>()) } returns resource(1, VersionBucket(UUID(0, 3)))
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } returns
+                listOf(resource(1, VersionBucket(UUID(0, 3))))
 
-            assertRaises(TaskAlreadyHasExerciseError) {
+            assertRaises(ExerciseLanguageAlreadyAttachedError(taskId = taskId, language = TrikSupportedLanguage.Python)) {
                 developerOperations.attachExercise(developer, taskId, resourceId)
             }
             verify(exactly = 0) { taskRepository.update(any<Task>()) }
         }
 
-        @Test
-        fun `should reject an occupied exercise slot with a different language`() {
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should attach another exercise for a different language in every state`(state: String) {
             val existing = resource(1, VersionBucket(UUID(0, 3))).withData { language.javaScript() }
-            every { taskRepository.findById(taskId) } returns testNewTask().withData {
+            val original = taskInState(state).withData {
                 uploadedResources.add(bucket)
-                content.new { exercise(1) }
+                when (state) {
+                    "New" -> content.new { exercises(listOf(1)) }
+                    "Uncommitted" -> content.uncommitted(
+                        wipBuilder = { exercises(listOf(1)) },
+                        lastCommittedBuilder = {},
+                    )
+                    "Committed" -> content.committed { exercises(listOf(1)) }
+                    else -> error("Unsupported test state: $state")
+                }
             }
-            every { exerciseRepository.load(any<LazyEntity<ExerciseId, Exercise>>()) } returns existing
+            every { taskRepository.findById(taskId) } returns original
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } returns listOf(existing)
 
-            assertRaises(TaskAlreadyHasExerciseError) {
-                developerOperations.attachExercise(developer, taskId, resourceId)
-            }
-            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            val result = developerOperations.attachExercise(developer, taskId, resourceId).getOrThrow()
+
+            assertAttachedContent(original, result, resourceId)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
         }
 
         @Test
@@ -3230,7 +3247,7 @@ class DeveloperOperationsTests {
             val original = taskInState("Committed").withData { uploadedResources.add(bucket) }
             every { taskRepository.findById(taskId) } returns original
 
-            assertRaises(TaskAlreadyHasExerciseError) {
+            assertRaises(ExerciseLanguageAlreadyAttachedError(taskId = taskId, language = TrikSupportedLanguage.Python)) {
                 developerOperations.attachExercise(developer, taskId, resourceId)
             }
             Assertions.assertInstanceOf(TaskContent.Committed::class.java, original.data.content)
@@ -3241,13 +3258,31 @@ class DeveloperOperationsTests {
         fun `should reject an attached exercise chain in a Committed task`() {
             val original = testCommitedTask().withData { uploadedResources.add(bucket) }
             every { taskRepository.findById(taskId) } returns original
-            every { exerciseRepository.load(any<LazyEntity<ExerciseId, Exercise>>()) } returns resource(1)
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } returns listOf(resource(1))
 
             assertRaises(ResourceAlreadyAttachedError(taskId, bucket)) {
                 developerOperations.attachExercise(developer, taskId, resourceId)
             }
             Assertions.assertInstanceOf(TaskContent.Committed::class.java, original.data.content)
             verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should attach a third exercise when both other programming languages are already present`() {
+            val original = testNewTask().withData {
+                uploadedResources.add(bucket)
+                content.new { exercises(listOf(1, 3)) }
+            }
+            every { taskRepository.findById(taskId) } returns original
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } returns listOf(
+                resource(1, VersionBucket(UUID(0, 3))).withData { language.javaScript() },
+                resource(3, VersionBucket(UUID(0, 4))).withData { language.visualLanguage() },
+            )
+
+            val result = developerOperations.attachExercise(developer, taskId, resourceId).getOrThrow()
+
+            assertAttachedContent(original, result, resourceId)
+            Assertions.assertEquals(listOf(ExerciseId(1), ExerciseId(3), resourceId), result.getEditableContent().exercises.ids)
         }
 
         @Test
@@ -3258,7 +3293,7 @@ class DeveloperOperationsTests {
 
             val result = developerOperations.attachExercise(developer, taskId, resourceId).getOrThrow()
 
-            Assertions.assertEquals(resourceId, result.getEditableContent().exercise?.id)
+            Assertions.assertEquals(listOf(resourceId), result.getEditableContent().exercises.ids)
             verify(exactly = 1) { taskRepository.update(any<Task>()) }
         }
     }
@@ -3376,7 +3411,7 @@ class DeveloperOperationsTests {
             val before = original.getEditableContent()
             val after = result.getEditableContent()
             Assertions.assertEquals(before.tests.ids + attachedId, after.tests.ids)
-            Assertions.assertEquals(before.exercise?.id, after.exercise?.id)
+            Assertions.assertEquals(before.exercises.ids, after.exercises.ids)
             Assertions.assertEquals(before.developerSolutions.ids, after.developerSolutions.ids)
             Assertions.assertEquals(before.statement?.id, after.statement?.id)
             Assertions.assertEquals(before.supportedTrikStudioVersions, after.supportedTrikStudioVersions)
@@ -3530,7 +3565,7 @@ class DeveloperOperationsTests {
             val before = original.getEditableContent()
             val after = result.getEditableContent()
             Assertions.assertEquals(before.developerSolutions.ids + attachedId, after.developerSolutions.ids)
-            Assertions.assertEquals(before.exercise?.id, after.exercise?.id)
+            Assertions.assertEquals(before.exercises.ids, after.exercises.ids)
             Assertions.assertEquals(before.tests.ids, after.tests.ids)
             Assertions.assertEquals(before.statement?.id, after.statement?.id)
             Assertions.assertEquals(before.supportedTrikStudioVersions, after.supportedTrikStudioVersions)
@@ -3819,7 +3854,7 @@ class DeveloperOperationsTests {
 
             val expected = taskContentNew {
                 detachResources()
-                exercise = null
+                exercises.clear()
             }.wip
             assertDetachedTask(original = original, result = result, expected = expected)
             Assertions.assertEquals(originalVersion, saved.captured.version)
@@ -3828,6 +3863,31 @@ class DeveloperOperationsTests {
             Assertions.assertEquals(originalVersion, original.version)
             Assertions.assertNotSame(original, saved.captured)
             verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should detach only the requested exercise among several in every state`(state: String) {
+            val original = taskForDetach(state).withData {
+                when (state) {
+                    "New" -> content.new { exercises.add(ExerciseId(99)) }
+                    "Uncommitted" -> content.uncommitted(
+                        wipBuilder = { exercises.add(ExerciseId(99)) },
+                        lastCommittedBuilder = {},
+                    )
+                    "Committed" -> content.committed { exercises.add(ExerciseId(99)) }
+                    else -> error("Unsupported test state: $state")
+                }
+            }
+            every { taskRepository.findById(taskId) } returns original
+
+            val result = developerOperations.detachExercise(developer, taskId, resourceId).getOrThrow()
+
+            val expected = taskContentNew {
+                detachResources()
+                exercises(listOf(99))
+            }.wip
+            assertDetachedTask(original = original, result = result, expected = expected)
         }
 
         @Test
@@ -3844,7 +3904,7 @@ class DeveloperOperationsTests {
             assertEditableContentEquals(
                 taskContentNew {
                     detachResources()
-                    exercise = null
+                    exercises.clear()
                 }.wip,
                 result.getEditableContent(),
             )
@@ -3872,7 +3932,7 @@ class DeveloperOperationsTests {
         fun `should reject a version present only in the committed revision when WIP exists`() {
             val original = taskForDetach("Uncommitted").withData {
                 content.uncommitted(
-                    wipBuilder = { exercise(99) },
+                    wipBuilder = { exercises(listOf(99)) },
                     lastCommittedBuilder = {},
                 )
             }
@@ -3889,7 +3949,7 @@ class DeveloperOperationsTests {
         @Test
         fun `should reject an unattached version in a New task`() {
             every { taskRepository.findById(taskId) } returns taskForDetach("New").withData {
-                content.new { exercise = null }
+                content.new { exercises.clear() }
             }
 
             assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
@@ -3919,7 +3979,7 @@ class DeveloperOperationsTests {
 
             val expected = taskContentNew {
                 detachResources()
-                exercise = null
+                exercises.clear()
             }.wip
             assertDetachedTask(original = original, result = result, expected = expected)
         }
@@ -4332,7 +4392,7 @@ class DeveloperOperationsTests {
 
     private fun TaskContentBuilder<*>.detachResources() {
         statement(11)
-        exercise(12)
+        exercises(listOf(12))
         tests(listOf(13, 14, 15))
         developerSolutions(listOf(16, 17, 18))
         supportedTrikStudioVersions(listOf("3.0.0", "4.0.0"))
@@ -4357,7 +4417,7 @@ class DeveloperOperationsTests {
 
     private fun assertEditableContentEquals(expected: WipTaskContent, actual: WipTaskContent) {
         Assertions.assertEquals(expected.statement?.id, actual.statement?.id)
-        Assertions.assertEquals(expected.exercise?.id, actual.exercise?.id)
+        Assertions.assertEquals(expected.exercises.ids, actual.exercises.ids)
         Assertions.assertEquals(expected.tests.ids, actual.tests.ids)
         Assertions.assertEquals(expected.developerSolutions.ids, actual.developerSolutions.ids)
         Assertions.assertEquals(expected.supportedTrikStudioVersions, actual.supportedTrikStudioVersions)

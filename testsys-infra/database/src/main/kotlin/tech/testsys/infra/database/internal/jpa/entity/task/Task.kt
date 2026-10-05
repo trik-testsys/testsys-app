@@ -27,6 +27,30 @@ enum class TaskStatusJpaEnum {
 }
 
 /**
+ * Composite key of [ExerciseToTaskContentJpaEntity].
+ *
+ * @property exerciseId id of the exercise.
+ * @property taskContentId id of the task content revision.
+ * @since %CURRENT_VERSION%
+ */
+@Embeddable
+@InternalDatabaseApi
+data class ExerciseToTaskContentId(
+    val exerciseId: Long,
+    val taskContentId: Long,
+) : CompositeId
+
+/**
+ * Join row: a [ExerciseJpaEntity] belongs to a [TaskContentJpaEntity] revision.
+ *
+ * @since %CURRENT_VERSION%
+ */
+@Entity
+@CompositeKeyConstructor
+@InternalDatabaseApi
+class ExerciseToTaskContentJpaEntity(id: ExerciseToTaskContentId) : CompositeJpaEntity<ExerciseToTaskContentId>(id)
+
+/**
  * Composite key of [TestToTaskContentJpaEntity].
  *
  * @property testId id of the test.
@@ -125,17 +149,15 @@ data class CommunityToTaskId(
 class CommunityToTaskJpaEntity(id: CommunityToTaskId) : CompositeJpaEntity<CommunityToTaskId>(id)
 
 /**
- * JPA entity of [tech.testsys.domain.model.task.TaskContent], one revision of a task's payload; tests, developer
+ * JPA entity of [tech.testsys.domain.model.task.TaskContent], one revision of a task's payload; exercises, tests, developer
  * solutions and TRIK Studio versions are attached through the `*ToTaskContentJpaEntity` join rows.
  *
- * @property exerciseId id of the [ExerciseJpaEntity], or `null` if not attached yet.
  * @property statementId id of the [StatementJpaEntity], or `null` if not attached yet.
  * @since %CURRENT_VERSION%
  */
 @Entity
 @InternalDatabaseApi
 class TaskContentJpaEntity(
-    val exerciseId: Long?,
     val statementId: Long?,
     id: Long? = null,
 ) : SnowflakeJpaEntity(id)

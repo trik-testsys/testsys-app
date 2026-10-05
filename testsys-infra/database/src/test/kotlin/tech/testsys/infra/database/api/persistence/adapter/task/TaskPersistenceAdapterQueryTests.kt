@@ -26,6 +26,7 @@ class TaskPersistenceAdapterQueryTests {
         taskContentJpaEntityRepository = mockk(),
         communityToTaskJpaEntityRepository = communityToTaskJpaEntityRepository,
         versionBucketToTaskJpaEntityRepository = mockk(),
+        exerciseToTaskContentJpaEntityRepository = mockk(),
         testToTaskContentJpaEntityRepository = mockk(),
         developerSolutionToTaskContentJpaEntityRepository = mockk(),
         trikStudioVersionToTaskContentJpaEntityRepository = mockk(),

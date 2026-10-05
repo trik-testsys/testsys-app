@@ -7,6 +7,7 @@ import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.DeveloperSolutionId
+import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
@@ -21,6 +22,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.TaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskStatusJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.task.CommunityToTaskJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.DeveloperSolutionToTaskContentJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.ExerciseToTaskContentJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TaskContentJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TaskJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TestToTaskContentJpaEntityRepository
@@ -49,6 +51,7 @@ class TaskPersistenceAdapter(
     private val taskContentJpaEntityRepository: TaskContentJpaEntityRepository,
     private val communityToTaskJpaEntityRepository: CommunityToTaskJpaEntityRepository,
     private val versionBucketToTaskJpaEntityRepository: VersionBucketToTaskJpaEntityRepository,
+    private val exerciseToTaskContentJpaEntityRepository: ExerciseToTaskContentJpaEntityRepository,
     private val testToTaskContentJpaEntityRepository: TestToTaskContentJpaEntityRepository,
     private val developerSolutionToTaskContentJpaEntityRepository: DeveloperSolutionToTaskContentJpaEntityRepository,
     private val trikStudioVersionToTaskContentJpaEntityRepository: TrikStudioVersionToTaskContentJpaEntityRepository,
@@ -166,11 +169,15 @@ class TaskPersistenceAdapter(
         val rowId = row.requireId()
         return TaskContentRevision(
             jpaEntity = row,
+            exerciseIds = loadExerciseIds(rowId),
             testIds = loadTestIds(rowId),
             developerSolutionIds = loadDeveloperSolutionIds(rowId),
             supportedVersions = loadSupportedVersions(rowId),
         )
     }
+
+    private fun loadExerciseIds(taskContentId: Long): List<ExerciseId> =
+        exerciseToTaskContentJpaEntityRepository.findAllByTaskContentId(taskContentId).map { ExerciseId(it.id.exerciseId) }
 
     private fun loadTestIds(taskContentId: Long): List<TestId> =
         testToTaskContentJpaEntityRepository.findAllByTaskContentId(taskContentId).map { TestId(it.id.testId) }
@@ -233,6 +240,7 @@ class TaskPersistenceAdapter(
         val contentId = saved.requireId()
         persistContentAssociations(
             contentId = contentId,
+            exerciseIds = content.exercises.ids,
             testIds = content.tests.ids,
             developerSolutionIds = content.developerSolutions.ids,
             versions = content.supportedTrikStudioVersions,
@@ -245,6 +253,7 @@ class TaskPersistenceAdapter(
         val contentId = saved.requireId()
         persistContentAssociations(
             contentId = contentId,
+            exerciseIds = content.exercises.ids,
             testIds = content.tests.ids,
             developerSolutionIds = content.developerSolutions.ids,
             versions = content.supportedTrikStudioVersions,
@@ -254,10 +263,12 @@ class TaskPersistenceAdapter(
 
     private fun persistContentAssociations(
         contentId: Long,
+        exerciseIds: List<ExerciseId>,
         testIds: List<TestId>,
         developerSolutionIds: List<DeveloperSolutionId>,
         versions: List<TrikStudioVersion>,
     ) {
+        exerciseToTaskContentJpaEntityRepository.saveAll(TaskContentMapping.toExerciseAssociations(contentId, exerciseIds))
         testToTaskContentJpaEntityRepository.saveAll(TaskContentMapping.toTestAssociations(contentId, testIds))
         developerSolutionToTaskContentJpaEntityRepository.saveAll(
             TaskContentMapping.toDeveloperSolutionAssociations(contentId, developerSolutionIds),
@@ -269,6 +280,9 @@ class TaskPersistenceAdapter(
     }
 
     private fun deleteContentCascade(contentId: Long) {
+        val exercises = exerciseToTaskContentJpaEntityRepository.findAllByTaskContentId(contentId)
+        if (exercises.isNotEmpty()) exerciseToTaskContentJpaEntityRepository.deleteAll(exercises)
+
         val tests = testToTaskContentJpaEntityRepository.findAllByTaskContentId(contentId)
         if (tests.isNotEmpty()) testToTaskContentJpaEntityRepository.deleteAll(tests)
 

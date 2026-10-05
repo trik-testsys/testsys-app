@@ -532,7 +532,7 @@ fun Test.withData(builder: TestDataBuilder.() -> Unit): Test {
 
 private fun WipTaskContentBuilder.populateFrom(content: WipTaskContent) {
     tests = content.tests.ids.toMutableList()
-    exercise = content.exercise?.id
+    exercises = content.exercises.ids.toMutableList()
     statement = content.statement?.id
     developerSolutions = content.developerSolutions.ids.toMutableList()
     supportedTrikStudioVersions = content.supportedTrikStudioVersions.toMutableList()
@@ -540,7 +540,7 @@ private fun WipTaskContentBuilder.populateFrom(content: WipTaskContent) {
 
 private fun CommittedTaskContentBuilder.populateFrom(content: CommittedTaskContent) {
     tests = content.tests.ids.toMutableList()
-    exercise = content.exercise.id
+    exercises = content.exercises.ids.toMutableList()
     statement = content.statement.id
     developerSolutions = content.developerSolutions.ids.toMutableList()
     supportedTrikStudioVersions = content.supportedTrikStudioVersions.toMutableList()

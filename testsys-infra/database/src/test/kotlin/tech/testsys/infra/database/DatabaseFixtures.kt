@@ -254,7 +254,7 @@ class DatabaseFixtures(
                 name = unique("Task")
                 description = "Task description"
                 content.committed {
-                    exercise(exerciseId)
+                    exercises(listOf(exerciseId))
                     statement(statementId)
                 }
             },

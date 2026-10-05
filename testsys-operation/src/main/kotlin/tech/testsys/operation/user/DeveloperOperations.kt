@@ -56,6 +56,7 @@ import tech.testsys.operation.error.DeveloperSolutionNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotUploadedToTaskError
 import tech.testsys.operation.error.DeveloperSolutionVersionNotLatestError
 import tech.testsys.operation.error.DownloadResourceVersionError
+import tech.testsys.operation.error.ExerciseLanguageAlreadyAttachedError
 import tech.testsys.operation.error.ExerciseNotExistsError
 import tech.testsys.operation.error.ExerciseNotUploadedToTaskError
 import tech.testsys.operation.error.ExerciseVersionNotLatestError
@@ -71,7 +72,6 @@ import tech.testsys.operation.error.StatementNotExistsError
 import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.StatementVersionNotLatestError
 import tech.testsys.operation.error.TaskAccessDeniedError
-import tech.testsys.operation.error.TaskAlreadyHasExerciseError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
@@ -445,18 +445,20 @@ class DeveloperOperations(
         }
 
         val editable = task.getEditableContent()
-        val attached = editable.exercise?.let { reference -> exerciseRepository.load(reference) }
-        val isChainAttached = attached?.data?.versionBucket == resource.data.versionBucket
+        val attached = exerciseRepository.load(editable.exercises)
+        val replacedIds = attached.filter { it.data.versionBucket == resource.data.versionBucket }.map { it.id }.toSet()
 
         val updated = resource.withData {
             name = resourceName ?: resource.data.name
             file(file.uploadedFilename, file.content)
         }
         val saved = exerciseRepository.save(updated.data)
-        if (isChainAttached) {
+        if (replacedIds.isNotEmpty()) {
             taskRepository.update(
                 task.changeEditableContent {
-                    exercise = saved.id
+                    exercises = editable.exercises.ids.map { attachedId ->
+                        if (attachedId in replacedIds) saved.id else attachedId
+                    }.toMutableList()
                 },
             )
         }
@@ -624,7 +626,7 @@ class DeveloperOperations(
 
     /**
      * Attaches [newExerciseId] to the editable revision of [taskId] on behalf of [user]. It must be the latest version
-     * of an uploaded chain; rejects an attached chain or an occupied exercise slot.
+     * of an uploaded chain; rejects an attached chain or another exercise using the same language.
      *
      * @since %CURRENT_VERSION%
      */
@@ -644,13 +646,14 @@ class DeveloperOperations(
                 ExerciseVersionNotLatestError(newExerciseId)
             }
             val wipContent = task.getEditableContent()
-            wipContent.exercise?.let { attached ->
-                ensure(exerciseRepository.load(attached).data.versionBucket != resource.data.versionBucket) {
-                    ResourceAlreadyAttachedError(taskId, resource.data.versionBucket)
-                }
+            val attached = exerciseRepository.load(wipContent.exercises)
+            ensure(attached.none { it.data.versionBucket == resource.data.versionBucket }) {
+                ResourceAlreadyAttachedError(taskId, resource.data.versionBucket)
             }
-            ensure(wipContent.exercise == null, TaskAlreadyHasExerciseError)
-            val updatedTask = task.changeEditableContent { exercise = newExerciseId }
+            ensure(attached.none { it.data.language == resource.data.language }) {
+                ExerciseLanguageAlreadyAttachedError(taskId = taskId, language = resource.data.language)
+            }
+            val updatedTask = task.changeEditableContent { exercises.add(newExerciseId) }
             return taskRepository.update(updatedTask).asSuccess()
         }
 
@@ -762,10 +765,10 @@ class DeveloperOperations(
                 ExerciseNotUploadedToTaskError(taskId = taskId, exerciseId = exerciseId)
             }
             val editable = task.getEditableContent()
-            ensure(editable.exercise?.id == exerciseId) {
+            ensure(exerciseId in editable.exercises.ids) {
                 ResourceVersionNotAttachedError(taskId = taskId, versionId = exerciseId)
             }
-            val updatedTask = task.changeEditableContent { exercise = null }
+            val updatedTask = task.changeEditableContent { exercises.remove(exerciseId) }
             return taskRepository.update(updatedTask).asSuccess()
         }
 

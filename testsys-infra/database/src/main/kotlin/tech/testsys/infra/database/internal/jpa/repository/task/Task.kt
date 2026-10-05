@@ -10,6 +10,8 @@ import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskId
 import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionToTaskContentId
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionToTaskContentJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.task.ExerciseToTaskContentId
+import tech.testsys.infra.database.internal.jpa.entity.task.ExerciseToTaskContentJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskContentJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TestToTaskContentId
@@ -20,6 +22,49 @@ import tech.testsys.infra.database.internal.jpa.entity.task.VersionBucketToTaskI
 import tech.testsys.infra.database.internal.jpa.entity.task.VersionBucketToTaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
+
+/**
+ * Spring Data repository for [ExerciseToTaskContentJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
+@Repository
+@InternalDatabaseApi
+interface ExerciseToTaskContentJpaEntityRepository :
+    CompositeJpaEntityRepository<ExerciseToTaskContentJpaEntity, ExerciseToTaskContentId> {
+
+    /**
+     * Finds the association rows of the exercise [exerciseId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.exerciseId = :exerciseId")
+    fun findAllByExerciseId(@Param("exerciseId") exerciseId: Long): List<ExerciseToTaskContentJpaEntity>
+
+    /**
+     * Finds one [pageable] page of the association rows of the exercise [exerciseId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.exerciseId = :exerciseId")
+    fun findAllByExerciseId(@Param("exerciseId") exerciseId: Long, pageable: Pageable): Page<ExerciseToTaskContentJpaEntity>
+
+    /**
+     * Finds the association rows of the task content revision [taskContentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
+    fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long): List<ExerciseToTaskContentJpaEntity>
+
+    /**
+     * Finds one [pageable] page of the association rows of the task content revision [taskContentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
+    fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long, pageable: Pageable): Page<ExerciseToTaskContentJpaEntity>
+}
 
 /**
  * Spring Data repository for [TestToTaskContentJpaEntity].

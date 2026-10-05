@@ -12,9 +12,11 @@ import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.SubmissionStatus
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
@@ -28,10 +30,12 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val authorId = author.id
         val taskId = fixtures.task(author).id.value
         val solutionId = fixtures.solution().id.value
+        val version = fixtures.trikStudioVersion()
         return submissionData {
             this.author = authorId
             solution(solutionId)
             task(taskId)
+            trikStudioVersion = version
             status.queued()
             kind.developerSolutionTest()
         }
@@ -51,6 +55,7 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         assertEquals(expected.data.author.id, actual.data.author.id)
         assertEquals(expected.data.solution.id, actual.data.solution.id)
         assertEquals(expected.data.task.id, actual.data.task.id)
+        assertEquals(expected.data.trikStudioVersion, actual.data.trikStudioVersion)
         assertSameStatus(expected.data.status, actual.data.status)
         assertSameKind(expected.data.kind, actual.data.kind)
         assertEquals(expected.data.judgmentOrders.ids.toSet(), actual.data.judgmentOrders.ids.toSet())
@@ -81,10 +86,12 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val authorId = author.id
         val taskId = fixtures.task().id.value
         val solutionId = fixtures.solution().id.value
+        val version = fixtures.trikStudioVersion()
         return submissionData {
             this.author = authorId
             solution(solutionId)
             task(taskId)
+            trikStudioVersion = version
             status.queued()
             kind.grading { contest(contestId) }
         }
@@ -150,12 +157,14 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val authorId = author.id
         val taskId = fixtures.task(author).id.value
         val solutionId = fixtures.solution().id.value
+        val version = fixtures.trikStudioVersion()
 
         val saved = repository.save(
             submissionData {
                 this.author = authorId
                 solution(solutionId)
                 task(taskId)
+                trikStudioVersion = version
                 status.queued()
                 kind.developerSolutionTest()
                 judgmentOrders(listOf(UNKNOWN_ID))
@@ -171,12 +180,14 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val authorId = fixtures.participant().id
         val taskId = fixtures.task().id.value
         val solutionId = fixtures.solution().id.value
+        val version = fixtures.trikStudioVersion()
 
         val saved = repository.save(
             submissionData {
                 this.author = authorId
                 solution(solutionId)
                 task(taskId)
+                trikStudioVersion = version
                 status.queued()
                 kind.developerSolutionTest()
             },
@@ -186,6 +197,24 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         assertEquals(authorId, saved.data.author.id)
         assertEquals(authorId, found.data.author.id)
         assertIs<SingleRoleUserId>(found.data.author.id)
+    }
+
+    @Test
+    fun `should keep the TRIK Studio version if an unregistered version is passed on update`() {
+        val saved = repository.save(newData())
+        val changed = saved.withData { trikStudioVersion = TrikStudioVersion(fixtures.unique("unregistered")) }
+
+        val updated = repository.update(changed)
+
+        assertEquals(saved.data.trikStudioVersion, updated.data.trikStudioVersion)
+        assertEquals(saved.data.trikStudioVersion, assertNotNull(repository.findById(saved.id)).data.trikStudioVersion)
+    }
+
+    @Test
+    fun `should fail to save a submission with an unregistered TRIK Studio version`() {
+        val data = newData().copy(trikStudioVersion = TrikStudioVersion(fixtures.unique("unregistered")))
+
+        assertFailsWith<IllegalArgumentException> { repository.save(data) }
     }
 
     @Test

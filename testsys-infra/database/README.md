@@ -25,6 +25,18 @@
 Бины регистрирует [DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/DatabaseConfiguration.kt),
 настройки Hibernate по умолчанию — в [hibernate-defaults.properties](src/main/resources/hibernate-defaults.properties).
 
+## Поиск доступных Задач
+
+Метод `findAvailableToDeveloper` в
+[TaskPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/TaskPersistenceAdapter.kt)
+читает собственные Задачи через `findAllByOwnerId`. Метод Spring Data `findAllByIdCommunityIdIn` загружает
+связи сразу для всех переданных Сообществ. По найденным идентификаторам адаптер загружает общие Задачи
+через `findAllById`, объединяет результаты и убирает дубликаты по идентификатору до сборки доменных сущностей.
+При пустом наборе Сообществ адаптер ищет только по владельцу; при отсутствии связей пропускает загрузку общих Задач.
+Выборка включает до трёх запросов. Сборка доменных сущностей читает дополнительные данные каждой Задачи.
+Все чтения выполняются в транзакции с `readOnly = true`; порядок списка не гарантирован,
+исключения хранилища выходят к вызывающему коду.
+
 ## Идентификаторы
 
 Идентификаторы сущностей выдаёт [SnowflakeIdGenerator.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/id/SnowflakeIdGenerator.kt),
@@ -54,6 +66,9 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 в [testsys-domain/README.md](../../testsys-domain/README.md).
 
 ## Загруженные Ресурсы Задачи
+
+Адаптеры Условий, Упражнений, Полигонов и Авторских Решений возвращают историю существующими доменными сущностями.
+Их `findFileRef` читает только метаданные файла и возвращает существующий `StoredBlobRef`, не обращаясь к `FileBlobStorage`.
 
 `TaskData.uploadedResources` хранится в `ts_version_bucket_to_task`: составной ключ включает `task_id`
 и `version_bucket`, а уникальное ограничение на `version_bucket` исключает одновременную принадлежность

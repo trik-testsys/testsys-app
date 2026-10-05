@@ -25,7 +25,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
  *
  * @param T the type of the built revision.
  * @property tests the ids of the tests (polygons) of the revision.
- * @property exercise the id of the exercise, or `null` if not set yet.
+ * @property exercises the ids of the exercises of the revision.
  * @property statement the id of the statement, or `null` if not set yet.
  * @property developerSolutions the ids of the developer solutions of the revision.
  * @property supportedTrikStudioVersions the TRIK Studio versions supported by the revision.
@@ -35,7 +35,7 @@ abstract class TaskContentBuilder<T> : Builder<T> {
 
     var tests = mutableListOf<TestId>()
 
-    var exercise: ExerciseId? = null
+    var exercises = mutableListOf<ExerciseId>()
 
     var statement: StatementId? = null
 
@@ -53,12 +53,12 @@ abstract class TaskContentBuilder<T> : Builder<T> {
     }
 
     /**
-     * Sets [exercise] from a raw id.
+     * Sets [exercises] from raw ids.
      *
      * @since %CURRENT_VERSION%
      */
-    fun exercise(exercise: Long) {
-        this.exercise = ExerciseId(exercise)
+    fun exercises(exercises: Iterable<Long>) {
+        this.exercises = exercises.map { ExerciseId(it) }.toMutableList()
     }
 
     /**
@@ -90,19 +90,19 @@ abstract class TaskContentBuilder<T> : Builder<T> {
 }
 
 /**
- * Builder of [CommittedTaskContent]. Required: [exercise], [statement].
+ * Builder of [CommittedTaskContent]. Required: nonempty [exercises], [statement].
  *
  * @since %CURRENT_VERSION%
  */
 class CommittedTaskContentBuilder : TaskContentBuilder<CommittedTaskContent>() {
 
     override fun build(): CommittedTaskContent {
-        val exercise = requireField(exercise) { ::exercise }
+        require(exercises.isNotEmpty()) { "Committed task content requires at least one exercise" }
         val statement = requireField(statement) { ::statement }
 
         return CommittedTaskContent(
             tests = tests.lazify(),
-            exercise = exercise.lazify(),
+            exercises = exercises.lazify(),
             statement = statement.lazify(),
             developerSolutions = developerSolutions.lazify(),
             supportedTrikStudioVersions = supportedTrikStudioVersions,
@@ -111,7 +111,7 @@ class CommittedTaskContentBuilder : TaskContentBuilder<CommittedTaskContent>() {
 }
 
 /**
- * Builder of [WipTaskContent]; [exercise] and [statement] are optional.
+ * Builder of [WipTaskContent]; [exercises] may be empty and [statement] is optional.
  *
  * @since %CURRENT_VERSION%
  */
@@ -120,7 +120,7 @@ class WipTaskContentBuilder : TaskContentBuilder<WipTaskContent>() {
     override fun build(): WipTaskContent {
         return WipTaskContent(
             tests = tests.lazify(),
-            exercise = exercise?.lazify(),
+            exercises = exercises.lazify(),
             statement = statement?.lazify(),
             developerSolutions = developerSolutions.lazify(),
             supportedTrikStudioVersions = supportedTrikStudioVersions,

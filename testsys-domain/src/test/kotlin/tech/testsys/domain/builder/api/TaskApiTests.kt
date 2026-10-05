@@ -58,6 +58,7 @@ class TaskApiTests {
                 author = LazyEntity(MultipleRoleUserId(10)),
                 solution = LazyEntity(SolutionId(15)),
                 task = LazyEntity(TaskId(9)),
+                trikStudioVersion = TrikStudioVersion("3.0.0"),
                 status = SubmissionStatus.InProgress,
                 kind = SubmissionKind.DeveloperSolutionTest,
                 judgmentOrders = LazyEntityList(listOf(JudgmentOrderId(32))),
@@ -74,9 +75,18 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.author.id, copy.data.author.id)
             Assertions.assertEquals(origin.data.solution.id, copy.data.solution.id)
             Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
+            Assertions.assertEquals(origin.data.trikStudioVersion, copy.data.trikStudioVersion)
             Assertions.assertEquals(origin.data.status, copy.data.status)
             Assertions.assertEquals(origin.data.kind, copy.data.kind)
             Assertions.assertEquals(origin.data.judgmentOrders.ids, copy.data.judgmentOrders.ids)
+        }
+
+        @Test
+        fun `should change TRIK Studio version if withData sets version`() {
+            val copy = origin.withData { trikStudioVersion("4.0.0") }
+
+            Assertions.assertEquals(TrikStudioVersion("4.0.0"), copy.data.trikStudioVersion)
+            Assertions.assertEquals(origin.version, copy.version)
         }
 
         @Test
@@ -132,6 +142,53 @@ class TaskApiTests {
             val copy = origin.withData { name = "Updated Contest" }
 
             Assertions.assertEquals("Updated Contest", copy.data.name)
+        }
+
+        @Test
+        fun `should clear both limits if withData sets them to null`() {
+            val copy = origin.withData {
+                contestDuration = null
+                attemptDuration = null
+            }
+
+            Assertions.assertNull(copy.data.contestDuration)
+            Assertions.assertNull(copy.data.attemptDuration)
+            Assertions.assertNull(copy.data.endsAt)
+            Assertions.assertEquals(origin.data.startsAt, copy.data.startsAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertNotNull(origin.data.contestDuration)
+        }
+
+        @Test
+        fun `should preserve absent limits when withData changes another field`() {
+            val unlimited = origin.withData {
+                contestDuration = null
+                attemptDuration = null
+            }
+
+            val copy = unlimited.withData { name = "Unlimited contest" }
+
+            Assertions.assertNull(copy.data.contestDuration)
+            Assertions.assertNull(copy.data.attemptDuration)
+            Assertions.assertEquals(unlimited.version, copy.version)
+        }
+
+        @Test
+        fun `should set finite limits on a contest without limits`() {
+            val unlimited = origin.withData {
+                contestDuration = null
+                attemptDuration = null
+            }
+
+            val copy = unlimited.withData {
+                contestDuration = Duration.ofMinutes(10)
+                attemptDuration = Duration.ofMinutes(5)
+            }
+
+            Assertions.assertEquals(Duration.ofMinutes(10), copy.data.contestDuration)
+            Assertions.assertEquals(Duration.ofMinutes(5), copy.data.attemptDuration)
+            Assertions.assertEquals(Instant.ofEpochSecond(5600), copy.data.endsAt)
+            Assertions.assertNull(unlimited.data.contestDuration)
         }
     }
 
@@ -520,7 +577,7 @@ class TaskApiTests {
                 content = TaskContent.New(
                     wip = WipTaskContent(
                         tests = LazyEntityList(listOf(TestId(20))),
-                        exercise = LazyEntity(ExerciseId(30)),
+                        exercises = LazyEntityList(listOf(ExerciseId(30), ExerciseId(32))),
                         statement = LazyEntity(StatementId(40)),
                         developerSolutions = LazyEntityList(listOf(DeveloperSolutionId(50))),
                         supportedTrikStudioVersions = listOf(TrikStudioVersion("3.0.0")),
@@ -546,7 +603,7 @@ class TaskApiTests {
             val originWip = (origin.data.content as TaskContent.New).wip
             val copyWip = (copy.data.content as TaskContent.New).wip
             Assertions.assertEquals(originWip.tests.ids, copyWip.tests.ids)
-            Assertions.assertEquals(originWip.exercise?.id, copyWip.exercise?.id)
+            Assertions.assertEquals(originWip.exercises.ids, copyWip.exercises.ids)
             Assertions.assertEquals(originWip.statement?.id, copyWip.statement?.id)
             Assertions.assertEquals(originWip.developerSolutions.ids, copyWip.developerSolutions.ids)
             Assertions.assertEquals(originWip.supportedTrikStudioVersions, copyWip.supportedTrikStudioVersions)
@@ -567,14 +624,14 @@ class TaskApiTests {
         fun `should change content from New to Committed if withData commits it`() {
             val copy = origin.withData {
                 content.committed {
-                    exercise(30)
+                    exercises(listOf(30))
                     statement(40)
                 }
             }
 
             Assertions.assertInstanceOf(TaskContent.Committed::class.java, copy.data.content)
             val copyCommitted = (copy.data.content as TaskContent.Committed).lastCommitted
-            Assertions.assertEquals(30L, copyCommitted.exercise.id.value)
+            Assertions.assertEquals(30L, copyCommitted.exercises.ids.single().value)
             Assertions.assertEquals(40L, copyCommitted.statement.id.value)
         }
     }
@@ -595,7 +652,7 @@ class TaskApiTests {
                 content = TaskContent.Committed(
                     lastCommitted = CommittedTaskContent(
                         tests = LazyEntityList(listOf(TestId(20))),
-                        exercise = LazyEntity(ExerciseId(30)),
+                        exercises = LazyEntityList(listOf(ExerciseId(30), ExerciseId(32))),
                         statement = LazyEntity(StatementId(40)),
                         developerSolutions = LazyEntityList(listOf(DeveloperSolutionId(50))),
                         supportedTrikStudioVersions = listOf(TrikStudioVersion("3.0.0")),
@@ -621,7 +678,7 @@ class TaskApiTests {
             val originCommitted = (origin.data.content as TaskContent.Committed).lastCommitted
             val copyCommitted = (copy.data.content as TaskContent.Committed).lastCommitted
             Assertions.assertEquals(originCommitted.tests.ids, copyCommitted.tests.ids)
-            Assertions.assertEquals(originCommitted.exercise.id, copyCommitted.exercise.id)
+            Assertions.assertEquals(originCommitted.exercises.ids, copyCommitted.exercises.ids)
             Assertions.assertEquals(originCommitted.statement.id, copyCommitted.statement.id)
             Assertions.assertEquals(originCommitted.developerSolutions.ids, copyCommitted.developerSolutions.ids)
             Assertions.assertEquals(originCommitted.supportedTrikStudioVersions, copyCommitted.supportedTrikStudioVersions)
@@ -639,12 +696,12 @@ class TaskApiTests {
         @Test
         fun `should change committed content if withData sets it`() {
             val copy = origin.withData {
-                content.committed { exercise(99) }
+                content.committed { exercises(listOf(99)) }
             }
 
             Assertions.assertInstanceOf(TaskContent.Committed::class.java, copy.data.content)
             val copyCommitted = (copy.data.content as TaskContent.Committed).lastCommitted
-            Assertions.assertEquals(99L, copyCommitted.exercise.id.value)
+            Assertions.assertEquals(99L, copyCommitted.exercises.ids.single().value)
             Assertions.assertEquals(40L, copyCommitted.statement.id.value)
         }
     }
@@ -665,14 +722,14 @@ class TaskApiTests {
                 content = TaskContent.Uncommitted(
                     wip = WipTaskContent(
                         tests = LazyEntityList(listOf(TestId(20))),
-                        exercise = LazyEntity(ExerciseId(30)),
+                        exercises = LazyEntityList(listOf(ExerciseId(30), ExerciseId(32))),
                         statement = LazyEntity(StatementId(40)),
                         developerSolutions = LazyEntityList(emptyList()),
                         supportedTrikStudioVersions = listOf(TrikStudioVersion("3.0.0")),
                     ),
                     lastCommitted = CommittedTaskContent(
                         tests = LazyEntityList(listOf(TestId(21))),
-                        exercise = LazyEntity(ExerciseId(31)),
+                        exercises = LazyEntityList(listOf(ExerciseId(31), ExerciseId(33))),
                         statement = LazyEntity(StatementId(41)),
                         developerSolutions = LazyEntityList(listOf(DeveloperSolutionId(51))),
                         supportedTrikStudioVersions = listOf(TrikStudioVersion("2.0.0")),
@@ -698,26 +755,44 @@ class TaskApiTests {
             val copyContent = copy.data.content as TaskContent.Uncommitted
 
             Assertions.assertEquals(originContent.wip.tests.ids, copyContent.wip.tests.ids)
-            Assertions.assertEquals(originContent.wip.exercise?.id, copyContent.wip.exercise?.id)
+            Assertions.assertEquals(originContent.wip.exercises.ids, copyContent.wip.exercises.ids)
             Assertions.assertEquals(originContent.wip.statement?.id, copyContent.wip.statement?.id)
 
             Assertions.assertEquals(originContent.lastCommitted.tests.ids, copyContent.lastCommitted.tests.ids)
-            Assertions.assertEquals(originContent.lastCommitted.exercise.id, copyContent.lastCommitted.exercise.id)
+            Assertions.assertEquals(originContent.lastCommitted.exercises.ids, copyContent.lastCommitted.exercises.ids)
             Assertions.assertEquals(originContent.lastCommitted.statement.id, copyContent.lastCommitted.statement.id)
+        }
+
+        @Test
+        fun `should copy exercise collections independently for both revisions`() {
+            val copy = origin.withData {
+                content.uncommitted(
+                    wipBuilder = { exercises.add(ExerciseId(99)) },
+                    lastCommittedBuilder = { exercises.remove(ExerciseId(31)) },
+                )
+            }
+
+            val original = Assertions.assertInstanceOf(TaskContent.Uncommitted::class.java, origin.data.content)
+            val changed = Assertions.assertInstanceOf(TaskContent.Uncommitted::class.java, copy.data.content)
+            Assertions.assertEquals(listOf(ExerciseId(30), ExerciseId(32)), original.wip.exercises.ids)
+            Assertions.assertEquals(listOf(ExerciseId(31), ExerciseId(33)), original.lastCommitted.exercises.ids)
+            Assertions.assertEquals(listOf(ExerciseId(30), ExerciseId(32), ExerciseId(99)), changed.wip.exercises.ids)
+            Assertions.assertEquals(listOf(ExerciseId(33)), changed.lastCommitted.exercises.ids)
+            Assertions.assertEquals(origin.version, copy.version)
         }
 
         @Test
         fun `should change uncommitted content if withData sets it`() {
             val copy = origin.withData {
                 content.uncommitted(
-                    wipBuilder = { exercise(99) },
-                    lastCommittedBuilder = { exercise(98) },
+                    wipBuilder = { exercises(listOf(99)) },
+                    lastCommittedBuilder = { exercises(listOf(98)) },
                 )
             }
 
             val copyContent = copy.data.content as TaskContent.Uncommitted
-            Assertions.assertEquals(99L, copyContent.wip.exercise?.id?.value)
-            Assertions.assertEquals(98L, copyContent.lastCommitted.exercise.id.value)
+            Assertions.assertEquals(99L, copyContent.wip.exercises.ids.single().value)
+            Assertions.assertEquals(98L, copyContent.lastCommitted.exercises.ids.single().value)
         }
 
         @Test
@@ -757,7 +832,7 @@ class TaskApiTests {
         Assertions.assertEquals(origin.version, copy.version)
         val content = Assertions.assertInstanceOf(TaskContent.New::class.java, copy.data.content)
         Assertions.assertEquals(emptyList<TestId>(), content.wip.tests.ids)
-        Assertions.assertNull(content.wip.exercise)
+        Assertions.assertEquals(emptyList<ExerciseId>(), content.wip.exercises.ids)
         Assertions.assertNull(content.wip.statement)
     }
 }

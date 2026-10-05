@@ -10,6 +10,7 @@ import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikStudioVersion
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.ContestJpaEntity
@@ -39,6 +40,21 @@ class ContestPersistenceAdapter(
     private val trikStudioVersionJpaEntityRepository: TrikStudioVersionJpaEntityRepository,
 ) : AbstractPersistenceAdapter<ContestData, ContestId, Contest, ContestJpaEntity>(jpaEntityRepository),
     ContestRepository {
+
+    private val contestJpaEntityRepository: ContestJpaEntityRepository = jpaEntityRepository
+
+    @Transactional(readOnly = true)
+    override fun findAvailableToDeveloper(ownerId: MultipleRoleUserId, communityIds: Set<CommunityId>): List<Contest> {
+        val owned = contestJpaEntityRepository.findAllByOwnerId(ownerId.value)
+        val sharedContestIds = if (communityIds.isEmpty()) {
+            emptySet()
+        } else {
+            communityToContestJpaEntityRepository.findAllByIdCommunityIdIn(communityIds.map { it.value }.toSet())
+                .map { it.id.contestId }.toSet()
+        }
+        val shared = if (sharedContestIds.isEmpty()) emptyList() else contestJpaEntityRepository.findAllById(sharedContestIds)
+        return (owned + shared).distinctBy { it.requireId() }.map { assemble(it) }
+    }
 
     @Transactional
     override fun save(data: ContestData): Contest {

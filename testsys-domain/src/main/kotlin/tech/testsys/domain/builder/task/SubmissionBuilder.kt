@@ -18,6 +18,7 @@ import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TestVerdict
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
@@ -162,11 +163,12 @@ class VerdictBuilder : DomainEntityWithDataBuilder<Verdict, VerdictData, Verdict
 }
 
 /**
- * Builder of [SubmissionData]. Required: [author], [solution], [task], choices in [status] and [kind].
+ * Builder of [SubmissionData]. Required: [author], [solution], [task], [trikStudioVersion], choices in [status] and [kind].
  *
  * @property author the id of the submitting user, or `null` if not set yet.
  * @property solution the id of the submitted solution, or `null` if not set yet.
  * @property task the id of the task, or `null` if not set yet.
+ * @property trikStudioVersion the TRIK Studio version used for grading, or `null` if not set yet.
  * @property judgmentOrders the ids of the judgment orders concerning the submission.
  * @property status the chooser of the submission status.
  * @property kind the chooser of the submission kind.
@@ -179,6 +181,8 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     var solution: SolutionId? = null
 
     var task: TaskId? = null
+
+    var trikStudioVersion: TrikStudioVersion? = null
 
     var judgmentOrders = mutableListOf<JudgmentOrderId>()
 
@@ -214,6 +218,15 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
     }
 
     /**
+     * Sets [trikStudioVersion] from a raw version tag.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun trikStudioVersion(version: String) {
+        trikStudioVersion = TrikStudioVersion(version = version)
+    }
+
+    /**
      * Sets [judgmentOrders] from raw ids.
      *
      * @since %CURRENT_VERSION%
@@ -226,11 +239,13 @@ class SubmissionDataBuilder : Builder<SubmissionData> {
         val author = requireField(author) { ::author }
         val solution = requireField(solution) { ::solution }
         val task = requireField(task) { ::task }
+        val trikStudioVersion = requireField(trikStudioVersion) { ::trikStudioVersion }
 
         return SubmissionData(
             author = author.lazify(),
             solution = solution.lazify(),
             task = task.lazify(),
+            trikStudioVersion = trikStudioVersion,
             status = status.build(),
             kind = kind.build(),
             judgmentOrders = judgmentOrders.lazify(),

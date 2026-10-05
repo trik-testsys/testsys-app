@@ -11,6 +11,7 @@ import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.SubmissionStatus
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.GradingResultJpaEnum
@@ -30,17 +31,23 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
 
     /**
-     * Assembles a [Submission] from [jpaEntity], its resolved [authorId] and [judgmentOrderIds];
+     * Assembles a [Submission] from [jpaEntity], its resolved [authorId], [trikStudioVersion] and [judgmentOrderIds];
      * fails on inconsistent status or kind columns.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDomain(jpaEntity: SubmissionJpaEntity, authorId: UserId, judgmentOrderIds: List<JudgmentOrderId>) = submission {
+    fun toDomain(
+        jpaEntity: SubmissionJpaEntity,
+        authorId: UserId,
+        trikStudioVersion: TrikStudioVersion,
+        judgmentOrderIds: List<JudgmentOrderId>,
+    ) = submission {
         populateFields(jpaEntity)
         data {
             author = authorId
             solution(jpaEntity.solutionId)
             task(jpaEntity.taskId)
+            this.trikStudioVersion = trikStudioVersion
 
             status.decodeStatus(jpaEntity)
             kind.decodeKind(jpaEntity)
@@ -50,11 +57,11 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
     }
 
     /**
-     * Creates a new [SubmissionJpaEntity] row from [data].
+     * Creates a new [SubmissionJpaEntity] row from [data] referencing the version row [trikStudioVersionId].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toJpaEntity(data: SubmissionData): SubmissionJpaEntity {
+    fun toJpaEntity(data: SubmissionData, trikStudioVersionId: Long): SubmissionJpaEntity {
         val statusEncoded = encodeStatus(data.status)
         val kindEncoded = encodeKind(data.kind)
 
@@ -62,6 +69,7 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
             authorId = data.author.id.value,
             solutionId = data.solution.id.value,
             taskId = data.task.id.value,
+            trikStudioVersionId = trikStudioVersionId,
             status = statusEncoded.status,
             gradingResult = statusEncoded.gradingResult,
             gradingVerdictId = statusEncoded.gradingVerdictId,
@@ -73,7 +81,7 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
 
     /**
      * Creates the [SubmissionJpaEntity] row replacing [current] from [entity],
-     * keeping `authorId`, `solutionId`, `taskId`, the kind columns, `createdAt` and `version`.
+     * keeping `authorId`, `solutionId`, `taskId`, `trikStudioVersionId`, the kind columns, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
@@ -84,6 +92,7 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
             authorId = current.authorId,
             solutionId = current.solutionId,
             taskId = current.taskId,
+            trikStudioVersionId = current.trikStudioVersionId,
             status = statusEncoded.status,
             gradingResult = statusEncoded.gradingResult,
             gradingVerdictId = statusEncoded.gradingVerdictId,

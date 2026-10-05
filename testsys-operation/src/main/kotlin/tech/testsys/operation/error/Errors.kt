@@ -1,8 +1,18 @@
 package tech.testsys.operation.error
 
+import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.DeveloperSolutionId
+import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikStudioVersion
+import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.domain.model.task.VersionBucket
+import java.time.Duration
+import java.time.Instant
 
 /**
  * Expected failure of an operation, returned in [OperationResult.Error].
@@ -47,11 +57,158 @@ sealed interface ResourceAccessError : OperationError
 // region DeveloperOperations
 
 /**
+ * Failure of listing contests available to the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewContestsError : OperationError
+
+/**
+ * Failure of viewing a contest available to the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewContestError : OperationError
+
+/**
+ * Failure of reverting a task owned by the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RevertTaskError : OperationError
+
+/**
+ * Failure of listing tasks available to the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewTasksError : OperationError
+
+/**
+ * Failure of viewing a task owned by the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewTaskError : OperationError
+
+/**
+ * Failure of editing information of a task owned by the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EditTaskInfoError : OperationError
+
+/**
+ * Failure of listing the developer's resources.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewResourcesError : OperationError
+
+/**
+ * Failure of viewing a resource and its existing versions.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewResourceError : OperationError
+
+/**
+ * Failure of obtaining the file reference of a resource version.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadResourceVersionError : OperationError
+
+/**
+ * Failure of updating a statement uploaded to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface UpdateStatementError : OperationError
+
+/**
+ * Failure of updating an exercise uploaded to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface UpdateExerciseError : OperationError
+
+/**
+ * Failure of updating a polygon uploaded to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface UpdateTestError : OperationError
+
+/**
+ * Failure of updating a developer solution uploaded to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface UpdateDeveloperSolutionError : OperationError
+
+/**
+ * Failure of uploading a new statement to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AddStatementError : OperationError
+
+/**
+ * Failure of uploading a new exercise to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AddExerciseError : OperationError
+
+/**
+ * Failure of uploading a new polygon to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AddTestError : OperationError
+
+/**
+ * Failure of uploading a new developer solution to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AddDeveloperSolutionError : OperationError
+
+/**
  * Failure of creating a task.
  *
  * @since %CURRENT_VERSION%
  */
 sealed interface CreateTaskError : OperationError
+
+/**
+ * Failure of creating a contest.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateContestError : OperationError
+
+/**
+ * Failure of editing a contest owned by the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EditContestError : OperationError
+
+/**
+ * Failure of sharing a contest to communities.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ShareContestError : OperationError
+
+/**
+ * Failure of attaching a task to a contest.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AttachTaskError : OperationError
 
 /**
  * Failure of attaching a statement to a task.
@@ -61,11 +218,60 @@ sealed interface CreateTaskError : OperationError
 sealed interface AttachStatementError : OperationError
 
 /**
+ * Failure of attaching a exercise to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AttachExerciseError : OperationError
+
+/**
+ * Failure of attaching a test to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AttachTestError : OperationError
+
+/**
+ * Failure of attaching a developersolution to a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AttachDeveloperSolutionError : OperationError
+
+/**
  * Failure of sharing a task to communities.
  *
  * @since %CURRENT_VERSION%
  */
 sealed interface ShareTaskError : OperationError
+
+/**
+ * Failure of detaching a statement version from a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DetachStatementError : OperationError
+
+/**
+ * Failure of detaching an exercise version from a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DetachExerciseError : OperationError
+
+/**
+ * Failure of detaching a polygon version from a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DetachTestError : OperationError
+
+/**
+ * Failure of detaching a developer solution version from a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DetachDeveloperSolutionError : OperationError
 // endregion
 
 // region Errors
@@ -75,7 +281,104 @@ sealed interface ShareTaskError : OperationError
  *
  * @since %CURRENT_VERSION%
  */
-data object MissedDeveloperRoleError : MissedRequiredRoleError, CreateTaskError, AttachStatementError, ShareTaskError
+data object MissedDeveloperRoleError :
+    AttachTaskError,
+    ViewContestsError,
+    ViewContestError,
+    RevertTaskError,
+    ShareContestError,
+    EditContestError,
+    EditTaskInfoError,
+    ViewTaskError,
+    ViewTasksError,
+    DetachStatementError,
+    DetachExerciseError,
+    DetachTestError,
+    DetachDeveloperSolutionError,
+    ViewResourcesError,
+    ViewResourceError,
+    DownloadResourceVersionError,
+    UpdateStatementError,
+    UpdateExerciseError,
+    UpdateTestError,
+    UpdateDeveloperSolutionError,
+    AddStatementError,
+    AddExerciseError,
+    AddTestError,
+    AddDeveloperSolutionError,
+    MissedRequiredRoleError,
+    CreateTaskError,
+    CreateContestError,
+    AttachStatementError,
+    ShareTaskError,
+    AttachExerciseError,
+    AttachTestError,
+    AttachDeveloperSolutionError
+
+/**
+ * The contest end is specified without its start.
+ *
+ * @property endsAt the end moment supplied without a start.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestEndWithoutStartError(val endsAt: Instant) : CreateContestError, EditContestError
+
+/**
+ * The contest end is not later than its start.
+ *
+ * @property startsAt the requested start moment.
+ * @property endsAt the requested end moment.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestEndNotAfterStartError(val startsAt: Instant, val endsAt: Instant) : CreateContestError, EditContestError
+
+/**
+ * The individual time limit is zero or negative.
+ *
+ * @property attemptDuration the nonpositive individual limit.
+ * @since %CURRENT_VERSION%
+ */
+data class NonPositiveAttemptDurationError(val attemptDuration: Duration) : CreateContestError
+
+/**
+ * The individual time limit exceeds the contest interval.
+ *
+ * @property attemptDuration the requested individual limit.
+ * @property contestDuration the available contest interval.
+ * @since %CURRENT_VERSION%
+ */
+data class AttemptDurationExceedsContestDurationError(
+    val attemptDuration: Duration,
+    val contestDuration: Duration,
+) : CreateContestError, EditContestError
+
+/**
+ * The contest does not exist.
+ *
+ * @property contestId the id of the missing contest.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestNotExistsError(
+    val contestId: ContestId,
+) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
+
+/**
+ * The user has no access to the contest for the requested operation.
+ *
+ * @property contestId the id of the contest.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestAccessDeniedError(
+    val contestId: ContestId,
+) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
+
+/**
+ * The contest is shared to at least one community.
+ *
+ * @property contestId the id of the shared contest.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestAlreadySharedError(val contestId: ContestId) : EditContestError, AttachTaskError
 
 /**
  * The task does not exist.
@@ -83,7 +386,31 @@ data object MissedDeveloperRoleError : MissedRequiredRoleError, CreateTaskError,
  * @property taskId the id of the missing task.
  * @since %CURRENT_VERSION%
  */
-data class TaskNotExistsError(val taskId: TaskId) : EntityNotExistsError, AttachStatementError, ShareTaskError
+data class TaskNotExistsError(val taskId: TaskId) :
+    AttachTaskError,
+    RevertTaskError,
+    EditTaskInfoError,
+    ViewTaskError,
+    DetachStatementError,
+    DetachExerciseError,
+    DetachTestError,
+    DetachDeveloperSolutionError,
+    ViewResourceError,
+    DownloadResourceVersionError,
+    UpdateStatementError,
+    UpdateExerciseError,
+    UpdateTestError,
+    UpdateDeveloperSolutionError,
+    AddStatementError,
+    AddExerciseError,
+    AddTestError,
+    AddDeveloperSolutionError,
+    EntityNotExistsError,
+    AttachStatementError,
+    ShareTaskError,
+    AttachExerciseError,
+    AttachTestError,
+    AttachDeveloperSolutionError
 
 /**
  * The statement does not exist.
@@ -91,16 +418,22 @@ data class TaskNotExistsError(val taskId: TaskId) : EntityNotExistsError, Attach
  * @property statementId the id of the missing statement.
  * @since %CURRENT_VERSION%
  */
-data class StatementNotExistsError(val statementId: StatementId) : EntityNotExistsError, AttachStatementError
+data class StatementNotExistsError(val statementId: StatementId) :
+    EntityNotExistsError,
+    AttachStatementError,
+    UpdateStatementError,
+    DetachStatementError
 
 /**
  * The statement's version chain is not uploaded to the task.
  *
  * @property taskId the id of the task.
- * @property statementId the id of the statement that cannot be attached.
+ * @property statementId the id of the resource outside the task's uploaded chains.
  * @since %CURRENT_VERSION%
  */
 data class StatementNotUploadedToTaskError(val taskId: TaskId, val statementId: StatementId) :
+    DetachStatementError,
+    UpdateStatementError,
     AttachStatementError,
     ResourceAccessError
 
@@ -117,15 +450,39 @@ data object TaskAlreadyHasStatementError : AttachStatementError
  * @property communityId the id of the missing community.
  * @since %CURRENT_VERSION%
  */
-data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExistsError, ShareTaskError
+data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExistsError, ShareTaskError, ShareContestError
 
 /**
- * The user is not the owner of the task.
+ * The user lacks the access to the task required by the operation.
  *
  * @property taskId the id of the task.
  * @since %CURRENT_VERSION%
  */
-data class TaskAccessDeniedError(val taskId: TaskId) : AccessDeniedError, AttachStatementError, ShareTaskError
+data class TaskAccessDeniedError(val taskId: TaskId) :
+    AttachTaskError,
+    RevertTaskError,
+    EditTaskInfoError,
+    ViewTaskError,
+    DetachStatementError,
+    DetachExerciseError,
+    DetachTestError,
+    DetachDeveloperSolutionError,
+    ViewResourceError,
+    DownloadResourceVersionError,
+    UpdateStatementError,
+    UpdateExerciseError,
+    UpdateTestError,
+    UpdateDeveloperSolutionError,
+    AddStatementError,
+    AddExerciseError,
+    AddTestError,
+    AddDeveloperSolutionError,
+    AccessDeniedError,
+    AttachStatementError,
+    ShareTaskError,
+    AttachExerciseError,
+    AttachTestError,
+    AttachDeveloperSolutionError
 
 /**
  * The user is not a member of the community.
@@ -133,7 +490,7 @@ data class TaskAccessDeniedError(val taskId: TaskId) : AccessDeniedError, Attach
  * @property communityId the id of the community.
  * @since %CURRENT_VERSION%
  */
-data class CommunityAccessDeniedError(val communityId: CommunityId) : AccessDeniedError, ShareTaskError
+data class CommunityAccessDeniedError(val communityId: CommunityId) : AccessDeniedError, ShareTaskError, ShareContestError
 
 /**
  * The task has no committed version.
@@ -141,5 +498,212 @@ data class CommunityAccessDeniedError(val communityId: CommunityId) : AccessDeni
  * @property taskId the id of the task.
  * @since %CURRENT_VERSION%
  */
-data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError
+data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTaskError, RevertTaskError
+
+/**
+ * The task's last committed revision does not support the contest's TRIK Studio version.
+ *
+ * @property taskId the id of the incompatible task.
+ * @property trikStudioVersion the version required by the contest.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTrikStudioVersionNotSupportedError(
+    val taskId: TaskId,
+    val trikStudioVersion: TrikStudioVersion,
+) : AttachTaskError
+
+/**
+ * The task is already attached to the contest.
+ *
+ * @property contestId the id of the contest.
+ * @property taskId the id of the already attached task.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskAlreadyAttachedToContestError(val contestId: ContestId, val taskId: TaskId) : AttachTaskError
+
+/**
+ * The task has no uncommitted changes to revert.
+ *
+ * @property taskId the id of the committed task.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError
 // endregion
+
+/**
+ * The requested statement version is no longer the latest version in its chain.
+ *
+ * @property statementId the id of the requested version.
+ * @since %CURRENT_VERSION%
+ */
+data class StatementVersionNotLatestError(val statementId: StatementId) : AttachStatementError, UpdateStatementError
+
+/**
+ * The exercise does not exist.
+ *
+ * @property exerciseId the id of the missing resource.
+ * @since %CURRENT_VERSION%
+ */
+data class ExerciseNotExistsError(val exerciseId: ExerciseId) :
+    EntityNotExistsError,
+    AttachExerciseError,
+    UpdateExerciseError,
+    DetachExerciseError
+
+/**
+ * The exercise's version chain is not uploaded to the task.
+ *
+ * @property taskId the id of the task.
+ * @property exerciseId the id of the resource outside the task's uploaded chains.
+ * @since %CURRENT_VERSION%
+ */
+data class ExerciseNotUploadedToTaskError(val taskId: TaskId, val exerciseId: ExerciseId) :
+    DetachExerciseError,
+    AttachExerciseError,
+    UpdateExerciseError,
+    ResourceAccessError
+
+/**
+ * The requested exercise version is no longer the latest version in its chain.
+ *
+ * @property exerciseId the id of the requested version.
+ * @since %CURRENT_VERSION%
+ */
+data class ExerciseVersionNotLatestError(val exerciseId: ExerciseId) : AttachExerciseError, UpdateExerciseError
+
+/**
+ * The test does not exist.
+ *
+ * @property testId the id of the missing resource.
+ * @since %CURRENT_VERSION%
+ */
+data class TestNotExistsError(val testId: TestId) :
+    EntityNotExistsError,
+    AttachTestError,
+    UpdateTestError,
+    DetachTestError
+
+/**
+ * The test's version chain is not uploaded to the task.
+ *
+ * @property taskId the id of the task.
+ * @property testId the id of the resource outside the task's uploaded chains.
+ * @since %CURRENT_VERSION%
+ */
+data class TestNotUploadedToTaskError(val taskId: TaskId, val testId: TestId) :
+    AttachTestError,
+    UpdateTestError,
+    DetachTestError,
+    ResourceAccessError
+
+/**
+ * The requested test version is no longer the latest version in its chain.
+ *
+ * @property testId the id of the requested version.
+ * @since %CURRENT_VERSION%
+ */
+data class TestVersionNotLatestError(val testId: TestId) : AttachTestError, UpdateTestError
+
+/**
+ * The developer solution does not exist.
+ *
+ * @property developerSolutionId the id of the missing resource.
+ * @since %CURRENT_VERSION%
+ */
+data class DeveloperSolutionNotExistsError(
+    val developerSolutionId: DeveloperSolutionId,
+) : EntityNotExistsError, AttachDeveloperSolutionError, UpdateDeveloperSolutionError, DetachDeveloperSolutionError
+
+/**
+ * The developer solution's version chain is not uploaded to the task.
+ *
+ * @property taskId the id of the task.
+ * @property developerSolutionId the id of the resource outside the task's uploaded chains.
+ * @since %CURRENT_VERSION%
+ */
+data class DeveloperSolutionNotUploadedToTaskError(
+    val taskId: TaskId,
+    val developerSolutionId: DeveloperSolutionId,
+) : AttachDeveloperSolutionError, UpdateDeveloperSolutionError, DetachDeveloperSolutionError, ResourceAccessError
+
+/**
+ * The requested developer solution version is no longer the latest version in its chain.
+ *
+ * @property developerSolutionId the id of the requested version.
+ * @since %CURRENT_VERSION%
+ */
+data class DeveloperSolutionVersionNotLatestError(val developerSolutionId: DeveloperSolutionId) :
+    AttachDeveloperSolutionError,
+    UpdateDeveloperSolutionError
+
+/**
+ * A version from the resource chain is already attached to the editable task revision.
+ *
+ * @property taskId the id of the task.
+ * @property versionBucket the already attached resource chain.
+ * @since %CURRENT_VERSION%
+ */
+data class ResourceAlreadyAttachedError(
+    val taskId: TaskId,
+    val versionBucket: VersionBucket,
+) :
+    AttachStatementError,
+    AttachExerciseError,
+    AttachTestError,
+    AttachDeveloperSolutionError
+
+/**
+ * Another exercise in the editable task revision already uses the requested programming language.
+ *
+ * @property taskId the id of the task.
+ * @property language the programming language already occupied in the revision.
+ * @since %CURRENT_VERSION%
+ */
+data class ExerciseLanguageAlreadyAttachedError(
+    val taskId: TaskId,
+    val language: TrikSupportedLanguage,
+) : AttachExerciseError
+
+/**
+ * The requested resource version is absent from the task's editable revision.
+ *
+ * @property taskId the task identifier.
+ * @property versionId the unattached version identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class ResourceVersionNotAttachedError(val taskId: TaskId, val versionId: DomainId) :
+    DetachStatementError,
+    DetachExerciseError,
+    DetachTestError,
+    DetachDeveloperSolutionError
+
+/**
+ * The requested resource chain does not exist.
+ *
+ * @property versionBucket the missing resource chain.
+ * @since %CURRENT_VERSION%
+ */
+data class ResourceNotExistsError(val versionBucket: VersionBucket) : EntityNotExistsError, ViewResourceError, DownloadResourceVersionError
+
+/**
+ * The requested resource chain is not uploaded to the task.
+ *
+ * @property taskId the task identifier.
+ * @property versionBucket the resource chain outside the task.
+ * @since %CURRENT_VERSION%
+ */
+data class ResourceNotUploadedToTaskError(val taskId: TaskId, val versionBucket: VersionBucket) :
+    ResourceAccessError,
+    ViewResourceError,
+    DownloadResourceVersionError
+
+/**
+ * The requested resource version does not exist in the selected chain.
+ *
+ * @property versionBucket the selected resource chain.
+ * @property versionId the missing version identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class ResourceVersionNotExistsError(val versionBucket: VersionBucket, val versionId: DomainId) :
+    EntityNotExistsError,
+    DownloadResourceVersionError

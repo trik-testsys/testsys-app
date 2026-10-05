@@ -66,8 +66,8 @@ class CommunityToContestJpaEntity(id: CommunityToContestId) : CompositeJpaEntity
  * @property description the description of the contest.
  * @property ownerId id of the developer owning the contest.
  * @property startsAt moment the contest starts, or `null` if not scheduled yet.
- * @property contestDurationMillis total duration in milliseconds.
- * @property attemptDurationMillis per-attempt duration in milliseconds.
+ * @property contestDurationMillis total duration in milliseconds, or `null` if there is no end limit.
+ * @property attemptDurationMillis individual duration in milliseconds, or `null` if there is no individual limit.
  * @property trikStudioVersionId id of the [TrikStudioVersionJpaEntity] the contest runs on.
  * @since %CURRENT_VERSION%
  */
@@ -79,8 +79,8 @@ class ContestJpaEntity(
     val description: String,
     val ownerId: Long,
     val startsAt: Instant?,
-    val contestDurationMillis: Long,
-    val attemptDurationMillis: Long,
+    val contestDurationMillis: Long?,
+    val attemptDurationMillis: Long?,
     val trikStudioVersionId: Long,
     id: Long? = null,
 ) : SnowflakeJpaEntity(id)

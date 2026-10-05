@@ -1,6 +1,7 @@
 package tech.testsys.domain.contract.persistence.repository
 
 import tech.testsys.domain.contract.StoredBlobRef
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
@@ -38,6 +39,7 @@ import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.MultipleRoleUserId
 
 /**
  * Persistence port for [Contest] entities.
@@ -241,7 +243,19 @@ interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict>
  *
  * @since %CURRENT_VERSION%
  */
-interface TaskRepository : EntityRepository<TaskData, TaskId, Task>
+interface TaskRepository : EntityRepository<TaskData, TaskId, Task> {
+
+    /**
+     * Synchronously finds tasks owned by [ownerId] or shared to any of [communityIds], without changing stored state.
+     * Repeated calls reflect current data; storage exceptions propagate to the caller.
+     *
+     * @param ownerId the developer whose own tasks are included.
+     * @param communityIds the communities granting access; an empty set searches only by owner.
+     * @return existing tasks without duplicates or guaranteed order, or an empty list if none are available.
+     * @since %CURRENT_VERSION%
+     */
+    fun findAvailableToDeveloper(ownerId: MultipleRoleUserId, communityIds: Set<CommunityId>): List<Task>
+}
 
 /**
  * Persistence port for [Test] entities. The file is fixed on creation: `update` with another file

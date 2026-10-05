@@ -25,6 +25,18 @@
 Бины регистрирует [DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/DatabaseConfiguration.kt),
 настройки Hibernate по умолчанию — в [hibernate-defaults.properties](src/main/resources/hibernate-defaults.properties).
 
+## Поиск доступных Задач
+
+Метод `findAvailableToDeveloper` в
+[TaskPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/TaskPersistenceAdapter.kt)
+читает собственные Задачи через `findAllByOwnerId`. Метод Spring Data `findAllByIdCommunityIdIn` загружает
+связи сразу для всех переданных Сообществ. По найденным идентификаторам адаптер загружает общие Задачи
+через `findAllById`, объединяет результаты и убирает дубликаты по идентификатору до сборки доменных сущностей.
+При пустом наборе Сообществ адаптер ищет только по владельцу; при отсутствии связей пропускает загрузку общих Задач.
+Выборка включает до трёх запросов. Сборка доменных сущностей читает дополнительные данные каждой Задачи.
+Все чтения выполняются в транзакции с `readOnly = true`; порядок списка не гарантирован,
+исключения хранилища выходят к вызывающему коду.
+
 ## Идентификаторы
 
 Идентификаторы сущностей выдаёт [SnowflakeIdGenerator.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/id/SnowflakeIdGenerator.kt),

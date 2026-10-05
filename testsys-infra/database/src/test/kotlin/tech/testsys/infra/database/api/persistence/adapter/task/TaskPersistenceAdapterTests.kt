@@ -1,6 +1,9 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.dao.DataIntegrityViolationException
 import tech.testsys.domain.builder.api.task
@@ -8,6 +11,7 @@ import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
@@ -15,6 +19,7 @@ import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.WipTaskContent
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.CommunityToTaskJpaEntityRepository
@@ -95,6 +100,123 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
         assertEquals(expected.data.sharedTo.ids.toSet(), actual.data.sharedTo.ids.toSet())
         assertEquals(expected.data.uploadedResources, actual.data.uploadedResources)
         assertSameContent(expected.data.content, actual.data.content)
+    }
+
+    @Nested
+    inner class FindAvailableToDeveloperTests {
+
+        @Test
+        fun `should return owned and shared tasks while excluding inaccessible tasks`() {
+            val owner = fixtures.developer().id
+            val otherOwner = fixtures.developer().id
+            val community = fixtures.community().id
+            val unrelatedCommunity = fixtures.community().id
+            val owned = saveTask(ownerId = owner, communityIds = emptyList())
+            val shared = saveTask(ownerId = otherOwner, communityIds = listOf(community))
+            saveTask(ownerId = otherOwner, communityIds = emptyList())
+            saveTask(ownerId = otherOwner, communityIds = listOf(unrelatedCommunity))
+
+            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = setOf(community))
+
+            assertEquals(setOf(owned.id, shared.id), result.map { it.id }.toSet())
+            assertUnchangedTask(owned, result.single { it.id == owned.id })
+            assertUnchangedTask(shared, result.single { it.id == shared.id })
+        }
+
+        @Test
+        fun `should return each task once when ownership and several shared communities overlap`() {
+            val owner = fixtures.developer().id
+            val communities = listOf(fixtures.community().id, fixtures.community().id)
+            val owned = saveTask(ownerId = owner, communityIds = communities)
+            val shared = saveTask(ownerId = fixtures.developer().id, communityIds = communities)
+
+            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = communities.toSet())
+
+            assertEquals(2, result.size)
+            assertEquals(setOf(owned.id, shared.id), result.map { it.id }.toSet())
+        }
+
+        @Test
+        fun `should return only owned tasks when the community set is empty`() {
+            val owner = fixtures.developer().id
+            val community = fixtures.community().id
+            val owned = saveTask(ownerId = owner, communityIds = listOf(community))
+            saveTask(ownerId = fixtures.developer().id, communityIds = listOf(community))
+
+            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = emptySet())
+
+            assertEquals(listOf(owned.id), result.map { it.id })
+        }
+
+        @ParameterizedTest
+        @ValueSource(booleans = [false, true])
+        fun `should return an empty list when no task is available`(withCommunities: Boolean) {
+            val owner = fixtures.developer().id
+            val community = fixtures.community().id
+            saveTask(ownerId = fixtures.developer().id, communityIds = emptyList())
+            val communities = communityIds(withCommunities, community)
+
+            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = communities)
+
+            assertEquals(emptyList(), result)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should retain all task data and revisions without changing stored state`(state: String) {
+            val saved = repository.save(newData())
+            val committed = assertIs<TaskContent.Committed>(saved.data.content).lastCommitted
+            val expected = repository.update(taskInState(saved, committed, state))
+            val unrelatedOwner = fixtures.developer().id
+
+            val result = repository.findAvailableToDeveloper(
+                ownerId = unrelatedOwner,
+                communityIds = expected.data.sharedTo.ids.toSet(),
+            ).single()
+
+            assertEquals(expected.id, result.id)
+            assertSameData(expected, result)
+            assertEquals(expected.version, result.version)
+            val retained = assertNotNull(repository.findById(expected.id))
+            assertSameData(expected, retained)
+            assertEquals(expected.version, retained.version)
+        }
+
+        private fun saveTask(ownerId: MultipleRoleUserId, communityIds: List<CommunityId>): Task = repository.save(
+            taskData {
+                owner = ownerId
+                name = fixtures.unique("Available task")
+                description = "Task description"
+                sharedTo = communityIds.toMutableList()
+                content.new {}
+            },
+        )
+
+        private fun communityIds(withCommunities: Boolean, community: CommunityId): Set<CommunityId> =
+            if (withCommunities) setOf(community) else emptySet()
+
+        private fun assertUnchangedTask(expected: Task, actual: Task) {
+            assertSameData(expected, actual)
+            assertEquals(expected.createdAt, actual.createdAt)
+            assertEquals(expected.version, actual.version)
+        }
+
+        private fun taskInState(saved: Task, committed: CommittedTaskContent, state: String): Task = saved.withData {
+            uploadedResources.add(fixtures.statement().data.versionBucket)
+            when (state) {
+                "New" -> content.new { tests = committed.tests.ids.toMutableList() }
+                "Uncommitted" -> content.uncommitted(
+                    wipBuilder = { tests = committed.tests.ids.toMutableList() },
+                    lastCommittedBuilder = {
+                        exercise = committed.exercise.id
+                        statement = committed.statement.id
+                        tests = committed.tests.ids.toMutableList()
+                    },
+                )
+                "Committed" -> Unit
+                else -> error("Unsupported test state: $state")
+            }
+        }
     }
 
     private fun assertSameContent(expected: TaskContent, actual: TaskContent) {

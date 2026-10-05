@@ -173,6 +173,13 @@ interface CommunityToTaskJpaEntityRepository :
     CompositeJpaEntityRepository<CommunityToTaskJpaEntity, CommunityToTaskId> {
 
     /**
+     * Finds the association rows of any community in the nonempty [communityIds].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByIdCommunityIdIn(communityIds: Set<Long>): List<CommunityToTaskJpaEntity>
+
+    /**
      * Finds the association rows of the community [communityId].
      *
      * @since %CURRENT_VERSION%

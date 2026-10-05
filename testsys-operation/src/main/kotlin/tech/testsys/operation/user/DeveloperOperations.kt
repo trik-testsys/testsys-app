@@ -66,6 +66,10 @@ import tech.testsys.operation.error.TaskNotExistsError
 import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
+import tech.testsys.operation.error.UpdateDeveloperSolutionError
+import tech.testsys.operation.error.UpdateExerciseError
+import tech.testsys.operation.error.UpdateStatementError
+import tech.testsys.operation.error.UpdateTestError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
@@ -246,6 +250,224 @@ class DeveloperOperations(
         )
         taskRepository.update(task.withData { uploadedResources.add(resource.data.versionBucket) })
         return resource.asSuccess()
+    }
+
+    /**
+     * Updates the latest [statementId] uploaded to [taskId] owned by [user], preserving omitted [resourceName].
+     * A supplied [file] creates a new version without comparison and replaces only an existing editable chain link.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.updateResource")
+    fun updateStatement(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        statementId: StatementId,
+        resourceName: String? = null,
+        file: FileData? = null,
+    ): OperationResult<Statement, UpdateStatementError> = operation<Statement, UpdateStatementError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        val resource = statementRepository.findById(statementId)
+        ensure(resource != null) { StatementNotExistsError(statementId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        ensure(resource.data.versionBucket in task.data.uploadedResources) {
+            StatementNotUploadedToTaskError(taskId, statementId)
+        }
+        ensure(statementRepository.findLatestByVersionBucket(resource.data.versionBucket)?.id == statementId) {
+            StatementVersionNotLatestError(statementId)
+        }
+
+        if (file == null) {
+            return statementRepository.update(resource.withData { name = resourceName ?: resource.data.name }).asSuccess()
+        }
+
+        val editable = task.getEditableContent()
+        val attached = editable.statement?.let { reference -> statementRepository.load(reference) }
+        val isChainAttached = attached?.data?.versionBucket == resource.data.versionBucket
+
+        val updated = resource.withData {
+            name = resourceName ?: resource.data.name
+            file(file.uploadedFilename, file.content)
+        }
+        val saved = statementRepository.save(updated.data)
+        if (isChainAttached) {
+            taskRepository.update(
+                task.changeEditableContent {
+                    statement = saved.id
+                },
+            )
+        }
+        return saved.asSuccess()
+    }
+
+    /**
+     * Updates the latest [exerciseId] uploaded to [taskId] owned by [user], preserving omitted [resourceName].
+     * A supplied [file] creates a new version without comparison and replaces only an existing editable chain link.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.updateResource")
+    fun updateExercise(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        exerciseId: ExerciseId,
+        resourceName: String? = null,
+        file: FileData? = null,
+    ): OperationResult<Exercise, UpdateExerciseError> = operation<Exercise, UpdateExerciseError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        val resource = exerciseRepository.findById(exerciseId)
+        ensure(resource != null) { ExerciseNotExistsError(exerciseId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        ensure(resource.data.versionBucket in task.data.uploadedResources) {
+            ExerciseNotUploadedToTaskError(taskId, exerciseId)
+        }
+        ensure(exerciseRepository.findLatestByVersionBucket(resource.data.versionBucket)?.id == exerciseId) {
+            ExerciseVersionNotLatestError(exerciseId)
+        }
+
+        if (file == null) {
+            return exerciseRepository.update(resource.withData { name = resourceName ?: resource.data.name }).asSuccess()
+        }
+
+        val editable = task.getEditableContent()
+        val attached = editable.exercise?.let { reference -> exerciseRepository.load(reference) }
+        val isChainAttached = attached?.data?.versionBucket == resource.data.versionBucket
+
+        val updated = resource.withData {
+            name = resourceName ?: resource.data.name
+            file(file.uploadedFilename, file.content)
+        }
+        val saved = exerciseRepository.save(updated.data)
+        if (isChainAttached) {
+            taskRepository.update(
+                task.changeEditableContent {
+                    exercise = saved.id
+                },
+            )
+        }
+        return saved.asSuccess()
+    }
+
+    /**
+     * Updates the latest [testId] uploaded to [taskId] owned by [user], preserving omitted [resourceName].
+     * A supplied [file] creates a new version without comparison and replaces only an existing editable chain link.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.updateResource")
+    fun updateTest(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        testId: TestId,
+        resourceName: String? = null,
+        file: FileData? = null,
+    ): OperationResult<Test, UpdateTestError> = operation<Test, UpdateTestError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        val resource = testRepository.findById(testId)
+        ensure(resource != null) { TestNotExistsError(testId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        ensure(resource.data.versionBucket in task.data.uploadedResources) {
+            TestNotUploadedToTaskError(taskId, testId)
+        }
+        ensure(testRepository.findLatestByVersionBucket(resource.data.versionBucket)?.id == testId) {
+            TestVersionNotLatestError(testId)
+        }
+
+        if (file == null) {
+            return testRepository.update(resource.withData { name = resourceName ?: resource.data.name }).asSuccess()
+        }
+
+        val editable = task.getEditableContent()
+        val replacedIds = testRepository.load(editable.tests)
+            .filter { attached -> attached.data.versionBucket == resource.data.versionBucket }
+            .map { attached -> attached.id }
+            .toSet()
+
+        val updated = resource.withData {
+            name = resourceName ?: resource.data.name
+            file(file.uploadedFilename, file.content)
+        }
+        val saved = testRepository.save(updated.data)
+        if (replacedIds.isNotEmpty()) {
+            taskRepository.update(
+                task.changeEditableContent {
+                    tests = editable.tests.ids.map { attachedId ->
+                        if (attachedId in replacedIds) saved.id else attachedId
+                    }.toMutableList()
+                },
+            )
+        }
+        return saved.asSuccess()
+    }
+
+    /**
+     * Updates the latest [developerSolutionId] uploaded to [taskId] owned by [user], preserving omitted [resourceName].
+     * Supplied [file] or [expectedScore] creates a new version without comparison; replaces only an existing editable chain link.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.updateResource")
+    fun updateDeveloperSolution(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        developerSolutionId: DeveloperSolutionId,
+        resourceName: String? = null,
+        file: FileData? = null,
+        expectedScore: Score? = null,
+    ): OperationResult<DeveloperSolution, UpdateDeveloperSolutionError> = operation<DeveloperSolution, UpdateDeveloperSolutionError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        val resource = developerSolutionRepository.findById(developerSolutionId)
+        ensure(resource != null) { DeveloperSolutionNotExistsError(developerSolutionId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        ensure(resource.data.versionBucket in task.data.uploadedResources) {
+            DeveloperSolutionNotUploadedToTaskError(taskId, developerSolutionId)
+        }
+        ensure(developerSolutionRepository.findLatestByVersionBucket(resource.data.versionBucket)?.id == developerSolutionId) {
+            DeveloperSolutionVersionNotLatestError(developerSolutionId)
+        }
+
+        if (file == null && expectedScore == null) {
+            return developerSolutionRepository.update(resource.withData { name = resourceName ?: resource.data.name }).asSuccess()
+        }
+
+        val editable = task.getEditableContent()
+        val replacedIds = developerSolutionRepository.load(editable.developerSolutions)
+            .filter { attached -> attached.data.versionBucket == resource.data.versionBucket }
+            .map { attached -> attached.id }
+            .toSet()
+
+        val solutionId = if (file != null) {
+            val previousSolution = solutionRepository.load(resource.data.solution)
+            solutionRepository.save(
+                previousSolution.withData { file(file.uploadedFilename, file.content) }.data,
+            ).id
+        } else {
+            resource.data.solution.id
+        }
+        val updated = resource.withData {
+            name = resourceName ?: resource.data.name
+            solution = solutionId
+            this.expectedScore = expectedScore ?: resource.data.expectedScore
+        }
+        val saved = developerSolutionRepository.save(updated.data)
+        if (replacedIds.isNotEmpty()) {
+            taskRepository.update(
+                task.changeEditableContent {
+                    developerSolutions = editable.developerSolutions.ids.map { attachedId ->
+                        if (attachedId in replacedIds) saved.id else attachedId
+                    }.toMutableList()
+                },
+            )
+        }
+        return saved.asSuccess()
     }
 
     /**

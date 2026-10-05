@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -33,7 +34,9 @@ import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
+import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
+import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
@@ -1070,6 +1073,1342 @@ class DeveloperOperationsTests {
                 .getOrThrow()
 
             verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+    }
+
+    @Nested
+    inner class UpdateStatementTests {
+
+        private val bucket = VersionBucket(UUID(0, 0))
+        private val resourceId = StatementId(21)
+        private val originalResource = resource(21)
+
+        @Test
+        fun `should save new version without filling an empty WIP slot`() {
+            prepare(taskForUpdate("New").withData { content.new { statement = null } })
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(StatementId(31), result.id)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { statementRepository.update(any<Statement>()) }
+        }
+
+        @Test
+        fun `should reject update before accessing storage if user is not a Developer`() {
+            val user = testAdministrator {}
+
+            assertRaises(MissedDeveloperRoleError) { request(user = user, file = uploadFile) }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if task does not exist`() {
+            every { taskRepository.findById(uploadTaskId) } returns null
+
+            assertRaises(TaskNotExistsError(uploadTaskId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if resource does not exist`() {
+            prepare()
+            every { statementRepository.findById(resourceId) } returns null
+
+            assertRaises(StatementNotExistsError(resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update of another owners task even when shared`() {
+            prepare(taskForUpdate("New").withData { owner(99) })
+
+            assertRaises(TaskAccessDeniedError(uploadTaskId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if chain was not uploaded to task`() {
+            prepare(taskForUpdate("New").withData { uploadedResources.clear() })
+
+            assertRaises(StatementNotUploadedToTaskError(uploadTaskId, resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["name", "file"])
+        fun `should reject an older source version for every change kind`(mode: String) {
+            prepare()
+            every { statementRepository.findLatestByVersionBucket(bucket) } returns resource(22)
+
+            assertRaises(StatementVersionNotLatestError(resourceId)) {
+                request(resourceName = "renamed", file = fileForMode(mode))
+            }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update if latest lookup returns no version`() {
+            prepare()
+            every { statementRepository.findLatestByVersionBucket(bucket) } returns null
+
+            assertRaises(StatementVersionNotLatestError(resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should rename latest version in place without changing task in any state`(state: String) {
+            val original = taskForUpdate(state)
+            prepare(original)
+
+            val result = request(resourceName = "renamed").getOrThrow()
+
+            Assertions.assertEquals(resourceId, result.id)
+            Assertions.assertEquals(originalResource.createdAt, result.createdAt)
+            Assertions.assertEquals(originalResource.version, result.version)
+            Assertions.assertEquals("renamed", result.data.name)
+            Assertions.assertEquals("name", originalResource.data.name)
+            assertResourceFields(result)
+            verify(exactly = 1) { statementRepository.update(any<Statement>()) }
+            assertNoUploadWrites()
+        }
+
+        @ParameterizedTest
+        @NullSource
+        @ValueSource(strings = ["name", ""])
+        fun `should persist metadata without checking unchanged or omitted name`(resourceName: String?) {
+            prepare()
+
+            val result = request(resourceName = resourceName).getOrThrow()
+
+            Assertions.assertEquals(resourceId, result.id)
+            Assertions.assertEquals(resourceName ?: "name", result.data.name)
+            assertResourceFields(result)
+            verify(exactly = 1) { statementRepository.update(any<Statement>()) }
+            assertNoUploadWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should replace an older attached chain version and preserve task revisions in every state`(state: String) {
+            val original = taskForUpdate(state)
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(StatementId(31), result.id)
+            Assertions.assertEquals("name", result.data.name)
+            Assertions.assertEquals("description", result.data.description)
+            Assertions.assertEquals(bucket, result.data.versionBucket)
+            assertUploadedFile(result.data.file)
+            assertTaskReplacement(original)
+            verify(exactly = 0) { statementRepository.update(any<Statement>()) }
+            Assertions.assertEquals("name", originalResource.data.name)
+            Assertions.assertArrayEquals(byteArrayOf(1, 2), originalResource.data.file.content)
+        }
+
+        @Test
+        fun `should give new version the supplied name without renaming the previous version`() {
+            prepare()
+
+            val result = request(resourceName = "renamed", file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(StatementId(31), result.id)
+            Assertions.assertEquals("renamed", result.data.name)
+            Assertions.assertEquals("name", originalResource.data.name)
+            verify(exactly = 0) { statementRepository.update(any<Statement>()) }
+        }
+
+        @Test
+        fun `should create another version even for identical file contents`() {
+            prepare()
+            val identical = FileData(uploadedFilename = "original.bin", content = byteArrayOf(1, 2))
+
+            val result = request(file = identical).getOrThrow()
+
+            Assertions.assertEquals(StatementId(31), result.id)
+            verify(exactly = 1) { statementRepository.save(any<StatementData>()) }
+            verify(exactly = 0) { statementRepository.update(any<Statement>()) }
+        }
+
+        @Test
+        fun `should leave existing WIP unchanged when chain remains only in last committed revision`() {
+            val original = taskForUpdate("Uncommitted").withData {
+                content.uncommitted(
+                    wipBuilder = { statement = StatementId(9) },
+                    lastCommittedBuilder = {},
+                )
+            }
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(StatementId(31), result.id)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { statementRepository.update(any<Statement>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should save detached chain without attaching or changing task in any state`(state: String) {
+            val original = taskForUpdate(state, attached = false)
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(StatementId(31), result.id)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { statementRepository.update(any<Statement>()) }
+        }
+
+        private fun resource(id: Long, chain: VersionBucket = bucket): Statement = statement {
+            this.id = id
+            createdAt = Instant.MIN
+            version = EntityVersion(0)
+            data = statementData {
+                name = "name"
+                description = "description"
+                versionBucket = chain
+                file("original.bin", byteArrayOf(1, 2))
+            }
+        }
+
+        private fun taskForUpdate(state: String, attached: Boolean = true): Task = taskInState(state).withData {
+            uploadedResources.add(bucket)
+            when (state) {
+                "New" -> content.new { configureContent(attached) }
+                "Uncommitted" -> content.uncommitted(
+                    wipBuilder = { configureContent(attached) },
+                    lastCommittedBuilder = { configureContent(attached) },
+                )
+                "Committed" -> content.committed {
+                    statement = StatementId(1)
+                    exercise = ExerciseId(1)
+                    configureContent(attached)
+                }
+                else -> error("Unsupported test state: $state")
+            }
+        }
+
+        private fun tech.testsys.domain.builder.task.TaskContentBuilder<*>.configureContent(attached: Boolean) {
+            if (attached) {
+                statement = StatementId(10)
+            } else {
+                statement = StatementId(9)
+            }
+        }
+
+        private fun prepare(original: Task = taskForUpdate("New")) {
+            prepareUpload(original)
+            every { statementRepository.findById(resourceId) } returns originalResource
+            every { statementRepository.findLatestByVersionBucket(bucket) } returns originalResource
+            every { statementRepository.update(any<Statement>()) } answers { firstArg<Statement>() }
+            every { statementRepository.save(any<StatementData>()) } answers {
+                statement {
+                    id = 31
+                    createdAt = Instant.EPOCH
+                    version = EntityVersion(1)
+                    data = firstArg<StatementData>()
+                }
+            }
+            every { statementRepository.load(any<LazyEntity<StatementId, Statement>>()) } answers {
+                val attachedId = firstArg<LazyEntity<StatementId, Statement>>().id
+                resource(attachedId.value, if (attachedId.value == 10L) bucket else VersionBucket(UUID(0, 9)))
+            }
+        }
+
+        private fun request(user: MultipleRoleUser = developer, resourceName: String? = null, file: FileData? = null) =
+            developerOperations.updateStatement(
+                user = user,
+                taskId = uploadTaskId,
+                statementId = resourceId,
+                resourceName = resourceName,
+                file = file,
+            )
+
+        private fun assertNoWrites() {
+            assertNoUploadWrites()
+            verify(exactly = 0) { statementRepository.update(any<Statement>()) }
+        }
+
+        private fun fileForMode(mode: String): FileData? = when (mode) {
+            "file" -> uploadFile
+            "name" -> null
+            else -> error("Unsupported update mode: $mode")
+        }
+
+        private fun assertResourceFields(result: Statement) {
+            Assertions.assertEquals("description", result.data.description)
+            Assertions.assertEquals(bucket, result.data.versionBucket)
+            Assertions.assertEquals("original.bin", result.data.file.uploadedFilename)
+            Assertions.assertArrayEquals(byteArrayOf(1, 2), result.data.file.content)
+        }
+
+        private fun assertTaskReplacement(original: Task) {
+            val captured = slot<Task>()
+            verify(exactly = 1) { taskRepository.update(capture(captured)) }
+            val updated = captured.captured
+            val before = original.getEditableContent()
+            val after = updated.getEditableContent()
+            Assertions.assertEquals(StatementId(31), after.statement?.id)
+            Assertions.assertEquals(before.exercise?.id, after.exercise?.id)
+            Assertions.assertEquals(before.tests.ids, after.tests.ids)
+            Assertions.assertEquals(before.developerSolutions.ids, after.developerSolutions.ids)
+            Assertions.assertEquals(before.supportedTrikStudioVersions, after.supportedTrikStudioVersions)
+            Assertions.assertEquals(original.id, updated.id)
+            Assertions.assertEquals(original.createdAt, updated.createdAt)
+            Assertions.assertEquals(original.version, updated.version)
+            Assertions.assertEquals(original.data.owner.id, updated.data.owner.id)
+            Assertions.assertEquals(original.data.name, updated.data.name)
+            Assertions.assertEquals(original.data.description, updated.data.description)
+            Assertions.assertEquals(original.data.sharedTo.ids, updated.data.sharedTo.ids)
+            Assertions.assertEquals(original.data.uploadedResources, updated.data.uploadedResources)
+            when (val content = original.data.content) {
+                is TaskContent.New -> Assertions.assertInstanceOf(TaskContent.New::class.java, updated.data.content)
+                is TaskContent.Uncommitted -> assertCommittedUnchanged(content.lastCommitted, updated)
+                is TaskContent.Committed -> assertCommittedUnchanged(content.lastCommitted, updated)
+            }
+        }
+    }
+
+    @Nested
+    inner class UpdateExerciseTests {
+
+        private val bucket = VersionBucket(UUID(0, 0))
+        private val resourceId = ExerciseId(21)
+        private val originalResource = resource(21)
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Python", "JavaScript", "VisualLanguage"])
+        fun `should preserve exercise language when uploading a replacement file`(language: String) {
+            prepare()
+            every { exerciseRepository.findById(resourceId) } returns originalResource.withData {
+                when (uploadLanguage(language)) {
+                    TrikSupportedLanguage.Python -> this.language.python()
+                    TrikSupportedLanguage.JavaScript -> this.language.javaScript()
+                    TrikSupportedLanguage.VisualLanguage -> this.language.visualLanguage()
+                }
+            }
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(ExerciseId(31), result.id)
+            Assertions.assertEquals(uploadLanguage(language), result.data.language)
+            assertUploadedFile(result.data.file)
+        }
+
+        @Test
+        fun `should save new version without filling an empty WIP slot`() {
+            prepare(taskForUpdate("New").withData { content.new { exercise = null } })
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(ExerciseId(31), result.id)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { exerciseRepository.update(any<Exercise>()) }
+        }
+
+        @Test
+        fun `should reject update before accessing storage if user is not a Developer`() {
+            val user = testAdministrator {}
+
+            assertRaises(MissedDeveloperRoleError) { request(user = user, file = uploadFile) }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if task does not exist`() {
+            every { taskRepository.findById(uploadTaskId) } returns null
+
+            assertRaises(TaskNotExistsError(uploadTaskId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if resource does not exist`() {
+            prepare()
+            every { exerciseRepository.findById(resourceId) } returns null
+
+            assertRaises(ExerciseNotExistsError(resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update of another owners task even when shared`() {
+            prepare(taskForUpdate("New").withData { owner(99) })
+
+            assertRaises(TaskAccessDeniedError(uploadTaskId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if chain was not uploaded to task`() {
+            prepare(taskForUpdate("New").withData { uploadedResources.clear() })
+
+            assertRaises(ExerciseNotUploadedToTaskError(uploadTaskId, resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["name", "file"])
+        fun `should reject an older source version for every change kind`(mode: String) {
+            prepare()
+            every { exerciseRepository.findLatestByVersionBucket(bucket) } returns resource(22)
+
+            assertRaises(ExerciseVersionNotLatestError(resourceId)) {
+                request(resourceName = "renamed", file = fileForMode(mode))
+            }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update if latest lookup returns no version`() {
+            prepare()
+            every { exerciseRepository.findLatestByVersionBucket(bucket) } returns null
+
+            assertRaises(ExerciseVersionNotLatestError(resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should rename latest version in place without changing task in any state`(state: String) {
+            val original = taskForUpdate(state)
+            prepare(original)
+
+            val result = request(resourceName = "renamed").getOrThrow()
+
+            Assertions.assertEquals(resourceId, result.id)
+            Assertions.assertEquals(originalResource.createdAt, result.createdAt)
+            Assertions.assertEquals(originalResource.version, result.version)
+            Assertions.assertEquals("renamed", result.data.name)
+            Assertions.assertEquals("name", originalResource.data.name)
+            assertResourceFields(result)
+            verify(exactly = 1) { exerciseRepository.update(any<Exercise>()) }
+            assertNoUploadWrites()
+        }
+
+        @ParameterizedTest
+        @NullSource
+        @ValueSource(strings = ["name", ""])
+        fun `should persist metadata without checking unchanged or omitted name`(resourceName: String?) {
+            prepare()
+
+            val result = request(resourceName = resourceName).getOrThrow()
+
+            Assertions.assertEquals(resourceId, result.id)
+            Assertions.assertEquals(resourceName ?: "name", result.data.name)
+            assertResourceFields(result)
+            verify(exactly = 1) { exerciseRepository.update(any<Exercise>()) }
+            assertNoUploadWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should replace an older attached chain version and preserve task revisions in every state`(state: String) {
+            val original = taskForUpdate(state)
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(ExerciseId(31), result.id)
+            Assertions.assertEquals("name", result.data.name)
+            Assertions.assertEquals("description", result.data.description)
+            Assertions.assertEquals(bucket, result.data.versionBucket)
+            assertUploadedFile(result.data.file)
+            Assertions.assertEquals(TrikSupportedLanguage.Python, result.data.language)
+            assertTaskReplacement(original)
+            verify(exactly = 0) { exerciseRepository.update(any<Exercise>()) }
+            Assertions.assertEquals("name", originalResource.data.name)
+            Assertions.assertArrayEquals(byteArrayOf(1, 2), originalResource.data.file.content)
+        }
+
+        @Test
+        fun `should give new version the supplied name without renaming the previous version`() {
+            prepare()
+
+            val result = request(resourceName = "renamed", file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(ExerciseId(31), result.id)
+            Assertions.assertEquals("renamed", result.data.name)
+            Assertions.assertEquals("name", originalResource.data.name)
+            verify(exactly = 0) { exerciseRepository.update(any<Exercise>()) }
+        }
+
+        @Test
+        fun `should create another version even for identical file contents`() {
+            prepare()
+            val identical = FileData(uploadedFilename = "original.bin", content = byteArrayOf(1, 2))
+
+            val result = request(file = identical).getOrThrow()
+
+            Assertions.assertEquals(ExerciseId(31), result.id)
+            verify(exactly = 1) { exerciseRepository.save(any<ExerciseData>()) }
+            verify(exactly = 0) { exerciseRepository.update(any<Exercise>()) }
+        }
+
+        @Test
+        fun `should leave existing WIP unchanged when chain remains only in last committed revision`() {
+            val original = taskForUpdate("Uncommitted").withData {
+                content.uncommitted(
+                    wipBuilder = { exercise = ExerciseId(9) },
+                    lastCommittedBuilder = {},
+                )
+            }
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(ExerciseId(31), result.id)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { exerciseRepository.update(any<Exercise>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should save detached chain without attaching or changing task in any state`(state: String) {
+            val original = taskForUpdate(state, attached = false)
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(ExerciseId(31), result.id)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { exerciseRepository.update(any<Exercise>()) }
+        }
+
+        private fun resource(id: Long, chain: VersionBucket = bucket): Exercise = exercise {
+            this.id = id
+            createdAt = Instant.MIN
+            version = EntityVersion(0)
+            data = exerciseData {
+                name = "name"
+                description = "description"
+                versionBucket = chain
+                file("original.bin", byteArrayOf(1, 2))
+                language.python()
+            }
+        }
+
+        private fun taskForUpdate(state: String, attached: Boolean = true): Task = taskInState(state).withData {
+            uploadedResources.add(bucket)
+            when (state) {
+                "New" -> content.new { configureContent(attached) }
+                "Uncommitted" -> content.uncommitted(
+                    wipBuilder = { configureContent(attached) },
+                    lastCommittedBuilder = { configureContent(attached) },
+                )
+                "Committed" -> content.committed {
+                    statement = StatementId(1)
+                    exercise = ExerciseId(1)
+                    configureContent(attached)
+                }
+                else -> error("Unsupported test state: $state")
+            }
+        }
+
+        private fun tech.testsys.domain.builder.task.TaskContentBuilder<*>.configureContent(attached: Boolean) {
+            if (attached) {
+                exercise = ExerciseId(10)
+            } else {
+                exercise = ExerciseId(9)
+            }
+        }
+
+        private fun prepare(original: Task = taskForUpdate("New")) {
+            prepareUpload(original)
+            every { exerciseRepository.findById(resourceId) } returns originalResource
+            every { exerciseRepository.findLatestByVersionBucket(bucket) } returns originalResource
+            every { exerciseRepository.update(any<Exercise>()) } answers { firstArg<Exercise>() }
+            every { exerciseRepository.save(any<ExerciseData>()) } answers {
+                exercise {
+                    id = 31
+                    createdAt = Instant.EPOCH
+                    version = EntityVersion(1)
+                    data = firstArg<ExerciseData>()
+                }
+            }
+            every { exerciseRepository.load(any<LazyEntity<ExerciseId, Exercise>>()) } answers {
+                val attachedId = firstArg<LazyEntity<ExerciseId, Exercise>>().id
+                resource(attachedId.value, if (attachedId.value == 10L) bucket else VersionBucket(UUID(0, 9)))
+            }
+        }
+
+        private fun request(user: MultipleRoleUser = developer, resourceName: String? = null, file: FileData? = null) =
+            developerOperations.updateExercise(
+                user = user,
+                taskId = uploadTaskId,
+                exerciseId = resourceId,
+                resourceName = resourceName,
+                file = file,
+            )
+
+        private fun assertNoWrites() {
+            assertNoUploadWrites()
+            verify(exactly = 0) { exerciseRepository.update(any<Exercise>()) }
+        }
+
+        private fun fileForMode(mode: String): FileData? = when (mode) {
+            "file" -> uploadFile
+            "name" -> null
+            else -> error("Unsupported update mode: $mode")
+        }
+
+        private fun assertResourceFields(result: Exercise) {
+            Assertions.assertEquals("description", result.data.description)
+            Assertions.assertEquals(bucket, result.data.versionBucket)
+            Assertions.assertEquals("original.bin", result.data.file.uploadedFilename)
+            Assertions.assertArrayEquals(byteArrayOf(1, 2), result.data.file.content)
+            Assertions.assertEquals(TrikSupportedLanguage.Python, result.data.language)
+        }
+
+        private fun assertTaskReplacement(original: Task) {
+            val captured = slot<Task>()
+            verify(exactly = 1) { taskRepository.update(capture(captured)) }
+            val updated = captured.captured
+            val before = original.getEditableContent()
+            val after = updated.getEditableContent()
+            Assertions.assertEquals(ExerciseId(31), after.exercise?.id)
+            Assertions.assertEquals(before.statement?.id, after.statement?.id)
+            Assertions.assertEquals(before.tests.ids, after.tests.ids)
+            Assertions.assertEquals(before.developerSolutions.ids, after.developerSolutions.ids)
+            Assertions.assertEquals(before.supportedTrikStudioVersions, after.supportedTrikStudioVersions)
+            Assertions.assertEquals(original.id, updated.id)
+            Assertions.assertEquals(original.createdAt, updated.createdAt)
+            Assertions.assertEquals(original.version, updated.version)
+            Assertions.assertEquals(original.data.owner.id, updated.data.owner.id)
+            Assertions.assertEquals(original.data.name, updated.data.name)
+            Assertions.assertEquals(original.data.description, updated.data.description)
+            Assertions.assertEquals(original.data.sharedTo.ids, updated.data.sharedTo.ids)
+            Assertions.assertEquals(original.data.uploadedResources, updated.data.uploadedResources)
+            when (val content = original.data.content) {
+                is TaskContent.New -> Assertions.assertInstanceOf(TaskContent.New::class.java, updated.data.content)
+                is TaskContent.Uncommitted -> assertCommittedUnchanged(content.lastCommitted, updated)
+                is TaskContent.Committed -> assertCommittedUnchanged(content.lastCommitted, updated)
+            }
+        }
+    }
+
+    @Nested
+    inner class UpdateTestTests {
+
+        private val bucket = VersionBucket(UUID(0, 0))
+        private val resourceId = TestId(21)
+        private val originalResource = resource(21)
+
+        @Test
+        fun `should reject update before accessing storage if user is not a Developer`() {
+            val user = testAdministrator {}
+
+            assertRaises(MissedDeveloperRoleError) { request(user = user, file = uploadFile) }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if task does not exist`() {
+            every { taskRepository.findById(uploadTaskId) } returns null
+
+            assertRaises(TaskNotExistsError(uploadTaskId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if resource does not exist`() {
+            prepare()
+            every { testRepository.findById(resourceId) } returns null
+
+            assertRaises(TestNotExistsError(resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update of another owners task even when shared`() {
+            prepare(taskForUpdate("New").withData { owner(99) })
+
+            assertRaises(TaskAccessDeniedError(uploadTaskId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if chain was not uploaded to task`() {
+            prepare(taskForUpdate("New").withData { uploadedResources.clear() })
+
+            assertRaises(TestNotUploadedToTaskError(uploadTaskId, resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["name", "file"])
+        fun `should reject an older source version for every change kind`(mode: String) {
+            prepare()
+            every { testRepository.findLatestByVersionBucket(bucket) } returns resource(22)
+
+            assertRaises(TestVersionNotLatestError(resourceId)) {
+                request(resourceName = "renamed", file = fileForMode(mode))
+            }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update if latest lookup returns no version`() {
+            prepare()
+            every { testRepository.findLatestByVersionBucket(bucket) } returns null
+
+            assertRaises(TestVersionNotLatestError(resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should rename latest version in place without changing task in any state`(state: String) {
+            val original = taskForUpdate(state)
+            prepare(original)
+
+            val result = request(resourceName = "renamed").getOrThrow()
+
+            Assertions.assertEquals(resourceId, result.id)
+            Assertions.assertEquals(originalResource.createdAt, result.createdAt)
+            Assertions.assertEquals(originalResource.version, result.version)
+            Assertions.assertEquals("renamed", result.data.name)
+            Assertions.assertEquals("name", originalResource.data.name)
+            assertResourceFields(result)
+            verify(exactly = 1) { testRepository.update(any<Polygon>()) }
+            assertNoUploadWrites()
+        }
+
+        @ParameterizedTest
+        @NullSource
+        @ValueSource(strings = ["name", ""])
+        fun `should persist metadata without checking unchanged or omitted name`(resourceName: String?) {
+            prepare()
+
+            val result = request(resourceName = resourceName).getOrThrow()
+
+            Assertions.assertEquals(resourceId, result.id)
+            Assertions.assertEquals(resourceName ?: "name", result.data.name)
+            assertResourceFields(result)
+            verify(exactly = 1) { testRepository.update(any<Polygon>()) }
+            assertNoUploadWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should replace an older attached chain version and preserve task revisions in every state`(state: String) {
+            val original = taskForUpdate(state)
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(TestId(31), result.id)
+            Assertions.assertEquals("name", result.data.name)
+            Assertions.assertEquals("description", result.data.description)
+            Assertions.assertEquals(bucket, result.data.versionBucket)
+            assertUploadedFile(result.data.file)
+            assertTaskReplacement(original)
+            verify(exactly = 0) { testRepository.update(any<Polygon>()) }
+            Assertions.assertEquals("name", originalResource.data.name)
+            Assertions.assertArrayEquals(byteArrayOf(1, 2), originalResource.data.file.content)
+        }
+
+        @Test
+        fun `should give new version the supplied name without renaming the previous version`() {
+            prepare()
+
+            val result = request(resourceName = "renamed", file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(TestId(31), result.id)
+            Assertions.assertEquals("renamed", result.data.name)
+            Assertions.assertEquals("name", originalResource.data.name)
+            verify(exactly = 0) { testRepository.update(any<Polygon>()) }
+        }
+
+        @Test
+        fun `should create another version even for identical file contents`() {
+            prepare()
+            val identical = FileData(uploadedFilename = "original.bin", content = byteArrayOf(1, 2))
+
+            val result = request(file = identical).getOrThrow()
+
+            Assertions.assertEquals(TestId(31), result.id)
+            verify(exactly = 1) { testRepository.save(any<TestData>()) }
+            verify(exactly = 0) { testRepository.update(any<Polygon>()) }
+        }
+
+        @Test
+        fun `should leave existing WIP unchanged when chain remains only in last committed revision`() {
+            val original = taskForUpdate("Uncommitted").withData {
+                content.uncommitted(
+                    wipBuilder = { tests(listOf(9, 11)) },
+                    lastCommittedBuilder = {},
+                )
+            }
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(TestId(31), result.id)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { testRepository.update(any<Polygon>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should save detached chain without attaching or changing task in any state`(state: String) {
+            val original = taskForUpdate(state, attached = false)
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(TestId(31), result.id)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { testRepository.update(any<Polygon>()) }
+        }
+
+        private fun resource(id: Long, chain: VersionBucket = bucket): Polygon = test {
+            this.id = id
+            createdAt = Instant.MIN
+            version = EntityVersion(0)
+            data = testData {
+                name = "name"
+                description = "description"
+                versionBucket = chain
+                file("original.bin", byteArrayOf(1, 2))
+            }
+        }
+
+        private fun taskForUpdate(state: String, attached: Boolean = true): Task = taskInState(state).withData {
+            uploadedResources.add(bucket)
+            when (state) {
+                "New" -> content.new { configureContent(attached) }
+                "Uncommitted" -> content.uncommitted(
+                    wipBuilder = { configureContent(attached) },
+                    lastCommittedBuilder = { configureContent(attached) },
+                )
+                "Committed" -> content.committed {
+                    statement = StatementId(1)
+                    exercise = ExerciseId(1)
+                    configureContent(attached)
+                }
+                else -> error("Unsupported test state: $state")
+            }
+        }
+
+        private fun tech.testsys.domain.builder.task.TaskContentBuilder<*>.configureContent(attached: Boolean) {
+            if (attached) {
+                tests(listOf(9, 10, 11))
+            } else {
+                tests(listOf(9, 11))
+            }
+        }
+
+        private fun prepare(original: Task = taskForUpdate("New")) {
+            prepareUpload(original)
+            every { testRepository.findById(resourceId) } returns originalResource
+            every { testRepository.findLatestByVersionBucket(bucket) } returns originalResource
+            every { testRepository.update(any<Polygon>()) } answers { firstArg<Polygon>() }
+            every { testRepository.save(any<TestData>()) } answers {
+                test {
+                    id = 31
+                    createdAt = Instant.EPOCH
+                    version = EntityVersion(1)
+                    data = firstArg<TestData>()
+                }
+            }
+            every { testRepository.load(any<LazyEntityList<TestId, Polygon>>()) } answers {
+                firstArg<LazyEntityList<TestId, Polygon>>().ids.map { attachedId ->
+                    resource(attachedId.value, if (attachedId.value == 10L) bucket else VersionBucket(UUID(0, 9)))
+                }
+            }
+        }
+
+        private fun request(user: MultipleRoleUser = developer, resourceName: String? = null, file: FileData? = null) =
+            developerOperations.updateTest(
+                user = user,
+                taskId = uploadTaskId,
+                testId = resourceId,
+                resourceName = resourceName,
+                file = file,
+            )
+
+        private fun assertNoWrites() {
+            assertNoUploadWrites()
+            verify(exactly = 0) { testRepository.update(any<Polygon>()) }
+        }
+
+        private fun fileForMode(mode: String): FileData? = when (mode) {
+            "file" -> uploadFile
+            "name" -> null
+            else -> error("Unsupported update mode: $mode")
+        }
+
+        private fun assertResourceFields(result: Polygon) {
+            Assertions.assertEquals("description", result.data.description)
+            Assertions.assertEquals(bucket, result.data.versionBucket)
+            Assertions.assertEquals("original.bin", result.data.file.uploadedFilename)
+            Assertions.assertArrayEquals(byteArrayOf(1, 2), result.data.file.content)
+        }
+
+        private fun assertTaskReplacement(original: Task) {
+            val captured = slot<Task>()
+            verify(exactly = 1) { taskRepository.update(capture(captured)) }
+            val updated = captured.captured
+            val before = original.getEditableContent()
+            val after = updated.getEditableContent()
+            Assertions.assertEquals(listOf(TestId(9), TestId(31), TestId(11)), after.tests.ids)
+            Assertions.assertEquals(before.statement?.id, after.statement?.id)
+            Assertions.assertEquals(before.exercise?.id, after.exercise?.id)
+            Assertions.assertEquals(before.developerSolutions.ids, after.developerSolutions.ids)
+            Assertions.assertEquals(before.supportedTrikStudioVersions, after.supportedTrikStudioVersions)
+            Assertions.assertEquals(original.id, updated.id)
+            Assertions.assertEquals(original.createdAt, updated.createdAt)
+            Assertions.assertEquals(original.version, updated.version)
+            Assertions.assertEquals(original.data.owner.id, updated.data.owner.id)
+            Assertions.assertEquals(original.data.name, updated.data.name)
+            Assertions.assertEquals(original.data.description, updated.data.description)
+            Assertions.assertEquals(original.data.sharedTo.ids, updated.data.sharedTo.ids)
+            Assertions.assertEquals(original.data.uploadedResources, updated.data.uploadedResources)
+            when (val content = original.data.content) {
+                is TaskContent.New -> Assertions.assertInstanceOf(TaskContent.New::class.java, updated.data.content)
+                is TaskContent.Uncommitted -> assertCommittedUnchanged(content.lastCommitted, updated)
+                is TaskContent.Committed -> assertCommittedUnchanged(content.lastCommitted, updated)
+            }
+        }
+    }
+
+    @Nested
+    inner class UpdateDeveloperSolutionTests {
+
+        private val bucket = VersionBucket(UUID(0, 0))
+        private val resourceId = DeveloperSolutionId(21)
+        private val originalResource = resource(21)
+
+        @ParameterizedTest
+        @NullSource
+        @ValueSource(strings = ["renamed"])
+        fun `should preserve or replace name when score changes without file`(resourceName: String?) {
+            prepare()
+
+            val result = request(resourceName = resourceName, expectedScore = Score(57)).getOrThrow()
+
+            Assertions.assertEquals(DeveloperSolutionId(31), result.id)
+            Assertions.assertEquals(resourceName ?: "name", result.data.name)
+            Assertions.assertEquals(Score(57), result.data.expectedScore)
+            Assertions.assertEquals(SolutionId(20), result.data.solution.id)
+            verify(exactly = 0) { solutionRepository.save(any<SolutionData>()) }
+        }
+
+        @ParameterizedTest
+        @NullSource
+        @ValueSource(strings = ["renamed"])
+        fun `should preserve or replace name when file and score change together`(resourceName: String?) {
+            prepare()
+
+            val result = request(resourceName = resourceName, file = uploadFile, expectedScore = Score(57)).getOrThrow()
+
+            Assertions.assertEquals(DeveloperSolutionId(31), result.id)
+            Assertions.assertEquals(resourceName ?: "name", result.data.name)
+            Assertions.assertEquals(Score(57), result.data.expectedScore)
+            Assertions.assertEquals(SolutionId(14), result.data.solution.id)
+            val saved = slot<SolutionData>()
+            verify(exactly = 1) { solutionRepository.save(capture(saved)) }
+            assertUploadedFile(saved.captured.file)
+        }
+
+        @Test
+        fun `should reject update before accessing storage if user is not a Developer`() {
+            val user = testAdministrator {}
+
+            assertRaises(MissedDeveloperRoleError) { request(user = user, file = uploadFile) }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if task does not exist`() {
+            every { taskRepository.findById(uploadTaskId) } returns null
+
+            assertRaises(TaskNotExistsError(uploadTaskId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if resource does not exist`() {
+            prepare()
+            every { developerSolutionRepository.findById(resourceId) } returns null
+
+            assertRaises(DeveloperSolutionNotExistsError(resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update of another owners task even when shared`() {
+            prepare(taskForUpdate("New").withData { owner(99) })
+
+            assertRaises(TaskAccessDeniedError(uploadTaskId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update without writes if chain was not uploaded to task`() {
+            prepare(taskForUpdate("New").withData { uploadedResources.clear() })
+
+            assertRaises(DeveloperSolutionNotUploadedToTaskError(uploadTaskId, resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["name", "file", "score"])
+        fun `should reject an older source version for every change kind`(mode: String) {
+            prepare()
+            every { developerSolutionRepository.findLatestByVersionBucket(bucket) } returns resource(22)
+
+            assertRaises(DeveloperSolutionVersionNotLatestError(resourceId)) {
+                request(resourceName = "renamed", file = fileForMode(mode), expectedScore = scoreForMode(mode))
+            }
+
+            assertNoWrites()
+        }
+
+        @Test
+        fun `should reject update if latest lookup returns no version`() {
+            prepare()
+            every { developerSolutionRepository.findLatestByVersionBucket(bucket) } returns null
+
+            assertRaises(DeveloperSolutionVersionNotLatestError(resourceId)) { request(file = uploadFile) }
+
+            assertNoWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should rename latest version in place without changing task in any state`(state: String) {
+            val original = taskForUpdate(state)
+            prepare(original)
+
+            val result = request(resourceName = "renamed").getOrThrow()
+
+            Assertions.assertEquals(resourceId, result.id)
+            Assertions.assertEquals(originalResource.createdAt, result.createdAt)
+            Assertions.assertEquals(originalResource.version, result.version)
+            Assertions.assertEquals("renamed", result.data.name)
+            Assertions.assertEquals("name", originalResource.data.name)
+            assertResourceFields(result)
+            verify(exactly = 1) { developerSolutionRepository.update(any<DeveloperSolution>()) }
+            assertNoUploadWrites()
+        }
+
+        @ParameterizedTest
+        @NullSource
+        @ValueSource(strings = ["name", ""])
+        fun `should persist metadata without checking unchanged or omitted name`(resourceName: String?) {
+            prepare()
+
+            val result = request(resourceName = resourceName).getOrThrow()
+
+            Assertions.assertEquals(resourceId, result.id)
+            Assertions.assertEquals(resourceName ?: "name", result.data.name)
+            assertResourceFields(result)
+            verify(exactly = 1) { developerSolutionRepository.update(any<DeveloperSolution>()) }
+            assertNoUploadWrites()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should replace an older attached chain version and preserve task revisions in every state`(state: String) {
+            val original = taskForUpdate(state)
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(DeveloperSolutionId(31), result.id)
+            Assertions.assertEquals("name", result.data.name)
+            Assertions.assertEquals("description", result.data.description)
+            Assertions.assertEquals(bucket, result.data.versionBucket)
+            Assertions.assertEquals(SolutionId(14), result.data.solution.id)
+            Assertions.assertEquals(Score(42), result.data.expectedScore)
+            assertTaskReplacement(original)
+            verify(exactly = 0) { developerSolutionRepository.update(any<DeveloperSolution>()) }
+            Assertions.assertEquals("name", originalResource.data.name)
+            Assertions.assertEquals(SolutionId(20), originalResource.data.solution.id)
+        }
+
+        @Test
+        fun `should give new version the supplied name without renaming the previous version`() {
+            prepare()
+
+            val result = request(resourceName = "renamed", file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(DeveloperSolutionId(31), result.id)
+            Assertions.assertEquals("renamed", result.data.name)
+            Assertions.assertEquals("name", originalResource.data.name)
+            verify(exactly = 0) { developerSolutionRepository.update(any<DeveloperSolution>()) }
+        }
+
+        @Test
+        fun `should create another version even for identical file contents`() {
+            prepare()
+            val identical = FileData(uploadedFilename = "original.bin", content = byteArrayOf(1, 2))
+
+            val result = request(file = identical).getOrThrow()
+
+            Assertions.assertEquals(DeveloperSolutionId(31), result.id)
+            verify(exactly = 1) { developerSolutionRepository.save(any<DeveloperSolutionData>()) }
+            verify(exactly = 0) { developerSolutionRepository.update(any<DeveloperSolution>()) }
+        }
+
+        @Test
+        fun `should leave existing WIP unchanged when chain remains only in last committed revision`() {
+            val original = taskForUpdate("Uncommitted").withData {
+                content.uncommitted(
+                    wipBuilder = { developerSolutions(listOf(9, 11)) },
+                    lastCommittedBuilder = {},
+                )
+            }
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(DeveloperSolutionId(31), result.id)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { developerSolutionRepository.update(any<DeveloperSolution>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should save detached chain without attaching or changing task in any state`(state: String) {
+            val original = taskForUpdate(state, attached = false)
+            prepare(original)
+
+            val result = request(file = uploadFile).getOrThrow()
+
+            Assertions.assertEquals(DeveloperSolutionId(31), result.id)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { developerSolutionRepository.update(any<DeveloperSolution>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [42, 57])
+        fun `should create score version reusing previous solution even for identical score`(score: Int) {
+            val original = taskForUpdate("Committed")
+            prepare(original)
+
+            val result = request(expectedScore = Score(score)).getOrThrow()
+
+            Assertions.assertEquals(DeveloperSolutionId(31), result.id)
+            Assertions.assertEquals(Score(score), result.data.expectedScore)
+            Assertions.assertEquals(SolutionId(20), result.data.solution.id)
+            Assertions.assertEquals(Score(42), originalResource.data.expectedScore)
+            verify(exactly = 0) { solutionRepository.save(any<SolutionData>()) }
+            verify(exactly = 0) { solutionRepository.load(any<LazyEntity<SolutionId, Solution>>()) }
+            assertTaskReplacement(original)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Python", "JavaScript", "VisualLanguage"])
+        fun `should preserve language when saving new solution with file name and score together`(language: String) {
+            prepare()
+            every { solutionRepository.load(originalResource.data.solution) } returns solution {
+                id = 20
+                createdAt = Instant.MIN
+                data = solutionData {
+                    file("original.bin", byteArrayOf(1, 2))
+                    when (uploadLanguage(language)) {
+                        TrikSupportedLanguage.Python -> this.language.python()
+                        TrikSupportedLanguage.JavaScript -> this.language.javaScript()
+                        TrikSupportedLanguage.VisualLanguage -> this.language.visualLanguage()
+                    }
+                }
+            }
+
+            val result = request(resourceName = "renamed", file = uploadFile, expectedScore = Score(57)).getOrThrow()
+
+            Assertions.assertEquals(DeveloperSolutionId(31), result.id)
+            Assertions.assertEquals("renamed", result.data.name)
+            Assertions.assertEquals(Score(57), result.data.expectedScore)
+            Assertions.assertEquals(SolutionId(14), result.data.solution.id)
+            val saved = slot<SolutionData>()
+            verify(exactly = 1) { solutionRepository.save(capture(saved)) }
+            Assertions.assertEquals(uploadLanguage(language), saved.captured.language)
+            assertUploadedFile(saved.captured.file)
+            Assertions.assertEquals(Score(42), originalResource.data.expectedScore)
+        }
+
+        @Test
+        fun `should save detached score version without attaching it to WIP`() {
+            prepare(
+                taskForUpdate("Uncommitted").withData {
+                    content.uncommitted(wipBuilder = { developerSolutions.clear() }, lastCommittedBuilder = {})
+                },
+            )
+
+            val result = request(expectedScore = Score(57)).getOrThrow()
+
+            Assertions.assertEquals(Score(57), result.data.expectedScore)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { solutionRepository.save(any<SolutionData>()) }
+        }
+
+        private fun resource(id: Long, chain: VersionBucket = bucket): DeveloperSolution = developerSolution {
+            this.id = id
+            createdAt = Instant.MIN
+            version = EntityVersion(0)
+            data = developerSolutionData {
+                name = "name"
+                description = "description"
+                versionBucket = chain
+                solution(20)
+                expectedScore(42)
+            }
+        }
+
+        private fun taskForUpdate(state: String, attached: Boolean = true): Task = taskInState(state).withData {
+            uploadedResources.add(bucket)
+            when (state) {
+                "New" -> content.new { configureContent(attached) }
+                "Uncommitted" -> content.uncommitted(
+                    wipBuilder = { configureContent(attached) },
+                    lastCommittedBuilder = { configureContent(attached) },
+                )
+                "Committed" -> content.committed {
+                    statement = StatementId(1)
+                    exercise = ExerciseId(1)
+                    configureContent(attached)
+                }
+                else -> error("Unsupported test state: $state")
+            }
+        }
+
+        private fun tech.testsys.domain.builder.task.TaskContentBuilder<*>.configureContent(attached: Boolean) {
+            if (attached) {
+                developerSolutions(listOf(9, 10, 11))
+            } else {
+                developerSolutions(listOf(9, 11))
+            }
+        }
+
+        private fun prepare(original: Task = taskForUpdate("New")) {
+            prepareUpload(original)
+            every { developerSolutionRepository.findById(resourceId) } returns originalResource
+            every { developerSolutionRepository.findLatestByVersionBucket(bucket) } returns originalResource
+            every { developerSolutionRepository.update(any<DeveloperSolution>()) } answers { firstArg<DeveloperSolution>() }
+            every { developerSolutionRepository.save(any<DeveloperSolutionData>()) } answers {
+                developerSolution {
+                    id = 31
+                    createdAt = Instant.EPOCH
+                    version = EntityVersion(1)
+                    data = firstArg<DeveloperSolutionData>()
+                }
+            }
+            every { developerSolutionRepository.load(any<LazyEntityList<DeveloperSolutionId, DeveloperSolution>>()) } answers {
+                firstArg<LazyEntityList<DeveloperSolutionId, DeveloperSolution>>().ids.map { attachedId ->
+                    resource(attachedId.value, if (attachedId.value == 10L) bucket else VersionBucket(UUID(0, 9)))
+                }
+            }
+            every { solutionRepository.load(originalResource.data.solution) } returns solution {
+                id = 20
+                createdAt = Instant.MIN
+                data = solutionData {
+                    file("original.bin", byteArrayOf(1, 2))
+                    language.python()
+                }
+            }
+        }
+
+        private fun request(
+            user: MultipleRoleUser = developer,
+            resourceName: String? = null,
+            file: FileData? = null,
+            expectedScore: Score? = null,
+        ) = developerOperations.updateDeveloperSolution(
+            user = user,
+            taskId = uploadTaskId,
+            developerSolutionId = resourceId,
+            resourceName = resourceName,
+            file = file,
+            expectedScore = expectedScore,
+        )
+
+        private fun assertNoWrites() {
+            assertNoUploadWrites()
+            verify(exactly = 0) { developerSolutionRepository.update(any<DeveloperSolution>()) }
+        }
+
+        private fun fileForMode(mode: String): FileData? = when (mode) {
+            "file" -> uploadFile
+            "name", "score" -> null
+            else -> error("Unsupported update mode: $mode")
+        }
+
+        private fun scoreForMode(mode: String): Score? = when (mode) {
+            "score" -> Score(42)
+            "name", "file" -> null
+            else -> error("Unsupported update mode: $mode")
+        }
+
+        private fun assertResourceFields(result: DeveloperSolution) {
+            Assertions.assertEquals("description", result.data.description)
+            Assertions.assertEquals(bucket, result.data.versionBucket)
+            Assertions.assertEquals(SolutionId(20), result.data.solution.id)
+            Assertions.assertEquals(Score(42), result.data.expectedScore)
+        }
+
+        private fun assertTaskReplacement(original: Task) {
+            val captured = slot<Task>()
+            verify(exactly = 1) { taskRepository.update(capture(captured)) }
+            val updated = captured.captured
+            val before = original.getEditableContent()
+            val after = updated.getEditableContent()
+            Assertions.assertEquals(
+                listOf(DeveloperSolutionId(9), DeveloperSolutionId(31), DeveloperSolutionId(11)),
+                after.developerSolutions.ids,
+            )
+            Assertions.assertEquals(before.statement?.id, after.statement?.id)
+            Assertions.assertEquals(before.exercise?.id, after.exercise?.id)
+            Assertions.assertEquals(before.tests.ids, after.tests.ids)
+            Assertions.assertEquals(before.supportedTrikStudioVersions, after.supportedTrikStudioVersions)
+            Assertions.assertEquals(original.id, updated.id)
+            Assertions.assertEquals(original.createdAt, updated.createdAt)
+            Assertions.assertEquals(original.version, updated.version)
+            Assertions.assertEquals(original.data.owner.id, updated.data.owner.id)
+            Assertions.assertEquals(original.data.name, updated.data.name)
+            Assertions.assertEquals(original.data.description, updated.data.description)
+            Assertions.assertEquals(original.data.sharedTo.ids, updated.data.sharedTo.ids)
+            Assertions.assertEquals(original.data.uploadedResources, updated.data.uploadedResources)
+            when (val content = original.data.content) {
+                is TaskContent.New -> Assertions.assertInstanceOf(TaskContent.New::class.java, updated.data.content)
+                is TaskContent.Uncommitted -> assertCommittedUnchanged(content.lastCommitted, updated)
+                is TaskContent.Committed -> assertCommittedUnchanged(content.lastCommitted, updated)
+            }
         }
     }
 

@@ -57,52 +57,6 @@
 
 Образец — [DeveloperOperations.kt](src/main/kotlin/tech/testsys/operation/user/DeveloperOperations.kt).
 
-Метод `viewTasks` возвращает `List<Task>` через `TaskRepository.findAvailableToDeveloper`.
-Идентификатор, название, состояние и владелец доступны в возвращённых сущностях. Исключения хранилища
-выходят из операции. Условия доступа и оставшаяся часть интерфейса — в фиче
-`testsys.user.multi.developer.task.viewTasks` в [features.md](../docs/domain/features.md).
-
-Метод `viewTask` возвращает `Task` через `TaskRepository.findById`, сохраняя обе версии содержимого
-и ссылки на прикреплённые Ресурсы. Исключения хранилища выходят из операции. Условия доступа
-и нереализованные части — в фиче `testsys.user.multi.developer.task.viewTask`
-в [features.md](../docs/domain/features.md).
-
-Метод `editTaskInfo` возвращает Задачу после редактирования; изменённые данные сохраняет через
-`TaskRepository.update`. Исключения хранилища выходят из операции. Условия редактирования и
-нереализованная страница — в фиче `testsys.user.multi.developer.task.editTaskInfo`
-в [features.md](../docs/domain/features.md).
-
-Метод `viewResources` возвращает последние версии доступных цепочек существующими доменными сущностями.
-Дата последнего изменения Ресурса — `createdAt` его последней версии. Метод `viewResource` возвращает
-существующие версии выбранной цепочки. Метод `downloadResourceVersion` возвращает сохранённый `StoredBlobRef`
-без чтения содержимого файла.
-
-Методы `addStatement`, `addExercise`, `addTest` и `addDeveloperSolution` класса `DeveloperOperations`
-сохраняют новый Ресурс и добавляют его цепочку в `TaskData.uploadedResources`. Прикрепление выполняют
-отдельные операции `attach*`. Условия загрузки — в фиче `testsys.user.multi.developer.resource.addResource`
-в [features.md](../docs/domain/features.md).
-
-Сохранение Ресурса и обновление Задачи — отдельные вызовы портов без общей транзакции.
-`addDeveloperSolution` сначала сохраняет Решение через `SolutionRepository`.
-Исключения хранилища выходят из операции. Если последующий вызов завершится ошибкой, уже сохранённые
-Решение или Ресурс могут остаться без регистрации в Задаче.
-
-Методы `updateStatement`, `updateExercise`, `updateTest` и `updateDeveloperSolution` возвращают сохранённую
-версию Ресурса. Метаданные обновляются через `update`, новая версия сохраняется через `save`.
-Операции используют `getEditableContent` и `changeEditableContent` для замены существующей ссылки в Задаче.
-Требования к обновлению — в фиче `testsys.user.multi.developer.resource.updateResource` в
-[features.md](../docs/domain/features.md).
-
-При новом файле `updateDeveloperSolution` сначала сохраняет новое Решение через `SolutionRepository`.
-Сохранение Решения, версии Ресурса и обновление Задачи — отдельные вызовы портов без общей транзакции.
-Исключения хранилища выходят из операции; после ошибки уже сохранённая версия может остаться
-без замены ссылки в Задаче.
-
-Методы `detachStatement`, `detachExercise`, `detachTest` и `detachDeveloperSolution` возвращают Задачу,
-сохранённую через `TaskRepository.update`. Операции используют `getEditableContent` для проверки ссылки
-и `changeEditableContent` для её удаления. Требования к откреплению — в фиче
-`testsys.user.multi.developer.task.detachResource` в [features.md](../docs/domain/features.md).
-
 ## Конфигурация
 
 **Конфигурация операций** — значения, которые настраиваются при развёртывании системы и нужны самим операциям,

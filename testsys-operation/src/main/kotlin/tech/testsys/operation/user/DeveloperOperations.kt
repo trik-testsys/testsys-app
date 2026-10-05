@@ -1,5 +1,6 @@
 package tech.testsys.operation.user
 
+import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.developerSolutionData
 import tech.testsys.domain.builder.api.exerciseData
 import tech.testsys.domain.builder.api.solutionData
@@ -9,6 +10,7 @@ import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
+import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
@@ -18,6 +20,7 @@ import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Exercise
@@ -46,8 +49,12 @@ import tech.testsys.operation.error.AttachDeveloperSolutionError
 import tech.testsys.operation.error.AttachExerciseError
 import tech.testsys.operation.error.AttachStatementError
 import tech.testsys.operation.error.AttachTestError
+import tech.testsys.operation.error.AttemptDurationExceedsContestDurationError
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
+import tech.testsys.operation.error.ContestEndNotAfterStartError
+import tech.testsys.operation.error.ContestEndWithoutStartError
+import tech.testsys.operation.error.CreateContestError
 import tech.testsys.operation.error.CreateTaskError
 import tech.testsys.operation.error.DetachDeveloperSolutionError
 import tech.testsys.operation.error.DetachExerciseError
@@ -63,6 +70,7 @@ import tech.testsys.operation.error.ExerciseNotExistsError
 import tech.testsys.operation.error.ExerciseNotUploadedToTaskError
 import tech.testsys.operation.error.ExerciseVersionNotLatestError
 import tech.testsys.operation.error.MissedDeveloperRoleError
+import tech.testsys.operation.error.NonPositiveAttemptDurationError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ResourceAlreadyAttachedError
 import tech.testsys.operation.error.ResourceNotExistsError
@@ -94,6 +102,8 @@ import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.changeEditableContent
 import tech.testsys.operation.util.getEditableContent
 import tech.testsys.operation.util.hasRole
+import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
 /**
@@ -110,7 +120,54 @@ class DeveloperOperations(
     private val testRepository: TestRepository,
     private val developerSolutionRepository: DeveloperSolutionRepository,
     private val solutionRepository: SolutionRepository,
+    private val contestRepository: ContestRepository,
 ) {
+
+    /**
+     * Creates a contest owned by [user] with [contestName], [contestDescription] and [trikStudioVersion].
+     * Omitted [attemptDuration], [startsAt] and [endsAt] leave their limits unset; storage exceptions propagate.
+     *
+     * @throws IllegalArgumentException if a duration cannot be represented exactly in Long milliseconds.
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.contest.createContest")
+    fun createContest(
+        user: MultipleRoleUser,
+        contestName: String,
+        trikStudioVersion: TrikStudioVersion,
+        attemptDuration: Duration? = null,
+        startsAt: Instant? = null,
+        endsAt: Instant? = null,
+        contestDescription: String = "",
+    ): OperationResult<Contest, CreateContestError> = operation<Contest, CreateContestError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val contestDuration = endsAt?.let { end ->
+            ensure(startsAt != null) { ContestEndWithoutStartError(end) }
+            ensure(end > startsAt) { ContestEndNotAfterStartError(startsAt = startsAt, endsAt = end) }
+            Duration.between(startsAt, end)
+        }
+        if (attemptDuration != null) {
+            ensure(attemptDuration > Duration.ZERO) { NonPositiveAttemptDurationError(attemptDuration) }
+            ensure(contestDuration == null || attemptDuration <= contestDuration) {
+                AttemptDurationExceedsContestDurationError(
+                    attemptDuration = attemptDuration,
+                    contestDuration = requireNotNull(contestDuration),
+                )
+            }
+        }
+        contestDuration?.requireExactMillis("contestDuration")
+        attemptDuration?.requireExactMillis("attemptDuration")
+        val data = contestData {
+            owner = user.id
+            name = contestName
+            description = contestDescription
+            this.trikStudioVersion = trikStudioVersion
+            this.attemptDuration = attemptDuration
+            this.startsAt = startsAt
+            this.contestDuration = contestDuration
+        }
+        return contestRepository.save(data).asSuccess()
+    }
 
     /**
      * Returns tasks owned by [user] or shared to communities of their [Developer] role, without changing task state.
@@ -924,4 +981,17 @@ class DeveloperOperations(
         exerciseRepository.existsByVersionBucket(versionBucket) ||
         testRepository.existsByVersionBucket(versionBucket) ||
         developerSolutionRepository.existsByVersionBucket(versionBucket)
+
+    private fun Duration.requireExactMillis(field: String) {
+        require(nano % NANOS_PER_MILLISECOND == 0) { "Contest $field=$this must be exactly representable in milliseconds" }
+        try {
+            toMillis()
+        } catch (exception: ArithmeticException) {
+            throw IllegalArgumentException("Contest $field=$this exceeds the Long millisecond range", exception)
+        }
+    }
+
+    private companion object {
+        const val NANOS_PER_MILLISECOND = 1_000_000
+    }
 }

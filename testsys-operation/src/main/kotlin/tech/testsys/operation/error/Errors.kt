@@ -9,6 +9,8 @@ import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
+import java.time.Duration
+import java.time.Instant
 
 /**
  * Expected failure of an operation, returned in [OperationResult.Error].
@@ -158,6 +160,13 @@ sealed interface AddDeveloperSolutionError : OperationError
 sealed interface CreateTaskError : OperationError
 
 /**
+ * Failure of creating a contest.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateContestError : OperationError
+
+/**
  * Failure of attaching a statement to a task.
  *
  * @since %CURRENT_VERSION%
@@ -249,11 +258,49 @@ data object MissedDeveloperRoleError :
     AddDeveloperSolutionError,
     MissedRequiredRoleError,
     CreateTaskError,
+    CreateContestError,
     AttachStatementError,
     ShareTaskError,
     AttachExerciseError,
     AttachTestError,
     AttachDeveloperSolutionError
+
+/**
+ * The contest end is specified without its start.
+ *
+ * @property endsAt the end moment supplied without a start.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestEndWithoutStartError(val endsAt: Instant) : CreateContestError
+
+/**
+ * The contest end is not later than its start.
+ *
+ * @property startsAt the requested start moment.
+ * @property endsAt the requested end moment.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestEndNotAfterStartError(val startsAt: Instant, val endsAt: Instant) : CreateContestError
+
+/**
+ * The individual time limit is zero or negative.
+ *
+ * @property attemptDuration the nonpositive individual limit.
+ * @since %CURRENT_VERSION%
+ */
+data class NonPositiveAttemptDurationError(val attemptDuration: Duration) : CreateContestError
+
+/**
+ * The individual time limit exceeds the contest interval.
+ *
+ * @property attemptDuration the requested individual limit.
+ * @property contestDuration the available contest interval.
+ * @since %CURRENT_VERSION%
+ */
+data class AttemptDurationExceedsContestDurationError(
+    val attemptDuration: Duration,
+    val contestDuration: Duration,
+) : CreateContestError
 
 /**
  * The task does not exist.

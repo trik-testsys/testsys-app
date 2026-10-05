@@ -18,6 +18,7 @@ import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.builder.task.TaskContentBuilder
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
+import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
@@ -30,6 +31,7 @@ import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.CommittedTaskContent
+import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
@@ -57,8 +59,11 @@ import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.operation.annotation.InternalOperationsApi
+import tech.testsys.operation.error.AttemptDurationExceedsContestDurationError
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
+import tech.testsys.operation.error.ContestEndNotAfterStartError
+import tech.testsys.operation.error.ContestEndWithoutStartError
 import tech.testsys.operation.error.DeveloperSolutionNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotUploadedToTaskError
 import tech.testsys.operation.error.DeveloperSolutionVersionNotLatestError
@@ -67,6 +72,7 @@ import tech.testsys.operation.error.ExerciseNotExistsError
 import tech.testsys.operation.error.ExerciseNotUploadedToTaskError
 import tech.testsys.operation.error.ExerciseVersionNotLatestError
 import tech.testsys.operation.error.MissedDeveloperRoleError
+import tech.testsys.operation.error.NonPositiveAttemptDurationError
 import tech.testsys.operation.error.ResourceAlreadyAttachedError
 import tech.testsys.operation.error.ResourceNotExistsError
 import tech.testsys.operation.error.ResourceNotUploadedToTaskError
@@ -95,6 +101,7 @@ import tech.testsys.operation.util.testNewTask
 import tech.testsys.operation.util.testSavedTask
 import tech.testsys.operation.util.testStatement
 import tech.testsys.operation.util.testUncommittedTask
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import kotlin.test.Test
@@ -110,6 +117,7 @@ class DeveloperOperationsTests {
     private val testRepository = mockk<TestRepository>()
     private val developerSolutionRepository = mockk<DeveloperSolutionRepository>()
     private val solutionRepository = mockk<SolutionRepository>()
+    private val contestRepository = mockk<ContestRepository>()
     private val developerOperations = DeveloperOperations(
         taskRepository,
         statementRepository,
@@ -118,6 +126,7 @@ class DeveloperOperationsTests {
         testRepository,
         developerSolutionRepository,
         solutionRepository,
+        contestRepository,
     )
 
     private lateinit var developer: MultipleRoleUser
@@ -128,6 +137,228 @@ class DeveloperOperationsTests {
     private val uploadUuid = UUID(0, 10)
     private val uploadBucket = VersionBucket(uploadUuid)
     private val uploadScore = Score(42)
+
+    @Nested
+    inner class CreateContestTests {
+
+        private val version = TrikStudioVersion("3.0.0")
+        private val start = Instant.parse("2020-01-01T10:00:00Z")
+        private val end = Instant.parse("2020-01-01T12:00:00Z")
+
+        @BeforeEach
+        fun prepareContestSave() {
+            every { contestRepository.save(any<ContestData>()) } answers {
+                contest {
+                    id = 19
+                    createdAt = Instant.parse("2019-01-01T00:00:00Z")
+                    data = firstArg<ContestData>()
+                }
+            }
+        }
+
+        @Test
+        fun `should raise MissedDeveloperRoleError without saving if user is not a Developer`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.createContest(testAdministrator {}, "Contest", version)
+            }
+
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+        }
+
+        @Test
+        fun `should save a contest with supplied metadata and limits owned by the Developer`() {
+            val dataSlot = slot<ContestData>()
+            every { contestRepository.save(capture(dataSlot)) } answers {
+                contest {
+                    id = 19
+                    createdAt = Instant.parse("2019-01-01T00:00:00Z")
+                    data = firstArg<ContestData>()
+                }
+            }
+
+            val result = developerOperations.createContest(
+                user = developer,
+                contestName = "Contest",
+                trikStudioVersion = version,
+                attemptDuration = Duration.ofMinutes(30),
+                startsAt = start,
+                endsAt = end,
+                contestDescription = "Description",
+            ).getOrThrow()
+
+            Assertions.assertEquals(19L, result.id.value)
+            Assertions.assertEquals(dataSlot.captured, result.data)
+            Assertions.assertEquals(developer.id, result.data.owner.id)
+            Assertions.assertEquals("Contest", result.data.name)
+            Assertions.assertEquals("Description", result.data.description)
+            Assertions.assertEquals(version, result.data.trikStudioVersion)
+            Assertions.assertEquals(start, result.data.startsAt)
+            Assertions.assertEquals(end, result.data.endsAt)
+            Assertions.assertEquals(Duration.ofHours(2), result.data.contestDuration)
+            Assertions.assertEquals(Duration.ofMinutes(30), result.data.attemptDuration)
+            Assertions.assertEquals(emptyList<TaskId>(), result.data.tasks.ids)
+            Assertions.assertEquals(emptyList<CommunityId>(), result.data.sharedTo.ids)
+            verify(exactly = 1) { contestRepository.save(any<ContestData>()) }
+        }
+
+        @Test
+        fun `should create a contest without dates or individual limit if optional values are omitted`() {
+            val result = developerOperations.createContest(developer, "Contest", version).getOrThrow()
+
+            Assertions.assertNull(result.data.startsAt)
+            Assertions.assertNull(result.data.endsAt)
+            Assertions.assertNull(result.data.contestDuration)
+            Assertions.assertNull(result.data.attemptDuration)
+            Assertions.assertEquals("", result.data.description)
+        }
+
+        @Test
+        fun `should create a finite contest without an individual limit`() {
+            val result = developerOperations.createContest(
+                user = developer,
+                contestName = "Contest",
+                trikStudioVersion = version,
+                startsAt = start,
+                endsAt = end,
+            ).getOrThrow()
+
+            Assertions.assertEquals(Duration.ofHours(2), result.data.contestDuration)
+            Assertions.assertEquals(end, result.data.endsAt)
+            Assertions.assertNull(result.data.attemptDuration)
+        }
+
+        @Test
+        fun `should accept an individual limit equal to the total interval and a past start`() {
+            val result = developerOperations.createContest(
+                user = developer,
+                contestName = "Contest",
+                trikStudioVersion = version,
+                attemptDuration = Duration.ofHours(2),
+                startsAt = start,
+                endsAt = end,
+            ).getOrThrow()
+
+            Assertions.assertEquals(Duration.ofHours(2), result.data.attemptDuration)
+            Assertions.assertEquals(start, result.data.startsAt)
+        }
+
+        @Test
+        fun `should accept a start and an individual limit without an end`() {
+            val result = developerOperations.createContest(
+                user = developer,
+                contestName = "Contest",
+                trikStudioVersion = version,
+                attemptDuration = Duration.ofMillis(1),
+                startsAt = start,
+            ).getOrThrow()
+
+            Assertions.assertEquals(Duration.ofMillis(1), result.data.attemptDuration)
+            Assertions.assertEquals(start, result.data.startsAt)
+            Assertions.assertNull(result.data.contestDuration)
+            Assertions.assertNull(result.data.endsAt)
+        }
+
+        @Test
+        fun `should raise ContestEndWithoutStartError without saving if only an end is supplied`() {
+            assertRaises(ContestEndWithoutStartError(end)) {
+                developerOperations.createContest(developer, "Contest", version, endsAt = end)
+            }
+
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(longs = [0, -1])
+        fun `should raise ContestEndNotAfterStartError without saving if the interval is not positive`(offset: Long) {
+            val invalidEnd = start.plusSeconds(offset)
+
+            assertRaises(ContestEndNotAfterStartError(startsAt = start, endsAt = invalidEnd)) {
+                developerOperations.createContest(developer, "Contest", version, startsAt = start, endsAt = invalidEnd)
+            }
+
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(longs = [0, -1])
+        fun `should raise NonPositiveAttemptDurationError without saving for a nonpositive limit`(millis: Long) {
+            val duration = Duration.ofMillis(millis)
+
+            assertRaises(NonPositiveAttemptDurationError(duration)) {
+                developerOperations.createContest(developer, "Contest", version, attemptDuration = duration)
+            }
+
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+        }
+
+        @Test
+        fun `should raise AttemptDurationExceedsContestDurationError without saving if the individual limit is too long`() {
+            val duration = Duration.ofHours(2).plusMillis(1)
+
+            assertRaises(
+                AttemptDurationExceedsContestDurationError(
+                    attemptDuration = duration,
+                    contestDuration = Duration.ofHours(2),
+                ),
+            ) {
+                developerOperations.createContest(
+                    user = developer,
+                    contestName = "Contest",
+                    trikStudioVersion = version,
+                    attemptDuration = duration,
+                    startsAt = start,
+                    endsAt = end,
+                )
+            }
+
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["PT0.000000001S", "PT9223372036854775.808S"])
+        fun `should reject an individual limit outside the exact millisecond contract before saving`(value: String) {
+            val duration = Duration.parse(value)
+
+            Assertions.assertThrows(IllegalArgumentException::class.java) {
+                developerOperations.createContest(developer, "Contest", version, attemptDuration = duration)
+            }
+
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["PT0.000000001S", "PT9223372036854775.808S"])
+        fun `should reject a total interval outside the exact millisecond contract before saving`(value: String) {
+            val invalidEnd = start.plus(Duration.parse(value))
+
+            Assertions.assertThrows(IllegalArgumentException::class.java) {
+                developerOperations.createContest(developer, "Contest", version, startsAt = start, endsAt = invalidEnd)
+            }
+
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+        }
+
+        @Test
+        fun `should accept the largest individual limit representable in Long milliseconds`() {
+            val duration = Duration.ofMillis(Long.MAX_VALUE)
+
+            val result = developerOperations.createContest(developer, "Contest", version, attemptDuration = duration).getOrThrow()
+
+            Assertions.assertEquals(duration, result.data.attemptDuration)
+        }
+
+        @Test
+        fun `should propagate a storage exception when saving the contest fails`() {
+            val failure = IllegalStateException("Storage failure")
+            every { contestRepository.save(any<ContestData>()) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.createContest(developer, "Contest", version)
+            }
+
+            Assertions.assertSame(failure, thrown)
+        }
+    }
 
     @Nested
     inner class ViewTasksTests {
@@ -327,7 +558,7 @@ class DeveloperOperationsTests {
             val expectedContent = taskContentNew {
                 existingResources()
                 supportedTrikStudioVersions = versions(expected).toMutableList()
-                exercise = original.getEditableContent().exercise?.id
+                exercises = original.getEditableContent().exercises.ids.toMutableList()
                 statement = original.getEditableContent().statement?.id
             }.wip
             assertDetachedTask(original = original, result = result, expected = expectedContent)
@@ -468,7 +699,7 @@ class DeveloperOperationsTests {
                 is TaskContent.Committed -> {
                     val actual = Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content).lastCommitted
                     Assertions.assertEquals(content.lastCommitted.tests.ids, actual.tests.ids)
-                    Assertions.assertEquals(content.lastCommitted.exercise.id, actual.exercise.id)
+                    Assertions.assertEquals(content.lastCommitted.exercises.ids, actual.exercises.ids)
                     Assertions.assertEquals(content.lastCommitted.statement.id, actual.statement.id)
                     Assertions.assertEquals(content.lastCommitted.developerSolutions.ids, actual.developerSolutions.ids)
                     Assertions.assertEquals(content.lastCommitted.supportedTrikStudioVersions, actual.supportedTrikStudioVersions)

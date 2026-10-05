@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
@@ -49,6 +50,7 @@ import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.task.WipTaskContent
@@ -226,6 +228,256 @@ class DeveloperOperationsTests {
 
             Assertions.assertSame(failure, actual)
         }
+    }
+
+    @Nested
+    inner class EditTaskInfoTests {
+
+        private val taskId = TaskId(42)
+
+        @Test
+        fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+            assertRaises(MissedDeveloperRoleError) { developerOperations.editTaskInfo(testAdministrator {}, taskId, taskName = "New") }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should raise TaskNotExistsError if task does not exist`() {
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) { developerOperations.editTaskInfo(developer, taskId) }
+
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should deny editing another owner's task even when shared to the Developer community`() {
+            val user = testDeveloper {
+                memberOf(listOf(4))
+                data = developerData {}
+            }
+            val original = taskInState("Committed").withData { owner = MultipleRoleUserId(99) }
+            every { taskRepository.findById(taskId) } returns original
+
+            assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.editTaskInfo(user, taskId, taskName = "New") }
+
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should edit only name without changing content or state`(state: String) {
+            val original = taskInState(state)
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.editTaskInfo(developer, taskId, taskName = "Updated name").getOrThrow()
+
+            Assertions.assertEquals("Updated name", result.data.name)
+            Assertions.assertEquals(original.data.description, result.data.description)
+            assertMetadataEditPreservesContent(original, result)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @CsvSource("New, Updated description", "Uncommitted, Updated description", "Committed, Updated description", "Committed, ''")
+        fun `should edit only description including clearing it without changing content or state`(state: String, description: String) {
+            val original = taskInState(state)
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.editTaskInfo(developer, taskId, taskDescription = description).getOrThrow()
+
+            Assertions.assertEquals(description, result.data.description)
+            Assertions.assertEquals(original.data.name, result.data.name)
+            assertMetadataEditPreservesContent(original, result)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "New, '3.0.0 4.0.0 4.0.0', '3.0.0 4.0.0'",
+            "Uncommitted, '3.0.0 4.0.0 4.0.0', '3.0.0 4.0.0'",
+            "Committed, '3.0.0 4.0.0 4.0.0', '3.0.0 4.0.0'",
+            "New, '4.0.0', '4.0.0'",
+            "Uncommitted, '4.0.0', '4.0.0'",
+            "Committed, '4.0.0', '4.0.0'",
+            "New, '', ''",
+            "Uncommitted, '', ''",
+            "Committed, '', ''",
+        )
+        fun `should replace editable versions and retain resources and committed content when the version set changes`(
+            state: String,
+            supplied: String,
+            expected: String,
+        ) {
+            val original = taskInState(state)
+            val saved = slot<Task>()
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(capture(saved)) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.editTaskInfo(
+                user = developer,
+                taskId = taskId,
+                supportedTrikStudioVersions = versions(supplied),
+            ).getOrThrow()
+
+            val expectedContent = taskContentNew {
+                existingResources()
+                supportedTrikStudioVersions = versions(expected).toMutableList()
+                exercise = original.getEditableContent().exercise?.id
+                statement = original.getEditableContent().statement?.id
+            }.wip
+            assertDetachedTask(original = original, result = result, expected = expectedContent)
+            Assertions.assertEquals(original.version, saved.captured.version)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should remove one supported version while retaining another in every state`(state: String) {
+            val original = taskForDetach(state)
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.editTaskInfo(developer, taskId, supportedTrikStudioVersions = versions("3.0.0")).getOrThrow()
+
+            val expected = taskContentNew {
+                detachResources()
+                supportedTrikStudioVersions(listOf("3.0.0"))
+            }.wip
+            assertDetachedTask(original = original, result = result, expected = expected)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should edit name description and versions together and return the saved task`() {
+            val original = taskInState("Committed")
+            val saved = slot<Task>()
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(capture(saved)) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.editTaskInfo(
+                user = developer,
+                taskId = taskId,
+                taskName = "Updated name",
+                taskDescription = "Updated description",
+                supportedTrikStudioVersions = versions("4.0.0"),
+            ).getOrThrow()
+
+            Assertions.assertEquals("Updated name", result.data.name)
+            Assertions.assertEquals("Updated description", result.data.description)
+            Assertions.assertEquals(versions("4.0.0"), result.getEditableContent().supportedTrikStudioVersions)
+            Assertions.assertEquals(saved.captured.data, result.data)
+            Assertions.assertEquals(savedTaskVersion, result.version)
+            Assertions.assertEquals(original.version, saved.captured.version)
+            assertCommittedUnchanged(
+                expected = Assertions.assertInstanceOf(TaskContent.Committed::class.java, original.data.content).lastCommitted,
+                result = result,
+            )
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should return original task without saving when no values are supplied`(state: String) {
+            val original = taskInState(state)
+            every { taskRepository.findById(taskId) } returns original
+
+            val result = developerOperations.editTaskInfo(developer, taskId).getOrThrow()
+
+            Assertions.assertSame(original, result)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should ignore reordering and duplicates when the version set and metadata are unchanged`(state: String) {
+            val original = taskForDetach(state)
+            every { taskRepository.findById(taskId) } returns original
+
+            val result = developerOperations.editTaskInfo(
+                user = developer,
+                taskId = taskId,
+                taskName = original.data.name,
+                taskDescription = original.data.description,
+                supportedTrikStudioVersions = versions("4.0.0 3.0.0 4.0.0"),
+            ).getOrThrow()
+
+            Assertions.assertSame(original, result)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should compare supplied versions to WIP rather than committed versions`() {
+            val original = taskInState("Uncommitted").withData {
+                content.uncommitted(wipBuilder = { supportedTrikStudioVersions(listOf("4.0.0")) }, lastCommittedBuilder = {})
+            }
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.editTaskInfo(developer, taskId, supportedTrikStudioVersions = versions("3.0.0")).getOrThrow()
+
+            Assertions.assertEquals(versions("3.0.0"), result.getEditableContent().supportedTrikStudioVersions)
+            assertCommittedUnchanged(
+                expected = Assertions.assertInstanceOf(TaskContent.Uncommitted::class.java, original.data.content).lastCommitted,
+                result = result,
+            )
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should propagate storage exceptions when loading a task`() {
+            val failure = IllegalStateException("Task storage unavailable")
+            every { taskRepository.findById(taskId) } throws failure
+
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) { developerOperations.editTaskInfo(developer, taskId) }
+
+            Assertions.assertSame(failure, actual)
+        }
+
+        @Test
+        fun `should propagate storage exceptions when saving edited information`() {
+            val original = taskInState("Committed")
+            val failure = IllegalStateException("Task update failed")
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(any<Task>()) } throws failure
+
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.editTaskInfo(developer, taskId, taskName = "Updated name")
+            }
+
+            Assertions.assertSame(failure, actual)
+            Assertions.assertEquals("name", original.data.name)
+        }
+
+        private fun assertMetadataEditPreservesContent(original: Task, result: Task) {
+            Assertions.assertEquals(original.data.content.javaClass, result.data.content.javaClass)
+            assertEditableContentEquals(original.getEditableContent(), result.getEditableContent())
+            Assertions.assertEquals(original.id, result.id)
+            Assertions.assertEquals(original.createdAt, result.createdAt)
+            Assertions.assertEquals(original.data.owner.id, result.data.owner.id)
+            Assertions.assertEquals(original.data.sharedTo.ids, result.data.sharedTo.ids)
+            Assertions.assertEquals(original.data.uploadedResources, result.data.uploadedResources)
+            Assertions.assertEquals(savedTaskVersion, result.version)
+            when (val content = original.data.content) {
+                is TaskContent.New -> Unit
+                is TaskContent.Uncommitted -> assertCommittedUnchanged(content.lastCommitted, result)
+                is TaskContent.Committed -> {
+                    val actual = Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content).lastCommitted
+                    Assertions.assertEquals(content.lastCommitted.tests.ids, actual.tests.ids)
+                    Assertions.assertEquals(content.lastCommitted.exercise.id, actual.exercise.id)
+                    Assertions.assertEquals(content.lastCommitted.statement.id, actual.statement.id)
+                    Assertions.assertEquals(content.lastCommitted.developerSolutions.ids, actual.developerSolutions.ids)
+                    Assertions.assertEquals(content.lastCommitted.supportedTrikStudioVersions, actual.supportedTrikStudioVersions)
+                }
+            }
+        }
+
+        private fun versions(tags: String): List<TrikStudioVersion> =
+            tags.split(' ').filter { it.isNotEmpty() }.map { TrikStudioVersion(it) }
     }
 
     @Nested

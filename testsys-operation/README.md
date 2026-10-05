@@ -67,6 +67,11 @@
 и нереализованные части — в фиче `testsys.user.multi.developer.task.viewTask`
 в [features.md](../docs/domain/features.md).
 
+Метод `editTaskInfo` возвращает Задачу после редактирования; изменённые данные сохраняет через
+`TaskRepository.update`. Исключения хранилища выходят из операции. Условия редактирования и
+нереализованная страница — в фиче `testsys.user.multi.developer.task.editTaskInfo`
+в [features.md](../docs/domain/features.md).
+
 Метод `viewResources` возвращает последние версии доступных цепочек существующими доменными сущностями.
 Дата последнего изменения Ресурса — `createdAt` его последней версии. Метод `viewResource` возвращает
 существующие версии выбранной цепочки. Метод `downloadResourceVersion` возвращает сохранённый `StoredBlobRef`

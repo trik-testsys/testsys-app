@@ -31,6 +31,7 @@ import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.Developer
@@ -56,6 +57,7 @@ import tech.testsys.operation.error.DeveloperSolutionNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotUploadedToTaskError
 import tech.testsys.operation.error.DeveloperSolutionVersionNotLatestError
 import tech.testsys.operation.error.DownloadResourceVersionError
+import tech.testsys.operation.error.EditTaskInfoError
 import tech.testsys.operation.error.ExerciseLanguageAlreadyAttachedError
 import tech.testsys.operation.error.ExerciseNotExistsError
 import tech.testsys.operation.error.ExerciseNotUploadedToTaskError
@@ -137,6 +139,45 @@ class DeveloperOperations(
         ensure(task != null) { TaskNotExistsError(taskId) }
         ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
         return task.asSuccess()
+    }
+
+    /**
+     * Edits [taskName], [taskDescription] and [supportedTrikStudioVersions] of [taskId] owned by [user], retaining omitted values.
+     * Version set changes affect only the editable revision; unchanged values return the task without saving.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.editTaskInfo")
+    fun editTaskInfo(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        taskName: String? = null,
+        taskDescription: String? = null,
+        supportedTrikStudioVersions: List<TrikStudioVersion>? = null,
+    ): OperationResult<Task, EditTaskInfoError> = operation<Task, EditTaskInfoError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+
+        val versions = supportedTrikStudioVersions?.distinct()
+        val hasVersionChanges = versions != null && versions.toSet() != task.getEditableContent().supportedTrikStudioVersions.toSet()
+        val name = taskName ?: task.data.name
+        val description = taskDescription ?: task.data.description
+        if (!hasVersionChanges && name == task.data.name && description == task.data.description) {
+            return task.asSuccess()
+        }
+
+        val editedTask = if (hasVersionChanges) {
+            task.changeEditableContent { this.supportedTrikStudioVersions = versions.toMutableList() }
+        } else {
+            task
+        }
+        val updatedTask = editedTask.withData {
+            this.name = name
+            this.description = description
+        }
+        return taskRepository.update(updatedTask).asSuccess()
     }
 
     /**

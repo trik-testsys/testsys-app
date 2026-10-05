@@ -30,13 +30,17 @@ class TableSelectionTests : MockVaadinTests() {
         val root = buildTestPage {
             block {
                 table(key = { value: String -> value }, fetch = { Page(listOf("row"), 1) }) {
-                    column("Choice", size = 1) { select("Choice", listOf("One", "Two"), { it }) }
+                    column("Choice", size = 1) { select("Choice", listOf("One", "Two"), { choice -> choice }) }
                     onRowClick { clicks++ }
                 }
             }
         }
         assertTrue(root.findAll("ts-table").isNotEmpty())
-        root.find("ts-table").findAll("ts-row-clickable").single()._fireDomEvent("click", tools.jackson.databind.ObjectMapper().createObjectNode().put(ROW_CLICK_FILTER, true))
+        root.find(
+            "ts-table",
+        ).findAll(
+            "ts-row-clickable",
+        ).single()._fireDomEvent("click", tools.jackson.databind.ObjectMapper().createObjectNode().put(ROW_CLICK_FILTER, true))
         assertEquals(1, clicks)
     }
 

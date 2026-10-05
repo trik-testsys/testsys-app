@@ -210,10 +210,7 @@ class MenuTests : MockVaadinTests() {
         assertTrue(clicked.isEmpty())
     }
 
-    private fun buildMenuTable(
-        extra: TableScope<Int>.() -> Unit = {},
-        content: MenuScope.(Int) -> Unit,
-    ) {
+    private fun buildMenuTable(extra: TableScope<Int>.() -> Unit = {}, content: MenuScope.(Int) -> Unit) {
         buildTestPage {
             block {
                 table<Int>(key = { row -> row }, fetch = { Page(listOf(1, 2, 3), 3) }) {

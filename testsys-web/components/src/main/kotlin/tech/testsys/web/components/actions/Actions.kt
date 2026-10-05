@@ -79,12 +79,7 @@ fun ContentScope.mainIconAction(icon: IconName, label: String, configure: Action
 fun ContentScope.destructiveIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}) =
     addIconAction(ActionRole.Destructive, icon, label, configure)
 
-private fun ContentScope.addIconAction(
-    role: ActionRole,
-    icon: IconName,
-    label: String,
-    configure: ActionHandle.() -> Unit
-): ActionHandle {
+private fun ContentScope.addIconAction(role: ActionRole, icon: IconName, label: String, configure: ActionHandle.() -> Unit): ActionHandle {
     require(label.isNotBlank()) { "Icon action accessible name must not be blank" }
 
     val handle = addAction(role, label = null, icon, configure = {})

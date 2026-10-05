@@ -180,10 +180,14 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
         private val queue = QueueExecutor()
 
         @BeforeEach
-        fun installQueue() { Background.executorOverride = queue }
+        fun installQueue() {
+            Background.executorOverride = queue
+        }
 
         @AfterEach
-        fun removeQueue() { Background.executorOverride = null }
+        fun removeQueue() {
+            Background.executorOverride = null
+        }
 
         @Test
         fun `should retain filter fields and their draft when replacing loaded content`() {
@@ -228,7 +232,9 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
 
     private class QueueExecutor : Executor {
         private val tasks = ArrayDeque<Runnable>()
-        override fun execute(command: Runnable) { tasks += command }
+        override fun execute(command: Runnable) {
+            tasks += command
+        }
         fun runAll() {
             while (tasks.isNotEmpty()) tasks.removeFirst().run()
             MockVaadin.clientRoundtrip()
@@ -258,7 +264,10 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
                         val candidate = DraftBuilder()
                         binder.writeBeanIfValid(candidate).also { valid -> if (valid) applied.set(candidate.value) }
                     },
-                    onReset = { applied.set("default"); binder.readBean(DraftBuilder()) },
+                    onReset = {
+                        applied.set("default")
+                        binder.readBean(DraftBuilder())
+                    },
                     onRefresh = { table.refresh(toFirstPage = true) },
                 ) {
                     row {

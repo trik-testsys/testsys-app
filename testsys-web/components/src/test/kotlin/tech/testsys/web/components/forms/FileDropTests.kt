@@ -38,8 +38,10 @@ class FileDropTests {
     fun `should reject actual bytes above unknown length limit and release quota for retry`() {
         var accepted = 0
         val engine = BoundedUploads(limits, { accepted++ }, { _, _ -> })
-        assertThrows(IOException::class.java) { engine.receive(
-                identity(engine, "large"), "large",
+        assertThrows(IOException::class.java) {
+            engine.receive(
+                identity(engine, "large"),
+                "large",
                 "text/plain",
                 -1,
                 ByteArrayInputStream(
@@ -47,7 +49,8 @@ class FileDropTests {
                         5,
                     ),
                 ),
-            ) }
+            )
+        }
 
         engine.receive(identity(engine, "retry"), "retry", "text/plain", -1, ByteArrayInputStream(ByteArray(4)))
 
@@ -63,8 +66,10 @@ class FileDropTests {
             { _, _ -> },
         )
 
-        assertThrows(IOException::class.java) { engine.receive(
-                identity(engine, "f.txt"), "f.txt",
+        assertThrows(IOException::class.java) {
+            engine.receive(
+                identity(engine, "f.txt"),
+                "f.txt",
                 "image/png",
                 1,
                 ByteArrayInputStream(
@@ -72,9 +77,12 @@ class FileDropTests {
                         1,
                     ),
                 ),
-            ) }
-        assertThrows(IOException::class.java) { engine.receive(
-                identity(engine, "f.png"), "f.png",
+            )
+        }
+        assertThrows(IOException::class.java) {
+            engine.receive(
+                identity(engine, "f.png"),
+                "f.png",
                 "text/plain",
                 1,
                 ByteArrayInputStream(
@@ -82,7 +90,8 @@ class FileDropTests {
                         1,
                     ),
                 ),
-            ) }
+            )
+        }
         engine.receive(identity(engine, "f.TXT"), "f.TXT", "text/plain", 1, ByteArrayInputStream(ByteArray(1)))
     }
 
@@ -91,13 +100,13 @@ class FileDropTests {
         val entered = CountDownLatch(1)
         val finish = CountDownLatch(1)
         val pool = Executors.newSingleThreadExecutor()
-        var first = true
+        var isFirst = true
         val engine = BoundedUploads(
             limits,
             { file ->
 
-                if (first) {
-                    first = false
+                if (isFirst) {
+                    isFirst = false
                     entered.countDown()
                     assertTrue(finish.await(5, TimeUnit.SECONDS))
                     file.ensureActive()
@@ -106,8 +115,11 @@ class FileDropTests {
             { _, _ -> },
         )
         try {
-            val task = pool.submit { assertThrows(IOException::class.java) { engine.receive(
-                        identity(engine, "first"), "first",
+            val task = pool.submit {
+                assertThrows(IOException::class.java) {
+                    engine.receive(
+                        identity(engine, "first"),
+                        "first",
                         "text/plain",
                         1,
                         ByteArrayInputStream(
@@ -115,7 +127,9 @@ class FileDropTests {
                                 1,
                             ),
                         ),
-                    ) } }
+                    )
+                }
+            }
             assertTrue(entered.await(5, TimeUnit.SECONDS))
             assertEquals(4L, engine.reservedBytes())
 
@@ -136,13 +150,13 @@ class FileDropTests {
         val entered = CountDownLatch(1)
         val finish = CountDownLatch(1)
         val pool = Executors.newSingleThreadExecutor()
-        var first = true
+        var isFirst = true
         val engine = BoundedUploads(
             limits.copy(maxMemoryBytes = 8),
             { file ->
 
-                if (first) {
-                    first = false
+                if (isFirst) {
+                    isFirst = false
                     entered.countDown()
                     assertTrue(finish.await(5, TimeUnit.SECONDS))
                     file.ensureActive()
@@ -151,8 +165,11 @@ class FileDropTests {
             { _, _ -> },
         )
         try {
-            val task = pool.submit { assertThrows(IOException::class.java) { engine.receive(
-                        identity(engine, "old"), "old",
+            val task = pool.submit {
+                assertThrows(IOException::class.java) {
+                    engine.receive(
+                        identity(engine, "old"),
+                        "old",
                         "text/plain",
                         1,
                         ByteArrayInputStream(
@@ -160,7 +177,9 @@ class FileDropTests {
                                 1,
                             ),
                         ),
-                    ) } }
+                    )
+                }
+            }
             assertTrue(entered.await(5, TimeUnit.SECONDS))
 
             engine.clear()
@@ -168,8 +187,10 @@ class FileDropTests {
             finish.countDown()
             task.get(5, TimeUnit.SECONDS)
 
-            assertThrows(IOException::class.java) { engine.receive(
-                    identity(engine, "extra"), "extra",
+            assertThrows(IOException::class.java) {
+                engine.receive(
+                    identity(engine, "extra"),
+                    "extra",
                     "text/plain",
                     1,
                     ByteArrayInputStream(
@@ -177,7 +198,8 @@ class FileDropTests {
                             1,
                         ),
                     ),
-                ) }
+                )
+            }
         } finally {
             finish.countDown()
             pool.shutdownNow()
@@ -186,19 +208,21 @@ class FileDropTests {
 
     @Test
     fun `should release failed application processing before retry`() {
-        var failed = false
+        var hasFailed = false
         val engine = BoundedUploads(
             limits,
             {
-                if (!failed) {
-                    failed = true
+                if (!hasFailed) {
+                    hasFailed = true
                     throw IllegalStateException("application failure")
                 }
             },
             { _, _ -> },
         )
-        assertThrows(IllegalStateException::class.java) { engine.receive(
-                identity(engine, "first"), "first",
+        assertThrows(IllegalStateException::class.java) {
+            engine.receive(
+                identity(engine, "first"),
+                "first",
                 "text/plain",
                 1,
                 ByteArrayInputStream(
@@ -206,12 +230,14 @@ class FileDropTests {
                         1,
                     ),
                 ),
-            ) }
+            )
+        }
 
         engine.receive(identity(engine, "retry"), "retry", "text/plain", 1, ByteArrayInputStream(ByteArray(1)))
 
         assertEquals(0L, engine.reservedBytes())
     }
+
     @Test
     fun `should reject bulk reads of a cached temporary stream after expiry`() {
         lateinit var cached: java.io.InputStream
@@ -258,6 +284,7 @@ class FileDropTests {
             pool.shutdownNow()
         }
     }
+
     @Test
     fun `should reject an old request cancelled before its reservation and permit a fresh retry`() {
         val entered = CountDownLatch(1)
@@ -326,9 +353,11 @@ class FileDropTests {
         }, { _, _ -> })
         val first = identity(engine, "first")
         try {
-            val task = pool.submit { assertThrows(IOException::class.java) {
-                engine.receive(first, "same.txt", "text/plain", 1, ByteArrayInputStream(ByteArray(1)))
-            } }
+            val task = pool.submit {
+                assertThrows(IOException::class.java) {
+                    engine.receive(first, "same.txt", "text/plain", 1, ByteArrayInputStream(ByteArray(1)))
+                }
+            }
             assertTrue(entered.await(5, TimeUnit.SECONDS))
             assertThrows(IOException::class.java) {
                 engine.receive(first, "same.txt", "text/plain", 1, ByteArrayInputStream(ByteArray(1)))
@@ -366,9 +395,11 @@ class FileDropTests {
         val first = identity(engine, "one")
         val second = identity(engine, "two")
         try {
-            val cancelled = pool.submit { assertThrows(IOException::class.java) {
-                engine.receive(first, "same.txt", "text/plain", 1, ByteArrayInputStream(ByteArray(1)))
-            } }
+            val cancelled = pool.submit {
+                assertThrows(IOException::class.java) {
+                    engine.receive(first, "same.txt", "text/plain", 1, ByteArrayInputStream(ByteArray(1)))
+                }
+            }
             val retained = pool.submit { engine.receive(second, "same.txt", "text/plain", 1, ByteArrayInputStream(ByteArray(1))) }
             assertTrue(entered.await(5, TimeUnit.SECONDS))
             engine.remove(first)
@@ -387,5 +418,4 @@ class FileDropTests {
 
     private fun identity(engine: BoundedUploads, name: String): String =
         "${engine.generation()}:${java.util.UUID.nameUUIDFromBytes(name.toByteArray())}"
-
 }

@@ -17,7 +17,8 @@ class QuizOptionTests : MockVaadinTests() {
     fun `should reflect multiple selected state and update the caption`() {
         lateinit var handle: SelectionHandle<QuizOptionData>
         var choices = 0
-        val root = buildTestContent { handle = quizOption(QuizOptionData("Answer", isMultiple = true)) { onChange { choices++ } } }
+        val root =
+            buildTestContent { handle = quizOption(QuizOptionData("Answer", isMultiple = true)) { onChange { choices++ } } }
         val button = root.find("ts-qopt") as NativeButton
 
         button._click()

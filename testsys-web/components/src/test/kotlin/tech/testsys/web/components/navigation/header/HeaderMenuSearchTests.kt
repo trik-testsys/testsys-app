@@ -60,10 +60,16 @@ class HeaderMenuSearchTests : MockVaadinTests() {
         val item = MegaMenuItem("menu", "Меню", HeaderMegaMenu(columns))
         val menuHeader = buildHeader(CabinetHeader(items = listOf(item), menuSearchKey = "menu"), testTexts)
         val menuParts = menuHeader.find("ts-header__bar").children.toList()
-        assertEquals(listOf("ts-nav", "ts-header__search", "ts-header__spacer"), menuParts.drop(1).map { it.element.classList.toList().single() })
+        assertEquals(
+            listOf("ts-nav", "ts-header__search", "ts-header__spacer"),
+            menuParts.drop(1).map { it.element.classList.toList().single() },
+        )
         val provider = buildHeader(CabinetHeader(search = HeaderSearch { emptyList() }), testTexts)
         val providerParts = provider.find("ts-header__bar").children.toList()
-        assertEquals(listOf("ts-nav", "ts-header__spacer", "ts-header__search"), providerParts.drop(1).map { it.element.classList.toList().single() })
+        assertEquals(
+            listOf("ts-nav", "ts-header__spacer", "ts-header__search"),
+            providerParts.drop(1).map { it.element.classList.toList().single() },
+        )
     }
 
     @Test

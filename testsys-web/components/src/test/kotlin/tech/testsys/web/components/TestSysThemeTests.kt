@@ -76,7 +76,7 @@ class TestSysThemeTests {
     }
 
     private fun rule(css: String, selector: String): Map<String, String> =
-        Regex(Regex.escape(selector) + "\\s*\\{([^}]+)}").find(css)!!.groupValues[1].split(';')
+        requireNotNull(Regex(Regex.escape(selector) + "\\s*\\{([^}]+)}").find(css)).groupValues[1].split(';')
             .mapNotNull { declaration ->
                 declaration.split(':', limit = 2).takeIf { it.size == 2 }?.let { it[0].trim() to it[1].trim() }
             }.toMap()

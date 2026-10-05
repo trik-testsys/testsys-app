@@ -13,16 +13,16 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import tech.testsys.web.components.display.field
 import tech.testsys.web.components.display.text
+import tech.testsys.web.components.forms.FileDropHandle
+import tech.testsys.web.components.forms.UploadLimits
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.dateRangeInput
 import tech.testsys.web.components.forms.fileDrop
-import tech.testsys.web.components.forms.select
-import tech.testsys.web.components.forms.segmentedControl
 import tech.testsys.web.components.forms.multiSelect
+import tech.testsys.web.components.forms.segmentedControl
+import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.skipWhenHidden
 import tech.testsys.web.components.forms.textInput
-import tech.testsys.web.components.forms.UploadLimits
-import tech.testsys.web.components.forms.FileDropHandle
 
 class FieldHandleTests : MockVaadinTests() {
     private class Draft(var code: String = "")
@@ -65,7 +65,12 @@ class FieldHandleTests : MockVaadinTests() {
     @Test
     fun `should reveal a disabled value through an independently focusable area`() {
         lateinit var input: ValueInput<String>
-        buildTestRow { input = textInput("Code", labelSize = 4, size = 8) { isEnabled = false; isEditable = false } }
+        buildTestRow {
+            input = textInput("Code", labelSize = 4, size = 8) {
+                isEnabled = false
+                isEditable = false
+            }
+        }
 
         input.isObscured = true
 

@@ -49,7 +49,12 @@ class FileDropDisplayTests : MockVaadinTests() {
     @Test
     fun `should retain the idle state after clearing an obscured disabled receiver`() {
         lateinit var input: FileDropHandle
-        buildTestRow { input = fileDrop("Files", limits = limits, consume = {}) { isEnabled = false; isObscured = true } }
+        buildTestRow {
+            input = fileDrop("Files", limits = limits, consume = {}) {
+                isEnabled = false
+                isObscured = true
+            }
+        }
 
         input.clear()
 

@@ -45,7 +45,7 @@ class GridTrackTests {
 
             val error = assertThrows<IllegalStateException> { track.take(12) }
 
-            assertTrue(error.message!!.contains("16+12 = 28"))
+            assertTrue(requireNotNull(error.message).contains("16+12 = 28"))
         }
     }
 
@@ -71,7 +71,7 @@ class GridTrackTests {
 
             val error = assertThrows<IllegalStateException> { track.take(1) }
 
-            assertTrue(error.message!!.startsWith("Block row is full"))
+            assertTrue(requireNotNull(error.message).startsWith("Block row is full"))
         }
 
         @Test
@@ -81,7 +81,7 @@ class GridTrackTests {
 
             val error = assertThrows<IllegalStateException> { track.takeRest() }
 
-            assertTrue(error.message!!.startsWith("Block row is full"))
+            assertTrue(requireNotNull(error.message).startsWith("Block row is full"))
         }
     }
 }

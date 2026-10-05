@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.actions.action
-import tech.testsys.web.components.button
 import tech.testsys.web.components.buildTestPage
+import tech.testsys.web.components.button
 import tech.testsys.web.components.control
 import tech.testsys.web.components.find
 import tech.testsys.web.components.forms.textInput

@@ -22,7 +22,7 @@ import tools.jackson.databind.JsonNode
 import tools.jackson.databind.node.JsonNodeFactory
 
 class NativeFieldsTests : MockVaadinTests() {
-    private class Draft(var code: String = "", var enabled: Boolean = false, var choice: String? = null)
+    private class Draft(var code: String = "", var isEnabled: Boolean = false, var choice: String? = null)
 
     @Nested
     inner class CodeEditorTests {
@@ -59,7 +59,12 @@ class NativeFieldsTests : MockVaadinTests() {
         @Test
         fun `should reject client changes while readonly and restore visible value`() {
             lateinit var input: ValueInput<String>
-            buildTestRow { input = codeEditor("Code", 4, 8) { value = "original"; isEditable = false } }
+            buildTestRow {
+                input = codeEditor("Code", 4, 8) {
+                    value = "original"
+                    isEditable = false
+                }
+            }
             val area = control<CodeEditorField>("Code").find("ts-code__area").element
 
             area.node.getFeature(ElementPropertyMap::class.java).deferredUpdateFromClient("value", "changed").run()
@@ -94,13 +99,13 @@ class NativeFieldsTests : MockVaadinTests() {
             val field = control<Switch>("Switch")
             val binder = Binder<Draft>()
             val draft = Draft()
-            binder.forField(input).bind({ bean -> bean.enabled }, { bean, enabled -> bean.enabled = enabled })
+            binder.forField(input).bind({ bean -> bean.isEnabled }, { bean, isEnabled -> bean.isEnabled = isEnabled })
 
             clientChange(field.element, "checked", JsonNodeFactory.instance.booleanNode(true))
             binder.writeBean(draft)
 
             assertEquals(true, input.value)
-            assertEquals(true, draft.enabled)
+            assertEquals(true, draft.isEnabled)
             assertEquals("Switch", field.ariaLabel.orElseThrow())
         }
 
@@ -129,7 +134,12 @@ class NativeFieldsTests : MockVaadinTests() {
         @Test
         fun `should accept programmatic checked changes while readonly and disabled`() {
             lateinit var input: ValueInput<Boolean>
-            buildTestRow { input = switchInput("Switch", 4, 8) { isEditable = false; isEnabled = false } }
+            buildTestRow {
+                input = switchInput("Switch", 4, 8) {
+                    isEditable = false
+                    isEnabled = false
+                }
+            }
 
             input.value = true
 
@@ -139,13 +149,13 @@ class NativeFieldsTests : MockVaadinTests() {
         @Test
         fun `should publish client switch requests without replacing the bound signal`() {
             val source = ValueSignal(false)
-            var requested = false
+            var isRequested = false
             lateinit var input: ValueInput<Boolean>
-            buildTestRow { input = switchInput("Switch", 4, 8) { bindValue(source) { value -> requested = value } } }
+            buildTestRow { input = switchInput("Switch", 4, 8) { bindValue(source) { value -> isRequested = value } } }
 
             clientChange(control<Switch>("Switch").element, "checked", JsonNodeFactory.instance.booleanNode(true))
 
-            assertEquals(true, requested)
+            assertEquals(true, isRequested)
             assertEquals(false, source.peek())
             assertEquals(false, input.value)
         }
@@ -172,7 +182,12 @@ class NativeFieldsTests : MockVaadinTests() {
         @Test
         fun `should ignore client choice changes while readonly`() {
             lateinit var input: ValueInput<String?>
-            buildTestRow { input = radio("Choice", 4, 8, listOf("a", "b"), { value -> value }) { value = "a"; isEditable = false } }
+            buildTestRow {
+                input = radio("Choice", 4, 8, listOf("a", "b"), { value -> value }) {
+                    value = "a"
+                    isEditable = false
+                }
+            }
 
             clientChoice(control("Choice"))
 
@@ -182,7 +197,12 @@ class NativeFieldsTests : MockVaadinTests() {
         @Test
         fun `should ignore client choice changes while disabled`() {
             lateinit var input: ValueInput<String?>
-            buildTestRow { input = radio("Choice", 4, 8, listOf("a", "b"), { value -> value }) { value = "a"; isEnabled = false } }
+            buildTestRow {
+                input = radio("Choice", 4, 8, listOf("a", "b"), { value -> value }) {
+                    value = "a"
+                    isEnabled = false
+                }
+            }
 
             clientChoice(control("Choice"))
 

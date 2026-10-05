@@ -13,13 +13,15 @@ internal class RadioChoicesTests : MockVaadinTests() {
     @Test
     fun `should reject values outside segmented options`() {
         lateinit var input: ValueInput<String?>
-        buildTestRow { input = segmentedControl(
+        buildTestRow {
+            input = segmentedControl(
                 "Choice",
                 4,
                 8,
                 listOf("a", "b"),
                 { value -> value },
-            ) }
+            )
+        }
 
         assertThrows(IllegalArgumentException::class.java) { input.value = "c" }
     }

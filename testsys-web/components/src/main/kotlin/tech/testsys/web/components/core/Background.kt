@@ -1,7 +1,6 @@
 package tech.testsys.web.components.core
 
 import com.vaadin.flow.component.UI
-import com.vaadin.flow.function.SerializableRunnable
 import com.vaadin.flow.server.VaadinService
 import java.util.concurrent.Executor
 

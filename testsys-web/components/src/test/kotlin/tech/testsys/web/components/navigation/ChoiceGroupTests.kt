@@ -127,7 +127,8 @@ class ChoiceGroupTests : MockVaadinTests() {
 
     @Test
     fun `should change a counter through the handle`() {
-        val handle = buildTabs(counts = mapOf(Filter.Accepted to 0, Filter.Failed to 3), countKind = CounterKind.Attention)
+        val handle =
+            buildTabs(counts = mapOf(Filter.Accepted to 0, Filter.Failed to 3), countKind = CounterKind.Attention)
 
         handle.setCount(Filter.Accepted, UPDATED_COUNT)
         handle.setCount(Filter.Failed, null)
@@ -178,7 +179,14 @@ class ChoiceGroupTests : MockVaadinTests() {
     @Test
     fun `should reject a negative count`() {
         assertThrows<IllegalArgumentException> {
-            buildTestPage { block { tabs(initial = 1) { tab(1, "Один", count = -1); tab(2, "Два") } } }
+            buildTestPage {
+                block {
+                    tabs(initial = 1) {
+                        tab(1, "Один", count = -1)
+                        tab(2, "Два")
+                    }
+                }
+            }
         }
     }
 
@@ -187,8 +195,14 @@ class ChoiceGroupTests : MockVaadinTests() {
         assertThrows<IllegalStateException> {
             buildTestPage {
                 block {
-                    tabs(initial = 1) { tab(1, "Один"); tab(2, "Два") }
-                    tabs(initial = 1) { tab(1, "Один"); tab(2, "Два") }
+                    tabs(initial = 1) {
+                        tab(1, "Один")
+                        tab(2, "Два")
+                    }
+                    tabs(initial = 1) {
+                        tab(1, "Один")
+                        tab(2, "Два")
+                    }
                 }
             }
         }
@@ -196,7 +210,16 @@ class ChoiceGroupTests : MockVaadinTests() {
 
     @Test
     fun `should put pills in the block head actions`() {
-        buildTestPage { block(title = "Каталог") { actions { pills(initial = 1) { pill(1, "Все"); pill(2, "Квизы") } } } }
+        buildTestPage {
+            block(title = "Каталог") {
+                actions {
+                    pills(initial = 1) {
+                        pill(1, "Все")
+                        pill(2, "Квизы")
+                    }
+                }
+            }
+        }
 
         val pills = ui().findAll("ts-pill")
         assertEquals(ui().find("ts-block__actions"), ui().find("ts-pills").parent.orElseThrow())
@@ -207,7 +230,16 @@ class ChoiceGroupTests : MockVaadinTests() {
     @Test
     fun `should change the value on a pill click`() {
         lateinit var handle: ChoiceHandle<Int>
-        buildTestPage { block(title = "Каталог") { actions { handle = pills(initial = 1) { pill(1, "Все"); pill(2, "Квизы") } } } }
+        buildTestPage {
+            block(title = "Каталог") {
+                actions {
+                    handle = pills(initial = 1) {
+                        pill(1, "Все")
+                        pill(2, "Квизы")
+                    }
+                }
+            }
+        }
 
         (ui().findAll("ts-pill")[1] as NativeButton)._click()
 
@@ -216,7 +248,17 @@ class ChoiceGroupTests : MockVaadinTests() {
 
     @Test
     fun `should place pills on the columns of a block row`() {
-        buildTestPage { block { row { pills(initial = 1, size = 12) { pill(1, "Все"); pill(2, "Квизы") }; text("x") } } }
+        buildTestPage {
+            block {
+                row {
+                    pills(initial = 1, size = 12) {
+                        pill(1, "Все")
+                        pill(2, "Квизы")
+                    }
+                    text("x")
+                }
+            }
+        }
 
         assertEquals("span 12", ui().find("ts-pills").element.style.get("grid-column"))
     }

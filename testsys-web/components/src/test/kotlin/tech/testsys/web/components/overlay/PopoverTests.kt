@@ -16,7 +16,12 @@ internal class PopoverTests : MockVaadinTests() {
         val placement = tech.testsys.web.components.layout.Placement.valueOf(name)
         lateinit var handle: PopoverHandle
         val root = buildTestContent {
-            handle = tech.testsys.web.components.layout.ContentScope(container, texts, placement, gridColumns).popover("Popup") { text("Body") }
+            handle = tech.testsys.web.components.layout.ContentScope(
+                container,
+                texts,
+                placement,
+                gridColumns,
+            ).popover("Popup") { text("Body") }
         }
         val trigger = root.children.toList().single().children.toList().filterIsInstance<com.vaadin.flow.component.button.Button>().single()
 

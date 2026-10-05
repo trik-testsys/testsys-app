@@ -8,7 +8,8 @@ import tech.testsys.web.components.error.NotFoundPage
 class TestSysBrandTests : MockVaadinTests() {
     @Test
     fun `should package brand graphics and favicon as public resources`() {
-        val assets = listOf(TestSysBrand.EMBLEM, TestSysBrand.WORDMARK, TestSysBrand.HEADER, TestSysBrand.FOOTER, TestSysBrand.FAVICON)
+        val assets =
+            listOf(TestSysBrand.EMBLEM, TestSysBrand.WORDMARK, TestSysBrand.HEADER, TestSysBrand.FOOTER, TestSysBrand.FAVICON)
 
         val resources = assets.map { asset -> javaClass.getResource("/META-INF/resources/$asset") }
 

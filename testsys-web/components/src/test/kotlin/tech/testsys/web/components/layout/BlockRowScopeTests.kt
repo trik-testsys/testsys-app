@@ -43,7 +43,7 @@ class BlockRowScopeTests : MockVaadinTests() {
             }
         }
 
-        assertTrue(error.message!!.startsWith("Block row is full"))
+        assertTrue(requireNotNull(error.message).startsWith("Block row is full"))
     }
 
     @Test
@@ -72,7 +72,7 @@ class BlockRowScopeTests : MockVaadinTests() {
             }
         }
 
-        assertTrue(error.message!!.contains("6+4 = 10 exceed 8"))
+        assertTrue(requireNotNull(error.message).contains("6+4 = 10 exceed 8"))
     }
 
     @Test

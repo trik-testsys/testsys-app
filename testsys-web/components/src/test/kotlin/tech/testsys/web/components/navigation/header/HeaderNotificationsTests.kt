@@ -64,7 +64,7 @@ class HeaderNotificationsTests : MockVaadinTests() {
     fun `should open a single arrival with the current read handler and destination`() {
         val calls = mutableListOf<String>()
         val source = ValueSignal<List<HeaderNotification>>(emptyList())
-        val controller = notifications(source, { key -> calls.add("read:$key") })
+        val controller = notifications(source) { key -> calls.add("read:$key") }
         source.set(listOf(notification("new", calls)))
 
         controller.arrival.openDestination()
@@ -130,7 +130,7 @@ class HeaderNotificationsTests : MockVaadinTests() {
         val calls = mutableListOf<String>()
         val notification = notification("first", calls)
         val source = ValueSignal(listOf(notification))
-        val controller = notifications(source, { key -> calls.add("read:$key") })
+        val controller = notifications(source) { key -> calls.add("read:$key") }
 
         assertInstanceOf(NativeButton::class.java, controller.component.find("ts-header-notification"))._click()
 

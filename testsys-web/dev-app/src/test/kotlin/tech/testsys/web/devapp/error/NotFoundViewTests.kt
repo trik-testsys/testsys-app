@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.boot.test.context.SpringBootTest
-import tech.testsys.web.devapp.MockSpringVaadinTests
 import tech.testsys.web.components.TestSysBrand
+import tech.testsys.web.devapp.MockSpringVaadinTests
 import tools.jackson.databind.node.BooleanNode
 
 @SpringBootTest
@@ -61,6 +61,7 @@ class NotFoundViewTests : MockSpringVaadinTests() {
         assertEquals(404, status)
         assertFalse(_get<Button>().isEnabled)
     }
+
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
     fun `should keep back disabled until client reports completed history`(canGoBack: Boolean) {

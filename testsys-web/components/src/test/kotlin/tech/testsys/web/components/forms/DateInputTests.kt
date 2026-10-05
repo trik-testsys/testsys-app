@@ -165,7 +165,6 @@ class DateInputTests : MockVaadinTests() {
             assertFalse(binder.validate().isOk)
         }
 
-
         @Test
         fun `should name the control through its accessible name property`() {
             buildTestRow { dateRangeInput("Период", labelSize = 4, size = 20) }

@@ -53,7 +53,7 @@ class SlotScopeTests : MockVaadinTests() {
             }
         }
 
-        assertTrue(error.message!!.contains("8+12 = 20 exceed 16"))
+        assertTrue(requireNotNull(error.message).contains("8+12 = 20 exceed 16"))
     }
 
     @Test

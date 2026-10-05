@@ -21,7 +21,17 @@ import tech.testsys.web.components.layout.Placement
 
 internal class IconActionTests : MockVaadinTests() {
     @ParameterizedTest
-    @CsvSource("Main,Body,md", "Neutral,Body,md", "Destructive,Body,md", "Main,Head,sm", "Neutral,Head,sm", "Destructive,Head,sm", "Main,Cell,sm", "Neutral,Cell,sm", "Destructive,Cell,sm")
+    @CsvSource(
+        "Main,Body,md",
+        "Neutral,Body,md",
+        "Destructive,Body,md",
+        "Main,Head,sm",
+        "Neutral,Head,sm",
+        "Destructive,Head,sm",
+        "Main,Cell,sm",
+        "Neutral,Cell,sm",
+        "Destructive,Cell,sm",
+    )
     fun `should preserve icon role name tooltip and placement`(role: ActionRole, placement: Placement, size: String) {
         buildTestPage {
             block {

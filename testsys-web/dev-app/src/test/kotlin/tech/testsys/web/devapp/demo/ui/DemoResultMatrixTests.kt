@@ -52,7 +52,10 @@ class DemoResultMatrixTests {
         val table = buildMatrix(taskCount = 5)
 
         assertEquals("100.0%", table.element.style.get("--ts-table-width"))
-        assertEquals(listOf("25.0%", "16.666666666666664%", "16.666666666666664%", "16.666666666666664%", "12.5%", "12.5%"), columnWidths(table))
+        assertEquals(
+            listOf("25.0%", "16.666666666666664%", "16.666666666666664%", "16.666666666666664%", "12.5%", "12.5%"),
+            columnWidths(table),
+        )
     }
 
     // http://localhost:8081/dev/demo/organizer.results — user-reported result matrix layout.
@@ -85,12 +88,25 @@ class DemoResultMatrixTests {
         val session = DemoSession()
         val actor = session.state.actor("Организатор")
         val participant = session.state.users.first { user -> user.role == "Участник" }
-        val tasks = List(taskCount) { index -> session.state.tasks.first().copy(id = "matrix-task-$index", name = "Задача ${index + 1}") }
+        val tasks =
+            List(taskCount) { index -> session.state.tasks.first().copy(id = "matrix-task-$index", name = "Задача ${index + 1}") }
         val tour = session.state.tours.first().copy(taskIds = tasks.map { task -> task.id })
         val solutions = tasks.take(1).flatMap { task ->
             listOf(
-                session.state.solutions.first().copy(id = "matrix-best", userId = participant.id, taskId = task.id, status = "Checked", score = 37),
-                session.state.solutions.first().copy(id = "matrix-other", userId = participant.id, taskId = task.id, status = "Checked", score = 12),
+                session.state.solutions.first().copy(
+                    id = "matrix-best",
+                    userId = participant.id,
+                    taskId = task.id,
+                    status = "Checked",
+                    score = 37,
+                ),
+                session.state.solutions.first().copy(
+                    id = "matrix-other",
+                    userId = participant.id,
+                    taskId = task.id,
+                    status = "Checked",
+                    score = 12,
+                ),
             )
         }
         session.state = session.state.copy(tasks = tasks, solutions = solutions)

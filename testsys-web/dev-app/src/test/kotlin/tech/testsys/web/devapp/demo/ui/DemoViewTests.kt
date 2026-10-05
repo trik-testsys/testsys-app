@@ -72,8 +72,10 @@ class DemoViewTests : MockSpringVaadinTests() {
         val rows = UI.getCurrent()._find<Div> { classes = "ts-block__row" }
         assertEquals(3, rows.size)
         assertEquals(listOf(2, 2, 2), rows.map { row -> row.children.filter { it.element.classList.contains("ts-field") }.count().toInt() })
-        assertEquals(listOf("ID", "Псевдоним", "Роль", "Код-доступа", "Почта", "Последний вход"),
-            UI.getCurrent()._find<com.vaadin.flow.component.html.Span> { classes = "ts-field__text" }.map { it.text })
+        assertEquals(
+            listOf("ID", "Псевдоним", "Роль", "Код-доступа", "Почта", "Последний вход"),
+            UI.getCurrent()._find<com.vaadin.flow.component.html.Span> { classes = "ts-field__text" }.map { it.text },
+        )
         assertEquals(6, UI.getCurrent()._find<TextField>().size)
     }
 
@@ -127,6 +129,8 @@ class DemoViewTests : MockSpringVaadinTests() {
         assertEquals(2, session.state.competitions.size)
         val footerCount = UI.getCurrent()._find<com.vaadin.flow.component.html.Footer>().size
         assertEquals(1, footerCount)
-        assertTrue(UI.getCurrent()._find<NativeButton>().any { it.text == "Фильтры" || it.element.getAttribute("aria-expanded") == "false" })
+        assertTrue(
+            UI.getCurrent()._find<NativeButton>().any { it.text == "Фильтры" || it.element.getAttribute("aria-expanded") == "false" },
+        )
     }
 }

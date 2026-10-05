@@ -30,7 +30,9 @@ class DownloadLifecycleTests : MockVaadinTests() {
     private val tasks = mutableListOf<Runnable>()
 
     @AfterEach
-    fun restoreExecutor() { Background.executorOverride = null }
+    fun restoreExecutor() {
+        Background.executorOverride = null
+    }
 
     @ParameterizedTest
     @ValueSource(booleans = [false, true])
@@ -53,7 +55,12 @@ class DownloadLifecycleTests : MockVaadinTests() {
         display.state.set(DownloadState.Downloading(bytes = 2, total = null))
 
         assertSame(spinner, button.children.filter { child -> "ts-spinner" in child.element.classList }.findFirst().orElseThrow())
-        if (label != null) assertSame(label, button.children.filter { child -> child is Span && child !== spinner }.findFirst().orElseThrow())
+        if (label != null) {
+            assertSame(
+                label,
+                button.children.filter { child -> child is Span && child !== spinner }.findFirst().orElseThrow(),
+            )
+        }
         assertEquals("true", button.element.getAttribute("aria-busy"))
         handle.cancel()
         assertEquals("false", button.element.getAttribute("aria-busy"))

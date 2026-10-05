@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import tech.testsys.web.components.MockVaadinTests
-import tech.testsys.web.components.button
 import tech.testsys.web.components.buildTestPage
+import tech.testsys.web.components.button
 import tech.testsys.web.components.child
 import tech.testsys.web.components.classes
 import tech.testsys.web.components.find
@@ -24,6 +24,7 @@ import kotlin.concurrent.thread
 class TableLiveTests : MockVaadinTests() {
     /** Root of the page built by [buildTable]. */
     private lateinit var page: Component
+
     @Nested
     inner class BackgroundRefreshTests {
         @Test

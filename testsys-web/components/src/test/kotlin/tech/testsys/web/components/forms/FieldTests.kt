@@ -150,7 +150,7 @@ class FieldTests : MockVaadinTests() {
             }
         }
 
-        assertTrue(error.message!!.contains("16+12 = 28"))
+        assertTrue(requireNotNull(error.message).contains("16+12 = 28"))
     }
 
     @Test

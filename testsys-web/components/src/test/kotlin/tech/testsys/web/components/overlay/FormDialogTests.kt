@@ -202,7 +202,8 @@ class FormDialogTests : MockVaadinTests() {
 
     @Test
     fun `should show the subtitle under the title`() {
-        val handle = dialog(title = "Новый тур", subtitle = "Черновик") { row { textInput("Название", labelSize = 4, size = 8) } }
+        val handle =
+            dialog(title = "Новый тур", subtitle = "Черновик") { row { textInput("Название", labelSize = 4, size = 8) } }
 
         handle.open()
 

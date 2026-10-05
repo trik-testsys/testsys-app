@@ -1,6 +1,5 @@
 package tech.testsys.web.components.display
 
-import java.util.Locale
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -12,6 +11,7 @@ import tech.testsys.web.components.findAll
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.testTexts
+import java.util.Locale
 
 class AvatarTests : MockVaadinTests() {
     @Test

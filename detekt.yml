@@ -53,11 +53,7 @@ potential-bugs:
   UnconditionalJumpStatementInLoop:
     active: true
   UnnamedParameterUse:
-    active: true
-    # The order of the two same-typed arguments of maxOf/minOf does not matter, so names add nothing.
-    ignoreFunctionCall:
-      - 'kotlin.comparisons.maxOf'
-      - 'kotlin.comparisons.minOf'
+    active: false
   UnnecessaryNotNullCheck:
     active: true
   UnnecessaryNotNullOperator:

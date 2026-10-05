@@ -86,10 +86,7 @@ class LookupTests : MockVaadinTests() {
     @ParameterizedTest
     @CsvSource("false,true", "true,false")
     @Tag("regression")
-    fun `should close an open lookup when choice becomes unavailable and ignore delayed choice`(
-        enabled: Boolean,
-        editable: Boolean,
-    ) {
+    fun `should close an open lookup when choice becomes unavailable and ignore delayed choice`(enabled: Boolean, editable: Boolean) {
         val input = buildLookup()
         val form = Form()
         Binder<Form>().apply {

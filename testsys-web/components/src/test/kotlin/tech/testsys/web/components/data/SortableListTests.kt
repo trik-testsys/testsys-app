@@ -18,14 +18,18 @@ class SortableListTests : MockVaadinTests() {
         val first = Item("a", "First")
         val second = Item("b", "Second")
         lateinit var handle: SortableListHandle<Item>
-        buildTestContent { handle = sortableList(
+        buildTestContent {
+            handle = sortableList(
                 listOf(first, second),
                 { item -> item.key },
                 { item -> item.caption },
-                { item -> text(
+                { item ->
+                    text(
                         item.caption,
-                    ) },
-            ) }
+                    )
+                },
+            )
+        }
         val adapter = requireNotNull(handle.component as? SortableListAdapter<*>)
         val version = adapter.currentVersion()
 
@@ -40,14 +44,18 @@ class SortableListTests : MockVaadinTests() {
     @Test
     fun `should reject duplicate programmatic keys and preserve previous order`() {
         lateinit var handle: SortableListHandle<String>
-        buildTestContent { handle = sortableList(
+        buildTestContent {
+            handle = sortableList(
                 listOf("a", "b"),
                 { value -> value },
                 { value -> value },
-                { value -> text(
+                { value ->
+                    text(
                         value,
-                    ) },
-            ) }
+                    )
+                },
+            )
+        }
 
         assertThrows(IllegalArgumentException::class.java) { handle.items = listOf("a", "a") }
 
@@ -58,14 +66,18 @@ class SortableListTests : MockVaadinTests() {
     fun `should replace content data for new instance of same key without firing user callback`() {
         lateinit var handle: SortableListHandle<Item>
         var changes = 0
-        buildTestContent { handle = sortableList(
+        buildTestContent {
+            handle = sortableList(
                 listOf(Item("a", "Before")),
                 { item -> item.key },
                 { item -> item.caption },
-                { item -> text(
+                { item ->
+                    text(
                         item.caption,
-                    ) },
-            ) { onChange { changes++ } } }
+                    )
+                },
+            ) { onChange { changes++ } }
+        }
         val fresh = Item("a", "After")
 
         handle.items = listOf(fresh)
@@ -73,6 +85,7 @@ class SortableListTests : MockVaadinTests() {
         assertSame(fresh, handle.items.single())
         assertEquals(0, changes)
     }
+
     @Test
     fun `should request a bound reorder while keeping signal owned order until signal changes`() {
         val source = com.vaadin.flow.signals.local.ValueSignal(listOf("a", "b"))

@@ -182,7 +182,7 @@ sealed interface DownloadState {
  * @since %CURRENT_VERSION%
  */
 class DownloadHandle internal constructor(
-    private val download: DownloadDisplay
+    private val download: DownloadDisplay,
 ) : ElementHandle(download) {
 
     private val enabled = Bindable(download.element, true, download::allow)

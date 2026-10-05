@@ -29,8 +29,10 @@ class TableGridTests : MockVaadinTests() {
         val table = _get<Table>().element
         assertEquals("8", table.style.get("--ts-table-used"))
         assertEquals("100.0%", table.style.get("--ts-table-width"))
-        assertEquals(listOf("12.5%", "25.0%", "50.0%", "12.5%"),
-            table.getChild(0).children.toList().map { col -> col.style.get("width") })
+        assertEquals(
+            listOf("12.5%", "25.0%", "50.0%", "12.5%"),
+            table.getChild(0).children.toList().map { col -> col.style.get("width") },
+        )
     }
 
     @Test

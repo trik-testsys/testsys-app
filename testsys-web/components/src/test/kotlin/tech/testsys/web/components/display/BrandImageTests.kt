@@ -10,8 +10,8 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.MockVaadinTests
-import tech.testsys.web.components.find
 import tech.testsys.web.components.buildTestContent
+import tech.testsys.web.components.find
 
 class BrandImageTests : MockVaadinTests() {
     @ParameterizedTest
@@ -24,6 +24,7 @@ class BrandImageTests : MockVaadinTests() {
         assertEquals("TestSys brand", image.alt.orElseThrow())
         assertTrue("ts-brand-image" in image.element.classList)
     }
+
     @Test
     fun `should configure visibility of the brand representation through its handle`() {
         lateinit var handle: ElementHandle

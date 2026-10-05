@@ -75,7 +75,9 @@ class LoadTests : MockVaadinTests() {
 
         assertFalse(old.isAttached)
         assertTrue(current.isAttached)
-        assertTrue(pendingJavaScript().any { call -> call.owner == button("Отменить").element.node && "focus" in call.invocation.expression })
+        assertTrue(
+            pendingJavaScript().any { call -> call.owner == button("Отменить").element.node && "focus" in call.invocation.expression },
+        )
     }
 
     private fun pendingJavaScript(): List<PendingJavaScriptInvocation> {
@@ -516,7 +518,8 @@ class LoadTests : MockVaadinTests() {
         fun `should not fetch on a reload from another thread after the page was left`() {
             val source = Counter()
             lateinit var handle: LoadHandle
-            val page = buildTestPage { block { handle = load(source::next) { value -> row { text("Всего: $value") } } } }
+            val page =
+                buildTestPage { block { handle = load(source::next) { value -> row { text("Всего: $value") } } } }
             queue.runAll()
             leave(page)
 
@@ -531,7 +534,8 @@ class LoadTests : MockVaadinTests() {
         fun `should not fetch on a reload in the UI thread after the page was left`() {
             val source = Counter()
             lateinit var handle: LoadHandle
-            val page = buildTestPage { block { handle = load(source::next) { value -> row { text("Всего: $value") } } } }
+            val page =
+                buildTestPage { block { handle = load(source::next) { value -> row { text("Всего: $value") } } } }
             queue.runAll()
             leave(page)
 
@@ -584,7 +588,8 @@ class LoadTests : MockVaadinTests() {
         fun `should load again when the page is shown again after a skipped reload`() {
             val source = Counter()
             lateinit var handle: LoadHandle
-            val page = buildTestPage { block { handle = load(source::next) { value -> row { text("Всего: $value") } } } }
+            val page =
+                buildTestPage { block { handle = load(source::next) { value -> row { text("Всего: $value") } } } }
             queue.runAll()
             leave(page)
             handle.reload()
@@ -612,7 +617,8 @@ class LoadTests : MockVaadinTests() {
         fun `should reload after the page is shown again`() {
             val source = Counter()
             lateinit var handle: LoadHandle
-            val page = buildTestPage { block { handle = load(source::next) { value -> row { text("Всего: $value") } } } }
+            val page =
+                buildTestPage { block { handle = load(source::next) { value -> row { text("Всего: $value") } } } }
             queue.runAll()
             leave(page)
             comeBack(page)

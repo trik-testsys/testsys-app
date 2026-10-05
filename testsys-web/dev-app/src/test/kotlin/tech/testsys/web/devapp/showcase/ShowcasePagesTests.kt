@@ -74,8 +74,12 @@ class ShowcasePagesTests {
             assertTrue(valueArea.element.hasAttribute("data-ts-obscured"))
             assertEquals("Подсказка остаётся читаемой", obscuredText.helperText)
             assertTrue(_find<Button>().any { action -> action.text == "Проверить действие" && action.isEnabled })
-            assertTrue(_find<Div>().any { value -> value.element.hasAttribute("data-ts-obscured") &&
-                value.element.getAttribute("aria-label") == "Скрытая информация" })
+            assertTrue(
+                _find<Div>().any { value ->
+                    value.element.hasAttribute("data-ts-obscured") &&
+                        value.element.getAttribute("aria-label") == "Скрытая информация"
+                },
+            )
         }
 
         @Test
@@ -115,13 +119,17 @@ class ShowcasePagesTests {
             expectView<ShowcaseDisplayView>()
             assertTrue(_find<NativeButton>().any { button -> "ts-qopt" in button.element.classList })
         }
+
         @Test
         fun `should render numeric zero and legacy compatibility separately`() {
             UI.getCurrent().navigate("dev/showcase/display")
 
             val scores = _find<Span>().filter { span -> "ts-verdict--score" in span.element.classList }
             assertEquals(listOf("0", "65баллов", "0баллов"), scores.map { score -> score.element.textRecursively })
-            assertEquals(7, _find<Span>().count { span -> "ts-verdict" in span.element.classList && "ts-verdict--score" !in span.element.classList })
+            assertEquals(
+                7,
+                _find<Span>().count { span -> "ts-verdict" in span.element.classList && "ts-verdict--score" !in span.element.classList },
+            )
         }
 
         @Test
@@ -139,7 +147,11 @@ class ShowcasePagesTests {
         @Test
         fun `should show selected answer and reset it`() {
             UI.getCurrent().navigate("dev/showcase/display")
-            val answer = _find<NativeButton>().single { button -> "ts-qopt" in button.element.classList && button.element.textRecursively.contains("Обычный ответ") }
+            val answer = _find<NativeButton>().single { button ->
+                "ts-qopt" in button.element.classList && button.element.textRecursively.contains(
+                    "Обычный ответ",
+                )
+            }
 
             answer._click()
 
@@ -173,16 +185,27 @@ class ShowcasePagesTests {
             question._click()
 
             assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Текущий вопрос: 4" })
-            assertTrue(_find<NativeButton>().single { button -> "ts-qnav__cell" in button.element.classList && button.text == "10" }.isEnabled.not())
+            assertTrue(
+                _find<NativeButton>().single { button ->
+                    "ts-qnav__cell" in button.element.classList && button.text == "10"
+                }.isEnabled.not(),
+            )
         }
-
     }
 
     @Nested
     @SpringBootTest
     inner class OutsideDevTests : MockSpringVaadinTests() {
         @ParameterizedTest
-        @ValueSource(strings = ["dev/showcase/forms", "dev/showcase/overlays", "dev/showcase/display", "dev/showcase/header", "dev/showcase/foundations"])
+        @ValueSource(
+            strings = [
+                "dev/showcase/forms",
+                "dev/showcase/overlays",
+                "dev/showcase/display",
+                "dev/showcase/header",
+                "dev/showcase/foundations",
+            ],
+        )
         fun `should reject remaining showcase routes outside dev profile`(route: String) {
             UI.getCurrent().navigate(route)
 

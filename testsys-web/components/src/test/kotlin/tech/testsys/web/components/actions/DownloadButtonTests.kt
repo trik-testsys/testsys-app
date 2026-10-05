@@ -11,20 +11,20 @@ import java.io.IOException
 
 class DownloadButtonTests {
     private class Output : ByteArrayOutputStream() {
-        var closed = false
+        var isClosed = false
         override fun close() {
-            closed = true
+            isClosed = true
             super.close()
         }
     }
 
     @Test
     fun `should stream known length bytes and close both streams`() {
-        var inputClosed = false
+        var isInputClosed = false
         val output = Output()
         val input = object : ByteArrayInputStream(byteArrayOf(1, 2, 3)) {
             override fun close() {
-                inputClosed = true
+                isInputClosed = true
                 super.close()
             }
         }
@@ -36,8 +36,8 @@ class DownloadButtonTests {
         assertEquals(3L, count)
         assertArrayEquals(byteArrayOf(1, 2, 3), output.toByteArray())
         assertEquals(listOf(0L, 3L), progress)
-        assertTrue(inputClosed)
-        assertTrue(output.closed)
+        assertTrue(isInputClosed)
+        assertTrue(output.isClosed)
     }
 
     @Test
@@ -47,19 +47,19 @@ class DownloadButtonTests {
 
         assertThrows(IOException::class.java) { streamDownload(content, DownloadContext(), output) {} }
 
-        assertTrue(output.closed)
+        assertTrue(output.isClosed)
     }
 
     @Test
     fun `should stop actual transfer after cooperative cancellation`() {
         val context = DownloadContext()
         val output = Output()
-        val content = DownloadContent("file", "application/octet-stream") { ByteArrayInputStream(ByteArray(100000)) }
+        val content = DownloadContent("file", "application/octet-stream") { ByteArrayInputStream(ByteArray(100_000)) }
 
         assertThrows(IOException::class.java) { streamDownload(content, context, output) { count -> if (count > 0) context.cancel() } }
 
-        assertTrue(output.closed)
-        assertTrue(output.size() < 100000)
+        assertTrue(output.isClosed)
+        assertTrue(output.size() < 100_000)
     }
 
     @Test
@@ -69,7 +69,7 @@ class DownloadButtonTests {
 
         assertThrows(IOException::class.java) { streamDownload(content, DownloadContext(), output) {} }
 
-        assertTrue(output.closed)
+        assertTrue(output.isClosed)
     }
 
     @Test
@@ -87,12 +87,16 @@ class DownloadButtonTests {
         assertEquals(1L, second)
         assertEquals(2, opens)
     }
+
     @Test
     fun `should report HTTP failure before closing output when source opening fails`() {
         var status = 200
         var closedAtStatus = 0
         val output = object : ByteArrayOutputStream() {
-            override fun close() { closedAtStatus = status; super.close() }
+            override fun close() {
+                closedAtStatus = status
+                super.close()
+            }
         }
         val content = DownloadContent("file", "text/plain") { throw IOException("Source failure") }
 

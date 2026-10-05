@@ -61,6 +61,7 @@ class NotFoundViewTests : MockSpringVaadinTests() {
         assertEquals(404, status)
         assertFalse(_get<Button>().isEnabled)
     }
+
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
     fun `should keep back disabled until client reports completed history`(canGoBack: Boolean) {

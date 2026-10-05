@@ -40,11 +40,12 @@ class DemoStateTests {
     @Test
     fun `should invalidate the old access code after one use recovery`() {
         val recovery = demoFixtures().requestRecovery("ANNA@example.com").state
-        val restored = recovery.restoreAccess(recovery.recovery!!.token).state
+        val token = requireNotNull(recovery.recovery).token
+        val restored = recovery.restoreAccess(token).state
 
         assertFalse(restored.login("STUDENT-2026").isSuccess)
         assertTrue(restored.login("RESTORED-103").isSuccess)
-        assertFalse(restored.restoreAccess(recovery.recovery.token).isSuccess)
+        assertFalse(restored.restoreAccess(token).isSuccess)
     }
 
     @Test

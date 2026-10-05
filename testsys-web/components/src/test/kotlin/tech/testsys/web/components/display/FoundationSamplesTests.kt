@@ -22,18 +22,27 @@ class FoundationSamplesTests : MockVaadinTests() {
         val token = first[0].element.text
         val example = first[1].element
         assertTrue(example.getAttribute("style").contains("var($token)"))
-
     }
+
     @Test
     fun `should preserve provided typography sample content`() {
-        val root = buildTestPage { block { foundationSamples(FoundationCategory.Typography, sampleText = "Example") } }.find("ts-foundation-samples")
+        val root = buildTestPage {
+            block {
+                foundationSamples(
+                    FoundationCategory.Typography,
+                    sampleText = "Example",
+                )
+            }
+        }.find("ts-foundation-samples")
 
         assertEquals("Example", root.children.findFirst().orElseThrow().children.toList()[1].element.text)
     }
+
     @Test
     fun `should configure visibility of the foundation representation through its handle`() {
         lateinit var handle: ElementHandle
-        val root = buildTestPage { block { handle = foundationSamples(FoundationCategory.Palette) { isVisible = false } } }
+        val root =
+            buildTestPage { block { handle = foundationSamples(FoundationCategory.Palette) { isVisible = false } } }
 
         assertFalse(root.find("ts-foundation-samples").isVisible)
         handle.isVisible = true

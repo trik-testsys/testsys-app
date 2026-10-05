@@ -263,7 +263,10 @@ class ShowcaseViewTests {
 
         @Test
         fun `should show the chosen page in the text under the pagination`() {
-            block("Пагинация")._get<NativeButton> { classes = "ts-pager__btn"; text = "2" }._click()
+            block("Пагинация")._get<NativeButton> {
+                classes = "ts-pager__btn"
+                text = "2"
+            }._click()
 
             assertTrue(block("Пагинация")._find<Div>().any { text -> text.text == "Страница 2 из 20" })
         }

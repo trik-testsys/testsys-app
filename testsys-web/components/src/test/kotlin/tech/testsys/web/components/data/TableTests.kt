@@ -14,8 +14,6 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.child
@@ -25,9 +23,6 @@ import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.testTexts
 import tools.jackson.databind.ObjectMapper
-
-/** Number of columns that [TableTests.buildTable] declares before the columns of a test: ID, name and score. */
-private const val BUILT_COLUMN_COUNT = 3
 
 class TableTests : MockVaadinTests() {
     @Test
@@ -173,8 +168,10 @@ class TableTests : MockVaadinTests() {
         buildTable(Source(size = 3)) { textColumn("Комментарий") { row -> row.name } }
 
         val cols = _get<com.vaadin.flow.component.html.Table>().element.getChild(0).children.toList()
-        assertEquals(listOf("4.166666666666666%", "4.166666666666666%", "4.166666666666666%", "87.5%"),
-            cols.map { col -> col.style.get("width") })
+        assertEquals(
+            listOf("4.166666666666666%", "4.166666666666666%", "4.166666666666666%", "87.5%"),
+            cols.map { col -> col.style.get("width") },
+        )
     }
 
     @Test
@@ -539,13 +536,6 @@ class TableTests : MockVaadinTests() {
     private fun nameHeader(): Component = headers()[1]
 
     private fun scoreHeader(): Component = headers()[2]
-
-    /** Headers of the columns that a test adds after the ID, name and score columns of [buildTable]. */
-    private fun addedHeaders(): List<Component> = headers().drop(BUILT_COLUMN_COUNT)
-
-    /** Header of the last column, the one a test adds after the columns of [buildTable]. */
-    private fun addedHeader(): Component = headers().last()
-
 
     private fun pagerButton(label: String): NativeButton =
         ui().findAll("ts-pager__btn").single { button -> button.element.getAttribute("aria-label") == label } as NativeButton

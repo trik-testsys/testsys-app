@@ -27,7 +27,7 @@ import tech.testsys.web.components.core.setAriaBusy
 @TestSysDsl
 class ActionHandle internal constructor(
     internal val button: Button,
-    private val icon: Component?
+    private val icon: Component?,
 ) : ElementHandle(button) {
 
     private val loading = Bindable(button.element, initial = false) { value ->

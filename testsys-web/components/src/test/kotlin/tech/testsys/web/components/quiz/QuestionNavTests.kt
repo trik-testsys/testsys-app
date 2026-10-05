@@ -14,7 +14,8 @@ class QuestionNavTests : MockVaadinTests() {
     @Test
     fun `should update current answered flagged and accessible question states`() {
         lateinit var handle: SelectionHandle<QuestionNavData>
-        val root = buildTestContent { handle = questionNav(QuestionNavData(3, answered = setOf(2), flagged = setOf(3))) }
+        val root =
+            buildTestContent { handle = questionNav(QuestionNavData(3, answered = setOf(2), flagged = setOf(3))) }
         var cells = root.findAll("ts-qnav__cell")
         assertEquals("step", cells[0].element.getAttribute("aria-current"))
         assertTrue("ts-qnav__cell--answered" in cells[1].element.classList)

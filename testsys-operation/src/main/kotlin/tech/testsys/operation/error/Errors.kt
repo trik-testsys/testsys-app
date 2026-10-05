@@ -8,6 +8,7 @@ import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
 import java.time.Duration
@@ -182,6 +183,13 @@ sealed interface EditContestError : OperationError
 sealed interface ShareContestError : OperationError
 
 /**
+ * Failure of attaching a task to a contest.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AttachTaskError : OperationError
+
+/**
  * Failure of attaching a statement to a task.
  *
  * @since %CURRENT_VERSION%
@@ -253,6 +261,7 @@ sealed interface DetachDeveloperSolutionError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedDeveloperRoleError :
+    AttachTaskError,
     ShareContestError,
     EditContestError,
     EditTaskInfoError,
@@ -325,7 +334,7 @@ data class AttemptDurationExceedsContestDurationError(
  * @property contestId the id of the missing contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestNotExistsError(val contestId: ContestId) : EntityNotExistsError, EditContestError, ShareContestError
+data class ContestNotExistsError(val contestId: ContestId) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError
 
 /**
  * The user is not the owner of the contest.
@@ -333,7 +342,7 @@ data class ContestNotExistsError(val contestId: ContestId) : EntityNotExistsErro
  * @property contestId the id of the contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestAccessDeniedError(val contestId: ContestId) : AccessDeniedError, EditContestError, ShareContestError
+data class ContestAccessDeniedError(val contestId: ContestId) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError
 
 /**
  * The contest is shared to at least one community.
@@ -341,7 +350,7 @@ data class ContestAccessDeniedError(val contestId: ContestId) : AccessDeniedErro
  * @property contestId the id of the shared contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestAlreadySharedError(val contestId: ContestId) : EditContestError
+data class ContestAlreadySharedError(val contestId: ContestId) : EditContestError, AttachTaskError
 
 /**
  * The task does not exist.
@@ -350,6 +359,7 @@ data class ContestAlreadySharedError(val contestId: ContestId) : EditContestErro
  * @since %CURRENT_VERSION%
  */
 data class TaskNotExistsError(val taskId: TaskId) :
+    AttachTaskError,
     EditTaskInfoError,
     ViewTaskError,
     DetachStatementError,
@@ -414,12 +424,13 @@ data object TaskAlreadyHasStatementError : AttachStatementError
 data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExistsError, ShareTaskError, ShareContestError
 
 /**
- * The user is not the owner of the task.
+ * The user lacks the access to the task required by the operation.
  *
  * @property taskId the id of the task.
  * @since %CURRENT_VERSION%
  */
 data class TaskAccessDeniedError(val taskId: TaskId) :
+    AttachTaskError,
     EditTaskInfoError,
     ViewTaskError,
     DetachStatementError,
@@ -457,7 +468,28 @@ data class CommunityAccessDeniedError(val communityId: CommunityId) : AccessDeni
  * @property taskId the id of the task.
  * @since %CURRENT_VERSION%
  */
-data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError
+data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTaskError
+
+/**
+ * The task's last committed revision does not support the contest's TRIK Studio version.
+ *
+ * @property taskId the id of the incompatible task.
+ * @property trikStudioVersion the version required by the contest.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTrikStudioVersionNotSupportedError(
+    val taskId: TaskId,
+    val trikStudioVersion: TrikStudioVersion,
+) : AttachTaskError
+
+/**
+ * The task is already attached to the contest.
+ *
+ * @property contestId the id of the contest.
+ * @property taskId the id of the already attached task.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskAlreadyAttachedToContestError(val contestId: ContestId, val taskId: TaskId) : AttachTaskError
 // endregion
 
 /**

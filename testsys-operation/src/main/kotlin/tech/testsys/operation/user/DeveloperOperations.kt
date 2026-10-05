@@ -49,6 +49,7 @@ import tech.testsys.operation.error.AddTestError
 import tech.testsys.operation.error.AttachDeveloperSolutionError
 import tech.testsys.operation.error.AttachExerciseError
 import tech.testsys.operation.error.AttachStatementError
+import tech.testsys.operation.error.AttachTaskError
 import tech.testsys.operation.error.AttachTestError
 import tech.testsys.operation.error.AttemptDurationExceedsContestDurationError
 import tech.testsys.operation.error.CommunityAccessDeniedError
@@ -88,9 +89,11 @@ import tech.testsys.operation.error.StatementNotExistsError
 import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.StatementVersionNotLatestError
 import tech.testsys.operation.error.TaskAccessDeniedError
+import tech.testsys.operation.error.TaskAlreadyAttachedToContestError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
+import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
@@ -256,6 +259,43 @@ class DeveloperOperations(
         }
         return contestRepository.update(sharedContest).asSuccess()
     }
+
+    /**
+     * Attaches [taskId] owned by [user] or shared to their Developer communities to an unshared [contestId] they own,
+     * requiring a committed revision that supports the contest's TRIK Studio version and rejecting repeated attachment.
+     * Only the contest's tasks change; the last committed revision is checked, and storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.contest.attachTask")
+    fun attachTask(user: MultipleRoleUser, contestId: ContestId, taskId: TaskId): OperationResult<Contest, AttachTaskError> =
+        operation<Contest, AttachTaskError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val contest = contestRepository.findById(contestId)
+            ensure(contest != null) { ContestNotExistsError(contestId) }
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(contest.data.owner.id == user.id) { ContestAccessDeniedError(contestId) }
+            val developerCommunityIds = user.data.roles.filterIsInstance<Developer>().single().memberOf.ids
+            ensure(task.data.owner.id == user.id || task.data.sharedTo.ids.any { communityId -> communityId in developerCommunityIds }) {
+                TaskAccessDeniedError(taskId)
+            }
+            ensure(contest.data.sharedTo.ids.isEmpty()) { ContestAlreadySharedError(contestId) }
+
+            val lastCommitted = when (val content = task.data.content) {
+                is TaskContent.New -> null
+                is TaskContent.Uncommitted -> content.lastCommitted
+                is TaskContent.Committed -> content.lastCommitted
+            }
+            ensure(lastCommitted != null) { TaskNotCommittedError(taskId) }
+            ensure(contest.data.trikStudioVersion in lastCommitted.supportedTrikStudioVersions) {
+                TaskTrikStudioVersionNotSupportedError(taskId, contest.data.trikStudioVersion)
+            }
+            ensure(taskId !in contest.data.tasks.ids) { TaskAlreadyAttachedToContestError(contestId, taskId) }
+
+            val updatedContest = contest.withData { tasks.add(taskId) }
+            return contestRepository.update(updatedContest).asSuccess()
+        }
 
     /**
      * Returns tasks owned by [user] or shared to communities of their [Developer] role, without changing task state.

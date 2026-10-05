@@ -87,9 +87,11 @@ import tech.testsys.operation.error.StatementNotExistsError
 import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.StatementVersionNotLatestError
 import tech.testsys.operation.error.TaskAccessDeniedError
+import tech.testsys.operation.error.TaskAlreadyAttachedToContestError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
+import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
@@ -1046,6 +1048,428 @@ class DeveloperOperationsTests {
             every { communityRepository.findById(secondCommunityId) } returns testCommunity(2)
             every { communityRepository.findById(foreignCommunityId) } returns testCommunity(3)
             every { contestRepository.update(any<Contest>()) } answers { testSavedContest(firstArg()) }
+        }
+    }
+
+    @Nested
+    inner class AttachTaskTests {
+
+        private val contestId = ContestId(19)
+        private val taskId = TaskId(0)
+        private val version = TrikStudioVersion("3.0.0")
+
+        @AfterEach
+        fun verifyNoTaskWrites() {
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { taskRepository.update(any<List<Task>>()) }
+            verify(exactly = 0) { taskRepository.save(any<TaskData>()) }
+            verify(exactly = 0) { taskRepository.save(any<List<TaskData>>()) }
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+            verify(exactly = 0) { contestRepository.save(any<List<ContestData>>()) }
+        }
+
+        @Test
+        fun `should reject a user without Developer role before reading entities`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.attachTask(testAdministrator {}, contestId, taskId)
+            }
+
+            verify(exactly = 0) { contestRepository.findById(any()) }
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should raise ContestNotExistsError without updating if contest is missing`() {
+            every { contestRepository.findById(contestId) } returns null
+
+            assertRaises(ContestNotExistsError(contestId)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should reject a missing task before checking contest ownership`() {
+            prepare(originalContest = testContest { owner(99) })
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [0, 1])
+        fun `should deny another owners contest even when shared to Developer communities`(recipientCount: Int) {
+            val user = testDeveloper {
+                memberOf(listOf(1))
+                data = developerData {}
+            }
+            val recipients = listOf(1L).take(recipientCount)
+            prepare(
+                originalContest = testContest {
+                    owner(99)
+                    sharedTo(recipients)
+                },
+            )
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                developerOperations.attachTask(user, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should deny a foreign task shared outside Developer communities`() {
+            prepare(
+                originalTask = committedTask().withData {
+                    owner(99)
+                    sharedTo(listOf(2))
+                },
+            )
+
+            assertRaises(TaskAccessDeniedError(taskId)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should attach a foreign task shared to one of the Developer communities`() {
+            val user = testDeveloper {
+                memberOf(listOf(1, 2))
+                data = developerData {}
+            }
+            prepare(
+                originalTask = committedTask().withData {
+                    owner(99)
+                    sharedTo(listOf(2, 3))
+                },
+            )
+
+            val result = developerOperations.attachTask(user, contestId, taskId).getOrThrow()
+
+            Assertions.assertEquals(listOf(taskId), result.data.tasks.ids)
+        }
+
+        @Test
+        fun `should deny a foreign task when only another role belongs to its community`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    developer { data = developerData {} }
+                    administrator { memberOf(listOf(1)) }
+                }
+            }
+            prepare(
+                originalTask = committedTask().withData {
+                    owner(99)
+                    sharedTo(listOf(1))
+                },
+            )
+
+            assertRaises(TaskAccessDeniedError(taskId)) {
+                developerOperations.attachTask(user, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should use Developer membership for a user with several roles`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    developer {
+                        memberOf(listOf(1))
+                        data = developerData {}
+                    }
+                    administrator { memberOf(listOf(2)) }
+                }
+            }
+            prepare(
+                originalTask = committedTask().withData {
+                    owner(99)
+                    sharedTo(listOf(1))
+                },
+            )
+
+            val result = developerOperations.attachTask(user, contestId, taskId).getOrThrow()
+
+            Assertions.assertEquals(listOf(taskId), result.data.tasks.ids)
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [0, 1])
+        fun `should reject a shared contest before repeated attachment`(attachedTaskCount: Int) {
+            val tasks = listOf(0L).take(attachedTaskCount)
+            prepare(
+                originalContest = testContest {
+                    sharedTo(listOf(1))
+                    tasks(tasks)
+                },
+            )
+
+            assertRaises(ContestAlreadySharedError(contestId)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should reject New task even if its working revision supports the contest version`() {
+            val newTask = testNewTask().withData { content.new { supportedTrikStudioVersions(listOf("3.0.0")) } }
+            prepare(originalTask = newTask)
+
+            assertRaises(TaskNotCommittedError(taskId)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Committed", "Uncommitted"])
+        fun `should attach an owned task with a committed revision without community membership`(state: String) {
+            val originalTask = compatibleTask(state)
+            val originalData = originalTask.data
+            prepare(originalTask = originalTask)
+            val saved = slot<Contest>()
+            every { contestRepository.update(capture(saved)) } answers { testSavedContest(firstArg()) }
+
+            val result = developerOperations.attachTask(developer, contestId, taskId).getOrThrow()
+
+            Assertions.assertEquals(listOf(taskId), result.data.tasks.ids)
+            Assertions.assertEquals(listOf(taskId), saved.captured.data.tasks.ids)
+            Assertions.assertSame(originalData, originalTask.data)
+            Assertions.assertEquals(0L, originalTask.version?.value)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should accept compatible committed revision when working revision is incompatible`() {
+            prepare(originalTask = uncommittedTask(committedVersions = listOf("3.0.0"), workingVersions = listOf("4.0.0")))
+
+            val result = developerOperations.attachTask(developer, contestId, taskId).getOrThrow()
+
+            Assertions.assertEquals(listOf(taskId), result.data.tasks.ids)
+        }
+
+        @Test
+        fun `should reject incompatible committed revision when working revision is compatible`() {
+            prepare(originalTask = uncommittedTask(committedVersions = listOf("4.0.0"), workingVersions = listOf("3.0.0")))
+
+            assertRaises(TaskTrikStudioVersionNotSupportedError(taskId, version)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should reject a committed revision without supported versions`() {
+            prepare(originalTask = committedTask(versions = emptyList()))
+
+            assertRaises(TaskTrikStudioVersionNotSupportedError(taskId, version)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["3.0", "3.0.1", "4.0.0"])
+        fun `should require the exact contest version in committed supported versions`(supportedVersion: String) {
+            prepare(originalTask = committedTask(versions = listOf(supportedVersion)))
+
+            assertRaises(TaskTrikStudioVersionNotSupportedError(taskId, version)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should accept one exact matching version among several supported versions`() {
+            prepare(originalTask = committedTask(versions = listOf("2.0.0", "3.0.0", "4.0.0")))
+
+            val result = developerOperations.attachTask(developer, contestId, taskId).getOrThrow()
+
+            Assertions.assertEquals(listOf(taskId), result.data.tasks.ids)
+        }
+
+        @Test
+        fun `should append a task while preserving existing tasks and contest metadata`() {
+            val original = testContest {
+                tasks(listOf(7, 8))
+                name = "Original contest"
+                description = "Original description"
+                startsAt = Instant.parse("2020-01-01T10:00:00Z")
+                contestDuration = Duration.ofHours(2)
+                attemptDuration = Duration.ofMinutes(30)
+            }
+            prepare(originalContest = original)
+            val saved = slot<Contest>()
+            every { contestRepository.update(capture(saved)) } answers { testSavedContest(firstArg()) }
+
+            val result = developerOperations.attachTask(developer, contestId, taskId).getOrThrow()
+
+            Assertions.assertEquals(listOf(TaskId(7), TaskId(8), taskId), saved.captured.data.tasks.ids)
+            Assertions.assertEquals(original.id, saved.captured.id)
+            Assertions.assertEquals(original.createdAt, saved.captured.createdAt)
+            Assertions.assertEquals(0L, saved.captured.version?.value)
+            Assertions.assertEquals(original.data.owner.id, saved.captured.data.owner.id)
+            Assertions.assertEquals("Original contest", saved.captured.data.name)
+            Assertions.assertEquals("Original description", saved.captured.data.description)
+            Assertions.assertEquals(original.data.startsAt, saved.captured.data.startsAt)
+            Assertions.assertEquals(Duration.ofHours(2), saved.captured.data.contestDuration)
+            Assertions.assertEquals(Duration.ofMinutes(30), saved.captured.data.attemptDuration)
+            Assertions.assertEquals(original.data.endsAt, saved.captured.data.endsAt)
+            Assertions.assertEquals(version, saved.captured.data.trikStudioVersion)
+            Assertions.assertEquals(emptyList<CommunityId>(), saved.captured.data.sharedTo.ids)
+            Assertions.assertEquals(listOf(TaskId(7), TaskId(8)), original.data.tasks.ids)
+            Assertions.assertEquals(1L, result.version?.value)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should return the actual updated repository object and its version`() {
+            prepare()
+            val repositoryResult = testSavedContest(testContest { tasks(listOf(0)) })
+            every { contestRepository.update(any<Contest>()) } returns repositoryResult
+
+            val result = developerOperations.attachTask(developer, contestId, taskId).getOrThrow()
+
+            Assertions.assertSame(repositoryResult, result)
+            Assertions.assertEquals(1L, result.version?.value)
+        }
+
+        @Test
+        fun `should reject repeated attachment without updating the contest`() {
+            prepare(originalContest = testContest { tasks(listOf(0)) })
+
+            assertRaises(TaskAlreadyAttachedToContestError(contestId, taskId)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should check task access before repeated attachment`() {
+            prepare(
+                originalContest = testContest { tasks(listOf(0)) },
+                originalTask = committedTask().withData { owner(99) },
+            )
+
+            assertRaises(TaskAccessDeniedError(taskId)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should check committed revision existence before repeated attachment`() {
+            prepare(originalContest = testContest { tasks(listOf(0)) }, originalTask = testNewTask())
+
+            assertRaises(TaskNotCommittedError(taskId)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should check version compatibility before repeated attachment`() {
+            prepare(
+                originalContest = testContest { tasks(listOf(0)) },
+                originalTask = committedTask(versions = listOf("4.0.0")),
+            )
+
+            assertRaises(TaskTrikStudioVersionNotSupportedError(taskId, version)) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should propagate storage exceptions when loading the contest`() {
+            val failure = IllegalStateException("Contest storage read failure")
+            every { contestRepository.findById(contestId) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            Assertions.assertSame(failure, thrown)
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should propagate storage exceptions when loading the task`() {
+            prepare()
+            val failure = IllegalStateException("Task storage read failure")
+            every { taskRepository.findById(taskId) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            Assertions.assertSame(failure, thrown)
+            assertNoContestUpdate()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Storage update failure", "Optimistic lock conflict"])
+        fun `should propagate update exceptions including optimistic lock conflicts`(message: String) {
+            prepare()
+            val failure = IllegalStateException(message)
+            every { contestRepository.update(any<Contest>()) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.attachTask(developer, contestId, taskId)
+            }
+
+            Assertions.assertSame(failure, thrown)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        private fun prepare(originalContest: Contest = testContest(), originalTask: Task = committedTask()) {
+            every { contestRepository.findById(contestId) } returns originalContest
+            every { taskRepository.findById(taskId) } returns originalTask
+            every { contestRepository.update(any<Contest>()) } answers { testSavedContest(firstArg()) }
+        }
+
+        private fun committedTask(versions: List<String> = listOf("3.0.0")): Task = testCommitedTask().withData {
+            content.committed { supportedTrikStudioVersions(versions) }
+        }
+
+        private fun uncommittedTask(
+            committedVersions: List<String> = listOf("3.0.0"),
+            workingVersions: List<String> = listOf("3.0.0"),
+        ): Task = testUncommittedTask().withData {
+            content.uncommitted(
+                wipBuilder = { supportedTrikStudioVersions(workingVersions) },
+                lastCommittedBuilder = { supportedTrikStudioVersions(committedVersions) },
+            )
+        }
+
+        private fun compatibleTask(state: String): Task = when (state) {
+            "Committed" -> committedTask()
+            "Uncommitted" -> uncommittedTask()
+            else -> error("Unsupported attach-task test state: $state")
+        }
+
+        private fun assertNoContestUpdate() {
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+            verify(exactly = 0) { contestRepository.update(any<List<Contest>>()) }
         }
     }
 

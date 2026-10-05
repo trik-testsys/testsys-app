@@ -69,6 +69,7 @@ sealed interface ViewContestsError : OperationError
  * @since %CURRENT_VERSION%
  */
 sealed interface ViewContestError : OperationError
+
 /**
  * Failure of reverting a task owned by the developer.
  *
@@ -357,7 +358,9 @@ data class AttemptDurationExceedsContestDurationError(
  * @property contestId the id of the missing contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestNotExistsError(val contestId: ContestId) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
+data class ContestNotExistsError(
+    val contestId: ContestId,
+) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
 
 /**
  * The user has no access to the contest for the requested operation.
@@ -365,7 +368,9 @@ data class ContestNotExistsError(val contestId: ContestId) : EntityNotExistsErro
  * @property contestId the id of the contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestAccessDeniedError(val contestId: ContestId) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
+data class ContestAccessDeniedError(
+    val contestId: ContestId,
+) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
 
 /**
  * The contest is shared to at least one community.

@@ -57,6 +57,11 @@
 
 Образец — [DeveloperOperations.kt](src/main/kotlin/tech/testsys/operation/user/DeveloperOperations.kt).
 
+Метод `viewResources` возвращает последние версии доступных цепочек существующими доменными сущностями.
+Дата последнего изменения Ресурса — `createdAt` его последней версии. Метод `viewResource` возвращает
+существующие версии выбранной цепочки. Метод `downloadResourceVersion` возвращает сохранённый `StoredBlobRef`
+без чтения содержимого файла.
+
 Методы `addStatement`, `addExercise`, `addTest` и `addDeveloperSolution` класса `DeveloperOperations`
 сохраняют новый Ресурс и добавляют его цепочку в `TaskData.uploadedResources`. Прикрепление выполняют
 отдельные операции `attach*`. Условия загрузки — в фиче `testsys.user.multi.developer.resource.addResource`

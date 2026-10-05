@@ -14,6 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
+import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
@@ -21,6 +22,7 @@ import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
+import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
@@ -62,6 +64,9 @@ import tech.testsys.operation.error.ExerciseNotUploadedToTaskError
 import tech.testsys.operation.error.ExerciseVersionNotLatestError
 import tech.testsys.operation.error.MissedDeveloperRoleError
 import tech.testsys.operation.error.ResourceAlreadyAttachedError
+import tech.testsys.operation.error.ResourceNotExistsError
+import tech.testsys.operation.error.ResourceNotUploadedToTaskError
+import tech.testsys.operation.error.ResourceVersionNotExistsError
 import tech.testsys.operation.error.StatementNotExistsError
 import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.StatementVersionNotLatestError
@@ -119,6 +124,327 @@ class DeveloperOperationsTests {
     private val uploadBucket = VersionBucket(uploadUuid)
     private val uploadScore = Score(42)
 
+    @Nested
+    inner class ViewResourcesTests {
+
+        @Test
+        fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+            assertRaises(MissedDeveloperRoleError) { developerOperations.viewResources(testAdministrator {}) }
+        }
+
+        @Test
+        fun `should return an empty list when developer has no tasks`() {
+            every { taskRepository.findByIds(emptyList()) } returns emptyList()
+
+            val result = developerOperations.viewResources(developer).getOrThrow()
+
+            Assertions.assertEquals(emptyList<DomainEntity<*>>(), result)
+        }
+
+        @Test
+        fun `should return latest existing entities of all four resource types from owned tasks`() {
+            val statement = viewStatement(id = 1, createdAt = Instant.ofEpochSecond(10))
+            val exercise = viewExercise()
+            val polygon = viewPolygon()
+            val solution = viewDeveloperSolution()
+            val user = testDeveloper { data = developerData { tasks(listOf(0, 1)) } }
+            val owned = testNewTask().withData {
+                uploadedResources = mutableSetOf(
+                    statement.data.versionBucket,
+                    exercise.data.versionBucket,
+                    polygon.data.versionBucket,
+                    solution.data.versionBucket,
+                )
+            }
+            val foreign = testNewTask().withData {
+                owner = MultipleRoleUserId(99)
+                uploadedResources = mutableSetOf(VersionBucket(UUID(0, 99)))
+            }
+            every { taskRepository.findByIds(listOf(TaskId(0), TaskId(1))) } returns listOf(owned, foreign)
+            every { statementRepository.findLatestByVersionBucket(any()) } returns null
+            every { exerciseRepository.findLatestByVersionBucket(any()) } returns null
+            every { testRepository.findLatestByVersionBucket(any()) } returns null
+            every { developerSolutionRepository.findLatestByVersionBucket(any()) } returns null
+            every { statementRepository.findLatestByVersionBucket(statement.data.versionBucket) } returns statement
+            every { exerciseRepository.findLatestByVersionBucket(exercise.data.versionBucket) } returns exercise
+            every { testRepository.findLatestByVersionBucket(polygon.data.versionBucket) } returns polygon
+            every { developerSolutionRepository.findLatestByVersionBucket(solution.data.versionBucket) } returns solution
+
+            val result = developerOperations.viewResources(user).getOrThrow()
+
+            Assertions.assertEquals(setOf(solution, polygon, exercise, statement), result.toSet())
+            val actualStatement = result.single { it is Statement }
+            Assertions.assertSame(statement, actualStatement)
+            Assertions.assertEquals(Instant.ofEpochSecond(10), actualStatement.createdAt)
+            verify(exactly = 0) { statementRepository.findLatestByVersionBucket(VersionBucket(UUID(0, 99))) }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should omit an uploaded chain with no existing versions`() {
+            val user = testDeveloper { data = developerData { tasks(listOf(0)) } }
+            every { taskRepository.findByIds(listOf(TaskId(0))) } returns listOf(testNewTask())
+            every { statementRepository.findLatestByVersionBucket(any()) } returns null
+            every { exerciseRepository.findLatestByVersionBucket(any()) } returns null
+            every { testRepository.findLatestByVersionBucket(any()) } returns null
+            every { developerSolutionRepository.findLatestByVersionBucket(any()) } returns null
+
+            val result = developerOperations.viewResources(user).getOrThrow()
+
+            Assertions.assertEquals(emptyList<DomainEntity<*>>(), result)
+        }
+    }
+
+    @Nested
+    inner class ViewResourceTests {
+
+        private val bucket = VersionBucket(UUID(0, 0))
+        private val taskId = TaskId(0)
+
+        @BeforeEach
+        fun setUp() {
+            every { statementRepository.existsByVersionBucket(any()) } returns false
+            every { exerciseRepository.existsByVersionBucket(any()) } returns false
+            every { testRepository.existsByVersionBucket(any()) } returns false
+            every { developerSolutionRepository.existsByVersionBucket(any()) } returns false
+            every { statementRepository.findVersionsByVersionBucket(any()) } returns emptyList()
+            every { exerciseRepository.findVersionsByVersionBucket(any()) } returns emptyList()
+            every { testRepository.findVersionsByVersionBucket(any()) } returns emptyList()
+            every { developerSolutionRepository.findVersionsByVersionBucket(any()) } returns emptyList()
+        }
+
+        @Test
+        fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.viewResource(testAdministrator {}, taskId, bucket)
+            }
+        }
+
+        @Test
+        fun `should raise TaskNotExistsError if task does not exist`() {
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) { developerOperations.viewResource(developer, taskId, bucket) }
+        }
+
+        @Test
+        fun `should raise ResourceNotExistsError if chain does not exist`() {
+            every { taskRepository.findById(taskId) } returns testNewTask()
+
+            assertRaises(ResourceNotExistsError(bucket)) { developerOperations.viewResource(developer, taskId, bucket) }
+        }
+
+        @Test
+        fun `should raise TaskAccessDeniedError if task belongs to another user`() {
+            every { taskRepository.findById(taskId) } returns testNewTask().withData { owner = MultipleRoleUserId(99) }
+            every { statementRepository.existsByVersionBucket(bucket) } returns true
+
+            assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.viewResource(developer, taskId, bucket) }
+        }
+
+        @Test
+        fun `should raise ResourceNotUploadedToTaskError if chain is outside the task`() {
+            every { taskRepository.findById(taskId) } returns testNewTask().withData { uploadedResources = mutableSetOf() }
+            every { statementRepository.existsByVersionBucket(bucket) } returns true
+
+            assertRaises(ResourceNotUploadedToTaskError(taskId, bucket)) {
+                developerOperations.viewResource(developer, taskId, bucket)
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should return the existing history without changing task state`(state: String) {
+            val old = viewStatement(id = 1, createdAt = Instant.ofEpochSecond(10))
+            val latest = viewStatement(id = 2, createdAt = Instant.ofEpochSecond(20))
+            every { taskRepository.findById(taskId) } returns taskInState(state)
+            every { statementRepository.existsByVersionBucket(bucket) } returns true
+            every { statementRepository.findVersionsByVersionBucket(bucket) } returns listOf(old, latest)
+
+            val result = developerOperations.viewResource(developer, taskId, bucket).getOrThrow()
+
+            Assertions.assertEquals(setOf(latest, old), result.toSet())
+            Assertions.assertSame(latest, result.single { it.id == latest.id })
+            Assertions.assertEquals("file.pdf", latest.data.file.uploadedFilename)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should return an existing exercise entity`() {
+            val version = viewExercise()
+            val exerciseBucket = version.data.versionBucket
+            every { taskRepository.findById(taskId) } returns testNewTask().withData { uploadedResources = mutableSetOf(exerciseBucket) }
+            every { exerciseRepository.existsByVersionBucket(exerciseBucket) } returns true
+            every { exerciseRepository.findVersionsByVersionBucket(exerciseBucket) } returns listOf(version)
+
+            val result = developerOperations.viewResource(developer, taskId, exerciseBucket).getOrThrow()
+
+            Assertions.assertSame(version, result.single())
+        }
+
+        @Test
+        fun `should return an existing test entity`() {
+            val version = viewPolygon()
+            val testBucket = version.data.versionBucket
+            every { taskRepository.findById(taskId) } returns testNewTask().withData { uploadedResources = mutableSetOf(testBucket) }
+            every { testRepository.existsByVersionBucket(testBucket) } returns true
+            every { testRepository.findVersionsByVersionBucket(testBucket) } returns listOf(version)
+
+            val result = developerOperations.viewResource(developer, taskId, testBucket).getOrThrow()
+
+            Assertions.assertSame(version, result.single())
+        }
+
+        @Test
+        fun `should return an existing developer solution entity`() {
+            val version = viewDeveloperSolution()
+            val solutionBucket = version.data.versionBucket
+            every { taskRepository.findById(taskId) } returns testNewTask().withData { uploadedResources = mutableSetOf(solutionBucket) }
+            every { developerSolutionRepository.existsByVersionBucket(solutionBucket) } returns true
+            every { developerSolutionRepository.findVersionsByVersionBucket(solutionBucket) } returns listOf(version)
+
+            val result = developerOperations.viewResource(developer, taskId, solutionBucket).getOrThrow()
+
+            Assertions.assertSame(version, result.single())
+        }
+    }
+
+    @Nested
+    inner class DownloadResourceVersionTests {
+
+        private val versionId = StatementId(1)
+        private val bucket = VersionBucket(UUID(0, 0))
+        private val taskId = TaskId(0)
+
+        @BeforeEach
+        fun setUp() {
+            every { statementRepository.existsByVersionBucket(bucket) } returns false
+            every { exerciseRepository.existsByVersionBucket(bucket) } returns false
+            every { testRepository.existsByVersionBucket(bucket) } returns false
+            every { developerSolutionRepository.existsByVersionBucket(bucket) } returns false
+        }
+
+        @Test
+        fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+            val user = testAdministrator {}
+
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.downloadResourceVersion(user, taskId, bucket, versionId)
+            }
+        }
+
+        @Test
+        fun `should raise TaskNotExistsError if task does not exist`() {
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) {
+                developerOperations.downloadResourceVersion(developer, taskId, bucket, versionId)
+            }
+        }
+
+        @Test
+        fun `should raise ResourceNotExistsError if chain does not exist`() {
+            every { taskRepository.findById(taskId) } returns testNewTask()
+            every { statementRepository.existsByVersionBucket(bucket) } returns false
+
+            assertRaises(ResourceNotExistsError(bucket)) {
+                developerOperations.downloadResourceVersion(developer, taskId, bucket, versionId)
+            }
+        }
+
+        @Test
+        fun `should raise TaskAccessDeniedError if task belongs to another user`() {
+            every { taskRepository.findById(taskId) } returns testNewTask().withData { owner = MultipleRoleUserId(99) }
+            every { statementRepository.existsByVersionBucket(bucket) } returns true
+
+            assertRaises(TaskAccessDeniedError(taskId)) {
+                developerOperations.downloadResourceVersion(developer, taskId, bucket, versionId)
+            }
+        }
+
+        @Test
+        fun `should raise ResourceNotUploadedToTaskError if chain is outside the task`() {
+            every { taskRepository.findById(taskId) } returns testNewTask().withData { uploadedResources = mutableSetOf() }
+            every { statementRepository.existsByVersionBucket(bucket) } returns true
+
+            assertRaises(ResourceNotUploadedToTaskError(taskId, bucket)) {
+                developerOperations.downloadResourceVersion(developer, taskId, bucket, versionId)
+            }
+        }
+
+        @Test
+        fun `should raise ResourceVersionNotExistsError if version is missing from the selected chain`() {
+            every { taskRepository.findById(taskId) } returns testNewTask()
+            every { statementRepository.existsByVersionBucket(bucket) } returns true
+            every { statementRepository.findFileRef(bucket, versionId) } returns null
+
+            assertRaises(ResourceVersionNotExistsError(bucket, versionId)) {
+                developerOperations.downloadResourceVersion(developer, taskId, bucket, versionId)
+            }
+        }
+
+        @Test
+        fun `should return the existing exercise file reference`() {
+            val exerciseId = ExerciseId(2)
+            every { taskRepository.findById(taskId) } returns testNewTask()
+            every { exerciseRepository.existsByVersionBucket(bucket) } returns true
+            every { exerciseRepository.findFileRef(bucket, exerciseId) } returns StoredBlobRef("exercise-file")
+
+            val result = developerOperations.downloadResourceVersion(developer, taskId, bucket, exerciseId).getOrThrow()
+
+            Assertions.assertEquals(StoredBlobRef("exercise-file"), result)
+        }
+
+        @Test
+        fun `should return the existing test file reference`() {
+            val testId = TestId(3)
+            every { taskRepository.findById(taskId) } returns testNewTask()
+            every { testRepository.existsByVersionBucket(bucket) } returns true
+            every { testRepository.findFileRef(bucket, testId) } returns StoredBlobRef("test-file")
+
+            val result = developerOperations.downloadResourceVersion(developer, taskId, bucket, testId).getOrThrow()
+
+            Assertions.assertEquals(StoredBlobRef("test-file"), result)
+        }
+
+        @Test
+        fun `should return the existing developer solution file reference`() {
+            val solutionId = DeveloperSolutionId(4)
+            every { taskRepository.findById(taskId) } returns testNewTask()
+            every { developerSolutionRepository.existsByVersionBucket(bucket) } returns true
+            every { developerSolutionRepository.findFileRef(bucket, solutionId) } returns StoredBlobRef("solution-file")
+
+            val result = developerOperations.downloadResourceVersion(developer, taskId, bucket, solutionId).getOrThrow()
+
+            Assertions.assertEquals(StoredBlobRef("solution-file"), result)
+        }
+
+        @Test
+        fun `should reject an id of an unrelated entity kind`() {
+            val solutionId = SolutionId(4)
+            every { taskRepository.findById(taskId) } returns testNewTask()
+            every { statementRepository.existsByVersionBucket(bucket) } returns true
+
+            assertRaises(ResourceVersionNotExistsError(bucket, solutionId)) {
+                developerOperations.downloadResourceVersion(developer, taskId, bucket, solutionId)
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should return existing file reference without changing task state or requiring latest version`(state: String) {
+            val task = taskInState(state)
+            every { taskRepository.findById(taskId) } returns task
+            every { statementRepository.existsByVersionBucket(bucket) } returns true
+            every { statementRepository.findFileRef(bucket, versionId) } returns StoredBlobRef("old-version-file")
+
+            val result = developerOperations.downloadResourceVersion(developer, taskId, bucket, versionId).getOrThrow()
+
+            Assertions.assertEquals(StoredBlobRef("old-version-file"), result)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+    }
+
     @BeforeEach
     fun beforeEach() {
         developer = testDeveloper { data = developerData { } }
@@ -141,6 +467,47 @@ class DeveloperOperationsTests {
                 )
                 is TaskContent.Committed -> content.committed { existingResources() }
             }
+        }
+    }
+
+    private fun viewStatement(id: Long, createdAt: Instant): Statement = statement {
+        this.id = id
+        this.createdAt = createdAt
+        data = testStatement().data
+    }
+
+    private fun viewExercise(): Exercise = exercise {
+        id = 2
+        createdAt = Instant.ofEpochSecond(20)
+        data = exerciseData {
+            name = "exercise"
+            description = ""
+            file("exercise.qrs", byteArrayOf(1))
+            language.python()
+            versionBucket = VersionBucket(UUID(0, 2))
+        }
+    }
+
+    private fun viewPolygon(): Polygon = test {
+        id = 3
+        createdAt = Instant.ofEpochSecond(30)
+        data = testData {
+            name = "test"
+            description = ""
+            file("world.xml", byteArrayOf(2))
+            versionBucket = VersionBucket(UUID(0, 3))
+        }
+    }
+
+    private fun viewDeveloperSolution(): DeveloperSolution = developerSolution {
+        id = 4
+        createdAt = Instant.ofEpochSecond(40)
+        data = developerSolutionData {
+            name = "solution"
+            description = ""
+            solution(5)
+            expectedScore(42)
+            versionBucket = VersionBucket(UUID(0, 4))
         }
     }
 

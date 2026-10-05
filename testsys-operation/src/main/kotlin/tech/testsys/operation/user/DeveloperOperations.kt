@@ -7,6 +7,7 @@ import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
@@ -14,6 +15,8 @@ import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
+import tech.testsys.domain.model.DomainEntity
+import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionId
@@ -48,12 +51,16 @@ import tech.testsys.operation.error.CreateTaskError
 import tech.testsys.operation.error.DeveloperSolutionNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotUploadedToTaskError
 import tech.testsys.operation.error.DeveloperSolutionVersionNotLatestError
+import tech.testsys.operation.error.DownloadResourceVersionError
 import tech.testsys.operation.error.ExerciseNotExistsError
 import tech.testsys.operation.error.ExerciseNotUploadedToTaskError
 import tech.testsys.operation.error.ExerciseVersionNotLatestError
 import tech.testsys.operation.error.MissedDeveloperRoleError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ResourceAlreadyAttachedError
+import tech.testsys.operation.error.ResourceNotExistsError
+import tech.testsys.operation.error.ResourceNotUploadedToTaskError
+import tech.testsys.operation.error.ResourceVersionNotExistsError
 import tech.testsys.operation.error.ShareTaskError
 import tech.testsys.operation.error.StatementNotExistsError
 import tech.testsys.operation.error.StatementNotUploadedToTaskError
@@ -70,6 +77,8 @@ import tech.testsys.operation.error.UpdateDeveloperSolutionError
 import tech.testsys.operation.error.UpdateExerciseError
 import tech.testsys.operation.error.UpdateStatementError
 import tech.testsys.operation.error.UpdateTestError
+import tech.testsys.operation.error.ViewResourceError
+import tech.testsys.operation.error.ViewResourcesError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
@@ -93,6 +102,88 @@ class DeveloperOperations(
     private val developerSolutionRepository: DeveloperSolutionRepository,
     private val solutionRepository: SolutionRepository,
 ) {
+
+    /**
+     * Returns the latest existing resource versions uploaded to tasks owned by [user], including unattached chains.
+     * Each entity's creation time is the last-change time of its resource; viewing does not change task state.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.viewResources")
+    fun viewResources(user: MultipleRoleUser): OperationResult<List<DomainEntity<*>>, ViewResourcesError> =
+        operation<List<DomainEntity<*>>, ViewResourcesError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val developer = user.data.roles.filterIsInstance<Developer>().single()
+            val buckets = taskRepository.findByIds(developer.data.tasks.ids)
+                .filter { it.data.owner.id == user.id }
+                .flatMap { it.data.uploadedResources }.toSet()
+            val resources: List<DomainEntity<*>> = buckets.flatMap { bucket ->
+                listOfNotNull(
+                    statementRepository.findLatestByVersionBucket(bucket),
+                    exerciseRepository.findLatestByVersionBucket(bucket),
+                    testRepository.findLatestByVersionBucket(bucket),
+                    developerSolutionRepository.findLatestByVersionBucket(bucket),
+                )
+            }
+            return resources.asSuccess()
+        }
+
+    /**
+     * Returns existing versions of [versionBucket] uploaded to [taskId] owned by [user].
+     * Entities retain their current metadata and files; viewing does not change task state.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.viewResource")
+    fun viewResource(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        versionBucket: VersionBucket,
+    ): OperationResult<List<DomainEntity<*>>, ViewResourceError> = operation<List<DomainEntity<*>>, ViewResourceError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(resourceExists(versionBucket)) { ResourceNotExistsError(versionBucket) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        ensure(versionBucket in task.data.uploadedResources) { ResourceNotUploadedToTaskError(taskId, versionBucket) }
+        val versions = statementRepository.findVersionsByVersionBucket(versionBucket) +
+            exerciseRepository.findVersionsByVersionBucket(versionBucket) +
+            testRepository.findVersionsByVersionBucket(versionBucket) +
+            developerSolutionRepository.findVersionsByVersionBucket(versionBucket)
+        ensure(versions.isNotEmpty()) { ResourceNotExistsError(versionBucket) }
+        return versions.asSuccess()
+    }
+
+    /**
+     * Returns the existing file reference of [versionId] in [versionBucket] uploaded to [taskId] owned by [user].
+     * The operation accepts older versions and does not load file contents or change the task.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.resource.viewResource")
+    fun downloadResourceVersion(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        versionBucket: VersionBucket,
+        versionId: DomainId,
+    ): OperationResult<StoredBlobRef, DownloadResourceVersionError> = operation<StoredBlobRef, DownloadResourceVersionError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(resourceExists(versionBucket)) { ResourceNotExistsError(versionBucket) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        ensure(versionBucket in task.data.uploadedResources) { ResourceNotUploadedToTaskError(taskId, versionBucket) }
+        val fileRef = when (versionId) {
+            is StatementId -> statementRepository.findFileRef(versionBucket, versionId)
+            is ExerciseId -> exerciseRepository.findFileRef(versionBucket, versionId)
+            is TestId -> testRepository.findFileRef(versionBucket, versionId)
+            is DeveloperSolutionId -> developerSolutionRepository.findFileRef(versionBucket, versionId)
+            else -> null
+        }
+        ensure(fileRef != null) { ResourceVersionNotExistsError(versionBucket, versionId) }
+        return fileRef.asSuccess()
+    }
+
     /**
      * Creates a new task owned by [user] with [taskName] and [taskDescription]. The created task has
      * [TaskContent.New] content and no uploaded resources.
@@ -641,4 +732,9 @@ class DeveloperOperations(
             val savedTask = taskRepository.update(sharedTask)
             return savedTask.asSuccess()
         }
+
+    private fun resourceExists(versionBucket: VersionBucket): Boolean = statementRepository.existsByVersionBucket(versionBucket) ||
+        exerciseRepository.existsByVersionBucket(versionBucket) ||
+        testRepository.existsByVersionBucket(versionBucket) ||
+        developerSolutionRepository.existsByVersionBucket(versionBucket)
 }

@@ -374,7 +374,7 @@ Page: **testsys.web.page.developer.resource**
 Реализованы операции обновления Условия, Упражнения, Полигона и Авторского Решения.
 Страница **testsys.web.page.developer.resource** и уведомление Пользователя не реализованы.
 
-### testsys.user.multi.developer.resource.viewResources (Not implemented)
+### testsys.user.multi.developer.resource.viewResources (Partially implemented)
 
 Page: **testsys.web.page.developer**
 
@@ -386,7 +386,10 @@ Page: **testsys.web.page.developer**
 
 Для каждого из этих Ресурсов он может перейти на страницу **testsys.web.page.developer.resource**
 
-### testsys.user.multi.developer.resource.viewResource (Not implemented)
+Реализована операция получения списка Ресурсов.
+Страница **testsys.web.page.developer** не реализована.
+
+### testsys.user.multi.developer.resource.viewResource (Partially implemented)
 
 Page: **testsys.web.page.developer.resource**
 
@@ -401,6 +404,11 @@ Page: **testsys.web.page.developer.resource**
 3) Комментарий изменения
 
 Для каждой записи об изменениях в таблице, Разработчик может скачать соответствующую версию файла.
+
+Реализованы операции просмотра Ресурса и скачивания его версий.
+История содержит существующие версии файлов.
+Комментарий изменения не реализован.
+Страница **testsys.web.page.developer.resource** не реализована.
 
 ### testsys.user.multi.developer.task.createTask (Partially implemented)
 

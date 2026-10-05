@@ -1,5 +1,6 @@
 package tech.testsys.operation.error
 
+import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.ExerciseId
@@ -49,6 +50,27 @@ sealed interface ResourceAccessError : OperationError
 // endregion
 
 // region DeveloperOperations
+
+/**
+ * Failure of listing the developer's resources.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewResourcesError : OperationError
+
+/**
+ * Failure of viewing a resource and its existing versions.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewResourceError : OperationError
+
+/**
+ * Failure of obtaining the file reference of a resource version.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadResourceVersionError : OperationError
 
 /**
  * Failure of updating a statement uploaded to a task.
@@ -157,6 +179,9 @@ sealed interface ShareTaskError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedDeveloperRoleError :
+    ViewResourcesError,
+    ViewResourceError,
+    DownloadResourceVersionError,
     UpdateStatementError,
     UpdateExerciseError,
     UpdateTestError,
@@ -180,6 +205,8 @@ data object MissedDeveloperRoleError :
  * @since %CURRENT_VERSION%
  */
 data class TaskNotExistsError(val taskId: TaskId) :
+    ViewResourceError,
+    DownloadResourceVersionError,
     UpdateStatementError,
     UpdateExerciseError,
     UpdateTestError,
@@ -237,6 +264,8 @@ data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExis
  * @since %CURRENT_VERSION%
  */
 data class TaskAccessDeniedError(val taskId: TaskId) :
+    ViewResourceError,
+    DownloadResourceVersionError,
     UpdateStatementError,
     UpdateExerciseError,
     UpdateTestError,
@@ -384,3 +413,34 @@ data class ResourceAlreadyAttachedError(
  * @since %CURRENT_VERSION%
  */
 data object TaskAlreadyHasExerciseError : AttachExerciseError
+
+/**
+ * The requested resource chain does not exist.
+ *
+ * @property versionBucket the missing resource chain.
+ * @since %CURRENT_VERSION%
+ */
+data class ResourceNotExistsError(val versionBucket: VersionBucket) : EntityNotExistsError, ViewResourceError, DownloadResourceVersionError
+
+/**
+ * The requested resource chain is not uploaded to the task.
+ *
+ * @property taskId the task identifier.
+ * @property versionBucket the resource chain outside the task.
+ * @since %CURRENT_VERSION%
+ */
+data class ResourceNotUploadedToTaskError(val taskId: TaskId, val versionBucket: VersionBucket) :
+    ResourceAccessError,
+    ViewResourceError,
+    DownloadResourceVersionError
+
+/**
+ * The requested resource version does not exist in the selected chain.
+ *
+ * @property versionBucket the selected resource chain.
+ * @property versionId the missing version identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class ResourceVersionNotExistsError(val versionBucket: VersionBucket, val versionId: DomainId) :
+    EntityNotExistsError,
+    DownloadResourceVersionError

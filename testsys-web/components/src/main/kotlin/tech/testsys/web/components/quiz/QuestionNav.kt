@@ -1,9 +1,19 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.quiz
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.SelectionHandle
+import tech.testsys.web.components.core.AriaCurrent
+import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAnswered
+import tech.testsys.web.components.core.setAriaCurrent
+import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setFlagged
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -49,7 +59,7 @@ fun ContentScope.questionNav(
         for (number in 1..value.total) {
             root.add(
                 NativeButton(number.toString()).apply {
-                    element.setAttribute("type", "button")
+                    element.setType(ElementType.Button)
                     element.setAttribute(
                         "aria-label",
                         texts.components.questionStatus(
@@ -58,7 +68,7 @@ fun ContentScope.questionNav(
                             number in value.flagged,
                         ),
                     )
-                    if (number == value.current) element.setAttribute("aria-current", "step")
+                    if (number == value.current) element.setAriaCurrent(AriaCurrent.Step)
                     addClassName("ts-qnav__cell")
                     setClassName("ts-qnav__cell--current", number == value.current)
                     setClassName("ts-qnav__cell--answered", number in value.answered && number != value.current)
@@ -67,15 +77,12 @@ fun ContentScope.questionNav(
                         add(
                             Span().apply {
                                 addClassName("ts-qnav__flag")
-                                element.setAttribute(
-                                    "aria-hidden",
-                                    "true",
-                                )
+                                element.setAriaHidden(true)
                             },
                         )
                     }
-                    element.setAttribute("data-answered", (number in value.answered).toString())
-                    element.setAttribute("data-flagged", (number in value.flagged).toString())
+                    element.setAnswered(number in value.answered)
+                    element.setFlagged(number in value.flagged)
                     addClickListener {
                         if (number !in handle.data.unavailable) {
                             handle.choose(handle.data.copy(current = number))

@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.Component
@@ -5,6 +7,10 @@ import com.vaadin.flow.component.HtmlContainer
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeLabel
 import com.vaadin.flow.component.html.Span
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setRole
 
 /** Parts of a grid field that its handle changes: the whole field and the required mark of its label. */
 internal class FieldParts(val field: Div, val requiredMark: Span, val valueCell: Div)
@@ -23,7 +29,7 @@ internal fun BlockRowScope.placeField(label: String, labelSize: Int, size: Int, 
     require(labelSize >= 1 && size >= 1) { "Field '$label' needs label and value sizes of at least 1, got $labelSize and $size" }
     val requiredMark = Span("*").apply {
         addClassName("ts-field__required")
-        element.setAttribute("aria-hidden", "true")
+        element.setAriaHidden(true)
         isVisible = false
     }
     val caption: HtmlContainer = if (labelAction == null) Div() else NativeLabel()
@@ -42,7 +48,7 @@ internal fun BlockRowScope.placeField(label: String, labelSize: Int, size: Int, 
 /** Wraps [value] in an independently focusable field value area named by [label]. */
 internal fun fieldValueArea(label: String, value: Component): Div = Div(value).apply {
     addClassName("ts-field__value")
-    element.setAttribute("role", "group")
+    element.setRole(ElementRole.Group)
     element.setAttribute("aria-label", label)
 }
 

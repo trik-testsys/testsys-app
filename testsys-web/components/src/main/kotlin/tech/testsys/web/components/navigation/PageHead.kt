@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Component
@@ -9,6 +11,10 @@ import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.AriaCurrent
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaCurrent
+import tech.testsys.web.components.core.setAriaHidden
 import tech.testsys.web.components.display.CounterKind
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.buildBadge
@@ -109,12 +115,12 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
         addClassName("ts-crumbs")
         element.setAttribute("aria-label", texts.navigation.breadcrumbs)
         crumbs.forEach { link -> add(link, separator()) }
-        add(Span(title).apply { element.setAttribute("aria-current", "page") })
+        add(Span(title).apply { element.setAriaCurrent(AriaCurrent.Page) })
     }
 
     private fun separator(): Span = Span("/").apply {
         addClassName("ts-crumbs__sep")
-        element.setAttribute("aria-hidden", "true")
+        element.setAriaHidden(true)
     }
 }
 
@@ -162,7 +168,7 @@ class PageTabsScope internal constructor(
                 if (isRouteExactMatch && tabs.any { it.target == view }) {
                     configureExactRoute(tab.link) { link, isCurrent ->
                         link.element.classList.set("ts-tab--active", isCurrent)
-                        if (isCurrent) link.element.setAttribute("aria-current", "page") else link.element.removeAttribute("aria-current")
+                        if (isCurrent) link.element.setAriaCurrent(AriaCurrent.Page) else link.element.setAriaCurrent(null)
                     }
                     add(tab.link)
                 } else {
@@ -175,7 +181,7 @@ class PageTabsScope internal constructor(
     private fun mark(tab: PageTab, isCurrent: Boolean): RouterLink = tab.link.apply {
         if (isCurrent) {
             addClassName("ts-tab--active")
-            element.setAttribute("aria-current", if (tab.target == view) "page" else "location")
+            element.setAriaCurrent(if (tab.target == view) AriaCurrent.Page else AriaCurrent.Location)
         }
     }
 }

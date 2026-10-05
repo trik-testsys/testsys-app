@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Div
@@ -8,6 +10,9 @@ import com.vaadin.flow.signals.local.ValueSignal
 import tech.testsys.web.components.Background
 import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import java.time.Clock
@@ -143,7 +148,7 @@ internal class TimerDisplay(
     init {
         addClassName("ts-timer")
         element.setAttribute("aria-label", label)
-        element.setAttribute("role", "timer")
+        element.setRole(ElementRole.Timer)
         addAttachListener { start() }
         addDetachListener { stop() }
         show()

@@ -1,8 +1,13 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.data
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.dom.Element
 import tech.testsys.web.components.DataHandle
+import tech.testsys.web.components.core.ElementScope
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setScope
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
@@ -30,7 +35,7 @@ fun ContentScope.leaderboard(data: LeaderboardData, configure: DataHandle<Leader
             headings.appendChild(
                 Element("th").apply {
                     text = caption
-                    setAttribute("scope", "col")
+                    setScope(ElementScope.Col)
                 },
             )
         }
@@ -49,7 +54,7 @@ fun ContentScope.leaderboard(data: LeaderboardData, configure: DataHandle<Leader
             )
             line.appendChild(
                 Element("th").apply {
-                    setAttribute("scope", "row")
+                    setScope(ElementScope.Row)
                     appendChild(Element("span").apply { text = row.name })
                     row.description?.let { detail -> appendChild(Element("small").apply { text = detail }) }
                 },

@@ -1,8 +1,13 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.DataHandle
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
@@ -49,7 +54,7 @@ fun ContentScope.avatar(data: AvatarData, configure: DataHandle<AvatarData>.() -
         root.addClassNames("ts-avatar", "ts-avatar--t${Math.floorMod(value.name.sumOf { char -> char.code }, AvatarDefaults.TONE_COUNT)}")
         root.avatarGeometry(placement)
         root.setClassName("ts-avatar--square", value.isSquare)
-        root.element.setAttribute("role", "img")
+        root.element.setRole(ElementRole.Image)
         root.element.setAttribute("aria-label", value.name)
         root.element.setAttribute("title", value.name)
     }
@@ -86,7 +91,7 @@ fun ContentScope.avatarGroup(
                 Span("+${values.size - maxVisible}").apply {
                     addClassNames("ts-avatar", "ts-avatar--t3")
                     avatarGeometry(placement)
-                    element.setAttribute("role", "img")
+                    element.setRole(ElementRole.Image)
                     element.setAttribute("aria-label", texts.components.avatarOverflow(values.size - maxVisible))
                     element.setAttribute(
                         "title",

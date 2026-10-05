@@ -1,9 +1,14 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.feedback
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.notification.Notification
+import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.ICON_SIZE_SMALL
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 
 /** How long a toast stays on screen. */
@@ -23,7 +28,7 @@ fun toast(kind: FeedbackKind, title: String, description: String? = null) {
     }
     val card = Div(icon, text).apply {
         addClassNames("ts-toast", "ts-toast--${kind.toastTone}")
-        element.setAttribute("role", "status")
+        element.setRole(ElementRole.Status)
     }
     Notification(card).apply {
         duration = TOAST_DURATION_MS

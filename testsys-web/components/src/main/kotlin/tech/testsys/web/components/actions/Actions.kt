@@ -1,9 +1,16 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.actions
 
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.dom.Element
+import tech.testsys.web.components.core.ElementSize
 import tech.testsys.web.components.core.ICON_SIZE
 import tech.testsys.web.components.core.ICON_SIZE_SMALL
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setIconOnly
+import tech.testsys.web.components.core.setSize
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.ContentScope
 
@@ -69,7 +76,7 @@ private fun ContentScope.addIconAction(role: ActionRole, icon: IconName, label: 
     handle.button.apply {
         setAriaLabel(label)
         setTooltipText(label)
-        element.setAttribute("data-ts-icon-only", true)
+        element.setIconOnly(true)
     }
     return handle.apply(configure)
 }
@@ -98,9 +105,12 @@ internal fun ContentScope.buildActionButton(role: ActionRole, label: String?, ic
     val isSmall = placement.isCompact
     val iconComponent = icon?.let { name -> svgIcon(name, if (isSmall) ICON_SIZE_SMALL else ICON_SIZE) }
     val button = Button(label.orEmpty()).apply {
-        element.setAttribute("data-ts-role", role.attribute)
-        element.setAttribute("data-ts-size", if (isSmall) "sm" else "md")
+        element.setActionRole(role)
+        element.setSize(if (isSmall) ElementSize.Small else ElementSize.Medium)
         setIcon(iconComponent)
     }
     return button
 }
+
+@InternalComponentsApi
+internal fun Element.setActionRole(value: ActionRole): Element = setAttribute("data-ts-role", value.attribute)

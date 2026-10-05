@@ -1,8 +1,14 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.feedback
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -20,7 +26,7 @@ private val LINE_WIDTHS = listOf(62 to 40, 80 to 30, 55 to 45, 72 to 25, 66 to 3
  * technologies.
  */
 internal fun buildSkeletonRows(rows: Int): Div = Div().apply {
-    element.setAttribute("aria-hidden", "true")
+    element.setAriaHidden(true)
     repeat(rows) { index -> add(skeletonRow(LINE_WIDTHS[index % LINE_WIDTHS.size])) }
 }
 
@@ -64,11 +70,11 @@ fun ContentScope.skeleton(
 ): ElementHandle {
     val part = Span().apply {
         addClassNames("ts-skel", "ts-skel--${shape.name.lowercase()}")
-        element.setAttribute("aria-hidden", "true")
+        element.setAriaHidden(true)
     }
     val root = Div(part).apply {
         addClassNames("ts-skeleton", "ts-skeleton--${shape.name.lowercase()}")
-        element.setAttribute("role", "status")
+        element.setRole(ElementRole.Status)
         element.setAttribute("aria-label", texts.components.loading)
     }
     add(root)
@@ -99,10 +105,7 @@ fun ContentScope.skeletonRows(rows: Int = 5, configure: ElementHandle.() -> Unit
             rows,
         ),
     ).apply {
-        element.setAttribute(
-            "role",
-            "status",
-        )
+        element.setRole(ElementRole.Status)
         element.setAttribute(
             "aria-label",
             texts.components.loading,

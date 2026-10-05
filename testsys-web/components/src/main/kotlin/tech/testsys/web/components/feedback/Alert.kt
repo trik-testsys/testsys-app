@@ -1,9 +1,14 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.feedback
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.ICON_SIZE_LARGE
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -32,6 +37,6 @@ private fun buildAlert(kind: FeedbackKind, title: String, text: String?): Div {
     }
     return Div(icon, body).apply {
         addClassNames("ts-alert", "ts-alert--${kind.alertTone}")
-        if (kind == FeedbackKind.Error) element.setAttribute("role", "alert")
+        if (kind == FeedbackKind.Error) element.setRole(ElementRole.Alert)
     }
 }

@@ -1,8 +1,14 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.DataHandle
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -52,7 +58,7 @@ fun ContentScope.progressBar(
     val root = Div(bar).apply {
         addClassNames("ts-progress", "ts-progress--${if (tone == Tone.Info) "accent" else tone.modifier}")
         setClassName("ts-progress--thin", placement.isCompact)
-        element.setAttribute("role", "progressbar")
+        element.setRole(ElementRole.ProgressBar)
         element.setAttribute("aria-label", label)
         element.setAttribute("aria-valuemin", "0")
         element.setAttribute("aria-valuemax", "100")
@@ -146,7 +152,7 @@ fun ContentScope.difficulty(
                 },
             )
         }
-        marks.element.setAttribute("aria-hidden", "true")
+        marks.element.setAriaHidden(true)
         root.add(marks)
         if (showLabel) root.add(Span(caption))
     }

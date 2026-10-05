@@ -1,10 +1,17 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.SelectionHandle
+import tech.testsys.web.components.core.AriaCurrent
+import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaCurrent
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -47,9 +54,9 @@ fun ContentScope.stepper(data: StepperData, configure: SelectionHandle<StepperDa
         value.steps.forEachIndexed { index, step ->
             root.add(
                 NativeButton().apply {
-                    element.setAttribute("type", "button")
+                    element.setType(ElementType.Button)
                     element.setAttribute("aria-label", step.label)
-                    if (index == value.current) element.setAttribute("aria-current", "step")
+                    if (index == value.current) element.setAriaCurrent(AriaCurrent.Step)
                     addClassName("ts-step")
                     setClassName("ts-step--grow", index != value.steps.lastIndex)
                     setClassName("ts-step--done", index < value.current)

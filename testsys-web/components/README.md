@@ -904,6 +904,15 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 пиксельная геометрия и клиентские команды полностью принадлежат ядру components и применяются им автоматически.
 Публичного `custom(Component)` или opt-in обхода нет. Новое представление добавляется в поддерживаемый DSL.
 
+Внутренние типизированные расширения DOM находятся в
+[ElementAttributes.kt](src/main/kotlin/tech/testsys/web/components/core/ElementAttributes.kt) и помечены
+`InternalComponentsApi`; они недоступны за пределами модуля. Расширение для роли действия остаётся рядом с
+`ActionRole` в [Actions.kt](src/main/kotlin/tech/testsys/web/components/actions/Actions.kt), привязка состояния
+скачивания — в [DownloadButton.kt](src/main/kotlin/tech/testsys/web/components/actions/DownloadButton.kt).
+Правило фиксированных значений атрибутов — в разделе «Типы» [code-style.md](../../docs/project/code-style.md).
+Типизированные `Popover.setAriaRole` и `Dialog.setAriaRole` вызывают штатные сеттеры Vaadin, сохраняя роль
+клиентского оверлея.
+
 Маршруты Vaadin, Binder, Signals, URL предметных ресурсов и Spring lifecycle остаются интеграциями приложения.
 Унаследованный API Vaadin у `TestSysView` технически существует, но поддерживаемая конфигурация страниц им
 не пользуется. Архитектурный тест `dev-app/src/test/kotlin/tech/testsys/web/devapp/PageConfigurationTests.kt`

@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.data
 
 import com.vaadin.flow.component.Component
@@ -14,6 +16,11 @@ import com.vaadin.flow.signals.local.ValueSignal
 import org.slf4j.LoggerFactory
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.action
+import tech.testsys.web.components.core.AriaSort
+import tech.testsys.web.components.core.ElementScope
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaSort
+import tech.testsys.web.components.core.setScope
 import tech.testsys.web.components.feedback.EmptyContent
 import tech.testsys.web.components.feedback.buildEmptyState
 
@@ -21,7 +28,6 @@ private val logger = LoggerFactory.getLogger(DataTable::class.java)
 
 private const val ARROW_DOWN = " ↓"
 private const val ARROW_UP = " ↑"
-private const val ARIA_SORT_NONE = "none"
 
 /** Client-side filter of key presses on a sortable header: Enter and Space sort like a click. */
 internal const val SORT_KEY_FILTER: String = "event.key === 'Enter' || event.key === ' '"
@@ -168,9 +174,9 @@ internal class DataTable<T>(
     private fun fetchPage(target: Int): Page<T> = fetch(PageRequest(offset = target * pageSize, limit = pageSize, sort = sort))
 
     private fun headerRow(): TableRow = TableRow().apply {
-        if (isSelectable) add(TableHeaderCell(headerCheckbox).apply { element.setAttribute("scope", "col") })
+        if (isSelectable) add(TableHeaderCell(headerCheckbox).apply { element.setScope(ElementScope.Col) })
         spec.columns.forEach { column ->
-            val cell = TableHeaderCell(column.title).apply { element.setAttribute("scope", "col") }
+            val cell = TableHeaderCell(column.title).apply { element.setScope(ElementScope.Col) }
             if (column.kind == CellKind.Number) cell.addClassName("ts-right")
             if (column.kind == CellKind.Menu) {
                 cell.element.setAttribute("aria-label", texts.menu.actions)
@@ -178,7 +184,7 @@ internal class DataTable<T>(
             column.sortKey?.let { sortKey ->
                 cell.addClassName("ts-sortable")
                 cell.element.setAttribute("tabindex", "0")
-                cell.element.setAttribute("aria-sort", ARIA_SORT_NONE)
+                cell.element.setAriaSort(AriaSort.None)
                 cell.element.addEventListener("click") { toggleSort(sortKey) }
                 cell.element.addEventListener("keydown") { toggleSort(sortKey) }.setFilter(SORT_KEY_FILTER).preventDefault()
                 sortHeaders += SortHeader(sortKey, column.title, cell)
@@ -194,13 +200,13 @@ internal class DataTable<T>(
         sortHeaders.forEach { header ->
             val isSorted = header.sortKey == sortKey
             val (arrow, ariaSort) = when {
-                !isSorted -> "" to ARIA_SORT_NONE
-                next.isDescending -> ARROW_DOWN to "descending"
-                else -> ARROW_UP to "ascending"
+                !isSorted -> "" to AriaSort.None
+                next.isDescending -> ARROW_DOWN to AriaSort.Descending
+                else -> ARROW_UP to AriaSort.Ascending
             }
             header.cell.setClassName("ts-sorted", isSorted)
             header.cell.text = header.title + arrow
-            header.cell.element.setAttribute("aria-sort", ariaSort)
+            header.cell.element.setAriaSort(ariaSort)
         }
         load(0)
     }

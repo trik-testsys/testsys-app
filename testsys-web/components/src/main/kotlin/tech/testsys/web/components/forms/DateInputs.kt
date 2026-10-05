@@ -1,6 +1,5 @@
 package tech.testsys.web.components.forms
 
-import com.vaadin.flow.component.HasValue
 import com.vaadin.flow.component.datepicker.DatePicker
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.timepicker.TimePicker
@@ -101,10 +100,7 @@ fun BlockRowScope.dateRangeInput(
         texts = texts,
         calendarName = texts.components.openCalendar(label),
     )
-    val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<DateRange>> ->
-        control.addValueChangeListener { event -> listener.valueChanged(event) }
-    }
-    return placeInput(label, labelSize, size, control, hint, subscribe, configure)
+    return addInput(label, labelSize, size, control, hint, configure)
 }
 
 private fun datePicker(texts: UiTexts): DatePicker = DatePicker().apply {

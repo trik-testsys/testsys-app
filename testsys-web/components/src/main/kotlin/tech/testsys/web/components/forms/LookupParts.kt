@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.customfield.CustomField
@@ -10,7 +12,14 @@ import com.vaadin.flow.dom.Element
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.iconAction
+import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaDisabled
+import tech.testsys.web.components.core.setAriaHasPopup
+import tech.testsys.web.components.core.setReadOnly
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.data.DataTable
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
@@ -72,7 +81,7 @@ internal abstract class LookupFrame<V>(
 ) : CustomField<V>(emptyValue, true), HasValidator<V> {
     protected val valueButton: NativeButton = NativeButton().apply {
         addClassNames("ts-lookup__text", "ts-obscured-value")
-        element.setAttribute("type", "button")
+        element.setType(ElementType.Button)
     }
     protected val box: Div = Div(valueButton).apply { addClassName("ts-lookup") }
     private val clearAction: ActionHandle
@@ -97,7 +106,7 @@ internal abstract class LookupFrame<V>(
     /** Also sets the attribute, since `vaadin-custom-field` has no read-only state of its own to style. */
     override fun setReadOnly(readOnly: Boolean) {
         super.setReadOnly(readOnly)
-        element.setAttribute("readonly", readOnly)
+        element.setReadOnly(readOnly)
         if (!isChoosable()) currentDialog?.shell?.close()
         updateView(value)
     }
@@ -136,8 +145,8 @@ internal abstract class LookupFrame<V>(
             else -> name
         }
         valueButton.element.setOrRemove(name = "aria-label", value = label)
-        valueButton.element.setOrRemove(name = "aria-haspopup", value = "dialog".takeIf { isChoosable })
-        valueButton.element.setOrRemove(name = "aria-disabled", value = "true".takeUnless { isChoosable })
+        valueButton.element.setAriaHasPopup(AriaPopup.Dialog.takeIf { isChoosable })
+        valueButton.element.setAriaDisabled(true.takeUnless { isChoosable })
         openAction.isVisible = isChoosable
         clearAction.isVisible = isChoosable && current != emptyValue
         showValue(current, isChoosable)

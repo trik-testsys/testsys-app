@@ -1,11 +1,20 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.HeaderTexts
+import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.ICON_SIZE_SMALL
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaDisabled
+import tech.testsys.web.components.core.setAriaHasPopup
+import tech.testsys.web.components.core.setAriaRole
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.display.avatarInitials
 
@@ -51,8 +60,8 @@ internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: Header
         )
     }
     val popup = interactions.popup(trigger, label = texts.userMenu(user.name), theme = "ts-header-user-popup", autofocus = true)
-    trigger.element.setAttribute("aria-haspopup", "menu")
-    popup.setAriaRole("menu")
+    trigger.element.setAriaHasPopup(AriaPopup.Menu)
+    popup.setAriaRole(ElementRole.Menu)
     val list = Div().apply { addClassName("ts-header-user-menu") }
     val items = checkNotNull(user.menu) { "Header user menu is not configured" }.items
     items.forEachIndexed { index, item ->
@@ -60,7 +69,7 @@ internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: Header
             list.add(
                 Div().apply {
                     addClassName("ts-header-user-separator")
-                    element.setAttribute("role", "separator")
+                    element.setRole(ElementRole.Separator)
                 },
             )
         }
@@ -71,8 +80,8 @@ internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: Header
         }
         entry.element.classList.add("ts-header-user-item")
         entry.element.classList.set("ts-menu__item--danger", item.isDestructive)
-        entry.element.setAttribute("role", "menuitem")
-        entry.element.setAttribute("aria-disabled", (!item.isEnabled).toString())
+        entry.element.setRole(ElementRole.MenuItem)
+        entry.element.setAriaDisabled(!item.isEnabled)
         list.add(entry)
     }
     popup.add(list)

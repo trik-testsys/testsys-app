@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.overlay
 
 import com.vaadin.flow.component.ModalityMode
@@ -7,7 +9,10 @@ import com.vaadin.flow.component.html.H2
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.iconAction
+import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaRole
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
@@ -25,7 +30,7 @@ internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, isW
         modality = ModalityMode.STRICT
         isCloseOnEsc = true
         isCloseOnOutsideClick = true
-        setAriaRole(if (isAlert) "alertdialog" else "dialog")
+        setAriaRole(if (isAlert) ElementRole.AlertDialog else ElementRole.Dialog)
         // Dialog.setAriaLabel is protected; it only sets this property.
         element.setProperty("ariaLabel", title)
     }

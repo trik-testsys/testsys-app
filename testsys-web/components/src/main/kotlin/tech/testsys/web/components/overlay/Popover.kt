@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.overlay
 
 import com.vaadin.flow.component.button.Button
@@ -7,6 +9,10 @@ import com.vaadin.flow.component.popover.PopoverPosition
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.actions.ActionRole
 import tech.testsys.web.components.actions.buildActionButton
+import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaExpanded
+import tech.testsys.web.components.core.setAriaHasPopup
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
@@ -52,7 +58,7 @@ class PopoverHandle internal constructor(root: Div, private val popup: Popover, 
 
     init {
         popup.addOpenedChangeListener { event ->
-            trigger.element.setAttribute("aria-expanded", event.isOpened.toString())
+            trigger.element.setAriaExpanded(event.isOpened)
             if (!event.isOpened) {
                 if (trigger.isAttached) trigger.focus()
                 closed()
@@ -104,7 +110,7 @@ fun ContentScope.popover(
 ): PopoverHandle {
     val root = Div()
     val trigger = buildActionButton(ActionRole.Neutral, label).apply {
-        element.setAttribute("aria-haspopup", "dialog")
+        element.setAriaHasPopup(AriaPopup.Dialog)
     }
     val popup = Popover().apply {
         target = trigger

@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Component
@@ -5,14 +7,18 @@ import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.component.popover.PopoverPosition
+import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaExpanded
+import tech.testsys.web.components.core.setAriaHasPopup
 
 /** Coordinates the header layers; opening one closes the preceding layer. */
 internal class HeaderInteractions {
     private var active: Popover? = null
 
     fun popup(trigger: Component, label: String, theme: String, autofocus: Boolean = false): Popover {
-        trigger.element.setAttribute("aria-haspopup", "dialog")
-        trigger.element.setAttribute("aria-expanded", "false")
+        trigger.element.setAriaHasPopup(AriaPopup.Dialog)
+        trigger.element.setAriaExpanded(false)
         val popup = Popover().apply {
             target = trigger
             isModal = false
@@ -26,7 +32,7 @@ internal class HeaderInteractions {
             addThemeName(theme)
         }
         popup.addOpenedChangeListener { event ->
-            trigger.element.setAttribute("aria-expanded", event.isOpened.toString())
+            trigger.element.setAriaExpanded(event.isOpened)
             if (event.isOpened) {
                 val previous = active
                 active = popup

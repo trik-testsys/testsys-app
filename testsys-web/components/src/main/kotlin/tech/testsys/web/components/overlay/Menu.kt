@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.overlay
 
 import com.vaadin.flow.component.Component
@@ -8,7 +10,10 @@ import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.iconAction
+import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaHasPopup
 import tech.testsys.web.components.layout.ContentScope
 
 /**
@@ -79,7 +84,7 @@ internal fun attachMenu(trigger: Component, content: MenuScope.() -> Unit): Cont
     }
     val scope = MenuScope(menu).apply(content)
     check(scope.itemCount > 0) { "Menu must have at least one item" }
-    trigger.element.setAttribute("aria-haspopup", "menu")
+    trigger.element.setAriaHasPopup(AriaPopup.Menu)
     ComponentUtil.setData(trigger, ContextMenu::class.java, menu)
     return menu
 }

@@ -1,7 +1,8 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.Component
-import com.vaadin.flow.component.HasValue
 import com.vaadin.flow.component.Tag
 import com.vaadin.flow.component.checkbox.Switch
 import com.vaadin.flow.component.customfield.CustomField
@@ -11,6 +12,12 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup
 import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.renderer.ComponentRenderer
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaHiddenPresence
+import tech.testsys.web.components.core.setAriaInvalid
+import tech.testsys.web.components.core.setAriaRequired
+import tech.testsys.web.components.core.setReadOnly
+import tech.testsys.web.components.core.setSpellcheckPresence
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -32,7 +39,7 @@ fun <T : Any> BlockRowScope.radio(
     hint: String? = null,
     itemMeta: ((T) -> String)? = null,
     configure: ValueInput<T?>.() -> Unit = {},
-): ValueInput<T?> = choiceInput(
+): ValueInput<T?> = addInput(
     label,
     labelSize,
     size,
@@ -56,7 +63,7 @@ fun <T : Any> BlockRowScope.segmentedControl(
     hint: String? = null,
     itemMeta: ((T) -> String)? = null,
     configure: ValueInput<T?>.() -> Unit = {},
-): ValueInput<T?> = choiceInput(
+): ValueInput<T?> = addInput(
     label,
     labelSize,
     size,
@@ -78,10 +85,7 @@ fun BlockRowScope.switchInput(
     configure: ValueInput<Boolean>.() -> Unit = {},
 ): ValueInput<Boolean> {
     val field = Switch()
-    val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<Boolean>> ->
-        field.addValueChangeListener { event -> listener.valueChanged(event) }
-    }
-    return placeInput(label, labelSize, size, field, hint, subscribe, configure)
+    return addInput(label, labelSize, size, field, hint, configure)
 }
 
 /**
@@ -99,24 +103,7 @@ fun BlockRowScope.codeEditor(
 ): ValueInput<String> {
     require(minLines > 0) { "Code editor minimum lines must be positive, got $minLines" }
     val field = CodeEditorField(label, minLines)
-    val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<String>> ->
-        field.addValueChangeListener { event -> listener.valueChanged(event) }
-    }
-    return placeInput(label, labelSize, size, field, hint, subscribe, configure)
-}
-
-private fun <T : Any> BlockRowScope.choiceInput(
-    label: String,
-    labelSize: Int,
-    size: Int,
-    field: ChoiceField<T>,
-    hint: String?,
-    configure: ValueInput<T?>.() -> Unit,
-): ValueInput<T?> {
-    val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T?>> ->
-        field.addValueChangeListener { event -> listener.valueChanged(event) }
-    }
-    return placeInput(label, labelSize, size, field, hint, subscribe, configure)
+    return addInput(label, labelSize, size, field, hint, configure)
 }
 
 @JsModule("./testsys-ui/segmented-choice.ts")
@@ -166,7 +153,7 @@ internal class NativeCodeArea : Component()
 internal class CodeEditorField(label: String, minLines: Int) : CustomField<String>("", true), HasValidator<String> {
     private val numbers = Div("1").apply {
         addClassName("ts-code__lines")
-        element.setAttribute("aria-hidden", true)
+        element.setAriaHiddenPresence(true)
     }
     private val description = Span().apply {
         addClassName("ts-sr-only")
@@ -180,7 +167,7 @@ internal class CodeEditorField(label: String, minLines: Int) : CustomField<Strin
         element.classList.add("ts-code__area")
         element.setAttribute("aria-label", label)
         element.setAttribute("aria-describedby", "${description.id.orElseThrow()} ${helperDescription.id.orElseThrow()}")
-        element.setAttribute("spellcheck", false)
+        element.setSpellcheckPresence(false)
         element.setProperty("value", "")
     }
 
@@ -214,7 +201,7 @@ internal class CodeEditorField(label: String, minLines: Int) : CustomField<Strin
 
     override fun setReadOnly(readOnly: Boolean) {
         super.setReadOnly(readOnly)
-        element.setAttribute("readonly", readOnly)
+        element.setReadOnly(readOnly)
         area.element.setProperty("readOnly", readOnly)
     }
 
@@ -226,12 +213,12 @@ internal class CodeEditorField(label: String, minLines: Int) : CustomField<Strin
 
     override fun setRequiredIndicatorVisible(requiredIndicatorVisible: Boolean) {
         super.setRequiredIndicatorVisible(requiredIndicatorVisible)
-        area.element.setAttribute("aria-required", requiredIndicatorVisible.toString())
+        area.element.setAriaRequired(requiredIndicatorVisible)
     }
 
     override fun setInvalid(invalid: Boolean) {
         super.setInvalid(invalid)
-        area.element.setAttribute("aria-invalid", invalid.toString())
+        area.element.setAriaInvalid(invalid)
         description.text = if (invalid) errorMessage.orEmpty() else ""
     }
 
@@ -265,16 +252,4 @@ fun <T : Any> ContentScope.segmentedControl(
     val field = ChoiceField(label, items, itemLabel, null, isSegmented = true)
     if (placement.isCompact) field.addClassName("ts-seg--sm")
     return addLabelLessInput(label, field, configure)
-}
-
-internal fun <T, C> ContentScope.placeComposite(
-    label: String,
-    field: C,
-    configure: ValueInput<T>.() -> Unit,
-): ValueInput<T>
-    where C : CustomField<T>, C : HasValidator<T> {
-    val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T>> ->
-        field.addValueChangeListener { event -> listener.valueChanged(event) }
-    }
-    return placeLabelLessInput(label, field, subscribe, configure)
 }

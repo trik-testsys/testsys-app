@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.actions
 
 import com.vaadin.flow.component.Component
@@ -9,6 +11,8 @@ import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaBusy
 
 /**
  * Handle of an action button.
@@ -22,7 +26,7 @@ import tech.testsys.web.components.TestSysDsl
 class ActionHandle internal constructor(internal val button: Button, private val icon: Component?) : ElementHandle(button) {
     private val loading = Bindable(button.element, initial = false) { value ->
         button.icon = if (value) Span().apply { addClassName("ts-spinner") } else icon
-        if (value) button.element.setAttribute("aria-busy", "true") else button.element.removeAttribute("aria-busy")
+        if (value) button.element.setAriaBusy(true) else button.element.setAriaBusy(null)
     }
 
     var isEnabled: Boolean

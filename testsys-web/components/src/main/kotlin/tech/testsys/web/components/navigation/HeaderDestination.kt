@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Component
@@ -7,6 +9,9 @@ import com.vaadin.flow.router.HighlightAction
 import com.vaadin.flow.router.HighlightConditions
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
+import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setType
 
 /**
  * Application-provided destination of a header item.
@@ -44,7 +49,7 @@ internal fun destinationLink(label: String, destination: HeaderDestination, befo
         element.addEventListener("click") { beforeOpen() }
     }
     is HeaderDestination.Action -> NativeButton(label).apply {
-        element.setAttribute("type", "button")
+        element.setType(ElementType.Button)
         addClickListener {
             beforeOpen()
             destination.onSelect()

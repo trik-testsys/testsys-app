@@ -1,9 +1,13 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components
 
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setObscured
 
 /**
  * Handle of a field whose value can be visually obscured independently of visibility and editability.
@@ -15,7 +19,7 @@ import com.vaadin.flow.signals.Signal
 open class FieldHandle internal constructor(component: Component, private val valueArea: Component) : ElementHandle(component) {
     private val originalTabIndex = valueArea.element.getAttribute("tabindex")
     private val obscured = Bindable(component.element, initial = false) { value ->
-        valueArea.element.setAttribute("data-ts-obscured", value)
+        valueArea.element.setObscured(value)
         if (value) {
             valueArea.element.setAttribute("tabindex", ObscuredFocus.TAB_INDEX)
         } else if (originalTabIndex == null) {

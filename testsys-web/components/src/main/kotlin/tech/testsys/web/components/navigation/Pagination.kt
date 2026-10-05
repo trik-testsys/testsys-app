@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Component
@@ -10,8 +12,13 @@ import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.PaginationTexts
+import tech.testsys.web.components.core.AriaCurrent
+import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.pagerArrow
+import tech.testsys.web.components.core.setAriaCurrent
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.layout.ContentScope
 
 /** The most pages shown without gaps. */
@@ -121,11 +128,11 @@ class PaginationHandle internal constructor(
 
     private fun pageButton(target: Int, shown: Int): NativeButton = NativeButton(target.toString()).apply {
         addClassName("ts-pager__btn")
-        element.setAttribute("type", "button")
+        element.setType(ElementType.Button)
         element.setAttribute("aria-label", texts.page(target))
         if (target == shown) {
             addClassName("ts-pager__btn--active")
-            element.setAttribute("aria-current", "page")
+            element.setAriaCurrent(AriaCurrent.Page)
         }
         addClickListener { choose(target = target, arrow = null) }
     }

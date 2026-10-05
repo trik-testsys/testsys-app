@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.error
 
 import com.vaadin.flow.component.button.Button
@@ -8,7 +10,12 @@ import com.vaadin.flow.component.html.Main
 import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.router.HasDynamicTitle
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.actions.ActionRole
+import tech.testsys.web.components.actions.setActionRole
 import tech.testsys.web.components.buildBrand
+import tech.testsys.web.components.core.ElementSize
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setSize
 import tech.testsys.web.components.layout.buildPageFooter
 
 /**
@@ -18,8 +25,8 @@ import tech.testsys.web.components.layout.buildPageFooter
  */
 open class NotFoundPage(private val texts: UiTexts) : Div(), HasDynamicTitle {
     private val back = Button(texts.notFound.back).apply {
-        element.setAttribute("data-ts-role", "neutral")
-        element.setAttribute("data-ts-size", "md")
+        element.setActionRole(ActionRole.Neutral)
+        element.setSize(ElementSize.Medium)
         isEnabled = false
         addClickListener { ui.orElseThrow().page.history.back() }
     }

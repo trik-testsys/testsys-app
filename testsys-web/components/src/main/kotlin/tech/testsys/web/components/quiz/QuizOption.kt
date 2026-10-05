@@ -1,10 +1,17 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.quiz
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.SelectionHandle
+import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaDisabled
+import tech.testsys.web.components.core.setAriaPressed
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -44,7 +51,7 @@ fun ContentScope.quizOption(
     configure: SelectionHandle<QuizOptionData>.() -> Unit = {
     },
 ): SelectionHandle<QuizOptionData> {
-    val root = NativeButton().apply { element.setAttribute("type", "button") }
+    val root = NativeButton().apply { element.setType(ElementType.Button) }
     lateinit var handle: SelectionHandle<QuizOptionData>
     fun render(value: QuizOptionData) {
         root.removeAll()
@@ -54,8 +61,8 @@ fun ContentScope.quizOption(
         root.setClassName("ts-qopt--correct", value.result == QuizResult.Correct)
         root.setClassName("ts-qopt--wrong", value.result == QuizResult.Wrong)
         root.setClassName("ts-qopt--locked", value.result != QuizResult.Unchecked)
-        root.element.setAttribute("aria-pressed", value.isSelected.toString())
-        root.element.setAttribute("aria-disabled", (value.result != QuizResult.Unchecked).toString())
+        root.element.setAriaPressed(value.isSelected)
+        root.element.setAriaDisabled(value.result != QuizResult.Unchecked)
         root.add(
             Span().apply {
                 addClassName("ts-qopt__ind")

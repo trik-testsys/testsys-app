@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.html.Div
@@ -5,8 +7,11 @@ import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.notification.Notification
 import tech.testsys.web.components.HeaderTexts
+import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.ICON_SIZE_SMALL
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import java.util.concurrent.atomic.AtomicLong
 
@@ -30,7 +35,7 @@ internal class HeaderNotificationArrival(
     private val dismiss = NativeButton().apply {
         addClassName("ts-toast__close")
         element.setAttribute("aria-label", texts.arrivalClose)
-        element.setAttribute("type", "button")
+        element.setType(ElementType.Button)
         add(svgIcon(IconName.X, ICON_SIZE_SMALL))
         addClickListener { close() }
     }

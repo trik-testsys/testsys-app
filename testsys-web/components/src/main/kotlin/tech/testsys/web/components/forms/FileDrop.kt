@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.UI
@@ -17,6 +19,11 @@ import tech.testsys.web.components.FieldHandle
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
+import tech.testsys.web.components.core.AriaLive
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaLive
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
@@ -325,8 +332,8 @@ internal class FileDropDisplay(
 
     private val status = Span().apply {
         addClassName("ts-filedrop__status")
-        element.setAttribute("role", "status")
-        element.setAttribute("aria-live", "polite")
+        element.setRole(ElementRole.Status)
+        element.setAriaLive(AriaLive.Polite)
     }
 
     private val upload = Upload(
@@ -415,7 +422,7 @@ internal class FileDropDisplay(
             if (engine.fileCount() == 0) state.set(FileUploadState.Idle)
         }.addEventData("event.detail.identity")
         addClassName("ts-filedrop")
-        element.setAttribute("role", "group")
+        element.setRole(ElementRole.Group)
         element.setAttribute("aria-label", label)
         val limitsHint = Span(texts.components.uploadLimits(limits.maxFiles, limits.maxFileBytes.toLong())).apply {
             addClassName("ts-hint")

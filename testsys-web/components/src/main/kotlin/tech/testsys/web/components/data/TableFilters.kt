@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.data
 
 import com.vaadin.flow.component.html.Div
@@ -7,7 +9,15 @@ import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.getAriaExpanded
+import tech.testsys.web.components.core.setAriaExpanded
+import tech.testsys.web.components.core.setHidden
+import tech.testsys.web.components.core.setRole
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.BlockRowScope
@@ -52,10 +62,10 @@ class TableFiltersHandle internal constructor(
     private val content: Div,
 ) : ElementHandle(component) {
     var isExpanded: Boolean
-        get() = toggle.element.getAttribute("aria-expanded") == "true"
+        get() = toggle.element.getAriaExpanded() == true
         set(value) {
-            toggle.element.setAttribute("aria-expanded", value.toString())
-            if (value) content.element.removeAttribute("hidden") else content.element.setAttribute("hidden", true)
+            toggle.element.setAriaExpanded(value)
+            if (value) content.element.setHidden(false) else content.element.setHidden(true)
             if (!value) {
                 content.element.executeJs("if (this.contains(document.activeElement)) this.previousElementSibling.focus();")
             }
@@ -84,14 +94,14 @@ fun BlockScope.filters(
         addClassName("ts-table-filters__toggle")
         setId("$panelId-toggle")
         element.setAttribute("aria-controls", panelId)
-        element.setAttribute("type", "button")
+        element.setType(ElementType.Button)
         add(svgIcon(IconName.ChevronDown))
         element.appendChild(com.vaadin.flow.component.Text(texts.tableFilters.title).element)
     }
     val panel = Div().apply {
         addClassName("ts-table-filters__content")
         setId(panelId)
-        element.setAttribute("role", "region")
+        element.setRole(ElementRole.Region)
         element.setAttribute("aria-labelledby", "$panelId-toggle")
     }
     val fields = Div().apply {

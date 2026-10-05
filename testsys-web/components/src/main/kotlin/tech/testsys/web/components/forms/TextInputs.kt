@@ -1,7 +1,11 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setMono
 import tech.testsys.web.components.layout.BlockRowScope
 
 /**
@@ -30,7 +34,7 @@ fun BlockRowScope.codeInput(
     size: Int,
     hint: String? = null,
     configure: ValueInput<String>.() -> Unit = {},
-): ValueInput<String> = addInput(label, labelSize, size, TextField().apply { element.setAttribute("data-ts-mono", true) }, hint, configure)
+): ValueInput<String> = addInput(label, labelSize, size, TextField().apply { element.setMono(true) }, hint, configure)
 
 /**
  * Adds a multi-line text field from [minLines] (two by default) to [maxLines] (no limit by default) lines high that

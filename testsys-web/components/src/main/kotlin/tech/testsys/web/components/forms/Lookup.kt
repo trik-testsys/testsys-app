@@ -1,6 +1,5 @@
 package tech.testsys.web.components.forms
 
-import com.vaadin.flow.component.HasValue
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
@@ -31,10 +30,7 @@ fun <T : Any> BlockRowScope.lookup(
 ): ValueInput<T?> {
     val tableColumns = lookupColumns(label, pageSize, columns)
     val control = LookupField(texts, label, display, fetch, pageSize, tableColumns, gridColumns = size)
-    val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T?>> ->
-        control.addValueChangeListener { event -> listener.valueChanged(event) }
-    }
-    return placeInput(label, labelSize, size, control, hint, subscribe, configure)
+    return addInput(label, labelSize, size, control, hint, configure)
 }
 
 /**

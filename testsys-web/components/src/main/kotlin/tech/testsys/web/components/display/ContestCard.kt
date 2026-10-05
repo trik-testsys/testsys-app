@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Div
@@ -7,6 +9,11 @@ import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setRole
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -112,10 +119,10 @@ internal class ContestCardDisplay(initial: ContestCardData) : Div() {
     fun updateInteraction() {
         if (selected == null) {
             element.removeAttribute("tabindex")
-            element.removeAttribute("role")
+            element.setRole(null)
         } else {
             element.setAttribute("tabindex", "0")
-            element.setAttribute("role", "link")
+            element.setRole(ElementRole.Link)
         }
     }
 
@@ -147,7 +154,7 @@ internal class ContestCardDisplay(initial: ContestCardData) : Div() {
                     Span(data.people).apply { addClassName("ts-ccard__people") },
                     NativeButton(data.actionLabel.orEmpty()).apply {
                         isVisible = data.actionLabel != null
-                        element.setAttribute("type", "button")
+                        element.setType(ElementType.Button)
                         addClassNames(
                             "ts-btn",
                             "ts-btn--sm",

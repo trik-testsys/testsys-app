@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.actions
 
 import com.vaadin.flow.component.Html
@@ -6,6 +8,7 @@ import com.vaadin.flow.component.html.Anchor
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.dom.Element
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.server.streams.DownloadEvent
 import com.vaadin.flow.server.streams.DownloadHandler
@@ -16,7 +19,14 @@ import tech.testsys.web.components.Background
 import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.AriaLive
+import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaBusy
+import tech.testsys.web.components.core.setAriaHiddenPresence
+import tech.testsys.web.components.core.setAriaLive
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -274,7 +284,7 @@ internal class DownloadDisplay(
     private val fill = Span().apply { addClassName("ts-btn__fill") }
     private val spinner = Span().apply {
         addClassName("ts-spinner")
-        element.setAttribute("aria-hidden", true)
+        element.setAriaHiddenPresence(true)
     }
     private val ring = Html(
         """
@@ -289,14 +299,14 @@ internal class DownloadDisplay(
 
     private val anchor = Anchor().apply {
         element.style.set("display", "none")
-        element.setAttribute("aria-hidden", true)
+        element.setAriaHiddenPresence(true)
         element.setAttribute("tabindex", "-1")
         setRouterIgnore(true)
     }
 
     private val status = Span().apply {
-        element.setAttribute("role", "status")
-        element.setAttribute("aria-live", "polite")
+        element.setRole(ElementRole.Status)
+        element.setAriaLive(AriaLive.Polite)
     }
 
     private var attempt: DownloadAttempt? = null
@@ -327,7 +337,7 @@ internal class DownloadDisplay(
                 }
             },
         )
-        trigger.element.bindAttribute("data-state", state.map { value -> value.javaClass.simpleName })
+        trigger.element.bindDownloadState(state)
         // Rendering through the signal also covers background access updates without keeping a custom subscription.
         com.vaadin.flow.dom.ElementEffect.bind(element, state) { _, value -> render(value) }
         render(DownloadState.Idle)
@@ -357,8 +367,6 @@ internal class DownloadDisplay(
                         anchor.element.executeJs("this.click()")
                     }
                 }
-            } catch (failure: IOException) {
-                publish(ui, current, DownloadState.Error(failure))
             } catch (failure: Exception) {
                 // The application producer may use checked exception types unknown to this module.
                 publish(ui, current, DownloadState.Error(failure))
@@ -445,7 +453,7 @@ internal class DownloadDisplay(
         val accessible = texts.components.downloadLabel(label, caption)
         trigger.element.setAttribute("aria-label", accessible)
         trigger.element.setAttribute("title", accessible)
-        trigger.element.setAttribute("aria-busy", isBusy.toString())
+        trigger.element.setAriaBusy(isBusy)
         captionNode.text = caption
         percent?.let { progress ->
             percentageNode.text = texts.components.percent(progress.toInt())
@@ -542,3 +550,16 @@ internal fun streamDownload(
         throw failure
     }
 }
+
+private fun Element.bindDownloadState(state: Signal<DownloadState>): SignalBinding<String> = bindAttribute(
+    "data-state",
+    state.map { value ->
+        when (value) {
+            DownloadState.Idle -> "Idle"
+            DownloadState.Preparing -> "Preparing"
+            is DownloadState.Downloading -> "Downloading"
+            is DownloadState.Done -> "Done"
+            is DownloadState.Error -> "Error"
+        }
+    },
+)

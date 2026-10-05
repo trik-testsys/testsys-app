@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.Component
@@ -5,10 +7,12 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Footer
 import com.vaadin.flow.shared.Registration
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.hasAriaBusy
+import tech.testsys.web.components.core.setAriaBusy
 
 private const val GRID_CLASS = "ts-block__body--grid"
 private const val FLUSH_CLASS = "ts-block__body--flush"
-private const val ARIA_BUSY = "aria-busy"
 
 /**
  * Body of a block that a load fills after the block is built, again on every reload: either a placeholder or
@@ -49,9 +53,9 @@ internal class LoadedBody(
 
     /** Whether the body is marked busy for assistive technologies while it loads. */
     var isBusy: Boolean
-        get() = body.element.hasAttribute(ARIA_BUSY)
+        get() = body.element.hasAriaBusy()
         set(value) {
-            if (value) body.element.setAttribute(ARIA_BUSY, "true") else body.element.removeAttribute(ARIA_BUSY)
+            if (value) body.element.setAriaBusy(true) else body.element.setAriaBusy(null)
         }
 
     /** Keeps [bar] for the pagination of a loaded table; [isOwn] if nothing else is in it, so it hides with it. */

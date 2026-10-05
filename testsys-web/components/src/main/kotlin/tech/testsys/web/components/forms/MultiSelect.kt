@@ -1,6 +1,7 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.forms
 
-import com.vaadin.flow.component.HasValue
 import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.html.Div
@@ -11,8 +12,15 @@ import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.value.ValueChangeMode
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.ICON_SIZE_TINY
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaExpanded
+import tech.testsys.web.components.core.setAriaHasPopup
+import tech.testsys.web.components.core.setReadOnly
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -37,10 +45,7 @@ fun <T : Any> BlockRowScope.multiSelect(
     configure: ValueInput<Set<T>>.() -> Unit = {},
 ): ValueInput<Set<T>> {
     val field = MultiSelectField(texts, label, items, itemLabel, itemMeta, display, maxChips)
-    val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<Set<T>>> ->
-        field.addValueChangeListener { event -> listener.valueChanged(event) }
-    }
-    return placeInput(label, labelSize, size, field, hint, subscribe, configure)
+    return addInput(label, labelSize, size, field, hint, configure)
 }
 
 internal class MultiSelectField<T : Any>(
@@ -53,15 +58,15 @@ internal class MultiSelectField<T : Any>(
     private val maxChips: Int = 3,
 ) : CustomField<Set<T>>(emptySet(), true), HasValidator<Set<T>> {
     private val trigger: NativeButton = NativeButton(texts.lookup.open).apply {
-        element.setAttribute("type", "button")
+        element.setType(ElementType.Button)
         element.setAttribute("aria-label", label)
-        element.setAttribute("aria-haspopup", "dialog")
+        element.setAriaHasPopup(AriaPopup.Dialog)
         addClassName("ts-lookup__text")
     }
 
     private val chips = Div().apply { addClassName("ts-lookup__chips") }
     private val clear = NativeButton(texts.lookup.clear).apply {
-        element.setAttribute("type", "button")
+        element.setType(ElementType.Button)
         addClassName("ts-multiselect__clear")
     }
 
@@ -97,7 +102,7 @@ internal class MultiSelectField<T : Any>(
         val foot = Div(count).apply { addClassName("ts-popover__foot") }
         foot.add(
             NativeButton(texts.lookup.reset).apply {
-                element.setAttribute("type", "button")
+                element.setType(ElementType.Button)
                 addClassNames("ts-btn", "ts-btn--secondary")
                 addClickListener {
                     draft = emptySet()
@@ -111,7 +116,7 @@ internal class MultiSelectField<T : Any>(
         )
         popup.add(search, options, foot)
         popup.addOpenedChangeListener { event ->
-            trigger.element.setAttribute("aria-expanded", event.isOpened.toString())
+            trigger.element.setAriaExpanded(event.isOpened)
             box.setClassName("ts-trigger--open", event.isOpened)
             if (!event.isOpened) {
                 draft = null
@@ -174,7 +179,7 @@ internal class MultiSelectField<T : Any>(
 
     override fun setReadOnly(readOnly: Boolean) {
         super.setReadOnly(readOnly)
-        element.setAttribute("readonly", readOnly)
+        element.setReadOnly(readOnly)
         close()
         renderValue(value)
     }
@@ -278,7 +283,7 @@ fun <T : Any> ContentScope.multiSelect(
     display: MultiSelectDisplay = MultiSelectDisplay.Chips,
     maxChips: Int = 3,
     configure: ValueInput<Set<T>>.() -> Unit = {},
-): ValueInput<Set<T>> = placeComposite(
+): ValueInput<Set<T>> = placeLabelLessInput(
     label,
     MultiSelectField(
         texts,

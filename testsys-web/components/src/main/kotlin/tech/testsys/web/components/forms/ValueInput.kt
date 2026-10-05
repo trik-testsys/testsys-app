@@ -35,7 +35,6 @@ class ValueInput<T> internal constructor(
     component: AbstractField<*, T>,
     private val validation: HasValidation,
     private val validator: HasValidator<T>,
-    private val subscribe: (HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T>>) -> Registration,
     valueArea: Component,
 ) : FieldHandle(component = parts?.field ?: valueArea, valueArea = valueArea),
     HasValue<HasValue.ValueChangeEvent<T>, T>,
@@ -115,7 +114,7 @@ class ValueInput<T> internal constructor(
     override fun getEmptyValue(): T = fieldComponent.emptyValue
 
     override fun addValueChangeListener(listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<T>>): Registration =
-        subscribe(listener)
+        fieldComponent.addValueChangeListener { event -> listener.valueChanged(event) }
 
     override fun setReadOnly(readOnly: Boolean) {
         isEditable = !readOnly

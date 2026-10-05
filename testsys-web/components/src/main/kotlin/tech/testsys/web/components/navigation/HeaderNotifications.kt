@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Component
@@ -7,8 +9,12 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.dom.ElementEffect
 import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.HeaderTexts
+import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.ICON_SIZE_LARGE
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 
 /**
@@ -51,7 +57,7 @@ internal class HeaderNotificationsController(
 ) {
     val indicator = Span().apply {
         addClassName("ts-bell__dot")
-        element.setAttribute("aria-hidden", "true")
+        element.setAriaHidden(true)
     }
     private val trigger = NativeButton().apply {
         addClassNames("ts-btn", "ts-btn--ghost", "ts-btn--icon", "ts-bell")
@@ -138,7 +144,7 @@ internal class HeaderNotificationsController(
     }
 
     private fun item(notification: HeaderNotification): NativeButton = NativeButton().apply {
-        element.setAttribute("type", "button")
+        element.setType(ElementType.Button)
         element.setAttribute("data-header-key", notification.key)
         addClickListener { openNotification(notification.key) }
     }

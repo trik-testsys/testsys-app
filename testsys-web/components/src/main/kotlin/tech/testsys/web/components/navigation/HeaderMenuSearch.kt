@@ -1,10 +1,22 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Input
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.HeaderTexts
+import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.Autocomplete
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaExpanded
+import tech.testsys.web.components.core.setAriaHasPopup
+import tech.testsys.web.components.core.setAutocomplete
+import tech.testsys.web.components.core.setRole
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import java.util.UUID
 
@@ -13,10 +25,10 @@ internal class HeaderSearchField(val field: Input, val component: Div)
 
 internal fun headerSearchField(label: String): HeaderSearchField {
     val field = Input(null).apply {
-        element.setAttribute("type", "search")
+        element.setType(ElementType.Search)
         element.setAttribute("placeholder", label)
         element.setAttribute("aria-label", label)
-        element.setAttribute("autocomplete", "off")
+        element.setAutocomplete(Autocomplete.Off)
     }
     val shell = Div(svgIcon(IconName.Search), field, Span("⌘K").apply { addClassName("ts-kbd") }).apply {
         addClassName("ts-header__search")
@@ -37,12 +49,12 @@ internal class HeaderMenuSearchController(private val menu: MegaMenuHandle, priv
         menu.popup.isAutofocus = false
         menu.popup.isCloseOnEsc = false
         menu.popup.isCloseOnOutsideClick = false
-        field.element.setAttribute("role", "searchbox")
+        field.element.setRole(ElementRole.SearchBox)
         field.element.setAttribute("aria-controls", id)
-        field.element.setAttribute("aria-haspopup", "dialog")
-        field.element.setAttribute("aria-expanded", "false")
+        field.element.setAriaHasPopup(AriaPopup.Dialog)
+        field.element.setAriaExpanded(false)
         menu.popup.addOpenedChangeListener { event ->
-            field.element.setAttribute("aria-expanded", event.isOpened.toString())
+            field.element.setAriaExpanded(event.isOpened)
         }
         field.element.addEventListener("header-menu-input") { event -> inputChanged(event.eventData.get("event.detail.query").asString()) }
             .addEventData("event.detail.query")

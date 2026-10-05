@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.core
 
 import com.vaadin.flow.component.Svg
@@ -35,7 +37,7 @@ internal fun svgIcon(name: IconName, size: Int = ICON_SIZE, strokeWidth: Int = I
 internal fun pagerArrow(name: IconName, label: String): NativeButton = NativeButton().apply {
     addClassName("ts-pager__btn")
     element.setAttribute("aria-label", label)
-    element.setAttribute("type", "button")
+    element.setType(ElementType.Button)
     add(svgIcon(name, ICON_SIZE_SMALL))
 }
 

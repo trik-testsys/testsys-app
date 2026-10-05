@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Component
@@ -7,6 +9,19 @@ import com.vaadin.flow.component.html.Span
 import org.slf4j.LoggerFactory
 import tech.testsys.web.components.Background
 import tech.testsys.web.components.HeaderTexts
+import tech.testsys.web.components.core.AriaAutocomplete
+import tech.testsys.web.components.core.AriaLive
+import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaAutocomplete
+import tech.testsys.web.components.core.setAriaBusy
+import tech.testsys.web.components.core.setAriaExpanded
+import tech.testsys.web.components.core.setAriaHasPopup
+import tech.testsys.web.components.core.setAriaLive
+import tech.testsys.web.components.core.setAriaRole
+import tech.testsys.web.components.core.setAriaSelected
+import tech.testsys.web.components.core.setRole
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
@@ -47,25 +62,25 @@ internal class HeaderSearchController(
     private var activeIndex = -1
     private val input = headerSearchField(texts.search)
     val field = input.field.apply {
-        element.setAttribute("role", "combobox")
-        element.setAttribute("aria-autocomplete", "list")
+        element.setRole(ElementRole.ComboBox)
+        element.setAriaAutocomplete(AriaAutocomplete.List)
         element.setAttribute("aria-controls", listId)
     }
     val component = input.component
     val popup = interactions.popup(component, label = texts.search, theme = "ts-header-search-popup").apply {
         isOpenOnClick = false
         isTabFocusEnabled = true
-        setAriaRole("presentation")
+        setAriaRole(ElementRole.Presentation)
     }
     val status = Span().apply {
         addClassName("ts-header-search-status")
-        element.setAttribute("role", "status")
-        element.setAttribute("aria-live", "polite")
+        element.setRole(ElementRole.Status)
+        element.setAriaLive(AriaLive.Polite)
     }
     private val results = Div().apply {
         setId(listId)
         addClassName("ts-header-results")
-        element.setAttribute("role", "listbox")
+        element.setRole(ElementRole.ListBox)
         element.setAttribute("aria-label", texts.search)
     }
     private val retryButton = NativeButton(texts.retry).apply {
@@ -76,9 +91,9 @@ internal class HeaderSearchController(
 
     init {
         component.add(popup)
-        field.element.setAttribute("aria-haspopup", "listbox")
-        field.element.setAttribute("aria-expanded", "false")
-        field.element.setAttribute("aria-busy", "false")
+        field.element.setAriaHasPopup(AriaPopup.ListBox)
+        field.element.setAriaExpanded(false)
+        field.element.setAriaBusy(false)
         popup.add(Div(status, results, retryButton).apply { addClassName("ts-header-search-body") })
         field.element.addEventListener("header-input") { event -> inputChanged(event.eventData.get("event.detail.query").asString()) }
             .addEventData("event.detail.query")
@@ -151,8 +166,8 @@ internal class HeaderSearchController(
         activeIndex = -1
         results.removeAll()
         field.element.removeAttribute("aria-activedescendant")
-        field.element.setAttribute("aria-expanded", "false")
-        field.element.setAttribute("aria-busy", "false")
+        field.element.setAriaExpanded(false)
+        field.element.setAriaBusy(false)
     }
 
     private fun show(outcome: Result<List<HeaderSearchResult>>) {
@@ -174,8 +189,8 @@ internal class HeaderSearchController(
         destinationLink(result.label, result.destination) { close() }.apply {
             element.classList.add("ts-header-result")
             setId("$listId-$index")
-            element.setAttribute("role", "option")
-            element.setAttribute("aria-selected", "false")
+            element.setRole(ElementRole.Option)
+            element.setAriaSelected(false)
             element.setAttribute("tabindex", "-1")
             result.description?.let { description -> element.appendChild(Span(description).element) }
         }
@@ -186,8 +201,8 @@ internal class HeaderSearchController(
         status.text = text
         retryButton.isVisible = false
         field.element.removeAttribute("aria-activedescendant")
-        field.element.setAttribute("aria-expanded", "true")
-        field.element.setAttribute("aria-busy", (state == SearchState.Loading).toString())
+        field.element.setAriaExpanded(true)
+        field.element.setAriaBusy(state == SearchState.Loading)
     }
 
     private fun move(direction: Int) {
@@ -196,7 +211,7 @@ internal class HeaderSearchController(
         activeIndex = if (activeIndex < 0 && direction < 0) values.lastIndex else Math.floorMod(activeIndex + direction, values.size)
         field.element.setAttribute("aria-activedescendant", "$listId-$activeIndex")
         results.children.toList().forEachIndexed { index, item ->
-            item.element.setAttribute("aria-selected", (index == activeIndex).toString())
+            item.element.setAriaSelected(index == activeIndex)
         }
         results.element.executeJs("this.children[$0]?.scrollIntoView({block:'nearest'})", activeIndex)
     }

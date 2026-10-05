@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.customfield.CustomField
@@ -14,7 +16,15 @@ import com.vaadin.flow.data.binder.Validator
 import com.vaadin.flow.data.binder.ValueContext
 import com.vaadin.flow.shared.Registration
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaHasPopup
+import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setHidden
+import tech.testsys.web.components.core.setRangePart
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import java.time.LocalDate
 import java.util.UUID
@@ -40,12 +50,12 @@ internal class DateRangeField(
     private var isPresenting = false
     private val requiredDescription = Span(requiredMessage).apply {
         setId("ts-range-required-${UUID.randomUUID()}")
-        element.setAttribute("hidden", true)
+        element.setHidden(true)
     }
     private val trigger = NativeButton().apply {
         addClassNames("ts-btn", "ts-btn--icon", "ts-btn--secondary")
-        element.setAttribute("type", "button")
-        element.setAttribute("aria-haspopup", "dialog")
+        element.setType(ElementType.Button)
+        element.setAriaHasPopup(AriaPopup.Dialog)
         element.setAttribute("aria-label", calendarName)
         element.setAttribute("title", calendarName)
         add(svgIcon(IconName.Calendar))
@@ -65,7 +75,7 @@ internal class DateRangeField(
         listOf(start to texts.dateFields.rangeFromPrefix, end to texts.dateFields.rangeToPrefix).forEach { (picker, prefix) ->
             picker.prefixComponent = Span(prefix).apply {
                 addClassName("ts-date-range__prefix")
-                element.setAttribute("aria-hidden", "true")
+                element.setAriaHidden(true)
             }
         }
         calendar.onPick = { chosen ->
@@ -83,7 +93,7 @@ internal class DateRangeField(
             }
         }
         listOf(start, end).forEach { picker ->
-            picker.element.setAttribute("data-ts-range-part", true)
+            picker.element.setRangePart(true)
             picker.element.executeJs(
                 """
                 this.addEventListener('keydown', e => {

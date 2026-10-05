@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Text
@@ -10,6 +12,12 @@ import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaPressed
+import tech.testsys.web.components.core.setRole
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.display.CounterKind
 import tech.testsys.web.components.display.buildCounter
 import tech.testsys.web.components.layout.BlockRowScope
@@ -202,7 +210,7 @@ internal class ChoiceGroup<V>(
         require(options.size >= MIN_OPTIONS) { "A choice group needs at least $MIN_OPTIONS options, got ${options.size}" }
         require(options.map { option -> option.value }.toSet().size == options.size) { "Choice group values must be unique" }
         require(options.any { option -> option.value == initial }) { "Initial value $initial is not among the options" }
-        root.element.setAttribute("role", "group")
+        root.element.setRole(ElementRole.Group)
         buttons = options.associate { option -> option.value to button(option, buttonClass) }
         buttons.values.forEach { button -> root.add(button) }
         update()
@@ -226,7 +234,7 @@ internal class ChoiceGroup<V>(
 
     private fun button(option: ChoiceOption<V>, buttonClass: String): NativeButton = NativeButton().apply {
         addClassName(buttonClass)
-        element.setAttribute("type", "button")
+        element.setType(ElementType.Button)
         add(Text(option.label))
         option.countKind?.let { kind ->
             val counter = buildCounter(option.count ?: 0, kind)
@@ -248,7 +256,7 @@ internal class ChoiceGroup<V>(
         buttons.forEach { (buttonValue, button) ->
             val isActive = buttonValue == value
             button.setClassName(activeClass, isActive)
-            button.element.setAttribute("aria-pressed", isActive.toString())
+            button.element.setAriaPressed(isActive)
         }
     }
 

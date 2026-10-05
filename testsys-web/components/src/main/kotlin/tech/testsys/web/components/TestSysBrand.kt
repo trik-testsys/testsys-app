@@ -1,9 +1,14 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components
 
 import com.vaadin.flow.component.HtmlContainer
 import com.vaadin.flow.component.html.Anchor
 import com.vaadin.flow.component.html.Image
 import com.vaadin.flow.component.html.Span
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setRole
 
 /**
  * Canonical brand assets served by the components module.
@@ -28,7 +33,7 @@ object TestSysBrand {
 }
 
 internal fun buildBrand(name: String, href: String? = null): HtmlContainer {
-    val container = if (href == null) Span().apply { element.setAttribute("role", "img") } else Anchor(href)
+    val container = if (href == null) Span().apply { element.setRole(ElementRole.Image) } else Anchor(href)
     container.addClassName("ts-brand")
     container.element.setAttribute("aria-label", name)
     container.add(Image(TestSysBrand.HEADER, "").apply { addClassName("ts-brand__logo") })

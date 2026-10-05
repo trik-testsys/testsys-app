@@ -76,9 +76,7 @@ internal fun BlockScope.demoTable(
         key = DemoRow::id,
         pageSize = DEMO_PAGE_SIZE,
         gridColumns = gridColumns,
-        fetch = {
-            demoPage(rows, state.applied, it)
-        },
+        fetch = { request -> demoPage(rows, state.applied, request) },
     ) {
         columns()
         if (rows.isNotEmpty()) {
@@ -105,77 +103,41 @@ internal fun BlockScope.demoTable(
             }
         },
         onReset = { restoreDefaults() },
-        onRefresh = {
-            handle.refresh(toFirstPage = true)
-        },
+        onRefresh = { handle.refresh(toFirstPage = true) },
     ) {
         row {
             textInput("Поиск", labelSize = 4, size = 20) {
-                binder.forField(this).bind(
-                    {
-                        it.query
-                    },
-                    { target, value ->
-                        target.query = value
-                    },
-                )
-                addValueChangeListener {
-                    state.draft.query = value
-                }
+                binder.forField(this).bind({ target -> target.query }, { target, value -> target.query = value })
+                addValueChangeListener { state.draft.query = value }
             }
         }
-        val categories = rows.map {
-            it.category
-        }.filter {
-            it.isNotBlank()
-        }.distinct()
+        val categories = rows.map(DemoRow::category).filter(String::isNotBlank).distinct()
         if (categories.isNotEmpty()) {
             row {
                 select(
                     "Тип / состояние",
                     items = listOf("Все") + categories,
-                    itemLabel = {
-                        it
-                    },
+                    itemLabel = { category -> category },
                     labelSize = 4,
                     size = 20,
                 ) {
                     binder.forField(this).bind(
-                        {
-                            it.category ?: "Все"
-                        },
+                        { target -> target.category ?: "Все" },
                         { target, value ->
-                            target.category = value.takeUnless {
-                                it == "Все"
-                            }
+                            target.category = value.takeUnless { category -> category == "Все" }
                         },
                     )
                     addValueChangeListener {
-                        state.draft.category = value.takeUnless { category ->
-                            category == "Все"
-                        }
+                        state.draft.category = value.takeUnless { category -> category == "Все" }
                     }
                 }
             }
         }
-        if (
-            rows.any {
-                it.date != null
-            }
-        ) {
+        if (rows.any { row -> row.date != null }) {
             row {
                 dateRangeInput("Период", labelSize = 4, size = 20) {
-                    binder.forField(this).bind(
-                        {
-                            it.period
-                        },
-                        { target, value ->
-                            target.period = value
-                        },
-                    )
-                    addValueChangeListener {
-                        state.draft.period = value
-                    }
+                    binder.forField(this).bind({ target -> target.period }, { target, value -> target.period = value })
+                    addValueChangeListener { state.draft.period = value }
                 }
             }
         }

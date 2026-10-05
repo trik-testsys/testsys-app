@@ -1,14 +1,18 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.forms
 
-import com.vaadin.flow.component.HasValue
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
+import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.ICON_SIZE_TINY
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
@@ -45,10 +49,7 @@ fun <T : Any> BlockRowScope.lookupMany(
 ): ValueInput<Set<T>> {
     val tableColumns = lookupColumns(label, pageSize, columns, isSelectable = true)
     val control = LookupManyField(texts, label, display, fetch, pageSize, tableColumns, gridColumns = size)
-    val subscribe = { listener: HasValue.ValueChangeListener<in HasValue.ValueChangeEvent<Set<T>>> ->
-        control.addValueChangeListener { event -> listener.valueChanged(event) }
-    }
-    return placeInput(label, labelSize, size, control, hint, subscribe, configure)
+    return addInput(label, labelSize, size, control, hint, configure)
 }
 
 /**
@@ -140,7 +141,7 @@ internal class LookupManyField<T : Any>(
             chip.add(
                 NativeButton().apply {
                     addClassName("ts-chip__x")
-                    element.setAttribute("type", "button")
+                    element.setType(ElementType.Button)
                     element.setAttribute("aria-label", texts.lookup.remove(name))
                     add(svgIcon(IconName.X, ICON_SIZE_TINY))
                     addClickListener { if (isChoosable()) chooseInBox(value - item) }

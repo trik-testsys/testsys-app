@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Component
@@ -9,8 +11,14 @@ import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.component.popover.PopoverPosition
 import com.vaadin.flow.dom.Element
 import com.vaadin.flow.router.RouterLink
+import tech.testsys.web.components.core.AriaCurrent
+import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.ICON_SIZE_SMALL
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaCurrent
+import tech.testsys.web.components.core.setHighlight
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 
 /**
@@ -126,7 +134,7 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
         popup.element.style.set("--ts-menu-columns", visibleColumns.toString())
         grid.element.style.set("--ts-menu-columns", visibleColumns.toString())
         if (columns.isEmpty() && emptyText != null) {
-            grid.add(Span(emptyText).apply { element.setAttribute("role", "status") })
+            grid.add(Span(emptyText).apply { element.setRole(ElementRole.Status) })
         }
         columns.forEach { column ->
             val group = Div().apply { addClassName("ts-mega__col") }
@@ -182,8 +190,8 @@ private fun menuDestination(target: Component): Component = target.apply {
 }
 
 private fun markMenuCurrent(link: RouterLink, isCurrent: Boolean) {
-    link.element.setAttribute("highlight", isCurrent)
-    if (isCurrent) link.element.setAttribute("aria-current", "page") else link.element.removeAttribute("aria-current")
+    link.element.setHighlight(isCurrent)
+    if (isCurrent) link.element.setAriaCurrent(AriaCurrent.Page) else link.element.setAriaCurrent(null)
 }
 
 private fun highlight(target: Component, value: String, query: String) {

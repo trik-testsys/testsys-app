@@ -9,15 +9,25 @@ import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.component.popover.PopoverPosition
-import com.vaadin.flow.dom.Element
 import com.vaadin.flow.router.RouterLink
 import tech.testsys.web.components.core.AriaCurrent
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssTheme
+import tech.testsys.web.components.core.DomEvent
 import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.HtmlTag
 import tech.testsys.web.components.core.ICON_SIZE_SMALL
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.add
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.addEventListener
+import tech.testsys.web.components.core.addThemeName
+import tech.testsys.web.components.core.htmlElement
 import tech.testsys.web.components.core.setAriaCurrent
 import tech.testsys.web.components.core.setHighlight
+import tech.testsys.web.components.core.setMenuColumns
 import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 
@@ -79,10 +89,10 @@ private const val MAX_MENU_COLUMNS = 4
 /** One menu surface shared by its navigation trigger and optional search field. */
 internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: HeaderInteractions) {
     val trigger = NativeButton(item.label).apply {
-        addClassName("ts-nav__item")
+        addClassName(CssClass.NavItem)
         add(svgIcon(IconName.ChevronDown, ICON_SIZE_SMALL))
     }
-    val popup: Popover = interactions.popup(trigger, label = item.label, theme = "ts-header-mega").apply {
+    val popup: Popover = interactions.popup(trigger, label = item.label, theme = CssTheme.HeaderMega).apply {
         isOpenOnHover = true
         hoverDelay = 0
         hideDelay = 0
@@ -92,9 +102,9 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
     private var query: String = ""
     private var groupCount: Int = item.menu.columns.size
     private val grid = Div().apply {
-        addClassNames("ts-mega__grid", "ts-header-mega__grid")
+        addClassNames(CssClass.MegaGrid, CssClass.HeaderMegaGrid)
     }
-    val component: Div = Div(trigger, popup).apply { addClassName("ts-header-mega-trigger") }
+    val component: Div = Div(trigger, popup).apply { addClassName(CssClass.HeaderMegaTrigger) }
 
     init {
         popup.add(grid)
@@ -108,12 +118,12 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
 
     fun searchMode(search: Component) {
         searchTarget = search
-        popup.addThemeName("ts-header-menu-search")
+        popup.addThemeName(CssTheme.HeaderMenuSearch)
         popup.isOpenOnClick = false
         popup.isOpenOnHover = false
         trigger.addClickListener { popup.isOpened = !popup.isOpened }
-        trigger.element.addEventListener("mouseenter") { popup.open() }
-        grid.addClassName("ts-header-mega__grid--search")
+        trigger.element.addEventListener(DomEvent.MouseEnter) { popup.open() }
+        grid.addClassName(CssClass.HeaderMegaGridSearch)
         position()
     }
 
@@ -131,32 +141,32 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
         groupCount = columns.size
         position()
         val visibleColumns = columns.size.coerceIn(minimumValue = 1, maximumValue = MAX_MENU_COLUMNS)
-        popup.element.style.set("--ts-menu-columns", visibleColumns.toString())
-        grid.element.style.set("--ts-menu-columns", visibleColumns.toString())
+        popup.element.style.setMenuColumns(visibleColumns)
+        grid.element.style.setMenuColumns(visibleColumns)
         if (columns.isEmpty() && emptyText != null) {
             grid.add(Span(emptyText).apply { element.setRole(ElementRole.Status) })
         }
         columns.forEach { column ->
-            val group = Div().apply { addClassName("ts-mega__col") }
+            val group = Div().apply { addClassName(CssClass.MegaCol) }
             val heading = column.destination?.let { destination ->
                 menuDestination(destinationLink(column.title, destination) { popup.close() }).apply {
-                    element.classList.add("ts-header-mega__heading")
+                    element.classList.add(CssClass.HeaderMegaHeading)
                     highlight(this, column.title, query)
                 }
-            } ?: Div(column.title).apply { addClassName("ts-mega__title") }
+            } ?: Div(column.title).apply { addClassName(CssClass.MegaTitle) }
             group.add(heading)
             val children = if (column.destination != null) {
-                group.addClassName("ts-mega__col--linked")
-                Div().apply { addClassName("ts-mega__children") }.also { group.add(it) }
+                group.addClassName(CssClass.MegaColLinked)
+                Div().apply { addClassName(CssClass.MegaChildren) }.also { group.add(it) }
             } else {
                 group
             }
             column.links.forEach { link ->
                 val target = menuDestination(destinationLink(link.label, link.destination) { popup.close() })
-                target.element.classList.add("ts-mega__link")
+                target.element.classList.add(CssClass.MegaLink)
                 target.element.setText("")
                 val title = Span().apply {
-                    addClassName("ts-header-link__title")
+                    addClassName(CssClass.HeaderLinkTitle)
                     highlight(this, link.label, query)
                 }
                 target.element.appendChild(title.element)
@@ -198,19 +208,21 @@ private fun highlight(target: Component, value: String, query: String) {
     target.element.removeAllChildren()
     target.element.setText("")
     splitHeaderMatches(value, query).forEach { part ->
-        val text = if (part.isMatched) Element("mark").apply { this.text = part.text } else Text(part.text).element
+        val text = if (part.isMatched) htmlElement(HtmlTag.Mark).apply { this.text = part.text } else Text(part.text).element
         target.element.appendChild(text)
     }
 }
 
 private fun promotionCard(promotion: HeaderPromotion, close: () -> Unit): Div = Div().apply {
-    addClassName("ts-mega__feat")
-    promotion.tag?.let { tag -> add(Span(tag).apply { addClassName("ts-header-promotion__tag") }) }
-    add(Div(promotion.title).apply { addClassName("ts-header-promotion__title") })
-    add(Div(promotion.description).apply { addClassName("ts-header-promotion__description") })
+    addClassName(CssClass.MegaFeat)
+    promotion.tag?.let { tag -> add(Span(tag).apply { addClassName(CssClass.HeaderPromotionTag) }) }
+    add(Div(promotion.title).apply { addClassName(CssClass.HeaderPromotionTitle) })
+    add(Div(promotion.description).apply { addClassName(CssClass.HeaderPromotionDescription) })
     add(
         destinationLink(promotion.actionLabel, promotion.destination, close).apply {
-            element.classList.addAll(listOf("ts-btn", "ts-btn--sm", "ts-header-promotion__action"))
+            element.classList.add(CssClass.Btn)
+            element.classList.add(CssClass.BtnSm)
+            element.classList.add(CssClass.HeaderPromotionAction)
         },
     )
 }

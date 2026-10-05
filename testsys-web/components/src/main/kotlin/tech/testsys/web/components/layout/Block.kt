@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.Component
@@ -7,6 +9,11 @@ import com.vaadin.flow.component.html.Header
 import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.setGridColumnSpan
 
 /** Title and subtitle of a block head; the head is omitted if there are neither, nor actions, nor tabs. */
 internal class BlockHeading(val title: String?, val subtitle: String?)
@@ -23,19 +30,19 @@ internal fun buildBlock(
     columns: Int,
     content: BlockScope.() -> Unit,
 ): BlockHandle {
-    val body = Div().apply { addClassNames("ts-block__body", "ts-block__body--grid") }
+    val body = Div().apply { addClassNames(CssClass.BlockBody, CssClass.BlockBodyGrid) }
     val block = Section()
     val editState = BlockEditState(block.element)
     val scope = BlockScope(body, columns, texts, editState, heading.title).apply(content).apply { finish() }
     with(block) {
-        addClassNames("ts-block", "ts-block--grid")
-        if (scope.filtersBar != null) addClassName("ts-block--filters")
-        if (highlight) addClassName("ts-block--dark")
-        if (span != null) style.set("grid-column", "span $span")
+        addClassNames(CssClass.Block, CssClass.BlockGrid)
+        if (scope.filtersBar != null) addClassName(CssClass.BlockFilters)
+        if (highlight) addClassName(CssClass.BlockDark)
+        if (span != null) style.setGridColumnSpan(span)
         blockHead(heading = heading, actions = scope.actionsBar, tabs = scope.tabsBar)?.let { head -> add(head) }
         scope.filtersBar?.let { filters -> add(filters) }
         if (body.children.findAny().isPresent) {
-            if (scope.isFlushBody) body.addClassName("ts-block__body--flush")
+            if (scope.isFlushBody) body.addClassName(CssClass.BlockBodyFlush)
             add(body)
         }
         scope.footerBar?.let { footer -> add(footer) }
@@ -47,15 +54,15 @@ internal fun buildBlock(
 private fun blockHead(heading: BlockHeading, actions: Div?, tabs: Component?): Header? {
     val hasTitles = heading.title != null || heading.subtitle != null
     if (!hasTitles && actions == null && tabs == null) return null
-    val titles = Div().apply { addClassName("ts-block__titles") }
-    heading.title?.let { title -> titles.add(H3(title).apply { addClassName("ts-block__title") }) }
-    heading.subtitle?.let { subtitle -> titles.add(Span(subtitle).apply { addClassName("ts-block__sub") }) }
+    val titles = Div().apply { addClassName(CssClass.BlockTitles) }
+    heading.title?.let { title -> titles.add(H3(title).apply { addClassName(CssClass.BlockTitle) }) }
+    heading.subtitle?.let { subtitle -> titles.add(Span(subtitle).apply { addClassName(CssClass.BlockSub) }) }
     if (!hasTitles && tabs != null) titles.add(tabs)
     return Header(titles).apply {
-        addClassName("ts-block__head")
+        addClassName(CssClass.BlockHead)
         actions?.let { bar -> add(bar) }
         if (hasTitles && tabs != null) {
-            addClassName("ts-block__head--tabs")
+            addClassName(CssClass.BlockHeadTabs)
             add(tabs)
         }
     }

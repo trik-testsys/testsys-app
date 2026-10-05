@@ -11,8 +11,12 @@ import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.iconAction
 import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssTheme
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.add
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setAriaHasPopup
 import tech.testsys.web.components.layout.ContentScope
 
@@ -46,12 +50,12 @@ class MenuScope internal constructor(private val menu: ContextMenu) {
     fun destructiveItem(label: String, onSelect: () -> Unit) {
         if (!hasDestructive && itemCount > 0) menu.addSeparator()
         hasDestructive = true
-        add(label, onSelect).addClassName("ts-menu__item--danger")
+        add(label, onSelect).addClassName(CssClass.MenuItemDanger)
     }
 
     private fun add(label: String, onSelect: () -> Unit): MenuItem {
         itemCount++
-        return menu.addItem(label) { onSelect() }.apply { addClassName("ts-menu__item") }
+        return menu.addItem(label) { onSelect() }.apply { addClassName(CssClass.MenuItem) }
     }
 }
 
@@ -80,7 +84,7 @@ internal fun attachMenu(trigger: Component, content: MenuScope.() -> Unit): Cont
     val menu = ContextMenu(trigger).apply {
         isOpenOnClick = true
         // A theme, not the class: .ts-menu of the design system lays out the popover and would apply to the host element.
-        element.themeList.add("ts-menu")
+        element.themeList.add(CssTheme.Menu)
     }
     val scope = MenuScope(menu).apply(content)
     check(scope.itemCount > 0) { "Menu must have at least one item" }

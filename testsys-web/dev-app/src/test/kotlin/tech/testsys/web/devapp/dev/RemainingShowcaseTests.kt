@@ -12,6 +12,7 @@ import com.vaadin.flow.component.html.Span
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -144,6 +145,23 @@ class RemainingShowcaseTests {
 
             assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Ответ выбран: true" })
             _find<Button>().single { button -> button.text == "Сбросить выборы" }._click()
+            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Ответ выбран: false" })
+        }
+
+        // Reset must restore the initially selected multiple answer as well as the ordinary answer.
+        @Test
+        @Tag("regression")
+        fun `should restore the initial multiple answer selection on reset`() {
+            UI.getCurrent().navigate("dev/showcase/display")
+            val answer = _find<NativeButton>().single { button ->
+                "ts-qopt" in button.element.classList && button.element.textRecursively.contains("Несколько ответов")
+            }
+            answer._click()
+            assertEquals("false", answer.element.getAttribute("aria-pressed"))
+
+            _find<Button>().single { button -> button.text == "Сбросить выборы" }._click()
+
+            assertEquals("true", answer.element.getAttribute("aria-pressed"))
             assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Ответ выбран: false" })
         }
 

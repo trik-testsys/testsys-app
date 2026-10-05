@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.data
 
 import com.vaadin.flow.component.Tag
@@ -5,12 +7,18 @@ import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.react.ReactAdapterComponent
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.DomEvent
+import tech.testsys.web.components.core.DomEventData
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addEventData
+import tech.testsys.web.components.core.addEventListener
+import tech.testsys.web.components.core.get
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
 import java.util.Base64
 
-@Tag("testsys-sortable-list")
-@JsModule("./testsys-ui/sortable-list.tsx")
+@Tag(SORTABLE_LIST_TAG)
+@JsModule(SORTABLE_LIST_MODULE)
 internal class SortableListAdapter<T : Any>(
     private val texts: UiTexts,
     initial: List<T>,
@@ -28,10 +36,10 @@ internal class SortableListAdapter<T : Any>(
     private val known = mutableMapOf<String, Pair<T, Div>>()
 
     init {
-        element.addEventListener("list-reorder") { event ->
-            val keys = readFromJson(event.eventData.get("event.detail.keys"), Array<String>::class.java).toList()
-            reorder(keys, event.eventData.get("event.detail.version").asLong())
-        }.addEventData("event.detail.keys").addEventData("event.detail.version")
+        element.addEventListener(DomEvent.ListReorder) { event ->
+            val keys = readFromJson(event.eventData.get(DomEventData.DetailKeys), Array<String>::class.java).toList()
+            reorder(keys, event.eventData.get(DomEventData.DetailVersion).asLong())
+        }.addEventData(DomEventData.DetailKeys).addEventData(DomEventData.DetailVersion)
         addDetachListener {
             version++
             publish()

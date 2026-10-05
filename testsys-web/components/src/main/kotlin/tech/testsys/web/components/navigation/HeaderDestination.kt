@@ -9,8 +9,10 @@ import com.vaadin.flow.router.HighlightAction
 import com.vaadin.flow.router.HighlightConditions
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
+import tech.testsys.web.components.core.DomEvent
 import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addEventListener
 import tech.testsys.web.components.core.setType
 
 /**
@@ -46,7 +48,7 @@ internal fun HeaderDestination.open() {
 
 internal fun destinationLink(label: String, destination: HeaderDestination, beforeOpen: () -> Unit): Component = when (destination) {
     is HeaderDestination.Route -> RouterLink(label, destination.target, destination.parameters).apply {
-        element.addEventListener("click") { beforeOpen() }
+        element.addEventListener(DomEvent.Click) { beforeOpen() }
     }
     is HeaderDestination.Action -> NativeButton(label).apply {
         element.setType(ElementType.Button)

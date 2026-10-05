@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.Component
@@ -6,6 +8,10 @@ import com.vaadin.flow.component.html.Div
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.setGridColumnSpan
 
 /**
  * Scope of a block row: elements side by side on the block columns; an element without a size takes the rest of the row.
@@ -26,14 +32,14 @@ class BlockRowScope internal constructor(
      *
      * @since %CURRENT_VERSION%
      */
-    fun horizontal(size: Int? = null, content: ContentScope.() -> Unit): ElementHandle = group("ts-hstack", size, content)
+    fun horizontal(size: Int? = null, content: ContentScope.() -> Unit): ElementHandle = group(CssClass.Hstack, size, content)
 
     /**
      * Lays out [content] in a column on [size] columns, or on the rest of the row if [size] is `null`.
      *
      * @since %CURRENT_VERSION%
      */
-    fun vertical(size: Int? = null, content: ContentScope.() -> Unit): ElementHandle = group("ts-vstack", size, content)
+    fun vertical(size: Int? = null, content: ContentScope.() -> Unit): ElementHandle = group(CssClass.Vstack, size, content)
 
     /** Places [component] on its assigned fractions. */
     internal fun <C : Component> place(size: Int?, component: C): C = placeWithSize(size) { component }.component
@@ -42,7 +48,7 @@ class BlockRowScope internal constructor(
     internal fun <C : Component> placeWithSize(size: Int?, create: (Int) -> C): GridPlacement<C> {
         val columns = if (size == null) track.takeRest() else size.also { taken -> track.take(taken) }
         val component = create(columns)
-        component.element.style.set("grid-column", "span $columns")
+        component.element.style.setGridColumnSpan(columns)
         row.add(component)
         return GridPlacement(component, columns)
     }
@@ -52,7 +58,7 @@ class BlockRowScope internal constructor(
         return ContentScope(placed.component, texts, Placement.Body, placed.columns)
     }
 
-    private fun group(cssClass: String, size: Int?, content: ContentScope.() -> Unit): ElementHandle {
+    private fun group(cssClass: CssClass, size: Int?, content: ContentScope.() -> Unit): ElementHandle {
         val placed = placeWithSize(size) { Div().apply { addClassName(cssClass) } }
         ContentScope(placed.component, texts, Placement.Body, placed.columns).content()
         return ElementHandle(placed.component)

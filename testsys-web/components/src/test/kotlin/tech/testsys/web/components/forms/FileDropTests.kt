@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -293,7 +294,7 @@ class FileDropTests {
 
     // Review report, Issue 5: preserve the selected transfer or disabled field contract.
     @Test
-    @org.junit.jupiter.api.Tag("regression")
+    @Tag("regression")
     fun `should remove exactly one completed same named transfer and ignore stale removal`() {
         val engine = BoundedUploads(limits.copy(maxFiles = 2, maxMemoryBytes = 8), {}, { _, _ -> })
         val first = identity(engine, "first")
@@ -313,7 +314,7 @@ class FileDropTests {
 
     // Review report, Issue 5: preserve the selected transfer or disabled field contract.
     @Test
-    @org.junit.jupiter.api.Tag("regression")
+    @Tag("regression")
     fun `should reject invalid and duplicate active identities without losing the first slot`() {
         val entered = CountDownLatch(1)
         val finish = CountDownLatch(1)
@@ -352,7 +353,7 @@ class FileDropTests {
 
     // Review report, Issue 5: preserve the selected transfer or disabled field contract.
     @Test
-    @org.junit.jupiter.api.Tag("regression")
+    @Tag("regression")
     fun `should cancel only one active same named transfer and preserve the other quota`() {
         val entered = CountDownLatch(2)
         val finish = CountDownLatch(1)

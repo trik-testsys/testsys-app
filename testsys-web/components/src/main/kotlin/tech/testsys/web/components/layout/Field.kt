@@ -7,9 +7,17 @@ import com.vaadin.flow.component.HtmlContainer
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeLabel
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.page.PendingJavaScriptResult
+import com.vaadin.flow.dom.Element
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setGridColumnSpan
 import tech.testsys.web.components.core.setRole
 
 /** Parts of a grid field that its handle changes: the whole field and the required mark of its label. */
@@ -28,28 +36,28 @@ internal enum class LabelAction(val method: String) {
 internal fun BlockRowScope.placeField(label: String, labelSize: Int, size: Int, value: Component, labelAction: LabelAction?): FieldParts {
     require(labelSize >= 1 && size >= 1) { "Field '$label' needs label and value sizes of at least 1, got $labelSize and $size" }
     val requiredMark = Span("*").apply {
-        addClassName("ts-field__required")
+        addClassName(CssClass.FieldRequired)
         element.setAriaHidden(true)
         isVisible = false
     }
     val caption: HtmlContainer = if (labelAction == null) Div() else NativeLabel()
-    caption.addClassName("ts-field__label")
-    caption.style.set("grid-column", "span $labelSize")
-    caption.add(Span(label).apply { addClassName("ts-field__text") }, requiredMark)
+    caption.addClassName(CssClass.FieldLabel)
+    caption.style.setGridColumnSpan(labelSize)
+    caption.add(Span(label).apply { addClassName(CssClass.FieldText) }, requiredMark)
     if (labelAction != null) runOnLabelClick(caption, value, labelAction)
     val valueCell = fieldValueArea(label, value).apply {
-        style.set("grid-column", "span $size")
+        style.setGridColumnSpan(size)
     }
-    val field = Div(caption, valueCell).apply { addClassNames("ts-field", "ts-field--grid") }
+    val field = Div(caption, valueCell).apply { addClassNames(CssClass.Field, CssClass.FieldGrid) }
     place(labelSize + size, field)
     return FieldParts(field = field, requiredMark = requiredMark, valueCell = valueCell)
 }
 
 /** Wraps [value] in an independently focusable field value area named by [label]. */
 internal fun fieldValueArea(label: String, value: Component): Div = Div(value).apply {
-    addClassName("ts-field__value")
+    addClassName(CssClass.FieldValue)
     element.setRole(ElementRole.Group)
-    element.setAttribute("aria-label", label)
+    element.setAttribute(HtmlAttribute.AriaLabel, label)
 }
 
 /**
@@ -59,11 +67,13 @@ internal fun fieldValueArea(label: String, value: Component): Div = Div(value).a
  */
 private fun runOnLabelClick(caption: Component, control: Component, action: LabelAction) {
     caption.addAttachListener {
-        caption.element.executeJs(
-            "if (this.__tsLabelAction) return; this.__tsLabelAction = true; " +
-                "this.addEventListener('mousedown', e => e.preventDefault()); " +
-                "this.addEventListener('click', () => $0.${action.method}())",
-            control.element,
-        )
+        caption.element.installLabelAction(control.element, action)
     }
 }
+
+private fun Element.installLabelAction(control: Element, action: LabelAction): PendingJavaScriptResult = executeJs(
+    "if (this.__tsLabelAction) return; this.__tsLabelAction = true; " +
+        "this.addEventListener('mousedown', e => e.preventDefault()); " +
+        "this.addEventListener('click', () => $0.${action.method}())",
+    control,
+)

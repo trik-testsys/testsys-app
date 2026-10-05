@@ -9,13 +9,25 @@ import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.page.PendingJavaScriptResult
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup
 import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.renderer.ComponentRenderer
+import com.vaadin.flow.dom.Element
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.DomEvent
+import tech.testsys.web.components.core.DomProperty
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
-import tech.testsys.web.components.core.setAriaHiddenPresence
+import tech.testsys.web.components.core.add
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addPropertyChangeListener
+import tech.testsys.web.components.core.setAriaHidden
 import tech.testsys.web.components.core.setAriaInvalid
 import tech.testsys.web.components.core.setAriaRequired
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setCodeMinLines
+import tech.testsys.web.components.core.setProperty
 import tech.testsys.web.components.core.setReadOnly
 import tech.testsys.web.components.core.setSpellcheckPresence
 import tech.testsys.web.components.layout.BlockRowScope
@@ -106,7 +118,7 @@ fun BlockRowScope.codeEditor(
     return addInput(label, labelSize, size, field, hint, configure)
 }
 
-@JsModule("./testsys-ui/segmented-choice.ts")
+@JsModule(SEGMENTED_CHOICE_MODULE)
 internal class ChoiceField<T : Any>(
     label: String,
     private val choices: List<T>,
@@ -120,23 +132,23 @@ internal class ChoiceField<T : Any>(
         ) { "Segmented controls require two to four choices, got ${choices.size}" }
         require(choices.distinct().size == choices.size) { "Choice items must be unique" }
         setAriaLabel(label)
-        addClassName(if (isSegmented) "ts-seg" else "ts-radio-group")
+        addClassName(if (isSegmented) CssClass.Seg else CssClass.RadioGroup)
         setItemLabelGenerator { item -> itemLabel(requireNotNull(item)) }
         if (isSegmented || itemMeta != null) {
             setRenderer(
                 ComponentRenderer<Span, T?> { item ->
                     val choice = requireNotNull(item)
                     Span(Span(itemLabel(choice))).apply {
-                        addClassName("ts-choice-label")
-                        itemMeta?.let { meta -> add(Span(meta(choice)).apply { addClassName("ts-option__meta") }) }
+                        addClassName(CssClass.ChoiceLabel)
+                        itemMeta?.let { meta -> add(Span(meta(choice)).apply { addClassName(CssClass.OptionMeta) }) }
                     }
                 },
             )
         }
         setItems(choices)
         if (isSegmented) {
-            addAttachListener { element.executeJs("window.testsysSegmentedChoice.attach(this)") }
-            addDetachListener { element.executeJs("window.testsysSegmentedChoice.detach(this)") }
+            addAttachListener { element.attachSegmentedChoice() }
+            addDetachListener { element.detachSegmentedChoice() }
         }
     }
 
@@ -146,69 +158,69 @@ internal class ChoiceField<T : Any>(
     }
 }
 
-@Tag("textarea")
+@Tag(NATIVE_CODE_AREA_TAG)
 internal class NativeCodeArea : Component()
 
-@JsModule("./testsys-ui/code-editor.ts")
+@JsModule(CODE_EDITOR_MODULE)
 internal class CodeEditorField(label: String, minLines: Int) : CustomField<String>("", true), HasValidator<String> {
     private val numbers = Div("1").apply {
-        addClassName("ts-code__lines")
-        element.setAriaHiddenPresence(true)
+        addClassName(CssClass.CodeLines)
+        element.setAriaHidden(true)
     }
     private val description = Span().apply {
-        addClassName("ts-sr-only")
+        addClassName(CssClass.SrOnly)
         setId("ts-code-description-${java.util.UUID.randomUUID()}")
     }
     private val helperDescription = Span().apply {
-        addClassName("ts-sr-only")
+        addClassName(CssClass.SrOnly)
         setId("ts-code-helper-${java.util.UUID.randomUUID()}")
     }
     private val area = NativeCodeArea().apply {
-        element.classList.add("ts-code__area")
-        element.setAttribute("aria-label", label)
-        element.setAttribute("aria-describedby", "${description.id.orElseThrow()} ${helperDescription.id.orElseThrow()}")
+        element.classList.add(CssClass.CodeArea)
+        element.setAttribute(HtmlAttribute.AriaLabel, label)
+        element.setAttribute(HtmlAttribute.AriaDescribedBy, "${description.id.orElseThrow()} ${helperDescription.id.orElseThrow()}")
         element.setSpellcheckPresence(false)
-        element.setProperty("value", "")
+        element.setProperty(DomProperty.Value, "")
     }
 
     init {
         val box = Div(numbers, area).apply {
-            addClassName("ts-code")
-            element.style.set("--ts-code-min-lines", minLines.toString())
+            addClassName(CssClass.Code)
+            element.style.setCodeMinLines(minLines)
         }
         add(box, description, helperDescription)
-        area.element.addPropertyChangeListener("value", "input") { event ->
+        area.element.addPropertyChangeListener(DomProperty.Value, DomEvent.Input) { event ->
             if (event.isUserOriginated) {
                 if (isEnabled && !isReadOnly) {
                     val code = requireNotNull(event.value as? String) { "Code editor input must be a string" }
                     setModelValue(code, true)
                     presentLines(value)
                 } else {
-                    area.element.setProperty("value", value)
+                    area.element.setProperty(DomProperty.Value, value)
                 }
             }
         }
-        addAttachListener { element.executeJs("window.testsysCodeEditor.attach($0, $1)", area.element, numbers.element) }
-        addDetachListener { area.element.executeJs("window.testsysCodeEditor.detach(this)") }
+        addAttachListener { element.attachCodeEditor(area = area.element, numbers = numbers.element) }
+        addDetachListener { area.element.detachCodeEditor() }
     }
 
     override fun generateModelValue(): String = value
 
     override fun setPresentationValue(newPresentationValue: String) {
-        area.element.setProperty("value", newPresentationValue)
+        area.element.setProperty(DomProperty.Value, newPresentationValue)
         presentLines(newPresentationValue)
     }
 
     override fun setReadOnly(readOnly: Boolean) {
         super.setReadOnly(readOnly)
         element.setReadOnly(readOnly)
-        area.element.setProperty("readOnly", readOnly)
+        area.element.setProperty(DomProperty.ReadOnly, readOnly)
     }
 
     override fun onEnabledStateChanged(enabled: Boolean) {
         super.onEnabledStateChanged(enabled)
         area.element.isEnabled = enabled
-        area.element.setProperty("disabled", !enabled)
+        area.element.setProperty(DomProperty.Disabled, !enabled)
     }
 
     override fun setRequiredIndicatorVisible(requiredIndicatorVisible: Boolean) {
@@ -250,6 +262,15 @@ fun <T : Any> ContentScope.segmentedControl(
     configure: ValueInput<T?>.() -> Unit = {},
 ): ValueInput<T?> {
     val field = ChoiceField(label, items, itemLabel, null, isSegmented = true)
-    if (placement.isCompact) field.addClassName("ts-seg--sm")
+    if (placement.isCompact) field.addClassName(CssClass.SegSm)
     return addLabelLessInput(label, field, configure)
 }
+
+private fun Element.attachSegmentedChoice(): PendingJavaScriptResult = executeJs("window.testsysSegmentedChoice.attach(this)")
+
+private fun Element.detachSegmentedChoice(): PendingJavaScriptResult = executeJs("window.testsysSegmentedChoice.detach(this)")
+
+private fun Element.attachCodeEditor(area: Element, numbers: Element): PendingJavaScriptResult =
+    executeJs("window.testsysCodeEditor.attach($0, $1)", area, numbers)
+
+private fun Element.detachCodeEditor(): PendingJavaScriptResult = executeJs("window.testsysCodeEditor.detach(this)")

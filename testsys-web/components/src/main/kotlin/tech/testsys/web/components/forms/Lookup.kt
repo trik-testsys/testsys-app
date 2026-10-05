@@ -53,6 +53,8 @@ internal class LookupField<T : Any>(
 
     override fun valueName(current: T?): String = current?.let(display).orEmpty()
 
+    override fun valueEquals(value1: T?, value2: T?): Boolean = value1 === value2
+
     override fun buildDialog(): LookupDialog<T> {
         val dialog = LookupDialog(
             texts,

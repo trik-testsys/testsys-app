@@ -6,11 +6,14 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.SelectionHandle
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setAriaDisabled
 import tech.testsys.web.components.core.setAriaPressed
+import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
@@ -55,24 +58,24 @@ fun ContentScope.quizOption(
     lateinit var handle: SelectionHandle<QuizOptionData>
     fun render(value: QuizOptionData) {
         root.removeAll()
-        root.addClassName("ts-qopt")
-        root.setClassName("ts-qopt--multi", value.isMultiple)
-        root.setClassName("ts-qopt--selected", value.isSelected && value.result == QuizResult.Unchecked)
-        root.setClassName("ts-qopt--correct", value.result == QuizResult.Correct)
-        root.setClassName("ts-qopt--wrong", value.result == QuizResult.Wrong)
-        root.setClassName("ts-qopt--locked", value.result != QuizResult.Unchecked)
+        root.addClassName(CssClass.Qopt)
+        root.setClassName(CssClass.QoptMulti, value.isMultiple)
+        root.setClassName(CssClass.QoptSelected, value.isSelected && value.result == QuizResult.Unchecked)
+        root.setClassName(CssClass.QoptCorrect, value.result == QuizResult.Correct)
+        root.setClassName(CssClass.QoptWrong, value.result == QuizResult.Wrong)
+        root.setClassName(CssClass.QoptLocked, value.result != QuizResult.Unchecked)
         root.element.setAriaPressed(value.isSelected)
         root.element.setAriaDisabled(value.result != QuizResult.Unchecked)
         root.add(
             Span().apply {
-                addClassName("ts-qopt__ind")
+                addClassName(CssClass.QoptInd)
                 if (value.isSelected || value.result == QuizResult.Correct) {
                     add(svgIcon(IconName.Check, tech.testsys.web.components.core.ICON_SIZE_TINY))
                 }
             },
         )
-        value.letter?.let { marker -> root.add(Span(marker).apply { addClassName("ts-qopt__letter") }) }
-        root.add(Span(value.label).apply { addClassName("ts-qopt__label") })
+        value.letter?.let { marker -> root.add(Span(marker).apply { addClassName(CssClass.QoptLetter) }) }
+        root.add(Span(value.label).apply { addClassName(CssClass.QoptLabel) })
     }
     render(data)
     root.addClickListener {

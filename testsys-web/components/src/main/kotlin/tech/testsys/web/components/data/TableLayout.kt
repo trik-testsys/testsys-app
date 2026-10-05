@@ -1,18 +1,29 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.data
 
 import com.vaadin.flow.dom.Element
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssUnit
+import tech.testsys.web.components.core.HtmlTag
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.add
+import tech.testsys.web.components.core.htmlElement
+import tech.testsys.web.components.core.setTableUsed
+import tech.testsys.web.components.core.setTableWidth
+import tech.testsys.web.components.core.setWidth
 import tech.testsys.web.components.layout.GridTrack
 
 /** Resolved column fractions of one logical grid, including utility columns. */
 internal class TableLayout(val gridColumns: Int, val sizes: List<Int>) {
     fun applyTo(table: Element) {
         val used = sizes.sum()
-        table.classList.add("ts-table-grid")
-        table.style.set("--ts-table-used", used.toString())
-        table.style.set("--ts-table-width", "${used.toDouble() / gridColumns * FULL_PERCENT}%")
-        val group = Element("colgroup")
+        table.classList.add(CssClass.TableGrid)
+        table.style.setTableUsed(used)
+        table.style.setTableWidth(used.toDouble() / gridColumns * FULL_PERCENT)
+        val group = htmlElement(HtmlTag.ColGroup)
         sizes.forEach { size ->
-            group.appendChild(Element("col").apply { style.set("width", "${size.toDouble() / used * FULL_PERCENT}%") })
+            group.appendChild(htmlElement(HtmlTag.Col).apply { style.setWidth(size.toDouble() / used * FULL_PERCENT, CssUnit.Percent) })
         }
         table.insertChild(0, group)
     }

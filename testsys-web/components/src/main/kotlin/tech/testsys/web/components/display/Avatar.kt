@@ -5,8 +5,14 @@ package tech.testsys.web.components.display
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.DataHandle
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -16,7 +22,7 @@ import tech.testsys.web.components.layout.Placement
 private object AvatarDefaults {
     const val MAX_VISIBLE = 3
     const val INITIALS_LENGTH = 2
-    const val TONE_COUNT = 4
+    val TONES = listOf(CssClass.AvatarT0, CssClass.AvatarT1, CssClass.AvatarT2, CssClass.AvatarT3)
     val WORD_SEPARATOR = Regex("\\s+")
 }
 
@@ -27,7 +33,7 @@ internal fun avatarInitials(name: String, locale: java.util.Locale): String = na
 
 /** Selects the common geometry for ordinary and overflow avatars. */
 private fun Span.avatarGeometry(placement: Placement) {
-    setClassName("ts-avatar--compact", placement.isCompact)
+    setClassName(CssClass.AvatarCompact, placement.isCompact)
 }
 
 /**
@@ -51,12 +57,12 @@ fun ContentScope.avatar(data: AvatarData, configure: DataHandle<AvatarData>.() -
     fun render(value: AvatarData) {
         root.text = value.initials ?: avatarInitials(value.name, texts.locale)
         root.element.classList.clear()
-        root.addClassNames("ts-avatar", "ts-avatar--t${Math.floorMod(value.name.sumOf { char -> char.code }, AvatarDefaults.TONE_COUNT)}")
+        root.addClassNames(CssClass.Avatar, value.name.avatarToneClass())
         root.avatarGeometry(placement)
-        root.setClassName("ts-avatar--square", value.isSquare)
+        root.setClassName(CssClass.AvatarSquare, value.isSquare)
         root.element.setRole(ElementRole.Image)
-        root.element.setAttribute("aria-label", value.name)
-        root.element.setAttribute("title", value.name)
+        root.element.setAttribute(HtmlAttribute.AriaLabel, value.name)
+        root.element.setAttribute(HtmlAttribute.Title, value.name)
     }
     render(data)
     add(root)
@@ -82,19 +88,19 @@ fun ContentScope.avatarGroup(
     configure: DataHandle<List<AvatarData>>.() -> Unit = {},
 ): DataHandle<List<AvatarData>> {
     require(maxVisible > 0) { "Avatar group visible count must be positive, got $maxVisible" }
-    val root = Div().apply { addClassName("ts-avatars") }
+    val root = Div().apply { addClassName(CssClass.Avatars) }
     fun render(values: List<AvatarData>) {
         root.removeAll()
         values.take(maxVisible).forEach { value -> ContentScope(root, texts, placement, gridColumns).avatar(value) }
         if (values.size > maxVisible) {
             root.add(
                 Span("+${values.size - maxVisible}").apply {
-                    addClassNames("ts-avatar", "ts-avatar--t3")
+                    addClassNames(CssClass.Avatar, CssClass.AvatarT3)
                     avatarGeometry(placement)
                     element.setRole(ElementRole.Image)
-                    element.setAttribute("aria-label", texts.components.avatarOverflow(values.size - maxVisible))
+                    element.setAttribute(HtmlAttribute.AriaLabel, texts.components.avatarOverflow(values.size - maxVisible))
                     element.setAttribute(
-                        "title",
+                        HtmlAttribute.Title,
                         values.drop(maxVisible).joinToString(", ") { value -> value.name },
                     )
                 },
@@ -117,3 +123,5 @@ fun BlockRowScope.avatarGroup(
     maxVisible: Int = AvatarDefaults.MAX_VISIBLE,
     configure: DataHandle<List<AvatarData>>.() -> Unit = {},
 ): DataHandle<List<AvatarData>> = placeContent(size, Div()).avatarGroup(data, maxVisible, configure)
+
+private fun String.avatarToneClass(): CssClass = AvatarDefaults.TONES[Math.floorMod(sumOf { char -> char.code }, AvatarDefaults.TONES.size)]

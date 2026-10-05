@@ -1,8 +1,14 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.Text
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.DataHandle
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import java.math.BigDecimal
@@ -13,12 +19,12 @@ import java.math.BigDecimal
  * @since %CURRENT_VERSION%
  */
 fun ContentScope.verdict(score: Double, label: String? = null, configure: DataHandle<Double>.() -> Unit = {}): DataHandle<Double> {
-    val root = Span().apply { addClassNames("ts-verdict", "ts-verdict--score") }
+    val root = Span().apply { addClassNames(CssClass.Verdict, CssClass.VerdictScore) }
     fun render(value: Double) {
         require(value.isFinite()) { "Verdict score must be finite, got $value" }
         root.removeAll()
         root.add(Text(BigDecimal.valueOf(value).stripTrailingZeros().toPlainString()))
-        label?.let { caption -> root.add(Span(caption).apply { addClassName("ts-verdict__label") }) }
+        label?.let { caption -> root.add(Span(caption).apply { addClassName(CssClass.VerdictLabel) }) }
     }
     render(score)
     add(root)

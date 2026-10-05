@@ -31,12 +31,12 @@ internal fun svgIcon(name: IconName, size: Int = ICON_SIZE, strokeWidth: Int = I
     """<svg xmlns="http://www.w3.org/2000/svg" width="$size" height="$size" viewBox="0 0 24 24" fill="none" """ +
         """stroke="currentColor" stroke-width="$strokeWidth" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">""" +
         """<use href="testsys-ui/icons.svg#${name.key}"/></svg>""",
-).apply { element.classList.add("ts-icon") }
+).apply { element.classList.add(CssClass.Icon) }
 
 /** Builds an arrow button of a pager: a `.ts-pager__btn` with the small icon [name] and the accessible name [label]. */
 internal fun pagerArrow(name: IconName, label: String): NativeButton = NativeButton().apply {
-    addClassName("ts-pager__btn")
-    element.setAttribute("aria-label", label)
+    addClassName(CssClass.PagerBtn)
+    element.setAttribute(HtmlAttribute.AriaLabel, label)
     element.setType(ElementType.Button)
     add(svgIcon(name, ICON_SIZE_SMALL))
 }

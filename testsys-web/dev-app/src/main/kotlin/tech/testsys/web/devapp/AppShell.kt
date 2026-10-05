@@ -22,6 +22,8 @@ import tech.testsys.web.components.UiTexts
 class AppShell(private val texts: UiTexts) : AppShellConfigurator {
     override fun configurePage(settings: AppShellSettings) {
         settings.setPageTitle(texts.brand)
-        settings.addFavIcon("icon", TestSysBrand.FAVICON_URL, "any")
+        settings.addBrandFavicon()
     }
 }
+
+private fun AppShellSettings.addBrandFavicon() = addFavIcon("icon", TestSysBrand.FAVICON_URL, "any")

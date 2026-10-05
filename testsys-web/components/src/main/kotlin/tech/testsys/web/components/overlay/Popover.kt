@@ -10,7 +10,11 @@ import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.actions.ActionRole
 import tech.testsys.web.components.actions.buildActionButton
 import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssTheme
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addThemeName
 import tech.testsys.web.components.core.setAriaExpanded
 import tech.testsys.web.components.core.setAriaHasPopup
 import tech.testsys.web.components.layout.BlockRowScope
@@ -120,9 +124,9 @@ fun ContentScope.popover(
         isCloseOnOutsideClick = true
         setAriaLabel(label)
         position = if (alignment == PopoverAlignment.Start) PopoverPosition.BOTTOM_START else PopoverPosition.BOTTOM_END
-        addThemeName("ts-popover")
+        addThemeName(CssTheme.Popover)
     }
-    val body = Div().apply { addClassName("ts-pop") }
+    val body = Div().apply { addClassName(CssClass.Pop) }
     ContentScope(body, texts, Placement.Body, gridColumns).content()
     popup.add(body)
     root.add(trigger, popup)

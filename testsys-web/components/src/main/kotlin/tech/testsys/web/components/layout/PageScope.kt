@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.Component
@@ -6,6 +8,9 @@ import com.vaadin.flow.component.html.Footer
 import com.vaadin.flow.component.html.Main
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.navigation.PageHeadScope
 
 /**
@@ -55,7 +60,7 @@ class PageScope internal constructor(
      */
     fun row(content: PageRowScope.() -> Unit) {
         isHeadAllowed = false
-        val row = Div().apply { addClassName("ts-row") }
+        val row = Div().apply { addClassName(CssClass.Row) }
         main.add(row)
         PageRowScope(row, texts).content()
     }

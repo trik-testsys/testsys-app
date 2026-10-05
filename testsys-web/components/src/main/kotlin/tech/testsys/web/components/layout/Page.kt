@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.Component
@@ -6,6 +8,10 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Main
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.bindTexts
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.navigation.CabinetHeader
 import tech.testsys.web.components.navigation.buildHeader
 
@@ -16,9 +22,9 @@ import tech.testsys.web.components.navigation.buildHeader
  */
 internal fun renderPage(root: Div, header: CabinetHeader, texts: UiTexts, view: Class<out Component>?, body: PageScope.() -> Unit) {
     bindTexts(checkNotNull(UI.getCurrent()) { "No current UI: a page is built inside a Vaadin request" }, texts)
-    val main = Main().apply { addClassName("ts-page") }
+    val main = Main().apply { addClassName(CssClass.Page) }
     root.removeAll()
-    root.setClassName("ts-app")
+    root.setClassName(CssClass.App)
     root.add(buildHeader(header, texts), main)
     val scope = PageScope(main, texts, view) { head -> root.addComponentAtIndex(1, head) }.apply(body)
     root.add(scope.buildFooter())

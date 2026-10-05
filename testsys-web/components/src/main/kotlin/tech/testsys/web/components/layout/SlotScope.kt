@@ -1,8 +1,13 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.html.Div
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 
 /**
  * Scope of a slot: rows stacked vertically on the columns of the slot.
@@ -22,7 +27,7 @@ class SlotScope internal constructor(
      * @since %CURRENT_VERSION%
      */
     fun row(content: SlotRowScope.() -> Unit) {
-        val row = Div().apply { addClassName("ts-slot__row") }
+        val row = Div().apply { addClassName(CssClass.SlotRow) }
         slot.add(row)
         SlotRowScope(row, size, texts, highlights).content()
     }

@@ -11,7 +11,9 @@ import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setAriaBusy
 
 /**
@@ -25,7 +27,7 @@ import tech.testsys.web.components.core.setAriaBusy
 @TestSysDsl
 class ActionHandle internal constructor(internal val button: Button, private val icon: Component?) : ElementHandle(button) {
     private val loading = Bindable(button.element, initial = false) { value ->
-        button.icon = if (value) Span().apply { addClassName("ts-spinner") } else icon
+        button.icon = if (value) Span().apply { addClassName(CssClass.Spinner) } else icon
         if (value) button.element.setAriaBusy(true) else button.element.setAriaBusy(null)
     }
 

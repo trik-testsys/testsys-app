@@ -9,10 +9,16 @@ import com.vaadin.flow.component.html.H2
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.iconAction
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssTheme
+import tech.testsys.web.components.core.DomProperty
 import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addThemeName
 import tech.testsys.web.components.core.setAriaRole
+import tech.testsys.web.components.core.setProperty
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
@@ -25,34 +31,34 @@ private const val GLYPH_SIZE = 20
  */
 internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, isWide: Boolean, isAlert: Boolean) {
     val dialog = Dialog().apply {
-        addThemeName("ts-dialog")
+        addThemeName(CssTheme.Dialog)
         // Vaadin defaults, set explicitly to state how every dialog closes.
         modality = ModalityMode.STRICT
         isCloseOnEsc = true
         isCloseOnOutsideClick = true
         setAriaRole(if (isAlert) ElementRole.AlertDialog else ElementRole.Dialog)
         // Dialog.setAriaLabel is protected; it only sets this property.
-        element.setProperty("ariaLabel", title)
+        element.setProperty(DomProperty.AriaLabel, title)
     }
-    val body = Div().apply { addClassName("ts-dialog__body") }
+    val body = Div().apply { addClassName(CssClass.DialogBody) }
     val content = Div()
-    val foot = Div().apply { addClassName("ts-dialog__foot") }
+    val foot = Div().apply { addClassName(CssClass.DialogFoot) }
 
     init {
         val card = Div().apply {
-            addClassName("ts-dialog")
-            if (isWide) addClassName("ts-dialog--md")
-            if (isAlert) addClassName("ts-dialog--alert")
+            addClassName(CssClass.Dialog)
+            if (isWide) addClassName(CssClass.DialogMd)
+            if (isAlert) addClassName(CssClass.DialogAlert)
         }
-        val heading = H2(title).apply { addClassName("ts-dialog__title") }
+        val heading = H2(title).apply { addClassName(CssClass.DialogTitle) }
         if (isAlert) {
-            val glyph = Span(svgIcon(IconName.TriangleAlert, GLYPH_SIZE)).apply { addClassName("ts-dialog__glyph") }
-            body.add(glyph, Div(heading, content).apply { addClassName("ts-dialog__stack") })
+            val glyph = Span(svgIcon(IconName.TriangleAlert, GLYPH_SIZE)).apply { addClassName(CssClass.DialogGlyph) }
+            body.add(glyph, Div(heading, content).apply { addClassName(CssClass.DialogStack) })
             card.add(body, foot)
         } else {
-            val titles = Div(heading).apply { addClassName("ts-block__titles") }
-            subtitle?.let { text -> titles.add(Span(text).apply { addClassName("ts-block__sub") }) }
-            val head = Div(titles).apply { addClassName("ts-dialog__head") }
+            val titles = Div(heading).apply { addClassName(CssClass.BlockTitles) }
+            subtitle?.let { text -> titles.add(Span(text).apply { addClassName(CssClass.BlockSub) }) }
+            val head = Div(titles).apply { addClassName(CssClass.DialogHead) }
             ContentScope(head, texts, Placement.Head, DIALOG_COLUMNS).iconAction(IconName.X, texts.dialog.close) { onClick { close() } }
             body.add(content)
             card.add(head, body, foot)

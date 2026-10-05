@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.navigation
 
 import com.vaadin.flow.component.Component
@@ -8,6 +10,13 @@ import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.buildBrand
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.HtmlAttribute
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.add
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.setAttribute
 
 /** Builds the `.ts-header` markup of [header]. */
 internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
@@ -16,12 +25,12 @@ internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
     require(header.menuSearchKey == null || (header.search == null && header.menuSearchKey in menus)) {
         "Menu search requires an existing mega-menu key and excludes provider search"
     }
-    val bar = Div().apply { addClassName("ts-header__bar") }
+    val bar = Div().apply { addClassName(CssClass.HeaderBar) }
     bar.add(buildBrand(texts.brand, href = "."), navigation(header, texts, menus))
     if (header.menuSearchKey != null) {
         bar.add(HeaderMenuSearchController(menus.getValue(header.menuSearchKey), texts.header).component)
     }
-    bar.add(Div().apply { addClassName("ts-header__spacer") })
+    bar.add(Div().apply { addClassName(CssClass.HeaderSpacer) })
     if (header.menuSearchKey == null) {
         header.search?.let { search -> bar.add(HeaderSearchController(search, texts.header, interactions).component) }
     }
@@ -42,13 +51,13 @@ internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
 }
 
 private fun navigation(header: CabinetHeader, texts: UiTexts, menus: Map<String, MegaMenuHandle>): Nav = Nav().apply {
-    addClassName("ts-nav")
-    element.setAttribute("aria-label", texts.navigation.sections)
+    addClassName(CssClass.Nav)
+    element.setAttribute(HtmlAttribute.AriaLabel, texts.navigation.sections)
     header.items.forEach { item ->
         val entry = when (item) {
             is NavItem -> navLink(item, active = item.key == header.active)
             is MegaMenuItem -> menus.getValue(item.key).component.apply {
-                if (item.key == header.active) children.findFirst().orElseThrow().element.classList.add("ts-nav__item--active")
+                if (item.key == header.active) children.findFirst().orElseThrow().element.classList.add(CssClass.NavItemActive)
             }
         }
         add(entry)
@@ -56,16 +65,16 @@ private fun navigation(header: CabinetHeader, texts: UiTexts, menus: Map<String,
 }
 
 private fun navLink(item: NavItem, active: Boolean): RouterLink = RouterLink(item.label, item.target).apply {
-    addClassName("ts-nav__item")
-    if (active) addClassName("ts-nav__item--active")
+    addClassName(CssClass.NavItem)
+    if (active) addClassName(CssClass.NavItemActive)
 }
 
 private fun userChip(user: HeaderUser, locale: java.util.Locale): Div {
     val avatar = userAvatar(user.name, locale)
-    return Div(avatar, Text(user.name)).apply { addClassName("ts-header__user") }
+    return Div(avatar, Text(user.name)).apply { addClassName(CssClass.HeaderUser) }
 }
 
 private fun signInLink(label: String, target: Class<out Component>, parameters: RouteParameters): RouterLink =
     RouterLink(label, target, parameters).apply {
-        addClassNames("ts-btn", "ts-btn--secondary", "ts-header__action")
+        addClassNames(CssClass.Btn, CssClass.BtnSecondary, CssClass.HeaderAction)
     }

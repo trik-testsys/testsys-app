@@ -7,6 +7,7 @@ import com.vaadin.flow.component.datepicker.DatePicker
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.page.PendingJavaScriptResult
 import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.binder.ValidationResult
@@ -14,14 +15,22 @@ import com.vaadin.flow.data.binder.ValidationStatusChangeEvent
 import com.vaadin.flow.data.binder.ValidationStatusChangeListener
 import com.vaadin.flow.data.binder.Validator
 import com.vaadin.flow.data.binder.ValueContext
+import com.vaadin.flow.dom.Element
 import com.vaadin.flow.shared.Registration
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssTheme
 import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.addThemeName
 import tech.testsys.web.components.core.setAriaHasPopup
 import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setHidden
 import tech.testsys.web.components.core.setRangePart
 import tech.testsys.web.components.core.setType
@@ -53,11 +62,11 @@ internal class DateRangeField(
         element.setHidden(true)
     }
     private val trigger = NativeButton().apply {
-        addClassNames("ts-btn", "ts-btn--icon", "ts-btn--secondary")
+        addClassNames(CssClass.Btn, CssClass.BtnIcon, CssClass.BtnSecondary)
         element.setType(ElementType.Button)
         element.setAriaHasPopup(AriaPopup.Dialog)
-        element.setAttribute("aria-label", calendarName)
-        element.setAttribute("title", calendarName)
+        element.setAttribute(HtmlAttribute.AriaLabel, calendarName)
+        element.setAttribute(HtmlAttribute.Title, calendarName)
         add(svgIcon(IconName.Calendar))
     }
     private val calendar = DateRangeCalendarAdapter(texts)
@@ -68,13 +77,13 @@ internal class DateRangeField(
         isCloseOnEsc = true
         isCloseOnOutsideClick = true
         setAriaLabel(calendarName)
-        addThemeName("ts-popover")
+        addThemeName(CssTheme.Popover)
     }
 
     init {
         listOf(start to texts.dateFields.rangeFromPrefix, end to texts.dateFields.rangeToPrefix).forEach { (picker, prefix) ->
             picker.prefixComponent = Span(prefix).apply {
-                addClassName("ts-date-range__prefix")
+                addClassName(CssClass.DateRangePrefix)
                 element.setAriaHidden(true)
             }
         }
@@ -94,27 +103,12 @@ internal class DateRangeField(
         }
         listOf(start, end).forEach { picker ->
             picker.element.setRangePart(true)
-            picker.element.executeJs(
-                """
-                this.addEventListener('keydown', e => {
-                  if (e.altKey && e.key === 'ArrowDown' && !this.readOnly && !this.disabled) {
-                    e.preventDefault(); e.stopImmediatePropagation(); $0.opened = true;
-                  }
-                }, true);
-                this.addEventListener('opened-changed', () => {
-                  if (this.opened) {
-                    this.opened = false;
-                    if (!this.readOnly && !this.disabled) $0.opened = true;
-                  }
-                });
-                """.trimIndent(),
-                popup.element,
-            )
+            picker.element.installRangeCalendar(popup.element)
             picker.isAutoOpen = false
             picker.isClearButtonVisible = true
             picker.setManualValidation(true)
         }
-        add(Div(start, end, trigger).apply { addClassName("ts-date-range") }, requiredDescription, popup)
+        add(Div(start, end, trigger).apply { addClassName(CssClass.DateRange) }, requiredDescription, popup)
         start.addValueChangeListener { event ->
             end.min = event.value
             if (!isPresenting) {
@@ -189,3 +183,20 @@ internal class DateRangeField(
         )
     }
 }
+
+private fun Element.installRangeCalendar(popup: Element): PendingJavaScriptResult = executeJs(
+    """
+    this.addEventListener('keydown', e => {
+      if (e.altKey && e.key === 'ArrowDown' && !this.readOnly && !this.disabled) {
+        e.preventDefault(); e.stopImmediatePropagation(); $0.opened = true;
+      }
+    }, true);
+    this.addEventListener('opened-changed', () => {
+      if (this.opened) {
+        this.opened = false;
+        if (!this.readOnly && !this.disabled) $0.opened = true;
+      }
+    });
+    """.trimIndent(),
+    popup,
+)

@@ -12,9 +12,15 @@ import com.vaadin.flow.router.RouterLink
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.AriaCurrent
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.set
 import tech.testsys.web.components.core.setAriaCurrent
 import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.display.CounterKind
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.buildBadge
@@ -61,7 +67,7 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
      * @since %CURRENT_VERSION%
      */
     fun meta(text: String) {
-        marks += Span(text).apply { addClassName("ts-page-head__meta") }
+        marks += Span(text).apply { addClassName(CssClass.PageHeadMeta) }
     }
 
     /**
@@ -72,7 +78,7 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
      */
     fun actions(content: ContentScope.() -> Unit) {
         check(actionsBar == null) { "Page head already has actions; call actions() once" }
-        val bar = Div().apply { addClassName("ts-page-head__actions") }
+        val bar = Div().apply { addClassName(CssClass.PageHeadActions) }
         ContentScope(bar, texts, Placement.PageHead, GRID_COLUMNS).content()
         actionsBar = bar
     }
@@ -101,25 +107,25 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
     }
 
     internal fun build(title: String): Div {
-        val inner = Div().apply { addClassName("ts-page-head__inner") }
+        val inner = Div().apply { addClassName(CssClass.PageHeadInner) }
         if (crumbs.isNotEmpty()) inner.add(breadcrumbs(title))
-        val titleRow = Div(H1(title).apply { addClassName("ts-h1") }).apply { addClassName("ts-page-head__title-row") }
+        val titleRow = Div(H1(title).apply { addClassName(CssClass.H1) }).apply { addClassName(CssClass.PageHeadTitleRow) }
         marks.forEach { mark -> titleRow.add(mark) }
         actionsBar?.let { bar -> titleRow.add(bar) }
         inner.add(titleRow)
         tabsNav?.let { nav -> inner.add(nav) }
-        return Div(inner).apply { addClassName("ts-page-head") }
+        return Div(inner).apply { addClassName(CssClass.PageHead) }
     }
 
     private fun breadcrumbs(title: String): Nav = Nav().apply {
-        addClassName("ts-crumbs")
-        element.setAttribute("aria-label", texts.navigation.breadcrumbs)
+        addClassName(CssClass.Crumbs)
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.navigation.breadcrumbs)
         crumbs.forEach { link -> add(link, separator()) }
         add(Span(title).apply { element.setAriaCurrent(AriaCurrent.Page) })
     }
 
     private fun separator(): Span = Span("/").apply {
-        addClassName("ts-crumbs__sep")
+        addClassName(CssClass.CrumbsSep)
         element.setAriaHidden(true)
     }
 }
@@ -152,7 +158,7 @@ class PageTabsScope internal constructor(
         activeOn: Set<Class<out Component>> = emptySet(),
     ) {
         require(count == null || count >= 0) { "Page tab '$label' count must not be negative, got $count" }
-        val link = RouterLink(label, target, parameters).apply { addClassName("ts-tab") }
+        val link = RouterLink(label, target, parameters).apply { addClassName(CssClass.Tab) }
         if (count != null && count > 0) link.add(buildCounter(count, countKind))
         tabs += PageTab(link, target, activeOn.toSet())
     }
@@ -162,12 +168,12 @@ class PageTabsScope internal constructor(
         val current = tabs.firstOrNull { tab -> tab.target == view }
             ?: tabs.firstOrNull { tab -> view in tab.activeOn }
         return Nav().apply {
-            addClassNames("ts-tabs", "ts-tabs--bare", "ts-tabs--lg")
-            element.setAttribute("aria-label", ariaLabel)
+            addClassNames(CssClass.Tabs, CssClass.TabsBare, CssClass.TabsLg)
+            element.setAttribute(HtmlAttribute.AriaLabel, ariaLabel)
             tabs.forEach { tab ->
                 if (isRouteExactMatch && tabs.any { it.target == view }) {
                     configureExactRoute(tab.link) { link, isCurrent ->
-                        link.element.classList.set("ts-tab--active", isCurrent)
+                        link.element.classList.set(CssClass.TabActive, isCurrent)
                         if (isCurrent) link.element.setAriaCurrent(AriaCurrent.Page) else link.element.setAriaCurrent(null)
                     }
                     add(tab.link)
@@ -180,7 +186,7 @@ class PageTabsScope internal constructor(
 
     private fun mark(tab: PageTab, isCurrent: Boolean): RouterLink = tab.link.apply {
         if (isCurrent) {
-            addClassName("ts-tab--active")
+            addClassName(CssClass.TabActive)
             element.setAriaCurrent(if (tab.target == view) AriaCurrent.Page else AriaCurrent.Location)
         }
     }

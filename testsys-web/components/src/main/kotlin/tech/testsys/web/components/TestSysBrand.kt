@@ -6,8 +6,12 @@ import com.vaadin.flow.component.HtmlContainer
 import com.vaadin.flow.component.html.Anchor
 import com.vaadin.flow.component.html.Image
 import com.vaadin.flow.component.html.Span
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setRole
 
 /**
@@ -34,8 +38,8 @@ object TestSysBrand {
 
 internal fun buildBrand(name: String, href: String? = null): HtmlContainer {
     val container = if (href == null) Span().apply { element.setRole(ElementRole.Image) } else Anchor(href)
-    container.addClassName("ts-brand")
-    container.element.setAttribute("aria-label", name)
-    container.add(Image(TestSysBrand.HEADER, "").apply { addClassName("ts-brand__logo") })
+    container.addClassName(CssClass.Brand)
+    container.element.setAttribute(HtmlAttribute.AriaLabel, name)
+    container.add(Image(TestSysBrand.HEADER, "").apply { addClassName(CssClass.BrandLogo) })
     return container
 }

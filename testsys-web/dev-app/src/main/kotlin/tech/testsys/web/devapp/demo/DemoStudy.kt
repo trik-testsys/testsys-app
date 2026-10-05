@@ -1,5 +1,6 @@
 package tech.testsys.web.devapp.demo
 
+import com.vaadin.flow.signals.local.ValueSignal
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.display.text
@@ -80,7 +81,7 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
         }
         if (section != "solutions" || actor.role == "Участник") {
             lateinit var kind: ValueInput<String?>
-            var filename = ""
+            val filename = ValueSignal("")
             row {
                 kind = select(
                     "Вид решения",
@@ -97,7 +98,7 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
                     "Файл решения (демонстрация)",
                     UploadLimits(maxFiles = 1, maxFileBytes = DEMO_FILE_BYTES, maxMemoryBytes = DEMO_FILE_BYTES.toLong()),
                     consume = { file ->
-                        filename = file.filename
+                        filename.set(file.filename)
                     },
                 )
             }
@@ -110,7 +111,7 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
                                     userId = actor.id,
                                     taskId = task.id,
                                     kind = kind.value.orEmpty(),
-                                    fileName = filename,
+                                    fileName = filename.peek(),
                                 ),
                             )
                         ) {

@@ -1,8 +1,13 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.TextHandle
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.layout.BlockHeading
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.SlotRowScope
@@ -12,9 +17,9 @@ import tech.testsys.web.components.layout.SlotRowScope
  *
  * @since %CURRENT_VERSION%
  */
-enum class Trend(internal val modifier: String) {
-    Up("up"),
-    Down("down"),
+enum class Trend(internal val cssClass: CssClass) {
+    Up(CssClass.StatDeltaUp),
+    Down(CssClass.StatDeltaDown),
 }
 
 /**
@@ -46,13 +51,13 @@ fun BlockRowScope.statCard(label: String, value: String, size: Int? = null, delt
 private class Stat(val card: Div, val value: Span)
 
 private fun buildStat(label: String, value: String, delta: String?, trend: Trend?): Stat {
-    val valueText = Span(value).apply { addClassName("ts-stat__value") }
-    val card = Div(Span(label).apply { addClassName("ts-stat__label") }, valueText).apply { addClassName("ts-stat") }
+    val valueText = Span(value).apply { addClassName(CssClass.StatValue) }
+    val card = Div(Span(label).apply { addClassName(CssClass.StatLabel) }, valueText).apply { addClassName(CssClass.Stat) }
     if (delta != null) {
         card.add(
             Span(delta).apply {
-                addClassName("ts-stat__delta")
-                trend?.let { direction -> addClassName("ts-stat__delta--${direction.modifier}") }
+                addClassName(CssClass.StatDelta)
+                trend?.let { direction -> addClassName(direction.cssClass) }
             },
         )
     }

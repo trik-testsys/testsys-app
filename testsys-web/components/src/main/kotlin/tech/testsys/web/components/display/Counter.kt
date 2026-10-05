@@ -1,7 +1,12 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.TextHandle
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -10,9 +15,9 @@ import tech.testsys.web.components.layout.ContentScope
  *
  * @since %CURRENT_VERSION%
  */
-enum class CounterKind(internal val tone: String) {
-    Attention("danger"),
-    Neutral("muted"),
+enum class CounterKind(internal val cssClass: CssClass) {
+    Attention(CssClass.CounterDanger),
+    Neutral(CssClass.CounterMuted),
 }
 
 /**
@@ -33,6 +38,6 @@ fun BlockRowScope.counter(value: Int, kind: CounterKind = CounterKind.Attention,
 
 /** Builds the `.ts-counter` markup showing [value], coloured by [kind]. */
 internal fun buildCounter(value: Int, kind: CounterKind): Span =
-    Span(value.toString()).apply { addClassNames("ts-counter", "ts-counter--${kind.tone}") }
+    Span(value.toString()).apply { addClassNames(CssClass.Counter, kind.cssClass) }
 
 private fun counterHandle(counter: Span): TextHandle = TextHandle(counter, counter)

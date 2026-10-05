@@ -1,8 +1,15 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.overlay
 
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.TestSysDsl
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssTheme
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addThemeName
 import tech.testsys.web.components.currentTexts
 import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.BlockRowScope
@@ -109,8 +116,8 @@ fun drawer(
 ): DrawerHandle {
     val texts = currentTexts()
     val shell = DialogShell(texts, title, subtitle, isWide = true, isAlert = false)
-    shell.dialog.addThemeName("ts-drawer")
-    shell.content.addClassName("ts-dialog__grid")
+    shell.dialog.addThemeName(CssTheme.Drawer)
+    shell.content.addClassName(CssClass.DialogGrid)
     val editing = BlockEditState(shell.dialog.element)
     val delegate = DialogHandle(shell, editing)
     val handle = DrawerHandle(delegate)

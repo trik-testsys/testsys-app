@@ -5,10 +5,24 @@ package tech.testsys.web.components.display
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.DataHandle
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssProperty
+import tech.testsys.web.components.core.CssUnit
 import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.HtmlAttribute
+import tech.testsys.web.components.core.HtmlTag
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.htmlElement
+import tech.testsys.web.components.core.removeAttribute
+import tech.testsys.web.components.core.removeWidth
+import tech.testsys.web.components.core.set
 import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setRole
+import tech.testsys.web.components.core.setWidth
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -54,26 +68,26 @@ fun ContentScope.progressBar(
     tone: Tone = Tone.Info,
     configure: DataHandle<ProgressValue>.() -> Unit = {},
 ): DataHandle<ProgressValue> {
-    val bar = Div().apply { addClassName("ts-progress__bar") }
+    val bar = Div().apply { addClassName(CssClass.ProgressBar) }
     val root = Div(bar).apply {
-        addClassNames("ts-progress", "ts-progress--${if (tone == Tone.Info) "accent" else tone.modifier}")
-        setClassName("ts-progress--thin", placement.isCompact)
+        addClassNames(CssClass.Progress, tone.progressClass)
+        setClassName(CssClass.ProgressThin, placement.isCompact)
         element.setRole(ElementRole.ProgressBar)
-        element.setAttribute("aria-label", label)
-        element.setAttribute("aria-valuemin", "0")
-        element.setAttribute("aria-valuemax", "100")
+        element.setAttribute(HtmlAttribute.AriaLabel, label)
+        element.setAttribute(HtmlAttribute.AriaValueMin, "0")
+        element.setAttribute(HtmlAttribute.AriaValueMax, "100")
     }
 
     fun render(progress: ProgressValue) {
-        root.setClassName("ts-progress--indeterminate", progress is ProgressValue.Indeterminate)
+        root.setClassName(CssClass.ProgressIndeterminate, progress is ProgressValue.Indeterminate)
         when (progress) {
             is ProgressValue.Determinate -> {
-                root.element.setAttribute("aria-valuenow", progress.percent.toString())
-                bar.element.style.set("width", "${progress.percent}%")
+                root.element.setAttribute(HtmlAttribute.AriaValueNow, progress.percent.toString())
+                bar.element.style.setWidth(progress.percent, CssUnit.Percent)
             }
             ProgressValue.Indeterminate -> {
-                root.element.removeAttribute("aria-valuenow")
-                bar.element.style.remove("width")
+                root.element.removeAttribute(HtmlAttribute.AriaValueNow)
+                bar.element.style.removeWidth()
             }
         }
     }
@@ -134,20 +148,17 @@ fun ContentScope.difficulty(
     showLabel: Boolean = true,
     configure: DataHandle<DifficultyLevel>.() -> Unit = {},
 ): DataHandle<DifficultyLevel> {
-    val root = Span().apply { addClassName("ts-difficulty") }
+    val root = Span().apply { addClassName(CssClass.Difficulty) }
     fun render(current: DifficultyLevel) {
         root.removeAll()
         val caption = label ?: texts.components.difficultyLabels[current.ordinal]
-        root.element.setAttribute("aria-label", caption)
+        root.element.setAttribute(HtmlAttribute.AriaLabel, caption)
         val marks = Span()
         repeat(DIFFICULTY_INDICATORS) { index ->
             marks.element.appendChild(
-                com.vaadin.flow.dom.Element("i").apply {
+                htmlElement(HtmlTag.I).apply {
                     if (index <= current.ordinal) {
-                        style.set(
-                            "background",
-                            "var(--${listOf("success", "warning", "danger")[current.ordinal]})",
-                        )
+                        style.setDifficultyBackground(current)
                     }
                 },
             )
@@ -173,3 +184,21 @@ fun BlockRowScope.difficulty(
     showLabel: Boolean = true,
     configure: DataHandle<DifficultyLevel>.() -> Unit = {},
 ): DataHandle<DifficultyLevel> = placeContent(size, Div()).difficulty(level, label, showLabel, configure)
+
+private val Tone.progressClass: CssClass
+    get() = when (this) {
+        Tone.Neutral -> CssClass.ProgressNeutral
+        Tone.Info -> CssClass.ProgressAccent
+        Tone.Success -> CssClass.ProgressSuccess
+        Tone.Warning -> CssClass.ProgressWarning
+        Tone.Danger -> CssClass.ProgressDanger
+    }
+
+private fun com.vaadin.flow.dom.Style.setDifficultyBackground(level: DifficultyLevel) = set(
+    CssProperty.Background,
+    when (level) {
+        DifficultyLevel.Easy -> "var(--success)"
+        DifficultyLevel.Medium -> "var(--warning)"
+        DifficultyLevel.Hard -> "var(--danger)"
+    },
+)

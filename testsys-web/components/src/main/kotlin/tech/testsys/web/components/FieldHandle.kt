@@ -6,7 +6,11 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.getAttribute
+import tech.testsys.web.components.core.removeAttribute
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setObscured
 
 /**
@@ -17,15 +21,15 @@ import tech.testsys.web.components.core.setObscured
  * @since %CURRENT_VERSION%
  */
 open class FieldHandle internal constructor(component: Component, private val valueArea: Component) : ElementHandle(component) {
-    private val originalTabIndex = valueArea.element.getAttribute("tabindex")
+    private val originalTabIndex = valueArea.element.getAttribute(HtmlAttribute.TabIndex)
     private val obscured = Bindable(component.element, initial = false) { value ->
         valueArea.element.setObscured(value)
         if (value) {
-            valueArea.element.setAttribute("tabindex", ObscuredFocus.TAB_INDEX)
+            valueArea.element.setAttribute(HtmlAttribute.TabIndex, ObscuredFocus.TAB_INDEX)
         } else if (originalTabIndex == null) {
-            valueArea.element.removeAttribute("tabindex")
+            valueArea.element.removeAttribute(HtmlAttribute.TabIndex)
         } else {
-            valueArea.element.setAttribute("tabindex", originalTabIndex)
+            valueArea.element.setAttribute(HtmlAttribute.TabIndex, originalTabIndex)
         }
     }
 

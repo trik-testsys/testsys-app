@@ -5,10 +5,18 @@ package tech.testsys.web.components.feedback
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssUnit
 import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setHeightPixels
 import tech.testsys.web.components.core.setRole
+import tech.testsys.web.components.core.setWidth
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -32,23 +40,23 @@ internal fun buildSkeletonRows(rows: Int): Div = Div().apply {
 
 private fun skeletonRow(lineWidths: Pair<Int, Int>): Div {
     val lines = Div(
-        skeleton(height = TITLE_HEIGHT, width = "${lineWidths.first}%"),
-        skeleton(height = SUBTITLE_HEIGHT, width = "${lineWidths.second}%"),
-    ).apply { addClassName("ts-skel-row__lines") }
+        skeleton(height = TITLE_HEIGHT, width = lineWidths.first),
+        skeleton(height = SUBTITLE_HEIGHT, width = lineWidths.second),
+    ).apply { addClassName(CssClass.SkelRowLines) }
     return Div(
-        skeleton(height = CIRCLE_SIZE, width = "${CIRCLE_SIZE}px", modifier = "ts-skel--circle"),
+        skeleton(height = CIRCLE_SIZE, width = CIRCLE_SIZE, unit = CssUnit.Pixels, modifier = CssClass.SkelCircle),
         lines,
         skeleton(height = VALUE_HEIGHT),
-        skeleton(height = BADGE_HEIGHT, modifier = "ts-skel--badge"),
-    ).apply { addClassNames("ts-list-row", "ts-skel-row") }
+        skeleton(height = BADGE_HEIGHT, modifier = CssClass.SkelBadge),
+    ).apply { addClassNames(CssClass.ListRow, CssClass.SkelRow) }
 }
 
-/** A pulsing shape [height] pixels high, [width] wide or as wide as its place, with an optional shape [modifier]. */
-private fun skeleton(height: Int, width: String? = null, modifier: String? = null): Span = Span().apply {
-    addClassName("ts-skel")
+/** A pulsing shape [height] pixels high, [width] units wide or as wide as its place, with an optional shape [modifier]. */
+private fun skeleton(height: Int, width: Int? = null, unit: CssUnit = CssUnit.Percent, modifier: CssClass? = null): Span = Span().apply {
+    addClassName(CssClass.Skel)
     modifier?.let { name -> addClassName(name) }
-    width?.let { value -> style.set("width", value) }
-    style.set("height", "${height}px")
+    width?.let { value -> style.setWidth(value, unit) }
+    style.setHeightPixels(height)
 }
 
 /**
@@ -69,13 +77,13 @@ fun ContentScope.skeleton(
     },
 ): ElementHandle {
     val part = Span().apply {
-        addClassNames("ts-skel", "ts-skel--${shape.name.lowercase()}")
+        addClassNames(CssClass.Skel, shape.partClass)
         element.setAriaHidden(true)
     }
     val root = Div(part).apply {
-        addClassNames("ts-skeleton", "ts-skeleton--${shape.name.lowercase()}")
+        addClassNames(CssClass.Skeleton, shape.rootClass)
         element.setRole(ElementRole.Status)
-        element.setAttribute("aria-label", texts.components.loading)
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.components.loading)
     }
     add(root)
     return ElementHandle(root).apply(configure)
@@ -107,7 +115,7 @@ fun ContentScope.skeletonRows(rows: Int = 5, configure: ElementHandle.() -> Unit
     ).apply {
         element.setRole(ElementRole.Status)
         element.setAttribute(
-            "aria-label",
+            HtmlAttribute.AriaLabel,
             texts.components.loading,
         )
     }
@@ -122,3 +130,19 @@ fun ContentScope.skeletonRows(rows: Int = 5, configure: ElementHandle.() -> Unit
  */
 fun BlockRowScope.skeletonRows(rows: Int = 5, size: Int? = null, configure: ElementHandle.() -> Unit = {}): ElementHandle =
     placeContent(size, Div()).skeletonRows(rows, configure)
+
+private val SkeletonShape.partClass: CssClass
+    get() = when (this) {
+        SkeletonShape.Text -> CssClass.SkelText
+        SkeletonShape.Circle -> CssClass.SkelCircle
+        SkeletonShape.Badge -> CssClass.SkelBadge
+        SkeletonShape.Rectangle -> CssClass.SkelRectangle
+    }
+
+private val SkeletonShape.rootClass: CssClass
+    get() = when (this) {
+        SkeletonShape.Text -> CssClass.SkeletonText
+        SkeletonShape.Circle -> CssClass.SkeletonCircle
+        SkeletonShape.Badge -> CssClass.SkeletonBadge
+        SkeletonShape.Rectangle -> CssClass.SkeletonRectangle
+    }

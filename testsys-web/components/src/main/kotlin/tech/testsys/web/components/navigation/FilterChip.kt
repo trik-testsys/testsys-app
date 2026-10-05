@@ -8,12 +8,15 @@ import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.ICON_SIZE_TINY
 import tech.testsys.web.components.core.ICON_STROKE_BOLD
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setAriaPressed
+import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.ContentScope
@@ -37,7 +40,7 @@ class FilterChipHandle internal constructor(private val button: NativeButton, is
         }
 
     init {
-        button.addClassName("ts-filter")
+        button.addClassName(CssClass.Filter)
         button.element.setType(ElementType.Button)
         button.addClickListener { toggle() }
         render(isSelected)
@@ -68,7 +71,7 @@ class FilterChipHandle internal constructor(private val button: NativeButton, is
     }
 
     private fun render(isOn: Boolean) {
-        button.setClassName("ts-filter--on", isOn)
+        button.setClassName(CssClass.FilterOn, isOn)
         button.element.setAriaPressed(isOn)
         if (isOn) button.addComponentAsFirst(check) else button.remove(check)
     }

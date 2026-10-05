@@ -3,10 +3,16 @@
 package tech.testsys.web.components.data
 
 import com.vaadin.flow.component.html.Div
-import com.vaadin.flow.dom.Element
 import tech.testsys.web.components.DataHandle
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementScope
+import tech.testsys.web.components.core.HtmlAttribute
+import tech.testsys.web.components.core.HtmlTag
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.add
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.htmlElement
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setScope
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -19,63 +25,63 @@ import tech.testsys.web.components.layout.Placement
  */
 fun ContentScope.leaderboard(data: LeaderboardData, configure: DataHandle<LeaderboardData>.() -> Unit = {}): DataHandle<LeaderboardData> {
     val root = Div().apply {
-        addClassNames("ts-table-scroll", "ts-leaderboard")
-        element.setAttribute("tabindex", "0")
+        addClassNames(CssClass.TableScroll, CssClass.Leaderboard)
+        element.setAttribute(HtmlAttribute.TabIndex, "0")
     }
 
     fun render(value: LeaderboardData) {
         root.element.removeAllChildren()
-        val table = Element("table").apply { setAttribute("aria-label", value.label) }
+        val table = htmlElement(HtmlTag.Table).apply { setAttribute(HtmlAttribute.AriaLabel, value.label) }
         resolveTableLayout(
             value.gridColumns ?: gridColumns,
             listOf(value.placeSize, value.identitySize) + value.columns.map { column -> column.size },
         ).applyTo(table)
-        val headings = Element("tr")
+        val headings = htmlElement(HtmlTag.Tr)
         (listOf(value.placeLabel, value.identityLabel) + value.columns.map { column -> column.label }).forEach { caption ->
             headings.appendChild(
-                Element("th").apply {
+                htmlElement(HtmlTag.Th).apply {
                     text = caption
                     setScope(ElementScope.Col)
                 },
             )
         }
-        table.appendChild(Element("thead").apply { appendChild(headings) })
-        val body = Element("tbody")
+        table.appendChild(htmlElement(HtmlTag.Thead).apply { appendChild(headings) })
+        val body = htmlElement(HtmlTag.Tbody)
         value.rows.forEach { row ->
-            val line = Element("tr").apply {
-                setAttribute("data-key", row.key)
-                if (row.isHighlighted) classList.add("ts-leaderboard__highlight")
+            val line = htmlElement(HtmlTag.Tr).apply {
+                setAttribute(HtmlAttribute.DataKey, row.key)
+                if (row.isHighlighted) classList.add(CssClass.LeaderboardHighlight)
             }
             line.appendChild(
-                Element("td").apply {
+                htmlElement(HtmlTag.Td).apply {
                     text = row.place
-                    classList.add("ts-mono")
+                    classList.add(CssClass.Mono)
                 },
             )
             line.appendChild(
-                Element("th").apply {
+                htmlElement(HtmlTag.Th).apply {
                     setScope(ElementScope.Row)
-                    appendChild(Element("span").apply { text = row.name })
-                    row.description?.let { detail -> appendChild(Element("small").apply { text = detail }) }
+                    appendChild(htmlElement(HtmlTag.Span).apply { text = row.name })
+                    row.description?.let { detail -> appendChild(htmlElement(HtmlTag.Small).apply { text = detail }) }
                 },
             )
             value.columns.forEach { column ->
                 val cell = row.cells.getValue(column.key)
                 line.appendChild(
-                    Element("td").apply {
-                        classList.add("ts-lb-cell")
+                    htmlElement(HtmlTag.Td).apply {
+                        classList.add(CssClass.LbCell)
                         classList.add(
-                            "ts-lb-cell--${when (cell.state) {
-                                LeaderboardCellState.None -> "none"
-                                LeaderboardCellState.Success -> "ok"
-                                LeaderboardCellState.Error -> "fail"
-                                LeaderboardCellState.Pending -> "pending"
-                                LeaderboardCellState.HighlightedSuccess -> "first"
-                            }}",
+                            when (cell.state) {
+                                LeaderboardCellState.None -> CssClass.LbCellNone
+                                LeaderboardCellState.Success -> CssClass.LbCellOk
+                                LeaderboardCellState.Error -> CssClass.LbCellFail
+                                LeaderboardCellState.Pending -> CssClass.LbCellPending
+                                LeaderboardCellState.HighlightedSuccess -> CssClass.LbCellFirst
+                            },
                         )
-                        if (column.isMetric) classList.add("ts-leaderboard__metric")
-                        appendChild(Element("b").apply { text = cell.value })
-                        cell.detail?.let { detail -> appendChild(Element("small").apply { text = detail }) }
+                        if (column.isMetric) classList.add(CssClass.LeaderboardMetric)
+                        appendChild(htmlElement(HtmlTag.B).apply { text = cell.value })
+                        cell.detail?.let { detail -> appendChild(htmlElement(HtmlTag.Small).apply { text = detail }) }
                     },
                 )
             }

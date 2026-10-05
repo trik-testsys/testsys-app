@@ -20,13 +20,26 @@ import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.AriaLive
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssDisplay
+import tech.testsys.web.components.core.CssUnit
 import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.clickClient
+import tech.testsys.web.components.core.removeClassName
 import tech.testsys.web.components.core.setAriaBusy
-import tech.testsys.web.components.core.setAriaHiddenPresence
+import tech.testsys.web.components.core.setAriaHidden
 import tech.testsys.web.components.core.setAriaLive
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setClassName
+import tech.testsys.web.components.core.setDisplay
+import tech.testsys.web.components.core.setDownloadOffset
 import tech.testsys.web.components.core.setRole
+import tech.testsys.web.components.core.setWidth
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -272,19 +285,19 @@ internal class DownloadDisplay(
     private val logger = LoggerFactory.getLogger(DownloadDisplay::class.java)
     val state = ValueSignal<DownloadState>(DownloadState.Idle)
     private val trigger = NativeButton().apply {
-        addClassNames("ts-btn", "ts-btn--secondary")
-        if (compact) addClassName("ts-btn--sm")
-        if (isIconOnly) addClassName("ts-btn--icon")
+        addClassNames(CssClass.Btn, CssClass.BtnSecondary)
+        if (compact) addClassName(CssClass.BtnSm)
+        if (isIconOnly) addClassName(CssClass.BtnIcon)
     }
 
-    private var renderedVariant: String? = null
+    private var renderedVariant: CssClass? = null
     private val captionNode = Span()
-    private val percentageNode = Span().apply { addClassName("ts-mono") }
-    private val progressLabel = Span().apply { addClassName("ts-btn__label") }
-    private val fill = Span().apply { addClassName("ts-btn__fill") }
+    private val percentageNode = Span().apply { addClassName(CssClass.Mono) }
+    private val progressLabel = Span().apply { addClassName(CssClass.BtnLabel) }
+    private val fill = Span().apply { addClassName(CssClass.BtnFill) }
     private val spinner = Span().apply {
-        addClassName("ts-spinner")
-        element.setAriaHiddenPresence(true)
+        addClassName(CssClass.Spinner)
+        element.setAriaHidden(true)
     }
     private val ring = Html(
         """
@@ -298,9 +311,9 @@ internal class DownloadDisplay(
     )
 
     private val anchor = Anchor().apply {
-        element.style.set("display", "none")
-        element.setAriaHiddenPresence(true)
-        element.setAttribute("tabindex", "-1")
+        element.style.setDisplay(CssDisplay.None)
+        element.setAriaHidden(true)
+        element.setAttribute(HtmlAttribute.TabIndex, "-1")
         setRouterIgnore(true)
     }
 
@@ -315,8 +328,8 @@ internal class DownloadDisplay(
 
     init {
         trigger.addClickListener { if (attempt != null) cancel() else start() }
-        addClassName("ts-download")
-        status.element.setAttribute("class", "ts-sr-only")
+        addClassName(CssClass.Download)
+        status.setClassName(CssClass.SrOnly)
         add(trigger, anchor, status)
         addAttachListener {
             executor = Background.executor()
@@ -364,7 +377,7 @@ internal class DownloadDisplay(
                 Background.inUi(ui) {
                     if (isAttached && attempt === current && !current.context.isCancelled) {
                         anchor.setHref(DownloadHandler { event -> transfer(event, current, content, ui) })
-                        anchor.element.executeJs("this.click()")
+                        anchor.element.clickClient()
                     }
                 }
             } catch (failure: Exception) {
@@ -444,36 +457,43 @@ internal class DownloadDisplay(
             DownloadState.Idle -> label
         }
         val variant = when {
-            value == DownloadState.Preparing || value is DownloadState.Downloading && percent == null -> "busy"
-            value is DownloadState.Downloading -> if (isIconOnly) "ghost" else "progress"
-            value is DownloadState.Done -> "success-soft"
-            value is DownloadState.Error -> "danger-soft"
-            else -> "secondary"
+            value == DownloadState.Preparing || value is DownloadState.Downloading && percent == null -> CssClass.BtnBusy
+            value is DownloadState.Downloading -> if (isIconOnly) CssClass.BtnGhost else CssClass.BtnProgress
+            value is DownloadState.Done -> CssClass.BtnSuccessSoft
+            value is DownloadState.Error -> CssClass.BtnDangerSoft
+            else -> CssClass.BtnSecondary
         }
         val accessible = texts.components.downloadLabel(label, caption)
-        trigger.element.setAttribute("aria-label", accessible)
-        trigger.element.setAttribute("title", accessible)
+        trigger.element.setAttribute(HtmlAttribute.AriaLabel, accessible)
+        trigger.element.setAttribute(HtmlAttribute.Title, accessible)
         trigger.element.setAriaBusy(isBusy)
         captionNode.text = caption
         percent?.let { progress ->
             percentageNode.text = texts.components.percent(progress.toInt())
-            fill.element.style.set("width", "$progress%")
-            ring.element.style.set("--ts-download-offset", (RING_CIRCUMFERENCE * (1 - progress / PERCENT_MAX)).toString())
+            fill.element.style.setWidth(progress, CssUnit.Percent)
+            ring.element.style.setDownloadOffset(RING_CIRCUMFERENCE * (1 - progress / PERCENT_MAX))
         }
         // Progress updates keep the animated node attached and preserve fill/ring transitions.
         if (renderedVariant == variant) return
         trigger.removeAll()
-        listOf("secondary", "busy", "success-soft", "danger-soft", "progress", "ghost").forEach { modifier ->
-            trigger.removeClassName("ts-btn--$modifier")
+        listOf(
+            CssClass.BtnSecondary,
+            CssClass.BtnBusy,
+            CssClass.BtnSuccessSoft,
+            CssClass.BtnDangerSoft,
+            CssClass.BtnProgress,
+            CssClass.BtnGhost,
+        ).forEach { modifier ->
+            trigger.removeClassName(modifier)
         }
-        trigger.addClassName("ts-btn--$variant")
+        trigger.addClassName(variant)
         when (variant) {
-            "busy" -> {
+            CssClass.BtnBusy -> {
                 trigger.add(spinner)
                 if (!isIconOnly) trigger.add(captionNode)
             }
-            "ghost" -> trigger.add(ring)
-            "progress" -> {
+            CssClass.BtnGhost -> trigger.add(ring)
+            CssClass.BtnProgress -> {
                 progressLabel.add(percentageNode, captionNode)
                 trigger.add(fill, progressLabel)
             }

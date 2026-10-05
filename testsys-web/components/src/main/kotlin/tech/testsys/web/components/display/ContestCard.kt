@@ -5,13 +5,24 @@ package tech.testsys.web.components.display
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.dom.Element
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.DomEvent
+import tech.testsys.web.components.core.DomEventFilter
 import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.addEventListener
+import tech.testsys.web.components.core.removeAttribute
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setFilter
 import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.layout.BlockRowScope
@@ -106,22 +117,20 @@ internal class ContestCardDisplay(initial: ContestCardData) : Div() {
     var action: () -> Unit = {}
 
     init {
-        addClassName("ts-ccard")
-        element.addEventListener("click") { selected?.invoke() }.setFilter("!event.target.closest('button')")
-        element.executeJs(
-            "this.addEventListener('keydown', e => { if (e.target === this && (e.key === ' ' || e.key === 'Enter')) e.preventDefault(); })",
-        )
-        element.addEventListener("keydown") { selected?.invoke() }
-            .setFilter("event.target === element && (event.key === 'Enter' || event.key === ' ')")
+        addClassName(CssClass.Ccard)
+        element.addEventListener(DomEvent.Click) { selected?.invoke() }.setFilter(DomEventFilter.CardClick)
+        element.preventCardSelectionDefaults()
+        element.addEventListener(DomEvent.KeyDown) { selected?.invoke() }
+            .setFilter(DomEventFilter.CardKey)
         present(initial)
     }
 
     fun updateInteraction() {
         if (selected == null) {
-            element.removeAttribute("tabindex")
+            element.removeAttribute(HtmlAttribute.TabIndex)
             element.setRole(null)
         } else {
-            element.setAttribute("tabindex", "0")
+            element.setAttribute(HtmlAttribute.TabIndex, "0")
             element.setRole(ElementRole.Link)
         }
     }
@@ -129,43 +138,40 @@ internal class ContestCardDisplay(initial: ContestCardData) : Div() {
     fun present(data: ContestCardData) {
         removeAll()
         val cover = when (data.tone) {
-            Tone.Info ->
-                "info"
-            Tone.Success -> "live"
-            Tone.Neutral, Tone.Warning, Tone.Danger -> "neutral"
+            Tone.Info -> CssClass.CcardCoverInfo
+            Tone.Success -> CssClass.CcardCoverLive
+            Tone.Neutral, Tone.Warning, Tone.Danger -> CssClass.CcardCoverNeutral
         }
         add(
             Div(
-                Div(Span(data.format).apply { addClassName("ts-ccard__fmt") }, buildBadge(data.status, data.tone)).apply {
-                    addClassName(
-                        "ts-ccard__head",
-                    )
+                Div(Span(data.format).apply { addClassName(CssClass.CcardFmt) }, buildBadge(data.status, data.tone)).apply {
+                    addClassName(CssClass.CcardHead)
                 },
-                Span(data.whenText).apply { addClassName("ts-ccard__when") },
-            ).apply { addClassNames("ts-ccard__cover", "ts-ccard__cover--$cover") },
+                Span(data.whenText).apply { addClassName(CssClass.CcardWhen) },
+            ).apply { addClassNames(CssClass.CcardCover, cover) },
         )
-        val tags = Div().apply { addClassName("ts-ccard__tags") }
-        data.tags.forEach { caption -> tags.add(Span(caption).apply { addClassNames("ts-tag", "ts-tag--plain") }) }
+        val tags = Div().apply { addClassName(CssClass.CcardTags) }
+        data.tags.forEach { caption -> tags.add(Span(caption).apply { addClassNames(CssClass.Tag, CssClass.TagPlain) }) }
         add(
             Div(
-                Span(data.title).apply { addClassName("ts-ccard__title") },
+                Span(data.title).apply { addClassName(CssClass.CcardTitle) },
                 tags,
                 Div(
-                    Span(data.people).apply { addClassName("ts-ccard__people") },
+                    Span(data.people).apply { addClassName(CssClass.CcardPeople) },
                     NativeButton(data.actionLabel.orEmpty()).apply {
                         isVisible = data.actionLabel != null
                         element.setType(ElementType.Button)
                         addClassNames(
-                            "ts-btn",
-                            "ts-btn--sm",
-                            "ts-btn--${if (cover == "info") "primary" else "secondary"}",
+                            CssClass.Btn,
+                            CssClass.BtnSm,
+                            if (cover == CssClass.CcardCoverInfo) CssClass.BtnPrimary else CssClass.BtnSecondary,
                         )
                         addClickListener { action() }
                     },
-                ).apply { addClassName("ts-ccard__foot") },
-            ).apply { addClassName("ts-ccard__body") },
+                ).apply { addClassName(CssClass.CcardFoot) },
+            ).apply { addClassName(CssClass.CcardBody) },
         )
-        element.setAttribute("aria-label", data.title)
+        element.setAttribute(HtmlAttribute.AriaLabel, data.title)
     }
 }
 
@@ -183,3 +189,7 @@ fun tech.testsys.web.components.layout.SlotRowScope.contestCard(
     placeElement(size, card)
     return ContestCardHandle(card, data).apply(configure)
 }
+
+private fun Element.preventCardSelectionDefaults() = executeJs(
+    "this.addEventListener('keydown', e => { if (e.target === this && (e.key === ' ' || e.key === 'Enter')) e.preventDefault(); })",
+)

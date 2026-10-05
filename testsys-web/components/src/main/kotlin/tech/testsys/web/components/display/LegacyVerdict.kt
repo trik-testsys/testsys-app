@@ -1,7 +1,12 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.DataHandle
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -10,14 +15,14 @@ import tech.testsys.web.components.layout.ContentScope
  *
  * @since %CURRENT_VERSION%
  */
-enum class LegacyVerdict(internal val caption: String, internal val modifier: String) {
-    Accepted("OK", "ok"),
-    WrongAnswer("WA", "wa"),
-    TimeLimitExceeded("TLE", "tle"),
-    MemoryLimitExceeded("MLE", "mle"),
-    RuntimeError("RE", "re"),
-    CompilationError("CE", "ce"),
-    Queued("…", "queue"),
+enum class LegacyVerdict(internal val caption: String, internal val cssClass: CssClass) {
+    Accepted("OK", CssClass.VerdictOk),
+    WrongAnswer("WA", CssClass.VerdictWa),
+    TimeLimitExceeded("TLE", CssClass.VerdictTle),
+    MemoryLimitExceeded("MLE", CssClass.VerdictMle),
+    RuntimeError("RE", CssClass.VerdictRe),
+    CompilationError("CE", CssClass.VerdictCe),
+    Queued("…", CssClass.VerdictQueue),
 }
 
 /**
@@ -29,7 +34,7 @@ fun ContentScope.legacyVerdict(value: LegacyVerdict, configure: DataHandle<Legac
     val root = Span()
     fun render(verdict: LegacyVerdict) {
         root.classNames.clear()
-        root.addClassNames("ts-verdict", "ts-verdict--${verdict.modifier}")
+        root.addClassNames(CssClass.Verdict, verdict.cssClass)
         root.text = verdict.caption
     }
     render(value)

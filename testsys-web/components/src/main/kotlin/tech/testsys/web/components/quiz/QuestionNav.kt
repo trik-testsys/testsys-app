@@ -7,11 +7,17 @@ import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.SelectionHandle
 import tech.testsys.web.components.core.AriaCurrent
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.focusClient
 import tech.testsys.web.components.core.setAnswered
 import tech.testsys.web.components.core.setAriaCurrent
 import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setFlagged
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.layout.BlockRowScope
@@ -52,7 +58,7 @@ fun ContentScope.questionNav(
     configure: SelectionHandle<QuestionNavData>.() -> Unit = {
     },
 ): SelectionHandle<QuestionNavData> {
-    val root = Div().apply { addClassName("ts-qnav") }
+    val root = Div().apply { addClassName(CssClass.Qnav) }
     lateinit var handle: SelectionHandle<QuestionNavData>
     fun render(value: QuestionNavData) {
         root.removeAll()
@@ -61,7 +67,7 @@ fun ContentScope.questionNav(
                 NativeButton(number.toString()).apply {
                     element.setType(ElementType.Button)
                     element.setAttribute(
-                        "aria-label",
+                        HtmlAttribute.AriaLabel,
                         texts.components.questionStatus(
                             number,
                             number in value.answered,
@@ -69,14 +75,14 @@ fun ContentScope.questionNav(
                         ),
                     )
                     if (number == value.current) element.setAriaCurrent(AriaCurrent.Step)
-                    addClassName("ts-qnav__cell")
-                    setClassName("ts-qnav__cell--current", number == value.current)
-                    setClassName("ts-qnav__cell--answered", number in value.answered && number != value.current)
+                    addClassName(CssClass.QnavCell)
+                    setClassName(CssClass.QnavCellCurrent, number == value.current)
+                    setClassName(CssClass.QnavCellAnswered, number in value.answered && number != value.current)
                     isEnabled = number !in value.unavailable
                     if (number in value.flagged) {
                         add(
                             Span().apply {
-                                addClassName("ts-qnav__flag")
+                                addClassName(CssClass.QnavFlag)
                                 element.setAriaHidden(true)
                             },
                         )
@@ -86,7 +92,7 @@ fun ContentScope.questionNav(
                     addClickListener {
                         if (number !in handle.data.unavailable) {
                             handle.choose(handle.data.copy(current = number))
-                            root.children.toList().getOrNull(number - 1)?.element?.executeJs("this.focus()")
+                            root.children.toList().getOrNull(number - 1)?.element?.focusClient()
                         }
                     }
                 },

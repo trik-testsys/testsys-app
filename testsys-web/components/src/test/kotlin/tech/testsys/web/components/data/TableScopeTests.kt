@@ -1,7 +1,10 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.data
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.testTexts
 
 class TableScopeTests {
@@ -14,7 +17,7 @@ class TableScopeTests {
             dateTimeColumn("Time", size = 1) { java.time.LocalDateTime.of(2026, 10, 4, 12, 0) }
         }.spec().columns
         assertEquals(listOf(CellKind.Date, CellKind.Date), columns.map { column -> column.kind })
-        assertEquals("ts-num", CellKind.Date.cssClass)
+        assertEquals(listOf("ts-num"), CellKind.Date.cssClasses.map { cssClass -> cssClass.value })
     }
 
     @Test

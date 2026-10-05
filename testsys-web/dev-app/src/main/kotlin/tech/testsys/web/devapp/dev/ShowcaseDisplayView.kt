@@ -254,11 +254,15 @@ private fun PageScope.questionExamples() {
     lateinit var questionResult: TextHandle
     lateinit var steps: SelectionHandle<StepperData>
     lateinit var option: SelectionHandle<QuizOptionData>
+    lateinit var multipleOption: SelectionHandle<QuizOptionData>
     lateinit var questions: SelectionHandle<QuestionNavData>
     val stepData = StepperData(
         steps = listOf(StepData("Начало"), StepData("Вопросы"), StepData("Результат", isSelectable = false)),
         current = 1,
     )
+
+    val multipleOptionData =
+        QuizOptionData(label = "Несколько ответов", letter = "B", isSelected = true, isMultiple = true)
 
     val navigation = QuestionNavData(
         total = QUESTION_COUNT,
@@ -275,7 +279,7 @@ private fun PageScope.questionExamples() {
                 option = quizOption(QuizOptionData(label = "Обычный ответ", letter = "A")) {
                     onChange { value -> answerResult.text = "Ответ выбран: ${value.isSelected}" }
                 }
-                quizOption(QuizOptionData(label = "Несколько ответов", letter = "B", isSelected = true, isMultiple = true)) {
+                multipleOption = quizOption(multipleOptionData) {
                     onChange { value -> answerResult.text = "Несколько ответов: ${value.isSelected}" }
                 }
                 quizOption(QuizOptionData(label = "Верный ответ", letter = "C", result = QuizResult.Correct))
@@ -290,6 +294,7 @@ private fun PageScope.questionExamples() {
                 onClick {
                     steps.data = stepData
                     option.data = option.data.copy(isSelected = false)
+                    multipleOption.data = multipleOptionData
                     questions.data = navigation
                     stepResult.text = "Выбран шаг: 2"
                     answerResult.text = "Ответ выбран: false"

@@ -7,13 +7,21 @@ import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.HeaderTexts
 import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssTheme
 import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.ICON_SIZE_SMALL
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.add
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.set
 import tech.testsys.web.components.core.setAriaDisabled
 import tech.testsys.web.components.core.setAriaHasPopup
 import tech.testsys.web.components.core.setAriaRole
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.display.avatarInitials
@@ -51,24 +59,24 @@ data class HeaderUserMenuItem(
 
 internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: HeaderInteractions, locale: java.util.Locale): Div {
     val trigger = NativeButton().apply {
-        addClassName("ts-header__user")
-        element.setAttribute("aria-label", texts.userMenu(user.name))
+        addClassName(CssClass.HeaderUser)
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.userMenu(user.name))
         add(
             userAvatar(user.name, locale),
-            Span(user.name).apply { addClassName("ts-header-user-name") },
+            Span(user.name).apply { addClassName(CssClass.HeaderUserName) },
             svgIcon(IconName.ChevronDown, ICON_SIZE_SMALL),
         )
     }
-    val popup = interactions.popup(trigger, label = texts.userMenu(user.name), theme = "ts-header-user-popup", autofocus = true)
+    val popup = interactions.popup(trigger, label = texts.userMenu(user.name), theme = CssTheme.HeaderUserPopup, autofocus = true)
     trigger.element.setAriaHasPopup(AriaPopup.Menu)
     popup.setAriaRole(ElementRole.Menu)
-    val list = Div().apply { addClassName("ts-header-user-menu") }
+    val list = Div().apply { addClassName(CssClass.HeaderUserMenu) }
     val items = checkNotNull(user.menu) { "Header user menu is not configured" }.items
     items.forEachIndexed { index, item ->
         if (item.isDestructive && (index == 0 || !items[index - 1].isDestructive)) {
             list.add(
                 Div().apply {
-                    addClassName("ts-header-user-separator")
+                    addClassName(CssClass.HeaderUserSeparator)
                     element.setRole(ElementRole.Separator)
                 },
             )
@@ -78,8 +86,8 @@ internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: Header
         } else {
             NativeButton(item.label).apply { isEnabled = false }
         }
-        entry.element.classList.add("ts-header-user-item")
-        entry.element.classList.set("ts-menu__item--danger", item.isDestructive)
+        entry.element.classList.add(CssClass.HeaderUserItem)
+        entry.element.classList.set(CssClass.MenuItemDanger, item.isDestructive)
         entry.element.setRole(ElementRole.MenuItem)
         entry.element.setAriaDisabled(!item.isEnabled)
         list.add(entry)
@@ -89,5 +97,5 @@ internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: Header
 }
 
 internal fun userAvatar(name: String, locale: java.util.Locale): Span = Span(avatarInitials(name, locale)).apply {
-    addClassNames("ts-avatar", "ts-avatar--t0", "ts-header__avatar")
+    addClassNames(CssClass.Avatar, CssClass.AvatarT0, CssClass.HeaderAvatar)
 }

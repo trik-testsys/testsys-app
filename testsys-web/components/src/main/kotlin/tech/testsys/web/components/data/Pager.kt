@@ -1,20 +1,28 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.data
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.pagerArrow
 
 /** Footer part of a table: the range of shown rows and the compact pager «‹ 3 / 71 ›»; [onPage] gets the page to go to. */
 internal class Pager(private val texts: UiTexts, private val onPage: (Int) -> Unit) {
-    private val range = Span().apply { addClassName("ts-muted") }
-    private val counter = Span().apply { addClassName("ts-pager__label") }
+    private val range = Span().apply { addClassName(CssClass.Muted) }
+    private val counter = Span().apply { addClassName(CssClass.PagerLabel) }
     private val previous = pagerArrow(IconName.ChevronLeft, texts.pagination.previous)
     private val next = pagerArrow(IconName.ChevronRight, texts.pagination.next)
     private var page = 0
 
-    val root: Div = Div(range, Div(previous, counter, next).apply { addClassName("ts-pager") }).apply { addClassName("ts-table-pager") }
+    val root: Div = Div(
+        range,
+        Div(previous, counter, next).apply { addClassName(CssClass.Pager) },
+    ).apply { addClassName(CssClass.TablePager) }
 
     init {
         previous.addClickListener { onPage(page - 1) }

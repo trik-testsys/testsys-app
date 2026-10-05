@@ -179,9 +179,6 @@ internal fun Element.setRangePart(value: Boolean): Element = setAttribute("data-
 internal fun Element.setSpellcheckPresence(value: Boolean): Element = setAttribute("spellcheck", value)
 
 @InternalComponentsApi
-internal fun Element.setAriaHiddenPresence(value: Boolean): Element = setAttribute("aria-hidden", value)
-
-@InternalComponentsApi
 internal fun Element.getAriaExpanded(): Boolean? = getAttribute("aria-expanded")?.toBooleanStrictOrNull()
 
 @InternalComponentsApi

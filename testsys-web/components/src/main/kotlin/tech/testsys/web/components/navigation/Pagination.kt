@@ -13,11 +13,16 @@ import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.PaginationTexts
 import tech.testsys.web.components.core.AriaCurrent
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.hasClassName
 import tech.testsys.web.components.core.pagerArrow
 import tech.testsys.web.components.core.setAriaCurrent
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.layout.ContentScope
 
@@ -77,7 +82,7 @@ class PaginationHandle internal constructor(
             require(current.isBound || value <= count) { "Page must be within 1..$count, got $value" }
             render()
         }
-        root.addClassName("ts-pager")
+        root.addClassName(CssClass.Pager)
         root.add(previous, next)
         previous.addClickListener { choose(target = this.page - 1, arrow = previous) }
         next.addClickListener { choose(target = this.page + 1, arrow = next) }
@@ -116,7 +121,7 @@ class PaginationHandle internal constructor(
         val shown = page
         items.forEach { item -> root.remove(item) }
         items = pageRange(page = shown, total = count).map { target ->
-            if (target == null) Span("…").apply { addClassName("ts-pager__gap") } else pageButton(target, shown)
+            if (target == null) Span("…").apply { addClassName(CssClass.PagerGap) } else pageButton(target, shown)
         }
         items.forEachIndexed { index, item -> root.addComponentAtIndex(index + 1, item) }
         previous.isEnabled = shown > 1
@@ -124,14 +129,14 @@ class PaginationHandle internal constructor(
     }
 
     private fun activeButton(): NativeButton =
-        items.filterIsInstance<NativeButton>().single { button -> button.hasClassName("ts-pager__btn--active") }
+        items.filterIsInstance<NativeButton>().single { button -> button.hasClassName(CssClass.PagerBtnActive) }
 
     private fun pageButton(target: Int, shown: Int): NativeButton = NativeButton(target.toString()).apply {
-        addClassName("ts-pager__btn")
+        addClassName(CssClass.PagerBtn)
         element.setType(ElementType.Button)
-        element.setAttribute("aria-label", texts.page(target))
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.page(target))
         if (target == shown) {
-            addClassName("ts-pager__btn--active")
+            addClassName(CssClass.PagerBtnActive)
             element.setAriaCurrent(AriaCurrent.Page)
         }
         addClickListener { choose(target = target, arrow = null) }

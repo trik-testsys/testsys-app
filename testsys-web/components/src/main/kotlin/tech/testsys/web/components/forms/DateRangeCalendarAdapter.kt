@@ -1,24 +1,32 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.Tag
 import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.react.ReactAdapterComponent
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.DomEvent
+import tech.testsys.web.components.core.DomEventData
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addEventData
+import tech.testsys.web.components.core.addEventListener
+import tech.testsys.web.components.core.get
 import java.time.LocalDate
 
 private const val DAYS_IN_WEEK = 7
 
-@Tag("testsys-date-range-calendar")
-@JsModule("./testsys-ui/date-range-calendar.tsx")
+@Tag(DATE_RANGE_CALENDAR_TAG)
+@JsModule(DATE_RANGE_CALENDAR_MODULE)
 internal class DateRangeCalendarAdapter(private val texts: UiTexts) : ReactAdapterComponent() {
     var onPick: (DateRange) -> Unit = {}
 
     init {
-        element.addEventListener("range-pick") { event ->
-            val start = event.eventData.get("event.detail.start").takeUnless { node -> node.isNull }?.asString()?.let(LocalDate::parse)
-            val end = event.eventData.get("event.detail.end").takeUnless { node -> node.isNull }?.asString()?.let(LocalDate::parse)
+        element.addEventListener(DomEvent.RangePick) { event ->
+            val start = event.eventData.get(DomEventData.DetailStart).takeUnless { node -> node.isNull }?.asString()?.let(LocalDate::parse)
+            val end = event.eventData.get(DomEventData.DetailEnd).takeUnless { node -> node.isNull }?.asString()?.let(LocalDate::parse)
             onPick(DateRange(from = start, to = end))
-        }.addEventData("event.detail.start").addEventData("event.detail.end")
+        }.addEventData(DomEventData.DetailStart).addEventData(DomEventData.DetailEnd)
         present(DateRange())
     }
 

@@ -1,8 +1,13 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Image
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysBrand
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -44,5 +49,5 @@ fun BlockRowScope.brandImage(
 
 private fun buildBrandImage(asset: BrandAsset, label: String): Image {
     require(label.isNotBlank()) { "Brand image accessible name must not be blank" }
-    return Image(asset.path, label).apply { addClassName("ts-brand-image") }
+    return Image(asset.path, label).apply { addClassName(CssClass.BrandImage) }
 }

@@ -17,7 +17,9 @@ import com.vaadin.flow.data.binder.Binder
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
@@ -40,10 +42,50 @@ import tools.jackson.databind.ObjectMapper
 class LookupTests : MockVaadinTests() {
     private val source = Source()
 
+    // Choosing an equal entity must replace stale data with the fetched instance.
+    @Test
+    @Tag("regression")
+    fun `should replace the selected entity with a fetched instance of the same id`() {
+        val input = buildLookup()
+        val fresh = source.contests[0]
+        val old = Contest(id = fresh.id, name = "Старое название")
+        val form = Form(old)
+        Binder<Form>().apply {
+            forField(input).bind({ bean -> bean.contest }, { bean, value -> bean.contest = value })
+            setBean(form)
+        }
+        val fromClient = mutableListOf<Boolean>()
+        input.addValueChangeListener { event -> fromClient += event.isFromClient }
+        lookupButton(testTexts.lookup.open)._click()
+
+        rows()[0]._fireDomEvent("click", rowClick())
+
+        assertSame(fresh, input.value)
+        assertSame(fresh, form.contest)
+        assertEquals("Кубок 1", field().find("ts-lookup__text").element.text)
+        assertEquals(listOf(true), fromClient)
+        assertTrue(openDialogs().isEmpty())
+    }
+
+    @Test
+    fun `should not report a value change when selecting the same entity instance`() {
+        val input = buildLookup()
+        input.value = source.contests[0]
+        var changes = 0
+        input.addValueChangeListener { changes++ }
+        lookupButton(testTexts.lookup.open)._click()
+
+        rows()[0]._fireDomEvent("click", rowClick())
+
+        assertSame(source.contests[0], input.value)
+        assertEquals(0, changes)
+        assertTrue(openDialogs().isEmpty())
+    }
+
     // Review report, Issue 6: an unavailable lookup must discard its open dialog and delayed choice.
     @ParameterizedTest
     @CsvSource("false,true", "true,false")
-    @org.junit.jupiter.api.Tag("regression")
+    @Tag("regression")
     fun `should close an open lookup when choice becomes unavailable and ignore delayed choice`(
         enabled: Boolean,
         editable: Boolean,
@@ -495,7 +537,11 @@ class LookupTests : MockVaadinTests() {
     /** Data of a click on the field as the client sends it: whether the click passed the filter of button clicks. */
     private fun fieldClick(isOnButton: Boolean) = ObjectMapper().createObjectNode().put(LOOKUP_CLICK_FILTER, !isOnButton)
 
-    private data class Contest(val id: Int, val name: String)
+    private data class Contest(val id: Int, val name: String) {
+        override fun equals(other: Any?): Boolean = other is Contest && id == other.id
+
+        override fun hashCode(): Int = id.hashCode()
+    }
 
     private class Form(var contest: Contest? = null)
 

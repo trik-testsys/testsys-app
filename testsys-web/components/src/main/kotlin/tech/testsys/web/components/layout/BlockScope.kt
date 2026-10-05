@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.Component
@@ -5,6 +7,10 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Footer
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.removeClassName
 
 private const val TABLE_OWNER = "a table"
 
@@ -55,7 +61,7 @@ class BlockScope internal constructor(
      */
     fun row(content: BlockRowScope.() -> Unit) {
         check(wholeBody == null) { "Block holds $wholeBody; it takes the whole body" }
-        val row = Div().apply { addClassName("ts-block__row") }
+        val row = Div().apply { addClassName(CssClass.BlockRow) }
         BlockRowScope(row, columns, texts, editState).content()
         if (row.children.findAny().isPresent) body.add(row)
     }
@@ -132,7 +138,7 @@ class BlockScope internal constructor(
     /** Makes [component] of [owner] the whole body, which is no longer a grid. */
     internal fun placeWhole(component: Component, owner: String) {
         checkWholeBodyPlace(owner)
-        body.removeClassName("ts-block__body--grid")
+        body.removeClassName(CssClass.BlockBodyGrid)
         body.add(component)
         wholeBody = owner
     }
@@ -187,9 +193,9 @@ class BlockScope internal constructor(
         check(!isLoadContent) { "Content of a load fills the block body only; call $call on the block itself" }
     }
 
-    private fun footBar(): Footer = footerBar ?: Footer().apply { addClassName("ts-block__foot") }.also { created -> footerBar = created }
+    private fun footBar(): Footer = footerBar ?: Footer().apply { addClassName(CssClass.BlockFoot) }.also { created -> footerBar = created }
 
-    private fun headBar(): Div = actionsBar ?: Div().apply { addClassName("ts-block__actions") }.also { created -> actionsBar = created }
+    private fun headBar(): Div = actionsBar ?: Div().apply { addClassName(CssClass.BlockActions) }.also { created -> actionsBar = created }
 }
 
 /** Pagination of the table of a block and the callback that gets the component to show and hide with it. */

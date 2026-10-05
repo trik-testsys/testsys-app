@@ -5,15 +5,25 @@ package tech.testsys.web.components.navigation
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Input
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.dom.Element
 import tech.testsys.web.components.HeaderTexts
 import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.Autocomplete
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.DomEvent
+import tech.testsys.web.components.core.DomEventData
 import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addEventData
+import tech.testsys.web.components.core.addEventListener
+import tech.testsys.web.components.core.get
 import tech.testsys.web.components.core.setAriaExpanded
 import tech.testsys.web.components.core.setAriaHasPopup
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setAutocomplete
 import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.setType
@@ -26,12 +36,12 @@ internal class HeaderSearchField(val field: Input, val component: Div)
 internal fun headerSearchField(label: String): HeaderSearchField {
     val field = Input(null).apply {
         element.setType(ElementType.Search)
-        element.setAttribute("placeholder", label)
-        element.setAttribute("aria-label", label)
+        element.setAttribute(HtmlAttribute.Placeholder, label)
+        element.setAttribute(HtmlAttribute.AriaLabel, label)
         element.setAutocomplete(Autocomplete.Off)
     }
-    val shell = Div(svgIcon(IconName.Search), field, Span("⌘K").apply { addClassName("ts-kbd") }).apply {
-        addClassName("ts-header__search")
+    val shell = Div(svgIcon(IconName.Search), field, Span("⌘K").apply { addClassName(CssClass.Kbd) }).apply {
+        addClassName(CssClass.HeaderSearch)
     }
     return HeaderSearchField(field, shell)
 }
@@ -50,25 +60,23 @@ internal class HeaderMenuSearchController(private val menu: MegaMenuHandle, priv
         menu.popup.isCloseOnEsc = false
         menu.popup.isCloseOnOutsideClick = false
         field.element.setRole(ElementRole.SearchBox)
-        field.element.setAttribute("aria-controls", id)
+        field.element.setAttribute(HtmlAttribute.AriaControls, id)
         field.element.setAriaHasPopup(AriaPopup.Dialog)
         field.element.setAriaExpanded(false)
         menu.popup.addOpenedChangeListener { event ->
             field.element.setAriaExpanded(event.isOpened)
         }
-        field.element.addEventListener("header-menu-input") { event -> inputChanged(event.eventData.get("event.detail.query").asString()) }
-            .addEventData("event.detail.query")
-        field.element.addEventListener("header-menu-close") { close() }
+        field.element.addEventListener(DomEvent.HeaderMenuInput) { event ->
+            inputChanged(event.eventData.get(DomEventData.DetailQuery).asString())
+        }
+            .addEventData(DomEventData.DetailQuery)
+        field.element.addEventListener(DomEvent.HeaderMenuClose) { close() }
         component.addAttachListener {
-            field.element.executeJs(
-                "window.testsysHeader.menuSearchAttach(this, $0, $1)",
-                menu.popup.element,
-                menu.trigger.element,
-            )
+            field.element.attachMenuSearch(popup = menu.popup.element, trigger = menu.trigger.element)
         }
         component.addDetachListener {
             close()
-            field.element.executeJs("window.testsysHeader.menuSearchDetach(this)")
+            field.element.detachMenuSearch()
         }
     }
 
@@ -81,3 +89,11 @@ internal class HeaderMenuSearchController(private val menu: MegaMenuHandle, priv
         menu.popup.close()
     }
 }
+
+private fun Element.attachMenuSearch(popup: Element, trigger: Element) = executeJs(
+    "window.testsysHeader.menuSearchAttach(this, $0, $1)",
+    popup,
+    trigger,
+)
+
+private fun Element.detachMenuSearch() = executeJs("window.testsysHeader.menuSearchDetach(this)")

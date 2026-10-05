@@ -1,8 +1,12 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.html.Div
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setGridColumnSpan
 
 /**
  * Scope of a slot row: blocks side by side whose sizes take at most the slot columns in total.
@@ -37,7 +41,7 @@ class SlotRowScope internal constructor(
     internal fun <C : com.vaadin.flow.component.Component> placeElement(size: Int?, component: C): C {
         val columns = size ?: slotSize
         track.take(columns)
-        component.element.style.set("grid-column", "span $columns")
+        component.element.style.setGridColumnSpan(columns)
         row.add(component)
         return component
     }

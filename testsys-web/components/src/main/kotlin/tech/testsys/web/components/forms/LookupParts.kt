@@ -13,11 +13,23 @@ import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.iconAction
 import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.DomEvent
+import tech.testsys.web.components.core.DomEventFilter
 import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.LOOKUP_CLICK_EXPRESSION
+import tech.testsys.web.components.core.LOOKUP_CONTROL_SELECTOR
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.addEventListener
+import tech.testsys.web.components.core.removeAttribute
 import tech.testsys.web.components.core.setAriaDisabled
 import tech.testsys.web.components.core.setAriaHasPopup
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setFilter
 import tech.testsys.web.components.core.setReadOnly
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.data.DataTable
@@ -39,10 +51,10 @@ internal const val LOOKUP_PAGE_SIZE: Int = 10
 private const val SEARCH_DELAY_MS: Int = 300
 
 /** Selectors of the controls inside the lookup box whose clicks are their own: its buttons and the remove buttons of its chips. */
-internal const val LOOKUP_OWN_CLICKS: String = "vaadin-button, .ts-chip__x"
+internal const val LOOKUP_OWN_CLICKS: String = LOOKUP_CONTROL_SELECTOR
 
 /** Client-side filter of clicks on the lookup box: clicks on [LOOKUP_OWN_CLICKS] do not open the dialog. */
-internal const val LOOKUP_CLICK_FILTER: String = "!event.target.closest('$LOOKUP_OWN_CLICKS')"
+internal const val LOOKUP_CLICK_FILTER: String = LOOKUP_CLICK_EXPRESSION
 
 /**
  * Checks the arguments of a lookup field [label] and returns the columns of its dialog table.
@@ -80,10 +92,10 @@ internal abstract class LookupFrame<V>(
     gridColumns: Int,
 ) : CustomField<V>(emptyValue, true), HasValidator<V> {
     protected val valueButton: NativeButton = NativeButton().apply {
-        addClassNames("ts-lookup__text", "ts-obscured-value")
+        addClassNames(CssClass.LookupText, CssClass.ObscuredValue)
         element.setType(ElementType.Button)
     }
-    protected val box: Div = Div(valueButton).apply { addClassName("ts-lookup") }
+    protected val box: Div = Div(valueButton).apply { addClassName(CssClass.Lookup) }
     private val clearAction: ActionHandle
     private val openAction: ActionHandle
     private var currentDialog: LookupDialog<*>? = null
@@ -93,7 +105,7 @@ internal abstract class LookupFrame<V>(
         clearAction = actions.iconAction(IconName.X, texts.lookup.clear) { onClick { clearByUser() } }
         openAction = actions.iconAction(IconName.Search, texts.lookup.open) { onClick { openDialog() } }
         openAction.button.tabIndex = -1
-        box.element.addEventListener("click") { openDialog() }.setFilter(LOOKUP_CLICK_FILTER)
+        box.element.addEventListener(DomEvent.Click) { openDialog() }.setFilter(DomEventFilter.LookupClick)
         add(box)
     }
 
@@ -144,7 +156,7 @@ internal abstract class LookupFrame<V>(
             text == name -> null
             else -> name
         }
-        valueButton.element.setOrRemove(name = "aria-label", value = label)
+        valueButton.element.setOrRemove(name = HtmlAttribute.AriaLabel, value = label)
         valueButton.element.setAriaHasPopup(AriaPopup.Dialog.takeIf { isChoosable })
         valueButton.element.setAriaDisabled(true.takeUnless { isChoosable })
         openAction.isVisible = isChoosable
@@ -179,7 +191,7 @@ internal abstract class LookupFrame<V>(
 }
 
 /** Sets attribute [name] to [value], or removes it if [value] is `null`. */
-private fun Element.setOrRemove(name: String, value: String?) {
+private fun Element.setOrRemove(name: HtmlAttribute, value: String?) {
     if (value == null) removeAttribute(name) else setAttribute(name, value)
 }
 
@@ -218,7 +230,7 @@ internal class LookupDialog<T : Any>(
             initialSelection = selected,
         )
         search = TextField().apply {
-            addClassName("ts-lookup-search")
+            addClassName(CssClass.LookupSearch)
             placeholder = texts.lookup.search
             setAriaLabel(texts.lookup.search)
             isAutofocus = true

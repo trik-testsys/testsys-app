@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.AbstractField
@@ -14,6 +16,9 @@ import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.FieldHandle
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.FieldParts
 
@@ -44,7 +49,7 @@ class ValueInput<T> internal constructor(
 
     private val enabled = Bindable(this.component.element, initial = component.isEnabled) { value ->
         fieldComponent.isEnabled = value
-        parts?.field?.setClassName("ts-field--disabled", !value)
+        parts?.field?.setClassName(CssClass.FieldDisabled, !value)
     }
 
     private var isBlockEditable = true

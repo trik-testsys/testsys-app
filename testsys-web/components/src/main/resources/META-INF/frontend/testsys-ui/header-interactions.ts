@@ -152,16 +152,21 @@ function send(input: HTMLInputElement, name: string, detail: object) {
       if (popup.opened && !path.includes(input) && !path.includes(popup) && !path.includes(popup.target) && !path.includes(trigger) &&
           !path.some(node => node instanceof Node && popup.contains(node))) close();
     };
+    const triggerEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && popup.opened) keydown(event);
+    };
     input.addEventListener('focus', show);
     input.addEventListener('input', show);
     input.addEventListener('keydown', keydown);
     popup.addEventListener('keydown', keydown);
+    trigger.addEventListener('keydown', triggerEscape);
     document.addEventListener('pointerdown', outside, true);
     menuSearches.set(input, () => {
       input.removeEventListener('focus', show);
       input.removeEventListener('input', show);
       input.removeEventListener('keydown', keydown);
       popup.removeEventListener('keydown', keydown);
+      trigger.removeEventListener('keydown', triggerEscape);
       document.removeEventListener('pointerdown', outside, true);
     });
   },

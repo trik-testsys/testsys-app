@@ -13,12 +13,20 @@ import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.value.ValueChangeMode
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.AriaPopup
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssTheme
 import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.ICON_SIZE_TINY
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.addThemeName
 import tech.testsys.web.components.core.setAriaExpanded
 import tech.testsys.web.components.core.setAriaHasPopup
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setReadOnly
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
@@ -59,18 +67,18 @@ internal class MultiSelectField<T : Any>(
 ) : CustomField<Set<T>>(emptySet(), true), HasValidator<Set<T>> {
     private val trigger: NativeButton = NativeButton(texts.lookup.open).apply {
         element.setType(ElementType.Button)
-        element.setAttribute("aria-label", label)
+        element.setAttribute(HtmlAttribute.AriaLabel, label)
         element.setAriaHasPopup(AriaPopup.Dialog)
-        addClassName("ts-lookup__text")
+        addClassName(CssClass.LookupText)
     }
 
-    private val chips = Div().apply { addClassName("ts-lookup__chips") }
+    private val chips = Div().apply { addClassName(CssClass.LookupChips) }
     private val clear = NativeButton(texts.lookup.clear).apply {
         element.setType(ElementType.Button)
-        addClassName("ts-multiselect__clear")
+        addClassName(CssClass.MultiselectClear)
     }
 
-    private val box = Div(trigger, chips, clear).apply { addClassNames("ts-trigger", "ts-lookup", "ts-lookup--many") }
+    private val box = Div(trigger, chips, clear).apply { addClassNames(CssClass.Trigger, CssClass.Lookup, CssClass.LookupMany) }
     private val popup = Popover().apply {
         target = trigger
         isOpenOnClick = false
@@ -79,17 +87,17 @@ internal class MultiSelectField<T : Any>(
         isCloseOnEsc = true
         isCloseOnOutsideClick = true
         setAriaLabel(label)
-        addThemeName("ts-popover")
+        addThemeName(CssTheme.Popover)
     }
 
     private val search = TextField().apply {
         placeholder = texts.lookup.search
         setAriaLabel(texts.lookup.search)
         valueChangeMode = ValueChangeMode.EAGER
-        addClassName("ts-popover__search")
+        addClassName(CssClass.PopoverSearch)
     }
 
-    private val options = Div().apply { addClassName("ts-options") }
+    private val options = Div().apply { addClassName(CssClass.Options) }
     private val count = Span()
     private var draft: Set<T>? = null
 
@@ -99,25 +107,25 @@ internal class MultiSelectField<T : Any>(
         search.addValueChangeListener { renderDraft() }
         require(maxChips > 0) { "MultiSelect max chips must be positive, got $maxChips" }
         require(items.distinct().size == items.size) { "MultiSelect '$label' items must be unique" }
-        val foot = Div(count).apply { addClassName("ts-popover__foot") }
+        val foot = Div(count).apply { addClassName(CssClass.PopoverFoot) }
         foot.add(
             NativeButton(texts.lookup.reset).apply {
                 element.setType(ElementType.Button)
-                addClassNames("ts-btn", "ts-btn--secondary")
+                addClassNames(CssClass.Btn, CssClass.BtnSecondary)
                 addClickListener {
                     draft = emptySet()
                     renderDraft()
                 }
             },
             NativeButton(texts.lookup.apply).apply {
-                addClassNames("ts-btn", "ts-btn--primary")
+                addClassNames(CssClass.Btn, CssClass.BtnPrimary)
                 addClickListener { applyDraft() }
             },
         )
         popup.add(search, options, foot)
         popup.addOpenedChangeListener { event ->
             trigger.element.setAriaExpanded(event.isOpened)
-            box.setClassName("ts-trigger--open", event.isOpened)
+            box.setClassName(CssClass.TriggerOpen, event.isOpened)
             if (!event.isOpened) {
                 draft = null
                 if (isAttached) trigger.focus()
@@ -203,12 +211,12 @@ internal class MultiSelectField<T : Any>(
         chips.removeAll()
         val visible = items.filter { item -> item in selected }.take(if (display == MultiSelectDisplay.Chips) maxChips else 0)
         visible.forEach { item ->
-            val chip = Span(Span(itemLabel(item)).apply { addClassName("ts-obscured-value") }).apply { addClassName("ts-chip") }
+            val chip = Span(Span(itemLabel(item)).apply { addClassName(CssClass.ObscuredValue) }).apply { addClassName(CssClass.Chip) }
             if (choosable()) {
                 val remove = NativeButton().apply {
                     add(svgIcon(IconName.X, ICON_SIZE_TINY))
-                    addClassName("ts-chip__x")
-                    element.setAttribute("aria-label", texts.lookup.remove(itemLabel(item)))
+                    addClassName(CssClass.ChipX)
+                    element.setAttribute(HtmlAttribute.AriaLabel, texts.lookup.remove(itemLabel(item)))
                     addClickListener { if (choosable()) choose(value - item) }
                 }
                 chip.add(remove)
@@ -217,14 +225,14 @@ internal class MultiSelectField<T : Any>(
         }
         if (display == MultiSelectDisplay.Count && selected.isNotEmpty()) {
             val counter = Span(texts.lookup.selectedCount(selected.size)).apply {
-                addClassNames("ts-counter", "ts-counter--accent", "ts-obscured-value")
+                addClassNames(CssClass.Counter, CssClass.CounterAccent, CssClass.ObscuredValue)
             }
             chips.add(counter)
         }
         if (display == MultiSelectDisplay.Chips && selected.size > maxChips) {
             val more = Span("+${selected.size - maxChips}").apply {
-                addClassNames("ts-chip", "ts-chip--more", "ts-obscured-value")
-                element.setAttribute("aria-label", texts.lookup.selectedCount(selected.size - maxChips))
+                addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue)
+                element.setAttribute(HtmlAttribute.AriaLabel, texts.lookup.selectedCount(selected.size - maxChips))
             }
             chips.add(more)
         }
@@ -250,11 +258,11 @@ internal class MultiSelectField<T : Any>(
         if (focusAll) all.focus()
         visible.forEach { item ->
             val choice = Checkbox(itemLabel(item)).apply {
-                addClassName("ts-option")
+                addClassName(CssClass.Option)
                 value = item in current
                 addValueChangeListener { event -> if (event.isFromClient) toggle(item) }
             }
-            itemMeta?.let { meta -> choice.element.setAttribute("title", meta(item)) }
+            itemMeta?.let { meta -> choice.element.setAttribute(HtmlAttribute.Title, meta(item)) }
             options.add(choice)
             if (item == focused) choice.focus()
         }

@@ -12,10 +12,16 @@ import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setAriaPressed
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.display.CounterKind
@@ -141,14 +147,14 @@ class TabsHandle<V> internal constructor(private val tabs: ChoiceGroup<V>) : Cho
  * @since %CURRENT_VERSION%
  */
 fun <V> BlockScope.tabs(initial: V, content: TabsScope<V>.() -> Unit): TabsHandle<V> {
-    val root = Div().apply { addClassNames("ts-tabs", "ts-tabs--bare", "ts-tabs--lg") }
-    title?.let { name -> root.element.setAttribute("aria-label", name) }
+    val root = Div().apply { addClassNames(CssClass.Tabs, CssClass.TabsBare, CssClass.TabsLg) }
+    title?.let { name -> root.element.setAttribute(HtmlAttribute.AriaLabel, name) }
     val group = ChoiceGroup(
         options = TabsScope<V>().apply(content).options,
         initial = initial,
         root = root,
-        buttonClass = "ts-tab",
-        activeClass = "ts-tab--active",
+        buttonClass = CssClass.Tab,
+        activeClass = CssClass.TabActive,
     )
     placeTabs(root)
     return TabsHandle(group)
@@ -183,9 +189,9 @@ fun <V> BlockRowScope.pills(initial: V, size: Int? = null, content: PillsScope<V
 private fun <V> pillGroup(initial: V, content: PillsScope<V>.() -> Unit): ChoiceGroup<V> = ChoiceGroup(
     options = PillsScope<V>().apply(content).options,
     initial = initial,
-    root = Div().apply { addClassName("ts-pills") },
-    buttonClass = "ts-pill",
-    activeClass = "ts-pill--active",
+    root = Div().apply { addClassName(CssClass.Pills) },
+    buttonClass = CssClass.Pill,
+    activeClass = CssClass.PillActive,
 )
 
 /**
@@ -195,8 +201,8 @@ internal class ChoiceGroup<V>(
     options: List<ChoiceOption<V>>,
     initial: V,
     val root: Div,
-    buttonClass: String,
-    private val activeClass: String,
+    buttonClass: CssClass,
+    private val activeClass: CssClass,
 ) {
     private val counters = mutableMapOf<V, Span>()
     private val buttons: Map<V, NativeButton>
@@ -232,7 +238,7 @@ internal class ChoiceGroup<V>(
 
     private fun counter(target: V): Span = requireNotNull(counters[target]) { "Value $target is not among the tabs" }
 
-    private fun button(option: ChoiceOption<V>, buttonClass: String): NativeButton = NativeButton().apply {
+    private fun button(option: ChoiceOption<V>, buttonClass: CssClass): NativeButton = NativeButton().apply {
         addClassName(buttonClass)
         element.setType(ElementType.Button)
         add(Text(option.label))

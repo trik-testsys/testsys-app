@@ -7,12 +7,11 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Footer
 import com.vaadin.flow.shared.Registration
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.hasAriaBusy
 import tech.testsys.web.components.core.setAriaBusy
-
-private const val GRID_CLASS = "ts-block__body--grid"
-private const val FLUSH_CLASS = "ts-block__body--flush"
+import tech.testsys.web.components.core.setClassName
 
 /**
  * Body of a block that a load fills after the block is built, again on every reload: either a placeholder or
@@ -71,8 +70,8 @@ internal class LoadedBody(
     /** Replaces the body with [component] that fills it whole, e.g. a placeholder; [isFlush] drops the padding. */
     fun showWhole(component: Component, isFlush: Boolean) {
         clear()
-        body.setClassName(GRID_CLASS, false)
-        body.setClassName(FLUSH_CLASS, isFlush)
+        body.setClassName(CssClass.BlockBodyGrid, false)
+        body.setClassName(CssClass.BlockBodyFlush, isFlush)
         body.add(component)
         hasContent = true
         updateVisibility()
@@ -84,13 +83,13 @@ internal class LoadedBody(
      */
     fun fill(content: BlockScope.() -> Unit) {
         clear()
-        body.setClassName(GRID_CLASS, true)
-        body.setClassName(FLUSH_CLASS, false)
+        body.setClassName(CssClass.BlockBodyGrid, true)
+        body.setClassName(CssClass.BlockBodyFlush, false)
         // Each fill gets its own edit state, so that fields of replaced content stop following the block.
         val state = BlockEditState(body.element)
         editRelay = editState.follow { value -> state.isEditable = value }
         val scope = BlockScope(body, columns, texts, state, title, isLoadContent = true).apply(content)
-        body.setClassName(FLUSH_CLASS, scope.isFlushBody)
+        body.setClassName(CssClass.BlockBodyFlush, scope.isFlushBody)
         hasContent = body.children.findAny().isPresent
         updateVisibility()
         pager = scope.tablePager

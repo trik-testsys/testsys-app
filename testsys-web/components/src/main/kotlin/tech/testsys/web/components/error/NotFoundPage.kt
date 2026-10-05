@@ -8,13 +8,16 @@ import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Header
 import com.vaadin.flow.component.html.Main
 import com.vaadin.flow.component.html.Section
+import com.vaadin.flow.dom.Element
 import com.vaadin.flow.router.HasDynamicTitle
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.ActionRole
 import tech.testsys.web.components.actions.setActionRole
 import tech.testsys.web.components.buildBrand
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementSize
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setSize
 import tech.testsys.web.components.layout.buildPageFooter
 
@@ -32,19 +35,19 @@ open class NotFoundPage(private val texts: UiTexts) : Div(), HasDynamicTitle {
     }
 
     init {
-        addClassName("ts-app")
+        addClassName(CssClass.App)
         val brand = buildBrand(texts.brand)
-        val bar = Div(brand).apply { addClassName("ts-header__bar") }
-        val header = Header(bar).apply { addClassName("ts-header") }
-        val heading = H1(texts.notFound.title).apply { addClassName("ts-h1") }
+        val bar = Div(brand).apply { addClassName(CssClass.HeaderBar) }
+        val header = Header(bar).apply { addClassName(CssClass.Header) }
+        val heading = H1(texts.notFound.title).apply { addClassName(CssClass.H1) }
         val description = Div().apply {
             text = texts.notFound.description
-            addClassName("ts-empty__desc")
+            addClassName(CssClass.EmptyDesc)
         }
-        val actions = Div(back).apply { addClassName("ts-empty__actions") }
-        val content = Div(heading, description, actions).apply { addClassName("ts-empty") }
-        val block = Section(content).apply { addClassName("ts-block") }
-        add(header, Main(block).apply { addClassName("ts-page") }, buildPageFooter(texts))
+        val actions = Div(back).apply { addClassName(CssClass.EmptyActions) }
+        val content = Div(heading, description, actions).apply { addClassName(CssClass.Empty) }
+        val block = Section(content).apply { addClassName(CssClass.Block) }
+        add(header, Main(block).apply { addClassName(CssClass.Page) }, buildPageFooter(texts))
     }
 
     /**
@@ -55,19 +58,21 @@ open class NotFoundPage(private val texts: UiTexts) : Div(), HasDynamicTitle {
     fun refreshHistoryNavigation() {
         back.isEnabled = false
         // Flow updates history asynchronously; use its navigation completion event before reading the new entry.
-        element.executeJs(
-            """
-            return new Promise(resolve => {
-                const readHistory = () => resolve(window.navigation ? window.navigation.canGoBack : window.history.length > 1);
-                if (window.Vaadin?.Flow?.navigation) {
-                    window.addEventListener('vaadin-navigated', readHistory, {once: true});
-                } else {
-                    requestAnimationFrame(() => setTimeout(readHistory));
-                }
-            });
-            """.trimIndent(),
-        ).then(Boolean::class.java) { canGoBack -> back.isEnabled = canGoBack }
+        element.readCompletedHistory().then(Boolean::class.java) { canGoBack -> back.isEnabled = canGoBack }
     }
 
     override fun getPageTitle(): String = texts.notFound.pageTitle
 }
+
+private fun Element.readCompletedHistory() = executeJs(
+    """
+    return new Promise(resolve => {
+        const readHistory = () => resolve(window.navigation ? window.navigation.canGoBack : window.history.length > 1);
+        if (window.Vaadin?.Flow?.navigation) {
+            window.addEventListener('vaadin-navigated', readHistory, {once: true});
+        } else {
+            requestAnimationFrame(() => setTimeout(readHistory));
+        }
+    });
+    """.trimIndent(),
+)

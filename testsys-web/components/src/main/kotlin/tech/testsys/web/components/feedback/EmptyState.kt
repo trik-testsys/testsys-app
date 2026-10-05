@@ -1,10 +1,15 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.feedback
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.ContentScope
@@ -25,14 +30,14 @@ internal class EmptyContent(
 internal fun buildEmptyState(content: EmptyContent, texts: UiTexts, gridColumns: Int, isError: Boolean = false): Div {
     val icon = svgIcon(if (isError) IconName.TriangleAlert else content.icon, EMPTY_ICON_SIZE)
     val state = Div(
-        Span(icon).apply { addClassName("ts-empty__icon") },
-        Span(content.title).apply { addClassName("ts-empty__title") },
+        Span(icon).apply { addClassName(CssClass.EmptyIcon) },
+        Span(content.title).apply { addClassName(CssClass.EmptyTitle) },
     ).apply {
-        addClassName("ts-empty")
-        if (isError) addClassName("ts-empty--error")
+        addClassName(CssClass.Empty)
+        if (isError) addClassName(CssClass.EmptyError)
     }
-    content.description?.let { description -> state.add(Span(description).apply { addClassName("ts-empty__desc") }) }
-    val actions = Div().apply { addClassName("ts-empty__actions") }
+    content.description?.let { description -> state.add(Span(description).apply { addClassName(CssClass.EmptyDesc) }) }
+    val actions = Div().apply { addClassName(CssClass.EmptyActions) }
     ContentScope(actions, texts, Placement.Empty, gridColumns).apply(content.actions)
     if (actions.children.findAny().isPresent) state.add(actions)
     return state

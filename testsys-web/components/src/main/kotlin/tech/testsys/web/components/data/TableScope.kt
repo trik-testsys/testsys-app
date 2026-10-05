@@ -1,10 +1,14 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.data
 
 import com.vaadin.flow.component.HasComponents
 import com.vaadin.flow.component.Text
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.IconName
+import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.feedback.EmptyContent
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.GRID_COLUMNS
@@ -15,13 +19,13 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 
 /** How a column lays out its cells; the look follows the meaning of the column. */
-internal enum class CellKind(val cssClass: String?) {
-    Text(null),
-    Code("ts-num"),
-    Number("ts-num ts-right"),
-    Date("ts-num"),
-    Content(null),
-    Menu("ts-right"),
+internal enum class CellKind(val cssClasses: List<CssClass>) {
+    Text(emptyList()),
+    Code(listOf(CssClass.Num)),
+    Number(listOf(CssClass.Num, CssClass.Right)),
+    Date(listOf(CssClass.Num)),
+    Content(emptyList()),
+    Menu(listOf(CssClass.Right)),
 }
 
 /** Column of a table: its [title], optional [sortKey], [size] and how it fills a cell of a row. */

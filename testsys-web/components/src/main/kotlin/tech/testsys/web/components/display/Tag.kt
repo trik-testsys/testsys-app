@@ -1,7 +1,12 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -10,12 +15,12 @@ import tech.testsys.web.components.layout.ContentScope
  *
  * @since %CURRENT_VERSION%
  */
-enum class TagKind(internal val modifier: String?) {
+enum class TagKind(internal val cssClass: CssClass?) {
     Topic(null),
-    Code("mono"),
-    Rating("dark"),
-    RatingUp("up"),
-    RatingDown("down"),
+    Code(CssClass.TagMono),
+    Rating(CssClass.TagDark),
+    RatingUp(CssClass.TagUp),
+    RatingDown(CssClass.TagDown),
 }
 
 /**
@@ -35,6 +40,6 @@ fun BlockRowScope.tag(text: String, kind: TagKind = TagKind.Topic, size: Int? = 
     ElementHandle(place(size, buildTag(text, kind)))
 
 private fun buildTag(text: String, kind: TagKind): Span = Span(text).apply {
-    addClassName("ts-tag")
-    kind.modifier?.let { modifier -> addClassName("ts-tag--$modifier") }
+    addClassName(CssClass.Tag)
+    kind.cssClass?.let { modifier -> addClassName(modifier) }
 }

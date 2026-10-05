@@ -27,12 +27,12 @@ internal class ElementAttributesTests {
     }
 
     @Test
-    fun `should preserve empty hidden aria value when using a presence flag`() {
+    fun `should serialize the hidden aria state as explicit true`() {
         val element = Element("div")
 
-        element.setAriaHiddenPresence(true)
+        element.setAriaHidden(true)
 
-        assertEquals("", element.getAttribute("aria-hidden"))
+        assertEquals("true", element.getAttribute("aria-hidden"))
     }
 
     @Test

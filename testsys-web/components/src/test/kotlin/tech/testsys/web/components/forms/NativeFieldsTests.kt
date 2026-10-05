@@ -12,6 +12,7 @@ import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestRow
@@ -25,6 +26,18 @@ class NativeFieldsTests : MockVaadinTests() {
 
     @Nested
     inner class CodeEditorTests {
+        // Decorative line numbers must stay outside the accessibility tree.
+        @Test
+        @Tag("regression")
+        fun `should hide decorative code line numbers from assistive technology`() {
+            val root = buildTestRow { codeEditor("Code", 4, 8) { value = "first\nsecond" } }
+
+            val numbers = root.find("ts-code__lines")
+
+            assertEquals("1\n2", numbers.element.text)
+            assertEquals("true", numbers.element.getAttribute("aria-hidden"))
+        }
+
         @Test
         fun `should synchronize actual client value into Binder and presentation`() {
             lateinit var input: ValueInput<String>

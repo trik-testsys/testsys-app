@@ -17,9 +17,21 @@ import org.slf4j.LoggerFactory
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.AriaSort
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.DomEvent
+import tech.testsys.web.components.core.DomEventFilter
 import tech.testsys.web.components.core.ElementScope
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.TABLE_ROW_CLICK_FILTER
+import tech.testsys.web.components.core.TABLE_SORT_KEY_FILTER
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addEventListener
 import tech.testsys.web.components.core.setAriaSort
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setClassName
+import tech.testsys.web.components.core.setFilter
+import tech.testsys.web.components.core.setPaddingPixels
 import tech.testsys.web.components.core.setScope
 import tech.testsys.web.components.feedback.EmptyContent
 import tech.testsys.web.components.feedback.buildEmptyState
@@ -30,15 +42,10 @@ private const val ARROW_DOWN = " ↓"
 private const val ARROW_UP = " ↑"
 
 /** Client-side filter of key presses on a sortable header: Enter and Space sort like a click. */
-internal const val SORT_KEY_FILTER: String = "event.key === 'Enter' || event.key === ' '"
-
-/** Controls inside a row whose clicks are their own. */
-private const val ROW_CONTROLS =
-    "[data-ts-input], vaadin-checkbox, vaadin-button, vaadin-text-field, button, a, input, label, select, textarea, [role=button], " +
-        ".ts-field__value--inline"
+internal const val SORT_KEY_FILTER: String = TABLE_SORT_KEY_FILTER
 
 /** Client-side filter of row clicks: clicks on controls inside a row do not click the row itself. */
-internal const val ROW_CLICK_FILTER: String = "!event.target.closest('$ROW_CONTROLS')"
+internal const val ROW_CLICK_FILTER: String = TABLE_ROW_CLICK_FILTER
 
 /**
  * Paged table of rows fetched by [fetch], [pageSize] rows a page: the `.ts-table` markup, sorting by column keys,
@@ -56,12 +63,12 @@ internal class DataTable<T>(
     private val highlighted: (T) -> Boolean = { false },
     initialSelection: Set<Any> = emptySet(),
 ) {
-    val table: Table = Table().apply { addClassName("ts-table") }
+    val table: Table = Table().apply { addClassName(CssClass.Table) }
 
     /** Viewport that contains only the table, keeping horizontal overflow away from its siblings and the pager. */
     val root: Div = Div(table).apply {
-        addClassName("ts-table-scroll")
-        element.setAttribute("tabindex", "0")
+        addClassName(CssClass.TableScroll)
+        element.setAttribute(HtmlAttribute.TabIndex, "0")
     }
     val pager: Pager = Pager(texts) { target -> load(target) }
 
@@ -177,16 +184,17 @@ internal class DataTable<T>(
         if (isSelectable) add(TableHeaderCell(headerCheckbox).apply { element.setScope(ElementScope.Col) })
         spec.columns.forEach { column ->
             val cell = TableHeaderCell(column.title).apply { element.setScope(ElementScope.Col) }
-            if (column.kind == CellKind.Number) cell.addClassName("ts-right")
+            if (column.kind == CellKind.Number) cell.addClassName(CssClass.Right)
             if (column.kind == CellKind.Menu) {
-                cell.element.setAttribute("aria-label", texts.menu.actions)
+                cell.element.setAttribute(HtmlAttribute.AriaLabel, texts.menu.actions)
             }
             column.sortKey?.let { sortKey ->
-                cell.addClassName("ts-sortable")
-                cell.element.setAttribute("tabindex", "0")
+                cell.addClassName(CssClass.Sortable)
+                cell.element.setAttribute(HtmlAttribute.TabIndex, "0")
                 cell.element.setAriaSort(AriaSort.None)
-                cell.element.addEventListener("click") { toggleSort(sortKey) }
-                cell.element.addEventListener("keydown") { toggleSort(sortKey) }.setFilter(SORT_KEY_FILTER).preventDefault()
+                cell.element.addEventListener(DomEvent.Click) { toggleSort(sortKey) }
+                cell.element.addEventListener(DomEvent.KeyDown) { toggleSort(sortKey) }
+                    .setFilter(DomEventFilter.TableSortKey).preventDefault()
                 sortHeaders += SortHeader(sortKey, column.title, cell)
             }
             add(cell)
@@ -204,7 +212,7 @@ internal class DataTable<T>(
                 next.isDescending -> ARROW_DOWN to AriaSort.Descending
                 else -> ARROW_UP to AriaSort.Ascending
             }
-            header.cell.setClassName("ts-sorted", isSorted)
+            header.cell.setClassName(CssClass.Sorted, isSorted)
             header.cell.text = header.title + arrow
             header.cell.element.setAriaSort(ariaSort)
         }
@@ -246,27 +254,27 @@ internal class DataTable<T>(
     /** Row of one cell over all columns that holds [content] instead of rows. */
     private fun messageRow(content: Component): TableRow {
         val cell = TableDataCell(content).apply {
-            element.setAttribute("colspan", (spec.columns.size + if (isSelectable) 1 else 0).toString())
-            style.set("padding", "0")
+            element.setAttribute(HtmlAttribute.ColSpan, (spec.columns.size + if (isSelectable) 1 else 0).toString())
+            style.setPaddingPixels(0)
         }
-        return TableRow(cell).apply { addClassName("ts-row-empty") }
+        return TableRow(cell).apply { addClassName(CssClass.RowEmpty) }
     }
 
     private fun rowOf(row: T, highlightNew: Boolean): TableRow = TableRow().apply {
         val shownRow = ShownRow(key = key(row), row = this, isHighlighted = highlighted(row))
         shownRows += shownRow
-        if (highlightNew && shownRow.key !in renderedKeys) addClassName("ts-row-new")
+        if (highlightNew && shownRow.key !in renderedKeys) addClassName(CssClass.RowNew)
         if (isSelectable) add(TableDataCell(shownRow.checkbox))
         shownRow.update()
         spec.columns.forEachIndexed { index, column ->
             val cell = TableDataCell()
-            column.kind.cssClass?.split(' ')?.forEach { cssClass -> cell.addClassName(cssClass) }
+            column.kind.cssClasses.forEach { cssClass -> cell.addClassName(cssClass) }
             column.fill(row, cell, spec.layout.sizes[index + if (isSelectable) 1 else 0])
             add(cell)
         }
         spec.rowClick?.let { listener ->
-            addClassName("ts-row-clickable")
-            element.addEventListener("click") { listener(row) }.setFilter(ROW_CLICK_FILTER)
+            addClassName(CssClass.RowClickable)
+            element.addEventListener(DomEvent.Click) { listener(row) }.setFilter(DomEventFilter.TableRowClick)
         }
     }
 
@@ -314,7 +322,7 @@ internal class DataTable<T>(
         }
 
         fun update() {
-            row.setClassName("ts-row-selected", isHighlighted || key in selected)
+            row.setClassName(CssClass.RowSelected, isHighlighted || key in selected)
         }
     }
 

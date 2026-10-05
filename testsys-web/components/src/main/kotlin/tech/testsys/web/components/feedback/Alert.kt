@@ -5,9 +5,13 @@ package tech.testsys.web.components.feedback
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.ICON_SIZE_LARGE
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.add
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
@@ -30,13 +34,13 @@ fun BlockRowScope.alert(kind: FeedbackKind, title: String, text: String? = null,
     ElementHandle(place(size, buildAlert(kind, title, text)))
 
 private fun buildAlert(kind: FeedbackKind, title: String, text: String?): Div {
-    val icon = svgIcon(kind.alertIcon, ICON_SIZE_LARGE).apply { element.classList.add("ts-alert__icon") }
-    val body = Div(Span(title).apply { addClassName("ts-alert__title") }).apply {
-        addClassName("ts-alert__text")
-        text?.let { description -> add(Span(description).apply { addClassName("ts-alert__desc") }) }
+    val icon = svgIcon(kind.alertIcon, ICON_SIZE_LARGE).apply { element.classList.add(CssClass.AlertIcon) }
+    val body = Div(Span(title).apply { addClassName(CssClass.AlertTitle) }).apply {
+        addClassName(CssClass.AlertText)
+        text?.let { description -> add(Span(description).apply { addClassName(CssClass.AlertDesc) }) }
     }
     return Div(icon, body).apply {
-        addClassNames("ts-alert", "ts-alert--${kind.alertTone}")
+        addClassNames(CssClass.Alert, kind.alertClass)
         if (kind == FeedbackKind.Error) element.setRole(ElementRole.Alert)
     }
 }

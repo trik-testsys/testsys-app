@@ -48,7 +48,7 @@ class LookupManyTests : MockVaadinTests() {
     // Review report, Issue 6: an unavailable lookup must discard its open dialog and delayed choice.
     @ParameterizedTest
     @CsvSource("false,true", "true,false")
-    @org.junit.jupiter.api.Tag("regression")
+    @Tag("regression")
     fun `should close an open lookup when choice becomes unavailable and ignore delayed choice`(
         enabled: Boolean,
         editable: Boolean,

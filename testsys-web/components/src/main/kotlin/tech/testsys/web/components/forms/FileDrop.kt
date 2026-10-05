@@ -6,8 +6,10 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.page.PendingJavaScriptResult
 import com.vaadin.flow.component.upload.Upload
 import com.vaadin.flow.component.upload.UploadI18N
+import com.vaadin.flow.dom.Element
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.server.streams.UploadEvent
 import com.vaadin.flow.server.streams.UploadHandler
@@ -20,9 +22,19 @@ import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.AriaLive
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.DomEvent
+import tech.testsys.web.components.core.DomEventData
 import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.addEventData
+import tech.testsys.web.components.core.addEventListener
+import tech.testsys.web.components.core.get
 import tech.testsys.web.components.core.setAriaLive
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -315,7 +327,7 @@ fun BlockRowScope.fileDrop(
     }
 }
 
-@JsModule("./testsys-ui/file-drop-transfers.ts")
+@JsModule(FILE_TRANSFER_MODULE)
 internal class FileDropDisplay(
     texts: UiTexts,
     label: String,
@@ -331,7 +343,7 @@ internal class FileDropDisplay(
     }
 
     private val status = Span().apply {
-        addClassName("ts-filedrop__status")
+        addClassName(CssClass.FiledropStatus)
         element.setRole(ElementRole.Status)
         element.setAriaLive(AriaLive.Polite)
     }
@@ -358,7 +370,7 @@ internal class FileDropDisplay(
             override fun getFileCountMax(): Long = limits.maxFiles.toLong()
         },
     ).apply {
-        addClassName("ts-drop")
+        addClassName(CssClass.Drop)
         setDropLabelIcon(
             tech.testsys.web.components.core.svgIcon(
                 tech.testsys.web.components.core.IconName.Upload,
@@ -369,12 +381,12 @@ internal class FileDropDisplay(
         maxFileSize = limits.maxFileBytes
         setAcceptedMimeTypes(*limits.mimeTypes.toTypedArray())
         setAcceptedFileExtensions(*limits.extensions.toTypedArray())
-        setDropLabel(Span(texts.components.drop).apply { addClassName("ts-drop__title") })
+        setDropLabel(Span(texts.components.drop).apply { addClassName(CssClass.DropTitle) })
         val selectAction = com.vaadin.flow.component.html.NativeButton(texts.components.upload).apply {
-            addClassNames("ts-btn", "ts-btn--secondary", "ts-btn--sm")
+            addClassNames(CssClass.Btn, CssClass.BtnSecondary, CssClass.BtnSm)
         }
         setUploadButton(selectAction)
-        element.setAttribute("aria-label", label)
+        element.setAttribute(HtmlAttribute.AriaLabel, label)
         i18n = UploadI18N()
             .setDropFiles(UploadI18N.DropFiles().setOne(texts.components.drop).setMany(texts.components.drop))
             .setAddFiles(UploadI18N.AddFiles().setOne(texts.components.upload).setMany(texts.components.upload))
@@ -409,7 +421,7 @@ internal class FileDropDisplay(
             .setUnits(texts.components.byteUnits)
     }
 
-    private val actions = Div().apply { addClassNames("ts-hstack", "ts-filedrop__actions") }
+    private val actions = Div().apply { addClassNames(CssClass.Hstack, CssClass.FiledropActions) }
     private val cancelAction: ActionHandle
     private val clearAction: ActionHandle
 
@@ -417,17 +429,17 @@ internal class FileDropDisplay(
         val controls = ContentScope(actions, texts, Placement.Head, gridColumns)
         cancelAction = controls.action(texts.components.cancel) { onClick { this@FileDropDisplay.cancel() } }
         clearAction = controls.action(texts.lookup.clear) { onClick { this@FileDropDisplay.clear() } }
-        upload.element.addEventListener("testsys-transfer-remove") { event ->
-            engine.remove(event.eventData.get("event.detail.identity").asString())
+        upload.element.addEventListener(DomEvent.TransferRemove) { event ->
+            engine.remove(event.eventData.get(DomEventData.DetailIdentity).asString())
             if (engine.fileCount() == 0) state.set(FileUploadState.Idle)
-        }.addEventData("event.detail.identity")
-        addClassName("ts-filedrop")
+        }.addEventData(DomEventData.DetailIdentity)
+        addClassName(CssClass.Filedrop)
         element.setRole(ElementRole.Group)
-        element.setAttribute("aria-label", label)
+        element.setAttribute(HtmlAttribute.AriaLabel, label)
         val limitsHint = Span(texts.components.uploadLimits(limits.maxFiles, limits.maxFileBytes.toLong())).apply {
-            addClassName("ts-hint")
+            addClassName(CssClass.Hint)
         }
-        add(Span(label), upload, Div(limitsHint, status, actions).apply { addClassName("ts-filedrop__meta") })
+        add(Span(label), upload, Div(limitsHint, status, actions).apply { addClassName(CssClass.FiledropMeta) })
         com.vaadin.flow.dom.ElementEffect.bind(element, state) { _, value ->
             cancelAction.isVisible = value is FileUploadState.Uploading || value is FileUploadState.Processing
             clearAction.isVisible = value != FileUploadState.Idle
@@ -437,11 +449,11 @@ internal class FileDropDisplay(
         addAttachListener { event ->
             attachedUi = event.ui
             engine.allow(isAllowed)
-            upload.element.setAttribute("data-ts-upload-generation", engine.generation().toString())
-            upload.element.executeJs("window.testsysFileTransfers.attach(this)")
+            upload.element.setAttribute(HtmlAttribute.DataTsUploadGeneration, engine.generation().toString())
+            upload.element.attachFileTransfers()
         }
         addDetachListener {
-            upload.element.executeJs("window.testsysFileTransfers.detach(this)")
+            upload.element.detachFileTransfers()
             engine.cancel()
             engine.allow(false)
             attachedUi = null
@@ -472,7 +484,7 @@ internal class FileDropDisplay(
         val previous = state.peek()
         val hadActive = engine.hasActive()
         engine.cancel()
-        upload.element.setAttribute("data-ts-upload-generation", engine.generation().toString())
+        upload.element.setAttribute(HtmlAttribute.DataTsUploadGeneration, engine.generation().toString())
         upload.interruptUpload()
         if (hadActive || previous is FileUploadState.Uploading || previous is FileUploadState.Processing) {
             state.set(FileUploadState.Cancelled)
@@ -481,7 +493,7 @@ internal class FileDropDisplay(
 
     fun clear() {
         engine.clear()
-        upload.element.setAttribute("data-ts-upload-generation", engine.generation().toString())
+        upload.element.setAttribute(HtmlAttribute.DataTsUploadGeneration, engine.generation().toString())
         upload.clearFileList()
         state.set(FileUploadState.Idle)
     }
@@ -689,3 +701,7 @@ internal class BoundedUploads(
         return isExtensionAllowed && isMimeAllowed
     }
 }
+
+private fun Element.attachFileTransfers(): PendingJavaScriptResult = executeJs("window.testsysFileTransfers.attach(this)")
+
+private fun Element.detachFileTransfers(): PendingJavaScriptResult = executeJs("window.testsysFileTransfers.detach(this)")

@@ -7,10 +7,16 @@ import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.SelectionHandle
 import tech.testsys.web.components.core.AriaCurrent
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.focusClient
 import tech.testsys.web.components.core.setAriaCurrent
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
@@ -47,7 +53,7 @@ data class StepperData(val steps: List<StepData>, val current: Int = 0) {
  * @since %CURRENT_VERSION%
  */
 fun ContentScope.stepper(data: StepperData, configure: SelectionHandle<StepperData>.() -> Unit = {}): SelectionHandle<StepperData> {
-    val root = Div().apply { addClassName("ts-stepper") }
+    val root = Div().apply { addClassName(CssClass.Stepper) }
     lateinit var handle: SelectionHandle<StepperData>
     fun render(value: StepperData) {
         root.removeAll()
@@ -55,16 +61,16 @@ fun ContentScope.stepper(data: StepperData, configure: SelectionHandle<StepperDa
             root.add(
                 NativeButton().apply {
                     element.setType(ElementType.Button)
-                    element.setAttribute("aria-label", step.label)
+                    element.setAttribute(HtmlAttribute.AriaLabel, step.label)
                     if (index == value.current) element.setAriaCurrent(AriaCurrent.Step)
-                    addClassName("ts-step")
-                    setClassName("ts-step--grow", index != value.steps.lastIndex)
-                    setClassName("ts-step--done", index < value.current)
-                    setClassName("ts-step--current", index == value.current)
+                    addClassName(CssClass.Step)
+                    setClassName(CssClass.StepGrow, index != value.steps.lastIndex)
+                    setClassName(CssClass.StepDone, index < value.current)
+                    setClassName(CssClass.StepCurrent, index == value.current)
                     isEnabled = step.isSelectable
                     add(
                         Span().apply {
-                            addClassName("ts-step__dot")
+                            addClassName(CssClass.StepDot)
                             if (index < value.current) {
                                 add(svgIcon(IconName.Check, tech.testsys.web.components.core.ICON_SIZE_SMALL))
                             } else {
@@ -72,18 +78,16 @@ fun ContentScope.stepper(data: StepperData, configure: SelectionHandle<StepperDa
                             }
                         },
                     )
-                    val titles = Span(Span(step.label).apply { addClassName("ts-step__label") }).apply {
-                        addClassName(
-                            "ts-step__text",
-                        )
+                    val titles = Span(Span(step.label).apply { addClassName(CssClass.StepLabel) }).apply {
+                        addClassName(CssClass.StepText)
                     }
-                    step.description?.let { caption -> titles.add(Span(caption).apply { addClassName("ts-step__sub") }) }
+                    step.description?.let { caption -> titles.add(Span(caption).apply { addClassName(CssClass.StepSub) }) }
                     add(titles)
-                    if (index != value.steps.lastIndex) add(Span().apply { addClassName("ts-step__line") })
+                    if (index != value.steps.lastIndex) add(Span().apply { addClassName(CssClass.StepLine) })
                     addClickListener {
                         if (step.isSelectable) {
                             handle.choose(handle.data.copy(current = index))
-                            root.children.toList().getOrNull(index)?.element?.executeJs("this.focus()")
+                            root.children.toList().getOrNull(index)?.element?.focusClient()
                         }
                     }
                 },

@@ -1,7 +1,14 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Div
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssProperty
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.setToken
 import tech.testsys.web.components.layout.BlockScope
 
 /**
@@ -21,7 +28,7 @@ fun BlockScope.foundationSamples(
     sampleText: String = "",
     configure: ElementHandle.() -> Unit = {},
 ): ElementHandle {
-    val samples = Div().apply { addClassName("ts-foundation-samples") }
+    val samples = Div().apply { addClassName(CssClass.FoundationSamples) }
     foundationTokens(category).forEach { name ->
         val example = Div(
             when (category) {
@@ -30,19 +37,19 @@ fun BlockScope.foundationSamples(
                 FoundationCategory.Layout -> name
             },
         ).apply {
-            addClassName("ts-foundation-sample")
+            addClassName(CssClass.FoundationSample)
             val property = when {
-                category == FoundationCategory.Palette -> "background"
-                name.startsWith("--font-") -> "font-family"
-                name.startsWith("--fs-") -> "font-size"
-                name.startsWith("--fw-") -> "font-weight"
-                name.startsWith("--space-") -> "padding"
-                name.startsWith("--radius-") -> "border-radius"
-                else -> "box-shadow"
+                category == FoundationCategory.Palette -> CssProperty.Background
+                name.startsWith("--font-") -> CssProperty.FontFamily
+                name.startsWith("--fs-") -> CssProperty.FontSize
+                name.startsWith("--fw-") -> CssProperty.FontWeight
+                name.startsWith("--space-") -> CssProperty.Padding
+                name.startsWith("--radius-") -> CssProperty.BorderRadius
+                else -> CssProperty.BoxShadow
             }
-            element.style.set(property, "var($name)")
+            element.style.setToken(property, name)
         }
-        samples.add(Div(Div(name).apply { addClassName("ts-mono") }, example).apply { addClassName("ts-foundation-row") })
+        samples.add(Div(Div(name).apply { addClassName(CssClass.Mono) }, example).apply { addClassName(CssClass.FoundationRow) })
     }
     placeWhole(samples, "foundation samples")
     return ElementHandle(samples).apply(configure)

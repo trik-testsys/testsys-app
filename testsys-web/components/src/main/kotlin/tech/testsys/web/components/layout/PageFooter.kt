@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.Component
@@ -12,6 +14,11 @@ import com.vaadin.flow.router.RouterLink
 import tech.testsys.web.components.TestSysBrand
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.HtmlAttribute
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.setAttribute
 import java.time.Clock
 import java.time.Year
 
@@ -30,7 +37,7 @@ class PageFooterScope internal constructor() {
      * @since %CURRENT_VERSION%
      */
     fun link(label: String, target: Class<out Component>, parameters: RouteParameters = RouteParameters.empty()) {
-        links += RouterLink(label, target, parameters).apply { addClassName("ts-footer__link") }
+        links += RouterLink(label, target, parameters).apply { addClassName(CssClass.FooterLink) }
     }
 
     /**
@@ -39,14 +46,14 @@ class PageFooterScope internal constructor() {
      * @since %CURRENT_VERSION%
      */
     fun link(label: String, href: String) {
-        links += Anchor(href, label).apply { addClassName("ts-footer__link") }
+        links += Anchor(href, label).apply { addClassName(CssClass.FooterLink) }
     }
 
     internal fun build(ariaLabel: String): Nav? {
         if (links.isEmpty()) return null
         return Nav().apply {
-            addClassName("ts-footer__links")
-            element.setAttribute("aria-label", ariaLabel)
+            addClassName(CssClass.FooterLinks)
+            element.setAttribute(HtmlAttribute.AriaLabel, ariaLabel)
             links.forEach { link -> add(link) }
         }
     }
@@ -57,10 +64,10 @@ internal fun buildPageFooter(
     links: PageFooterScope = PageFooterScope(),
     clock: Clock = Clock.systemDefaultZone(),
 ): Footer {
-    val logo = Image(TestSysBrand.FOOTER, texts.brand).apply { addClassName("ts-footer__logo") }
-    val year = Span(texts.footer.year(Year.now(clock).value)).apply { addClassName("ts-footer__year") }
-    val brand = Div(logo, year).apply { addClassName("ts-footer__brand") }
-    val inner = Div(brand).apply { addClassName("ts-footer__inner") }
+    val logo = Image(TestSysBrand.FOOTER, texts.brand).apply { addClassName(CssClass.FooterLogo) }
+    val year = Span(texts.footer.year(Year.now(clock).value)).apply { addClassName(CssClass.FooterYear) }
+    val brand = Div(logo, year).apply { addClassName(CssClass.FooterBrand) }
+    val inner = Div(brand).apply { addClassName(CssClass.FooterInner) }
     links.build(texts.footer.links)?.let { navigation -> inner.add(navigation) }
-    return Footer(inner).apply { addClassName("ts-footer") }
+    return Footer(inner).apply { addClassName(CssClass.Footer) }
 }

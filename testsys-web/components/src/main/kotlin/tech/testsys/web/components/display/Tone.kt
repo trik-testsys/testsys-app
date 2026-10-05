@@ -5,10 +5,10 @@ package tech.testsys.web.components.display
  *
  * @since %CURRENT_VERSION%
  */
-enum class Tone(internal val modifier: String) {
-    Neutral("neutral"),
-    Info("info"),
-    Success("success"),
-    Warning("warning"),
-    Danger("danger"),
+enum class Tone {
+    Neutral,
+    Info,
+    Success,
+    Warning,
+    Danger,
 }

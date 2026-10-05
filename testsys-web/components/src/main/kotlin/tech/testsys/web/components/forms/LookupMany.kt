@@ -8,10 +8,15 @@ import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementType
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.ICON_SIZE_TINY
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.data.Page
@@ -68,10 +73,10 @@ internal class LookupManyField<T : Any>(
     private val columns: TableSpec<T>,
     gridColumns: Int,
 ) : LookupFrame<Set<T>>(texts, title, emptyValue = emptySet(), gridColumns = gridColumns) {
-    private val chips = Div().apply { addClassName("ts-lookup__chips") }
+    private val chips = Div().apply { addClassName(CssClass.LookupChips) }
 
     init {
-        box.addClassName("ts-lookup--many")
+        box.addClassName(CssClass.LookupMany)
         // After the value button, so that it stays the first input of the field; CSS shows the chips before it.
         box.addComponentAtIndex(1, chips)
         updateView(value)
@@ -94,7 +99,9 @@ internal class LookupManyField<T : Any>(
         chips.removeAll()
         current.take(MAX_CHIPS).forEach { item -> chips.add(chipOf(item, isChoosable)) }
         if (current.size > MAX_CHIPS) {
-            chips.add(Span("+${current.size - MAX_CHIPS}").apply { addClassNames("ts-chip", "ts-chip--more", "ts-obscured-value") })
+            chips.add(
+                Span("+${current.size - MAX_CHIPS}").apply { addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue) },
+            )
         }
         chips.isVisible = current.isNotEmpty()
     }
@@ -117,9 +124,9 @@ internal class LookupManyField<T : Any>(
             selected = value,
             highlighted = { false },
         ) { row -> table.toggle(row) }
-        val count = Span(texts.lookup.selectedCount(value.size)).apply { addClassNames("ts-muted", "ts-lookup-count") }
+        val count = Span(texts.lookup.selectedCount(value.size)).apply { addClassNames(CssClass.Muted, CssClass.LookupCount) }
         dialog.table.onSelectionChange = { keys -> count.text = texts.lookup.selectedCount(keys.size) }
-        dialog.table.pager.root.addClassName("ts-lookup-pager")
+        dialog.table.pager.root.addClassName(CssClass.LookupPager)
         dialog.shell.content.add(dialog.table.pager.root)
         dialog.shell.foot.add(count)
         val foot = ContentScope(dialog.shell.foot, texts, Placement.Body, DIALOG_COLUMNS)
@@ -136,13 +143,13 @@ internal class LookupManyField<T : Any>(
     /** Chip of [item]; the remove button only if [isRemovable], named after the value it removes. */
     private fun chipOf(item: T, isRemovable: Boolean): Span {
         val name = display(item)
-        val chip = Span(Span(name).apply { addClassName("ts-obscured-value") }).apply { addClassName("ts-chip") }
+        val chip = Span(Span(name).apply { addClassName(CssClass.ObscuredValue) }).apply { addClassName(CssClass.Chip) }
         if (isRemovable) {
             chip.add(
                 NativeButton().apply {
-                    addClassName("ts-chip__x")
+                    addClassName(CssClass.ChipX)
                     element.setType(ElementType.Button)
-                    element.setAttribute("aria-label", texts.lookup.remove(name))
+                    element.setAttribute(HtmlAttribute.AriaLabel, texts.lookup.remove(name))
                     add(svgIcon(IconName.X, ICON_SIZE_TINY))
                     addClickListener { if (isChoosable()) chooseInBox(value - item) }
                 },

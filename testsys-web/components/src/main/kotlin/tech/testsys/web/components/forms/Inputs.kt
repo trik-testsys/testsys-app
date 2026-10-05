@@ -9,9 +9,13 @@ import com.vaadin.flow.component.HasHelper
 import com.vaadin.flow.component.HasValidation
 import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.data.binder.HasValidator
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.DomProperty
 import tech.testsys.web.components.core.ElementSize
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setInput
+import tech.testsys.web.components.core.setProperty
 import tech.testsys.web.components.core.setSize
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -69,7 +73,7 @@ internal fun <C, T> ContentScope.placeLabelLessInput(
     where C : AbstractField<*, T>, C : HasValidation, C : HasValidator<T> {
     nameControl(control, label)
     control.element.setInput(true)
-    val area = fieldValueArea(label, control).apply { addClassName("ts-field__value--inline") }
+    val area = fieldValueArea(label, control).apply { addClassName(CssClass.FieldValueInline) }
     add(area)
     return ValueInput(
         parts = null,
@@ -82,5 +86,5 @@ internal fun <C, T> ContentScope.placeLabelLessInput(
 
 /** Gives [control] the accessible name [label], since the visible label of a grid field is not its own. */
 internal fun nameControl(control: Component, label: String) {
-    if (control is HasAriaLabel) control.setAriaLabel(label) else control.element.setProperty("accessibleName", label)
+    if (control is HasAriaLabel) control.setAriaLabel(label) else control.element.setProperty(DomProperty.AccessibleName, label)
 }

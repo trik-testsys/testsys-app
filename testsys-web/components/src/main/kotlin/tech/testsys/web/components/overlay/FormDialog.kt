@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.overlay
 
 import com.vaadin.flow.component.html.Div
@@ -6,6 +8,9 @@ import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.currentTexts
 import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.BlockRowScope
@@ -87,7 +92,7 @@ class DialogScope internal constructor(
      * @since %CURRENT_VERSION%
      */
     fun row(content: BlockRowScope.() -> Unit) {
-        val row = Div().apply { addClassName("ts-block__row") }
+        val row = Div().apply { addClassName(CssClass.BlockRow) }
         BlockRowScope(row, DIALOG_COLUMNS, texts, editState).content()
         if (row.children.findAny().isPresent) shell.content.add(row)
     }
@@ -110,7 +115,7 @@ class DialogScope internal constructor(
 fun dialog(title: String, subtitle: String? = null, content: DialogScope.() -> Unit): DialogHandle {
     val texts = currentTexts()
     val shell = DialogShell(texts, title, subtitle, isWide = true, isAlert = false)
-    shell.content.addClassName("ts-dialog__grid")
+    shell.content.addClassName(CssClass.DialogGrid)
     val editState = BlockEditState(shell.dialog.element)
     val handle = DialogHandle(shell, editState)
     DialogScope(shell, texts, editState, handle).content()

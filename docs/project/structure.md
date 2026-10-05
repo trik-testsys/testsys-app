@@ -146,8 +146,10 @@ testsys-app/
 и собственные generated/build-результаты.
 
 Режиму разработки Vaadin нужен `com.vaadin:vaadin-dev`; он подключён как `developmentOnly`, поэтому есть в classpath
-`bootRun`, но не попадает в `bootJar`. Плагин Vaadin генерирует `app/src/main/frontend/index.html` и `dev-app/src/main/frontend/index.html`
-(хранится в git) и `src/main/frontend/generated/` (в `.gitignore`). Свои файлы (в том числе настройки dev-сервера)
+`bootRun`, но не попадает в `bootJar`. Плагин Vaadin создаёт HTML-оболочку в `src/main/frontend/generated/index.html`
+каждого приложения. Каталог `src/main/frontend/generated/` игнорируется Git; отдельные исключения также покрывают
+`app/src/main/frontend/index.html` и `dev-app/src/main/frontend/index.html`.
+Свои файлы (в том числе настройки dev-сервера)
 dev-режим кладёт в `build/` — так задаёт `vaadin.build.folder` в `application.yml`; без него, при запуске без
 токен-файла Gradle-плагина, использовался бы каталог Maven `target/`.
 

@@ -19,8 +19,9 @@ data, actions or states. Do not reopen a settled format choice.
 
 - Read [ui-design.md](../../../docs/project/ui-design.md) for visual and interface rules, and
   [definitions.md](../../../docs/domain/definitions.md) for domain terms and Roles.
-- Read [components/README.md](../../../testsys-web/components/README.md) for composition, APIs, handles,
-  client implementations, resources and component verification. Read
+- For a page, follow [implement-web-page.md](../../../docs/guides/implement-web-page.md). Read the public composition,
+  handles, bindings and component API sections it selects in
+  [components/README.md](../../../testsys-web/components/README.md). Read
   [structure.md](../../../docs/project/structure.md) for code placement and build commands, and
   [code-style.md](../../../docs/project/code-style.md) for Kotlin and KDoc.
 - Consult [dev-app/README.md](../../../testsys-web/dev-app/README.md) for demonstrations and usage examples.
@@ -30,9 +31,11 @@ data, actions or states. Do not reopen a settled format choice.
 
 ## Build interfaces
 
-Inspect existing component signatures and relevant tests before composing a page. Follow the composition,
-binding, editing, routing and live-update sections of `components/README.md` as needed. When a component is
-missing, follow its "Как добавить компонент" section and use the nearest actual implementation as context.
+Inspect the public signatures and relevant tests of the components the page uses. Follow the page guide and its
+selected API sections. If a component is missing, follow
+[add-web-component.md](../../../docs/guides/add-web-component.md) and inspect the nearest actual implementation.
+Read core internals, client implementations and resource details when adding or changing a component;
+ordinary page composition uses the public DSL.
 
 For application text, use [localization/README.md](../../../testsys-infra/localization/README.md); for new messages,
 follow [add-localization.md](../../../docs/guides/add-localization.md). Keep demonstration exceptions within their
@@ -44,7 +47,7 @@ library or turn sample data into application behaviour without a corresponding r
 
 ## Verify and hand over
 
-Follow [unit-tests.md](../../../docs/project/unit-tests.md), the component verification guidance and the build
+Follow the page or component guide, [unit-tests.md](../../../docs/project/unit-tests.md) and the build
 commands in `structure.md`. Check rendered behaviour against the documented requirements and component
 contracts. For standalone artifacts, check the relevant interactions in a browser.
 

@@ -12,9 +12,9 @@ The project documentation (Russian) owns project development rules and facts. Th
 under `.testsys-agents/` link to it. Instructions addressing agent behaviour belong in the shared AI resources.
 
 - **One direction only:** AI configuration files link to the docs; the docs never link to or mention AI configuration files.
-  Never add a reference to `AGENTS.md`, `.testsys-agents/`, client configuration or a skill into any document. The only exception is the root
-  `README.md`, which lists the skills and agents (see "Где лежит документация" in `docs/docs.md`); keep that list
-  in sync when a skill or agent is added, renamed or removed.
+  Never add a reference to `AGENTS.md`, `.testsys-agents/`, client configuration or a skill into `docs/` or module
+  READMEs. The root `README.md` links to [README_LLM_USAGE.md](README_LLM_USAGE.md), which owns the skills and roles
+  list; keep that list in sync when a skill or role is added, renamed or removed.
 - **Do not restate the docs here or in skills.** If a project development rule is missing, add it to the owning document
   (see `docs/docs.md`) and link to it from here.
 - Before any task, read the [document registry](docs/docs.md#перечень-документов), then the owning documents
@@ -62,7 +62,7 @@ documentation review pass; project development requirements remain in their owne
 
 Edit shared skills, role contracts, hooks and tool mappings only in `.testsys-agents/`; it is the source stored in
 Git. Local client configuration (for example `.claude/` or `.codex/`) and discovery links are setup results, not copies of
-the procedures. Keep the root README's skill/role links current. Preserve unrelated local resources and settings.
+the procedures. Keep the skill/role links in `README_LLM_USAGE.md` current. Preserve unrelated local resources and settings.
 
 Change client-specific settings in [testsys-llm-sync.md](testsys-llm-sync.md) and synchronize the selected client.
 Shared hooks are in [.testsys-agents/hooks/](.testsys-agents/hooks/); keep the review guard allowlist aligned with

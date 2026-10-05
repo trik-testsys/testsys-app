@@ -84,6 +84,7 @@ import tech.testsys.operation.error.UpdateStatementError
 import tech.testsys.operation.error.UpdateTestError
 import tech.testsys.operation.error.ViewResourceError
 import tech.testsys.operation.error.ViewResourcesError
+import tech.testsys.operation.error.ViewTasksError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
@@ -107,6 +108,20 @@ class DeveloperOperations(
     private val developerSolutionRepository: DeveloperSolutionRepository,
     private val solutionRepository: SolutionRepository,
 ) {
+
+    /**
+     * Returns tasks owned by [user] or shared to communities of their [Developer] role, without changing task state.
+     * Missing developer role is an expected failure; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.viewTasks")
+    fun viewTasks(user: MultipleRoleUser): OperationResult<List<Task>, ViewTasksError> = operation<List<Task>, ViewTasksError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val developer = user.data.roles.filterIsInstance<Developer>().single()
+        val tasks = taskRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = developer.memberOf.ids.toSet())
+        return tasks.asSuccess()
+    }
 
     /**
      * Returns the latest existing resource versions uploaded to tasks owned by [user], including unattached chains.

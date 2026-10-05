@@ -57,6 +57,11 @@
 
 Образец — [DeveloperOperations.kt](src/main/kotlin/tech/testsys/operation/user/DeveloperOperations.kt).
 
+Метод `viewTasks` возвращает `List<Task>` через `TaskRepository.findAvailableToDeveloper`.
+Идентификатор, название, состояние и владелец доступны в возвращённых сущностях. Исключения хранилища
+выходят из операции. Условия доступа и оставшаяся часть интерфейса — в фиче
+`testsys.user.multi.developer.task.viewTasks` в [features.md](../docs/domain/features.md).
+
 Метод `viewResources` возвращает последние версии доступных цепочек существующими доменными сущностями.
 Дата последнего изменения Ресурса — `createdAt` его последней версии. Метод `viewResource` возвращает
 существующие версии выбранной цепочки. Метод `downloadResourceVersion` возвращает сохранённый `StoredBlobRef`

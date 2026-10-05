@@ -52,6 +52,13 @@ sealed interface ResourceAccessError : OperationError
 // region DeveloperOperations
 
 /**
+ * Failure of listing tasks available to the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewTasksError : OperationError
+
+/**
  * Failure of listing the developer's resources.
  *
  * @since %CURRENT_VERSION%
@@ -207,6 +214,7 @@ sealed interface DetachDeveloperSolutionError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedDeveloperRoleError :
+    ViewTasksError,
     DetachStatementError,
     DetachExerciseError,
     DetachTestError,

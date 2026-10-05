@@ -88,6 +88,7 @@ import tech.testsys.operation.util.testAdministrator
 import tech.testsys.operation.util.testCommitedTask
 import tech.testsys.operation.util.testCommunity
 import tech.testsys.operation.util.testDeveloper
+import tech.testsys.operation.util.testMultipleRoleUser
 import tech.testsys.operation.util.testNewTask
 import tech.testsys.operation.util.testSavedTask
 import tech.testsys.operation.util.testStatement
@@ -125,6 +126,107 @@ class DeveloperOperationsTests {
     private val uploadUuid = UUID(0, 10)
     private val uploadBucket = VersionBucket(uploadUuid)
     private val uploadScore = Score(42)
+
+    @Nested
+    inner class ViewTasksTests {
+
+        @Test
+        fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
+            assertRaises(MissedDeveloperRoleError) { developerOperations.viewTasks(testAdministrator {}) }
+
+            verify(exactly = 0) { taskRepository.findAvailableToDeveloper(any(), any()) }
+        }
+
+        @Test
+        fun `should return an empty list when no tasks are available`() {
+            every { taskRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet()) } returns emptyList()
+
+            val result = developerOperations.viewTasks(developer).getOrThrow()
+
+            Assertions.assertEquals(emptyList<Task>(), result)
+        }
+
+        @Test
+        fun `should return owned and shared tasks with their identifiers names owners and states`() {
+            val user = testDeveloper {
+                memberOf(listOf(1, 2))
+                data = developerData {}
+            }
+            val owned = task {
+                id = 1
+                createdAt = Instant.MIN
+                data = testNewTask().data
+            }
+            val shared = task {
+                id = 2
+                createdAt = Instant.MIN
+                data = testCommitedTask().withData {
+                    owner = MultipleRoleUserId(99)
+                    name = "Shared task"
+                    sharedTo(listOf(2))
+                }.data
+            }
+            every {
+                taskRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(1), CommunityId(2)))
+            } returns listOf(owned, shared)
+
+            val result = developerOperations.viewTasks(user).getOrThrow()
+
+            Assertions.assertEquals(listOf(TaskId(1), TaskId(2)), result.map { it.id })
+            Assertions.assertEquals(listOf("name", "Shared task"), result.map { it.data.name })
+            Assertions.assertEquals(listOf(user.id, MultipleRoleUserId(99)), result.map { it.data.owner.id })
+            Assertions.assertInstanceOf(TaskContent.New::class.java, result[0].data.content)
+            Assertions.assertInstanceOf(TaskContent.Committed::class.java, result[1].data.content)
+            verify(exactly = 0) { taskRepository.findByIds(any()) }
+        }
+
+        @Test
+        fun `should consider community membership only in the Developer role when user has several roles`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    developer {
+                        memberOf(listOf(1))
+                        data = developerData {}
+                    }
+                    student {
+                        memberOf(listOf(2))
+                        data = studentData {}
+                    }
+                    administrator { memberOf(listOf(3)) }
+                }
+            }
+            every { taskRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(1))) } returns emptyList()
+
+            developerOperations.viewTasks(user).getOrThrow()
+
+            verify(exactly = 1) { taskRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(1))) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should retain task state and data when viewing tasks`(state: String) {
+            val original = taskInState(state)
+            every { taskRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet()) } returns listOf(original)
+
+            val result = developerOperations.viewTasks(developer).getOrThrow().single()
+
+            Assertions.assertSame(original, result)
+            Assertions.assertEquals(original.data, result.data)
+            Assertions.assertEquals(original.version, result.version)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { taskRepository.save(any<TaskData>()) }
+        }
+
+        @Test
+        fun `should propagate a storage exception when listing tasks`() {
+            val failure = IllegalStateException("Task storage unavailable")
+            every { taskRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet()) } throws failure
+
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) { developerOperations.viewTasks(developer) }
+
+            Assertions.assertSame(failure, actual)
+        }
+    }
 
     @Nested
     inner class ViewResourcesTests {

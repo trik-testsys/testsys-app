@@ -533,7 +533,7 @@ Page: **testsys.web.page.developer.task**
 
 Данное действие переводит Задачу в состояние *committed*.
 
-### testsys.user.multi.developer.task.viewTasks (Not implemented)
+### testsys.user.multi.developer.task.viewTasks (Partially implemented)
 
 Page: **testsys.web.page.developer**
 
@@ -544,6 +544,14 @@ Page: **testsys.web.page.developer**
 3) Состояние
 
 Для созданных им Задач он может перейти на страницу **testsys.web.page.developer.task**
+
+Для доступа через Сообщества учитывается членство Пользователя в Роли Разработчика.
+
+Операция отклоняется, если у Пользователя нет Роли Разработчика.
+Просмотр не изменяет состояние Задач.
+
+Реализована операция получения списка доступных Задач. Страницы
+**testsys.web.page.developer**, **testsys.web.page.developer.task** и переход между ними не реализованы.
 
 ### testsys.user.multi.developer.task.viewTask (Not implemented)
 

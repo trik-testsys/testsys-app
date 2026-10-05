@@ -6,8 +6,8 @@ import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
-import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.ICON_SIZE_TINY

@@ -4,9 +4,9 @@ package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.html.Div
 import tech.testsys.web.components.TestSysDsl
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.setGridColumnSpan
+import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Scope of a slot row: blocks side by side whose sizes take at most the slot columns in total.

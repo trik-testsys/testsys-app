@@ -4,12 +4,12 @@ package tech.testsys.web.components.data
 
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.pagerArrow
+import tech.testsys.web.components.texts.UiTexts
 
 /** Footer part of a table: the range of shown rows and the compact pager «‹ 3 / 71 ›»; [onPage] gets the page to go to. */
 internal class Pager(private val texts: UiTexts, private val onPage: (Int) -> Unit) {

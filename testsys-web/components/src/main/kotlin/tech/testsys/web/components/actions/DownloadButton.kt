@@ -15,11 +15,10 @@ import com.vaadin.flow.server.streams.DownloadHandler
 import com.vaadin.flow.signals.Signal
 import com.vaadin.flow.signals.local.ValueSignal
 import org.slf4j.LoggerFactory
-import tech.testsys.web.components.Background
-import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.AriaLive
+import tech.testsys.web.components.core.Background
+import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssDisplay
 import tech.testsys.web.components.core.CssUnit
@@ -43,6 +42,7 @@ import tech.testsys.web.components.core.setWidth
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.texts.UiTexts
 import java.io.IOException
 import java.io.InputStream
 import java.io.InterruptedIOException
@@ -74,13 +74,14 @@ data class DownloadContent(
     val length: Long? = null,
     val openStream: () -> InputStream,
 ) {
+
     init {
-        require(
-            filename.isNotBlank() && '\n' !in filename && '\r' !in filename,
-        ) {
+        require(filename.isNotBlank() && '\n' !in filename && '\r' !in filename) {
             "Download filename must be nonempty and must not contain newlines"
         }
-        require(contentType.isNotBlank() && (length == null || length >= 0)) { "Download type must be nonempty and length nonnegative" }
+        require(contentType.isNotBlank() && (length == null || length >= 0)) {
+            "Download type must be nonempty and length nonnegative"
+        }
     }
 }
 
@@ -91,6 +92,7 @@ data class DownloadContent(
  * @since %CURRENT_VERSION%
  */
 class DownloadContext internal constructor() {
+
     private val isCancellationRequested = AtomicBoolean()
     private val input = AtomicReference<InputStream?>()
     val isCancelled: Boolean
@@ -106,9 +108,7 @@ class DownloadContext internal constructor() {
         if (isCancelled) throw InterruptedIOException("Download attempt was cancelled")
     }
 
-    internal fun cancel() {
-        isCancellationRequested.set(true)
-    }
+    internal fun cancel() = isCancellationRequested.set(true)
 
     internal fun own(stream: InputStream) {
         input.set(stream)
@@ -118,16 +118,12 @@ class DownloadContext internal constructor() {
         }
     }
 
-    internal fun releaseStream(stream: InputStream) {
-        input.compareAndSet(stream, null)
-    }
+    internal fun releaseStream(stream: InputStream) = input.compareAndSet(stream, null)
 
-    internal fun closeStream() {
-        try {
-            input.getAndSet(null)?.close()
-        } catch (_: IOException) {
-            // The state already describes cancellation or the transfer error.
-        }
+    internal fun closeStream() = try {
+        input.getAndSet(null)?.close()
+    } catch (_: IOException) {
+        // The state already describes cancellation or the transfer error.
     }
 }
 
@@ -137,6 +133,7 @@ class DownloadContext internal constructor() {
  * @since %CURRENT_VERSION%
  */
 sealed interface DownloadState {
+
     /**
      * No current attempt.
      *
@@ -184,13 +181,18 @@ sealed interface DownloadState {
  * @property state the read-only signal of the current attempt.
  * @since %CURRENT_VERSION%
  */
-class DownloadHandle internal constructor(private val download: DownloadDisplay) : ElementHandle(download) {
+class DownloadHandle internal constructor(
+    private val download: DownloadDisplay
+) : ElementHandle(download) {
+
     private val enabled = Bindable(download.element, true, download::allow)
+
     var isEnabled: Boolean
         get() = enabled.value
         set(value) {
             enabled.value = value
         }
+
     val state: Signal<DownloadState> = download.state.asReadonly()
 
     /**
@@ -205,18 +207,14 @@ class DownloadHandle internal constructor(private val download: DownloadDisplay)
      *
      * @since %CURRENT_VERSION%
      */
-    fun start() {
-        download.start()
-    }
+    fun start() = download.start()
 
     /**
      * Cancels preparation or transfer and removes its registered resource.
      *
      * @since %CURRENT_VERSION%
      */
-    fun cancel() {
-        download.cancel()
-    }
+    fun cancel() = download.cancel()
 }
 
 /**
@@ -282,6 +280,7 @@ internal class DownloadDisplay(
     compact: Boolean,
     private val produce: (DownloadContext) -> DownloadContent,
 ) : Div() {
+
     private val logger = LoggerFactory.getLogger(DownloadDisplay::class.java)
     val state = ValueSignal<DownloadState>(DownloadState.Idle)
     private val trigger = NativeButton().apply {
@@ -314,7 +313,7 @@ internal class DownloadDisplay(
         element.style.setDisplay(CssDisplay.None)
         element.setAriaHidden(true)
         element.setAttribute(HtmlAttribute.TabIndex, "-1")
-        setRouterIgnore(true)
+        isRouterIgnore = true
     }
 
     private val status = Span().apply {

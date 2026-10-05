@@ -13,12 +13,12 @@ import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
 import tech.testsys.web.components.TestSysBrand
 import tech.testsys.web.components.TestSysDsl
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.texts.UiTexts
 import java.time.Clock
 import java.time.Year
 

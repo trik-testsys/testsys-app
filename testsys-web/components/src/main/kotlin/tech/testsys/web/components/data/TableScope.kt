@@ -5,7 +5,6 @@ package tech.testsys.web.components.data
 import com.vaadin.flow.component.HasComponents
 import com.vaadin.flow.component.Text
 import tech.testsys.web.components.TestSysDsl
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
@@ -15,6 +14,7 @@ import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.overlay.MenuScope
 import tech.testsys.web.components.overlay.iconMenu
+import tech.testsys.web.components.texts.UiTexts
 import java.time.LocalDate
 import java.time.LocalDateTime
 

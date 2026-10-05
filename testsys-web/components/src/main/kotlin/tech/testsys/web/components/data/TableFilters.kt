@@ -8,7 +8,6 @@ import com.vaadin.flow.component.page.PendingJavaScriptResult
 import com.vaadin.flow.dom.Element
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.core.CssClass
@@ -31,6 +30,7 @@ import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
+import tech.testsys.web.components.texts.UiTexts
 import java.util.UUID
 
 /**

@@ -7,7 +7,7 @@ import com.vaadin.flow.server.AppShellSettings
 import com.vaadin.flow.theme.lumo.Lumo
 import tech.testsys.web.components.TestSysBrand
 import tech.testsys.web.components.TestSysTheme
-import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Application shell: loads Lumo and the design system stylesheets on every page, sets the page title

@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
-import tech.testsys.web.components.Background
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.buildTestPage
@@ -27,6 +26,7 @@ import tech.testsys.web.components.button
 import tech.testsys.web.components.child
 import tech.testsys.web.components.classes
 import tech.testsys.web.components.control
+import tech.testsys.web.components.core.Background
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.text

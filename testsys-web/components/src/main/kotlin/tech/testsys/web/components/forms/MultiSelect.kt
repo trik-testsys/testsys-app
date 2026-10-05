@@ -11,7 +11,6 @@ import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.value.ValueChangeMode
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
@@ -32,6 +31,7 @@ import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Adds a local multi-selection of [items] shown by [itemLabel]; popup changes become the value only on Apply.

@@ -5,13 +5,13 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.Signal
 import org.slf4j.LoggerFactory
-import tech.testsys.web.components.Background
-import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.action
+import tech.testsys.web.components.core.Background
+import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.LoadedBody
+import tech.testsys.web.components.texts.UiTexts
 import java.util.concurrent.atomic.AtomicLong
 
 private val logger = LoggerFactory.getLogger(LoadHandle::class.java)

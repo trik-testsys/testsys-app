@@ -7,7 +7,6 @@ import com.vaadin.flow.component.dialog.Dialog
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H2
 import com.vaadin.flow.component.html.Span
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.iconAction
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
@@ -22,6 +21,7 @@ import tech.testsys.web.components.core.setProperty
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
+import tech.testsys.web.components.texts.UiTexts
 
 private const val GLYPH_SIZE = 20
 

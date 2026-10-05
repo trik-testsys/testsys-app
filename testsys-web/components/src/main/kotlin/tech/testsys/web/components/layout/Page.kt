@@ -6,14 +6,14 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Main
-import tech.testsys.web.components.UiTexts
-import tech.testsys.web.components.bindTexts
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setClassName
-import tech.testsys.web.components.navigation.CabinetHeader
-import tech.testsys.web.components.navigation.buildHeader
+import tech.testsys.web.components.navigation.header.CabinetHeader
+import tech.testsys.web.components.navigation.header.buildHeader
+import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.bindTexts
 
 /**
  * Replaces the content of [root] with `.ts-app`: the header, the page head if the body declares one and

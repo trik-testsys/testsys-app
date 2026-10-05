@@ -1,6 +1,6 @@
 package tech.testsys.web.components.data
 
-import tech.testsys.web.components.UiTexts
+import tech.testsys.web.components.texts.UiTexts
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.time.LocalDateTime

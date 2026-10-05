@@ -7,11 +7,11 @@ import com.vaadin.flow.component.HasComponents
 import com.vaadin.flow.component.html.Div
 import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setGridColumnSpan
+import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Scope of a block row: elements side by side on the block columns; an element without a size takes the rest of the row.

@@ -10,7 +10,6 @@ import com.vaadin.flow.component.html.Main
 import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.dom.Element
 import com.vaadin.flow.router.HasDynamicTitle
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.ActionRole
 import tech.testsys.web.components.actions.setActionRole
 import tech.testsys.web.components.buildBrand
@@ -20,6 +19,7 @@ import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setSize
 import tech.testsys.web.components.layout.buildPageFooter
+import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Branded missing-route screen available in every profile, with browser-history navigation only.

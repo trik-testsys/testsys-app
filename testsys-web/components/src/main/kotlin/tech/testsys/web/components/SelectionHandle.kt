@@ -3,6 +3,7 @@ package tech.testsys.web.components
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.Signal
+import tech.testsys.web.components.core.Bindable
 
 /**
  * Handle of an application-controlled selection whose programmatic updates never invoke the user callback.

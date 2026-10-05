@@ -3,8 +3,8 @@ package tech.testsys.web.components.data
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.Signal
-import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 

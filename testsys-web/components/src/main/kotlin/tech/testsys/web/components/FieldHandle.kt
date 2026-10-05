@@ -6,6 +6,7 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
+import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.getAttribute

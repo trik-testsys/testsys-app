@@ -18,9 +18,9 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import tech.testsys.web.components.Background
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestContent
+import tech.testsys.web.components.core.Background
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException

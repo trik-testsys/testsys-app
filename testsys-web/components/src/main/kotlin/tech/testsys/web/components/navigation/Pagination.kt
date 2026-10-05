@@ -9,10 +9,9 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
-import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
-import tech.testsys.web.components.PaginationTexts
 import tech.testsys.web.components.core.AriaCurrent
+import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.HtmlAttribute
@@ -25,6 +24,7 @@ import tech.testsys.web.components.core.setAriaCurrent
 import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.texts.PaginationTexts
 
 /** The most pages shown without gaps. */
 private const val MAX_PAGES_WITHOUT_GAPS = 7

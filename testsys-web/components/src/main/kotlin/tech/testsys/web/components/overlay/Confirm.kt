@@ -7,9 +7,9 @@ import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.dangerAction
 import tech.testsys.web.components.actions.mainAction
-import tech.testsys.web.components.currentTexts
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
+import tech.testsys.web.components.texts.currentTexts
 
 /**
  * Asks to confirm an action: opens a dialog with [title], [text] and the [action] that runs [onConfirm] and closes it.

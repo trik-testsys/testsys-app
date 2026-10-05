@@ -10,7 +10,6 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
 import tech.testsys.web.components.TestSysDsl
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.AriaCurrent
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.HtmlAttribute
@@ -28,6 +27,8 @@ import tech.testsys.web.components.display.buildCounter
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
+import tech.testsys.web.components.navigation.header.configureExactRoute
+import tech.testsys.web.components.texts.UiTexts
 
 private const val MIN_PAGE_TABS = 2
 

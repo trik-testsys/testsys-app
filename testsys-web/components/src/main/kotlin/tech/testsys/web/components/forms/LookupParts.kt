@@ -9,7 +9,6 @@ import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.value.ValueChangeMode
 import com.vaadin.flow.dom.Element
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.iconAction
 import tech.testsys.web.components.core.AriaPopup
@@ -43,6 +42,7 @@ import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.overlay.DIALOG_COLUMNS
 import tech.testsys.web.components.overlay.DialogShell
+import tech.testsys.web.components.texts.UiTexts
 
 /** Default number of rows on a page of the lookup dialog. */
 internal const val LOOKUP_PAGE_SIZE: Int = 10

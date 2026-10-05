@@ -5,7 +5,6 @@ package tech.testsys.web.components.feedback
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.ElementHandle
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
@@ -14,6 +13,7 @@ import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
+import tech.testsys.web.components.texts.UiTexts
 
 private const val EMPTY_ICON_SIZE = 22
 private const val EMPTY_STATE_OWNER = "an empty state"

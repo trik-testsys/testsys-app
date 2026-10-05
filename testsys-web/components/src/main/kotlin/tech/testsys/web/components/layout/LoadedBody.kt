@@ -6,12 +6,12 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Footer
 import com.vaadin.flow.shared.Registration
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.hasAriaBusy
 import tech.testsys.web.components.core.setAriaBusy
 import tech.testsys.web.components.core.setClassName
+import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Body of a block that a load fills after the block is built, again on every reload: either a placeholder or

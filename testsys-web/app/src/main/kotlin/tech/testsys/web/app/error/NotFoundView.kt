@@ -5,8 +5,8 @@ import com.vaadin.flow.router.ErrorParameter
 import com.vaadin.flow.router.HasErrorParameter
 import com.vaadin.flow.router.NotFoundException
 import com.vaadin.flow.server.HttpStatusCode
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.error.NotFoundPage
+import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Missing-route handler backed by the shared branded page.

@@ -31,7 +31,7 @@ object TestSysBrand {
     const val HEADER: String =
         "testsys-ui/brand/horizontal-large-type/png/TestSys-mono-horizontal-large-type-05-split-cream.png"
     const val FAVICON: String = "testsys-ui/brand/emblem/svg/TestSys-mono-emblem.svg"
-    const val FAVICON_URL: String = FAVICON + "?v=rounded-96"
+    const val FAVICON_URL: String = "$FAVICON?v=rounded-96"
     const val FOOTER: String =
         "testsys-ui/brand/horizontal-large-type/svg/TestSys-mono-horizontal-large-type-07-transparent-blue.svg"
 }

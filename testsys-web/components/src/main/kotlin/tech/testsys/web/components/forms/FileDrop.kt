@@ -15,13 +15,12 @@ import com.vaadin.flow.server.streams.UploadEvent
 import com.vaadin.flow.server.streams.UploadHandler
 import com.vaadin.flow.signals.Signal
 import com.vaadin.flow.signals.local.ValueSignal
-import tech.testsys.web.components.Background
-import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.FieldHandle
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.AriaLive
+import tech.testsys.web.components.core.Background
+import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.DomEvent
 import tech.testsys.web.components.core.DomEventData
@@ -39,6 +38,7 @@ import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
+import tech.testsys.web.components.texts.UiTexts
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream

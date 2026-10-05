@@ -1,35 +1,35 @@
 package tech.testsys.web.components.data
 
-import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10.MockVaadin
+import com.github.mvysny.kaributesting.v10._click
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.data.binder.Binder
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertInstanceOf
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import tech.testsys.web.components.MockVaadinTests
-import tech.testsys.web.components.Background
 import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.child
 import tech.testsys.web.components.classes
+import tech.testsys.web.components.core.Background
 import tech.testsys.web.components.display.text
+import tech.testsys.web.components.feedback.LoadHandle
+import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.skipWhenHidden
 import tech.testsys.web.components.forms.textInput
-import tech.testsys.web.components.feedback.LoadHandle
-import tech.testsys.web.components.feedback.load
 import tech.testsys.web.components.layout.BlockHandle
-import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicReference
 
 internal class TableFiltersHandleTests : MockVaadinTests() {
     @Test

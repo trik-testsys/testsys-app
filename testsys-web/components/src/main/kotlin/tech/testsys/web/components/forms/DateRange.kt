@@ -17,7 +17,6 @@ import com.vaadin.flow.data.binder.Validator
 import com.vaadin.flow.data.binder.ValueContext
 import com.vaadin.flow.dom.Element
 import com.vaadin.flow.shared.Registration
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
@@ -35,6 +34,7 @@ import tech.testsys.web.components.core.setHidden
 import tech.testsys.web.components.core.setRangePart
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
+import tech.testsys.web.components.texts.UiTexts
 import java.time.LocalDate
 import java.util.UUID
 

@@ -5,13 +5,13 @@ package tech.testsys.web.components.forms
 import com.vaadin.flow.component.Tag
 import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.react.ReactAdapterComponent
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.DomEvent
 import tech.testsys.web.components.core.DomEventData
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addEventData
 import tech.testsys.web.components.core.addEventListener
 import tech.testsys.web.components.core.get
+import tech.testsys.web.components.texts.UiTexts
 import java.time.LocalDate
 
 private const val DAYS_IN_WEEK = 7

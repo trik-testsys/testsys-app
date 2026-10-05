@@ -5,7 +5,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
 import tech.testsys.web.components.TestSysBrand
-import tech.testsys.web.components.localization.buildUiTexts
+import tech.testsys.web.components.texts.buildUiTexts
 
 class AppShellTests {
     private val texts = buildUiTexts()

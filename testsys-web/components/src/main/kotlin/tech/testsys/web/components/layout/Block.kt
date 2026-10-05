@@ -8,12 +8,12 @@ import com.vaadin.flow.component.html.H3
 import com.vaadin.flow.component.html.Header
 import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Span
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setGridColumnSpan
+import tech.testsys.web.components.texts.UiTexts
 
 /** Title and subtitle of a block head; the head is omitted if there are neither, nor actions, nor tabs. */
 internal class BlockHeading(val title: String?, val subtitle: String?)

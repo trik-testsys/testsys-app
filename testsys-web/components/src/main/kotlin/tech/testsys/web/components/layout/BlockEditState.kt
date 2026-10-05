@@ -4,7 +4,7 @@ import com.vaadin.flow.dom.Element
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.shared.Registration
 import com.vaadin.flow.signals.Signal
-import tech.testsys.web.components.Bindable
+import tech.testsys.web.components.core.Bindable
 
 /**
  * Whether the fields of one block can be edited, set by the page or bound to a signal of the block [element];

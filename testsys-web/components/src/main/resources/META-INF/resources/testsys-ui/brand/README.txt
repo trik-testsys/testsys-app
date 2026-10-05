@@ -30,14 +30,15 @@ horizontal/svg/ и horizontal/png/ — восемь вариантов с эмб
 stacked/svg/ и stacked/png/ — три квадратных варианта с эмблемой над надписью.
 emblem/svg/ и emblem/png/ — три квадратных варианта эмблемы без надписи.
 wordmark/svg/ и wordmark/png/ — три прямоугольных варианта надписи без эмблемы.
-previews/ — общие листы предпросмотра.
+testsys-web/components/brand/previews/ — общие листы предпросмотра вне runtime-ресурсов.
 
-previews/TestSys-mono-preview.png — четыре типа компоновки с видимыми границами холстов и размерами.
-previews/TestSys-mono-color-options.png — шесть горизонтальных цветовых вариантов, каждый в прямоугольнике 12:5.
+testsys-web/components/brand/previews/TestSys-mono-preview.png — четыре типа компоновки с видимыми границами холстов и размерами.
+testsys-web/components/brand/previews/TestSys-mono-color-options.png — шесть горизонтальных цветовых вариантов, каждый в прямоугольнике 12:5.
 
 СОСТАВ КОМПЛЕКТА
 
-25 SVG, 25 PNG, 4 листа предпросмотра и этот README.
+25 SVG, 25 PNG и этот README входят в runtime-ресурсы.
+Четыре листа предпросмотра хранятся отдельно и не входят в jar.
 
 ДОПОЛНИТЕЛЬНЫЙ ГОРИЗОНТАЛЬНЫЙ ВАРИАНТ — РЕДАКЦИЯ V8
 
@@ -73,6 +74,6 @@ PNG экспортированы с равномерным масштабом 2�
 Плашка в вариантах 03/04: 232 × 232, радиус скругления 32.
 
 Папки horizontal, stacked, emblem и wordmark оставлены без изменений.
-previews/TestSys-mono-large-type-comparison.png — сравнение v7 и v8
+testsys-web/components/brand/previews/TestSys-mono-large-type-comparison.png — сравнение v7 и v8
 с одинаковым масштабом эмблемы и обозначенными границами холстов.
-previews/TestSys-mono-large-type-colors.png — все восемь вариантов v8.
+testsys-web/components/brand/previews/TestSys-mono-large-type-colors.png — все восемь вариантов v8.

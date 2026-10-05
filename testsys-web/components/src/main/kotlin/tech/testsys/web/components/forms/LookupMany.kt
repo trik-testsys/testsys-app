@@ -5,7 +5,6 @@ package tech.testsys.web.components.forms
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.core.CssClass
@@ -27,6 +26,7 @@ import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.overlay.DIALOG_COLUMNS
+import tech.testsys.web.components.texts.UiTexts
 
 /** Number of values shown as chips; the rest is counted in one more chip. */
 private const val MAX_CHIPS = 3

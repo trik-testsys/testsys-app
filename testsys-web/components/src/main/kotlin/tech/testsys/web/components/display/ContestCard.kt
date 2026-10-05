@@ -8,8 +8,8 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.dom.Element
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.Signal
-import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.DomEvent
 import tech.testsys.web.components.core.DomEventFilter

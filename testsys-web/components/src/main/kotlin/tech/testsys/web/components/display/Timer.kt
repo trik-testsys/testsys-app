@@ -8,9 +8,9 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.Signal
 import com.vaadin.flow.signals.local.ValueSignal
-import tech.testsys.web.components.Background
-import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.ElementHandle
+import tech.testsys.web.components.core.Background
+import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.HtmlAttribute
@@ -145,7 +145,7 @@ internal class TimerDisplay(
     label: String,
     private var current: TimerValue,
     private val variant: TimerVariant,
-    private val texts: tech.testsys.web.components.UiTexts,
+    private val texts: tech.testsys.web.components.texts.UiTexts,
     private val dangerBelow: Duration,
 ) : Div() {
     val remainingState = ValueSignal(0L)

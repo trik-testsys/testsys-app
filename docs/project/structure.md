@@ -137,6 +137,11 @@ testsys-app/
 ./gradlew :testsys-web:dev-app:bootRun -Pdetekt.autoCorrect=false --args='--spring.profiles.active=dev'
 ```
 
+Исходники веб-подмодулей организованы по пакетам, описанным в их README:
+[components](../../testsys-web/components/README.md#устройство),
+[app](../../testsys-web/app/README.md) и
+[dev-app](../../testsys-web/dev-app/README.md#устройство-исходников).
+
 Корневой `testsys-web` не содержит запускаемого приложения; у каждого приложения свой `src/main/frontend/`
 и собственные generated/build-результаты.
 

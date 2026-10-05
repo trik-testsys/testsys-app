@@ -3,8 +3,8 @@ package tech.testsys.web.components.forms
 import com.vaadin.flow.component.datepicker.DatePicker
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.timepicker.TimePicker
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.layout.BlockRowScope
+import tech.testsys.web.components.texts.UiTexts
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate

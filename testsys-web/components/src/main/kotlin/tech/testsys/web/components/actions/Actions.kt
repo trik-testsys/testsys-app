@@ -14,73 +14,6 @@ import tech.testsys.web.components.core.setSize
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.ContentScope
 
-/**
- * Adds the main action of a block; by convention a block has one.
- *
- * @since %CURRENT_VERSION%
- */
-fun ContentScope.mainAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addAction(ActionRole.Main, label, icon, configure)
-
-/**
- * Adds a neutral action.
- *
- * @since %CURRENT_VERSION%
- */
-fun ContentScope.action(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addAction(ActionRole.Neutral, label, icon, configure)
-
-/**
- * Adds an action that deletes or cancels something.
- *
- * @since %CURRENT_VERSION%
- */
-fun ContentScope.destructiveAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addAction(ActionRole.Destructive, label, icon, configure)
-
-/**
- * Adds an inline text action.
- *
- * @since %CURRENT_VERSION%
- */
-fun ContentScope.linkAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addAction(ActionRole.Link, label, icon, configure)
-
-/**
- * Adds a neutral action shown as an icon only; [label] is read by screen readers and shown as a tooltip.
- *
- * @since %CURRENT_VERSION%
- */
-fun ContentScope.iconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addIconAction(ActionRole.Neutral, icon, label, configure)
-
-/**
- * Adds the main action as an icon; [label] provides its accessible name and tooltip.
- *
- * @since %CURRENT_VERSION%
- */
-fun ContentScope.mainIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addIconAction(ActionRole.Main, icon, label, configure)
-
-/**
- * Adds a destructive action as an icon; [label] provides its accessible name and tooltip.
- *
- * @since %CURRENT_VERSION%
- */
-fun ContentScope.destructiveIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
-    addIconAction(ActionRole.Destructive, icon, label, configure)
-
-private fun ContentScope.addIconAction(role: ActionRole, icon: IconName, label: String, configure: ActionHandle.() -> Unit): ActionHandle {
-    require(label.isNotBlank()) { "Icon action accessible name must not be blank" }
-    val handle = addAction(role, label = null, icon, configure = {})
-    handle.button.apply {
-        setAriaLabel(label)
-        setTooltipText(label)
-        element.setIconOnly(true)
-    }
-    return handle.apply(configure)
-}
-
 /** Role of an action; the look of the button follows it. */
 internal enum class ActionRole(val attribute: String) {
     Main("main"),
@@ -90,13 +23,88 @@ internal enum class ActionRole(val attribute: String) {
     Danger("danger"),
 }
 
+/**
+ * Adds the main action of a block; by convention a block has one.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun ContentScope.mainAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}) =
+    addAction(ActionRole.Main, label, icon, configure)
+
+/**
+ * Adds a neutral action.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun ContentScope.action(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}) =
+    addAction(ActionRole.Neutral, label, icon, configure)
+
+/**
+ * Adds an action that deletes or cancels something.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun ContentScope.destructiveAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}) =
+    addAction(ActionRole.Destructive, label, icon, configure)
+
+/**
+ * Adds an inline text action.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun ContentScope.linkAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}) =
+    addAction(ActionRole.Link, label, icon, configure)
+
+/**
+ * Adds a neutral action shown as an icon only; [label] is read by screen readers and shown as a tooltip.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun ContentScope.iconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}) =
+    addIconAction(ActionRole.Neutral, icon, label, configure)
+
+/**
+ * Adds the main action as an icon; [label] provides its accessible name and tooltip.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun ContentScope.mainIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}) =
+    addIconAction(ActionRole.Main, icon, label, configure)
+
+/**
+ * Adds a destructive action as an icon; [label] provides its accessible name and tooltip.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun ContentScope.destructiveIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}) =
+    addIconAction(ActionRole.Destructive, icon, label, configure)
+
+private fun ContentScope.addIconAction(
+    role: ActionRole,
+    icon: IconName,
+    label: String,
+    configure: ActionHandle.() -> Unit
+): ActionHandle {
+    require(label.isNotBlank()) { "Icon action accessible name must not be blank" }
+
+    val handle = addAction(role, label = null, icon, configure = {})
+    handle.button.apply {
+        setAriaLabel(label)
+        setTooltipText(label)
+        element.setIconOnly(true)
+    }
+
+    return handle.apply(configure)
+}
+
 /** Adds the filled red action of a dangerous confirmation; pages have no such role. */
-internal fun ContentScope.dangerAction(label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
+internal fun ContentScope.dangerAction(label: String, configure: ActionHandle.() -> Unit = {}) =
     addAction(ActionRole.Danger, label, icon = null, configure)
 
 private fun ContentScope.addAction(role: ActionRole, label: String?, icon: IconName?, configure: ActionHandle.() -> Unit): ActionHandle {
     val button = buildActionButton(role, label, icon)
     add(button)
+
     return ActionHandle(button, button.icon).apply(configure)
 }
 

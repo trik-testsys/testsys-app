@@ -10,10 +10,10 @@ import tech.testsys.web.components.core.CssTheme
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addThemeName
-import tech.testsys.web.components.currentTexts
 import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.texts.currentTexts
 
 /**
  * Handle of a reusable side drawer whose form values survive closing.

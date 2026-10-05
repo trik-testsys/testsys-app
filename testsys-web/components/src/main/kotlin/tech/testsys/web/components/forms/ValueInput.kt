@@ -14,8 +14,8 @@ import com.vaadin.flow.function.SerializableConsumer
 import com.vaadin.flow.shared.Registration
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
-import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.FieldHandle
+import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.setClassName

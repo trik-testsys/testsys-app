@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.layout.PageScope
-import tech.testsys.web.components.navigation.CabinetHeader
+import tech.testsys.web.components.navigation.header.CabinetHeader
 
 /** Route target with a parameter whose head title comes from `beforeEnter`, as a page with route parameters does. */
 @Route("test/param/:id")

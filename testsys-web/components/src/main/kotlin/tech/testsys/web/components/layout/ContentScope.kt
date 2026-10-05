@@ -6,10 +6,10 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.HasComponents
 import com.vaadin.flow.component.html.Div
 import tech.testsys.web.components.TestSysDsl
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Scope of a flow of content without sizes: head, footer and row groups of a block, the value of a field, table cells,

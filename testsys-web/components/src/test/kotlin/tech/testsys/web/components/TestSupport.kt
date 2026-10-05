@@ -15,7 +15,24 @@ import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.layout.renderPage
-import tech.testsys.web.components.navigation.CabinetHeader
+import tech.testsys.web.components.navigation.header.CabinetHeader
+import tech.testsys.web.components.texts.CalendarTexts
+import tech.testsys.web.components.texts.ComponentTexts
+import tech.testsys.web.components.texts.DateFieldTexts
+import tech.testsys.web.components.texts.DialogTexts
+import tech.testsys.web.components.texts.EditingTexts
+import tech.testsys.web.components.texts.FieldErrorTexts
+import tech.testsys.web.components.texts.FooterTexts
+import tech.testsys.web.components.texts.HeaderTexts
+import tech.testsys.web.components.texts.LoadTexts
+import tech.testsys.web.components.texts.LookupTexts
+import tech.testsys.web.components.texts.MenuTexts
+import tech.testsys.web.components.texts.NavigationTexts
+import tech.testsys.web.components.texts.NotFoundTexts
+import tech.testsys.web.components.texts.PaginationTexts
+import tech.testsys.web.components.texts.TableFiltersTexts
+import tech.testsys.web.components.texts.TableTexts
+import tech.testsys.web.components.texts.UiTexts
 import java.time.DayOfWeek
 import java.util.Locale
 

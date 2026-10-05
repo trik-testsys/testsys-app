@@ -1,11 +1,11 @@
 package tech.testsys.web.components.forms
 
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.TableScope
 import tech.testsys.web.components.data.TableSpec
 import tech.testsys.web.components.layout.BlockRowScope
+import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Adds a field of one entity chosen in a dialog that searches with [fetch] and lists rows in [columns], [pageSize]

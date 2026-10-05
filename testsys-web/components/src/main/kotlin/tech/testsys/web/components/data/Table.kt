@@ -4,9 +4,9 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
-import tech.testsys.web.components.Background
-import tech.testsys.web.components.Bindable
 import tech.testsys.web.components.TestSysDsl
+import tech.testsys.web.components.core.Background
+import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.layout.BlockScope
 
 /** Rows of a table page when the page does not choose. */

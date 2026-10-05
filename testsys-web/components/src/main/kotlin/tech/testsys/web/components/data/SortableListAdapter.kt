@@ -6,7 +6,6 @@ import com.vaadin.flow.component.Tag
 import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.react.ReactAdapterComponent
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.core.DomEvent
 import tech.testsys.web.components.core.DomEventData
 import tech.testsys.web.components.core.InternalComponentsApi
@@ -15,6 +14,7 @@ import tech.testsys.web.components.core.addEventListener
 import tech.testsys.web.components.core.get
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
+import tech.testsys.web.components.texts.UiTexts
 import java.util.Base64
 
 @Tag(SORTABLE_LIST_TAG)

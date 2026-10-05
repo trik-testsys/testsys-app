@@ -14,7 +14,6 @@ import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.signals.Signal
 import com.vaadin.flow.signals.local.ValueSignal
 import org.slf4j.LoggerFactory
-import tech.testsys.web.components.UiTexts
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.core.AriaSort
 import tech.testsys.web.components.core.CssClass
@@ -35,6 +34,7 @@ import tech.testsys.web.components.core.setPaddingPixels
 import tech.testsys.web.components.core.setScope
 import tech.testsys.web.components.feedback.EmptyContent
 import tech.testsys.web.components.feedback.buildEmptyState
+import tech.testsys.web.components.texts.UiTexts
 
 private val logger = LoggerFactory.getLogger(DataTable::class.java)
 

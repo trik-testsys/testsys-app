@@ -4,7 +4,8 @@ import com.vaadin.flow.component.Composite
 import com.vaadin.flow.component.html.Div
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.layout.renderPage
-import tech.testsys.web.components.navigation.CabinetHeader
+import tech.testsys.web.components.navigation.header.CabinetHeader
+import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Base class of a Cabinet page built with the design system DSL.

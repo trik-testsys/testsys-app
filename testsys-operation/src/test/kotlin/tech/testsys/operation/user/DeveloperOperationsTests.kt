@@ -88,6 +88,7 @@ import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.StatementVersionNotLatestError
 import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskAlreadyAttachedToContestError
+import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
@@ -362,6 +363,300 @@ class DeveloperOperationsTests {
             }
 
             Assertions.assertSame(failure, actual)
+        }
+    }
+
+    @Nested
+    inner class RevertTaskTests {
+
+        private val taskId = TaskId(0)
+        private val statement = statementVersion(11)
+        private val exercise = exerciseVersion(12)
+        private val polygon = polygonVersion(13)
+        private val referenceSolution = developerSolutionVersion(14)
+        private val original = testUncommittedTask().withData {
+            name = "Current task name"
+            description = "Current task description"
+            sharedTo = mutableListOf(CommunityId(7))
+            uploadedResources = mutableSetOf(
+                statement.data.versionBucket,
+                exercise.data.versionBucket,
+                polygon.data.versionBucket,
+                referenceSolution.data.versionBucket,
+                VersionBucket(UUID(0, 99)),
+            )
+            content.uncommitted(
+                wipBuilder = {
+                    statement(21)
+                    exercises(listOf(22, 99))
+                    tests(listOf(23, 98))
+                    developerSolutions(listOf(24, 97))
+                    supportedTrikStudioVersions(listOf("4.0.0"))
+                },
+                lastCommittedBuilder = {
+                    statement = this@RevertTaskTests.statement.id
+                    exercises = mutableListOf(exercise.id)
+                    tests = mutableListOf(polygon.id)
+                    developerSolutions = mutableListOf(referenceSolution.id)
+                    supportedTrikStudioVersions(listOf("3.0.0"))
+                },
+            )
+        }
+
+        @BeforeEach
+        fun prepareRevert() {
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+            every { statementRepository.load(any<LazyEntity<StatementId, Statement>>()) } returns statement
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } returns listOf(exercise)
+            every { testRepository.load(any<LazyEntityList<TestId, Polygon>>()) } returns listOf(polygon)
+            every { developerSolutionRepository.load(any<LazyEntityList<DeveloperSolutionId, DeveloperSolution>>()) } returns
+                listOf(referenceSolution)
+            every { statementRepository.findLatestByVersionBucket(statement.data.versionBucket) } returns statement
+            every { exerciseRepository.findLatestByVersionBucket(exercise.data.versionBucket) } returns exercise
+            every { testRepository.findLatestByVersionBucket(polygon.data.versionBucket) } returns polygon
+            every { developerSolutionRepository.findLatestByVersionBucket(referenceSolution.data.versionBucket) } returns referenceSolution
+        }
+
+        @Test
+        fun `should reject a user without Developer role before loading the task`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.revertTask(testAdministrator {}, taskId)
+            }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            verifyNoWrites()
+        }
+
+        @Test
+        fun `should reject a missing task`() {
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) { developerOperations.revertTask(developer, taskId) }
+            verifyNoWrites()
+        }
+
+        @Test
+        fun `should reject a task owned by another user before checking its state`() {
+            every { taskRepository.findById(taskId) } returns testNewTask().withData { owner(99) }
+
+            assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.revertTask(developer, taskId) }
+            verifyNoWrites()
+        }
+
+        @Test
+        fun `should reject a New task without a committed revision`() {
+            every { taskRepository.findById(taskId) } returns testNewTask()
+
+            assertRaises(TaskNotCommittedError(taskId)) { developerOperations.revertTask(developer, taskId) }
+            verifyNoWrites()
+        }
+
+        @Test
+        fun `should reject a Committed task without pending changes`() {
+            every { taskRepository.findById(taskId) } returns testCommitedTask()
+
+            assertRaises(TaskAlreadyCommittedError(taskId)) { developerOperations.revertTask(developer, taskId) }
+            verifyNoWrites()
+        }
+
+        @Test
+        fun `should restore committed resources and TRIK versions without copying latest resources`() {
+            val result = developerOperations.revertTask(developer, taskId).getOrThrow()
+
+            val content = Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content).lastCommitted
+            Assertions.assertEquals(StatementId(11), content.statement.id)
+            Assertions.assertEquals(listOf(ExerciseId(12)), content.exercises.ids)
+            Assertions.assertEquals(listOf(TestId(13)), content.tests.ids)
+            Assertions.assertEquals(listOf(DeveloperSolutionId(14)), content.developerSolutions.ids)
+            Assertions.assertEquals(listOf(TrikStudioVersion("3.0.0")), content.supportedTrikStudioVersions)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { statementRepository.save(any<StatementData>()) }
+            verify(exactly = 0) { exerciseRepository.save(any<ExerciseData>()) }
+            verify(exactly = 0) { testRepository.save(any<TestData>()) }
+            verify(exactly = 0) { developerSolutionRepository.save(any<DeveloperSolutionData>()) }
+        }
+
+        @Test
+        fun `should preserve task metadata uploaded chains and input revision when reverting`() {
+            val result = developerOperations.revertTask(developer, taskId).getOrThrow()
+
+            Assertions.assertEquals("Current task name", result.data.name)
+            Assertions.assertEquals("Current task description", result.data.description)
+            Assertions.assertEquals(original.data.owner.id, result.data.owner.id)
+            Assertions.assertEquals(listOf(CommunityId(7)), result.data.sharedTo.ids)
+            Assertions.assertEquals(original.data.uploadedResources, result.data.uploadedResources)
+            Assertions.assertEquals(savedTaskVersion, result.version)
+            Assertions.assertInstanceOf(TaskContent.Uncommitted::class.java, original.data.content)
+            verify { taskRepository.update(match<Task> { it.version == original.version }) }
+        }
+
+        @Test
+        fun `should restore detached committed resources even if WIP contains no resources`() {
+            every { taskRepository.findById(taskId) } returns original.withData {
+                content.uncommitted(
+                    wipBuilder = {
+                        statement = null
+                        exercises.clear()
+                        tests.clear()
+                        developerSolutions.clear()
+                    },
+                    lastCommittedBuilder = {},
+                )
+            }
+
+            val result = developerOperations.revertTask(developer, taskId).getOrThrow()
+
+            val content = Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content).lastCommitted
+            Assertions.assertEquals(StatementId(11), content.statement.id)
+            Assertions.assertEquals(listOf(ExerciseId(12)), content.exercises.ids)
+            Assertions.assertEquals(listOf(TestId(13)), content.tests.ids)
+            Assertions.assertEquals(listOf(DeveloperSolutionId(14)), content.developerSolutions.ids)
+        }
+
+        @Test
+        fun `should save committed content as latest versions while retaining current resource metadata`() {
+            prepareNewLatestVersions()
+
+            val result = developerOperations.revertTask(developer, taskId).getOrThrow()
+
+            val content = Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content).lastCommitted
+            Assertions.assertEquals(StatementId(101), content.statement.id)
+            Assertions.assertEquals(listOf(ExerciseId(102)), content.exercises.ids)
+            Assertions.assertEquals(listOf(TestId(103)), content.tests.ids)
+            Assertions.assertEquals(listOf(DeveloperSolutionId(104)), content.developerSolutions.ids)
+            verify(exactly = 1) {
+                statementRepository.save(
+                    match<StatementData> {
+                        it.versionBucket == statement.data.versionBucket && it.name == "resource 21" &&
+                            it.description == "description 21" && it.file.uploadedFilename == "file-11" &&
+                            it.file.content.contentEquals(byteArrayOf(11))
+                    },
+                )
+                exerciseRepository.save(
+                    match<ExerciseData> {
+                        it.versionBucket == exercise.data.versionBucket && it.name == "resource 22" &&
+                            it.description == "description 22" && it.file.uploadedFilename == "file-12" &&
+                            it.file.content.contentEquals(byteArrayOf(12)) && it.language == TrikSupportedLanguage.Python
+                    },
+                )
+                testRepository.save(
+                    match<TestData> {
+                        it.versionBucket == polygon.data.versionBucket && it.name == "resource 23" &&
+                            it.description == "description 23" && it.file.uploadedFilename == "file-13" &&
+                            it.file.content.contentEquals(byteArrayOf(13))
+                    },
+                )
+                developerSolutionRepository.save(
+                    match<DeveloperSolutionData> {
+                        it.versionBucket == referenceSolution.data.versionBucket && it.name == "resource 24" &&
+                            it.description == "description 24" && it.solution.id == SolutionId(14) && it.expectedScore == Score(14)
+                    },
+                )
+                taskRepository.update(any<Task>())
+            }
+            verify(exactly = 0) { solutionRepository.save(any<SolutionData>()) }
+        }
+
+        @Test
+        fun `should reject a second revert after the task becomes Committed`() {
+            val reverted = developerOperations.revertTask(developer, taskId).getOrThrow()
+            every { taskRepository.findById(taskId) } returns reverted
+
+            assertRaises(TaskAlreadyCommittedError(taskId)) { developerOperations.revertTask(developer, taskId) }
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        private fun prepareNewLatestVersions() {
+            every { statementRepository.findLatestByVersionBucket(statement.data.versionBucket) } returns statementVersion(21)
+            every { exerciseRepository.findLatestByVersionBucket(exercise.data.versionBucket) } returns exerciseVersion(22)
+            every { testRepository.findLatestByVersionBucket(polygon.data.versionBucket) } returns polygonVersion(23)
+            every { developerSolutionRepository.findLatestByVersionBucket(referenceSolution.data.versionBucket) } returns
+                developerSolutionVersion(24)
+            every { statementRepository.save(any<StatementData>()) } answers {
+                statement {
+                    id = 101
+                    createdAt = Instant.ofEpochSecond(101)
+                    data = firstArg<StatementData>()
+                }
+            }
+            every { exerciseRepository.save(any<ExerciseData>()) } answers {
+                exercise {
+                    id = 102
+                    createdAt = Instant.ofEpochSecond(102)
+                    data = firstArg<ExerciseData>()
+                }
+            }
+            every { testRepository.save(any<TestData>()) } answers {
+                test {
+                    id = 103
+                    createdAt = Instant.ofEpochSecond(103)
+                    data = firstArg<TestData>()
+                }
+            }
+            every { developerSolutionRepository.save(any<DeveloperSolutionData>()) } answers {
+                developerSolution {
+                    id = 104
+                    createdAt = Instant.ofEpochSecond(104)
+                    data = firstArg<DeveloperSolutionData>()
+                }
+            }
+        }
+
+        private fun verifyNoWrites() {
+            verify(exactly = 0) {
+                taskRepository.update(any<Task>())
+                statementRepository.save(any<StatementData>())
+                exerciseRepository.save(any<ExerciseData>())
+                testRepository.save(any<TestData>())
+                developerSolutionRepository.save(any<DeveloperSolutionData>())
+            }
+        }
+
+        private fun statementVersion(versionId: Long): Statement = statement {
+            id = versionId
+            createdAt = Instant.ofEpochSecond(versionId)
+            data = statementData {
+                name = "resource $versionId"
+                description = "description $versionId"
+                versionBucket = VersionBucket(UUID(0, 11))
+                file("file-$versionId", byteArrayOf(versionId.toByte()))
+            }
+        }
+
+        private fun exerciseVersion(versionId: Long): Exercise = exercise {
+            id = versionId
+            createdAt = Instant.ofEpochSecond(versionId)
+            data = exerciseData {
+                name = "resource $versionId"
+                description = "description $versionId"
+                versionBucket = VersionBucket(UUID(0, 12))
+                language.python()
+                file("file-$versionId", byteArrayOf(versionId.toByte()))
+            }
+        }
+
+        private fun polygonVersion(versionId: Long): Polygon = test {
+            id = versionId
+            createdAt = Instant.ofEpochSecond(versionId)
+            data = testData {
+                name = "resource $versionId"
+                description = "description $versionId"
+                versionBucket = VersionBucket(UUID(0, 13))
+                file("file-$versionId", byteArrayOf(versionId.toByte()))
+            }
+        }
+
+        private fun developerSolutionVersion(versionId: Long): DeveloperSolution = developerSolution {
+            id = versionId
+            createdAt = Instant.ofEpochSecond(versionId)
+            data = developerSolutionData {
+                name = "resource $versionId"
+                description = "description $versionId"
+                versionBucket = VersionBucket(UUID(0, 14))
+                solution(versionId)
+                expectedScore = Score(versionId.toInt())
+            }
         }
     }
 

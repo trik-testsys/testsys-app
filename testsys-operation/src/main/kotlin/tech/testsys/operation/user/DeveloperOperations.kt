@@ -83,6 +83,7 @@ import tech.testsys.operation.error.ResourceNotExistsError
 import tech.testsys.operation.error.ResourceNotUploadedToTaskError
 import tech.testsys.operation.error.ResourceVersionNotAttachedError
 import tech.testsys.operation.error.ResourceVersionNotExistsError
+import tech.testsys.operation.error.RevertTaskError
 import tech.testsys.operation.error.ShareContestError
 import tech.testsys.operation.error.ShareTaskError
 import tech.testsys.operation.error.StatementNotExistsError
@@ -90,6 +91,7 @@ import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.StatementVersionNotLatestError
 import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskAlreadyAttachedToContestError
+import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
@@ -1140,6 +1142,93 @@ class DeveloperOperations(
             val savedTask = taskRepository.update(sharedTask)
             return savedTask.asSuccess()
         }
+
+    /**
+     * Restores the committed content of [taskId] owned by [user], creating latest resource versions when necessary.
+     * Task and resource metadata are retained; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.revertTask")
+    fun revertTask(user: MultipleRoleUser, taskId: TaskId): OperationResult<Task, RevertTaskError> = operation<Task, RevertTaskError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        val previous = task.data.content
+        ensure(previous !is TaskContent.New) { TaskNotCommittedError(taskId) }
+        ensure(previous !is TaskContent.Committed) { TaskAlreadyCommittedError(taskId) }
+        check(previous is TaskContent.Uncommitted) { "Task $taskId must have uncommitted content to revert" }
+        val committed = previous.lastCommitted
+
+        val statement = statementRepository.load(committed.statement)
+        val exercises = exerciseRepository.load(committed.exercises).associateBy { it.id }
+        val tests = testRepository.load(committed.tests).associateBy { it.id }
+        val developerSolutions = developerSolutionRepository.load(committed.developerSolutions).associateBy { it.id }
+
+        val statementId = restoreStatement(statement)
+        val exerciseIds = committed.exercises.ids.map { id -> restoreExercise(exercises.getValue(id)) }
+        val testIds = committed.tests.ids.map { id -> restoreTest(tests.getValue(id)) }
+        val developerSolutionIds = committed.developerSolutions.ids.map { id -> restoreDeveloperSolution(developerSolutions.getValue(id)) }
+        val restored = task.withData {
+            content.committed {
+                this.statement = statementId
+                this.exercises = exerciseIds.toMutableList()
+                this.tests = testIds.toMutableList()
+                this.developerSolutions = developerSolutionIds.toMutableList()
+                supportedTrikStudioVersions = committed.supportedTrikStudioVersions.toMutableList()
+            }
+        }
+        return taskRepository.update(restored).asSuccess()
+    }
+
+    private fun restoreStatement(resource: Statement): StatementId {
+        val latest = checkNotNull(statementRepository.findLatestByVersionBucket(resource.data.versionBucket)) {
+            "Statement ${resource.id} has no latest version in bucket ${resource.data.versionBucket}"
+        }
+        if (latest.id == resource.id) return resource.id
+        val restored = resource.withData {
+            name = latest.data.name
+            description = latest.data.description
+        }
+        return statementRepository.save(restored.data).id
+    }
+
+    private fun restoreExercise(resource: Exercise): ExerciseId {
+        val latest = checkNotNull(exerciseRepository.findLatestByVersionBucket(resource.data.versionBucket)) {
+            "Exercise ${resource.id} has no latest version in bucket ${resource.data.versionBucket}"
+        }
+        if (latest.id == resource.id) return resource.id
+        val restored = resource.withData {
+            name = latest.data.name
+            description = latest.data.description
+        }
+        return exerciseRepository.save(restored.data).id
+    }
+
+    private fun restoreTest(resource: Test): TestId {
+        val latest = checkNotNull(testRepository.findLatestByVersionBucket(resource.data.versionBucket)) {
+            "Test ${resource.id} has no latest version in bucket ${resource.data.versionBucket}"
+        }
+        if (latest.id == resource.id) return resource.id
+        val restored = resource.withData {
+            name = latest.data.name
+            description = latest.data.description
+        }
+        return testRepository.save(restored.data).id
+    }
+
+    private fun restoreDeveloperSolution(resource: DeveloperSolution): DeveloperSolutionId {
+        val latest = checkNotNull(developerSolutionRepository.findLatestByVersionBucket(resource.data.versionBucket)) {
+            "Developer solution ${resource.id} has no latest version in bucket ${resource.data.versionBucket}"
+        }
+        if (latest.id == resource.id) return resource.id
+        val restored = resource.withData {
+            name = latest.data.name
+            description = latest.data.description
+        }
+        return developerSolutionRepository.save(restored.data).id
+    }
 
     private fun resourceExists(versionBucket: VersionBucket): Boolean = statementRepository.existsByVersionBucket(versionBucket) ||
         exerciseRepository.existsByVersionBucket(versionBucket) ||

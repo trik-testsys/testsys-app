@@ -69,6 +69,12 @@ sealed interface ViewContestsError : OperationError
  * @since %CURRENT_VERSION%
  */
 sealed interface ViewContestError : OperationError
+/**
+ * Failure of reverting a task owned by the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RevertTaskError : OperationError
 
 /**
  * Failure of listing tasks available to the developer.
@@ -278,6 +284,7 @@ data object MissedDeveloperRoleError :
     AttachTaskError,
     ViewContestsError,
     ViewContestError,
+    RevertTaskError,
     ShareContestError,
     EditContestError,
     EditTaskInfoError,
@@ -376,6 +383,7 @@ data class ContestAlreadySharedError(val contestId: ContestId) : EditContestErro
  */
 data class TaskNotExistsError(val taskId: TaskId) :
     AttachTaskError,
+    RevertTaskError,
     EditTaskInfoError,
     ViewTaskError,
     DetachStatementError,
@@ -447,6 +455,7 @@ data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExis
  */
 data class TaskAccessDeniedError(val taskId: TaskId) :
     AttachTaskError,
+    RevertTaskError,
     EditTaskInfoError,
     ViewTaskError,
     DetachStatementError,
@@ -484,7 +493,7 @@ data class CommunityAccessDeniedError(val communityId: CommunityId) : AccessDeni
  * @property taskId the id of the task.
  * @since %CURRENT_VERSION%
  */
-data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTaskError
+data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTaskError, RevertTaskError
 
 /**
  * The task's last committed revision does not support the contest's TRIK Studio version.
@@ -506,6 +515,14 @@ data class TaskTrikStudioVersionNotSupportedError(
  * @since %CURRENT_VERSION%
  */
 data class TaskAlreadyAttachedToContestError(val contestId: ContestId, val taskId: TaskId) : AttachTaskError
+
+/**
+ * The task has no uncommitted changes to revert.
+ *
+ * @property taskId the id of the committed task.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError
 // endregion
 
 /**

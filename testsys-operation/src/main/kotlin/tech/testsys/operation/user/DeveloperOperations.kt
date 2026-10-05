@@ -82,6 +82,7 @@ import tech.testsys.operation.error.ResourceNotExistsError
 import tech.testsys.operation.error.ResourceNotUploadedToTaskError
 import tech.testsys.operation.error.ResourceVersionNotAttachedError
 import tech.testsys.operation.error.ResourceVersionNotExistsError
+import tech.testsys.operation.error.ShareContestError
 import tech.testsys.operation.error.ShareTaskError
 import tech.testsys.operation.error.StatementNotExistsError
 import tech.testsys.operation.error.StatementNotUploadedToTaskError
@@ -218,6 +219,42 @@ class DeveloperOperations(
             this.contestDuration = contestDuration
         }
         return contestRepository.update(updatedContest).asSuccess()
+    }
+
+    /**
+     * Adds [communityIds] to the recipients of [contestId] owned by [user]; new recipients require Developer membership.
+     * Requests without new recipients return the contest without saving; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.contest.shareContest")
+    fun shareContest(
+        user: MultipleRoleUser,
+        contestId: ContestId,
+        communityIds: Set<CommunityId>,
+    ): OperationResult<Contest, ShareContestError> = operation<Contest, ShareContestError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val contest = contestRepository.findById(contestId)
+        ensure(contest != null) { ContestNotExistsError(contestId) }
+        communityIds.forEach { communityId ->
+            ensure(communityRepository.findById(communityId) != null) { CommunityNotExistsError(communityId) }
+        }
+        ensure(contest.data.owner.id == user.id) { ContestAccessDeniedError(contestId) }
+
+        val sharedCommunityIds = contest.data.sharedTo.ids
+        val newCommunityIds = communityIds.filterNot { communityId -> communityId in sharedCommunityIds }
+        val developerCommunityIds = user.data.roles.filterIsInstance<Developer>().single().memberOf.ids
+        newCommunityIds.forEach { communityId ->
+            ensure(communityId in developerCommunityIds) { CommunityAccessDeniedError(communityId) }
+        }
+        if (newCommunityIds.isEmpty()) {
+            return contest.asSuccess()
+        }
+
+        val sharedContest = contest.withData {
+            sharedTo = (sharedCommunityIds + communityIds).distinct().toMutableList()
+        }
+        return contestRepository.update(sharedContest).asSuccess()
     }
 
     /**

@@ -175,6 +175,13 @@ sealed interface CreateContestError : OperationError
 sealed interface EditContestError : OperationError
 
 /**
+ * Failure of sharing a contest to communities.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ShareContestError : OperationError
+
+/**
  * Failure of attaching a statement to a task.
  *
  * @since %CURRENT_VERSION%
@@ -246,6 +253,7 @@ sealed interface DetachDeveloperSolutionError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedDeveloperRoleError :
+    ShareContestError,
     EditContestError,
     EditTaskInfoError,
     ViewTaskError,
@@ -317,7 +325,7 @@ data class AttemptDurationExceedsContestDurationError(
  * @property contestId the id of the missing contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestNotExistsError(val contestId: ContestId) : EntityNotExistsError, EditContestError
+data class ContestNotExistsError(val contestId: ContestId) : EntityNotExistsError, EditContestError, ShareContestError
 
 /**
  * The user is not the owner of the contest.
@@ -325,7 +333,7 @@ data class ContestNotExistsError(val contestId: ContestId) : EntityNotExistsErro
  * @property contestId the id of the contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestAccessDeniedError(val contestId: ContestId) : AccessDeniedError, EditContestError
+data class ContestAccessDeniedError(val contestId: ContestId) : AccessDeniedError, EditContestError, ShareContestError
 
 /**
  * The contest is shared to at least one community.
@@ -403,7 +411,7 @@ data object TaskAlreadyHasStatementError : AttachStatementError
  * @property communityId the id of the missing community.
  * @since %CURRENT_VERSION%
  */
-data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExistsError, ShareTaskError
+data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExistsError, ShareTaskError, ShareContestError
 
 /**
  * The user is not the owner of the task.
@@ -441,7 +449,7 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
  * @property communityId the id of the community.
  * @since %CURRENT_VERSION%
  */
-data class CommunityAccessDeniedError(val communityId: CommunityId) : AccessDeniedError, ShareTaskError
+data class CommunityAccessDeniedError(val communityId: CommunityId) : AccessDeniedError, ShareTaskError, ShareContestError
 
 /**
  * The task has no committed version.

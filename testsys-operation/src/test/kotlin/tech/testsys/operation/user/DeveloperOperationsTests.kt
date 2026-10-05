@@ -742,6 +742,314 @@ class DeveloperOperationsTests {
     }
 
     @Nested
+    inner class ShareContestTests {
+
+        private val contestId = ContestId(19)
+        private val firstCommunityId = CommunityId(1)
+        private val secondCommunityId = CommunityId(2)
+        private val foreignCommunityId = CommunityId(3)
+        private val sharingDeveloper = testDeveloper {
+            memberOf(listOf(1, 2))
+            data = developerData {}
+        }
+
+        @Test
+        fun `should raise MissedDeveloperRoleError without reading or updating for a user without the Developer role`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.shareContest(testAdministrator {}, contestId, setOf(firstCommunityId))
+            }
+
+            verify(exactly = 0) { contestRepository.findById(any()) }
+            verify(exactly = 0) { communityRepository.findById(any()) }
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should require the Developer role even when the requested set is empty`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.shareContest(testAdministrator {}, contestId, emptySet())
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should raise ContestNotExistsError without updating if the contest is missing`() {
+            every { contestRepository.findById(contestId) } returns null
+
+            assertRaises(ContestNotExistsError(contestId)) {
+                developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId))
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should reject a missing selected community before checking contest ownership`() {
+            prepare(testContest { owner = MultipleRoleUserId(99) })
+            every { communityRepository.findById(foreignCommunityId) } returns null
+
+            assertRaises(CommunityNotExistsError(foreignCommunityId)) {
+                developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId, foreignCommunityId))
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should reject a missing community even if it already has access`() {
+            prepare(testContest { sharedTo(listOf(3)) })
+            every { communityRepository.findById(foreignCommunityId) } returns null
+
+            assertRaises(CommunityNotExistsError(foreignCommunityId)) {
+                developerOperations.shareContest(sharingDeveloper, contestId, setOf(foreignCommunityId))
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should deny sharing another owners contest even if it is shared to the Developer community`() {
+            prepare(
+                testContest {
+                    owner = MultipleRoleUserId(99)
+                    sharedTo(listOf(1))
+                },
+            )
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId))
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should require contest ownership even when the requested set is empty`() {
+            prepare(testContest { owner = MultipleRoleUserId(99) })
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                developerOperations.shareContest(sharingDeveloper, contestId, emptySet())
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should reject a new community outside Developer membership without saving any recipients`() {
+            prepare()
+
+            assertRaises(CommunityAccessDeniedError(foreignCommunityId)) {
+                developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId, foreignCommunityId))
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should reject membership in another role when Developer membership is absent`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    developer { data = developerData {} }
+                    administrator { memberOf(listOf(1)) }
+                }
+            }
+            prepare()
+
+            assertRaises(CommunityAccessDeniedError(firstCommunityId)) {
+                developerOperations.shareContest(user, contestId, setOf(firstCommunityId))
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should share a contest without tasks or schedule to selected communities`() {
+            prepare()
+            val saved = slot<Contest>()
+            every { contestRepository.update(capture(saved)) } answers { testSavedContest(firstArg()) }
+
+            val result = developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId, secondCommunityId))
+                .getOrThrow()
+
+            Assertions.assertEquals(listOf(firstCommunityId, secondCommunityId), result.data.sharedTo.ids)
+            Assertions.assertEquals(listOf(firstCommunityId, secondCommunityId), saved.captured.data.sharedTo.ids)
+            Assertions.assertEquals(emptyList<TaskId>(), result.data.tasks.ids)
+            Assertions.assertNull(result.data.startsAt)
+            Assertions.assertNull(result.data.contestDuration)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should add recipients while retaining communities omitted from the request`() {
+            prepare(testContest { sharedTo(listOf(1)) })
+
+            val result = developerOperations.shareContest(sharingDeveloper, contestId, setOf(secondCommunityId)).getOrThrow()
+
+            Assertions.assertEquals(listOf(firstCommunityId, secondCommunityId), result.data.sharedTo.ids)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should avoid duplicate recipients when existing and new communities are requested together`() {
+            prepare(testContest { sharedTo(listOf(1)) })
+
+            val result = developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId, secondCommunityId))
+                .getOrThrow()
+
+            Assertions.assertEquals(listOf(firstCommunityId, secondCommunityId), result.data.sharedTo.ids)
+        }
+
+        @Test
+        fun `should return an unshared contest unchanged without saving when the requested set is empty`() {
+            val original = testContest()
+            prepare(original)
+
+            val result = developerOperations.shareContest(sharingDeveloper, contestId, emptySet()).getOrThrow()
+
+            Assertions.assertSame(original, result)
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should retain all recipients without saving when an empty set is requested for a shared contest`() {
+            val original = testContest { sharedTo(listOf(3)) }
+            prepare(original)
+
+            val result = developerOperations.shareContest(sharingDeveloper, contestId, emptySet()).getOrThrow()
+
+            Assertions.assertSame(original, result)
+            Assertions.assertEquals(listOf(foreignCommunityId), result.data.sharedTo.ids)
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should return the loaded contest without saving when every requested recipient already has access`() {
+            val original = testContest { sharedTo(listOf(1, 2)) }
+            prepare(original)
+
+            val result = developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId, secondCommunityId))
+                .getOrThrow()
+
+            Assertions.assertSame(original, result)
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should permit repeating a previous recipient after leaving the community without saving`() {
+            val original = testContest { sharedTo(listOf(3)) }
+            prepare(original)
+
+            val result = developerOperations.shareContest(sharingDeveloper, contestId, setOf(foreignCommunityId)).getOrThrow()
+
+            Assertions.assertSame(original, result)
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should retain a previous recipient after leaving while adding a new community`() {
+            prepare(testContest { sharedTo(listOf(3)) })
+
+            val result = developerOperations.shareContest(sharingDeveloper, contestId, setOf(foreignCommunityId, firstCommunityId))
+                .getOrThrow()
+
+            Assertions.assertEquals(listOf(foreignCommunityId, firstCommunityId), result.data.sharedTo.ids)
+        }
+
+        @Test
+        fun `should preserve contest data and the loaded version when saving new recipients`() {
+            val start = Instant.parse("2020-01-01T10:00:00Z")
+            val original = testContest {
+                tasks(listOf(10, 11))
+                startsAt = start
+                contestDuration = Duration.ofHours(2)
+                attemptDuration = Duration.ofMinutes(30)
+                sharedTo(listOf(3))
+            }
+            prepare(original)
+            val saved = slot<Contest>()
+            every { contestRepository.update(capture(saved)) } answers { testSavedContest(firstArg()) }
+
+            developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId)).getOrThrow()
+
+            val updated = saved.captured
+            Assertions.assertEquals(original.id, updated.id)
+            Assertions.assertEquals(original.createdAt, updated.createdAt)
+            Assertions.assertEquals(original.version, updated.version)
+            Assertions.assertEquals(original.data.owner.id, updated.data.owner.id)
+            Assertions.assertEquals(original.data.name, updated.data.name)
+            Assertions.assertEquals(original.data.description, updated.data.description)
+            Assertions.assertEquals(listOf(TaskId(10), TaskId(11)), updated.data.tasks.ids)
+            Assertions.assertEquals(start, updated.data.startsAt)
+            Assertions.assertEquals(Duration.ofHours(2), updated.data.contestDuration)
+            Assertions.assertEquals(Duration.ofMinutes(30), updated.data.attemptDuration)
+            Assertions.assertEquals(start.plus(Duration.ofHours(2)), updated.data.endsAt)
+            Assertions.assertEquals(original.data.trikStudioVersion, updated.data.trikStudioVersion)
+            Assertions.assertEquals(listOf(foreignCommunityId, firstCommunityId), updated.data.sharedTo.ids)
+            Assertions.assertEquals(listOf(foreignCommunityId), original.data.sharedTo.ids)
+        }
+
+        @Test
+        fun `should return the repository result with its updated version`() {
+            prepare()
+            val repositoryResult = testSavedContest(testContest { sharedTo(listOf(1)) })
+            every { contestRepository.update(any<Contest>()) } returns repositoryResult
+
+            val result = developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId)).getOrThrow()
+
+            Assertions.assertSame(repositoryResult, result)
+        }
+
+        @Test
+        fun `should propagate a storage exception without saving when loading the contest fails`() {
+            val failure = IllegalStateException("Storage read failure")
+            every { contestRepository.findById(contestId) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId))
+            }
+
+            Assertions.assertSame(failure, thrown)
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should propagate a storage exception without saving when loading a selected community fails`() {
+            prepare()
+            val failure = IllegalStateException("Community storage read failure")
+            every { communityRepository.findById(firstCommunityId) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId))
+            }
+
+            Assertions.assertSame(failure, thrown)
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should propagate a storage exception when updating the contest fails`() {
+            prepare()
+            val failure = IllegalStateException("Storage update failure")
+            every { contestRepository.update(any<Contest>()) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId))
+            }
+
+            Assertions.assertSame(failure, thrown)
+        }
+
+        private fun prepare(original: Contest = testContest()) {
+            every { contestRepository.findById(contestId) } returns original
+            every { communityRepository.findById(firstCommunityId) } returns testCommunity(1)
+            every { communityRepository.findById(secondCommunityId) } returns testCommunity(2)
+            every { communityRepository.findById(foreignCommunityId) } returns testCommunity(3)
+            every { contestRepository.update(any<Contest>()) } answers { testSavedContest(firstArg()) }
+        }
+    }
+
+    @Nested
     inner class ViewTasksTests {
 
         @Test

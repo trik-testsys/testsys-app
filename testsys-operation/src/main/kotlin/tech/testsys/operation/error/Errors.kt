@@ -169,6 +169,34 @@ sealed interface AttachDeveloperSolutionError : OperationError
  * @since %CURRENT_VERSION%
  */
 sealed interface ShareTaskError : OperationError
+
+/**
+ * Failure of detaching a statement version from a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DetachStatementError : OperationError
+
+/**
+ * Failure of detaching an exercise version from a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DetachExerciseError : OperationError
+
+/**
+ * Failure of detaching a polygon version from a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DetachTestError : OperationError
+
+/**
+ * Failure of detaching a developer solution version from a task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DetachDeveloperSolutionError : OperationError
 // endregion
 
 // region Errors
@@ -179,6 +207,10 @@ sealed interface ShareTaskError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedDeveloperRoleError :
+    DetachStatementError,
+    DetachExerciseError,
+    DetachTestError,
+    DetachDeveloperSolutionError,
     ViewResourcesError,
     ViewResourceError,
     DownloadResourceVersionError,
@@ -205,6 +237,10 @@ data object MissedDeveloperRoleError :
  * @since %CURRENT_VERSION%
  */
 data class TaskNotExistsError(val taskId: TaskId) :
+    DetachStatementError,
+    DetachExerciseError,
+    DetachTestError,
+    DetachDeveloperSolutionError,
     ViewResourceError,
     DownloadResourceVersionError,
     UpdateStatementError,
@@ -228,7 +264,11 @@ data class TaskNotExistsError(val taskId: TaskId) :
  * @property statementId the id of the missing statement.
  * @since %CURRENT_VERSION%
  */
-data class StatementNotExistsError(val statementId: StatementId) : EntityNotExistsError, AttachStatementError, UpdateStatementError
+data class StatementNotExistsError(val statementId: StatementId) :
+    EntityNotExistsError,
+    AttachStatementError,
+    UpdateStatementError,
+    DetachStatementError
 
 /**
  * The statement's version chain is not uploaded to the task.
@@ -238,6 +278,7 @@ data class StatementNotExistsError(val statementId: StatementId) : EntityNotExis
  * @since %CURRENT_VERSION%
  */
 data class StatementNotUploadedToTaskError(val taskId: TaskId, val statementId: StatementId) :
+    DetachStatementError,
     UpdateStatementError,
     AttachStatementError,
     ResourceAccessError
@@ -264,6 +305,10 @@ data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExis
  * @since %CURRENT_VERSION%
  */
 data class TaskAccessDeniedError(val taskId: TaskId) :
+    DetachStatementError,
+    DetachExerciseError,
+    DetachTestError,
+    DetachDeveloperSolutionError,
     ViewResourceError,
     DownloadResourceVersionError,
     UpdateStatementError,
@@ -312,7 +357,11 @@ data class StatementVersionNotLatestError(val statementId: StatementId) : Attach
  * @property exerciseId the id of the missing resource.
  * @since %CURRENT_VERSION%
  */
-data class ExerciseNotExistsError(val exerciseId: ExerciseId) : EntityNotExistsError, AttachExerciseError, UpdateExerciseError
+data class ExerciseNotExistsError(val exerciseId: ExerciseId) :
+    EntityNotExistsError,
+    AttachExerciseError,
+    UpdateExerciseError,
+    DetachExerciseError
 
 /**
  * The exercise's version chain is not uploaded to the task.
@@ -322,6 +371,7 @@ data class ExerciseNotExistsError(val exerciseId: ExerciseId) : EntityNotExistsE
  * @since %CURRENT_VERSION%
  */
 data class ExerciseNotUploadedToTaskError(val taskId: TaskId, val exerciseId: ExerciseId) :
+    DetachExerciseError,
     AttachExerciseError,
     UpdateExerciseError,
     ResourceAccessError
@@ -340,7 +390,11 @@ data class ExerciseVersionNotLatestError(val exerciseId: ExerciseId) : AttachExe
  * @property testId the id of the missing resource.
  * @since %CURRENT_VERSION%
  */
-data class TestNotExistsError(val testId: TestId) : EntityNotExistsError, AttachTestError, UpdateTestError
+data class TestNotExistsError(val testId: TestId) :
+    EntityNotExistsError,
+    AttachTestError,
+    UpdateTestError,
+    DetachTestError
 
 /**
  * The test's version chain is not uploaded to the task.
@@ -349,7 +403,11 @@ data class TestNotExistsError(val testId: TestId) : EntityNotExistsError, Attach
  * @property testId the id of the resource outside the task's uploaded chains.
  * @since %CURRENT_VERSION%
  */
-data class TestNotUploadedToTaskError(val taskId: TaskId, val testId: TestId) : AttachTestError, UpdateTestError, ResourceAccessError
+data class TestNotUploadedToTaskError(val taskId: TaskId, val testId: TestId) :
+    AttachTestError,
+    UpdateTestError,
+    DetachTestError,
+    ResourceAccessError
 
 /**
  * The requested test version is no longer the latest version in its chain.
@@ -367,7 +425,7 @@ data class TestVersionNotLatestError(val testId: TestId) : AttachTestError, Upda
  */
 data class DeveloperSolutionNotExistsError(
     val developerSolutionId: DeveloperSolutionId,
-) : EntityNotExistsError, AttachDeveloperSolutionError, UpdateDeveloperSolutionError
+) : EntityNotExistsError, AttachDeveloperSolutionError, UpdateDeveloperSolutionError, DetachDeveloperSolutionError
 
 /**
  * The developer solution's version chain is not uploaded to the task.
@@ -379,7 +437,7 @@ data class DeveloperSolutionNotExistsError(
 data class DeveloperSolutionNotUploadedToTaskError(
     val taskId: TaskId,
     val developerSolutionId: DeveloperSolutionId,
-) : AttachDeveloperSolutionError, UpdateDeveloperSolutionError, ResourceAccessError
+) : AttachDeveloperSolutionError, UpdateDeveloperSolutionError, DetachDeveloperSolutionError, ResourceAccessError
 
 /**
  * The requested developer solution version is no longer the latest version in its chain.
@@ -413,6 +471,19 @@ data class ResourceAlreadyAttachedError(
  * @since %CURRENT_VERSION%
  */
 data object TaskAlreadyHasExerciseError : AttachExerciseError
+
+/**
+ * The requested resource version is absent from the task's editable revision.
+ *
+ * @property taskId the task identifier.
+ * @property versionId the unattached version identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class ResourceVersionNotAttachedError(val taskId: TaskId, val versionId: DomainId) :
+    DetachStatementError,
+    DetachExerciseError,
+    DetachTestError,
+    DetachDeveloperSolutionError
 
 /**
  * The requested resource chain does not exist.

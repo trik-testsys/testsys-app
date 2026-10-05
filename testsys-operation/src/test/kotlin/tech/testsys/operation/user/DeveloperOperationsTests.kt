@@ -14,6 +14,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
+import tech.testsys.domain.builder.task.TaskContentBuilder
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
@@ -66,6 +67,7 @@ import tech.testsys.operation.error.MissedDeveloperRoleError
 import tech.testsys.operation.error.ResourceAlreadyAttachedError
 import tech.testsys.operation.error.ResourceNotExistsError
 import tech.testsys.operation.error.ResourceNotUploadedToTaskError
+import tech.testsys.operation.error.ResourceVersionNotAttachedError
 import tech.testsys.operation.error.ResourceVersionNotExistsError
 import tech.testsys.operation.error.StatementNotExistsError
 import tech.testsys.operation.error.StatementNotUploadedToTaskError
@@ -3459,5 +3461,803 @@ class DeveloperOperationsTests {
                 result.getEditableContent().developerSolutions.ids,
             )
         }
+    }
+
+    @Nested
+    inner class DetachStatementTests {
+        private val taskId = TaskId(0)
+        private val resourceId = StatementId(11)
+        private val bucket = VersionBucket(UUID(0, 1))
+        private val resource = testStatement(11).withData { versionBucket = bucket }
+
+        @BeforeEach
+        fun prepareDetach() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New")
+            every { statementRepository.findById(resourceId) } returns resource
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+        }
+
+        @Test
+        fun `should reject a user without the Developer role`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.detachStatement(testAdministrator {}, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a missing task`() {
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) {
+                developerOperations.detachStatement(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a missing statement version`() {
+            every { statementRepository.findById(resourceId) } returns null
+
+            assertRaises(StatementNotExistsError(resourceId)) {
+                developerOperations.detachStatement(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a task owned by another developer`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData { owner(9) }
+
+            assertRaises(TaskAccessDeniedError(taskId)) {
+                developerOperations.detachStatement(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a chain not uploaded to the target task`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData { uploadedResources.remove(bucket) }
+
+            assertRaises(StatementNotUploadedToTaskError(taskId = taskId, statementId = resourceId)) {
+                developerOperations.detachStatement(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should detach the exact version while preserving other data in every state`(state: String) {
+            val original = taskForDetach(state)
+            val originalContent = original.getEditableContent()
+            val originalVersion = original.version
+            val saved = slot<Task>()
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(capture(saved)) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.detachStatement(developer, taskId, resourceId).getOrThrow()
+
+            val expected = taskContentNew {
+                detachResources()
+                statement = null
+            }.wip
+            assertDetachedTask(original = original, result = result, expected = expected)
+            Assertions.assertEquals(originalVersion, saved.captured.version)
+            assertEditableContentEquals(expected, saved.captured.getEditableContent())
+            assertEditableContentEquals(originalContent, original.getEditableContent())
+            Assertions.assertEquals(originalVersion, original.version)
+            Assertions.assertNotSame(original, saved.captured)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should detach an older attached version when a newer version exists`() {
+            val newer = testStatement(111).withData { versionBucket = bucket }
+            every { statementRepository.findLatestByVersionBucket(bucket) } returns newer
+
+            val result = developerOperations.detachStatement(developer, taskId, resourceId).getOrThrow()
+
+            assertEditableContentEquals(
+                taskContentNew {
+                    detachResources()
+                    statement = null
+                }.wip,
+                result.getEditableContent(),
+            )
+            verify(exactly = 0) { statementRepository.findLatestByVersionBucket(any()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should reject another attached version from the same chain in every state`(state: String) {
+            val otherId = StatementId(111)
+            every { taskRepository.findById(taskId) } returns taskForDetach(state)
+            every { statementRepository.findById(otherId) } returns testStatement(otherId.value).withData { versionBucket = bucket }
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = otherId)) {
+                developerOperations.detachStatement(developer, taskId, otherId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a version present only in the committed revision when WIP exists`() {
+            val original = taskForDetach("Uncommitted").withData {
+                content.uncommitted(
+                    wipBuilder = { statement(99) },
+                    lastCommittedBuilder = {},
+                )
+            }
+            val originalContent = original.data.content
+            every { taskRepository.findById(taskId) } returns original
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachStatement(developer, taskId, resourceId)
+            }
+            Assertions.assertSame(originalContent, original.data.content)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject an unattached version in a New task`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData {
+                content.new { statement = null }
+            }
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachStatement(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject repeated detachment without updating the task again`() {
+            val detached = developerOperations.detachStatement(developer, taskId, resourceId).getOrThrow()
+            every { taskRepository.findById(taskId) } returns detached
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachStatement(developer, taskId, resourceId)
+            }
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should detach the last statement in every state`(state: String) {
+            val original = taskForDetach(state)
+            every { taskRepository.findById(taskId) } returns original
+
+            val result = developerOperations.detachStatement(developer, taskId, resourceId).getOrThrow()
+
+            val expected = taskContentNew {
+                detachResources()
+                statement = null
+            }.wip
+            assertDetachedTask(original = original, result = result, expected = expected)
+        }
+    }
+
+    @Nested
+    inner class DetachExerciseTests {
+        private val taskId = TaskId(0)
+        private val resourceId = ExerciseId(12)
+        private val bucket = VersionBucket(UUID(0, 2))
+        private val resource = exercise {
+            this.id = 12
+            createdAt = Instant.EPOCH
+            data = viewExercise().data
+        }.withData { versionBucket = bucket }
+
+        @BeforeEach
+        fun prepareDetach() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New")
+            every { exerciseRepository.findById(resourceId) } returns resource
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+        }
+
+        @Test
+        fun `should reject a user without the Developer role`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.detachExercise(testAdministrator {}, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a missing task`() {
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) {
+                developerOperations.detachExercise(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a missing exercise version`() {
+            every { exerciseRepository.findById(resourceId) } returns null
+
+            assertRaises(ExerciseNotExistsError(resourceId)) {
+                developerOperations.detachExercise(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a task owned by another developer`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData { owner(9) }
+
+            assertRaises(TaskAccessDeniedError(taskId)) {
+                developerOperations.detachExercise(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a chain not uploaded to the target task`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData { uploadedResources.remove(bucket) }
+
+            assertRaises(ExerciseNotUploadedToTaskError(taskId = taskId, exerciseId = resourceId)) {
+                developerOperations.detachExercise(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should detach the exact version while preserving other data in every state`(state: String) {
+            val original = taskForDetach(state)
+            val originalContent = original.getEditableContent()
+            val originalVersion = original.version
+            val saved = slot<Task>()
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(capture(saved)) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.detachExercise(developer, taskId, resourceId).getOrThrow()
+
+            val expected = taskContentNew {
+                detachResources()
+                exercise = null
+            }.wip
+            assertDetachedTask(original = original, result = result, expected = expected)
+            Assertions.assertEquals(originalVersion, saved.captured.version)
+            assertEditableContentEquals(expected, saved.captured.getEditableContent())
+            assertEditableContentEquals(originalContent, original.getEditableContent())
+            Assertions.assertEquals(originalVersion, original.version)
+            Assertions.assertNotSame(original, saved.captured)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should detach an older attached version when a newer version exists`() {
+            val newer = exercise {
+                this.id = 112
+                createdAt = Instant.ofEpochSecond(1)
+                data = resource.data
+            }
+            every { exerciseRepository.findLatestByVersionBucket(bucket) } returns newer
+
+            val result = developerOperations.detachExercise(developer, taskId, resourceId).getOrThrow()
+
+            assertEditableContentEquals(
+                taskContentNew {
+                    detachResources()
+                    exercise = null
+                }.wip,
+                result.getEditableContent(),
+            )
+            verify(exactly = 0) { exerciseRepository.findLatestByVersionBucket(any()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should reject another attached version from the same chain in every state`(state: String) {
+            val otherId = ExerciseId(112)
+            every { taskRepository.findById(taskId) } returns taskForDetach(state)
+            every { exerciseRepository.findById(otherId) } returns exercise {
+                this.id = otherId.value
+                createdAt = Instant.ofEpochSecond(1)
+                data = resource.data
+            }
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = otherId)) {
+                developerOperations.detachExercise(developer, taskId, otherId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a version present only in the committed revision when WIP exists`() {
+            val original = taskForDetach("Uncommitted").withData {
+                content.uncommitted(
+                    wipBuilder = { exercise(99) },
+                    lastCommittedBuilder = {},
+                )
+            }
+            val originalContent = original.data.content
+            every { taskRepository.findById(taskId) } returns original
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachExercise(developer, taskId, resourceId)
+            }
+            Assertions.assertSame(originalContent, original.data.content)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject an unattached version in a New task`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData {
+                content.new { exercise = null }
+            }
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachExercise(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject repeated detachment without updating the task again`() {
+            val detached = developerOperations.detachExercise(developer, taskId, resourceId).getOrThrow()
+            every { taskRepository.findById(taskId) } returns detached
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachExercise(developer, taskId, resourceId)
+            }
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should detach the last exercise in every state`(state: String) {
+            val original = taskForDetach(state)
+            every { taskRepository.findById(taskId) } returns original
+
+            val result = developerOperations.detachExercise(developer, taskId, resourceId).getOrThrow()
+
+            val expected = taskContentNew {
+                detachResources()
+                exercise = null
+            }.wip
+            assertDetachedTask(original = original, result = result, expected = expected)
+        }
+    }
+
+    @Nested
+    inner class DetachTestTests {
+        private val taskId = TaskId(0)
+        private val resourceId = TestId(14)
+        private val bucket = VersionBucket(UUID(0, 3))
+        private val resource = test {
+            this.id = 14
+            createdAt = Instant.EPOCH
+            data = viewPolygon().data
+        }.withData { versionBucket = bucket }
+
+        @BeforeEach
+        fun prepareDetach() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New")
+            every { testRepository.findById(resourceId) } returns resource
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+        }
+
+        @Test
+        fun `should reject a user without the Developer role`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.detachTest(testAdministrator {}, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a missing task`() {
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) {
+                developerOperations.detachTest(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a missing polygon version`() {
+            every { testRepository.findById(resourceId) } returns null
+
+            assertRaises(TestNotExistsError(resourceId)) {
+                developerOperations.detachTest(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a task owned by another developer`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData { owner(9) }
+
+            assertRaises(TaskAccessDeniedError(taskId)) {
+                developerOperations.detachTest(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a chain not uploaded to the target task`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData { uploadedResources.remove(bucket) }
+
+            assertRaises(TestNotUploadedToTaskError(taskId = taskId, testId = resourceId)) {
+                developerOperations.detachTest(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should detach the exact version while preserving other data in every state`(state: String) {
+            val original = taskForDetach(state)
+            val originalContent = original.getEditableContent()
+            val originalVersion = original.version
+            val saved = slot<Task>()
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(capture(saved)) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.detachTest(developer, taskId, resourceId).getOrThrow()
+
+            val expected = taskContentNew {
+                detachResources()
+                tests(listOf(13, 15))
+            }.wip
+            assertDetachedTask(original = original, result = result, expected = expected)
+            Assertions.assertEquals(originalVersion, saved.captured.version)
+            assertEditableContentEquals(expected, saved.captured.getEditableContent())
+            assertEditableContentEquals(originalContent, original.getEditableContent())
+            Assertions.assertEquals(originalVersion, original.version)
+            Assertions.assertNotSame(original, saved.captured)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should detach an older attached version when a newer version exists`() {
+            val newer = test {
+                this.id = 114
+                createdAt = Instant.ofEpochSecond(1)
+                data = resource.data
+            }
+            every { testRepository.findLatestByVersionBucket(bucket) } returns newer
+
+            val result = developerOperations.detachTest(developer, taskId, resourceId).getOrThrow()
+
+            assertEditableContentEquals(
+                taskContentNew {
+                    detachResources()
+                    tests(listOf(13, 15))
+                }.wip,
+                result.getEditableContent(),
+            )
+            verify(exactly = 0) { testRepository.findLatestByVersionBucket(any()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should reject another attached version from the same chain in every state`(state: String) {
+            val otherId = TestId(114)
+            every { taskRepository.findById(taskId) } returns taskForDetach(state)
+            every { testRepository.findById(otherId) } returns test {
+                this.id = otherId.value
+                createdAt = Instant.ofEpochSecond(1)
+                data = resource.data
+            }
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = otherId)) {
+                developerOperations.detachTest(developer, taskId, otherId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a version present only in the committed revision when WIP exists`() {
+            val original = taskForDetach("Uncommitted").withData {
+                content.uncommitted(
+                    wipBuilder = { tests(listOf(99)) },
+                    lastCommittedBuilder = {},
+                )
+            }
+            val originalContent = original.data.content
+            every { taskRepository.findById(taskId) } returns original
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachTest(developer, taskId, resourceId)
+            }
+            Assertions.assertSame(originalContent, original.data.content)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject an unattached version in a New task`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData {
+                content.new { tests = mutableListOf() }
+            }
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachTest(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject repeated detachment without updating the task again`() {
+            val detached = developerOperations.detachTest(developer, taskId, resourceId).getOrThrow()
+            every { taskRepository.findById(taskId) } returns detached
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachTest(developer, taskId, resourceId)
+            }
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should detach the last polygon in every state`(state: String) {
+            val original = taskForDetach(state) { tests(listOf(14)) }
+            every { taskRepository.findById(taskId) } returns original
+
+            val result = developerOperations.detachTest(developer, taskId, resourceId).getOrThrow()
+
+            val expected = taskContentNew {
+                detachResources()
+                tests = mutableListOf()
+            }.wip
+            assertDetachedTask(original = original, result = result, expected = expected)
+        }
+    }
+
+    @Nested
+    inner class DetachDeveloperSolutionTests {
+        private val taskId = TaskId(0)
+        private val resourceId = DeveloperSolutionId(17)
+        private val bucket = VersionBucket(UUID(0, 4))
+        private val resource = developerSolution {
+            this.id = 17
+            createdAt = Instant.EPOCH
+            data = viewDeveloperSolution().data
+        }.withData { versionBucket = bucket }
+
+        @BeforeEach
+        fun prepareDetach() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New")
+            every { developerSolutionRepository.findById(resourceId) } returns resource
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+        }
+
+        @Test
+        fun `should reject a user without the Developer role`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.detachDeveloperSolution(testAdministrator {}, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a missing task`() {
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) {
+                developerOperations.detachDeveloperSolution(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a missing developer solution version`() {
+            every { developerSolutionRepository.findById(resourceId) } returns null
+
+            assertRaises(DeveloperSolutionNotExistsError(resourceId)) {
+                developerOperations.detachDeveloperSolution(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a task owned by another developer`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData { owner(9) }
+
+            assertRaises(TaskAccessDeniedError(taskId)) {
+                developerOperations.detachDeveloperSolution(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a chain not uploaded to the target task`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData { uploadedResources.remove(bucket) }
+
+            assertRaises(DeveloperSolutionNotUploadedToTaskError(taskId = taskId, developerSolutionId = resourceId)) {
+                developerOperations.detachDeveloperSolution(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should detach the exact version while preserving other data in every state`(state: String) {
+            val original = taskForDetach(state)
+            val originalContent = original.getEditableContent()
+            val originalVersion = original.version
+            val saved = slot<Task>()
+            every { taskRepository.findById(taskId) } returns original
+            every { taskRepository.update(capture(saved)) } answers { testSavedTask(firstArg()) }
+
+            val result = developerOperations.detachDeveloperSolution(developer, taskId, resourceId).getOrThrow()
+
+            val expected = taskContentNew {
+                detachResources()
+                developerSolutions(listOf(16, 18))
+            }.wip
+            assertDetachedTask(original = original, result = result, expected = expected)
+            Assertions.assertEquals(originalVersion, saved.captured.version)
+            assertEditableContentEquals(expected, saved.captured.getEditableContent())
+            assertEditableContentEquals(originalContent, original.getEditableContent())
+            Assertions.assertEquals(originalVersion, original.version)
+            Assertions.assertNotSame(original, saved.captured)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should detach an older attached version when a newer version exists`() {
+            val newer = developerSolution {
+                this.id = 117
+                createdAt = Instant.ofEpochSecond(1)
+                data = resource.data
+            }
+            every { developerSolutionRepository.findLatestByVersionBucket(bucket) } returns newer
+
+            val result = developerOperations.detachDeveloperSolution(developer, taskId, resourceId).getOrThrow()
+
+            assertEditableContentEquals(
+                taskContentNew {
+                    detachResources()
+                    developerSolutions(listOf(16, 18))
+                }.wip,
+                result.getEditableContent(),
+            )
+            verify(exactly = 0) { developerSolutionRepository.findLatestByVersionBucket(any()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should reject another attached version from the same chain in every state`(state: String) {
+            val otherId = DeveloperSolutionId(117)
+            every { taskRepository.findById(taskId) } returns taskForDetach(state)
+            every { developerSolutionRepository.findById(otherId) } returns developerSolution {
+                this.id = otherId.value
+                createdAt = Instant.ofEpochSecond(1)
+                data = resource.data
+            }
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = otherId)) {
+                developerOperations.detachDeveloperSolution(developer, taskId, otherId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a version present only in the committed revision when WIP exists`() {
+            val original = taskForDetach("Uncommitted").withData {
+                content.uncommitted(
+                    wipBuilder = { developerSolutions(listOf(99)) },
+                    lastCommittedBuilder = {},
+                )
+            }
+            val originalContent = original.data.content
+            every { taskRepository.findById(taskId) } returns original
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachDeveloperSolution(developer, taskId, resourceId)
+            }
+            Assertions.assertSame(originalContent, original.data.content)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject an unattached version in a New task`() {
+            every { taskRepository.findById(taskId) } returns taskForDetach("New").withData {
+                content.new { developerSolutions = mutableListOf() }
+            }
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachDeveloperSolution(developer, taskId, resourceId)
+            }
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject repeated detachment without updating the task again`() {
+            val detached = developerOperations.detachDeveloperSolution(developer, taskId, resourceId).getOrThrow()
+            every { taskRepository.findById(taskId) } returns detached
+
+            assertRaises(ResourceVersionNotAttachedError(taskId = taskId, versionId = resourceId)) {
+                developerOperations.detachDeveloperSolution(developer, taskId, resourceId)
+            }
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted", "Committed"])
+        fun `should detach the last developer solution in every state`(state: String) {
+            val original = taskForDetach(state) { developerSolutions(listOf(17)) }
+            every { taskRepository.findById(taskId) } returns original
+
+            val result = developerOperations.detachDeveloperSolution(developer, taskId, resourceId).getOrThrow()
+
+            val expected = taskContentNew {
+                detachResources()
+                developerSolutions = mutableListOf()
+            }.wip
+            assertDetachedTask(original = original, result = result, expected = expected)
+        }
+    }
+
+    private fun taskForDetach(state: String, customize: TaskContentBuilder<*>.() -> Unit = {}): Task {
+        val original = taskInState(state)
+        return original.withData {
+            uploadedResources = mutableSetOf(
+                VersionBucket(UUID(0, 0)),
+                VersionBucket(UUID(0, 1)),
+                VersionBucket(UUID(0, 2)),
+                VersionBucket(UUID(0, 3)),
+                VersionBucket(UUID(0, 4)),
+            )
+            when (original.data.content) {
+                is TaskContent.New -> content.new {
+                    detachResources()
+                    customize()
+                }
+                is TaskContent.Uncommitted -> content.uncommitted(
+                    wipBuilder = {
+                        detachResources()
+                        customize()
+                    },
+                    lastCommittedBuilder = {
+                        detachResources()
+                        customize()
+                    },
+                )
+                is TaskContent.Committed -> content.committed {
+                    detachResources()
+                    customize()
+                }
+            }
+        }
+    }
+
+    private fun TaskContentBuilder<*>.detachResources() {
+        statement(11)
+        exercise(12)
+        tests(listOf(13, 14, 15))
+        developerSolutions(listOf(16, 17, 18))
+        supportedTrikStudioVersions(listOf("3.0.0", "4.0.0"))
+    }
+
+    private fun assertDetachedTask(original: Task, result: Task, expected: WipTaskContent) {
+        assertEditableContentEquals(expected, result.getEditableContent())
+        Assertions.assertEquals(original.id, result.id)
+        Assertions.assertEquals(original.createdAt, result.createdAt)
+        Assertions.assertEquals(original.data.owner.id, result.data.owner.id)
+        Assertions.assertEquals(original.data.name, result.data.name)
+        Assertions.assertEquals(original.data.description, result.data.description)
+        Assertions.assertEquals(original.data.sharedTo.ids, result.data.sharedTo.ids)
+        Assertions.assertEquals(original.data.uploadedResources, result.data.uploadedResources)
+        Assertions.assertEquals(savedTaskVersion.value, result.version?.value)
+        when (val content = original.data.content) {
+            is TaskContent.New -> Assertions.assertInstanceOf(TaskContent.New::class.java, result.data.content)
+            is TaskContent.Uncommitted -> assertCommittedUnchanged(content.lastCommitted, result)
+            is TaskContent.Committed -> assertCommittedUnchanged(content.lastCommitted, result)
+        }
+    }
+
+    private fun assertEditableContentEquals(expected: WipTaskContent, actual: WipTaskContent) {
+        Assertions.assertEquals(expected.statement?.id, actual.statement?.id)
+        Assertions.assertEquals(expected.exercise?.id, actual.exercise?.id)
+        Assertions.assertEquals(expected.tests.ids, actual.tests.ids)
+        Assertions.assertEquals(expected.developerSolutions.ids, actual.developerSolutions.ids)
+        Assertions.assertEquals(expected.supportedTrikStudioVersions, actual.supportedTrikStudioVersions)
     }
 }

@@ -48,6 +48,10 @@ import tech.testsys.operation.error.AttachTestError
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
 import tech.testsys.operation.error.CreateTaskError
+import tech.testsys.operation.error.DetachDeveloperSolutionError
+import tech.testsys.operation.error.DetachExerciseError
+import tech.testsys.operation.error.DetachStatementError
+import tech.testsys.operation.error.DetachTestError
 import tech.testsys.operation.error.DeveloperSolutionNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotUploadedToTaskError
 import tech.testsys.operation.error.DeveloperSolutionVersionNotLatestError
@@ -60,6 +64,7 @@ import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ResourceAlreadyAttachedError
 import tech.testsys.operation.error.ResourceNotExistsError
 import tech.testsys.operation.error.ResourceNotUploadedToTaskError
+import tech.testsys.operation.error.ResourceVersionNotAttachedError
 import tech.testsys.operation.error.ResourceVersionNotExistsError
 import tech.testsys.operation.error.ShareTaskError
 import tech.testsys.operation.error.StatementNotExistsError
@@ -694,6 +699,113 @@ class DeveloperOperations(
             ResourceAlreadyAttachedError(taskId, resource.data.versionBucket)
         }
         val updatedTask = task.changeEditableContent { developerSolutions.add(newDeveloperSolutionId) }
+        return taskRepository.update(updatedTask).asSuccess()
+    }
+
+    /**
+     * Detaches the exact [statementId] from the editable revision of [taskId] owned by [user].
+     * Preserves the last committed revision, uploaded chains and resource versions.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.detachResource")
+    fun detachStatement(user: MultipleRoleUser, taskId: TaskId, statementId: StatementId): OperationResult<Task, DetachStatementError> =
+        operation<Task, DetachStatementError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            val resource = statementRepository.findById(statementId)
+            ensure(resource != null) { StatementNotExistsError(statementId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            ensure(resource.data.versionBucket in task.data.uploadedResources) {
+                StatementNotUploadedToTaskError(taskId = taskId, statementId = statementId)
+            }
+            val editable = task.getEditableContent()
+            ensure(editable.statement?.id == statementId) {
+                ResourceVersionNotAttachedError(taskId = taskId, versionId = statementId)
+            }
+            val updatedTask = task.changeEditableContent { statement = null }
+            return taskRepository.update(updatedTask).asSuccess()
+        }
+
+    /**
+     * Detaches the exact [exerciseId] from the editable revision of [taskId] owned by [user].
+     * Preserves the last committed revision, uploaded chains and resource versions.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.detachResource")
+    fun detachExercise(user: MultipleRoleUser, taskId: TaskId, exerciseId: ExerciseId): OperationResult<Task, DetachExerciseError> =
+        operation<Task, DetachExerciseError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            val resource = exerciseRepository.findById(exerciseId)
+            ensure(resource != null) { ExerciseNotExistsError(exerciseId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            ensure(resource.data.versionBucket in task.data.uploadedResources) {
+                ExerciseNotUploadedToTaskError(taskId = taskId, exerciseId = exerciseId)
+            }
+            val editable = task.getEditableContent()
+            ensure(editable.exercise?.id == exerciseId) {
+                ResourceVersionNotAttachedError(taskId = taskId, versionId = exerciseId)
+            }
+            val updatedTask = task.changeEditableContent { exercise = null }
+            return taskRepository.update(updatedTask).asSuccess()
+        }
+
+    /**
+     * Detaches the exact [testId] from the editable revision of [taskId] owned by [user].
+     * Preserves the last committed revision, uploaded chains and resource versions.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.detachResource")
+    fun detachTest(user: MultipleRoleUser, taskId: TaskId, testId: TestId): OperationResult<Task, DetachTestError> =
+        operation<Task, DetachTestError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            val resource = testRepository.findById(testId)
+            ensure(resource != null) { TestNotExistsError(testId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            ensure(resource.data.versionBucket in task.data.uploadedResources) {
+                TestNotUploadedToTaskError(taskId = taskId, testId = testId)
+            }
+            val editable = task.getEditableContent()
+            ensure(testId in editable.tests.ids) {
+                ResourceVersionNotAttachedError(taskId = taskId, versionId = testId)
+            }
+            val updatedTask = task.changeEditableContent { tests.remove(testId) }
+            return taskRepository.update(updatedTask).asSuccess()
+        }
+
+    /**
+     * Detaches the exact [developerSolutionId] from the editable revision of [taskId] owned by [user].
+     * Preserves the last committed revision, uploaded chains and resource versions.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.detachResource")
+    fun detachDeveloperSolution(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+        developerSolutionId: DeveloperSolutionId,
+    ): OperationResult<Task, DetachDeveloperSolutionError> = operation<Task, DetachDeveloperSolutionError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        val resource = developerSolutionRepository.findById(developerSolutionId)
+        ensure(resource != null) { DeveloperSolutionNotExistsError(developerSolutionId) }
+        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        ensure(resource.data.versionBucket in task.data.uploadedResources) {
+            DeveloperSolutionNotUploadedToTaskError(taskId = taskId, developerSolutionId = developerSolutionId)
+        }
+        val editable = task.getEditableContent()
+        ensure(developerSolutionId in editable.developerSolutions.ids) {
+            ResourceVersionNotAttachedError(taskId = taskId, versionId = developerSolutionId)
+        }
+        val updatedTask = task.changeEditableContent { developerSolutions.remove(developerSolutionId) }
         return taskRepository.update(updatedTask).asSuccess()
     }
 

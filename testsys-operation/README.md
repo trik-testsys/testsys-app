@@ -83,6 +83,11 @@
 Исключения хранилища выходят из операции; после ошибки уже сохранённая версия может остаться
 без замены ссылки в Задаче.
 
+Методы `detachStatement`, `detachExercise`, `detachTest` и `detachDeveloperSolution` возвращают Задачу,
+сохранённую через `TaskRepository.update`. Операции используют `getEditableContent` для проверки ссылки
+и `changeEditableContent` для её удаления. Требования к откреплению — в фиче
+`testsys.user.multi.developer.task.detachResource` в [features.md](../docs/domain/features.md).
+
 ## Конфигурация
 
 **Конфигурация операций** — значения, которые настраиваются при развёртывании системы и нужны самим операциям,

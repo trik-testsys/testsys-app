@@ -2,6 +2,7 @@ package tech.testsys.operation.error
 
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.StatementId
@@ -167,6 +168,13 @@ sealed interface CreateTaskError : OperationError
 sealed interface CreateContestError : OperationError
 
 /**
+ * Failure of editing a contest owned by the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EditContestError : OperationError
+
+/**
  * Failure of attaching a statement to a task.
  *
  * @since %CURRENT_VERSION%
@@ -238,6 +246,7 @@ sealed interface DetachDeveloperSolutionError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedDeveloperRoleError :
+    EditContestError,
     EditTaskInfoError,
     ViewTaskError,
     ViewTasksError,
@@ -271,7 +280,7 @@ data object MissedDeveloperRoleError :
  * @property endsAt the end moment supplied without a start.
  * @since %CURRENT_VERSION%
  */
-data class ContestEndWithoutStartError(val endsAt: Instant) : CreateContestError
+data class ContestEndWithoutStartError(val endsAt: Instant) : CreateContestError, EditContestError
 
 /**
  * The contest end is not later than its start.
@@ -280,7 +289,7 @@ data class ContestEndWithoutStartError(val endsAt: Instant) : CreateContestError
  * @property endsAt the requested end moment.
  * @since %CURRENT_VERSION%
  */
-data class ContestEndNotAfterStartError(val startsAt: Instant, val endsAt: Instant) : CreateContestError
+data class ContestEndNotAfterStartError(val startsAt: Instant, val endsAt: Instant) : CreateContestError, EditContestError
 
 /**
  * The individual time limit is zero or negative.
@@ -300,7 +309,31 @@ data class NonPositiveAttemptDurationError(val attemptDuration: Duration) : Crea
 data class AttemptDurationExceedsContestDurationError(
     val attemptDuration: Duration,
     val contestDuration: Duration,
-) : CreateContestError
+) : CreateContestError, EditContestError
+
+/**
+ * The contest does not exist.
+ *
+ * @property contestId the id of the missing contest.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestNotExistsError(val contestId: ContestId) : EntityNotExistsError, EditContestError
+
+/**
+ * The user is not the owner of the contest.
+ *
+ * @property contestId the id of the contest.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestAccessDeniedError(val contestId: ContestId) : AccessDeniedError, EditContestError
+
+/**
+ * The contest is shared to at least one community.
+ *
+ * @property contestId the id of the shared contest.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestAlreadySharedError(val contestId: ContestId) : EditContestError
 
 /**
  * The task does not exist.

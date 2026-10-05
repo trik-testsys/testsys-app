@@ -21,6 +21,7 @@ import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.Contest
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Exercise
@@ -52,8 +53,11 @@ import tech.testsys.operation.error.AttachTestError
 import tech.testsys.operation.error.AttemptDurationExceedsContestDurationError
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
+import tech.testsys.operation.error.ContestAccessDeniedError
+import tech.testsys.operation.error.ContestAlreadySharedError
 import tech.testsys.operation.error.ContestEndNotAfterStartError
 import tech.testsys.operation.error.ContestEndWithoutStartError
+import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.CreateContestError
 import tech.testsys.operation.error.CreateTaskError
 import tech.testsys.operation.error.DetachDeveloperSolutionError
@@ -64,6 +68,7 @@ import tech.testsys.operation.error.DeveloperSolutionNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotUploadedToTaskError
 import tech.testsys.operation.error.DeveloperSolutionVersionNotLatestError
 import tech.testsys.operation.error.DownloadResourceVersionError
+import tech.testsys.operation.error.EditContestError
 import tech.testsys.operation.error.EditTaskInfoError
 import tech.testsys.operation.error.ExerciseLanguageAlreadyAttachedError
 import tech.testsys.operation.error.ExerciseNotExistsError
@@ -167,6 +172,52 @@ class DeveloperOperations(
             this.contestDuration = contestDuration
         }
         return contestRepository.save(data).asSuccess()
+    }
+
+    /**
+     * Replaces the name and dates of an unshared [contestId] owned by [user]; null dates clear the corresponding limits.
+     * The resulting interval must fit exactly in Long milliseconds; unchanged values return the contest without saving.
+     *
+     * @throws IllegalArgumentException if the resulting interval cannot be represented exactly in Long milliseconds.
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.contest.editContest")
+    fun editContest(
+        user: MultipleRoleUser,
+        contestId: ContestId,
+        contestName: String,
+        startsAt: Instant?,
+        endsAt: Instant?,
+    ): OperationResult<Contest, EditContestError> = operation<Contest, EditContestError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val contest = contestRepository.findById(contestId)
+        ensure(contest != null) { ContestNotExistsError(contestId) }
+        ensure(contest.data.owner.id == user.id) { ContestAccessDeniedError(contestId) }
+        ensure(contest.data.sharedTo.ids.isEmpty()) { ContestAlreadySharedError(contestId) }
+
+        val contestDuration = endsAt?.let { end ->
+            ensure(startsAt != null) { ContestEndWithoutStartError(end) }
+            ensure(end > startsAt) { ContestEndNotAfterStartError(startsAt = startsAt, endsAt = end) }
+            Duration.between(startsAt, end)
+        }
+        val attemptDuration = contest.data.attemptDuration
+        ensure(attemptDuration == null || contestDuration == null || attemptDuration <= contestDuration) {
+            AttemptDurationExceedsContestDurationError(
+                attemptDuration = requireNotNull(attemptDuration),
+                contestDuration = requireNotNull(contestDuration),
+            )
+        }
+        contestDuration?.requireExactMillis("contestDuration")
+        if (contestName == contest.data.name && startsAt == contest.data.startsAt && endsAt == contest.data.endsAt) {
+            return contest.asSuccess()
+        }
+
+        val updatedContest = contest.withData {
+            name = contestName
+            this.startsAt = startsAt
+            this.contestDuration = contestDuration
+        }
+        return contestRepository.update(updatedContest).asSuccess()
     }
 
     /**

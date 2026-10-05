@@ -31,7 +31,9 @@ import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.CommittedTaskContent
+import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
@@ -62,8 +64,11 @@ import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.error.AttemptDurationExceedsContestDurationError
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
+import tech.testsys.operation.error.ContestAccessDeniedError
+import tech.testsys.operation.error.ContestAlreadySharedError
 import tech.testsys.operation.error.ContestEndNotAfterStartError
 import tech.testsys.operation.error.ContestEndWithoutStartError
+import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotUploadedToTaskError
 import tech.testsys.operation.error.DeveloperSolutionVersionNotLatestError
@@ -95,9 +100,11 @@ import tech.testsys.operation.util.savedTaskVersion
 import tech.testsys.operation.util.testAdministrator
 import tech.testsys.operation.util.testCommitedTask
 import tech.testsys.operation.util.testCommunity
+import tech.testsys.operation.util.testContest
 import tech.testsys.operation.util.testDeveloper
 import tech.testsys.operation.util.testMultipleRoleUser
 import tech.testsys.operation.util.testNewTask
+import tech.testsys.operation.util.testSavedContest
 import tech.testsys.operation.util.testSavedTask
 import tech.testsys.operation.util.testStatement
 import tech.testsys.operation.util.testUncommittedTask
@@ -357,6 +364,380 @@ class DeveloperOperationsTests {
             }
 
             Assertions.assertSame(failure, thrown)
+        }
+    }
+
+    @Nested
+    inner class EditContestTests {
+
+        private val contestId = ContestId(19)
+        private val start = Instant.parse("2020-01-01T10:00:00Z")
+        private val end = Instant.parse("2020-01-01T12:00:00Z")
+
+        @Test
+        fun `should raise MissedDeveloperRoleError without reading or updating for a user without the Developer role`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.editContest(testAdministrator {}, contestId, "Updated", startsAt = start, endsAt = end)
+            }
+
+            verify(exactly = 0) { contestRepository.findById(any()) }
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should raise ContestNotExistsError without updating if the contest is missing`() {
+            every { contestRepository.findById(contestId) } returns null
+
+            assertRaises(ContestNotExistsError(contestId)) {
+                developerOperations.editContest(developer, contestId, "Updated", startsAt = start, endsAt = end)
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should deny editing another owners contest even if it is shared to the Developer community`() {
+            val user = testDeveloper {
+                memberOf(listOf(4))
+                data = developerData {}
+            }
+            val original = testContest {
+                owner = MultipleRoleUserId(99)
+                sharedTo(listOf(4))
+            }
+            prepare(original)
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                developerOperations.editContest(user, contestId, "Updated", startsAt = null, endsAt = end)
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should reject a shared contest before validating the requested dates`() {
+            prepare(testContest { sharedTo(listOf(4)) })
+
+            assertRaises(ContestAlreadySharedError(contestId)) {
+                developerOperations.editContest(developer, contestId, "Updated", startsAt = null, endsAt = end)
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should reject a shared contest even if its name and dates are unchanged`() {
+            val original = testContest { sharedTo(listOf(4)) }
+            prepare(original)
+
+            assertRaises(ContestAlreadySharedError(contestId)) {
+                developerOperations.editContest(developer, contestId, original.data.name, startsAt = null, endsAt = null)
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Updated", "", "  Contest  "])
+        fun `should change only the name and preserve all contest limits`(name: String) {
+            val original = scheduledContest()
+            prepare(original)
+
+            val result = developerOperations.editContest(developer, contestId, name, startsAt = start, endsAt = end).getOrThrow()
+
+            Assertions.assertEquals(name, result.data.name)
+            Assertions.assertEquals(start, result.data.startsAt)
+            Assertions.assertEquals(end, result.data.endsAt)
+            Assertions.assertEquals(Duration.ofHours(2), result.data.contestDuration)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should change the start while keeping the supplied end absolute and recalculating the interval`() {
+            prepare(scheduledContest())
+            val newStart = start.plusSeconds(3600)
+
+            val result = developerOperations.editContest(developer, contestId, "Contest", startsAt = newStart, endsAt = end).getOrThrow()
+
+            Assertions.assertEquals(newStart, result.data.startsAt)
+            Assertions.assertEquals(end, result.data.endsAt)
+            Assertions.assertEquals(Duration.ofHours(1), result.data.contestDuration)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should change only the end and recalculate the interval`() {
+            prepare(scheduledContest())
+            val newEnd = end.plusSeconds(3600)
+
+            val result = developerOperations.editContest(developer, contestId, "Contest", startsAt = start, endsAt = newEnd).getOrThrow()
+
+            Assertions.assertEquals(start, result.data.startsAt)
+            Assertions.assertEquals(newEnd, result.data.endsAt)
+            Assertions.assertEquals(Duration.ofHours(3), result.data.contestDuration)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should change all editable fields preserve other data and return the saved contest with its new version`() {
+            val original = scheduledContest().withData {
+                tasks(listOf(2, 7))
+                attemptDuration = Duration.ofMinutes(30)
+            }
+            val updated = slot<Contest>()
+            val newStart = start.plusSeconds(3600)
+            val newEnd = end.plusSeconds(3600)
+            val saved = testSavedContest(
+                original.withData {
+                    name = "Updated"
+                    startsAt = newStart
+                },
+            )
+            every { contestRepository.findById(contestId) } returns original
+            every { contestRepository.update(capture(updated)) } returns saved
+
+            val result = developerOperations.editContest(developer, contestId, "Updated", startsAt = newStart, endsAt = newEnd).getOrThrow()
+
+            Assertions.assertEquals("Updated", updated.captured.data.name)
+            Assertions.assertEquals(newStart, updated.captured.data.startsAt)
+            Assertions.assertEquals(newEnd, updated.captured.data.endsAt)
+            Assertions.assertEquals(Duration.ofHours(2), updated.captured.data.contestDuration)
+            Assertions.assertEquals(original.data.owner.id, updated.captured.data.owner.id)
+            Assertions.assertEquals("Description", updated.captured.data.description)
+            Assertions.assertEquals(listOf(TaskId(2), TaskId(7)), updated.captured.data.tasks.ids)
+            Assertions.assertEquals(Duration.ofMinutes(30), updated.captured.data.attemptDuration)
+            Assertions.assertEquals(TrikStudioVersion("3.0.0"), updated.captured.data.trikStudioVersion)
+            Assertions.assertEquals(emptyList<CommunityId>(), updated.captured.data.sharedTo.ids)
+            Assertions.assertEquals(original.id, updated.captured.id)
+            Assertions.assertEquals(original.createdAt, updated.captured.createdAt)
+            Assertions.assertEquals(original.version, updated.captured.version)
+            Assertions.assertSame(saved, result)
+            Assertions.assertEquals(saved.version, result.version)
+            Assertions.assertEquals(start, original.data.startsAt)
+            Assertions.assertEquals("Contest", original.data.name)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should clear the end and total interval while retaining the start and individual limit`() {
+            prepare(scheduledContest().withData { attemptDuration = Duration.ofMinutes(30) })
+
+            val result = developerOperations.editContest(developer, contestId, "Contest", startsAt = start, endsAt = null).getOrThrow()
+
+            Assertions.assertEquals(start, result.data.startsAt)
+            Assertions.assertNull(result.data.endsAt)
+            Assertions.assertNull(result.data.contestDuration)
+            Assertions.assertEquals(Duration.ofMinutes(30), result.data.attemptDuration)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should clear both dates and total interval while retaining the individual limit`() {
+            prepare(scheduledContest().withData { attemptDuration = Duration.ofMinutes(30) })
+
+            val result = developerOperations.editContest(developer, contestId, "Contest", startsAt = null, endsAt = null).getOrThrow()
+
+            Assertions.assertNull(result.data.startsAt)
+            Assertions.assertNull(result.data.endsAt)
+            Assertions.assertNull(result.data.contestDuration)
+            Assertions.assertEquals(Duration.ofMinutes(30), result.data.attemptDuration)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should schedule a contest without dates using the requested start and end`() {
+            prepare(testContest())
+
+            val result = developerOperations.editContest(developer, contestId, "Contest", startsAt = start, endsAt = end).getOrThrow()
+
+            Assertions.assertEquals(start, result.data.startsAt)
+            Assertions.assertEquals(end, result.data.endsAt)
+            Assertions.assertEquals(Duration.ofHours(2), result.data.contestDuration)
+        }
+
+        @Test
+        fun `should set a start without an end for a contest without dates`() {
+            prepare(testContest())
+
+            val result = developerOperations.editContest(developer, contestId, "Contest", startsAt = start, endsAt = null).getOrThrow()
+
+            Assertions.assertEquals(start, result.data.startsAt)
+            Assertions.assertNull(result.data.endsAt)
+            Assertions.assertNull(result.data.contestDuration)
+        }
+
+        @Test
+        fun `should raise ContestEndWithoutStartError without updating if only an end is supplied`() {
+            prepare(scheduledContest())
+
+            assertRaises(ContestEndWithoutStartError(end)) {
+                developerOperations.editContest(developer, contestId, "Contest", startsAt = null, endsAt = end)
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(longs = [0, -1])
+        fun `should raise ContestEndNotAfterStartError without updating if the interval is not positive`(offset: Long) {
+            prepare(scheduledContest())
+            val invalidEnd = start.plusSeconds(offset)
+
+            assertRaises(ContestEndNotAfterStartError(startsAt = start, endsAt = invalidEnd)) {
+                developerOperations.editContest(developer, contestId, "Contest", startsAt = start, endsAt = invalidEnd)
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should reject a new interval shorter than the existing individual limit without updating`() {
+            prepare(scheduledContest().withData { attemptDuration = Duration.ofHours(1) })
+            val newEnd = start.plusSeconds(3600).minusMillis(1)
+
+            assertRaises(
+                AttemptDurationExceedsContestDurationError(
+                    attemptDuration = Duration.ofHours(1),
+                    contestDuration = Duration.ofHours(1).minusMillis(1),
+                ),
+            ) {
+                developerOperations.editContest(developer, contestId, "Contest", startsAt = start, endsAt = newEnd)
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should accept a new interval equal to the existing individual limit`() {
+            prepare(scheduledContest().withData { attemptDuration = Duration.ofHours(1) })
+            val newEnd = start.plusSeconds(3600)
+
+            val result = developerOperations.editContest(developer, contestId, "Contest", startsAt = start, endsAt = newEnd).getOrThrow()
+
+            Assertions.assertEquals(Duration.ofHours(1), result.data.contestDuration)
+            Assertions.assertEquals(Duration.ofHours(1), result.data.attemptDuration)
+            Assertions.assertEquals(newEnd, result.data.endsAt)
+        }
+
+        @Test
+        fun `should accept a one millisecond interval`() {
+            prepare(scheduledContest())
+            val newEnd = start.plusMillis(1)
+
+            val result = developerOperations.editContest(developer, contestId, "Contest", startsAt = start, endsAt = newEnd).getOrThrow()
+
+            Assertions.assertEquals(Duration.ofMillis(1), result.data.contestDuration)
+            Assertions.assertEquals(newEnd, result.data.endsAt)
+        }
+
+        @Test
+        fun `should accept the largest total interval representable in Long milliseconds`() {
+            prepare(scheduledContest())
+            val newEnd = start.plusMillis(Long.MAX_VALUE)
+
+            val result = developerOperations.editContest(developer, contestId, "Contest", startsAt = start, endsAt = newEnd).getOrThrow()
+
+            Assertions.assertEquals(Duration.ofMillis(Long.MAX_VALUE), result.data.contestDuration)
+            Assertions.assertEquals(newEnd, result.data.endsAt)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["PT0.000000001S", "PT9223372036854775.808S"])
+        fun `should reject a total interval outside the exact millisecond contract without updating`(value: String) {
+            prepare(scheduledContest())
+            val invalidEnd = start.plus(Duration.parse(value))
+
+            Assertions.assertThrows(IllegalArgumentException::class.java) {
+                developerOperations.editContest(developer, contestId, "Contest", startsAt = start, endsAt = invalidEnd)
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["PT0.000000001S", "PT9223372036854775.808S"])
+        fun `should validate the exact millisecond contract even when the name and dates are unchanged`(value: String) {
+            val original = testContest {
+                startsAt = start
+                contestDuration = Duration.parse(value)
+            }
+            prepare(original)
+
+            Assertions.assertThrows(IllegalArgumentException::class.java) {
+                developerOperations.editContest(developer, contestId, original.data.name, startsAt = start, endsAt = original.data.endsAt)
+            }
+
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should return the loaded contest without updating if its name and dates are unchanged`() {
+            val original = scheduledContest()
+            prepare(original)
+
+            val result = developerOperations.editContest(
+                user = developer,
+                contestId = contestId,
+                contestName = original.data.name,
+                startsAt = start,
+                endsAt = end,
+            ).getOrThrow()
+
+            Assertions.assertSame(original, result)
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should return a contest without dates without updating if its values are unchanged`() {
+            val original = testContest()
+            prepare(original)
+
+            val result = developerOperations.editContest(
+                user = developer,
+                contestId = contestId,
+                contestName = original.data.name,
+                startsAt = null,
+                endsAt = null,
+            ).getOrThrow()
+
+            Assertions.assertSame(original, result)
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should propagate a storage exception without updating when loading the contest fails`() {
+            val failure = IllegalStateException("Storage read failure")
+            every { contestRepository.findById(contestId) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.editContest(developer, contestId, "Updated", startsAt = start, endsAt = end)
+            }
+
+            Assertions.assertSame(failure, thrown)
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should propagate a storage exception when updating the contest fails`() {
+            prepare(scheduledContest())
+            val failure = IllegalStateException("Storage update failure")
+            every { contestRepository.update(any<Contest>()) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.editContest(developer, contestId, "Updated", startsAt = start, endsAt = end)
+            }
+
+            Assertions.assertSame(failure, thrown)
+        }
+
+        private fun scheduledContest(): Contest = testContest {
+            startsAt = start
+            contestDuration = Duration.ofHours(2)
+        }
+
+        private fun prepare(original: Contest) {
+            every { contestRepository.findById(contestId) } returns original
+            every { contestRepository.update(any<Contest>()) } answers { testSavedContest(firstArg()) }
         }
     }
 

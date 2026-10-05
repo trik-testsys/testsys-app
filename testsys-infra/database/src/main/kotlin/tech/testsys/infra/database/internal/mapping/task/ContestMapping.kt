@@ -24,6 +24,8 @@ import java.time.Duration
 @InternalDatabaseApi
 object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
 
+    private const val NANOS_PER_MILLISECOND = 1_000_000
+
     /**
      * Assembles a [Contest] from [jpaEntity], its resolved [trikStudioVersion] and the ids of its tasks and shared-to communities.
      *
@@ -43,8 +45,8 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
             description = jpaEntity.description
             tasks = taskIds.toMutableList()
             startsAt = jpaEntity.startsAt
-            contestDuration = Duration.ofMillis(jpaEntity.contestDurationMillis)
-            attemptDuration = Duration.ofMillis(jpaEntity.attemptDurationMillis)
+            contestDuration = jpaEntity.contestDurationMillis?.let(Duration::ofMillis)
+            attemptDuration = jpaEntity.attemptDurationMillis?.let(Duration::ofMillis)
             this.trikStudioVersion = trikStudioVersion
             sharedTo = sharedToIds.toMutableList()
         }
@@ -60,8 +62,8 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
         description = data.description,
         ownerId = data.owner.id.value,
         startsAt = data.startsAt,
-        contestDurationMillis = data.contestDuration.toMillis(),
-        attemptDurationMillis = data.attemptDuration.toMillis(),
+        contestDurationMillis = data.contestDuration?.toExactMillis("contestDuration"),
+        attemptDurationMillis = data.attemptDuration?.toExactMillis("attemptDuration"),
         trikStudioVersionId = trikStudioVersionId,
     )
 
@@ -76,8 +78,8 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
         description = entity.data.description,
         ownerId = current.ownerId,
         startsAt = entity.data.startsAt,
-        contestDurationMillis = entity.data.contestDuration.toMillis(),
-        attemptDurationMillis = entity.data.attemptDuration.toMillis(),
+        contestDurationMillis = entity.data.contestDuration?.toExactMillis("contestDuration"),
+        attemptDurationMillis = entity.data.attemptDuration?.toExactMillis("attemptDuration"),
         trikStudioVersionId = trikStudioVersionId,
         id = entity.id.value,
     ).also {
@@ -107,5 +109,14 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
             communityId = it.value,
             contestId = contestId,
         )
+    }
+
+    private fun Duration.toExactMillis(field: String): Long {
+        require(nano % NANOS_PER_MILLISECOND == 0) { "Contest $field=$this must be exactly representable in milliseconds" }
+        return try {
+            toMillis()
+        } catch (exception: ArithmeticException) {
+            throw IllegalArgumentException("Contest $field=$this exceeds the Long millisecond range", exception)
+        }
     }
 }

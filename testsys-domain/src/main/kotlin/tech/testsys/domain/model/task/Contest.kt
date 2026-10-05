@@ -29,11 +29,11 @@ value class ContestId(
  * @property description the description of the contest.
  * @property tasks the tasks included in the contest.
  * @property startsAt the moment the contest starts, or `null` if not scheduled yet.
- * @property contestDuration the total duration of the contest, counted from [startsAt].
- * @property attemptDuration the time limit of a single attempt at solving the contest.
+ * @property contestDuration the total duration counted from [startsAt], or `null` if there is no end limit.
+ * @property attemptDuration the time limit counted from opening the contest, or `null` if there is no individual limit.
  * @property trikStudioVersion the TRIK Studio version used to run and grade solutions.
  * @property sharedTo the communities the contest is shared to.
- * @property endsAt the moment the contest ends ([startsAt] plus [contestDuration]), or `null` if not scheduled yet.
+ * @property endsAt [startsAt] plus [contestDuration], or `null` if either value is absent.
  * @since %CURRENT_VERSION%
  */
 data class ContestData(
@@ -42,13 +42,13 @@ data class ContestData(
     val description: String,
     val tasks: LazyEntityList<TaskId, Task>,
     val startsAt: Instant?,
-    val contestDuration: Duration,
-    val attemptDuration: Duration,
+    val contestDuration: Duration?,
+    val attemptDuration: Duration?,
     val trikStudioVersion: TrikStudioVersion,
     val sharedTo: LazyEntityList<CommunityId, Community>,
 ) {
 
-    val endsAt = startsAt?.let { it + contestDuration }
+    val endsAt: Instant? = if (startsAt != null && contestDuration != null) startsAt + contestDuration else null
 }
 
 /**

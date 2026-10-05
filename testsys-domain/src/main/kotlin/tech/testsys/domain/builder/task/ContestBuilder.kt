@@ -16,16 +16,15 @@ import java.time.Duration
 import java.time.Instant
 
 /**
- * Builder of [ContestData]. Required: [owner], [name], [description], [contestDuration], [attemptDuration],
- * [trikStudioVersion].
+ * Builder of [ContestData]. Required: [owner], [name], [description], [trikStudioVersion].
  *
  * @property owner the id of the owning developer, or `null` if not set yet.
  * @property name the name of the contest, or `null` if not set yet.
  * @property description the description of the contest, or `null` if not set yet.
  * @property tasks the ids of the included tasks.
  * @property startsAt the start moment of the contest, or `null` if not scheduled.
- * @property contestDuration the total duration of the contest, or `null` if not set yet.
- * @property attemptDuration the time limit of a single attempt, or `null` if not set yet.
+ * @property contestDuration the total duration of the contest, or `null` if there is no end limit.
+ * @property attemptDuration the time limit of a single attempt, or `null` if there is no individual limit.
  * @property trikStudioVersion the TRIK Studio version of the contest, or `null` if not set yet.
  * @property sharedTo the ids of the communities the contest is shared to.
  * @since %CURRENT_VERSION%
@@ -92,8 +91,6 @@ class ContestDataBuilder : Builder<ContestData> {
         val name = requireField(name) { ::name }
         val description = requireField(description) { ::description }
         val owner = requireField(owner) { ::owner }
-        val contestDuration = requireField(contestDuration) { ::contestDuration }
-        val attemptDuration = requireField(attemptDuration) { ::attemptDuration }
         val trikStudioVersion = requireField(trikStudioVersion) { ::trikStudioVersion }
 
         return ContestData(

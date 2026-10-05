@@ -133,6 +133,53 @@ class TaskApiTests {
 
             Assertions.assertEquals("Updated Contest", copy.data.name)
         }
+
+        @Test
+        fun `should clear both limits if withData sets them to null`() {
+            val copy = origin.withData {
+                contestDuration = null
+                attemptDuration = null
+            }
+
+            Assertions.assertNull(copy.data.contestDuration)
+            Assertions.assertNull(copy.data.attemptDuration)
+            Assertions.assertNull(copy.data.endsAt)
+            Assertions.assertEquals(origin.data.startsAt, copy.data.startsAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertNotNull(origin.data.contestDuration)
+        }
+
+        @Test
+        fun `should preserve absent limits when withData changes another field`() {
+            val unlimited = origin.withData {
+                contestDuration = null
+                attemptDuration = null
+            }
+
+            val copy = unlimited.withData { name = "Unlimited contest" }
+
+            Assertions.assertNull(copy.data.contestDuration)
+            Assertions.assertNull(copy.data.attemptDuration)
+            Assertions.assertEquals(unlimited.version, copy.version)
+        }
+
+        @Test
+        fun `should set finite limits on a contest without limits`() {
+            val unlimited = origin.withData {
+                contestDuration = null
+                attemptDuration = null
+            }
+
+            val copy = unlimited.withData {
+                contestDuration = Duration.ofMinutes(10)
+                attemptDuration = Duration.ofMinutes(5)
+            }
+
+            Assertions.assertEquals(Duration.ofMinutes(10), copy.data.contestDuration)
+            Assertions.assertEquals(Duration.ofMinutes(5), copy.data.attemptDuration)
+            Assertions.assertEquals(Instant.ofEpochSecond(5600), copy.data.endsAt)
+            Assertions.assertNull(unlimited.data.contestDuration)
+        }
     }
 
     @Nested

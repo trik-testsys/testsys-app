@@ -10,6 +10,8 @@ import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.single.SupervisorDataJpaEntity
 import tech.testsys.infra.database.internal.utils.populateFields
 import tech.testsys.infra.database.internal.utils.requireVersion
+import tech.testsys.infra.database.internal.utils.toDomain
+import tech.testsys.infra.database.internal.utils.toJpaEnum
 
 /**
  * Mapping between [Supervisor] and its [UserJpaEntity] and [SupervisorDataJpaEntity] rows.
@@ -31,7 +33,10 @@ object SupervisorMapping {
             "SupervisorData ${dataJpaEntity.id} bound to user ${dataJpaEntity.userId} != ${userJpaEntity.id}"
         }
         data {
-            accessToken = userJpaEntity.accessToken
+            storedAccessToken(
+                value = userJpaEntity.accessToken,
+                algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
+            )
             name = userJpaEntity.name
         }
     }
@@ -44,6 +49,7 @@ object SupervisorMapping {
     fun toUserJpaEntity(data: SupervisorData) = UserJpaEntity(
         name = data.name,
         accessToken = data.accessToken,
+        accessTokenHashAlgorithm = data.accessTokenHashAlgorithm.toJpaEnum(),
         email = null,
         type = UserTypeJpaEnum.SINGLE_ROLE,
     )
@@ -56,6 +62,7 @@ object SupervisorMapping {
     fun toUserJpaEntity(entity: Supervisor, current: UserJpaEntity) = UserJpaEntity(
         name = entity.data.name,
         accessToken = entity.data.accessToken,
+        accessTokenHashAlgorithm = entity.data.accessTokenHashAlgorithm.toJpaEnum(),
         email = current.email,
         type = UserTypeJpaEnum.SINGLE_ROLE,
         id = entity.id.value,

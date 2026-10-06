@@ -10,6 +10,8 @@ import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ParticipantDataJpaEntity
 import tech.testsys.infra.database.internal.utils.populateFields
 import tech.testsys.infra.database.internal.utils.requireVersion
+import tech.testsys.infra.database.internal.utils.toDomain
+import tech.testsys.infra.database.internal.utils.toJpaEnum
 
 /**
  * Mapping between [Participant] and its [UserJpaEntity] and [ParticipantDataJpaEntity] rows.
@@ -30,7 +32,10 @@ object ParticipantMapping {
             "ParticipantData ${dataJpaEntity.id} bound to user ${dataJpaEntity.userId} != ${userJpaEntity.id}"
         }
         data {
-            accessToken = userJpaEntity.accessToken
+            storedAccessToken(
+                value = userJpaEntity.accessToken,
+                algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
+            )
             name = userJpaEntity.name
             competition(dataJpaEntity.competitionId)
         }
@@ -44,6 +49,7 @@ object ParticipantMapping {
     fun toUserJpaEntity(data: ParticipantData) = UserJpaEntity(
         name = data.name,
         accessToken = data.accessToken,
+        accessTokenHashAlgorithm = data.accessTokenHashAlgorithm.toJpaEnum(),
         email = null,
         type = UserTypeJpaEnum.SINGLE_ROLE,
     )
@@ -56,6 +62,7 @@ object ParticipantMapping {
     fun toUserJpaEntity(entity: Participant, current: UserJpaEntity) = UserJpaEntity(
         name = entity.data.name,
         accessToken = entity.data.accessToken,
+        accessTokenHashAlgorithm = entity.data.accessTokenHashAlgorithm.toJpaEnum(),
         email = current.email,
         type = UserTypeJpaEnum.SINGLE_ROLE,
         id = entity.id.value,

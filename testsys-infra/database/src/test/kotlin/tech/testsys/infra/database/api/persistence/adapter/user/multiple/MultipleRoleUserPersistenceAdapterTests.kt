@@ -13,6 +13,7 @@ import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepos
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CompatibleUserRole
 import tech.testsys.domain.model.user.Developer
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Judge
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -21,6 +22,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Student
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.AdministratorDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.DeveloperDataJpaEntityRepository
@@ -57,7 +59,7 @@ class MultipleRoleUserPersistenceAdapterTests :
     override fun newData(): MultipleRoleUserData {
         val communityId = fixtures.community().id.value
         return multipleRoleUserData {
-            accessToken = fixtures.unique("token")
+            accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
             name = fixtures.unique("User")
             email = fixtures.email("user")
             roles {
@@ -73,7 +75,7 @@ class MultipleRoleUserPersistenceAdapterTests :
     override fun modified(entity: MultipleRoleUser): MultipleRoleUser {
         val communityId = fixtures.community().id.value
         return entity.withData {
-            accessToken = fixtures.unique("token")
+            accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
             name = fixtures.unique("Renamed user")
             email = fixtures.email("renamed")
             roles {
@@ -97,6 +99,7 @@ class MultipleRoleUserPersistenceAdapterTests :
 
     override fun assertSameData(expected: MultipleRoleUser, actual: MultipleRoleUser) {
         assertEquals(expected.data.accessToken, actual.data.accessToken)
+        assertEquals(expected.data.accessTokenHashAlgorithm, actual.data.accessTokenHashAlgorithm)
         assertEquals(expected.data.name, actual.data.name)
         assertEquals(expected.data.email, actual.data.email)
         assertSameRoles(expected.data.roles, actual.data.roles)
@@ -136,7 +139,7 @@ class MultipleRoleUserPersistenceAdapterTests :
         val first = fixtures.community().id.value
         val second = fixtures.community().id.value
         val data = multipleRoleUserData {
-            accessToken = fixtures.unique("token")
+            accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
             name = fixtures.unique("Jack of all trades")
             email = fixtures.email("jack")
             roles {
@@ -246,7 +249,7 @@ class MultipleRoleUserPersistenceAdapterTests :
     fun `should ignore role projections given on save`() {
         val saved = repository.save(
             multipleRoleUserData {
-                accessToken = fixtures.unique("token")
+                accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
                 name = fixtures.unique("User")
                 email = fixtures.email("user")
                 roles {
@@ -257,6 +260,24 @@ class MultipleRoleUserPersistenceAdapterTests :
 
         assertEquals(emptyList(), saved.role<Developer>().data.tasks.ids)
         assertEquals(emptyList(), assertNotNull(repository.findById(saved.id)).role<Developer>().data.tasks.ids)
+    }
+
+    @Test
+    fun `should store the access code and its algorithm through save and update`() {
+        val data = newData()
+
+        val saved = repository.save(data)
+        val modified = modified(saved)
+        val updated = repository.update(modified)
+        val found = requireNotNull(repository.findById(updated.id))
+        val row = userJpaEntityRepository.findById(updated.id.value).orElseThrow()
+
+        assertEquals(data.accessToken, saved.data.accessToken)
+        assertEquals(HashAlgorithm.Identity, saved.data.accessTokenHashAlgorithm)
+        assertEquals(modified.data.accessToken, found.data.accessToken)
+        assertEquals(HashAlgorithm.Identity, found.data.accessTokenHashAlgorithm)
+        assertEquals(modified.data.accessToken, row.accessToken)
+        assertEquals(HashAlgorithmJpaEnum.IDENTITY, row.accessTokenHashAlgorithm)
     }
 
     @Test

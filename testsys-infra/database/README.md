@@ -78,6 +78,23 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 Удаление Задачи очищает эти строки, сохраняя версии Ресурсов и их файлы. Таблица хранит только текущую
 принадлежность; история владельцев цепочки не сохраняется. Операций переноса или удаления Ресурсов пока нет.
 
+## Коды-доступа Пользователей
+
+`ts_user.access_token_hash_algorithm` хранит алгоритм строкой из `HashAlgorithmJpaEnum` рядом с `access_token`
+([User.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/entity/user/User.kt)).
+Миграция [changelog.16-user-access-token-hash-algorithm.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.16-user-access-token-hash-algorithm.xml)
+заполняет существующие записи значением `IDENTITY`, затем устанавливает `NOT NULL`.
+Постоянного значения по умолчанию у колонки нет: при записи алгоритм передаётся явно.
+
+Маппинги Пользователей читают значение и алгоритм через `storedAccessToken(value, algorithm)`.
+При записи оба поля переносятся из доменных данных без хэширования. Ввод исходного КД описан в разделе
+[«Пользователи»](../../testsys-domain/README.md#пользователи).
+
+Ограничение `uk_ts_user_access_token` обеспечивает уникальность исходных КД благодаря `Identity`.
+Поэтому `UserJpaEntity` помечен `@RawAccessTokenDependency`. При переходе к хэшированию с индивидуальной солью
+это ограничение нужно пересмотреть. Семантика сохранённого КД и правило аннотации — в разделе
+[«Пользователи»](../../testsys-domain/README.md#пользователи).
+
 ## Схема БД
 
 - Схемой управляет Liquibase: changelog'и лежат в `src/main/resources/db/changelog/changes/<версия>/`.

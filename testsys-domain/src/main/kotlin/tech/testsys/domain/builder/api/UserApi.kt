@@ -114,7 +114,7 @@ private fun ParticipantData.toBuilder(): ParticipantDataBuilder {
     val thisData = this
     return ParticipantDataBuilder().apply {
         competition = thisData.competition.id
-        accessToken = thisData.accessToken
+        storedAccessToken(value = thisData.accessToken, algorithm = thisData.accessTokenHashAlgorithm)
         name = thisData.name
     }
 }
@@ -136,7 +136,7 @@ private fun ObserverData.toBuilder(): ObserverDataBuilder {
     val thisData = this
     return ObserverDataBuilder().apply {
         community = thisData.community.id
-        accessToken = thisData.accessToken
+        storedAccessToken(value = thisData.accessToken, algorithm = thisData.accessTokenHashAlgorithm)
         competitions = thisData.competitions.ids.toMutableList()
         name = thisData.name
     }
@@ -158,7 +158,7 @@ fun Observer.withData(builder: ObserverDataBuilder.() -> Unit): Observer {
 private fun MultipleRoleUserData.toBuilder(): MultipleRoleUserDataBuilder {
     val thisData = this
     return MultipleRoleUserDataBuilder().apply {
-        accessToken = thisData.accessToken
+        storedAccessToken(value = thisData.accessToken, algorithm = thisData.accessTokenHashAlgorithm)
         name = thisData.name
         email = thisData.email
         roles { addAll(thisData.roles) }
@@ -181,7 +181,7 @@ fun MultipleRoleUser.withData(builder: MultipleRoleUserDataBuilder.() -> Unit): 
 private fun SupervisorData.toBuilder(): SupervisorDataBuilder {
     val thisData = this
     return SupervisorDataBuilder().apply {
-        accessToken = thisData.accessToken
+        storedAccessToken(value = thisData.accessToken, algorithm = thisData.accessTokenHashAlgorithm)
         name = thisData.name
     }
 }

@@ -6,11 +6,13 @@ import tech.testsys.domain.builder.api.supervisor
 import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SupervisorDataJpaEntityRepository
@@ -34,12 +36,12 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     private lateinit var singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository
 
     override fun newData() = supervisorData {
-        accessToken = fixtures.unique("token")
+        accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
         name = fixtures.unique("Supervisor")
     }
 
     override fun modified(entity: Supervisor) = entity.withData {
-        accessToken = fixtures.unique("token")
+        accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
         name = fixtures.unique("Renamed supervisor")
     }
 
@@ -53,7 +55,26 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
 
     override fun assertSameData(expected: Supervisor, actual: Supervisor) {
         assertEquals(expected.data.accessToken, actual.data.accessToken)
+        assertEquals(expected.data.accessTokenHashAlgorithm, actual.data.accessTokenHashAlgorithm)
         assertEquals(expected.data.name, actual.data.name)
+    }
+
+    @Test
+    fun `should store the access code and its algorithm through save and update`() {
+        val data = newData()
+
+        val saved = repository.save(data)
+        val modified = modified(saved)
+        val updated = repository.update(modified)
+        val found = requireNotNull(repository.findById(updated.id))
+        val row = userJpaEntityRepository.findById(updated.id.value).orElseThrow()
+
+        assertEquals(data.accessToken, saved.data.accessToken)
+        assertEquals(HashAlgorithm.Identity, saved.data.accessTokenHashAlgorithm)
+        assertEquals(modified.data.accessToken, found.data.accessToken)
+        assertEquals(HashAlgorithm.Identity, found.data.accessTokenHashAlgorithm)
+        assertEquals(modified.data.accessToken, row.accessToken)
+        assertEquals(HashAlgorithmJpaEnum.IDENTITY, row.accessTokenHashAlgorithm)
     }
 
     @Test

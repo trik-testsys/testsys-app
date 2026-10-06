@@ -4,18 +4,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import tech.testsys.domain.model.EntityVersion
-import tech.testsys.domain.model.LazyEntity
-import tech.testsys.domain.model.LazyEntityList
-import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.group.CompetitionId
-import tech.testsys.domain.model.task.TaskId
-import tech.testsys.domain.model.user.Administrator
-import tech.testsys.domain.model.user.Developer
-import tech.testsys.domain.model.user.DeveloperData
-import tech.testsys.domain.model.user.MultipleRoleUserData
-import tech.testsys.domain.model.user.ObserverData
-import tech.testsys.domain.model.user.ParticipantData
-import tech.testsys.domain.model.user.SupervisorData
+import tech.testsys.domain.model.user.HashAlgorithm
 import java.time.Instant
 
 class UserApiTests {
@@ -27,11 +16,11 @@ class UserApiTests {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
             version = EntityVersion(7)
-            data = ParticipantData(
-                competition = LazyEntity(CompetitionId(10)),
-                accessToken = "participant-token",
-                name = "Participant",
-            )
+            data = participantData {
+                competition(10)
+                accessToken("participant-token", algorithm = HashAlgorithm.Identity)
+                name = "Participant"
+            }
         }
 
         @Test
@@ -43,6 +32,7 @@ class UserApiTests {
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.competition.id, copy.data.competition.id)
             Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
         }
 
@@ -61,12 +51,12 @@ class UserApiTests {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
             version = EntityVersion(7)
-            data = ObserverData(
-                community = LazyEntity(CommunityId(7)),
-                competitions = LazyEntityList(listOf(CompetitionId(10), CompetitionId(20))),
-                accessToken = "observer-token",
-                name = "Observer",
-            )
+            data = observerData {
+                community(7)
+                competitions(listOf(10L, 20L))
+                accessToken("observer-token", algorithm = HashAlgorithm.Identity)
+                name = "Observer"
+            }
         }
 
         @Test
@@ -78,15 +68,17 @@ class UserApiTests {
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.community.id, copy.data.community.id)
             Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.competitions.ids, copy.data.competitions.ids)
         }
 
         @Test
         fun `should change accessToken if withData sets accessToken`() {
-            val copy = origin.withData { accessToken = "new-token" }
+            val copy = origin.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
 
             Assertions.assertEquals("new-token", copy.data.accessToken)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
         }
     }
 
@@ -97,23 +89,20 @@ class UserApiTests {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
             version = EntityVersion(7)
-            data = MultipleRoleUserData(
-                accessToken = "user-token",
-                name = "Alice",
-                email = "alice@example.com",
-                roles = listOf(
-                    Developer(
-                        memberOf = LazyEntityList(listOf(CommunityId(10))),
-                        data = DeveloperData(
-                            tasks = LazyEntityList(listOf(TaskId(1))),
-                            contests = LazyEntityList(emptyList()),
-                        ),
-                    ),
-                    Administrator(
-                        memberOf = LazyEntityList(emptyList()),
-                    ),
-                ),
-            )
+            data = multipleRoleUserData {
+                accessToken("user-token", algorithm = HashAlgorithm.Identity)
+                name = "Alice"
+                email = "alice@example.com"
+                roles {
+                    developer {
+                        memberOf(listOf(10))
+                        data = developerData {
+                            tasks(listOf(1))
+                        }
+                    }
+                    administrator {}
+                }
+            }
         }
 
         @Test
@@ -124,6 +113,7 @@ class UserApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.email, copy.data.email)
             Assertions.assertEquals(origin.data.roles, copy.data.roles)
@@ -131,9 +121,10 @@ class UserApiTests {
 
         @Test
         fun `should change accessToken if withData sets accessToken`() {
-            val copy = origin.withData { accessToken = "new-token" }
+            val copy = origin.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
 
             Assertions.assertEquals("new-token", copy.data.accessToken)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
         }
     }
 
@@ -144,10 +135,10 @@ class UserApiTests {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
             version = EntityVersion(7)
-            data = SupervisorData(
-                accessToken = "supervisor-token",
-                name = "Supervisor",
-            )
+            data = supervisorData {
+                accessToken("supervisor-token", algorithm = HashAlgorithm.Identity)
+                name = "Supervisor"
+            }
         }
 
         @Test
@@ -158,14 +149,16 @@ class UserApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
         }
 
         @Test
         fun `should change accessToken if withData sets accessToken`() {
-            val copy = origin.withData { accessToken = "new-token" }
+            val copy = origin.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
 
             Assertions.assertEquals("new-token", copy.data.accessToken)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
         }
     }
 }

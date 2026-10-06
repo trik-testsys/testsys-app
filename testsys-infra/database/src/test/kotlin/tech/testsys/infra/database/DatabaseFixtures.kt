@@ -62,6 +62,7 @@ import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
@@ -109,7 +110,7 @@ class DatabaseFixtures(
 
     fun multipleRoleUser(roles: MultipleRoleUserDataBuilder.() -> Unit): MultipleRoleUser = multipleRoleUsers.save(
         multipleRoleUserData {
-            accessToken = unique("token")
+            accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
             name = unique("User")
             email = email("user")
             roles()
@@ -129,7 +130,7 @@ class DatabaseFixtures(
         return participants.save(
             participantData {
                 competition(competitionId)
-                accessToken = unique("token")
+                accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
                 name = unique("Participant")
             },
         )
@@ -140,7 +141,7 @@ class DatabaseFixtures(
         return observers.save(
             observerData {
                 community(communityId)
-                accessToken = unique("token")
+                accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
                 name = unique("Observer")
             },
         )
@@ -148,7 +149,7 @@ class DatabaseFixtures(
 
     fun supervisor(): Supervisor = supervisors.save(
         supervisorData {
-            accessToken = unique("token")
+            accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
             name = unique("Supervisor")
         },
     )

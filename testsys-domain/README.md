@@ -87,6 +87,31 @@
 
 Смысл Фиксированных и Нефиксированных Ролей — в [definitions.md](../docs/domain/definitions.md).
 
+`UserData.accessToken` хранит представление Кода-доступа по алгоритму `accessTokenHashAlgorithm`
+([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)). Сейчас доступен только `HashAlgorithm.Identity`:
+он оставляет Код-доступа без изменений, поэтому сохранённое значение совпадает с исходным КД.
+`Identity` — временное решение и не обеспечивает криптографическую защиту.
+
+Объявления, поведение которых зависит от совпадения сохранённого значения с исходным КД, помечаются
+`@RawAccessTokenDependency` с объяснением зависимости в обязательном параметре `reason`
+([RawAccessTokenDependency.kt](src/main/kotlin/tech/testsys/domain/model/user/RawAccessTokenDependency.kt)).
+При замене `Identity` все отмеченные объявления должны быть проверены и исправлены до включения нового алгоритма.
+Простое копирование значения между объектами такой зависимости не создаёт. При реализации фич
+`testsys.user.multi.admin.viewUser` и `testsys.user.multi.manager.competition.viewCompetition` методы,
+показывающие исходный КД, должны получить эту аннотацию.
+
+Все четыре билдера данных Пользователей наследуют `UserDataBuilder`
+([UserBuilder.kt](src/main/kotlin/tech/testsys/domain/builder/user/UserBuilder.kt)).
+Метод `accessToken(rawAccessToken, algorithm)` вызывает общую функцию `hashAccessToken`
+([AccessTokenHashing.kt](src/main/kotlin/tech/testsys/domain/model/user/AccessTokenHashing.kt)).
+Она применяет переданный алгоритм и возвращает значение вместе с ним в `AccessTokenHash`.
+Алгоритм исходного КД передаётся явно; сейчас доступен только `HashAlgorithm.Identity`.
+Метод `storedAccessToken(value, algorithm)` восстанавливает сохранённую пару без хэширования;
+алгоритм передаётся явно. `build()` проверяет наличие пары, но не хэширует её.
+
+`withData` переносит сохранённую пару. Для замены КД вызывается `accessToken(newToken, algorithm)` внутри блока `withData`.
+Конструкторы классов данных и их `copy` принимают уже сохранённые значения.
+
 ## Порты
 
 - `EntityRepository<Data, Id, Entity>` объединяет `EntityFinder`, `EntityLoader`, `EntitySaver` и `EntityRemover`

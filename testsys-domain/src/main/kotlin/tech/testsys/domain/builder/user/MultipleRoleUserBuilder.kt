@@ -302,18 +302,16 @@ class ManagerBuilder : CompatibleUserRoleBuilderWithData<Manager, ManagerData, M
 private typealias Roles = MutableList<CompatibleUserRole>
 
 /**
- * Builder of [MultipleRoleUserData]. Required: [accessToken], [name], [email]. Roles are added inside a [roles] block.
+ * Builder of [MultipleRoleUserData]. Required: [accessToken] or [storedAccessToken], [name], [email].
+ * Roles are added inside a [roles] block.
  *
- * @property accessToken the access code the user logs in with, or `null` if not set yet.
  * @property name the name of the user, or `null` if not set yet.
  * @property email the e-mail address of the user, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
-class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
+class MultipleRoleUserDataBuilder : UserDataBuilder<MultipleRoleUserData>() {
 
     private var roles: Roles = mutableListOf()
-
-    var accessToken: String? = null
 
     var name: String? = null
 
@@ -390,7 +388,8 @@ class MultipleRoleUserDataBuilder : Builder<MultipleRoleUserData> {
 
     override fun build() = MultipleRoleUserData(
         roles = roles,
-        accessToken = requireField(accessToken) { ::accessToken },
+        accessToken = requireAccessTokenHash().value,
+        accessTokenHashAlgorithm = requireAccessTokenHash().algorithm,
         name = requireField(name) { ::name },
         email = requireField(email) { ::email },
     )

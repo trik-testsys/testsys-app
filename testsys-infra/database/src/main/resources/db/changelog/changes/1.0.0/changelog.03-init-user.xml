@@ -25,6 +25,9 @@
             <column name="access_token" type="VARCHAR(255)">
                 <constraints nullable="false" unique="true" uniqueConstraintName="uk_ts_user_access_token"/>
             </column>
+            <column name="access_token_hash_algorithm" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
             <column name="email" type="VARCHAR(255)">
                 <constraints unique="true" uniqueConstraintName="uk_ts_user_email"/>
             </column>

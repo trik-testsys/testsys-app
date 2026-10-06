@@ -82,9 +82,9 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 
 `ts_user.access_token_hash_algorithm` хранит алгоритм строкой из `HashAlgorithmJpaEnum` рядом с `access_token`
 ([User.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/entity/user/User.kt)).
-Миграция [changelog.16-user-access-token-hash-algorithm.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.16-user-access-token-hash-algorithm.xml)
-заполняет существующие записи значением `IDENTITY`, затем устанавливает `NOT NULL`.
-Постоянного значения по умолчанию у колонки нет: при записи алгоритм передаётся явно.
+Колонка создаётся с `NOT NULL` в
+[changelog.03-init-user.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.03-init-user.xml).
+Значения по умолчанию у колонки нет: при записи алгоритм передаётся явно.
 
 Маппинги Пользователей читают значение и алгоритм через `storedAccessToken(value, algorithm)`.
 При записи оба поля переносятся из доменных данных без хэширования. Ввод исходного КД описан в разделе

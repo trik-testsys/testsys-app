@@ -1,11 +1,15 @@
 package tech.testsys.domain.builder.user
 
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import tech.testsys.domain.builder.DomainEntityBuilderTests
 import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.judgeData
 import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.studentData
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 
@@ -15,7 +19,7 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
 ) {
     override fun buildDataWithAllFields() = listOf(
         multipleRoleUserData {
-            accessToken = "token"
+            accessToken("token", algorithm = HashAlgorithm.Identity)
             name = "Alice"
             email = "alice@example.com"
             roles {
@@ -26,7 +30,7 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
             }
         },
         multipleRoleUserData {
-            accessToken = "token"
+            accessToken("token", algorithm = HashAlgorithm.Identity)
             name = "Bob"
             email = "bob@example.com"
             roles {
@@ -40,7 +44,7 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
             }
         },
         multipleRoleUserData {
-            accessToken = "token"
+            accessToken("token", algorithm = HashAlgorithm.Identity)
             name = "Carol"
             email = "carol@example.com"
             roles {
@@ -53,7 +57,7 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
             }
         },
         multipleRoleUserData {
-            accessToken = "token"
+            accessToken("token", algorithm = HashAlgorithm.Identity)
             name = "Dan"
             email = "dan@example.com"
             roles {
@@ -67,7 +71,7 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
             }
         },
         multipleRoleUserData {
-            accessToken = "token"
+            accessToken("token", algorithm = HashAlgorithm.Identity)
             name = "Eve"
             email = "eve@example.com"
             roles {
@@ -75,7 +79,7 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
             }
         },
         multipleRoleUserData {
-            accessToken = "token"
+            accessToken("token", algorithm = HashAlgorithm.Identity)
             name = "Frank"
             email = "frank@example.com"
             roles {
@@ -93,4 +97,29 @@ class MultipleRoleUserBuilderTests : DomainEntityBuilderTests<MultipleRoleUser, 
             }
         },
     )
+}
+
+class MultipleRoleUserDataBuilderTests {
+
+    @Test
+    fun `should build data with the provided hash algorithm`() {
+        val data = multipleRoleUserData {
+            email = "alice@example.com"
+            accessToken("token", algorithm = HashAlgorithm.Identity)
+            name = "User"
+        }
+
+        assertEquals("token", data.accessTokenHash.value)
+        assertEquals(HashAlgorithm.Identity, data.accessTokenHash.algorithm)
+    }
+
+    @Test
+    fun `should fail to build data if the access token is not set`() {
+        assertThrows<IllegalArgumentException> {
+            multipleRoleUserData {
+                email = "alice@example.com"
+                name = "User"
+            }
+        }
+    }
 }

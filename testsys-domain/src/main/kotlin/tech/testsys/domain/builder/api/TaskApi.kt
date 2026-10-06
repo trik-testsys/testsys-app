@@ -280,7 +280,6 @@ private fun SubmissionData.toBuilder(): SubmissionDataBuilder {
         author = thisData.author.id
         solution = thisData.solution.id
         task = thisData.task.id
-        trikStudioVersion = thisData.trikStudioVersion
         judgmentOrders = thisData.judgmentOrders.ids.toMutableList()
 
         when (val originStatus = thisData.status) {
@@ -298,7 +297,9 @@ private fun SubmissionData.toBuilder(): SubmissionDataBuilder {
         }
 
         when (val originKind = thisData.kind) {
-            SubmissionKind.DeveloperSolutionTest -> kind.developerSolutionTest()
+            is SubmissionKind.DeveloperSolutionTest -> kind.developerSolutionTest {
+                trikStudioVersion = originKind.trikStudioVersion
+            }
             is SubmissionKind.Grading -> kind.grading { contest = originKind.contest.id }
         }
     }

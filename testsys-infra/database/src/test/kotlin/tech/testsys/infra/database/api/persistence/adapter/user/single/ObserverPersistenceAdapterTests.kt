@@ -6,11 +6,13 @@ import tech.testsys.domain.builder.api.observer
 import tech.testsys.domain.builder.api.observerData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.CompetitionToObserverJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.ObserverDataJpaEntityRepository
@@ -43,7 +45,7 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val competitionIds = listOf(fixtures.competition().id.value, fixtures.competition().id.value)
         return observerData {
             community(communityId)
-            accessToken = fixtures.unique("token")
+            accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
             name = fixtures.unique("Observer")
             competitions(competitionIds)
         }
@@ -55,7 +57,7 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val newCompetition = fixtures.competition().id
         return entity.withData {
             community(newCommunityId)
-            accessToken = fixtures.unique("token")
+            accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
             name = fixtures.unique("Renamed observer")
             competitions = mutableListOf(keptCompetition, newCompetition)
         }
@@ -70,7 +72,7 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
     override fun idOf(value: Long) = SingleRoleUserId(value)
 
     override fun assertSameData(expected: Observer, actual: Observer) {
-        assertEquals(expected.data.accessToken, actual.data.accessToken)
+        assertEquals(expected.data.accessTokenHash, actual.data.accessTokenHash)
         assertEquals(expected.data.name, actual.data.name)
         assertEquals(expected.data.community.id, actual.data.community.id)
         assertEquals(expected.data.competitions.ids.toSet(), actual.data.competitions.ids.toSet())
@@ -84,7 +86,7 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val saved = repository.save(
             observerData {
                 community(communityId)
-                accessToken = fixtures.unique("token")
+                accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
                 name = fixtures.unique("Observer")
                 competitions(listOf(competitionId, competitionId))
             },
@@ -93,6 +95,24 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         assertEquals(listOf(competitionId), saved.data.competitions.ids.map { it.value })
         assertEquals(listOf(competitionId), assertNotNull(repository.findById(saved.id)).data.competitions.ids.map { it.value })
         assertEquals(1, competitionToObserverJpaEntityRepository.findAllByObserverId(saved.id.value).size)
+    }
+
+    @Test
+    fun `should store the access code and its algorithm through save and update`() {
+        val data = newData()
+
+        val saved = repository.save(data)
+        val modified = modified(saved)
+        val updated = repository.update(modified)
+        val found = requireNotNull(repository.findById(updated.id))
+        val row = userJpaEntityRepository.findById(updated.id.value).orElseThrow()
+
+        assertEquals(data.accessTokenHash.value, saved.data.accessTokenHash.value)
+        assertEquals(HashAlgorithm.Identity, saved.data.accessTokenHash.algorithm)
+        assertEquals(modified.data.accessTokenHash.value, found.data.accessTokenHash.value)
+        assertEquals(HashAlgorithm.Identity, found.data.accessTokenHash.algorithm)
+        assertEquals(modified.data.accessTokenHash.value, row.accessToken)
+        assertEquals(HashAlgorithmJpaEnum.IDENTITY, row.accessTokenHashAlgorithm)
     }
 
     @Test

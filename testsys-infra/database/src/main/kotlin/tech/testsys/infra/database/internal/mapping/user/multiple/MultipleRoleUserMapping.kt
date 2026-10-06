@@ -9,6 +9,7 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -16,6 +17,8 @@ import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.utils.populateFields
 import tech.testsys.infra.database.internal.utils.requireVersion
+import tech.testsys.infra.database.internal.utils.toDomain
+import tech.testsys.infra.database.internal.utils.toJpaEnum
 
 /**
  * Role rows of a [MultipleRoleUser] collected from the per-role tables; a `null` role is not held by the user.
@@ -115,7 +118,12 @@ object MultipleRoleUserMapping {
     fun toDomain(userJpaEntity: UserJpaEntity, roles: MultipleRoleUserRoles) = multipleRoleUser {
         populateFields(userJpaEntity)
         data {
-            accessToken = userJpaEntity.accessToken
+            storedAccessToken(
+                AccessTokenHash(
+                    value = userJpaEntity.accessToken,
+                    algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
+                ),
+            )
             name = userJpaEntity.name
             email = requireNotNull(userJpaEntity.email) {
                 "User ${userJpaEntity.id} is MULTIPLE_ROLE but email is null"
@@ -170,7 +178,8 @@ object MultipleRoleUserMapping {
      */
     fun toUserJpaEntity(data: MultipleRoleUserData) = UserJpaEntity(
         name = data.name,
-        accessToken = data.accessToken,
+        accessToken = data.accessTokenHash.value,
+        accessTokenHashAlgorithm = data.accessTokenHash.algorithm.toJpaEnum(),
         email = data.email,
         type = UserTypeJpaEnum.MULTIPLE_ROLE,
     )
@@ -182,7 +191,8 @@ object MultipleRoleUserMapping {
      */
     fun toUserJpaEntity(entity: MultipleRoleUser, current: UserJpaEntity) = UserJpaEntity(
         name = entity.data.name,
-        accessToken = entity.data.accessToken,
+        accessToken = entity.data.accessTokenHash.value,
+        accessTokenHashAlgorithm = entity.data.accessTokenHash.algorithm.toJpaEnum(),
         email = entity.data.email,
         type = UserTypeJpaEnum.MULTIPLE_ROLE,
         id = entity.id.value,

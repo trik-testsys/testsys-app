@@ -31,7 +31,7 @@
   Домен передаёт токен обратно в `update` и никогда не сравнивает и не изменяет. Устаревший токен приводит
   к ошибке `update`.
 - Часть полей `XData` фиксируется при создании: `owner` у Задачи, Тура, Класса, Соревнования и Сообщества;
-  `author`, `solution`, `task`, `trikStudioVersion` и `kind` у Посылки; `judge` и `submission`
+  `author`, `solution`, `task` и `kind` со всеми его полями у Посылки; `judge` и `submission`
   у Судейского вердикта (`JudgmentOrder`); `versionBucket` у Полигона, Условия, Упражнения и Авторского
   Решения. `save` их записывает, а `update` игнорирует значение из переданной сущности и оставляет сохранённое.
   В KDoc такое поле помечено «fixed on creation and ignored on update».
@@ -86,6 +86,31 @@
 - `SingleRoleUser` — один из `Participant`, `Observer`, `Supervisor`.
 
 Смысл Фиксированных и Нефиксированных Ролей — в [definitions.md](../docs/domain/definitions.md).
+
+`UserData.accessTokenHash` хранит представление Кода-доступа и алгоритм в одном объекте `AccessTokenHash`
+([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)). Сейчас доступен только `HashAlgorithm.Identity`:
+он оставляет Код-доступа без изменений, поэтому сохранённое значение совпадает с исходным КД.
+`Identity` — временное решение и не обеспечивает криптографическую защиту.
+
+Объявления, поведение которых зависит от совпадения сохранённого значения с исходным КД, помечаются
+`@RawAccessTokenDependency` с объяснением зависимости в обязательном параметре `reason`
+([RawAccessTokenDependency.kt](src/main/kotlin/tech/testsys/domain/model/user/RawAccessTokenDependency.kt)).
+При замене `Identity` все отмеченные объявления должны быть проверены и исправлены до включения нового алгоритма.
+Простое копирование значения между объектами такой зависимости не создаёт. При реализации фич
+`testsys.user.multi.admin.viewUser` и `testsys.user.multi.manager.competition.viewCompetition` методы,
+показывающие исходный КД, должны получить эту аннотацию.
+
+Все четыре билдера данных Пользователей наследуют `UserDataBuilder`
+([UserBuilder.kt](src/main/kotlin/tech/testsys/domain/builder/user/UserBuilder.kt)).
+Метод `accessToken(rawAccessToken, algorithm)` вызывает функцию `AccessTokenHash.hashAccessToken`
+([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)).
+Она применяет переданный алгоритм и возвращает значение вместе с ним в `AccessTokenHash`.
+Алгоритм исходного КД передаётся явно; сейчас доступен только `HashAlgorithm.Identity`.
+Метод `storedAccessToken(hash)` принимает готовый `AccessTokenHash` без хэширования.
+`build()` проверяет наличие объекта, но не хэширует его.
+
+`withData` переносит сохранённый `AccessTokenHash`. Для замены КД вызывается `accessToken(newToken, algorithm)` внутри блока `withData`.
+Конструкторы классов данных и их `copy` принимают готовый `AccessTokenHash`.
 
 ## Порты
 

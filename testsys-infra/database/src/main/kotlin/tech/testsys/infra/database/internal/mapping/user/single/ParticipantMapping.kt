@@ -2,6 +2,7 @@ package tech.testsys.infra.database.internal.mapping.user.single
 
 import tech.testsys.domain.builder.api.participant
 import tech.testsys.domain.builder.data
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -10,6 +11,8 @@ import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ParticipantDataJpaEntity
 import tech.testsys.infra.database.internal.utils.populateFields
 import tech.testsys.infra.database.internal.utils.requireVersion
+import tech.testsys.infra.database.internal.utils.toDomain
+import tech.testsys.infra.database.internal.utils.toJpaEnum
 
 /**
  * Mapping between [Participant] and its [UserJpaEntity] and [ParticipantDataJpaEntity] rows.
@@ -30,7 +33,12 @@ object ParticipantMapping {
             "ParticipantData ${dataJpaEntity.id} bound to user ${dataJpaEntity.userId} != ${userJpaEntity.id}"
         }
         data {
-            accessToken = userJpaEntity.accessToken
+            storedAccessToken(
+                AccessTokenHash(
+                    value = userJpaEntity.accessToken,
+                    algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
+                ),
+            )
             name = userJpaEntity.name
             competition(dataJpaEntity.competitionId)
         }
@@ -43,7 +51,8 @@ object ParticipantMapping {
      */
     fun toUserJpaEntity(data: ParticipantData) = UserJpaEntity(
         name = data.name,
-        accessToken = data.accessToken,
+        accessToken = data.accessTokenHash.value,
+        accessTokenHashAlgorithm = data.accessTokenHash.algorithm.toJpaEnum(),
         email = null,
         type = UserTypeJpaEnum.SINGLE_ROLE,
     )
@@ -55,7 +64,8 @@ object ParticipantMapping {
      */
     fun toUserJpaEntity(entity: Participant, current: UserJpaEntity) = UserJpaEntity(
         name = entity.data.name,
-        accessToken = entity.data.accessToken,
+        accessToken = entity.data.accessTokenHash.value,
+        accessTokenHashAlgorithm = entity.data.accessTokenHash.algorithm.toJpaEnum(),
         email = current.email,
         type = UserTypeJpaEnum.SINGLE_ROLE,
         id = entity.id.value,

@@ -25,7 +25,7 @@ import java.time.Instant
  * @since %CURRENT_VERSION%
  */
 data class MultipleRoleUserData(
-    override val accessToken: String,
+    override val accessTokenHash: AccessTokenHash,
     override val name: String,
     val email: String,
     val roles: List<CompatibleUserRole>,

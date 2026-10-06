@@ -19,6 +19,7 @@ import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Instant
@@ -31,7 +32,7 @@ fun testMultipleRoleUser(builder: MultipleRoleUserDataBuilder.() -> Unit): Multi
     data = multipleRoleUserData {
         name = "Name"
         email = "email"
-        accessToken = "token"
+        accessToken("token", algorithm = HashAlgorithm.Identity)
         builder()
     }
 }

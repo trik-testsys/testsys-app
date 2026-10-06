@@ -41,15 +41,25 @@ sealed interface HashAlgorithm {
 }
 
 /**
+ * Stored access-code representation and the algorithm that produced it.
+ *
+ * @property value the stored representation.
+ * @property algorithm the algorithm used to produce [value].
+ * @since %CURRENT_VERSION%
+ */
+data class AccessTokenHash(
+    val value: String,
+    val algorithm: HashAlgorithm,
+)
+
+/**
  * Data common to every kind of [User].
  *
- * @property accessToken the stored access-code representation; with Identity it equals the original access code.
- * @property accessTokenHashAlgorithm the algorithm used to produce the stored access-code representation.
+ * @property accessTokenHash the stored access-code representation together with its hashing algorithm.
  * @property name the name of the user.
  * @since %CURRENT_VERSION%
  */
 interface UserData {
-    val accessToken: String
-    val accessTokenHashAlgorithm: HashAlgorithm
+    val accessTokenHash: AccessTokenHash
     val name: String
 }

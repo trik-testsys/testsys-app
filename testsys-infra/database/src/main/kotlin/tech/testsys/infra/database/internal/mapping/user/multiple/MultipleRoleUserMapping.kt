@@ -9,6 +9,7 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -118,8 +119,10 @@ object MultipleRoleUserMapping {
         populateFields(userJpaEntity)
         data {
             storedAccessToken(
-                value = userJpaEntity.accessToken,
-                algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
+                AccessTokenHash(
+                    value = userJpaEntity.accessToken,
+                    algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
+                ),
             )
             name = userJpaEntity.name
             email = requireNotNull(userJpaEntity.email) {
@@ -175,8 +178,8 @@ object MultipleRoleUserMapping {
      */
     fun toUserJpaEntity(data: MultipleRoleUserData) = UserJpaEntity(
         name = data.name,
-        accessToken = data.accessToken,
-        accessTokenHashAlgorithm = data.accessTokenHashAlgorithm.toJpaEnum(),
+        accessToken = data.accessTokenHash.value,
+        accessTokenHashAlgorithm = data.accessTokenHash.algorithm.toJpaEnum(),
         email = data.email,
         type = UserTypeJpaEnum.MULTIPLE_ROLE,
     )
@@ -188,8 +191,8 @@ object MultipleRoleUserMapping {
      */
     fun toUserJpaEntity(entity: MultipleRoleUser, current: UserJpaEntity) = UserJpaEntity(
         name = entity.data.name,
-        accessToken = entity.data.accessToken,
-        accessTokenHashAlgorithm = entity.data.accessTokenHashAlgorithm.toJpaEnum(),
+        accessToken = entity.data.accessTokenHash.value,
+        accessTokenHashAlgorithm = entity.data.accessTokenHash.algorithm.toJpaEnum(),
         email = entity.data.email,
         type = UserTypeJpaEnum.MULTIPLE_ROLE,
         id = entity.id.value,

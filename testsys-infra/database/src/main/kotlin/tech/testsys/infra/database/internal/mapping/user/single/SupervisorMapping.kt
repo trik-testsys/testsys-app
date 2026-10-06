@@ -2,6 +2,7 @@ package tech.testsys.infra.database.internal.mapping.user.single
 
 import tech.testsys.domain.builder.api.supervisor
 import tech.testsys.domain.builder.data
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -34,8 +35,10 @@ object SupervisorMapping {
         }
         data {
             storedAccessToken(
-                value = userJpaEntity.accessToken,
-                algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
+                AccessTokenHash(
+                    value = userJpaEntity.accessToken,
+                    algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
+                ),
             )
             name = userJpaEntity.name
         }
@@ -48,8 +51,8 @@ object SupervisorMapping {
      */
     fun toUserJpaEntity(data: SupervisorData) = UserJpaEntity(
         name = data.name,
-        accessToken = data.accessToken,
-        accessTokenHashAlgorithm = data.accessTokenHashAlgorithm.toJpaEnum(),
+        accessToken = data.accessTokenHash.value,
+        accessTokenHashAlgorithm = data.accessTokenHash.algorithm.toJpaEnum(),
         email = null,
         type = UserTypeJpaEnum.SINGLE_ROLE,
     )
@@ -61,8 +64,8 @@ object SupervisorMapping {
      */
     fun toUserJpaEntity(entity: Supervisor, current: UserJpaEntity) = UserJpaEntity(
         name = entity.data.name,
-        accessToken = entity.data.accessToken,
-        accessTokenHashAlgorithm = entity.data.accessTokenHashAlgorithm.toJpaEnum(),
+        accessToken = entity.data.accessTokenHash.value,
+        accessTokenHashAlgorithm = entity.data.accessTokenHash.algorithm.toJpaEnum(),
         email = current.email,
         type = UserTypeJpaEnum.SINGLE_ROLE,
         id = entity.id.value,

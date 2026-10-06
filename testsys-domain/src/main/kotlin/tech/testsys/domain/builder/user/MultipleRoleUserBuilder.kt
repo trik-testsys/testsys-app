@@ -388,8 +388,7 @@ class MultipleRoleUserDataBuilder : UserDataBuilder<MultipleRoleUserData>() {
 
     override fun build() = MultipleRoleUserData(
         roles = roles,
-        accessToken = requireAccessTokenHash().value,
-        accessTokenHashAlgorithm = requireAccessTokenHash().algorithm,
+        accessTokenHash = requireAccessTokenHash(),
         name = requireField(name) { ::name },
         email = requireField(email) { ::email },
     )

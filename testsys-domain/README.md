@@ -87,7 +87,7 @@
 
 Смысл Фиксированных и Нефиксированных Ролей — в [definitions.md](../docs/domain/definitions.md).
 
-`UserData.accessToken` хранит представление Кода-доступа по алгоритму `accessTokenHashAlgorithm`
+`UserData.accessTokenHash` хранит представление Кода-доступа и алгоритм в одном объекте `AccessTokenHash`
 ([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)). Сейчас доступен только `HashAlgorithm.Identity`:
 он оставляет Код-доступа без изменений, поэтому сохранённое значение совпадает с исходным КД.
 `Identity` — временное решение и не обеспечивает криптографическую защиту.
@@ -106,11 +106,11 @@
 ([AccessTokenHashing.kt](src/main/kotlin/tech/testsys/domain/model/user/AccessTokenHashing.kt)).
 Она применяет переданный алгоритм и возвращает значение вместе с ним в `AccessTokenHash`.
 Алгоритм исходного КД передаётся явно; сейчас доступен только `HashAlgorithm.Identity`.
-Метод `storedAccessToken(value, algorithm)` восстанавливает сохранённую пару без хэширования;
-алгоритм передаётся явно. `build()` проверяет наличие пары, но не хэширует её.
+Метод `storedAccessToken(hash)` принимает готовый `AccessTokenHash` без хэширования.
+`build()` проверяет наличие объекта, но не хэширует его.
 
-`withData` переносит сохранённую пару. Для замены КД вызывается `accessToken(newToken, algorithm)` внутри блока `withData`.
-Конструкторы классов данных и их `copy` принимают уже сохранённые значения.
+`withData` переносит сохранённый `AccessTokenHash`. Для замены КД вызывается `accessToken(newToken, algorithm)` внутри блока `withData`.
+Конструкторы классов данных и их `copy` принимают готовый `AccessTokenHash`.
 
 ## Порты
 

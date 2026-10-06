@@ -42,12 +42,12 @@ abstract class UserDataBuilder<Data : UserData> : Builder<Data> {
     }
 
     /**
-     * Restores [value] and [algorithm] from stored data without hashing.
+     * Restores [hash] from stored data without hashing.
      *
      * @since %CURRENT_VERSION%
      */
-    fun storedAccessToken(value: String, algorithm: HashAlgorithm) {
-        tokenHash = AccessTokenHash(value = value, algorithm = algorithm)
+    fun storedAccessToken(hash: AccessTokenHash) {
+        tokenHash = hash
     }
 
     protected fun requireAccessTokenHash(): AccessTokenHash = requireField(tokenHash) { ::tokenHash }

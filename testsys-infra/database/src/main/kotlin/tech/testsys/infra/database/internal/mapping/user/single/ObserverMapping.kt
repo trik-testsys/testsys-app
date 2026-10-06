@@ -3,6 +3,7 @@ package tech.testsys.infra.database.internal.mapping.user.single
 import tech.testsys.domain.builder.api.observer
 import tech.testsys.domain.builder.data
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -35,8 +36,10 @@ object ObserverMapping {
         }
         data {
             storedAccessToken(
-                value = userJpaEntity.accessToken,
-                algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
+                AccessTokenHash(
+                    value = userJpaEntity.accessToken,
+                    algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
+                ),
             )
             name = userJpaEntity.name
             community(dataJpaEntity.communityId)
@@ -51,8 +54,8 @@ object ObserverMapping {
      */
     fun toUserJpaEntity(data: ObserverData) = UserJpaEntity(
         name = data.name,
-        accessToken = data.accessToken,
-        accessTokenHashAlgorithm = data.accessTokenHashAlgorithm.toJpaEnum(),
+        accessToken = data.accessTokenHash.value,
+        accessTokenHashAlgorithm = data.accessTokenHash.algorithm.toJpaEnum(),
         email = null,
         type = UserTypeJpaEnum.SINGLE_ROLE,
     )
@@ -64,8 +67,8 @@ object ObserverMapping {
      */
     fun toUserJpaEntity(entity: Observer, current: UserJpaEntity) = UserJpaEntity(
         name = entity.data.name,
-        accessToken = entity.data.accessToken,
-        accessTokenHashAlgorithm = entity.data.accessTokenHashAlgorithm.toJpaEnum(),
+        accessToken = entity.data.accessTokenHash.value,
+        accessTokenHashAlgorithm = entity.data.accessTokenHash.algorithm.toJpaEnum(),
         email = current.email,
         type = UserTypeJpaEnum.SINGLE_ROLE,
         id = entity.id.value,

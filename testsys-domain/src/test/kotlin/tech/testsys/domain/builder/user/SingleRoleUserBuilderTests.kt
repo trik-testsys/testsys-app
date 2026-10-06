@@ -69,8 +69,8 @@ class ParticipantDataBuilderTests {
             name = "User"
         }
 
-        assertEquals("token", data.accessToken)
-        assertEquals(HashAlgorithm.Identity, data.accessTokenHashAlgorithm)
+        assertEquals("token", data.accessTokenHash.value)
+        assertEquals(HashAlgorithm.Identity, data.accessTokenHash.algorithm)
     }
 
     @Test
@@ -94,8 +94,8 @@ class ObserverDataBuilderTests {
             name = "User"
         }
 
-        assertEquals("token", data.accessToken)
-        assertEquals(HashAlgorithm.Identity, data.accessTokenHashAlgorithm)
+        assertEquals("token", data.accessTokenHash.value)
+        assertEquals(HashAlgorithm.Identity, data.accessTokenHash.algorithm)
     }
 
     @Test
@@ -118,8 +118,8 @@ class SupervisorDataBuilderTests {
             name = "User"
         }
 
-        assertEquals("token", data.accessToken)
-        assertEquals(HashAlgorithm.Identity, data.accessTokenHashAlgorithm)
+        assertEquals("token", data.accessTokenHash.value)
+        assertEquals(HashAlgorithm.Identity, data.accessTokenHash.algorithm)
     }
 
     @Test

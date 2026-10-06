@@ -86,7 +86,7 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 [changelog.03-init-user.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.03-init-user.xml).
 Значения по умолчанию у колонки нет: при записи алгоритм передаётся явно.
 
-Маппинги Пользователей читают значение и алгоритм через `storedAccessToken(value, algorithm)`.
+Маппинги Пользователей объединяют значение и алгоритм в `AccessTokenHash` и передают его в `storedAccessToken(hash)`.
 При записи оба поля переносятся из доменных данных без хэширования. Ввод исходного КД описан в разделе
 [«Пользователи»](../../testsys-domain/README.md#пользователи).
 

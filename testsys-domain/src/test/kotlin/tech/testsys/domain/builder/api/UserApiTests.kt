@@ -31,8 +31,8 @@ class UserApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.competition.id, copy.data.competition.id)
-            Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
+            Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
         }
 
@@ -67,8 +67,8 @@ class UserApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.community.id, copy.data.community.id)
-            Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
+            Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.competitions.ids, copy.data.competitions.ids)
         }
@@ -77,8 +77,8 @@ class UserApiTests {
         fun `should change accessToken if withData sets accessToken`() {
             val copy = origin.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
 
-            Assertions.assertEquals("new-token", copy.data.accessToken)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
+            Assertions.assertEquals("new-token", copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
         }
     }
 
@@ -112,8 +112,8 @@ class UserApiTests {
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
-            Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
+            Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.email, copy.data.email)
             Assertions.assertEquals(origin.data.roles, copy.data.roles)
@@ -123,8 +123,8 @@ class UserApiTests {
         fun `should change accessToken if withData sets accessToken`() {
             val copy = origin.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
 
-            Assertions.assertEquals("new-token", copy.data.accessToken)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
+            Assertions.assertEquals("new-token", copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
         }
     }
 
@@ -148,8 +148,8 @@ class UserApiTests {
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
-            Assertions.assertEquals(origin.data.accessToken, copy.data.accessToken)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
+            Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
         }
 
@@ -157,8 +157,8 @@ class UserApiTests {
         fun `should change accessToken if withData sets accessToken`() {
             val copy = origin.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
 
-            Assertions.assertEquals("new-token", copy.data.accessToken)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHashAlgorithm)
+            Assertions.assertEquals("new-token", copy.data.accessTokenHash.value)
+            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
         }
     }
 }

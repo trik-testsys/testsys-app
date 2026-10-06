@@ -52,27 +52,25 @@ class UserDataBuilderTests {
         builder.accessToken("raw-token", algorithm = HashAlgorithm.Identity)
         val data = builder.build()
 
-        assertEquals("hashed-token", data.accessToken)
-        assertEquals(HashAlgorithm.Identity, data.accessTokenHashAlgorithm)
+        assertEquals(AccessTokenHash(value = "hashed-token", algorithm = HashAlgorithm.Identity), data.accessTokenHash)
         verify(exactly = 1) { hashAccessToken("raw-token", algorithm = HashAlgorithm.Identity) }
     }
 
     @ParameterizedTest
     @EnumSource(UserKind::class)
-    fun `should restore the stored pair without hashing for every user kind`(kind: UserKind) {
+    fun `should restore the stored hash without hashing for every user kind`(kind: UserKind) {
         every { hashAccessToken(any(), any()) } throws IllegalStateException("Stored tokens must not be hashed")
         val builder = dataBuilder(kind)
 
-        builder.storedAccessToken(value = "stored-token", algorithm = HashAlgorithm.Identity)
+        builder.storedAccessToken(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.Identity))
         val data = builder.build()
 
-        assertEquals("stored-token", data.accessToken)
-        assertEquals(HashAlgorithm.Identity, data.accessTokenHashAlgorithm)
+        assertEquals(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.Identity), data.accessTokenHash)
     }
 
     @ParameterizedTest
     @EnumSource(UserKind::class)
-    fun `should preserve the computed pair when building again`(kind: UserKind) {
+    fun `should preserve the computed hash when building again`(kind: UserKind) {
         every { hashAccessToken("raw-token", algorithm = HashAlgorithm.Identity) } returns AccessTokenHash(
             value = "hashed-token",
             algorithm = HashAlgorithm.Identity,
@@ -82,21 +80,19 @@ class UserDataBuilderTests {
 
         val data = builder.build()
 
-        assertEquals("hashed-token", data.accessToken)
-        assertEquals(HashAlgorithm.Identity, data.accessTokenHashAlgorithm)
+        assertEquals(AccessTokenHash(value = "hashed-token", algorithm = HashAlgorithm.Identity), data.accessTokenHash)
         verify(exactly = 1) { hashAccessToken("raw-token", algorithm = HashAlgorithm.Identity) }
     }
 
     @ParameterizedTest
     @EnumSource(UserKind::class)
-    fun `should preserve the stored pair when withData changes the name`(kind: UserKind) {
+    fun `should preserve the stored hash when withData changes the name`(kind: UserKind) {
         every { hashAccessToken(any(), any()) } throws IllegalStateException("Stored tokens must not be hashed")
         val original = storedUser(kind)
 
         val updated = changeName(original)
 
-        assertEquals("stored-token", userData(updated).accessToken)
-        assertEquals(HashAlgorithm.Identity, userData(updated).accessTokenHashAlgorithm)
+        assertEquals(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.Identity), userData(updated).accessTokenHash)
         assertEquals("Updated", userData(updated).name)
         assertEquals(original.id, updated.id)
         assertEquals(original.createdAt, updated.createdAt)
@@ -114,8 +110,7 @@ class UserDataBuilderTests {
 
         val updated = replaceToken(original)
 
-        assertEquals("new-hash", userData(updated).accessToken)
-        assertEquals(HashAlgorithm.Identity, userData(updated).accessTokenHashAlgorithm)
+        assertEquals(AccessTokenHash(value = "new-hash", algorithm = HashAlgorithm.Identity), userData(updated).accessTokenHash)
         assertEquals(userData(original).name, userData(updated).name)
         assertEquals(original.id, updated.id)
         assertEquals(original.createdAt, updated.createdAt)
@@ -147,7 +142,7 @@ class UserDataBuilderTests {
             data = ParticipantDataBuilder().apply {
                 competition(10)
                 name = "User"
-                storedAccessToken(value = "stored-token", algorithm = HashAlgorithm.Identity)
+                storedAccessToken(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.Identity))
             }.build()
         }
         UserKind.OBSERVER -> observer {
@@ -157,7 +152,7 @@ class UserDataBuilderTests {
             data = ObserverDataBuilder().apply {
                 community(20)
                 name = "User"
-                storedAccessToken(value = "stored-token", algorithm = HashAlgorithm.Identity)
+                storedAccessToken(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.Identity))
             }.build()
         }
         UserKind.SUPERVISOR -> supervisor {
@@ -166,7 +161,7 @@ class UserDataBuilderTests {
             version = EntityVersion(7)
             data = SupervisorDataBuilder().apply {
                 name = "User"
-                storedAccessToken(value = "stored-token", algorithm = HashAlgorithm.Identity)
+                storedAccessToken(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.Identity))
             }.build()
         }
         UserKind.MULTIPLE_ROLE -> multipleRoleUser {
@@ -176,7 +171,7 @@ class UserDataBuilderTests {
             data = MultipleRoleUserDataBuilder().apply {
                 name = "User"
                 email = "user@example.com"
-                storedAccessToken(value = "stored-token", algorithm = HashAlgorithm.Identity)
+                storedAccessToken(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.Identity))
             }.build()
         }
     }

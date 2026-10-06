@@ -36,8 +36,7 @@ sealed class SingleRoleUser(
  * @since %CURRENT_VERSION%
  */
 data class ParticipantData(
-    override val accessToken: String,
-    override val accessTokenHashAlgorithm: HashAlgorithm,
+    override val accessTokenHash: AccessTokenHash,
     override val name: String,
     val competition: LazyEntity<CompetitionId, Competition>,
 ) : UserData
@@ -62,8 +61,7 @@ class Participant(
  * @since %CURRENT_VERSION%
  */
 data class ObserverData(
-    override val accessToken: String,
-    override val accessTokenHashAlgorithm: HashAlgorithm,
+    override val accessTokenHash: AccessTokenHash,
     override val name: String,
     val community: LazyEntity<CommunityId, Community>,
     val competitions: LazyEntityList<CompetitionId, Competition>,
@@ -87,8 +85,7 @@ class Observer(
  * @since %CURRENT_VERSION%
  */
 data class SupervisorData(
-    override val accessToken: String,
-    override val accessTokenHashAlgorithm: HashAlgorithm,
+    override val accessTokenHash: AccessTokenHash,
     override val name: String,
 ) : UserData
 

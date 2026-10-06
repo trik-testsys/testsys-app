@@ -58,8 +58,7 @@ class ParticipantDataBuilder : UserDataBuilder<ParticipantData>() {
 
         return ParticipantData(
             competition = competition.lazify(),
-            accessToken = requireAccessTokenHash().value,
-            accessTokenHashAlgorithm = requireAccessTokenHash().algorithm,
+            accessTokenHash = requireAccessTokenHash(),
             name = requireField(name) { ::name },
         )
     }
@@ -128,8 +127,7 @@ class ObserverDataBuilder : UserDataBuilder<ObserverData>() {
         return ObserverData(
             community = community.lazify(),
             competitions = competitions.lazify(),
-            accessToken = requireAccessTokenHash().value,
-            accessTokenHashAlgorithm = requireAccessTokenHash().algorithm,
+            accessTokenHash = requireAccessTokenHash(),
             name = requireField(name) { ::name },
         )
     }
@@ -169,8 +167,7 @@ class SupervisorDataBuilder : UserDataBuilder<SupervisorData>() {
     var name: String? = null
 
     override fun build() = SupervisorData(
-        accessToken = requireAccessTokenHash().value,
-        accessTokenHashAlgorithm = requireAccessTokenHash().algorithm,
+        accessTokenHash = requireAccessTokenHash(),
         name = requireField(name) { ::name },
     )
 }

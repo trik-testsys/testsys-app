@@ -98,8 +98,7 @@ class MultipleRoleUserPersistenceAdapterTests :
     override fun idOf(value: Long) = MultipleRoleUserId(value)
 
     override fun assertSameData(expected: MultipleRoleUser, actual: MultipleRoleUser) {
-        assertEquals(expected.data.accessToken, actual.data.accessToken)
-        assertEquals(expected.data.accessTokenHashAlgorithm, actual.data.accessTokenHashAlgorithm)
+        assertEquals(expected.data.accessTokenHash, actual.data.accessTokenHash)
         assertEquals(expected.data.name, actual.data.name)
         assertEquals(expected.data.email, actual.data.email)
         assertSameRoles(expected.data.roles, actual.data.roles)
@@ -272,11 +271,11 @@ class MultipleRoleUserPersistenceAdapterTests :
         val found = requireNotNull(repository.findById(updated.id))
         val row = userJpaEntityRepository.findById(updated.id.value).orElseThrow()
 
-        assertEquals(data.accessToken, saved.data.accessToken)
-        assertEquals(HashAlgorithm.Identity, saved.data.accessTokenHashAlgorithm)
-        assertEquals(modified.data.accessToken, found.data.accessToken)
-        assertEquals(HashAlgorithm.Identity, found.data.accessTokenHashAlgorithm)
-        assertEquals(modified.data.accessToken, row.accessToken)
+        assertEquals(data.accessTokenHash.value, saved.data.accessTokenHash.value)
+        assertEquals(HashAlgorithm.Identity, saved.data.accessTokenHash.algorithm)
+        assertEquals(modified.data.accessTokenHash.value, found.data.accessTokenHash.value)
+        assertEquals(HashAlgorithm.Identity, found.data.accessTokenHash.algorithm)
+        assertEquals(modified.data.accessTokenHash.value, row.accessToken)
         assertEquals(HashAlgorithmJpaEnum.IDENTITY, row.accessTokenHashAlgorithm)
     }
 

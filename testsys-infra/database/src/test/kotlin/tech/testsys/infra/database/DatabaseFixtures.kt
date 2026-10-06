@@ -43,6 +43,7 @@ import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.group.Class
@@ -58,6 +59,7 @@ import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
@@ -95,6 +97,7 @@ class DatabaseFixtures(
     private val statements: StatementRepository,
     private val developerSolutions: DeveloperSolutionRepository,
     private val tasks: TaskRepository,
+    private val taskValidationRequests: TaskValidationRequestRepository,
     private val contests: ContestRepository,
     private val submissions: SubmissionRepository,
     private val verdicts: VerdictRepository,
@@ -261,6 +264,18 @@ class DatabaseFixtures(
             },
         )
     }
+
+    fun workingTask(owner: MultipleRoleUser = developer()): Task = tasks.save(
+        taskData {
+            this.owner = owner.id
+            name = unique("Task")
+            description = "Working task"
+            content.new {}
+        },
+    )
+
+    fun taskValidationRequest(task: Task = workingTask()): TaskValidationRequest =
+        taskValidationRequests.findOrCreateActive(task.id, task.data.owner.id)
 
     fun contest(owner: MultipleRoleUser = developer(), version: TrikStudioVersion = trikStudioVersion()): Contest {
         val ownerId = owner.id.value

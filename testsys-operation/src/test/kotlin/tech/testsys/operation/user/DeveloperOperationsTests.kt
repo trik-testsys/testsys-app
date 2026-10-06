@@ -24,6 +24,7 @@ import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.EntityVersion
@@ -110,6 +111,7 @@ import tech.testsys.operation.util.testNewTask
 import tech.testsys.operation.util.testSavedContest
 import tech.testsys.operation.util.testSavedTask
 import tech.testsys.operation.util.testStatement
+import tech.testsys.operation.util.testTaskValidationRequest
 import tech.testsys.operation.util.testUncommittedTask
 import java.time.Duration
 import java.time.Instant
@@ -128,6 +130,7 @@ class DeveloperOperationsTests {
     private val developerSolutionRepository = mockk<DeveloperSolutionRepository>()
     private val solutionRepository = mockk<SolutionRepository>()
     private val contestRepository = mockk<ContestRepository>()
+    private val taskValidationRequestRepository = mockk<TaskValidationRequestRepository>()
     private val developerOperations = DeveloperOperations(
         taskRepository,
         statementRepository,
@@ -137,6 +140,7 @@ class DeveloperOperationsTests {
         developerSolutionRepository,
         solutionRepository,
         contestRepository,
+        taskValidationRequestRepository,
     )
 
     private lateinit var developer: MultipleRoleUser
@@ -147,6 +151,73 @@ class DeveloperOperationsTests {
     private val uploadUuid = UUID(0, 10)
     private val uploadBucket = VersionBucket(uploadUuid)
     private val uploadScore = Score(42)
+
+    @Nested
+    inner class RunDiagnosticsTests {
+        @Test
+        fun `should reject a user without the Developer role`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.runDiagnostics(testAdministrator {}, TaskId(0))
+            }
+        }
+
+        @Test
+        fun `should reject a missing task`() {
+            every { taskRepository.findById(TaskId(0)) } returns null
+
+            assertRaises(TaskNotExistsError(TaskId(0))) {
+                developerOperations.runDiagnostics(developer, TaskId(0))
+            }
+        }
+
+        @Test
+        fun `should reject a task owned by another developer`() {
+            every { taskRepository.findById(TaskId(0)) } returns testNewTask().withData { owner(99) }
+
+            assertRaises(TaskAccessDeniedError(TaskId(0))) {
+                developerOperations.runDiagnostics(developer, TaskId(0))
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["new", "uncommitted"])
+        fun `should return the persisted request without changing any task state`(state: String) {
+            val task = if (state == "new") testNewTask() else testUncommittedTask()
+            val request = testTaskValidationRequest()
+            every { taskRepository.findById(task.id) } returns task
+            every { taskValidationRequestRepository.findOrCreateActive(task.id, developer.id) } returns request
+
+            val result = developerOperations.runDiagnostics(developer, task.id).getOrThrow()
+
+            Assertions.assertSame(request, result)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should reject a committed task before creating a diagnostics request`() {
+            val task = testCommitedTask()
+            every { taskRepository.findById(task.id) } returns task
+
+            assertRaises(TaskAlreadyCommittedError(task.id)) {
+                developerOperations.runDiagnostics(developer, task.id)
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        @Test
+        fun `should propagate technical persistence exceptions to the external caller`() {
+            every { taskRepository.findById(TaskId(0)) } returns testNewTask()
+            val failure = IllegalStateException("Database unavailable")
+            every { taskValidationRequestRepository.findOrCreateActive(TaskId(0), developer.id) } throws failure
+
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.runDiagnostics(developer, TaskId(0))
+            }
+
+            Assertions.assertSame(failure, actual)
+        }
+    }
 
     @Nested
     inner class ViewContestsTests {

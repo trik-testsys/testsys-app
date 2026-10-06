@@ -57,6 +57,13 @@ sealed interface ResourceAccessError : OperationError
 // region DeveloperOperations
 
 /**
+ * Expected failure of requesting polygon diagnostics for an owned task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RunDiagnosticsError : OperationError
+
+/**
  * Failure of listing contests available to the developer.
  *
  * @since %CURRENT_VERSION%
@@ -282,6 +289,7 @@ sealed interface DetachDeveloperSolutionError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedDeveloperRoleError :
+    RunDiagnosticsError,
     AttachTaskError,
     ViewContestsError,
     ViewContestError,
@@ -387,6 +395,7 @@ data class ContestAlreadySharedError(val contestId: ContestId) : EditContestErro
  * @since %CURRENT_VERSION%
  */
 data class TaskNotExistsError(val taskId: TaskId) :
+    RunDiagnosticsError,
     AttachTaskError,
     RevertTaskError,
     EditTaskInfoError,
@@ -459,6 +468,7 @@ data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExis
  * @since %CURRENT_VERSION%
  */
 data class TaskAccessDeniedError(val taskId: TaskId) :
+    RunDiagnosticsError,
     AttachTaskError,
     RevertTaskError,
     EditTaskInfoError,
@@ -527,7 +537,7 @@ data class TaskAlreadyAttachedToContestError(val contestId: ContestId, val taskI
  * @property taskId the id of the committed task.
  * @since %CURRENT_VERSION%
  */
-data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError
+data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError, RunDiagnosticsError
 // endregion
 
 /**

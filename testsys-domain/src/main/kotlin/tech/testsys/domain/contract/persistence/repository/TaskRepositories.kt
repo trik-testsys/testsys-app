@@ -32,8 +32,13 @@ import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TaskValidationRequest
+import tech.testsys.domain.model.task.TaskValidationRequestData
+import tech.testsys.domain.model.task.TaskValidationRequestId
+import tech.testsys.domain.model.task.TaskValidationTechnicalFailure
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
+import tech.testsys.domain.model.task.TestDiagnosticResult
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
@@ -267,6 +272,88 @@ interface TaskRepository : EntityRepository<TaskData, TaskId, Task> {
      * @since %CURRENT_VERSION%
      */
     fun findAvailableToDeveloper(ownerId: MultipleRoleUserId, communityIds: Set<CommunityId>): List<Task>
+}
+
+/**
+ * Persistence port for [TaskValidationRequest] entities and their resumable diagnostic progress.
+ *
+ * @since %CURRENT_VERSION%
+ */
+interface TaskValidationRequestRepository :
+    EntityRepository<TaskValidationRequestData, TaskValidationRequestId, TaskValidationRequest> {
+
+    /**
+     * Atomically reads current task inputs and returns an active matching request or persists a new one.
+     * Comparison ignores metadata, collection order and diagnostic configuration.
+     *
+     * @param taskId the task whose working revision inputs are pinned.
+     * @param requestedBy the initiator; ownership must be checked by the caller.
+     * @return the persisted matching or new request.
+     * @throws IllegalArgumentException if the task does not exist.
+     * @throws IllegalStateException if the task has no working revision at creation time.
+     * @since %CURRENT_VERSION%
+     */
+    fun findOrCreateActive(taskId: TaskId, requestedBy: MultipleRoleUserId): TaskValidationRequest
+
+    /**
+     * Reads saved validation history without changing execution.
+     *
+     * @param taskId the task whose requests are read.
+     * @return existing requests ordered by creation time and identifier.
+     * @since %CURRENT_VERSION%
+     */
+    fun findHistory(taskId: TaskId): List<TaskValidationRequest>
+
+    /**
+     * Starts or resumes diagnostics for the caller-selected request, without acquiring execution ownership.
+     *
+     * @param requestId the request selected exclusively by the application.
+     * @return the in-progress request, or `null` if missing or no longer eligible for diagnostics.
+     * @since %CURRENT_VERSION%
+     */
+    fun startDiagnostics(requestId: TaskValidationRequestId): TaskValidationRequest?
+
+    /**
+     * Reads completed polygon results, including empty message lists, while the public stage is incomplete.
+     *
+     * @param requestId the request whose progress is read.
+     * @return the saved polygon results.
+     * @since %CURRENT_VERSION%
+     */
+    fun findDiagnosticProgress(requestId: TaskValidationRequestId): List<TestDiagnosticResult>
+
+    /**
+     * Atomically saves a polygon result and its messages; the first saved result wins on repeated calls.
+     *
+     * @param requestId the in-progress request containing the polygon.
+     * @param result the completed polygon result.
+     * @return the persisted result, including an earlier result if already present.
+     * @throws IllegalArgumentException if the request or polygon input does not exist.
+     * @throws IllegalStateException if the request is not being diagnosed.
+     * @since %CURRENT_VERSION%
+     */
+    fun saveDiagnosticProgress(requestId: TaskValidationRequestId, result: TestDiagnosticResult): TestDiagnosticResult
+
+    /**
+     * Completes diagnostics after all snapshot polygons have saved results; Error terminates the request.
+     * Repeated calls on a completed stage return its stored state.
+     *
+     * @param requestId the request to complete.
+     * @return the request whose execution contains completed diagnostics, awaiting submissions or stopped by errors.
+     * @throws IllegalStateException if results are missing or execution is ineligible.
+     * @since %CURRENT_VERSION%
+     */
+    fun completeDiagnostics(requestId: TaskValidationRequestId): TaskValidationRequest
+
+    /**
+     * Records a terminal technical stop without discarding progress; terminal requests stay terminal.
+     *
+     * @param requestId the request known by the external exception boundary.
+     * @param failure the technical failure details.
+     * @return the stopped request retaining the payload of every completed stage in its execution state.
+     * @since %CURRENT_VERSION%
+     */
+    fun recordTechnicalFailure(requestId: TaskValidationRequestId, failure: TaskValidationTechnicalFailure): TaskValidationRequest
 }
 
 /**

@@ -32,6 +32,7 @@ import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TaskValidationExecution
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TestVerdict
@@ -46,6 +47,61 @@ import java.time.Instant
 import java.util.UUID
 
 class TaskApiTests {
+
+    @Nested
+    inner class TaskValidationRequestTests {
+        private val original = taskValidationRequest {
+            id = 7
+            createdAt = Instant.EPOCH
+            version = EntityVersion(9)
+            data = taskValidationRequestData {
+                task(1)
+                requestedBy(2)
+                snapshot = taskValidationSnapshot { tests(listOf(3)) }
+                execution.createdSubmissionsFailure {
+                    diagnostics = mutableListOf(testDiagnosticResult { testId(3) })
+                    submissions(listOf(4))
+                    failure = taskValidationTechnicalFailure {
+                        description = "Failure"
+                        occurredAt = Instant.EPOCH
+                    }
+                }
+            }
+        }
+
+        @Test
+        fun `should retain every field and the persistence version when copying unchanged data`() {
+            val copied = original.withData {}
+
+            Assertions.assertEquals(original.id, copied.id)
+            Assertions.assertEquals(original.createdAt, copied.createdAt)
+            Assertions.assertEquals(original.version, copied.version)
+            Assertions.assertEquals(original.data.task.id, copied.data.task.id)
+            Assertions.assertEquals(original.data.requestedBy.id, copied.data.requestedBy.id)
+            Assertions.assertEquals(original.data.snapshot, copied.data.snapshot)
+            val expected = Assertions.assertInstanceOf(
+                TaskValidationExecution.TechnicalFailure.CreatedSubmissions::class.java,
+                original.data.execution,
+            )
+            val actual = Assertions.assertInstanceOf(
+                TaskValidationExecution.TechnicalFailure.CreatedSubmissions::class.java,
+                copied.data.execution,
+            )
+            Assertions.assertEquals(expected.diagnostics, actual.diagnostics)
+            Assertions.assertEquals(expected.submissions.ids, actual.submissions.ids)
+            Assertions.assertEquals(expected.failure, actual.failure)
+            Assertions.assertEquals(expected.completedAt, actual.completedAt)
+        }
+
+        @Test
+        fun `should change execution without changing the original failure payload`() {
+            val copied = original.withData { execution.awaitingSubmissions {} }
+
+            val actual = Assertions.assertInstanceOf(TaskValidationExecution.AwaitingSubmissions::class.java, copied.data.execution)
+            Assertions.assertEquals(emptyList<Any>(), actual.diagnostics)
+            Assertions.assertInstanceOf(TaskValidationExecution.TechnicalFailure.CreatedSubmissions::class.java, original.data.execution)
+        }
+    }
 
     @Nested
     inner class SubmissionTests {

@@ -35,7 +35,7 @@ testsys-app/
 | `testsys-operation`                  | Операции — реализация пользовательских фич из [features.md](../domain/features.md), по классу на Роль или группу Пользователей. | В разработке      |
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
 | `testsys-infra:diagnostics`          | Синхронный анализ XML одного Полигона через порт `PolygonDiagnostics`.                           | Реализован        |
-| `testsys-infra:grpc`                 | Связь с внешним грейдером решений TRIK Studio (реализация порта `Grader`).                           | Заготовка (пусто) |
+| `testsys-infra:grpc`                 | Связь с Проверяющими узлами и балансировка проверок (реализация порта `Grader`).                    | Реализован        |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
 | `testsys-web`                        | Веб-приложение (Кабинеты): точка входа, собирающая все модули; вызывает операции.                    | Заготовка (пусто) |
 
@@ -48,8 +48,8 @@ testsys-app/
 
 - `testsys-domain` ни от чего не зависит. Любой новый код, которому нужен Spring, JPA или сеть, живёт вне домена.
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
-- Сейчас в Gradle прописаны только связи `operation → domain`, `database → domain`, `database → codegen-api`
-  и `database → codegen` (через `ksp`), а также `diagnostics → domain`. Остальные связи — целевая архитектура.
+- Сейчас в Gradle прописаны только связи `operation → domain`, `database → domain`, `database → codegen-api`,
+  `database → codegen` (через `ksp`), `grpc → domain` и `diagnostics → domain`. Остальные связи — целевая архитектура.
 
 ## Сборка
 

@@ -5,7 +5,9 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.ExerciseId
+import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.StatementId
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
@@ -64,11 +66,57 @@ sealed interface ResourceAccessError : OperationError
 sealed interface ViewResultsError : OperationError
 
 /**
+ * Failure of issuing a judgment order for a submission.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ChangeVerdictError : OperationError
+
+/**
  * The user does not hold the judge role.
  *
  * @since %CURRENT_VERSION%
  */
-data object MissedJudgeRoleError : ViewResultsError, MissedRequiredRoleError
+data object MissedJudgeRoleError : ViewResultsError, ChangeVerdictError, MissedRequiredRoleError
+
+/**
+ * The submission does not exist.
+ *
+ * @property submissionId the id of the missing submission.
+ * @since %CURRENT_VERSION%
+ */
+data class SubmissionNotExistsError(val submissionId: SubmissionId) : ChangeVerdictError, EntityNotExistsError
+
+/**
+ * The submission is outside the judge's access or is a developer solution test.
+ *
+ * @property submissionId the id of the inaccessible submission.
+ * @since %CURRENT_VERSION%
+ */
+data class SubmissionAccessDeniedError(val submissionId: SubmissionId) : ChangeVerdictError, AccessDeniedError
+
+/**
+ * The submission has no successful automatic grading result.
+ *
+ * @property submissionId the id of the submission.
+ * @since %CURRENT_VERSION%
+ */
+data class SubmissionNotSuccessfullyGradedError(val submissionId: SubmissionId) : ChangeVerdictError
+
+/**
+ * The requested judgment score is negative.
+ *
+ * @property score the invalid score.
+ * @since %CURRENT_VERSION%
+ */
+data class NegativeJudgmentScoreError(val score: Score) : ChangeVerdictError
+
+/**
+ * The judgment reason is empty or contains only whitespace.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object BlankJudgmentReasonError : ChangeVerdictError
 
 // endregion
 

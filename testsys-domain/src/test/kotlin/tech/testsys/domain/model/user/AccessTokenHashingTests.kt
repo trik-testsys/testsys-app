@@ -9,7 +9,7 @@ class AccessTokenHashingTests {
     @ParameterizedTest
     @ValueSource(strings = ["token", "", "  token  ", "Token", "Код-доступа"])
     fun `should preserve the raw access token with Identity`(rawAccessToken: String) {
-        val result = hashAccessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+        val result = AccessTokenHash.hashAccessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
 
         assertEquals(AccessTokenHash(value = rawAccessToken, algorithm = HashAlgorithm.Identity), result)
     }

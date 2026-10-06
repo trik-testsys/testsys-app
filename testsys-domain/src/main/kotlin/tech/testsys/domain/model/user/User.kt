@@ -50,7 +50,21 @@ sealed interface HashAlgorithm {
 data class AccessTokenHash(
     val value: String,
     val algorithm: HashAlgorithm,
-)
+) {
+    companion object {
+        /**
+         * Hashes [rawAccessToken] with [algorithm] without normalizing or validating the input.
+         *
+         * @since %CURRENT_VERSION%
+         */
+        fun hashAccessToken(rawAccessToken: String, algorithm: HashAlgorithm): AccessTokenHash {
+            val value = when (algorithm) {
+                HashAlgorithm.Identity -> rawAccessToken
+            }
+            return AccessTokenHash(value = value, algorithm = algorithm)
+        }
+    }
+}
 
 /**
  * Data common to every kind of [User].

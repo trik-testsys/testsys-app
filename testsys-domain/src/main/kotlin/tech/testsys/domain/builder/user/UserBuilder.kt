@@ -8,7 +8,6 @@ import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserData
 import tech.testsys.domain.model.user.UserId
-import tech.testsys.domain.model.user.hashAccessToken
 
 /**
  * Base class of [User] builders.
@@ -38,7 +37,7 @@ abstract class UserDataBuilder<Data : UserData> : Builder<Data> {
      * @since %CURRENT_VERSION%
      */
     fun accessToken(rawAccessToken: String, algorithm: HashAlgorithm) {
-        tokenHash = hashAccessToken(rawAccessToken = rawAccessToken, algorithm = algorithm)
+        tokenHash = AccessTokenHash.hashAccessToken(rawAccessToken = rawAccessToken, algorithm = algorithm)
     }
 
     /**

@@ -212,7 +212,7 @@ sealed interface SubmissionKind {
      * @property trikStudioVersion the TRIK Studio version used for the test run.
      * @since %CURRENT_VERSION%
      */
-    class DeveloperSolutionTest(val trikStudioVersion: TrikStudioVersion) : SubmissionKind
+    data class DeveloperSolutionTest(val trikStudioVersion: TrikStudioVersion) : SubmissionKind
 
     /**
      * A regular submission made within a contest.
@@ -220,7 +220,7 @@ sealed interface SubmissionKind {
      * @property contest the contest the solution was submitted in.
      * @since %CURRENT_VERSION%
      */
-    class Grading(val contest: LazyEntity<ContestId, Contest>) : SubmissionKind
+    data class Grading(val contest: LazyEntity<ContestId, Contest>) : SubmissionKind
 }
 
 /**

@@ -1,8 +1,8 @@
 package tech.testsys.domain.builder.user
 
 import io.mockk.every
-import io.mockk.mockkStatic
-import io.mockk.unmockkStatic
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -23,7 +23,6 @@ import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserData
-import tech.testsys.domain.model.user.hashAccessToken
 import java.time.Instant
 
 class UserDataBuilderTests {
@@ -32,18 +31,18 @@ class UserDataBuilderTests {
 
     @BeforeEach
     fun mockHashing() {
-        mockkStatic(::hashAccessToken)
+        mockkObject(AccessTokenHash.Companion)
     }
 
     @AfterEach
     fun unmockHashing() {
-        unmockkStatic(::hashAccessToken)
+        unmockkObject(AccessTokenHash.Companion)
     }
 
     @ParameterizedTest
     @EnumSource(UserKind::class)
     fun `should hash raw access tokens once for every user kind`(kind: UserKind) {
-        every { hashAccessToken("raw-token", algorithm = HashAlgorithm.Identity) } returns AccessTokenHash(
+        every { AccessTokenHash.hashAccessToken("raw-token", algorithm = HashAlgorithm.Identity) } returns AccessTokenHash(
             value = "hashed-token",
             algorithm = HashAlgorithm.Identity,
         )
@@ -53,13 +52,13 @@ class UserDataBuilderTests {
         val data = builder.build()
 
         assertEquals(AccessTokenHash(value = "hashed-token", algorithm = HashAlgorithm.Identity), data.accessTokenHash)
-        verify(exactly = 1) { hashAccessToken("raw-token", algorithm = HashAlgorithm.Identity) }
+        verify(exactly = 1) { AccessTokenHash.hashAccessToken("raw-token", algorithm = HashAlgorithm.Identity) }
     }
 
     @ParameterizedTest
     @EnumSource(UserKind::class)
     fun `should restore the stored hash without hashing for every user kind`(kind: UserKind) {
-        every { hashAccessToken(any(), any()) } throws IllegalStateException("Stored tokens must not be hashed")
+        every { AccessTokenHash.hashAccessToken(any(), any()) } throws IllegalStateException("Stored tokens must not be hashed")
         val builder = dataBuilder(kind)
 
         builder.storedAccessToken(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.Identity))
@@ -71,7 +70,7 @@ class UserDataBuilderTests {
     @ParameterizedTest
     @EnumSource(UserKind::class)
     fun `should preserve the computed hash when building again`(kind: UserKind) {
-        every { hashAccessToken("raw-token", algorithm = HashAlgorithm.Identity) } returns AccessTokenHash(
+        every { AccessTokenHash.hashAccessToken("raw-token", algorithm = HashAlgorithm.Identity) } returns AccessTokenHash(
             value = "hashed-token",
             algorithm = HashAlgorithm.Identity,
         )
@@ -81,13 +80,13 @@ class UserDataBuilderTests {
         val data = builder.build()
 
         assertEquals(AccessTokenHash(value = "hashed-token", algorithm = HashAlgorithm.Identity), data.accessTokenHash)
-        verify(exactly = 1) { hashAccessToken("raw-token", algorithm = HashAlgorithm.Identity) }
+        verify(exactly = 1) { AccessTokenHash.hashAccessToken("raw-token", algorithm = HashAlgorithm.Identity) }
     }
 
     @ParameterizedTest
     @EnumSource(UserKind::class)
     fun `should preserve the stored hash when withData changes the name`(kind: UserKind) {
-        every { hashAccessToken(any(), any()) } throws IllegalStateException("Stored tokens must not be hashed")
+        every { AccessTokenHash.hashAccessToken(any(), any()) } throws IllegalStateException("Stored tokens must not be hashed")
         val original = storedUser(kind)
 
         val updated = changeName(original)
@@ -102,7 +101,7 @@ class UserDataBuilderTests {
     @ParameterizedTest
     @EnumSource(UserKind::class)
     fun `should hash the replacement token and preserve entity fields with withData`(kind: UserKind) {
-        every { hashAccessToken("new-token", algorithm = HashAlgorithm.Identity) } returns AccessTokenHash(
+        every { AccessTokenHash.hashAccessToken("new-token", algorithm = HashAlgorithm.Identity) } returns AccessTokenHash(
             value = "new-hash",
             algorithm = HashAlgorithm.Identity,
         )
@@ -115,7 +114,7 @@ class UserDataBuilderTests {
         assertEquals(original.id, updated.id)
         assertEquals(original.createdAt, updated.createdAt)
         assertEquals(original.version, updated.version)
-        verify(exactly = 1) { hashAccessToken("new-token", algorithm = HashAlgorithm.Identity) }
+        verify(exactly = 1) { AccessTokenHash.hashAccessToken("new-token", algorithm = HashAlgorithm.Identity) }
     }
 
     private fun dataBuilder(kind: UserKind): UserDataBuilder<out UserData> = when (kind) {

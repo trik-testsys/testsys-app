@@ -102,8 +102,8 @@
 
 Все четыре билдера данных Пользователей наследуют `UserDataBuilder`
 ([UserBuilder.kt](src/main/kotlin/tech/testsys/domain/builder/user/UserBuilder.kt)).
-Метод `accessToken(rawAccessToken, algorithm)` вызывает общую функцию `hashAccessToken`
-([AccessTokenHashing.kt](src/main/kotlin/tech/testsys/domain/model/user/AccessTokenHashing.kt)).
+Метод `accessToken(rawAccessToken, algorithm)` вызывает функцию `AccessTokenHash.hashAccessToken`
+([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)).
 Она применяет переданный алгоритм и возвращает значение вместе с ним в `AccessTokenHash`.
 Алгоритм исходного КД передаётся явно; сейчас доступен только `HashAlgorithm.Identity`.
 Метод `storedAccessToken(hash)` принимает готовый `AccessTokenHash` без хэширования.

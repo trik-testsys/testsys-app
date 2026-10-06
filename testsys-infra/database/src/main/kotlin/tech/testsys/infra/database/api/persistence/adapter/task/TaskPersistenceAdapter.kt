@@ -1,7 +1,12 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import tech.testsys.domain.contract.persistence.Page
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.CommittedTaskContent
@@ -17,6 +22,7 @@ import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskStatusJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.task.CommunityToTaskJpaEntityRepository
@@ -35,6 +41,7 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.findIdByTagOrError
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
+import org.springframework.data.domain.Sort as JpaSort
 
 /**
  * Persistence adapter of [Task] entities backed by [TaskJpaEntity].
@@ -61,16 +68,48 @@ class TaskPersistenceAdapter(
     private val taskJpaEntityRepository: TaskJpaEntityRepository = jpaEntityRepository
 
     @Transactional(readOnly = true)
-    override fun findAvailableToDeveloper(ownerId: MultipleRoleUserId, communityIds: Set<CommunityId>): List<Task> {
-        val owned = taskJpaEntityRepository.findAllByOwnerId(ownerId.value)
-        val sharedTaskIds = if (communityIds.isEmpty()) {
-            emptySet()
-        } else {
-            communityToTaskJpaEntityRepository.findAllByIdCommunityIdIn(communityIds.map { it.value }.toSet())
-                .map { it.id.taskId }.toSet()
+    override fun findAvailableToDeveloper(
+        ownerId: MultipleRoleUserId,
+        communityIds: Set<CommunityId>,
+        pagination: Pagination,
+        filter: TaskFilter,
+    ): Page<Task> {
+        val specification = Specification<TaskJpaEntity> { entity, query, builder ->
+            val owned = builder.equal(entity.get<Long>("ownerId"), ownerId.value)
+            val access = if (communityIds.isEmpty()) {
+                owned
+            } else {
+                val shared = requireNotNull(query).subquery(Long::class.java)
+                val association = shared.from(CommunityToTaskJpaEntity::class.java)
+                shared.select(association.get<Any>("id").get<Long>("taskId")).where(
+                    builder.equal(association.get<Any>("id").get<Long>("taskId"), entity.get<Long>("id")),
+                    association.get<Any>("id").get<Long>("communityId").`in`(communityIds.map { community -> community.value }),
+                )
+                builder.or(owned, builder.exists(shared))
+            }
+            val predicates = mutableListOf(access)
+            filter.name?.let { name ->
+                predicates.add(builder.gt(builder.locate(builder.lower(entity.get("name")), name.lowercase()), 0))
+            }
+            filter.ownerId?.let { owner ->
+                predicates.add(builder.equal(entity.get<Long>("ownerId"), owner.value))
+            }
+            filter.state?.let { state ->
+                predicates.add(builder.equal(entity.get<TaskStatusJpaEnum>("status"), TaskStatusJpaEnum.valueOf(state.name)))
+            }
+            builder.and(*predicates.toTypedArray())
         }
-        val shared = if (sharedTaskIds.isEmpty()) emptyList() else taskJpaEntityRepository.findAllById(sharedTaskIds)
-        return (owned + shared).distinctBy { it.requireId() }.map { assemble(it) }
+        val orders = pagination.sort.orders.map { order ->
+            JpaSort.Order(JpaSort.Direction.valueOf(order.direction.name), order.field)
+        }
+        val stableOrders = if (orders.any { order -> order.property == "id" }) orders else orders + JpaSort.Order.asc("id")
+        val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
+        val page = taskJpaEntityRepository.findAll(specification, pageable)
+        return Page(
+            content = page.content.map { entity -> assemble(entity) },
+            pagination = pagination,
+            totalElements = page.totalElements,
+        )
     }
 
     @Transactional

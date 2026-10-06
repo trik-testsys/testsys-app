@@ -9,6 +9,10 @@ import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.StoredBlobRef
+import tech.testsys.domain.contract.persistence.ContestFilter
+import tech.testsys.domain.contract.persistence.Page
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
@@ -158,19 +162,28 @@ class DeveloperOperations(
         }
 
     /**
-     * Returns contests owned by [user] or shared to communities of their [Developer] role, without changing contest state.
+     * Returns a [pagination] page matching [filter] of contests owned by [user] or shared to their [Developer] communities.
+     * Viewing preserves stored state.
      * Missing developer role is an expected failure; storage exceptions propagate to the caller.
      *
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.developer.contest.viewContests")
-    fun viewContests(user: MultipleRoleUser): OperationResult<List<Contest>, ViewContestsError> =
-        operation<List<Contest>, ViewContestsError> {
-            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
-            val developer = user.data.roles.filterIsInstance<Developer>().single()
-            val contests = contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = developer.memberOf.ids.toSet())
-            return contests.asSuccess()
-        }
+    fun viewContests(
+        user: MultipleRoleUser,
+        pagination: Pagination,
+        filter: ContestFilter = ContestFilter(),
+    ): OperationResult<Page<Contest>, ViewContestsError> = operation<Page<Contest>, ViewContestsError> {
+        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+        val developer = user.data.roles.filterIsInstance<Developer>().single()
+        val contests = contestRepository.findAvailableToDeveloper(
+            ownerId = user.id,
+            communityIds = developer.memberOf.ids.toSet(),
+            pagination = pagination,
+            filter = filter,
+        )
+        return contests.asSuccess()
+    }
 
     /**
      * Returns [contestId] owned by [user] or shared to communities of their [Developer] role, preserving its data.
@@ -357,16 +370,26 @@ class DeveloperOperations(
         }
 
     /**
-     * Returns tasks owned by [user] or shared to communities of their [Developer] role, without changing task state.
+     * Returns a [pagination] page matching [filter] of tasks owned by [user] or shared to their [Developer] communities.
+     * Viewing preserves stored state.
      * Missing developer role is an expected failure; storage exceptions propagate to the caller.
      *
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.developer.task.viewTasks")
-    fun viewTasks(user: MultipleRoleUser): OperationResult<List<Task>, ViewTasksError> = operation<List<Task>, ViewTasksError> {
+    fun viewTasks(
+        user: MultipleRoleUser,
+        pagination: Pagination,
+        filter: TaskFilter = TaskFilter(),
+    ): OperationResult<Page<Task>, ViewTasksError> = operation<Page<Task>, ViewTasksError> {
         ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
         val developer = user.data.roles.filterIsInstance<Developer>().single()
-        val tasks = taskRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = developer.memberOf.ids.toSet())
+        val tasks = taskRepository.findAvailableToDeveloper(
+            ownerId = user.id,
+            communityIds = developer.memberOf.ids.toSet(),
+            pagination = pagination,
+            filter = filter,
+        )
         return tasks.asSuccess()
     }
 

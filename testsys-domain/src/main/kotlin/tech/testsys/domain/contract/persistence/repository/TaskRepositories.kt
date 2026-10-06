@@ -1,8 +1,11 @@
 package tech.testsys.domain.contract.persistence.repository
 
 import tech.testsys.domain.contract.StoredBlobRef
+import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.TaskFilter
+import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
@@ -47,7 +50,6 @@ import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.MultipleRoleUserId
-import tech.testsys.domain.model.user.UserId
 
 /**
  * Persistence port for [Contest] entities.
@@ -62,10 +64,17 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> 
      *
      * @param ownerId the developer whose own contests are included.
      * @param communityIds the communities granting access; an empty set searches only by owner.
-     * @return existing contests without duplicates or guaranteed order, or an empty list if none are available.
+     * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
+     * @param filter optional conditions combined with AND before paging and counting; missing owners match nothing.
+     * @return distinct authorized contests, the original pagination and exact filtered total; missing pages are empty.
      * @since %CURRENT_VERSION%
      */
-    fun findAvailableToDeveloper(ownerId: MultipleRoleUserId, communityIds: Set<CommunityId>): List<Contest>
+    fun findAvailableToDeveloper(
+        ownerId: MultipleRoleUserId,
+        communityIds: Set<CommunityId>,
+        pagination: Pagination,
+        filter: ContestFilter = ContestFilter(),
+    ): Page<Contest>
 }
 
 /**
@@ -263,11 +272,11 @@ interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict> 
      * Repeated calls reflect current data without changing it or loading file contents; technical exceptions propagate.
      *
      * @param pagination the requested page and ordering.
-     * @param authorId the author's user id to filter before paging and counting, or `null` for all eligible authors.
+     * @param filter optional author selection applied before paging and counting.
      * @return verdicts with lazy references, requested pagination and exact total; missing authors or pages are empty.
      * @since %CURRENT_VERSION%
      */
-    fun findAvailableToJudge(pagination: Pagination, authorId: UserId? = null): Page<Verdict>
+    fun findAvailableToJudge(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<Verdict>
 }
 
 /**
@@ -283,10 +292,17 @@ interface TaskRepository : EntityRepository<TaskData, TaskId, Task> {
      *
      * @param ownerId the developer whose own tasks are included.
      * @param communityIds the communities granting access; an empty set searches only by owner.
-     * @return existing tasks without duplicates or guaranteed order, or an empty list if none are available.
+     * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
+     * @param filter optional conditions combined with AND before paging and counting; missing owners match nothing.
+     * @return distinct authorized tasks, the original pagination and exact filtered total; missing pages are empty.
      * @since %CURRENT_VERSION%
      */
-    fun findAvailableToDeveloper(ownerId: MultipleRoleUserId, communityIds: Set<CommunityId>): List<Task>
+    fun findAvailableToDeveloper(
+        ownerId: MultipleRoleUserId,
+        communityIds: Set<CommunityId>,
+        pagination: Pagination,
+        filter: TaskFilter = TaskFilter(),
+    ): Page<Task>
 }
 
 /**

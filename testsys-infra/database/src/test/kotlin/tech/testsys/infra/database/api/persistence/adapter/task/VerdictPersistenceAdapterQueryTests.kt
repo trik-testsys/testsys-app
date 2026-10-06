@@ -21,6 +21,7 @@ import tech.testsys.domain.contract.FileBlobStorage
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
+import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
@@ -107,7 +108,10 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         successfulVerdict(student.id)
         users.update(student.withData { roles { clear() } })
 
-        val page = repository.findAvailableToJudge(pagination = Pagination(page = 0, size = 1), authorId = student.id)
+        val page = repository.findAvailableToJudge(
+            pagination = Pagination(page = 0, size = 1),
+            filter = VerdictFilter(authorId = student.id),
+        )
 
         assertTrue(page.content.isEmpty())
         assertEquals(0, page.totalElements)
@@ -147,7 +151,7 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         successfulVerdict(fixtures.participant().id)
         val pagination = Pagination(page = 1, size = 1, sort = Sort(listOf(Sort.Order("id"))))
 
-        val page = repository.findAvailableToJudge(pagination = pagination, authorId = authorId)
+        val page = repository.findAvailableToJudge(pagination = pagination, filter = VerdictFilter(authorId = authorId))
 
         assertEquals(listOf(second.id), page.content.map { it.id })
         assertTrue(first.id.value < second.id.value && second.id.value < third.id.value)
@@ -163,7 +167,7 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         successfulVerdict(authorId)
         successfulVerdict(fixtures.participant().id)
 
-        val page = repository.findAvailableToJudge(pagination = Pagination(page = 2, size = 1), authorId = authorId)
+        val page = repository.findAvailableToJudge(pagination = Pagination(page = 2, size = 1), filter = VerdictFilter(authorId = authorId))
 
         assertTrue(page.content.isEmpty())
         assertEquals(1, page.totalElements)
@@ -175,7 +179,10 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
     fun `should return an empty page for an unknown author user id`() {
         successfulVerdict(fixtures.student().id)
 
-        val page = repository.findAvailableToJudge(pagination = Pagination(page = 0, size = 1), authorId = MultipleRoleUserId(-1))
+        val page = repository.findAvailableToJudge(
+            pagination = Pagination(page = 0, size = 1),
+            filter = VerdictFilter(authorId = MultipleRoleUserId(-1)),
+        )
 
         assertTrue(page.content.isEmpty())
         assertEquals(0, page.totalElements)
@@ -187,7 +194,7 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         val authorId = fixtures.developer().id
         successfulVerdict(authorId)
 
-        val page = repository.findAvailableToJudge(pagination = Pagination(page = 0, size = 1), authorId = authorId)
+        val page = repository.findAvailableToJudge(pagination = Pagination(page = 0, size = 1), filter = VerdictFilter(authorId = authorId))
 
         assertTrue(page.content.isEmpty())
         assertEquals(0, page.totalElements)

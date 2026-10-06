@@ -2,11 +2,11 @@ package tech.testsys.operation.user
 
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.user.Judge
 import tech.testsys.domain.model.user.MultipleRoleUser
-import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.error.MissedJudgeRoleError
@@ -26,7 +26,7 @@ import tech.testsys.operation.util.hasRole
 class JudgeOperations(private val verdictRepository: VerdictRepository) {
 
     /**
-     * Returns a page of current successful verdicts available to [user], optionally filtered by [authorId], with lazy file references.
+     * Returns a page of current successful verdicts available to [user], optionally filtered by [filter], with lazy file references.
      *
      * @since %CURRENT_VERSION%
      */
@@ -34,10 +34,10 @@ class JudgeOperations(private val verdictRepository: VerdictRepository) {
     fun viewResults(
         user: MultipleRoleUser,
         pagination: Pagination,
-        authorId: UserId? = null,
+        filter: VerdictFilter = VerdictFilter(),
     ): OperationResult<Page<Verdict>, ViewResultsError> = operation<Page<Verdict>, ViewResultsError> {
         ensure(user.hasRole<Judge>(), MissedJudgeRoleError)
-        val page = verdictRepository.findAvailableToJudge(pagination = pagination, authorId = authorId)
+        val page = verdictRepository.findAvailableToJudge(pagination = pagination, filter = filter)
         return page.asSuccess()
     }
 }

@@ -16,6 +16,7 @@ import tech.testsys.domain.builder.api.verdictData
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
+import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -52,7 +53,7 @@ class JudgeOperationsTests {
             val first = testVerdict(10)
             val second = testVerdict(20)
             val page = Page(content = listOf(first, second), pagination = responsePagination, totalElements = 5)
-            every { repository.findAvailableToJudge(refEq(pagination), null) } returns page
+            every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns page
 
             val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
@@ -64,7 +65,7 @@ class JudgeOperationsTests {
             assertEquals(null, result.content[0].data.testVerdicts[1].recording)
             assertEquals(3, result.totalPages)
             assertEquals(true, result.hasNext)
-            verify(exactly = 1) { repository.findAvailableToJudge(refEq(pagination), null) }
+            verify(exactly = 1) { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) }
         }
 
         @Test
@@ -72,13 +73,17 @@ class JudgeOperationsTests {
             val authorId = MultipleRoleUserId(7)
             val pagination = Pagination(page = 3, size = 4)
             val page = Page<Verdict>(content = emptyList(), pagination = pagination, totalElements = 2)
-            every { repository.findAvailableToJudge(refEq(pagination), authorId) } returns page
+            every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter(authorId = authorId)) } returns page
 
-            val result = operations.viewResults(user = judge, pagination = pagination, authorId = authorId).getOrThrow()
+            val result = operations.viewResults(
+                user = judge,
+                pagination = pagination,
+                filter = VerdictFilter(authorId = authorId),
+            ).getOrThrow()
 
             assertSame(page, result)
             assertFalse(result.hasNext)
-            verify(exactly = 1) { repository.findAvailableToJudge(refEq(pagination), authorId) }
+            verify(exactly = 1) { repository.findAvailableToJudge(refEq(pagination), VerdictFilter(authorId = authorId)) }
         }
 
         @Test
@@ -86,19 +91,23 @@ class JudgeOperationsTests {
             val authorId = SingleRoleUserId(9)
             val pagination = Pagination(page = 0, size = 1)
             val page = Page(content = listOf(testVerdict(1)), pagination = pagination, totalElements = 1)
-            every { repository.findAvailableToJudge(pagination, authorId) } returns page
+            every { repository.findAvailableToJudge(pagination, VerdictFilter(authorId = authorId)) } returns page
 
-            val result = operations.viewResults(user = judge, pagination = pagination, authorId = authorId).getOrThrow()
+            val result = operations.viewResults(
+                user = judge,
+                pagination = pagination,
+                filter = VerdictFilter(authorId = authorId),
+            ).getOrThrow()
 
             assertSame(page, result)
-            verify(exactly = 1) { repository.findAvailableToJudge(pagination, authorId) }
+            verify(exactly = 1) { repository.findAvailableToJudge(pagination, VerdictFilter(authorId = authorId)) }
         }
 
         @Test
         fun `should return an empty page without a domain error`() {
             val pagination = Pagination(page = 0, size = 10)
             val page = Page<Verdict>(content = emptyList(), pagination = pagination, totalElements = 0)
-            every { repository.findAvailableToJudge(page.pagination, null) } returns page
+            every { repository.findAvailableToJudge(page.pagination, VerdictFilter()) } returns page
 
             val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
@@ -112,19 +121,19 @@ class JudgeOperationsTests {
             val pagination =
                 Pagination(page = 0, size = 10, sort = Sort(listOf(Sort.Order("storageField", Sort.Direction.DESC))))
             val page = Page<Verdict>(content = emptyList(), pagination = pagination, totalElements = 0)
-            every { repository.findAvailableToJudge(refEq(pagination), null) } returns page
+            every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns page
 
             val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
             assertSame(page, result)
-            verify(exactly = 1) { repository.findAvailableToJudge(refEq(pagination), null) }
+            verify(exactly = 1) { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) }
         }
 
         @Test
         fun `should propagate the original technical exception`() {
             val pagination = Pagination(page = 0, size = 10)
             val failure = IllegalStateException("Storage unavailable")
-            every { repository.findAvailableToJudge(refEq(pagination), null) } throws failure
+            every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } throws failure
 
             val thrown = assertThrows(IllegalStateException::class.java) {
                 operations.viewResults(user = judge, pagination = pagination)

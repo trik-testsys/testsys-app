@@ -321,7 +321,6 @@ class DatabaseFixtures(
                 author = authorId
                 task(taskId)
                 solution(solutionId)
-                trikStudioVersion = contest.data.trikStudioVersion
                 status.queued()
                 kind.grading { this.contest = contest.id }
             },

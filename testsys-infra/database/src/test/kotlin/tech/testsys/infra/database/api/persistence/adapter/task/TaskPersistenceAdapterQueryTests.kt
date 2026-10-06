@@ -2,29 +2,34 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
-import org.junit.jupiter.api.Assertions
+import io.mockk.slot
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
+import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.dao.DataAccessResourceFailureException
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.domain.Specification
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.Sort
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
-import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskId
-import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskJpaEntity
-import tech.testsys.infra.database.internal.jpa.repository.task.CommunityToTaskJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.entity.task.TaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.TaskJpaEntityRepository
 
 @OptIn(InternalDatabaseApi::class)
 class TaskPersistenceAdapterQueryTests {
 
     private val jpaEntityRepository = mockk<TaskJpaEntityRepository>()
-    private val communityToTaskJpaEntityRepository = mockk<CommunityToTaskJpaEntityRepository>()
     private val adapter = TaskPersistenceAdapter(
         jpaEntityRepository = jpaEntityRepository,
         taskContentJpaEntityRepository = mockk(),
-        communityToTaskJpaEntityRepository = communityToTaskJpaEntityRepository,
+        communityToTaskJpaEntityRepository = mockk(),
         versionBucketToTaskJpaEntityRepository = mockk(),
         exerciseToTaskContentJpaEntityRepository = mockk(),
         testToTaskContentJpaEntityRepository = mockk(),
@@ -33,71 +38,63 @@ class TaskPersistenceAdapterQueryTests {
         trikStudioVersionJpaEntityRepository = mockk(),
     )
 
-    @ParameterizedTest
-    @ValueSource(booleans = [false, true])
-    fun `should propagate storage exceptions when finding owned tasks`(withCommunities: Boolean) {
+    @Test
+    fun `should propagate storage exceptions when finding a page`() {
         val failure = DataAccessResourceFailureException("Task storage unavailable")
-        val communities = communityIds(withCommunities)
-        every { jpaEntityRepository.findAllByOwnerId(1) } throws failure
+        every { jpaEntityRepository.findAll(any<Specification<TaskJpaEntity>>(), any<Pageable>()) } throws failure
 
-        val actual = Assertions.assertThrows(DataAccessResourceFailureException::class.java) {
-            adapter.findAvailableToDeveloper(ownerId = MultipleRoleUserId(1), communityIds = communities)
+        val actual = assertThrows(DataAccessResourceFailureException::class.java) {
+            adapter.findAvailableToDeveloper(
+                ownerId = MultipleRoleUserId(1),
+                communityIds = setOf(CommunityId(2)),
+                pagination = Pagination(page = 0, size = 1),
+            )
         }
 
-        Assertions.assertSame(failure, actual)
+        assertSame(failure, actual)
     }
 
-    @Test
-    fun `should propagate storage exceptions when finding shared associations`() {
-        val failure = DataAccessResourceFailureException("Task associations unavailable")
-        every { jpaEntityRepository.findAllByOwnerId(1) } returns emptyList()
-        every { communityToTaskJpaEntityRepository.findAllByIdCommunityIdIn(setOf(2L)) } throws failure
+    @ParameterizedTest
+    @CsvSource("name,DESC,name:DESC id:ASC", "id,DESC,id:DESC")
+    fun `should retain explicit order and add id only when not explicitly sorted`(field: String, direction: String, expected: String) {
+        val requested =
+            Pagination(page = 5, size = 2, sort = Sort(listOf(Sort.Order(field, Sort.Direction.valueOf(direction)))))
+        val pageable = slot<Pageable>()
+        every {
+            jpaEntityRepository.findAll(any<Specification<TaskJpaEntity>>(), capture(pageable))
+        } returns PageImpl(emptyList(), PageRequest.of(5, 2), 7)
 
-        val actual = Assertions.assertThrows(DataAccessResourceFailureException::class.java) {
-            adapter.findAvailableToDeveloper(ownerId = MultipleRoleUserId(1), communityIds = setOf(CommunityId(2)))
-        }
-
-        Assertions.assertSame(failure, actual)
-    }
-
-    @Test
-    fun `should propagate storage exceptions when loading shared tasks`() {
-        val failure = DataAccessResourceFailureException("Shared tasks unavailable")
-        every { jpaEntityRepository.findAllByOwnerId(1) } returns emptyList()
-        every { communityToTaskJpaEntityRepository.findAllByIdCommunityIdIn(setOf(2L)) } returns listOf(
-            CommunityToTaskJpaEntity(id = CommunityToTaskId(communityId = 2, taskId = 3)),
+        val page = adapter.findAvailableToDeveloper(
+            ownerId = MultipleRoleUserId(1),
+            communityIds = emptySet(),
+            pagination = requested,
         )
-        every { jpaEntityRepository.findAllById(setOf(3L)) } throws failure
 
-        val actual = Assertions.assertThrows(DataAccessResourceFailureException::class.java) {
-            adapter.findAvailableToDeveloper(ownerId = MultipleRoleUserId(1), communityIds = setOf(CommunityId(2)))
-        }
-
-        Assertions.assertSame(failure, actual)
+        assertEquals(expected, pageable.captured.sort.joinToString(" ") { order -> "${order.property}:${order.direction}" })
+        assertEquals(5, pageable.captured.pageNumber)
+        assertEquals(2, pageable.captured.pageSize)
+        assertEquals(emptyList<Any>(), page.content)
+        assertEquals(7L, page.totalElements)
+        assertSame(requested, page.pagination)
     }
 
     @Test
-    fun `should skip shared queries when community identifiers are empty`() {
-        every { jpaEntityRepository.findAllByOwnerId(1) } returns emptyList()
+    fun `should default to id ascending without altering requested metadata`() {
+        val requested = Pagination(page = 0, size = 2)
+        val pageable = slot<Pageable>()
+        every {
+            jpaEntityRepository.findAll(any<Specification<TaskJpaEntity>>(), capture(pageable))
+        } returns PageImpl(emptyList())
 
-        val result = adapter.findAvailableToDeveloper(ownerId = MultipleRoleUserId(1), communityIds = emptySet())
+        val page = adapter.findAvailableToDeveloper(
+            ownerId = MultipleRoleUserId(1),
+            communityIds = emptySet(),
+            pagination = requested,
+        )
 
-        Assertions.assertEquals(emptyList<Any>(), result)
-        verify(exactly = 0) { communityToTaskJpaEntityRepository.findAllByIdCommunityIdIn(any()) }
-        verify(exactly = 0) { jpaEntityRepository.findAllById(any()) }
+        assertEquals("id:ASC", pageable.captured.sort.joinToString(" ") { order -> "${order.property}:${order.direction}" })
+        assertSame(requested, page.pagination)
+        assertEquals(0L, page.totalElements)
+        assertEquals(emptyList<Any>(), page.content)
     }
-
-    @Test
-    fun `should query all communities together and skip loading tasks when no associations exist`() {
-        every { jpaEntityRepository.findAllByOwnerId(1) } returns emptyList()
-        every { communityToTaskJpaEntityRepository.findAllByIdCommunityIdIn(setOf(2L, 3L)) } returns emptyList()
-
-        val result = adapter.findAvailableToDeveloper(ownerId = MultipleRoleUserId(1), communityIds = setOf(CommunityId(2), CommunityId(3)))
-
-        Assertions.assertEquals(emptyList<Any>(), result)
-        verify(exactly = 1) { communityToTaskJpaEntityRepository.findAllByIdCommunityIdIn(setOf(2L, 3L)) }
-        verify(exactly = 0) { jpaEntityRepository.findAllById(any()) }
-    }
-
-    private fun communityIds(withCommunities: Boolean): Set<CommunityId> = if (withCommunities) setOf(CommunityId(2)) else emptySet()
 }

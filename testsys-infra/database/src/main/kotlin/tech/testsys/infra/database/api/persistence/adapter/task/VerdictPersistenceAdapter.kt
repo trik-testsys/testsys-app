@@ -6,11 +6,11 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
-import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.VerdictJpaEntity
@@ -65,14 +65,14 @@ class VerdictPersistenceAdapter(
     override fun removeByIds(ids: List<VerdictId>) = ids.forEach(::removeById)
 
     @Transactional(readOnly = true)
-    override fun findAvailableToJudge(pagination: Pagination, authorId: UserId?): Page<Verdict> {
+    override fun findAvailableToJudge(pagination: Pagination, filter: VerdictFilter): Page<Verdict> {
         val jpaSort = JpaSort.by(
             pagination.sort.orders.map { order ->
                 JpaSort.Order(JpaSort.Direction.valueOf(order.direction.name), order.field)
             },
         )
         val pageable = PageRequest.of(pagination.page, pagination.size, jpaSort)
-        val page = verdictJpaEntityRepository.findAvailableToJudge(authorId = authorId?.value, pageable = pageable)
+        val page = verdictJpaEntityRepository.findAvailableToJudge(authorId = filter.authorId?.value, pageable = pageable)
         val verdictIds = page.content.map { jpaEntity -> jpaEntity.requireId() }
         val outcomesByVerdict = if (verdictIds.isEmpty()) {
             emptyMap()

@@ -42,7 +42,7 @@
 |---------------------------------------|--------------------------------------|---------------------------------------------------------------------------|
 | `EntityRepository` и `XRepository`     | `contract/persistence/repository/`   | Реализованы адаптерами в `testsys-infra:database`                          |
 | `FileBlobStorage`                      | `contract/File.kt`                   | Потребитель — `FileDataStorage`; продакшен-реализации нет, в тестах `InMemoryFileBlobStorage` |
-| `Grader`                               | `contract/Grading.kt`                | Реализации нет; модуль `testsys-infra:grpc` — пустая заготовка             |
+| `Grader`                               | `contract/Grading.kt`                | Реализован в [grpc/README.md](../../testsys-infra/grpc/README.md)          |
 | `Pagination` / `Sort` / `Page`         | `contract/persistence/Pagination.kt` | Используются в портах и адаптерах `Task`, `Contest` и `Verdict`          |
 
 Порт без реализации — нормальное состояние: интерфейс фиксирует потребность домена раньше, чем появляется

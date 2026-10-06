@@ -54,6 +54,24 @@ sealed interface ResourceAccessError : OperationError
 
 // endregion
 
+// region JudgeOperations
+
+/**
+ * Failure of listing verdicts available to the judge.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewResultsError : OperationError
+
+/**
+ * The user does not hold the judge role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object MissedJudgeRoleError : ViewResultsError, MissedRequiredRoleError
+
+// endregion
+
 // region DeveloperOperations
 
 /**

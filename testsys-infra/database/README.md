@@ -37,6 +37,18 @@
 Все чтения выполняются в транзакции с `readOnly = true`; порядок списка не гарантирован,
 исключения хранилища выходят к вызывающему коду.
 
+## Постраничный поиск Вердиктов
+
+Метод `findAvailableToJudge` в
+[VerdictPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/VerdictPersistenceAdapter.kt)
+передаёт фильтр автора и `Pageable` в `VerdictJpaEntityRepository`. БД фильтрует и сортирует Вердикты,
+затем выбирает страницу. Для подсчёта общего числа задан отдельный `countQuery` с теми же условиями.
+Адаптер одним запросом загружает результаты Полигонов для всех Вердиктов выбранной страницы,
+группирует их по идентификатору Вердикта и собирает страницу через `VerdictMapping`.
+Для пустой страницы запрос результатов Полигонов не выполняется.
+Результат содержит переданные параметры пагинации; связи с логами и видеозаписями остаются lazy.
+Чтение выполняется в транзакции с `readOnly = true`.
+
 ## Идентификаторы
 
 Идентификаторы сущностей выдаёт [SnowflakeIdGenerator.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/id/SnowflakeIdGenerator.kt),

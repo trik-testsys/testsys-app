@@ -1,6 +1,8 @@
 package tech.testsys.domain.contract.persistence.repository
 
 import tech.testsys.domain.contract.StoredBlobRef
+import tech.testsys.domain.contract.persistence.Page
+import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
@@ -45,6 +47,7 @@ import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.UserId
 
 /**
  * Persistence port for [Contest] entities.
@@ -253,7 +256,19 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
  *
  * @since %CURRENT_VERSION%
  */
-interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict>
+interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict> {
+
+    /**
+     * Synchronously finds current successful grading verdicts whose authors currently hold a student or participant role.
+     * Repeated calls reflect current data without changing it or loading file contents; technical exceptions propagate.
+     *
+     * @param pagination the requested page and ordering.
+     * @param authorId the author's user id to filter before paging and counting, or `null` for all eligible authors.
+     * @return verdicts with lazy references, requested pagination and exact total; missing authors or pages are empty.
+     * @since %CURRENT_VERSION%
+     */
+    fun findAvailableToJudge(pagination: Pagination, authorId: UserId? = null): Page<Verdict>
+}
 
 /**
  * Persistence port for [Task] entities.

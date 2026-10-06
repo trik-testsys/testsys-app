@@ -58,9 +58,8 @@ class TaskApiTests {
                 author = LazyEntity(MultipleRoleUserId(10)),
                 solution = LazyEntity(SolutionId(15)),
                 task = LazyEntity(TaskId(9)),
-                trikStudioVersion = TrikStudioVersion("3.0.0"),
                 status = SubmissionStatus.InProgress,
-                kind = SubmissionKind.DeveloperSolutionTest,
+                kind = SubmissionKind.DeveloperSolutionTest(trikStudioVersion = TrikStudioVersion("3.0.0")),
                 judgmentOrders = LazyEntityList(listOf(JudgmentOrderId(32))),
             )
         }
@@ -75,17 +74,26 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.author.id, copy.data.author.id)
             Assertions.assertEquals(origin.data.solution.id, copy.data.solution.id)
             Assertions.assertEquals(origin.data.task.id, copy.data.task.id)
-            Assertions.assertEquals(origin.data.trikStudioVersion, copy.data.trikStudioVersion)
             Assertions.assertEquals(origin.data.status, copy.data.status)
-            Assertions.assertEquals(origin.data.kind, copy.data.kind)
+            Assertions.assertEquals(
+                (origin.data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion,
+                (copy.data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion,
+            )
             Assertions.assertEquals(origin.data.judgmentOrders.ids, copy.data.judgmentOrders.ids)
         }
 
         @Test
         fun `should change TRIK Studio version if withData sets version`() {
-            val copy = origin.withData { trikStudioVersion("4.0.0") }
+            val copy = origin.withData { kind.developerSolutionTest { trikStudioVersion("4.0.0") } }
 
-            Assertions.assertEquals(TrikStudioVersion("4.0.0"), copy.data.trikStudioVersion)
+            Assertions.assertEquals(
+                TrikStudioVersion("4.0.0"),
+                (copy.data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion,
+            )
+            Assertions.assertEquals(
+                TrikStudioVersion("3.0.0"),
+                (origin.data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion,
+            )
             Assertions.assertEquals(origin.version, copy.version)
         }
 
@@ -95,7 +103,42 @@ class TaskApiTests {
 
             Assertions.assertEquals(45L, copy.data.author.id.value)
             Assertions.assertEquals(origin.data.status, copy.data.status)
-            Assertions.assertEquals(origin.data.kind, copy.data.kind)
+            Assertions.assertEquals(
+                (origin.data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion,
+                (copy.data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion,
+            )
+        }
+
+        @Test
+        fun `should change developer solution test to grading through withData`() {
+            val copy = origin.withData { kind.grading { contest(12) } }
+
+            Assertions.assertEquals(12L, (copy.data.kind as? SubmissionKind.Grading)?.contest?.id?.value)
+            Assertions.assertEquals(origin.version, copy.version)
+        }
+
+        @Test
+        fun `should preserve grading contest and token through withData`() {
+            val grading = origin.withData { kind.grading { contest(12) } }
+
+            val copy = grading.withData { status.queued() }
+
+            Assertions.assertEquals(12L, (copy.data.kind as? SubmissionKind.Grading)?.contest?.id?.value)
+            Assertions.assertEquals(grading.version, copy.version)
+            Assertions.assertEquals(SubmissionStatus.Queued, copy.data.status)
+        }
+
+        @Test
+        fun `should change grading to developer solution test through withData`() {
+            val grading = origin.withData { kind.grading { contest(12) } }
+
+            val copy = grading.withData { kind.developerSolutionTest { trikStudioVersion("4.0.0") } }
+
+            Assertions.assertEquals(
+                TrikStudioVersion("4.0.0"),
+                (copy.data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion,
+            )
+            Assertions.assertEquals(grading.version, copy.version)
         }
     }
 

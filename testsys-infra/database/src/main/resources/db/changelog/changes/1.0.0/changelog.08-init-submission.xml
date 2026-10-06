@@ -32,7 +32,7 @@
                              foreignKeyName="fk_submission_task" references="ts_task(id)"/>
             </column>
             <column name="trik_studio_version_id" type="BIGINT">
-                <constraints nullable="false" foreignKeyName="fk_submission_trik_studio_version"
+                <constraints foreignKeyName="fk_submission_trik_studio_version"
                              references="ts_trik_studio_version(id)"/>
             </column>
             <column name="status" type="VARCHAR(64)">

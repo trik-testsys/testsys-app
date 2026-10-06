@@ -209,9 +209,10 @@ sealed interface SubmissionKind {
     /**
      * A test run of a developer's reference solution, made to validate the task itself; not bound to any contest.
      *
+     * @property trikStudioVersion the TRIK Studio version used for the test run.
      * @since %CURRENT_VERSION%
      */
-    object DeveloperSolutionTest : SubmissionKind
+    class DeveloperSolutionTest(val trikStudioVersion: TrikStudioVersion) : SubmissionKind
 
     /**
      * A regular submission made within a contest.
@@ -228,7 +229,6 @@ sealed interface SubmissionKind {
  * @property author the user who submitted the solution; fixed on creation and ignored on update.
  * @property solution the submitted program; fixed on creation and ignored on update.
  * @property task the task the solution is graded against; fixed on creation and ignored on update.
- * @property trikStudioVersion the TRIK Studio version used for grading; fixed on creation and ignored on update.
  * @property status the position of the submission in the grading lifecycle.
  * @property kind the context of the submission; fixed on creation and ignored on update.
  * @property judgmentOrders the judges' rulings concerning the submission.
@@ -238,7 +238,6 @@ data class SubmissionData(
     val author: LazyEntity<UserId, User<UserId>>,
     val solution: LazyEntity<SolutionId, Solution>,
     val task: LazyEntity<TaskId, Task>,
-    val trikStudioVersion: TrikStudioVersion,
     val status: SubmissionStatus,
     val kind: SubmissionKind,
     val judgmentOrders: LazyEntityList<JudgmentOrderId, JudgmentOrder>,

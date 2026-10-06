@@ -290,9 +290,8 @@ class DatabaseFixtures(
                 this.author = authorId
                 solution(solutionId)
                 task(taskId)
-                trikStudioVersion = version
                 status.queued()
-                kind.developerSolutionTest()
+                kind.developerSolutionTest { trikStudioVersion = version }
             },
         )
     }

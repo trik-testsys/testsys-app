@@ -31,7 +31,8 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
 
     /**
-     * Assembles a [Submission] from [jpaEntity], its resolved [authorId], [trikStudioVersion] and [judgmentOrderIds];
+     * Assembles a [Submission] from [jpaEntity], [authorId], [judgmentOrderIds] and a resolved [trikStudioVersion]
+     * for developer solution tests;
      * fails on inconsistent status or kind columns.
      *
      * @since %CURRENT_VERSION%
@@ -39,7 +40,7 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
     fun toDomain(
         jpaEntity: SubmissionJpaEntity,
         authorId: UserId,
-        trikStudioVersion: TrikStudioVersion,
+        trikStudioVersion: TrikStudioVersion?,
         judgmentOrderIds: List<JudgmentOrderId>,
     ) = submission {
         populateFields(jpaEntity)
@@ -47,21 +48,20 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
             author = authorId
             solution(jpaEntity.solutionId)
             task(jpaEntity.taskId)
-            this.trikStudioVersion = trikStudioVersion
 
             status.decodeStatus(jpaEntity)
-            kind.decodeKind(jpaEntity)
+            kind.decodeKind(jpaEntity, trikStudioVersion)
 
             judgmentOrders = judgmentOrderIds.toMutableList()
         }
     }
 
     /**
-     * Creates a new [SubmissionJpaEntity] row from [data] referencing the version row [trikStudioVersionId].
+     * Creates a new [SubmissionJpaEntity] row from [data]; [trikStudioVersionId] is required for developer solution tests.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toJpaEntity(data: SubmissionData, trikStudioVersionId: Long): SubmissionJpaEntity {
+    fun toJpaEntity(data: SubmissionData, trikStudioVersionId: Long?): SubmissionJpaEntity {
         val statusEncoded = encodeStatus(data.status)
         val kindEncoded = encodeKind(data.kind)
 
@@ -69,7 +69,12 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
             authorId = data.author.id.value,
             solutionId = data.solution.id.value,
             taskId = data.task.id.value,
-            trikStudioVersionId = trikStudioVersionId,
+            trikStudioVersionId = when (data.kind) {
+                is SubmissionKind.DeveloperSolutionTest -> requireNotNull(trikStudioVersionId) {
+                    "Developer solution test requires a TRIK Studio version id"
+                }
+                is SubmissionKind.Grading -> null
+            },
             status = statusEncoded.status,
             gradingResult = statusEncoded.gradingResult,
             gradingVerdictId = statusEncoded.gradingVerdictId,
@@ -158,23 +163,31 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
         }
     }
 
-    private fun SubmissionKindChooser.decodeKind(jpaEntity: SubmissionJpaEntity) = when (jpaEntity.kind) {
-        SubmissionKindJpaEnum.DEVELOPER_SOLUTION_TEST -> {
-            require(jpaEntity.gradingContestId == null) {
-                "Submission ${jpaEntity.id} has kind=DEVELOPER_SOLUTION_TEST but gradingContestId is set"
-            }
+    private fun SubmissionKindChooser.decodeKind(jpaEntity: SubmissionJpaEntity, trikStudioVersion: TrikStudioVersion?) =
+        when (jpaEntity.kind) {
+            SubmissionKindJpaEnum.DEVELOPER_SOLUTION_TEST -> {
+                require(jpaEntity.gradingContestId == null) {
+                    "Submission ${jpaEntity.id} has kind=DEVELOPER_SOLUTION_TEST but gradingContestId is set"
+                }
 
-            developerSolutionTest()
-        }
-        SubmissionKindJpaEnum.GRADING -> {
-            val contestId = jpaEntity.gradingContestId
-                ?: error("Submission ${jpaEntity.id} has kind=GRADING but gradingContestId is null")
+                requireNotNull(jpaEntity.trikStudioVersionId) {
+                    "Submission ${jpaEntity.id} has kind=DEVELOPER_SOLUTION_TEST but trikStudioVersionId is null"
+                }
+                val version = requireNotNull(trikStudioVersion) {
+                    "Submission ${jpaEntity.id} has kind=DEVELOPER_SOLUTION_TEST but its TRIK Studio version is unresolved"
+                }
 
-            grading {
-                contest(contestId)
+                developerSolutionTest { this.trikStudioVersion = version }
+            }
+            SubmissionKindJpaEnum.GRADING -> {
+                val contestId = jpaEntity.gradingContestId
+                    ?: error("Submission ${jpaEntity.id} has kind=GRADING but gradingContestId is null")
+
+                grading {
+                    contest(contestId)
+                }
             }
         }
-    }
 
     private fun SubmissionJpaEntity.requireNullPayload(status: SubmissionStatusJpaEnum) {
         require(
@@ -228,7 +241,7 @@ object SubmissionMapping : EntityMapping<Submission, SubmissionJpaEntity> {
     )
 
     private fun encodeKind(kind: SubmissionKind): KindFlat = when (kind) {
-        SubmissionKind.DeveloperSolutionTest -> KindFlat(SubmissionKindJpaEnum.DEVELOPER_SOLUTION_TEST, null)
+        is SubmissionKind.DeveloperSolutionTest -> KindFlat(SubmissionKindJpaEnum.DEVELOPER_SOLUTION_TEST, null)
         is SubmissionKind.Grading -> KindFlat(SubmissionKindJpaEnum.GRADING, kind.contest.id.value)
     }
 }

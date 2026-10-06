@@ -113,7 +113,8 @@ class LogsJpaEntity(
  * @property authorId id of the user who submitted the solution.
  * @property solutionId id of the submitted solution.
  * @property taskId id of the task the solution is submitted to.
- * @property trikStudioVersionId id of the [TrikStudioVersionJpaEntity] used for grading.
+ * @property trikStudioVersionId id of the [TrikStudioVersionJpaEntity] used for a developer solution test,
+ * or `null` for a regular grading submission.
  * @property status lifecycle state of the submission.
  * @property gradingResult outcome of grading, or `null` while not graded.
  * @property gradingVerdictId id of the verdict of a successful grading, or `null` otherwise.
@@ -128,7 +129,7 @@ class SubmissionJpaEntity(
     val authorId: Long,
     val solutionId: Long,
     val taskId: Long,
-    val trikStudioVersionId: Long,
+    val trikStudioVersionId: Long?,
     @Enumerated(EnumType.STRING)
     val status: SubmissionStatusJpaEnum,
     @Enumerated(EnumType.STRING)

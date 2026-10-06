@@ -7,6 +7,7 @@ import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionId
+import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.SingleRoleUserId
@@ -14,6 +15,7 @@ import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionKindJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.task.JudgmentOrderJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.SubmissionJpaEntityRepository
@@ -26,8 +28,7 @@ import tech.testsys.infra.database.internal.utils.requireId
 
 /**
  * Persistence adapter of [Submission] entities backed by [SubmissionJpaEntity].
- * Judgment order ids are projected from the judgment order table on read,
- * and the kind of the author id is resolved from the user row; the TRIK Studio version must already be registered by tag.
+ * Reads judgment order ids and author id kinds from their rows; a developer solution test requires a registered version.
  *
  * @since %CURRENT_VERSION%
  */
@@ -43,14 +44,20 @@ class SubmissionPersistenceAdapter(
 
     @Transactional
     override fun save(data: SubmissionData): Submission {
-        val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(data.trikStudioVersion.version)
+        val trikStudioVersion = when (val kind = data.kind) {
+            is SubmissionKind.DeveloperSolutionTest -> kind.trikStudioVersion
+            is SubmissionKind.Grading -> null
+        }
+        val trikStudioVersionId = trikStudioVersion?.let {
+            trikStudioVersionJpaEntityRepository.findIdByTagOrError(it.version)
+        }
         val jpaEntity = SubmissionMapping.toJpaEntity(data, trikStudioVersionId)
         val savedJpaEntity = jpaEntityRepository.save(jpaEntity)
 
         val domainEntity = SubmissionMapping.toDomain(
             jpaEntity = savedJpaEntity,
             authorId = resolveAuthorId(savedJpaEntity.authorId),
-            trikStudioVersion = data.trikStudioVersion,
+            trikStudioVersion = trikStudioVersion,
             judgmentOrderIds = emptyList(),
         )
         return domainEntity
@@ -70,11 +77,19 @@ class SubmissionPersistenceAdapter(
         val judgmentOrderIds = judgmentOrderJpaEntityRepository.findAllBySubmissionId(submissionId)
             .map { JudgmentOrderId(it.requireId()) }
 
-        val tag = trikStudioVersionJpaEntityRepository.findByIdOrError(jpaEntity.trikStudioVersionId).tag
+        val trikStudioVersion = when (jpaEntity.kind) {
+            SubmissionKindJpaEnum.DEVELOPER_SOLUTION_TEST -> {
+                val versionId = requireNotNull(jpaEntity.trikStudioVersionId) {
+                    "Submission $submissionId has kind=DEVELOPER_SOLUTION_TEST but trikStudioVersionId is null"
+                }
+                TrikStudioVersion(version = trikStudioVersionJpaEntityRepository.findByIdOrError(versionId).tag)
+            }
+            SubmissionKindJpaEnum.GRADING -> null
+        }
         val domainEntity = SubmissionMapping.toDomain(
             jpaEntity = jpaEntity,
             authorId = resolveAuthorId(jpaEntity.authorId),
-            trikStudioVersion = TrikStudioVersion(tag),
+            trikStudioVersion = trikStudioVersion,
             judgmentOrderIds = judgmentOrderIds,
         )
         return domainEntity

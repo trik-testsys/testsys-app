@@ -475,6 +475,37 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
     }
 
     @Test
+    fun `should replace committed content with editable content having registered versions before deleting old rows`() {
+        val saved = repository.save(newData())
+        val version = fixtures.trikStudioVersion()
+        val polygon = fixtures.polygon()
+        val before = assertIs<TaskContent.Committed>(saved.data.content).lastCommitted
+
+        val updated = repository.update(
+            saved.withData {
+                content.uncommitted(
+                    wipBuilder = {
+                        tests = mutableListOf(polygon.id)
+                        supportedTrikStudioVersions = mutableListOf(version)
+                    },
+                    lastCommittedBuilder = {
+                        statement = before.statement.id
+                        exercises = before.exercises.ids.toMutableList()
+                        tests = before.tests.ids.toMutableList()
+                        developerSolutions = before.developerSolutions.ids.toMutableList()
+                        supportedTrikStudioVersions = before.supportedTrikStudioVersions.toMutableList()
+                    },
+                )
+            },
+        )
+
+        val content = assertIs<TaskContent.Uncommitted>(updated.data.content)
+        assertEquals(listOf(version), content.wip.supportedTrikStudioVersions)
+        assertEquals(listOf(polygon.id), content.wip.tests.ids)
+        assertSameContent(updated.data.content, assertNotNull(repository.findById(saved.id)).data.content)
+    }
+
+    @Test
     fun `should keep unattached uploaded resource chains through a round trip`() {
         val statement = fixtures.statement()
         val data = newTaskData()

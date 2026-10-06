@@ -1,6 +1,5 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
@@ -82,8 +81,6 @@ class TaskPersistenceAdapter(
         val (wipContentId, committedContentId) = persistContents(
             wipContent,
             committedContent,
-            currentWipId = null,
-            currentCommittedId = null,
         )
 
         val savedJpaEntity = jpaEntityRepository.save(TaskMapping.toJpaEntity(data, wipContentId, committedContentId))
@@ -97,7 +94,11 @@ class TaskPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Task): Task {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
+        val currentJpaEntity = requireNotNull(taskJpaEntityRepository.findLockedById(entity.id.value)) {
+            "Task id=${entity.id.value} does not exist"
+        }
+        val currentWipId = currentJpaEntity.wipContentId
+        val currentCommittedId = currentJpaEntity.committedContentId
 
         val wipContent = TaskMapping.extractWip(entity.data.content)
         val committedContent = TaskMapping.extractCommitted(entity.data.content)
@@ -105,12 +106,12 @@ class TaskPersistenceAdapter(
         val (wipContentId, committedContentId) = persistContents(
             wipContent = wipContent,
             committedContent = committedContent,
-            currentWipId = currentJpaEntity.wipContentId,
-            currentCommittedId = currentJpaEntity.committedContentId,
         )
 
         val updatedJpaEntity = TaskMapping.toJpaEntity(entity, currentJpaEntity, wipContentId, committedContentId)
         val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
+        deleteContentCascade(currentWipId)
+        currentCommittedId?.takeIf { it != currentWipId }?.let { deleteContentCascade(it) }
         val taskId = savedJpaEntity.requireId()
         syncSharedTo(taskId, entity.data.sharedTo.ids)
         syncUploadedResources(taskId, entity.data.uploadedResources)
@@ -121,7 +122,7 @@ class TaskPersistenceAdapter(
 
     @Transactional
     override fun removeById(id: TaskId) {
-        val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val jpaEntity = taskJpaEntityRepository.findLockedById(id.value) ?: return
         val taskId = jpaEntity.requireId()
         communityToTaskJpaEntityRepository.deleteAll(communityToTaskJpaEntityRepository.findAllByTaskId(taskId))
         versionBucketToTaskJpaEntityRepository.deleteAll(versionBucketToTaskJpaEntityRepository.findAllByTaskId(taskId))
@@ -201,18 +202,7 @@ class TaskPersistenceAdapter(
      * Replaces the wip/committed content rows of a task and returns the `(wipContentId, committedContentId)` pair;
      * for a `COMMITTED` task (no wip) both point at the same row.
      */
-    private fun persistContents(
-        wipContent: WipTaskContent?,
-        committedContent: CommittedTaskContent?,
-        currentWipId: Long?,
-        currentCommittedId: Long?,
-    ): Pair<Long, Long?> {
-        // Delete previous content rows + their associations to keep the schema tidy.
-        currentWipId?.let { deleteContentCascade(it) }
-        if (currentCommittedId != null && currentCommittedId != currentWipId) {
-            deleteContentCascade(currentCommittedId)
-        }
-
+    private fun persistContents(wipContent: WipTaskContent?, committedContent: CommittedTaskContent?): Pair<Long, Long?> {
         return when {
             wipContent != null && committedContent != null -> {
                 val wipId = insertContent(wipContent)

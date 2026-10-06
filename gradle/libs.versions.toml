@@ -15,6 +15,7 @@ mockk = "1.14.9"
 protos = "1.2.0.RELEASE"
 grpc = "1.66.0"
 jackson = "2.19.4"
+ksoup = "0.2.5"
 
 [libraries]
 grading-protos = { module = "trik.testsys.grading:protos", version.ref = "protos" }
@@ -23,6 +24,7 @@ grpc-inprocess = { module = "io.grpc:grpc-inprocess", version.ref = "grpc" }
 spring-context = { module = "org.springframework:spring-context", version.ref = "spring" }
 spring-tx = { module = "org.springframework:spring-tx", version.ref = "spring" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
+ksoup = { module = "com.fleeksoft.ksoup:ksoup", version.ref = "ksoup" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }

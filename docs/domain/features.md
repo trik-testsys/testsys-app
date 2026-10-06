@@ -37,7 +37,9 @@
 Фича имеет кодификатор следующего вида `testsys.префикс.название-фичи`.
 Префикс может обладать дополнительной семантикой.
 
-Фича имеет статус, который написан в скобках рядом с ней:
+Фичи с суффиксом `authorization` не имеют статуса, поскольку описывают поведение других фичей.
+
+У остальных фич статус указан в скобках рядом с кодификатором:
 - **Not implemented** – фича не реализована ни в каком виде
 - **Partially implemented** – фича реализована частично
 - **Implemented** – фича реализована полностью
@@ -281,7 +283,7 @@ Page: **testsys.web.page.authentication**
 
 <!-- testsys.user.single.participant -->
 
-### testsys.user.single.participant.authorization (Not implemented)
+### testsys.user.single.participant.authorization
 
 Участнику доступны Туры находящиеся в одном с ним Соревновании,
 а также Задачи из этих Туров.
@@ -351,7 +353,7 @@ Page: **testsys.web.page.study.task**
 
 <!-- testsys.user.single.observer -->
 
-### testsys.user.single.observer.authorization (Not implemented)
+### testsys.user.single.observer.authorization
 
 Наблюдателю доступны Соревнования,
 проходящие в том же сообществе в котором состоит Наблюдатель,
@@ -379,7 +381,7 @@ TODO: Столбцы
 
 <!-- testsys.user.multi.developer -->
 
-### testsys.user.multi.developer.authorization (Not implemented)
+### testsys.user.multi.developer.authorization
 
 Разработчику доступны созданные им Ресурсы, Задачи, Туры, 
 а также Задачи и Туры, к которым был предоставлен доступ Сообществам,
@@ -1309,7 +1311,7 @@ Page: **testsys.web.page.developer.contest**
 
 <!-- testsys.user.multi.student -->
 
-### testsys.user.multi.student.authorization (Not implemented)
+### testsys.user.multi.student.authorization
 
 Ученику доступны:
 1) Классы в которых он состоит
@@ -1331,7 +1333,7 @@ TODO: description
 
 <!-- testsys.user.multi.judge -->
 
-### testsys.user.multi.judge.authorization (Not implemented)
+### testsys.user.multi.judge.authorization
 
 Судье доступна информация о всех Решениях отправленных:
 1) Учениками
@@ -1375,7 +1377,7 @@ Page: **testsys.web.page.judge**
 
 <!-- testsys.user.multi.admin -->
 
-### testsys.user.multi.admin.authorization (Not implemented)
+### testsys.user.multi.admin.authorization
 
 Администратору доступна информация о Пользователях, 
 находящихся с ним в одном Сообществе.
@@ -1466,7 +1468,7 @@ Page: **testsys.web.page.admin.user**
 
 <!-- testsys.user.multi.manager -->
 
-### testsys.user.multi.manager.authorization (Not implemented)
+### testsys.user.multi.manager.authorization
 
 Организатору доступны Классы, Соревнования, Участники
 которых он создал. Организатору также доступны Туры, доступ к которым был предоставлен

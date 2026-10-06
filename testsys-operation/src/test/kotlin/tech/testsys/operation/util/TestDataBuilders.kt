@@ -3,6 +3,7 @@ package tech.testsys.operation.util
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.builder.api.multipleRoleUser
 import tech.testsys.domain.builder.task.ContestDataBuilder
+import tech.testsys.domain.builder.task.TaskValidationRequestDataBuilder
 import tech.testsys.domain.builder.user.AdministratorBuilder
 import tech.testsys.domain.builder.user.DeveloperBuilder
 import tech.testsys.domain.builder.user.JudgeBuilder
@@ -17,6 +18,7 @@ import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.HashAlgorithm
@@ -63,6 +65,21 @@ fun testTask(choose: TaskContentChooser.() -> Unit): Task = task {
 
 fun testNewTask(): Task = testTask {
     new {}
+}
+
+fun testTaskValidationRequest(builder: TaskValidationRequestDataBuilder.() -> Unit = {}): TaskValidationRequest {
+    return taskValidationRequest {
+        id = 11
+        createdAt = Instant.EPOCH
+        version = EntityVersion(0)
+        data = taskValidationRequestData {
+            task(0)
+            requestedBy(0)
+            snapshot = taskValidationSnapshot {}
+            execution.pendingDiagnostics()
+            builder()
+        }
+    }
 }
 
 fun testUncommittedTask(): Task = testTask {

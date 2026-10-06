@@ -1,7 +1,9 @@
 package tech.testsys.infra.database.internal.jpa.repository.task
 
+import jakarta.persistence.LockModeType
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -274,6 +276,15 @@ interface TaskContentJpaEntityRepository : SnowflakeJpaEntityRepository<TaskCont
 @Repository
 @InternalDatabaseApi
 interface TaskJpaEntityRepository : SnowflakeJpaEntityRepository<TaskJpaEntity> {
+
+    /**
+     * Locks the task before reading its snapshot, replacing content or removing the task.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from TaskJpaEntity e where e.id = :id")
+    fun findLockedById(@Param("id") id: Long): TaskJpaEntity?
 
     /**
      * Finds the tasks owned by the user [ownerId].

@@ -16,6 +16,7 @@ import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
@@ -33,6 +34,7 @@ import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
@@ -84,6 +86,7 @@ import tech.testsys.operation.error.ResourceNotUploadedToTaskError
 import tech.testsys.operation.error.ResourceVersionNotAttachedError
 import tech.testsys.operation.error.ResourceVersionNotExistsError
 import tech.testsys.operation.error.RevertTaskError
+import tech.testsys.operation.error.RunDiagnosticsError
 import tech.testsys.operation.error.ShareContestError
 import tech.testsys.operation.error.ShareTaskError
 import tech.testsys.operation.error.StatementNotExistsError
@@ -134,7 +137,25 @@ class DeveloperOperations(
     private val developerSolutionRepository: DeveloperSolutionRepository,
     private val solutionRepository: SolutionRepository,
     private val contestRepository: ContestRepository,
+    private val taskValidationRequestRepository: TaskValidationRequestRepository,
 ) {
+
+    /**
+     * Persists or returns an active validation request for the working revision of [taskId] owned by [user].
+     * Technical storage exceptions propagate to the external caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.runDiagnostics")
+    fun runDiagnostics(user: MultipleRoleUser, taskId: TaskId): OperationResult<TaskValidationRequest, RunDiagnosticsError> =
+        operation<TaskValidationRequest, RunDiagnosticsError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            ensure(task.data.content !is TaskContent.Committed) { TaskAlreadyCommittedError(taskId) }
+            return taskValidationRequestRepository.findOrCreateActive(taskId = taskId, requestedBy = user.id).asSuccess()
+        }
 
     /**
      * Returns contests owned by [user] or shared to communities of their [Developer] role, without changing contest state.

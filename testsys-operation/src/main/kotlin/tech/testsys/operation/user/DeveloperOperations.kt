@@ -46,6 +46,7 @@ import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.Developer
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.operation.TaskValidationDispatcher
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.error.AddDeveloperSolutionError
@@ -90,7 +91,6 @@ import tech.testsys.operation.error.ResourceNotUploadedToTaskError
 import tech.testsys.operation.error.ResourceVersionNotAttachedError
 import tech.testsys.operation.error.ResourceVersionNotExistsError
 import tech.testsys.operation.error.RevertTaskError
-import tech.testsys.operation.error.RunDiagnosticsError
 import tech.testsys.operation.error.ShareContestError
 import tech.testsys.operation.error.ShareTaskError
 import tech.testsys.operation.error.StatementNotExistsError
@@ -102,9 +102,15 @@ import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
+import tech.testsys.operation.error.TaskTestingNoDeveloperSolutionsError
+import tech.testsys.operation.error.TaskTestingNoExerciseForLanguageError
+import tech.testsys.operation.error.TaskTestingNoPolygonsError
+import tech.testsys.operation.error.TaskTestingNoStatementError
+import tech.testsys.operation.error.TaskTestingNoTrikStudioVersionsError
 import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
+import tech.testsys.operation.error.TestTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
 import tech.testsys.operation.error.UpdateDeveloperSolutionError
 import tech.testsys.operation.error.UpdateExerciseError
@@ -115,6 +121,7 @@ import tech.testsys.operation.error.ViewContestsError
 import tech.testsys.operation.error.ViewResourceError
 import tech.testsys.operation.error.ViewResourcesError
 import tech.testsys.operation.error.ViewTaskError
+import tech.testsys.operation.error.ViewTaskValidationRequestsError
 import tech.testsys.operation.error.ViewTasksError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
@@ -142,23 +149,63 @@ class DeveloperOperations(
     private val solutionRepository: SolutionRepository,
     private val contestRepository: ContestRepository,
     private val taskValidationRequestRepository: TaskValidationRequestRepository,
+    private val taskValidationDispatcher: TaskValidationDispatcher,
 ) {
 
     /**
-     * Persists or returns an active validation request for the working revision of [taskId] owned by [user].
-     * Technical storage exceptions propagate to the external caller.
+     * Returns a saved validation request for the working revision owned by [user] and schedules its processing,
+     * without waiting for testing. Checks access and required working content before creating a request;
+     * storage exceptions propagate.
      *
      * @since %CURRENT_VERSION%
      */
-    @Feature("testsys.user.multi.developer.task.runDiagnostics")
-    fun runDiagnostics(user: MultipleRoleUser, taskId: TaskId): OperationResult<TaskValidationRequest, RunDiagnosticsError> =
-        operation<TaskValidationRequest, RunDiagnosticsError> {
+    @Feature("testsys.user.multi.developer.task.testTask")
+    fun testTask(user: MultipleRoleUser, taskId: TaskId): OperationResult<TaskValidationRequest, TestTaskError> =
+        operation<TaskValidationRequest, TestTaskError> {
             ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
             val task = taskRepository.findById(taskId)
             ensure(task != null) { TaskNotExistsError(taskId) }
             ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
             ensure(task.data.content !is TaskContent.Committed) { TaskAlreadyCommittedError(taskId) }
-            return taskValidationRequestRepository.findOrCreateActive(taskId = taskId, requestedBy = user.id).asSuccess()
+            val content = task.getEditableContent()
+            ensure(content.statement != null) { TaskTestingNoStatementError(taskId) }
+            ensure(content.tests.ids.isNotEmpty()) { TaskTestingNoPolygonsError(taskId) }
+            ensure(content.developerSolutions.ids.isNotEmpty()) { TaskTestingNoDeveloperSolutionsError(taskId) }
+            ensure(content.supportedTrikStudioVersions.isNotEmpty()) { TaskTestingNoTrikStudioVersionsError(taskId) }
+            val exercises = exerciseRepository.load(content.exercises)
+            developerSolutionRepository.load(content.developerSolutions).forEach { developerSolution ->
+                val solution = solutionRepository.load(developerSolution.data.solution)
+                ensure(exercises.any { exercise -> exercise.data.language == solution.data.language }) {
+                    TaskTestingNoExerciseForLanguageError(taskId = taskId, language = solution.data.language)
+                }
+            }
+            contestRepository.findByTaskId(taskId).forEach { contest ->
+                ensure(contest.data.trikStudioVersion in content.supportedTrikStudioVersions) {
+                    TaskTrikStudioVersionNotSupportedError(taskId = taskId, trikStudioVersion = contest.data.trikStudioVersion)
+                }
+            }
+            val request = taskValidationRequestRepository.findOrCreateActive(taskId = taskId, requestedBy = user.id)
+            taskValidationDispatcher.schedule(request.id)
+            return request.asSuccess()
+        }
+
+    /**
+     * Returns every saved testing request of [taskId] owned by [user], ordered by creation time and identifier,
+     * each with its current state and, when completed, its failed submissions. Viewing preserves stored state.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.testTask")
+    fun viewTaskValidationRequests(
+        user: MultipleRoleUser,
+        taskId: TaskId,
+    ): OperationResult<List<TaskValidationRequest>, ViewTaskValidationRequestsError> =
+        operation<List<TaskValidationRequest>, ViewTaskValidationRequestsError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            return taskValidationRequestRepository.findHistory(taskId).asSuccess()
         }
 
     /**

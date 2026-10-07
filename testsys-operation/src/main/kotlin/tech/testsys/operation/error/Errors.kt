@@ -123,11 +123,59 @@ data object BlankJudgmentReasonError : ChangeVerdictError
 // region DeveloperOperations
 
 /**
- * Expected failure of requesting polygon diagnostics for an owned task.
+ * Expected failure of requesting testing of an owned task.
  *
  * @since %CURRENT_VERSION%
  */
-sealed interface RunDiagnosticsError : OperationError
+sealed interface TestTaskError : OperationError
+
+/**
+ * Expected failure of viewing the testing history of an owned task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewTaskValidationRequestsError : OperationError
+
+/**
+ * The working task has no attached statement.
+ *
+ * @property taskId the tested task identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTestingNoStatementError(val taskId: TaskId) : TestTaskError
+
+/**
+ * The working task has no exercise for an author solution's language.
+ *
+ * @property taskId the tested task identifier.
+ * @property language the author solution language without an exercise.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTestingNoExerciseForLanguageError(val taskId: TaskId, val language: TrikSupportedLanguage) : TestTaskError
+
+/**
+ * The working task has no attached polygons.
+ *
+ * @property taskId the tested task identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTestingNoPolygonsError(val taskId: TaskId) : TestTaskError
+
+/**
+ * The working task has no attached author solutions.
+ *
+ * @property taskId the tested task identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTestingNoDeveloperSolutionsError(val taskId: TaskId) : TestTaskError
+
+/**
+ * The working task supports no TRIK Studio version.
+ *
+ * @property taskId the tested task identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTestingNoTrikStudioVersionsError(val taskId: TaskId) : TestTaskError
 
 /**
  * Failure of listing contests available to the developer.
@@ -355,7 +403,8 @@ sealed interface DetachDeveloperSolutionError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedDeveloperRoleError :
-    RunDiagnosticsError,
+    TestTaskError,
+    ViewTaskValidationRequestsError,
     AttachTaskError,
     ViewContestsError,
     ViewContestError,
@@ -461,7 +510,8 @@ data class ContestAlreadySharedError(val contestId: ContestId) : EditContestErro
  * @since %CURRENT_VERSION%
  */
 data class TaskNotExistsError(val taskId: TaskId) :
-    RunDiagnosticsError,
+    TestTaskError,
+    ViewTaskValidationRequestsError,
     AttachTaskError,
     RevertTaskError,
     EditTaskInfoError,
@@ -534,7 +584,8 @@ data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExis
  * @since %CURRENT_VERSION%
  */
 data class TaskAccessDeniedError(val taskId: TaskId) :
-    RunDiagnosticsError,
+    TestTaskError,
+    ViewTaskValidationRequestsError,
     AttachTaskError,
     RevertTaskError,
     EditTaskInfoError,
@@ -586,7 +637,7 @@ data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTas
 data class TaskTrikStudioVersionNotSupportedError(
     val taskId: TaskId,
     val trikStudioVersion: TrikStudioVersion,
-) : AttachTaskError
+) : AttachTaskError, TestTaskError
 
 /**
  * The task is already attached to the contest.
@@ -603,7 +654,7 @@ data class TaskAlreadyAttachedToContestError(val contestId: ContestId, val taskI
  * @property taskId the id of the committed task.
  * @since %CURRENT_VERSION%
  */
-data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError, RunDiagnosticsError
+data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError, TestTaskError
 // endregion
 
 /**

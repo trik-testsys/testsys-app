@@ -7,6 +7,7 @@ import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.AuthorSubmissionFailure
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
@@ -40,6 +41,7 @@ import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TaskValidationRequestData
 import tech.testsys.domain.model.task.TaskValidationRequestId
+import tech.testsys.domain.model.task.TaskValidationSnapshot
 import tech.testsys.domain.model.task.TaskValidationTechnicalFailure
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
@@ -57,6 +59,15 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
  * @since %CURRENT_VERSION%
  */
 interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> {
+
+    /**
+     * Synchronously finds all contests currently containing [taskId], ordered by identifier.
+     * Repeated calls reflect current associations without changing state; technical storage exceptions propagate.
+     *
+     * @return the attached contests, or an empty list when no association exists.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByTaskId(taskId: TaskId): List<Contest>
 
     /**
      * Synchronously finds contests owned by [ownerId] or shared to any of [communityIds], without changing stored state.
@@ -314,6 +325,50 @@ interface TaskValidationRequestRepository :
     EntityRepository<TaskValidationRequestData, TaskValidationRequestId, TaskValidationRequest> {
 
     /**
+     * Atomically saves a queued submission for every [TaskValidationSnapshot.authorRuns] entry of the [requestId] snapshot,
+     * their ordered links and the created-submissions state, without network IO.
+     * Repeated calls return the existing links without creating submissions.
+     *
+     * @param requestId the request awaiting submissions.
+     * @return the request whose links follow the order of the snapshot author runs.
+     * @throws IllegalArgumentException if the request does not exist.
+     * @throws IllegalStateException if the request neither awaits nor already has submissions.
+     * @since %CURRENT_VERSION%
+     */
+    fun createSubmissions(requestId: TaskValidationRequestId): TaskValidationRequest
+
+    /**
+     * Atomically completes author testing of [requestId] with [failures] and the current time.
+     * Repeated calls on a completed request return it unchanged.
+     *
+     * @param requestId the request with created submissions.
+     * @param failures every failed submission of the request in submission order, empty if testing succeeded.
+     * @return the completed request.
+     * @throws IllegalArgumentException if the request does not exist or a failure names a submission of another request.
+     * @throws IllegalStateException if the request is in another state.
+     * @since %CURRENT_VERSION%
+     */
+    fun completeTesting(requestId: TaskValidationRequestId, failures: List<AuthorSubmissionFailure>): TaskValidationRequest
+
+    /**
+     * Synchronously reads every active request, ordered by identifier, without changing state.
+     *
+     * @return the requests whose processing may continue.
+     * @since %CURRENT_VERSION%
+     */
+    fun findActive(): List<TaskValidationRequest>
+
+    /**
+     * Synchronously finds the request linked to [submissionId], without changing state.
+     * Repeated calls reflect current data; ambiguous associations and technical exceptions propagate.
+     *
+     * @return the linked request, or `null` for an unlinked submission.
+     * @throws IllegalStateException if several requests reference the same submission.
+     * @since %CURRENT_VERSION%
+     */
+    fun findBySubmissionId(submissionId: SubmissionId): TaskValidationRequest?
+
+    /**
      * Atomically reads current task inputs and returns an active matching request or persists a new one.
      * Comparison ignores metadata, collection order and diagnostic configuration.
      *
@@ -336,10 +391,10 @@ interface TaskValidationRequestRepository :
     fun findHistory(taskId: TaskId): List<TaskValidationRequest>
 
     /**
-     * Starts or resumes diagnostics for the caller-selected request, without acquiring execution ownership.
+     * Reads the caller-selected request if diagnostics are unfinished, without changing state or acquiring ownership.
      *
      * @param requestId the request selected exclusively by the application.
-     * @return the in-progress request, or `null` if missing or no longer eligible for diagnostics.
+     * @return the unfinished request, or `null` if missing or no longer eligible for diagnostics.
      * @since %CURRENT_VERSION%
      */
     fun startDiagnostics(requestId: TaskValidationRequestId): TaskValidationRequest?
@@ -356,11 +411,11 @@ interface TaskValidationRequestRepository :
     /**
      * Atomically saves a polygon result and its messages; the first saved result wins on repeated calls.
      *
-     * @param requestId the in-progress request containing the polygon.
+     * @param requestId the request with unfinished diagnostics containing the polygon.
      * @param result the completed polygon result.
      * @return the persisted result, including an earlier result if already present.
      * @throws IllegalArgumentException if the request or polygon input does not exist.
-     * @throws IllegalStateException if the request is not being diagnosed.
+     * @throws IllegalStateException if the request is ineligible for diagnostics.
      * @since %CURRENT_VERSION%
      */
     fun saveDiagnosticProgress(requestId: TaskValidationRequestId, result: TestDiagnosticResult): TestDiagnosticResult

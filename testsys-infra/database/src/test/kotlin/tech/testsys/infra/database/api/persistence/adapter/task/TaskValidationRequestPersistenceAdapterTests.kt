@@ -2,18 +2,30 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentMatchers.argThat
+import org.mockito.Mockito.doThrow
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.test.context.TestPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import tech.testsys.domain.builder.api.*
+import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.model.task.*
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
+import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.repository.task.SubmissionJpaEntityRepository
 import java.time.Instant
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
+@OptIn(InternalDatabaseApi::class)
+@TestPropertySource(
+    properties = ["spring.datasource.url=jdbc:h2:mem:testsys_task_validation;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1"],
+)
 class TaskValidationRequestPersistenceAdapterTests :
     UpdatablePersistenceAdapterContractTests<TaskValidationRequestData, TaskValidationRequestId, TaskValidationRequest>() {
     @Autowired
@@ -21,6 +33,178 @@ class TaskValidationRequestPersistenceAdapterTests :
 
     @Autowired
     private lateinit var taskRepository: TaskRepository
+
+    @Autowired
+    private lateinit var submissionRows: SubmissionJpaEntityRepository
+
+    @MockitoSpyBean
+    private lateinit var savedSubmissions: SubmissionRepository
+
+    @Autowired
+    private lateinit var contestRepository: ContestRepository
+
+    @Test
+    fun `should preserve shared programs distinct expectations and deterministic submission order on creation and repeat`() {
+        val task = fixtures.workingTask()
+        val polygon = fixtures.polygon()
+        val program = fixtures.solution()
+        val first = fixtures.developerSolution(solution = program, expectedScore = 5)
+        val second = fixtures.developerSolution(solution = program, expectedScore = 9)
+        val firstVersion = fixtures.trikStudioVersion("v1-" + fixtures.unique("version"))
+        val secondVersion = fixtures.trikStudioVersion("v2-" + fixtures.unique("version"))
+        val edited = taskRepository.update(
+            task.withData {
+                content.new {
+                    tests = mutableListOf(polygon.id)
+                    developerSolutions = mutableListOf(second.id, first.id)
+                    supportedTrikStudioVersions = mutableListOf(secondVersion, firstVersion)
+                }
+            },
+        )
+        val request = repository.findOrCreateActive(edited.id, edited.data.owner.id)
+        repository.startDiagnostics(request.id)
+        repository.saveDiagnosticProgress(request.id, testDiagnosticResult { testId = polygon.id })
+        repository.completeDiagnostics(request.id)
+        val count = submissionRows.count()
+
+        val created = repository.createSubmissions(request.id)
+        val repeated = repository.createSubmissions(request.id)
+        val read = requireNotNull(repository.findById(request.id))
+
+        val links = (created.data.execution as TaskValidationExecution.WithSubmissions).submissions.ids
+        val saved = links.map { id -> requireNotNull(savedSubmissions.findById(id)) }
+        assertEquals(4, links.distinct().size)
+        assertEquals(count + 4, submissionRows.count())
+        assertEquals(
+            listOf(firstVersion, secondVersion, firstVersion, secondVersion),
+            saved.map { (it.data.kind as SubmissionKind.DeveloperSolutionTest).trikStudioVersion },
+        )
+        assertEquals(List(4) { program.id }, saved.map { it.data.solution.id })
+        assertEquals(List(4) { SubmissionStatus.Queued }, saved.map { it.data.status })
+        assertEquals(links, (repeated.data.execution as TaskValidationExecution.WithSubmissions).submissions.ids)
+        assertEquals(links, (read.data.execution as TaskValidationExecution.WithSubmissions).submissions.ids)
+        assertEquals(listOf(Score(5), Score(9)), read.data.snapshot.developerSolutions.map { it.expectedScore })
+        assertEquals(created.id, repository.findBySubmissionId(links.first())?.id)
+    }
+
+    @Test
+    fun `should roll back earlier submissions when saving a later submission fails and permit retry`() {
+        val request = readyRequest()
+        val secondVersion = request.data.snapshot.supportedTrikStudioVersions[1]
+        val failure = IllegalStateException("Second submission save failed")
+        doThrow(failure).doCallRealMethod().`when`(savedSubmissions).save(submissionIn(secondVersion))
+        val count = submissionRows.count()
+
+        assertThrows(IllegalStateException::class.java) { repository.createSubmissions(request.id) }
+
+        assertEquals(count, submissionRows.count())
+        assertInstanceOf(TaskValidationExecution.AwaitingSubmissions::class.java, repository.findById(request.id)?.data?.execution)
+        val retried = repository.createSubmissions(request.id)
+        assertEquals(2, (retried.data.execution as TaskValidationExecution.WithSubmissions).submissions.ids.size)
+        assertEquals(count + 2, submissionRows.count())
+    }
+
+    @Test
+    fun `should reject creating submissions before diagnostics complete`() {
+        val request = repository.save(newData())
+
+        assertThrows(IllegalStateException::class.java) { repository.createSubmissions(request.id) }
+
+        assertEquals(TaskValidationExecution.PendingDiagnostics, repository.findById(request.id)?.data?.execution)
+    }
+
+    @Test
+    fun `should round trip every failure of completed testing with ordered links and keep the request terminal`() {
+        val created = repository.createSubmissions(readyRequest().id)
+        val state = created.data.execution as TaskValidationExecution.WithSubmissions
+        val failures = listOf(
+            AuthorSubmissionFailure.GradingFailed(state.submissions.ids.first()),
+            AuthorSubmissionFailure.ScoreMismatch(submission = state.submissions.ids.last(), actualScore = 4_294_967_294L),
+        )
+
+        val completed = repository.completeTesting(requestId = created.id, failures = failures)
+        val repeated = repository.completeTesting(requestId = created.id, failures = emptyList())
+
+        val read = requireNotNull(repository.findById(completed.id))
+        val result = assertInstanceOf(TaskValidationExecution.Completed::class.java, read.data.execution)
+        assertEquals(failures, result.failures)
+        assertEquals(state.submissions.ids, result.submissions.ids)
+        assertEquals(state.diagnostics, result.diagnostics)
+        assertNotNull(result.completedAt)
+        assertFalse(read.data.isActive)
+        assertEquals(failures, (repeated.data.execution as TaskValidationExecution.Completed).failures)
+        assertNull(repository.startDiagnostics(read.id))
+    }
+
+    @Test
+    fun `should round trip successful testing without failures`() {
+        val created = repository.createSubmissions(readyRequest().id)
+
+        repository.completeTesting(requestId = created.id, failures = emptyList())
+
+        val read = requireNotNull(repository.findById(created.id))
+        assertEquals(emptyList<AuthorSubmissionFailure>(), (read.data.execution as TaskValidationExecution.Completed).failures)
+    }
+
+    @Test
+    fun `should reject failures out of submission order without completing testing`() {
+        val created = repository.createSubmissions(readyRequest().id)
+        val ids = (created.data.execution as TaskValidationExecution.WithSubmissions).submissions.ids
+        val failures = ids.reversed().map { AuthorSubmissionFailure.GradingFailed(it) }
+
+        assertThrows(IllegalArgumentException::class.java) { repository.completeTesting(requestId = created.id, failures = failures) }
+
+        assertInstanceOf(TaskValidationExecution.SubmissionsCreated::class.java, repository.findById(created.id)?.data?.execution)
+    }
+
+    @Test
+    fun `should reject completing testing before submissions are created`() {
+        val request = readyRequest()
+
+        assertThrows(IllegalStateException::class.java) {
+            repository.completeTesting(requestId = request.id, failures = emptyList())
+        }
+
+        assertInstanceOf(TaskValidationExecution.AwaitingSubmissions::class.java, repository.findById(request.id)?.data?.execution)
+    }
+
+    @Test
+    fun `should reject updating a terminal request`() {
+        val created = repository.createSubmissions(readyRequest().id)
+        val completed = repository.completeTesting(requestId = created.id, failures = emptyList())
+
+        assertThrows(IllegalStateException::class.java) {
+            repository.update(completed.withData { execution.pendingDiagnostics() })
+        }
+
+        assertInstanceOf(TaskValidationExecution.Completed::class.java, repository.findById(completed.id)?.data?.execution)
+    }
+
+    @Test
+    fun `should find only active requests`() {
+        val pending = repository.save(newData())
+        val awaiting = readyRequest()
+        val created = repository.createSubmissions(readyRequest().id)
+        val completed = repository.completeTesting(repository.createSubmissions(readyRequest().id).id, emptyList())
+
+        val active = repository.findActive().map { it.id }
+
+        assertTrue(active.containsAll(listOf(pending.id, awaiting.id, created.id)))
+        assertFalse(completed.id in active)
+        assertEquals(active.sortedBy { it.value }, active)
+    }
+
+    @Test
+    fun `should find only contests currently attached to the task`() {
+        val task = fixtures.task()
+        val included = fixtures.contest()
+        fixtures.contest()
+        contestRepository.update(included.withData { tasks = mutableListOf(task.id) })
+
+        val found = contestRepository.findByTaskId(task.id)
+
+        assertEquals(listOf(included.id), found.map { it.id })
+    }
 
     @Test
     fun `should retain completed diagnostics when a technical failure is recorded after the stage`() {
@@ -388,9 +572,10 @@ class TaskValidationRequestPersistenceAdapterTests :
         repository.saveDiagnosticProgress(requestId = request.id, result = result)
 
         val stored = requireNotNull(repository.findById(request.id))
-        assertEquals(TaskValidationExecution.DiagnosticsInProgress, stored.data.execution)
+        assertEquals(TaskValidationExecution.PendingDiagnostics, stored.data.execution)
+        assertEquals(request.version, stored.version)
         assertEquals(listOf(result), repository.findDiagnosticProgress(request.id))
-        assertEquals(TaskValidationExecution.DiagnosticsInProgress, repository.startDiagnostics(request.id)?.data?.execution)
+        assertEquals(TaskValidationExecution.PendingDiagnostics, repository.startDiagnostics(request.id)?.data?.execution)
     }
 
     @Test
@@ -426,7 +611,7 @@ class TaskValidationRequestPersistenceAdapterTests :
 
         assertThrows(IllegalStateException::class.java) { repository.completeDiagnostics(request.id) }
 
-        assertEquals(TaskValidationExecution.DiagnosticsInProgress, repository.findById(request.id)?.data?.execution)
+        assertEquals(TaskValidationExecution.PendingDiagnostics, repository.findById(request.id)?.data?.execution)
     }
 
     @Test
@@ -475,4 +660,36 @@ class TaskValidationRequestPersistenceAdapterTests :
         assertNotEquals(request.id, repository.findOrCreateActive(editable.id, editable.data.owner.id).id)
         assertEquals(2, repository.findHistory(task.id).size)
     }
+
+    private fun readyRequest(): TaskValidationRequest {
+        val task = fixtures.workingTask()
+        val polygon = fixtures.polygon()
+        val author = fixtures.developerSolution()
+        val firstVersion = fixtures.trikStudioVersion("v1-" + fixtures.unique("version"))
+        val secondVersion = fixtures.trikStudioVersion("v2-" + fixtures.unique("version"))
+        val edited = taskRepository.update(
+            task.withData {
+                content.new {
+                    tests = mutableListOf(polygon.id)
+                    developerSolutions = mutableListOf(author.id)
+                    supportedTrikStudioVersions = mutableListOf(firstVersion, secondVersion)
+                }
+            },
+        )
+        val request = repository.findOrCreateActive(edited.id, edited.data.owner.id)
+        repository.startDiagnostics(request.id)
+        repository.saveDiagnosticProgress(request.id, testDiagnosticResult { testId = polygon.id })
+        return repository.completeDiagnostics(request.id)
+    }
+
+    // The matcher returns null while stubbing; the placeholder only satisfies the non-null Kotlin parameter.
+    private fun submissionIn(version: TrikStudioVersion): SubmissionData =
+        argThat<SubmissionData> { data -> (data?.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion == version }
+            ?: submissionData {
+                author(0)
+                task(0)
+                solution(0)
+                status.queued()
+                kind.developerSolutionTest { trikStudioVersion = version }
+            }
 }

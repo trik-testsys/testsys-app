@@ -33,6 +33,13 @@ interface TaskValidationRequestJpaEntityRepository : SnowflakeJpaEntityRepositor
      * @since %CURRENT_VERSION%
      */
     fun findAllByTaskIdOrderByCreatedAtAscIdAsc(taskId: Long): List<TaskValidationRequestJpaEntity>
+
+    /**
+     * Finds requests in any of the given execution stages.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByExecutionInOrderByIdAsc(executions: Collection<TaskValidationExecutionJpaEnum>): List<TaskValidationRequestJpaEntity>
 }
 
 /**
@@ -101,4 +108,18 @@ interface SubmissionToTaskValidationRequestJpaEntityRepository :
      * @since %CURRENT_VERSION%
      */
     fun findAllByIdRequestId(requestId: Long): List<SubmissionToTaskValidationRequestJpaEntity>
+
+    /**
+     * Finds links in their stored author solution and version order.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByIdRequestIdOrderByPositionAsc(requestId: Long): List<SubmissionToTaskValidationRequestJpaEntity>
+
+    /**
+     * Finds validation requests referencing a submission.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByIdSubmissionId(submissionId: Long): List<SubmissionToTaskValidationRequestJpaEntity>
 }

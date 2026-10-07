@@ -8,29 +8,78 @@ import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import tech.testsys.domain.builder.api.developerSolutionValidationInput
 import tech.testsys.domain.builder.api.task
-import tech.testsys.domain.builder.api.test
+import tech.testsys.domain.builder.api.taskValidationSnapshot
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.builder.data
+import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.RecordingId
+import tech.testsys.domain.model.task.Score
+import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionStatus
+import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
-import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.task.TrikStudioVersion
 import java.time.Instant
-import java.util.UUID
 import tech.testsys.domain.model.task.Test as Polygon
 import trik.testsys.grading.GradingNodeOuterClass as Proto
 
 class GradingPersistenceServiceTests {
     @Nested
     inner class PrepareTests {
+        @ParameterizedTest
+        @ValueSource(booleans = [true, false])
+        fun `should select immutable snapshot polygons for linked author submissions after task edits or commit`(committed: Boolean) {
+            val repository = RepositoryFixture()
+            val submitted = repository.initial
+            val request = validationRequest()
+            every { repository.validationRequests.findBySubmissionId(submitted.id) } returns request
+            every { repository.tasks.load(submitted.data.task) } returns changedTask(committed)
+
+            val prepared = repository.persistence.prepare(submitted, shouldRecordVideo = true)
+
+            assertEquals(listOf(TestId(4)), prepared.testIds)
+            assertEquals("4", prepared.message.task.fieldsList.single().name)
+            assertEquals("world", prepared.message.task.fieldsList.single().content.toStringUtf8())
+            assertEquals("2025.1", prepared.message.options.dockerImage)
+            verify(exactly = 0) { repository.tasks.load(submitted.data.task) }
+        }
+
+        @Test
+        fun `should reject a linked submission that does not match its snapshot author solution and version`() {
+            val repository = RepositoryFixture()
+            val request = validationRequest().withData {
+                snapshot = taskValidationSnapshot {
+                    tests(listOf(4))
+                    developerSolutions = mutableListOf(
+                        developerSolutionValidationInput {
+                            developerSolution(7)
+                            solution(99)
+                            expectedScore = Score(5)
+                        },
+                    )
+                    supportedTrikStudioVersions = mutableListOf(TrikStudioVersion("2025.1"))
+                }
+            }
+            every { repository.validationRequests.findBySubmissionId(repository.initial.id) } returns request
+
+            assertThrows(IllegalStateException::class.java) {
+                repository.persistence.prepare(repository.initial, shouldRecordVideo = true)
+            }
+
+            verify(exactly = 0) { repository.submissions.update(any<Submission>()) }
+        }
+
         @Test
         fun `should select committed polygons for a regular submission`() {
             val submitted = testSubmission().withData { kind.grading { contest(10) } }
@@ -45,52 +94,18 @@ class GradingPersistenceServiceTests {
         }
 
         @Test
-        fun `should select WIP polygons for a developer test`() {
+        fun `should reject an author submission without a validation request before queueing`() {
             val repository = RepositoryFixture()
-            every { repository.tasks.load(repository.initial.data.task) } returns editedTask()
-            every { repository.tests.load(any<LazyEntityList<TestId, Polygon>>()) } returns listOf(
-                test {
-                    id = 5
-                    createdAt = Instant.EPOCH
-                    data {
-                        name = "WIP"
-                        description = ""
-                        versionBucket = VersionBucket(UUID(0, 0))
-                        file("world.xml", "wip-world".toByteArray())
-                    }
-                },
-            )
+            every { repository.validationRequests.findBySubmissionId(repository.initial.id) } returns null
 
-            val prepared = repository.persistence.prepare(repository.initial, shouldRecordVideo = true)
-
-            assertEquals(listOf(TestId(5)), prepared.testIds)
-            assertEquals("5", prepared.message.task.fieldsList.single().name)
-            assertEquals("2025.1", prepared.message.options.dockerImage)
-        }
-
-        @Test
-        fun `should select committed polygons for a developer test without WIP`() {
-            val repository = RepositoryFixture()
-            every { repository.tasks.load(repository.initial.data.task) } returns task {
-                id = 3
-                createdAt = Instant.EPOCH
-                data {
-                    owner(1)
-                    name = "Task"
-                    description = ""
-                    content.committed {
-                        tests(listOf(4))
-                        exercises(listOf(6))
-                        statement(7)
-                    }
-                }
+            val failure = assertThrows(IllegalStateException::class.java) {
+                repository.persistence.prepare(repository.initial, shouldRecordVideo = true)
             }
 
-            val prepared = repository.persistence.prepare(repository.initial, shouldRecordVideo = true)
-
-            assertEquals(listOf(TestId(4)), prepared.testIds)
-            assertEquals("4", prepared.message.task.fieldsList.single().name)
-            assertEquals("world", prepared.message.task.fieldsList.single().content.toStringUtf8())
+            assertEquals("Author submission 42 has no linked validation request", failure.message)
+            verify(exactly = 0) { repository.tasks.load(any<LazyEntity<TaskId, Task>>()) }
+            verify(exactly = 0) { repository.tests.load(any<LazyEntityList<TestId, Polygon>>()) }
+            verify(exactly = 0) { repository.submissions.update(any<Submission>()) }
         }
 
         @ParameterizedTest
@@ -181,7 +196,7 @@ class GradingPersistenceServiceTests {
 
             assertEquals(0, repository.savedVerdicts.size)
             assertEquals(0, repository.savedLogs.size)
-            verify(exactly = 1) { repository.submissions.update(any<tech.testsys.domain.model.task.Submission>()) }
+            verify(exactly = 1) { repository.submissions.update(any<Submission>()) }
         }
     }
 
@@ -200,6 +215,25 @@ class GradingPersistenceServiceTests {
                     statement(7)
                 },
             )
+        }
+    }
+
+    private fun changedTask(committed: Boolean) = task {
+        id = 3
+        createdAt = Instant.EPOCH
+        data {
+            owner(1)
+            name = "Changed task"
+            description = ""
+            if (committed) {
+                content.committed {
+                    tests(listOf(5))
+                    exercises(listOf(6))
+                    statement(7)
+                }
+            } else {
+                content.new { tests(listOf(5)) }
+            }
         }
     }
 }

@@ -66,6 +66,7 @@ import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.operation.TaskValidationDispatcher
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.error.AttemptDurationExceedsContestDurationError
 import tech.testsys.operation.error.CommunityAccessDeniedError
@@ -98,6 +99,11 @@ import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
+import tech.testsys.operation.error.TaskTestingNoDeveloperSolutionsError
+import tech.testsys.operation.error.TaskTestingNoExerciseForLanguageError
+import tech.testsys.operation.error.TaskTestingNoPolygonsError
+import tech.testsys.operation.error.TaskTestingNoStatementError
+import tech.testsys.operation.error.TaskTestingNoTrikStudioVersionsError
 import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
@@ -136,6 +142,7 @@ class DeveloperOperationsTests {
     private val solutionRepository = mockk<SolutionRepository>()
     private val contestRepository = mockk<ContestRepository>()
     private val taskValidationRequestRepository = mockk<TaskValidationRequestRepository>()
+    private val taskValidationDispatcher = mockk<TaskValidationDispatcher>(relaxUnitFun = true)
     private val developerOperations = DeveloperOperations(
         taskRepository,
         statementRepository,
@@ -146,6 +153,7 @@ class DeveloperOperationsTests {
         solutionRepository,
         contestRepository,
         taskValidationRequestRepository,
+        taskValidationDispatcher,
     )
 
     private lateinit var developer: MultipleRoleUser
@@ -158,12 +166,14 @@ class DeveloperOperationsTests {
     private val uploadScore = Score(42)
 
     @Nested
-    inner class RunDiagnosticsTests {
+    inner class TestTaskTests {
         @Test
         fun `should reject a user without the Developer role`() {
             assertRaises(MissedDeveloperRoleError) {
-                developerOperations.runDiagnostics(testAdministrator {}, TaskId(0))
+                developerOperations.testTask(testAdministrator {}, TaskId(0))
             }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
         }
 
         @Test
@@ -171,7 +181,198 @@ class DeveloperOperationsTests {
             every { taskRepository.findById(TaskId(0)) } returns null
 
             assertRaises(TaskNotExistsError(TaskId(0))) {
-                developerOperations.runDiagnostics(developer, TaskId(0))
+                developerOperations.testTask(developer, TaskId(0))
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        @Test
+        fun `should reject a task owned by another developer`() {
+            every { taskRepository.findById(TaskId(0)) } returns testNewTask().withData { owner(99) }
+
+            assertRaises(TaskAccessDeniedError(TaskId(0))) {
+                developerOperations.testTask(developer, TaskId(0))
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        @Test
+        fun `should schedule processing of the persisted request`() {
+            val task = validTask()
+            prepareContent(task)
+            val request = testTaskValidationRequest()
+            every { taskRepository.findById(task.id) } returns task
+            every { taskValidationRequestRepository.findOrCreateActive(task.id, developer.id) } returns request
+
+            developerOperations.testTask(developer, task.id).getOrThrow()
+
+            verify(exactly = 1) { taskValidationDispatcher.schedule(request.id) }
+        }
+
+        @Test
+        fun `should not schedule processing if a request is rejected`() {
+            every { taskRepository.findById(TaskId(0)) } returns null
+
+            assertRaises(TaskNotExistsError(TaskId(0))) { developerOperations.testTask(developer, TaskId(0)) }
+
+            verify(exactly = 0) { taskValidationDispatcher.schedule(any()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["new", "uncommitted"])
+        fun `should return the persisted request without changing any task state`(state: String) {
+            val task = validTask(state)
+            prepareContent(task)
+            val request = testTaskValidationRequest()
+            every { taskRepository.findById(task.id) } returns task
+            every { taskValidationRequestRepository.findOrCreateActive(task.id, developer.id) } returns request
+
+            val result = developerOperations.testTask(developer, task.id).getOrThrow()
+
+            Assertions.assertSame(request, result)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { testRepository.load(any<LazyEntityList<TestId, Polygon>>()) }
+        }
+
+        @Test
+        fun `should reject a committed task before creating a testing request`() {
+            val task = testCommitedTask()
+            every { taskRepository.findById(task.id) } returns task
+
+            assertRaises(TaskAlreadyCommittedError(task.id)) {
+                developerOperations.testTask(developer, task.id)
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        @Test
+        fun `should propagate technical persistence exceptions to the external caller`() {
+            val task = validTask()
+            prepareContent(task)
+            every { taskRepository.findById(TaskId(0)) } returns task
+            val failure = IllegalStateException("Database unavailable")
+            every { taskValidationRequestRepository.findOrCreateActive(TaskId(0), developer.id) } throws failure
+
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.testTask(developer, TaskId(0))
+            }
+
+            Assertions.assertSame(failure, actual)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["statement", "polygons", "authors", "versions"])
+        fun `should reject missing required content before saving a request`(missing: String) {
+            val task = validTask().withData {
+                content.new {
+                    statement = if (missing == "statement") null else StatementId(1)
+                    tests = if (missing == "polygons") mutableListOf() else mutableListOf(TestId(3))
+                    developerSolutions = if (missing == "authors") mutableListOf() else mutableListOf(DeveloperSolutionId(4))
+                    exercises(listOf(2))
+                    supportedTrikStudioVersions = if (missing == "versions") mutableListOf() else mutableListOf(TrikStudioVersion("v1"))
+                }
+            }
+            every { taskRepository.findById(task.id) } returns task
+            val expected = when (missing) {
+                "statement" -> TaskTestingNoStatementError(task.id)
+                "polygons" -> TaskTestingNoPolygonsError(task.id)
+                "authors" -> TaskTestingNoDeveloperSolutionsError(task.id)
+                else -> TaskTestingNoTrikStudioVersionsError(task.id)
+            }
+
+            assertRaises(expected) { developerOperations.testTask(developer, task.id) }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        @Test
+        fun `should reject an author language without an attached exercise`() {
+            val task = validTask()
+            prepareContent(task)
+            every { exerciseRepository.load(task.getEditableContent().exercises) } returns emptyList()
+            every { taskRepository.findById(task.id) } returns task
+
+            assertRaises(TaskTestingNoExerciseForLanguageError(task.id, TrikSupportedLanguage.Python)) {
+                developerOperations.testTask(developer, task.id)
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        @Test
+        fun `should reject an incompatible attached contest before saving a request`() {
+            val task = validTask()
+            prepareContent(task)
+            every { taskRepository.findById(task.id) } returns task
+            every { contestRepository.findByTaskId(task.id) } returns listOf(testContest { trikStudioVersion("other") })
+
+            assertRaises(TaskTrikStudioVersionNotSupportedError(task.id, TrikStudioVersion("other"))) {
+                developerOperations.testTask(developer, task.id)
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        private fun validTask(state: String = "new"): Task {
+            val original = if (state == "new") testNewTask() else testUncommittedTask()
+            return original.withData {
+                val contentBuilder: tech.testsys.domain.builder.task.WipTaskContentBuilder.() -> Unit = {
+                    statement(1)
+                    exercises(listOf(2))
+                    tests(listOf(3))
+                    developerSolutions(listOf(4))
+                    supportedTrikStudioVersions(listOf("v1"))
+                }
+                if (state == "new") {
+                    content.new(contentBuilder)
+                } else {
+                    content.uncommitted(
+                        wipBuilder = contentBuilder,
+                        lastCommittedBuilder = {
+                            statement(99)
+                            exercises(listOf(99))
+                        },
+                    )
+                }
+            }
+        }
+
+        private fun prepareContent(task: Task) {
+            val author = viewDeveloperSolution()
+            every { exerciseRepository.load(task.getEditableContent().exercises) } returns listOf(viewExercise())
+            every { developerSolutionRepository.load(task.getEditableContent().developerSolutions) } returns listOf(author)
+            every { solutionRepository.load(author.data.solution) } returns solution {
+                id = 5
+                createdAt = Instant.EPOCH
+                data = solutionData {
+                    file("solution.py", byteArrayOf(1))
+                    language.python()
+                }
+            }
+            every { contestRepository.findByTaskId(task.id) } returns emptyList()
+        }
+    }
+
+    @Nested
+    inner class ViewTaskValidationRequestsTests {
+        @Test
+        fun `should reject a user without the Developer role`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.viewTaskValidationRequests(testAdministrator {}, TaskId(0))
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findHistory(any()) }
+        }
+
+        @Test
+        fun `should reject a missing task`() {
+            every { taskRepository.findById(TaskId(0)) } returns null
+
+            assertRaises(TaskNotExistsError(TaskId(0))) {
+                developerOperations.viewTaskValidationRequests(developer, TaskId(0))
             }
         }
 
@@ -180,47 +381,28 @@ class DeveloperOperationsTests {
             every { taskRepository.findById(TaskId(0)) } returns testNewTask().withData { owner(99) }
 
             assertRaises(TaskAccessDeniedError(TaskId(0))) {
-                developerOperations.runDiagnostics(developer, TaskId(0))
+                developerOperations.viewTaskValidationRequests(developer, TaskId(0))
             }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findHistory(any()) }
         }
 
         @ParameterizedTest
-        @ValueSource(strings = ["new", "uncommitted"])
-        fun `should return the persisted request without changing any task state`(state: String) {
-            val task = if (state == "new") testNewTask() else testUncommittedTask()
-            val request = testTaskValidationRequest()
+        @ValueSource(strings = ["new", "uncommitted", "committed"])
+        fun `should return the saved testing history of an owned task in any state`(state: String) {
+            val task = when (state) {
+                "new" -> testNewTask()
+                "uncommitted" -> testUncommittedTask()
+                else -> testCommitedTask()
+            }
+            val history = listOf(testTaskValidationRequest())
             every { taskRepository.findById(task.id) } returns task
-            every { taskValidationRequestRepository.findOrCreateActive(task.id, developer.id) } returns request
+            every { taskValidationRequestRepository.findHistory(task.id) } returns history
 
-            val result = developerOperations.runDiagnostics(developer, task.id).getOrThrow()
+            val result = developerOperations.viewTaskValidationRequests(developer, task.id).getOrThrow()
 
-            Assertions.assertSame(request, result)
+            Assertions.assertSame(history, result)
             verify(exactly = 0) { taskRepository.update(any<Task>()) }
-        }
-
-        @Test
-        fun `should reject a committed task before creating a diagnostics request`() {
-            val task = testCommitedTask()
-            every { taskRepository.findById(task.id) } returns task
-
-            assertRaises(TaskAlreadyCommittedError(task.id)) {
-                developerOperations.runDiagnostics(developer, task.id)
-            }
-
-            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
-        }
-
-        @Test
-        fun `should propagate technical persistence exceptions to the external caller`() {
-            every { taskRepository.findById(TaskId(0)) } returns testNewTask()
-            val failure = IllegalStateException("Database unavailable")
-            every { taskValidationRequestRepository.findOrCreateActive(TaskId(0), developer.id) } throws failure
-
-            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.runDiagnostics(developer, TaskId(0))
-            }
-
-            Assertions.assertSame(failure, actual)
         }
     }
 

@@ -114,6 +114,11 @@
             <column name="request_id" type="BIGINT">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_submission_to_task_validation_request" foreignKeyName="fk_ts_submission_to_task_validation_request_request_id" references="ts_task_validation_request(id)"/>
             </column>
+            <column name="position" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="failure" type="VARCHAR(255)"/>
+            <column name="actual_score" type="BIGINT"/>
             <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
                 <constraints nullable="false"/>
             </column>
@@ -183,6 +188,8 @@
     </changeSet>
 
     <changeSet id="1.0.0-13-8" author="testsys">
+        <addUniqueConstraint tableName="ts_submission_to_task_validation_request" columnNames="request_id,position"
+                             constraintName="uk_ts_submission_to_task_validation_request_position"/>
         <addForeignKeyConstraint baseTableName="ts_diagnostic_report" baseColumnNames="request_id,test_id"
                                  referencedTableName="ts_test_diagnostic_result" referencedColumnNames="request_id,test_id"
                                  constraintName="fk_ts_diagnostic_report_result"/>

@@ -234,14 +234,14 @@ class DatabaseFixtures(
         },
     )
 
-    fun developerSolution(solution: Solution = solution()): DeveloperSolution {
+    fun developerSolution(solution: Solution = solution(), expectedScore: Int = 100): DeveloperSolution {
         val solutionId = solution.id.value
         return developerSolutions.save(
             developerSolutionData {
                 name = unique("Developer solution")
                 description = "Developer solution description"
                 solution(solutionId)
-                expectedScore(100)
+                expectedScore(expectedScore)
                 versionBucket = VersionBucket(UUID.randomUUID())
             },
         )

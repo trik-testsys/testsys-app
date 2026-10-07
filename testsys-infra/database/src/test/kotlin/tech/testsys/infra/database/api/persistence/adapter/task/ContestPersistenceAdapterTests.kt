@@ -1,15 +1,21 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.beans.factory.annotation.Autowired
 import tech.testsys.domain.builder.api.contest
 import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.TrikStudioVersion
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import java.time.Duration
 import java.time.Instant
@@ -23,23 +29,67 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
     @Autowired
     override lateinit var repository: ContestRepository
 
-    override fun newData(): ContestData {
-        val ownerId = fixtures.developer().id.value
-        val taskIds = listOf(fixtures.task().id, fixtures.task().id)
-        val communityIds = listOf(fixtures.community().id.value)
-        val version = fixtures.trikStudioVersion()
-        return contestData {
-            owner(ownerId)
-            name = fixtures.unique("Contest")
-            description = "Contest description"
-            tasks = taskIds.toMutableList()
-            startsAt = STARTS_AT
-            contestDuration = Duration.ofHours(2)
-            attemptDuration = Duration.ofMinutes(30)
-            trikStudioVersion = version
-            sharedTo(communityIds)
+    @Nested
+    inner class FindAvailableToDeveloperTests {
+
+        @Test
+        fun `should find owned and shared contests while excluding inaccessible contests`() {
+            val owner = fixtures.developer().id
+            val otherOwner = fixtures.developer().id
+            val community = fixtures.community().id
+            val unrelatedCommunity = fixtures.community().id
+            val owned = saveContest(ownerId = owner, communityIds = emptyList())
+            val shared = saveContest(ownerId = otherOwner, communityIds = listOf(community))
+            saveContest(ownerId = otherOwner, communityIds = emptyList())
+            saveContest(ownerId = otherOwner, communityIds = listOf(unrelatedCommunity))
+
+            val result = repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = setOf(community),
+                pagination = Pagination(page = 0, size = 10),
+            ).content
+
+            assertEquals(setOf(owned.id, shared.id), result.map { it.id }.toSet())
+            assertSameData(owned, result.single { it.id == owned.id })
+            assertSameData(shared, result.single { it.id == shared.id })
+            assertEquals(shared.version, result.single { it.id == shared.id }.version)
+        }
+
+        @Test
+        fun `should return contests once when ownership and shared communities overlap`() {
+            val owner = fixtures.developer().id
+            val communities = listOf(fixtures.community().id, fixtures.community().id)
+            val owned = saveContest(ownerId = owner, communityIds = communities)
+            val shared = saveContest(ownerId = fixtures.developer().id, communityIds = communities)
+
+            val result = repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = communities.toSet(),
+                pagination = Pagination(page = 0, size = 10),
+            ).content
+
+            assertEquals(2, result.size)
+            assertEquals(setOf(owned.id, shared.id), result.map { it.id }.toSet())
+        }
+
+        @Test
+        fun `should find only owned contests when no communities grant access`() {
+            val owner = fixtures.developer().id
+            val community = fixtures.community().id
+            val owned = saveContest(ownerId = owner, communityIds = listOf(community))
+            saveContest(ownerId = fixtures.developer().id, communityIds = listOf(community))
+
+            val result = repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = emptySet(),
+                pagination = Pagination(page = 0, size = 10),
+            ).content
+
+            assertEquals(listOf(owned.id), result.map { it.id })
         }
     }
+
+    override fun newData(): ContestData = newDataWithLimits(total = Duration.ofHours(2), attempt = Duration.ofMinutes(30))
 
     override fun modified(entity: Contest): Contest {
         val keptTask = entity.data.tasks.ids.first()
@@ -76,6 +126,43 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
         assertEquals(expected.data.attemptDuration, actual.data.attemptDuration)
         assertEquals(expected.data.trikStudioVersion, actual.data.trikStudioVersion)
         assertEquals(expected.data.sharedTo.ids.toSet(), actual.data.sharedTo.ids.toSet())
+    }
+
+    @ParameterizedTest
+    @CsvSource("false,false", "false,true", "true,false", "true,true")
+    fun `should save and read each combination of absent and finite limits`(hasTotal: Boolean, hasAttempt: Boolean) {
+        val total = Duration.ofMillis(7_200_001).takeIf { hasTotal }
+        val attempt = Duration.ofMillis(1_800_001).takeIf { hasAttempt }
+        val data = newDataWithLimits(total = total, attempt = attempt)
+
+        val saved = repository.save(data)
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(total, saved.data.contestDuration)
+        assertEquals(attempt, saved.data.attemptDuration)
+        assertEquals(total, found.data.contestDuration)
+        assertEquals(attempt, found.data.attemptDuration)
+    }
+
+    @ParameterizedTest
+    @CsvSource("false,false", "false,true", "true,false", "true,true")
+    fun `should update and read each combination of absent and finite limits`(hasTotal: Boolean, hasAttempt: Boolean) {
+        val saved = repository.save(newData())
+        val total = Duration.ofMillis(10_800_001).takeIf { hasTotal }
+        val attempt = Duration.ofMillis(3_600_001).takeIf { hasAttempt }
+
+        val updated = repository.update(
+            saved.withData {
+                contestDuration = total
+                attemptDuration = attempt
+            },
+        )
+
+        val found = assertNotNull(repository.findById(updated.id))
+        assertEquals(total, updated.data.contestDuration)
+        assertEquals(attempt, updated.data.attemptDuration)
+        assertEquals(total, found.data.contestDuration)
+        assertEquals(attempt, found.data.attemptDuration)
     }
 
     @Test
@@ -139,6 +226,35 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
         assertEquals(saved.data.owner.id, updated.data.owner.id)
         assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
     }
+
+    private fun newDataWithLimits(total: Duration?, attempt: Duration?): ContestData {
+        val ownerId = fixtures.developer().id.value
+        val taskIds = listOf(fixtures.task().id, fixtures.task().id)
+        val communityIds = listOf(fixtures.community().id.value)
+        val version = fixtures.trikStudioVersion()
+        return contestData {
+            owner(ownerId)
+            name = fixtures.unique("Contest")
+            description = "Contest description"
+            tasks = taskIds.toMutableList()
+            startsAt = STARTS_AT
+            contestDuration = total
+            attemptDuration = attempt
+            trikStudioVersion = version
+            sharedTo(communityIds)
+        }
+    }
+
+    private fun saveContest(ownerId: MultipleRoleUserId, communityIds: List<CommunityId>): Contest = repository.save(
+        contestData {
+            owner = ownerId
+            name = fixtures.unique("Available contest")
+            description = "Available contest description"
+            trikStudioVersion = fixtures.trikStudioVersion()
+            tasks = mutableListOf(fixtures.task().id)
+            sharedTo = communityIds.toMutableList()
+        },
+    )
 
     private companion object {
 

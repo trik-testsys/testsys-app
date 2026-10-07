@@ -5,6 +5,10 @@ import tech.testsys.domain.builder.task.ContestBuilder
 import tech.testsys.domain.builder.task.ContestDataBuilder
 import tech.testsys.domain.builder.task.DeveloperSolutionBuilder
 import tech.testsys.domain.builder.task.DeveloperSolutionDataBuilder
+import tech.testsys.domain.builder.task.DeveloperSolutionValidationInputBuilder
+import tech.testsys.domain.builder.task.DiagnosticLocationBuilder
+import tech.testsys.domain.builder.task.DiagnosticPathSegmentBuilder
+import tech.testsys.domain.builder.task.DiagnosticReportBuilder
 import tech.testsys.domain.builder.task.ExerciseBuilder
 import tech.testsys.domain.builder.task.ExerciseDataBuilder
 import tech.testsys.domain.builder.task.JudgmentOrderBuilder
@@ -21,8 +25,13 @@ import tech.testsys.domain.builder.task.SubmissionBuilder
 import tech.testsys.domain.builder.task.SubmissionDataBuilder
 import tech.testsys.domain.builder.task.TaskBuilder
 import tech.testsys.domain.builder.task.TaskDataBuilder
+import tech.testsys.domain.builder.task.TaskValidationRequestBuilder
+import tech.testsys.domain.builder.task.TaskValidationRequestDataBuilder
+import tech.testsys.domain.builder.task.TaskValidationSnapshotBuilder
+import tech.testsys.domain.builder.task.TaskValidationTechnicalFailureBuilder
 import tech.testsys.domain.builder.task.TestBuilder
 import tech.testsys.domain.builder.task.TestDataBuilder
+import tech.testsys.domain.builder.task.TestDiagnosticResultBuilder
 import tech.testsys.domain.builder.task.TestVerdictBuilder
 import tech.testsys.domain.builder.task.VerdictBuilder
 import tech.testsys.domain.builder.task.VerdictDataBuilder
@@ -34,6 +43,10 @@ import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
+import tech.testsys.domain.model.task.DeveloperSolutionValidationInput
+import tech.testsys.domain.model.task.DiagnosticLocation
+import tech.testsys.domain.model.task.DiagnosticPathSegment
+import tech.testsys.domain.model.task.DiagnosticReport
 import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.GradingResult
@@ -54,8 +67,14 @@ import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
+import tech.testsys.domain.model.task.TaskValidationExecution
+import tech.testsys.domain.model.task.TaskValidationRequest
+import tech.testsys.domain.model.task.TaskValidationRequestData
+import tech.testsys.domain.model.task.TaskValidationSnapshot
+import tech.testsys.domain.model.task.TaskValidationTechnicalFailure
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
+import tech.testsys.domain.model.task.TestDiagnosticResult
 import tech.testsys.domain.model.task.TestVerdict
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
@@ -297,7 +316,9 @@ private fun SubmissionData.toBuilder(): SubmissionDataBuilder {
         }
 
         when (val originKind = thisData.kind) {
-            SubmissionKind.DeveloperSolutionTest -> kind.developerSolutionTest()
+            is SubmissionKind.DeveloperSolutionTest -> kind.developerSolutionTest {
+                trikStudioVersion = originKind.trikStudioVersion
+            }
             is SubmissionKind.Grading -> kind.grading { contest = originKind.contest.id }
         }
     }
@@ -532,7 +553,7 @@ fun Test.withData(builder: TestDataBuilder.() -> Unit): Test {
 
 private fun WipTaskContentBuilder.populateFrom(content: WipTaskContent) {
     tests = content.tests.ids.toMutableList()
-    exercise = content.exercise?.id
+    exercises = content.exercises.ids.toMutableList()
     statement = content.statement?.id
     developerSolutions = content.developerSolutions.ids.toMutableList()
     supportedTrikStudioVersions = content.supportedTrikStudioVersions.toMutableList()
@@ -540,7 +561,7 @@ private fun WipTaskContentBuilder.populateFrom(content: WipTaskContent) {
 
 private fun CommittedTaskContentBuilder.populateFrom(content: CommittedTaskContent) {
     tests = content.tests.ids.toMutableList()
-    exercise = content.exercise.id
+    exercises = content.exercises.ids.toMutableList()
     statement = content.statement.id
     developerSolutions = content.developerSolutions.ids.toMutableList()
     supportedTrikStudioVersions = content.supportedTrikStudioVersions.toMutableList()
@@ -604,4 +625,123 @@ fun Verdict.withData(builder: VerdictDataBuilder.() -> Unit): Verdict {
         createdAt = this.createdAt,
         data = this.data.toBuilder().apply(builder).build(),
     ).applyVersion(this.version)
+}
+
+/**
+ * Builds [TaskValidationRequestData] with a [TaskValidationRequestDataBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun taskValidationRequestData(builder: TaskValidationRequestDataBuilder.() -> Unit): TaskValidationRequestData =
+    TaskValidationRequestDataBuilder().apply(builder).build()
+
+/**
+ * Builds [TaskValidationRequest] with a [TaskValidationRequestBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun taskValidationRequest(builder: TaskValidationRequestBuilder.() -> Unit): TaskValidationRequest =
+    TaskValidationRequestBuilder().apply(builder).build()
+
+/**
+ * Builds [TaskValidationSnapshot] with a [TaskValidationSnapshotBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun taskValidationSnapshot(builder: TaskValidationSnapshotBuilder.() -> Unit): TaskValidationSnapshot =
+    TaskValidationSnapshotBuilder().apply(builder).build()
+
+/**
+ * Builds [DeveloperSolutionValidationInput] with a [DeveloperSolutionValidationInputBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun developerSolutionValidationInput(builder: DeveloperSolutionValidationInputBuilder.() -> Unit): DeveloperSolutionValidationInput =
+    DeveloperSolutionValidationInputBuilder().apply(builder).build()
+
+/**
+ * Builds [TestDiagnosticResult] with a [TestDiagnosticResultBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun testDiagnosticResult(builder: TestDiagnosticResultBuilder.() -> Unit): TestDiagnosticResult =
+    TestDiagnosticResultBuilder().apply(builder).build()
+
+/**
+ * Builds [DiagnosticReport] with a [DiagnosticReportBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun diagnosticReport(builder: DiagnosticReportBuilder.() -> Unit): DiagnosticReport =
+    DiagnosticReportBuilder().apply(builder).build()
+
+/**
+ * Builds [DiagnosticLocation] with a [DiagnosticLocationBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun diagnosticLocation(builder: DiagnosticLocationBuilder.() -> Unit): DiagnosticLocation =
+    DiagnosticLocationBuilder().apply(builder).build()
+
+/**
+ * Builds [DiagnosticPathSegment] with a [DiagnosticPathSegmentBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun diagnosticPathSegment(builder: DiagnosticPathSegmentBuilder.() -> Unit): DiagnosticPathSegment =
+    DiagnosticPathSegmentBuilder().apply(builder).build()
+
+/**
+ * Builds [TaskValidationTechnicalFailure] with a [TaskValidationTechnicalFailureBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun taskValidationTechnicalFailure(builder: TaskValidationTechnicalFailureBuilder.() -> Unit): TaskValidationTechnicalFailure =
+    TaskValidationTechnicalFailureBuilder().apply(builder).build()
+
+/**
+ * Copies a [TaskValidationRequest] with [builder] applied to its data, retaining its identifier and version.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun TaskValidationRequest.withData(builder: TaskValidationRequestDataBuilder.() -> Unit): TaskValidationRequest {
+    return taskValidationRequest {
+        id = this@withData.id.value
+        createdAt = this@withData.createdAt
+        version = this@withData.version
+        data = this@withData.data.toBuilder().apply(builder).build()
+    }
+}
+
+private fun TaskValidationRequestData.toBuilder() = TaskValidationRequestDataBuilder().also { builder ->
+    builder.task = task.id
+    builder.requestedBy = requestedBy.id
+    builder.snapshot = snapshot
+    when (val state = execution) {
+        TaskValidationExecution.PendingDiagnostics -> builder.execution.pendingDiagnostics()
+        TaskValidationExecution.DiagnosticsInProgress -> builder.execution.diagnosticsInProgress()
+        is TaskValidationExecution.AwaitingSubmissions -> builder.execution.awaitingSubmissions {
+            diagnostics = state.diagnostics.toMutableList()
+        }
+        is TaskValidationExecution.StoppedByDiagnostics -> builder.execution.stoppedByDiagnostics {
+            diagnostics = state.diagnostics.toMutableList()
+            completedAt = state.completedAt
+        }
+        is TaskValidationExecution.SubmissionsCreated -> builder.execution.submissionsCreated {
+            diagnostics = state.diagnostics.toMutableList()
+            submissions = state.submissions.ids.toMutableList()
+        }
+        is TaskValidationExecution.TechnicalFailure.IncompleteDiagnostics -> builder.execution.incompleteDiagnosticsFailure {
+            failure = state.failure
+        }
+        is TaskValidationExecution.TechnicalFailure.CompletedDiagnostics -> builder.execution.completedDiagnosticsFailure {
+            diagnostics = state.diagnostics.toMutableList()
+            failure = state.failure
+        }
+        is TaskValidationExecution.TechnicalFailure.CreatedSubmissions -> builder.execution.createdSubmissionsFailure {
+            diagnostics = state.diagnostics.toMutableList()
+            submissions = state.submissions.ids.toMutableList()
+            failure = state.failure
+        }
+    }
 }

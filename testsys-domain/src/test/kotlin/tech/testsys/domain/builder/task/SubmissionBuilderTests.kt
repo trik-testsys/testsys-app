@@ -11,7 +11,9 @@ import tech.testsys.domain.model.task.RecordingId
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
+import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 
@@ -19,13 +21,53 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
     SubmissionBuilder(),
     SubmissionDataBuilder(),
 ) {
+    @Test
+    fun `should throw IllegalArgumentException if developer solution test version is missing`() {
+        Assertions.assertThrows(IllegalArgumentException::class.java) {
+            submissionData {
+                author(42)
+                solution(1)
+                task(1)
+                status.queued()
+                kind.developerSolutionTest { }
+            }
+        }
+    }
+
+    @Test
+    fun `should build grading submission without a separate TRIK Studio version`() {
+        val data = submissionData {
+            author(42)
+            solution(1)
+            task(1)
+            status.queued()
+            kind.grading { contest(10) }
+        }
+
+        Assertions.assertEquals(10L, (data.kind as? SubmissionKind.Grading)?.contest?.id?.value)
+    }
+
+    @Test
+    fun `should accumulate developer solution test configuration across chooser calls`() {
+        val data = submissionData {
+            author(42)
+            solution(1)
+            task(1)
+            status.queued()
+            kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+            kind.developerSolutionTest { }
+        }
+
+        Assertions.assertEquals(TrikStudioVersion("3.0.0"), (data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion)
+    }
+
     override fun buildDataWithAllFields() = listOf(
         submissionData {
             author(42)
             solution(1)
             task(1)
             status.queued()
-            kind.developerSolutionTest()
+            kind.developerSolutionTest { trikStudioVersion("3.0.0") }
         },
         submissionData {
             author(42)
@@ -47,7 +89,7 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
             solution(1)
             task(1)
             status.graded { status.error { description = "description" } }
-            kind.developerSolutionTest()
+            kind.developerSolutionTest { trikStudioVersion("3.0.0") }
         },
         submissionData {
             author(42)

@@ -24,6 +24,7 @@ import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.verdictData
+import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
@@ -43,6 +44,7 @@ import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.group.Class
@@ -58,14 +60,17 @@ import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.Supervisor
+import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
@@ -94,6 +99,7 @@ class DatabaseFixtures(
     private val statements: StatementRepository,
     private val developerSolutions: DeveloperSolutionRepository,
     private val tasks: TaskRepository,
+    private val taskValidationRequests: TaskValidationRequestRepository,
     private val contests: ContestRepository,
     private val submissions: SubmissionRepository,
     private val verdicts: VerdictRepository,
@@ -109,7 +115,7 @@ class DatabaseFixtures(
 
     fun multipleRoleUser(roles: MultipleRoleUserDataBuilder.() -> Unit): MultipleRoleUser = multipleRoleUsers.save(
         multipleRoleUserData {
-            accessToken = unique("token")
+            accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
             name = unique("User")
             email = email("user")
             roles()
@@ -129,7 +135,7 @@ class DatabaseFixtures(
         return participants.save(
             participantData {
                 competition(competitionId)
-                accessToken = unique("token")
+                accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
                 name = unique("Participant")
             },
         )
@@ -140,7 +146,7 @@ class DatabaseFixtures(
         return observers.save(
             observerData {
                 community(communityId)
-                accessToken = unique("token")
+                accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
                 name = unique("Observer")
             },
         )
@@ -148,7 +154,7 @@ class DatabaseFixtures(
 
     fun supervisor(): Supervisor = supervisors.save(
         supervisorData {
-            accessToken = unique("token")
+            accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
             name = unique("Supervisor")
         },
     )
@@ -254,12 +260,24 @@ class DatabaseFixtures(
                 name = unique("Task")
                 description = "Task description"
                 content.committed {
-                    exercise(exerciseId)
+                    exercises(listOf(exerciseId))
                     statement(statementId)
                 }
             },
         )
     }
+
+    fun workingTask(owner: MultipleRoleUser = developer()): Task = tasks.save(
+        taskData {
+            this.owner = owner.id
+            name = unique("Task")
+            description = "Working task"
+            content.new {}
+        },
+    )
+
+    fun taskValidationRequest(task: Task = workingTask()): TaskValidationRequest =
+        taskValidationRequests.findOrCreateActive(task.id, task.data.owner.id)
 
     fun contest(owner: MultipleRoleUser = developer(), version: TrikStudioVersion = trikStudioVersion()): Contest {
         val ownerId = owner.id.value
@@ -275,7 +293,12 @@ class DatabaseFixtures(
         )
     }
 
-    fun submission(author: MultipleRoleUser = developer(), task: Task = task(author), solution: Solution = solution()): Submission {
+    fun submission(
+        author: MultipleRoleUser = developer(),
+        task: Task = task(author),
+        solution: Solution = solution(),
+        version: TrikStudioVersion = trikStudioVersion(),
+    ): Submission {
         val authorId = author.id
         val taskId = task.id.value
         val solutionId = solution.id.value
@@ -285,9 +308,29 @@ class DatabaseFixtures(
                 solution(solutionId)
                 task(taskId)
                 status.queued()
-                kind.developerSolutionTest()
+                kind.developerSolutionTest { trikStudioVersion = version }
             },
         )
+    }
+
+    fun gradingSubmission(authorId: UserId = student().id, contest: Contest = contest()): Submission {
+        val taskId = task().id.value
+        val solutionId = solution().id.value
+        return submissions.save(
+            submissionData {
+                author = authorId
+                task(taskId)
+                solution(solutionId)
+                status.queued()
+                kind.grading { this.contest = contest.id }
+            },
+        )
+    }
+
+    fun successfulGradingVerdict(submission: Submission = gradingSubmission()): Verdict {
+        val verdict = verdict(submission)
+        submissions.update(submission.withData { status.graded { status.success { this.verdict = verdict.id } } })
+        return verdict
     }
 
     fun verdict(submission: Submission = submission(), polygon: Polygon = polygon()): Verdict {

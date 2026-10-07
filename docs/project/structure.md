@@ -38,7 +38,8 @@ testsys-app/
 | `testsys-domain`                     | Доменные модели, порты (`contract`), DSL билдеров. Без Spring, JPA и любых внешних зависимостей.     | Реализован        |
 | `testsys-operation`                  | Операции — реализация пользовательских фич из [features.md](../domain/features.md), по классу на Роль или группу Пользователей. | В разработке      |
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
-| `testsys-infra:grpc`                 | Связь с внешним грейдером решений TRIK Studio (реализация порта `Grader`).                           | Заготовка (пусто) |
+| `testsys-infra:diagnostics`          | Синхронный анализ XML одного Полигона через порт `PolygonDiagnostics`.                           | Реализован        |
+| `testsys-infra:grpc`                 | Связь с Проверяющими узлами и балансировка проверок (реализация порта `Grader`).                    | Реализован        |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
 | `testsys-web:app` | Основное приложение Vaadin Flow: точка входа, конфигурация и маршрутизация ошибок, см. [app/README.md](../../testsys-web/app/README.md). | Каркас; предметных страниц Кабинетов нет |
 | `testsys-web:components` | Kotlin-DSL, общая фабрика текстов и визуальная часть 404, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
@@ -58,8 +59,8 @@ testsys-app/
 - `testsys-domain` ни от чего не зависит. Любой новый код, которому нужен Spring, JPA или сеть, живёт вне домена.
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
 - Сейчас в Gradle прописаны связи `operation → domain`, `database → domain`, `database → codegen-api`,
-  `database → codegen` (через `ksp`), `app → components` и `dev-app → components`.
-  Остальные связи — целевая архитектура.
+  `database → codegen` (через `ksp`), `grpc → domain`, `diagnostics → domain`, `app → components`
+  и `dev-app → components`. Остальные связи — целевая архитектура.
 
 ## Сборка
 
@@ -195,6 +196,7 @@ Workflow лежат в `.github/workflows`.
 | Хранение сущности в БД                          | `testsys-infra:database`, см. [implement-entity.md](../guides/implement-entity.md)               |
 | Новый внешний порт (хранилище, внешняя система) | Интерфейс в `domain/contract`, реализация — в `testsys-infra`, см. [implement-port.md](../guides/implement-port.md) |
 | Пользовательскую фичу                           | Метод с `@Feature` в `operation/user/<Actor>Operations.kt`, см. [implement-feature.md](../guides/implement-feature.md) |
+| Служебную обработку запроса валидации           | `TaskValidationOperations` в `testsys-operation`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
 | Токены, стили, бренд и иконки | `components/src/main/resources/META-INF/resources/testsys-ui/`, правила — [ui-design.md](ui-design.md) |

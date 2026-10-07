@@ -7,6 +7,7 @@ Usage:
 
 Exit code 1 when at least one violation is reported.
 The explicit --generated mode disables only MISSING_SINCE for generated declarations.
+Files under src/test and src/codegenTest are excluded, including explicitly selected files.
 Reported codes:
     MISSING_DOC     public class/interface/object/fun/typealias without KDoc
     MISSING_SINCE   public declaration KDoc without "@since %CURRENT_VERSION%"
@@ -396,6 +397,14 @@ def main():
     for p in args.paths:
         p = pathlib.Path(p)
         files += sorted(p.rglob("*.kt")) if p.is_dir() else [p]
+
+    files = [
+        f for f in files
+        if not any(
+            parent == "src" and source_set in ("test", "codegenTest")
+            for parent, source_set in zip(f.resolve().parts, f.resolve().parts[1:])
+        )
+    ]
 
     total = 0
     for f in files:

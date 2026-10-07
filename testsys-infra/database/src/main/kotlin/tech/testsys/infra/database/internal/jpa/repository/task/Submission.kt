@@ -1,5 +1,9 @@
 package tech.testsys.infra.database.internal.jpa.repository.task
 
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.LogsJpaEntity
@@ -16,7 +20,68 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
  */
 @Repository
 @InternalDatabaseApi
-interface VerdictJpaEntityRepository : SnowflakeJpaEntityRepository<VerdictJpaEntity>
+interface VerdictJpaEntityRepository : SnowflakeJpaEntityRepository<VerdictJpaEntity> {
+
+    /**
+     * Finds current successful grading verdicts of current students or participants, applying filters before paging and counting.
+     * Group filters require current author membership and contest assignment to the same group.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query(
+        value = """
+            select v from VerdictJpaEntity v, SubmissionJpaEntity s
+            where s.id = v.submissionId
+              and s.kind = tech.testsys.infra.database.internal.jpa.entity.task.SubmissionKindJpaEnum.GRADING
+              and s.status = tech.testsys.infra.database.internal.jpa.entity.task.SubmissionStatusJpaEnum.GRADED
+              and s.gradingResult = tech.testsys.infra.database.internal.jpa.entity.task.GradingResultJpaEnum.SUCCESS
+              and s.gradingVerdictId = v.id
+              and (:authorId is null or s.authorId = :authorId)
+              and (:submissionId is null or s.id = :submissionId)
+              and (:classId is null or (
+                exists (select membership.id.studentId from StudentToClassJpaEntity membership
+                  where membership.id.studentId = s.authorId and membership.id.classId = :classId)
+                and exists (select assignment.id.contestId from ContestToClassJpaEntity assignment
+                  where assignment.id.contestId = s.gradingContestId and assignment.id.classId = :classId)))
+              and (:competitionId is null or (
+                exists (select participant.userId from ParticipantDataJpaEntity participant
+                  where participant.userId = s.authorId and participant.competitionId = :competitionId)
+                and exists (select assignment.id.contestId from ContestToCompetitionJpaEntity assignment
+                  where assignment.id.contestId = s.gradingContestId and assignment.id.competitionId = :competitionId)))
+              and (s.authorId in (select student.userId from StudentDataJpaEntity student)
+                or s.authorId in (select participant.userId from ParticipantDataJpaEntity participant))
+        """,
+        countQuery = """
+            select count(v) from VerdictJpaEntity v, SubmissionJpaEntity s
+            where s.id = v.submissionId
+              and s.kind = tech.testsys.infra.database.internal.jpa.entity.task.SubmissionKindJpaEnum.GRADING
+              and s.status = tech.testsys.infra.database.internal.jpa.entity.task.SubmissionStatusJpaEnum.GRADED
+              and s.gradingResult = tech.testsys.infra.database.internal.jpa.entity.task.GradingResultJpaEnum.SUCCESS
+              and s.gradingVerdictId = v.id
+              and (:authorId is null or s.authorId = :authorId)
+              and (:submissionId is null or s.id = :submissionId)
+              and (:classId is null or (
+                exists (select membership.id.studentId from StudentToClassJpaEntity membership
+                  where membership.id.studentId = s.authorId and membership.id.classId = :classId)
+                and exists (select assignment.id.contestId from ContestToClassJpaEntity assignment
+                  where assignment.id.contestId = s.gradingContestId and assignment.id.classId = :classId)))
+              and (:competitionId is null or (
+                exists (select participant.userId from ParticipantDataJpaEntity participant
+                  where participant.userId = s.authorId and participant.competitionId = :competitionId)
+                and exists (select assignment.id.contestId from ContestToCompetitionJpaEntity assignment
+                  where assignment.id.contestId = s.gradingContestId and assignment.id.competitionId = :competitionId)))
+              and (s.authorId in (select student.userId from StudentDataJpaEntity student)
+                or s.authorId in (select participant.userId from ParticipantDataJpaEntity participant))
+        """,
+    )
+    fun findAvailableToJudge(
+        @Param("authorId") authorId: Long?,
+        @Param("submissionId") submissionId: Long?,
+        @Param("classId") classId: Long?,
+        @Param("competitionId") competitionId: Long?,
+        pageable: Pageable,
+    ): Page<VerdictJpaEntity>
+}
 
 /**
  * Spring Data repository for [TestVerdictJpaEntity].
@@ -33,6 +98,13 @@ interface TestVerdictJpaEntityRepository : SnowflakeJpaEntityRepository<TestVerd
      * @since %CURRENT_VERSION%
      */
     fun findAllByVerdictIdOrderByTestIdAsc(verdictId: Long): List<TestVerdictJpaEntity>
+
+    /**
+     * Finds test outcomes of [verdictIds] in one query, ordered by verdict id and then test id.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByVerdictIdInOrderByVerdictIdAscTestIdAsc(verdictIds: List<Long>): List<TestVerdictJpaEntity>
 }
 
 /**

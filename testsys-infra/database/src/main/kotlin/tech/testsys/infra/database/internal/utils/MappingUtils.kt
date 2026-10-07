@@ -7,10 +7,12 @@ import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.JpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikSupportedLanguageEnum
+import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
 
 @InternalDatabaseApi
 internal fun <Entity : SnowflakeJpaEntity> Entity.requireId() = requireNotNull(id) { "${this::class.simpleName} has null id" }
@@ -49,4 +51,14 @@ internal fun TrikSupportedLanguage.toJpaEnum() = when (this) {
     TrikSupportedLanguage.Python -> TrikSupportedLanguageEnum.PYTHON
     TrikSupportedLanguage.JavaScript -> TrikSupportedLanguageEnum.JAVA_SCRIPT
     TrikSupportedLanguage.VisualLanguage -> TrikSupportedLanguageEnum.VISUAL_LANGUAGE
+}
+
+@InternalDatabaseApi
+internal fun HashAlgorithmJpaEnum.toDomain(): HashAlgorithm = when (this) {
+    HashAlgorithmJpaEnum.IDENTITY -> HashAlgorithm.Identity
+}
+
+@InternalDatabaseApi
+internal fun HashAlgorithm.toJpaEnum() = when (this) {
+    HashAlgorithm.Identity -> HashAlgorithmJpaEnum.IDENTITY
 }

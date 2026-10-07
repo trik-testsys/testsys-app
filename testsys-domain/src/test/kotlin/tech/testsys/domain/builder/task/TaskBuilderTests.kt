@@ -2,12 +2,16 @@ package tech.testsys.domain.builder.task
 
 import org.junit.jupiter.api.Test
 import tech.testsys.domain.builder.DomainEntityBuilderTests
+import tech.testsys.domain.builder.api.taskContentCommitted
+import tech.testsys.domain.builder.api.taskContentNew
 import tech.testsys.domain.builder.api.taskData
+import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.VersionBucket
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class TaskBuilderTests : DomainEntityBuilderTests<Task, TaskData, TaskDataBuilder>(
     TaskBuilder(),
@@ -20,7 +24,7 @@ class TaskBuilderTests : DomainEntityBuilderTests<Task, TaskData, TaskDataBuilde
     }
 
     private fun committedTaskContent(): CommittedTaskContentBuilder.() -> Unit = {
-        exercise(1)
+        exercises(listOf(1, 2))
         statement(1)
         supportedTrikStudioVersions(listOf("3.0.0"))
     }
@@ -45,6 +49,28 @@ class TaskBuilderTests : DomainEntityBuilderTests<Task, TaskData, TaskDataBuilde
             )
         },
     )
+
+    @Test
+    fun `should build WIP content without exercises by default`() {
+        val content = taskContentNew {}
+
+        assertEquals(emptyList(), content.wip.exercises.ids)
+    }
+
+    @Test
+    fun `should require at least one exercise in committed content`() {
+        assertFailsWith<IllegalArgumentException> { taskContentCommitted { statement(1) } }
+    }
+
+    @Test
+    fun `should retain several exercise identifiers in committed content`() {
+        val content = taskContentCommitted {
+            exercises(listOf(1, 2))
+            statement(1)
+        }
+
+        assertEquals(listOf(ExerciseId(1), ExerciseId(2)), content.lastCommitted.exercises.ids)
+    }
 
     @Test
     fun `should build a task with no uploaded resources by default`() {

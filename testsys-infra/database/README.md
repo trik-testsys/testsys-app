@@ -25,6 +25,39 @@
 Бины регистрирует [DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/DatabaseConfiguration.kt),
 настройки Hibernate по умолчанию — в [hibernate-defaults.properties](src/main/resources/hibernate-defaults.properties).
 
+## Постраничный поиск Задач и Туров
+
+Методы `findAvailableToDeveloper` в
+[TaskPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/TaskPersistenceAdapter.kt)
+и [ContestPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapter.kt)
+передают условия доступа и фильтры в `JpaSpecificationExecutor`. БД выбирает собственные сущности
+или сущности, доступные через переданные Сообщества. Предикат `EXISTS` исключает повторы при нескольких
+основаниях доступа. При пустом наборе Сообществ запрос проверяет только владельца.
+
+Фильтры названия, владельца, состояния Задачи и предоставленного доступа Сообществу применяются до выбора
+страницы и подсчёта общего числа. Связь с выбранным Сообществом проверяется отдельным предикатом `EXISTS`.
+Подсчёт использует ту же спецификацию. Сопоставление названия использует `locate` и `lower`;
+правила фильтрации определены в [features.md](../../docs/domain/features.md).
+Без параметров сортировки сущности упорядочиваются по идентификатору по возрастанию.
+Этот порядок дополняет указанную сортировку, если в ней нет идентификатора.
+
+Адаптеры собирают доменные сущности только выбранной страницы и возвращают исходные параметры пагинации.
+Все чтения выполняются в транзакции с `readOnly = true`; исключения хранилища выходят к вызывающему коду.
+
+## Постраничный поиск Вердиктов
+
+Метод `findAvailableToJudge` в
+[VerdictPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/VerdictPersistenceAdapter.kt)
+передаёт идентификаторы автора, Посылки, Класса и Соревнования из `VerdictFilter` и `Pageable`
+в `VerdictJpaEntityRepository`. Членство автора и принадлежность Тура проверяются через `EXISTS`;
+правила фильтрации определены в [features.md](../../docs/domain/features.md).
+БД фильтрует и сортирует Вердикты, затем выбирает страницу. Для подсчёта общего числа задан отдельный `countQuery` с теми же условиями.
+Адаптер одним запросом загружает результаты Полигонов для всех Вердиктов выбранной страницы,
+группирует их по идентификатору Вердикта и собирает страницу через `VerdictMapping`.
+Для пустой страницы запрос результатов Полигонов не выполняется.
+Результат содержит переданные параметры пагинации; связи с логами и видеозаписями остаются lazy.
+Чтение выполняется в транзакции с `readOnly = true`.
+
 ## Идентификаторы
 
 Идентификаторы сущностей выдаёт [SnowflakeIdGenerator.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/id/SnowflakeIdGenerator.kt),
@@ -55,6 +88,9 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 
 ## Загруженные Ресурсы Задачи
 
+Адаптеры Условий, Упражнений, Полигонов и Авторских Решений возвращают историю существующими доменными сущностями.
+Их `findFileRef` читает только метаданные файла и возвращает существующий `StoredBlobRef`, не обращаясь к `FileBlobStorage`.
+
 `TaskData.uploadedResources` хранится в `ts_version_bucket_to_task`: составной ключ включает `task_id`
 и `version_bucket`, а уникальное ограничение на `version_bucket` исключает одновременную принадлежность
 цепочки двум Задачам. В таблицах версий Ресурсов `version_bucket` остаётся UUID.
@@ -62,6 +98,23 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 `TaskPersistenceAdapter` сохраняет и синхронизирует строки принадлежности отдельно от ревизий содержимого.
 Удаление Задачи очищает эти строки, сохраняя версии Ресурсов и их файлы. Таблица хранит только текущую
 принадлежность; история владельцев цепочки не сохраняется. Операций переноса или удаления Ресурсов пока нет.
+
+## Коды-доступа Пользователей
+
+`ts_user.access_token_hash_algorithm` хранит алгоритм строкой из `HashAlgorithmJpaEnum` рядом с `access_token`
+([User.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/entity/user/User.kt)).
+Колонка создаётся с `NOT NULL` в
+[changelog.03-init-user.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.03-init-user.xml).
+Значения по умолчанию у колонки нет: при записи алгоритм передаётся явно.
+
+Маппинги Пользователей объединяют значение и алгоритм в `AccessTokenHash` и передают его в `storedAccessToken(hash)`.
+При записи оба поля переносятся из доменных данных без хэширования. Ввод исходного КД описан в разделе
+[«Пользователи»](../../testsys-domain/README.md#пользователи).
+
+Ограничение `uk_ts_user_access_token` обеспечивает уникальность исходных КД благодаря `Identity`.
+Поэтому `UserJpaEntity` помечен `@RawAccessTokenDependency`. При переходе к хэшированию с индивидуальной солью
+это ограничение нужно пересмотреть. Семантика сохранённого КД и правило аннотации — в разделе
+[«Пользователи»](../../testsys-domain/README.md#пользователи).
 
 ## Схема БД
 

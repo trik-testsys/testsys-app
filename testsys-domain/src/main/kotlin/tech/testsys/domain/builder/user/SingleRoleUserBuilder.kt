@@ -32,18 +32,15 @@ abstract class SingleRoleUserBuilder<U : SingleRoleUser, Data, DataBuilder : Bui
 }
 
 /**
- * Builder of [ParticipantData]. Required: [competition], [accessToken], [name].
+ * Builder of [ParticipantData]. Required: [competition], [accessToken] or [storedAccessToken], [name].
  *
  * @property competition the id of the competition the participant belongs to, or `null` if not set yet.
- * @property accessToken the access code the participant logs in with, or `null` if not set yet.
  * @property name the name of the participant, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
-class ParticipantDataBuilder : Builder<ParticipantData> {
+class ParticipantDataBuilder : UserDataBuilder<ParticipantData>() {
 
     var competition: CompetitionId? = null
-
-    var accessToken: String? = null
 
     var name: String? = null
 
@@ -61,7 +58,7 @@ class ParticipantDataBuilder : Builder<ParticipantData> {
 
         return ParticipantData(
             competition = competition.lazify(),
-            accessToken = requireField(accessToken) { ::accessToken },
+            accessTokenHash = requireAccessTokenHash(),
             name = requireField(name) { ::name },
         )
     }
@@ -91,21 +88,18 @@ class ParticipantBuilder : SingleRoleUserBuilder<Participant, ParticipantData, P
 }
 
 /**
- * Builder of [ObserverData]. Required: [community], [accessToken], [name].
+ * Builder of [ObserverData]. Required: [community], [accessToken] or [storedAccessToken], [name].
  *
  * @property community the id of the community the observer is a member of, or `null` if not set yet.
  * @property competitions the ids of the competitions the observer may view.
- * @property accessToken the access code the observer logs in with, or `null` if not set yet.
  * @property name the name of the observer, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
-class ObserverDataBuilder : Builder<ObserverData> {
+class ObserverDataBuilder : UserDataBuilder<ObserverData>() {
 
     var community: CommunityId? = null
 
     var competitions = mutableListOf<CompetitionId>()
-
-    var accessToken: String? = null
 
     var name: String? = null
 
@@ -133,7 +127,7 @@ class ObserverDataBuilder : Builder<ObserverData> {
         return ObserverData(
             community = community.lazify(),
             competitions = competitions.lazify(),
-            accessToken = requireField(accessToken) { ::accessToken },
+            accessTokenHash = requireAccessTokenHash(),
             name = requireField(name) { ::name },
         )
     }
@@ -163,20 +157,17 @@ class ObserverBuilder : SingleRoleUserBuilder<Observer, ObserverData, ObserverDa
 }
 
 /**
- * Builder of [SupervisorData]. Required: [accessToken], [name].
+ * Builder of [SupervisorData]. Required: [accessToken] or [storedAccessToken], [name].
  *
- * @property accessToken the access code the supervisor logs in with, or `null` if not set yet.
  * @property name the name of the supervisor, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
-class SupervisorDataBuilder : Builder<SupervisorData> {
-
-    var accessToken: String? = null
+class SupervisorDataBuilder : UserDataBuilder<SupervisorData>() {
 
     var name: String? = null
 
     override fun build() = SupervisorData(
-        accessToken = requireField(accessToken) { ::accessToken },
+        accessTokenHash = requireAccessTokenHash(),
         name = requireField(name) { ::name },
     )
 }

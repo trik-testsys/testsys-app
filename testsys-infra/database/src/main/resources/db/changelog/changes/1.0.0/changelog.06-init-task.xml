@@ -19,9 +19,6 @@
             <column name="version" type="BIGINT" defaultValueNumeric="0">
                 <constraints nullable="false"/>
             </column>
-            <column name="exercise_id" type="BIGINT">
-                <constraints foreignKeyName="fk_task_content_exercise" references="ts_exercise(id)"/>
-            </column>
             <column name="statement_id" type="BIGINT">
                 <constraints foreignKeyName="fk_task_content_statement" references="ts_statement(id)"/>
             </column>
@@ -141,6 +138,28 @@
             <column name="task_id" type="BIGINT">
                 <constraints primaryKey="true" primaryKeyName="pk_ts_community_to_task" nullable="false"
                              foreignKeyName="fk_community_to_task_task" references="ts_task(id)"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="1.0.0-06-7" author="testsys">
+        <createTable tableName="ts_exercise_to_task_content">
+            <column name="exercise_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_exercise_to_task_content" nullable="false"
+                             foreignKeyName="fk_ts_exercise_to_task_content_exercise_id" references="ts_exercise(id)"/>
+            </column>
+            <column name="task_content_id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_exercise_to_task_content" nullable="false"
+                             foreignKeyName="fk_ts_exercise_to_task_content_task_content_id" references="ts_task_content(id)"/>
             </column>
             <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
                 <constraints nullable="false"/>

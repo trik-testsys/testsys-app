@@ -1,7 +1,9 @@
 package tech.testsys.infra.database.internal.jpa.repository.task
 
+import jakarta.persistence.LockModeType
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -10,6 +12,8 @@ import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskId
 import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionToTaskContentId
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionToTaskContentJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.task.ExerciseToTaskContentId
+import tech.testsys.infra.database.internal.jpa.entity.task.ExerciseToTaskContentJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskContentJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TestToTaskContentId
@@ -20,6 +24,49 @@ import tech.testsys.infra.database.internal.jpa.entity.task.VersionBucketToTaskI
 import tech.testsys.infra.database.internal.jpa.entity.task.VersionBucketToTaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
+
+/**
+ * Spring Data repository for [ExerciseToTaskContentJpaEntity].
+ *
+ * @since %CURRENT_VERSION%
+ */
+@Repository
+@InternalDatabaseApi
+interface ExerciseToTaskContentJpaEntityRepository :
+    CompositeJpaEntityRepository<ExerciseToTaskContentJpaEntity, ExerciseToTaskContentId> {
+
+    /**
+     * Finds the association rows of the exercise [exerciseId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.exerciseId = :exerciseId")
+    fun findAllByExerciseId(@Param("exerciseId") exerciseId: Long): List<ExerciseToTaskContentJpaEntity>
+
+    /**
+     * Finds one [pageable] page of the association rows of the exercise [exerciseId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.exerciseId = :exerciseId")
+    fun findAllByExerciseId(@Param("exerciseId") exerciseId: Long, pageable: Pageable): Page<ExerciseToTaskContentJpaEntity>
+
+    /**
+     * Finds the association rows of the task content revision [taskContentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
+    fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long): List<ExerciseToTaskContentJpaEntity>
+
+    /**
+     * Finds one [pageable] page of the association rows of the task content revision [taskContentId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query("select e from ExerciseToTaskContentJpaEntity e where e.id.taskContentId = :taskContentId")
+    fun findAllByTaskContentId(@Param("taskContentId") taskContentId: Long, pageable: Pageable): Page<ExerciseToTaskContentJpaEntity>
+}
 
 /**
  * Spring Data repository for [TestToTaskContentJpaEntity].
@@ -173,6 +220,13 @@ interface CommunityToTaskJpaEntityRepository :
     CompositeJpaEntityRepository<CommunityToTaskJpaEntity, CommunityToTaskId> {
 
     /**
+     * Finds the association rows of any community in the nonempty [communityIds].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByIdCommunityIdIn(communityIds: Set<Long>): List<CommunityToTaskJpaEntity>
+
+    /**
      * Finds the association rows of the community [communityId].
      *
      * @since %CURRENT_VERSION%
@@ -222,6 +276,15 @@ interface TaskContentJpaEntityRepository : SnowflakeJpaEntityRepository<TaskCont
 @Repository
 @InternalDatabaseApi
 interface TaskJpaEntityRepository : SnowflakeJpaEntityRepository<TaskJpaEntity> {
+
+    /**
+     * Locks the task before reading its snapshot, replacing content or removing the task.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from TaskJpaEntity e where e.id = :id")
+    fun findLockedById(@Param("id") id: Long): TaskJpaEntity?
 
     /**
      * Finds the tasks owned by the user [ownerId].

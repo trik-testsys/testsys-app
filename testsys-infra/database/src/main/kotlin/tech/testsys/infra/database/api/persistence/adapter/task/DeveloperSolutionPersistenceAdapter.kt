@@ -1,15 +1,20 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.DeveloperSolutionJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.SolutionJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.DeveloperSolutionMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 
@@ -24,10 +29,14 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 @OptIn(InternalDatabaseApi::class)
 class DeveloperSolutionPersistenceAdapter(
     jpaEntityRepository: DeveloperSolutionJpaEntityRepository,
+    private val solutionJpaEntityRepository: SolutionJpaEntityRepository,
+    private val fileDataJpaEntityRepository: FileDataJpaEntityRepository,
 ) : AbstractPersistenceAdapter<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution, DeveloperSolutionJpaEntity>(
     jpaEntityRepository,
 ),
     DeveloperSolutionRepository {
+
+    private val resourceVersionRepository: DeveloperSolutionJpaEntityRepository = jpaEntityRepository
 
     @Transactional
     override fun save(data: DeveloperSolutionData): DeveloperSolution {
@@ -57,5 +66,25 @@ class DeveloperSolutionPersistenceAdapter(
         return domainEntity
     }
 
+    @Transactional(readOnly = true)
+    override fun findLatestByVersionBucket(versionBucket: VersionBucket): DeveloperSolution? {
+        return resourceVersionRepository.findFirstByVersionBucketOrderByCreatedAtDescIdDesc(versionBucket.value)?.let { assemble(it) }
+    }
+
     override fun assemble(jpaEntity: DeveloperSolutionJpaEntity) = DeveloperSolutionMapping.toDomain(jpaEntity)
+
+    @Transactional(readOnly = true)
+    override fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<DeveloperSolution> =
+        resourceVersionRepository.findAllByVersionBucket(versionBucket.value).map { assemble(it) }
+
+    @Transactional(readOnly = true)
+    override fun existsByVersionBucket(versionBucket: VersionBucket): Boolean =
+        resourceVersionRepository.existsByVersionBucket(versionBucket.value)
+
+    @Transactional(readOnly = true)
+    override fun findFileRef(versionBucket: VersionBucket, id: DeveloperSolutionId): StoredBlobRef? {
+        val row = jpaEntityRepository.findByIdOrNull(id.value)?.takeIf { it.versionBucket == versionBucket.value } ?: return null
+        val solution = solutionJpaEntityRepository.findByIdOrError(row.solutionId)
+        return StoredBlobRef(fileDataJpaEntityRepository.findByIdOrError(solution.fileDataId).storedFileName)
+    }
 }

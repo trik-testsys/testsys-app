@@ -68,6 +68,8 @@
 | [database/README.md](../testsys-infra/database/README.md)              | Справочник | Слои модуля хранения, идентификаторы, файлы, схема БД          |
 | [codegen/README.md](../testsys-infra/database/codegen/README.md)       | Справочник | KSP-кодогенерация модуля `database`                            |
 | [localization/README.md](../testsys-infra/localization/README.md)     | Справочник | Модуль локализации: зачем, как устроен, наш код и ICU4J       |
+| [grpc/README.md](../testsys-infra/grpc/README.md)                     | Справочник | gRPC-грейдер: компоненты, балансировка и настройки             |
+| [diagnostics/README.md](../testsys-infra/diagnostics/README.md)       | Справочник | Анализ XML Полигонов и конфигурация диагностик                  |
 | [ui-design.md](project/ui-design.md) | Справочник | Общие правила оформления веб-интерфейса |
 | [components/README.md](../testsys-web/components/README.md)                            | Справочник | Kotlin-DSL дизайн-системы: страница, сетка, скоупы, компоненты  |
 | [app/README.md](../testsys-web/app/README.md) | Справочник | Основное веб-приложение: запуск и границы ответственности |

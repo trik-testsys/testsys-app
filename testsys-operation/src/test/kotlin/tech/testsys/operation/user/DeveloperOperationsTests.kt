@@ -1,6 +1,8 @@
 package tech.testsys.operation.user
 
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.slot
@@ -16,6 +18,10 @@ import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.builder.task.TaskContentBuilder
+import tech.testsys.domain.builder.task.WipTaskContentBuilder
+import tech.testsys.domain.builder.util.chooser.TaskValidationExecutionChooser
+import tech.testsys.domain.contract.Grader
+import tech.testsys.domain.contract.GradingAdmission
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.Page
@@ -28,6 +34,7 @@ import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepo
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
+import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
@@ -36,6 +43,7 @@ import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.AuthorSubmissionFailure
 import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
@@ -54,10 +62,13 @@ import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
+import tech.testsys.domain.model.task.Submission
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
@@ -66,6 +77,7 @@ import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.operation.TaskValidationDispatcher
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.error.AttemptDurationExceedsContestDurationError
 import tech.testsys.operation.error.CommunityAccessDeniedError
@@ -96,8 +108,15 @@ import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskAlreadyAttachedToContestError
 import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
+import tech.testsys.operation.error.TaskNotAttachedToContestError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
+import tech.testsys.operation.error.TaskNotTestedError
+import tech.testsys.operation.error.TaskTestingNoDeveloperSolutionsError
+import tech.testsys.operation.error.TaskTestingNoExerciseForLanguageError
+import tech.testsys.operation.error.TaskTestingNoPolygonsError
+import tech.testsys.operation.error.TaskTestingNoStatementError
+import tech.testsys.operation.error.TaskTestingNoTrikStudioVersionsError
 import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
@@ -136,6 +155,9 @@ class DeveloperOperationsTests {
     private val solutionRepository = mockk<SolutionRepository>()
     private val contestRepository = mockk<ContestRepository>()
     private val taskValidationRequestRepository = mockk<TaskValidationRequestRepository>()
+    private val taskValidationDispatcher = mockk<TaskValidationDispatcher>(relaxUnitFun = true)
+    private val submissionRepository = mockk<SubmissionRepository>()
+    private val grader = mockk<Grader>()
     private val developerOperations = DeveloperOperations(
         taskRepository,
         statementRepository,
@@ -146,6 +168,9 @@ class DeveloperOperationsTests {
         solutionRepository,
         contestRepository,
         taskValidationRequestRepository,
+        taskValidationDispatcher,
+        submissionRepository,
+        grader,
     )
 
     private lateinit var developer: MultipleRoleUser
@@ -158,12 +183,14 @@ class DeveloperOperationsTests {
     private val uploadScore = Score(42)
 
     @Nested
-    inner class RunDiagnosticsTests {
+    inner class TestTaskTests {
         @Test
         fun `should reject a user without the Developer role`() {
             assertRaises(MissedDeveloperRoleError) {
-                developerOperations.runDiagnostics(testAdministrator {}, TaskId(0))
+                developerOperations.testTask(testAdministrator {}, TaskId(0))
             }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
         }
 
         @Test
@@ -171,7 +198,198 @@ class DeveloperOperationsTests {
             every { taskRepository.findById(TaskId(0)) } returns null
 
             assertRaises(TaskNotExistsError(TaskId(0))) {
-                developerOperations.runDiagnostics(developer, TaskId(0))
+                developerOperations.testTask(developer, TaskId(0))
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        @Test
+        fun `should reject a task owned by another developer`() {
+            every { taskRepository.findById(TaskId(0)) } returns testNewTask().withData { owner(99) }
+
+            assertRaises(TaskAccessDeniedError(TaskId(0))) {
+                developerOperations.testTask(developer, TaskId(0))
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        @Test
+        fun `should schedule processing of the persisted request`() {
+            val task = validTask()
+            prepareContent(task)
+            val request = testTaskValidationRequest()
+            every { taskRepository.findById(task.id) } returns task
+            every { taskValidationRequestRepository.findOrCreateActive(task.id, developer.id) } returns request
+
+            developerOperations.testTask(developer, task.id).getOrThrow()
+
+            verify(exactly = 1) { taskValidationDispatcher.schedule(request.id) }
+        }
+
+        @Test
+        fun `should not schedule processing if a request is rejected`() {
+            every { taskRepository.findById(TaskId(0)) } returns null
+
+            assertRaises(TaskNotExistsError(TaskId(0))) { developerOperations.testTask(developer, TaskId(0)) }
+
+            verify(exactly = 0) { taskValidationDispatcher.schedule(any()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["new", "uncommitted"])
+        fun `should return the persisted request without changing any task state`(state: String) {
+            val task = validTask(state)
+            prepareContent(task)
+            val request = testTaskValidationRequest()
+            every { taskRepository.findById(task.id) } returns task
+            every { taskValidationRequestRepository.findOrCreateActive(task.id, developer.id) } returns request
+
+            val result = developerOperations.testTask(developer, task.id).getOrThrow()
+
+            Assertions.assertSame(request, result)
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { testRepository.load(any<LazyEntityList<TestId, Polygon>>()) }
+        }
+
+        @Test
+        fun `should reject a committed task before creating a testing request`() {
+            val task = testCommitedTask()
+            every { taskRepository.findById(task.id) } returns task
+
+            assertRaises(TaskAlreadyCommittedError(task.id)) {
+                developerOperations.testTask(developer, task.id)
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        @Test
+        fun `should propagate technical persistence exceptions to the external caller`() {
+            val task = validTask()
+            prepareContent(task)
+            every { taskRepository.findById(TaskId(0)) } returns task
+            val failure = IllegalStateException("Database unavailable")
+            every { taskValidationRequestRepository.findOrCreateActive(TaskId(0), developer.id) } throws failure
+
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.testTask(developer, TaskId(0))
+            }
+
+            Assertions.assertSame(failure, actual)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["statement", "polygons", "authors", "versions"])
+        fun `should reject missing required content before saving a request`(missing: String) {
+            val task = validTask().withData {
+                content.new {
+                    statement = if (missing == "statement") null else StatementId(1)
+                    tests = if (missing == "polygons") mutableListOf() else mutableListOf(TestId(3))
+                    developerSolutions = if (missing == "authors") mutableListOf() else mutableListOf(DeveloperSolutionId(4))
+                    exercises(listOf(2))
+                    supportedTrikStudioVersions = if (missing == "versions") mutableListOf() else mutableListOf(TrikStudioVersion("v1"))
+                }
+            }
+            every { taskRepository.findById(task.id) } returns task
+            val expected = when (missing) {
+                "statement" -> TaskTestingNoStatementError(task.id)
+                "polygons" -> TaskTestingNoPolygonsError(task.id)
+                "authors" -> TaskTestingNoDeveloperSolutionsError(task.id)
+                else -> TaskTestingNoTrikStudioVersionsError(task.id)
+            }
+
+            assertRaises(expected) { developerOperations.testTask(developer, task.id) }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        @Test
+        fun `should reject an author language without an attached exercise`() {
+            val task = validTask()
+            prepareContent(task)
+            every { exerciseRepository.load(task.getEditableContent().exercises) } returns emptyList()
+            every { taskRepository.findById(task.id) } returns task
+
+            assertRaises(TaskTestingNoExerciseForLanguageError(task.id, TrikSupportedLanguage.Python)) {
+                developerOperations.testTask(developer, task.id)
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        @Test
+        fun `should reject an incompatible attached contest before saving a request`() {
+            val task = validTask()
+            prepareContent(task)
+            every { taskRepository.findById(task.id) } returns task
+            every { contestRepository.findByTaskId(task.id) } returns listOf(testContest { trikStudioVersion("other") })
+
+            assertRaises(TaskTrikStudioVersionNotSupportedError(task.id, TrikStudioVersion("other"))) {
+                developerOperations.testTask(developer, task.id)
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        }
+
+        private fun validTask(state: String = "new"): Task {
+            val original = if (state == "new") testNewTask() else testUncommittedTask()
+            return original.withData {
+                val contentBuilder: tech.testsys.domain.builder.task.WipTaskContentBuilder.() -> Unit = {
+                    statement(1)
+                    exercises(listOf(2))
+                    tests(listOf(3))
+                    developerSolutions(listOf(4))
+                    supportedTrikStudioVersions(listOf("v1"))
+                }
+                if (state == "new") {
+                    content.new(contentBuilder)
+                } else {
+                    content.uncommitted(
+                        wipBuilder = contentBuilder,
+                        lastCommittedBuilder = {
+                            statement(99)
+                            exercises(listOf(99))
+                        },
+                    )
+                }
+            }
+        }
+
+        private fun prepareContent(task: Task) {
+            val author = viewDeveloperSolution()
+            every { exerciseRepository.load(task.getEditableContent().exercises) } returns listOf(viewExercise())
+            every { developerSolutionRepository.load(task.getEditableContent().developerSolutions) } returns listOf(author)
+            every { solutionRepository.load(author.data.solution) } returns solution {
+                id = 5
+                createdAt = Instant.EPOCH
+                data = solutionData {
+                    file("solution.py", byteArrayOf(1))
+                    language.python()
+                }
+            }
+            every { contestRepository.findByTaskId(task.id) } returns emptyList()
+        }
+    }
+
+    @Nested
+    inner class ViewTaskValidationRequestsTests {
+        @Test
+        fun `should reject a user without the Developer role`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.viewTaskValidationRequests(testAdministrator {}, TaskId(0))
+            }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findHistory(any()) }
+        }
+
+        @Test
+        fun `should reject a missing task`() {
+            every { taskRepository.findById(TaskId(0)) } returns null
+
+            assertRaises(TaskNotExistsError(TaskId(0))) {
+                developerOperations.viewTaskValidationRequests(developer, TaskId(0))
             }
         }
 
@@ -180,47 +398,411 @@ class DeveloperOperationsTests {
             every { taskRepository.findById(TaskId(0)) } returns testNewTask().withData { owner(99) }
 
             assertRaises(TaskAccessDeniedError(TaskId(0))) {
-                developerOperations.runDiagnostics(developer, TaskId(0))
+                developerOperations.viewTaskValidationRequests(developer, TaskId(0))
             }
+
+            verify(exactly = 0) { taskValidationRequestRepository.findHistory(any()) }
         }
 
         @ParameterizedTest
-        @ValueSource(strings = ["new", "uncommitted"])
-        fun `should return the persisted request without changing any task state`(state: String) {
-            val task = if (state == "new") testNewTask() else testUncommittedTask()
-            val request = testTaskValidationRequest()
+        @ValueSource(strings = ["new", "uncommitted", "committed"])
+        fun `should return the saved testing history of an owned task in any state`(state: String) {
+            val task = when (state) {
+                "new" -> testNewTask()
+                "uncommitted" -> testUncommittedTask()
+                else -> testCommitedTask()
+            }
+            val history = listOf(testTaskValidationRequest())
             every { taskRepository.findById(task.id) } returns task
-            every { taskValidationRequestRepository.findOrCreateActive(task.id, developer.id) } returns request
+            every { taskValidationRequestRepository.findHistory(task.id) } returns history
 
-            val result = developerOperations.runDiagnostics(developer, task.id).getOrThrow()
+            val result = developerOperations.viewTaskValidationRequests(developer, task.id).getOrThrow()
 
-            Assertions.assertSame(request, result)
+            Assertions.assertSame(history, result)
             verify(exactly = 0) { taskRepository.update(any<Task>()) }
         }
+    }
 
-        @Test
-        fun `should reject a committed task before creating a diagnostics request`() {
-            val task = testCommitedTask()
-            every { taskRepository.findById(task.id) } returns task
+    @Nested
+    inner class CommitTaskTests {
 
-            assertRaises(TaskAlreadyCommittedError(task.id)) {
-                developerOperations.runDiagnostics(developer, task.id)
+        private val taskId = TaskId(0)
+        private val uploadedBucket = VersionBucket(UUID(0, 2))
+        private val pythonSolution = solution {
+            id = 5
+            createdAt = Instant.EPOCH
+            data = solutionData {
+                file("solution.py", byteArrayOf(1))
+                language.python()
             }
+        }
 
-            verify(exactly = 0) { taskValidationRequestRepository.findOrCreateActive(any(), any()) }
+        @BeforeEach
+        fun prepareCommit() {
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } returns listOf(viewExercise())
+            every { developerSolutionRepository.load(any<LazyEntityList<DeveloperSolutionId, DeveloperSolution>>()) } returns
+                listOf(viewDeveloperSolution())
+            every { solutionRepository.load(any<LazyEntity<SolutionId, Solution>>()) } returns pythonSolution
+            every { contestRepository.findByTaskId(taskId) } returns emptyList()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest())
+            every { submissionRepository.findGradingByTaskId(taskId) } returns listOf(contestSubmission(31), contestSubmission(32))
+            every { grader.sendToGrade(any()) } returns GradingAdmission.Accepted
         }
 
         @Test
-        fun `should propagate technical persistence exceptions to the external caller`() {
-            every { taskRepository.findById(TaskId(0)) } returns testNewTask()
-            val failure = IllegalStateException("Database unavailable")
-            every { taskValidationRequestRepository.findOrCreateActive(TaskId(0), developer.id) } throws failure
+        fun `should reject a user without the Developer role before loading the task`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.commitTask(testAdministrator {}, taskId, regradeSubmissions = true)
+            }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a missing task`() {
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a task owned by another developer`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask().withData { owner(99) }
+
+            assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a Committed task without a working revision`() {
+            every { taskRepository.findById(taskId) } returns testCommitedTask()
+
+            assertRaises(TaskAlreadyCommittedError(taskId)) {
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
+            }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a working revision without validation history`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns emptyList()
+
+            assertRaises(TaskNotTestedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["failed", "stoppedByDiagnostics", "active"])
+        fun `should reject a working revision whose matching validation request has not succeeded`(execution: String) {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(unsuccessfulRequest(execution))
+
+            assertRaises(TaskNotTestedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a working revision if successful validation used another polygon set`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest(polygonIds = listOf(3, 7)))
+
+            assertRaises(TaskNotTestedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a working revision if successful validation used another author solution set`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest(authorIds = listOf(4, 8)))
+
+            assertRaises(TaskNotTestedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a working revision if successful validation used another TRIK Studio version set`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest(versionTags = listOf("3.0.0")))
+
+            assertRaises(TaskNotTestedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a working revision without a statement`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask { statement = null }
+
+            assertRaises(TaskTestingNoStatementError(taskId)) {
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
+            }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject an author language without an attached exercise`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } returns emptyList()
+
+            assertRaises(TaskTestingNoExerciseForLanguageError(taskId, TrikSupportedLanguage.Python)) {
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
+            }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject an attached contest with an unsupported TRIK Studio version`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { contestRepository.findByTaskId(taskId) } returns listOf(testContest { trikStudioVersion("2.0.0") })
+
+            assertRaises(TaskTrikStudioVersionNotSupportedError(taskId, TrikStudioVersion("2.0.0"))) {
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
+            }
+
+            verifyNoChanges()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted"])
+        fun `should replace the last committed revision with the working revision`(state: String) {
+            every { taskRepository.findById(taskId) } returns committableTask(state)
+
+            val result = developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            val content = Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content).lastCommitted
+            Assertions.assertEquals(StatementId(1), content.statement.id)
+            Assertions.assertEquals(listOf(ExerciseId(2)), content.exercises.ids)
+            Assertions.assertEquals(listOf(TestId(3), TestId(6)), content.tests.ids)
+            Assertions.assertEquals(listOf(DeveloperSolutionId(4)), content.developerSolutions.ids)
+            Assertions.assertEquals(listOf(TrikStudioVersion("3.0.0"), TrikStudioVersion("4.0.0")), content.supportedTrikStudioVersions)
+            Assertions.assertEquals(savedTaskVersion, result.version)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should commit a task compatible with every attached contest`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { contestRepository.findByTaskId(taskId) } returns listOf(
+                testContest { trikStudioVersion("3.0.0") },
+                testContest { trikStudioVersion("4.0.0") },
+            )
+
+            val result = developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content)
+        }
+
+        @Test
+        fun `should match a successful snapshot regardless of the order of inputs`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask {
+                tests(listOf(6, 3))
+                developerSolutions(listOf(8, 4))
+                supportedTrikStudioVersions(listOf("4.0.0", "3.0.0"))
+            }
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest(authorIds = listOf(4, 8)))
+
+            val result = developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            val content = Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content).lastCommitted
+            Assertions.assertEquals(listOf(TestId(6), TestId(3)), content.tests.ids)
+        }
+
+        @Test
+        fun `should accept an earlier successful validation request after a later failed one`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(
+                validationRequest(),
+                unsuccessfulRequest("failed"),
+            )
+
+            val result = developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content)
+        }
+
+        @Test
+        fun `should preserve task metadata access and uploaded chains when committing`() {
+            val original = uncommittedTask()
+            every { taskRepository.findById(taskId) } returns original
+
+            val result = developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            Assertions.assertEquals("Task name", result.data.name)
+            Assertions.assertEquals("Task description", result.data.description)
+            Assertions.assertEquals(original.data.owner.id, result.data.owner.id)
+            Assertions.assertEquals(listOf(CommunityId(4)), result.data.sharedTo.ids)
+            Assertions.assertEquals(setOf(uploadedBucket), result.data.uploadedResources)
+        }
+
+        @Test
+        fun `should send every contest submission to grading if requested and the polygon set changed`() {
+            val sent = mutableListOf<Submission>()
+            every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
+            every { grader.sendToGrade(capture(sent)) } returns GradingAdmission.Accepted
+
+            developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
+
+            Assertions.assertEquals(listOf(SubmissionId(31), SubmissionId(32)), sent.map { submission -> submission.id })
+        }
+
+        @Test
+        fun `should send contest submissions to grading if a polygon is replaced with its new version`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3, 5))
+
+            developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
+
+            verify(exactly = 2) { grader.sendToGrade(any()) }
+        }
+
+        @Test
+        fun `should not search or send submissions if regrading is not requested even when the polygon set changed`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
+
+            developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
+            verify(exactly = 0) { grader.sendToGrade(any()) }
+        }
+
+        @Test
+        fun `should not search submissions if the polygon set is unchanged`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(6, 3))
+
+            developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
+
+            verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
+            verify(exactly = 0) { grader.sendToGrade(any()) }
+        }
+
+        @Test
+        fun `should not search submissions when committing a New task`() {
+            every { taskRepository.findById(taskId) } returns newTask()
+
+            developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
+
+            verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
+            verify(exactly = 0) { grader.sendToGrade(any()) }
+        }
+
+        @Test
+        fun `should propagate a storage exception without sending submissions to grading`() {
+            val failure = IllegalStateException("Task was changed concurrently")
+            every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
+            every { taskRepository.update(any<Task>()) } throws failure
 
             val actual = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.runDiagnostics(developer, TaskId(0))
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
             }
 
             Assertions.assertSame(failure, actual)
+            verify(exactly = 0) { grader.sendToGrade(any()) }
+        }
+
+        private fun committableTask(state: String): Task = when (state) {
+            "New" -> newTask()
+            "Uncommitted" -> uncommittedTask(committedPolygonIds = listOf(9))
+            else -> error("Unsupported test state: $state")
+        }
+
+        private fun newTask(): Task = testNewTask().withData {
+            content.new { committableResources() }
+        }
+
+        private fun uncommittedTask(
+            committedPolygonIds: List<Long> = listOf(3, 6),
+            customizeWip: WipTaskContentBuilder.() -> Unit = {},
+        ): Task = testUncommittedTask().withData {
+            name = "Task name"
+            description = "Task description"
+            sharedTo(listOf(4))
+            uploadedResources = mutableSetOf(uploadedBucket)
+            content.uncommitted(
+                wipBuilder = {
+                    committableResources()
+                    customizeWip()
+                },
+                lastCommittedBuilder = {
+                    statement(99)
+                    exercises(listOf(99))
+                    tests(committedPolygonIds)
+                    developerSolutions(listOf(4))
+                    supportedTrikStudioVersions(listOf("3.0.0", "4.0.0"))
+                },
+            )
+        }
+
+        private fun TaskContentBuilder<*>.committableResources() {
+            statement(1)
+            exercises(listOf(2))
+            tests(listOf(3, 6))
+            developerSolutions(listOf(4))
+            supportedTrikStudioVersions(listOf("3.0.0", "4.0.0"))
+        }
+
+        private fun validationRequest(
+            polygonIds: List<Long> = listOf(3, 6),
+            authorIds: List<Long> = listOf(4),
+            versionTags: List<String> = listOf("3.0.0", "4.0.0"),
+            chooseExecution: TaskValidationExecutionChooser.() -> Unit = { completed { completedAt = Instant.EPOCH } },
+        ): TaskValidationRequest = testTaskValidationRequest {
+            snapshot = taskValidationSnapshot {
+                tests(polygonIds)
+                developerSolutions = authorIds.map { authorId ->
+                    developerSolutionValidationInput {
+                        developerSolution(authorId)
+                        solution(5)
+                        expectedScore = Score(42)
+                    }
+                }.toMutableList()
+                supportedTrikStudioVersions = versionTags.map { tag -> TrikStudioVersion(tag) }.toMutableList()
+            }
+            execution.chooseExecution()
+        }
+
+        private fun unsuccessfulRequest(execution: String): TaskValidationRequest = when (execution) {
+            "failed" -> validationRequest {
+                completed {
+                    submissions(listOf(21))
+                    failures = mutableListOf(AuthorSubmissionFailure.ScoreMismatch(submission = SubmissionId(21), actualScore = 0))
+                    completedAt = Instant.EPOCH
+                }
+            }
+            "stoppedByDiagnostics" -> validationRequest { stoppedByDiagnostics { completedAt = Instant.EPOCH } }
+            "active" -> validationRequest { pendingDiagnostics() }
+            else -> error("Unsupported test execution: $execution")
+        }
+
+        private fun contestSubmission(submissionId: Long): Submission = submission {
+            id = submissionId
+            createdAt = Instant.ofEpochSecond(submissionId)
+            data = submissionData {
+                author(20)
+                solution(5)
+                task(0)
+                status.queued()
+                kind.grading { contest(19) }
+            }
+        }
+
+        private fun verifyNoChanges() {
+            verify(exactly = 0) {
+                taskRepository.update(any<Task>())
+                submissionRepository.findGradingByTaskId(any())
+                grader.sendToGrade(any())
+            }
         }
     }
 
@@ -2094,6 +2676,436 @@ class DeveloperOperationsTests {
         private fun assertNoContestUpdate() {
             verify(exactly = 0) { contestRepository.update(any<Contest>()) }
             verify(exactly = 0) { contestRepository.update(any<List<Contest>>()) }
+        }
+    }
+
+    @Nested
+    inner class DetachTaskTests {
+
+        private val contestId = ContestId(19)
+        private val taskId = TaskId(0)
+
+        @AfterEach
+        fun verifyNoTaskWrites() {
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { taskRepository.update(any<List<Task>>()) }
+            verify(exactly = 0) { taskRepository.save(any<TaskData>()) }
+            verify(exactly = 0) { taskRepository.save(any<List<TaskData>>()) }
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+            verify(exactly = 0) { contestRepository.save(any<List<ContestData>>()) }
+        }
+
+        @Test
+        fun `should reject a user without Developer role before reading entities`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.detachTask(testAdministrator {}, contestId, taskId)
+            }
+
+            verify(exactly = 0) { contestRepository.findById(any()) }
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should raise ContestNotExistsError without updating if contest is missing`() {
+            every { contestRepository.findById(contestId) } returns null
+
+            assertRaises(ContestNotExistsError(contestId)) {
+                developerOperations.detachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should reject a missing task before checking contest ownership`() {
+            prepare(originalContest = testContest { owner(99) })
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) {
+                developerOperations.detachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [0, 1])
+        fun `should deny another owners contest even when shared to Developer communities`(recipientCount: Int) {
+            val user = testDeveloper {
+                memberOf(listOf(1))
+                data = developerData {}
+            }
+            val recipients = listOf(1L).take(recipientCount)
+            prepare(
+                originalContest = testContest {
+                    owner(99)
+                    sharedTo(recipients)
+                    tasks(listOf(0))
+                },
+            )
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                developerOperations.detachTask(user, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [0, 1])
+        fun `should reject a shared contest before checking task attachment`(attachedTaskCount: Int) {
+            val tasks = listOf(0L).take(attachedTaskCount)
+            prepare(
+                originalContest = testContest {
+                    sharedTo(listOf(1))
+                    tasks(tasks)
+                },
+            )
+
+            assertRaises(ContestAlreadySharedError(contestId)) {
+                developerOperations.detachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [0, 2])
+        fun `should raise TaskNotAttachedToContestError if contest does not contain the task`(attachedTaskCount: Int) {
+            val tasks = listOf(7L, 8L).take(attachedTaskCount)
+            prepare(originalContest = testContest { tasks(tasks) })
+
+            assertRaises(TaskNotAttachedToContestError(contestId, taskId)) {
+                developerOperations.detachTask(developer, contestId, taskId)
+            }
+
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should remove the task while preserving other tasks and contest metadata`() {
+            val original = testContest {
+                tasks(listOf(7, 0, 8))
+                name = "Original contest"
+                description = "Original description"
+                startsAt = Instant.parse("2020-01-01T10:00:00Z")
+                contestDuration = Duration.ofHours(2)
+                attemptDuration = Duration.ofMinutes(30)
+            }
+            prepare(originalContest = original)
+            val saved = slot<Contest>()
+            every { contestRepository.update(capture(saved)) } answers { testSavedContest(firstArg()) }
+
+            val result = developerOperations.detachTask(developer, contestId, taskId).getOrThrow()
+
+            Assertions.assertEquals(listOf(TaskId(7), TaskId(8)), saved.captured.data.tasks.ids)
+            Assertions.assertEquals(original.id, saved.captured.id)
+            Assertions.assertEquals(original.createdAt, saved.captured.createdAt)
+            Assertions.assertEquals(0L, saved.captured.version?.value)
+            Assertions.assertEquals(original.data.owner.id, saved.captured.data.owner.id)
+            Assertions.assertEquals("Original contest", saved.captured.data.name)
+            Assertions.assertEquals("Original description", saved.captured.data.description)
+            Assertions.assertEquals(original.data.startsAt, saved.captured.data.startsAt)
+            Assertions.assertEquals(Duration.ofHours(2), saved.captured.data.contestDuration)
+            Assertions.assertEquals(Duration.ofMinutes(30), saved.captured.data.attemptDuration)
+            Assertions.assertEquals(original.data.endsAt, saved.captured.data.endsAt)
+            Assertions.assertEquals(TrikStudioVersion("3.0.0"), saved.captured.data.trikStudioVersion)
+            Assertions.assertEquals(emptyList<CommunityId>(), saved.captured.data.sharedTo.ids)
+            Assertions.assertEquals(listOf(TaskId(7), taskId, TaskId(8)), original.data.tasks.ids)
+            Assertions.assertEquals(listOf(TaskId(7), TaskId(8)), result.data.tasks.ids)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should leave the contest without tasks when its only task is detached`() {
+            prepare(originalContest = testContest { tasks(listOf(0)) })
+
+            val result = developerOperations.detachTask(developer, contestId, taskId).getOrThrow()
+
+            Assertions.assertEquals(emptyList<TaskId>(), result.data.tasks.ids)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        @Test
+        fun `should detach a foreign task that is no longer shared to Developer communities`() {
+            val user = testDeveloper {
+                memberOf(listOf(1))
+                data = developerData {}
+            }
+            prepare(
+                originalContest = testContest { tasks(listOf(0)) },
+                originalTask = testCommitedTask().withData {
+                    owner(99)
+                    sharedTo(listOf(2))
+                },
+            )
+
+            val result = developerOperations.detachTask(user, contestId, taskId).getOrThrow()
+
+            Assertions.assertEquals(emptyList<TaskId>(), result.data.tasks.ids)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Committed", "Uncommitted"])
+        fun `should keep the detached task unchanged in every state`(state: String) {
+            val originalTask = taskInState(state)
+            val originalData = originalTask.data
+            prepare(originalContest = testContest { tasks(listOf(0)) }, originalTask = originalTask)
+
+            developerOperations.detachTask(developer, contestId, taskId).getOrThrow()
+
+            Assertions.assertSame(originalData, originalTask.data)
+            Assertions.assertEquals(0L, originalTask.version?.value)
+        }
+
+        @Test
+        fun `should return the actual updated repository object and its version`() {
+            prepare(originalContest = testContest { tasks(listOf(0)) })
+            val repositoryResult = testSavedContest(testContest())
+            every { contestRepository.update(any<Contest>()) } returns repositoryResult
+
+            val result = developerOperations.detachTask(developer, contestId, taskId).getOrThrow()
+
+            Assertions.assertSame(repositoryResult, result)
+            Assertions.assertEquals(1L, result.version?.value)
+        }
+
+        @Test
+        fun `should propagate storage exceptions when loading the contest`() {
+            val failure = IllegalStateException("Contest storage read failure")
+            every { contestRepository.findById(contestId) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.detachTask(developer, contestId, taskId)
+            }
+
+            Assertions.assertSame(failure, thrown)
+            assertNoContestUpdate()
+        }
+
+        @Test
+        fun `should propagate storage exceptions when loading the task`() {
+            prepare(originalContest = testContest { tasks(listOf(0)) })
+            val failure = IllegalStateException("Task storage read failure")
+            every { taskRepository.findById(taskId) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.detachTask(developer, contestId, taskId)
+            }
+
+            Assertions.assertSame(failure, thrown)
+            assertNoContestUpdate()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Storage update failure", "Optimistic lock conflict"])
+        fun `should propagate update exceptions including optimistic lock conflicts`(message: String) {
+            prepare(originalContest = testContest { tasks(listOf(0)) })
+            val failure = IllegalStateException(message)
+            every { contestRepository.update(any<Contest>()) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.detachTask(developer, contestId, taskId)
+            }
+
+            Assertions.assertSame(failure, thrown)
+            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
+        }
+
+        private fun prepare(originalContest: Contest = testContest(), originalTask: Task = testCommitedTask()) {
+            every { contestRepository.findById(contestId) } returns originalContest
+            every { taskRepository.findById(taskId) } returns originalTask
+            every { contestRepository.update(any<Contest>()) } answers { testSavedContest(firstArg()) }
+        }
+
+        private fun taskInState(state: String): Task = when (state) {
+            "New" -> testNewTask()
+            "Committed" -> testCommitedTask()
+            "Uncommitted" -> testUncommittedTask()
+            else -> error("Unsupported detach-task test state: $state")
+        }
+
+        private fun assertNoContestUpdate() {
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+            verify(exactly = 0) { contestRepository.update(any<List<Contest>>()) }
+        }
+    }
+
+    @Nested
+    inner class DeleteContestTests {
+
+        private val contestId = ContestId(19)
+
+        @AfterEach
+        fun verifyNoWrites() {
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { taskRepository.update(any<List<Task>>()) }
+            verify(exactly = 0) { taskRepository.save(any<TaskData>()) }
+            verify(exactly = 0) { taskRepository.save(any<List<TaskData>>()) }
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+            verify(exactly = 0) { contestRepository.update(any<List<Contest>>()) }
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+            verify(exactly = 0) { contestRepository.save(any<List<ContestData>>()) }
+        }
+
+        @Test
+        fun `should raise MissedDeveloperRoleError without reading or deleting the contest if user is not a Developer`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.deleteContest(testAdministrator {}, contestId)
+            }
+
+            verify(exactly = 0) { contestRepository.findById(any()) }
+            assertNoContestRemoval()
+        }
+
+        @Test
+        fun `should raise ContestNotExistsError without deleting if contest is missing`() {
+            every { contestRepository.findById(contestId) } returns null
+
+            assertRaises(ContestNotExistsError(contestId)) {
+                developerOperations.deleteContest(developer, contestId)
+            }
+
+            assertNoContestRemoval()
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [0, 1])
+        fun `should raise ContestAccessDeniedError for another owners contest even when shared to Developer communities`(
+            recipientCount: Int,
+        ) {
+            val user = testDeveloper {
+                memberOf(listOf(1))
+                data = developerData {}
+            }
+            val recipients = listOf(1L).take(recipientCount)
+            prepare(
+                originalContest = testContest {
+                    owner(99)
+                    sharedTo(recipients)
+                },
+            )
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                developerOperations.deleteContest(user, contestId)
+            }
+
+            assertNoContestRemoval()
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [1, 2])
+        fun `should raise ContestAlreadySharedError without deleting if contest is shared to communities`(recipientCount: Int) {
+            val recipients = listOf(1L, 2L).take(recipientCount)
+            prepare(originalContest = testContest { sharedTo(recipients) })
+
+            assertRaises(ContestAlreadySharedError(contestId)) {
+                developerOperations.deleteContest(developer, contestId)
+            }
+
+            assertNoContestRemoval()
+        }
+
+        @Test
+        fun `should delete an unshared own contest by its id and return it as it was before deletion`() {
+            val original = testContest {
+                tasks(listOf(7))
+                name = "Original contest"
+                description = "Original description"
+                startsAt = Instant.parse("2020-01-01T10:00:00Z")
+                contestDuration = Duration.ofHours(2)
+                attemptDuration = Duration.ofMinutes(30)
+            }
+            prepare(originalContest = original)
+
+            val result = developerOperations.deleteContest(developer, contestId).getOrThrow()
+
+            Assertions.assertSame(original, result)
+            Assertions.assertEquals(contestId, result.id)
+            Assertions.assertEquals(0L, result.version?.value)
+            Assertions.assertEquals("Original contest", result.data.name)
+            Assertions.assertEquals(listOf(TaskId(7)), result.data.tasks.ids)
+            verify(exactly = 1) { contestRepository.removeById(contestId) }
+            verify(exactly = 1) { contestRepository.removeById(any()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [0, 2])
+        fun `should delete the contest without accessing tasks with any number of attached tasks`(attachedTaskCount: Int) {
+            val tasks = listOf(7L, 8L).take(attachedTaskCount)
+            prepare(originalContest = testContest { tasks(tasks) })
+
+            val result = developerOperations.deleteContest(developer, contestId).getOrThrow()
+
+            Assertions.assertEquals(tasks.map(::TaskId), result.data.tasks.ids)
+            verify(exactly = 1) { contestRepository.removeById(contestId) }
+            verify(exactly = 0) { taskRepository.findById(any()) }
+        }
+
+        @Test
+        fun `should delete a contest without schedule and limits`() {
+            prepare(originalContest = testContest())
+
+            val result = developerOperations.deleteContest(developer, contestId).getOrThrow()
+
+            Assertions.assertNull(result.data.startsAt)
+            Assertions.assertNull(result.data.contestDuration)
+            Assertions.assertNull(result.data.attemptDuration)
+            verify(exactly = 1) { contestRepository.removeById(contestId) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Committed", "Uncommitted"])
+        fun `should keep an attached task unchanged in every state`(state: String) {
+            val attachedTask = taskInState(state)
+            val attachedData = attachedTask.data
+            prepare(originalContest = testContest { tasks(listOf(attachedTask.id.value)) })
+
+            developerOperations.deleteContest(developer, contestId).getOrThrow()
+
+            Assertions.assertSame(attachedData, attachedTask.data)
+            Assertions.assertEquals(0L, attachedTask.version?.value)
+            verify(exactly = 0) { taskRepository.findById(any()) }
+        }
+
+        @Test
+        fun `should propagate storage exceptions when loading the contest`() {
+            val failure = IllegalStateException("Contest storage read failure")
+            every { contestRepository.findById(contestId) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.deleteContest(developer, contestId)
+            }
+
+            Assertions.assertSame(failure, thrown)
+            assertNoContestRemoval()
+        }
+
+        @Test
+        fun `should propagate storage exceptions when removing the contest`() {
+            prepare(originalContest = testContest())
+            val failure = IllegalStateException("Contest storage remove failure")
+            every { contestRepository.removeById(contestId) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.deleteContest(developer, contestId)
+            }
+
+            Assertions.assertSame(failure, thrown)
+            verify(exactly = 1) { contestRepository.removeById(contestId) }
+        }
+
+        private fun prepare(originalContest: Contest) {
+            every { contestRepository.findById(contestId) } returns originalContest
+            every { contestRepository.removeById(contestId) } just Runs
+        }
+
+        private fun assertNoContestRemoval() {
+            verify(exactly = 0) { contestRepository.removeById(any()) }
+            verify(exactly = 0) { contestRepository.removeByIds(any()) }
+            verify(exactly = 0) { contestRepository.remove(any<Contest>()) }
+            verify(exactly = 0) { contestRepository.remove(any<List<Contest>>()) }
         }
     }
 

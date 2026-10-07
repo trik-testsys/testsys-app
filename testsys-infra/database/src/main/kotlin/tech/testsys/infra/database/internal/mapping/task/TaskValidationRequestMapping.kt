@@ -6,8 +6,10 @@ import tech.testsys.domain.builder.data
 import tech.testsys.domain.builder.task.TaskValidationRequestDataBuilder
 import tech.testsys.domain.model.task.*
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.task.AuthorSubmissionFailureJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionToTaskValidationRequestId
 import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionToTaskValidationRequestJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionToTaskValidationRequestId
 import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionToTaskValidationRequestJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskValidationExecutionJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskValidationRequestJpaEntity
@@ -73,7 +75,7 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
         }
 
     /**
-     * Restores the state from [row], completed [diagnostics] and stored [submissionIds] into [builder].
+     * Restores the state from [row], completed [diagnostics], stored [submissionIds] and their [failures] into [builder].
      * Inconsistent storage flags or missing required payload cause an exception.
      *
      * @since %CURRENT_VERSION%
@@ -82,12 +84,15 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
         row: TaskValidationRequestJpaEntity,
         diagnostics: List<TestDiagnosticResult>,
         submissionIds: List<SubmissionId>,
+        failures: List<AuthorSubmissionFailure>,
         builder: TaskValidationRequestDataBuilder,
     ) {
         validateStoredState(row, diagnostics, submissionIds)
+        check(failures.isEmpty() || row.execution == TaskValidationExecutionJpaEnum.COMPLETED) {
+            "Request id=${row.id} has author submission failures in ${row.execution}"
+        }
         when (row.execution) {
             TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS -> builder.execution.pendingDiagnostics()
-            TaskValidationExecutionJpaEnum.DIAGNOSTICS_IN_PROGRESS -> builder.execution.diagnosticsInProgress()
             TaskValidationExecutionJpaEnum.AWAITING_SUBMISSIONS -> builder.execution.awaitingSubmissions {
                 this.diagnostics = diagnostics.toMutableList()
             }
@@ -98,6 +103,12 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
             TaskValidationExecutionJpaEnum.SUBMISSIONS_CREATED -> builder.execution.submissionsCreated {
                 this.diagnostics = diagnostics.toMutableList()
                 submissions = submissionIds.toMutableList()
+            }
+            TaskValidationExecutionJpaEnum.COMPLETED -> builder.execution.completed {
+                this.diagnostics = diagnostics.toMutableList()
+                submissions = submissionIds.toMutableList()
+                this.failures = failures.toMutableList()
+                completedAt = checkNotNull(row.completedAt) { "Request id=${row.id} has no completion time" }
             }
             TaskValidationExecutionJpaEnum.TECHNICAL_FAILURE -> {
                 val failure = taskValidationTechnicalFailure {
@@ -155,29 +166,72 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
     }
 
     /**
-     * Creates submission references of [requestId] from [submissionIds].
+     * Creates ordered submission references of [requestId] from [submissionIds], each with its entry of [failures].
+     *
+     * @throws IllegalArgumentException if [failures] do not name distinct linked submissions in [submissionIds] order.
+     * @since %CURRENT_VERSION%
+     */
+    fun toSubmissionAssociations(
+        requestId: Long,
+        submissionIds: List<SubmissionId>,
+        failures: List<AuthorSubmissionFailure>,
+    ): List<SubmissionToTaskValidationRequestJpaEntity> {
+        val failureBySubmission = failures.associateBy { it.submission }
+        require(failures.map { it.submission } == submissionIds.filter { it in failureBySubmission }) {
+            "Request id=$requestId failures must name distinct linked submissions in submission order"
+        }
+        return submissionIds.distinct().mapIndexed { index, id ->
+            val failure = failureBySubmission[id]
+            SubmissionToTaskValidationRequestJpaEntity(
+                id = SubmissionToTaskValidationRequestId(submissionId = id.value, requestId = requestId),
+                position = index,
+                failure = failure?.let(::encodeFailure),
+                actualScore = (failure as? AuthorSubmissionFailure.ScoreMismatch)?.actualScore,
+            )
+        }
+    }
+
+    /**
+     * Restores the failure stored in [link], or `null` for a submission without one.
+     * A score is required for a mismatch and forbidden otherwise.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toSubmissionAssociations(requestId: Long, submissionIds: List<SubmissionId>) = submissionIds.distinct().map {
-        SubmissionToTaskValidationRequestJpaEntity(submissionId = it.value, requestId = requestId)
+    fun toFailure(link: SubmissionToTaskValidationRequestJpaEntity): AuthorSubmissionFailure? {
+        val submission = SubmissionId(link.id.submissionId)
+        check((link.actualScore != null) == (link.failure == AuthorSubmissionFailureJpaEnum.SCORE_MISMATCH)) {
+            "Submission id=${submission.value} of request id=${link.id.requestId} has an inconsistent failure score"
+        }
+        return when (link.failure) {
+            null -> null
+            AuthorSubmissionFailureJpaEnum.SCORE_MISMATCH -> AuthorSubmissionFailure.ScoreMismatch(
+                submission = submission,
+                actualScore = checkNotNull(link.actualScore),
+            )
+            AuthorSubmissionFailureJpaEnum.GRADING_FAILED -> AuthorSubmissionFailure.GradingFailed(submission)
+        }
+    }
+
+    private fun encodeFailure(failure: AuthorSubmissionFailure): AuthorSubmissionFailureJpaEnum = when (failure) {
+        is AuthorSubmissionFailure.ScoreMismatch -> AuthorSubmissionFailureJpaEnum.SCORE_MISMATCH
+        is AuthorSubmissionFailure.GradingFailed -> AuthorSubmissionFailureJpaEnum.GRADING_FAILED
     }
 
     private fun completionTime(execution: TaskValidationExecution): java.time.Instant? = when (execution) {
         TaskValidationExecution.PendingDiagnostics,
-        TaskValidationExecution.DiagnosticsInProgress,
         is TaskValidationExecution.AwaitingSubmissions,
         is TaskValidationExecution.SubmissionsCreated,
         -> null
+        is TaskValidationExecution.Completed -> execution.completedAt
         is TaskValidationExecution.StoppedByDiagnostics -> execution.completedAt
         is TaskValidationExecution.TechnicalFailure -> execution.completedAt
     }
 
     private fun encodeExecution(execution: TaskValidationExecution): TaskValidationExecutionJpaEnum = when (execution) {
         TaskValidationExecution.PendingDiagnostics -> TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS
-        TaskValidationExecution.DiagnosticsInProgress -> TaskValidationExecutionJpaEnum.DIAGNOSTICS_IN_PROGRESS
         is TaskValidationExecution.AwaitingSubmissions -> TaskValidationExecutionJpaEnum.AWAITING_SUBMISSIONS
         is TaskValidationExecution.StoppedByDiagnostics -> TaskValidationExecutionJpaEnum.STOPPED_BY_DIAGNOSTICS
+        is TaskValidationExecution.Completed -> TaskValidationExecutionJpaEnum.COMPLETED
         is TaskValidationExecution.SubmissionsCreated -> TaskValidationExecutionJpaEnum.SUBMISSIONS_CREATED
         is TaskValidationExecution.TechnicalFailure -> TaskValidationExecutionJpaEnum.TECHNICAL_FAILURE
     }
@@ -191,20 +245,20 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
         val isStopped = row.execution == TaskValidationExecutionJpaEnum.STOPPED_BY_DIAGNOSTICS
         val hasError = diagnostics.any { result -> result.reports.any { it.severity == DiagnosticSeverity.Error } }
         val areExpectedDiagnosticsComplete = when (row.execution) {
-            TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS,
-            TaskValidationExecutionJpaEnum.DIAGNOSTICS_IN_PROGRESS,
-            -> false
+            TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS -> false
             TaskValidationExecutionJpaEnum.AWAITING_SUBMISSIONS,
             TaskValidationExecutionJpaEnum.STOPPED_BY_DIAGNOSTICS,
             TaskValidationExecutionJpaEnum.SUBMISSIONS_CREATED,
+            TaskValidationExecutionJpaEnum.COMPLETED,
             -> true
             TaskValidationExecutionJpaEnum.TECHNICAL_FAILURE -> row.areDiagnosticsComplete
         }
         val areExpectedSubmissionsCreated = when (row.execution) {
-            TaskValidationExecutionJpaEnum.SUBMISSIONS_CREATED -> true
+            TaskValidationExecutionJpaEnum.SUBMISSIONS_CREATED,
+            TaskValidationExecutionJpaEnum.COMPLETED,
+            -> true
             TaskValidationExecutionJpaEnum.TECHNICAL_FAILURE -> row.areSubmissionsCreated
             TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS,
-            TaskValidationExecutionJpaEnum.DIAGNOSTICS_IN_PROGRESS,
             TaskValidationExecutionJpaEnum.AWAITING_SUBMISSIONS,
             TaskValidationExecutionJpaEnum.STOPPED_BY_DIAGNOSTICS,
             -> false
@@ -218,7 +272,7 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
         check(
             (row.failureDescription != null) == isFailure &&
                 (row.failureOccurredAt != null) == isFailure &&
-                (row.completedAt != null) == (isFailure || isStopped) &&
+                (row.completedAt != null) == (isFailure || isStopped || row.execution == TaskValidationExecutionJpaEnum.COMPLETED) &&
                 (!isFailure || row.completedAt == row.failureOccurredAt),
         ) { "Request id=${row.id} has inconsistent failure or completion data for ${row.execution}" }
         check(

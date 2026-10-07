@@ -53,6 +53,19 @@
 - Варианты состояния моделируются sealed-иерархиями: `TaskContent` (`New` / `Uncommitted` / `Committed`),
   `SubmissionStatus`, `SubmissionKind`, `GradingResult`, `TrikSupportedLanguage`.
 
+### Запросы валидации Задач
+
+[`TaskValidationRequest`](src/main/kotlin/tech/testsys/domain/model/task/TaskValidationRequest.kt) сохраняет
+неизменяемый снимок непосредственных входных данных.
+`TaskValidationExecution.PendingDiagnostics` означает незавершённые Диагностики,
+в том числе при наличии сохранённых результатов отдельных Полигонов.
+`TaskValidationExecution.Completed` завершает обработку
+и содержит время завершения, Диагностики, упорядоченные ссылки на Авторские Посылки
+и список проваленных Посылок `AuthorSubmissionFailure`; пустой список означает успех.
+Порядок Посылок задаёт `TaskValidationSnapshot.authorRuns`: каждая пара Авторского Решения и версии TRIK Studio.
+Условия успешного тестирования описаны в
+[features.md](../docs/domain/features.md#testsysusermultidevelopertasktesttask-partially-implemented).
+
 ### Версионирование Ресурсов
 
 Версионируются сущности с `versionBucket`: Полигон (`Test`), Условие (`Statement`), Упражнение (`Exercise`)

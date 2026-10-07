@@ -1,9 +1,11 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
+import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
+import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.model.task.*
@@ -17,7 +19,7 @@ import tech.testsys.infra.database.internal.mapping.task.TestDiagnosticResultMap
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.findIdByTagOrError
 import tech.testsys.infra.database.internal.utils.requireId
-import tech.testsys.infra.database.internal.utils.syncJoinTable
+import tech.testsys.infra.database.internal.utils.requireVersion
 import java.time.Instant
 
 /**
@@ -31,6 +33,7 @@ class TaskValidationRequestPersistenceAdapter(
     private val requests: TaskValidationRequestJpaEntityRepository,
     private val tasks: TaskJpaEntityRepository,
     private val taskRepository: TaskRepository,
+    private val submissionRepository: SubmissionRepository,
     private val developerSolutionRepository: DeveloperSolutionRepository,
     private val tests: TestToTaskValidationRequestJpaEntityRepository,
     private val solutions: DeveloperSolutionToTaskValidationRequestJpaEntityRepository,
@@ -70,18 +73,14 @@ class TaskValidationRequestPersistenceAdapter(
     override fun findHistory(taskId: TaskId): List<TaskValidationRequest> =
         requests.findAllByTaskIdOrderByCreatedAtAscIdAsc(taskId.value).map { assemble(it) }
 
-    @Transactional
+    @Transactional(readOnly = true)
     override fun startDiagnostics(requestId: TaskValidationRequestId): TaskValidationRequest? {
-        val row = requests.findLockedById(requestId.value) ?: return null
+        val row = requests.findById(requestId.value).orElse(null) ?: return null
         return when (row.execution) {
-            TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS -> update(
-                assemble(row).withData {
-                    execution.diagnosticsInProgress()
-                },
-            )
-            TaskValidationExecutionJpaEnum.DIAGNOSTICS_IN_PROGRESS -> assemble(row)
+            TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS -> assemble(row)
             TaskValidationExecutionJpaEnum.AWAITING_SUBMISSIONS,
             TaskValidationExecutionJpaEnum.SUBMISSIONS_CREATED,
+            TaskValidationExecutionJpaEnum.COMPLETED,
             TaskValidationExecutionJpaEnum.STOPPED_BY_DIAGNOSTICS,
             TaskValidationExecutionJpaEnum.TECHNICAL_FAILURE,
             -> null
@@ -102,7 +101,7 @@ class TaskValidationRequestPersistenceAdapter(
         }
         val key = TestDiagnosticResultId(requestId = requestId.value, testId = result.testId.value)
         if (results.existsById(key)) return resultOf(requestId = requestId.value, testId = result.testId.value)
-        check(row.execution == TaskValidationExecutionJpaEnum.DIAGNOSTICS_IN_PROGRESS) {
+        check(row.execution == TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS) {
             "Request id=${requestId.value} is not diagnosing: ${row.execution}"
         }
         persistResult(requestId.value, result)
@@ -113,7 +112,7 @@ class TaskValidationRequestPersistenceAdapter(
     override fun completeDiagnostics(requestId: TaskValidationRequestId): TaskValidationRequest {
         val row = locked(requestId)
         if (row.areDiagnosticsComplete) return assemble(row)
-        check(row.execution == TaskValidationExecutionJpaEnum.DIAGNOSTICS_IN_PROGRESS) {
+        check(row.execution == TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS) {
             "Request id=${requestId.value} cannot complete diagnostics from ${row.execution}"
         }
         val request = assemble(row)
@@ -146,9 +145,7 @@ class TaskValidationRequestPersistenceAdapter(
         return update(
             request.withData {
                 when (val state = request.data.execution) {
-                    TaskValidationExecution.PendingDiagnostics,
-                    TaskValidationExecution.DiagnosticsInProgress,
-                    -> execution.incompleteDiagnosticsFailure { this.failure = failure }
+                    TaskValidationExecution.PendingDiagnostics -> execution.incompleteDiagnosticsFailure { this.failure = failure }
                     is TaskValidationExecution.AwaitingSubmissions -> execution.completedDiagnosticsFailure {
                         diagnostics = state.diagnostics.toMutableList()
                         this.failure = failure
@@ -158,6 +155,7 @@ class TaskValidationRequestPersistenceAdapter(
                         submissions = state.submissions.ids.toMutableList()
                         this.failure = failure
                     }
+                    is TaskValidationExecution.Completed,
                     is TaskValidationExecution.StoppedByDiagnostics,
                     is TaskValidationExecution.TechnicalFailure,
                     -> error("Request id=${requestId.value} is already stopped")
@@ -167,12 +165,72 @@ class TaskValidationRequestPersistenceAdapter(
     }
 
     @Transactional
+    override fun createSubmissions(requestId: TaskValidationRequestId): TaskValidationRequest {
+        val request = assemble(locked(requestId))
+        val state = request.data.execution
+        if (state is TaskValidationExecution.SubmissionsCreated || state is TaskValidationExecution.Completed) return request
+        check(state is TaskValidationExecution.AwaitingSubmissions) {
+            "Request id=${requestId.value} cannot create submissions from $state"
+        }
+        val saved = TaskValidationSnapshot.authorRuns(request.data.snapshot).map { run ->
+            submissionRepository.save(
+                submissionData {
+                    author = request.data.requestedBy.id
+                    task = request.data.task.id
+                    solution = run.input.solution.id
+                    status.queued()
+                    kind.developerSolutionTest { trikStudioVersion = run.trikStudioVersion }
+                },
+            )
+        }
+        return update(
+            request.withData {
+                execution.submissionsCreated {
+                    diagnostics = state.diagnostics.toMutableList()
+                    submissions = saved.map { it.id }.toMutableList()
+                }
+            },
+        )
+    }
+
+    @Transactional
+    override fun completeTesting(requestId: TaskValidationRequestId, failures: List<AuthorSubmissionFailure>): TaskValidationRequest {
+        val request = assemble(locked(requestId))
+        val state = request.data.execution
+        if (state is TaskValidationExecution.Completed) return request
+        check(state is TaskValidationExecution.SubmissionsCreated) {
+            "Request id=${requestId.value} cannot complete testing from $state"
+        }
+        return update(
+            request.withData {
+                execution.completed {
+                    diagnostics = state.diagnostics.toMutableList()
+                    submissions = state.submissions.ids.toMutableList()
+                    this.failures = failures.toMutableList()
+                    completedAt = Instant.now()
+                }
+            },
+        )
+    }
+
+    @Transactional(readOnly = true)
+    override fun findActive(): List<TaskValidationRequest> =
+        requests.findAllByExecutionInOrderByIdAsc(ACTIVE_EXECUTIONS).map { assemble(it) }
+
+    @Transactional(readOnly = true)
+    override fun findBySubmissionId(submissionId: SubmissionId): TaskValidationRequest? {
+        val links = submissions.findAllByIdSubmissionId(submissionId.value)
+        check(links.size <= 1) { "Submission id=${submissionId.value} belongs to several validation requests" }
+        return links.singleOrNull()?.let { assemble(requests.findByIdOrError(it.id.requestId)) }
+    }
+
+    @Transactional
     override fun save(data: TaskValidationRequestData): TaskValidationRequest {
         validateCompletedDiagnostics(data, data.snapshot.tests.ids.toSet())
         val row = requests.saveAndFlush(TaskValidationRequestMapping.toJpaEntity(data))
         val requestId = row.requireId()
         persistSnapshot(requestId, data.snapshot)
-        persistSubmissions(requestId, (data.execution as? TaskValidationExecution.WithSubmissions)?.submissions?.ids.orEmpty())
+        persistSubmissions(requestId, submissionIdsOf(data.execution), failuresOf(data.execution))
         (data.execution as? TaskValidationExecution.WithDiagnostics)?.diagnostics?.forEach { persistResult(requestId, it) }
         return assemble(row)
     }
@@ -180,6 +238,10 @@ class TaskValidationRequestPersistenceAdapter(
     @Transactional
     override fun update(entity: TaskValidationRequest): TaskValidationRequest {
         val current = locked(entity.id)
+        if (current.version != entity.requireVersion()) {
+            throw OptimisticLockingFailureException("Stale task validation request id=${entity.id.value}")
+        }
+        check(assemble(current).data.isActive) { "Request id=${entity.id.value} is terminal: ${current.execution}" }
         val storedTests = tests.findAllByIdRequestId(entity.id.value).map { TestId(it.id.testId) }.toSet()
         validateCompletedDiagnostics(entity.data, storedTests)
         val saved = requests.saveAndFlush(TaskValidationRequestMapping.toJpaEntity(entity, current))
@@ -187,7 +249,7 @@ class TaskValidationRequestPersistenceAdapter(
             val key = TestDiagnosticResultId(requestId = entity.id.value, testId = result.testId.value)
             if (!results.existsById(key)) persistResult(entity.id.value, result)
         }
-        syncSubmissions(entity.id.value, (entity.data.execution as? TaskValidationExecution.WithSubmissions)?.submissions?.ids.orEmpty())
+        syncSubmissions(entity.id.value, submissionIdsOf(entity.data.execution), failuresOf(entity.data.execution))
         return assemble(saved)
     }
 
@@ -218,7 +280,7 @@ class TaskValidationRequestPersistenceAdapter(
         val requestId = jpaEntity.requireId()
         val snapshot = taskValidationSnapshot {
             tests = this@TaskValidationRequestPersistenceAdapter.tests.findAllByIdRequestId(requestId)
-                .map { TestId(it.id.testId) }.toMutableList()
+                .map { TestId(it.id.testId) }.sortedBy { it.value }.toMutableList()
             developerSolutions = solutions.findAllByIdRequestId(requestId).sortedBy { it.id.developerSolutionId }
                 .map { row ->
                     developerSolutionValidationInput {
@@ -229,7 +291,7 @@ class TaskValidationRequestPersistenceAdapter(
                 }.toMutableList()
             supportedTrikStudioVersions = versions.findAllByIdRequestId(requestId).map { row ->
                 TrikStudioVersion(studioVersions.findByIdOrError(row.id.trikStudioVersionId).tag)
-            }.toMutableList()
+            }.sortedBy { it.version }.toMutableList()
         }
         val data = taskValidationRequestData {
             task(jpaEntity.taskId)
@@ -240,12 +302,12 @@ class TaskValidationRequestPersistenceAdapter(
             } else {
                 emptyList()
             }
-            val submissionIds = this@TaskValidationRequestPersistenceAdapter.submissions.findAllByIdRequestId(requestId)
-                .map { SubmissionId(it.id.submissionId) }
+            val links = orderedSubmissionLinks(requestId)
             TaskValidationRequestMapping.decodeExecution(
                 row = jpaEntity,
                 diagnostics = completedDiagnostics,
-                submissionIds = submissionIds,
+                submissionIds = links.map { SubmissionId(it.id.submissionId) },
+                failures = links.mapNotNull { TaskValidationRequestMapping.toFailure(it) },
                 builder = this,
             )
         }
@@ -272,7 +334,7 @@ class TaskValidationRequestPersistenceAdapter(
             is TaskContent.Committed -> error("Task id=${task.id.value} has no working revision for diagnostics")
         }
         return taskValidationSnapshot {
-            tests = content.tests.ids.toMutableList()
+            tests = content.tests.ids.sortedBy { it.value }.toMutableList()
             developerSolutions = developerSolutionRepository.load(content.developerSolutions).sortedBy { it.id.value }.map { solution ->
                 developerSolutionValidationInput {
                     developerSolution = solution.id
@@ -280,7 +342,7 @@ class TaskValidationRequestPersistenceAdapter(
                     expectedScore = solution.data.expectedScore
                 }
             }.toMutableList()
-            supportedTrikStudioVersions = content.supportedTrikStudioVersions.toMutableList()
+            supportedTrikStudioVersions = content.supportedTrikStudioVersions.sortedBy { it.version }.toMutableList()
         }
     }
 
@@ -298,18 +360,37 @@ class TaskValidationRequestPersistenceAdapter(
         versions.saveAll(TaskValidationRequestMapping.toTrikStudioVersionAssociations(requestId, versionIds))
     }
 
-    private fun persistSubmissions(requestId: Long, ids: List<SubmissionId>) {
-        submissions.saveAll(TaskValidationRequestMapping.toSubmissionAssociations(requestId, ids))
+    private fun submissionIdsOf(execution: TaskValidationExecution): List<SubmissionId> =
+        (execution as? TaskValidationExecution.WithSubmissions)?.submissions?.ids.orEmpty()
+
+    private fun failuresOf(execution: TaskValidationExecution): List<AuthorSubmissionFailure> =
+        (execution as? TaskValidationExecution.Completed)?.failures.orEmpty()
+
+    private fun persistSubmissions(requestId: Long, ids: List<SubmissionId>, failures: List<AuthorSubmissionFailure>) {
+        submissions.saveAll(TaskValidationRequestMapping.toSubmissionAssociations(requestId, ids, failures))
     }
 
-    private fun syncSubmissions(requestId: Long, ids: List<SubmissionId>) = syncJoinTable(
-        existing = submissions.findAllByIdRequestId(requestId),
-        targetKeys = ids.distinct(),
-        keyOf = { SubmissionId(it.id.submissionId) },
-        buildAssociation = { TaskValidationRequestMapping.toSubmissionAssociations(requestId, listOf(it)).single() },
-        deleteAll = { submissions.deleteAll(it) },
-        saveAll = { submissions.saveAll(it) },
-    )
+    private fun syncSubmissions(requestId: Long, ids: List<SubmissionId>, failures: List<AuthorSubmissionFailure>) {
+        val existing = submissions.findAllByIdRequestIdOrderByPositionAsc(requestId)
+        if (existing.map { SubmissionId(it.id.submissionId) } == ids &&
+            existing.withIndex().all { (index, row) -> row.position == index } &&
+            existing.mapNotNull { TaskValidationRequestMapping.toFailure(it) } == failures
+        ) {
+            return
+        }
+        submissions.deleteAll(existing)
+        submissions.flush()
+        persistSubmissions(requestId, ids, failures)
+        submissions.flush()
+    }
+
+    private fun orderedSubmissionLinks(requestId: Long): List<SubmissionToTaskValidationRequestJpaEntity> {
+        val links = submissions.findAllByIdRequestIdOrderByPositionAsc(requestId)
+        check(links.withIndex().all { (index, link) -> link.position == index }) {
+            "Request id=$requestId has inconsistent submission positions"
+        }
+        return links
+    }
 
     private fun persistResult(requestId: Long, result: TestDiagnosticResult) {
         results.saveAndFlush(
@@ -335,5 +416,13 @@ class TaskValidationRequestPersistenceAdapter(
             testId = testId,
         )
             .map { TestDiagnosticResultMapping.toDomain(it) }.toMutableList()
+    }
+
+    private companion object {
+        val ACTIVE_EXECUTIONS = listOf(
+            TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS,
+            TaskValidationExecutionJpaEnum.AWAITING_SUBMISSIONS,
+            TaskValidationExecutionJpaEnum.SUBMISSIONS_CREATED,
+        )
     }
 }

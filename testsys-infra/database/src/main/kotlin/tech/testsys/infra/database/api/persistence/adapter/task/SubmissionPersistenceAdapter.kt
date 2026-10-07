@@ -8,6 +8,7 @@ import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.SubmissionKind
+import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.SingleRoleUserId
@@ -42,6 +43,8 @@ class SubmissionPersistenceAdapter(
 ) : AbstractPersistenceAdapter<SubmissionData, SubmissionId, Submission, SubmissionJpaEntity>(jpaEntityRepository),
     SubmissionRepository {
 
+    private val submissionJpaEntityRepository: SubmissionJpaEntityRepository = jpaEntityRepository
+
     @Transactional
     override fun save(data: SubmissionData): Submission {
         val trikStudioVersion = when (val kind = data.kind) {
@@ -71,6 +74,11 @@ class SubmissionPersistenceAdapter(
 
         return assemble(savedJpaEntity)
     }
+
+    @Transactional(readOnly = true)
+    override fun findGradingByTaskId(taskId: TaskId): List<Submission> = submissionJpaEntityRepository
+        .findAllByTaskIdAndKindOrderByIdAsc(taskId = taskId.value, kind = SubmissionKindJpaEnum.GRADING)
+        .map { jpaEntity -> assemble(jpaEntity) }
 
     override fun assemble(jpaEntity: SubmissionJpaEntity): Submission {
         val submissionId = jpaEntity.requireId()

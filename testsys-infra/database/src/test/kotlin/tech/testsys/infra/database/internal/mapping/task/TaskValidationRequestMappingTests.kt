@@ -9,6 +9,9 @@ import tech.testsys.domain.builder.task.TaskValidationRequestDataBuilder
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.task.*
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.task.AuthorSubmissionFailureJpaEnum
+import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionToTaskValidationRequestId
+import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionToTaskValidationRequestJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskValidationExecutionJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskValidationRequestJpaEntity
 import tech.testsys.infra.database.internal.mapping.EntityMappingTests
@@ -55,6 +58,11 @@ class TaskValidationRequestMappingTests : EntityMappingTests<TaskValidationReque
     @MethodSource("states")
     fun `should restore every state with its required stage payload`(source: TaskValidationRequestData) {
         val row = mapping.toJpaEntity(source)
+        val links = mapping.toSubmissionAssociations(
+            requestId = 7,
+            submissionIds = (source.execution as? TaskValidationExecution.WithSubmissions)?.submissions?.ids.orEmpty(),
+            failures = (source.execution as? TaskValidationExecution.Completed)?.failures.orEmpty(),
+        )
 
         val restored = taskValidationRequestData {
             task(1)
@@ -63,12 +71,22 @@ class TaskValidationRequestMappingTests : EntityMappingTests<TaskValidationReque
             mapping.decodeExecution(
                 row = row,
                 diagnostics = (source.execution as? TaskValidationExecution.WithDiagnostics)?.diagnostics.orEmpty(),
-                submissionIds = (source.execution as? TaskValidationExecution.WithSubmissions)?.submissions?.ids.orEmpty(),
+                submissionIds = links.map { SubmissionId(it.id.submissionId) },
+                failures = links.mapNotNull { mapping.toFailure(it) },
                 builder = this,
             )
         }
 
         assertEquals(source.execution::class, restored.execution::class)
+        assertEquals(
+            (source.execution as? TaskValidationExecution.Completed)?.completedAt,
+            (restored.execution as? TaskValidationExecution.Completed)?.completedAt,
+        )
+        assertEquals(
+            (source.execution as? TaskValidationExecution.Completed)?.failures,
+            (restored.execution as? TaskValidationExecution.Completed)?.failures,
+        )
+        assertEquals(source.isActive, restored.isActive)
         assertEquals(
             (source.execution as? TaskValidationExecution.WithDiagnostics)?.diagnostics,
             (restored.execution as? TaskValidationExecution.WithDiagnostics)?.diagnostics,
@@ -99,6 +117,7 @@ class TaskValidationRequestMappingTests : EntityMappingTests<TaskValidationReque
                     row = row,
                     diagnostics = emptyList(),
                     submissionIds = emptyList(),
+                    failures = emptyList(),
                     builder = this,
                 )
             }
@@ -118,9 +137,51 @@ class TaskValidationRequestMappingTests : EntityMappingTests<TaskValidationReque
                     row = row,
                     diagnostics = emptyList(),
                     submissionIds = listOf(SubmissionId(4)),
+                    failures = emptyList(),
                     builder = this,
                 )
             }
+        }
+    }
+
+    @Test
+    fun `should reject stored submission failures before testing is completed`() {
+        val row = mapping.toJpaEntity(
+            data {
+                execution.submissionsCreated {
+                    diagnostics = mutableListOf(testDiagnosticResult { testId(3) })
+                    submissions = mutableListOf(SubmissionId(4))
+                }
+            },
+        )
+
+        assertThrows(IllegalStateException::class.java) {
+            taskValidationRequestData {
+                task(1)
+                requestedBy(2)
+                snapshot = taskValidationSnapshot { tests(listOf(3)) }
+                mapping.decodeExecution(
+                    row = row,
+                    diagnostics = listOf(testDiagnosticResult { testId(3) }),
+                    submissionIds = listOf(SubmissionId(4)),
+                    failures = listOf(AuthorSubmissionFailure.GradingFailed(SubmissionId(4))),
+                    builder = this,
+                )
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidFailureLinks")
+    fun `should reject a stored failure with an inconsistent score`(link: SubmissionToTaskValidationRequestJpaEntity) {
+        assertThrows(IllegalStateException::class.java) { mapping.toFailure(link) }
+    }
+
+    @ParameterizedTest
+    @MethodSource("misplacedFailures")
+    fun `should reject failures that are not distinct linked submissions in submission order`(failures: List<AuthorSubmissionFailure>) {
+        assertThrows(IllegalArgumentException::class.java) {
+            mapping.toSubmissionAssociations(requestId = 7, submissionIds = listOf(SubmissionId(4), SubmissionId(5)), failures = failures)
         }
     }
 
@@ -128,7 +189,6 @@ class TaskValidationRequestMappingTests : EntityMappingTests<TaskValidationReque
         @JvmStatic
         fun states(): List<TaskValidationRequestData> = listOf(
             data { execution.pendingDiagnostics() },
-            data { execution.diagnosticsInProgress() },
             data {
                 execution.awaitingSubmissions {
                     diagnostics = mutableListOf(testDiagnosticResult { testId(3) })
@@ -154,6 +214,11 @@ class TaskValidationRequestMappingTests : EntityMappingTests<TaskValidationReque
                     submissions = mutableListOf(SubmissionId(4))
                 }
             },
+            completed(),
+            completed(
+                AuthorSubmissionFailure.GradingFailed(SubmissionId(5)),
+                AuthorSubmissionFailure.ScoreMismatch(submission = SubmissionId(4), actualScore = 4_294_967_294L),
+            ),
             data {
                 execution.incompleteDiagnosticsFailure {
                     failure = taskValidationTechnicalFailure {
@@ -186,13 +251,28 @@ class TaskValidationRequestMappingTests : EntityMappingTests<TaskValidationReque
         @JvmStatic
         fun invalidRows(): List<TaskValidationRequestJpaEntity> = listOf(
             row(TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS, complete = true),
-            row(TaskValidationExecutionJpaEnum.DIAGNOSTICS_IN_PROGRESS, submitted = true),
+            row(TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS, submitted = true),
             row(TaskValidationExecutionJpaEnum.AWAITING_SUBMISSIONS),
             row(TaskValidationExecutionJpaEnum.AWAITING_SUBMISSIONS, complete = true, submitted = true),
             row(TaskValidationExecutionJpaEnum.STOPPED_BY_DIAGNOSTICS, complete = true),
             row(TaskValidationExecutionJpaEnum.SUBMISSIONS_CREATED, complete = true),
             row(TaskValidationExecutionJpaEnum.SUBMISSIONS_CREATED, submitted = true),
             row(TaskValidationExecutionJpaEnum.TECHNICAL_FAILURE),
+            row(TaskValidationExecutionJpaEnum.COMPLETED, complete = true, submitted = true),
+        )
+
+        @JvmStatic
+        fun invalidFailureLinks(): List<SubmissionToTaskValidationRequestJpaEntity> = listOf(
+            link(failure = AuthorSubmissionFailureJpaEnum.SCORE_MISMATCH, actualScore = null),
+            link(failure = AuthorSubmissionFailureJpaEnum.GRADING_FAILED, actualScore = 3),
+            link(failure = null, actualScore = 3),
+        )
+
+        @JvmStatic
+        fun misplacedFailures(): List<List<AuthorSubmissionFailure>> = listOf(
+            listOf(AuthorSubmissionFailure.GradingFailed(SubmissionId(5)), AuthorSubmissionFailure.GradingFailed(SubmissionId(4))),
+            listOf(AuthorSubmissionFailure.GradingFailed(SubmissionId(4)), AuthorSubmissionFailure.GradingFailed(SubmissionId(4))),
+            listOf(AuthorSubmissionFailure.GradingFailed(SubmissionId(9))),
         )
 
         private fun row(execution: TaskValidationExecutionJpaEnum, complete: Boolean = false, submitted: Boolean = false) =
@@ -206,6 +286,22 @@ class TaskValidationRequestMappingTests : EntityMappingTests<TaskValidationReque
                 failureOccurredAt = null,
                 completedAt = null,
             )
+
+        private fun link(failure: AuthorSubmissionFailureJpaEnum?, actualScore: Long?) = SubmissionToTaskValidationRequestJpaEntity(
+            id = SubmissionToTaskValidationRequestId(submissionId = 4, requestId = 7),
+            position = 0,
+            failure = failure,
+            actualScore = actualScore,
+        )
+
+        private fun completed(vararg failures: AuthorSubmissionFailure): TaskValidationRequestData = data {
+            execution.completed {
+                diagnostics = mutableListOf(testDiagnosticResult { testId(3) })
+                submissions = mutableListOf(SubmissionId(5), SubmissionId(4))
+                this.failures = failures.toMutableList()
+                completedAt = Instant.EPOCH
+            }
+        }
 
         private fun data(builder: TaskValidationRequestDataBuilder.() -> Unit): TaskValidationRequestData = taskValidationRequestData {
             task(1)

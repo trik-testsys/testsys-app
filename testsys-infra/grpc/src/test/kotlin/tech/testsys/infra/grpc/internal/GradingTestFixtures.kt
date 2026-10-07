@@ -8,12 +8,16 @@ import io.mockk.mockk
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.SimpleTransactionStatus
 import tech.testsys.domain.builder.api.contest
+import tech.testsys.domain.builder.api.developerSolutionValidationInput
 import tech.testsys.domain.builder.api.logs
 import tech.testsys.domain.builder.api.recording
 import tech.testsys.domain.builder.api.solution
 import tech.testsys.domain.builder.api.submission
 import tech.testsys.domain.builder.api.task
+import tech.testsys.domain.builder.api.taskValidationRequest
+import tech.testsys.domain.builder.api.taskValidationSnapshot
 import tech.testsys.domain.builder.api.test
+import tech.testsys.domain.builder.api.testDiagnosticResult
 import tech.testsys.domain.builder.api.verdict
 import tech.testsys.domain.builder.data
 import tech.testsys.domain.contract.GradingNodeStatus
@@ -23,6 +27,7 @@ import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.LazyEntity
@@ -31,13 +36,17 @@ import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.LogsData
 import tech.testsys.domain.model.task.RecordingData
+import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Submission
+import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VersionBucket
@@ -75,6 +84,33 @@ internal fun testSubmission(id: Long = 42) = submission {
     }
 }
 
+internal fun validationRequest(
+    submitted: Submission = testSubmission(),
+    version: TrikStudioVersion = TrikStudioVersion("2025.1"),
+): TaskValidationRequest = taskValidationRequest {
+    id = 11
+    createdAt = Instant.EPOCH
+    data {
+        task = submitted.data.task.id
+        requestedBy(submitted.data.author.id.value)
+        snapshot = taskValidationSnapshot {
+            tests(listOf(4))
+            developerSolutions = mutableListOf(
+                developerSolutionValidationInput {
+                    developerSolution(7)
+                    solution = submitted.data.solution.id
+                    expectedScore = Score(5)
+                },
+            )
+            supportedTrikStudioVersions = mutableListOf(version)
+        }
+        execution.submissionsCreated {
+            diagnostics = mutableListOf(testDiagnosticResult { testId(4) })
+            submissions = mutableListOf(submitted.id)
+        }
+    }
+}
+
 internal fun field(name: String = "4", content: String = """[{"level":"info","message":"Набрано баллов: 17"}]"""): Proto.FieldResult =
     Proto.FieldResult.newBuilder().setName(name).setVerdict(
         Proto.File.newBuilder().setName("logs.json").setContent(ByteString.copyFromUtf8(content)),
@@ -92,6 +128,7 @@ internal class RepositoryFixture(val initial: Submission = testSubmission()) {
     val logs = mockk<LogsRepository>()
     val recordings = mockk<RecordingRepository>()
     val verdicts = mockk<VerdictRepository>()
+    val validationRequests = mockk<TaskValidationRequestRepository>()
     val savedVerdicts = mutableListOf<VerdictData>()
     val savedVerdictEntities = mutableListOf<Verdict>()
     val savedLogs = mutableListOf<LogsData>()
@@ -108,10 +145,15 @@ internal class RepositoryFixture(val initial: Submission = testSubmission()) {
         logs = logs,
         recordings = recordings,
         verdicts = verdicts,
+        validationRequests = validationRequests,
         transactionManager = transactions,
     )
 
     init {
+        every { validationRequests.findBySubmissionId(initial.id) } returns when (val kind = initial.data.kind) {
+            is SubmissionKind.DeveloperSolutionTest -> validationRequest(submitted = initial, version = kind.trikStudioVersion)
+            is SubmissionKind.Grading -> null
+        }
         every { transactions.getTransaction(any()) } answers {
             hasCommitted.set(false)
             SimpleTransactionStatus()

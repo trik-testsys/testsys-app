@@ -123,11 +123,74 @@ data object BlankJudgmentReasonError : ChangeVerdictError
 // region DeveloperOperations
 
 /**
- * Expected failure of requesting polygon diagnostics for an owned task.
+ * Expected failure of requesting testing of an owned task.
  *
  * @since %CURRENT_VERSION%
  */
-sealed interface RunDiagnosticsError : OperationError
+sealed interface TestTaskError : OperationError
+
+/**
+ * Expected failure of viewing the testing history of an owned task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewTaskValidationRequestsError : OperationError
+
+/**
+ * Expected failure of committing the working revision of an owned task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CommitTaskError : OperationError
+
+/**
+ * The working revision has no successfully completed validation request with a matching snapshot.
+ *
+ * @property taskId the identifier of the task being committed.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskNotTestedError(val taskId: TaskId) : CommitTaskError
+
+/**
+ * The working task has no attached statement.
+ *
+ * @property taskId the identifier of the tested or committed task.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTestingNoStatementError(val taskId: TaskId) : TestTaskError, CommitTaskError
+
+/**
+ * The working task has no exercise for an author solution's language.
+ *
+ * @property taskId the identifier of the tested or committed task.
+ * @property language the author solution language without an exercise.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTestingNoExerciseForLanguageError(val taskId: TaskId, val language: TrikSupportedLanguage) : TestTaskError, CommitTaskError
+
+/**
+ * The working task has no attached polygons.
+ *
+ * @property taskId the tested task identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTestingNoPolygonsError(val taskId: TaskId) : TestTaskError
+
+/**
+ * The working task has no attached author solutions.
+ *
+ * @property taskId the tested task identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTestingNoDeveloperSolutionsError(val taskId: TaskId) : TestTaskError
+
+/**
+ * The working task supports no TRIK Studio version.
+ *
+ * @property taskId the tested task identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTestingNoTrikStudioVersionsError(val taskId: TaskId) : TestTaskError
 
 /**
  * Failure of listing contests available to the developer.
@@ -284,6 +347,20 @@ sealed interface ShareContestError : OperationError
 sealed interface AttachTaskError : OperationError
 
 /**
+ * Failure of detaching a task from a contest.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DetachTaskError : OperationError
+
+/**
+ * Failure of deleting a contest owned by the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DeleteContestError : OperationError
+
+/**
  * Failure of attaching a statement to a task.
  *
  * @since %CURRENT_VERSION%
@@ -355,8 +432,12 @@ sealed interface DetachDeveloperSolutionError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedDeveloperRoleError :
-    RunDiagnosticsError,
+    TestTaskError,
+    ViewTaskValidationRequestsError,
+    CommitTaskError,
     AttachTaskError,
+    DetachTaskError,
+    DeleteContestError,
     ViewContestsError,
     ViewContestError,
     RevertTaskError,
@@ -434,7 +515,7 @@ data class AttemptDurationExceedsContestDurationError(
  */
 data class ContestNotExistsError(
     val contestId: ContestId,
-) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
+) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError, DetachTaskError, ViewContestError, DeleteContestError
 
 /**
  * The user has no access to the contest for the requested operation.
@@ -444,7 +525,7 @@ data class ContestNotExistsError(
  */
 data class ContestAccessDeniedError(
     val contestId: ContestId,
-) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
+) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError, DetachTaskError, ViewContestError, DeleteContestError
 
 /**
  * The contest is shared to at least one community.
@@ -452,7 +533,7 @@ data class ContestAccessDeniedError(
  * @property contestId the id of the shared contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestAlreadySharedError(val contestId: ContestId) : EditContestError, AttachTaskError
+data class ContestAlreadySharedError(val contestId: ContestId) : EditContestError, AttachTaskError, DetachTaskError, DeleteContestError
 
 /**
  * The task does not exist.
@@ -461,8 +542,11 @@ data class ContestAlreadySharedError(val contestId: ContestId) : EditContestErro
  * @since %CURRENT_VERSION%
  */
 data class TaskNotExistsError(val taskId: TaskId) :
-    RunDiagnosticsError,
+    TestTaskError,
+    ViewTaskValidationRequestsError,
+    CommitTaskError,
     AttachTaskError,
+    DetachTaskError,
     RevertTaskError,
     EditTaskInfoError,
     ViewTaskError,
@@ -534,7 +618,9 @@ data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExis
  * @since %CURRENT_VERSION%
  */
 data class TaskAccessDeniedError(val taskId: TaskId) :
-    RunDiagnosticsError,
+    TestTaskError,
+    ViewTaskValidationRequestsError,
+    CommitTaskError,
     AttachTaskError,
     RevertTaskError,
     EditTaskInfoError,
@@ -586,7 +672,7 @@ data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTas
 data class TaskTrikStudioVersionNotSupportedError(
     val taskId: TaskId,
     val trikStudioVersion: TrikStudioVersion,
-) : AttachTaskError
+) : AttachTaskError, TestTaskError, CommitTaskError
 
 /**
  * The task is already attached to the contest.
@@ -598,12 +684,21 @@ data class TaskTrikStudioVersionNotSupportedError(
 data class TaskAlreadyAttachedToContestError(val contestId: ContestId, val taskId: TaskId) : AttachTaskError
 
 /**
+ * The task is not attached to the contest.
+ *
+ * @property contestId the id of the contest.
+ * @property taskId the id of the task absent from the contest.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskNotAttachedToContestError(val contestId: ContestId, val taskId: TaskId) : DetachTaskError
+
+/**
  * The task has no uncommitted changes to revert.
  *
  * @property taskId the id of the committed task.
  * @since %CURRENT_VERSION%
  */
-data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError, RunDiagnosticsError
+data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError, TestTaskError, CommitTaskError
 // endregion
 
 /**

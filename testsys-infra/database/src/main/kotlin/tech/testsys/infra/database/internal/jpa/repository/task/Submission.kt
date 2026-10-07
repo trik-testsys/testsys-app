@@ -9,6 +9,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.LogsJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.RecordingJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionKindJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.task.TestVerdictJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.VerdictJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
@@ -140,4 +141,11 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
      * @since %CURRENT_VERSION%
      */
     fun findAllByAuthorId(authorId: Long): List<SubmissionJpaEntity>
+
+    /**
+     * Finds the submissions of [kind] made to the task [taskId], ordered by id ascending.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByTaskIdAndKindOrderByIdAsc(taskId: Long, kind: SubmissionKindJpaEnum): List<SubmissionJpaEntity>
 }

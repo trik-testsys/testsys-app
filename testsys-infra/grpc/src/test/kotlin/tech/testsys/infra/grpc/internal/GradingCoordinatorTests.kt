@@ -457,6 +457,7 @@ internal class GradingCoordinatorTests {
             data = repository.initial.data
         }
         every { repository.submissions.findById(SubmissionId(41)) } returns second
+        every { repository.validationRequests.findBySubmissionId(second.id) } returns validationRequest(submitted = second)
         grader.sendToGrade(repository.initial)
         queue.runNext()
         queue.runNext()

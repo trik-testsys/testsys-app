@@ -108,9 +108,12 @@ internal class MultiSelectField<T : Any>(
         clear.addClickListener { if (choosable()) choose(emptySet()) }
         trigger.addClickListener { if (popup.isOpened) close() else open() }
         search.addValueChangeListener { renderDraft() }
+
         require(maxChips > 0) { "MultiSelect max chips must be positive, got $maxChips" }
+
         val duplicates = items.groupBy { item -> item }.filterValues { same -> same.size > 1 }.keys
         require(duplicates.isEmpty()) { "MultiSelect '$label' items must be unique, repeated: $duplicates" }
+
         val foot = Div(count).apply { addClassName(CssClass.PopoverFoot) }
         foot.add(
             NativeButton(texts.lookup.reset).apply {
@@ -126,7 +129,9 @@ internal class MultiSelectField<T : Any>(
                 addClickListener { applyDraft() }
             },
         )
+
         popup.add(search, options, foot)
+
         popup.addOpenedChangeListener { event ->
             trigger.element.setAriaExpanded(event.isOpened)
             box.setClassName(CssClass.TriggerOpen, event.isOpened)
@@ -135,6 +140,7 @@ internal class MultiSelectField<T : Any>(
                 if (isAttached) trigger.element.restoreTriggerFocus(popup.element)
             }
         }
+
         add(box, popup)
         addDetachListener { close() }
         renderValue(emptySet())
@@ -142,6 +148,7 @@ internal class MultiSelectField<T : Any>(
 
     fun open() {
         if (!choosable() || popup.isOpened) return
+
         draft = value.toSet()
         search.clear()
         renderDraft()
@@ -215,6 +222,7 @@ internal class MultiSelectField<T : Any>(
 
     private fun renderValue(selected: Set<T>) {
         chips.removeAll()
+
         val visible = items.filter { item -> item in selected }.take(if (display == MultiSelectDisplay.Chips) maxChips else 0)
         visible.forEach { item ->
             val chip = Span(Span(itemLabel(item)).apply { addClassName(CssClass.ObscuredValue) }).apply { addClassName(CssClass.Chip) }
@@ -227,14 +235,17 @@ internal class MultiSelectField<T : Any>(
                 }
                 chip.add(remove)
             }
+
             chips.add(chip)
         }
+
         if (display == MultiSelectDisplay.Count && selected.isNotEmpty()) {
             val counter = Span(texts.lookup.selectedCount(selected.size)).apply {
                 addClassNames(CssClass.Counter, CssClass.CounterAccent, CssClass.ObscuredValue)
             }
             chips.add(counter)
         }
+
         if (display == MultiSelectDisplay.Chips && selected.size > maxChips) {
             val more = Span("+${formatNumber(selected.size - maxChips, texts)}").apply {
                 addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue)
@@ -242,14 +253,17 @@ internal class MultiSelectField<T : Any>(
             }
             chips.add(more)
         }
+
         trigger.isEnabled = choosable()
         clear.isVisible = selected.isNotEmpty() && choosable()
     }
 
     private fun renderDraft(focused: T? = null, focusAll: Boolean = false) {
         val current = draft ?: return
+
         val visible = items.filter { item -> itemLabel(item).contains(search.value.trim(), ignoreCase = true) }
         options.removeAll()
+
         val all = Checkbox(texts.components.selectAll).apply {
             value = visible.isNotEmpty() && current.containsAll(visible)
             isIndeterminate = visible.any { item -> item in current } && !value
@@ -260,8 +274,10 @@ internal class MultiSelectField<T : Any>(
                 }
             }
         }
+
         options.add(all)
         if (focusAll) all.focus()
+
         visible.forEach { item ->
             val choice = Checkbox(itemLabel(item)).apply {
                 addClassName(CssClass.Option)
@@ -272,6 +288,7 @@ internal class MultiSelectField<T : Any>(
             options.add(choice)
             if (item == focused) choice.focus()
         }
+
         if (visible.isEmpty()) options.add(Span(texts.lookup.empty))
         count.text = texts.lookup.selectedCount(current.size)
     }

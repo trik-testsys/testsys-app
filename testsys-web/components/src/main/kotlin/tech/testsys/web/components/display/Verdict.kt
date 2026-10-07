@@ -22,12 +22,14 @@ import java.util.Locale
  */
 fun ContentScope.verdict(score: Double, label: String? = null, configure: DataHandle<Double>.() -> Unit = {}): DataHandle<Double> {
     val root = Span().apply { addClassNames(CssClass.Verdict, CssClass.VerdictScore) }
+
     fun render(value: Double) {
         require(value.isFinite()) { "Verdict score must be finite, got $value" }
         root.removeAll()
         root.add(Text(formatScore(value, texts.locale)))
         label?.let { caption -> root.add(Span(caption).apply { addClassName(CssClass.VerdictLabel) }) }
     }
+
     render(score)
     add(root)
     return DataHandle(root, score, ::render).apply(configure)

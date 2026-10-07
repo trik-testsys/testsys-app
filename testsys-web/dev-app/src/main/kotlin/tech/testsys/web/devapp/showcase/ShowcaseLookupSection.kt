@@ -86,6 +86,7 @@ internal fun PageScope.lookupSection() {
             footer { mainAction("Проверить") { onClick { binder.writeBeanIfValid(choice) } } }
         }
     }
+
     binder.readBean(choice)
 }
 

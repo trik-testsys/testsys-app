@@ -112,6 +112,7 @@ internal fun ContentScope.buildActionButton(role: ActionRole, label: String?, ic
         element.setSize(if (isSmall) ElementSize.Small else ElementSize.Medium)
         setIcon(iconComponent)
     }
+
     return button
 }
 

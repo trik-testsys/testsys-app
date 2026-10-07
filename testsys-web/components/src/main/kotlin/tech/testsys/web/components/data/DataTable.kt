@@ -140,6 +140,7 @@ internal class DataTable<T>(
                 page = lastPage
                 result = fetchPage(page)
             }
+
             pageCount = pageCountOf(result.total)
             isFailed = false
             render(result, highlightNew = highlightNew && !isMoved)
@@ -164,6 +165,7 @@ internal class DataTable<T>(
             isSelected -> selected += rowKey
             else -> selected -= rowKey
         }
+
         updateHeaderCheckbox()
         notifySelectionChange()
     }
@@ -185,9 +187,11 @@ internal class DataTable<T>(
         spec.columns.forEach { column ->
             val cell = TableHeaderCell(column.title).apply { element.setScope(ElementScope.Col) }
             if (column.kind == CellKind.Number) cell.addClassName(CssClass.Right)
+
             if (column.kind == CellKind.Menu) {
                 cell.element.setAttribute(HtmlAttribute.AriaLabel, texts.menu.actions)
             }
+
             column.sortKey?.let { sortKey ->
                 cell.addClassName(CssClass.Sortable)
                 cell.element.setAttribute(HtmlAttribute.TabIndex, "0")
@@ -197,6 +201,7 @@ internal class DataTable<T>(
                     .setFilter(DomEventFilter.TableSortKey).preventDefault()
                 sortHeaders += SortHeader(sortKey = sortKey, title = column.title, cell = cell)
             }
+
             add(cell)
         }
     }
@@ -205,6 +210,7 @@ internal class DataTable<T>(
         val current = sort
         val next = if (current?.key == sortKey) current.copy(isDescending = !current.isDescending) else Sort(sortKey, true)
         sort = next
+
         sortHeaders.forEach { header ->
             val isSorted = header.sortKey == sortKey
             val (arrow, ariaSort) = when {
@@ -212,10 +218,12 @@ internal class DataTable<T>(
                 next.isDescending -> ARROW_DOWN to AriaSort.Descending
                 else -> ARROW_UP to AriaSort.Ascending
             }
+
             header.cell.setClassName(CssClass.Sorted, isSorted)
             header.cell.text = header.title + arrow
             header.cell.element.setAriaSort(ariaSort)
         }
+
         load(0)
     }
 
@@ -223,11 +231,13 @@ internal class DataTable<T>(
     private fun render(result: Page<T>, highlightNew: Boolean) {
         shownRows.clear()
         body.removeAll()
+
         if (result.rows.isEmpty()) {
             body.add(messageRow(buildEmptyState(spec.empty, texts)))
         } else {
             result.rows.forEach { row -> body.add(rowOf(row, highlightNew)) }
         }
+
         val first = page * pageSize
         val from = if (result.rows.isEmpty()) 0 else first + 1
         pager.show(page = page, pageCount = pageCount, from = from, to = first + result.rows.size, total = result.total)
@@ -266,12 +276,14 @@ internal class DataTable<T>(
         if (highlightNew && shownRow.key !in renderedKeys) addClassName(CssClass.RowNew)
         if (isSelectable) add(TableDataCell(shownRow.checkbox))
         shownRow.update()
+
         spec.columns.forEach { column ->
             val cell = TableDataCell()
             column.kind.cssClasses.forEach { cssClass -> cell.addClassName(cssClass) }
             column.fill(row, cell)
             add(cell)
         }
+
         spec.rowClick?.let { listener ->
             addClassName(CssClass.RowClickable)
             element.addEventListener(DomEvent.Click) { listener(row) }.setFilter(DomEventFilter.TableRowClick)

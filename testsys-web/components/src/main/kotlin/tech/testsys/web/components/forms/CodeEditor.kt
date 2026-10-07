@@ -28,6 +28,7 @@ import tech.testsys.web.components.core.setProperty
 import tech.testsys.web.components.core.setReadOnly
 import tech.testsys.web.components.core.setSpellcheckPresence
 import tech.testsys.web.components.layout.BlockRowScope
+import java.util.UUID
 
 private const val DEFAULT_EDITOR_LINES = 10
 
@@ -60,11 +61,11 @@ internal class CodeEditorField(label: String, minLines: Int) : CustomField<Strin
     }
     private val description = Span().apply {
         addClassName(CssClass.SrOnly)
-        setId("ts-code-description-${java.util.UUID.randomUUID()}")
+        setId("ts-code-description-${UUID.randomUUID()}")
     }
     private val helperDescription = Span().apply {
         addClassName(CssClass.SrOnly)
-        setId("ts-code-helper-${java.util.UUID.randomUUID()}")
+        setId("ts-code-helper-${UUID.randomUUID()}")
     }
     private val area = NativeCodeArea().apply {
         element.classList.add(CssClass.CodeArea)
@@ -79,7 +80,9 @@ internal class CodeEditorField(label: String, minLines: Int) : CustomField<Strin
             addClassName(CssClass.Code)
             element.style.setCodeMinLines(minLines)
         }
+
         add(box, description, helperDescription)
+
         area.element.addPropertyChangeListener(DomProperty.Value, DomEvent.Input) { event ->
             if (event.isUserOriginated) {
                 if (isEnabled && !isReadOnly) {
@@ -91,6 +94,7 @@ internal class CodeEditorField(label: String, minLines: Int) : CustomField<Strin
                 }
             }
         }
+
         addAttachListener { element.attachCodeEditor(area = area.element, numbers = numbers.element) }
         addDetachListener { area.element.detachCodeEditor() }
     }

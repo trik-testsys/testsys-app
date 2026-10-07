@@ -20,9 +20,11 @@ import com.vaadin.flow.data.binder.Binder
 fun <BEAN, TARGET> Binder.Binding<BEAN, TARGET>.skipWhenHidden(): Binder.Binding<BEAN, TARGET> {
     val input = field
     require(input is ValueInput<*>) { "skipWhenHidden requires ValueInput, got ${input.javaClass.name}" }
+
     setIsAppliedPredicate {
         generateSequence(input.component.element) { element -> element.parent }
             .all { element -> element.isVisible }
     }
+
     return this
 }

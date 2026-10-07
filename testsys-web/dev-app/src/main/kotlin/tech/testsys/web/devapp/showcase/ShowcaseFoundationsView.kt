@@ -26,6 +26,7 @@ internal class ShowcaseFoundationsView(texts: UiTexts, private val environment: 
             }
         }
     }
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         if (!environment.matchesProfiles(DEV_PROFILE)) {
             event.rerouteToError(NotFoundException::class.java)

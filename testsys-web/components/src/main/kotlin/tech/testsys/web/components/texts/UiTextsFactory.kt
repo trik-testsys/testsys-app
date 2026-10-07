@@ -164,6 +164,7 @@ private fun formatBytes(bytes: Long): String {
         value /= BYTES_PER_UNIT
         unit++
     }
+
     val format = NumberFormat.getNumberInstance(Locale.forLanguageTag("ru-RU")).apply { maximumFractionDigits = 1 }
     return "${format.format(value)} ${BYTE_UNITS[unit]}"
 }

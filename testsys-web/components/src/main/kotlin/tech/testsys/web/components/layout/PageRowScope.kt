@@ -45,6 +45,7 @@ class PageRowScope internal constructor(private val row: Div, private val texts:
             check(!hasHighlight) { "Row already holds a highlight block; a row holds at most one" }
             hasHighlight = true
         }
+
         val block = buildBlock(texts, heading, highlight, span = columns, columns = GRID_COLUMNS, content)
         block.component.element.style.setPageColumns(columns.toDouble())
         row.add(block.component)

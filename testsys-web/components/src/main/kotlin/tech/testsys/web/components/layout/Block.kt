@@ -47,6 +47,7 @@ internal fun buildBlock(
         }
         scope.footerBar?.let { footer -> add(footer) }
     }
+
     scope.start()
     return BlockHandle(block, editState, hasEditingSwitch = scope.hasEditingSwitch)
 }
@@ -54,10 +55,12 @@ internal fun buildBlock(
 private fun blockHead(heading: BlockHeading, actions: Div?, tabs: Component?): Header? {
     val hasTitles = heading.title != null || heading.subtitle != null
     if (!hasTitles && actions == null && tabs == null) return null
+
     val titles = Div().apply { addClassName(CssClass.BlockTitles) }
     heading.title?.let { title -> titles.add(H3(title).apply { addClassName(CssClass.BlockTitle) }) }
     heading.subtitle?.let { subtitle -> titles.add(Span(subtitle).apply { addClassName(CssClass.BlockSub) }) }
     if (!hasTitles && tabs != null) titles.add(tabs)
+
     return Header(titles).apply {
         addClassName(CssClass.BlockHead)
         actions?.let { bar -> add(bar) }

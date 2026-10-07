@@ -114,6 +114,7 @@ fun dialog(title: String, subtitle: String? = null, content: DialogScope.() -> U
     val texts = currentTexts()
     val shell = DialogShell(texts, title = title, subtitle = subtitle, isWide = true, isAlert = false)
     shell.content.addClassName(CssClass.DialogGrid)
+
     val editState = BlockEditState(shell.dialog.element)
     val handle = DialogHandle(shell, editState)
     DialogScope(shell, texts, editState, handle).content()

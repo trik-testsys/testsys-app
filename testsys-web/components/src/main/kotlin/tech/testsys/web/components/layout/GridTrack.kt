@@ -14,19 +14,23 @@ internal class GridTrack(private val capacity: Int, private val owner: String) {
     fun take(size: Int) {
         checkOpen()
         require(size in 1..capacity) { "$owner accepts sizes in 1..$capacity columns, got $size" }
+
         val taken = sizes + size
         val total = taken.sumOf { value -> value.toLong() }
         check(total <= capacity) {
             "$owner overflow: sizes ${taken.joinToString("+")} = $total exceed $capacity columns"
         }
+
         sizes += size
     }
 
     /** Takes all columns left in the row, closes the row and returns how many columns it took. */
     fun takeRest(): Int {
         checkOpen()
+
         val rest = capacity - sizes.sum()
         check(rest > 0) { "$owner is full: sizes ${sizes.joinToString("+")} leave no columns for an element without a size" }
+
         sizes += rest
         isClosed = true
         return rest

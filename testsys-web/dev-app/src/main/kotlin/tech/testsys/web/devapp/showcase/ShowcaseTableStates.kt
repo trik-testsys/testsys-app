@@ -85,6 +85,7 @@ internal fun PageScope.tabsSection() {
         block(size = HALF) {
             val filter = tabs(initial = RowFilter.All) { filterTabs() }
             actions { badge("Вкладки вместо заголовка", Tone.Info) }
+
             val rows = table(
                 key = { row -> row.id },
                 pageSize = PAGE_SIZE,
@@ -93,6 +94,7 @@ internal fun PageScope.tabsSection() {
                 codeColumn("ID", size = 6) { row -> row.id.toString() }
                 textColumn("Автор") { row -> row.author }
             }
+
             filter.onChange { rows.refresh(toFirstPage = true) }
         }
         block(size = HALF, title = "Посылки тура", subtitle = "Заголовок и вкладки второй строкой") {
@@ -102,6 +104,7 @@ internal fun PageScope.tabsSection() {
                     onClick { toast(FeedbackKind.Info, "Экспорт демонстрационной таблицы") }
                 }
             }
+
             val rows = table(
                 key = { row -> row.id },
                 pageSize = PAGE_SIZE,
@@ -110,7 +113,9 @@ internal fun PageScope.tabsSection() {
                 codeColumn("ID", size = 6) { row -> row.id.toString() }
                 textColumn("Автор") { row -> row.author }
             }
+
             filter.onChange { rows.refresh(toFirstPage = true) }
+
             footer {
                 linkAction("Обнулить счётчик ошибок") { onClick { filter.setCount(RowFilter.Failed, null) } }
             }
@@ -169,6 +174,7 @@ internal fun PageScope.failureSection() {
                 codeColumn("ID", size = 3) { row -> row.id.toString() }
                 textColumn("Автор") { row -> row.author }
             }
+
             footer {
                 linkAction("Сломать снова") {
                     onClick {

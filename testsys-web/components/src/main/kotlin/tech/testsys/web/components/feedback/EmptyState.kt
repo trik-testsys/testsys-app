@@ -36,7 +36,9 @@ internal fun buildEmptyState(content: EmptyContent, texts: UiTexts, isError: Boo
         addClassName(CssClass.Empty)
         if (isError) addClassName(CssClass.EmptyError)
     }
+
     content.description?.let { description -> state.add(Span(description).apply { addClassName(CssClass.EmptyDesc) }) }
+
     val actions = Div().apply { addClassName(CssClass.EmptyActions) }
     ContentScope(actions, texts, Placement.Empty).apply(content.actions)
     if (actions.children.findAny().isPresent) state.add(actions)

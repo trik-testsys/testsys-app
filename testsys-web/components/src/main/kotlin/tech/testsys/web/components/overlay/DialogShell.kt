@@ -50,6 +50,7 @@ internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, isW
             if (isWide) addClassName(CssClass.DialogMd)
             if (isAlert) addClassName(CssClass.DialogAlert)
         }
+
         val heading = H2(title).apply { addClassName(CssClass.DialogTitle) }
         if (isAlert) {
             val glyph = Span(svgIcon(IconName.TriangleAlert, GLYPH_SIZE)).apply { addClassName(CssClass.DialogGlyph) }
@@ -63,6 +64,7 @@ internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, isW
             body.add(content)
             card.add(head, body, foot)
         }
+
         dialog.add(card)
     }
 

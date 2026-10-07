@@ -189,6 +189,7 @@ private fun PageScope.fileExamples() {
                     },
                 ) { isObscured = true }
             }
+
             row { vertical { text("Статус").bindText(status) } }
         }
     }
@@ -199,6 +200,7 @@ private fun PageScope.fileExamples() {
                     downloadAction("Скачать пример TXT", produce = { context -> demoDownload(context, knownLength = true) })
                     downloadAction("Скачать без известной длины", produce = { context -> demoDownload(context, knownLength = false) })
                     iconDownloadAction("Скачать пример со значком", produce = { context -> demoDownload(context, knownLength = true) })
+
                     val attempts = AtomicInteger()
                     downloadAction("Скачать с ошибкой и повтором", produce = { context ->
                         context.ensureActive()
@@ -236,6 +238,7 @@ private fun demoDownload(context: DownloadContext, knownLength: Boolean): Downlo
             override fun read(bytes: ByteArray, offset: Int, size: Int): Int {
                 context.ensureActive()
                 if (remaining == 0L) return -1
+
                 LockSupport.parkNanos(TRANSFER_CHUNK_NANOS)
                 val count = minOf(size, TRANSFER_CHUNK_BYTES, remaining.toInt())
                 repeat(count) { index -> bytes[offset + index] = read().toByte() }

@@ -196,6 +196,7 @@ class ShowcaseHeaderView(texts: UiTexts, private val environment: Environment) :
                 description = "Карточка держится 6 секунд; наведение и фокус ставят таймер на паузу",
             )
         }
+
         notifications.set(notifications.peek() + added)
         status.set(if (count == 1) "Добавлено уведомление ${nextNotification.get()}" else "Добавлено уведомлений: $count")
     }

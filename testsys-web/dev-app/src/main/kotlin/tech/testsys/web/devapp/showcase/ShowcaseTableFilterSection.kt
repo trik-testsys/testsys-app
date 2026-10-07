@@ -70,6 +70,7 @@ internal fun PageScope.tableFiltersExample() {
                 selectable = true,
                 fetch = { request -> submissionPage(SUBMISSIONS.filter { row -> row.matches(applied.peek()) }, request) },
             ) { submissionColumns() }
+
             actions {
                 action("Обновить выборку") { onClick { rows.refresh() } }
                 text(
@@ -78,6 +79,7 @@ internal fun PageScope.tableFiltersExample() {
                     },
                 )
             }
+
             filters(
                 onApply = {
                     val candidate = SubmissionFiltersBuilder(defaults)
@@ -131,6 +133,7 @@ internal fun PageScope.tableFiltersExample() {
             }
         }
     }
+
     binder.readBean(SubmissionFiltersBuilder(defaults))
 }
 

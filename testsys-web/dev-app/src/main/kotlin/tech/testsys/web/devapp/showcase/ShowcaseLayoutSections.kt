@@ -25,16 +25,20 @@ internal fun PageScope.gridSection() {
             }
         }
     }
+
     row { block(size = 24, title = "Блок 24") { row { text("Блок на всю ширину") } } }
+
     row {
         block(size = 12, title = "Блок 12") { row { text("Половина") } }
         block(size = 12, title = "Блок 12") { row { text("Половина") } }
     }
+
     row {
         block(size = 8, title = "Блок 8") { row { text("Треть") } }
         block(size = 8, title = "Блок 8") { row { text("Треть") } }
         block(size = 8, title = "Блок 8") { row { text("Треть") } }
     }
+
     row {
         highlightBlock(size = 6, title = "Блок 6", subtitle = "Подсветка") {
             row { text("Одна на ряд страницы") }
@@ -42,6 +46,7 @@ internal fun PageScope.gridSection() {
         block(size = 12, title = "Блок 12") { row { text("Рядом") } }
         block(title = "Без size") { row { text("Остаток ряда: 6 колонок") } }
     }
+
     row {
         block(size = 16, title = "Блок 16") { row { text("Две трети") } }
         block(size = 8, title = "Блок 8") { row { text("Треть") } }

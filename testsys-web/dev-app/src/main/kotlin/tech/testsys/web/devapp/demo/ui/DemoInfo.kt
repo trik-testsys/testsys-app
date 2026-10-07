@@ -31,12 +31,14 @@ internal fun PageScope.demoInfo(title: String, fields: List<Pair<String, String>
 internal fun demoInfoRows(fields: List<Pair<String, String>>, wideLabels: Set<String>): List<List<Pair<String, String>>> {
     val rows = mutableListOf<List<Pair<String, String>>>()
     val pending = mutableListOf<Pair<String, String>>()
+
     fun flush() {
         if (pending.isNotEmpty()) {
             rows.add(pending.toList())
             pending.clear()
         }
     }
+
     fields.forEach { field ->
         if (field.first in wideLabels) {
             flush()
@@ -46,6 +48,7 @@ internal fun demoInfoRows(fields: List<Pair<String, String>>, wideLabels: Set<St
             if (pending.size == FIELDS_PER_ROW) flush()
         }
     }
+
     flush()
     return rows
 }

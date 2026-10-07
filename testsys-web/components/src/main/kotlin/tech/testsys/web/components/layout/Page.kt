@@ -22,10 +22,12 @@ import tech.testsys.web.components.texts.bindTexts
  */
 internal fun renderPage(root: Div, header: CabinetHeader, texts: UiTexts, view: Class<out Component>?, body: PageScope.() -> Unit) {
     bindTexts(checkNotNull(UI.getCurrent()) { "No current UI: a page is built inside a Vaadin request" }, texts)
+
     val main = Main().apply { addClassName(CssClass.Page) }
     root.removeAll()
     root.setClassName(CssClass.App)
     root.add(buildHeader(header, texts), main)
+
     val scope = PageScope(main, texts, view) { head -> root.addComponentAtIndex(1, head) }.apply(body)
     root.add(scope.buildFooter())
 }

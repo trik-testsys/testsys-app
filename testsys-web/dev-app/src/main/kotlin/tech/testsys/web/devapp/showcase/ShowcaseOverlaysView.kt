@@ -66,6 +66,7 @@ class ShowcaseOverlaysView(texts: UiTexts, private val environment: Environment)
                             }
                         }
                     }
+
                     row { vertical { result = text("Действие ещё не выполнено") } }
                 }
             }
@@ -78,10 +79,12 @@ class ShowcaseOverlaysView(texts: UiTexts, private val environment: Environment)
                             }
                         }
                     }
+
                     val nested = dialog("Диалог с попапом") {
                         row { vertical { popover("Открыть попап в диалоге") { text("Вложенность и возврат фокуса") } } }
                         footer { handle -> action("Закрыть") { onClick { handle.close() } } }
                     }
+
                     row { horizontal { action("Проверить вложенность") { onClick { nested.open() } } } }
                 }
             }

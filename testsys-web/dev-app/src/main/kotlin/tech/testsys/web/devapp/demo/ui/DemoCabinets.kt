@@ -3,6 +3,7 @@ package tech.testsys.web.devapp.demo.ui
 import tech.testsys.web.components.actions.DownloadContent
 import tech.testsys.web.components.actions.downloadAction
 import tech.testsys.web.components.display.text
+import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.devapp.demo.model.DemoObjects
 import tech.testsys.web.devapp.demo.model.DemoRow
@@ -23,13 +24,17 @@ internal fun PageScope.demoCabinet(context: DemoContext, cabinet: DemoCabinet, a
         demoOrganizer(context, actor, section)
         return
     }
+
     if (section in listOf("overview", "profile", "user", "purpose", "capabilities")) {
         demoInfo("Сведения о пользователе", actor.infoFields())
     }
+
     if (cabinet.key in listOf("student", "participant") && section in listOf("overview", "study", "tours", "solutions")) {
         demoStudy(context, actor, objects, section)
     }
+
     if (section in listOf("overview", "resources") && cabinet.key == "developer") demoResources(context, actor, objects)
+
     if (cabinet.key == "developer" && section in listOf("overview", "tasks")) {
         demoList(
             context = context,
@@ -55,12 +60,14 @@ internal fun PageScope.demoCabinet(context: DemoContext, cabinet: DemoCabinet, a
             )
         }
     }
+
     if (cabinet.key in listOf("developer", "observer") && section in listOf("overview", "tours")) {
         val rows = objects.tours.map { tour -> tour.row() }
         demoList(context = context, actor = actor, key = "tours", title = "Туры", rows = rows) { selected ->
             demoTourMaterials(context, objects.tours.first { tour -> tour.id == selected.id })
         }
     }
+
     if (cabinet.key == "administrator" && section in listOf("overview", "users", "user")) {
         demoList(
             context = context,
@@ -72,8 +79,10 @@ internal fun PageScope.demoCabinet(context: DemoContext, cabinet: DemoCabinet, a
             },
         ) { selected -> demoInfo("Сведения о выбранном пользователе", objects.users.first { user -> user.id == selected.id }.infoFields()) }
     }
+
     if (cabinet.key == "judge") demoJudge(context, actor, objects, section)
     if (cabinet.key == "observer" && section == "results") demoObserverResults(context, actor, objects)
+
     if (cabinet.key == "supervisor") {
         row {
             block(title = "Назначение роли") {
@@ -107,6 +116,7 @@ private fun PageScope.demoResources(context: DemoContext, actor: DemoUser, objec
             "Сведения о ресурсе",
             listOf("ID" to resource.id, "Название" to resource.name, "Тип" to resource.category, "Файл" to resource.fileName),
         )
+
         row {
             block(title = "История изменений") {
                 val revisions = resource.history.map { change ->
@@ -153,11 +163,12 @@ private fun PageScope.demoList(
             demoTable(context.table(contextKey), rows) { row -> context.select(key = contextKey, id = row.id) }
         }
     }
+
     rows.firstOrNull { it.id == context.selection(key = contextKey, fallback = rows.firstOrNull()?.id) }?.let { details(it) }
 }
 
 /** Real download of explicitly labelled mock content. */
-internal fun tech.testsys.web.components.layout.ContentScope.demoDownload(filename: String, content: String) {
+internal fun ContentScope.demoDownload(filename: String, content: String) {
     downloadAction(
         "Скачать $filename",
         produce = {
@@ -185,6 +196,7 @@ internal fun PageScope.demoTourMaterials(context: DemoContext, tour: DemoTour) {
         ),
         wideLabels = setOf("Описание"),
     )
+
     val tasks = tour.taskIds.map { id -> context.state.tasks.first { task -> task.id == id } }
     row {
         block(title = "Задачи тура") {

@@ -34,6 +34,7 @@ fun BlockRowScope.integerInput(
             .setMaxErrorMessage(errors.aboveMax)
             .setStepErrorMessage(errors.stepMismatch)
     }
+
     return addInput<IntegerField, Int?>(label, labelSize, size, control, hint, configure)
 }
 
@@ -66,5 +67,6 @@ fun BlockRowScope.decimalInput(
             .setMaxErrorMessage(errors.aboveMax)
             .setStepErrorMessage(errors.stepMismatch)
     }
+
     return addInput<NumberField, Double?>(label, labelSize, size, control, hint, configure)
 }

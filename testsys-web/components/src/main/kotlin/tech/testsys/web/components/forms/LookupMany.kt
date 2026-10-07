@@ -97,6 +97,7 @@ internal class LookupManyField<T : Any>(
     override fun showValue(current: Set<T>, isChoosable: Boolean) {
         chips.removeAll()
         current.take(MAX_CHIPS).forEach { item -> chips.add(chipOf(item, isChoosable)) }
+
         if (current.size > MAX_CHIPS) {
             chips.add(
                 Span("+${formatNumber(current.size - MAX_CHIPS, texts)}").apply {
@@ -104,6 +105,7 @@ internal class LookupManyField<T : Any>(
                 },
             )
         }
+
         chips.isVisible = current.isNotEmpty()
     }
 
@@ -112,9 +114,11 @@ internal class LookupManyField<T : Any>(
         // An equal row fetched later replaces the stored instance, so the value gets the latest fetched one.
         val knownRows = LinkedHashMap<Any, T>()
         value.forEach { item -> knownRows[item] = item }
+
         val fetchKnown = { query: String, request: PageRequest ->
             fetch(query, request).also { page -> page.rows.forEach { row -> knownRows[row] = row } }
         }
+
         val dialog = LookupDialog(
             texts,
             title,
@@ -125,19 +129,23 @@ internal class LookupManyField<T : Any>(
             selected = value,
             highlighted = { false },
         ) { row -> table.toggle(row) }
+
         val count = Span(texts.lookup.selectedCount(value.size)).apply { addClassNames(CssClass.Muted, CssClass.LookupCount) }
         dialog.table.onSelectionChange = { keys -> count.text = texts.lookup.selectedCount(keys.size) }
         dialog.table.pager.root.addClassName(CssClass.LookupPager)
         dialog.shell.content.add(dialog.table.pager.root)
         dialog.shell.foot.add(count)
+
         val foot = ContentScope(dialog.shell.foot, texts, Placement.Body)
         foot.action(texts.lookup.reset) { onClick { dialog.table.clearSelection() } }
+
         foot.mainAction(texts.lookup.apply) {
             onClick {
                 choose(dialog.table.selected.mapNotNullTo(LinkedHashSet()) { key -> knownRows[key] })
                 dialog.shell.close()
             }
         }
+
         return dialog
     }
 
@@ -156,6 +164,7 @@ internal class LookupManyField<T : Any>(
                 },
             )
         }
+
         return chip
     }
 }

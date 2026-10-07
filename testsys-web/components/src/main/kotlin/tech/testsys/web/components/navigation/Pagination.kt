@@ -78,11 +78,13 @@ class PaginationHandle internal constructor(
     init {
         require(pageCount >= 1) { "Page count must be at least 1, got $pageCount" }
         require(page in 1..pageCount) { "Page must be within 1..$pageCount, got $page" }
+
         current = Bindable(root.element, initial = page) { value ->
             require(value >= 1) { "Page must be at least 1, got $value" }
             require(current.isBound || value <= count) { "Page must be within 1..$count, got $value" }
             render()
         }
+
         root.addClassName(CssClass.Pager)
         root.add(previous, next)
         previous.addClickListener { choose(target = this.page - 1, arrow = previous) }
@@ -121,9 +123,11 @@ class PaginationHandle internal constructor(
     private fun render() {
         val shown = page
         items.forEach { item -> root.remove(item) }
+
         items = pageRange(page = shown, total = count).map { target ->
             if (target == null) Span("…").apply { addClassName(CssClass.PagerGap) } else pageButton(target = target, shown = shown)
         }
+
         items.forEachIndexed { index, item -> root.addComponentAtIndex(index + 1, item) }
         previous.isEnabled = shown > 1
         next.isEnabled = shown < count
@@ -136,10 +140,12 @@ class PaginationHandle internal constructor(
         addClassName(CssClass.PagerBtn)
         element.setType(ElementType.Button)
         element.setAttribute(HtmlAttribute.AriaLabel, texts.pagination.page(target))
+
         if (target == shown) {
             addClassName(CssClass.PagerBtnActive)
             element.setAriaCurrent(AriaCurrent.Page)
         }
+
         addClickListener { choose(target = target, arrow = null) }
     }
 }

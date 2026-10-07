@@ -56,8 +56,10 @@ internal fun PageScope.demoJudge(context: DemoContext, actor: DemoUser, objects:
             context.navigate("judge.result")
         }
     }
+
     val selectedId = context.selection(key = selectionKey, fallback = objects.solutions.firstOrNull()?.id)
     val solution = objects.solutions.firstOrNull { it.id == selectedId } ?: return
+
     if (section in listOf("overview", "result")) {
         demoInfo(
             "Результат проверки",
@@ -105,8 +107,10 @@ internal fun PageScope.demoObserverResults(context: DemoContext, actor: DemoUser
             }
         }
     }
+
     val selectedId = context.selection(key = tourKey, fallback = objects.tours.firstOrNull()?.id)
     val tour = objects.tours.firstOrNull { it.id == selectedId } ?: return
+
     val participantIds = objects.competitions.filter { tour.id in it.tourIds }.flatMap { it.participantIds }
     val participants = context.state.users.filter { it.id in participantIds }
     row { block(title = "Обзор результата") { demoResultMatrix(context, actor, tour, participants) } }

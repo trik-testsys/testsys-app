@@ -85,9 +85,11 @@ internal class LoadedBody(
         clear()
         body.setClassName(CssClass.BlockBodyGrid, true)
         body.setClassName(CssClass.BlockBodyFlush, false)
+
         // Each fill gets its own edit state, so that fields of replaced content stop following the block.
         val state = BlockEditState(body.element)
         editRelay = editState.follow { value -> state.isEditable = value }
+
         val scope = BlockScope(body, columns, texts, state, title, isLoadContent = true).apply(content)
         body.setClassName(CssClass.BlockBodyFlush, scope.isFlushBody)
         hasContent = body.children.findAny().isPresent

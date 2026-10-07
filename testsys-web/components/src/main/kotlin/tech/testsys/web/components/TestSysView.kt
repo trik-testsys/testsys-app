@@ -26,6 +26,7 @@ abstract class TestSysView(protected val texts: UiTexts) : Composite<Div>() {
      */
     protected fun page(header: CabinetHeader, body: PageScope.() -> Unit) {
         check(!isBuilding) { "TestSysView.page() called again from inside its own body for ${this::class.simpleName}" }
+
         isBuilding = true
         try {
             renderPage(content, header, texts, this::class.java, body)

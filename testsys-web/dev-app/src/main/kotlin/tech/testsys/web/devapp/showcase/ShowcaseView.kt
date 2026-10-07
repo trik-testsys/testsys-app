@@ -8,6 +8,7 @@ import com.vaadin.flow.router.Route
 import org.springframework.core.env.Environment
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.devapp.demo.ui.DemoView
 
 /**
  * Showcase of every layout and component option of the design system DSL for visual checks;
@@ -22,7 +23,7 @@ class ShowcaseView(texts: UiTexts, private val environment: Environment) : TestS
         page(showcaseHeader()) {
             showcaseHead("Компоненты")
             footer {
-                link("Демонстрация сценариев", tech.testsys.web.devapp.demo.ui.DemoView::class.java)
+                link("Демонстрация сценариев", DemoView::class.java)
                 link("Поля и файлы", ShowcaseFormsView::class.java)
                 link(label = "Исходный код", href = "https://github.com/trik-testsys/testsys-app")
             }

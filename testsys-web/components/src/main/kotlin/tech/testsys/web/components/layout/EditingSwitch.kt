@@ -27,10 +27,12 @@ internal class EditingSwitch(private val onSave: () -> Boolean, private val onCa
                 state.isEditable = false
             }
         }
+
         start.onClick {
             state.isEditable = true
             focusFirstEditableInput(body = body, fallback = cancel.button)
         }
+
         val save = head.mainAction(texts.editing.save) { onClick { if (onSave()) state.isEditable = false } }
         state.follow { editable ->
             start.isVisible = !editable

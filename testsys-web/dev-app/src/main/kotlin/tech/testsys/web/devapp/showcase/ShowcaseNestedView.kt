@@ -69,12 +69,14 @@ private fun PageScope.focusExamples() {
             row { textInput("Первое доступное", labelSize = 4, size = 20) }
         }
     }
+
     row {
         block(title = "Фокус: диапазон дат") {
             val binder = Binder<RangeDraft>()
             val required = ValueSignal(true)
             editing(onSave = { binder.validate().isOk }, onCancel = {})
             actions { action("Переключить обязательность") { onClick { required.set(!required.peek()) } } }
+
             row {
                 dateRangeInput("Период", labelSize = 4, size = 20) {
                     binder.forField(this).withValidator({ range -> !required.peek() || range != DateRange() }, "Укажите границу периода")
@@ -84,12 +86,14 @@ private fun PageScope.focusExamples() {
             }
         }
     }
+
     row {
         block(title = "Фокус: дата и время") {
             editing(onSave = { true }, onCancel = {})
             row { dateTimeInput("Начало", labelSize = 4, size = 20) }
         }
     }
+
     row {
         block(title = "Фокус: лукап") {
             editing(onSave = { true }, onCancel = {})
@@ -105,24 +109,29 @@ private fun PageScope.focusExamples() {
             }
         }
     }
+
     row {
         block(title = "Фокус: нет доступных полей") {
             editing(onSave = { true }, onCancel = {})
             row { textInput("Архивный код", labelSize = 4, size = 20) { isEditable = false } }
         }
     }
+
     row {
         block(title = "Фокус: пустой блок") {
             editing(onSave = { true }, onCancel = {})
         }
     }
+
     row {
         block(title = "Фокус: пустая загрузка") {
             var isFieldShown = false
             editing(onSave = { true }, onCancel = {})
+
             val loaded = load({ isFieldShown }) { show ->
                 if (show) row { textInput("Появившееся поле", labelSize = 4, size = 20) }
             }
+
             actions {
                 action("Заполнить пустое тело") {
                     onClick {
@@ -133,6 +142,7 @@ private fun PageScope.focusExamples() {
             }
         }
     }
+
     row {
         block(title = "Фокус: загруженное тело") {
             var revision = 0
@@ -165,6 +175,7 @@ private fun PageScope.hiddenFieldExample() {
             }
         }
     }
+
     binder.readBean(draft)
 }
 
@@ -178,7 +189,9 @@ private fun PageScope.dialogSignalExample() {
             action("Закрыть") { onClick { handle.close() } }
         }
     }
+
     form.bindEditable(editable)
+
     row {
         block(title = "Диалог по сигналу") {
             actions { action("Открыть форму") { onClick { form.open() } } }

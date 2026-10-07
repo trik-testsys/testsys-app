@@ -36,6 +36,7 @@ open class NotFoundPage(private val texts: UiTexts) : Div(), HasDynamicTitle {
 
     init {
         addClassName(CssClass.App)
+
         val brand = buildBrand(texts.brand)
         val bar = Div(brand).apply { addClassName(CssClass.HeaderBar) }
         val header = Header(bar).apply { addClassName(CssClass.Header) }
@@ -44,6 +45,7 @@ open class NotFoundPage(private val texts: UiTexts) : Div(), HasDynamicTitle {
             text = texts.notFound.description
             addClassName(CssClass.EmptyDesc)
         }
+
         val actions = Div(back).apply { addClassName(CssClass.EmptyActions) }
         val content = Div(heading, description, actions).apply { addClassName(CssClass.Empty) }
         val block = Section(content).apply { addClassName(CssClass.Block) }

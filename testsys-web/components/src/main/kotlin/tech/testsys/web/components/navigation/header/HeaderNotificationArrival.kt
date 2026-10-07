@@ -73,9 +73,11 @@ internal class HeaderNotificationArrival(
 
     fun show(values: List<HeaderNotification>) {
         if (values.isEmpty() || !widget.isAttached) return
+
         selection = if (values.size == 1) Selection.Single(values.single().key) else Selection.Batch(values.map { item -> item.key })
         render(values)
         notification.open()
+
         widget.element.showNotificationArrival(
             card = card.element,
             notification = notification.element,
@@ -105,6 +107,7 @@ internal class HeaderNotificationArrival(
     fun openDestination() {
         val chosen = selection
         close()
+
         when (chosen) {
             Selection.Hidden -> Unit
             is Selection.Single -> onOpen(chosen.key)

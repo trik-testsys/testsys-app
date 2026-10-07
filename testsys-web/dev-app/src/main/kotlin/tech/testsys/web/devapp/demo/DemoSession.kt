@@ -44,6 +44,7 @@ internal class DemoSession {
             state = state.checkSolution(id)
             render()
         }
+
         schedule(ui, current, CHECK_FINISH_DELAY) {
             state = state.finishSolution(id = id, status = DemoSolutionStatus.Checked, score = CHECKED_SCORE)
             render()

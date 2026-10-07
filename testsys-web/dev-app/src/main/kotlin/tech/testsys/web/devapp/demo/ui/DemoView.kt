@@ -42,22 +42,27 @@ internal class DemoView(
     private val environment: Environment,
 ) : TestSysView(texts), BeforeEnterObserver {
     private var screen: String = "home"
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         if (!environment.matchesProfiles("dev")) {
             event.rerouteToError(NotFoundException::class.java)
             return
         }
+
         screen = demoScreen(event.routeParameters.get("screen").orElse("home"))
         render()
     }
+
     private fun render() {
         val cabinet = DEMO_CABINETS.firstOrNull {
             screen.startsWith(it.key + ".")
         }
+
         val section = screen.substringAfter('.', "overview")
         val actor = cabinet?.let {
             session.state.actor(it.role)
         }
+
         val context = DemoContext(session, screen, ::render, ::navigate)
         val title = when {
             screen == "login" -> "Вход и регистрация"
@@ -65,6 +70,7 @@ internal class DemoView(
             section == "overview" -> cabinet.label
             else -> cabinet.label
         }
+
         page(header()) {
             head(title) {
                 crumb("Демонстрация", DemoView::class.java, parameters("home"))
@@ -95,6 +101,7 @@ internal class DemoView(
             }
         }
     }
+
     private fun header(): CabinetHeader {
         val user = session.state.users.firstOrNull { actor -> actor.id == session.state.sessionUserId }
         val columns = DEMO_CABINETS.map { cabinet ->
@@ -113,6 +120,7 @@ internal class DemoView(
                 searchText = cabinet.label,
             )
         }
+
         return CabinetHeader(
             items = listOf(
                 NavItem(key = "home", label = "Главная", target = DemoView::class.java),
@@ -164,6 +172,7 @@ internal class DemoView(
             menuSearchKey = "cabinets",
         )
     }
+
     private fun navigate(target: String) {
         UI.getCurrent().navigate(DemoView::class.java, parameters(target))
     }
@@ -180,23 +189,29 @@ internal class DemoContext(
     val navigate: (String) -> Unit,
 ) {
     val state: DemoState get() = session.state
+
     fun apply(result: DemoResult): Boolean {
         val isSuccess = session.apply(result)
         toast(if (isSuccess) FeedbackKind.Success else FeedbackKind.Error, result.message)
         return isSuccess
     }
+
     fun selection(key: String, fallback: String?): String? = session.selections[key] ?: fallback
+
     fun select(key: String, id: String) {
         session.selections[key] = id
         render()
     }
+
     fun table(key: String): DemoTableState = session.tables.getOrPut(key) {
         DemoTableState()
     }
+
     fun created(result: DemoResult, selectionKey: String, id: String): Boolean {
         if (!apply(result)) {
             return false
         }
+
         session.selections[selectionKey] = id
         session.tables.clear()
         render()

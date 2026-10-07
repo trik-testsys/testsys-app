@@ -56,9 +56,11 @@ fun BlockRowScope.textArea(
     require(minLines == null || maxLines == null || minLines <= maxLines) {
         "Text area '$label' has minLines $minLines above maxLines $maxLines"
     }
+
     val area = TextArea().apply {
         if (minLines != null) minRows = minLines
         maxRows = maxLines
     }
+
     return addInput(label, labelSize, size, area, hint, configure)
 }

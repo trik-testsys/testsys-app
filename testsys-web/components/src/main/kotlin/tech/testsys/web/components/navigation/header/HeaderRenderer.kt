@@ -17,6 +17,7 @@ import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.texts.UiTexts
+import java.util.Locale
 
 /** Builds the `.ts-header` markup of [header]. */
 internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
@@ -25,13 +26,17 @@ internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
     require(header.menuSearchKey == null || header.menuSearchKey in menus) {
         "Menu search key '${header.menuSearchKey}' must be one of the mega-menu keys ${menus.keys}"
     }
+
     val bar = Div().apply { addClassName(CssClass.HeaderBar) }
     bar.add(buildBrand(texts.brand, href = "."), navigation(header, texts, menus))
+
     // The search looks through the section items, so the field follows the navigation.
     if (header.menuSearchKey != null) {
         bar.add(HeaderMenuSearchController(menus.getValue(header.menuSearchKey), texts.header).component)
     }
+
     bar.add(Div().apply { addClassName(CssClass.HeaderSpacer) })
+
     val user = header.user
     val signIn = header.signIn
     if (user != null) {
@@ -42,6 +47,7 @@ internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
     } else if (signIn != null) {
         bar.add(signInLink(texts.signIn, signIn, header.signInParameters))
     }
+
     return HeaderRoot().apply {
         add(bar)
         header.menuSearchKey?.let { key -> menus.getValue(key).fullAnchor(this) }
@@ -51,6 +57,7 @@ internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
 private fun navigation(header: CabinetHeader, texts: UiTexts, menus: Map<String, MegaMenuHandle>): Nav = Nav().apply {
     addClassName(CssClass.Nav)
     element.setAttribute(HtmlAttribute.AriaLabel, texts.navigation.sections)
+
     header.items.forEach { item ->
         val entry = when (item) {
             is NavItem -> navLink(item, active = item.key == header.active)
@@ -67,7 +74,7 @@ private fun navLink(item: NavItem, active: Boolean): RouterLink = RouterLink(ite
     if (active) addClassName(CssClass.NavItemActive)
 }
 
-private fun userChip(user: HeaderUser, locale: java.util.Locale): Div {
+private fun userChip(user: HeaderUser, locale: Locale): Div {
     val avatar = userAvatar(user.name, locale)
     return Div(avatar, Text(user.name)).apply { addClassName(CssClass.HeaderUser) }
 }

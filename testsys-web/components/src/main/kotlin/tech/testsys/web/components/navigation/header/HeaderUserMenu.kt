@@ -25,6 +25,7 @@ import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.display.avatarInitials
 import tech.testsys.web.components.texts.HeaderTexts
+import java.util.Locale
 
 /**
  * User menu supplied by the application; destructive items follow ordinary items.
@@ -58,7 +59,7 @@ data class HeaderUserMenuItem(
     val isDestructive: Boolean = false,
 )
 
-internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: HeaderInteractions, locale: java.util.Locale): Div {
+internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: HeaderInteractions, locale: Locale): Div {
     val trigger = NativeButton().apply {
         addClassName(CssClass.HeaderUser)
         element.setAttribute(HtmlAttribute.AriaLabel, texts.userMenu(user.name))
@@ -68,9 +69,11 @@ internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: Header
             svgIcon(IconName.ChevronDown, ICON_SIZE_SMALL),
         )
     }
+
     val popup = interactions.popup(trigger, label = texts.userMenu(user.name), theme = CssTheme.HeaderUserPopup, autofocus = true)
     trigger.element.setAriaHasPopup(AriaPopup.Menu)
     popup.setAriaRole(ElementRole.Menu)
+
     val list = Div().apply { addClassName(CssClass.HeaderUserMenu) }
     val items = checkNotNull(user.menu) { "Header user menu is not configured" }.items
     items.forEachIndexed { index, item ->
@@ -82,21 +85,24 @@ internal fun userMenu(user: HeaderUser, texts: HeaderTexts, interactions: Header
                 },
             )
         }
+
         val entry = if (item.isEnabled) {
             destinationLink(item.label, item.destination) { popup.close() }
         } else {
             NativeButton(item.label).apply { isEnabled = false }
         }
+
         entry.element.classList.add(CssClass.HeaderUserItem)
         entry.element.classList.set(CssClass.MenuItemDanger, item.isDestructive)
         entry.element.setRole(ElementRole.MenuItem)
         entry.element.setAriaDisabled(!item.isEnabled)
         list.add(entry)
     }
+
     popup.add(list)
     return Div(trigger, popup)
 }
 
-internal fun userAvatar(name: String, locale: java.util.Locale): Span = Span(avatarInitials(name, locale)).apply {
+internal fun userAvatar(name: String, locale: Locale): Span = Span(avatarInitials(name, locale)).apply {
     addClassNames(CssClass.Avatar, CssClass.AvatarT0, CssClass.HeaderAvatar)
 }

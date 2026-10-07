@@ -2,6 +2,7 @@
 
 package tech.testsys.web.components.data
 
+import com.vaadin.flow.component.Text
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.page.PendingJavaScriptResult
@@ -103,18 +104,21 @@ fun BlockScope.filters(
         element.setAttribute(HtmlAttribute.AriaControls, panelId)
         element.setType(ElementType.Button)
         add(svgIcon(IconName.ChevronDown))
-        element.appendChild(com.vaadin.flow.component.Text(texts.tableFilters.title).element)
+        element.appendChild(Text(texts.tableFilters.title).element)
     }
+
     val panel = Div().apply {
         addClassName(CssClass.TableFiltersContent)
         setId(panelId)
         element.setRole(ElementRole.Region)
         element.setAttribute(HtmlAttribute.AriaLabelledBy, "$panelId-toggle")
     }
+
     val fields = Div().apply {
         addClassName(CssClass.TableFiltersFields)
         style.setGridTemplateColumns(columns)
     }
+
     val actions = Div().apply { addClassName(CssClass.TableFiltersActions) }
     val bar = ContentScope(actions, texts, Placement.Body)
     bar.action(texts.tableFilters.reset) {
@@ -122,14 +126,15 @@ fun BlockScope.filters(
             onReset()
             onRefresh()
         }
-    }
-        .component.addClassName(CssClass.TableFiltersReset)
+    }.component.addClassName(CssClass.TableFiltersReset)
     bar.mainAction(texts.tableFilters.apply) { onClick { if (onApply()) onRefresh() } }
         .component.addClassName(CssClass.TableFiltersApply)
+
     TableFiltersScope(fields, columns, texts, BlockEditState(fields.element)).apply(content)
     panel.add(fields, actions)
     root.add(toggle, panel)
     placeFilters(root)
+
     return TableFiltersHandle(root, toggle, panel).apply {
         isExpanded = false
         toggle.addClickListener { isExpanded = !isExpanded }

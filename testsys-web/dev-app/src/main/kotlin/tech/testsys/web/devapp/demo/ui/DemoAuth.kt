@@ -2,6 +2,7 @@ package tech.testsys.web.devapp.demo.ui
 
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
+import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
@@ -16,10 +17,11 @@ import tech.testsys.web.devapp.demo.model.restoreAccess
 internal fun PageScope.demoLogin(context: DemoContext) {
     row {
         block(title = "Вход по коду-доступа", subtitle = "Примеры: STUDENT-2026 · ORG-2026 · PART-101") {
-            lateinit var code: tech.testsys.web.components.forms.ValueInput<String>
+            lateinit var code: ValueInput<String>
             row {
                 code = textInput("Код-доступа", labelSize = 4, size = 20)
             }
+
             footer {
                 mainAction("Войти") {
                     onClick {
@@ -36,11 +38,12 @@ internal fun PageScope.demoLogin(context: DemoContext) {
             }
         }
     }
+
     row {
         block(title = "Регистрация") {
-            lateinit var alias: tech.testsys.web.components.forms.ValueInput<String>
-            lateinit var email: tech.testsys.web.components.forms.ValueInput<String>
-            lateinit var role: tech.testsys.web.components.forms.ValueInput<DemoRole?>
+            lateinit var alias: ValueInput<String>
+            lateinit var email: ValueInput<String>
+            lateinit var role: ValueInput<DemoRole?>
             row {
                 alias = textInput("Псевдоним", labelSize = 4, size = 8)
                 role = select(
@@ -53,9 +56,11 @@ internal fun PageScope.demoLogin(context: DemoContext) {
                     value = DemoRole.Student
                 }
             }
+
             row {
                 email = textInput("Почта", labelSize = 4, size = 20)
             }
+
             footer {
                 mainAction("Зарегистрироваться") {
                     onClick {
@@ -66,13 +71,15 @@ internal fun PageScope.demoLogin(context: DemoContext) {
             }
         }
     }
+
     if (context.state.pendingRegistration != null) {
         row {
             block(title = "Демонстрационное письмо", subtitle = "Код подтверждения: 246810") {
-                lateinit var confirmation: tech.testsys.web.components.forms.ValueInput<String>
+                lateinit var confirmation: ValueInput<String>
                 row {
                     confirmation = textInput("Код подтверждения", labelSize = 4, size = 20)
                 }
+
                 footer {
                     mainAction("Подтвердить") {
                         onClick {
@@ -84,12 +91,14 @@ internal fun PageScope.demoLogin(context: DemoContext) {
             }
         }
     }
+
     row {
         block(title = "Восстановление доступа") {
-            lateinit var email: tech.testsys.web.components.forms.ValueInput<String>
+            lateinit var email: ValueInput<String>
             row {
                 email = textInput("Почта", labelSize = 4, size = 20)
             }
+
             footer {
                 action("Подготовить письмо") {
                     onClick {

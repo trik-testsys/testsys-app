@@ -65,6 +65,7 @@ class LoadHandle internal constructor(private val loader: BlockLoader<*>) : Elem
  */
 fun <T> BlockScope.load(fetch: () -> T, skeletonRows: Int = 3, content: BlockScope.(T) -> Unit): LoadHandle {
     require(skeletonRows >= 1) { "Load must show at least 1 skeleton row, got $skeletonRows" }
+
     val ui = checkNotNull(UI.getCurrent()) { "Block with a load must be built in a UI thread" }
     val slot = placeLoad(LOAD_OWNER)
     val loader = BlockLoader(slot, texts, ui, skeletonRows, fetch, content)
@@ -174,6 +175,7 @@ internal class BlockLoader<T>(
             description = texts.load.failedHint,
             actions = { action(texts.load.retry) { onClick { reload() } } },
         )
+
         slot.showWhole(buildEmptyState(failure, texts, isError = true), isFlush = false)
         slot.isBusy = false
     }

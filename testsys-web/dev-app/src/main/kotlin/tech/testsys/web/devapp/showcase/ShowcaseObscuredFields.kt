@@ -236,6 +236,7 @@ internal fun PageScope.obscuredFields() {
             }
         }
     }
+
     unlabeledObscuredFields(obscured)
 }
 

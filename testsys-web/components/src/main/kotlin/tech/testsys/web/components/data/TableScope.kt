@@ -156,6 +156,7 @@ class TableScope<T> internal constructor(
     fun menuColumn(ariaLabel: (T) -> String, size: Int = 1, content: MenuScope.(T) -> Unit) {
         check(!hasMenuColumn) { "Table already has a menu column" }
         require(size in 1..gridColumns) { "Table menu size must be in 1..$gridColumns, got $size" }
+
         hasMenuColumn = true
         columns += TableColumn(title = "", sortKey = null, size = size, kind = CellKind.Menu) { row, cell ->
             ContentScope(cell, texts, Placement.Cell).iconMenu(ariaLabel(row)) { content(row) }
@@ -191,6 +192,7 @@ class TableScope<T> internal constructor(
             selectionSize = selectionSize,
             menuSize = menuSize,
         )
+
         return TableSpec(columns.toList(), emptyContent, layout, rowClick)
     }
 

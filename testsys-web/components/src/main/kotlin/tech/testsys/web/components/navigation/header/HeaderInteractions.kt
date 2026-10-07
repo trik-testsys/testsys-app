@@ -26,6 +26,7 @@ internal class HeaderInteractions {
     fun popup(trigger: Component, label: String, theme: CssTheme, autofocus: Boolean = false): Popover {
         trigger.element.setAriaHasPopup(AriaPopup.Dialog)
         trigger.element.setAriaExpanded(false)
+
         val popup = Popover().apply {
             target = trigger
             isModal = false
@@ -38,6 +39,7 @@ internal class HeaderInteractions {
             addThemeName(CssTheme.HeaderPopup)
             addThemeName(theme)
         }
+
         popup.addOpenedChangeListener { event ->
             trigger.element.setAriaExpanded(event.isOpened)
             if (event.isOpened) {
@@ -48,6 +50,7 @@ internal class HeaderInteractions {
                 active = null
             }
         }
+
         trigger.addDetachListener { popup.close() }
         return popup
     }

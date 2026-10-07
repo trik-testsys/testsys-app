@@ -5,11 +5,13 @@ package tech.testsys.web.components.forms
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.page.PendingJavaScriptResult
 import com.vaadin.flow.component.upload.Upload
 import com.vaadin.flow.component.upload.UploadI18N
 import com.vaadin.flow.dom.Element
+import com.vaadin.flow.dom.ElementEffect
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.server.streams.UploadEvent
 import com.vaadin.flow.server.streams.UploadHandler
@@ -26,6 +28,8 @@ import tech.testsys.web.components.core.DomEvent
 import tech.testsys.web.components.core.DomEventData
 import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.HtmlAttribute
+import tech.testsys.web.components.core.ICON_SIZE
+import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
@@ -35,6 +39,8 @@ import tech.testsys.web.components.core.get
 import tech.testsys.web.components.core.setAriaLive
 import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setRole
+import tech.testsys.web.components.core.svgIcon
+import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
@@ -73,6 +79,7 @@ data class UploadLimits(
         require(maxMemoryBytes >= maxFileBytes) {
             "Upload memory $maxMemoryBytes must hold at least one file of $maxFileBytes bytes"
         }
+
         val invalidExtensions = extensions.filterNot { extension -> extension.startsWith('.') && extension.length > 1 }
         require(invalidExtensions.isEmpty()) { "Upload extensions must include their leading dot, got $invalidExtensions" }
     }
@@ -109,6 +116,7 @@ class UploadedFile internal constructor(
         return object : InputStream() {
             private val source = ByteArrayInputStream(bytes, 0, size)
             private var isClosed = false
+
             override fun read(): Int {
                 ensureReadable()
                 return source.read()
@@ -274,7 +282,7 @@ class FileDropHandle internal constructor(private val drop: FileDropDisplay) : F
         drop.clear()
     }
 
-    internal fun followBlock(state: tech.testsys.web.components.layout.BlockEditState) {
+    internal fun followBlock(state: BlockEditState) {
         state.follow { value ->
             isBlockEditable = value
             drop.allow(value && enabled.value && editable.value)
@@ -365,9 +373,9 @@ internal class FileDropDisplay(
     ).apply {
         addClassName(CssClass.Drop)
         setDropLabelIcon(
-            tech.testsys.web.components.core.svgIcon(
-                tech.testsys.web.components.core.IconName.Upload,
-                tech.testsys.web.components.core.ICON_SIZE,
+            svgIcon(
+                IconName.Upload,
+                ICON_SIZE,
             ),
         )
         maxFiles = limits.maxFiles
@@ -375,7 +383,7 @@ internal class FileDropDisplay(
         setAcceptedMimeTypes(*limits.mimeTypes.toTypedArray())
         setAcceptedFileExtensions(*limits.extensions.toTypedArray())
         setDropLabel(Span(texts.components.drop).apply { addClassName(CssClass.DropTitle) })
-        val selectAction = com.vaadin.flow.component.html.NativeButton(texts.components.upload).apply {
+        val selectAction = NativeButton(texts.components.upload).apply {
             addClassNames(CssClass.Btn, CssClass.BtnSecondary, CssClass.BtnSm)
         }
         setUploadButton(selectAction)
@@ -422,6 +430,7 @@ internal class FileDropDisplay(
         val controls = ContentScope(actions, texts, Placement.Head)
         cancelAction = controls.action(texts.components.cancel) { onClick { this@FileDropDisplay.cancel() } }
         clearAction = controls.action(texts.lookup.clear) { onClick { this@FileDropDisplay.clear() } }
+
         upload.element.addEventListener(DomEvent.TransferRemove) { event ->
             val wasActive = engine.remove(event.eventData.get(DomEventData.DetailIdentity).asString())
             when {
@@ -429,25 +438,32 @@ internal class FileDropDisplay(
                 wasActive -> state.set(FileUploadState.Cancelled)
             }
         }.addEventData(DomEventData.DetailIdentity)
+
         addClassName(CssClass.Filedrop)
         element.setRole(ElementRole.Group)
         element.setAttribute(HtmlAttribute.AriaLabel, label)
+
         val limitsHint = Span(texts.components.uploadLimits(limits.maxFiles, limits.maxFileBytes.toLong())).apply {
             addClassName(CssClass.Hint)
         }
+
         add(Span(label), upload, Div(limitsHint, status, actions).apply { addClassName(CssClass.FiledropMeta) })
-        com.vaadin.flow.dom.ElementEffect.bind(element, state) { _, value ->
+
+        ElementEffect.bind(element, state) { _, value ->
             cancelAction.isVisible = value is FileUploadState.Uploading || value is FileUploadState.Processing
             clearAction.isVisible = value != FileUploadState.Idle
         }
+
         cancelAction.isVisible = false
         clearAction.isVisible = false
+
         addAttachListener { event ->
             attachedUi = event.ui
             engine.allow(isAllowed)
             upload.element.setAttribute(HtmlAttribute.DataTsUploadGeneration, engine.generation().toString())
             upload.element.attachFileTransfers()
         }
+
         addDetachListener {
             upload.element.detachFileTransfers()
             val hadActive = engine.hasActive() || state.peek().isRunning()
@@ -456,6 +472,7 @@ internal class FileDropDisplay(
             attachedUi = null
             if (hadActive) state.set(FileUploadState.Cancelled)
         }
+
         status.element.bindText(
             state.map { value ->
                 when (value) {
@@ -484,6 +501,7 @@ internal class FileDropDisplay(
         engine.cancel()
         upload.element.setAttribute(HtmlAttribute.DataTsUploadGeneration, engine.generation().toString())
         upload.interruptUpload()
+
         if (hadActive || previous.isRunning()) {
             state.set(FileUploadState.Cancelled)
         }
@@ -539,6 +557,7 @@ internal class BoundedUploads(
     fun receive(transferId: String, filename: String, mime: String, declared: Long, stream: InputStream) {
         val id = sequence.incrementAndGet()
         lastEvent.updateAndGet { current -> maxOf(current, id) }
+
         val eventEpoch = UploadIdentity.PATTERN.matchEntire(transferId)?.groupValues?.get(1)?.toLongOrNull()
         var token: Active? = null
         var isReserved = false
@@ -547,6 +566,7 @@ internal class BoundedUploads(
         var buffer: ByteArray? = null
         try {
             reservationGateOverride?.invoke()
+
             val current = synchronized(lock) {
                 if (eventEpoch == null) throw UploadRejectedException("Invalid transfer identity '$transferId' of upload '$filename'")
                 if (eventEpoch != epoch.get()) throw InterruptedIOException("Upload '$filename' was cancelled before reservation")
@@ -570,6 +590,7 @@ internal class BoundedUploads(
                             "the memory limit is ${limits.maxMemoryBytes}",
                     )
                 }
+
                 val created = Active(transferId, filename, epoch.get(), AtomicBoolean(false), stream)
                 slots[transferId] = id
                 memory += limits.maxFileBytes
@@ -578,24 +599,31 @@ internal class BoundedUploads(
                 token = created
                 created
             }
+
             val bytes = ByteArray(limits.maxFileBytes)
             buffer = bytes
+
             var count = 0
             var reported = 0
             var reportedAt = System.nanoTime()
             emit(id, current, FileUploadState.Uploading(filename, bytes = 0, total = declared.takeIf { size -> size >= 0 }))
+
             stream.use { input ->
                 while (true) {
                     ensureActive(current)
+
                     val read = if (count == bytes.size) {
                         if (input.read() != -1) throw UploadRejectedException("Upload '$filename' exceeds ${limits.maxFileBytes} bytes")
                         -1
                     } else {
                         input.read(bytes, count, bytes.size - count)
                     }
+
                     if (read < 0) break
                     if (read == 0) continue
+
                     count += read
+
                     val now = System.nanoTime()
                     if (count - reported >= PROGRESS_BYTES_INTERVAL || now - reportedAt >= PROGRESS_NANOS_INTERVAL) {
                         emit(
@@ -607,11 +635,13 @@ internal class BoundedUploads(
                                 total = declared.takeIf { size -> size >= 0 },
                             ),
                         )
+
                         reported = count
                         reportedAt = now
                     }
                 }
             }
+
             ensureActive(current)
             file = UploadedFile(filename, mime, count, bytes, current.cancelled)
             emit(id, current, FileUploadState.Uploading(filename, bytes = count.toLong(), total = declared.takeIf { size -> size >= 0 }))
@@ -673,6 +703,7 @@ internal class BoundedUploads(
         val token = synchronized(lock) {
             slots.remove(transferId)?.let { id -> active[id] }?.also { current -> current.cancelled.set(true) }
         }
+
         if (token != null) {
             try {
                 token.stream.close()
@@ -680,6 +711,7 @@ internal class BoundedUploads(
                 // Cancellation remains cooperative.
             }
         }
+
         return token != null
     }
 
@@ -705,6 +737,7 @@ internal class BoundedUploads(
         val isExtensionAllowed = limits.extensions.isEmpty() || limits.extensions.any { extension ->
             filename.endsWith(extension, ignoreCase = true)
         }
+
         val normalizedMime = mime.substringBefore(';').trim()
         val isMimeAllowed = limits.mimeTypes.isEmpty() || limits.mimeTypes.any { allowed ->
             when {
@@ -713,6 +746,7 @@ internal class BoundedUploads(
                 else -> normalizedMime.equals(allowed, ignoreCase = true)
             }
         }
+
         return isExtensionAllowed && isMimeAllowed
     }
 }

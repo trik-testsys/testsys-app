@@ -87,15 +87,18 @@ internal class HeaderNotificationsController(
 
     init {
         popup.add(Div(Span(texts.notifications), readAll).apply { addClassName(CssClass.HeaderPopupHead) }, list, empty)
+
         component.addAttachListener {
             seen.addAll(notifications.items.peek().map { item -> item.key })
             isAcceptingArrivals = true
             component.element.attachNotificationArrivals()
         }
+
         component.addDetachListener {
             isAcceptingArrivals = false
             arrival.close()
         }
+
         popup.addOpenedChangeListener { event -> if (event.isOpened) arrival.close() }
         render(notifications.items.peek())
         ElementEffect.bind(component.element, notifications.items) { _, values -> render(values) }
@@ -104,18 +107,22 @@ internal class HeaderNotificationsController(
     private fun render(values: List<HeaderNotification>) {
         val duplicates = values.groupBy { value -> value.key }.filterValues { same -> same.size > 1 }.keys
         require(duplicates.isEmpty()) { "Header notification keys must be unique, repeated: $duplicates" }
+
         val added = values.filter { item -> item.key !in seen && item.isUnread }
         seen.addAll(values.map { item -> item.key })
         arrival.refresh(values)
+
         val unread = values.count { value -> value.isUnread }
         indicator.isVisible = unread > 0
         trigger.element.setAttribute(HtmlAttribute.AriaLabel, texts.unreadCount(unread))
         readAll.isEnabled = unread > 0
         empty.isVisible = values.isEmpty()
+
         val existing = list.children.toList().associateBy { component -> component.element.getAttribute(HtmlAttribute.DataHeaderKey) }
         val keys = values.map { notification -> notification.key }.toSet()
         val removed = existing.filterKeys { key -> key !in keys }.values
         removed.forEach { row -> list.remove(row) }
+
         values.forEachIndexed { index, notification ->
             val row = existing[notification.key] ?: item(notification)
             updateItem(row, notification)
@@ -123,7 +130,9 @@ internal class HeaderNotificationsController(
                 list.element.insertChild(index, row.element)
             }
         }
+
         if (added.isNotEmpty() && isAcceptingArrivals && component.isAttached) announce(added)
+
         if (removed.isNotEmpty()) {
             popup.element.focusAfterNotificationRemoval(trigger.element)
         }
@@ -160,10 +169,12 @@ internal class HeaderNotificationsController(
         row.element.setText(notification.label)
         row.element.classList.add(CssClass.HeaderNotification)
         row.element.classList.set(CssClass.HeaderNotificationUnread, notification.isUnread)
+
         row.element.setAttribute(
             HtmlAttribute.AriaLabel,
             if (notification.isUnread) texts.unreadItem(notification.label) else notification.label,
         )
+
         notification.description?.let { description -> row.element.appendChild(Span(description).element) }
     }
 }

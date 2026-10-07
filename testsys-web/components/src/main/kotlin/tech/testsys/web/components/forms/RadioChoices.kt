@@ -76,11 +76,14 @@ internal class ChoiceField<T : Any>(
         require(
             !isSegmented || choices.size in 2..MAX_SEGMENTED_CHOICES,
         ) { "Segmented controls require two to four choices, got ${choices.size}" }
+
         val duplicates = choices.groupBy { choice -> choice }.filterValues { same -> same.size > 1 }.keys
         require(duplicates.isEmpty()) { "Choice items of '$label' must be unique, repeated: $duplicates" }
+
         setAriaLabel(label)
         addClassName(if (isSegmented) CssClass.Seg else CssClass.RadioGroup)
         setItemLabelGenerator { item -> itemLabel(requireNotNull(item) { "Choice of '$label' has no item to render" }) }
+
         if (isSegmented || itemMeta != null) {
             setRenderer(
                 ComponentRenderer<Span, T?> { item ->
@@ -92,7 +95,9 @@ internal class ChoiceField<T : Any>(
                 },
             )
         }
+
         setItems(choices)
+
         if (isSegmented) {
             addAttachListener { element.attachSegmentedChoice() }
             addDetachListener { element.detachSegmentedChoice() }

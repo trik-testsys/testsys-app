@@ -25,6 +25,7 @@ private const val TIME_SORT = "time"
  */
 internal fun PageScope.tableSection() {
     tableFiltersExample()
+
     var verdict: ShowcaseVerdict? = null
     var isErrorsOnly = false
     row {
@@ -62,6 +63,7 @@ internal fun PageScope.tableSection() {
             }
         }
     }
+
     row {
         block(size = 12, title = "Пустая таблица") {
             table(key = { row -> row.id }, fetch = { request -> submissionPage(emptyList(), request) }) {
@@ -90,6 +92,7 @@ internal fun submissionPage(rows: List<ShowcaseSubmission>, request: PageRequest
         TIME_SORT -> rows.sortedBy { row -> row.sentAt }
         else -> rows
     }
+
     val ordered = if (request.sort?.isDescending == true) sorted.reversed() else sorted
     return Page(ordered.drop(request.offset).take(request.limit), ordered.size)
 }

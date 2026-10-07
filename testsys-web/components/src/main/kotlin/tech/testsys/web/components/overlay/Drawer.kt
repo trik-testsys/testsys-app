@@ -118,6 +118,7 @@ fun drawer(
     val shell = DialogShell(texts, title = title, subtitle = subtitle, isWide = true, isAlert = false)
     shell.dialog.addThemeName(CssTheme.Drawer)
     shell.content.addClassName(CssClass.DialogGrid)
+
     val editing = BlockEditState(shell.dialog.element)
     val delegate = DialogHandle(shell, editing)
     val handle = DrawerHandle(delegate)

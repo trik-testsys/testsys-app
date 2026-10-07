@@ -86,8 +86,10 @@ internal fun attachMenu(trigger: Component, content: MenuScope.() -> Unit): Cont
         // A theme, not the class: .ts-menu of the design system lays out the popover and would apply to the host element.
         element.themeList.add(CssTheme.Menu)
     }
+
     val scope = MenuScope(menu).apply(content)
     check(scope.itemCount > 0) { "Menu must have at least one item" }
+
     trigger.element.setAriaHasPopup(AriaPopup.Menu)
     ComponentUtil.setData(trigger, ContextMenu::class.java, menu)
     return menu

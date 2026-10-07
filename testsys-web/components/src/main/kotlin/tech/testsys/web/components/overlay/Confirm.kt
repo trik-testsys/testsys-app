@@ -33,6 +33,7 @@ fun confirm(
     val texts = currentTexts()
     val shell = DialogShell(texts, title, subtitle = null, isWide = false, isAlert = isDanger)
     text?.let { description -> shell.content.add(Div(description)) }
+
     val confirmName = typeToConfirm?.let { name ->
         TextField().apply {
             label = texts.dialog.typeToConfirm(name)
@@ -41,19 +42,23 @@ fun confirm(
             style.setWidth(value = 100, unit = CssUnit.Percent)
         }.also { field -> shell.content.add(field) }
     }
+
     val foot = ContentScope(shell.foot, texts, Placement.Body)
     foot.action(texts.dialog.cancel) { onClick { shell.close() } }
+
     val run: ActionHandle.() -> Unit = {
         onClick {
             onConfirm()
             shell.close()
         }
     }
+
     val confirmAction = if (isDanger) foot.dangerAction(action, run) else foot.mainAction(action, configure = run)
     confirmName?.let { field ->
         confirmAction.isEnabled = false
         field.addValueChangeListener { event -> confirmAction.isEnabled = event.value.trim() == typeToConfirm }
     }
+
     shell.open()
     confirmName?.focus()
 }

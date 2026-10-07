@@ -9,6 +9,7 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.dom.Element
+import com.vaadin.flow.dom.ElementEffect
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.server.streams.DownloadEvent
 import com.vaadin.flow.server.streams.DownloadHandler
@@ -24,6 +25,7 @@ import tech.testsys.web.components.core.CssDisplay
 import tech.testsys.web.components.core.CssUnit
 import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.HtmlAttribute
+import tech.testsys.web.components.core.ICON_SIZE
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
@@ -263,6 +265,7 @@ private fun ContentScope.download(
     configure: DownloadHandle.() -> Unit,
 ): DownloadHandle {
     require(label.isNotBlank()) { "Download action needs an accessible label" }
+
     val display = DownloadDisplay(
         texts,
         label,
@@ -270,6 +273,7 @@ private fun ContentScope.download(
         compact = placement.isCompact,
         produce = produce,
     )
+
     add(display)
     return DownloadHandle(display).apply(configure)
 }
@@ -335,14 +339,17 @@ internal class DownloadDisplay(
         addClassName(CssClass.Download)
         status.setClassName(CssClass.SrOnly)
         add(trigger, anchor, status)
+
         addAttachListener {
             executor = Background.executor()
             render(state.peek())
         }
+
         addDetachListener {
             cancel()
             executor = null
         }
+
         status.element.bindText(
             state.map { value ->
                 when (value) {
@@ -354,9 +361,10 @@ internal class DownloadDisplay(
                 }
             },
         )
+
         trigger.element.bindDownloadState(state)
         // Rendering through the signal also covers background access updates without keeping a custom subscription.
-        com.vaadin.flow.dom.ElementEffect.bind(element, state) { _, value -> render(value) }
+        ElementEffect.bind(element, state) { _, value -> render(value) }
         render(DownloadState.Idle)
     }
 
@@ -368,16 +376,22 @@ internal class DownloadDisplay(
 
     fun start() {
         if (!isAllowed || !isAttached || !isVisible || attempt != null) return
+
         anchor.removeHref()
+
         val current = DownloadAttempt()
         attempt = current
+
         val ui = ui.orElseThrow()
         state.set(DownloadState.Preparing)
+
         checkNotNull(executor) { "Attached download has no background executor" }.execute {
             try {
                 current.context.ensureActive()
+
                 val content = produce(current.context)
                 current.context.ensureActive()
+
                 Background.inUi(ui) {
                     if (isAttached && attempt === current && !current.context.isCancelled) {
                         anchor.setHref(DownloadHandler { event -> transfer(event, current, content, ui) })
@@ -407,10 +421,12 @@ internal class DownloadDisplay(
             event.response.setStatus(HTTP_GONE)
             return
         }
+
         event.response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate")
         event.setFileName(headerSafeFilename(content.filename))
         event.setContentType(content.contentType)
         content.length?.let(event::setContentLength)
+
         try {
             val bytes = streamDownload(
                 content,
@@ -448,11 +464,13 @@ internal class DownloadDisplay(
     private fun render(value: DownloadState) {
         val isBusy = value == DownloadState.Preparing || value is DownloadState.Downloading
         trigger.isEnabled = isAllowed
+
         val percent = (value as? DownloadState.Downloading)?.let { transfer ->
             transfer.total?.takeIf { total -> total > 0 }?.let { total ->
                 (transfer.bytes * PERCENT_MAX / total).coerceIn(minimumValue = 0.0, maximumValue = PERCENT_MAX)
             }
         }
+
         val caption = when (value) {
             DownloadState.Preparing -> texts.components.preparing
             is DownloadState.Downloading -> texts.components.cancel
@@ -460,6 +478,7 @@ internal class DownloadDisplay(
             is DownloadState.Error -> texts.components.retry
             DownloadState.Idle -> label
         }
+
         val variant = when {
             value == DownloadState.Preparing || value is DownloadState.Downloading && percent == null -> CssClass.BtnBusy
             value is DownloadState.Downloading -> if (isIconOnly) CssClass.BtnGhost else CssClass.BtnProgress
@@ -467,19 +486,24 @@ internal class DownloadDisplay(
             value is DownloadState.Error -> CssClass.BtnDangerSoft
             else -> CssClass.BtnSecondary
         }
+
         val accessible = texts.components.downloadLabel(label, caption)
         trigger.element.setAttribute(HtmlAttribute.AriaLabel, accessible)
         trigger.element.setAttribute(HtmlAttribute.Title, accessible)
         trigger.element.setAriaBusy(isBusy)
         captionNode.text = caption
+
         percent?.let { progress ->
             percentageNode.text = texts.components.percent(progress.toInt())
             fill.element.style.setWidth(progress, CssUnit.Percent)
             ring.element.style.setDownloadOffset(RING_CIRCUMFERENCE * (1 - progress / PERCENT_MAX))
         }
+
         // Progress updates keep the animated node attached and preserve fill/ring transitions.
         if (renderedVariant == variant) return
+
         trigger.removeAll()
+
         listOf(
             CssClass.BtnSecondary,
             CssClass.BtnBusy,
@@ -490,7 +514,9 @@ internal class DownloadDisplay(
         ).forEach { modifier ->
             trigger.removeClassName(modifier)
         }
+
         trigger.addClassName(variant)
+
         when (variant) {
             CssClass.BtnBusy -> {
                 trigger.add(spinner)
@@ -509,12 +535,13 @@ internal class DownloadDisplay(
                             is DownloadState.Error -> IconName.RefreshCw
                             else -> IconName.Download
                         },
-                        tech.testsys.web.components.core.ICON_SIZE,
+                        ICON_SIZE,
                     ),
                 )
                 if (!isIconOnly) trigger.add(captionNode)
             }
         }
+
         renderedVariant = variant
     }
 }
@@ -528,6 +555,7 @@ internal fun streamDownload(
 ): Long = output.use { destination ->
     try {
         context.ensureActive()
+
         val input = content.openStream()
         var count = 0L
         var reported = 0L
@@ -535,19 +563,26 @@ internal fun streamDownload(
         try {
             input.use { source ->
                 context.own(source)
+
                 val buffer = ByteArray(COPY_BUFFER_BYTES)
                 progress(0)
+
                 while (true) {
                     context.ensureActive()
+
                     val read = source.read(buffer)
                     if (read < 0) break
                     if (read == 0) continue
+
                     context.ensureActive()
+
                     if (content.length != null && count + read > content.length) {
                         throw IOException("Download '${content.filename}' exceeds declared length ${content.length}")
                     }
+
                     destination.write(buffer, 0, read)
                     count += read
+
                     val now = System.nanoTime()
                     if (count - reported >= PROGRESS_BYTES_INTERVAL || now - reportedAt >= PROGRESS_NANOS_INTERVAL) {
                         progress(count)
@@ -555,9 +590,11 @@ internal fun streamDownload(
                         reportedAt = now
                     }
                 }
+
                 if (content.length != null && count != content.length) {
                     throw IOException("Download '${content.filename}' ended at $count bytes, expected ${content.length}")
                 }
+
                 context.ensureActive()
                 destination.flush()
                 progress(count)
@@ -565,6 +602,7 @@ internal fun streamDownload(
         } finally {
             context.releaseStream(input)
         }
+
         count
     } catch (failure: IOException) {
         onFailure(failure)

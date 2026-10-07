@@ -39,12 +39,15 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
             }
         }
     }
+
     val selectedClass = objects.classes.firstOrNull {
         it.id == context.selection(key = "${actor.id}:class", fallback = objects.classes.firstOrNull()?.id)
     }
+
     val tours = objects.tours.filter {
         selectedClass == null || it.id in selectedClass.tourIds
     }
+
     row {
         block(title = "Доступные туры") {
             demoTable(
@@ -57,13 +60,17 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
             }
         }
     }
+
     val tour = tours.firstOrNull {
         it.id == context.selection(key = "${actor.id}:study-tour", fallback = tours.firstOrNull()?.id)
     } ?: return
+
     demoTourMaterials(context, tour)
+
     val tasks = objects.tasks.filter {
         it.id in tour.taskIds
     }
+
     val taskKey = "${actor.id}:${tour.id}:task"
     row {
         block(title = "Выбор задачи") {
@@ -81,9 +88,11 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
             }
         }
     }
+
     val task = tasks.firstOrNull {
         it.id == context.selection(key = taskKey, fallback = tasks.firstOrNull()?.id)
     } ?: return
+
     row {
         block(title = task.name) {
             row {
@@ -111,6 +120,7 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
                         value = task.authorSolutionKinds.first()
                     }
                 }
+
                 row {
                     fileDrop(
                         "Файл решения (демонстрация)",
@@ -120,6 +130,7 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
                         },
                     )
                 }
+
                 footer {
                     mainAction("Отправить решение") {
                         onClick {
@@ -151,6 +162,7 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
             }
         }
     }
+
     demoSolutionTable(
         context,
         actor,

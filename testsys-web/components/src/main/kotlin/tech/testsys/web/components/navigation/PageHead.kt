@@ -109,6 +109,7 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
     internal fun build(title: String): Div {
         val inner = Div().apply { addClassName(CssClass.PageHeadInner) }
         if (crumbs.isNotEmpty()) inner.add(breadcrumbs(title))
+
         val titleRow = Div(H1(title).apply { addClassName(CssClass.H1) }).apply { addClassName(CssClass.PageHeadTitleRow) }
         marks.forEach { mark -> titleRow.add(mark) }
         actionsBar?.let { bar -> titleRow.add(bar) }
@@ -166,6 +167,7 @@ class PageTabsScope internal constructor(
 
     internal fun build(ariaLabel: String): Nav {
         require(tabs.size >= MIN_PAGE_TABS) { "Page tabs need at least $MIN_PAGE_TABS tabs, got ${tabs.size}" }
+
         val current = tabs.firstOrNull { tab -> tab.target == view }
             ?: tabs.firstOrNull { tab -> view in tab.activeOn }
         return Nav().apply {

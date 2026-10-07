@@ -31,10 +31,12 @@ fun toast(kind: FeedbackKind, title: String, description: String? = null) {
         addClassName(CssClass.ToastText)
         description?.let { value -> add(Span(value).apply { addClassName(CssClass.ToastDesc) }) }
     }
+
     val card = Div(icon, text).apply {
         addClassNames(CssClass.Toast, kind.toastClass)
         element.setRole(ElementRole.Status)
     }
+
     Notification(card).apply {
         duration = TOAST_DURATION_MS
         position = Notification.Position.BOTTOM_END

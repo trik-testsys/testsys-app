@@ -171,10 +171,12 @@ class BlockScope internal constructor(
      */
     internal fun finish() {
         editingSwitch?.install(bar = headBar(), texts = texts, state = editState, body = body)
+
         tablePager?.let { placed ->
             val isOwnFooter = footerBar == null
             placed.placeInto(footBar(), isOwnFooter)
         }
+
         loadedBody?.let { loaded ->
             val isOwnFooter = footerBar == null
             val bar = footBar()

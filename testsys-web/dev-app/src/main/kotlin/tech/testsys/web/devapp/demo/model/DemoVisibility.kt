@@ -16,6 +16,7 @@ internal fun DemoState.objects(actor: DemoUser): DemoObjects {
     val visibleClasses = classes.filter { demoClass ->
         actor.role == DemoRole.Student && actor.id in demoClass.studentIds
     }
+
     val visibleCompetitions = competitions.filter { competition -> isVisible(competition, actor) }
     val tourIds = when (actor.role) {
         DemoRole.Student -> visibleClasses.flatMap { demoClass ->
@@ -31,6 +32,7 @@ internal fun DemoState.objects(actor: DemoUser): DemoObjects {
         DemoRole.Organizer, DemoRole.Participant, DemoRole.Developer, DemoRole.Judge, DemoRole.Administrator, DemoRole.Supervisor ->
             visibleCompetitions.flatMap { competition -> competition.tourIds }
     }
+
     val visibleTours = tours.filter { tour ->
         if (actor.role == DemoRole.Developer) {
             tour.ownerId == actor.id
@@ -38,6 +40,7 @@ internal fun DemoState.objects(actor: DemoUser): DemoObjects {
             tour.id in tourIds
         }
     }
+
     val visibleTasks = tasks.filter { task ->
         if (actor.role == DemoRole.Developer) {
             task.ownerId == actor.id || task.communityIds.any { communityId ->
@@ -49,6 +52,7 @@ internal fun DemoState.objects(actor: DemoUser): DemoObjects {
             }
         }
     }
+
     return DemoObjects(
         communities = communities.filter { community ->
             community.id in actor.communityIds

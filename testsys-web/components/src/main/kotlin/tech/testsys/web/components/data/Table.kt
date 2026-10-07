@@ -133,13 +133,16 @@ fun <T> BlockScope.table(
     content: TableScope<T>.() -> Unit,
 ): TableHandle<T> {
     require(selectionSize > 0) { "Table selection size must be positive, got $selectionSize" }
+
     val spec = TableScope<T>(
         texts,
         gridColumns = gridColumns ?: columns,
         selectionSize = if (selectable) selectionSize else 0,
     ).apply(content).spec()
+
     require(spec.columns.isNotEmpty()) { "Table must declare at least one column" }
     checkTablePlace()
+
     val table = DataTable(texts, key, pageSize, selectable, fetch, spec)
     placeTable(table = table.root, pager = table.pager.root) { host -> table.pagerHost = host }
     return TableHandle(table)

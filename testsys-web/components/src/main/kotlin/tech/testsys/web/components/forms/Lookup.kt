@@ -68,6 +68,7 @@ internal class LookupField<T : Any>(
             choose(row)
             shell.close()
         }
+
         dialog.shell.foot.add(dialog.table.pager.root)
         dialog.table.pagerHost = dialog.shell.foot
         return dialog

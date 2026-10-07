@@ -108,6 +108,7 @@ fun BlockRowScope.skeleton(
  */
 fun ContentScope.skeletonRows(rows: Int = 5, configure: ElementHandle.() -> Unit = {}): ElementHandle {
     require(rows > 0) { "Skeleton row count must be positive, got $rows" }
+
     val root = Div(
         buildSkeletonRows(
             rows,
@@ -119,6 +120,7 @@ fun ContentScope.skeletonRows(rows: Int = 5, configure: ElementHandle.() -> Unit
             texts.components.loading,
         )
     }
+
     add(root)
     return ElementHandle(root).apply(configure)
 }

@@ -27,11 +27,13 @@ internal fun BlockScope.demoTable(
 ) {
     val binder = Binder<DemoCriteria>()
     lateinit var handle: TableHandle<DemoRow>
+
     fun restoreDefaults() {
         state.draft = DemoCriteria()
         state.applied = DemoCriteria()
         binder.readBean(state.draft)
     }
+
     handle = table(
         key = DemoRow::id,
         pageSize = DEMO_PAGE_SIZE,
@@ -53,6 +55,7 @@ internal fun BlockScope.demoTable(
         }
         onRowClick(onSelect)
     }
+
     filters(
         onApply = {
             val candidate = DemoCriteria()
@@ -71,6 +74,7 @@ internal fun BlockScope.demoTable(
                 addValueChangeListener { state.draft.query = value }
             }
         }
+
         val categories = rows.map(DemoRow::category).filter(String::isNotBlank).distinct()
         if (categories.isNotEmpty()) {
             row {
@@ -93,6 +97,7 @@ internal fun BlockScope.demoTable(
                 }
             }
         }
+
         if (rows.any { row -> row.date != null }) {
             row {
                 dateRangeInput("Период", labelSize = 4, size = 20) {
@@ -102,6 +107,7 @@ internal fun BlockScope.demoTable(
             }
         }
     }
+
     binder.readBean(state.draft)
 }
 

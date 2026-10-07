@@ -39,6 +39,7 @@ private fun buildAlert(kind: FeedbackKind, title: String, text: String?): Div {
         addClassName(CssClass.AlertText)
         text?.let { description -> add(Span(description).apply { addClassName(CssClass.AlertDesc) }) }
     }
+
     return Div(icon, body).apply {
         addClassNames(CssClass.Alert, kind.alertClass)
         if (kind == FeedbackKind.Error) element.setRole(ElementRole.Alert)

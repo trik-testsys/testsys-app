@@ -89,6 +89,7 @@ internal class DateRangeField(
                 element.setAriaHidden(true)
             }
         }
+
         calendar.onPick = { chosen ->
             if (isEnabled && !isReadOnly) {
                 setPresentationValue(chosen)
@@ -96,6 +97,7 @@ internal class DateRangeField(
                 if (chosen.to != null) popup.close()
             }
         }
+
         popup.addOpenedChangeListener { event ->
             if (event.isOpened) {
                 if (isEnabled && !isReadOnly) calendar.present(value) else popup.close()
@@ -103,6 +105,7 @@ internal class DateRangeField(
                 trigger.element.restoreTriggerFocus(popup.element)
             }
         }
+
         listOf(start, end).forEach { picker ->
             picker.element.setRangePart(true)
             // Runs on every attach, since a reopened dialog creates a new browser element.
@@ -111,7 +114,9 @@ internal class DateRangeField(
             picker.isClearButtonVisible = true
             picker.setManualValidation(true)
         }
+
         add(Div(start, end, trigger).apply { addClassName(CssClass.DateRange) }, requiredDescription, popup)
+
         start.addValueChangeListener { event ->
             end.min = event.value
             if (!isPresenting) {
@@ -119,6 +124,7 @@ internal class DateRangeField(
                 calendar.present(value)
             }
         }
+
         end.addValueChangeListener { event ->
             start.max = event.value
             if (!isPresenting) {
@@ -126,6 +132,7 @@ internal class DateRangeField(
                 calendar.present(value)
             }
         }
+
         addDetachListener { popup.close() }
     }
 

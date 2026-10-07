@@ -19,6 +19,7 @@ internal fun DemoState.register(alias: String, email: String, role: DemoRole?): 
     ) {
         return fail("Почта уже привязана к кабинету")
     }
+
     return copy(
         pendingRegistration = DemoRegistration(alias = alias.trim(), email = normalized, role = role),
     ).ok("Демонстрационное письмо: код 246810")
@@ -36,6 +37,7 @@ internal fun DemoState.confirmRegistration(code: String): DemoResult {
     ) {
         return fail("Почта уже привязана к кабинету")
     }
+
     val user = DemoUser(
         id = "user$nextId",
         alias = pending.alias,
@@ -44,6 +46,7 @@ internal fun DemoState.confirmRegistration(code: String): DemoResult {
         communityIds = listOf("public"),
         email = pending.email,
     )
+
     return copy(
         users = users + user,
         sessionUserId = user.id,
@@ -65,6 +68,7 @@ internal fun DemoState.restoreAccess(token: String): DemoResult {
     if (current.isCompleted || current.token != token) {
         return fail("Ссылка восстановления недействительна")
     }
+
     val code = "RESTORED-$nextId"
     return copy(
         users = users.map {

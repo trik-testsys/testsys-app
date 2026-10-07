@@ -75,12 +75,14 @@ internal fun <T : Any> BlockRowScope.lookupColumns(
     isSelectable: Boolean = false,
 ): TableSpec<T> {
     require(pageSize >= 1) { "Lookup '$label' page size must be at least 1, got $pageSize" }
+
     val scope = TableScope<T>(texts, selectionSize = if (isSelectable) GRID_COLUMNS / LOOKUP_PAGE_COLUMNS else 0).apply(columns)
     val spec = scope.spec()
     require(spec.columns.isNotEmpty()) { "Lookup '$label' must declare at least one column" }
     require(!scope.hasOwnEmpty && spec.rowClick == null && !scope.hasMenuColumn) {
         "Lookup '$label' columns must not set the empty state, the row click or a menu column: the lookup sets the first two itself"
     }
+
     return spec
 }
 
@@ -155,12 +157,14 @@ internal abstract class LookupFrame<V>(
         val name = valueName(current)
         val text = valueText(current)
         valueButton.text = text
+
         // An empty button would have no accessible name: it is named after what it does, or after the field if it does nothing.
         val label = when {
             name.isEmpty() -> if (isChoosable) texts.lookup.open else title
             text == name -> null
             else -> name
         }
+
         valueButton.element.setOrRemove(name = HtmlAttribute.AriaLabel, value = label)
         valueButton.element.setAriaHasPopup(AriaPopup.Dialog.takeIf { isChoosable })
         valueButton.element.setAriaDisabled(true.takeUnless { isChoosable })
@@ -234,6 +238,7 @@ internal class LookupDialog<T : Any>(
             highlighted,
             initialSelection = selected,
         )
+
         search = TextField().apply {
             addClassName(CssClass.LookupSearch)
             placeholder = texts.lookup.search
@@ -247,6 +252,7 @@ internal class LookupDialog<T : Any>(
                 table.reload(toFirstPage = true)
             }
         }
+
         shell.content.style.setPageColumns(LOOKUP_PAGE_COLUMNS.toDouble())
         shell.content.add(search, table.root)
     }

@@ -151,6 +151,7 @@ class TabsHandle<V> internal constructor(private val tabs: ChoiceGroup<V>) : Cho
 fun <V> BlockScope.tabs(initial: V, content: TabsScope<V>.() -> Unit): TabsHandle<V> {
     val root = Div().apply { addClassNames(CssClass.Tabs, CssClass.TabsBare, CssClass.TabsLg) }
     title?.let { name -> root.element.setAttribute(HtmlAttribute.AriaLabel, name) }
+
     val group = ChoiceGroup(
         options = TabsScope<V>().apply(content).options,
         initial = initial,
@@ -159,6 +160,7 @@ fun <V> BlockScope.tabs(initial: V, content: TabsScope<V>.() -> Unit): TabsHandl
         activeClass = CssClass.TabActive,
         texts = texts,
     )
+
     placeTabs(root)
     return TabsHandle(group)
 }
@@ -220,9 +222,11 @@ internal class ChoiceGroup<V>(
 
     init {
         require(options.size >= MIN_OPTIONS) { "A choice group needs at least $MIN_OPTIONS options, got ${options.size}" }
+
         val duplicates = options.groupBy { option -> option.value }.filterValues { same -> same.size > 1 }.keys
         require(duplicates.isEmpty()) { "Choice group values must be unique, repeated: $duplicates" }
         require(options.any { option -> option.value == initial }) { "Initial value $initial is not among the options" }
+
         root.element.setRole(ElementRole.Group)
         buttons = options.associate { option -> option.value to button(option, buttonClass) }
         buttons.values.forEach { button -> root.add(button) }
@@ -253,6 +257,7 @@ internal class ChoiceGroup<V>(
         addClassName(buttonClass)
         element.setType(ElementType.Button)
         add(Text(option.label))
+
         option.countKind?.let { kind ->
             val counter = buildCounter(option.count ?: 0, kind, texts)
             counts[option.value] = option.count
@@ -260,6 +265,7 @@ internal class ChoiceGroup<V>(
             counters[option.value] = counter
             add(counter)
         }
+
         addClickListener { choose(option.value) }
     }
 

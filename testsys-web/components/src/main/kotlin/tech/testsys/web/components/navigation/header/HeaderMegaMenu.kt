@@ -111,12 +111,15 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
     fun filter(query: String, emptyText: String? = null) {
         grid.removeAll()
         this.query = query
+
         val columns = filteredMegaColumns(item.menu.columns, query)
         groupCount = columns.size
         position()
+
         val visibleColumns = columns.size.coerceIn(minimumValue = 1, maximumValue = MAX_MENU_COLUMNS)
         popup.element.style.setMenuColumns(visibleColumns)
         grid.element.style.setMenuColumns(visibleColumns)
+
         if (columns.isEmpty() && emptyText != null) {
             grid.add(
                 Span(emptyText).apply {
@@ -125,6 +128,7 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
                 },
             )
         }
+
         columns.forEach { column ->
             val group = Div().apply { addClassName(CssClass.MegaCol) }
             val heading = column.destination?.let { destination ->
@@ -133,13 +137,16 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
                     highlight(this, column.title, query)
                 }
             } ?: Div(column.title).apply { addClassName(CssClass.MegaTitle) }
+
             group.add(heading)
+
             val children = if (column.destination != null) {
                 group.addClassName(CssClass.MegaColLinked)
                 Div().apply { addClassName(CssClass.MegaChildren) }.also { nested -> group.add(nested) }
             } else {
                 group
             }
+
             column.links.forEach { link ->
                 val target = menuDestination(destinationLink(link.label, link.destination) { popup.close() })
                 target.element.classList.add(CssClass.MegaLink)
@@ -148,6 +155,7 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
                 link.description?.let { description -> target.element.appendChild(Span(description).element) }
                 children.add(target)
             }
+
             grid.add(group)
         }
     }
@@ -194,6 +202,7 @@ private fun headerLinkTitle(label: String, query: String): Span = Span().apply {
 private fun highlight(target: Component, value: String, query: String) {
     target.element.removeAllChildren()
     target.element.setText("")
+
     splitHeaderMatches(value, query).forEach { part ->
         val text = if (part.isMatched) htmlElement(HtmlTag.Mark).apply { this.text = part.text } else Text(part.text).element
         target.element.appendChild(text)

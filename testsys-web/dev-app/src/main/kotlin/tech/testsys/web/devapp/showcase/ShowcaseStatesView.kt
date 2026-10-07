@@ -55,6 +55,7 @@ class ShowcaseStatesView(texts: UiTexts, private val environment: Environment) :
             menuSection()
             liveSection(clock)
         }
+
         addAttachListener { startClock() }
         addDetachListener { stopClock() }
     }
@@ -66,9 +67,11 @@ class ShowcaseStatesView(texts: UiTexts, private val environment: Environment) :
     /** Starts the clock executor, unless it is already running: an attach without a detach in between is a no-op. */
     private fun startClock() {
         if (clockExecutor != null) return
+
         val executor = Executors.newSingleThreadScheduledExecutor { runnable ->
             Thread(runnable, "showcase-clock").apply { isDaemon = true }
         }
+
         val periodMillis = CLOCK_PERIOD.toMillis()
         executor.scheduleAtFixedRate({ clock.set(currentClockText()) }, periodMillis, periodMillis, TimeUnit.MILLISECONDS)
         clockExecutor = executor

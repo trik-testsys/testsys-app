@@ -123,8 +123,10 @@ internal fun PageScope.editingSection() {
             row { textInput("Название", labelSize = 8, size = 16) { value = "Весенний тур" } }
         }
     }
+
     binder.readBean(profile)
     switched.isEditable = false
+
     row {
         highlightBlock(title = "Подсветка в режиме редактирования", subtitle = "Поля только для чтения в тёмном блоке") {
             editing(onSave = { true }, onCancel = {})

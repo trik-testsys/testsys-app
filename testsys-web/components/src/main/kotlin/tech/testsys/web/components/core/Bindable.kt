@@ -49,6 +49,7 @@ internal class Bindable<T>(private val element: Element, initial: T, private val
     private fun show(newValue: T) {
         val previous = current
         current = newValue
+
         try {
             apply(newValue)
         } catch (rejected: IllegalArgumentException) {

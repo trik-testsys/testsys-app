@@ -115,6 +115,7 @@ fun ContentScope.popover(
     val trigger = buildActionButton(ActionRole.Neutral, label).apply {
         element.setAriaHasPopup(AriaPopup.Dialog)
     }
+
     val popup = Popover().apply {
         target = trigger
         isModal = false
@@ -125,6 +126,7 @@ fun ContentScope.popover(
         position = if (alignment == PopoverAlignment.Start) PopoverPosition.BOTTOM_START else PopoverPosition.BOTTOM_END
         addThemeName(CssTheme.Popover)
     }
+
     val body = Div().apply { addClassName(CssClass.Pop) }
     ContentScope(body, texts, Placement.Body).content()
     popup.add(body)

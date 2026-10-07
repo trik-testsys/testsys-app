@@ -35,19 +35,23 @@ internal enum class LabelAction(val method: String) {
  */
 internal fun BlockRowScope.placeField(label: String, labelSize: Int, size: Int, value: Component, labelAction: LabelAction?): FieldParts {
     require(labelSize >= 1 && size >= 1) { "Field '$label' needs label and value sizes of at least 1, got $labelSize and $size" }
+
     val requiredMark = Span("*").apply {
         addClassName(CssClass.FieldRequired)
         element.setAriaHidden(true)
         isVisible = false
     }
+
     val caption: HtmlContainer = if (labelAction == null) Div() else NativeLabel()
     caption.addClassName(CssClass.FieldLabel)
     caption.style.setGridColumnSpan(labelSize)
     caption.add(Span(label).apply { addClassName(CssClass.FieldText) }, requiredMark)
     if (labelAction != null) runOnLabelClick(caption = caption, control = value, action = labelAction)
+
     val valueCell = fieldValueArea(label, value).apply {
         style.setGridColumnSpan(size)
     }
+
     val field = Div(caption, valueCell).apply { addClassNames(CssClass.Field, CssClass.FieldGrid) }
     place(labelSize + size, field)
     return FieldParts(field = field, requiredMark = requiredMark, valueCell = valueCell)

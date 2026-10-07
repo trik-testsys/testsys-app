@@ -4,12 +4,15 @@ internal fun DemoState.submitSolution(userId: String, taskId: String, kind: Demo
     val user = users.firstOrNull {
         it.id == userId
     } ?: return fail("Пользователь недоступен")
+
     val task = objects(user).tasks.firstOrNull {
         it.id == taskId
     } ?: return fail("Выберите доступную задачу, вид решения и файл")
+
     if (kind == null || kind !in task.authorSolutionKinds || fileName.isBlank()) {
         return fail("Выберите доступную задачу, вид решения и файл")
     }
+
     val solution = DemoSolution(
         id = "s$nextId",
         userId = userId,
@@ -19,6 +22,7 @@ internal fun DemoState.submitSolution(userId: String, taskId: String, kind: Demo
         submittedAt = "01.10.2026 11:00",
         status = DemoSolutionStatus.Queue,
     )
+
     return copy(solutions = solutions + solution, nextId = nextId + 1).ok("Решение поставлено в очередь демонстрационной проверки")
 }
 
@@ -51,13 +55,16 @@ internal fun DemoState.resultsCsv(competitionId: String, tourId: String): String
     val competition = competitions.firstOrNull {
         it.id == competitionId
     } ?: return ""
+
     val tour = tours.firstOrNull {
         it.id == tourId && it.id in competition.tourIds
     } ?: return ""
+
     val selectedTasks = tour.taskIds.mapNotNull { taskId -> tasks.firstOrNull { task -> task.id == taskId } }
     val header = listOf("ID", "Псевдоним") + selectedTasks.flatMap {
         listOf("${it.id} ${it.name}: лучший балл", "${it.id} ${it.name}: решений")
     }
+
     val rows = competition.participantIds.map { id ->
         listOf(
             id,
@@ -71,6 +78,7 @@ internal fun DemoState.resultsCsv(competitionId: String, tourId: String): String
             )
         }
     }
+
     return "﻿" + (listOf(header) + rows).joinToString("\r\n") { row ->
         row.joinToString(";") { cell ->
             "\"${cell.replace(oldValue = "\"", newValue = "\"\"")}\""

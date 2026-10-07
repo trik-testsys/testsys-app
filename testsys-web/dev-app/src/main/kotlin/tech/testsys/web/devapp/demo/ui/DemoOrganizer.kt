@@ -34,6 +34,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
     val competition = competitions.firstOrNull {
         it.id == selectedId
     }
+
     val createBinder = Binder<DemoCreation>()
     val create = dialog("Создать соревнование") {
         val binder = createBinder
@@ -49,6 +50,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                 )
             }
         }
+
         footer { handle ->
             action("Отменить") {
                 onClick {
@@ -68,6 +70,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
             }
         }
     }
+
     if (section in listOf("overview", "competitions")) {
         row {
             block(title = "Соревнования") {
@@ -90,9 +93,11 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
             }
         }
     }
+
     if (competition == null) {
         return
     }
+
     row {
         block(title = "Выбранное соревнование") {
             row {
@@ -103,10 +108,12 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
             }
         }
     }
+
     if (section in listOf("overview", "participants")) {
         val participants = context.state.users.filter {
             it.id in competition.participantIds
         }
+
         val participantsBinder = Binder<DemoCreation>()
         val createParticipants = dialog(
             "Создать участников",
@@ -133,6 +140,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                         )
                 }
             }
+
             footer { handle ->
                 action("Отменить") {
                     onClick {
@@ -158,6 +166,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                 }
             }
         }
+
         row {
             block(title = "Участники") {
                 actions {
@@ -177,10 +186,12 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
             }
         }
     }
+
     if (section in listOf("overview", "tours", "results")) {
         val available = context.state.availableTours(actor).filter {
             it.id !in competition.tourIds
         }
+
         val tourBinder = Binder<DemoCreation>()
         val add = dialog("Добавить доступный тур") {
             val binder = tourBinder
@@ -198,6 +209,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                     )
                 }
             }
+
             footer { handle ->
                 action("Отменить") {
                     onClick {
@@ -223,9 +235,11 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                 }
             }
         }
+
         val tours = context.state.tours.filter {
             it.id in competition.tourIds
         }
+
         val tourKey = "${actor.id}:tour"
         row {
             block(title = "Туры") {
@@ -247,9 +261,11 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                 }
             }
         }
+
         val tour = tours.firstOrNull {
             it.id == context.selection(key = tourKey, fallback = tours.firstOrNull()?.id)
         }
+
         if (tour != null) {
             demoTourMaterials(context, tour)
             row {
@@ -270,6 +286,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                             },
                         )
                     }
+
                     val participants = competition.participantIds.map { id -> context.state.users.first { user -> user.id == id } }
                     demoResultMatrix(context, actor, tour, participants)
                 }

@@ -40,9 +40,11 @@ private fun headerSearchField(label: String): HeaderSearchField {
         element.setAttribute(HtmlAttribute.AriaLabel, label)
         element.setAutocomplete(Autocomplete.Off)
     }
+
     val shell = Div(svgIcon(IconName.Search), field, Span("⌘K").apply { addClassName(CssClass.Kbd) }).apply {
         addClassName(CssClass.HeaderSearch)
     }
+
     return HeaderSearchField(field, shell)
 }
 
@@ -54,6 +56,7 @@ internal class HeaderMenuSearchController(private val menu: MegaMenuHandle, priv
 
     init {
         menu.searchMode(component)
+
         val id = "ts-header-menu-${UUID.randomUUID()}"
         menu.popup.setId(id)
         menu.popup.isAutofocus = false
@@ -63,17 +66,21 @@ internal class HeaderMenuSearchController(private val menu: MegaMenuHandle, priv
         field.element.setAttribute(HtmlAttribute.AriaControls, id)
         field.element.setAriaHasPopup(AriaPopup.Dialog)
         field.element.setAriaExpanded(false)
+
         menu.popup.addOpenedChangeListener { event ->
             field.element.setAriaExpanded(event.isOpened)
         }
+
         field.element.addEventListener(DomEvent.HeaderMenuInput) { event ->
             inputChanged(event.eventData.get(DomEventData.DetailQuery).asString())
-        }
-            .addEventData(DomEventData.DetailQuery)
+        }.addEventData(DomEventData.DetailQuery)
+
         field.element.addEventListener(DomEvent.HeaderMenuClose) { close() }
+
         component.addAttachListener {
             field.element.attachMenuSearch(popup = menu.popup.element, trigger = menu.trigger.element)
         }
+
         component.addDetachListener {
             close()
             field.element.detachMenuSearch()

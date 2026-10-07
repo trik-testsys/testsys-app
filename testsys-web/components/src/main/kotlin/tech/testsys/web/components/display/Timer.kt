@@ -14,14 +14,18 @@ import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.HtmlAttribute
+import tech.testsys.web.components.core.ICON_SIZE_SMALL
+import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
-import tech.testsys.web.components.core.remove
+import tech.testsys.web.components.core.removeClassNames
 import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setRole
+import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.texts.UiTexts
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -145,7 +149,7 @@ internal class TimerDisplay(
     label: String,
     private var current: TimerValue,
     private val variant: TimerVariant,
-    private val texts: tech.testsys.web.components.texts.UiTexts,
+    private val texts: UiTexts,
     private val dangerBelow: Duration,
 ) : Div() {
     val remainingState = ValueSignal(0L)
@@ -176,7 +180,9 @@ internal class TimerDisplay(
     private fun start() {
         stop()
         show()
+
         if (current !is TimerValue.Until || remaining() == 0L) return
+
         val ui = ui.orElseThrow()
         val token = generation
         task = TimerRuntime.schedule {
@@ -198,40 +204,45 @@ internal class TimerDisplay(
     private fun show() {
         val seconds = remaining()
         remainingState.set(seconds)
+
         val hours = seconds / SECONDS_PER_HOUR
         val minutes = seconds / SECONDS_PER_MINUTE % SECONDS_PER_MINUTE
         val rest = seconds % SECONDS_PER_MINUTE
-        fun pad(value: Long): String = value.toString().padStart(2, '0')
+
         removeAll()
-        element.classList.remove(CssClass.TimerChip)
-        element.classList.remove(CssClass.TimerParts)
-        element.classList.remove(CssClass.TimerTiles)
+        removeClassNames(CssClass.TimerChip, CssClass.TimerParts, CssClass.TimerTiles)
+
         when (variant) {
             TimerVariant.Chip, TimerVariant.Text -> {
                 if (variant == TimerVariant.Chip) addClassName(CssClass.TimerChip)
+
                 if (variant == TimerVariant.Chip && seconds > dangerBelow.seconds) {
                     add(
-                        tech.testsys.web.components.core.svgIcon(
-                            tech.testsys.web.components.core.IconName.Clock,
-                            tech.testsys.web.components.core.ICON_SIZE_SMALL,
+                        svgIcon(
+                            IconName.Clock,
+                            ICON_SIZE_SMALL,
                         ),
                     )
                 }
+
                 val caption = if (variant == TimerVariant.Chip && hours == 0L) {
                     "${pad(minutes)}:${pad(rest)}"
                 } else {
                     "${pad(hours)}:${pad(minutes)}:${pad(rest)}"
                 }
+
                 add(Span(caption))
             }
             TimerVariant.Hero, TimerVariant.Tiles -> {
                 val isTiles = variant == TimerVariant.Tiles
                 addClassName(if (isTiles) CssClass.TimerTiles else CssClass.TimerParts)
+
                 val values = if (isTiles) {
                     listOf(seconds / SECONDS_PER_DAY, hours % HOURS_PER_DAY, minutes, rest)
                 } else {
                     listOf(hours, minutes, rest)
                 }
+
                 val units = if (isTiles) texts.components.timerUnits else texts.components.timerUnits.drop(1)
                 values.forEachIndexed { index, number ->
                     val numeric = if (isTiles) {
@@ -239,16 +250,21 @@ internal class TimerDisplay(
                     } else {
                         Span(pad(number)).apply { addClassName(CssClass.TimerNum) }
                     }
+
                     val unit = Span(units[index]).apply { addClassName(CssClass.TimerUnit) }
                     val tile = Div(numeric, unit).apply {
                         addClassName(if (isTiles) CssClass.TimerTile else CssClass.TimerPart)
                     }
+
                     add(tile)
                 }
             }
         }
+
         setClassName(CssClass.TimerDanger, variant == TimerVariant.Chip && seconds <= dangerBelow.seconds)
     }
 }
 
-private fun Long.timerTileNumber(): Html = Html("<b>${toString().padStart(2, '0')}</b>")
+private fun pad(value: Long): String = value.toString().padStart(2, '0')
+
+private fun Long.timerTileNumber(): Html = Html("<b>${pad(this)}</b>")

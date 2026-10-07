@@ -719,7 +719,6 @@ private fun TaskValidationRequestData.toBuilder() = TaskValidationRequestDataBui
     builder.snapshot = snapshot
     when (val state = execution) {
         TaskValidationExecution.PendingDiagnostics -> builder.execution.pendingDiagnostics()
-        TaskValidationExecution.DiagnosticsInProgress -> builder.execution.diagnosticsInProgress()
         is TaskValidationExecution.AwaitingSubmissions -> builder.execution.awaitingSubmissions {
             diagnostics = state.diagnostics.toMutableList()
         }
@@ -730,6 +729,12 @@ private fun TaskValidationRequestData.toBuilder() = TaskValidationRequestDataBui
         is TaskValidationExecution.SubmissionsCreated -> builder.execution.submissionsCreated {
             diagnostics = state.diagnostics.toMutableList()
             submissions = state.submissions.ids.toMutableList()
+        }
+        is TaskValidationExecution.Completed -> builder.execution.completed {
+            diagnostics = state.diagnostics.toMutableList()
+            submissions = state.submissions.ids.toMutableList()
+            failures = state.failures.toMutableList()
+            completedAt = state.completedAt
         }
         is TaskValidationExecution.TechnicalFailure.IncompleteDiagnostics -> builder.execution.incompleteDiagnosticsFailure {
             failure = state.failure

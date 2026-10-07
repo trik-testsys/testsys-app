@@ -51,6 +51,11 @@ class ContestPersistenceAdapter(
     private val contestJpaEntityRepository: ContestJpaEntityRepository = jpaEntityRepository
 
     @Transactional(readOnly = true)
+    override fun findByTaskId(taskId: TaskId): List<Contest> =
+        taskToContestJpaEntityRepository.findAllByTaskId(taskId.value).map { it.id.contestId }
+            .distinct().sorted().map { assemble(contestJpaEntityRepository.findByIdOrError(it)) }
+
+    @Transactional(readOnly = true)
     override fun findAvailableToDeveloper(
         ownerId: MultipleRoleUserId,
         communityIds: Set<CommunityId>,

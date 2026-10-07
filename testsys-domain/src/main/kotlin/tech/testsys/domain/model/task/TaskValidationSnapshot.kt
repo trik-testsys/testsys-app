@@ -29,4 +29,36 @@ data class TaskValidationSnapshot(
     val tests: LazyEntityList<TestId, Test>,
     val developerSolutions: List<DeveloperSolutionValidationInput>,
     val supportedTrikStudioVersions: List<TrikStudioVersion>,
+) {
+    /**
+     * Operations on [TaskValidationSnapshot] values.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    companion object {
+        /**
+         * Lists every author solution and TRIK Studio version pair of [snapshot] in the canonical order
+         * of author submissions: by author solution identifier, then by version string.
+         *
+         * @since %CURRENT_VERSION%
+         */
+        fun authorRuns(snapshot: TaskValidationSnapshot): List<AuthorSolutionRun> {
+            val versions = snapshot.supportedTrikStudioVersions.sortedBy { it.version }
+            return snapshot.developerSolutions.sortedBy { it.developerSolution.id.value }.flatMap { input ->
+                versions.map { version -> AuthorSolutionRun(input = input, trikStudioVersion = version) }
+            }
+        }
+    }
+}
+
+/**
+ * One author submission of a [TaskValidationSnapshot]: an author solution checked in one TRIK Studio version.
+ *
+ * @property input the author solution inputs.
+ * @property trikStudioVersion the execution environment version.
+ * @since %CURRENT_VERSION%
+ */
+data class AuthorSolutionRun(
+    val input: DeveloperSolutionValidationInput,
+    val trikStudioVersion: TrikStudioVersion,
 )

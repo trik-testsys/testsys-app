@@ -21,18 +21,18 @@
 
 | #  | Шаг                          | Куда                                                                                  |
 |----|------------------------------|---------------------------------------------------------------------------------------|
-| 1  | Модель                       | `testsys-domain/.../model/<group\|task\|user>/X.kt`                                    |
-| 2  | Билдер                       | `testsys-domain/.../builder/<group\|task\|user>/XBuilder.kt`                           |
-| 3  | Точка входа DSL и `withData` | `testsys-domain/.../builder/api/{Group,Task,User}Api.kt`                               |
-| 4  | Порт хранения                | `testsys-domain/.../contract/persistence/repository/{Group,Task,User}Repositories.kt` |
-| 5  | JPA-сущность                 | `testsys-infra/database/.../internal/jpa/entity/<group\|task\|user>/X.kt`              |
-| 6  | Spring Data репозиторий      | `testsys-infra/database/.../internal/jpa/repository/<group\|task\|user>/X.kt`          |
+| 1  | Модель                       | `testsys-domain/.../model/<entry\|group\|task\|user>/X.kt`                                    |
+| 2  | Билдер                       | `testsys-domain/.../builder/<entry\|group\|task\|user>/XBuilder.kt`                           |
+| 3  | Точка входа DSL и `withData` | `testsys-domain/.../builder/api/{Entry,Group,Task,User}Api.kt`                               |
+| 4  | Порт хранения                | `testsys-domain/.../contract/persistence/repository/{Entry,Group,Task,User}Repositories.kt` |
+| 5  | JPA-сущность                 | `testsys-infra/database/.../internal/jpa/entity/<entry\|group\|task\|user>/X.kt`              |
+| 6  | Spring Data репозиторий      | `testsys-infra/database/.../internal/jpa/repository/<entry\|group\|task\|user>/X.kt`          |
 | 7  | Liquibase changeset          | `testsys-infra/database/src/main/resources/db/changelog/changes/...`                   |
-| 8  | Маппинг                      | `testsys-infra/database/.../internal/mapping/<group\|task\|user>/XMapping.kt`          |
-| 9  | Адаптер порта                | `testsys-infra/database/.../api/persistence/adapter/<group\|task\|user>/XPersistenceAdapter.kt` |
+| 8  | Маппинг                      | `testsys-infra/database/.../internal/mapping/<entry\|group\|task\|user>/XMapping.kt`          |
+| 9  | Адаптер порта                | `testsys-infra/database/.../api/persistence/adapter/<entry\|group\|task\|user>/XPersistenceAdapter.kt` |
 | 10 | Тесты                        | Тесты билдера, `withData`, маппинга, адаптера + фикстура в `DatabaseFixtures`          |
 
-Подпакет (`group`, `task`, `user`) выбирается по смыслу сущности и **одинаков во всех слоях**.
+Подпакет (`entry`, `group`, `task`, `user`) выбирается по смыслу сущности и **одинаков во всех слоях**.
 
 Шаги 1–4 (домен) самодостаточны: домен компилируется и тестируется без инфраструктуры. Шаги 5–10 —
 реализация хранения. Оба набора обычно делаются в одном PR.
@@ -78,7 +78,7 @@
 
 ## 3. Точка входа DSL и `withData`
 
-В `builder/api/{Group,Task,User}Api.kt` (файл выбирается по подпакету сущности) добавляются функции `xData { }`,
+В `builder/api/{Entry,Group,Task,User}Api.kt` (файл выбирается по подпакету сущности) добавляются функции `xData { }`,
 `x { }`, приватная `XData.toBuilder()` и `X.withData { }`. Образец — функции `contestData`, `contest`
 и `Contest.withData` в [TaskApi.kt](../../testsys-domain/src/main/kotlin/tech/testsys/domain/builder/api/TaskApi.kt).
 
@@ -92,7 +92,7 @@
 
 ## 4. Порт хранения
 
-В `contract/persistence/repository/{Group,Task,User}Repositories.kt` добавляется интерфейс
+В `contract/persistence/repository/{Entry,Group,Task,User}Repositories.kt` добавляется интерфейс
 `XRepository : EntityRepository<XData, XId, X>`. Образец — `ContestRepository`
 в [TaskRepositories.kt](../../testsys-domain/src/main/kotlin/tech/testsys/domain/contract/persistence/repository/TaskRepositories.kt).
 
@@ -205,7 +205,7 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 | Что                  | Базовый класс                          | Что писать                                                  | Образец                   |
 |----------------------|----------------------------------------|-------------------------------------------------------------|---------------------------|
 | Билдер               | `DomainEntityBuilderTests`             | Только `buildDataWithAllFields()`                           | [ContestBuilderTests.kt](../../testsys-domain/src/test/kotlin/tech/testsys/domain/builder/task/ContestBuilderTests.kt) |
-| `withData`           | `{Group,Task,User}ApiTests`            | `@Nested inner class XTests`: поля и токен `version` не теряются, поля изменяются | `ContestTests` в [TaskApiTests.kt](../../testsys-domain/src/test/kotlin/tech/testsys/domain/builder/api/TaskApiTests.kt) |
+| `withData`           | `{Entry,Group,Task,User}ApiTests`            | `@Nested inner class XTests`: поля и токен `version` не теряются, поля изменяются | `ContestTests` в [TaskApiTests.kt](../../testsys-domain/src/test/kotlin/tech/testsys/domain/builder/api/TaskApiTests.kt) |
 | Маппинг              | `EntityMappingTests<XMapping>`         | Только `override val mapping = XMapping`                    | [ContestMappingTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/internal/mapping/task/ContestMappingTests.kt) |
 | Адаптер              | `UpdatablePersistenceAdapterContractTests` | `newData()`, `modified()`, `detached()`, `idOf()`, `assertSameData()` + свои тесты | [ContestPersistenceAdapterTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapterTests.kt) |
 | Фикстура             | —                                      | Метод `fun x(...): X`                                       | [DatabaseFixtures.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/DatabaseFixtures.kt) |

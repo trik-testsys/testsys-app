@@ -22,15 +22,6 @@ class TaskValidationExecutionChooser : Chooser<TaskValidationExecution>() {
     })
 
     /**
-     * Selects [TaskValidationExecution.DiagnosticsInProgress].
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun diagnosticsInProgress() = makeChoice(object : Builder<TaskValidationExecution> {
-        override fun build() = TaskValidationExecution.DiagnosticsInProgress
-    })
-
-    /**
      * Selects [TaskValidationExecution.AwaitingSubmissions] configured by [builder].
      * Repeated calls accumulate configuration.
      *
@@ -60,6 +51,17 @@ class TaskValidationExecutionChooser : Chooser<TaskValidationExecution>() {
      */
     fun submissionsCreated(builder: SubmissionsCreatedBuilder.() -> Unit) {
         val currentBuilder = choice as? SubmissionsCreatedBuilder ?: SubmissionsCreatedBuilder()
+        makeChoice(currentBuilder.apply(builder))
+    }
+
+    /**
+     * Selects [TaskValidationExecution.Completed] configured by [builder].
+     * Repeated calls accumulate configuration.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun completed(builder: CompletedValidationBuilder.() -> Unit) {
+        val currentBuilder = choice as? CompletedValidationBuilder ?: CompletedValidationBuilder()
         makeChoice(currentBuilder.apply(builder))
     }
 
@@ -151,6 +153,38 @@ class SubmissionsCreatedBuilder : Builder<TaskValidationExecution> {
     override fun build(): TaskValidationExecution = TaskValidationExecution.SubmissionsCreated(
         diagnostics = diagnostics.toList(),
         submissions = submissions.toList().lazify(),
+    )
+}
+
+/**
+ * Builder of [TaskValidationExecution.Completed]. Required: [completedAt].
+ *
+ * @property diagnostics the completed diagnostic results.
+ * @property submissions the ordered author submission identifiers.
+ * @property failures the failed author submissions, empty if testing succeeded.
+ * @property completedAt the terminal completion moment, or `null` if not set.
+ * @since %CURRENT_VERSION%
+ */
+class CompletedValidationBuilder : Builder<TaskValidationExecution> {
+    var diagnostics: MutableList<TestDiagnosticResult> = mutableListOf()
+    var submissions: MutableList<SubmissionId> = mutableListOf()
+    var failures: MutableList<AuthorSubmissionFailure> = mutableListOf()
+    var completedAt: Instant? = null
+
+    /**
+     * Sets [submissions] from raw ids.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun submissions(submissions: Iterable<Long>) {
+        this.submissions = submissions.map { SubmissionId(it) }.toMutableList()
+    }
+
+    override fun build(): TaskValidationExecution = TaskValidationExecution.Completed(
+        diagnostics = diagnostics.toList(),
+        submissions = submissions.toList().lazify(),
+        failures = failures.toList(),
+        completedAt = requireField(completedAt) { ::completedAt },
     )
 }
 

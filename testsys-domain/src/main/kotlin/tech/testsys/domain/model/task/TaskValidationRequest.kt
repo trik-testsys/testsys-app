@@ -23,18 +23,11 @@ value class TaskValidationRequestId(override val value: Long) : DomainId
  */
 sealed interface TaskValidationExecution {
     /**
-     * A [TaskValidationRequest] waiting for diagnostics.
+     * A [TaskValidationRequest] whose diagnostics are unfinished, with separately stored polygon progress.
      *
      * @since %CURRENT_VERSION%
      */
     data object PendingDiagnostics : TaskValidationExecution
-
-    /**
-     * A [TaskValidationRequest] with unfinished diagnostics and separately stored progress.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    data object DiagnosticsInProgress : TaskValidationExecution
 
     /**
      * Completed diagnostics of a [TaskValidationRequest].
@@ -85,6 +78,20 @@ sealed interface TaskValidationExecution {
     ) : WithSubmissions
 
     /**
+     * Finished author testing of a [TaskValidationRequest]; testing succeeded if [failures] is empty.
+     *
+     * @property failures every failed author submission in submission order, fixed when all submissions finished.
+     * @property completedAt the terminal completion moment.
+     * @since %CURRENT_VERSION%
+     */
+    data class Completed(
+        override val diagnostics: List<TestDiagnosticResult>,
+        override val submissions: LazyEntityList<SubmissionId, Submission>,
+        val failures: List<AuthorSubmissionFailure>,
+        val completedAt: Instant,
+    ) : WithSubmissions
+
+    /**
      * A technical stop of a [TaskValidationRequest], retaining its completed stages.
      *
      * @property failure the recorded failure.
@@ -126,6 +133,31 @@ sealed interface TaskValidationExecution {
 }
 
 /**
+ * Reason why an author submission of a [TaskValidationRequest] failed testing.
+ *
+ * @property submission the failed submission.
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AuthorSubmissionFailure {
+    val submission: SubmissionId
+
+    /**
+     * The submission scored a total other than the expected score of its author solution.
+     *
+     * @property actualScore the total of all polygon scores, calculated without integer overflow.
+     * @since %CURRENT_VERSION%
+     */
+    data class ScoreMismatch(override val submission: SubmissionId, val actualScore: Long) : AuthorSubmissionFailure
+
+    /**
+     * The submission finished with a grading error or timeout kept in the submission.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    data class GradingFailed(override val submission: SubmissionId) : AuthorSubmissionFailure
+}
+
+/**
  * Technical stop recorded by the external caller of a [TaskValidationRequest].
  *
  * @property description the technical failure details.
@@ -155,11 +187,11 @@ data class TaskValidationRequestData(
 ) {
     val isActive: Boolean = when (execution) {
         TaskValidationExecution.PendingDiagnostics,
-        TaskValidationExecution.DiagnosticsInProgress,
         is TaskValidationExecution.AwaitingSubmissions,
         is TaskValidationExecution.SubmissionsCreated,
         -> true
         is TaskValidationExecution.StoppedByDiagnostics,
+        is TaskValidationExecution.Completed,
         is TaskValidationExecution.TechnicalFailure,
         -> false
     }

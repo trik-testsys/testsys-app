@@ -47,6 +47,7 @@
 | `testsys.user.*`                    | `UserOperations`             |
 | `testsys.user.single.*`             | `SingleRoleUserOperations`   |
 | `testsys.user.single.participant.*` | `ParticipantOperations`      |
+| `testsys.user.study.*`              | `StudyOperations`            |
 | `testsys.user.single.observer.*`    | `ObserverOperations`         |
 | `testsys.user.multi.*`              | `MultipleRoleUserOperations` |
 | `testsys.user.multi.developer.*`    | `DeveloperOperations`        |
@@ -59,23 +60,56 @@
 
 ## Обработка запросов валидации
 
-`DeveloperOperations.runDiagnostics` запускает диагностики только для рабочей версии Задачи.
-При состоянии `Committed` операция возвращает `TaskAlreadyCommittedError`.
+`DeveloperOperations.testTask` проверяет доступ, рабочую версию и предварительные условия
+[фичи testTask](../docs/domain/features.md#testsysusermultidevelopertasktesttask-partially-implemented).
+После успешных проверок операция сохраняет или возвращает активный запрос и ставит его в очередь
+`TaskValidationDispatcher`, не дожидаясь результатов.
+Условие и Упражнения проверяются по рабочему содержимому и не входят в снимок проверки.
+`DeveloperOperations.viewTaskValidationRequests` возвращает историю запросов Задачи.
 
-[`TaskValidationOperations`](src/main/kotlin/tech/testsys/operation/TaskValidationOperations.kt) предоставляет
-служебный метод `processDiagnostics(requestId)`. Приложение выбирает запрос и вызывает метод.
+[`TaskValidationOperations`](src/main/kotlin/tech/testsys/operation/TaskValidationOperations.kt)
+обрабатывает один сохранённый запрос:
 
-Метод загружает запрос из БД, пропускает записанные результаты Полигонов, вызывает `PolygonDiagnostics`
-для остальных и сохраняет каждый результат отдельным вызовом порта хранения. Он продолжает анализ после Error.
-После сохранения всех результатов хранение завершает этап: Error останавливает запрос, иначе запрос ожидает Посылок.
-Запрос без Полигонов получает пустой результат этапа в `AwaitingSubmissions`.
-Диагностические ошибки переводят запрос в `StoppedByDiagnostics` с результатами и временем завершения.
+| Метод | Что выполняет |
+|-------|---------------|
+| `runDiagnostics(requestId)` | Анализирует Полигоны снимка и сохраняет каждый результат. |
+| `proceed(requestId)` | Выполняет Диагностики, создаёт и отправляет Посылки, а когда все Посылки получили результат, завершает запрос с итогом. |
+| `resendUnfinishedSubmissions(requestId)` | Повторно отправляет грейдеру Посылки без результата. Нужен после перезапуска приложения. |
+
+Методы помечены `@Feature`: диагностический этап — кодификатором `runDiagnostics`,
+остальные — кодификатором `testTask`.
+
+Диагностический этап пропускает записанные результаты Полигонов и продолжает анализ после Error.
+После сохранения всех результатов хранение завершает этап: Error переводит запрос в `StoppedByDiagnostics`,
+иначе запрос переходит в `AwaitingSubmissions`.
 Завершённые запросы и запросы с завершёнными Диагностиками не анализируются повторно.
 
-Технические исключения выходят к вызывающему приложению с уже сохранённым прогрессом.
-Приложение знает `requestId` и может записать техническую остановку через `TaskValidationRequestRepository`.
-Оно организует возобновление после перезапуска; записанные результаты не вычисляются повторно.
+На Авторском этапе `TaskValidationRequestRepository.createSubmissions` атомарно сохраняет отдельную Посылку
+для каждого элемента `TaskValidationSnapshot.authorRuns`: по идентификатору Авторского Решения, затем по строке версии
+TRIK Studio. Затем `proceed` отправляет Посылки грейдеру.
+Пока хотя бы одна Посылка без результата, `proceed` возвращает активный запрос.
+Когда результат есть у всех, `completeTesting` сохраняет все проваленные Посылки в том же порядке
+как список `AuthorSubmissionFailure`. Пустой список означает успех.
+Сумма баллов Посылки считается в `Long` и сравнивается с ожидаемым баллом её Авторского Решения.
+Итог хранится в запросе и не пересчитывается.
+
+Повторный вызов `proceed` не создаёт и не отправляет Посылки повторно.
+Технические исключения выходят из `TaskValidationOperations`, сохранённый прогресс остаётся.
 Обработка сохранённого снимка не зависит от последующей фиксации Задачи.
+
+### Диспетчер
+
+[`TaskValidationDispatcher`](src/main/kotlin/tech/testsys/operation/TaskValidationDispatcher.kt) вызывает
+`TaskValidationOperations` на переданном `Executor`. Этот `Executor` должен выполнять задачи по одному:
+так один экземпляр приложения обрабатывает каждый запрос монопольно.
+
+- `schedule(requestId)` ставит запрос в очередь. Запрос, который ещё ждёт обработки, повторно не ставится.
+- `start()` вызывается один раз при запуске приложения. Метод подписывается на результаты грейдера
+  и для каждого активного запроса вызывает `resendUnfinishedSubmissions`, а затем ставит запрос в очередь.
+  Результат Авторской Посылки ставит в очередь её активный запрос.
+
+Исключение на любом шаге диспетчер записывает как техническую остановку через `recordTechnicalFailure`.
+Приложение создаёт `Executor` и вызывает `start()`; в `testsys-web` это пока не реализовано.
 
 ## Конфигурация
 
@@ -181,3 +215,38 @@
   [Assertions.kt](src/test/kotlin/tech/testsys/operation/util/Assertions.kt).
 
 Образец — [DeveloperOperationsTests.kt](src/test/kotlin/tech/testsys/operation/user/DeveloperOperationsTests.kt).
+
+## Просмотр Тура
+
+[StudyOperations](src/main/kotlin/tech/testsys/operation/user/StudyOperations.kt) предоставляет две перегрузки
+`viewContest`: для Участника и для Ученика с идентификатором выбранного Класса.
+Требования просмотра определены в `testsys.user.study.viewContest` в [features.md](../docs/domain/features.md).
+
+Обе перегрузки возвращают `Pair<Instant?, Contest>`: сохранённый момент первого входа
+в выбранном контексте либо `null` и исходный `Contest`.
+Просмотр не загружает Задачи, не записывает вход и не вычисляет оставшееся время.
+
+## Отправка Решения
+
+[StudyOperations](src/main/kotlin/tech/testsys/operation/user/StudyOperations.kt) предоставляет две перегрузки
+`sendSolution`: для Участника и для Ученика с идентификатором выбранного Класса.
+Требования отправки определены в `testsys.user.study.sendSolution` в [features.md](../docs/domain/features.md).
+
+Обе перегрузки сохраняют `Solution` и `Submission` и возвращают сохранённую `Submission`.
+Операция не передаёт Посылку в `Grader`: это делает вызывающая сторона после фиксации транзакции.
+`StudyOperations` получает `Clock` через конструктор и использует его только для проверки времени отправки.
+Вызов читает время не более одного раза.
+
+## Вход в Тур
+
+[ParticipantOperations](src/main/kotlin/tech/testsys/operation/user/ParticipantOperations.kt) предоставляет
+`viewContests` и `enterContest`.
+[StudentOperations](src/main/kotlin/tech/testsys/operation/user/StudentOperations.kt) предоставляет
+`viewContests` и `enterContest` для выбранного Класса.
+
+Обе операции `viewContests` возвращают `List<Pair<Instant?, Contest>>`:
+первый элемент — сохранённый момент входа в выбранном контексте либо `null`, второй — сам Тур.
+Операции не вычисляют оставшееся время и не записывают вход.
+`ParticipantOperations` и `StudentOperations` получают `Clock` через конструктор и используют его только в операциях входа.
+Вызов читает время не более одного раза; сохранённый момент нормализуется до микросекунд.
+Проверки первого и повторного входа описаны в [features.md](../docs/domain/features.md).

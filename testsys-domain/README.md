@@ -11,7 +11,7 @@
 
 | Пакет                                  | Что лежит                                                          |
 |----------------------------------------|--------------------------------------------------------------------|
-| `tech.testsys.domain.model`            | Сущности и их данные, по подпакетам `group`, `task`, `user`        |
+| `tech.testsys.domain.model`            | Сущности и их данные, по подпакетам `entry`, `group`, `task`, `user`        |
 | `tech.testsys.domain.contract`         | Порты: интерфейсы, через которые домен обращается к внешнему миру  |
 | `tech.testsys.domain.builder`          | DSL билдеров: билдеры, точки входа `api`, `Chooser`'ы в `util`     |
 
@@ -52,6 +52,19 @@
   и `ids.lazify()`.
 - Варианты состояния моделируются sealed-иерархиями: `TaskContent` (`New` / `Uncommitted` / `Committed`),
   `SubmissionStatus`, `SubmissionKind`, `GradingResult`, `TrikSupportedLanguage`.
+
+### Запросы валидации Задач
+
+[`TaskValidationRequest`](src/main/kotlin/tech/testsys/domain/model/task/TaskValidationRequest.kt) сохраняет
+неизменяемый снимок непосредственных входных данных.
+`TaskValidationExecution.PendingDiagnostics` означает незавершённые Диагностики,
+в том числе при наличии сохранённых результатов отдельных Полигонов.
+`TaskValidationExecution.Completed` завершает обработку
+и содержит время завершения, Диагностики, упорядоченные ссылки на Авторские Посылки
+и список проваленных Посылок `AuthorSubmissionFailure`; пустой список означает успех.
+Порядок Посылок задаёт `TaskValidationSnapshot.authorRuns`: каждая пара Авторского Решения и версии TRIK Studio.
+Условия успешного тестирования описаны в
+[features.md](../docs/domain/features.md#testsysusermultidevelopertasktesttask-partially-implemented).
 
 ### Версионирование Ресурсов
 
@@ -122,9 +135,23 @@
 
 ## DSL билдеров
 
-- Точки входа — в `builder/api/{Task,Group,User}Api.kt`: `task { … }`, `taskData { … }`, `submission { … }`,
+- Точки входа — в `builder/api/{Entry,Group,Task,User}Api.kt`: `task { … }`, `taskData { … }`, `submission { … }`,
   `X.withData { … }`.
 - Для полей sealed-типов используются `Chooser`'ы (`LanguageChooser`, `SubmissionStatusChooser`, …)
   из `builder/util/chooser`.
 - Билдер проверяет обязательные поля и бросает `IllegalArgumentException` в `build()`.
 - Доменные объекты за пределами домена, в том числе в маппингах инфраструктуры, создаются **только через DSL**.
+
+## Записи первого входа
+
+Первый вход хранится в неизменяемых сущностях:
+
+| Сущность | Контекст |
+|----------|----------|
+| [ParticipantContestEntry](src/main/kotlin/tech/testsys/domain/model/entry/ParticipantContestEntry.kt) | Участник, Соревнование и Тур |
+| [StudentContestEntry](src/main/kotlin/tech/testsys/domain/model/entry/StudentContestEntry.kt) | Пользователь, Класс и Тур |
+
+Связи и поле `enteredAt` фиксируются при создании; `update` бросает `UnsupportedOperationException`.
+Порты объявлены в [EntryRepositories.kt](src/main/kotlin/tech/testsys/domain/contract/persistence/repository/EntryRepositories.kt).
+Метод `findOrCreate` сохраняет первый момент атомарно, а поиск по контексту и пакетный поиск по Турам не меняют записи.
+Правила доступа и первого входа определены в `testsys.entity.studyEntry` в [features.md](../docs/domain/features.md).

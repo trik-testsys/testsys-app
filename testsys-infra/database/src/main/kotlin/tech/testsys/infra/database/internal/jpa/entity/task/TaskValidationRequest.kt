@@ -21,18 +21,11 @@ import java.time.Instant
 @InternalDatabaseApi
 enum class TaskValidationExecutionJpaEnum {
     /**
-     * The pending diagnostics stage.
+     * The unfinished diagnostics stage, including any separately saved polygon progress.
      *
      * @since %CURRENT_VERSION%
      */
     PENDING_DIAGNOSTICS,
-
-    /**
-     * The diagnostics in progress stage.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    DIAGNOSTICS_IN_PROGRESS,
 
     /**
      * The awaiting submissions stage.
@@ -56,11 +49,40 @@ enum class TaskValidationExecutionJpaEnum {
     SUBMISSIONS_CREATED,
 
     /**
+     * The completed author testing stage.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    COMPLETED,
+
+    /**
      * The technical failure stage.
      *
      * @since %CURRENT_VERSION%
      */
     TECHNICAL_FAILURE,
+}
+
+/**
+ * Stored reason of a failed author submission.
+ *
+ * @since %CURRENT_VERSION%
+ */
+@InternalDatabaseApi
+enum class AuthorSubmissionFailureJpaEnum {
+    /**
+     * The submission scored another total than expected.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    SCORE_MISMATCH,
+
+    /**
+     * The submission finished with a grading error or timeout.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    GRADING_FAILED,
 }
 
 /**
@@ -178,11 +200,17 @@ data class SubmissionToTaskValidationRequestId(val submissionId: Long, val reque
 /**
  * Pinned submission input or reference of a task validation request.
  *
+ * @property position the required position in author solution and version order.
+ * @property failure the stored failure reason of completed testing, or `null` if the submission passed or testing is unfinished.
+ * @property actualScore the stored total score of a mismatching submission.
  * @since %CURRENT_VERSION%
  */
 @Entity
-@CompositeKeyConstructor
 @InternalDatabaseApi
 class SubmissionToTaskValidationRequestJpaEntity(
     id: SubmissionToTaskValidationRequestId,
+    val position: Int,
+    @field:Enumerated(EnumType.STRING)
+    val failure: AuthorSubmissionFailureJpaEnum? = null,
+    val actualScore: Long? = null,
 ) : CompositeJpaEntity<SubmissionToTaskValidationRequestId>(id)

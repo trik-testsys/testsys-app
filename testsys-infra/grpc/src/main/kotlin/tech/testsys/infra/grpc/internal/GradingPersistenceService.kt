@@ -15,12 +15,16 @@ import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.TaskContent
+import tech.testsys.domain.model.task.TaskValidationExecution
+import tech.testsys.domain.model.task.TaskValidationRequest
+import tech.testsys.domain.model.task.TaskValidationSnapshot
 import tech.testsys.domain.model.task.TestId
 import trik.testsys.grading.GradingNodeOuterClass as Proto
 
@@ -38,31 +42,34 @@ internal class GradingPersistenceService(
     private val logs: LogsRepository,
     private val recordings: RecordingRepository,
     private val verdicts: VerdictRepository,
+    private val validationRequests: TaskValidationRequestRepository,
     transactionManager: PlatformTransactionManager,
 ) {
     private val transaction = TransactionTemplate(transactionManager)
 
     fun prepare(submission: Submission, shouldRecordVideo: Boolean): PreparedSubmission {
-        val solution = solutions.load(submission.data.solution)
-        val task = tasks.load(submission.data.task)
-        val content = task.data.content
         val kind = submission.data.kind
         val trikStudioVersion = when (kind) {
             is SubmissionKind.DeveloperSolutionTest -> kind.trikStudioVersion
             is SubmissionKind.Grading -> contests.load(kind.contest).data.trikStudioVersion
         }
         val testReferences = when (kind) {
-            is SubmissionKind.DeveloperSolutionTest -> when (content) {
-                is TaskContent.New -> content.wip.tests
-                is TaskContent.Uncommitted -> content.wip.tests
-                is TaskContent.Committed -> content.lastCommitted.tests
+            is SubmissionKind.DeveloperSolutionTest -> {
+                val request = validationRequests.findBySubmissionId(submission.id)
+                    ?: error("Author submission ${submission.id.value} has no linked validation request")
+                validateSnapshotSubmission(request, submission, kind)
+                request.data.snapshot.tests
             }
-            is SubmissionKind.Grading -> when (content) {
-                is TaskContent.New -> error("Task ${task.id.value} has no committed revision")
-                is TaskContent.Uncommitted -> content.lastCommitted.tests
-                is TaskContent.Committed -> content.lastCommitted.tests
+            is SubmissionKind.Grading -> {
+                val task = tasks.load(submission.data.task)
+                when (val content = task.data.content) {
+                    is TaskContent.New -> error("Task ${task.id.value} has no committed revision")
+                    is TaskContent.Uncommitted -> content.lastCommitted.tests
+                    is TaskContent.Committed -> content.lastCommitted.tests
+                }
             }
         }
+        val solution = solutions.load(submission.data.solution)
         require(testReferences.ids.isNotEmpty() && testReferences.ids.distinct().size == testReferences.ids.size) {
             "Submission ${submission.id.value} must have nonempty distinct polygons"
         }
@@ -132,5 +139,26 @@ internal class GradingPersistenceService(
             val current = requireNotNull(submissions.findById(id)) { "Missing submission ${id.value}" }
             submissions.update(current.withData { status.queued() })
         }
+    }
+
+    private fun validateSnapshotSubmission(
+        request: TaskValidationRequest,
+        submission: Submission,
+        kind: SubmissionKind.DeveloperSolutionTest,
+    ) {
+        val state = checkNotNull(request.data.execution as? TaskValidationExecution.WithSubmissions) {
+            "Validation request ${request.id.value} has no submission links"
+        }
+        val runs = TaskValidationSnapshot.authorRuns(request.data.snapshot)
+        check(state.submissions.ids.size == runs.size) {
+            "Validation request ${request.id.value} has ${state.submissions.ids.size} submissions for ${runs.size} author runs"
+        }
+        val position = state.submissions.ids.indexOf(submission.id)
+        check(position >= 0) { "Submission ${submission.id.value} is not linked to validation request ${request.id.value}" }
+        val run = runs[position]
+        check(
+            submission.data.task.id == request.data.task.id && submission.data.author.id == request.data.requestedBy.id &&
+                submission.data.solution.id == run.input.solution.id && kind.trikStudioVersion == run.trikStudioVersion,
+        ) { "Submission ${submission.id.value} does not match its author run in validation request ${request.id.value}" }
     }
 }

@@ -27,6 +27,11 @@ class TaskValidationExecutionChooserTests {
         assertEquals(request.createdAt, copied.createdAt)
         assertEquals(request.version, copied.version)
         assertEquals(data.execution::class, copied.data.execution::class)
+        assertEquals(sourceCompletedAt(data.execution), sourceCompletedAt(copied.data.execution))
+        assertEquals(
+            (data.execution as? TaskValidationExecution.Completed)?.failures,
+            (copied.data.execution as? TaskValidationExecution.Completed)?.failures,
+        )
         assertEquals(
             (data.execution as? TaskValidationExecution.WithDiagnostics)?.diagnostics,
             (copied.data.execution as? TaskValidationExecution.WithDiagnostics)?.diagnostics,
@@ -77,11 +82,32 @@ class TaskValidationExecutionChooserTests {
         assertThrows(IllegalArgumentException::class.java) { chooser.build() }
     }
 
+    private fun sourceCompletedAt(state: TaskValidationExecution): Instant? = (state as? TaskValidationExecution.Completed)?.completedAt
+
+    @Test
+    fun `should reject author testing completion without its completion time`() {
+        val chooser = TaskValidationExecutionChooser()
+        chooser.completed {}
+
+        assertThrows(IllegalArgumentException::class.java) { chooser.build() }
+    }
+
+    @Test
+    fun `should keep completed author testing terminal`() {
+        val source = taskValidationRequestData {
+            task(1)
+            requestedBy(2)
+            snapshot = taskValidationSnapshot {}
+            execution.completed { completedAt = Instant.EPOCH }
+        }
+
+        assertFalse(source.isActive)
+    }
+
     companion object {
         @JvmStatic
         fun states(): List<TaskValidationRequestData> = listOf(
             data { execution.pendingDiagnostics() },
-            data { execution.diagnosticsInProgress() },
             data {
                 execution.awaitingSubmissions {
                     diagnostics = mutableListOf(testDiagnosticResult { testId(3) })
@@ -97,6 +123,24 @@ class TaskValidationExecutionChooserTests {
                 execution.submissionsCreated {
                     diagnostics = mutableListOf(testDiagnosticResult { testId(3) })
                     submissions = mutableListOf(SubmissionId(4))
+                }
+            },
+            data {
+                execution.completed {
+                    diagnostics = mutableListOf(testDiagnosticResult { testId(3) })
+                    submissions = mutableListOf(SubmissionId(5), SubmissionId(4))
+                    completedAt = Instant.EPOCH
+                }
+            },
+            data {
+                execution.completed {
+                    diagnostics = mutableListOf(testDiagnosticResult { testId(3) })
+                    submissions = mutableListOf(SubmissionId(5), SubmissionId(4))
+                    failures = mutableListOf(
+                        AuthorSubmissionFailure.GradingFailed(SubmissionId(5)),
+                        AuthorSubmissionFailure.ScoreMismatch(submission = SubmissionId(4), actualScore = 7),
+                    )
+                    completedAt = Instant.EPOCH
                 }
             },
             data {

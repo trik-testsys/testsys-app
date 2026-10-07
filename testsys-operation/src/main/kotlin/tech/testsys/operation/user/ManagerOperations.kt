@@ -2,6 +2,7 @@ package tech.testsys.operation.user
 
 import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.builder.api.competitionData
+import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.ClassFilter
 import tech.testsys.domain.contract.persistence.CompetitionFilter
 import tech.testsys.domain.contract.persistence.ContestTaskResult
@@ -22,6 +23,8 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
+import tech.testsys.operation.error.AddClassContestError
+import tech.testsys.operation.error.AddCompetitionContestError
 import tech.testsys.operation.error.ClassAccessDeniedError
 import tech.testsys.operation.error.ClassNameBlankError
 import tech.testsys.operation.error.ClassNameTooLongError
@@ -30,6 +33,9 @@ import tech.testsys.operation.error.CompetitionAccessDeniedError
 import tech.testsys.operation.error.CompetitionNameBlankError
 import tech.testsys.operation.error.CompetitionNameTooLongError
 import tech.testsys.operation.error.CompetitionNotExistsError
+import tech.testsys.operation.error.ContestAccessDeniedError
+import tech.testsys.operation.error.ContestAlreadyAddedToClassError
+import tech.testsys.operation.error.ContestAlreadyAddedToCompetitionError
 import tech.testsys.operation.error.ContestNotAddedToClassError
 import tech.testsys.operation.error.ContestNotAddedToCompetitionError
 import tech.testsys.operation.error.ContestNotExistsError
@@ -221,6 +227,66 @@ class ManagerOperations(
             ContestNotAddedToCompetitionError(competitionId = competitionId, contestId = contestId)
         }
         return findContestResults(contest = contest, memberIds = competition.data.participants.ids).asSuccess()
+    }
+
+    /**
+     * Adds [contestId] shared to a community of the [Manager] role of [user] to [classId] they own and returns the updated class.
+     * Missing role, class, contest, access and repeated addition are expected failures; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.addContest")
+    fun addClassContest(user: MultipleRoleUser, classId: ClassId, contestId: ContestId): OperationResult<Class, AddClassContestError> =
+        operation<Class, AddClassContestError> {
+            ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+            val studyClass = classRepository.findById(classId)
+            ensure(studyClass != null) { ClassNotExistsError(classId) }
+            val contest = contestRepository.findById(contestId)
+            ensure(contest != null) { ContestNotExistsError(contestId) }
+            ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
+            ensure(isAvailableToManager(user = user, contest = contest)) { ContestAccessDeniedError(contestId) }
+            ensure(contestId !in studyClass.data.contests.ids) {
+                ContestAlreadyAddedToClassError(classId = classId, contestId = contestId)
+            }
+
+            val updatedClass = studyClass.withData {
+                contests.add(contestId)
+            }
+            return classRepository.update(updatedClass).asSuccess()
+        }
+
+    /**
+     * Adds [contestId] shared to a community of the [Manager] role of [user] to [competitionId] they own and returns the updated
+     * competition. Missing role, competition, contest, access and repeated addition are expected failures; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.addContest")
+    fun addCompetitionContest(
+        user: MultipleRoleUser,
+        competitionId: CompetitionId,
+        contestId: ContestId,
+    ): OperationResult<Competition, AddCompetitionContestError> = operation<Competition, AddCompetitionContestError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val competition = competitionRepository.findById(competitionId)
+        ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+        val contest = contestRepository.findById(contestId)
+        ensure(contest != null) { ContestNotExistsError(contestId) }
+        ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
+        ensure(isAvailableToManager(user = user, contest = contest)) { ContestAccessDeniedError(contestId) }
+        ensure(contestId !in competition.data.contests.ids) {
+            ContestAlreadyAddedToCompetitionError(competitionId = competitionId, contestId = contestId)
+        }
+
+        val updatedCompetition = competition.withData {
+            contests.add(contestId)
+        }
+        return competitionRepository.update(updatedCompetition).asSuccess()
+    }
+
+    private fun isAvailableToManager(user: MultipleRoleUser, contest: Contest): Boolean {
+        val managerCommunityIds = user.data.roles.filterIsInstance<Manager>().single().memberOf.ids
+        return contest.data.sharedTo.ids.any { communityId -> communityId in managerCommunityIds }
     }
 
     private fun findContestResults(contest: Contest, memberIds: List<UserId>): ContestResults {

@@ -17,6 +17,7 @@ import tech.testsys.domain.builder.api.`class`
 import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.builder.api.competition
 import tech.testsys.domain.builder.api.competitionData
+import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.group.ClassDataBuilder
@@ -53,6 +54,9 @@ import tech.testsys.operation.error.CompetitionAccessDeniedError
 import tech.testsys.operation.error.CompetitionNameBlankError
 import tech.testsys.operation.error.CompetitionNameTooLongError
 import tech.testsys.operation.error.CompetitionNotExistsError
+import tech.testsys.operation.error.ContestAccessDeniedError
+import tech.testsys.operation.error.ContestAlreadyAddedToClassError
+import tech.testsys.operation.error.ContestAlreadyAddedToCompetitionError
 import tech.testsys.operation.error.ContestNotAddedToClassError
 import tech.testsys.operation.error.ContestNotAddedToCompetitionError
 import tech.testsys.operation.error.ContestNotExistsError
@@ -61,6 +65,7 @@ import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.testAdministrator
 import tech.testsys.operation.util.testContest
+import tech.testsys.operation.util.testDeveloper
 import tech.testsys.operation.util.testManager
 import tech.testsys.operation.util.testMultipleRoleUser
 import java.time.Duration
@@ -1293,6 +1298,578 @@ class ManagerOperationsTests {
 
             val actual = assertThrows(IllegalStateException::class.java) {
                 operations.viewCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+            }
+
+            assertSame(failure, actual)
+        }
+    }
+
+    @Nested
+    inner class AddClassContestTests {
+
+        private val classId = ClassId(11)
+        private val contestId = ContestId(19)
+        private val manager = testManager {
+            memberOf(listOf(4))
+            data = managerData {}
+        }
+
+        @Test
+        fun `should raise MissedManagerRoleError before reading storage if user is not a Manager`() {
+            val user = testAdministrator {}
+
+            assertRaises(MissedManagerRoleError) { operations.addClassContest(user = user, classId = classId, contestId = contestId) }
+
+            verify { listOf(repository, competitionRepository, contestRepository, submissionRepository) wasNot Called }
+        }
+
+        @Test
+        fun `should raise MissedManagerRoleError if user is only a Developer of the community the contest is shared to`() {
+            val user = testDeveloper {
+                memberOf(listOf(4))
+                data = developerData {}
+            }
+
+            assertRaises(MissedManagerRoleError) { operations.addClassContest(user = user, classId = classId, contestId = contestId) }
+
+            verify { listOf(repository, competitionRepository, contestRepository, submissionRepository) wasNot Called }
+        }
+
+        @Test
+        fun `should raise ClassNotExistsError before reading the contest if class does not exist`() {
+            every { repository.findById(classId) } returns null
+
+            assertRaises(ClassNotExistsError(classId)) {
+                operations.addClassContest(user = manager, classId = classId, contestId = contestId)
+            }
+
+            verify { repository.findById(classId) }
+            confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
+        }
+
+        @Test
+        fun `should raise ContestNotExistsError without saving if contest does not exist`() {
+            every { repository.findById(classId) } returns testClass()
+            every { contestRepository.findById(contestId) } returns null
+
+            assertRaises(ContestNotExistsError(contestId)) {
+                operations.addClassContest(user = manager, classId = classId, contestId = contestId)
+            }
+
+            verify { repository.findById(classId) }
+            verify { contestRepository.findById(contestId) }
+            confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
+        }
+
+        @Test
+        fun `should raise ContestNotExistsError before checking access if contest for a foreign class does not exist`() {
+            every { repository.findById(classId) } returns testClass { owner = MultipleRoleUserId(99) }
+            every { contestRepository.findById(contestId) } returns null
+
+            assertRaises(ContestNotExistsError(contestId)) {
+                operations.addClassContest(user = manager, classId = classId, contestId = contestId)
+            }
+        }
+
+        @Test
+        fun `should raise ClassAccessDeniedError without saving if class belongs to another owner`() {
+            every { repository.findById(classId) } returns testClass { owner = MultipleRoleUserId(99) }
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+
+            assertRaises(ClassAccessDeniedError(classId)) {
+                operations.addClassContest(user = manager, classId = classId, contestId = contestId)
+            }
+
+            verify(exactly = 0) { repository.update(any<Class>()) }
+        }
+
+        @Test
+        fun `should deny a foreign class incorrectly included in the Manager class snapshot`() {
+            val user = testManager {
+                memberOf(listOf(4))
+                data = managerData { classes(listOf(11)) }
+            }
+            every { repository.findById(classId) } returns testClass { owner = MultipleRoleUserId(99) }
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+
+            assertRaises(ClassAccessDeniedError(classId)) {
+                operations.addClassContest(user = user, classId = classId, contestId = contestId)
+            }
+        }
+
+        @Test
+        fun `should raise ContestAccessDeniedError without saving if contest is not shared to any community`() {
+            every { repository.findById(classId) } returns testClass()
+            every { contestRepository.findById(contestId) } returns testContest()
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                operations.addClassContest(user = manager, classId = classId, contestId = contestId)
+            }
+
+            verify(exactly = 0) { repository.update(any<Class>()) }
+        }
+
+        @Test
+        fun `should raise ContestAccessDeniedError if contest is shared only to communities of other roles of the user`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    manager {
+                        memberOf(listOf(3))
+                        data = managerData {}
+                    }
+                    developer {
+                        memberOf(listOf(4))
+                        data = developerData {}
+                    }
+                    student {
+                        memberOf(listOf(5))
+                        data = studentData {}
+                    }
+                }
+            }
+            every { repository.findById(classId) } returns testClass()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4, 5)) }
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                operations.addClassContest(user = user, classId = classId, contestId = contestId)
+            }
+
+            verify(exactly = 0) { repository.update(any<Class>()) }
+        }
+
+        @Test
+        fun `should raise ContestAccessDeniedError for an unshared contest created by the Manager as a Developer`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    manager {
+                        memberOf(listOf(4))
+                        data = managerData {}
+                    }
+                    developer { data = developerData { contests(listOf(19)) } }
+                }
+            }
+            every { repository.findById(classId) } returns testClass()
+            every { contestRepository.findById(contestId) } returns testContest { owner = MultipleRoleUserId(0) }
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                operations.addClassContest(user = user, classId = classId, contestId = contestId)
+            }
+
+            verify(exactly = 0) { repository.update(any<Class>()) }
+        }
+
+        @Test
+        fun `should raise ContestAlreadyAddedToClassError without saving if contest is already added to the class`() {
+            every { repository.findById(classId) } returns testClass { contests(listOf(19)) }
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+
+            assertRaises(ContestAlreadyAddedToClassError(classId = classId, contestId = contestId)) {
+                operations.addClassContest(user = manager, classId = classId, contestId = contestId)
+            }
+
+            verify { repository.findById(classId) }
+            verify { contestRepository.findById(contestId) }
+            confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
+        }
+
+        @Test
+        fun `should raise ContestAccessDeniedError for an already added contest that is no longer available`() {
+            every { repository.findById(classId) } returns testClass { contests(listOf(19)) }
+            every { contestRepository.findById(contestId) } returns testContest()
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                operations.addClassContest(user = manager, classId = classId, contestId = contestId)
+            }
+        }
+
+        @Test
+        fun `should append the contest to the class and save it once with the other data unchanged`() {
+            val saved = testClass { contests(listOf(17, 18, 19)) }
+            every { repository.findById(classId) } returns testClass { contests(listOf(17, 18)) }
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+            every { repository.update(any<Class>()) } returns saved
+
+            val actual = operations.addClassContest(user = manager, classId = classId, contestId = contestId).getOrThrow()
+
+            assertSame(saved, actual)
+            verify(exactly = 1) {
+                repository.update(
+                    match<Class> { updated ->
+                        updated.id == ClassId(11) &&
+                            updated.createdAt == Instant.EPOCH &&
+                            updated.version == EntityVersion(0) &&
+                            updated.data.owner.id == MultipleRoleUserId(0) &&
+                            updated.data.name == "Viewed class" &&
+                            updated.data.description == "Class description" &&
+                            updated.data.students.ids == listOf(MultipleRoleUserId(1), MultipleRoleUserId(2)) &&
+                            updated.data.contests.ids == listOf(ContestId(17), ContestId(18), ContestId(19))
+                    },
+                )
+            }
+        }
+
+        @Test
+        fun `should allow a contest shared to several communities if only one of them has the Manager`() {
+            val user = testManager {
+                memberOf(listOf(4, 6))
+                data = managerData {}
+            }
+            every { repository.findById(classId) } returns testClass()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(3, 4, 5)) }
+            every { repository.update(any<Class>()) } answers { firstArg() }
+
+            val actual = operations.addClassContest(user = user, classId = classId, contestId = contestId).getOrThrow()
+
+            assertEquals(listOf(ContestId(19)), actual.data.contests.ids)
+        }
+
+        @Test
+        fun `should add a contest without tasks and schedule`() {
+            every { repository.findById(classId) } returns testClass()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+            every { repository.update(any<Class>()) } answers { firstArg() }
+
+            val actual = operations.addClassContest(user = manager, classId = classId, contestId = contestId).getOrThrow()
+
+            assertEquals(listOf(ContestId(19)), actual.data.contests.ids)
+        }
+
+        @Test
+        fun `should allow a Manager who also has other roles`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    manager {
+                        memberOf(listOf(4))
+                        data = managerData {}
+                    }
+                    student { data = studentData {} }
+                    administrator {}
+                }
+            }
+            every { repository.findById(classId) } returns testClass()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+            every { repository.update(any<Class>()) } answers { firstArg() }
+
+            val actual = operations.addClassContest(user = user, classId = classId, contestId = contestId).getOrThrow()
+
+            assertEquals(listOf(ContestId(19)), actual.data.contests.ids)
+        }
+
+        @Test
+        fun `should save only the class without writing the contest`() {
+            every { repository.findById(classId) } returns testClass()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+            every { repository.update(any<Class>()) } answers { firstArg() }
+
+            operations.addClassContest(user = manager, classId = classId, contestId = contestId).getOrThrow()
+
+            verify { repository.findById(classId) }
+            verify { contestRepository.findById(contestId) }
+            verify { repository.update(any<Class>()) }
+            confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
+        }
+
+        @Test
+        fun `should propagate a technical exception when saving the class`() {
+            val failure = IllegalStateException("Class storage unavailable")
+            every { repository.findById(classId) } returns testClass()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+            every { repository.update(any<Class>()) } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) {
+                operations.addClassContest(user = manager, classId = classId, contestId = contestId)
+            }
+
+            assertSame(failure, actual)
+        }
+    }
+
+    @Nested
+    inner class AddCompetitionContestTests {
+
+        private val competitionId = CompetitionId(21)
+        private val contestId = ContestId(19)
+        private val manager = testManager {
+            memberOf(listOf(4))
+            data = managerData {}
+        }
+
+        @Test
+        fun `should raise MissedManagerRoleError before reading storage if user is not a Manager`() {
+            val user = testAdministrator {}
+
+            assertRaises(MissedManagerRoleError) {
+                operations.addCompetitionContest(user = user, competitionId = competitionId, contestId = contestId)
+            }
+
+            verify { listOf(repository, competitionRepository, contestRepository, submissionRepository) wasNot Called }
+        }
+
+        @Test
+        fun `should raise MissedManagerRoleError if user is only a Developer of the community the contest is shared to`() {
+            val user = testDeveloper {
+                memberOf(listOf(4))
+                data = developerData {}
+            }
+
+            assertRaises(MissedManagerRoleError) {
+                operations.addCompetitionContest(user = user, competitionId = competitionId, contestId = contestId)
+            }
+
+            verify { listOf(repository, competitionRepository, contestRepository, submissionRepository) wasNot Called }
+        }
+
+        @Test
+        fun `should raise CompetitionNotExistsError before reading the contest if competition does not exist`() {
+            every { competitionRepository.findById(competitionId) } returns null
+
+            assertRaises(CompetitionNotExistsError(competitionId)) {
+                operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+            }
+
+            verify { competitionRepository.findById(competitionId) }
+            confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
+        }
+
+        @Test
+        fun `should raise ContestNotExistsError without saving if contest does not exist`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { contestRepository.findById(contestId) } returns null
+
+            assertRaises(ContestNotExistsError(contestId)) {
+                operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+            }
+
+            verify { competitionRepository.findById(competitionId) }
+            verify { contestRepository.findById(contestId) }
+            confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
+        }
+
+        @Test
+        fun `should raise ContestNotExistsError before checking access if contest for a foreign competition does not exist`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition { owner = MultipleRoleUserId(99) }
+            every { contestRepository.findById(contestId) } returns null
+
+            assertRaises(ContestNotExistsError(contestId)) {
+                operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+            }
+        }
+
+        @Test
+        fun `should raise CompetitionAccessDeniedError without saving if competition belongs to another owner`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition { owner = MultipleRoleUserId(99) }
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+
+            assertRaises(CompetitionAccessDeniedError(competitionId)) {
+                operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+            }
+
+            verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+        }
+
+        @Test
+        fun `should deny a foreign competition incorrectly included in the Manager competition snapshot`() {
+            val user = testManager {
+                memberOf(listOf(4))
+                data = managerData { competitions(listOf(21)) }
+            }
+            every { competitionRepository.findById(competitionId) } returns testCompetition { owner = MultipleRoleUserId(99) }
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+
+            assertRaises(CompetitionAccessDeniedError(competitionId)) {
+                operations.addCompetitionContest(user = user, competitionId = competitionId, contestId = contestId)
+            }
+        }
+
+        @Test
+        fun `should raise ContestAccessDeniedError without saving if contest is not shared to any community`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { contestRepository.findById(contestId) } returns testContest()
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+            }
+
+            verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+        }
+
+        @Test
+        fun `should raise ContestAccessDeniedError if contest is shared only to communities of other roles of the user`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    manager {
+                        memberOf(listOf(3))
+                        data = managerData {}
+                    }
+                    developer {
+                        memberOf(listOf(4))
+                        data = developerData {}
+                    }
+                    student {
+                        memberOf(listOf(5))
+                        data = studentData {}
+                    }
+                }
+            }
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4, 5)) }
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                operations.addCompetitionContest(user = user, competitionId = competitionId, contestId = contestId)
+            }
+
+            verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+        }
+
+        @Test
+        fun `should raise ContestAccessDeniedError for an unshared contest created by the Manager as a Developer`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    manager {
+                        memberOf(listOf(4))
+                        data = managerData {}
+                    }
+                    developer { data = developerData { contests(listOf(19)) } }
+                }
+            }
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { contestRepository.findById(contestId) } returns testContest { owner = MultipleRoleUserId(0) }
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                operations.addCompetitionContest(user = user, competitionId = competitionId, contestId = contestId)
+            }
+
+            verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+        }
+
+        @Test
+        fun `should raise ContestAlreadyAddedToCompetitionError without saving if contest is already added to the competition`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition { contests(listOf(19)) }
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+
+            assertRaises(ContestAlreadyAddedToCompetitionError(competitionId = competitionId, contestId = contestId)) {
+                operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+            }
+
+            verify { competitionRepository.findById(competitionId) }
+            verify { contestRepository.findById(contestId) }
+            confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
+        }
+
+        @Test
+        fun `should raise ContestAccessDeniedError for an already added contest that is no longer available`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition { contests(listOf(19)) }
+            every { contestRepository.findById(contestId) } returns testContest()
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+            }
+        }
+
+        @Test
+        fun `should append the contest to the competition and save it once with the other data unchanged`() {
+            val saved = testCompetition {
+                participants(listOf(31, 32))
+                contests(listOf(17, 18, 19))
+            }
+            every { competitionRepository.findById(competitionId) } returns testCompetition {
+                participants(listOf(31, 32))
+                contests(listOf(17, 18))
+            }
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+            every { competitionRepository.update(any<Competition>()) } returns saved
+
+            val actual = operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+                .getOrThrow()
+
+            assertSame(saved, actual)
+            verify(exactly = 1) {
+                competitionRepository.update(
+                    match<Competition> { updated ->
+                        updated.id == CompetitionId(21) &&
+                            updated.createdAt == Instant.EPOCH &&
+                            updated.version == EntityVersion(0) &&
+                            updated.data.owner.id == MultipleRoleUserId(0) &&
+                            updated.data.name == "Existing competition" &&
+                            updated.data.description == "Competition description" &&
+                            updated.data.participants.ids == listOf(SingleRoleUserId(31), SingleRoleUserId(32)) &&
+                            updated.data.contests.ids == listOf(ContestId(17), ContestId(18), ContestId(19))
+                    },
+                )
+            }
+        }
+
+        @Test
+        fun `should allow a contest shared to several communities if only one of them has the Manager`() {
+            val user = testManager {
+                memberOf(listOf(4, 6))
+                data = managerData {}
+            }
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(3, 4, 5)) }
+            every { competitionRepository.update(any<Competition>()) } answers { firstArg() }
+
+            val actual = operations.addCompetitionContest(user = user, competitionId = competitionId, contestId = contestId).getOrThrow()
+
+            assertEquals(listOf(ContestId(19)), actual.data.contests.ids)
+        }
+
+        @Test
+        fun `should add a contest without tasks and schedule`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+            every { competitionRepository.update(any<Competition>()) } answers { firstArg() }
+
+            val actual = operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+                .getOrThrow()
+
+            assertEquals(listOf(ContestId(19)), actual.data.contests.ids)
+        }
+
+        @Test
+        fun `should allow a Manager who also has other roles`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    manager {
+                        memberOf(listOf(4))
+                        data = managerData {}
+                    }
+                    student { data = studentData {} }
+                    administrator {}
+                }
+            }
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+            every { competitionRepository.update(any<Competition>()) } answers { firstArg() }
+
+            val actual = operations.addCompetitionContest(user = user, competitionId = competitionId, contestId = contestId).getOrThrow()
+
+            assertEquals(listOf(ContestId(19)), actual.data.contests.ids)
+        }
+
+        @Test
+        fun `should save only the competition without writing the contest`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+            every { competitionRepository.update(any<Competition>()) } answers { firstArg() }
+
+            operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId).getOrThrow()
+
+            verify { competitionRepository.findById(competitionId) }
+            verify { contestRepository.findById(contestId) }
+            verify { competitionRepository.update(any<Competition>()) }
+            confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
+        }
+
+        @Test
+        fun `should propagate a technical exception when saving the competition`() {
+            val failure = IllegalStateException("Competition storage unavailable")
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+            every { competitionRepository.update(any<Competition>()) } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) {
+                operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
             }
 
             assertSame(failure, actual)

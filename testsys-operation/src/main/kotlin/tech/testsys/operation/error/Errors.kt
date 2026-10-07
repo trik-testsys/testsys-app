@@ -61,6 +61,13 @@ sealed interface ResourceAccessError : OperationError
 // region ManagerOperations
 
 /**
+ * Failure of creating a class owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateClassError : OperationError
+
+/**
  * Failure of listing classes owned by the manager.
  *
  * @since %CURRENT_VERSION%
@@ -79,7 +86,22 @@ sealed interface ViewClassError : OperationError
  *
  * @since %CURRENT_VERSION%
  */
-data object MissedManagerRoleError : ViewClassesError, ViewClassError, MissedRequiredRoleError
+data object MissedManagerRoleError : CreateClassError, ViewClassesError, ViewClassError, MissedRequiredRoleError
+
+/**
+ * The class name is empty or contains only whitespace.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object ClassNameBlankError : CreateClassError
+
+/**
+ * The class name exceeds 255 Unicode code points.
+ *
+ * @property className the supplied class name.
+ * @since %CURRENT_VERSION%
+ */
+data class ClassNameTooLongError(val className: String) : CreateClassError
 
 /**
  * The class does not exist.

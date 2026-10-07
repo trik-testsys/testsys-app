@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.`class`
 import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.builder.api.contest
@@ -34,9 +35,12 @@ import tech.testsys.domain.model.group.ClassData
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.operation.error.ClassAccessDeniedError
+import tech.testsys.operation.error.ClassNameBlankError
+import tech.testsys.operation.error.ClassNameTooLongError
 import tech.testsys.operation.error.ClassNotExistsError
 import tech.testsys.operation.error.MissedManagerRoleError
 import tech.testsys.operation.error.getOrThrow
@@ -58,6 +62,181 @@ class ManagerOperationsTests {
         multipleRoleUserRepository = multipleRoleUserRepository,
         contestRepository = contestRepository,
     )
+
+    @Nested
+    inner class CreateClassTests {
+
+        private val manager = testManager { data = managerData {} }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["", "Valid name", "a"])
+        fun `should raise MissedManagerRoleError before saving or validating the name if user is not a Manager`(name: String) {
+            val user = testAdministrator {}
+
+            assertRaises(MissedManagerRoleError) { operations.createClass(user = user, className = name) }
+
+            verify { listOf(repository, multipleRoleUserRepository, contestRepository) wasNot Called }
+        }
+
+        @Test
+        fun `should create an owned empty class and save it exactly once`() {
+            prepareSaving()
+
+            val actual = operations.createClass(user = manager, className = "New class").getOrThrow()
+
+            assertEquals(manager.id, actual.data.owner.id)
+            assertEquals("New class", actual.data.name)
+            assertEquals("", actual.data.description)
+            assertEquals(emptyList<MultipleRoleUserId>(), actual.data.students.ids)
+            assertEquals(emptyList<ContestId>(), actual.data.contests.ids)
+            verify(exactly = 1) {
+                repository.save(
+                    match<ClassData> { data ->
+                        data.owner.id == manager.id && data.name == "New class" && data.description == "" &&
+                            data.students.ids.isEmpty() && data.contests.ids.isEmpty()
+                    },
+                )
+            }
+            confirmVerified(repository, multipleRoleUserRepository, contestRepository)
+        }
+
+        @Test
+        fun `should return the stored class with its identity timestamp and version unchanged`() {
+            val stored = testClass { name = "New class" }
+            every { repository.save(any<ClassData>()) } returns stored
+
+            val actual = operations.createClass(user = manager, className = "New class").getOrThrow()
+
+            assertSame(stored, actual)
+            assertEquals(ClassId(11), actual.id)
+            assertEquals(Instant.EPOCH, actual.createdAt)
+            assertEquals(0L, actual.version?.value)
+        }
+
+        @Test
+        fun `should allow a Manager who also has other roles`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    manager { data = managerData {} }
+                    student { data = studentData {} }
+                    administrator {}
+                }
+            }
+            prepareSaving()
+
+            val actual = operations.createClass(user = user, className = "New class").getOrThrow()
+
+            assertEquals(user.id, actual.data.owner.id)
+            assertEquals("New class", actual.data.name)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["  Mixed CASE  ", "\tA\n", "é", "😀"])
+        fun `should preserve a nonblank name including its whitespace case and Unicode characters`(name: String) {
+            prepareSaving()
+
+            val actual = operations.createClass(user = manager, className = name).getOrThrow()
+
+            assertEquals(name, actual.data.name)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["", " ", "\t", "\n", " \t\r\n", "\u00A0"])
+        fun `should raise ClassNameBlankError without saving if the name is blank`(name: String) {
+            assertRaises(ClassNameBlankError) { operations.createClass(user = manager, className = name) }
+
+            verify { listOf(repository, multipleRoleUserRepository, contestRepository) wasNot Called }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should accept a name with exactly 255 Unicode code points`(symbol: String) {
+            val name = symbol.repeat(255)
+            prepareSaving()
+
+            val actual = operations.createClass(user = manager, className = name).getOrThrow()
+
+            assertEquals(name, actual.data.name)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should raise ClassNameTooLongError without saving if the name has 256 Unicode code points`(symbol: String) {
+            val name = symbol.repeat(256)
+
+            assertRaises(ClassNameTooLongError(name)) { operations.createClass(user = manager, className = name) }
+
+            verify { listOf(repository, multipleRoleUserRepository, contestRepository) wasNot Called }
+        }
+
+        @Test
+        fun `should allow duplicate names without changing the existing class`() {
+            val first = testClass {
+                name = "Same name"
+                students(emptyList())
+            }
+            val second = `class` {
+                id = 12
+                createdAt = Instant.EPOCH
+                version = EntityVersion(0)
+                data = first.data
+            }
+            every { repository.save(any<ClassData>()) } returnsMany listOf(first, second)
+            val existing = operations.createClass(user = manager, className = "Same name").getOrThrow()
+            val existingData = existing.data
+
+            val actual = operations.createClass(user = manager, className = "Same name").getOrThrow()
+
+            assertSame(second, actual)
+            assertEquals(ClassId(12), actual.id)
+            assertEquals("Same name", actual.data.name)
+            assertSame(existingData, existing.data)
+            assertEquals(ClassId(11), existing.id)
+            verify(exactly = 2) { repository.save(match<ClassData> { data -> data.name == "Same name" }) }
+            confirmVerified(repository, multipleRoleUserRepository, contestRepository)
+        }
+
+        @Test
+        fun `should preserve the user and Manager class snapshot without saving other entities`() {
+            val user = testManager { data = managerData { classes(listOf(99)) } }
+            val userData = user.data
+            val managerRole = user.data.roles.filterIsInstance<Manager>().single()
+            prepareSaving()
+
+            val actual = operations.createClass(user = user, className = "New class").getOrThrow()
+
+            assertEquals(user.id, actual.data.owner.id)
+            assertSame(userData, user.data)
+            assertSame(managerRole, user.data.roles.filterIsInstance<Manager>().single())
+            assertEquals(listOf(ClassId(99)), managerRole.data.classes.ids)
+            assertEquals(0L, user.version?.value)
+            verify(exactly = 1) { repository.save(any<ClassData>()) }
+            confirmVerified(repository, multipleRoleUserRepository, contestRepository)
+        }
+
+        @Test
+        fun `should propagate a technical storage exception when saving the class`() {
+            val failure = IllegalStateException("Class storage unavailable")
+            every { repository.save(any<ClassData>()) } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) {
+                operations.createClass(user = manager, className = "New class")
+            }
+
+            assertSame(failure, actual)
+        }
+
+        private fun prepareSaving() {
+            every { repository.save(any<ClassData>()) } answers {
+                `class` {
+                    id = 12
+                    createdAt = Instant.EPOCH
+                    version = EntityVersion(0)
+                    data = firstArg<ClassData>()
+                }
+            }
+        }
+    }
 
     @Nested
     inner class ViewClassesTests {

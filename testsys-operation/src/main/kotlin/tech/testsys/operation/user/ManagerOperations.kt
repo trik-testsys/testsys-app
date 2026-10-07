@@ -1,5 +1,6 @@
 package tech.testsys.operation.user
 
+import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.contract.persistence.ClassFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
@@ -14,7 +15,10 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.error.ClassAccessDeniedError
+import tech.testsys.operation.error.ClassNameBlankError
+import tech.testsys.operation.error.ClassNameTooLongError
 import tech.testsys.operation.error.ClassNotExistsError
+import tech.testsys.operation.error.CreateClassError
 import tech.testsys.operation.error.MissedManagerRoleError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ViewClassError
@@ -23,6 +27,8 @@ import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.hasRole
+
+private const val MAX_CLASS_NAME_CODE_POINTS = 255
 
 /**
  * Operations of a user with the [Manager] role.
@@ -35,6 +41,29 @@ class ManagerOperations(
     private val multipleRoleUserRepository: MultipleRoleUserRepository,
     private val contestRepository: ContestRepository,
 ) {
+
+    /**
+     * Creates a class owned by [user] with unchanged [className], an empty description and no students or contests.
+     * The name must be nonblank and contain at most 255 Unicode code points; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.class.createClass")
+    fun createClass(user: MultipleRoleUser, className: String): OperationResult<Class, CreateClassError> =
+        operation<Class, CreateClassError> {
+            ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+            ensure(className.isNotBlank(), ClassNameBlankError)
+            ensure(className.codePointCount(0, className.length) <= MAX_CLASS_NAME_CODE_POINTS) { ClassNameTooLongError(className) }
+
+            val classData = classData {
+                owner = user.id
+                name = className
+                description = ""
+            }
+
+            val studyClass = classRepository.save(classData)
+            return studyClass.asSuccess()
+        }
 
     /**
      * Returns a [pagination] page matching [filter] of classes owned by [user], preserving stored state.

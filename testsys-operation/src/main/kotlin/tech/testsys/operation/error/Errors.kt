@@ -58,6 +58,24 @@ sealed interface ResourceAccessError : OperationError
 
 // endregion
 
+// region ManagerOperations
+
+/**
+ * Failure of listing classes owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewClassesError : OperationError
+
+/**
+ * The user does not hold the manager role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object MissedManagerRoleError : ViewClassesError, MissedRequiredRoleError
+
+// endregion
+
 // region JudgeOperations
 
 /**

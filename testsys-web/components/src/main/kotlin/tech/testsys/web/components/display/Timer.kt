@@ -95,7 +95,7 @@ fun ContentScope.timer(
     ),
     configure: TimerHandle.() -> Unit = {},
 ): TimerHandle {
-    require(!dangerBelow.isNegative) { "Timer danger threshold must be nonnegative" }
+    require(!dangerBelow.isNegative) { "Timer '$label' danger threshold must be nonnegative, got $dangerBelow" }
     val control = TimerDisplay(label, value, variant, texts, dangerBelow)
     add(control)
     return TimerHandle(control, value).apply(configure)

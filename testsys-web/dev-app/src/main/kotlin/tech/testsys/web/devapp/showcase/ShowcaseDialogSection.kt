@@ -81,7 +81,7 @@ private fun tourDialog(): DialogHandle {
             }
         }
         footer { handle ->
-            action("Отмена") { onClick { handle.close() } }
+            action("Отменить") { onClick { handle.close() } }
             mainAction("Создать") {
                 onClick {
                     val tour = ShowcaseTour()

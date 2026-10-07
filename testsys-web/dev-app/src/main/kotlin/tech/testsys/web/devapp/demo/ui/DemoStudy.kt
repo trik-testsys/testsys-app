@@ -10,8 +10,10 @@ import tech.testsys.web.components.forms.fileDrop
 import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.devapp.demo.model.DemoObjects
+import tech.testsys.web.devapp.demo.model.DemoRole
 import tech.testsys.web.devapp.demo.model.DemoRow
 import tech.testsys.web.devapp.demo.model.DemoSolution
+import tech.testsys.web.devapp.demo.model.DemoSolutionKind
 import tech.testsys.web.devapp.demo.model.DemoTask
 import tech.testsys.web.devapp.demo.model.DemoUser
 import tech.testsys.web.devapp.demo.model.actor
@@ -35,15 +37,15 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
             }
         }
     }
-    val group = objects.classes.firstOrNull {
+    val selectedClass = objects.classes.firstOrNull {
         it.id == context.selection(key = "${actor.id}:class", fallback = objects.classes.firstOrNull()?.id)
     }
     val tours = objects.tours.filter {
-        group == null || it.id in group.tourIds
+        selectedClass == null || it.id in selectedClass.tourIds
     }
     block("Доступные туры") {
         demoTable(
-            context.table("${actor.id}:${group?.id}:tours"),
+            context.table("${actor.id}:${selectedClass?.id}:tours"),
             tours.map {
                 it.row()
             },
@@ -88,8 +90,8 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
             demoDownload(filename = "${task.id}-statement.txt", content = "${task.name}\n${task.description}\nДемонстрационное условие")
             demoDownload(filename = "${task.id}-exercise-demo.qrs", content = "TestSys demo exercise: ${task.name}")
         }
-        if (section != "solutions" || actor.role == "Участник") {
-            lateinit var kind: ValueInput<String?>
+        if (section != "solutions" || actor.role == DemoRole.Participant) {
+            lateinit var kind: ValueInput<DemoSolutionKind?>
             val filename = ValueSignal("")
             row {
                 kind = select(
@@ -119,7 +121,7 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
                                 context.state.submitSolution(
                                     userId = actor.id,
                                     taskId = task.id,
-                                    kind = kind.value.orEmpty(),
+                                    kind = kind.value,
                                     fileName = filename.peek(),
                                 ),
                             )
@@ -158,7 +160,7 @@ internal fun PageScope.demoSolutionTable(
     onSelect: (DemoRow) -> Unit = {},
 ) {
     block(
-        if (actor.role == "Судья") {
+        if (actor.role == DemoRole.Judge) {
             "Решения учеников и участников"
         } else {
             "Мои решения"

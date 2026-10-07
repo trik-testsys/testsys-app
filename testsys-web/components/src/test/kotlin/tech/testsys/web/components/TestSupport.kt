@@ -8,6 +8,7 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.dialog.Dialog
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.internal.PendingJavaScriptInvocation
 import com.vaadin.flow.router.Route
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -53,7 +54,7 @@ internal val testTexts = UiTexts(
         firstDayOfWeek = DayOfWeek.MONDAY,
         dateFormat = "dd.MM.yyyy",
         today = "Сегодня",
-        cancel = "Отмена",
+        cancel = "Отменить",
     ),
     fieldErrors = FieldErrorTexts(
         badInput = "Проверьте формат",
@@ -102,6 +103,9 @@ internal val testTexts = UiTexts(
         upload = "Выбрать файлы",
         drop = "Перетащите файлы сюда",
         cancel = "Отменить",
+        cancelled = "Отменено",
+        removeFile = "Убрать файл",
+        stalled = "Передача приостановлена",
         preparing = "Подготовка",
         downloading = "Передача",
         done = "Передано сервером",
@@ -121,6 +125,7 @@ internal val testTexts = UiTexts(
         byteUnits = listOf("Б", "КБ", "МБ", "ГБ"),
         timerUnits = listOf("дни", "часы", "минуты", "секунды"),
         avatarOverflow = { count -> "Ещё $count" },
+        more = { count -> "Ещё значений: $count" },
         transferBytes = { count -> "Байты: $count" },
         question = { number -> "Вопрос $number" },
     ),
@@ -145,7 +150,7 @@ internal val testTexts = UiTexts(
     notFound = NotFoundTexts(
         title = "Страница не найдена",
         description = "Проверьте адрес",
-        back = "Назад",
+        back = "Вернуться",
         pageTitle = "Страница не найдена — TestSys",
     ),
 )
@@ -209,6 +214,13 @@ internal fun findAllButtons(root: Component): List<Button> = (listOf(root) + roo
 
 /** The button with [text] on the current UI, shown or hidden. */
 internal fun button(text: String): Button = findAllButtons(UI.getCurrent()).single { button -> button.text == text }
+
+/** JavaScript calls queued on the current UI since the last call, flushed as the response would do before it is read. */
+internal fun pendingJavaScript(): List<PendingJavaScriptInvocation> {
+    val internals = UI.getCurrent().internals
+    internals.stateTree.runExecutionsBeforeClientResponse()
+    return internals.dumpPendingJavaScriptInvocations()
+}
 
 /** Dialogs opened on the current UI after the pending round trip attached them. */
 internal fun openDialogs(): List<Dialog> {

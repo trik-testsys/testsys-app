@@ -1,12 +1,14 @@
 package tech.testsys.web.components.data
 
 import com.github.mvysny.kaributesting.v10._click
+import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._setValue
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.component.select.Select
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -21,26 +23,36 @@ import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.testTexts
+import tools.jackson.databind.ObjectMapper
 
 class TableSelectionTests : MockVaadinTests() {
     @Test
-    fun `should protect every DSL input host including select from row clicks`() {
+    fun `should mark a select in a cell as an input that the row click filter excludes`() {
+        buildSelectTable {}
+
+        val select = _find<Select<*>>().single()
+
+        assertTrue(select.element.hasAttribute("data-ts-input"))
         assertTrue(ROW_CLICK_FILTER.contains("[data-ts-input]"))
+    }
+
+    @Test
+    fun `should ignore a row click that the client filter rejects`() {
         var clicks = 0
-        val root = buildTestPage {
-            block {
-                table(key = { value: String -> value }, fetch = { Page(listOf("row"), 1) }) {
-                    column("Choice", size = 1) { select("Choice", listOf("One", "Two"), { choice -> choice }) }
-                    onRowClick { clicks++ }
-                }
-            }
-        }
-        assertTrue(root.findAll("ts-table").isNotEmpty())
-        root.find(
-            "ts-table",
-        ).findAll(
-            "ts-row-clickable",
-        ).single()._fireDomEvent("click", tools.jackson.databind.ObjectMapper().createObjectNode().put(ROW_CLICK_FILTER, true))
+        val root = buildSelectTable { clicks++ }
+
+        root.find("ts-table").findAll("ts-row-clickable").single()._fireDomEvent("click", rowClick(isAccepted = false))
+
+        assertEquals(0, clicks)
+    }
+
+    @Test
+    fun `should run the row click for a click that the client filter accepts`() {
+        var clicks = 0
+        val root = buildSelectTable { clicks++ }
+
+        root.find("ts-table").findAll("ts-row-clickable").single()._fireDomEvent("click", rowClick(isAccepted = true))
+
         assertEquals(1, clicks)
     }
 
@@ -323,14 +335,22 @@ class TableSelectionTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should not click the row when its checkbox is clicked`() {
-        var clicked: Row? = null
-        val handle = buildTable(Source(size = 12)) { onRowClick { row -> clicked = row } }
+    fun `should select a row through its checkbox`() {
+        val handle = buildTable(Source(size = 12))
 
         rowCheckbox(1)._setValue(true)
 
-        assertNull(clicked)
         assertEquals(setOf<Any>(2), handle.selected)
+    }
+
+    @Test
+    fun `should not run the row click for a click on its checkbox`() {
+        var clicked: Row? = null
+        buildTable(Source(size = 12)) { onRowClick { row -> clicked = row } }
+
+        rows()[1]._fireDomEvent("click", rowClick(isAccepted = false))
+
+        assertNull(clicked)
         assertTrue(ROW_CLICK_FILTER.contains("vaadin-checkbox"))
     }
 
@@ -371,6 +391,18 @@ class TableSelectionTests : MockVaadinTests() {
         }
         return handle
     }
+
+    private fun buildSelectTable(onClick: () -> Unit): Component = buildTestPage {
+        block {
+            table(key = { value: String -> value }, fetch = { Page(listOf("row"), 1) }) {
+                column("Choice", size = 1) { select("Choice", listOf("One", "Two"), { choice -> choice }) }
+                onRowClick { onClick() }
+            }
+        }
+    }
+
+    /** Data of a row click as the client sends it: whether the click passed the filter of interactive targets. */
+    private fun rowClick(isAccepted: Boolean) = ObjectMapper().createObjectNode().put(ROW_CLICK_FILTER, isAccepted)
 
     private fun ui(): Component = UI.getCurrent()
 

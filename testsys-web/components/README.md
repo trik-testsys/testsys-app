@@ -20,8 +20,9 @@
 - CSS и ресурсы расположены непосредственно в `src/main/resources/META-INF/resources/testsys-ui/`.
   Общие классы компонентов определены в `tokens/components.css`.
   `styles/styles.css` импортирует единственные токены; `styles/vaadin.css` связывает Lumo с ними и оформляет
-  специфичный DOM Vaadin. Шрифты с лицензиями находятся в `fonts/`, бренд — в `brand/`, иконки — в `icons.svg`.
-  Стандартный `processResources` упаковывает эти ресурсы без дополнительного копирования исходников.
+  специфичный DOM Vaadin. Шрифты с лицензиями находятся в `fonts/`, бренд — в `brand/`, иконки — в `icons.svg`,
+  лицензия иконок — `LICENSE-Lucide.txt`. Стандартный `processResources` упаковывает эти ресурсы без дополнительного
+  копирования исходников.
 - jar модуля сохраняет даты изменения файлов (`isPreserveFileTimestamps = true`): Vaadin отдаёт стили с
   `Last-Modified` из jar, и с одинаковой датой воспроизводимой сборки браузер держал бы старый CSS после пересборки.
 - Приложение подключает стили через `@StyleSheet` на `AppShellConfigurator` в порядке: `Lumo.STYLESHEET`,
@@ -182,7 +183,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `page` | `row`, `block`, `highlightBlock` | Блок прямо в странице занимает всю ширину |
 | `row` страницы | `slot(size)` | `size` от 1 до 24, сумма слотов ряда — не больше 24 |
 | `slot` | `row` | Ряды слота стоят друг под другом на колонках слота |
-| `row` слота | `block(size)`, `highlightBlock(size)`, `statCard(…)` | `size` от 1 до ширины слота, по умолчанию весь слот; сумма — не больше ширины слота |
+| `row` слота | `block(size)`, `highlightBlock(size)`, `statCard(…)`, `contestCard(…)` | `size` от 1 до ширины слота, по умолчанию весь слот; сумма — не больше ширины слота |
 | `row` блока | поля, `field`, `text`, `tag`, `badge`, `counter`, `icon`, `alert`, `statCard`, `pills`, `horizontal`, `vertical` | Поле занимает `labelSize + size`, остальные — `size`; без `size` элемент занимает остаток строки, после него строка закрыта; сумма — не больше размера блока |
 
 - Неверный размер — `IllegalArgumentException`, переполнение ряда и элемент после занявшего остаток строки —
@@ -211,10 +212,10 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `PageTabsScope` | `tab` (вкладка-маршрут) |
 | `PageRowScope` | `slot` |
 | `SlotScope` | `row` |
-| `SlotRowScope` | `block`, `highlightBlock`, `statCard` |
+| `SlotRowScope` | `block`, `highlightBlock`, `statCard`, `contestCard` |
 | `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
-| `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, `select` без подписи, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` (без полей с подписью) |
+| `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `segmentedControl`, `multiSelect`, `fileDrop`), `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
 | `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
 | `TableScope<T>` | колонки таблицы, `menuColumn`, `empty`, `onRowClick` |
 | `MenuScope` | `item`, `destructiveItem` |
@@ -225,12 +226,14 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 ячейки `column` таблицы, подвал диалога, кнопки заголовка страницы и пустого состояния.
 
 Функции содержимого — расширения скоупов в пакетах `actions`, `forms`, `display`, `feedback`, `data`, `navigation`,
-`overlay`, `core`; `toast`, `confirm` и `dialog` — функции верхнего уровня в пакетах `feedback` и `overlay`. Функции
-отображения (`text`, `icon`, `tag`, `badge`, `counter`, `alert`) и `pills` объявлены и для `ContentScope`, и для
-`BlockRowScope` (с необязательным `size`), поля — только для `BlockRowScope`, действия, `menu`, `filterChip`,
-`pagination` и `select` без подписи (см. [Фильтры в шапке](#фильтры-в-шапке)) — только для `ContentScope`, `tabs`
-и `emptyState` — только для `BlockScope`. `statCard` в ряду слота создаёт свой блок,
-в строке блока — только разметку `.ts-stat`.
+`overlay`, `quiz`, `core`; `toast`, `confirm` и `dialog` — функции верхнего уровня в пакетах `feedback` и `overlay`.
+Функции отображения (`text`, `icon`, `tag`, `badge`, `counter`, `alert`) и `pills` объявлены и для `ContentScope`,
+и для `BlockRowScope` (с необязательным `size`). Поля с подписью есть только в `BlockRowScope`; в `ContentScope`
+есть поля без подписи: `select` (см. [Фильтры в шапке](#фильтры-в-шапке)), `segmentedControl`, `multiSelect`
+и `fileDrop`. Действия, `menu`, `filterChip` и `pagination` объявлены для `ContentScope`; `downloadAction` есть также
+в `BlockRowScope`. `tabs` и `emptyState` — только для `BlockScope`. `statCard` в ряду слота создаёт свой блок,
+в строке блока — только разметку `.ts-stat`. `contestCard` в ряду слота — самостоятельная поверхность уровня блока
+без обёртки в блок.
 
 ## Поля
 
@@ -366,7 +369,7 @@ block(title = "Посылки") {
 `pagination(pageCount, page = 1) { }` в `ContentScope` — полный пейджер для списка, который страница листает
 сама: стрелки и кнопки страниц. Возвращает `PaginationHandle`. В строке блока пейджер ставится в `horizontal { }`.
 Таблица использует свой компактный пейджер, см. [Пагинация таблицы](#пагинация-таблицы). Образец — `paginationSection`
-в `ShowcaseStatesView.kt` витрины.
+в `ShowcaseNavigationSections.kt` витрины.
 
 - Разметка: `div.ts-pager` со стрелкой «‹», кнопками страниц `button.ts-pager__btn`, пропусками
   `span.ts-pager__gap` («…») и стрелкой «›». Текущая страница — `.ts-pager__btn--active` с `aria-current="page"`.
@@ -392,7 +395,7 @@ block(title = "Посылки") {
 
 `emptyState(title, description = null, icon = IconName.File) { … }` в `BlockScope` — разметка `.ts-empty`
 на всё тело блока: иконка, заголовок, описание и кнопки из завершающей лямбды (`ContentScope`). Возвращает
-`ElementHandle`. Образец — `emptySection` в `ShowcaseStatesView.kt` витрины.
+`ElementHandle`. Образец — `emptySection` в `ShowcaseTableStates.kt` витрины.
 
 - Пустое состояние занимает всё тело блока, как таблица: блок со строками не принимает `emptyState`, а блок
   с пустым состоянием — `row { }`, `table` и второй `emptyState` (`IllegalStateException`).
@@ -572,14 +575,14 @@ confirm(
 
 - `confirm(title, text = null, action, isDanger = false, typeToConfirm = null, onConfirm)` вызывается
   из обработчиков, как `toast`, и открывает диалог шириной 440 px сразу.
-- Подвал: «Отмена» (`UiTexts.dialog.cancel`) и кнопка действия. У обычного подтверждения она главная (`mainAction`).
+- Подвал: «Отменить» (`UiTexts.dialog.cancel`) и кнопка действия. У обычного подтверждения она главная (`mainAction`).
   `isDanger` включает вид `.ts-dialog--alert` (предупреждающая иконка вместо шапки), а кнопка действия получает
   внутреннюю роль `danger` (см. [Оформление](#оформление)).
 - `typeToConfirm` ставит между текстом и подвалом поле с подписью `UiTexts.dialog.typeToConfirm(name)` и фокусом
   после открытия. Кнопка действия включена, только когда значение поля без пробелов по краям в точности, с учётом
   регистра, совпадает с `typeToConfirm`.
 - Кнопка действия вызывает `onConfirm` и закрывает диалог; если `onConfirm` бросил исключение, диалог остаётся
-  открытым. «Отмена», крестик, Esc и клик по фону закрывают диалог без вызова.
+  открытым. «Отменить», крестик, Esc и клик по фону закрывают диалог без вызова.
 
 ### Создание из списка
 
@@ -595,7 +598,7 @@ confirm(
 val newTour = dialog(title = "Новый тур", subtitle = "Название обязательно") {
     row { textInput("Название", labelSize = 4, size = 8) { binder.forField(this).asRequired("Заполните").bind(…) } }
     footer { dialog ->
-        action("Отмена") { onClick { dialog.close() } }
+        action("Отменить") { onClick { dialog.close() } }
         mainAction("Создать") { onClick { if (binder.writeBeanIfValid(tour)) dialog.close() } }
     }
 }
@@ -617,7 +620,7 @@ val newTour = dialog(title = "Новый тур", subtitle = "Название �
 `lookup(label, labelSize, size, fetch, display, columns, hint = null, pageSize = 10) { }` в `BlockRowScope` — поле
 одной сущности, выбранной в диалоге с поиском и таблицей; возвращает `ValueInput<T?>`. Работает везде, где есть
 строка: в блоке и в диалоге с формой. Поле нескольких сущностей — `lookupMany`, см.
-[Несколько значений](#несколько-значений). Образец — лукапы тура в `ShowcaseTableSections.kt` витрины.
+[Несколько значений](#несколько-значений). Образец — `contestLookup` в `ShowcaseLookupSection.kt` витрины.
 
 ```kotlin
 lookup(
@@ -660,8 +663,8 @@ lookup(
 
 `lookupMany(label, labelSize, size, fetch, display, columns, hint = null, pageSize = 10) { }` в `BlockRowScope` —
 поле нескольких сущностей, отмеченных в диалоге лукапа; возвращает `ValueInput<Set<T>>`, пустое значение — пустой
-набор. Параметры, их проверки, поиск и таблица диалога — как у `lookup`. Образец — лукап задач в
-`ShowcaseTableSections.kt` витрины.
+набор. Параметры, их проверки, поиск и таблица диалога — как у `lookup`. Образец — `taskLookup` в
+`ShowcaseLookupSection.kt` витрины.
 
 - В рамке — чипы `.ts-chip` первых трёх значений с текстом `display(value)`, остальные значения — один чип «+N»
   (`.ts-chip--more`). У чипа крестик `.ts-chip__x` с именем `UiTexts.lookup.remove(display(value))`, который убирает
@@ -688,7 +691,7 @@ lookup(
 
 `menu(label = null) { … }` в `ContentScope` — кнопка, которая по клику открывает меню действий: без `label` — иконка
 «⋯» с доступным именем `UiTexts.menu.actions` (как `iconAction`), с `label` — кнопка `action` с этим текстом.
-Возвращает `ElementHandle`. Образец — `menuSection` в `ShowcaseStatesView.kt` витрины.
+Возвращает `ElementHandle`. Образец — `menuSection` в `ShowcaseTableStates.kt` витрины.
 
 - `item(label, isEnabled = true) { }` — пункт меню; выключенный пункт виден, но не выбирается.
   `destructiveItem(label) { }` — пункт, который удаляет или отменяет. Разрушительные пункты идут последними,
@@ -730,8 +733,8 @@ lookup(
 [Ручки и служебные свойства](#ручки-и-служебные-свойства).
 
 `text(signal)` в `ContentScope` и `text(signal, size)` в `BlockRowScope` — то же, что `text(String)`, но текст
-следует сигналу; ручной `TextHandle.text` после этого бросает `BindingActiveException`. Образец — часы витрины
-в разделе «Живые обновления», `liveSection` в `ShowcaseStatesView.kt`.
+следует сигналу; ручной `TextHandle.text` после этого бросает `BindingActiveException`. Образец — блок «Часы»
+(`clockBlock`) из `liveSection` в `ShowcaseLiveSections.kt` витрины.
 
 ### Фоновая загрузка блока
 
@@ -865,7 +868,8 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 Поле строки блока редактируемо, только если редактируемы и оно само (`ValueInput.isEditable`/`bindEditable`), и его
 блок (`BlockHandle.isEditable`/`bindEditable`); по умолчанию оба `true`, и правило действует при любом сочетании ручных
 значений и привязок. `select` без подписи из `ContentScope` от режима блока не зависит, см.
-[Выпадающий список](#выпадающий-список). Нередактируемое поле — `readOnly` в Vaadin: тип и формат значения
+[Выпадающий список](#выпадающий-список). `fileDrop` в строке блока следует режиму блока, а из `ContentScope` —
+нет, см. [Настоящая передача файлов](#настоящая-передача-файлов). Нередактируемое поле — `readOnly` в Vaadin: тип и формат значения
 сохраняются, значение можно выделить и скопировать, из кода оно читается и записывается; вид — пунктирная рамка без заливки. Выключенное поле
 (`isEnabled = false`) остаётся серым, даже если оно ещё и нередактируемо. `Binder.setReadOnly` работает через
 `isEditable`. `BlockHandle.bindEditable(signal)` бросает `IllegalStateException`, если у блока уже есть переключатель
@@ -875,13 +879,13 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 
 - блок открывается в режиме просмотра (`isEditable = false`);
 - DSL ставит кнопки в конец шапки, после содержимого `actions { }`, и выводит шапку даже у блока без заголовка:
-  в просмотре — «Изменить» (`action` с иконкой карандаша), в редактировании — «Отмена» (`action`) и «Сохранить»
+  в просмотре — «Изменить» (`action` с иконкой карандаша), в редактировании — «Отменить» (`action`) и «Сохранить»
   (`mainAction`);
 - «Изменить» включает редактирование и после клиентского обновления фокусирует первое видимое, включённое
   и редактируемое поле текущего тела; у составного поля — первую доступную часть, у лукапа — кнопку значения.
-  Если подходящих полей нет, фокус получает «Отмена». После `load` поиск использует новое тело; сама загрузка,
+  Если подходящих полей нет, фокус получает «Отменить». После `load` поиск использует новое тело; сама загрузка,
   программная запись и сигнал фокус не перехватывают; «Сохранить» вызывает `onSave` и возвращает просмотр, если тот вернул `true`,
-  иначе блок остаётся в редактировании с ошибками у полей; «Отмена» вызывает `onCancel` и возвращает просмотр;
+  иначе блок остаётся в редактировании с ошибками у полей; «Отменить» вызывает `onCancel` и возвращает просмотр;
 - `BlockHandle.isEditable`, изменённый из кода, переключает и поля, и кнопки;
 - повторный вызов `editing` в том же блоке — `IllegalStateException`.
 
@@ -899,7 +903,8 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 В `UiTexts` входят бренд, календарь, ограничения полей и группы `table`, `pagination`, `load`, `dialog`,
 `lookup`, `navigation`, `menu`, `dateFields`, `notFound`, `footer`, `tableFilters`, `components` и `header`.
 Группа `pagination` (`previous`, `next`, `page(n)`) общая для `pagination` и компактного пейджера таблицы.
-Строки со значением — функции: `pagination.page(n)`, `lookup.remove(value)`, `lookup.selectedCount(n)`.
+Строки со значением — функции: `pagination.page(n)`, `lookup.remove(value)`, `lookup.selectedCount(n)`,
+`components.more(n)`.
 
 Функции верхнего уровня (`confirm`, `dialog`) не видят скоупов DSL, поэтому `page(...)` привязывает `UiTexts`
 страницы к текущему `UI`, а диалоги берут их оттуда (см. [Диалоги](#диалоги)).
@@ -953,8 +958,14 @@ inline-стили — в [CssStyles.kt](src/main/kotlin/tech/testsys/web/compone
 Тесты компонента используют `MockVaadinTests` и `buildTestPage` из
 [TestSupport.kt](src/test/kotlin/tech/testsys/web/components/TestSupport.kt).
 Они проверяют смысловые классы, доступные имена, состояния, запрещённые действия и изменение разметки ручкой.
-Клиентское поведение проверяется исполняемыми тестами; примеры — в разделе
-[Клиентская реализация компонентов](#клиентская-реализация-компонентов).
+Клиентское поведение проверяется исполняемыми тестами `src/test/frontend/*.test.mjs` на Node 24; устройство
+клиентского кода — в разделе [Клиентская реализация компонентов](#клиентская-реализация-компонентов).
+Gradle их не запускает; все клиентские тесты запускаются из корня репозитория одной командой:
+
+```bash
+node --test testsys-web/components/src/test/frontend/*.test.mjs
+```
+
 Особенности фоновых действий — в разделе [Тестирование](#тестирование).
 
 ## Остальные поля и локальный выбор
@@ -963,11 +974,8 @@ inline-стили — в [CssStyles.kt](src/main/kotlin/tech/testsys/web/compone
 `ValueInput`: обычные режимы, сигналы, обязательность и Binder действуют так же, как у других полей.
 `radio` и `segmentedControl` используют `RadioButtonGroup`, `switchInput` — штатный `Switch`.
 Тонкая настройка radio-группы проверяет локальные варианты; `META-INF/frontend/testsys-ui/segmented-choice.ts`
-добавляет только выбор Home/End. Его клиентские сценарии проверяются на Node 24:
-
-```bash
-node --test testsys-web/components/src/test/frontend/segmented-choice.test.mjs
-```
+добавляет только выбор Home/End. Его клиентские сценарии проверяются в `segmented-choice.test.mjs`,
+см. [Проверка компонентов](#проверка-компонентов).
 
 `segmentedControl` и `multiSelect` из `ContentScope` служат компактными фильтрами и не зависят от режима блока.
 Образцы вызовов — в [ShowcaseFormsView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseFormsView.kt) модуля приложения.
@@ -1043,6 +1051,8 @@ SortableList использует клиентскую React-реализаци�
 
 `fileDrop(label, limits, consume)` — действие приёма с `FileDropHandle`, а не значение Binder.
 Ручка наследует `FieldHandle`; её состояние и обработчики одинаковы в `BlockRowScope` и `ContentScope`.
+В строке блока приём учитывает и режим редактирования блока: в режиме просмотра файлы не принимаются.
+В `ContentScope` режим блока на приём не действует.
 Компактное представление использует штатные кнопку, drag-and-drop и список Vaadin Upload;
 правила оформления — в [ui-design.md](../../docs/project/ui-design.md), раздел «Визуальные основы».
 `UploadLimits` ограничивает число принятых файлов после последней очистки, размер каждого и суммарную память
@@ -1056,7 +1066,8 @@ SortableList использует клиентскую React-реализаци�
 `state` — сигнал последнего события `Idle`, `Uploading`, `Processing`, `Done`, `Error`, `Cancelled`.
 `cancel` отменяет действующие передачи, `clear` также сбрасывает список и квоту числа файлов; удаление из списка
 освобождает место именно выбранной передачи; одноимённые файлы имеют независимую идентичность.
-Ошибка и отмена освобождают место для повторной попытки.
+Удаление действующей передачи при оставшихся файлах и detach во время передачи публикуют `Cancelled`; удаление
+последнего файла возвращает `Idle`. Ошибка и отмена освобождают место для повторной попытки.
 
 `downloadAction` и `iconDownloadAction` запускают настоящий `DownloadHandler`. Производитель получает
 `DownloadContext` и возвращает `DownloadContent` с filename, contentType, необязательной length и фабрикой нового
@@ -1078,7 +1089,8 @@ InputStream на каждую попытку. Подготовка и чтени
 `DateRangeCalendarAdapter` и `SortableListAdapter` подключают `META-INF/frontend/testsys-ui/*.tsx` из jar.
 Их фактические JSX-реализации, типы и внутренние sprite controls лежат рядом с адаптерами.
 Это части двух компонентов, а не отдельная библиотека или эталон. Они импортируют
-`Frontend/generated/flow/ReactAdapter`. Синхронизация CodeEditor находится в том же frontend-каталоге.
+`Frontend/generated/flow/ReactAdapter`. Синхронизация CodeEditor и поиск поля для фокуса при включении
+редактирования (`editing-focus.ts`) находятся в том же frontend-каталоге.
 Стандартная упаковка ресурсов сохраняет единственную исходную копию.
 
 Снимки состояния сервера проходят через собственный `ServerSnapshot` на `React.useSyncExternalStore`: текущий
@@ -1089,8 +1101,8 @@ InputStream на каждую попытку. Подготовка и чтени
 `ConnectedReactAdapterElement` последовательно выполняет полные lifecycle callbacks SDK: Flow 25.3 проверяет
 наличие React-root при reconnect до завершения асинхронного unmount. Очередь с поколением подключения пропускает
 устаревший connect и предотвращает потерю root при переносе календаря в popup или повторном attach списка.
-Регрессии очереди проверяются в `src/test/frontend/connection-lifecycle.test.mjs` командой `node --test`
-на Node 24, используемом frontend-сборкой.
+Регрессии очереди проверяются в `src/test/frontend/connection-lifecycle.test.mjs`, см.
+[Проверка компонентов](#проверка-компонентов).
 
 ## Интерактивная шапка Кабинета
 
@@ -1111,11 +1123,8 @@ Menu-search находится рядом с nav перед растягиваю
 Фокус сохраняется в поиске при вводе; стрелки/Home/End перемещают фокус ссылок, Enter открывает цель,
 Escape закрывает панель и возвращает фокус в поиск. Подписки снимаются при detach.
 
-Клиентские сценарии Escape на триггере и очистки подписок проверяются на Node 24:
-
-```bash
-node --test testsys-web/components/src/test/frontend/header-interactions.test.mjs
-```
+Клиентские сценарии Escape на триггере и очистки подписок проверяются в `header-interactions.test.mjs`,
+см. [Проверка компонентов](#проверка-компонентов).
 
 `signInParameters` дополняет гостевую ссылку `signIn` параметрами маршрута; default — пустые параметры.
 
@@ -1171,7 +1180,7 @@ node --test testsys-web/components/src/test/frontend/header-interactions.test.mj
 сохраняется. Оповещение не забирает фокус, не воспроизводит звук и учитывает `prefers-reduced-motion`.
 Detach закрывает карточку и освобождает её таймеры и обработчики. Обычные тосты результатов действий по-прежнему
 появляются справа снизу. Поведение показано на `/dev/showcase/header`; таймер покрыт
-`src/test/frontend/arrival-timer.test.mjs` на используемом сборкой Node 24.
+`src/test/frontend/arrival-timer.test.mjs`, см. [Проверка компонентов](#проверка-компонентов).
 
 ## Ресурсы бренда
 

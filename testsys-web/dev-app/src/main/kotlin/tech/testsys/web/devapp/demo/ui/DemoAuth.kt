@@ -5,6 +5,7 @@ import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
+import tech.testsys.web.devapp.demo.model.DemoRole
 import tech.testsys.web.devapp.demo.model.confirmRegistration
 import tech.testsys.web.devapp.demo.model.login
 import tech.testsys.web.devapp.demo.model.register
@@ -22,10 +23,10 @@ internal fun PageScope.demoLogin(context: DemoContext) {
             mainAction("Войти") {
                 onClick {
                     if (context.apply(context.state.login(code.value))) {
-                        val role = context.state.users.first {
-                            it.id == context.state.sessionUserId
+                        val role = context.state.users.first { user ->
+                            user.id == context.state.sessionUserId
                         }.role
-                        context.navigate("${DEMO_CABINETS.first { it.role == role }.key}.overview")
+                        context.navigate("${DEMO_CABINETS.first { cabinet -> cabinet.role == role }.key}.overview")
                     } else {
                         context.render()
                     }
@@ -36,19 +37,17 @@ internal fun PageScope.demoLogin(context: DemoContext) {
     block("Регистрация") {
         lateinit var alias: tech.testsys.web.components.forms.ValueInput<String>
         lateinit var email: tech.testsys.web.components.forms.ValueInput<String>
-        lateinit var role: tech.testsys.web.components.forms.ValueInput<String?>
+        lateinit var role: tech.testsys.web.components.forms.ValueInput<DemoRole?>
         row {
             alias = textInput("Псевдоним", labelSize = 4, size = 8)
             role = select(
                 "Роль",
-                items = listOf("Ученик", "Организатор"),
-                itemLabel = {
-                    it
-                },
+                items = listOf(DemoRole.Student, DemoRole.Organizer),
+                itemLabel = ::demoRoleLabel,
                 labelSize = 4,
                 size = 8,
             ) {
-                value = "Ученик"
+                value = DemoRole.Student
             }
         }
         row {
@@ -57,7 +56,7 @@ internal fun PageScope.demoLogin(context: DemoContext) {
         footer {
             mainAction("Зарегистрироваться") {
                 onClick {
-                    context.apply(context.state.register(alias = alias.value, email = email.value, role = role.value.orEmpty()))
+                    context.apply(context.state.register(alias = alias.value, email = email.value, role = role.value))
                     context.render()
                 }
             }

@@ -1,6 +1,7 @@
 package tech.testsys.web.components
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -19,22 +20,61 @@ class TestSysThemeTests {
     }
 
     @Test
-    fun `should use canonical typography focus and motion tokens`() {
-        val components = resource("testsys-ui/tokens/components.css")!!.readText()
-        val overrides = resource(TestSysTheme.VAADIN_OVERRIDES)!!.readText()
-        val typography = resource("testsys-ui/tokens/typography.css")!!.readText()
+    fun `should use canonical typography tokens for headings`() {
+        val components = text("testsys-ui/tokens/components.css")
+
         assertTrue(rule(components, ".ts-h1").getValue("font").contains("var(--fs-h1)"))
+        assertEquals("var(--tracking-tight)", rule(components, ".ts-h1")["letter-spacing"])
         assertTrue(rule(components, ".ts-block__title").getValue("font").contains("var(--fw-bold)"))
         assertTrue(rule(components, ".ts-dialog__title").getValue("font").contains("var(--fw-bold)"))
+    }
+
+    @Test
+    fun `should use the canonical focus ring`() {
+        val components = text("testsys-ui/tokens/components.css")
+
         assertEquals("0 0 0 3px var(--accent-ring)", rule(components, ".ts-header__search:focus-within")["box-shadow"])
-        val defined = Regex("(--fs-[a-z0-9-]+)\\s*:").findAll(typography).map { it.groupValues[1] }.toSet()
-        val used = Regex("var\\((--fs-[a-z0-9-]+)\\)").findAll(components).map { it.groupValues[1] }.toSet()
+        assertEquals("0 0 0 3px var(--accent-ring)", rule(components, ".ts-sort-handle:focus-visible")["box-shadow"])
+    }
+
+    @Test
+    fun `should use only defined font size tokens`() {
+        val typography = text("testsys-ui/tokens/typography.css")
+        val components = text("testsys-ui/tokens/components.css")
+
+        val defined = Regex("(--fs-[a-z0-9-]+)\\s*:").findAll(typography).map { match -> match.groupValues[1] }.toSet()
+        val used = Regex("var\\((--fs-[a-z0-9-]+)\\)").findAll(components).map { match -> match.groupValues[1] }.toSet()
+
         assertTrue(defined.containsAll(used), "Undefined size tokens: ${used - defined}")
-        assertTrue(!components.contains("var(--ease)"))
+    }
+
+    @Test
+    fun `should use the canonical motion curve`() {
+        val components = text("testsys-ui/tokens/components.css")
+
+        assertFalse(components.contains("var(--ease)"))
+        assertEquals(
+            "box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)",
+            rule(components, ".ts-ccard")["transition"],
+        )
+    }
+
+    @Test
+    fun `should animate the drawer on opening only when motion is allowed`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
         val drawer = "vaadin-dialog[theme~=\"ts-drawer\"]::part(overlay)"
+
         assertTrue(rule(overrides, drawer).getValue("animation").contains("ts-drawer-in"))
         assertEquals("none", rule(overrides, "vaadin-dialog[theme~=\"ts-drawer\"] .ts-dialog")["animation"])
         assertTrue(overrides.substringAfter("@media (prefers-reduced-motion: reduce)", "").contains(drawer))
+    }
+
+    @Test
+    fun `should dim the page behind dialogs and drawers with the overlay tokens`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+
+        assertEquals("var(--overlay)", rule(overrides, "vaadin-dialog[theme~=\"ts-dialog\"]::part(backdrop)")["background"])
+        assertEquals("var(--overlay-drawer)", rule(overrides, "vaadin-dialog[theme~=\"ts-drawer\"]::part(backdrop)")["background"])
     }
 
     @Test
@@ -60,6 +100,12 @@ class TestSysThemeTests {
         assertEquals("calc(var(--ts-table-used) * 52px)", layout["min-width"])
         assertEquals("auto", rule(css, ".ts-table-scroll")["overflow-x"])
         assertEquals("anywhere", rule(css, ".ts-table-grid th, .ts-table-grid td")["overflow-wrap"])
+    }
+
+    @Test
+    fun `should keep the natural width of a brand image`() {
+        val css = text("testsys-ui/tokens/components.css")
+
         assertEquals("auto", rule(css, ".ts-brand-image")["width"])
     }
 
@@ -78,8 +124,10 @@ class TestSysThemeTests {
     private fun rule(css: String, selector: String): Map<String, String> =
         requireNotNull(Regex(Regex.escape(selector) + "\\s*\\{([^}]+)}").find(css)).groupValues[1].split(';')
             .mapNotNull { declaration ->
-                declaration.split(':', limit = 2).takeIf { it.size == 2 }?.let { it[0].trim() to it[1].trim() }
+                declaration.split(':', limit = 2).takeIf { parts -> parts.size == 2 }?.let { parts -> parts[0].trim() to parts[1].trim() }
             }.toMap()
 
     private fun resource(path: String) = javaClass.getResource("/META-INF/resources/$path")
+
+    private fun text(path: String): String = requireNotNull(resource(path)) { "Resource $path is missing" }.readText()
 }

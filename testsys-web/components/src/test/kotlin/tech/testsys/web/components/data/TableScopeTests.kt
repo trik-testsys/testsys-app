@@ -2,6 +2,7 @@
 
 package tech.testsys.web.components.data
 
+import com.vaadin.flow.component.html.Div
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import tech.testsys.web.components.core.InternalComponentsApi
@@ -16,8 +17,12 @@ class TableScopeTests {
             dateColumn("Date", size = 1) { java.time.LocalDate.of(2026, 10, 4) }
             dateTimeColumn("Time", size = 1) { java.time.LocalDateTime.of(2026, 10, 4, 12, 0) }
         }.spec().columns
+
+        val cells = columns.map { column -> Div().also { cell -> column.fill(Row("1", null), cell, 1) } }
+
         assertEquals(listOf(CellKind.Date, CellKind.Date), columns.map { column -> column.kind })
         assertEquals(listOf("ts-num"), CellKind.Date.cssClasses.map { cssClass -> cssClass.value })
+        assertEquals(listOf("04.10.2026", "04.10.2026 12:00"), cells.map { cell -> cell.element.textRecursively })
     }
 
     @Test

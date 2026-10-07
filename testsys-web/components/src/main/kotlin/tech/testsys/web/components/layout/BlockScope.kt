@@ -170,7 +170,7 @@ class BlockScope internal constructor(
      * footer for the pagination of a table it may load, hidden while the block has no footer content of its own.
      */
     internal fun finish() {
-        editingSwitch?.install(headBar(), texts, editState, body, columns)
+        editingSwitch?.install(bar = headBar(), texts = texts, state = editState, body = body, columns = columns)
         tablePager?.let { placed ->
             val isOwnFooter = footerBar == null
             placed.placeInto(footBar(), isOwnFooter)

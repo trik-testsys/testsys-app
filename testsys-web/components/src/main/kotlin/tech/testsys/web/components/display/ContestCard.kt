@@ -5,7 +5,6 @@ package tech.testsys.web.components.display
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
-import com.vaadin.flow.dom.Element
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.ElementHandle
@@ -119,9 +118,8 @@ internal class ContestCardDisplay(initial: ContestCardData) : Div() {
     init {
         addClassName(CssClass.Ccard)
         element.addEventListener(DomEvent.Click) { selected?.invoke() }.setFilter(DomEventFilter.CardClick)
-        element.preventCardSelectionDefaults()
         element.addEventListener(DomEvent.KeyDown) { selected?.invoke() }
-            .setFilter(DomEventFilter.CardKey)
+            .setFilter(DomEventFilter.CardKey).preventDefault()
         present(initial)
     }
 
@@ -189,7 +187,3 @@ fun tech.testsys.web.components.layout.SlotRowScope.contestCard(
     placeElement(size, card)
     return ContestCardHandle(card, data).apply(configure)
 }
-
-private fun Element.preventCardSelectionDefaults() = executeJs(
-    "this.addEventListener('keydown', e => { if (e.target === this && (e.key === ' ' || e.key === 'Enter')) e.preventDefault(); })",
-)

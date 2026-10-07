@@ -61,7 +61,8 @@ private fun foundationTokens(category: FoundationCategory): List<String> {
         FoundationCategory.Typography -> "typography"
         FoundationCategory.Layout -> "spacing"
     }
-    val source = checkNotNull(FoundationCategory::class.java.getResource("/META-INF/resources/testsys-ui/tokens/$file.css")).readText()
+    val path = "/META-INF/resources/testsys-ui/tokens/$file.css"
+    val source = checkNotNull(FoundationCategory::class.java.getResource(path)) { "Token file $path of $category is missing" }.readText()
     val names = Regex("(--[a-zA-Z0-9-]+)\\s*:").findAll(source).map { match -> match.groupValues[1] }.distinct()
     return names.filter { name ->
         when (category) {

@@ -104,7 +104,7 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
      */
     fun tabs(matchRouteParameters: Boolean, content: PageTabsScope.() -> Unit) {
         check(tabsNav == null) { "Page head already has tabs; call tabs() once" }
-        tabsNav = PageTabsScope(view, matchRouteParameters).apply(content).build(texts.navigation.sections)
+        tabsNav = PageTabsScope(view, texts, matchRouteParameters).apply(content).build(texts.navigation.sections)
     }
 
     internal fun build(title: String): Div {
@@ -139,6 +139,7 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
 @TestSysDsl
 class PageTabsScope internal constructor(
     private val view: Class<out Component>?,
+    private val texts: UiTexts,
     private val isRouteExactMatch: Boolean = false,
 ) {
     private val tabs = mutableListOf<PageTab>()
@@ -160,7 +161,7 @@ class PageTabsScope internal constructor(
     ) {
         require(count == null || count >= 0) { "Page tab '$label' count must not be negative, got $count" }
         val link = RouterLink(label, target, parameters).apply { addClassName(CssClass.Tab) }
-        if (count != null && count > 0) link.add(buildCounter(count, countKind))
+        if (count != null && count > 0) link.add(buildCounter(count, countKind, texts))
         tabs += PageTab(link, target, activeOn.toSet())
     }
 
@@ -172,7 +173,7 @@ class PageTabsScope internal constructor(
             addClassNames(CssClass.Tabs, CssClass.TabsBare, CssClass.TabsLg)
             element.setAttribute(HtmlAttribute.AriaLabel, ariaLabel)
             tabs.forEach { tab ->
-                if (isRouteExactMatch && tabs.any { it.target == view }) {
+                if (isRouteExactMatch && tabs.any { candidate -> candidate.target == view }) {
                     configureExactRoute(tab.link) { link, isCurrent ->
                         link.element.classList.set(CssClass.TabActive, isCurrent)
                         if (isCurrent) link.element.setAriaCurrent(AriaCurrent.Page) else link.element.setAriaCurrent(null)

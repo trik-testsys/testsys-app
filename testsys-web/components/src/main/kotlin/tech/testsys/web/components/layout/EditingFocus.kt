@@ -15,21 +15,4 @@ internal fun focusFirstEditableInput(body: Component, fallback: Component) {
     fallback.element.focusEditableInputInBlock()
 }
 
-private fun Element.focusEditableInputInBlock(): PendingJavaScriptResult = executeJs(
-    """
-    requestAnimationFrame(() => {
-        const eligible = node => node.isConnected && node.getClientRects().length > 0
-            && getComputedStyle(node).visibility !== 'hidden'
-            && !node.closest('[hidden], [disabled], [readonly], [aria-disabled="true"]')
-            && !node.disabled && !node.readOnly;
-        const body = this.closest('.ts-block')?.querySelector('[data-ts-editing-body]');
-        for (const field of body?.querySelectorAll('[data-ts-input]') ?? []) {
-            if (!eligible(field)) continue;
-            const parts = field.querySelectorAll('vaadin-date-picker, vaadin-time-picker, .ts-lookup__text');
-            const target = Array.from(parts.length ? parts : [field]).find(eligible);
-            if (target) { target.focus(); return; }
-        }
-        if (eligible(this)) this.focus();
-    });
-    """.trimIndent(),
-)
+private fun Element.focusEditableInputInBlock(): PendingJavaScriptResult = executeJs("window.testsysEditingFocus.focusFirst(this)")

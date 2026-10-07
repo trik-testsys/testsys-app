@@ -76,11 +76,15 @@ data class LeaderboardData(
     val gridColumns: Int? = null,
 ) {
     init {
-        require(placeSize > 0 && identitySize > 0) { "Leaderboard identity sizes must be positive" }
+        require(placeSize > 0) { "Leaderboard place size must be positive, got $placeSize" }
+        require(identitySize > 0) { "Leaderboard identity size must be positive, got $identitySize" }
         require(gridColumns == null || gridColumns > 0) { "Leaderboard grid capacity must be positive, got $gridColumns" }
-        require(columns.map { column -> column.key }.distinct().size == columns.size) { "Leaderboard column keys must be unique" }
-        require(rows.map { row -> row.key }.distinct().size == rows.size) { "Leaderboard row keys must be unique" }
+        val repeatedColumns = columns.groupBy { column -> column.key }.filterValues { same -> same.size > 1 }.keys
+        require(repeatedColumns.isEmpty()) { "Leaderboard column keys must be unique, repeated: $repeatedColumns" }
+        val repeatedRows = rows.groupBy { row -> row.key }.filterValues { same -> same.size > 1 }.keys
+        require(repeatedRows.isEmpty()) { "Leaderboard row keys must be unique, repeated: $repeatedRows" }
         val keys = columns.map { column -> column.key }.toSet()
-        require(rows.all { row -> row.cells.keys == keys }) { "Every leaderboard row must provide exactly its named columns" }
+        val mismatched = rows.filter { row -> row.cells.keys != keys }.map { row -> row.key }
+        require(mismatched.isEmpty()) { "Leaderboard rows $mismatched must provide exactly the columns $keys" }
     }
 }

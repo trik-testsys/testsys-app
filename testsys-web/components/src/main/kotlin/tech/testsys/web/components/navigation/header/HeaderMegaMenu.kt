@@ -127,13 +127,6 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
         position()
     }
 
-    private fun position() {
-        if (searchTarget == null) return
-        val isCompact = query.isNotBlank() && groupCount < MAX_MENU_COLUMNS
-        popup.target = if (isCompact) searchTarget else fullTarget
-        popup.position = if (isCompact) PopoverPosition.BOTTOM_END else PopoverPosition.BOTTOM_START
-    }
-
     fun filter(query: String, emptyText: String? = null) {
         grid.removeAll()
         this.query = query
@@ -157,7 +150,7 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
             group.add(heading)
             val children = if (column.destination != null) {
                 group.addClassName(CssClass.MegaColLinked)
-                Div().apply { addClassName(CssClass.MegaChildren) }.also { group.add(it) }
+                Div().apply { addClassName(CssClass.MegaChildren) }.also { nested -> group.add(nested) }
             } else {
                 group
             }
@@ -177,16 +170,23 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
         }
         item.menu.promotion?.let { promotion -> grid.add(promotionCard(promotion) { popup.close() }) }
     }
+
+    private fun position() {
+        if (searchTarget == null) return
+        val isCompact = query.isNotBlank() && groupCount < MAX_MENU_COLUMNS
+        popup.target = if (isCompact) searchTarget else fullTarget
+        popup.position = if (isCompact) PopoverPosition.BOTTOM_END else PopoverPosition.BOTTOM_START
+    }
 }
 
 /** Preserves a matched group; otherwise narrows its existing children without changing targets. */
 internal fun filteredMegaColumns(columns: List<HeaderMegaColumn>, query: String): List<HeaderMegaColumn> {
     if (query.isBlank()) return columns
     return columns.mapNotNull { column ->
-        if (splitHeaderMatches("${column.title} ${column.searchText.orEmpty()}", query).any { it.isMatched }) {
+        if (splitHeaderMatches("${column.title} ${column.searchText.orEmpty()}", query).any { part -> part.isMatched }) {
             column
         } else {
-            val links = column.links.filter { splitHeaderMatches(it.label, query).any { part -> part.isMatched } }
+            val links = column.links.filter { link -> splitHeaderMatches(link.label, query).any { part -> part.isMatched } }
             column.copy(links = links).takeIf { links.isNotEmpty() }
         }
     }

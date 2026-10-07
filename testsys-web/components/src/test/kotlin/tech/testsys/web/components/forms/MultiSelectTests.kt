@@ -1,57 +1,176 @@
 package tech.testsys.web.components.forms
 
 import com.github.mvysny.kaributesting.v10._click
+import com.github.mvysny.kaributesting.v10._find
+import com.github.mvysny.kaributesting.v10._setValue
+import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.popover.Popover
+import com.vaadin.flow.component.textfield.TextField
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestRow
 import tech.testsys.web.components.control
 import tech.testsys.web.components.find
+import tech.testsys.web.components.findAll
+import tech.testsys.web.components.pendingJavaScript
 import tech.testsys.web.components.testTexts
 
 internal class MultiSelectTests : MockVaadinTests() {
+    private lateinit var input: ValueInput<Set<String>>
+
     @Test
-    fun `should clear accepted multiselect values through visible clear caption`() {
-        lateinit var input: ValueInput<Set<String>>
-        buildTestRow { input = multiSelect("Items", 4, 8, listOf("a", "b"), { value -> value }) }
-        input.value = setOf("a", "b")
-        val field = control<MultiSelectField<String>>("Items")
-        val clear = field.find("ts-multiselect__clear") as NativeButton
-        assertEquals(testTexts.lookup.clear, clear.text)
+    fun `should caption the clear action`() {
+        buildMultiSelect()
 
-        clear._click()
-
-        assertEquals(emptySet<String>(), input.value)
-        assertEquals(false, clear.isVisible)
+        assertEquals(testTexts.lookup.clear, clearAction().text)
     }
 
     @Test
-    fun `should discard multiselect draft on close and accept only apply`() {
-        lateinit var input: ValueInput<Set<String>>
-        buildTestRow { input = multiSelect("Items", 4, 8, listOf("a", "b"), { value -> value }) }
-        val field = control<MultiSelectField<String>>("Items")
-        field.open()
-        field.toggle("a")
-        field.close()
+    fun `should clear accepted values through the clear action`() {
+        buildMultiSelect()
+        input.value = setOf("Анна", "Борис")
+
+        clearAction()._click()
+
         assertEquals(emptySet<String>(), input.value)
-        field.open()
-        field.toggle("b")
-        field.applyDraft()
-        assertEquals(setOf("b"), input.value)
+        assertFalse(clearAction().isVisible)
+    }
+
+    @Test
+    fun `should discard the draft on close`() {
+        buildMultiSelect()
+        field().open()
+        field().toggle("Анна")
+
+        field().close()
+
+        assertEquals(emptySet<String>(), input.value)
+    }
+
+    @Test
+    fun `should accept the draft on apply`() {
+        buildMultiSelect()
+        field().open()
+        field().toggle("Борис")
+
+        _find<NativeButton>().single { button -> button.text == testTexts.lookup.apply }._click()
+
+        assertEquals(setOf("Борис"), input.value)
     }
 
     @Test
     fun `should reject stale draft after programmatic multiselect change`() {
-        lateinit var input: ValueInput<Set<String>>
-        buildTestRow { input = multiSelect("Items", 4, 8, listOf("a", "b"), { value -> value }) }
-        val field = control<MultiSelectField<String>>("Items")
-        field.open()
-        field.toggle("a")
+        buildMultiSelect()
+        field().open()
+        field().toggle("Анна")
 
-        input.value = setOf("b")
-        field.applyDraft()
+        input.value = setOf("Борис")
+        field().applyDraft()
 
-        assertEquals(setOf("b"), input.value)
+        assertEquals(setOf("Борис"), input.value)
     }
+
+    @Test
+    fun `should select all options that match the search`() {
+        buildMultiSelect()
+        field().open()
+        _find<TextField>().single()._setValue("Ар")
+
+        selectAll()._setValue(true)
+
+        assertTrue(_find<Span>().any { count -> count.text == testTexts.lookup.selectedCount(1) })
+    }
+
+    @Test
+    fun `should change only the draft on reset`() {
+        buildMultiSelect()
+        input.value = setOf("Анна")
+        field().open()
+
+        _find<NativeButton>().single { button -> button.text == testTexts.lookup.reset }._click()
+
+        assertEquals(setOf("Анна"), input.value)
+        assertTrue(_find<Span>().any { count -> count.text == testTexts.lookup.selectedCount(0) })
+    }
+
+    @Test
+    fun `should remove an accepted value immediately through its chip`() {
+        buildMultiSelect()
+        input.value = setOf("Анна", "Борис")
+        val remove = field().findAll("ts-chip__x").filterIsInstance<NativeButton>()
+            .single { chip -> chip.element.getAttribute("aria-label") == testTexts.lookup.remove("Анна") }
+
+        remove._click()
+
+        assertEquals(setOf("Борис"), input.value)
+    }
+
+    @Test
+    fun `should close the popup on a programmatic value`() {
+        buildMultiSelect()
+        field().open()
+
+        input.value = setOf("Борис")
+
+        assertFalse(_find<Popover>().single().isOpened)
+    }
+
+    @Test
+    fun `should show the number of accepted values in the count display`() {
+        buildMultiSelect(display = MultiSelectDisplay.Count)
+
+        input.value = setOf("Анна", "Борис")
+
+        assertEquals(testTexts.lookup.selectedCount(2), field().find("ts-counter").element.text)
+    }
+
+    @Test
+    fun `should name the chip of hidden values by their number`() {
+        buildMultiSelect(maxChips = 1)
+
+        input.value = setOf("Анна", "Аркадий", "Борис")
+
+        val more = field().find("ts-chip--more")
+        assertEquals("+2", more.element.text)
+        assertEquals(testTexts.components.more(2), more.element.getAttribute("aria-label"))
+    }
+
+    @Test
+    fun `should return focus to the trigger only if it stayed in the popup`() {
+        buildMultiSelect()
+        field().open()
+        pendingJavaScript()
+
+        field().close()
+
+        val trigger = field().find("ts-lookup__text")
+        val calls = pendingJavaScript().filter { call -> call.owner == trigger.element.node }
+        assertTrue(calls.isNotEmpty())
+        assertTrue(calls.all { call -> "document.activeElement" in call.invocation.expression })
+    }
+
+    private fun buildMultiSelect(display: MultiSelectDisplay = MultiSelectDisplay.Chips, maxChips: Int = 3) {
+        buildTestRow {
+            input = multiSelect(
+                "Участники",
+                labelSize = 4,
+                size = 8,
+                items = listOf("Анна", "Аркадий", "Борис"),
+                itemLabel = { value -> value },
+                display = display,
+                maxChips = maxChips,
+            )
+        }
+    }
+
+    private fun field(): MultiSelectField<String> = control("Участники")
+
+    private fun clearAction(): NativeButton = field().findAll("ts-multiselect__clear").filterIsInstance<NativeButton>().single()
+
+    private fun selectAll(): Checkbox = _find<Checkbox>().single { checkbox -> checkbox.label == testTexts.components.selectAll }
 }

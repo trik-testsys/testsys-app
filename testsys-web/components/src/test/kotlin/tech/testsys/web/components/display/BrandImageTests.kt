@@ -4,6 +4,7 @@ import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.html.Image
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -26,12 +27,24 @@ class BrandImageTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should configure visibility of the brand representation through its handle`() {
+    fun `should configure visibility of the brand representation`() {
+        val root = buildTestContent { brandImage(BrandAsset.Header, label = "TestSys") { isVisible = false } }
+
+        assertFalse(root.find("ts-brand-image").isVisible)
+    }
+
+    @Test
+    fun `should show the brand representation again through its handle`() {
         lateinit var handle: ElementHandle
         val root = buildTestContent { handle = brandImage(BrandAsset.Header, label = "TestSys") { isVisible = false } }
 
-        assertFalse(root.find("ts-brand-image").isVisible)
         handle.isVisible = true
+
         assertTrue(root.find("ts-brand-image").isVisible)
+    }
+
+    @Test
+    fun `should reject a blank accessible name`() {
+        assertThrows(IllegalArgumentException::class.java) { buildTestContent { brandImage(BrandAsset.Header, label = " ") } }
     }
 }

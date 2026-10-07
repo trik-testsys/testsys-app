@@ -5,6 +5,8 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.internal.PendingJavaScriptInvocation
+import com.vaadin.flow.server.ErrorHandler
+import com.vaadin.flow.server.VaadinSession
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -477,6 +479,18 @@ class PaginationTests : MockVaadinTests() {
             handle.bindPage(ValueSignal(2))
 
             assertThrows<BindingActiveException> { handle.bindPage(ValueSignal(3)) }
+        }
+
+        @Test
+        fun `should reject a signal value below the first page and keep the shown page`() {
+            val handle = buildPagination(pageCount = 5)
+            val errors = mutableListOf<Throwable>()
+            VaadinSession.getCurrent().errorHandler = ErrorHandler { event -> errors += event.throwable }
+
+            handle.bindPage(ValueSignal(0))
+
+            assertEquals(listOf(IllegalArgumentException::class.java), errors.map { error -> error.javaClass })
+            assertEquals(1, handle.page)
         }
     }
 

@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
@@ -45,11 +44,22 @@ import tools.jackson.databind.ObjectMapper
 class LookupManyTests : MockVaadinTests() {
     private val source = Source()
 
-    // Review report, Issue 6: an unavailable lookup must discard its open dialog and delayed choice.
     @ParameterizedTest
     @CsvSource("false,true", "true,false")
-    @Tag("regression")
-    fun `should close an open lookup when choice becomes unavailable and ignore delayed choice`(enabled: Boolean, editable: Boolean) {
+    fun `should close an open lookup when choice becomes unavailable`(enabled: Boolean, editable: Boolean) {
+        val input = buildLookupMany()
+        lookupButton(testTexts.lookup.open)._click()
+        rows()[1]._fireDomEvent("click", rowClick())
+
+        input.isEnabled = enabled
+        input.isEditable = editable
+
+        assertTrue(openDialogs().isEmpty())
+    }
+
+    @ParameterizedTest
+    @CsvSource("false,true", "true,false")
+    fun `should ignore a delayed apply after the lookup becomes unavailable`(enabled: Boolean, editable: Boolean) {
         val input = buildLookupMany()
         val form = Form()
         Binder<Form>().apply {
@@ -63,8 +73,9 @@ class LookupManyTests : MockVaadinTests() {
         val apply = dialogButton(testTexts.lookup.apply)
         input.isEnabled = enabled
         input.isEditable = editable
-        assertTrue(openDialogs().isEmpty())
+
         apply.click()
+
         assertEquals(emptySet<Contest>(), input.value)
         assertEquals(0, changes)
         assertEquals(emptySet<Contest>(), form.contests)
@@ -550,9 +561,7 @@ class LookupManyTests : MockVaadinTests() {
 
     @Nested
     inner class BinderTests {
-        // Review report, Issue 3: applying equal entities must replace stale instances in the field and Binder.
         @Test
-        @Tag("regression")
         fun `should replace selected entities with fetched instances when their ids stay the same`() {
             val input = buildLookupMany()
             val fresh = source.contests[0]

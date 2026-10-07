@@ -1,8 +1,6 @@
 package tech.testsys.web.components.layout
 
 import com.github.mvysny.kaributesting.v10._click
-import com.vaadin.flow.component.UI
-import com.vaadin.flow.component.internal.PendingJavaScriptInvocation
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -16,21 +14,23 @@ import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.button
 import tech.testsys.web.components.control
 import tech.testsys.web.components.find
+import tech.testsys.web.components.findAllButtons
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.pendingJavaScript
 
 class EditingTests : MockVaadinTests() {
     private var saves = 0
     private var cancels = 0
 
     @Test
-    fun `should request focus in current body only after starting editing`() {
+    fun `should request the client focus search from the cancel action after starting editing`() {
         buildEditingBlock()
         pendingJavaScript()
 
         button("Изменить")._click()
 
         val cancel = button("Отменить")
-        assertTrue(pendingJavaScript().any { call -> call.owner == cancel.element.node && "focus" in call.invocation.expression })
+        assertTrue(pendingJavaScript().any { call -> call.owner == cancel.element.node && FOCUS_SEARCH in call.invocation.expression })
     }
 
     @Test
@@ -40,7 +40,7 @@ class EditingTests : MockVaadinTests() {
 
         handle.isEditable = true
 
-        assertTrue(pendingJavaScript().none { call -> "focus" in call.invocation.expression })
+        assertTrue(pendingJavaScript().none { call -> FOCUS_SEARCH in call.invocation.expression })
     }
 
     @Test
@@ -51,7 +51,7 @@ class EditingTests : MockVaadinTests() {
         button("Изменить")._click()
 
         val cancel = button("Отменить")
-        assertTrue(pendingJavaScript().any { call -> call.owner == cancel.element.node && "focus" in call.invocation.expression })
+        assertTrue(pendingJavaScript().any { call -> call.owner == cancel.element.node && FOCUS_SEARCH in call.invocation.expression })
     }
 
     @Test
@@ -64,31 +64,7 @@ class EditingTests : MockVaadinTests() {
 
         editable.set(true)
 
-        assertTrue(pendingJavaScript().none { call -> "focus" in call.invocation.expression })
-    }
-
-    private fun pendingJavaScript(): List<PendingJavaScriptInvocation> {
-        val internals = UI.getCurrent().internals
-        internals.stateTree.runExecutionsBeforeClientResponse()
-        return internals.dumpPendingJavaScriptInvocations()
-    }
-
-    private fun buildEditingBlock(isSaved: Boolean = true): BlockHandle {
-        lateinit var handle: BlockHandle
-        buildTestPage {
-            handle = block(title = "Профиль") {
-                editing(
-                    onSave = {
-                        saves++
-                        isSaved
-                    },
-                    onCancel = { cancels++ },
-                )
-                row { textInput("Логин", labelSize = 4, size = 20) }
-                row { textInput("Создан", labelSize = 4, size = 20) { isEditable = false } }
-            }
-        }
-        return handle
+        assertTrue(pendingJavaScript().none { call -> FOCUS_SEARCH in call.invocation.expression })
     }
 
     @Test
@@ -177,15 +153,16 @@ class EditingTests : MockVaadinTests() {
             }
         }.find("ts-block__actions")
 
-        val labels = bar.children.toList().map { child -> child.element.textRecursively }
+        val labels = findAllButtons(bar).map { button -> button.text }
         assertEquals(listOf("Фильтр", "Изменить", "Отменить", "Сохранить"), labels)
     }
 
     @Test
-    fun `should add a head to a block without a title`() {
+    fun `should add a head with the switch to a block without a title`() {
         val page = buildTestPage { block { editing(onSave = { true }, onCancel = {}) } }
 
-        page.find("ts-block__head")
+        val labels = findAllButtons(page.find("ts-block__head")).map { button -> button.text }
+        assertEquals(listOf("Изменить", "Отменить", "Сохранить"), labels)
     }
 
     @Test
@@ -207,5 +184,27 @@ class EditingTests : MockVaadinTests() {
         val error = assertThrows<IllegalStateException> { handle.bindEditable(ValueSignal(true)) }
 
         assertTrue("editing switch" in error.message.orEmpty())
+    }
+
+    private fun buildEditingBlock(isSaved: Boolean = true): BlockHandle {
+        lateinit var handle: BlockHandle
+        buildTestPage {
+            handle = block(title = "Профиль") {
+                editing(
+                    onSave = {
+                        saves++
+                        isSaved
+                    },
+                    onCancel = { cancels++ },
+                )
+                row { textInput("Логин", labelSize = 4, size = 20) }
+                row { textInput("Создан", labelSize = 4, size = 20) { isEditable = false } }
+            }
+        }
+        return handle
+    }
+
+    private companion object {
+        const val FOCUS_SEARCH = "window.testsysEditingFocus.focusFirst(this)"
     }
 }

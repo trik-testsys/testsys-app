@@ -33,10 +33,10 @@ class TextInputTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should add multi-line text area`() {
+    fun `should start a text area with two lines by default`() {
         buildTestRow { textArea("Описание", labelSize = 4, size = 20) }
 
-        control<TextArea>("Описание")
+        assertEquals(2, control<TextArea>("Описание").minRows)
     }
 
     @Test
@@ -87,15 +87,26 @@ class TextInputTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should bind value through Binder`() {
+    fun `should show a bean value read by Binder`() {
         lateinit var input: ValueInput<String>
         buildTestRow { input = textInput("Название", labelSize = 4, size = 20) }
         val binder = Binder<Form>().apply { forField(input).bind({ form -> form.name }, { form, value -> form.name = value }) }
-        val form = Form()
 
         binder.readBean(Form(name = "Весенний тур"))
+
         assertEquals("Весенний тур", control<TextField>("Название").value)
+    }
+
+    @Test
+    fun `should write the field value into a bean through Binder`() {
+        lateinit var input: ValueInput<String>
+        buildTestRow { input = textInput("Название", labelSize = 4, size = 20) }
+        val binder = Binder<Form>().apply { forField(input).bind({ form -> form.name }, { form, value -> form.name = value }) }
+        input.value = "Весенний тур"
+        val form = Form()
+
         binder.writeBean(form)
+
         assertEquals("Весенний тур", form.name)
     }
 

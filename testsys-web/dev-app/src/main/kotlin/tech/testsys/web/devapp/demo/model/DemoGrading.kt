@@ -1,13 +1,13 @@
 package tech.testsys.web.devapp.demo.model
 
-internal fun DemoState.submitSolution(userId: String, taskId: String, kind: String, fileName: String): DemoResult {
+internal fun DemoState.submitSolution(userId: String, taskId: String, kind: DemoSolutionKind?, fileName: String): DemoResult {
     val user = users.firstOrNull {
         it.id == userId
     } ?: return fail("Пользователь недоступен")
     val task = objects(user).tasks.firstOrNull {
         it.id == taskId
     } ?: return fail("Выберите доступную задачу, вид решения и файл")
-    if (kind !in task.authorSolutionKinds || fileName.isBlank()) {
+    if (kind == null || kind !in task.authorSolutionKinds || fileName.isBlank()) {
         return fail("Выберите доступную задачу, вид решения и файл")
     }
     val solution = DemoSolution(
@@ -17,32 +17,32 @@ internal fun DemoState.submitSolution(userId: String, taskId: String, kind: Stri
         fileName = fileName,
         kind = kind,
         submittedAt = "01.10.2026 11:00",
-        status = "Queue",
+        status = DemoSolutionStatus.Queue,
     )
     return copy(solutions = solutions + solution, nextId = nextId + 1).ok("Решение поставлено в очередь демонстрационной проверки")
 }
 
 internal fun DemoState.checkSolution(id: String): DemoState = copy(
     solutions = solutions.map {
-        if (it.id == id && it.status == "Queue") {
-            it.copy(status = "Checking")
+        if (it.id == id && it.status == DemoSolutionStatus.Queue) {
+            it.copy(status = DemoSolutionStatus.Checking)
         } else {
             it
         }
     },
 )
 
-internal fun DemoState.finishSolution(id: String, status: String, score: Int): DemoState = copy(
-    solutions = solutions.map {
-        if (it.id == id && it.status in listOf("Queue", "Checking")) {
-            it.copy(
+internal fun DemoState.finishSolution(id: String, status: DemoSolutionStatus, score: Int): DemoState = copy(
+    solutions = solutions.map { solution ->
+        if (solution.id == id && solution.status in listOf(DemoSolutionStatus.Queue, DemoSolutionStatus.Checking)) {
+            solution.copy(
                 status = status,
                 score = score.takeIf {
-                    status == "Checked"
+                    status == DemoSolutionStatus.Checked
                 },
             )
         } else {
-            it
+            solution
         }
     },
 )
@@ -61,8 +61,8 @@ internal fun DemoState.resultsCsv(competitionId: String, tourId: String): String
     val rows = competition.participantIds.map { id ->
         listOf(
             id,
-            users.first {
-                it.id == id
+            users.first { user ->
+                user.id == id
             }.alias,
         ) + selectedTasks.flatMap { task ->
             listOf(
@@ -71,9 +71,9 @@ internal fun DemoState.resultsCsv(competitionId: String, tourId: String): String
             )
         }
     }
-    return "\uFEFF" + (listOf(header) + rows).joinToString("\r\n") { row ->
-        row.joinToString(";") {
-            "\"${it.replace(oldValue = "\"", newValue = "\"\"")}\""
+    return "﻿" + (listOf(header) + rows).joinToString("\r\n") { row ->
+        row.joinToString(";") { cell ->
+            "\"${cell.replace(oldValue = "\"", newValue = "\"\"")}\""
         }
     }
 }
@@ -85,7 +85,7 @@ internal fun attemptCount(solutions: List<DemoSolution>, userId: String, taskId:
 /** Best finite checked score, preserving zero as a result. */
 internal fun bestScore(solutions: List<DemoSolution>, userId: String, taskId: String): Int? = solutions
     .filter {
-        it.userId == userId && it.taskId == taskId && it.status == "Checked"
+        it.userId == userId && it.taskId == taskId && it.status == DemoSolutionStatus.Checked
     }.mapNotNull {
         it.score
     }.maxOrNull()

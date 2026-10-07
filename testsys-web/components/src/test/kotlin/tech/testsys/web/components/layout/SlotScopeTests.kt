@@ -3,12 +3,12 @@ package tech.testsys.web.components.layout
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.child
 import tech.testsys.web.components.classes
+import tech.testsys.web.components.findAll
 
 class SlotScopeTests : MockVaadinTests() {
     @Test
@@ -70,11 +70,11 @@ class SlotScopeTests : MockVaadinTests() {
 
     @Test
     fun `should allow highlight blocks in different page rows`() {
-        assertDoesNotThrow {
-            buildTestPage {
-                row { slot(12) { row { highlightBlock {} } } }
-                row { slot(12) { row { highlightBlock {} } } }
-            }
+        val main = buildTestPage {
+            row { slot(size = 12) { row { highlightBlock {} } } }
+            row { slot(size = 12) { row { highlightBlock {} } } }
         }
+
+        assertEquals(2, main.findAll("ts-block--dark").size)
     }
 }

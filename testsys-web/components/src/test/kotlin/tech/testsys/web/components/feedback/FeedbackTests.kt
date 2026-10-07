@@ -3,6 +3,7 @@ package tech.testsys.web.components.feedback
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.getNotifications
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.notification.Notification
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -56,6 +57,7 @@ class FeedbackTests : MockVaadinTests() {
             assertTrue("ts-toast--success" in card.classes())
             assertEquals("Решение отправлено", card.find("ts-toast__title").element.textRecursively)
             assertEquals(TOAST_DURATION_MS, notification.duration)
+            assertEquals(Notification.Position.BOTTOM_END, notification.position)
         }
     }
 }

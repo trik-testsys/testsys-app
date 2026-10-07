@@ -39,13 +39,21 @@ class FoundationSamplesTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should configure visibility of the foundation representation through its handle`() {
-        lateinit var handle: ElementHandle
-        val root =
-            buildTestPage { block { handle = foundationSamples(FoundationCategory.Palette) { isVisible = false } } }
+    fun `should configure visibility of the foundation representation`() {
+        val root = buildTestPage { block { foundationSamples(FoundationCategory.Palette) { isVisible = false } } }
 
         assertFalse(root.find("ts-foundation-samples").isVisible)
+    }
+
+    @Test
+    fun `should show the foundation representation again through its handle`() {
+        lateinit var handle: ElementHandle
+        val root = buildTestPage {
+            block { handle = foundationSamples(FoundationCategory.Palette) { isVisible = false } }
+        }
+
         handle.isVisible = true
+
         assertTrue(root.find("ts-foundation-samples").isVisible)
     }
 }

@@ -16,6 +16,9 @@
 - Тестовые данные создаются через DSL билдеров и тестовые хелперы, а не через конструкторы.
 - UI-тесты `testsys-web` пишутся на **Karibu-Testing** (Vaadin без браузера, `MockVaadin`), страницы — вместе
   с `@SpringBootTest`. Тестовые хелперы — в [components/README.md](../../testsys-web/components/README.md).
+- Клиентский код компонентов проверяется встроенным `node:test` на Node 24. Тесты `*.test.mjs` лежат
+  в `src/test/frontend/` модуля; Gradle их не запускает, команда запуска — в разделе «Проверка компонентов»
+  [components/README.md](../../testsys-web/components/README.md#проверка-компонентов).
 
 ## Расположение и имена
 

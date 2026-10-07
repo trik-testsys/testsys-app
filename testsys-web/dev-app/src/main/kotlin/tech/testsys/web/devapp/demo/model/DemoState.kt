@@ -3,7 +3,7 @@ package tech.testsys.web.devapp.demo.model
 private const val FIRST_DEMO_ID = 103
 
 /** Pending mock email confirmation. */
-internal data class DemoRegistration(val alias: String, val email: String, val role: String)
+internal data class DemoRegistration(val alias: String, val email: String, val role: DemoRole)
 
 /** One-use mock access recovery, displayed inside the demonstration. */
 internal data class DemoRecovery(val userId: String, val token: String, val isCompleted: Boolean = false)
@@ -11,7 +11,7 @@ internal data class DemoRecovery(val userId: String, val token: String, val isCo
 /** Records visible in the selected demonstration context. */
 internal data class DemoObjects(
     val communities: List<DemoCommunity>,
-    val classes: List<DemoGroup>,
+    val classes: List<DemoClass>,
     val competitions: List<DemoCompetition>,
     val tours: List<DemoTour>,
     val tasks: List<DemoTask>,
@@ -27,7 +27,7 @@ internal data class DemoResult(val state: DemoState, val isSuccess: Boolean, val
 internal data class DemoState(
     val users: List<DemoUser>,
     val communities: List<DemoCommunity>,
-    val classes: List<DemoGroup>,
+    val classes: List<DemoClass>,
     val competitions: List<DemoCompetition>,
     val tours: List<DemoTour>,
     val tasks: List<DemoTask>,

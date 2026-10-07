@@ -149,7 +149,7 @@ internal class HeaderSearchController(
         val token = generation.get()
         val ui = component.ui.orElseThrow()
         Background.executor().execute {
-            val outcome = runCatching { search.fetch(requested) }
+            val outcome = fetchOutcome(requested)
             if (outcome.exceptionOrNull() is InterruptedException) Thread.currentThread().interrupt()
             Background.inUi(ui) {
                 if (component.isAttached && generation.get() == token && state == SearchState.Loading) show(outcome)
@@ -179,6 +179,14 @@ internal class HeaderSearchController(
         }
     }
 
+    @Suppress("TooGenericExceptionCaught")
+    private fun fetchOutcome(requested: String): Result<List<HeaderSearchResult>> = try {
+        Result.success(search.fetch(requested))
+    } catch (failure: Exception) {
+        // fetch is application code: its failure shows in the search popup; an Error still reaches the executor.
+        Result.failure(failure)
+    }
+
     private fun invalidate() {
         generation.incrementAndGet()
         state = SearchState.Hidden
@@ -191,7 +199,8 @@ internal class HeaderSearchController(
 
     private fun show(outcome: Result<List<HeaderSearchResult>>) {
         outcome.fold(onSuccess = { values ->
-            require(values.map { result -> result.key }.distinct().size == values.size) { "Header search result keys must be unique" }
+            val duplicates = values.groupBy { result -> result.key }.filterValues { same -> same.size > 1 }.keys
+            require(duplicates.isEmpty()) { "Header search result keys must be unique, repeated: $duplicates" }
             state = SearchState.Results(values)
             showStatus(if (values.isEmpty()) texts.searchEmpty else texts.searchCount(values.size))
             values.forEachIndexed { index, result -> results.add(resultItem(index, result)) }

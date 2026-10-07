@@ -12,8 +12,8 @@ It owns client connections and native settings; workflows and role contracts rem
 |---|------|--------|
 | 1 | Select the client | The user's requested client is known. |
 | 2 | Find the root and inventory | Shared sources exist; local resources and intentional edits are recorded. |
-| 3 | Apply the Claude Code example, if selected | Instructions, five skills, six native roles and native hooks are connected. |
-| 4 | Apply the Codex example, if selected | Instructions, five skills and six native roles are connected. |
+| 3 | Apply the Claude Code example, if selected | Instructions, six skills, six native roles and native hooks are connected. |
+| 4 | Apply the Codex example, if selected | Instructions, six skills and six native roles are connected. |
 | 5 | Synchronize again | Correct links are retained; intentional local settings remain intact. |
 | 6 | Verify a fresh context | Discovery and workflow checks are reported as confirmed or unavailable. |
 
@@ -34,7 +34,7 @@ do not assume another client's tools or guards exist.
 
 Resolve the checkout root independently of the current subdirectory: in a Git checkout run
 `git rev-parse --show-toplevel`; otherwise locate the nearest parent with `AGENTS.md` and `.testsys-agents/`.
-Read `AGENTS.md` and verify all five skill directories, six role files, two hooks and the tool reference exist
+Read `AGENTS.md` and verify all six skill directories, six role files, two hooks and the tool reference exist
 under `.testsys-agents/`. Stop with the missing paths if sources are incomplete.
 
 Also verify [documentation-rules.md](.testsys-agents/resoures/documentation-rules.md) exists and is readable;
@@ -46,8 +46,8 @@ local memory/import files and unrelated resources. Preserve personal skills, wor
 and unrelated config fields. Do not enumerate or expose secrets in settings. The source directories and checkout
 paths can contain spaces; use literal paths and shell-appropriate quoting throughout.
 
-The five skills are `implement`, `review-changes`, `fix-review`, `generate-localization` and `add-localization`;
-the six roles are `coder`, `reviewer`, `review-verifier`, `fixer`, `localization-generator` and
+The six skills are `implement`, `review-changes`, `fix-review`, `generate-localization`, `add-localization` and
+`testsys-design`; the six roles are `coder`, `reviewer`, `review-verifier`, `fixer`, `localization-generator` and
 `localization-reviewer`. Each connection is per skill, not a replacement of an entire skills directory.
 Before replacing an ordinary directory, compare every resource with the canonical source. Show substantive
 differences and preserve or merge intentional edits first. If the difference conflicts with the shared workflow,
@@ -72,7 +72,7 @@ local memory file has intentional content, preserve it and resolve the conflict 
 discard rules. If direct loading is verified later, retire the generated import so the root instructions are not
 loaded twice. Do not force a client upgrade or change global/session settings to make loading work.
 
-Connect `.claude/skills/<skill>` to `.testsys-agents/skills/<skill>` for each of the five names. On Windows create
+Connect `.claude/skills/<skill>` to `.testsys-agents/skills/<skill>` for each of the six names. On Windows create
 a directory junction with `New-Item -ItemType Junction -Path <absolute-link> -Target <absolute-source>`; on systems
 with directory symlinks use `ln -s <source> <link>`. Use absolute, quoted paths for junctions. A relative symlink
 from `.claude/skills/` points to `../../.testsys-agents/skills/<skill>`. Leave a correctly targeted link untouched.
@@ -235,7 +235,7 @@ location; exclude fixtures locally when they are inside the checkout. Cover allo
 forbidden Git writes, wrappers, protected guard paths, malformed input and Gradle without its mandatory property.
 
 Restart/open a fresh client context after setup so discovery and native definitions are reloaded. Confirm the
-five skill names occur once and all six named roles are available. Confirm the root instructions loaded once (the
+six skill names occur once and all six named roles are available. Confirm the root instructions loaded once (the
 Claude fallback import supplies them when needed). From a subdirectory start a named role and confirm it reads
 the correct shared contract independently of the parent. Do not treat a CLI inventory as proof of role execution.
 

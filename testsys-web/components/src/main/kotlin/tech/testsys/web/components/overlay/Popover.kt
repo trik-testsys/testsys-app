@@ -43,7 +43,7 @@ enum class PopoverAlignment {
 }
 
 /**
- * Handle of a popup and its own trigger; closing restores focus to the trigger.
+ * Handle of a popup and its own trigger; Vaadin restores focus to the trigger if it stayed in the popup.
  *
  * @property isOpen whether the popup is open.
  * @property isEnabled whether its trigger accepts interaction.
@@ -64,7 +64,6 @@ class PopoverHandle internal constructor(root: Div, private val popup: Popover, 
         popup.addOpenedChangeListener { event ->
             trigger.element.setAriaExpanded(event.isOpened)
             if (!event.isOpened) {
-                if (trigger.isAttached) trigger.focus()
                 closed()
             }
         }

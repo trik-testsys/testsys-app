@@ -9,8 +9,8 @@ import com.vaadin.flow.signals.Signal
 /**
  * State kept by a handle rather than by a Vaadin component, set by the page or bound to a signal of [element]:
  * [apply] shows every new value. While bound, a manual value and a second binding throw [BindingActiveException],
- * as Vaadin bindings do. The initial value is not applied by the constructor, as the caller already built the
- * component in that state.
+ * as Vaadin bindings do. A value that [apply] rejects with an argument or state error leaves the previous one current.
+ * The initial value is not applied by the constructor, as the caller already built the component in that state.
  *
  * @param T the type of the value.
  */
@@ -42,13 +42,19 @@ internal class Bindable<T>(private val element: Element, initial: T, private val
         return ElementEffect.bind(element, signal) { _, source -> show(toValue(source)) }
     }
 
-    /** Keeps [newValue] as current while [apply] shows it, and restores the previous one if [apply] rejects it. */
+    /**
+     * Keeps [newValue] as current while [apply] shows it, and restores the previous one if [apply] rejects it with
+     * an argument or state error.
+     */
     private fun show(newValue: T) {
         val previous = current
         current = newValue
         try {
             apply(newValue)
         } catch (rejected: IllegalArgumentException) {
+            current = previous
+            throw rejected
+        } catch (rejected: IllegalStateException) {
             current = previous
             throw rejected
         }

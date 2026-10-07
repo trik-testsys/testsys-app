@@ -12,7 +12,6 @@ import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestRow
@@ -26,11 +25,9 @@ class NativeFieldsTests : MockVaadinTests() {
 
     @Nested
     inner class CodeEditorTests {
-        // Decorative line numbers must stay outside the accessibility tree.
         @Test
-        @Tag("regression")
         fun `should hide decorative code line numbers from assistive technology`() {
-            val root = buildTestRow { codeEditor("Code", 4, 8) { value = "first\nsecond" } }
+            val root = buildTestRow { codeEditor("Code", labelSize = 4, size = 8) { value = "first\nsecond" } }
 
             val numbers = root.find("ts-code__lines")
 
@@ -39,9 +36,29 @@ class NativeFieldsTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should mark the code area invalid for assistive technology`() {
+            lateinit var input: ValueInput<String>
+            buildTestRow { input = codeEditor("Code", labelSize = 4, size = 8) }
+
+            input.isInvalid = true
+
+            assertEquals("true", control<CodeEditorField>("Code").find("ts-code__area").element.getAttribute("aria-invalid"))
+        }
+
+        @Test
+        fun `should mark the code area required for assistive technology`() {
+            lateinit var input: ValueInput<String>
+            buildTestRow { input = codeEditor("Code", labelSize = 4, size = 8) }
+
+            input.isRequiredIndicatorVisible = true
+
+            assertEquals("true", control<CodeEditorField>("Code").find("ts-code__area").element.getAttribute("aria-required"))
+        }
+
+        @Test
         fun `should synchronize actual client value into Binder and presentation`() {
             lateinit var input: ValueInput<String>
-            buildTestRow { input = codeEditor("Code", 4, 8, minLines = 3, hint = "Hint") }
+            buildTestRow { input = codeEditor("Code", labelSize = 4, size = 8, minLines = 3, hint = "Hint") }
             val binder = Binder<Draft>()
             val draft = Draft()
             binder.forField(input).bind({ bean -> bean.code }, { bean, code -> bean.code = code })
@@ -60,7 +77,7 @@ class NativeFieldsTests : MockVaadinTests() {
         fun `should reject client changes while readonly and restore visible value`() {
             lateinit var input: ValueInput<String>
             buildTestRow {
-                input = codeEditor("Code", 4, 8) {
+                input = codeEditor("Code", labelSize = 4, size = 8) {
                     value = "original"
                     isEditable = false
                 }
@@ -79,7 +96,7 @@ class NativeFieldsTests : MockVaadinTests() {
             val source = ValueSignal("original")
             var requested = ""
             lateinit var input: ValueInput<String>
-            buildTestRow { input = codeEditor("Code", 4, 8) { bindValue(source) { code -> requested = code } } }
+            buildTestRow { input = codeEditor("Code", labelSize = 4, size = 8) { bindValue(source) { code -> requested = code } } }
             val area = control<CodeEditorField>("Code").find("ts-code__area").element
 
             area.node.getFeature(ElementPropertyMap::class.java).deferredUpdateFromClient("value", "request").run()
@@ -95,7 +112,7 @@ class NativeFieldsTests : MockVaadinTests() {
         @Test
         fun `should publish client checked changes to the handle and Binder`() {
             lateinit var input: ValueInput<Boolean>
-            buildTestRow { input = switchInput("Switch", 4, 8) }
+            buildTestRow { input = switchInput("Switch", labelSize = 4, size = 8) }
             val field = control<Switch>("Switch")
             val binder = Binder<Draft>()
             val draft = Draft()
@@ -112,7 +129,7 @@ class NativeFieldsTests : MockVaadinTests() {
         @Test
         fun `should ignore client checked changes while readonly`() {
             lateinit var input: ValueInput<Boolean>
-            buildTestRow { input = switchInput("Switch", 4, 8) { isEditable = false } }
+            buildTestRow { input = switchInput("Switch", labelSize = 4, size = 8) { isEditable = false } }
             val field = control<Switch>("Switch")
 
             clientChange(field.element, "checked", JsonNodeFactory.instance.booleanNode(true))
@@ -124,7 +141,7 @@ class NativeFieldsTests : MockVaadinTests() {
         @Test
         fun `should ignore client checked changes while disabled`() {
             lateinit var input: ValueInput<Boolean>
-            buildTestRow { input = switchInput("Switch", 4, 8) { isEnabled = false } }
+            buildTestRow { input = switchInput("Switch", labelSize = 4, size = 8) { isEnabled = false } }
 
             clientChange(control<Switch>("Switch").element, "checked", JsonNodeFactory.instance.booleanNode(true))
 
@@ -135,7 +152,7 @@ class NativeFieldsTests : MockVaadinTests() {
         fun `should accept programmatic checked changes while readonly and disabled`() {
             lateinit var input: ValueInput<Boolean>
             buildTestRow {
-                input = switchInput("Switch", 4, 8) {
+                input = switchInput("Switch", labelSize = 4, size = 8) {
                     isEditable = false
                     isEnabled = false
                 }
@@ -151,7 +168,7 @@ class NativeFieldsTests : MockVaadinTests() {
             val source = ValueSignal(false)
             var isRequested = false
             lateinit var input: ValueInput<Boolean>
-            buildTestRow { input = switchInput("Switch", 4, 8) { bindValue(source) { value -> isRequested = value } } }
+            buildTestRow { input = switchInput("Switch", labelSize = 4, size = 8) { bindValue(source) { value -> isRequested = value } } }
 
             clientChange(control<Switch>("Switch").element, "checked", JsonNodeFactory.instance.booleanNode(true))
 
@@ -166,7 +183,7 @@ class NativeFieldsTests : MockVaadinTests() {
         @Test
         fun `should publish client choice changes to the handle and Binder`() {
             lateinit var input: ValueInput<String?>
-            buildTestRow { input = radio("Choice", 4, 8, listOf("a", "b"), { value -> value }) }
+            buildTestRow { input = radio("Choice", labelSize = 4, size = 8, items = listOf("a", "b"), itemLabel = { value -> value }) }
             val field = control<ChoiceField<String>>("Choice")
             val binder = Binder<Draft>()
             val draft = Draft()
@@ -183,7 +200,7 @@ class NativeFieldsTests : MockVaadinTests() {
         fun `should ignore client choice changes while readonly`() {
             lateinit var input: ValueInput<String?>
             buildTestRow {
-                input = radio("Choice", 4, 8, listOf("a", "b"), { value -> value }) {
+                input = radio("Choice", labelSize = 4, size = 8, items = listOf("a", "b"), itemLabel = { value -> value }) {
                     value = "a"
                     isEditable = false
                 }
@@ -198,7 +215,7 @@ class NativeFieldsTests : MockVaadinTests() {
         fun `should ignore client choice changes while disabled`() {
             lateinit var input: ValueInput<String?>
             buildTestRow {
-                input = radio("Choice", 4, 8, listOf("a", "b"), { value -> value }) {
+                input = radio("Choice", labelSize = 4, size = 8, items = listOf("a", "b"), itemLabel = { value -> value }) {
                     value = "a"
                     isEnabled = false
                 }
@@ -215,7 +232,7 @@ class NativeFieldsTests : MockVaadinTests() {
             var requested: String? = null
             lateinit var input: ValueInput<String?>
             buildTestRow {
-                input = radio("Choice", 4, 8, listOf("a", "b"), { value -> value }) {
+                input = radio("Choice", labelSize = 4, size = 8, items = listOf("a", "b"), itemLabel = { value -> value }) {
                     bindValue(source) { value -> requested = value }
                 }
             }

@@ -9,6 +9,13 @@ test('same named files have distinct stable identities through retry', () => {
   assert.equal(transferIdentity(first), transferIdentity(first));
   assert.notEqual(transferIdentity(first), transferIdentity(second));
 });
+test('identity is a lowercase UUID v4 accepted by the server pattern', () => {
+  assert.match(transferIdentity({name:'file.txt'}), /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+});
+test('identity does not need the secure-context randomUUID', (t) => {
+  t.mock.method(crypto, 'randomUUID', () => { throw new TypeError('randomUUID is unavailable outside secure contexts'); });
+  assert.match(transferIdentity({name:'plain-http.txt'}), /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+});
 test('request and removal carry identity and lifecycle replaces listeners', () => {
   const host = new Upload(), file = {name:'same.txt'}, headers = [], removed = [];
   const xhr = {setRequestHeader:(name, value) => headers.push([name,value])};

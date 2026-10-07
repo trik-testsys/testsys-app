@@ -19,7 +19,7 @@ class NotFoundHttpTests {
     private lateinit var port: String
 
     @ParameterizedTest
-    @ValueSource(strings = ["unknown-route", "dev/showcase", "dev/showcase/states/accessibility"])
+    @ValueSource(strings = ["unknown-route", "dev/showcase", "dev/showcase/states/accessibility", "dev/demo"])
     fun `should return HTTP 404 on initial request to missing or unavailable page`(path: String) {
         val request = HttpRequest.newBuilder(URI("http://localhost:$port/$path"))
             .header("Accept", "text/html").GET().build()

@@ -31,7 +31,7 @@ fun buildUiTexts(): UiTexts {
             firstDayOfWeek = WeekFields.of(locale).firstDayOfWeek,
             dateFormat = "dd.MM.yyyy",
             today = "Сегодня",
-            cancel = "Отмена",
+            cancel = "Отменить",
         ),
         fieldErrors = FieldErrorTexts(
             badInput = "Проверьте формат значения",
@@ -40,7 +40,7 @@ fun buildUiTexts(): UiTexts {
             stepMismatch = "Значение не соответствует шагу",
         ),
         dateRangeReversed = "Дата окончания раньше даты начала",
-        editing = EditingTexts(start = "Изменить", save = "Сохранить", cancel = "Отмена"),
+        editing = EditingTexts(start = "Изменить", save = "Сохранить", cancel = "Отменить"),
         table = TableTexts(
             empty = "Нет данных",
             range = { from, to, total -> "${formatNumber(from)}–${formatNumber(to)} из ${formatNumber(total)}" },
@@ -58,7 +58,7 @@ fun buildUiTexts(): UiTexts {
             retry = "Повторить",
         ),
         dialog = DialogTexts(
-            cancel = "Отмена",
+            cancel = "Отменить",
             close = "Закрыть",
             typeToConfirm = { name -> "Введите «$name», чтобы подтвердить" },
         ),
@@ -92,6 +92,9 @@ fun buildUiTexts(): UiTexts {
             upload = "Выбрать файлы",
             drop = "Перетащите файлы сюда",
             cancel = "Отменить",
+            cancelled = "Отменено",
+            removeFile = "Убрать файл",
+            stalled = "Передача приостановлена",
             preparing = "Подготовка",
             downloading = "Передача",
             done = "Передано сервером",
@@ -133,6 +136,7 @@ fun buildUiTexts(): UiTexts {
                 val participants = plural(count, one = "участник", few = "участника", many = "участников")
                 "Ещё ${formatNumber(count)} $participants"
             },
+            more = { count -> "Ещё ${formatNumber(count)}" },
             transferBytes = { count -> "Передано: ${formatNumber(count)} Б" },
             question = { number -> "Вопрос ${formatNumber(number)}" },
         ),
@@ -161,7 +165,7 @@ fun buildUiTexts(): UiTexts {
         notFound = NotFoundTexts(
             title = "Страница не найдена",
             description = "Проверьте адрес или вернитесь на предыдущую страницу.",
-            back = "Назад",
+            back = "Вернуться",
             pageTitle = "Страница не найдена — TestSys",
         ),
     )

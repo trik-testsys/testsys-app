@@ -27,7 +27,14 @@ class HeaderTests : MockVaadinTests() {
     )
 
     @Test
-    fun `should keep the shared header sticky and derive initials using UI locale`() {
+    fun `should keep the shared header sticky`() {
+        val header = buildHeader(CabinetHeader(user = HeaderUser("istanbul izmir")), testTexts)
+
+        assertTrue("ts-header--sticky" in header.classes())
+    }
+
+    @Test
+    fun `should derive avatar initials using the locale of the texts`() {
         val texts = tech.testsys.web.components.texts.UiTexts(
             locale = java.util.Locale.forLanguageTag("tr"),
             brand = testTexts.brand,
@@ -50,8 +57,9 @@ class HeaderTests : MockVaadinTests() {
             footer = testTexts.footer,
             tableFilters = testTexts.tableFilters,
         )
+
         val header = buildHeader(CabinetHeader(user = HeaderUser("istanbul izmir")), texts)
-        assertTrue("ts-header--sticky" in header.classes())
+
         assertEquals("İİ", header.find("ts-header__avatar").element.text)
     }
 

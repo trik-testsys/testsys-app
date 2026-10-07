@@ -28,7 +28,7 @@ internal enum class ActionRole(val attribute: String) {
  *
  * @since %CURRENT_VERSION%
  */
-fun ContentScope.mainAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}) =
+fun ContentScope.mainAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addAction(ActionRole.Main, label, icon, configure)
 
 /**
@@ -36,7 +36,7 @@ fun ContentScope.mainAction(label: String, icon: IconName? = null, configure: Ac
  *
  * @since %CURRENT_VERSION%
  */
-fun ContentScope.action(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}) =
+fun ContentScope.action(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addAction(ActionRole.Neutral, label, icon, configure)
 
 /**
@@ -44,7 +44,7 @@ fun ContentScope.action(label: String, icon: IconName? = null, configure: Action
  *
  * @since %CURRENT_VERSION%
  */
-fun ContentScope.destructiveAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}) =
+fun ContentScope.destructiveAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addAction(ActionRole.Destructive, label, icon, configure)
 
 /**
@@ -52,7 +52,7 @@ fun ContentScope.destructiveAction(label: String, icon: IconName? = null, config
  *
  * @since %CURRENT_VERSION%
  */
-fun ContentScope.linkAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}) =
+fun ContentScope.linkAction(label: String, icon: IconName? = null, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addAction(ActionRole.Link, label, icon, configure)
 
 /**
@@ -60,7 +60,7 @@ fun ContentScope.linkAction(label: String, icon: IconName? = null, configure: Ac
  *
  * @since %CURRENT_VERSION%
  */
-fun ContentScope.iconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}) =
+fun ContentScope.iconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addIconAction(ActionRole.Neutral, icon, label, configure)
 
 /**
@@ -68,7 +68,7 @@ fun ContentScope.iconAction(icon: IconName, label: String, configure: ActionHand
  *
  * @since %CURRENT_VERSION%
  */
-fun ContentScope.mainIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}) =
+fun ContentScope.mainIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addIconAction(ActionRole.Main, icon, label, configure)
 
 /**
@@ -76,7 +76,7 @@ fun ContentScope.mainIconAction(icon: IconName, label: String, configure: Action
  *
  * @since %CURRENT_VERSION%
  */
-fun ContentScope.destructiveIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}) =
+fun ContentScope.destructiveIconAction(icon: IconName, label: String, configure: ActionHandle.() -> Unit = {}): ActionHandle =
     addIconAction(ActionRole.Destructive, icon, label, configure)
 
 private fun ContentScope.addIconAction(role: ActionRole, icon: IconName, label: String, configure: ActionHandle.() -> Unit): ActionHandle {

@@ -33,6 +33,64 @@ internal class IconActionTests : MockVaadinTests() {
         "Destructive,Cell,sm",
     )
     fun `should preserve icon role name tooltip and placement`(role: ActionRole, placement: Placement, size: String) {
+        buildInPlacement(role, placement)
+
+        val button = _get<Button>()
+        assertEquals(role.attribute, button.element.getAttribute("data-ts-role"))
+        assertEquals(size, button.element.getAttribute("data-ts-size"))
+        assertEquals("Action name", button.ariaLabel.orElseThrow())
+        assertEquals("Action name", button.tooltip.text)
+        assertTrue(button.text.isEmpty())
+        assertTrue(button.element.hasAttribute("data-ts-icon-only"))
+        assertTrue("ts-icon" in button.icon.element.classList)
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive"])
+    fun `should ignore clicks while loading`(role: ActionRole) {
+        var clicks = 0
+        lateinit var handle: ActionHandle
+        buildTestContent { handle = iconOnly(role).apply { onClick { clicks++ } } }
+        handle.isLoading = true
+
+        _get<Button>()._click()
+
+        assertEquals(0, clicks)
+        assertEquals("true", _get<Button>().element.getAttribute("aria-busy"))
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive"])
+    fun `should run the click callback after loading ends`(role: ActionRole) {
+        var clicks = 0
+        lateinit var handle: ActionHandle
+        buildTestContent { handle = iconOnly(role).apply { onClick { clicks++ } } }
+        handle.isLoading = true
+        handle.isLoading = false
+
+        _get<Button>()._click()
+
+        assertEquals(1, clicks)
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive"])
+    fun `should disable the button through the handle`(role: ActionRole) {
+        lateinit var handle: ActionHandle
+        buildTestContent { handle = iconOnly(role) }
+
+        handle.isEnabled = false
+
+        assertFalse(_get<Button>().isEnabled)
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive"])
+    fun `should reject an empty accessible name`(role: ActionRole) {
+        assertThrows<IllegalArgumentException> { buildTestContent { iconOnly(role, label = " ") } }
+    }
+
+    private fun buildInPlacement(role: ActionRole, placement: Placement) {
         buildTestPage {
             block {
                 when (placement) {
@@ -42,40 +100,6 @@ internal class IconActionTests : MockVaadinTests() {
                 }
             }
         }
-
-        val button = _get<Button>()
-        assertEquals(role.attribute, button.element.getAttribute("data-ts-role"))
-        assertEquals(size, button.element.getAttribute("data-ts-size"))
-        assertEquals("Action name", button.ariaLabel.orElseThrow())
-        assertEquals("Action name", button.tooltip.text)
-        assertTrue(button.text.isEmpty())
-        assertTrue(button.element.hasAttribute("data-ts-icon-only"))
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive"])
-    fun `should keep icon action state and callbacks through its handle`(role: ActionRole) {
-        var clicks = 0
-        lateinit var handle: ActionHandle
-        buildTestContent { handle = iconOnly(role).apply { onClick { clicks++ } } }
-        val button = _get<Button>()
-
-        handle.isLoading = true
-        button._click()
-        assertEquals(0, clicks)
-        assertEquals("true", button.element.getAttribute("aria-busy"))
-        handle.isLoading = false
-        button._click()
-        assertEquals(1, clicks)
-        assertTrue("ts-icon" in button.icon.element.classList)
-        handle.isEnabled = false
-        assertFalse(button.isEnabled)
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = ActionRole::class, names = ["Main", "Neutral", "Destructive"])
-    fun `should reject an empty accessible name`(role: ActionRole) {
-        assertThrows<IllegalArgumentException> { buildTestContent { iconOnly(role, label = " ") } }
     }
 
     private fun ContentScope.iconOnly(role: ActionRole, label: String = "Action name"): ActionHandle = when (role) {

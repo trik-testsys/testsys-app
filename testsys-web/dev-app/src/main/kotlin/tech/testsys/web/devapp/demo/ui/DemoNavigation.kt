@@ -1,17 +1,19 @@
 package tech.testsys.web.devapp.demo.ui
 
+import tech.testsys.web.devapp.demo.model.DemoRole
+
 /** Role navigation and sections of the existing demonstration. */
 internal data class DemoCabinet(
     val key: String,
-    val role: String,
+    val role: DemoRole,
     val sections: List<Pair<String, String>>,
-    val label: String = role,
+    val label: String,
 )
 
 internal val DEMO_CABINETS: List<DemoCabinet> = listOf(
     DemoCabinet(
         key = "student",
-        role = "Ученик",
+        role = DemoRole.Student,
         label = "Кабинет ученика",
         sections = listOf(
             "overview" to "Обзор",
@@ -22,7 +24,7 @@ internal val DEMO_CABINETS: List<DemoCabinet> = listOf(
     ),
     DemoCabinet(
         key = "organizer",
-        role = "Организатор",
+        role = DemoRole.Organizer,
         label = "Кабинет организатора",
         sections = listOf(
             "overview" to "Обзор",
@@ -34,7 +36,7 @@ internal val DEMO_CABINETS: List<DemoCabinet> = listOf(
     ),
     DemoCabinet(
         key = "developer",
-        role = "Разработчик",
+        role = DemoRole.Developer,
         label = "Кабинет разработчика",
         sections = listOf(
             "overview" to "Обзор",
@@ -45,7 +47,7 @@ internal val DEMO_CABINETS: List<DemoCabinet> = listOf(
     ),
     DemoCabinet(
         key = "judge",
-        role = "Судья",
+        role = DemoRole.Judge,
         label = "Кабинет судьи",
         sections = listOf(
             "overview" to "Обзор",
@@ -55,7 +57,7 @@ internal val DEMO_CABINETS: List<DemoCabinet> = listOf(
     ),
     DemoCabinet(
         key = "administrator",
-        role = "Администратор",
+        role = DemoRole.Administrator,
         label = "Кабинет администратора",
         sections = listOf(
             "overview" to "Обзор",
@@ -65,7 +67,7 @@ internal val DEMO_CABINETS: List<DemoCabinet> = listOf(
     ),
     DemoCabinet(
         key = "participant",
-        role = "Участник",
+        role = DemoRole.Participant,
         label = "Кабинет участника",
         sections = listOf(
             "overview" to "Обзор",
@@ -75,7 +77,7 @@ internal val DEMO_CABINETS: List<DemoCabinet> = listOf(
     ),
     DemoCabinet(
         key = "observer",
-        role = "Наблюдатель",
+        role = DemoRole.Observer,
         label = "Кабинет наблюдателя",
         sections = listOf(
             "overview" to "Обзор",
@@ -85,7 +87,7 @@ internal val DEMO_CABINETS: List<DemoCabinet> = listOf(
     ),
     DemoCabinet(
         key = "supervisor",
-        role = "Супервайзер",
+        role = DemoRole.Supervisor,
         label = "Кабинет супервайзера",
         sections = listOf(
             "overview" to "Обзор",
@@ -101,10 +103,10 @@ internal fun demoScreen(value: String?): String = when {
     value == "profile" -> "student.overview"
     value == "org" -> "organizer.overview"
     DEMO_CABINETS.any { cabinet ->
-        cabinet.sections.any {
-            "${cabinet.key}.${it.first}" == value
+        cabinet.sections.any { (section, _) ->
+            "${cabinet.key}.$section" == value
         }
     }
-    -> checkNotNull(value)
+    -> checkNotNull(value) { "Declared demo screen key must not be null" }
     else -> "home"
 }

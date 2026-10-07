@@ -8,7 +8,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -16,6 +15,8 @@ import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.navigation.header.CabinetHeader
 import tech.testsys.web.components.texts.buildUiTexts
 import tech.testsys.web.devapp.demo.DemoSession
+import tech.testsys.web.devapp.demo.model.DemoRole
+import tech.testsys.web.devapp.demo.model.DemoSolutionStatus
 import tech.testsys.web.devapp.demo.model.actor
 
 class DemoResultMatrixTests {
@@ -25,9 +26,7 @@ class DemoResultMatrixTests {
     @AfterEach
     fun tearDownVaadin() = MockVaadin.tearDown()
 
-    // http://localhost:8081/dev/demo/organizer.results — user-reported result matrix layout.
     @Test
-    @Tag("regression")
     fun `should fill the available grid with two task columns`() {
         val table = buildMatrix(taskCount = 2)
 
@@ -45,9 +44,7 @@ class DemoResultMatrixTests {
         assertTrue(body.textRecursively.contains("Нет результатаРешений: 0"))
     }
 
-    // http://localhost:8081/dev/demo/organizer.results — user-reported result matrix layout.
     @Test
-    @Tag("regression")
     fun `should distribute indivisible remaining fractions over the first task columns`() {
         val table = buildMatrix(taskCount = 5)
 
@@ -58,9 +55,7 @@ class DemoResultMatrixTests {
         )
     }
 
-    // http://localhost:8081/dev/demo/organizer.results — user-reported result matrix layout.
     @ParameterizedTest
-    @Tag("regression")
     @ValueSource(ints = [0, 1])
     fun `should fill the grid with zero or one task`(taskCount: Int) {
         val table = buildMatrix(taskCount)
@@ -86,8 +81,8 @@ class DemoResultMatrixTests {
 
     private fun buildMatrix(taskCount: Int): Table {
         val session = DemoSession()
-        val actor = session.state.actor("Организатор")
-        val participant = session.state.users.first { user -> user.role == "Участник" }
+        val actor = session.state.actor(DemoRole.Organizer)
+        val participant = session.state.users.first { user -> user.role == DemoRole.Participant }
         val tasks =
             List(taskCount) { index -> session.state.tasks.first().copy(id = "matrix-task-$index", name = "Задача ${index + 1}") }
         val tour = session.state.tours.first().copy(taskIds = tasks.map { task -> task.id })
@@ -97,14 +92,14 @@ class DemoResultMatrixTests {
                     id = "matrix-best",
                     userId = participant.id,
                     taskId = task.id,
-                    status = "Checked",
+                    status = DemoSolutionStatus.Checked,
                     score = 37,
                 ),
                 session.state.solutions.first().copy(
                     id = "matrix-other",
                     userId = participant.id,
                     taskId = task.id,
-                    status = "Checked",
+                    status = DemoSolutionStatus.Checked,
                     score = 12,
                 ),
             )

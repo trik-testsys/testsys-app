@@ -33,7 +33,7 @@ internal class Pager(private val texts: UiTexts, private val onPage: (Int) -> Un
     fun show(page: Int, pageCount: Int, from: Int, to: Int, total: Int) {
         this.page = page
         range.text = texts.table.range(from, to, total)
-        counter.text = "${page + 1} / $pageCount"
+        counter.text = "${formatNumber(page + 1, texts)} / ${formatNumber(pageCount, texts)}"
         previous.isEnabled = page > 0
         next.isEnabled = page < pageCount - 1
     }

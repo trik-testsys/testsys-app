@@ -36,11 +36,11 @@ internal fun PageScope.demoCabinet(context: DemoContext, cabinet: DemoCabinet, a
             actor = actor,
             key = "tasks",
             title = "Задачи",
-            rows = objects.tasks.map {
-                DemoRow(id = it.id, title = it.name, category = demoTaskStateLabel(it.state), detail = it.description)
+            rows = objects.tasks.map { task ->
+                DemoRow(id = task.id, title = task.name, category = demoTaskStateLabel(task.state), detail = task.description)
             },
         ) { selected ->
-            val task = objects.tasks.first { it.id == selected.id }
+            val task = objects.tasks.first { candidate -> candidate.id == selected.id }
             demoInfo(
                 "Сведения о задаче",
                 listOf(
@@ -56,8 +56,9 @@ internal fun PageScope.demoCabinet(context: DemoContext, cabinet: DemoCabinet, a
         }
     }
     if (cabinet.key in listOf("developer", "observer") && section in listOf("overview", "tours")) {
-        demoList(context = context, actor = actor, key = "tours", title = "Туры", rows = objects.tours.map { it.row() }) { selected ->
-            demoTourMaterials(context, objects.tours.first { it.id == selected.id })
+        val rows = objects.tours.map { tour -> tour.row() }
+        demoList(context = context, actor = actor, key = "tours", title = "Туры", rows = rows) { selected ->
+            demoTourMaterials(context, objects.tours.first { tour -> tour.id == selected.id })
         }
     }
     if (cabinet.key == "administrator" && section in listOf("overview", "users", "user")) {
@@ -66,8 +67,10 @@ internal fun PageScope.demoCabinet(context: DemoContext, cabinet: DemoCabinet, a
             actor = actor,
             key = "users",
             title = "Пользователи",
-            rows = objects.users.map { DemoRow(id = it.id, title = it.alias, category = it.role, detail = it.email.orEmpty()) },
-        ) { selected -> demoInfo("Сведения о выбранном пользователе", objects.users.first { it.id == selected.id }.infoFields()) }
+            rows = objects.users.map { user ->
+                DemoRow(id = user.id, title = user.alias, category = demoRoleLabel(user.role), detail = user.email.orEmpty())
+            },
+        ) { selected -> demoInfo("Сведения о выбранном пользователе", objects.users.first { user -> user.id == selected.id }.infoFields()) }
     }
     if (cabinet.key == "judge") demoJudge(context, actor, objects, section)
     if (cabinet.key == "observer" && section == "results") demoObserverResults(context, actor, objects)
@@ -81,7 +84,7 @@ internal fun PageScope.demoCabinet(context: DemoContext, cabinet: DemoCabinet, a
 private fun DemoUser.infoFields(): List<Pair<String, String>> = listOf(
     "ID" to id,
     "Псевдоним" to alias,
-    "Роль" to role,
+    "Роль" to demoRoleLabel(role),
     "Код-доступа" to accessCode,
     "Почта" to email.orEmpty(),
     "Последний вход" to lastLogin,
@@ -97,7 +100,7 @@ private fun PageScope.demoResources(context: DemoContext, actor: DemoUser, objec
             DemoRow(id = it.id, title = it.name, category = it.category, date = demoDate(it.modifiedAt), detail = it.fileName)
         },
     ) { selected ->
-        val resource = objects.resources.first { it.id == selected.id }
+        val resource = objects.resources.first { candidate -> candidate.id == selected.id }
         demoInfo(
             "Сведения о ресурсе",
             listOf("ID" to resource.id, "Название" to resource.name, "Тип" to resource.category, "Файл" to resource.fileName),
@@ -176,7 +179,7 @@ internal fun PageScope.demoTourMaterials(context: DemoContext, tour: DemoTour) {
         ),
         wideLabels = setOf("Описание"),
     )
-    val tasks = tour.taskIds.map { id -> context.state.tasks.first { it.id == id } }
+    val tasks = tour.taskIds.map { id -> context.state.tasks.first { task -> task.id == id } }
     block("Задачи тура") {
         demoTable(
             context.table("${context.screen}:${tour.id}:materials"),

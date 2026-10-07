@@ -36,7 +36,6 @@ import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import tech.testsys.web.components.display.CounterKind
 import tech.testsys.web.components.display.TagKind
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.Trend
@@ -134,9 +133,10 @@ class ShowcaseViewTests {
             assertTrue(_find<TextField>().any { field -> field.element.hasAttribute("data-ts-mono") })
         }
 
-        @Test
-        fun `should show a counter of every kind`() {
-            assertTrue(_find<Component> { classes = "ts-counter" }.size >= CounterKind.entries.size)
+        @ParameterizedTest
+        @ValueSource(strings = ["ts-counter--danger", "ts-counter--muted"])
+        fun `should show a counter of every kind`(kindClass: String) {
+            assertTrue(_find<Component> { classes = "ts-counter" }.any { counter -> kindClass in counter.element.classList })
         }
 
         @Test
@@ -272,8 +272,17 @@ class ShowcaseViewTests {
         }
 
         @Test
-        fun `should show menus in a block head and in table rows`() {
-            assertTrue(_find<Button>().count { button -> button.element.getAttribute("aria-haspopup") == "menu" } > 2)
+        fun `should show two menus in a block head`() {
+            val menus = block("Меню в шапке")._find<Button>().count { button -> button.element.getAttribute("aria-haspopup") == "menu" }
+
+            assertEquals(2, menus)
+        }
+
+        @Test
+        fun `should show a menu in every row of the first table page`() {
+            val menus = block("Меню в строках")._find<Button>().count { button -> button.element.getAttribute("aria-haspopup") == "menu" }
+
+            assertEquals(8, menus)
         }
 
         @Test
@@ -309,12 +318,18 @@ class ShowcaseViewTests {
     @ActiveProfiles("dev")
     inner class NestedPageTests : MockSpringVaadinTests() {
         @Test
-        fun `should mark states section and expose compound focus examples`() {
+        fun `should mark the states section on the nested page`() {
             UI.getCurrent().navigate("dev/showcase/states/accessibility")
 
             expectView<ShowcaseNestedView>()
             val current = _find<RouterLink>().single { link -> link.element.getAttribute("aria-current") == "location" }
             assertEquals("dev/showcase/states", current.href)
+        }
+
+        @Test
+        fun `should expose compound focus examples on the nested page`() {
+            UI.getCurrent().navigate("dev/showcase/states/accessibility")
+
             assertTrue(_find<DateTimePicker>().isNotEmpty())
             assertEquals(listOf("Период: с", "Период: до"), _find<DatePicker>().mapNotNull { picker -> picker.ariaLabel.orElse(null) })
             assertTrue(_find<Button>().any { button -> button.text == "Сохранить явно" })

@@ -101,6 +101,13 @@ class DisplayTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should group the digits of a large counter`() {
+            val page = buildTestContent { counter(1412) }
+
+            assertEquals("1 412", page.find("ts-counter").element.textRecursively)
+        }
+
+        @Test
         fun `should span counter over its size in a block row`() {
             val counter = buildTestRow { counter(3, size = 2) }.child(0)
 

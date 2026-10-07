@@ -3,6 +3,8 @@ package tech.testsys.web.components.core
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestContent
 import tech.testsys.web.components.buildTestRow
@@ -11,16 +13,21 @@ import tech.testsys.web.components.classes
 import tech.testsys.web.components.find
 
 class IconTests : MockVaadinTests() {
+    private val sprite = requireNotNull(javaClass.getResource("/META-INF/resources/testsys-ui/icons.svg")).readText()
+
     @Test
-    fun `should render Lucide paths with the standard size`() {
+    fun `should render a sprite reference with the standard size and color`() {
         val icon = buildTestContent { icon(IconName.ChevronDown) }.find("ts-icon")
 
         val svg = icon.element.getProperty("innerHTML")
-        assertTrue(svg.contains("""href="testsys-ui/icons.svg#chevron-down"""))
-        val sprite = javaClass.getResource("/META-INF/resources/testsys-ui/icons.svg")!!.readText()
-        assertTrue(sprite.contains("""<path d="m6 9 6 6 6-6"/>"""))
+        assertTrue(svg.contains("""href="testsys-ui/icons.svg#chevron-down""""))
         assertTrue(svg.contains("""width="16""""))
         assertTrue(svg.contains("""stroke="currentColor""""))
+    }
+
+    @Test
+    fun `should keep the Lucide path of an icon in the sprite`() {
+        assertTrue(sprite.contains("""<symbol id="chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>"""))
     }
 
     @Test
@@ -32,10 +39,14 @@ class IconTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should cover the icon subset of the design system`() {
+    fun `should keep the icon subset of the design system in the sprite`() {
         assertEquals(37, IconName.entries.size)
-        val sprite = javaClass.getResource("/META-INF/resources/testsys-ui/icons.svg")!!.readText()
         assertEquals(37, Regex("<symbol ").findAll(sprite).count())
-        IconName.entries.forEach { name -> assertTrue(sprite.contains("<symbol id=\"${name.key}\"")) }
+    }
+
+    @ParameterizedTest
+    @EnumSource(IconName::class)
+    internal fun `should define a sprite symbol for every icon name`(name: IconName) {
+        assertTrue(sprite.contains("<symbol id=\"${name.key}\""))
     }
 }

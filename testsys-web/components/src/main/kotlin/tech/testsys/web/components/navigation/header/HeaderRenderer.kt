@@ -22,8 +22,11 @@ import tech.testsys.web.components.texts.UiTexts
 internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
     val interactions = HeaderInteractions()
     val menus = header.items.filterIsInstance<MegaMenuItem>().associate { it.key to MegaMenuHandle(it, interactions) }
-    require(header.menuSearchKey == null || (header.search == null && header.menuSearchKey in menus)) {
-        "Menu search requires an existing mega-menu key and excludes provider search"
+    require(header.menuSearchKey == null || header.menuSearchKey in menus) {
+        "Menu search key '${header.menuSearchKey}' must be one of the mega-menu keys ${menus.keys}"
+    }
+    require(header.menuSearchKey == null || header.search == null) {
+        "Menu search '${header.menuSearchKey}' excludes provider search"
     }
     val bar = Div().apply { addClassName(CssClass.HeaderBar) }
     bar.add(buildBrand(texts.brand, href = "."), navigation(header, texts, menus))

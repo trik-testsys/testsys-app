@@ -39,6 +39,21 @@ class PageHeadTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should fall back to activeOn sections when exact tabs do not target the current page`() {
+        val scope = PageHeadScope(testTexts, SecondTestView::class.java)
+        scope.tabs(matchRouteParameters = true) {
+            tab("Обзор", ItemTestView::class.java, RouteParameters("id", "7"), activeOn = setOf(SecondTestView::class.java))
+            tab("Другое", FirstTestView::class.java)
+        }
+
+        val head = scope.build("Кабинет")
+
+        val links = head.findAll("ts-tab")
+        assertEquals(listOf("location", null), links.map { link -> link.element.getAttribute("aria-current") })
+        assertEquals(listOf(true, false), links.map { link -> "ts-tab--active" in link.element.classList })
+    }
+
+    @Test
     fun `should put the head between the header and the page body`() {
         val main = buildTestPage { head("Весенний кубок") }
 

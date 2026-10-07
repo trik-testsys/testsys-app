@@ -91,11 +91,17 @@ class HeaderNotificationsTests : MockVaadinTests() {
         val source = ValueSignal<List<HeaderNotification>>(emptyList())
         val controller = notifications(source)
         controller.popup.open()
+        pendingJavaScript()
 
         source.set(listOf(notification("new", mutableListOf())))
 
         assertFalse(controller.arrival.isOpen)
         assertTrue(controller.popup.isOpened)
+        assertTrue(
+            pendingJavaScript().any { call ->
+                call.owner == controller.component.element.node && "testsysHeaderArrivals.highlight" in call.invocation.expression
+            },
+        )
     }
 
     @Test

@@ -128,7 +128,7 @@ class ShowcaseDisplayView(texts: UiTexts, private val environment: Environment) 
 
 private fun PageScope.contestCards() {
     row {
-        slot(FULL_WIDTH) {
+        slot(size = FULL_WIDTH) {
             row {
                 contestCard(
                     ContestCardData(

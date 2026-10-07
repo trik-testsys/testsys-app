@@ -24,11 +24,13 @@ import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.setType
+import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.display.CounterKind
 import tech.testsys.web.components.display.buildCounter
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.texts.UiTexts
 
 private const val MIN_OPTIONS = 2
 
@@ -155,6 +157,7 @@ fun <V> BlockScope.tabs(initial: V, content: TabsScope<V>.() -> Unit): TabsHandl
         root = root,
         buttonClass = CssClass.Tab,
         activeClass = CssClass.TabActive,
+        texts = texts,
     )
     placeTabs(root)
     return TabsHandle(group)
@@ -168,7 +171,7 @@ fun <V> BlockScope.tabs(initial: V, content: TabsScope<V>.() -> Unit): TabsHandl
  * @since %CURRENT_VERSION%
  */
 fun <V> ContentScope.pills(initial: V, content: PillsScope<V>.() -> Unit): ChoiceHandle<V> {
-    val group = pillGroup(initial, content)
+    val group = pillGroup(initial, texts, content)
     add(group.root)
     return ChoiceHandle(group)
 }
@@ -181,17 +184,18 @@ fun <V> ContentScope.pills(initial: V, content: PillsScope<V>.() -> Unit): Choic
  * @since %CURRENT_VERSION%
  */
 fun <V> BlockRowScope.pills(initial: V, size: Int? = null, content: PillsScope<V>.() -> Unit): ChoiceHandle<V> {
-    val group = pillGroup(initial, content)
+    val group = pillGroup(initial, texts, content)
     place(size, group.root)
     return ChoiceHandle(group)
 }
 
-private fun <V> pillGroup(initial: V, content: PillsScope<V>.() -> Unit): ChoiceGroup<V> = ChoiceGroup(
+private fun <V> pillGroup(initial: V, texts: UiTexts, content: PillsScope<V>.() -> Unit): ChoiceGroup<V> = ChoiceGroup(
     options = PillsScope<V>().apply(content).options,
     initial = initial,
     root = Div().apply { addClassName(CssClass.Pills) },
     buttonClass = CssClass.Pill,
     activeClass = CssClass.PillActive,
+    texts = texts,
 )
 
 /**
@@ -203,8 +207,10 @@ internal class ChoiceGroup<V>(
     val root: Div,
     buttonClass: CssClass,
     private val activeClass: CssClass,
+    private val texts: UiTexts,
 ) {
     private val counters = mutableMapOf<V, Span>()
+    private val counts = mutableMapOf<V, Int?>()
     private val buttons: Map<V, NativeButton>
 
     var onChange: (V) -> Unit = {}
@@ -214,7 +220,8 @@ internal class ChoiceGroup<V>(
 
     init {
         require(options.size >= MIN_OPTIONS) { "A choice group needs at least $MIN_OPTIONS options, got ${options.size}" }
-        require(options.map { option -> option.value }.toSet().size == options.size) { "Choice group values must be unique" }
+        val duplicates = options.groupBy { option -> option.value }.filterValues { same -> same.size > 1 }.keys
+        require(duplicates.isEmpty()) { "Choice group values must be unique, repeated: $duplicates" }
         require(options.any { option -> option.value == initial }) { "Initial value $initial is not among the options" }
         root.element.setRole(ElementRole.Group)
         buttons = options.associate { option -> option.value to button(option, buttonClass) }
@@ -230,11 +237,15 @@ internal class ChoiceGroup<V>(
 
     fun setCount(target: V, count: Int?) {
         require(count == null || count >= 0) { "Count must not be negative, got $count" }
+        counts[target] = count
         showCount(counter(target), count)
     }
 
     /** The count shown next to [target], or `null` if its counter is empty. */
-    fun count(target: V): Int? = counter(target).text.toIntOrNull()
+    fun count(target: V): Int? {
+        counter(target)
+        return counts[target]
+    }
 
     private fun counter(target: V): Span = requireNotNull(counters[target]) { "Value $target is not among the tabs" }
 
@@ -243,7 +254,8 @@ internal class ChoiceGroup<V>(
         element.setType(ElementType.Button)
         add(Text(option.label))
         option.countKind?.let { kind ->
-            val counter = buildCounter(option.count ?: 0, kind)
+            val counter = buildCounter(option.count ?: 0, kind, texts)
+            counts[option.value] = option.count
             showCount(counter, option.count)
             counters[option.value] = counter
             add(counter)
@@ -267,7 +279,7 @@ internal class ChoiceGroup<V>(
     }
 
     private fun showCount(counter: Span, count: Int?) {
-        counter.text = count?.toString().orEmpty()
+        counter.text = count?.let { value -> formatNumber(value, texts) }.orEmpty()
         counter.isVisible = count != null && count > 0
     }
 }

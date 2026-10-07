@@ -57,7 +57,8 @@ fun BlockScope.emptyState(
     actions: ContentScope.() -> Unit = {},
 ): ElementHandle {
     checkWholeBodyPlace(EMPTY_STATE_OWNER)
-    val state = buildEmptyState(EmptyContent(title, description, icon, actions), texts, columns)
+    val content = EmptyContent(title = title, description = description, icon = icon, actions = actions)
+    val state = buildEmptyState(content, texts, columns)
     placeWhole(state, EMPTY_STATE_OWNER)
     return ElementHandle(state)
 }

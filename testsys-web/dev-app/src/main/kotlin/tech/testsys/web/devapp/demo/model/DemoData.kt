@@ -4,7 +4,7 @@ package tech.testsys.web.devapp.demo.model
 internal data class DemoUser(
     val id: String,
     val alias: String,
-    val role: String,
+    val role: DemoRole,
     val accessCode: String,
     val communityIds: List<String>,
     val email: String? = null,
@@ -36,8 +36,8 @@ internal data class DemoResource(
     val history: List<DemoHistory>,
 )
 
-/** Immutable group fixture of the UI demonstration; not a domain entity. */
-internal data class DemoGroup(
+/** Immutable Class fixture of the UI demonstration; not a domain entity. */
+internal data class DemoClass(
     val id: String,
     val name: String,
     val studentIds: List<String>,
@@ -74,10 +74,10 @@ internal data class DemoTask(
     val id: String,
     val name: String,
     val description: String,
-    val authorSolutionKinds: List<String>,
+    val authorSolutionKinds: List<DemoSolutionKind>,
     val ownerId: String,
     val communityIds: List<String>,
-    val state: String,
+    val state: DemoTaskState,
     val trikVersions: List<String>,
 )
 
@@ -87,9 +87,9 @@ internal data class DemoSolution(
     val userId: String,
     val taskId: String,
     val fileName: String,
-    val kind: String,
+    val kind: DemoSolutionKind,
     val submittedAt: String,
-    val status: String,
+    val status: DemoSolutionStatus,
     val score: Int? = null,
 )
 

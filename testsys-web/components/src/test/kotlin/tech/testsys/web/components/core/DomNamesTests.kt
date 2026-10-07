@@ -14,34 +14,53 @@ import tools.jackson.databind.ObjectMapper
 
 internal class DomNamesTests : MockVaadinTests() {
     @Test
-    fun `should serialize native tags attributes and string and boolean properties`() {
+    fun `should create a native tag`() {
+        val element = htmlElement(HtmlTag.Span)
+
+        assertEquals("span", element.tag)
+    }
+
+    @Test
+    fun `should serialize attributes and string and boolean properties`() {
         val element = htmlElement(HtmlTag.Span)
 
         element.setAttribute(HtmlAttribute.AriaLabel, "Sample")
         element.setProperty(DomProperty.Value, "content")
         element.setProperty(DomProperty.Disabled, false)
 
-        assertEquals("span", element.tag)
         assertEquals("Sample", element.getAttribute("aria-label"))
         assertEquals("content", element.getProperty("value"))
         assertFalse(element.getProperty("disabled", true))
-        assertSame(element, element.removeAttribute(HtmlAttribute.AriaLabel))
+    }
+
+    @Test
+    fun `should remove an attribute and return the element`() {
+        val element = htmlElement(HtmlTag.Span).apply { setAttribute(HtmlAttribute.AriaLabel, "Sample") }
+
+        val result = element.removeAttribute(HtmlAttribute.AriaLabel)
+
+        assertSame(element, result)
         assertFalse(element.hasAttribute("aria-label"))
     }
 
     @Test
-    fun `should retain listener data and filter registration and dispatch`() {
-        val component = Div()
-        UI.getCurrent().add(component)
-        var query = ""
-        val listener = component.element.addEventListener(DomEvent.HeaderInput) { event ->
-            query = event.eventData.get(DomEventData.DetailQuery).asString()
-        }
+    fun `should return the same registration from event data and filter settings`() {
+        val listener = Div().also { component -> UI.getCurrent().add(component) }.element.addEventListener(DomEvent.HeaderInput) {}
+
         assertSame(listener, listener.addEventData(DomEventData.DetailQuery))
         assertSame(listener, listener.setFilter(DomEventFilter.TableSortKey))
+    }
+
+    @Test
+    fun `should dispatch an event that passes the filter with its data`() {
+        val component = Div().also { div -> UI.getCurrent().add(div) }
+        var query = ""
+        component.element.addEventListener(DomEvent.HeaderInput) { event ->
+            query = event.eventData.get(DomEventData.DetailQuery).asString()
+        }.addEventData(DomEventData.DetailQuery).setFilter(DomEventFilter.TableSortKey)
         val data = ObjectMapper().createObjectNode()
             .put("event.detail.query", "chosen")
-            .put("event.key === 'Enter' || event.key === ' '", true)
+            .put(DomEventFilter.TableSortKey.value, true)
 
         component._fireDomEvent("header-input", data)
 

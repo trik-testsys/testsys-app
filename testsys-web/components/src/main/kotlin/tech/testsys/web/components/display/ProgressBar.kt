@@ -6,18 +6,17 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.DataHandle
 import tech.testsys.web.components.core.CssClass
-import tech.testsys.web.components.core.CssProperty
 import tech.testsys.web.components.core.CssUnit
 import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.HtmlTag
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.add
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.htmlElement
 import tech.testsys.web.components.core.removeAttribute
 import tech.testsys.web.components.core.removeWidth
-import tech.testsys.web.components.core.set
 import tech.testsys.web.components.core.setAriaHidden
 import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setClassName
@@ -153,13 +152,12 @@ fun ContentScope.difficulty(
         root.removeAll()
         val caption = label ?: texts.components.difficultyLabels[current.ordinal]
         root.element.setAttribute(HtmlAttribute.AriaLabel, caption)
+        DifficultyLevel.entries.forEach { candidate -> root.setClassName(candidate.cssClass, candidate == current) }
         val marks = Span()
         repeat(DIFFICULTY_INDICATORS) { index ->
             marks.element.appendChild(
                 htmlElement(HtmlTag.I).apply {
-                    if (index <= current.ordinal) {
-                        style.setDifficultyBackground(current)
-                    }
+                    if (index <= current.ordinal) classList.add(CssClass.DifficultyMarkOn)
                 },
             )
         }
@@ -194,11 +192,9 @@ private val Tone.progressClass: CssClass
         Tone.Danger -> CssClass.ProgressDanger
     }
 
-private fun com.vaadin.flow.dom.Style.setDifficultyBackground(level: DifficultyLevel) = set(
-    CssProperty.Background,
-    when (level) {
-        DifficultyLevel.Easy -> "var(--success)"
-        DifficultyLevel.Medium -> "var(--warning)"
-        DifficultyLevel.Hard -> "var(--danger)"
-    },
-)
+private val DifficultyLevel.cssClass: CssClass
+    get() = when (this) {
+        DifficultyLevel.Easy -> CssClass.DifficultyEasy
+        DifficultyLevel.Medium -> CssClass.DifficultyMedium
+        DifficultyLevel.Hard -> CssClass.DifficultyHard
+    }

@@ -122,17 +122,26 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should start collapsed and toggle the accessible disclosure`() {
+    fun `should start collapsed with a closed disclosure and a hidden panel`() {
+        val fixture = Fixture()
+
+        assertFalse(fixture.filters.isExpanded)
+        assertEquals("false", fixture.root.find("ts-table-filters__toggle").element.getAttribute("aria-expanded"))
+        assertTrue(fixture.root.find("ts-table-filters__content").element.hasAttribute("hidden"))
+    }
+
+    @Test
+    fun `should expand the panel on a toggle click`() {
         val fixture = Fixture()
         val toggle = fixture.root.find("ts-table-filters__toggle")
-        assertFalse(fixture.filters.isExpanded)
-        assertEquals("false", toggle.element.getAttribute("aria-expanded"))
 
         assertInstanceOf(NativeButton::class.java, toggle)._click()
 
+        val content = fixture.root.find("ts-table-filters__content")
         assertTrue(fixture.filters.isExpanded)
         assertEquals("true", toggle.element.getAttribute("aria-expanded"))
-        assertEquals(fixture.root.find("ts-table-filters__content").id.orElseThrow(), toggle.element.getAttribute("aria-controls"))
+        assertEquals(content.id.orElseThrow(), toggle.element.getAttribute("aria-controls"))
+        assertFalse(content.element.hasAttribute("hidden"))
     }
 
     @Test

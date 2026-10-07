@@ -28,7 +28,9 @@ class DownloadButtonTests {
                 super.close()
             }
         }
-        val content = DownloadContent("example.bin", "application/octet-stream", 3) { input }
+        val content = DownloadContent(filename = "example.bin", contentType = "application/octet-stream", length = 3) {
+            input
+        }
         val progress = mutableListOf<Long>()
 
         val count = streamDownload(content, DownloadContext(), output, progress = progress::add)
@@ -43,7 +45,9 @@ class DownloadButtonTests {
     @Test
     fun `should close output when opening source fails`() {
         val output = Output()
-        val content = DownloadContent("file", "text/plain") { throw IOException("source failure") }
+        val content = DownloadContent(filename = "file", contentType = "text/plain") {
+            throw IOException("source failure")
+        }
 
         assertThrows(IOException::class.java) { streamDownload(content, DownloadContext(), output) {} }
 
@@ -54,7 +58,9 @@ class DownloadButtonTests {
     fun `should stop actual transfer after cooperative cancellation`() {
         val context = DownloadContext()
         val output = Output()
-        val content = DownloadContent("file", "application/octet-stream") { ByteArrayInputStream(ByteArray(100_000)) }
+        val content = DownloadContent(filename = "file", contentType = "application/octet-stream") {
+            ByteArrayInputStream(ByteArray(100_000))
+        }
 
         assertThrows(IOException::class.java) { streamDownload(content, context, output) { count -> if (count > 0) context.cancel() } }
 
@@ -65,7 +71,9 @@ class DownloadButtonTests {
     @Test
     fun `should detect early EOF and close streams`() {
         val output = Output()
-        val content = DownloadContent("short", "text/plain", 10) { ByteArrayInputStream(ByteArray(1)) }
+        val content = DownloadContent(filename = "short", contentType = "text/plain", length = 10) {
+            ByteArrayInputStream(ByteArray(1))
+        }
 
         assertThrows(IOException::class.java) { streamDownload(content, DownloadContext(), output) {} }
 
@@ -75,7 +83,7 @@ class DownloadButtonTests {
     @Test
     fun `should create a fresh stream on each unknown length attempt`() {
         var opens = 0
-        val content = DownloadContent("file", "text/plain") {
+        val content = DownloadContent(filename = "file", contentType = "text/plain") {
             opens++
             ByteArrayInputStream(byteArrayOf(42))
         }
@@ -98,7 +106,9 @@ class DownloadButtonTests {
                 super.close()
             }
         }
-        val content = DownloadContent("file", "text/plain") { throw IOException("Source failure") }
+        val content = DownloadContent(filename = "file", contentType = "text/plain") {
+            throw IOException("Source failure")
+        }
 
         assertThrows(IOException::class.java) {
             streamDownload(content, DownloadContext(), output, onFailure = { status = 500 }) {}
@@ -106,4 +116,30 @@ class DownloadButtonTests {
 
         assertEquals(500, closedAtStatus)
     }
+
+    @Test
+    fun `should reject a blank download filename`() {
+        assertThrows(IllegalArgumentException::class.java) { DownloadContent(filename = " ", contentType = "text/plain") { empty() } }
+    }
+
+    @Test
+    fun `should reject a download filename with a line break`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            DownloadContent(filename = "a\nb.txt", contentType = "text/plain") { empty() }
+        }
+    }
+
+    @Test
+    fun `should reject a blank download content type`() {
+        assertThrows(IllegalArgumentException::class.java) { DownloadContent(filename = "a.txt", contentType = "") { empty() } }
+    }
+
+    @Test
+    fun `should reject a negative download length`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            DownloadContent(filename = "a.txt", contentType = "text/plain", length = -1) { empty() }
+        }
+    }
+
+    private fun empty() = ByteArrayInputStream(ByteArray(0))
 }

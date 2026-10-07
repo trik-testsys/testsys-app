@@ -39,7 +39,7 @@ class BindingTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should preserve bean while ancestor is hidden and resume writing after showing`() {
+    fun `should preserve bean while ancestor is hidden`() {
         lateinit var input: ValueInput<String>
         lateinit var block: BlockHandle
         buildTestPage {
@@ -51,10 +51,29 @@ class BindingTests : MockVaadinTests() {
         block.isVisible = false
         input.value = "12"
 
-        assertTrue(binder.writeBeanIfValid(form))
+        val isWritten = binder.writeBeanIfValid(form)
+
+        assertTrue(isWritten)
         assertEquals(7, form.count)
+    }
+
+    @Test
+    fun `should resume writing after the hidden ancestor is shown`() {
+        lateinit var input: ValueInput<String>
+        lateinit var block: BlockHandle
+        buildTestPage {
+            block = block { row { input = textInput("Количество", labelSize = 4, size = 20) } }
+        }
+        val binder = bind(input)
+        val form = Form()
+        binder.readBean(form)
+        block.isVisible = false
+        input.value = "12"
         block.isVisible = true
-        assertTrue(binder.writeBeanIfValid(form))
+
+        val isWritten = binder.writeBeanIfValid(form)
+
+        assertTrue(isWritten)
         assertEquals(12, form.count)
     }
 

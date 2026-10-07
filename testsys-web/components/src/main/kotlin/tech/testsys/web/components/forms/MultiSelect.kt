@@ -7,10 +7,12 @@ import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.page.PendingJavaScriptResult
 import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.value.ValueChangeMode
+import com.vaadin.flow.dom.Element
 import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
@@ -128,7 +130,7 @@ internal class MultiSelectField<T : Any>(
             box.setClassName(CssClass.TriggerOpen, event.isOpened)
             if (!event.isOpened) {
                 draft = null
-                if (isAttached) trigger.focus()
+                if (isAttached) trigger.element.restoreTriggerFocus(popup.element)
             }
         }
         add(box, popup)
@@ -165,7 +167,7 @@ internal class MultiSelectField<T : Any>(
     }
 
     override fun setValue(value: Set<T>) {
-        require(items.containsAll(value)) { "MultiSelect value contains items outside its options" }
+        require(items.containsAll(value)) { "MultiSelect value items ${value - items.toSet()} are outside its options" }
         close()
         super.setValue(value.toSet())
     }
@@ -180,7 +182,9 @@ internal class MultiSelectField<T : Any>(
     override fun generateModelValue(): Set<T> = value
 
     override fun setPresentationValue(newPresentationValue: Set<T>) {
-        require(items.containsAll(newPresentationValue)) { "MultiSelect value contains items outside its options" }
+        require(items.containsAll(newPresentationValue)) {
+            "MultiSelect value items ${newPresentationValue - items.toSet()} are outside its options"
+        }
         close()
         renderValue(newPresentationValue)
     }
@@ -232,7 +236,7 @@ internal class MultiSelectField<T : Any>(
         if (display == MultiSelectDisplay.Chips && selected.size > maxChips) {
             val more = Span("+${selected.size - maxChips}").apply {
                 addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue)
-                element.setAttribute(HtmlAttribute.AriaLabel, texts.lookup.selectedCount(selected.size - maxChips))
+                element.setAttribute(HtmlAttribute.AriaLabel, texts.components.more(selected.size - maxChips))
             }
             chips.add(more)
         }
@@ -303,3 +307,7 @@ fun <T : Any> ContentScope.multiSelect(
     ),
     configure,
 )
+
+/** Returns focus to the trigger only if it stayed in [popup] or was lost, so a click elsewhere keeps its target. */
+private fun Element.restoreTriggerFocus(popup: Element): PendingJavaScriptResult =
+    executeJs("const active = document.activeElement; if (active === document.body || $0.contains(active)) this.focus();", popup)

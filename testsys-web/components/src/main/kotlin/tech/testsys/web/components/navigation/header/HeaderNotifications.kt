@@ -102,7 +102,8 @@ internal class HeaderNotificationsController(
     }
 
     private fun render(values: List<HeaderNotification>) {
-        require(values.map { value -> value.key }.distinct().size == values.size) { "Header notification keys must be unique" }
+        val duplicates = values.groupBy { value -> value.key }.filterValues { same -> same.size > 1 }.keys
+        require(duplicates.isEmpty()) { "Header notification keys must be unique, repeated: $duplicates" }
         val added = values.filter { item -> item.key !in seen && item.isUnread }
         seen.addAll(values.map { item -> item.key })
         arrival.refresh(values)

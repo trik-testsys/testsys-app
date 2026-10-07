@@ -106,4 +106,13 @@ class BindableTests : MockVaadinTests() {
 
         assertEquals(1, count.value)
     }
+
+    @Test
+    fun `should keep the previous value when showing the new one fails with a state error`() {
+        val count = Bindable<Int>(element, initial = 1) { value -> check(value <= 8) { "Count $value overflows" } }
+
+        assertThrows<IllegalStateException> { count.value = 9 }
+
+        assertEquals(1, count.value)
+    }
 }

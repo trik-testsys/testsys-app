@@ -6,6 +6,7 @@ import com.github.mvysny.kaributesting.v10._setValue
 import com.vaadin.flow.component.datepicker.DatePicker
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.component.timepicker.TimePicker
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.signals.local.ValueSignal
@@ -16,10 +17,15 @@ import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestRow
+import tech.testsys.web.components.child
 import tech.testsys.web.components.control
+import tech.testsys.web.components.pendingJavaScript
 import tech.testsys.web.components.testTexts
+import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 import java.time.LocalDate
 
@@ -135,20 +141,66 @@ class DateInputTests : MockVaadinTests() {
         }
 
         @Test
-        fun `should accept either open boundary and reject empty required range`() {
+        fun `should reject an empty required range`() {
             lateinit var input: ValueInput<DateRange>
             buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
-            val binder = Binder<Form>().apply {
-                forField(input).asRequired("Период обязателен").bind({ form -> form.period }, { form, value -> form.period = value })
-            }
-            assertFalse(binder.validate().isOk)
+            val binder = bindRequired(input)
 
-            input.value = DateRange(from = start)
-            assertTrue(binder.validate().isOk)
-            input.value = DateRange(to = end)
-            assertTrue(binder.validate().isOk)
-            input.value = DateRange(from = start, to = end)
-            assertTrue(binder.validate().isOk)
+            val status = binder.validate()
+
+            assertFalse(status.isOk)
+        }
+
+        @ParameterizedTest
+        @CsvSource("2026-10-01,", ",2026-10-10", "2026-10-01,2026-10-10")
+        fun `should accept a required range with at least one boundary`(from: LocalDate?, to: LocalDate?) {
+            lateinit var input: ValueInput<DateRange>
+            buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
+            val binder = bindRequired(input)
+            input.value = DateRange(from = from, to = to)
+
+            val status = binder.validate()
+
+            assertTrue(status.isOk)
+        }
+
+        @Test
+        fun `should choose the range picked in the calendar and close it`() {
+            lateinit var input: ValueInput<DateRange>
+            buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
+            val popup = _find<Popover>().single().apply { open() }
+            val pick = ObjectMapper().createObjectNode().put("event.detail.start", "$start").put("event.detail.end", "$end")
+
+            _find<DateRangeCalendarAdapter>().single()._fireDomEvent("range-pick", pick)
+
+            assertEquals(DateRange(start, end), input.value)
+            assertFalse(popup.isOpened)
+        }
+
+        @Test
+        fun `should keep the calendar open while only the start is picked`() {
+            lateinit var input: ValueInput<DateRange>
+            buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
+            val popup = _find<Popover>().single().apply { open() }
+            val pick = ObjectMapper().createObjectNode().put("event.detail.start", "$start").putNull("event.detail.end")
+
+            _find<DateRangeCalendarAdapter>().single()._fireDomEvent("range-pick", pick)
+
+            assertEquals(DateRange(from = start), input.value)
+            assertTrue(popup.isOpened)
+        }
+
+        @Test
+        fun `should install the shared calendar again when the field is attached again`() {
+            val row = buildTestRow { dateRangeInput("Период", labelSize = 4, size = 20) }
+            val field = row.child(0)
+            pendingJavaScript()
+
+            field.element.removeFromParent()
+            row.element.appendChild(field.element)
+
+            val installed = pendingJavaScript().filter { call -> "__tsRangeCalendar" in call.invocation.expression }
+            assertEquals(_find<DatePicker>().map { picker -> picker.element.node }.toSet(), installed.map { call -> call.owner }.toSet())
         }
 
         @Test
@@ -248,6 +300,10 @@ class DateInputTests : MockVaadinTests() {
 
         private fun bind(input: ValueInput<DateRange>): Binder<Form> = Binder<Form>().apply {
             forField(input).bind({ form -> form.period }, { form, value -> form.period = value })
+        }
+
+        private fun bindRequired(input: ValueInput<DateRange>): Binder<Form> = Binder<Form>().apply {
+            forField(input).asRequired("Период обязателен").bind({ form -> form.period }, { form, value -> form.period = value })
         }
 
         /**

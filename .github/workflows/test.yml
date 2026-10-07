@@ -46,6 +46,15 @@ jobs:
         run: >-
           ./gradlew testAll -Pdetekt.autoCorrect=false --no-daemon
 
+      # Client-side component code is tested with node:test; Gradle runs only the JVM suites.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Test client-side components
+        run: node --test testsys-web/components/src/test/frontend/*.test.mjs
+
       - name: Publish test report
         uses: mikepenz/action-junit-report@v6
         if: always()

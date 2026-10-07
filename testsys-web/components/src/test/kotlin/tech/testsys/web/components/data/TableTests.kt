@@ -194,6 +194,13 @@ class TableTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should group the digits of a large page count`() {
+        buildTable(Source(size = 7_060))
+
+        assertEquals("1 / 1 412", ui().find("ts-pager__label").element.textRecursively)
+    }
+
+    @Test
     fun `should go to the next page`() {
         val source = Source(size = 12)
         buildTable(source)

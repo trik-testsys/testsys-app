@@ -103,7 +103,8 @@ internal class DateRangeField(
         }
         listOf(start, end).forEach { picker ->
             picker.element.setRangePart(true)
-            picker.element.installRangeCalendar(popup.element)
+            // Runs on every attach, since a reopened dialog creates a new browser element.
+            picker.addAttachListener { picker.element.installRangeCalendar(popup.element) }
             picker.isAutoOpen = false
             picker.isClearButtonVisible = true
             picker.setManualValidation(true)
@@ -186,6 +187,8 @@ internal class DateRangeField(
 
 private fun Element.installRangeCalendar(popup: Element): PendingJavaScriptResult = executeJs(
     """
+    if (this.__tsRangeCalendar) return;
+    this.__tsRangeCalendar = true;
     this.addEventListener('keydown', e => {
       if (e.altKey && e.key === 'ArrowDown' && !this.readOnly && !this.disabled) {
         e.preventDefault(); e.stopImmediatePropagation(); $0.opened = true;

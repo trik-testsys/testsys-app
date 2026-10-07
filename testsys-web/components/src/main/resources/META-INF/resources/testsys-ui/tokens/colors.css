@@ -63,4 +63,5 @@
   --border-strong: var(--line-strong);
   --border-focus: var(--accent);
   --overlay: rgba(22, 24, 29, 0.55);
+  --overlay-drawer: rgba(22, 24, 29, 0.35);
 }

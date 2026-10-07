@@ -2,19 +2,20 @@ package tech.testsys.web.components
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.web.components.error.NotFoundPage
 
 class TestSysBrandTests : MockVaadinTests() {
-    @Test
-    fun `should package brand graphics and favicon as public resources`() {
-        val assets =
-            listOf(TestSysBrand.EMBLEM, TestSysBrand.WORDMARK, TestSysBrand.HEADER, TestSysBrand.FOOTER, TestSysBrand.FAVICON)
+    @ParameterizedTest
+    @ValueSource(strings = [TestSysBrand.EMBLEM, TestSysBrand.WORDMARK, TestSysBrand.HEADER, TestSysBrand.FOOTER, TestSysBrand.FAVICON])
+    fun `should package a brand graphic as a public resource`(asset: String) {
+        val resource = javaClass.getResource("/META-INF/resources/$asset")
 
-        val resources = assets.map { asset -> javaClass.getResource("/META-INF/resources/$asset") }
-
-        assets.forEach { asset -> org.junit.jupiter.api.Assertions.assertTrue(asset.startsWith("testsys-ui/brand/")) }
-        resources.forEach { resource -> assertNotNull(resource) }
+        assertTrue(asset.startsWith("testsys-ui/brand/"))
+        assertNotNull(resource)
     }
 
     @Test

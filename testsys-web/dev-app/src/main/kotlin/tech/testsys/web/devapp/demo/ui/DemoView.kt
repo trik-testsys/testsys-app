@@ -99,7 +99,7 @@ internal class DemoView(
         val user = session.state.users.firstOrNull { actor -> actor.id == session.state.sessionUserId }
         val columns = DEMO_CABINETS.map { cabinet ->
             HeaderMegaColumn(
-                title = cabinet.role,
+                title = demoRoleLabel(cabinet.role),
                 links = cabinet.sections.filter { (key, _) -> key != "overview" }.map { (key, label) ->
                     HeaderMegaLink(
                         label,
@@ -215,7 +215,7 @@ private fun PageScope.demoHome(context: DemoContext) {
                     }
                 }
                 DEMO_CABINETS.forEach { cabinet ->
-                    action(cabinet.role) {
+                    action(demoRoleLabel(cabinet.role)) {
                         onClick {
                             context.navigate("${cabinet.key}.overview")
                         }

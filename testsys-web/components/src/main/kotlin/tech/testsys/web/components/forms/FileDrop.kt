@@ -68,18 +68,13 @@ data class UploadLimits(
     val extensions: Set<String> = emptySet(),
 ) {
     init {
-        require(
-            maxFiles > 0 && maxFileBytes > 0 && maxMemoryBytes >= maxFileBytes,
-        ) { "Upload limits must permit at least one positive-sized file" }
-        require(
-            extensions.all { extension ->
-                extension.startsWith(
-                    '.',
-                ) && extension.length > 1
-            },
-        ) {
-            "Upload extensions must include their leading dot"
+        require(maxFiles > 0) { "Upload limits must permit at least one file, got maxFiles $maxFiles" }
+        require(maxFileBytes > 0) { "Upload limits must permit a positive file size, got maxFileBytes $maxFileBytes" }
+        require(maxMemoryBytes >= maxFileBytes) {
+            "Upload memory $maxMemoryBytes must hold at least one file of $maxFileBytes bytes"
         }
+        val invalidExtensions = extensions.filterNot { extension -> extension.startsWith('.') && extension.length > 1 }
+        require(invalidExtensions.isEmpty()) { "Upload extensions must include their leading dot, got $invalidExtensions" }
     }
 }
 
@@ -338,7 +333,7 @@ internal class FileDropDisplay(
     val state = ValueSignal<FileUploadState>(FileUploadState.Idle)
     private var attachedUi: UI? = null
     private var isAllowed = true
-    private val engine = BoundedUploads(limits, consume) { value, isCurrent ->
+    val engine = BoundedUploads(limits, consume) { value, isCurrent ->
         attachedUi?.let { ui -> Background.inUi(ui) { if (isAttached && isCurrent()) state.set(value) } }
     }
 
@@ -397,14 +392,14 @@ internal class FileDropDisplay(
             )
             .setFile(
                 UploadI18N.File().setRetry(texts.components.retry).setStart(texts.components.upload).setRemove(
-                    texts.lookup.clear,
+                    texts.components.removeFile,
                 ),
             )
             .setUploading(
                 UploadI18N.Uploading()
                     .setStatus(
                         UploadI18N.Uploading.Status().setConnecting(texts.components.preparing).setStalled(
-                            texts.components.downloading,
+                            texts.components.stalled,
                         ).setProcessing(texts.components.preparing).setHeld(texts.components.preparing),
                     )
                     .setRemainingTime(
@@ -430,8 +425,11 @@ internal class FileDropDisplay(
         cancelAction = controls.action(texts.components.cancel) { onClick { this@FileDropDisplay.cancel() } }
         clearAction = controls.action(texts.lookup.clear) { onClick { this@FileDropDisplay.clear() } }
         upload.element.addEventListener(DomEvent.TransferRemove) { event ->
-            engine.remove(event.eventData.get(DomEventData.DetailIdentity).asString())
-            if (engine.fileCount() == 0) state.set(FileUploadState.Idle)
+            val wasActive = engine.remove(event.eventData.get(DomEventData.DetailIdentity).asString())
+            when {
+                engine.fileCount() == 0 -> state.set(FileUploadState.Idle)
+                wasActive && state.peek().isRunning() -> state.set(FileUploadState.Cancelled)
+            }
         }.addEventData(DomEventData.DetailIdentity)
         addClassName(CssClass.Filedrop)
         element.setRole(ElementRole.Group)
@@ -454,9 +452,11 @@ internal class FileDropDisplay(
         }
         addDetachListener {
             upload.element.detachFileTransfers()
+            val wasRunning = state.peek().isRunning()
             engine.cancel()
             engine.allow(false)
             attachedUi = null
+            if (wasRunning) state.set(FileUploadState.Cancelled)
         }
         status.element.bindText(
             state.map { value ->
@@ -466,7 +466,7 @@ internal class FileDropDisplay(
                     is FileUploadState.Processing -> texts.components.preparing
                     is FileUploadState.Done -> texts.components.done
                     is FileUploadState.Error -> texts.components.failed
-                    FileUploadState.Cancelled -> texts.components.cancel
+                    FileUploadState.Cancelled -> texts.components.cancelled
                 }
             },
         )
@@ -486,7 +486,7 @@ internal class FileDropDisplay(
         engine.cancel()
         upload.element.setAttribute(HtmlAttribute.DataTsUploadGeneration, engine.generation().toString())
         upload.interruptUpload()
-        if (hadActive || previous is FileUploadState.Uploading || previous is FileUploadState.Processing) {
+        if (hadActive || previous.isRunning()) {
             state.set(FileUploadState.Cancelled)
         }
     }
@@ -657,7 +657,8 @@ internal class BoundedUploads(
         synchronized(lock) { slots.clear() }
     }
 
-    fun remove(transferId: String) {
+    /** Removes the transfer [transferId] and returns whether it was still running. */
+    fun remove(transferId: String): Boolean {
         val token = synchronized(lock) {
             slots.remove(transferId)?.let { id -> active[id] }?.also { current -> current.cancelled.set(true) }
         }
@@ -668,6 +669,7 @@ internal class BoundedUploads(
                 // Cancellation remains cooperative.
             }
         }
+        return token != null
     }
 
     fun hasActive(): Boolean = active.isNotEmpty()
@@ -683,7 +685,9 @@ internal class BoundedUploads(
     }
 
     private fun ensureActive(token: Active) {
-        if (token.cancelled.get() || token.generation != epoch.get()) throw InterruptedIOException("Upload was cancelled")
+        if (token.cancelled.get() || token.generation != epoch.get()) {
+            throw InterruptedIOException("Upload '${token.filename}' of generation ${token.generation} was cancelled")
+        }
     }
 
     private fun accepts(filename: String, mime: String): Boolean {
@@ -705,3 +709,5 @@ internal class BoundedUploads(
 private fun Element.attachFileTransfers(): PendingJavaScriptResult = executeJs("window.testsysFileTransfers.attach(this)")
 
 private fun Element.detachFileTransfers(): PendingJavaScriptResult = executeJs("window.testsysFileTransfers.detach(this)")
+
+private fun FileUploadState.isRunning(): Boolean = this is FileUploadState.Uploading || this is FileUploadState.Processing

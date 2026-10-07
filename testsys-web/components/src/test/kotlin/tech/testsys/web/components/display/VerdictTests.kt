@@ -57,7 +57,14 @@ class VerdictTests : MockVaadinTests() {
     fun `should preserve a finite score outside the range of Long`() {
         val content = buildTestContent { verdict(1.0e20) }
 
-        assertEquals("100000000000000000000", content.find("ts-verdict").element.textRecursively)
+        assertEquals("100 000 000 000 000 000 000", content.find("ts-verdict").element.textRecursively)
+    }
+
+    @Test
+    fun `should format a fractional score with the decimal comma of the locale`() {
+        val content = buildTestContent { verdict(1412.25) }
+
+        assertEquals("1 412,25", content.find("ts-verdict").element.textRecursively)
     }
 
     @Test

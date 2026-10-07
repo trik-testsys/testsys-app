@@ -32,7 +32,6 @@ class NotFoundViewTests : MockSpringVaadinTests() {
         val status = ui.internals.router.navigate(ui, Location("missing-sensitive-route"), NavigationTrigger.PAGE_LOAD)
 
         assertEquals(404, status)
-
         expectView<NotFoundView>()
         assertEquals("Страница не найдена", _get<H1>().text)
         assertEquals("TestSys", _get<Span> { classes = "ts-brand" }.element.getAttribute("aria-label"))
@@ -45,7 +44,15 @@ class NotFoundViewTests : MockSpringVaadinTests() {
         assertFalse(content.contains("missing-sensitive-route"))
         assertFalse(content.contains("dev/showcase"))
         assertFalse(content.contains("Exception"))
-        assertEquals(listOf("Назад"), _find<Button>().map { button -> button.text })
+        assertEquals(listOf("Вернуться"), _find<Button>().map { button -> button.text })
+    }
+
+    @Test
+    fun `should keep back disabled before the client reports history`() {
+        val ui = UI.getCurrent()
+
+        ui.internals.router.navigate(ui, Location("missing"), NavigationTrigger.PAGE_LOAD)
+
         assertFalse(_get<Button>().isEnabled)
     }
 
@@ -64,14 +71,13 @@ class NotFoundViewTests : MockSpringVaadinTests() {
 
     @ParameterizedTest
     @ValueSource(booleans = [true, false])
-    fun `should keep back disabled until client reports completed history`(canGoBack: Boolean) {
+    fun `should enable back only when client reports previous history`(canGoBack: Boolean) {
         val ui = UI.getCurrent()
         ui.internals.router.navigate(ui, Location("missing"), NavigationTrigger.PAGE_LOAD)
         ui.internals.stateTree.runExecutionsBeforeClientResponse()
         val history = ui.internals.dumpPendingJavaScriptInvocations()
             .single { call -> "canGoBack" in call.invocation.expression }
         val back = _get<Button>()
-        assertFalse(back.isEnabled)
 
         history.complete(BooleanNode.valueOf(canGoBack))
 

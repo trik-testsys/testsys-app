@@ -146,10 +146,10 @@ vaadin-button > .ts-spinner { display: inline-block; }
   :scope :is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
       vaadin-integer-field, vaadin-number-field)[readonly]:not([disabled])::part(input-field) {
     color: var(--white);
-    border-color: rgba(255, 255, 255, .3);
+    border-color: var(--ink-600);
   }
-  :scope vaadin-custom-field[readonly]:not([disabled]) .ts-lookup { color:var(--white); border-color:rgba(255,255,255,.3); }
-  :scope .ts-progress { background:rgba(255,255,255,.15); }
+  :scope vaadin-custom-field[readonly]:not([disabled]) .ts-lookup { color:var(--white); border-color:var(--ink-600); }
+  :scope .ts-progress { background:var(--ink-700); }
   :scope .ts-progress__bar { background:var(--white); }
 }
 .ts-field__value > :is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
@@ -237,6 +237,7 @@ vaadin-notification-card[theme~="ts-toast"]::part(overlay) { background: none; b
 vaadin-notification-card[theme~="ts-toast"]::part(content) { padding: 0; }
 
 /* Dialog: the rounded overlay carries the shadow outside scrollable content; .ts-dialog draws the card. */
+vaadin-dialog[theme~="ts-dialog"]::part(backdrop) { background:var(--overlay); }
 vaadin-dialog[theme~="ts-dialog"]::part(overlay) { background: none; box-shadow: var(--shadow-dialog); border-radius: var(--radius-2xl); overflow: hidden; }
 vaadin-dialog[theme~="ts-dialog"]::part(content) { padding: 0; border-radius: inherit; }
 vaadin-dialog[theme~="ts-dialog"] .ts-dialog { box-shadow: none; }
@@ -284,7 +285,7 @@ vaadin-radio-button {
 }
 vaadin-radio-button::part(radio) { border:1.5px solid var(--ink-300); box-sizing:border-box; }
 vaadin-radio-button[checked]::part(radio) { border-color:var(--accent); }
-vaadin-radio-button[focus-ring]::part(radio) { outline:2px solid var(--border-focus); outline-offset:3px; }
+vaadin-radio-button[focus-ring]::part(radio) { outline:1px solid var(--border-focus); outline-offset:0; box-shadow:0 0 0 3px var(--accent-ring); }
 vaadin-radio-button[disabled]::part(radio), vaadin-radio-button[disabled] > label { opacity:1; }
 .ts-choice-label { display:inline-flex; align-items:center; gap:10px; }
 vaadin-radio-group.ts-seg { padding:0; background:none; border-radius:0; }
@@ -301,7 +302,7 @@ vaadin-radio-group.ts-seg > vaadin-radio-button {
 /* Keep the native radio input focusable while hiding its marker in segmented controls. */
 vaadin-radio-group.ts-seg > vaadin-radio-button::part(radio) { position:absolute; width:1px; height:1px; padding:0; border:0; overflow:hidden; clip-path:inset(50%); }
 vaadin-radio-group.ts-seg > vaadin-radio-button[checked] { background:var(--surface-card); color:var(--text-primary); box-shadow:var(--shadow-segment); }
-vaadin-radio-group.ts-seg > vaadin-radio-button[focus-ring] { outline:2px solid var(--border-focus); outline-offset:1px; }
+vaadin-radio-group.ts-seg > vaadin-radio-button[focus-ring] { outline:1px solid var(--border-focus); outline-offset:0; box-shadow:0 0 0 3px var(--accent-ring); }
 vaadin-radio-group.ts-seg--sm > vaadin-radio-button { height:22px; padding:0 10px; font-size:var(--fs-caption); }
 vaadin-radio-group[readonly]::part(group-field) { background:transparent; border:1px dashed var(--border-strong); border-radius:var(--radius-md); }
 vaadin-radio-group[readonly] > vaadin-radio-button { cursor:default; }
@@ -323,14 +324,14 @@ vaadin-switch[data-ts-input] {
   --vaadin-switch-marker-scale:1;
 }
 vaadin-switch[checked] { --vaadin-switch-background:var(--accent); }
-vaadin-switch[focus-ring]::part(switch) { outline:2px solid var(--border-focus); outline-offset:3px; }
+vaadin-switch[focus-ring]::part(switch) { outline:1px solid var(--border-focus); outline-offset:0; box-shadow:0 0 0 3px var(--accent-ring); }
 vaadin-switch[disabled]::part(switch) { background:var(--muted); opacity:1; }
 vaadin-switch[readonly]:not([disabled])::part(switch) { background:var(--border-strong); }
 vaadin-switch[readonly][checked]:not([disabled])::part(switch) { background:var(--accent); }
 
 /* The line gutter follows the actual textarea scroll inside Vaadin. */
 .ts-code__lines { overflow:hidden; max-height:100%; flex:none; }
-textarea.ts-code__area { margin:0; min-width:0; width:100%; min-height:0; height:100%; resize:none; box-sizing:border-box; }
+textarea.ts-code__area { margin:0; min-width:0; width:100%; min-height:0; height:100%; resize:none; box-sizing:border-box; white-space:pre; overflow-wrap:normal; overflow-x:auto; }
 .ts-multiselect__clear { flex:none; width:auto; border:0; border-radius:var(--radius-xs); padding:0 var(--space-1); background:transparent; color:inherit; font:inherit; font-size:var(--fs-sm); line-height:var(--lh-sm); white-space:nowrap; cursor:pointer; }
 .ts-multiselect__clear:hover { background:var(--canvas); }
 vaadin-custom-field[readonly] .ts-code { outline:1px dashed var(--border-strong); }
@@ -348,6 +349,7 @@ vaadin-popover .ts-popover__foot { white-space:nowrap; }
 vaadin-popover .ts-popover__foot > span { flex:1; }
 
 /* Drawer is a modal Flow Dialog placed at the viewport edge. */
+vaadin-dialog[theme~="ts-drawer"]::part(backdrop) { background:var(--overlay-drawer); }
 vaadin-dialog[theme~="ts-drawer"] { align-items:stretch; justify-content:flex-end; padding:0; }
 vaadin-dialog[theme~="ts-drawer"]::part(overlay) { animation:ts-drawer-in var(--dur-slow) var(--ease-out); width:480px; max-width:100vw; height:100%; max-height:100%; margin:0; background:var(--surface-card); border-radius:var(--radius-xl); overflow:hidden; box-shadow:var(--shadow-drawer); }
 vaadin-dialog[theme~="ts-drawer"]::part(content) { height:100%; border-radius:inherit; overflow:hidden; }

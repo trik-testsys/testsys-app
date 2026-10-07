@@ -77,7 +77,21 @@ class FieldHandleTests : MockVaadinTests() {
         assertEquals("0", input.component.find("ts-field__value").element.getAttribute("tabindex"))
         assertFalse(input.isEnabled)
         assertFalse(input.isEditable)
+    }
+
+    @Test
+    fun `should restore the tab order of a disabled value when no longer obscured`() {
+        lateinit var input: ValueInput<String>
+        buildTestRow {
+            input = textInput("Code", labelSize = 4, size = 8) {
+                isEnabled = false
+                isEditable = false
+                isObscured = true
+            }
+        }
+
         input.isObscured = false
+
         assertFalse(input.component.find("ts-field__value").element.hasAttribute("tabindex"))
     }
 
@@ -197,22 +211,36 @@ class FieldHandleTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should keep Binder visibility rules on a wrapped label less control`() {
+    fun `should skip a hidden obscured label less control when Binder writes`() {
         lateinit var input: ValueInput<String?>
         buildTestContent { input = select("Mode", items = listOf("a", "b"), itemLabel = { item -> item }) { value = "a" } }
         val binder = Binder<Draft>()
         val draft = Draft("a")
         binder.forField(input).bind({ bean -> bean.code }, { bean, code -> bean.code = code.orEmpty() }).skipWhenHidden()
-
         input.isObscured = true
         input.isVisible = false
         input.value = "b"
+
         binder.writeBean(draft)
 
         assertEquals("a", draft.code)
         assertFalse(input.component.isVisible)
+    }
+
+    @Test
+    fun `should write an obscured label less control again once visible`() {
+        lateinit var input: ValueInput<String?>
+        buildTestContent { input = select("Mode", items = listOf("a", "b"), itemLabel = { item -> item }) { value = "a" } }
+        val binder = Binder<Draft>()
+        val draft = Draft("a")
+        binder.forField(input).bind({ bean -> bean.code }, { bean, code -> bean.code = code.orEmpty() }).skipWhenHidden()
+        input.isObscured = true
+        input.isVisible = false
+        input.value = "b"
         input.isVisible = true
+
         binder.writeBean(draft)
+
         assertEquals("b", draft.code)
     }
 

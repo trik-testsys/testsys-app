@@ -12,7 +12,6 @@ import com.vaadin.flow.component.html.Span
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
-import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -39,19 +38,25 @@ class ShowcasePagesTests {
         }
 
         @Test
-        fun `should retain all columns and pagination in the wide matrix example`() {
+        fun `should retain all columns of the first page in the wide matrix example`() {
             UI.getCurrent().navigate("dev/showcase/states")
-            val table = _find<com.vaadin.flow.component.html.Table>().single { candidate ->
-                candidate.element.style.get("--ts-table-used") == "66"
-            }
 
+            val table = wideMatrix()
             val group = table.element.children.toList().single { child -> child.tag == "colgroup" }
             assertEquals(31, group.childCount)
             assertTrue(table.element.textRecursively.contains("Задача 30"))
             assertTrue(table.element.textRecursively.contains("Группа 1"))
+        }
+
+        @Test
+        fun `should show the second page of the wide matrix example on next`() {
+            UI.getCurrent().navigate("dev/showcase/states")
+            val table = wideMatrix()
             val block = table.parent.orElseThrow().parent.orElseThrow().parent.orElseThrow()
             val next = block._find<NativeButton>().single { button -> button.element.getAttribute("aria-label") == "Вперёд" }
+
             next._click()
+
             assertTrue(table.element.textRecursively.contains("Группа 2"))
         }
 
@@ -90,14 +95,23 @@ class ShowcasePagesTests {
         }
 
         @Test
-        fun `should show each background action result in overlays route`() {
+        fun `should show the background action result in overlays route`() {
             UI.getCurrent().navigate("dev/showcase/overlays")
             val action = _find<Button>().single { button -> button.text == "Действие за попапом" }
 
             action._click()
 
             assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Действие выполнено: 1" })
+        }
+
+        @Test
+        fun `should count repeated background actions in overlays route`() {
+            UI.getCurrent().navigate("dev/showcase/overlays")
+            val action = _find<Button>().single { button -> button.text == "Действие за попапом" }
             action._click()
+
+            action._click()
+
             assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Действие выполнено: 2" })
         }
 
@@ -133,45 +147,61 @@ class ShowcasePagesTests {
         }
 
         @Test
-        fun `should show selected step and reset it`() {
+        fun `should show the selected step`() {
             UI.getCurrent().navigate("dev/showcase/display")
             val first = _find<NativeButton>().single { button -> button.element.getAttribute("aria-label") == "Начало" }
 
             first._click()
 
             assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Выбран шаг: 1" })
-            _find<Button>().single { button -> button.text == "Сбросить выборы" }._click()
+        }
+
+        @Test
+        fun `should restore the initial step on reset`() {
+            UI.getCurrent().navigate("dev/showcase/display")
+            _find<NativeButton>().single { button -> button.element.getAttribute("aria-label") == "Начало" }._click()
+
+            resetChoices()
+
             assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Выбран шаг: 2" })
         }
 
         @Test
-        fun `should show selected answer and reset it`() {
+        fun `should show the selected answer`() {
             UI.getCurrent().navigate("dev/showcase/display")
-            val answer = _find<NativeButton>().single { button ->
-                "ts-qopt" in button.element.classList && button.element.textRecursively.contains(
-                    "Обычный ответ",
-                )
-            }
 
-            answer._click()
+            answer("Обычный ответ")._click()
 
             assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Ответ выбран: true" })
-            _find<Button>().single { button -> button.text == "Сбросить выборы" }._click()
+        }
+
+        @Test
+        fun `should clear the selected answer on reset`() {
+            UI.getCurrent().navigate("dev/showcase/display")
+            answer("Обычный ответ")._click()
+
+            resetChoices()
+
             assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Ответ выбран: false" })
         }
 
-        // Reset must restore the initially selected multiple answer as well as the ordinary answer.
         @Test
-        @Tag("regression")
+        fun `should deselect the initially selected multiple answer on click`() {
+            UI.getCurrent().navigate("dev/showcase/display")
+            val answer = answer("Несколько ответов")
+
+            answer._click()
+
+            assertEquals("false", answer.element.getAttribute("aria-pressed"))
+        }
+
+        @Test
         fun `should restore the initial multiple answer selection on reset`() {
             UI.getCurrent().navigate("dev/showcase/display")
-            val answer = _find<NativeButton>().single { button ->
-                "ts-qopt" in button.element.classList && button.element.textRecursively.contains("Несколько ответов")
-            }
+            val answer = answer("Несколько ответов")
             answer._click()
-            assertEquals("false", answer.element.getAttribute("aria-pressed"))
 
-            _find<Button>().single { button -> button.text == "Сбросить выборы" }._click()
+            resetChoices()
 
             assertEquals("true", answer.element.getAttribute("aria-pressed"))
             assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Ответ выбран: false" })
@@ -191,6 +221,15 @@ class ShowcasePagesTests {
                 }.isEnabled.not(),
             )
         }
+
+        private fun wideMatrix(): com.vaadin.flow.component.html.Table =
+            _find<com.vaadin.flow.component.html.Table>().single { candidate -> candidate.element.style.get("--ts-table-used") == "66" }
+
+        private fun answer(text: String): NativeButton = _find<NativeButton>().single { button ->
+            "ts-qopt" in button.element.classList && button.element.textRecursively.contains(text)
+        }
+
+        private fun resetChoices() = _find<Button>().single { button -> button.text == "Сбросить выборы" }._click()
     }
 
     @Nested
@@ -204,9 +243,11 @@ class ShowcasePagesTests {
                 "dev/showcase/display",
                 "dev/showcase/header",
                 "dev/showcase/foundations",
+                "dev/demo",
+                "dev/demo/login",
             ],
         )
-        fun `should reject remaining showcase routes outside dev profile`(route: String) {
+        fun `should reject showcase and demo routes outside dev profile`(route: String) {
             UI.getCurrent().navigate(route)
 
             expectView<NotFoundView>()

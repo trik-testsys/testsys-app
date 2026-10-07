@@ -7,9 +7,9 @@ internal fun DemoState.login(code: String): DemoResult {
     return copy(sessionUserId = user.id).ok("Вход выполнен: ${user.alias}")
 }
 
-internal fun DemoState.register(alias: String, email: String, role: String): DemoResult {
+internal fun DemoState.register(alias: String, email: String, role: DemoRole?): DemoResult {
     val normalized = email.trim().lowercase()
-    if (alias.isBlank() || !EMAIL.matches(normalized) || role !in listOf("Ученик", "Организатор")) {
+    if (alias.isBlank() || !EMAIL.matches(normalized) || role == null || role !in listOf(DemoRole.Student, DemoRole.Organizer)) {
         return fail("Укажите псевдоним, корректную почту и роль")
     }
     if (

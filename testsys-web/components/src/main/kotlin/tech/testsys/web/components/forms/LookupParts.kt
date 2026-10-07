@@ -13,6 +13,7 @@ import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.iconAction
 import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.CssUnit
 import tech.testsys.web.components.core.DomEvent
 import tech.testsys.web.components.core.DomEventFilter
 import tech.testsys.web.components.core.ElementType
@@ -31,6 +32,7 @@ import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setFilter
 import tech.testsys.web.components.core.setReadOnly
 import tech.testsys.web.components.core.setType
+import tech.testsys.web.components.core.setWidth
 import tech.testsys.web.components.data.DataTable
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
@@ -236,7 +238,7 @@ internal class LookupDialog<T : Any>(
             isAutofocus = true
             valueChangeMode = ValueChangeMode.LAZY
             valueChangeTimeout = SEARCH_DELAY_MS
-            width = "100%"
+            style.setWidth(value = 100, unit = CssUnit.Percent)
             addValueChangeListener { event ->
                 query = event.value.trim()
                 table.reload(toFirstPage = true)

@@ -46,11 +46,18 @@ class FormDialogTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should reject manual mode and second binding while dialog mode is bound`() {
+    fun `should reject a manual mode while dialog mode is bound`() {
         val handle = dialog(title = "Тур") {}
         handle.bindEditable(ValueSignal(false))
 
         assertThrows(BindingActiveException::class.java) { handle.isEditable = true }
+    }
+
+    @Test
+    fun `should reject a second binding of the dialog mode`() {
+        val handle = dialog(title = "Тур") {}
+        handle.bindEditable(ValueSignal(false))
+
         assertThrows(BindingActiveException::class.java) { handle.bindEditable(ValueSignal(true)) }
     }
 

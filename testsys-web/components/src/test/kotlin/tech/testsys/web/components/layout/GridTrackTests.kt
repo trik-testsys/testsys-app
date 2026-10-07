@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
@@ -20,16 +19,21 @@ class GridTrackTests {
         @Test
         fun `should accept sizes that fill the row exactly`() {
             val track = GridTrack(capacity = 24, owner = "Row")
+            track.take(16)
 
-            assertDoesNotThrow {
-                track.take(16)
-                track.take(8)
-            }
+            track.take(8)
+
+            val error = assertThrows<IllegalStateException> { track.takeRest() }
+            assertTrue(requireNotNull(error.message).startsWith("Row is full"))
         }
 
         @Test
         fun `should accept a row that is not full`() {
-            assertDoesNotThrow { GridTrack(capacity = 24, owner = "Row").take(7) }
+            val track = GridTrack(capacity = 24, owner = "Row")
+
+            track.take(7)
+
+            assertEquals(17, track.takeRest())
         }
 
         @ParameterizedTest

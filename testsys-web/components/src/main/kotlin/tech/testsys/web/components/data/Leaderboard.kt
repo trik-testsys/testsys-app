@@ -30,7 +30,6 @@ fun ContentScope.leaderboard(data: LeaderboardData, configure: DataHandle<Leader
     }
 
     fun render(value: LeaderboardData) {
-        root.element.removeAllChildren()
         val table = htmlElement(HtmlTag.Table).apply { setAttribute(HtmlAttribute.AriaLabel, value.label) }
         resolveTableLayout(
             value.gridColumns ?: gridColumns,
@@ -88,6 +87,7 @@ fun ContentScope.leaderboard(data: LeaderboardData, configure: DataHandle<Leader
             body.appendChild(line)
         }
         table.appendChild(body)
+        root.element.removeAllChildren()
         root.element.appendChild(table)
     }
     render(data)

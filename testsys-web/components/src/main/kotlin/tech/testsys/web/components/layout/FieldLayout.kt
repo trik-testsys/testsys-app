@@ -44,7 +44,7 @@ internal fun BlockRowScope.placeField(label: String, labelSize: Int, size: Int, 
     caption.addClassName(CssClass.FieldLabel)
     caption.style.setGridColumnSpan(labelSize)
     caption.add(Span(label).apply { addClassName(CssClass.FieldText) }, requiredMark)
-    if (labelAction != null) runOnLabelClick(caption, value, labelAction)
+    if (labelAction != null) runOnLabelClick(caption = caption, control = value, action = labelAction)
     val valueCell = fieldValueArea(label, value).apply {
         style.setGridColumnSpan(size)
     }

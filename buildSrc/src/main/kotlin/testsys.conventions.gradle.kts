@@ -74,9 +74,10 @@ tasks.withType<Detekt>().configureEach {
 }
 
 tasks.named<Detekt>("detekt") {
-    // Source-set tasks already analyse the sources with their own classpaths; avoid a second pass here.
+    // Compilation tasks (`detekt<Compilation>`) already analyse the sources with their own classpaths; avoid a second pass here.
     setSource(files())
-    dependsOn(tasks.withType<Detekt>().matching { task -> task.name != "detekt" })
+    // `detekt<SourceSet>SourceSet` tasks analyse the same files as the compilation tasks, so they would duplicate findings.
+    dependsOn(tasks.withType<Detekt>().matching { task -> task.name != "detekt" && !task.name.endsWith("SourceSet") })
 }
 
 tasks.named("check") {

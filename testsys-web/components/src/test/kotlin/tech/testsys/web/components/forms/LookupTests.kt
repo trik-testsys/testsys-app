@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
@@ -42,9 +41,7 @@ import tools.jackson.databind.ObjectMapper
 class LookupTests : MockVaadinTests() {
     private val source = Source()
 
-    // Choosing an equal entity must replace stale data with the fetched instance.
     @Test
-    @Tag("regression")
     fun `should replace the selected entity with a fetched instance of the same id`() {
         val input = buildLookup()
         val fresh = source.contests[0]
@@ -82,11 +79,21 @@ class LookupTests : MockVaadinTests() {
         assertTrue(openDialogs().isEmpty())
     }
 
-    // Review report, Issue 6: an unavailable lookup must discard its open dialog and delayed choice.
     @ParameterizedTest
     @CsvSource("false,true", "true,false")
-    @Tag("regression")
-    fun `should close an open lookup when choice becomes unavailable and ignore delayed choice`(enabled: Boolean, editable: Boolean) {
+    fun `should close an open lookup when choice becomes unavailable`(enabled: Boolean, editable: Boolean) {
+        val input = buildLookup()
+        lookupButton(testTexts.lookup.open)._click()
+
+        input.isEnabled = enabled
+        input.isEditable = editable
+
+        assertTrue(openDialogs().isEmpty())
+    }
+
+    @ParameterizedTest
+    @CsvSource("false,true", "true,false")
+    fun `should ignore a delayed choice after the lookup becomes unavailable`(enabled: Boolean, editable: Boolean) {
         val input = buildLookup()
         val form = Form()
         Binder<Form>().apply {
@@ -99,8 +106,9 @@ class LookupTests : MockVaadinTests() {
         val oldRow = rows()[1]
         input.isEnabled = enabled
         input.isEditable = editable
-        assertTrue(openDialogs().isEmpty())
+
         oldRow._fireDomEvent("click", rowClick())
+
         assertEquals(null, input.value)
         assertEquals(0, changes)
         assertEquals(null, form.contest)

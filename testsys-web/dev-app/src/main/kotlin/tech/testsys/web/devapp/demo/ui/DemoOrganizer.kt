@@ -28,10 +28,10 @@ private class DemoCreation(var name: String = "", var count: Int? = 3, var tourI
 
 /** Organizer list actions open forms in the corresponding block header. */
 internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, section: String) {
-    val contests = context.state.objects(actor).competitions
+    val competitions = context.state.objects(actor).competitions
     val selectionKey = "${actor.id}:competition"
-    val selectedId = context.selection(key = selectionKey, fallback = contests.firstOrNull()?.id)
-    val competition = contests.firstOrNull {
+    val selectedId = context.selection(key = selectionKey, fallback = competitions.firstOrNull()?.id)
+    val competition = competitions.firstOrNull {
         it.id == selectedId
     }
     val createBinder = Binder<DemoCreation>()
@@ -50,7 +50,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
             }
         }
         footer { handle ->
-            action("Отмена") {
+            action("Отменить") {
                 onClick {
                     handle.close()
                 }
@@ -80,7 +80,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
             }
             demoTable(
                 context.table("${actor.id}:competitions"),
-                contests.map {
+                competitions.map {
                     DemoRow(id = it.id, title = it.name)
                 },
             ) {
@@ -130,7 +130,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                 }
             }
             footer { handle ->
-                action("Отмена") {
+                action("Отменить") {
                     onClick {
                         handle.close()
                     }
@@ -142,7 +142,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                             binder.writeBeanIfValid(draft) && context.created(
                                 result = context.state.createParticipants(
                                     competition.id,
-                                    checkNotNull(draft.count),
+                                    checkNotNull(draft.count) { "Validated participant count of ${competition.id} is missing" },
                                 ),
                                 selectionKey = selectionKey,
                                 id = competition.id,
@@ -193,7 +193,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                 }
             }
             footer { handle ->
-                action("Отмена") {
+                action("Отменить") {
                     onClick {
                         handle.close()
                     }
@@ -205,10 +205,10 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                             binder.writeBeanIfValid(draft) && context.created(
                                 result = context.state.addTour(
                                     competitionId = competition.id,
-                                    tourId = checkNotNull(draft.tourId),
+                                    tourId = checkNotNull(draft.tourId) { "Validated tour of ${competition.id} is missing" },
                                 ),
                                 selectionKey = "${actor.id}:tour",
-                                id = checkNotNull(draft.tourId),
+                                id = checkNotNull(draft.tourId) { "Validated tour of ${competition.id} is missing" },
                             )
                         ) {
                             handle.close()
@@ -261,7 +261,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                         },
                     )
                 }
-                val participants = competition.participantIds.map { id -> context.state.users.first { it.id == id } }
+                val participants = competition.participantIds.map { id -> context.state.users.first { user -> user.id == id } }
                 demoResultMatrix(context, actor, tour, participants)
             }
         }

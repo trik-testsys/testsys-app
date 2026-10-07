@@ -275,6 +275,9 @@ class NotFoundTexts(
  * @property upload the action selecting files.
  * @property drop the hint for dropping files.
  * @property cancel the action cancelling a transfer.
+ * @property cancelled the status of a cancelled transfer.
+ * @property removeFile the action removing a file from the transfer list.
+ * @property stalled the status of a transfer that stopped progressing.
  * @property preparing the download preparation label.
  * @property downloading the transfer label.
  * @property done the completed transfer label.
@@ -293,6 +296,7 @@ class NotFoundTexts(
  * @property byteUnits the localized byte-size unit labels.
  * @property timerUnits the labels of days, hours, minutes and seconds.
  * @property avatarOverflow the accessible count of hidden avatars.
+ * @property more the accessible count of hidden selected values.
  * @property transferBytes the accessible transferred byte count.
  * @property question the accessible question number.
  * @property overflow the label of the remaining avatars.
@@ -307,6 +311,9 @@ class ComponentTexts(
     val upload: String,
     val drop: String,
     val cancel: String,
+    val cancelled: String,
+    val removeFile: String,
+    val stalled: String,
     val preparing: String,
     val downloading: String,
     val done: String,
@@ -326,6 +333,7 @@ class ComponentTexts(
     val byteUnits: List<String>,
     val timerUnits: List<String>,
     val avatarOverflow: (Int) -> String,
+    val more: (Int) -> String,
     val transferBytes: (Long) -> String,
     val question: (Int) -> String,
 )

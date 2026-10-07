@@ -121,7 +121,7 @@ class PaginationHandle internal constructor(
         val shown = page
         items.forEach { item -> root.remove(item) }
         items = pageRange(page = shown, total = count).map { target ->
-            if (target == null) Span("…").apply { addClassName(CssClass.PagerGap) } else pageButton(target, shown)
+            if (target == null) Span("…").apply { addClassName(CssClass.PagerGap) } else pageButton(target = target, shown = shown)
         }
         items.forEachIndexed { index, item -> root.addComponentAtIndex(index + 1, item) }
         previous.isEnabled = shown > 1
@@ -151,7 +151,7 @@ class PaginationHandle internal constructor(
  * @since %CURRENT_VERSION%
  */
 fun ContentScope.pagination(pageCount: Int, page: Int = 1, configure: PaginationHandle.() -> Unit = {}): PaginationHandle {
-    val handle = PaginationHandle(Div(), texts.pagination, pageCount, page)
+    val handle = PaginationHandle(Div(), texts.pagination, pageCount = pageCount, page = page)
     add(handle.component)
     return handle.apply(configure)
 }

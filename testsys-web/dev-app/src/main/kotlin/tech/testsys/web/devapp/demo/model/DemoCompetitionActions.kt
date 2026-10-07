@@ -8,7 +8,7 @@ internal fun DemoState.createCompetition(name: String): DemoResult {
     if (name.isBlank()) {
         return fail("Введите название соревнования")
     }
-    val organizer = actor("Организатор")
+    val organizer = actor(DemoRole.Organizer)
     val competition = DemoCompetition(
         id = "competition$nextId",
         name = name.trim(),
@@ -21,7 +21,7 @@ internal fun DemoState.createCompetition(name: String): DemoResult {
 }
 
 internal fun DemoState.addTour(competitionId: String, tourId: String): DemoResult {
-    val organizer = actor("Организатор")
+    val organizer = actor(DemoRole.Organizer)
     val competition = competitions.firstOrNull {
         it.id == competitionId && it.organizerId == organizer.id
     } ?: return fail("Соревнование или тур недоступны")
@@ -51,13 +51,13 @@ internal fun DemoState.createParticipants(competitionId: String, count: Int = DE
         return fail("Укажите целое количество от 1 до 100 (предел демонстрации)")
     }
     val competition = competitions.firstOrNull {
-        it.id == competitionId && it.organizerId == actor("Организатор").id
+        it.id == competitionId && it.organizerId == actor(DemoRole.Organizer).id
     } ?: return fail("Соревнование недоступно")
     val participants = (nextId until nextId + count).map { id ->
         DemoUser(
             id = "p$id",
             alias = "Участник $id",
-            role = "Участник",
+            role = DemoRole.Participant,
             accessCode = "PART-$id",
             communityIds = listOf(competition.communityId),
         )

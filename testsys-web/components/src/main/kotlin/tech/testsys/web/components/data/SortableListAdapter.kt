@@ -53,7 +53,9 @@ internal class SortableListAdapter<T : Any>(
 
     fun present(values: List<T>) {
         val keys = values.map(itemKey)
-        require(keys.all(String::isNotEmpty) && keys.distinct().size == keys.size) { "Sortable list keys must be nonempty and unique" }
+        require(keys.all(String::isNotEmpty)) { "Sortable list keys must be nonempty, got $keys" }
+        val duplicates = keys.groupBy { key -> key }.filterValues { same -> same.size > 1 }.keys
+        require(duplicates.isEmpty()) { "Sortable list keys must be unique, repeated: $duplicates" }
         val removed = known.keys - keys.toSet()
         removed.forEach { key ->
             getContentElement(slot(key)).removeAllChildren()

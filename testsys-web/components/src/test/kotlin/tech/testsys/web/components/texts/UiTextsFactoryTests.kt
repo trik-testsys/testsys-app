@@ -51,7 +51,7 @@ class UiTextsFactoryTests {
     fun `should localize not found screen and brand in page title`() {
         assertEquals("Страница не найдена", texts.notFound.title)
         assertEquals("Проверьте адрес или вернитесь на предыдущую страницу.", texts.notFound.description)
-        assertEquals("Назад", texts.notFound.back)
+        assertEquals("Вернуться", texts.notFound.back)
         assertEquals("Страница не найдена — TestSys", texts.notFound.pageTitle)
     }
 
@@ -138,6 +138,33 @@ class UiTextsFactoryTests {
     @CsvSource("1, файла", "2, файлов", "5, файлов", "11, файлов", "21, файла", "22, файлов", "25, файлов")
     internal fun `should preserve Russian upload limit forms and byte grouping`(count: Int, files: String) {
         assertEquals("До $count $files, до 1 412 Б каждый", texts.components.uploadLimits(count, 1412))
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "false, false, Вопрос 7",
+        "true, false, 'Вопрос 7, отвечен'",
+        "false, true, 'Вопрос 7, отмечен'",
+        "true, true, 'Вопрос 7, отвечен, отмечен'",
+    )
+    internal fun `should describe a question by its answered and flagged statuses`(answered: Boolean, flagged: Boolean, expected: String) {
+        assertEquals(expected, texts.components.questionStatus(7, answered, flagged))
+    }
+
+    @Test
+    internal fun `should name verb actions of cancelling, returning and the calendar today date`() {
+        assertEquals("Отменить", texts.editing.cancel)
+        assertEquals("Отменить", texts.dialog.cancel)
+        assertEquals("Отменить", texts.calendar.cancel)
+        assertEquals("Сегодня", texts.calendar.today)
+    }
+
+    @Test
+    internal fun `should take transfer status and hidden value texts from the Russian text factory`() {
+        assertEquals("Отменено", texts.components.cancelled)
+        assertEquals("Убрать файл", texts.components.removeFile)
+        assertEquals("Передача приостановлена", texts.components.stalled)
+        assertEquals("Ещё 7", texts.components.more(7))
     }
 
     @Test

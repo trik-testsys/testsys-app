@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -138,18 +139,29 @@ class HeaderSearchTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should show an error and retry the current query`() {
+    fun `should show an error when the provider fails`() {
+        val search = search { error("Provider rejected request") }
+        search.inputChanged("query")
+        search.fetchPending("query")
+
+        pending.removeAt(0).run()
+
+        assertEquals(testTexts.header.searchFailed, search.status.text)
+    }
+
+    @Test
+    fun `should retry the current query after an error`() {
         var attempts = 0
         val search = search { query ->
-            if (++attempts == 1) error("Provider rejected request")
+            attempts++
+            if (attempts == 1) error("Provider rejected request")
             listOf(result(query))
         }
         search.inputChanged("query")
         search.fetchPending("query")
         pending.removeAt(0).run()
-        assertEquals(testTexts.header.searchFailed, search.status.text)
-
         search.retry()
+
         pending.removeAt(0).run()
 
         assertEquals(2, attempts)
@@ -157,23 +169,47 @@ class HeaderSearchTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should select with arrows and open only the chosen result`() {
+    fun `should not open a result on Enter before one is selected`() {
         val opened = mutableListOf<String>()
-        val search = search { listOf(result("first", opened), result("second", opened)) }
-        search.inputChanged("query")
-        search.fetchPending("query")
-        pending.single().run()
+        val search = loadedSearch(opened)
+
         search.key("Enter")
+
         assertTrue(opened.isEmpty())
+    }
+
+    @Test
+    fun `should select the first result with the down arrow`() {
+        val search = loadedSearch(mutableListOf())
+
         search.key("ArrowDown")
+
         assertEquals("true", search.component.findAll("ts-header-result").first().element.getAttribute("aria-selected"))
         assertEquals("listbox", search.field.element.getAttribute("aria-haspopup"))
+    }
+
+    @Test
+    fun `should open only the chosen result and close the popup`() {
+        val opened = mutableListOf<String>()
+        val search = loadedSearch(opened)
+        search.key("ArrowDown")
         search.key("ArrowDown")
 
         search.key("Enter")
 
         assertEquals(listOf("second"), opened)
         assertFalse(search.popup.isOpened)
+    }
+
+    @Test
+    fun `should let an Error of the provider escape the search`() {
+        val search = search { throw AssertionError("Fatal provider failure") }
+        search.inputChanged("query")
+        search.fetchPending("query")
+
+        assertThrows(AssertionError::class.java) { pending.removeAt(0).run() }
+
+        assertEquals(testTexts.header.searchLoading, search.status.text)
     }
 
     @Test
@@ -194,6 +230,14 @@ class HeaderSearchTests : MockVaadinTests() {
         HeaderSearchController(HeaderSearch(fetch), testTexts.header, HeaderInteractions()).also { controller ->
             UI.getCurrent().add(controller.component)
         }
+
+    private fun loadedSearch(opened: MutableList<String>): HeaderSearchController {
+        val search = search { listOf(result("first", opened), result("second", opened)) }
+        search.inputChanged("query")
+        search.fetchPending("query")
+        pending.single().run()
+        return search
+    }
 
     private fun result(label: String, opened: MutableList<String>? = null): HeaderSearchResult = HeaderSearchResult(
         key = label,

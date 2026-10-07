@@ -1,3 +1,5 @@
+@file:OptIn(InternalComponentsApi::class)
+
 package tech.testsys.web.components.overlay
 
 import com.vaadin.flow.component.html.Div
@@ -7,6 +9,9 @@ import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.dangerAction
 import tech.testsys.web.components.actions.mainAction
+import tech.testsys.web.components.core.CssUnit
+import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setWidth
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.texts.currentTexts
@@ -33,7 +38,7 @@ fun confirm(
             label = texts.dialog.typeToConfirm(name)
             valueChangeMode = ValueChangeMode.EAGER
             isAutofocus = true
-            width = "100%"
+            style.setWidth(value = 100, unit = CssUnit.Percent)
         }.also { field -> shell.content.add(field) }
     }
     val foot = ContentScope(shell.foot, texts, Placement.Body, DIALOG_COLUMNS)

@@ -8,6 +8,7 @@ import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.devapp.demo.model.DemoObjects
 import tech.testsys.web.devapp.demo.model.DemoRow
+import tech.testsys.web.devapp.demo.model.DemoSolutionStatus
 import tech.testsys.web.devapp.demo.model.DemoTour
 import tech.testsys.web.devapp.demo.model.DemoUser
 import tech.testsys.web.devapp.demo.model.actor
@@ -17,7 +18,7 @@ import tech.testsys.web.devapp.demo.model.objects
 
 /** Shared result matrix that fills the grid and expands to keep task columns readable. */
 internal fun BlockScope.demoResultMatrix(context: DemoContext, actor: DemoUser, tour: DemoTour, participants: List<DemoUser>) {
-    val tasks = tour.taskIds.map { id -> context.state.tasks.first { it.id == id } }
+    val tasks = tour.taskIds.map { id -> context.state.tasks.first { task -> task.id == id } }
     val rows = participants.map { DemoRow(id = it.id, title = it.alias) }
     demoTable(
         state = context.table("${actor.id}:${tour.id}:matrix"),
@@ -64,7 +65,7 @@ internal fun PageScope.demoJudge(context: DemoContext, actor: DemoUser, objects:
                 "Решение" to solution.id,
                 "Файл" to solution.fileName,
                 "Отправлено" to solution.submittedAt,
-                "Логи проверки" to if (solution.status == "Checked") {
+                "Логи проверки" to if (solution.status == DemoSolutionStatus.Checked) {
                     "Демонстрационная проверка завершена"
                 } else {
                     "Материалы проверки отсутствуют"
@@ -76,8 +77,8 @@ internal fun PageScope.demoJudge(context: DemoContext, actor: DemoUser, objects:
         block("Вердикт") {
             row {
                 horizontal {
-                    if (solution.status == "Checked") {
-                        verdict(checkNotNull(solution.score).toDouble(), "баллов")
+                    if (solution.status == DemoSolutionStatus.Checked) {
+                        verdict(checkNotNull(solution.score) { "Checked solution ${solution.id} has no score" }.toDouble(), "баллов")
                     } else {
                         badge(demoStatusLabel(solution.status), demoStatusTone(solution.status))
                     }

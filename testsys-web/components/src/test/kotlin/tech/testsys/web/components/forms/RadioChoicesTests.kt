@@ -16,10 +16,10 @@ internal class RadioChoicesTests : MockVaadinTests() {
         buildTestRow {
             input = segmentedControl(
                 "Choice",
-                4,
-                8,
-                listOf("a", "b"),
-                { value -> value },
+                labelSize = 4,
+                size = 8,
+                items = listOf("a", "b"),
+                itemLabel = { value -> value },
             )
         }
 
@@ -29,7 +29,7 @@ internal class RadioChoicesTests : MockVaadinTests() {
     @Test
     fun `should reject duplicate radio choices`() {
         assertThrows(IllegalArgumentException::class.java) {
-            buildTestRow { radio("Choice", 4, 8, listOf("a", "a"), { value -> value }) }
+            buildTestRow { radio("Choice", labelSize = 4, size = 8, items = listOf("a", "a"), itemLabel = { value -> value }) }
         }
     }
 
@@ -37,7 +37,9 @@ internal class RadioChoicesTests : MockVaadinTests() {
     @ValueSource(ints = [0, 1, 5])
     fun `should reject segmented choices outside the supported range`(count: Int) {
         assertThrows(IllegalArgumentException::class.java) {
-            buildTestRow { segmentedControl("Choice", 4, 8, (0 until count).toList(), { value -> value.toString() }) }
+            buildTestRow {
+                segmentedControl("Choice", labelSize = 4, size = 8, items = (0 until count).toList(), itemLabel = Int::toString)
+            }
         }
     }
 
@@ -45,7 +47,9 @@ internal class RadioChoicesTests : MockVaadinTests() {
     @ValueSource(ints = [2, 4])
     fun `should accept segmented choices at the supported boundaries`(count: Int) {
         lateinit var input: ValueInput<Int?>
-        buildTestRow { input = segmentedControl("Choice", 4, 8, (0 until count).toList(), { value -> value.toString() }) }
+        buildTestRow {
+            input = segmentedControl("Choice", labelSize = 4, size = 8, items = (0 until count).toList(), itemLabel = Int::toString)
+        }
 
         input.value = count - 1
 
@@ -55,7 +59,7 @@ internal class RadioChoicesTests : MockVaadinTests() {
     @Test
     fun `should clear a selected radio choice to null`() {
         lateinit var input: ValueInput<String?>
-        buildTestRow { input = radio("Choice", 4, 8, listOf("a", "b"), { value -> value }) }
+        buildTestRow { input = radio("Choice", labelSize = 4, size = 8, items = listOf("a", "b"), itemLabel = { value -> value }) }
         input.value = "a"
 
         input.clear()
@@ -67,7 +71,14 @@ internal class RadioChoicesTests : MockVaadinTests() {
     @Test
     fun `should render radio labels and metadata`() {
         buildTestRow {
-            radio("Choice", 4, 8, listOf("a", "b"), { value -> "Label $value" }, itemMeta = { value -> "Meta $value" })
+            radio(
+                "Choice",
+                labelSize = 4,
+                size = 8,
+                items = listOf("a", "b"),
+                itemLabel = { value -> "Label $value" },
+                itemMeta = { value -> "Meta $value" },
+            )
         }
         val field = control<ChoiceField<String>>("Choice")
 

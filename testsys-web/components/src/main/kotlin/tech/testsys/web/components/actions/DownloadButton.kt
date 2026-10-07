@@ -76,12 +76,10 @@ data class DownloadContent(
 ) {
 
     init {
-        require(filename.isNotBlank() && '\n' !in filename && '\r' !in filename) {
-            "Download filename must be nonempty and must not contain newlines"
-        }
-        require(contentType.isNotBlank() && (length == null || length >= 0)) {
-            "Download type must be nonempty and length nonnegative"
-        }
+        require(filename.isNotBlank()) { "Download filename must be nonempty, got '$filename'" }
+        require('\n' !in filename && '\r' !in filename) { "Download filename '$filename' must not contain newlines" }
+        require(contentType.isNotBlank()) { "Download type of '$filename' must be nonempty, got '$contentType'" }
+        require(length == null || length >= 0) { "Download length of '$filename' must be nonnegative, got $length" }
     }
 }
 
@@ -264,7 +262,13 @@ private fun ContentScope.download(
     configure: DownloadHandle.() -> Unit,
 ): DownloadHandle {
     require(label.isNotBlank()) { "Download action needs an accessible label" }
-    val display = DownloadDisplay(texts, label, isIconOnly, placement.isCompact, produce)
+    val display = DownloadDisplay(
+        texts,
+        label,
+        isIconOnly = isIconOnly,
+        compact = placement.isCompact,
+        produce = produce,
+    )
     add(display)
     return DownloadHandle(display).apply(configure)
 }

@@ -16,6 +16,10 @@ import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.builder.task.TaskContentBuilder
+import tech.testsys.domain.builder.task.WipTaskContentBuilder
+import tech.testsys.domain.builder.util.chooser.TaskValidationExecutionChooser
+import tech.testsys.domain.contract.Grader
+import tech.testsys.domain.contract.GradingAdmission
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.Page
@@ -28,6 +32,7 @@ import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepo
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
+import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
@@ -36,6 +41,7 @@ import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.AuthorSubmissionFailure
 import tech.testsys.domain.model.task.CommittedTaskContent
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
@@ -54,10 +60,13 @@ import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
+import tech.testsys.domain.model.task.Submission
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
@@ -99,6 +108,7 @@ import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
+import tech.testsys.operation.error.TaskNotTestedError
 import tech.testsys.operation.error.TaskTestingNoDeveloperSolutionsError
 import tech.testsys.operation.error.TaskTestingNoExerciseForLanguageError
 import tech.testsys.operation.error.TaskTestingNoPolygonsError
@@ -143,6 +153,8 @@ class DeveloperOperationsTests {
     private val contestRepository = mockk<ContestRepository>()
     private val taskValidationRequestRepository = mockk<TaskValidationRequestRepository>()
     private val taskValidationDispatcher = mockk<TaskValidationDispatcher>(relaxUnitFun = true)
+    private val submissionRepository = mockk<SubmissionRepository>()
+    private val grader = mockk<Grader>()
     private val developerOperations = DeveloperOperations(
         taskRepository,
         statementRepository,
@@ -154,6 +166,8 @@ class DeveloperOperationsTests {
         contestRepository,
         taskValidationRequestRepository,
         taskValidationDispatcher,
+        submissionRepository,
+        grader,
     )
 
     private lateinit var developer: MultipleRoleUser
@@ -403,6 +417,389 @@ class DeveloperOperationsTests {
 
             Assertions.assertSame(history, result)
             verify(exactly = 0) { taskRepository.update(any<Task>()) }
+        }
+    }
+
+    @Nested
+    inner class CommitTaskTests {
+
+        private val taskId = TaskId(0)
+        private val uploadedBucket = VersionBucket(UUID(0, 2))
+        private val pythonSolution = solution {
+            id = 5
+            createdAt = Instant.EPOCH
+            data = solutionData {
+                file("solution.py", byteArrayOf(1))
+                language.python()
+            }
+        }
+
+        @BeforeEach
+        fun prepareCommit() {
+            every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } returns listOf(viewExercise())
+            every { developerSolutionRepository.load(any<LazyEntityList<DeveloperSolutionId, DeveloperSolution>>()) } returns
+                listOf(viewDeveloperSolution())
+            every { solutionRepository.load(any<LazyEntity<SolutionId, Solution>>()) } returns pythonSolution
+            every { contestRepository.findByTaskId(taskId) } returns emptyList()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest())
+            every { submissionRepository.findGradingByTaskId(taskId) } returns listOf(contestSubmission(31), contestSubmission(32))
+            every { grader.sendToGrade(any()) } returns GradingAdmission.Accepted
+        }
+
+        @Test
+        fun `should reject a user without the Developer role before loading the task`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.commitTask(testAdministrator {}, taskId, regradeSubmissions = true)
+            }
+
+            verify(exactly = 0) { taskRepository.findById(any()) }
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a missing task`() {
+            every { taskRepository.findById(taskId) } returns null
+
+            assertRaises(TaskNotExistsError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a task owned by another developer`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask().withData { owner(99) }
+
+            assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a Committed task without a working revision`() {
+            every { taskRepository.findById(taskId) } returns testCommitedTask()
+
+            assertRaises(TaskAlreadyCommittedError(taskId)) {
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
+            }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a working revision without validation history`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns emptyList()
+
+            assertRaises(TaskNotTestedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["failed", "stoppedByDiagnostics", "active"])
+        fun `should reject a working revision whose matching validation request has not succeeded`(execution: String) {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(unsuccessfulRequest(execution))
+
+            assertRaises(TaskNotTestedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a working revision if successful validation used another polygon set`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest(polygonIds = listOf(3, 7)))
+
+            assertRaises(TaskNotTestedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a working revision if successful validation used another author solution set`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest(authorIds = listOf(4, 8)))
+
+            assertRaises(TaskNotTestedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a working revision if successful validation used another TRIK Studio version set`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest(versionTags = listOf("3.0.0")))
+
+            assertRaises(TaskNotTestedError(taskId)) { developerOperations.commitTask(developer, taskId, regradeSubmissions = true) }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject a working revision without a statement`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask { statement = null }
+
+            assertRaises(TaskTestingNoStatementError(taskId)) {
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
+            }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject an author language without an attached exercise`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { exerciseRepository.load(any<LazyEntityList<ExerciseId, Exercise>>()) } returns emptyList()
+
+            assertRaises(TaskTestingNoExerciseForLanguageError(taskId, TrikSupportedLanguage.Python)) {
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
+            }
+
+            verifyNoChanges()
+        }
+
+        @Test
+        fun `should reject an attached contest with an unsupported TRIK Studio version`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { contestRepository.findByTaskId(taskId) } returns listOf(testContest { trikStudioVersion("2.0.0") })
+
+            assertRaises(TaskTrikStudioVersionNotSupportedError(taskId, TrikStudioVersion("2.0.0"))) {
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
+            }
+
+            verifyNoChanges()
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Uncommitted"])
+        fun `should replace the last committed revision with the working revision`(state: String) {
+            every { taskRepository.findById(taskId) } returns committableTask(state)
+
+            val result = developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            val content = Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content).lastCommitted
+            Assertions.assertEquals(StatementId(1), content.statement.id)
+            Assertions.assertEquals(listOf(ExerciseId(2)), content.exercises.ids)
+            Assertions.assertEquals(listOf(TestId(3), TestId(6)), content.tests.ids)
+            Assertions.assertEquals(listOf(DeveloperSolutionId(4)), content.developerSolutions.ids)
+            Assertions.assertEquals(listOf(TrikStudioVersion("3.0.0"), TrikStudioVersion("4.0.0")), content.supportedTrikStudioVersions)
+            Assertions.assertEquals(savedTaskVersion, result.version)
+            verify(exactly = 1) { taskRepository.update(any<Task>()) }
+        }
+
+        @Test
+        fun `should commit a task compatible with every attached contest`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { contestRepository.findByTaskId(taskId) } returns listOf(
+                testContest { trikStudioVersion("3.0.0") },
+                testContest { trikStudioVersion("4.0.0") },
+            )
+
+            val result = developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content)
+        }
+
+        @Test
+        fun `should match a successful snapshot regardless of the order of inputs`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask {
+                tests(listOf(6, 3))
+                developerSolutions(listOf(8, 4))
+                supportedTrikStudioVersions(listOf("4.0.0", "3.0.0"))
+            }
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest(authorIds = listOf(4, 8)))
+
+            val result = developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            val content = Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content).lastCommitted
+            Assertions.assertEquals(listOf(TestId(6), TestId(3)), content.tests.ids)
+        }
+
+        @Test
+        fun `should accept an earlier successful validation request after a later failed one`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask()
+            every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(
+                validationRequest(),
+                unsuccessfulRequest("failed"),
+            )
+
+            val result = developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            Assertions.assertInstanceOf(TaskContent.Committed::class.java, result.data.content)
+        }
+
+        @Test
+        fun `should preserve task metadata access and uploaded chains when committing`() {
+            val original = uncommittedTask()
+            every { taskRepository.findById(taskId) } returns original
+
+            val result = developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            Assertions.assertEquals("Task name", result.data.name)
+            Assertions.assertEquals("Task description", result.data.description)
+            Assertions.assertEquals(original.data.owner.id, result.data.owner.id)
+            Assertions.assertEquals(listOf(CommunityId(4)), result.data.sharedTo.ids)
+            Assertions.assertEquals(setOf(uploadedBucket), result.data.uploadedResources)
+        }
+
+        @Test
+        fun `should send every contest submission to grading if requested and the polygon set changed`() {
+            val sent = mutableListOf<Submission>()
+            every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
+            every { grader.sendToGrade(capture(sent)) } returns GradingAdmission.Accepted
+
+            developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
+
+            Assertions.assertEquals(listOf(SubmissionId(31), SubmissionId(32)), sent.map { submission -> submission.id })
+        }
+
+        @Test
+        fun `should send contest submissions to grading if a polygon is replaced with its new version`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3, 5))
+
+            developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
+
+            verify(exactly = 2) { grader.sendToGrade(any()) }
+        }
+
+        @Test
+        fun `should not search or send submissions if regrading is not requested even when the polygon set changed`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
+
+            developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
+
+            verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
+            verify(exactly = 0) { grader.sendToGrade(any()) }
+        }
+
+        @Test
+        fun `should not search submissions if the polygon set is unchanged`() {
+            every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(6, 3))
+
+            developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
+
+            verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
+            verify(exactly = 0) { grader.sendToGrade(any()) }
+        }
+
+        @Test
+        fun `should not search submissions when committing a New task`() {
+            every { taskRepository.findById(taskId) } returns newTask()
+
+            developerOperations.commitTask(developer, taskId, regradeSubmissions = true).getOrThrow()
+
+            verify(exactly = 0) { submissionRepository.findGradingByTaskId(any()) }
+            verify(exactly = 0) { grader.sendToGrade(any()) }
+        }
+
+        @Test
+        fun `should propagate a storage exception without sending submissions to grading`() {
+            val failure = IllegalStateException("Task was changed concurrently")
+            every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
+            every { taskRepository.update(any<Task>()) } throws failure
+
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
+            }
+
+            Assertions.assertSame(failure, actual)
+            verify(exactly = 0) { grader.sendToGrade(any()) }
+        }
+
+        private fun committableTask(state: String): Task = when (state) {
+            "New" -> newTask()
+            "Uncommitted" -> uncommittedTask(committedPolygonIds = listOf(9))
+            else -> error("Unsupported test state: $state")
+        }
+
+        private fun newTask(): Task = testNewTask().withData {
+            content.new { committableResources() }
+        }
+
+        private fun uncommittedTask(
+            committedPolygonIds: List<Long> = listOf(3, 6),
+            customizeWip: WipTaskContentBuilder.() -> Unit = {},
+        ): Task = testUncommittedTask().withData {
+            name = "Task name"
+            description = "Task description"
+            sharedTo(listOf(4))
+            uploadedResources = mutableSetOf(uploadedBucket)
+            content.uncommitted(
+                wipBuilder = {
+                    committableResources()
+                    customizeWip()
+                },
+                lastCommittedBuilder = {
+                    statement(99)
+                    exercises(listOf(99))
+                    tests(committedPolygonIds)
+                    developerSolutions(listOf(4))
+                    supportedTrikStudioVersions(listOf("3.0.0", "4.0.0"))
+                },
+            )
+        }
+
+        private fun TaskContentBuilder<*>.committableResources() {
+            statement(1)
+            exercises(listOf(2))
+            tests(listOf(3, 6))
+            developerSolutions(listOf(4))
+            supportedTrikStudioVersions(listOf("3.0.0", "4.0.0"))
+        }
+
+        private fun validationRequest(
+            polygonIds: List<Long> = listOf(3, 6),
+            authorIds: List<Long> = listOf(4),
+            versionTags: List<String> = listOf("3.0.0", "4.0.0"),
+            chooseExecution: TaskValidationExecutionChooser.() -> Unit = { completed { completedAt = Instant.EPOCH } },
+        ): TaskValidationRequest = testTaskValidationRequest {
+            snapshot = taskValidationSnapshot {
+                tests(polygonIds)
+                developerSolutions = authorIds.map { authorId ->
+                    developerSolutionValidationInput {
+                        developerSolution(authorId)
+                        solution(5)
+                        expectedScore = Score(42)
+                    }
+                }.toMutableList()
+                supportedTrikStudioVersions = versionTags.map { tag -> TrikStudioVersion(tag) }.toMutableList()
+            }
+            execution.chooseExecution()
+        }
+
+        private fun unsuccessfulRequest(execution: String): TaskValidationRequest = when (execution) {
+            "failed" -> validationRequest {
+                completed {
+                    submissions(listOf(21))
+                    failures = mutableListOf(AuthorSubmissionFailure.ScoreMismatch(submission = SubmissionId(21), actualScore = 0))
+                    completedAt = Instant.EPOCH
+                }
+            }
+            "stoppedByDiagnostics" -> validationRequest { stoppedByDiagnostics { completedAt = Instant.EPOCH } }
+            "active" -> validationRequest { pendingDiagnostics() }
+            else -> error("Unsupported test execution: $execution")
+        }
+
+        private fun contestSubmission(submissionId: Long): Submission = submission {
+            id = submissionId
+            createdAt = Instant.ofEpochSecond(submissionId)
+            data = submissionData {
+                author(20)
+                solution(5)
+                task(0)
+                status.queued()
+                kind.grading { contest(19) }
+            }
+        }
+
+        private fun verifyNoChanges() {
+            verify(exactly = 0) {
+                taskRepository.update(any<Task>())
+                submissionRepository.findGradingByTaskId(any())
+                grader.sendToGrade(any())
+            }
         }
     }
 

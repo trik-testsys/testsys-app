@@ -8,6 +8,7 @@ import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.Grader
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.Page
@@ -19,6 +20,7 @@ import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepo
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
+import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
@@ -38,12 +40,14 @@ import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TaskValidationExecution
 import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.Developer
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.operation.TaskValidationDispatcher
@@ -59,6 +63,7 @@ import tech.testsys.operation.error.AttachStatementError
 import tech.testsys.operation.error.AttachTaskError
 import tech.testsys.operation.error.AttachTestError
 import tech.testsys.operation.error.AttemptDurationExceedsContestDurationError
+import tech.testsys.operation.error.CommitTaskError
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
 import tech.testsys.operation.error.ContestAccessDeniedError
@@ -102,6 +107,7 @@ import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
+import tech.testsys.operation.error.TaskNotTestedError
 import tech.testsys.operation.error.TaskTestingNoDeveloperSolutionsError
 import tech.testsys.operation.error.TaskTestingNoExerciseForLanguageError
 import tech.testsys.operation.error.TaskTestingNoPolygonsError
@@ -150,6 +156,8 @@ class DeveloperOperations(
     private val contestRepository: ContestRepository,
     private val taskValidationRequestRepository: TaskValidationRequestRepository,
     private val taskValidationDispatcher: TaskValidationDispatcher,
+    private val submissionRepository: SubmissionRepository,
+    private val grader: Grader,
 ) {
 
     /**
@@ -206,6 +214,59 @@ class DeveloperOperations(
             ensure(task != null) { TaskNotExistsError(taskId) }
             ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
             return taskValidationRequestRepository.findHistory(taskId).asSuccess()
+        }
+
+    /**
+     * Commits the working revision of [taskId] owned by [user] if a successful validation request has a matching
+     * snapshot and its statement, exercises and attached contests still fit; returns the saved Committed task.
+     * With [regradeSubmissions], a changed polygon set resends contest submissions to grading; exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.task.commitTask")
+    fun commitTask(user: MultipleRoleUser, taskId: TaskId, regradeSubmissions: Boolean): OperationResult<Task, CommitTaskError> =
+        operation<Task, CommitTaskError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            val previous = task.data.content
+            ensure(previous !is TaskContent.Committed) { TaskAlreadyCommittedError(taskId) }
+            val wip = task.getEditableContent()
+            ensure(taskValidationRequestRepository.findHistory(taskId).any { request -> isSuccessfulTestOf(request, wip) }) {
+                TaskNotTestedError(taskId)
+            }
+            val statement = wip.statement
+            ensure(statement != null) { TaskTestingNoStatementError(taskId) }
+            val exercises = exerciseRepository.load(wip.exercises)
+            developerSolutionRepository.load(wip.developerSolutions).forEach { developerSolution ->
+                val solution = solutionRepository.load(developerSolution.data.solution)
+                ensure(exercises.any { exercise -> exercise.data.language == solution.data.language }) {
+                    TaskTestingNoExerciseForLanguageError(taskId = taskId, language = solution.data.language)
+                }
+            }
+            contestRepository.findByTaskId(taskId).forEach { contest ->
+                ensure(contest.data.trikStudioVersion in wip.supportedTrikStudioVersions) {
+                    TaskTrikStudioVersionNotSupportedError(taskId = taskId, trikStudioVersion = contest.data.trikStudioVersion)
+                }
+            }
+
+            val committedTask = task.withData {
+                content.committed {
+                    this.statement = statement.id
+                    this.exercises = wip.exercises.ids.toMutableList()
+                    tests = wip.tests.ids.toMutableList()
+                    developerSolutions = wip.developerSolutions.ids.toMutableList()
+                    supportedTrikStudioVersions = wip.supportedTrikStudioVersions.toMutableList()
+                }
+            }
+            val savedTask = taskRepository.update(committedTask)
+            val isPolygonSetChanged = previous is TaskContent.Uncommitted &&
+                previous.lastCommitted.tests.ids.toSet() != wip.tests.ids.toSet()
+            if (regradeSubmissions && isPolygonSetChanged) {
+                submissionRepository.findGradingByTaskId(taskId).forEach { submission -> grader.sendToGrade(submission) }
+            }
+            return savedTask.asSuccess()
         }
 
     /**
@@ -1319,6 +1380,17 @@ class DeveloperOperations(
             description = latest.data.description
         }
         return developerSolutionRepository.save(restored.data).id
+    }
+
+    private fun isSuccessfulTestOf(request: TaskValidationRequest, content: WipTaskContent): Boolean {
+        val execution = request.data.execution
+        val snapshot = request.data.snapshot
+        val snapshotDeveloperSolutionIds = snapshot.developerSolutions.map { input -> input.developerSolution.id }
+        return execution is TaskValidationExecution.Completed &&
+            execution.failures.isEmpty() &&
+            snapshot.tests.ids.toSet() == content.tests.ids.toSet() &&
+            snapshotDeveloperSolutionIds.toSet() == content.developerSolutions.ids.toSet() &&
+            snapshot.supportedTrikStudioVersions.toSet() == content.supportedTrikStudioVersions.toSet()
     }
 
     private fun resourceExists(versionBucket: VersionBucket): Boolean = statementRepository.existsByVersionBucket(versionBucket) ||

@@ -35,6 +35,7 @@ import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionId
+import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
@@ -269,7 +270,18 @@ interface StatementRepository : EntityRepository<StatementData, StatementId, Sta
  *
  * @since %CURRENT_VERSION%
  */
-interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, Submission>
+interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, Submission> {
+
+    /**
+     * Synchronously finds contest submissions of [taskId], excluding author solution tests, without changing state.
+     * Repeated calls reflect current data; storage exceptions propagate to the caller.
+     *
+     * @param taskId the task the submissions were made to.
+     * @return the submissions of kind [SubmissionKind.Grading] ordered by identifier, or an empty list if none exist.
+     * @since %CURRENT_VERSION%
+     */
+    fun findGradingByTaskId(taskId: TaskId): List<Submission>
+}
 
 /**
  * Persistence port for [Verdict] entities. A verdict is fixed on creation, so `update` is not supported.

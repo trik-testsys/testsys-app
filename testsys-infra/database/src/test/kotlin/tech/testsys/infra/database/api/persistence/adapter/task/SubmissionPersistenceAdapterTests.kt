@@ -85,10 +85,9 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         }
     }
 
-    private fun gradingSubmissionData(contestId: Long): SubmissionData {
+    private fun gradingSubmissionData(contestId: Long, taskId: Long = fixtures.task().id.value): SubmissionData {
         val author = fixtures.student()
         val authorId = author.id
-        val taskId = fixtures.task().id.value
         val solutionId = fixtures.solution().id.value
         return submissionData {
             this.author = authorId
@@ -296,10 +295,48 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         assertSameEntity(updated, assertNotNull(repository.findById(saved.id)))
     }
 
-    private fun developerSolutionTestData(version: TrikStudioVersion): SubmissionData {
+    @Test
+    fun `should find only contest submissions of the task ordered by id`() {
+        val task = fixtures.task()
+        val contestId = fixtures.contest().id.value
+        val first = repository.save(gradingSubmissionData(contestId, task.id.value))
+        repository.save(developerSolutionTestData(fixtures.trikStudioVersion(), task.id.value))
+        repository.save(gradingSubmissionData(contestId))
+        val second = repository.save(gradingSubmissionData(contestId, task.id.value))
+
+        val found = repository.findGradingByTaskId(task.id)
+
+        assertEquals(listOf(first.id, second.id), found.map { submission -> submission.id })
+        assertEquals(
+            listOf(contestId, contestId),
+            found.map { submission -> assertIs<SubmissionKind.Grading>(submission.data.kind).contest.id.value },
+        )
+    }
+
+    @Test
+    fun `should find no contest submissions of a task with only author solution tests`() {
+        val task = fixtures.task()
+        repository.save(developerSolutionTestData(fixtures.trikStudioVersion(), task.id.value))
+
+        val found = repository.findGradingByTaskId(task.id)
+
+        assertEquals(emptyList(), found)
+    }
+
+    @Test
+    fun `should find no contest submissions of a task without submissions`() {
+        val task = fixtures.task()
+        repository.save(gradingSubmissionData(fixtures.contest().id.value))
+
+        val found = repository.findGradingByTaskId(task.id)
+
+        assertEquals(emptyList(), found)
+    }
+
+    private fun developerSolutionTestData(version: TrikStudioVersion, submittedTaskId: Long? = null): SubmissionData {
         val author = fixtures.developer()
         val authorId = author.id
-        val taskId = fixtures.task(author).id.value
+        val taskId = submittedTaskId ?: fixtures.task(author).id.value
         val solutionId = fixtures.solution().id.value
         return submissionData {
             this.author = authorId

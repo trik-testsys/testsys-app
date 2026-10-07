@@ -137,21 +137,36 @@ sealed interface TestTaskError : OperationError
 sealed interface ViewTaskValidationRequestsError : OperationError
 
 /**
- * The working task has no attached statement.
+ * Expected failure of committing the working revision of an owned task.
  *
- * @property taskId the tested task identifier.
  * @since %CURRENT_VERSION%
  */
-data class TaskTestingNoStatementError(val taskId: TaskId) : TestTaskError
+sealed interface CommitTaskError : OperationError
+
+/**
+ * The working revision has no successfully completed validation request with a matching snapshot.
+ *
+ * @property taskId the identifier of the task being committed.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskNotTestedError(val taskId: TaskId) : CommitTaskError
+
+/**
+ * The working task has no attached statement.
+ *
+ * @property taskId the identifier of the tested or committed task.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskTestingNoStatementError(val taskId: TaskId) : TestTaskError, CommitTaskError
 
 /**
  * The working task has no exercise for an author solution's language.
  *
- * @property taskId the tested task identifier.
+ * @property taskId the identifier of the tested or committed task.
  * @property language the author solution language without an exercise.
  * @since %CURRENT_VERSION%
  */
-data class TaskTestingNoExerciseForLanguageError(val taskId: TaskId, val language: TrikSupportedLanguage) : TestTaskError
+data class TaskTestingNoExerciseForLanguageError(val taskId: TaskId, val language: TrikSupportedLanguage) : TestTaskError, CommitTaskError
 
 /**
  * The working task has no attached polygons.
@@ -405,6 +420,7 @@ sealed interface DetachDeveloperSolutionError : OperationError
 data object MissedDeveloperRoleError :
     TestTaskError,
     ViewTaskValidationRequestsError,
+    CommitTaskError,
     AttachTaskError,
     ViewContestsError,
     ViewContestError,
@@ -512,6 +528,7 @@ data class ContestAlreadySharedError(val contestId: ContestId) : EditContestErro
 data class TaskNotExistsError(val taskId: TaskId) :
     TestTaskError,
     ViewTaskValidationRequestsError,
+    CommitTaskError,
     AttachTaskError,
     RevertTaskError,
     EditTaskInfoError,
@@ -586,6 +603,7 @@ data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExis
 data class TaskAccessDeniedError(val taskId: TaskId) :
     TestTaskError,
     ViewTaskValidationRequestsError,
+    CommitTaskError,
     AttachTaskError,
     RevertTaskError,
     EditTaskInfoError,
@@ -637,7 +655,7 @@ data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTas
 data class TaskTrikStudioVersionNotSupportedError(
     val taskId: TaskId,
     val trikStudioVersion: TrikStudioVersion,
-) : AttachTaskError, TestTaskError
+) : AttachTaskError, TestTaskError, CommitTaskError
 
 /**
  * The task is already attached to the contest.
@@ -654,7 +672,7 @@ data class TaskAlreadyAttachedToContestError(val contestId: ContestId, val taskI
  * @property taskId the id of the committed task.
  * @since %CURRENT_VERSION%
  */
-data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError, TestTaskError
+data class TaskAlreadyCommittedError(val taskId: TaskId) : RevertTaskError, TestTaskError, CommitTaskError
 // endregion
 
 /**

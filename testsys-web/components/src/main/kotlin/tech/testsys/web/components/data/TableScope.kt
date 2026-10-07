@@ -34,7 +34,7 @@ internal class TableColumn<T>(
     val sortKey: String?,
     val size: Int?,
     val kind: CellKind,
-    val fill: (T, HasComponents, Int) -> Unit,
+    val fill: (T, HasComponents) -> Unit,
 )
 
 /** Columns and settings collected by a [TableScope]. */
@@ -132,8 +132,8 @@ class TableScope<T> internal constructor(
      */
     fun column(title: String, sortKey: String? = null, size: Int? = null, content: ContentScope.(T) -> Unit) {
         checkBeforeMenuColumn()
-        columns += TableColumn(title, sortKey, size, CellKind.Content) { row, cell, columns ->
-            ContentScope(cell, texts, Placement.Cell, columns).content(row)
+        columns += TableColumn(title, sortKey, size, CellKind.Content) { row, cell ->
+            ContentScope(cell, texts, Placement.Cell).content(row)
         }
     }
 
@@ -157,8 +157,8 @@ class TableScope<T> internal constructor(
         check(!hasMenuColumn) { "Table already has a menu column" }
         require(size in 1..gridColumns) { "Table menu size must be in 1..$gridColumns, got $size" }
         hasMenuColumn = true
-        columns += TableColumn(title = "", sortKey = null, size = size, kind = CellKind.Menu) { row, cell, columns ->
-            ContentScope(cell, texts, Placement.Cell, columns).iconMenu(ariaLabel(row)) { content(row) }
+        columns += TableColumn(title = "", sortKey = null, size = size, kind = CellKind.Menu) { row, cell ->
+            ContentScope(cell, texts, Placement.Cell).iconMenu(ariaLabel(row)) { content(row) }
         }
     }
 
@@ -196,7 +196,7 @@ class TableScope<T> internal constructor(
 
     private fun add(title: String, sortKey: String?, size: Int?, kind: CellKind, text: (T) -> String) {
         checkBeforeMenuColumn()
-        columns += TableColumn(title, sortKey, size, kind) { row, cell, _ -> cell.add(Text(text(row))) }
+        columns += TableColumn(title, sortKey, size, kind) { row, cell -> cell.add(Text(text(row))) }
     }
 
     private fun checkBeforeMenuColumn() {

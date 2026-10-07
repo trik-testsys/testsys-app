@@ -26,7 +26,6 @@ import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
-import tech.testsys.web.components.overlay.DIALOG_COLUMNS
 import tech.testsys.web.components.texts.UiTexts
 
 /** Number of values shown as chips; the rest is counted in one more chip. */
@@ -54,7 +53,7 @@ fun <T : Any> BlockRowScope.lookupMany(
     configure: ValueInput<Set<T>>.() -> Unit = {},
 ): ValueInput<Set<T>> {
     val tableColumns = lookupColumns(label, pageSize, columns, isSelectable = true)
-    val control = LookupManyField(texts, label, display, fetch, pageSize, tableColumns, gridColumns = size)
+    val control = LookupManyField(texts, label, display, fetch, pageSize, tableColumns)
     return addInput(label, labelSize, size, control, hint, configure)
 }
 
@@ -72,8 +71,7 @@ internal class LookupManyField<T : Any>(
     private val fetch: (String, PageRequest) -> Page<T>,
     private val pageSize: Int,
     private val columns: TableSpec<T>,
-    gridColumns: Int,
-) : LookupFrame<Set<T>>(texts, title, emptyValue = emptySet(), gridColumns = gridColumns) {
+) : LookupFrame<Set<T>>(texts, title, emptyValue = emptySet()) {
     private val chips = Div().apply { addClassName(CssClass.LookupChips) }
 
     init {
@@ -132,7 +130,7 @@ internal class LookupManyField<T : Any>(
         dialog.table.pager.root.addClassName(CssClass.LookupPager)
         dialog.shell.content.add(dialog.table.pager.root)
         dialog.shell.foot.add(count)
-        val foot = ContentScope(dialog.shell.foot, texts, Placement.Body, DIALOG_COLUMNS)
+        val foot = ContentScope(dialog.shell.foot, texts, Placement.Body)
         foot.action(texts.lookup.reset) { onClick { dialog.table.clearSelection() } }
         foot.mainAction(texts.lookup.apply) {
             onClick {

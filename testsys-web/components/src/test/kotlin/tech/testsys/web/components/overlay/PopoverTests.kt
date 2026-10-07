@@ -20,7 +20,7 @@ internal class PopoverTests : MockVaadinTests() {
     @CsvSource("Body,md", "PageHead,md", "Head,sm", "Cell,sm", "Empty,sm")
     fun `should size popup triggers by placement`(placement: Placement, size: String) {
         val root = buildTestContent {
-            ContentScope(container, texts, placement, gridColumns).popover("Popup") { text("Body") }
+            ContentScope(container, texts, placement).popover("Popup") { text("Body") }
         }
 
         assertEquals(size, trigger(root).element.getAttribute("data-ts-size"))

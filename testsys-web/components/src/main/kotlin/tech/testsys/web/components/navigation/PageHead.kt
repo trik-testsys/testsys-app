@@ -25,7 +25,6 @@ import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.buildBadge
 import tech.testsys.web.components.display.buildCounter
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.navigation.header.configureExactRoute
 import tech.testsys.web.components.texts.UiTexts
@@ -80,7 +79,7 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
     fun actions(content: ContentScope.() -> Unit) {
         check(actionsBar == null) { "Page head already has actions; call actions() once" }
         val bar = Div().apply { addClassName(CssClass.PageHeadActions) }
-        ContentScope(bar, texts, Placement.PageHead, GRID_COLUMNS).content()
+        ContentScope(bar, texts, Placement.PageHead).content()
         actionsBar = bar
     }
 

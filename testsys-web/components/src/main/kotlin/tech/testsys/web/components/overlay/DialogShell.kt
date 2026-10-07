@@ -59,7 +59,7 @@ internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, isW
             val titles = Div(heading).apply { addClassName(CssClass.BlockTitles) }
             subtitle?.let { text -> titles.add(Span(text).apply { addClassName(CssClass.BlockSub) }) }
             val head = Div(titles).apply { addClassName(CssClass.DialogHead) }
-            ContentScope(head, texts, Placement.Head, DIALOG_COLUMNS).iconAction(IconName.X, texts.dialog.close) { onClick { close() } }
+            ContentScope(head, texts, Placement.Head).iconAction(IconName.X, texts.dialog.close) { onClick { close() } }
             body.add(content)
             card.add(head, body, foot)
         }

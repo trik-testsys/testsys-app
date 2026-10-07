@@ -126,7 +126,7 @@ fun ContentScope.popover(
         addThemeName(CssTheme.Popover)
     }
     val body = Div().apply { addClassName(CssClass.Pop) }
-    ContentScope(body, texts, Placement.Body, gridColumns).content()
+    ContentScope(body, texts, Placement.Body).content()
     popup.add(body)
     root.add(trigger, popup)
     add(root)

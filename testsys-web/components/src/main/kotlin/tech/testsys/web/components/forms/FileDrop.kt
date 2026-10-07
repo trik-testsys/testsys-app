@@ -295,7 +295,7 @@ fun ContentScope.fileDrop(
     consume: (UploadedFile) -> Unit,
     configure: FileDropHandle.() -> Unit = {},
 ): FileDropHandle {
-    val drop = FileDropDisplay(texts, label, limits, consume, gridColumns)
+    val drop = FileDropDisplay(texts, label, limits, consume)
     add(drop)
     return FileDropHandle(drop).apply(configure)
 }
@@ -314,8 +314,7 @@ fun BlockRowScope.fileDrop(
     consume: (UploadedFile) -> Unit,
     configure: FileDropHandle.() -> Unit = {},
 ): FileDropHandle {
-    val placed = placeWithSize(size) { columns -> FileDropDisplay(texts, label, limits, consume, columns) }
-    val drop = placed.component
+    val drop = placeWithSize(size) { FileDropDisplay(texts, label, limits, consume) }
     return FileDropHandle(drop).apply {
         followBlock(this@fileDrop.editState)
         configure()
@@ -328,7 +327,6 @@ internal class FileDropDisplay(
     label: String,
     limits: UploadLimits,
     consume: (UploadedFile) -> Unit,
-    gridColumns: Int,
 ) : Div() {
     val state = ValueSignal<FileUploadState>(FileUploadState.Idle)
     private var attachedUi: UI? = null
@@ -421,7 +419,7 @@ internal class FileDropDisplay(
     private val clearAction: ActionHandle
 
     init {
-        val controls = ContentScope(actions, texts, Placement.Head, gridColumns)
+        val controls = ContentScope(actions, texts, Placement.Head)
         cancelAction = controls.action(texts.components.cancel) { onClick { this@FileDropDisplay.cancel() } }
         clearAction = controls.action(texts.lookup.clear) { onClick { this@FileDropDisplay.clear() } }
         upload.element.addEventListener(DomEvent.TransferRemove) { event ->

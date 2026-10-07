@@ -22,7 +22,6 @@ class ContentScope internal constructor(
     internal val container: HasComponents,
     internal val texts: UiTexts,
     internal val placement: Placement,
-    internal val gridColumns: Int,
 ) {
     /**
      * Lays out [content] in a line with the standard gap, wrapping it when it does not fit.
@@ -49,7 +48,7 @@ class ContentScope internal constructor(
     private fun group(cssClass: CssClass, content: ContentScope.() -> Unit) {
         val group = Div().apply { addClassName(cssClass) }
         container.add(group)
-        ContentScope(group, texts, placement, gridColumns).content()
+        ContentScope(group, texts, placement).content()
     }
 }
 

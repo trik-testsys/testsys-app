@@ -17,9 +17,9 @@ private const val EDITING_FOCUS_MODULE = "./testsys-ui/editing-focus.ts"
 /** Edit, cancel and save actions of a block head; they switch the edit mode of the block. */
 internal class EditingSwitch(private val onSave: () -> Boolean, private val onCancel: () -> Unit) {
     /** Adds the actions to the end of the head [bar] and shows the ones of the current mode of [state]. */
-    fun install(bar: Div, texts: UiTexts, state: BlockEditState, body: Div, columns: Int) {
+    fun install(bar: Div, texts: UiTexts, state: BlockEditState, body: Div) {
         val actions = EditingActions().also { container -> bar.add(container) }
-        val head = ContentScope(actions, texts, Placement.Head, columns)
+        val head = ContentScope(actions, texts, Placement.Head)
         val start = head.action(texts.editing.start, icon = IconName.Pencil)
         val cancel = head.action(texts.editing.cancel) {
             onClick {

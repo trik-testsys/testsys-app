@@ -116,7 +116,7 @@ fun BlockScope.filters(
         style.setGridTemplateColumns(columns)
     }
     val actions = Div().apply { addClassName(CssClass.TableFiltersActions) }
-    val bar = ContentScope(actions, texts, Placement.Body, columns)
+    val bar = ContentScope(actions, texts, Placement.Body)
     bar.action(texts.tableFilters.reset) {
         onClick {
             onReset()

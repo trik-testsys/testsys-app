@@ -91,7 +91,6 @@ internal abstract class LookupFrame<V>(
     protected val texts: UiTexts,
     private val title: String,
     emptyValue: V,
-    gridColumns: Int,
 ) : CustomField<V>(emptyValue, true), HasValidator<V> {
     protected val valueButton: NativeButton = NativeButton().apply {
         addClassNames(CssClass.LookupText, CssClass.ObscuredValue)
@@ -103,7 +102,7 @@ internal abstract class LookupFrame<V>(
     private var currentDialog: LookupDialog<*>? = null
 
     init {
-        val actions = ContentScope(box, texts, Placement.Head, gridColumns)
+        val actions = ContentScope(box, texts, Placement.Head)
         clearAction = actions.iconAction(IconName.X, texts.lookup.clear) { onClick { clearByUser() } }
         openAction = actions.iconAction(IconName.Search, texts.lookup.open) { onClick { openDialog() } }
         openAction.button.tabIndex = -1

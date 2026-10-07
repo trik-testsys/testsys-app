@@ -20,7 +20,7 @@ import tech.testsys.web.components.layout.placeField
  */
 fun BlockRowScope.field(label: String, labelSize: Int, size: Int, content: ContentScope.() -> Unit): FieldHandle {
     val value = Div().apply { addClassName(CssClass.FieldContent) }
-    ContentScope(value, texts, Placement.Body, size).content()
+    ContentScope(value, texts, Placement.Body).content()
     val parts = placeField(label = label, labelSize = labelSize, size = size, value = value, labelAction = null)
     return FieldHandle(component = parts.field, valueArea = parts.valueCell)
 }

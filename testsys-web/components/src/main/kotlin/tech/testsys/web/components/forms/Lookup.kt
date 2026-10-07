@@ -29,7 +29,7 @@ fun <T : Any> BlockRowScope.lookup(
     configure: ValueInput<T?>.() -> Unit = {},
 ): ValueInput<T?> {
     val tableColumns = lookupColumns(label, pageSize, columns)
-    val control = LookupField(texts, label, display, fetch, pageSize, tableColumns, gridColumns = size)
+    val control = LookupField(texts, label, display, fetch, pageSize, tableColumns)
     return addInput(label, labelSize, size, control, hint, configure)
 }
 
@@ -45,8 +45,7 @@ internal class LookupField<T : Any>(
     private val fetch: (String, PageRequest) -> Page<T>,
     private val pageSize: Int,
     private val columns: TableSpec<T>,
-    gridColumns: Int,
-) : LookupFrame<T?>(texts, title, emptyValue = null, gridColumns = gridColumns) {
+) : LookupFrame<T?>(texts, title, emptyValue = null) {
     init {
         updateView(value)
     }

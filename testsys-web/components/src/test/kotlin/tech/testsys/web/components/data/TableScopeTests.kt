@@ -18,7 +18,7 @@ class TableScopeTests {
             dateTimeColumn("Time", size = 1) { java.time.LocalDateTime.of(2026, 10, 4, 12, 0) }
         }.spec().columns
 
-        val cells = columns.map { column -> Div().also { cell -> column.fill(Row("1", null), cell, 1) } }
+        val cells = columns.map { column -> Div().also { cell -> column.fill(Row("1", null), cell) } }
 
         assertEquals(listOf(CellKind.Date, CellKind.Date), columns.map { column -> column.kind })
         assertEquals(listOf("ts-num"), CellKind.Date.cssClasses.map { cssClass -> cssClass.value })

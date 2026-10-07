@@ -74,7 +74,7 @@ class BlockScope internal constructor(
      */
     fun actions(content: ContentScope.() -> Unit) {
         checkBlockLevel("actions { }")
-        ContentScope(headBar(), texts, Placement.Head, columns).content()
+        ContentScope(headBar(), texts, Placement.Head).content()
     }
 
     /**
@@ -85,7 +85,7 @@ class BlockScope internal constructor(
      */
     fun footer(content: ContentScope.() -> Unit) {
         checkBlockLevel("footer { }")
-        ContentScope(footBar(), texts, Placement.Body, columns).content()
+        ContentScope(footBar(), texts, Placement.Body).content()
     }
 
     /**
@@ -170,7 +170,7 @@ class BlockScope internal constructor(
      * footer for the pagination of a table it may load, hidden while the block has no footer content of its own.
      */
     internal fun finish() {
-        editingSwitch?.install(bar = headBar(), texts = texts, state = editState, body = body, columns = columns)
+        editingSwitch?.install(bar = headBar(), texts = texts, state = editState, body = body)
         tablePager?.let { placed ->
             val isOwnFooter = footerBar == null
             placed.placeInto(footBar(), isOwnFooter)

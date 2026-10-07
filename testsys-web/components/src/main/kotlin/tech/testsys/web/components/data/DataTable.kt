@@ -224,7 +224,7 @@ internal class DataTable<T>(
         shownRows.clear()
         body.removeAll()
         if (result.rows.isEmpty()) {
-            body.add(messageRow(buildEmptyState(spec.empty, texts, gridColumns = spec.layout.sizes.sum())))
+            body.add(messageRow(buildEmptyState(spec.empty, texts)))
         } else {
             result.rows.forEach { row -> body.add(rowOf(row, highlightNew)) }
         }
@@ -240,7 +240,7 @@ internal class DataTable<T>(
         isFailed = true
         shownRows.clear()
         body.removeAll()
-        body.add(messageRow(buildEmptyState(failureContent(), texts, gridColumns = spec.layout.sizes.sum(), isError = true)))
+        body.add(messageRow(buildEmptyState(failureContent(), texts, isError = true)))
         updatePagerVisibility()
         updateHeaderCheckbox()
     }
@@ -266,10 +266,10 @@ internal class DataTable<T>(
         if (highlightNew && shownRow.key !in renderedKeys) addClassName(CssClass.RowNew)
         if (isSelectable) add(TableDataCell(shownRow.checkbox))
         shownRow.update()
-        spec.columns.forEachIndexed { index, column ->
+        spec.columns.forEach { column ->
             val cell = TableDataCell()
             column.kind.cssClasses.forEach { cssClass -> cell.addClassName(cssClass) }
-            column.fill(row, cell, spec.layout.sizes[index + if (isSelectable) 1 else 0])
+            column.fill(row, cell)
             add(cell)
         }
         spec.rowClick?.let { listener ->

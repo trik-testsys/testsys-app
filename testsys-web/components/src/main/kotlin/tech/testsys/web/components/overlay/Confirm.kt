@@ -41,7 +41,7 @@ fun confirm(
             style.setWidth(value = 100, unit = CssUnit.Percent)
         }.also { field -> shell.content.add(field) }
     }
-    val foot = ContentScope(shell.foot, texts, Placement.Body, DIALOG_COLUMNS)
+    val foot = ContentScope(shell.foot, texts, Placement.Body)
     foot.action(texts.dialog.cancel) { onClick { shell.close() } }
     val run: ActionHandle.() -> Unit = {
         onClick {

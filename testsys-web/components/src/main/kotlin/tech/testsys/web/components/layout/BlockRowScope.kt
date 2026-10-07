@@ -42,28 +42,25 @@ class BlockRowScope internal constructor(
     fun vertical(size: Int? = null, content: ContentScope.() -> Unit): ElementHandle = group(CssClass.Vstack, size, content)
 
     /** Places [component] on its assigned fractions. */
-    internal fun <C : Component> place(size: Int?, component: C): C = placeWithSize(size) { component }.component
+    internal fun <C : Component> place(size: Int?, component: C): C = placeWithSize(size) { component }
 
-    /** Resolves the assignment before building its component, keeping its capacity as semantic data. */
-    internal fun <C : Component> placeWithSize(size: Int?, create: (Int) -> C): GridPlacement<C> {
+    /** Resolves the assignment before building its component. */
+    internal fun <C : Component> placeWithSize(size: Int?, create: () -> C): C {
         val columns = if (size == null) track.takeRest() else size.also { taken -> track.take(taken) }
-        val component = create(columns)
+        val component = create()
         component.element.style.setGridColumnSpan(columns)
         row.add(component)
-        return GridPlacement(component, columns)
+        return component
     }
 
     internal fun <C> placeContent(size: Int?, container: C): ContentScope where C : Component, C : HasComponents {
         val placed = placeWithSize(size) { container }
-        return ContentScope(placed.component, texts, Placement.Body, placed.columns)
+        return ContentScope(placed, texts, Placement.Body)
     }
 
     private fun group(cssClass: CssClass, size: Int?, content: ContentScope.() -> Unit): ElementHandle {
         val placed = placeWithSize(size) { Div().apply { addClassName(cssClass) } }
-        ContentScope(placed.component, texts, Placement.Body, placed.columns).content()
-        return ElementHandle(placed.component)
+        ContentScope(placed, texts, Placement.Body).content()
+        return ElementHandle(placed)
     }
 }
-
-/** Component and the logical fractions assigned to it by its row. */
-internal class GridPlacement<C : Component>(val component: C, val columns: Int)

@@ -96,6 +96,13 @@ sealed interface ViewClassError : OperationError
 sealed interface ViewCompetitionsError : OperationError
 
 /**
+ * Failure of viewing a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewCompetitionError : OperationError
+
+/**
  * The user does not hold the manager role.
  *
  * @since %CURRENT_VERSION%
@@ -106,6 +113,7 @@ data object MissedManagerRoleError :
     ViewClassesError,
     ViewClassError,
     ViewCompetitionsError,
+    ViewCompetitionError,
     MissedRequiredRoleError
 
 /**
@@ -153,6 +161,22 @@ data class ClassNotExistsError(val classId: ClassId) : ViewClassError, EntityNot
  * @since %CURRENT_VERSION%
  */
 data class ClassAccessDeniedError(val classId: ClassId) : ViewClassError, AccessDeniedError
+
+/**
+ * The competition does not exist.
+ *
+ * @property competitionId the id of the missing competition.
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionNotExistsError(val competitionId: CompetitionId) : ViewCompetitionError, EntityNotExistsError
+
+/**
+ * The competition belongs to another user.
+ *
+ * @property competitionId the id of the inaccessible competition.
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionAccessDeniedError(val competitionId: CompetitionId) : ViewCompetitionError, AccessDeniedError
 
 // endregion
 

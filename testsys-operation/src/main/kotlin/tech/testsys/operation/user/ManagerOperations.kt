@@ -8,12 +8,10 @@ import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
-import tech.testsys.domain.contract.persistence.repository.ContestRepository
-import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.Competition
-import tech.testsys.domain.model.task.Contest
+import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.operation.annotation.Feature
@@ -22,14 +20,17 @@ import tech.testsys.operation.error.ClassAccessDeniedError
 import tech.testsys.operation.error.ClassNameBlankError
 import tech.testsys.operation.error.ClassNameTooLongError
 import tech.testsys.operation.error.ClassNotExistsError
+import tech.testsys.operation.error.CompetitionAccessDeniedError
 import tech.testsys.operation.error.CompetitionNameBlankError
 import tech.testsys.operation.error.CompetitionNameTooLongError
+import tech.testsys.operation.error.CompetitionNotExistsError
 import tech.testsys.operation.error.CreateClassError
 import tech.testsys.operation.error.CreateCompetitionError
 import tech.testsys.operation.error.MissedManagerRoleError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ViewClassError
 import tech.testsys.operation.error.ViewClassesError
+import tech.testsys.operation.error.ViewCompetitionError
 import tech.testsys.operation.error.ViewCompetitionsError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
@@ -48,8 +49,6 @@ private const val MAX_COMPETITION_NAME_CODE_POINTS = 255
 class ManagerOperations(
     private val classRepository: ClassRepository,
     private val competitionRepository: CompetitionRepository,
-    private val multipleRoleUserRepository: MultipleRoleUserRepository,
-    private val contestRepository: ContestRepository,
 ) {
 
     /**
@@ -118,24 +117,19 @@ class ManagerOperations(
     }
 
     /**
-     * Returns [classId] owned by [user] with its enrolled students and assigned contests loaded.
+     * Returns [classId] owned by [user], preserving its data, including the stored student and contest ids.
      * Missing role, class and access are expected failures; storage exceptions propagate to the caller.
      *
-     * @throws IllegalArgumentException if an enrolled student or assigned contest does not exist.
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.manager.class.viewClass")
-    fun viewClass(user: MultipleRoleUser, classId: ClassId): OperationResult<ClassView, ViewClassError> =
-        operation<ClassView, ViewClassError> {
-            ensure(user.hasRole<Manager>(), MissedManagerRoleError)
-            val studyClass = classRepository.findById(classId)
-            ensure(studyClass != null) { ClassNotExistsError(classId) }
-            ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
-
-            val students = studyClass.data.students.load(multipleRoleUserRepository)
-            val contests = studyClass.data.contests.load(contestRepository)
-            return ClassView(studyClass = studyClass, students = students, contests = contests).asSuccess()
-        }
+    fun viewClass(user: MultipleRoleUser, classId: ClassId): OperationResult<Class, ViewClassError> = operation<Class, ViewClassError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val studyClass = classRepository.findById(classId)
+        ensure(studyClass != null) { ClassNotExistsError(classId) }
+        ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
+        return studyClass.asSuccess()
+    }
 
     /**
      * Returns a [pagination] page matching [filter] of competitions owned by [user], preserving stored state.
@@ -155,16 +149,18 @@ class ManagerOperations(
     }
 
     /**
-     * A class and its loaded membership and assigned contests returned by the viewing operation.
+     * Returns [competitionId] owned by [user], preserving its data, including the stored participant and contest ids.
+     * Missing role, competition and access are expected failures; storage exceptions propagate to the caller.
      *
-     * @property studyClass the class with its stored data and version preserved.
-     * @property students the enrolled users, regardless of their current roles.
-     * @property contests all assigned contests, regardless of current community access.
      * @since %CURRENT_VERSION%
      */
-    data class ClassView(
-        val studyClass: Class,
-        val students: List<MultipleRoleUser>,
-        val contests: List<Contest>,
-    )
+    @Feature("testsys.user.multi.manager.competition.viewCompetition")
+    fun viewCompetition(user: MultipleRoleUser, competitionId: CompetitionId): OperationResult<Competition, ViewCompetitionError> =
+        operation<Competition, ViewCompetitionError> {
+            ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+            val competition = competitionRepository.findById(competitionId)
+            ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+            ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
+            return competition.asSuccess()
+        }
 }

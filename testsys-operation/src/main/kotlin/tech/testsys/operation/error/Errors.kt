@@ -196,10 +196,17 @@ data class ClassNotExistsError(val classId: ClassId) :
     ViewClassError,
     ViewClassContestError,
     AddClassContestError,
+    ViewStudentContestsError,
+    EnterStudentContestError,
+    ViewStudentContestError,
+    ViewStudentTaskError,
+    DownloadStudentTaskResourceError,
+    SendStudentSolutionError,
     EntityNotExistsError
 
 /**
- * The class belongs to another user.
+ * The user has no access to the class for the requested operation: it belongs to another user,
+ * or the user is not enrolled in it.
  *
  * @property classId the id of the inaccessible class.
  * @since %CURRENT_VERSION%
@@ -208,6 +215,12 @@ data class ClassAccessDeniedError(val classId: ClassId) :
     ViewClassError,
     ViewClassContestError,
     AddClassContestError,
+    ViewStudentContestsError,
+    EnterStudentContestError,
+    ViewStudentContestError,
+    ViewStudentTaskError,
+    DownloadStudentTaskResourceError,
+    SendStudentSolutionError,
     AccessDeniedError
 
 /**
@@ -221,6 +234,12 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
     ViewCompetitionContestError,
     AddCompetitionContestError,
     CreateParticipantsError,
+    ViewParticipantContestsError,
+    EnterParticipantContestError,
+    ViewParticipantContestError,
+    ViewParticipantTaskError,
+    DownloadParticipantTaskResourceError,
+    SendParticipantSolutionError,
     EntityNotExistsError
 
 /**
@@ -1289,51 +1308,6 @@ data object MissedStudentRoleError :
     MissedRequiredRoleError,
     ViewStudentContestsError,
     ViewStudentClassesError,
-    EnterStudentContestError,
-    ViewStudentContestError,
-    ViewStudentTaskError,
-    DownloadStudentTaskResourceError,
-    SendStudentSolutionError
-
-/**
- * The competition does not exist.
- *
- * @property competitionId the missing competition.
- * @since %CURRENT_VERSION%
- */
-data class CompetitionNotExistsError(val competitionId: CompetitionId) :
-    EntityNotExistsError,
-    ViewParticipantContestsError,
-    EnterParticipantContestError,
-    ViewParticipantContestError,
-    ViewParticipantTaskError,
-    DownloadParticipantTaskResourceError,
-    SendParticipantSolutionError
-
-/**
- * The class does not exist.
- *
- * @property classId the missing class.
- * @since %CURRENT_VERSION%
- */
-data class ClassNotExistsError(val classId: ClassId) :
-    EntityNotExistsError,
-    ViewStudentContestsError,
-    EnterStudentContestError,
-    ViewStudentContestError,
-    ViewStudentTaskError,
-    DownloadStudentTaskResourceError,
-    SendStudentSolutionError
-
-/**
- * The user is not enrolled in the selected class.
- *
- * @property classId the inaccessible class.
- * @since %CURRENT_VERSION%
- */
-data class ClassAccessDeniedError(val classId: ClassId) :
-    AccessDeniedError,
-    ViewStudentContestsError,
     EnterStudentContestError,
     ViewStudentContestError,
     ViewStudentTaskError,

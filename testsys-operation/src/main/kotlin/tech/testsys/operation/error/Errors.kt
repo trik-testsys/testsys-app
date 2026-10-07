@@ -525,7 +525,9 @@ data class ContestNotExistsError(
     ViewContestError,
     DeleteContestError,
     EnterParticipantContestError,
-    EnterStudentContestError
+    EnterStudentContestError,
+    ViewParticipantContestError,
+    ViewStudentContestError
 
 /**
  * The user has no access to the contest for the requested operation.
@@ -543,7 +545,9 @@ data class ContestAccessDeniedError(
     ViewContestError,
     DeleteContestError,
     EnterParticipantContestError,
-    EnterStudentContestError
+    EnterStudentContestError,
+    ViewParticipantContestError,
+    ViewStudentContestError
 
 /**
  * The contest is shared to at least one community.
@@ -900,6 +904,20 @@ data class ResourceVersionNotExistsError(val versionBucket: VersionBucket, val v
 // region StudyOperations
 
 /**
+ * Failure of viewing a contest in the participant's competition.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewParticipantContestError : OperationError
+
+/**
+ * Failure of viewing a contest in the selected class.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewStudentContestError : OperationError
+
+/**
  * Failure of listing contests of the participant.
  *
  * @since %CURRENT_VERSION%
@@ -933,14 +951,14 @@ sealed interface EnterStudentContestError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedParticipantRoleError :
-    MissedRequiredRoleError, ViewParticipantContestsError, EnterParticipantContestError
+    MissedRequiredRoleError, ViewParticipantContestsError, EnterParticipantContestError, ViewParticipantContestError
 
 /**
  * The user does not hold the student role.
  *
  * @since %CURRENT_VERSION%
  */
-data object MissedStudentRoleError : MissedRequiredRoleError, ViewStudentContestsError, EnterStudentContestError
+data object MissedStudentRoleError : MissedRequiredRoleError, ViewStudentContestsError, EnterStudentContestError, ViewStudentContestError
 
 /**
  * The competition does not exist.
@@ -949,7 +967,7 @@ data object MissedStudentRoleError : MissedRequiredRoleError, ViewStudentContest
  * @since %CURRENT_VERSION%
  */
 data class CompetitionNotExistsError(val competitionId: CompetitionId) :
-    EntityNotExistsError, ViewParticipantContestsError, EnterParticipantContestError
+    EntityNotExistsError, ViewParticipantContestsError, EnterParticipantContestError, ViewParticipantContestError
 
 /**
  * The class does not exist.
@@ -958,7 +976,7 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
  * @since %CURRENT_VERSION%
  */
 data class ClassNotExistsError(val classId: ClassId) :
-    EntityNotExistsError, ViewStudentContestsError, EnterStudentContestError
+    EntityNotExistsError, ViewStudentContestsError, EnterStudentContestError, ViewStudentContestError
 
 /**
  * The user is not enrolled in the selected class.
@@ -967,7 +985,7 @@ data class ClassNotExistsError(val classId: ClassId) :
  * @since %CURRENT_VERSION%
  */
 data class ClassAccessDeniedError(val classId: ClassId) :
-    AccessDeniedError, ViewStudentContestsError, EnterStudentContestError
+    AccessDeniedError, ViewStudentContestsError, EnterStudentContestError, ViewStudentContestError
 
 /**
  * The first entry precedes the contest start.

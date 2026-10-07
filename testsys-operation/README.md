@@ -47,6 +47,7 @@
 | `testsys.user.*`                    | `UserOperations`             |
 | `testsys.user.single.*`             | `SingleRoleUserOperations`   |
 | `testsys.user.single.participant.*` | `ParticipantOperations`      |
+| `testsys.user.study.*`              | `StudyOperations`            |
 | `testsys.user.single.observer.*`    | `ObserverOperations`         |
 | `testsys.user.multi.*`              | `MultipleRoleUserOperations` |
 | `testsys.user.multi.developer.*`    | `DeveloperOperations`        |
@@ -214,6 +215,16 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   [Assertions.kt](src/test/kotlin/tech/testsys/operation/util/Assertions.kt).
 
 Образец — [DeveloperOperationsTests.kt](src/test/kotlin/tech/testsys/operation/user/DeveloperOperationsTests.kt).
+
+## Просмотр Тура
+
+[StudyOperations](src/main/kotlin/tech/testsys/operation/user/StudyOperations.kt) предоставляет две перегрузки
+`viewContest`: для Участника и для Ученика с идентификатором выбранного Класса.
+Требования просмотра определены в `testsys.user.study.viewContest` в [features.md](../docs/domain/features.md).
+
+Обе перегрузки возвращают `Pair<Instant?, Contest>`: сохранённый момент первого входа
+в выбранном контексте либо `null` и исходный `Contest`.
+Просмотр не загружает Задачи, не записывает вход и не вычисляет оставшееся время.
 
 ## Вход в Тур
 

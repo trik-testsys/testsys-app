@@ -18,6 +18,7 @@ import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
 import tech.testsys.domain.model.user.User
+import tech.testsys.domain.model.user.UserId
 
 /**
  * Search port for users of every kind available to an administrator.
@@ -41,6 +42,27 @@ interface UserRepository {
         pagination: Pagination,
         filter: UserFilter = UserFilter(),
     ): Page<User<*>>
+
+    /**
+     * Synchronously finds [userId] if it is available to [administratorId], without changing stored state.
+     * Storage exceptions propagate to the caller.
+     *
+     * @param administratorId the creator of the communities that grant access as in [findAvailableToAdministrator] without filters.
+     * @param userId the id of the user of any kind to find.
+     * @return the available user of its concrete kind with all its data, or `null` if it is missing or not available.
+     * @since %CURRENT_VERSION%
+     */
+    fun findAvailableToAdministratorById(administratorId: MultipleRoleUserId, userId: UserId): User<*>?
+
+    /**
+     * Synchronously checks whether a user of any kind, including participants and supervisors, has [userId],
+     * without changing stored state. Storage exceptions propagate to the caller.
+     *
+     * @param userId the id of the user to check.
+     * @return `true` if a user of the kind matching [userId] exists, `false` otherwise.
+     * @since %CURRENT_VERSION%
+     */
+    fun existsById(userId: UserId): Boolean
 }
 
 /**

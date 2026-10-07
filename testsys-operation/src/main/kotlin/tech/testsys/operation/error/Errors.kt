@@ -15,6 +15,7 @@ import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.UserId
 import java.time.Duration
 import java.time.Instant
 
@@ -359,6 +360,13 @@ data class CompetitionParticipantLimitExceededError(
 sealed interface ViewUsersError : OperationError
 
 /**
+ * Failure of viewing one user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserError : OperationError
+
+/**
  * Failure of creating or replacing the invite code of a community owned by the administrator for a role.
  *
  * @since %CURRENT_VERSION%
@@ -393,11 +401,28 @@ sealed interface RefreshCommunityInviteError : OperationError
  */
 data object MissedAdministratorRoleError :
     ViewUsersError,
+    ViewUserError,
     CreateCommunityInviteError,
     ExtendCommunityInviteError,
     RefreshCommunityInviteError,
     ViewCommunityInvitesError,
     MissedRequiredRoleError
+
+/**
+ * The user does not exist.
+ *
+ * @property userId the id of the missing user.
+ * @since %CURRENT_VERSION%
+ */
+data class UserNotExistsError(val userId: UserId) : ViewUserError, EntityNotExistsError
+
+/**
+ * The user exists but is not available to the administrator.
+ *
+ * @property userId the id of the inaccessible user.
+ * @since %CURRENT_VERSION%
+ */
+data class UserAccessDeniedError(val userId: UserId) : ViewUserError, AccessDeniedError
 
 // endregion
 

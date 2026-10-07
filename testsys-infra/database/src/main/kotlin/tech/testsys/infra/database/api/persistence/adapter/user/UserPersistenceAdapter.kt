@@ -7,6 +7,7 @@ import jakarta.persistence.criteria.Root
 import jakarta.persistence.criteria.Subquery
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.Page
@@ -18,6 +19,7 @@ import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
+import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.group.CommunityJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
@@ -31,7 +33,7 @@ import org.springframework.data.domain.Sort as JpaSort
 
 /**
  * Persistence adapter searching [User] entities of every kind backed by [UserJpaEntity] rows.
- * Users of the selected page are assembled by [MultipleRoleUserRepository] and [ObserverRepository].
+ * Found users are assembled by [MultipleRoleUserRepository] and [ObserverRepository].
  *
  * @since %CURRENT_VERSION%
  */
@@ -49,7 +51,46 @@ class UserPersistenceAdapter(
         pagination: Pagination,
         filter: UserFilter,
     ): Page<User<*>> {
-        val specification = Specification<UserJpaEntity> { entity, query, builder ->
+        val specification = availableTo(administratorId = administratorId, filter = filter)
+        val orders = pagination.sort.orders.map { order ->
+            JpaSort.Order(JpaSort.Direction.valueOf(order.direction.name), order.field)
+        }
+        val stableOrders = if (orders.any { order -> order.property == "id" }) orders else orders + JpaSort.Order.asc("id")
+        val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
+        val page = userJpaEntityRepository.findAll(specification, pageable)
+        return Page(
+            content = assemble(administratorId, page.content),
+            pagination = pagination,
+            totalElements = page.totalElements,
+        )
+    }
+
+    @Transactional(readOnly = true)
+    override fun findAvailableToAdministratorById(administratorId: MultipleRoleUserId, userId: UserId): User<*>? {
+        val type = typeOf(userId) ?: return null
+        val specification = availableTo(administratorId = administratorId, filter = UserFilter()).and(
+            Specification { entity, _, builder ->
+                builder.and(
+                    builder.equal(entity.get<Long>("id"), userId.value),
+                    builder.equal(entity.get<UserTypeJpaEnum>("type"), type),
+                )
+            },
+        )
+        val jpaEntity = userJpaEntityRepository.findOne(specification).orElse(null) ?: return null
+        return assemble(administratorId, listOf(jpaEntity)).single()
+    }
+
+    @Transactional(readOnly = true)
+    override fun existsById(userId: UserId): Boolean {
+        val type = typeOf(userId) ?: return false
+        return userJpaEntityRepository.findByIdOrNull(userId.value)?.type == type
+    }
+
+    /**
+     * Selects users available to [administratorId] that match the role, community and name conditions of [filter].
+     */
+    private fun availableTo(administratorId: MultipleRoleUserId, filter: UserFilter): Specification<UserJpaEntity> =
+        Specification<UserJpaEntity> { entity, query, builder ->
             val scope = AdministratorScope(administratorId = administratorId.value, filter = filter, builder = builder)
             val criteriaQuery = requireNotNull(query)
             val grounds = listOfNotNull(
@@ -63,17 +104,14 @@ class UserPersistenceAdapter(
             }
             builder.and(*predicates.toTypedArray())
         }
-        val orders = pagination.sort.orders.map { order ->
-            JpaSort.Order(JpaSort.Direction.valueOf(order.direction.name), order.field)
-        }
-        val stableOrders = if (orders.any { order -> order.property == "id" }) orders else orders + JpaSort.Order.asc("id")
-        val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
-        val page = userJpaEntityRepository.findAll(specification, pageable)
-        return Page(
-            content = assemble(administratorId, page.content),
-            pagination = pagination,
-            totalElements = page.totalElements,
-        )
+
+    /**
+     * Returns the row kind holding users with ids of the kind of [userId], or `null` for an unknown id kind.
+     */
+    private fun typeOf(userId: UserId): UserTypeJpaEnum? = when (userId) {
+        is MultipleRoleUserId -> UserTypeJpaEnum.MULTIPLE_ROLE
+        is SingleRoleUserId -> UserTypeJpaEnum.SINGLE_ROLE
+        else -> null
     }
 
     private fun assemble(administratorId: MultipleRoleUserId, jpaEntities: List<UserJpaEntity>): List<User<*>> {

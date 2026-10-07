@@ -19,8 +19,11 @@ import tech.testsys.domain.builder.api.communityData
 import tech.testsys.domain.builder.api.communityInviteData
 import tech.testsys.domain.builder.api.developerCommunityInvite
 import tech.testsys.domain.builder.api.developerData
+import tech.testsys.domain.builder.api.judgeData
 import tech.testsys.domain.builder.api.managerCommunityInvite
 import tech.testsys.domain.builder.api.managerData
+import tech.testsys.domain.builder.api.multipleRoleUser
+import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.observer
 import tech.testsys.domain.builder.api.observerData
 import tech.testsys.domain.contract.persistence.Page
@@ -40,12 +43,16 @@ import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.group.CommunityInviteId
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Observer
+import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.operation.config.CommunityInviteConfig
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
 import tech.testsys.operation.error.MissedAdministratorRoleError
+import tech.testsys.operation.error.UserAccessDeniedError
+import tech.testsys.operation.error.UserNotExistsError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.testAdministrator
@@ -162,6 +169,113 @@ class AdministratorOperationsTests {
                 name = "Observer"
                 community(5)
             }
+        }
+    }
+
+    @Nested
+    inner class ViewUserTests {
+
+        private val userId = MultipleRoleUserId(42)
+
+        @Test
+        fun `should raise MissedAdministratorRoleError before reading storage if user is not an Administrator`() {
+            val user = testManager { data = managerData {} }
+
+            assertRaises(MissedAdministratorRoleError) { operations.viewUser(user = user, userId = userId) }
+
+            verify(exactly = 0) { userRepository.findAvailableToAdministratorById(any(), any()) }
+            verify(exactly = 0) { userRepository.existsById(any()) }
+        }
+
+        @Test
+        fun `should raise UserNotExistsError if the user is not available and does not exist`() {
+            every { userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = userId) } returns null
+            every { userRepository.existsById(userId) } returns false
+
+            assertRaises(UserNotExistsError(userId)) { operations.viewUser(user = administrator, userId = userId) }
+        }
+
+        @Test
+        fun `should raise UserAccessDeniedError if the user exists but is not available`() {
+            every { userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = userId) } returns null
+            every { userRepository.existsById(userId) } returns true
+
+            assertRaises(UserAccessDeniedError(userId)) { operations.viewUser(user = administrator, userId = userId) }
+        }
+
+        @Test
+        fun `should return the user with roles in foreign communities as returned by the port`() {
+            val expected = multipleRoleUser {
+                id = userId.value
+                createdAt = Instant.EPOCH
+                data = multipleRoleUserData {
+                    accessToken("member", algorithm = HashAlgorithm.Identity)
+                    name = "Member"
+                    email = "member@example.com"
+                    roles {
+                        developer {
+                            memberOf(listOf(5L))
+                            data = developerData {}
+                        }
+                        judge {
+                            memberOf(listOf(7L))
+                            data = judgeData {}
+                        }
+                    }
+                }
+            }
+            every { userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = userId) } returns expected
+
+            val actual = operations.viewUser(user = administrator, userId = userId).getOrThrow()
+
+            assertSame(expected, actual)
+        }
+
+        @Test
+        fun `should return an observer as returned by the port`() {
+            val expected = observer {
+                id = 31
+                createdAt = Instant.EPOCH
+                data = observerData {
+                    accessToken("observer", algorithm = HashAlgorithm.Identity)
+                    name = "Observer"
+                    community(5)
+                }
+            }
+            every {
+                userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = SingleRoleUserId(31))
+            } returns expected
+
+            val actual = operations.viewUser(user = administrator, userId = SingleRoleUserId(31)).getOrThrow()
+
+            assertSame(expected, actual)
+        }
+
+        @Test
+        fun `should return the administrator themself with other roles`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    developer { data = developerData {} }
+                    administrator {}
+                }
+            }
+            every { userRepository.findAvailableToAdministratorById(administratorId = user.id, userId = user.id) } returns user
+
+            val actual = operations.viewUser(user = user, userId = user.id).getOrThrow()
+
+            assertSame(user, actual)
+        }
+
+        @Test
+        fun `should propagate a technical storage exception when viewing a user`() {
+            val failure = IllegalStateException("User storage unavailable")
+            every { userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = userId) } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) {
+                operations.viewUser(user = administrator, userId = userId)
+            }
+
+            assertSame(failure, actual)
         }
     }
 

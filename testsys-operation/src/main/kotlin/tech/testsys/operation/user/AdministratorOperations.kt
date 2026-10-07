@@ -18,6 +18,7 @@ import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.User
+import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.config.CommunityInviteConfig
@@ -28,11 +29,15 @@ import tech.testsys.operation.error.ExtendCommunityInviteError
 import tech.testsys.operation.error.MissedAdministratorRoleError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.RefreshCommunityInviteError
+import tech.testsys.operation.error.UserAccessDeniedError
+import tech.testsys.operation.error.UserNotExistsError
 import tech.testsys.operation.error.ViewCommunityInvitesError
+import tech.testsys.operation.error.ViewUserError
 import tech.testsys.operation.error.ViewUsersError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
+import tech.testsys.operation.error.raise
 import tech.testsys.operation.util.generateInviteCode
 import tech.testsys.operation.util.hasRole
 import tech.testsys.operation.util.inviteExpiresAt
@@ -75,6 +80,26 @@ class AdministratorOperations(
         ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
         val users = userRepository.findAvailableToAdministrator(administratorId = user.id, pagination = pagination, filter = filter)
         return users.asSuccess()
+    }
+
+    /**
+     * Returns [userId] with all its stored data if it is available to [user], preserving stored state.
+     * Missing role, user and access are expected failures; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.viewUser")
+    @RawAccessTokenDependency(
+        reason = "The returned user carries the stored access code that the administrator sees as the original code only with Identity.",
+    )
+    fun viewUser(user: MultipleRoleUser, userId: UserId): OperationResult<User<*>, ViewUserError> = operation<User<*>, ViewUserError> {
+        ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
+        val viewed = userRepository.findAvailableToAdministratorById(administratorId = user.id, userId = userId)
+        if (viewed == null) {
+            ensure(userRepository.existsById(userId)) { UserNotExistsError(userId) }
+            UserAccessDeniedError(userId).raise()
+        }
+        return viewed.asSuccess()
     }
 
     /**

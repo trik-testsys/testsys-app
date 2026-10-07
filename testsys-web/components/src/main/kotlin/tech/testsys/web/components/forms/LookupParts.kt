@@ -30,6 +30,7 @@ import tech.testsys.web.components.core.setAriaDisabled
 import tech.testsys.web.components.core.setAriaHasPopup
 import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setFilter
+import tech.testsys.web.components.core.setPageColumns
 import tech.testsys.web.components.core.setReadOnly
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.setWidth
@@ -41,13 +42,16 @@ import tech.testsys.web.components.data.TableSpec
 import tech.testsys.web.components.feedback.EmptyContent
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
-import tech.testsys.web.components.overlay.DIALOG_COLUMNS
 import tech.testsys.web.components.overlay.DialogShell
 import tech.testsys.web.components.texts.UiTexts
 
 /** Default number of rows on a page of the lookup dialog. */
 internal const val LOOKUP_PAGE_SIZE: Int = 10
+
+/** Width of the lookup dialog table in page columns; its 24 fractions keep the minimum width of twelve page columns. */
+internal const val LOOKUP_PAGE_COLUMNS: Int = 12
 
 /** Delay after the last typed character before the lookup searches. */
 private const val SEARCH_DELAY_MS: Int = 300
@@ -71,7 +75,7 @@ internal fun <T : Any> BlockRowScope.lookupColumns(
     isSelectable: Boolean = false,
 ): TableSpec<T> {
     require(pageSize >= 1) { "Lookup '$label' page size must be at least 1, got $pageSize" }
-    val scope = TableScope<T>(texts, gridColumns = DIALOG_COLUMNS, selectionSize = if (isSelectable) 1 else 0).apply(columns)
+    val scope = TableScope<T>(texts, selectionSize = if (isSelectable) GRID_COLUMNS / LOOKUP_PAGE_COLUMNS else 0).apply(columns)
     val spec = scope.spec()
     require(spec.columns.isNotEmpty()) { "Lookup '$label' must declare at least one column" }
     require(!scope.hasOwnEmpty && spec.rowClick == null && !scope.hasMenuColumn) {
@@ -243,6 +247,7 @@ internal class LookupDialog<T : Any>(
                 table.reload(toFirstPage = true)
             }
         }
+        shell.content.style.setPageColumns(LOOKUP_PAGE_COLUMNS.toDouble())
         shell.content.add(search, table.root)
     }
 

@@ -13,12 +13,10 @@ import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.texts.UiTexts
 import tech.testsys.web.components.texts.currentTexts
-
-/** Columns of the grid inside a form dialog. */
-internal const val DIALOG_COLUMNS: Int = 12
 
 /**
  * Handle of a dialog built once and opened any number of times; field values stay between openings.
@@ -75,7 +73,7 @@ class DialogHandle internal constructor(private val shell: DialogShell, private 
 }
 
 /**
- * Scope of a form dialog: rows on twelve columns and the footer, which gets the dialog handle to close it.
+ * Scope of a form dialog: rows on its own 24-column grid and the footer, which gets the dialog handle to close it.
  *
  * @since %CURRENT_VERSION%
  */
@@ -87,13 +85,13 @@ class DialogScope internal constructor(
     private val handle: DialogHandle,
 ) {
     /**
-     * Adds a row of the dialog; its elements take at most twelve columns in total.
+     * Adds a row of the dialog; its elements take at most 24 columns in total.
      *
      * @since %CURRENT_VERSION%
      */
     fun row(content: BlockRowScope.() -> Unit) {
         val row = Div().apply { addClassName(CssClass.BlockRow) }
-        BlockRowScope(row, DIALOG_COLUMNS, texts, editState).content()
+        BlockRowScope(row, GRID_COLUMNS, texts, editState).content()
         if (row.children.findAny().isPresent) shell.content.add(row)
     }
 

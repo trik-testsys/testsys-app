@@ -151,8 +151,8 @@ private fun PageScope.hiddenFieldExample() {
 private fun PageScope.dialogSignalExample() {
     val editable = ValueSignal(false)
     val form = dialog("Режим диалога по сигналу") {
-        row { textInput("Название диалога", labelSize = 4, size = 8) }
-        row { textInput("Неизменяемый код", labelSize = 4, size = 8) { isEditable = false } }
+        row { textInput("Название диалога", labelSize = 8, size = 16) }
+        row { textInput("Неизменяемый код", labelSize = 8, size = 16) { isEditable = false } }
         footer { handle ->
             action("Переключить режим") { onClick { editable.set(!editable.peek()) } }
             action("Закрыть") { onClick { handle.close() } }

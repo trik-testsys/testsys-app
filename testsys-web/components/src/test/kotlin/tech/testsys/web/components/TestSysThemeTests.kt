@@ -161,8 +161,8 @@ class TestSysThemeTests {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = [".ts-slot", ".ts-block--grid"])
-    fun `should give a slot and a block their own 24-column grid`(selector: String) {
+    @ValueSource(strings = [".ts-slot", ".ts-block--grid", ".ts-dialog__grid"])
+    fun `should give a slot, a block and a dialog their own 24-column grid`(selector: String) {
         val css = text("testsys-ui/tokens/components.css")
 
         assertEquals("repeat(var(--grid-columns), minmax(0, 1fr))", rule(css, selector)["grid-template-columns"])

@@ -98,10 +98,10 @@ private fun BlockRowScope.contestLookup(
     fetch = { query, request -> pageOf(CONTESTS.filter { contest -> contest.name.contains(query, ignoreCase = true) }, request) },
     display = { contest -> contest.name },
     columns = {
-        codeColumn("ID", size = 2) { contest -> "${contest.id}" }
-        textColumn("Название", size = 5) { contest -> contest.name }
-        dateColumn("Начало", size = 3) { contest -> contest.startsOn }
-        numberColumn("Задач", size = 1) { contest -> contest.taskCount }
+        codeColumn("ID", size = 4) { contest -> "${contest.id}" }
+        textColumn("Название", size = 10) { contest -> contest.name }
+        dateColumn("Начало", size = 6) { contest -> contest.startsOn }
+        numberColumn("Задач", size = 2) { contest -> contest.taskCount }
     },
     hint = hint,
     configure = configure,
@@ -118,9 +118,9 @@ private fun BlockRowScope.taskLookup(
     fetch = { query, request -> pageOf(SHOWCASE_TASKS.filter { task -> task.name.contains(query, ignoreCase = true) }, request) },
     display = { task -> task.name },
     columns = {
-        codeColumn("ID", size = 2) { task -> "${task.id}" }
-        textColumn("Название", size = 5) { task -> task.name }
-        textColumn("Тема", size = 4) { task -> task.topic }
+        codeColumn("ID", size = 4) { task -> "${task.id}" }
+        textColumn("Название", size = 10) { task -> task.name }
+        textColumn("Тема", size = 8) { task -> task.topic }
     },
     hint = hint,
     configure = configure,

@@ -38,7 +38,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
     val create = dialog("Создать соревнование") {
         val binder = createBinder
         row {
-            textInput("Название", labelSize = 4, size = 8) {
+            textInput("Название", labelSize = 8, size = 16) {
                 binder.forField(this).asRequired("Введите название соревнования").bind(
                     { draft ->
                         draft.name
@@ -110,7 +110,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
         ) {
             val binder = participantsBinder
             row {
-                integerInput("Количество", labelSize = 4, size = 8, min = 1, max = DEMO_PARTICIPANT_LIMIT) {
+                integerInput("Количество", labelSize = 8, size = 16, min = 1, max = DEMO_PARTICIPANT_LIMIT) {
                     value = 3
                     binder.forField(this).asRequired("Укажите количество")
                         .withValidator(
@@ -179,7 +179,7 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
         val add = dialog("Добавить доступный тур") {
             val binder = tourBinder
             row {
-                select("Тур", items = available, itemLabel = DemoTour::name, labelSize = 4, size = 8) {
+                select("Тур", items = available, itemLabel = DemoTour::name, labelSize = 8, size = 16) {
                     binder.forField(this).asRequired("Выберите тур").bind(
                         { draft ->
                             available.firstOrNull { tour ->

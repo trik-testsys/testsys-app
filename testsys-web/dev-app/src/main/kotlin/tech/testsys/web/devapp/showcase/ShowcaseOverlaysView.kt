@@ -20,8 +20,8 @@ import tech.testsys.web.components.overlay.popover
 import tech.testsys.web.components.overlay.tooltip
 import tech.testsys.web.components.texts.UiTexts
 
-private const val LABEL_COLUMNS = 4
-private const val VALUE_COLUMNS = 8
+private const val LABEL_COLUMNS = 8
+private const val VALUE_COLUMNS = 16
 
 /**
  * Showcase of reusable drawers, nonmodal popups and noninteractive tooltips, available only in dev.

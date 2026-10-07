@@ -64,19 +64,19 @@ private fun tourDialog(): DialogHandle {
     val binder = Binder<ShowcaseTour>()
     return dialog(title = "Новый тур", subtitle = "Название обязательно") {
         row {
-            textInput("Название", labelSize = 4, size = 8) {
+            textInput("Название", labelSize = 8, size = 16) {
                 binder.forField(this)
                     .asRequired("Заполните название")
                     .bind({ source -> source.name }, { target, value -> target.name = value })
             }
         }
         row {
-            dateRangeInput("Период", labelSize = 4, size = 8) {
+            dateRangeInput("Период", labelSize = 8, size = 16) {
                 binder.forField(this).bind({ source -> source.period }, { target, value -> target.period = value })
             }
         }
         row {
-            textArea("Описание", labelSize = 4, size = 8, maxLines = DESCRIPTION_LINES) {
+            textArea("Описание", labelSize = 8, size = 16, maxLines = DESCRIPTION_LINES) {
                 binder.forField(this).bind({ source -> source.description }, { target, value -> target.description = value })
             }
         }

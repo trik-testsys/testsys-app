@@ -246,6 +246,15 @@ class LookupManyTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should give the checkbox two fractions of the dialog table`() {
+            buildLookupMany(columns = { textColumn("Название", size = 22) { contest -> contest.name } })
+
+            openDialog()
+
+            assertEquals("24", openDialogs().single().find("ts-table").element.style.get("--ts-table-used"))
+        }
+
+        @Test
         fun `should not open a second dialog while one is open`() {
             buildLookupMany()
             openDialog()

@@ -29,7 +29,7 @@ import tech.testsys.web.components.testTexts
 class FormDialogTests : MockVaadinTests() {
     @Test
     fun `should open read-only fields if the edit mode is bound to a false signal before opening`() {
-        val handle = dialog(title = "Тур") { row { textInput("Название", labelSize = 4, size = 8) } }
+        val handle = dialog(title = "Тур") { row { textInput("Название", labelSize = 8, size = 16) } }
         handle.bindEditable(ValueSignal(false))
 
         handle.open()
@@ -42,8 +42,8 @@ class FormDialogTests : MockVaadinTests() {
     fun `should bind edit mode before opening and preserve own read-only fields`() {
         val editable = ValueSignal(false)
         val handle = dialog(title = "Тур") {
-            row { textInput("Название", labelSize = 4, size = 8) }
-            row { textInput("Код", labelSize = 4, size = 8) { isEditable = false } }
+            row { textInput("Название", labelSize = 8, size = 16) }
+            row { textInput("Код", labelSize = 8, size = 16) { isEditable = false } }
         }
         handle.bindEditable(editable)
         handle.open()
@@ -74,7 +74,7 @@ class FormDialogTests : MockVaadinTests() {
     @Test
     fun `should apply current signal on reopening without resetting values`() {
         val editable = ValueSignal(true)
-        val handle = dialog(title = "Тур") { row { textInput("Название", labelSize = 4, size = 8) } }
+        val handle = dialog(title = "Тур") { row { textInput("Название", labelSize = 8, size = 16) } }
         handle.bindEditable(editable)
         handle.open()
         openDialogs()
@@ -97,7 +97,7 @@ class FormDialogTests : MockVaadinTests() {
 
     @Test
     fun `should build a wide dialog without opening it`() {
-        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 4, size = 8) } }
+        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 8, size = 16) } }
 
         assertTrue(openDialogs().isEmpty())
         assertFalse(handle.isOpen)
@@ -105,7 +105,7 @@ class FormDialogTests : MockVaadinTests() {
 
     @Test
     fun `should open and close through the handle`() {
-        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 4, size = 8) } }
+        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 8, size = 16) } }
 
         handle.open()
 
@@ -117,7 +117,7 @@ class FormDialogTests : MockVaadinTests() {
 
     @Test
     fun `should hide the dialog when closed through the handle`() {
-        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 4, size = 8) } }
+        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 8, size = 16) } }
         handle.open()
         openDialogs()
 
@@ -128,21 +128,21 @@ class FormDialogTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should lay rows on the twelve columns grid`() {
+    fun `should lay rows on the 24-column grid`() {
         val handle = dialog(title = "Новый тур") { row { vertical {} } }
         handle.open()
 
         val grid = openDialogs().single().find("ts-dialog__grid")
-        assertEquals("span 12", grid.find("ts-block__row").child(0).element.style.get("grid-column"))
+        assertEquals("span 24", grid.find("ts-block__row").child(0).element.style.get("grid-column"))
     }
 
     @Test
-    fun `should reject a row wider than twelve columns`() {
+    fun `should reject a row wider than 24 columns`() {
         assertThrows(IllegalStateException::class.java) {
             dialog(title = "Новый тур") {
                 row {
-                    textInput("Название", labelSize = 4, size = 4)
-                    textInput("Код", labelSize = 3, size = 2)
+                    textInput("Название", labelSize = 8, size = 8)
+                    textInput("Код", labelSize = 6, size = 4)
                 }
             }
         }
@@ -152,7 +152,7 @@ class FormDialogTests : MockVaadinTests() {
     fun `should skip empty rows`() {
         val handle = dialog(title = "Новый тур") {
             row {}
-            row { textInput("Название", labelSize = 4, size = 8) }
+            row { textInput("Название", labelSize = 8, size = 16) }
         }
         handle.open()
 
@@ -162,7 +162,7 @@ class FormDialogTests : MockVaadinTests() {
     @Test
     fun `should close from a footer action`() {
         val handle = dialog(title = "Новый тур") {
-            row { textInput("Название", labelSize = 4, size = 8) }
+            row { textInput("Название", labelSize = 8, size = 16) }
             footer { dialog -> action("Отмена") { onClick { dialog.close() } } }
         }
         handle.open()
@@ -177,7 +177,7 @@ class FormDialogTests : MockVaadinTests() {
     @Test
     fun `should notify every close`() {
         var closes = 0
-        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 4, size = 8) } }
+        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 8, size = 16) } }
         handle.onClose { closes++ }
         handle.open()
         openDialogs()
@@ -192,7 +192,7 @@ class FormDialogTests : MockVaadinTests() {
 
     @Test
     fun `should make its fields read-only when not editable`() {
-        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 4, size = 8) } }
+        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 8, size = 16) } }
         handle.open()
         openDialogs()
 
@@ -204,7 +204,7 @@ class FormDialogTests : MockVaadinTests() {
 
     @Test
     fun `should keep field values between openings`() {
-        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 4, size = 8) } }
+        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 8, size = 16) } }
         handle.open()
         openDialogs()
         control<TextField>("Название")._setValue("Весенний кубок")
@@ -220,7 +220,7 @@ class FormDialogTests : MockVaadinTests() {
     @Test
     fun `should show the subtitle under the title`() {
         val handle =
-            dialog(title = "Новый тур", subtitle = "Черновик") { row { textInput("Название", labelSize = 4, size = 8) } }
+            dialog(title = "Новый тур", subtitle = "Черновик") { row { textInput("Название", labelSize = 8, size = 16) } }
 
         handle.open()
 

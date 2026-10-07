@@ -74,7 +74,7 @@ class DrawerHandle internal constructor(private val delegate: DialogHandle) {
 }
 
 /**
- * Scope of a drawer with rows on twelve columns and a footer.
+ * Scope of a drawer with rows on 24 columns and a footer.
  *
  * @since %CURRENT_VERSION%
  */

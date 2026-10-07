@@ -204,8 +204,8 @@
 .ts-table-filters__actions { display:flex; justify-content:flex-end; gap:var(--space-2); }
 .ts-block__row > * { min-width:0; }
 .ts-block__row > :is(.ts-tag, .ts-status, .ts-counter, .ts-icon) { justify-self:start; }
-/* Form dialog body (Kotlin DSL): rows on twelve columns; the dialog body text is secondary, field values stay primary. */
-.ts-dialog__grid { display:grid; grid-template-columns:repeat(12, minmax(0, 1fr)); column-gap:var(--grid-gap); row-gap:var(--space-3); color:var(--text-primary); }
+/* Form dialog body (Kotlin DSL): rows on its own 24-column grid; the dialog body text is secondary, field values stay primary. */
+.ts-dialog__grid { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); column-gap:var(--grid-gap); row-gap:var(--space-3); color:var(--text-primary); }
 
 /* Grid field (React and Kotlin DSL): the label on the left and the value on the right, both on the block columns. */
 .ts-field--grid { display:grid; grid-template-columns:subgrid; column-gap:normal; row-gap:0; align-items:start; }

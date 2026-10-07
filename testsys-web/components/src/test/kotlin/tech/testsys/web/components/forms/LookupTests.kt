@@ -138,6 +138,16 @@ class LookupTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should lay the dialog table on 24 fractions of 12 page columns`() {
+        buildLookup()
+
+        lookupButton(testTexts.lookup.open)._click()
+
+        assertEquals("12.0", searchField().parent.get().element.style.get("--ts-page-columns"))
+        assertEquals("24", openDialogs().single().find("ts-table").element.style.get("--ts-table-used"))
+    }
+
+    @Test
     fun `should keep lookup search and pagination outside the table viewport`() {
         buildLookup()
 

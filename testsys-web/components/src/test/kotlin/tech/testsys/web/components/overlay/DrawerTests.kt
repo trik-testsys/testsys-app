@@ -29,7 +29,7 @@ internal class DrawerTests : MockVaadinTests() {
     @Test
     fun `should reopen drawer with retained value and inherited readonly mode`() {
         val handle = drawer("Drawer") {
-            row { field = textInput("Name", labelSize = 4, size = 8) { value = "Retained" } }
+            row { field = textInput("Name", labelSize = 8, size = 16) { value = "Retained" } }
         }
         handle.isEditable = false
         handle.open()
@@ -56,7 +56,7 @@ internal class DrawerTests : MockVaadinTests() {
     @Test
     fun `should call the latest close listener when the drawer closes`() {
         var calls = 0
-        val handle = drawer("Drawer") { row { field = textInput("Name", labelSize = 4, size = 8) } }
+        val handle = drawer("Drawer") { row { field = textInput("Name", labelSize = 8, size = 16) } }
         handle.onClose { calls += 10 }
         handle.onClose { calls++ }
         handle.open()
@@ -68,7 +68,7 @@ internal class DrawerTests : MockVaadinTests() {
 
     @Test
     fun `should apply the bound edit mode when opened`() {
-        val handle = drawer("Drawer") { row { field = textInput("Name", labelSize = 4, size = 8) } }
+        val handle = drawer("Drawer") { row { field = textInput("Name", labelSize = 8, size = 16) } }
         handle.bindEditable(ValueSignal(false))
 
         handle.open()
@@ -79,7 +79,7 @@ internal class DrawerTests : MockVaadinTests() {
     @Test
     fun `should show the subtitle under the title`() {
         val handle = drawer("Drawer", subtitle = "Сведения о посылке") {
-            row { field = textInput("Name", labelSize = 4, size = 8) }
+            row { field = textInput("Name", labelSize = 8, size = 16) }
         }
 
         handle.open()

@@ -184,7 +184,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `row` страницы | `slot(size)` | `size` от 1 до 24, сумма слотов ряда — не больше 24 |
 | `slot` | `row` | Ряды слота стоят друг под другом |
 | `row` слота | `block(size)`, `highlightBlock(size)`, `statCard(…)`, `contestCard(…)` | `size` от 1 до 24 — доля ширины слота, по умолчанию весь слот; элемент не уже одной колонки страницы (размер слота × `size` ≥ 24); сумма — не больше 24 |
-| `row` блока | поля, `field`, `text`, `tag`, `badge`, `counter`, `icon`, `alert`, `statCard`, `pills`, `horizontal`, `vertical` | Поле занимает `labelSize + size`, остальные — `size`; без `size` элемент занимает остаток строки, после него строка закрыта; сумма — не больше 24 колонок блока |
+| `row` блока, диалога и `drawer` | поля, `field`, `text`, `tag`, `badge`, `counter`, `icon`, `alert`, `statCard`, `pills`, `horizontal`, `vertical` | Поле занимает `labelSize + size`, остальные — `size`; без `size` элемент занимает остаток строки, после него строка закрыта; сумма — не больше 24 колонок контейнера |
 
 - Неверный размер — `IllegalArgumentException`, переполнение ряда и элемент после занявшего остаток строки —
   `IllegalStateException` с перечнем размеров. Ошибка возникает при построении страницы, поэтому каждая
@@ -220,7 +220,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
 | `TableScope<T>` | колонки таблицы, `menuColumn`, `empty`, `onRowClick` |
 | `MenuScope` | `item`, `destructiveItem` |
-| `DialogScope` | `row` (строка на 12 колонках), `footer { dialog -> }` |
+| `DialogScope` | `row` (строка на 24 колонках), `footer { dialog -> }` |
 
 Содержимое тела блока кладётся только в строки, в таблицу или в пустое состояние: элемент прямо в `BlockScope`
 не компилируется. `ContentScope` — поток без размеров: шапка, подвал, группы `horizontal`/`vertical` строки блока, значение `field`,
@@ -494,7 +494,7 @@ block(title = "Посылки") {
 - Колонки принимают `size: Int? = null`: число долей сетки содержащего блока (24). По умолчанию таблица наследует
   вместимость содержащего блока; `gridColumns` задаёт расширенную логическую сетку для широкой матрицы.
   Неизменяемое свойство `TableScope.gridColumns` позволяет переиспользуемым Kotlin-билдерам вычислять размеры по текущей вместимости. Лукап использует
-  12 долей сетки диалога. Размер должен быть положительным и не превышать вместимость.
+  24 доли сетки диалога, флажок `lookupMany` занимает 2. Размер должен быть положительным и не превышать вместимость.
 - Колонка без `size` занимает остаток и завершает объявления обычных колонок. `menuColumn(size = 1)` допускается
   после неё: ядро резервирует место меню до вычисления остатка. Checkbox при `selectable = true` занимает
   `selectionSize = 1` долю той же сетки. Значения по умолчанию хватает блоку от 19 колонок страницы. В более
@@ -600,7 +600,7 @@ confirm(
 
 ```kotlin
 val newTour = dialog(title = "Новый тур", subtitle = "Название обязательно") {
-    row { textInput("Название", labelSize = 4, size = 8) { binder.forField(this).asRequired("Заполните").bind(…) } }
+    row { textInput("Название", labelSize = 8, size = 16) { binder.forField(this).asRequired("Заполните").bind(…) } }
     footer { dialog ->
         action("Отменить") { onClick { dialog.close() } }
         mainAction("Создать") { onClick { if (binder.writeBeanIfValid(tour)) dialog.close() } }
@@ -610,7 +610,7 @@ val newTour = dialog(title = "Новый тур", subtitle = "Название �
 
 - `dialog(title, subtitle = null) { … }` строит диалог шириной 520 px (`.ts-dialog--md`) один раз и возвращает
   `DialogHandle`; открывается он `open()` сколько угодно раз, значения полей между открытиями сохраняются.
-- `row { }` — `BlockRowScope` на 12 колонках (`.ts-dialog__grid`): все поля и элементы строки блока, пустые строки
+- `row { }` — `BlockRowScope` на 24 колонках (`.ts-dialog__grid`): все поля и элементы строки блока, пустые строки
   не выводятся.
 - `footer { dialog -> }` — `ContentScope` подвала. Лямбда получает ручку диалога параметром: маркер DSL не пускает
   обработчики кнопок к членам внешнего `DialogScope`, а переменная с ручкой ещё не присвоена, пока диалог строится.
@@ -632,7 +632,7 @@ lookup(
     fetch = { query, request -> contests.search(query, request) },
     display = { it.name },
     columns = {
-        textColumn("Название", size = 8) { it.name }
+        textColumn("Название", size = 16) { it.name }
         dateColumn("Начало") { it.startsOn }
     },
 ) { binder.forField(this).asRequired("Выберите тур").bind(…) }
@@ -1000,7 +1000,7 @@ Escape и закрытие снаружи отменяют черновик. У�
 
 ## Оверлеи и отображение
 
-`drawer` строит повторно открываемую форму на 12 колонках с `row` и `footer`: `DrawerHandle` управляет открытием,
+`drawer` строит повторно открываемую форму на 24 колонках с `row` и `footer`: `DrawerHandle` управляет открытием,
 закрытием и редактируемостью. Значения сохраняются. `popover` добавляется в `ContentScope` или строку блока,
 создаёт собственный триггер и немодальное содержимое. `ElementHandle.tooltip` добавляет только текстовую подсказку
 с четырьмя направлениями и `bindText`. Escape, фокус и возврат к триггеру обеспечивает Vaadin.

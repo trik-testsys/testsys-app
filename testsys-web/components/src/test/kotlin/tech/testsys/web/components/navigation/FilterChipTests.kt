@@ -61,7 +61,7 @@ class FilterChipTests : MockVaadinTests() {
 
         @Test
         fun `should render the chip in the block head`() {
-            buildTestPage { block(title = "Посылки") { actions { filterChip("Только мои") } } }
+            buildTestPage { row { block(title = "Посылки") { actions { filterChip("Только мои") } } } }
 
             assertEquals(UI.getCurrent().find("ts-block__actions"), chip().parent.orElseThrow())
         }

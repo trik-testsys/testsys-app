@@ -49,186 +49,190 @@ private object ObscuredSamples {
 /** Shows obscuring across the existing field families using one shared signal and ordinary field configuration. */
 internal fun PageScope.obscuredFields() {
     val obscured = ValueSignal(true)
-    block(title = "Скрытые значения", subtitle = "Наведите указатель на значение или перейдите к нему клавишей Tab") {
-        actions { action("Переключить скрытие") { onClick { obscured.set(!obscured.peek()) } } }
-        row {
-            textInput("Обычное значение", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) { value = "Открытый текст" }
-            textInput(
-                "Скрытый текст",
-                labelSize = ObscuredSamples.LABEL,
-                size = ObscuredSamples.HALF_VALUE,
-                hint = "Подсказка остаётся читаемой",
-            ) {
-                value = "Секретное значение"
-                bindObscured(obscured)
-            }
-        }
-        row {
-            textInput("Скрытое только чтение", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
-                value = "КД-1234"
-                isEditable = false
-                bindObscured(obscured)
-            }
-            textInput("Скрытое выключенное", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
-                value = "Недоступно для правки"
-                isEnabled = false
-                bindObscured(obscured)
-            }
-        }
-        row {
-            codeInput("Скрытый код", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
-                value = "ACCESS-1234"
-                bindObscured(obscured)
-            }
-            textArea("Скрытое описание", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
-                value = "Первая строка\nВторая строка"
-                bindObscured(obscured)
-            }
-        }
-        row {
-            integerInput("Скрытое целое", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
-                value = ObscuredSamples.NUMBER
-                bindObscured(obscured)
-            }
-            decimalInput("Скрытое число", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
-                value = ObscuredSamples.DECIMAL
-                bindObscured(obscured)
-            }
-        }
-        row {
-            dateInput("Скрытая дата", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
-                value = ObscuredSamples.DAY
-                bindObscured(obscured)
-            }
-            timeInput("Скрытое время", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
-                value = ObscuredSamples.TIME
-                bindObscured(obscured)
-            }
-        }
-        row {
-            dateTimeInput("Скрытая дата и время", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.FULL_VALUE) {
-                value = LocalDateTime.of(ObscuredSamples.DAY, ObscuredSamples.TIME)
-                bindObscured(obscured)
-            }
-        }
-        row {
-            dateRangeInput("Скрытый диапазон", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.FULL_VALUE) {
-                value = DateRange(from = ObscuredSamples.DAY, to = ObscuredSamples.LAST_DAY)
-                bindObscured(obscured)
-            }
-        }
-        row {
-            checkbox("Скрытый флажок", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
-                value = true
-                bindObscured(obscured)
-            }
-            switchInput("Скрытый переключатель", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
-                value = true
-                bindObscured(obscured)
-            }
-        }
-        row {
-            radio(
-                "Скрытый выбор",
-                labelSize = ObscuredSamples.LABEL,
-                size = ObscuredSamples.HALF_VALUE,
-                items = ObscuredSamples.OPTIONS,
-                itemLabel = { item -> item },
-            ) {
-                value = ObscuredSamples.OPTIONS.first()
-                bindObscured(obscured)
-            }
-            segmentedControl(
-                "Скрытые сегменты",
-                labelSize = ObscuredSamples.LABEL,
-                size = ObscuredSamples.HALF_VALUE,
-                items = ObscuredSamples.OPTIONS,
-                itemLabel = { item -> item },
-            ) {
-                value = ObscuredSamples.OPTIONS.first()
-                bindObscured(obscured)
-            }
-        }
-        row {
-            select(
-                "Скрытый список",
-                labelSize = ObscuredSamples.LABEL,
-                size = ObscuredSamples.HALF_VALUE,
-                items = ObscuredSamples.OPTIONS,
-                itemLabel = { item -> item },
-            ) {
-                value = ObscuredSamples.OPTIONS.first()
-                bindObscured(obscured)
-            }
-            multiSelect(
-                "Скрытые теги",
-                labelSize = ObscuredSamples.LABEL,
-                size = ObscuredSamples.HALF_VALUE,
-                items = ObscuredSamples.OPTIONS,
-                itemLabel = { item -> item },
-            ) {
-                value = ObscuredSamples.OPTIONS.toSet()
-                bindObscured(obscured)
-            }
-        }
-        row {
-            multiSelect(
-                "Скрытый счётчик",
-                labelSize = ObscuredSamples.LABEL,
-                size = ObscuredSamples.HALF_VALUE,
-                items = ObscuredSamples.OPTIONS,
-                itemLabel = { item -> item },
-                display = MultiSelectDisplay.Count,
-            ) {
-                value = ObscuredSamples.OPTIONS.toSet()
-                bindObscured(obscured)
-            }
-            field("Скрытая информация", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
-                horizontal {
-                    text("КД-5678")
-                    vertical {
-                        tag("Доступ")
-                        action("Проверить действие") { onClick { toast(FeedbackKind.Success, "Действие доступно") } }
-                    }
+    row {
+        block(title = "Скрытые значения", subtitle = "Наведите указатель на значение или перейдите к нему клавишей Tab") {
+            actions { action("Переключить скрытие") { onClick { obscured.set(!obscured.peek()) } } }
+            row {
+                textInput("Обычное значение", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    value = "Открытый текст"
                 }
-            }.bindObscured(obscured)
-        }
-        row {
-            codeEditor(
-                "Скрытый редактор",
-                labelSize = ObscuredSamples.LABEL,
-                size = ObscuredSamples.FULL_VALUE,
-                minLines = ObscuredSamples.EDITOR_LINES,
-                hint = "Ошибка и подсказка видны независимо от размытия",
-            ) {
-                value = "print('TestSys')\nreturn 42"
-                errorMessage = "Пример ошибки проверки"
-                isInvalid = true
-                bindObscured(obscured)
+                textInput(
+                    "Скрытый текст",
+                    labelSize = ObscuredSamples.LABEL,
+                    size = ObscuredSamples.HALF_VALUE,
+                    hint = "Подсказка остаётся читаемой",
+                ) {
+                    value = "Секретное значение"
+                    bindObscured(obscured)
+                }
             }
-        }
-        row {
-            lookup(
-                "Скрытый объект",
-                labelSize = ObscuredSamples.LABEL,
-                size = ObscuredSamples.HALF_VALUE,
-                fetch = { _, _ -> Page(ObscuredSamples.OPTIONS, ObscuredSamples.OPTIONS.size) },
-                display = { item -> item },
-                columns = { textColumn("Название") { item -> item } },
-            ) {
-                value = ObscuredSamples.OPTIONS.first()
-                bindObscured(obscured)
+            row {
+                textInput("Скрытое только чтение", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    value = "КД-1234"
+                    isEditable = false
+                    bindObscured(obscured)
+                }
+                textInput("Скрытое выключенное", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    value = "Недоступно для правки"
+                    isEnabled = false
+                    bindObscured(obscured)
+                }
             }
-            lookupMany(
-                "Скрытые объекты",
-                labelSize = ObscuredSamples.LABEL,
-                size = ObscuredSamples.HALF_VALUE,
-                fetch = { _, _ -> Page(ObscuredSamples.OPTIONS, ObscuredSamples.OPTIONS.size) },
-                display = { item -> item },
-                columns = { textColumn("Название") { item -> item } },
-            ) {
-                value = ObscuredSamples.OPTIONS.toSet()
-                bindObscured(obscured)
+            row {
+                codeInput("Скрытый код", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    value = "ACCESS-1234"
+                    bindObscured(obscured)
+                }
+                textArea("Скрытое описание", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    value = "Первая строка\nВторая строка"
+                    bindObscured(obscured)
+                }
+            }
+            row {
+                integerInput("Скрытое целое", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    value = ObscuredSamples.NUMBER
+                    bindObscured(obscured)
+                }
+                decimalInput("Скрытое число", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    value = ObscuredSamples.DECIMAL
+                    bindObscured(obscured)
+                }
+            }
+            row {
+                dateInput("Скрытая дата", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    value = ObscuredSamples.DAY
+                    bindObscured(obscured)
+                }
+                timeInput("Скрытое время", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    value = ObscuredSamples.TIME
+                    bindObscured(obscured)
+                }
+            }
+            row {
+                dateTimeInput("Скрытая дата и время", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.FULL_VALUE) {
+                    value = LocalDateTime.of(ObscuredSamples.DAY, ObscuredSamples.TIME)
+                    bindObscured(obscured)
+                }
+            }
+            row {
+                dateRangeInput("Скрытый диапазон", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.FULL_VALUE) {
+                    value = DateRange(from = ObscuredSamples.DAY, to = ObscuredSamples.LAST_DAY)
+                    bindObscured(obscured)
+                }
+            }
+            row {
+                checkbox("Скрытый флажок", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    value = true
+                    bindObscured(obscured)
+                }
+                switchInput("Скрытый переключатель", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    value = true
+                    bindObscured(obscured)
+                }
+            }
+            row {
+                radio(
+                    "Скрытый выбор",
+                    labelSize = ObscuredSamples.LABEL,
+                    size = ObscuredSamples.HALF_VALUE,
+                    items = ObscuredSamples.OPTIONS,
+                    itemLabel = { item -> item },
+                ) {
+                    value = ObscuredSamples.OPTIONS.first()
+                    bindObscured(obscured)
+                }
+                segmentedControl(
+                    "Скрытые сегменты",
+                    labelSize = ObscuredSamples.LABEL,
+                    size = ObscuredSamples.HALF_VALUE,
+                    items = ObscuredSamples.OPTIONS,
+                    itemLabel = { item -> item },
+                ) {
+                    value = ObscuredSamples.OPTIONS.first()
+                    bindObscured(obscured)
+                }
+            }
+            row {
+                select(
+                    "Скрытый список",
+                    labelSize = ObscuredSamples.LABEL,
+                    size = ObscuredSamples.HALF_VALUE,
+                    items = ObscuredSamples.OPTIONS,
+                    itemLabel = { item -> item },
+                ) {
+                    value = ObscuredSamples.OPTIONS.first()
+                    bindObscured(obscured)
+                }
+                multiSelect(
+                    "Скрытые теги",
+                    labelSize = ObscuredSamples.LABEL,
+                    size = ObscuredSamples.HALF_VALUE,
+                    items = ObscuredSamples.OPTIONS,
+                    itemLabel = { item -> item },
+                ) {
+                    value = ObscuredSamples.OPTIONS.toSet()
+                    bindObscured(obscured)
+                }
+            }
+            row {
+                multiSelect(
+                    "Скрытый счётчик",
+                    labelSize = ObscuredSamples.LABEL,
+                    size = ObscuredSamples.HALF_VALUE,
+                    items = ObscuredSamples.OPTIONS,
+                    itemLabel = { item -> item },
+                    display = MultiSelectDisplay.Count,
+                ) {
+                    value = ObscuredSamples.OPTIONS.toSet()
+                    bindObscured(obscured)
+                }
+                field("Скрытая информация", labelSize = ObscuredSamples.LABEL, size = ObscuredSamples.HALF_VALUE) {
+                    horizontal {
+                        text("КД-5678")
+                        vertical {
+                            tag("Доступ")
+                            action("Проверить действие") { onClick { toast(FeedbackKind.Success, "Действие доступно") } }
+                        }
+                    }
+                }.bindObscured(obscured)
+            }
+            row {
+                codeEditor(
+                    "Скрытый редактор",
+                    labelSize = ObscuredSamples.LABEL,
+                    size = ObscuredSamples.FULL_VALUE,
+                    minLines = ObscuredSamples.EDITOR_LINES,
+                    hint = "Ошибка и подсказка видны независимо от размытия",
+                ) {
+                    value = "print('TestSys')\nreturn 42"
+                    errorMessage = "Пример ошибки проверки"
+                    isInvalid = true
+                    bindObscured(obscured)
+                }
+            }
+            row {
+                lookup(
+                    "Скрытый объект",
+                    labelSize = ObscuredSamples.LABEL,
+                    size = ObscuredSamples.HALF_VALUE,
+                    fetch = { _, _ -> Page(ObscuredSamples.OPTIONS, ObscuredSamples.OPTIONS.size) },
+                    display = { item -> item },
+                    columns = { textColumn("Название") { item -> item } },
+                ) {
+                    value = ObscuredSamples.OPTIONS.first()
+                    bindObscured(obscured)
+                }
+                lookupMany(
+                    "Скрытые объекты",
+                    labelSize = ObscuredSamples.LABEL,
+                    size = ObscuredSamples.HALF_VALUE,
+                    fetch = { _, _ -> Page(ObscuredSamples.OPTIONS, ObscuredSamples.OPTIONS.size) },
+                    display = { item -> item },
+                    columns = { textColumn("Название") { item -> item } },
+                ) {
+                    value = ObscuredSamples.OPTIONS.toSet()
+                    bindObscured(obscured)
+                }
             }
         }
     }
@@ -237,37 +241,39 @@ internal fun PageScope.obscuredFields() {
 
 private fun PageScope.unlabeledObscuredFields(obscured: ValueSignal<Boolean>) {
     val enabled = ValueSignal(false)
-    block(title = "Скрытие без подписи", subtitle = "Компактные списки сохраняют собственный порядок фокуса") {
-        actions {
-            action("Переключить скрытие списков") { onClick { obscured.set(!obscured.peek()) } }
-            action("Переключить доступность списков") { onClick { enabled.set(!enabled.peek()) } }
-        }
-        row {
-            horizontal {
-                vertical {
-                    text("Доступный список")
-                    select("Скрытый список без подписи", items = ObscuredSamples.OPTIONS, itemLabel = { item -> item }) {
-                        value = ObscuredSamples.OPTIONS.first()
-                        bindObscured(obscured)
+    row {
+        block(title = "Скрытие без подписи", subtitle = "Компактные списки сохраняют собственный порядок фокуса") {
+            actions {
+                action("Переключить скрытие списков") { onClick { obscured.set(!obscured.peek()) } }
+                action("Переключить доступность списков") { onClick { enabled.set(!enabled.peek()) } }
+            }
+            row {
+                horizontal {
+                    vertical {
+                        text("Доступный список")
+                        select("Скрытый список без подписи", items = ObscuredSamples.OPTIONS, itemLabel = { item -> item }) {
+                            value = ObscuredSamples.OPTIONS.first()
+                            bindObscured(obscured)
+                        }
                     }
-                }
-                vertical {
-                    text("Скрытие перед выключением")
-                    select("Сначала скрытый, затем выключенный", items = ObscuredSamples.OPTIONS, itemLabel = { item -> item }) {
-                        value = ObscuredSamples.OPTIONS.first()
-                        bindObscured(obscured)
-                        bindEnabled(enabled)
+                    vertical {
+                        text("Скрытие перед выключением")
+                        select("Сначала скрытый, затем выключенный", items = ObscuredSamples.OPTIONS, itemLabel = { item -> item }) {
+                            value = ObscuredSamples.OPTIONS.first()
+                            bindObscured(obscured)
+                            bindEnabled(enabled)
+                        }
                     }
-                }
-                vertical {
-                    text("Выключение перед скрытием")
-                    select("Сначала выключенный, затем скрытый", items = ObscuredSamples.OPTIONS, itemLabel = { item -> item }) {
-                        value = ObscuredSamples.OPTIONS.first()
-                        bindEnabled(enabled)
-                        bindObscured(obscured)
+                    vertical {
+                        text("Выключение перед скрытием")
+                        select("Сначала выключенный, затем скрытый", items = ObscuredSamples.OPTIONS, itemLabel = { item -> item }) {
+                            value = ObscuredSamples.OPTIONS.first()
+                            bindEnabled(enabled)
+                            bindObscured(obscured)
+                        }
                     }
+                    text(enabled.map { value -> if (value) "Списки доступны" else "Списки выключены" })
                 }
-                text(enabled.map { value -> if (value) "Списки доступны" else "Списки выключены" })
             }
         }
     }

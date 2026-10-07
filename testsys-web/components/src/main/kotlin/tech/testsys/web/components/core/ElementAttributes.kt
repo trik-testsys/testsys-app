@@ -19,7 +19,6 @@ internal enum class ElementRole(internal val attribute: String) {
     Dialog("dialog"),
     Group("group"),
     Image("img"),
-    Link("link"),
     Menu("menu"),
     MenuItem("menuitem"),
     Presentation("presentation"),

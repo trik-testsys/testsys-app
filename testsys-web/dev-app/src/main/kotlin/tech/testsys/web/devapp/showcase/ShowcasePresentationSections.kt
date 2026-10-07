@@ -6,10 +6,8 @@ import tech.testsys.web.components.core.icon
 import tech.testsys.web.components.display.CounterKind
 import tech.testsys.web.components.display.TagKind
 import tech.testsys.web.components.display.Tone
-import tech.testsys.web.components.display.Trend
 import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.counter
-import tech.testsys.web.components.display.statCard
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.display.verdict
@@ -31,55 +29,37 @@ internal const val LONG_TEXT = "Дан ориентированный граф �
 
 internal fun PageScope.displaySection() {
     row {
-        slot(size = 12) {
+        block(title = "Отображение") {
+            row { text("Обычный текст абзаца на всю ширину блока") }
             row {
-                block(title = "Отображение") {
-                    row { text("Обычный текст абзаца на всю ширину блока") }
-                    row {
-                        horizontal {
-                            verdict(0.0)
-                            verdict(DEMO_VERDICT_SCORE, label = "баллов")
-                        }
-                    }
-                    row {
-                        horizontal {
-                            icon(IconName.Trophy)
-                            text("Иконка рядом с текстом")
-                        }
-                    }
-                    row { horizontal { TagKind.entries.forEach { kind -> tag(kind.name, kind) } } }
-                    row { horizontal { Tone.entries.forEach { tone -> badge(tone.name, tone) } } }
-                    row { horizontal { CounterKind.entries.forEach { kind -> counter(value = 12, kind = kind) } } }
+                horizontal {
+                    verdict(0.0)
+                    verdict(DEMO_VERDICT_SCORE, label = "баллов")
                 }
             }
-        }
-        slot(size = 12) {
             row {
-                Trend.entries.forEach { trend ->
-                    statCard(label = "Тренд ${trend.name}", value = "1 842", size = 12, delta = "+38", trend = trend)
+                horizontal {
+                    icon(IconName.Trophy)
+                    text("Иконка рядом с текстом")
                 }
             }
-            row { statCard(label = "Без изменения", value = "42") }
-            row {
-                block(title = "Метрики в строке блока") {
-                    row {
-                        statCard(label = "Решено", value = "42", size = 12, delta = "+3", trend = Trend.Up)
-                        statCard(label = "Попытки", value = "118", size = 12, delta = "−2", trend = Trend.Down)
-                    }
-                }
-            }
+            row { horizontal { TagKind.entries.forEach { kind -> tag(kind.name, kind) } } }
+            row { horizontal { Tone.entries.forEach { tone -> badge(tone.name, tone) } } }
+            row { horizontal { CounterKind.entries.forEach { kind -> counter(value = 12, kind = kind) } } }
         }
     }
 }
 
 internal fun PageScope.feedbackSection() {
-    block(title = "Обратная связь") {
-        FeedbackKind.entries.forEach { kind -> row { alert(kind, "Алерт ${kind.name}", text = "Описание под заголовком") } }
-        row {
-            horizontal {
-                FeedbackKind.entries.forEach { kind ->
-                    action("Показать тост ${kind.name}") {
-                        onClick { toast(kind = kind, title = "Тост ${kind.name}", description = "Описание тоста") }
+    row {
+        block(title = "Обратная связь") {
+            FeedbackKind.entries.forEach { kind -> row { alert(kind, "Алерт ${kind.name}", text = "Описание под заголовком") } }
+            row {
+                horizontal {
+                    FeedbackKind.entries.forEach { kind ->
+                        action("Показать тост ${kind.name}") {
+                            onClick { toast(kind = kind, title = "Тост ${kind.name}", description = "Описание тоста") }
+                        }
                     }
                 }
             }
@@ -88,13 +68,15 @@ internal fun PageScope.feedbackSection() {
 }
 
 internal fun PageScope.iconGallery() {
-    block(title = "Icon: поддерживаемые имена") {
-        IconName.entries.chunked(ICONS_PER_ROW).forEach { names ->
-            row {
-                names.forEach { name ->
-                    horizontal(size = 6) {
-                        icon(name)
-                        text(name.name)
+    row {
+        block(title = "Icon: поддерживаемые имена") {
+            IconName.entries.chunked(ICONS_PER_ROW).forEach { names ->
+                row {
+                    names.forEach { name ->
+                        horizontal(size = 6) {
+                            icon(name)
+                            text(name.name)
+                        }
                     }
                 }
             }

@@ -57,7 +57,7 @@ class ChoiceTests : MockVaadinTests() {
     inner class LabelLessSelectTests {
         @Test
         fun `should render the select in the block head small`() {
-            buildTestPage { block(title = "Посылки") { actions { languageSelect() } } }
+            buildTestPage { row { block(title = "Посылки") { actions { languageSelect() } } } }
 
             assertEquals("sm", selectControl().element.getAttribute("data-ts-size"))
         }
@@ -65,8 +65,10 @@ class ChoiceTests : MockVaadinTests() {
         @Test
         fun `should render the select in a table cell small`() {
             buildTestPage {
-                block {
-                    table(key = { id: Int -> id }, fetch = { Page(listOf(1), total = 1) }) { column("Язык") { languageSelect() } }
+                row {
+                    block {
+                        table(key = { id: Int -> id }, fetch = { Page(listOf(1), total = 1) }) { column("Язык") { languageSelect() } }
+                    }
                 }
             }
 

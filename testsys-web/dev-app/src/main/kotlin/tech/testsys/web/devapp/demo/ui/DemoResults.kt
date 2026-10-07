@@ -74,19 +74,21 @@ internal fun PageScope.demoJudge(context: DemoContext, actor: DemoUser, objects:
             ),
             wideLabels = setOf("Логи проверки", "Видеозапись"),
         )
-        block("Вердикт") {
-            row {
-                horizontal {
-                    if (solution.status == DemoSolutionStatus.Checked) {
-                        verdict(checkNotNull(solution.score) { "Checked solution ${solution.id} has no score" }.toDouble(), "баллов")
-                    } else {
-                        badge(demoStatusLabel(solution.status), demoStatusTone(solution.status))
+        row {
+            block(title = "Вердикт") {
+                row {
+                    horizontal {
+                        if (solution.status == DemoSolutionStatus.Checked) {
+                            verdict(checkNotNull(solution.score) { "Checked solution ${solution.id} has no score" }.toDouble(), "баллов")
+                        } else {
+                            badge(demoStatusLabel(solution.status), demoStatusTone(solution.status))
+                        }
                     }
                 }
-            }
-            footer {
-                action("Вернуться к списку решений") {
-                    onClick { context.navigate("judge.solutions") }
+                footer {
+                    action("Вернуться к списку решений") {
+                        onClick { context.navigate("judge.solutions") }
+                    }
                 }
             }
         }
@@ -96,16 +98,18 @@ internal fun PageScope.demoJudge(context: DemoContext, actor: DemoUser, objects:
 /** Observer matrix uses only assigned tours and the corresponding participants. */
 internal fun PageScope.demoObserverResults(context: DemoContext, actor: DemoUser, objects: DemoObjects) {
     val tourKey = "${actor.id}:observer-tour"
-    block("Доступные туры") {
-        demoTable(context.table(tourKey), objects.tours.map { tour -> tour.row() }) { selected ->
-            context.select(key = tourKey, id = selected.id)
+    row {
+        block(title = "Доступные туры") {
+            demoTable(context.table(tourKey), objects.tours.map { tour -> tour.row() }) { selected ->
+                context.select(key = tourKey, id = selected.id)
+            }
         }
     }
     val selectedId = context.selection(key = tourKey, fallback = objects.tours.firstOrNull()?.id)
     val tour = objects.tours.firstOrNull { it.id == selectedId } ?: return
     val participantIds = objects.competitions.filter { tour.id in it.tourIds }.flatMap { it.participantIds }
     val participants = context.state.users.filter { it.id in participantIds }
-    block("Обзор результата") { demoResultMatrix(context, actor, tour, participants) }
+    row { block(title = "Обзор результата") { demoResultMatrix(context, actor, tour, participants) } }
 }
 
 private object ResultGrid {

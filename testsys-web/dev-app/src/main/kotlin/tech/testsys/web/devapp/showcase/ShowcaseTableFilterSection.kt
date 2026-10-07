@@ -62,69 +62,71 @@ internal fun PageScope.tableFiltersExample() {
     val defaults = SubmissionFilters()
     val applied = ValueSignal(defaults)
     val binder = Binder<SubmissionFiltersBuilder>()
-    block(title = "Посылки: фильтры полями", subtitle = "До применения таблица не меняется; минимум по умолчанию — 20 баллов") {
-        val rows = table(
-            key = { row: ShowcaseSubmission -> row.id },
-            pageSize = FILTER_PAGE_SIZE,
-            selectable = true,
-            fetch = { request -> submissionPage(SUBMISSIONS.filter { row -> row.matches(applied.peek()) }, request) },
-        ) { submissionColumns() }
-        actions {
-            action("Обновить выборку") { onClick { rows.refresh() } }
-            text(
-                applied.map { criteria ->
-                    "Применено: минимум ${criteria.minScore ?: "любой"}, участник ${criteria.author.ifEmpty { "любой" }}"
+    row {
+        block(title = "Посылки: фильтры полями", subtitle = "До применения таблица не меняется; минимум по умолчанию — 20 баллов") {
+            val rows = table(
+                key = { row: ShowcaseSubmission -> row.id },
+                pageSize = FILTER_PAGE_SIZE,
+                selectable = true,
+                fetch = { request -> submissionPage(SUBMISSIONS.filter { row -> row.matches(applied.peek()) }, request) },
+            ) { submissionColumns() }
+            actions {
+                action("Обновить выборку") { onClick { rows.refresh() } }
+                text(
+                    applied.map { criteria ->
+                        "Применено: минимум ${criteria.minScore ?: "любой"}, участник ${criteria.author.ifEmpty { "любой" }}"
+                    },
+                )
+            }
+            filters(
+                onApply = {
+                    val candidate = SubmissionFiltersBuilder(defaults)
+                    val isValid = binder.writeBeanIfValid(candidate)
+                    if (isValid) applied.set(candidate.build())
+                    isValid
                 },
-            )
-        }
-        filters(
-            onApply = {
-                val candidate = SubmissionFiltersBuilder(defaults)
-                val isValid = binder.writeBeanIfValid(candidate)
-                if (isValid) applied.set(candidate.build())
-                isValid
-            },
-            onReset = {
-                applied.set(defaults)
-                binder.readBean(SubmissionFiltersBuilder(defaults))
-            },
-            onRefresh = { rows.refresh(toFirstPage = true) },
-        ) {
-            row {
-                textInput("Участник", labelSize = 4, size = 8, hint = "Часть имени, без учёта регистра") {
-                    binder.forField(this).bind({ draft -> draft.author }, { draft, value -> draft.author = value })
+                onReset = {
+                    applied.set(defaults)
+                    binder.readBean(SubmissionFiltersBuilder(defaults))
+                },
+                onRefresh = { rows.refresh(toFirstPage = true) },
+            ) {
+                row {
+                    textInput("Участник", labelSize = 4, size = 8, hint = "Часть имени, без учёта регистра") {
+                        binder.forField(this).bind({ draft -> draft.author }, { draft, value -> draft.author = value })
+                    }
+                    select(
+                        "Вердикт",
+                        labelSize = 4,
+                        size = 8,
+                        items = SubmissionVerdictChoice.entries,
+                        itemLabel = SubmissionVerdictChoice::label,
+                    ) {
+                        binder.forField(this).bind(
+                            { draft -> SubmissionVerdictChoice.entries.first { choice -> choice.verdict == draft.verdict } },
+                            { draft, value -> draft.verdict = value?.verdict },
+                        )
+                    }
                 }
-                select(
-                    "Вердикт",
-                    labelSize = 4,
-                    size = 8,
-                    items = SubmissionVerdictChoice.entries,
-                    itemLabel = SubmissionVerdictChoice::label,
-                ) {
-                    binder.forField(this).bind(
-                        { draft -> SubmissionVerdictChoice.entries.first { choice -> choice.verdict == draft.verdict } },
-                        { draft, value -> draft.verdict = value?.verdict },
-                    )
+                row {
+                    integerInput(
+                        "Минимум баллов",
+                        labelSize = 4,
+                        size = 8,
+                        min = 0,
+                        max = SCORE_LIMIT - 1,
+                        hint = "От 0 до 100; пусто — любой балл",
+                    ) {
+                        binder.forField(this).bind({ draft -> draft.minScore }, { draft, value -> draft.minScore = value })
+                    }
+                    checkbox("Только ошибки", labelSize = 4, size = 8) {
+                        binder.forField(this).bind({ draft -> draft.isErrorsOnly }, { draft, value -> draft.isErrorsOnly = value })
+                    }
                 }
-            }
-            row {
-                integerInput(
-                    "Минимум баллов",
-                    labelSize = 4,
-                    size = 8,
-                    min = 0,
-                    max = SCORE_LIMIT - 1,
-                    hint = "От 0 до 100; пусто — любой балл",
-                ) {
-                    binder.forField(this).bind({ draft -> draft.minScore }, { draft, value -> draft.minScore = value })
-                }
-                checkbox("Только ошибки", labelSize = 4, size = 8) {
-                    binder.forField(this).bind({ draft -> draft.isErrorsOnly }, { draft, value -> draft.isErrorsOnly = value })
-                }
-            }
-            row {
-                dateRangeInput("Период отправки", labelSize = 4, size = 20) {
-                    binder.forField(this).bind({ draft -> draft.period }, { draft, value -> draft.period = value })
+                row {
+                    dateRangeInput("Период отправки", labelSize = 4, size = 20) {
+                        binder.forField(this).bind({ draft -> draft.period }, { draft, value -> draft.period = value })
+                    }
                 }
             }
         }

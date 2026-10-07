@@ -114,10 +114,12 @@ class ChoiceGroupTests : MockVaadinTests() {
     @Test
     fun `should render the counter with the default kind if none is given`() {
         buildTestPage {
-            block {
-                tabs(initial = 1) {
-                    tab(1, "Один")
-                    tab(2, "Два", count = DEFAULT_KIND_COUNT)
+            row {
+                block {
+                    tabs(initial = 1) {
+                        tab(1, "Один")
+                        tab(2, "Два", count = DEFAULT_KIND_COUNT)
+                    }
                 }
             }
         }
@@ -180,10 +182,12 @@ class ChoiceGroupTests : MockVaadinTests() {
     fun `should reject a negative count`() {
         assertThrows<IllegalArgumentException> {
             buildTestPage {
-                block {
-                    tabs(initial = 1) {
-                        tab(1, "Один", count = -1)
-                        tab(2, "Два")
+                row {
+                    block {
+                        tabs(initial = 1) {
+                            tab(1, "Один", count = -1)
+                            tab(2, "Два")
+                        }
                     }
                 }
             }
@@ -194,14 +198,16 @@ class ChoiceGroupTests : MockVaadinTests() {
     fun `should reject a second tab group in a block`() {
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    tabs(initial = 1) {
-                        tab(1, "Один")
-                        tab(2, "Два")
-                    }
-                    tabs(initial = 1) {
-                        tab(1, "Один")
-                        tab(2, "Два")
+                row {
+                    block {
+                        tabs(initial = 1) {
+                            tab(1, "Один")
+                            tab(2, "Два")
+                        }
+                        tabs(initial = 1) {
+                            tab(1, "Один")
+                            tab(2, "Два")
+                        }
                     }
                 }
             }
@@ -211,11 +217,13 @@ class ChoiceGroupTests : MockVaadinTests() {
     @Test
     fun `should put pills in the block head actions`() {
         buildTestPage {
-            block(title = "Каталог") {
-                actions {
-                    pills(initial = 1) {
-                        pill(1, "Все")
-                        pill(2, "Квизы")
+            row {
+                block(title = "Каталог") {
+                    actions {
+                        pills(initial = 1) {
+                            pill(1, "Все")
+                            pill(2, "Квизы")
+                        }
                     }
                 }
             }
@@ -231,11 +239,13 @@ class ChoiceGroupTests : MockVaadinTests() {
     fun `should change the value on a pill click`() {
         lateinit var handle: ChoiceHandle<Int>
         buildTestPage {
-            block(title = "Каталог") {
-                actions {
-                    handle = pills(initial = 1) {
-                        pill(1, "Все")
-                        pill(2, "Квизы")
+            row {
+                block(title = "Каталог") {
+                    actions {
+                        handle = pills(initial = 1) {
+                            pill(1, "Все")
+                            pill(2, "Квизы")
+                        }
                     }
                 }
             }
@@ -249,13 +259,15 @@ class ChoiceGroupTests : MockVaadinTests() {
     @Test
     fun `should place pills on the columns of a block row`() {
         buildTestPage {
-            block {
-                row {
-                    pills(initial = 1, size = 12) {
-                        pill(1, "Все")
-                        pill(2, "Квизы")
+            row {
+                block {
+                    row {
+                        pills(initial = 1, size = 12) {
+                            pill(1, "Все")
+                            pill(2, "Квизы")
+                        }
+                        text("x")
                     }
-                    text("x")
                 }
             }
         }
@@ -342,11 +354,13 @@ class ChoiceGroupTests : MockVaadinTests() {
     ): TabsHandle<Filter> {
         lateinit var handle: TabsHandle<Filter>
         buildTestPage {
-            block(title = title) {
-                handle = tabs(initial) {
-                    values.forEach { value -> tab(value, value.name, count = counts[value], countKind = countKind) }
+            row {
+                block(title = title) {
+                    handle = tabs(initial) {
+                        values.forEach { value -> tab(value, value.name, count = counts[value], countKind = countKind) }
+                    }
+                    row { text("Содержимое") }
                 }
-                row { text("Содержимое") }
             }
         }
         return handle

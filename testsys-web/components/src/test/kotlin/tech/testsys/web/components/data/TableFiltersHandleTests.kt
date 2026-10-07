@@ -157,9 +157,11 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
     fun `should reject a repeated filter panel`() {
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    filters(onApply = { true }, onReset = {}, onRefresh = {}) {}
-                    filters(onApply = { true }, onReset = {}, onRefresh = {}) {}
+                row {
+                    block {
+                        filters(onApply = { true }, onReset = {}, onRefresh = {}) {}
+                        filters(onApply = { true }, onReset = {}, onRefresh = {}) {}
+                    }
                 }
             }
         }
@@ -170,13 +172,9 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
         assertThrows<IllegalArgumentException> {
             buildTestPage {
                 row {
-                    slot(size = 12) {
-                        row {
-                            block {
-                                filters(onApply = { true }, onReset = {}, onRefresh = {}) {
-                                    row { textInput("Too wide", labelSize = 4, size = 21) }
-                                }
-                            }
+                    block(size = 12) {
+                        filters(onApply = { true }, onReset = {}, onRefresh = {}) {
+                            row { textInput("Too wide", labelSize = 4, size = 21) }
                         }
                     }
                 }
@@ -204,10 +202,12 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
             lateinit var input: ValueInput<String>
             lateinit var filters: TableFiltersHandle
             val main = buildTestPage {
-                block {
-                    loaded = load({ 1 }) { value -> row { text(value.toString()) } }
-                    filters = filters(onApply = { true }, onReset = {}, onRefresh = { loaded.reload() }) {
-                        row { input = textInput("Draft", labelSize = 4, size = 20) }
+                row {
+                    block {
+                        loaded = load({ 1 }) { value -> row { text(value.toString()) } }
+                        filters = filters(onApply = { true }, onReset = {}, onRefresh = { loaded.reload() }) {
+                            row { input = textInput("Draft", labelSize = 4, size = 20) }
+                        }
                     }
                 }
             }
@@ -227,8 +227,10 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
         @Test
         fun `should reject filter declarations inside the replaced load body`() {
             val main = buildTestPage {
-                block {
-                    load({ 1 }) { _ -> filters(onApply = { true }, onReset = {}, onRefresh = {}) {} }
+                row {
+                    block {
+                        load({ 1 }) { _ -> filters(onApply = { true }, onReset = {}, onRefresh = {}) {} }
+                    }
                 }
             }
 
@@ -263,31 +265,33 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
         lateinit var table: TableHandle<Int>
         lateinit var block: BlockHandle
         val root = buildTestPage {
-            block = block {
-                table = table(key = { value: Int -> value }, pageSize = 2, fetch = { request ->
-                    requests += applied.get() to request.offset
-                    Page((1..8).drop(request.offset).take(request.limit), total = 8)
-                }) { column("ID") { value -> text(value.toString()) } }
-                filters = filters(
-                    onApply = {
-                        val candidate = DraftBuilder()
-                        binder.writeBeanIfValid(candidate).also { valid -> if (valid) applied.set(candidate.value) }
-                    },
-                    onReset = {
-                        applied.set("default")
-                        binder.readBean(DraftBuilder())
-                    },
-                    onRefresh = { table.refresh(toFirstPage = true) },
-                ) {
-                    row {
-                        input = textInput("Query", labelSize = 4, size = 20) {
-                            binder.forField(this).asRequired("Required")
-                                .bind({ draft -> draft.value }, { draft, value -> draft.value = value }).skipWhenHidden()
+            row {
+                block = block {
+                    table = table(key = { value: Int -> value }, pageSize = 2, fetch = { request ->
+                        requests += applied.get() to request.offset
+                        Page((1..8).drop(request.offset).take(request.limit), total = 8)
+                    }) { column("ID") { value -> text(value.toString()) } }
+                    filters = filters(
+                        onApply = {
+                            val candidate = DraftBuilder()
+                            binder.writeBeanIfValid(candidate).also { valid -> if (valid) applied.set(candidate.value) }
+                        },
+                        onReset = {
+                            applied.set("default")
+                            binder.readBean(DraftBuilder())
+                        },
+                        onRefresh = { table.refresh(toFirstPage = true) },
+                    ) {
+                        row {
+                            input = textInput("Query", labelSize = 4, size = 20) {
+                                binder.forField(this).asRequired("Required")
+                                    .bind({ draft -> draft.value }, { draft, value -> draft.value = value }).skipWhenHidden()
+                            }
                         }
                     }
                 }
             }
-        }.child(0)
+        }.child(0).child(0)
 
         init {
             binder.readBean(DraftBuilder())

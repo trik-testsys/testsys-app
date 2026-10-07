@@ -7,28 +7,23 @@ import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import org.springframework.core.env.Environment
 import tech.testsys.web.components.TestSysView
-import tech.testsys.web.components.display.ContestCardData
 import tech.testsys.web.components.display.ProgressValue
 import tech.testsys.web.components.display.TimerValue
 import tech.testsys.web.components.display.TimerVariant
 import tech.testsys.web.components.display.Tone
-import tech.testsys.web.components.display.contestCard
 import tech.testsys.web.components.display.progressBar
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.display.timer
 import tech.testsys.web.components.display.verdict
-import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.SkeletonShape
 import tech.testsys.web.components.feedback.skeleton
 import tech.testsys.web.components.feedback.skeletonRows
-import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.texts.UiTexts
 import java.time.Duration
 import java.time.Instant
 
 private const val HALF_WIDTH = 12
-private const val FULL_WIDTH = 24
 private const val DEMO_PROGRESS_PERCENT = 65.0
 private const val COMPLETE_PROGRESS_PERCENT = 100.0
 private const val LIVE_TIMER_SECONDS = 65L
@@ -46,33 +41,36 @@ class ShowcaseDisplayView(texts: UiTexts, private val environment: Environment) 
     init {
         page(showcaseHeader()) {
             showcaseHead("Отображение и данные")
-            block(title = "ProgressBar и Timer") {
-                row {
-                    progressBar("Прогресс", ProgressValue.Determinate(DEMO_PROGRESS_PERCENT), size = HALF_WIDTH)
-                    progressBar("Ожидание", ProgressValue.Indeterminate, size = HALF_WIDTH)
-                }
-                TimerVariant.entries.forEach { variant ->
-                    row { timer("Осталось времени", TimerValue.Static(Duration.ofSeconds(STATIC_TIMER_SECONDS)), variant = variant) }
-                }
-                row { timer("Живой таймер", TimerValue.Until(Instant.now().plusSeconds(LIVE_TIMER_SECONDS))) }
-                row { timer("Завершённый таймер", TimerValue.Static(Duration.ZERO)) }
-                row {
-                    progressBar("Начало", ProgressValue.Determinate(0.0), size = HALF_WIDTH)
-                    progressBar("Готово", ProgressValue.Determinate(COMPLETE_PROGRESS_PERCENT), size = HALF_WIDTH, tone = Tone.Success)
-                }
-                row {
-                    horizontal {
-                        listOf(Tone.Info, Tone.Success, Tone.Warning, Tone.Danger).forEach { tone ->
-                            progressBar("Прогресс ${tone.name}", ProgressValue.Determinate(DEMO_PROGRESS_PERCENT), tone = tone)
+            row {
+                block(title = "ProgressBar и Timer") {
+                    row {
+                        progressBar("Прогресс", ProgressValue.Determinate(DEMO_PROGRESS_PERCENT), size = HALF_WIDTH)
+                        progressBar("Ожидание", ProgressValue.Indeterminate, size = HALF_WIDTH)
+                    }
+                    TimerVariant.entries.forEach { variant ->
+                        row { timer("Осталось времени", TimerValue.Static(Duration.ofSeconds(STATIC_TIMER_SECONDS)), variant = variant) }
+                    }
+                    row { timer("Живой таймер", TimerValue.Until(Instant.now().plusSeconds(LIVE_TIMER_SECONDS))) }
+                    row { timer("Завершённый таймер", TimerValue.Static(Duration.ZERO)) }
+                    row {
+                        progressBar("Начало", ProgressValue.Determinate(0.0), size = HALF_WIDTH)
+                        progressBar("Готово", ProgressValue.Determinate(COMPLETE_PROGRESS_PERCENT), size = HALF_WIDTH, tone = Tone.Success)
+                    }
+                    row {
+                        horizontal {
+                            listOf(Tone.Info, Tone.Success, Tone.Warning, Tone.Danger).forEach { tone ->
+                                progressBar("Прогресс ${tone.name}", ProgressValue.Determinate(DEMO_PROGRESS_PERCENT), tone = tone)
+                            }
                         }
                     }
                 }
             }
-            block(title = "Skeleton") {
-                row { horizontal { SkeletonShape.entries.forEach { shape -> skeleton(shape) } } }
-                row { vertical { skeletonRows(SKELETON_ROW_COUNT) } }
+            row {
+                block(title = "Skeleton") {
+                    row { horizontal { SkeletonShape.entries.forEach { shape -> skeleton(shape) } } }
+                    row { vertical { skeletonRows(SKELETON_ROW_COUNT) } }
+                }
             }
-            contestCards()
             numericVerdicts()
         }
     }
@@ -82,50 +80,17 @@ class ShowcaseDisplayView(texts: UiTexts, private val environment: Environment) 
     }
 }
 
-private fun PageScope.contestCards() {
-    row {
-        slot(size = FULL_WIDTH) {
-            row {
-                contestCard(
-                    ContestCardData(
-                        title = "Открытая практика",
-                        format = "Практика",
-                        status = "Открыта",
-                        tone = Tone.Info,
-                        whenText = "В любое время",
-                        tags = listOf("TRIK", "Python"),
-                        people = "24 участника",
-                        actionLabel = "Участвовать",
-                    ),
-                    size = HALF_WIDTH,
-                ) {
-                    onClick { toast(FeedbackKind.Info, "Открыта карточка практики") }
-                    onAction { toast(FeedbackKind.Success, "Выбрано участие в практике") }
-                }
-                contestCard(
-                    ContestCardData(
-                        title = "Завершённая тренировка",
-                        format = "Тренировка",
-                        status = "Завершена",
-                        tone = Tone.Neutral,
-                        whenText = "Вчера",
-                    ),
-                    size = HALF_WIDTH,
-                )
-            }
-        }
-    }
-}
-
 private fun PageScope.numericVerdicts() {
-    block(title = "Verdict: числовой результат") {
-        row {
-            horizontal {
-                verdict(0.0)
-                verdict(DEMO_PROGRESS_PERCENT, label = "баллов")
-                text("Число не задаёт порог успешности; очередь, ошибка и тайм-аут — отдельные статусы")
+    row {
+        block(title = "Verdict: числовой результат") {
+            row {
+                horizontal {
+                    verdict(0.0)
+                    verdict(DEMO_PROGRESS_PERCENT, label = "баллов")
+                    text("Число не задаёт порог успешности; очередь, ошибка и тайм-аут — отдельные статусы")
+                }
             }
+            row { verdict(0.0, label = "баллов", size = HALF_WIDTH) }
         }
-        row { verdict(0.0, label = "баллов", size = HALF_WIDTH) }
     }
 }

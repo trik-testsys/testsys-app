@@ -27,59 +27,53 @@ internal fun PageScope.tableSection() {
     tableFiltersExample()
     var verdict: ShowcaseVerdict? = null
     var isErrorsOnly = false
-    block(title = "Посылки", subtitle = "Ширины колонок, сортировка по баллам и времени, фильтры в шапке, выбор строк") {
-        val submissions = table(
-            key = { row -> row.id },
-            selectable = true,
-            fetch = { request -> submissionPage(SUBMISSIONS.filter { row -> row.matches(verdict, isErrorsOnly) }, request) },
-        ) {
-            submissionColumns()
-            onRowClick { row -> toast(FeedbackKind.Info, "Посылка #${row.id}") }
-        }
-        actions {
-            select("Вердикт", items = ShowcaseVerdict.entries, itemLabel = ShowcaseVerdict::label, emptyLabel = "Все вердикты") {
-                addValueChangeListener { event ->
-                    verdict = event.value
-                    submissions.refresh(toFirstPage = true)
-                }
+    row {
+        block(title = "Посылки", subtitle = "Ширины колонок, сортировка по баллам и времени, фильтры в шапке, выбор строк") {
+            val submissions = table(
+                key = { row -> row.id },
+                selectable = true,
+                fetch = { request -> submissionPage(SUBMISSIONS.filter { row -> row.matches(verdict, isErrorsOnly) }, request) },
+            ) {
+                submissionColumns()
+                onRowClick { row -> toast(FeedbackKind.Info, "Посылка #${row.id}") }
             }
-            filterChip("С ошибками") {
-                onChange { isOn ->
-                    isErrorsOnly = isOn
-                    submissions.refresh(toFirstPage = true)
+            actions {
+                select("Вердикт", items = ShowcaseVerdict.entries, itemLabel = ShowcaseVerdict::label, emptyLabel = "Все вердикты") {
+                    addValueChangeListener { event ->
+                        verdict = event.value
+                        submissions.refresh(toFirstPage = true)
+                    }
                 }
-            }
-            text(submissions.selection.map { keys -> "Выбрано: ${keys.size}" })
-            action("Перепроверить") {
-                bindEnabled(submissions.selection.map { keys -> keys.isNotEmpty() })
-                onClick {
-                    val count = submissions.selected.size
-                    toast(kind = FeedbackKind.Success, title = "Отправлено на перепроверку", description = "Посылок: $count")
-                    submissions.clearSelection()
+                filterChip("С ошибками") {
+                    onChange { isOn ->
+                        isErrorsOnly = isOn
+                        submissions.refresh(toFirstPage = true)
+                    }
+                }
+                text(submissions.selection.map { keys -> "Выбрано: ${keys.size}" })
+                action("Перепроверить") {
+                    bindEnabled(submissions.selection.map { keys -> keys.isNotEmpty() })
+                    onClick {
+                        val count = submissions.selected.size
+                        toast(kind = FeedbackKind.Success, title = "Отправлено на перепроверку", description = "Посылок: $count")
+                        submissions.clearSelection()
+                    }
                 }
             }
         }
     }
     row {
-        slot(size = 12) {
-            row {
-                block(title = "Пустая таблица") {
-                    table(key = { row -> row.id }, fetch = { request -> submissionPage(emptyList(), request) }) {
-                        submissionColumns(isCompact = true)
-                        empty("Посылок пока нет")
-                    }
-                }
+        block(size = 12, title = "Пустая таблица") {
+            table(key = { row -> row.id }, fetch = { request -> submissionPage(emptyList(), request) }) {
+                submissionColumns(isCompact = true)
+                empty("Посылок пока нет")
             }
         }
-        slot(size = 12) {
-            row {
-                block(title = "Маленькая таблица", subtitle = "Одна страница — без пагинации") {
-                    table(key = { row -> row.id }, fetch = { request -> submissionPage(SUBMISSIONS.take(SMALL_TABLE_ROWS), request) }) {
-                        codeColumn("ID", size = 4) { row -> "#${row.id}" }
-                        textColumn("Участник", size = 12) { row -> row.author }
-                        column("Вердикт", size = 8) { row -> badge(row.verdict.label, row.verdict.tone) }
-                    }
-                }
+        block(size = 12, title = "Маленькая таблица", subtitle = "Одна страница — без пагинации") {
+            table(key = { row -> row.id }, fetch = { request -> submissionPage(SUBMISSIONS.take(SMALL_TABLE_ROWS), request) }) {
+                codeColumn("ID", size = 4) { row -> "#${row.id}" }
+                textColumn("Участник", size = 12) { row -> row.author }
+                column("Вердикт", size = 8) { row -> badge(row.verdict.label, row.verdict.tone) }
             }
         }
     }

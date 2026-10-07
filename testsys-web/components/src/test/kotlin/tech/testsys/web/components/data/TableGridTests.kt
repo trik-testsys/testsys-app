@@ -10,18 +10,14 @@ import tech.testsys.web.components.find
 
 class TableGridTests : MockVaadinTests() {
     @Test
-    fun `should split the 24 fractions of a block inside a slot`() {
+    fun `should split the 24 fractions of a block of a page row`() {
         val page = buildTestPage {
             row {
-                slot(size = 8) {
-                    row {
-                        block {
-                            table(key = { row: Int -> row }, selectable = true, selectionSize = 3, fetch = { Page(listOf(1), 1) }) {
-                                textColumn("Name", size = 6) { "Name" }
-                                numberColumn("Score") { 50 }
-                                menuColumn(size = 3) { item("Open") {} }
-                            }
-                        }
+                block(size = 8) {
+                    table(key = { row: Int -> row }, selectable = true, selectionSize = 3, fetch = { Page(listOf(1), 1) }) {
+                        textColumn("Name", size = 6) { "Name" }
+                        numberColumn("Score") { 50 }
+                        menuColumn(size = 3) { item("Open") {} }
                     }
                 }
             }
@@ -40,9 +36,11 @@ class TableGridTests : MockVaadinTests() {
     @Test
     fun `should retain an unused part of the logical grid`() {
         buildTestPage {
-            block {
-                table(key = { row: Int -> row }, gridColumns = 8, fetch = { Page(emptyList(), 0) }) {
-                    textColumn("Name", size = 2) { "Name" }
+            row {
+                block {
+                    table(key = { row: Int -> row }, gridColumns = 8, fetch = { Page(emptyList(), 0) }) {
+                        textColumn("Name", size = 2) { "Name" }
+                    }
                 }
             }
         }

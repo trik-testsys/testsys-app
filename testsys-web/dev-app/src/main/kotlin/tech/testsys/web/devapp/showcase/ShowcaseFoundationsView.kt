@@ -34,13 +34,17 @@ internal class ShowcaseFoundationsView(texts: UiTexts, private val environment: 
 }
 
 private fun PageScope.foundations() {
-    block("Состояния движения") {
-        row { horizontal { action("Навести или сфокусировать") } }
-        row { skeleton() }
+    row {
+        block(title = "Состояния движения") {
+            row { horizontal { action("Навести или сфокусировать") } }
+            row { skeleton() }
+        }
     }
-    block("Бренд") {
-        BrandAsset.entries.forEach { asset ->
-            row { brandImage(asset, label = "Фирменный ресурс TestSys") }
+    row {
+        block(title = "Бренд") {
+            BrandAsset.entries.forEach { asset ->
+                row { brandImage(asset, label = "Фирменный ресурс TestSys") }
+            }
         }
     }
 }

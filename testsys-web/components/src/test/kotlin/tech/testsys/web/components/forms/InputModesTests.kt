@@ -38,10 +38,12 @@ internal class InputModesTests : MockVaadinTests() {
 
     private fun buildModes() {
         buildTestPage {
-            block = block {
-                row {
-                    toggle = switchInput("Switch", labelSize = 2, size = 2)
-                    code = codeEditor("Code", labelSize = 2, size = 6)
+            row {
+                block = block {
+                    row {
+                        toggle = switchInput("Switch", labelSize = 2, size = 2)
+                        code = codeEditor("Code", labelSize = 2, size = 6)
+                    }
                 }
             }
         }

@@ -40,8 +40,10 @@ class ShowcaseNestedView(texts: UiTexts, private val environment: Environment) :
             focusExamples()
             hiddenFieldExample()
             dialogSignalExample()
-            block(title = "Страница 404") {
-                actions { action("Открыть отсутствующую страницу") { onClick { UI.getCurrent().navigate("dev/missing") } } }
+            row {
+                block(title = "Страница 404") {
+                    actions { action("Открыть отсутствующую страницу") { onClick { UI.getCurrent().navigate("dev/missing") } } }
+                }
             }
         }
     }
@@ -58,72 +60,88 @@ private class HiddenFieldDraft(var name: String = "Сохранённое наз
 private class RangeDraft(var period: DateRange = DateRange())
 
 private fun PageScope.focusExamples() {
-    block(title = "Фокус: обычное поле") {
-        editing(onSave = { true }, onCancel = {})
-        row { textInput("Скрытое", labelSize = 4, size = 20) { isVisible = false } }
-        row { textInput("Выключенное", labelSize = 4, size = 20) { isEnabled = false } }
-        row { textInput("Только чтение", labelSize = 4, size = 20) { isEditable = false } }
-        row { textInput("Первое доступное", labelSize = 4, size = 20) }
-    }
-    block(title = "Фокус: диапазон дат") {
-        val binder = Binder<RangeDraft>()
-        val required = ValueSignal(true)
-        editing(onSave = { binder.validate().isOk }, onCancel = {})
-        actions { action("Переключить обязательность") { onClick { required.set(!required.peek()) } } }
-        row {
-            dateRangeInput("Период", labelSize = 4, size = 20) {
-                binder.forField(this).withValidator({ range -> !required.peek() || range != DateRange() }, "Укажите границу периода")
-                    .bind({ draft -> draft.period }, { draft, value -> draft.period = value })
-                bindRequiredIndicatorVisible(required)
-            }
+    row {
+        block(title = "Фокус: обычное поле") {
+            editing(onSave = { true }, onCancel = {})
+            row { textInput("Скрытое", labelSize = 4, size = 20) { isVisible = false } }
+            row { textInput("Выключенное", labelSize = 4, size = 20) { isEnabled = false } }
+            row { textInput("Только чтение", labelSize = 4, size = 20) { isEditable = false } }
+            row { textInput("Первое доступное", labelSize = 4, size = 20) }
         }
     }
-    block(title = "Фокус: дата и время") {
-        editing(onSave = { true }, onCancel = {})
-        row { dateTimeInput("Начало", labelSize = 4, size = 20) }
-    }
-    block(title = "Фокус: лукап") {
-        editing(onSave = { true }, onCancel = {})
-        row {
-            lookup(
-                "Тур",
-                labelSize = 4,
-                size = 20,
-                fetch = { _, _ -> Page(listOf("Весенний кубок"), 1) },
-                display = { value -> value },
-                columns = { textColumn("Название") { value -> value } },
-            )
-        }
-    }
-    block(title = "Фокус: нет доступных полей") {
-        editing(onSave = { true }, onCancel = {})
-        row { textInput("Архивный код", labelSize = 4, size = 20) { isEditable = false } }
-    }
-    block(title = "Фокус: пустой блок") {
-        editing(onSave = { true }, onCancel = {})
-    }
-    block(title = "Фокус: пустая загрузка") {
-        var isFieldShown = false
-        editing(onSave = { true }, onCancel = {})
-        val loaded = load({ isFieldShown }) { show ->
-            if (show) row { textInput("Появившееся поле", labelSize = 4, size = 20) }
-        }
-        actions {
-            action("Заполнить пустое тело") {
-                onClick {
-                    isFieldShown = true
-                    loaded.reload()
+    row {
+        block(title = "Фокус: диапазон дат") {
+            val binder = Binder<RangeDraft>()
+            val required = ValueSignal(true)
+            editing(onSave = { binder.validate().isOk }, onCancel = {})
+            actions { action("Переключить обязательность") { onClick { required.set(!required.peek()) } } }
+            row {
+                dateRangeInput("Период", labelSize = 4, size = 20) {
+                    binder.forField(this).withValidator({ range -> !required.peek() || range != DateRange() }, "Укажите границу периода")
+                        .bind({ draft -> draft.period }, { draft, value -> draft.period = value })
+                    bindRequiredIndicatorVisible(required)
                 }
             }
         }
     }
-    block(title = "Фокус: загруженное тело") {
-        var revision = 0
-        editing(onSave = { true }, onCancel = {})
-        val loaded = load({ "Загрузка ${++revision}" }) { label ->
-            row { textInput(label, labelSize = 4, size = 20) }
+    row {
+        block(title = "Фокус: дата и время") {
+            editing(onSave = { true }, onCancel = {})
+            row { dateTimeInput("Начало", labelSize = 4, size = 20) }
         }
-        actions { action("Заменить тело") { onClick { loaded.reload() } } }
+    }
+    row {
+        block(title = "Фокус: лукап") {
+            editing(onSave = { true }, onCancel = {})
+            row {
+                lookup(
+                    "Тур",
+                    labelSize = 4,
+                    size = 20,
+                    fetch = { _, _ -> Page(listOf("Весенний кубок"), 1) },
+                    display = { value -> value },
+                    columns = { textColumn("Название") { value -> value } },
+                )
+            }
+        }
+    }
+    row {
+        block(title = "Фокус: нет доступных полей") {
+            editing(onSave = { true }, onCancel = {})
+            row { textInput("Архивный код", labelSize = 4, size = 20) { isEditable = false } }
+        }
+    }
+    row {
+        block(title = "Фокус: пустой блок") {
+            editing(onSave = { true }, onCancel = {})
+        }
+    }
+    row {
+        block(title = "Фокус: пустая загрузка") {
+            var isFieldShown = false
+            editing(onSave = { true }, onCancel = {})
+            val loaded = load({ isFieldShown }) { show ->
+                if (show) row { textInput("Появившееся поле", labelSize = 4, size = 20) }
+            }
+            actions {
+                action("Заполнить пустое тело") {
+                    onClick {
+                        isFieldShown = true
+                        loaded.reload()
+                    }
+                }
+            }
+        }
+    }
+    row {
+        block(title = "Фокус: загруженное тело") {
+            var revision = 0
+            editing(onSave = { true }, onCancel = {})
+            val loaded = load({ "Загрузка ${++revision}" }) { label ->
+                row { textInput(label, labelSize = 4, size = 20) }
+            }
+            actions { action("Заменить тело") { onClick { loaded.reload() } } }
+        }
     }
 }
 
@@ -132,17 +150,19 @@ private fun PageScope.hiddenFieldExample() {
     val binder = Binder<HiddenFieldDraft>()
     lateinit var input: ValueInput<String>
     lateinit var saved: TextHandle
-    block(title = "Скрытое поле Binder", subtitle = "Скрытие сохраняет прежнее значение при явном сохранении") {
-        row {
-            input = textInput("Название", labelSize = 4, size = 20) {
-                binder.forField(this).asRequired("Укажите название")
-                    .bind({ bean -> bean.name }, { bean, value -> bean.name = value }).skipWhenHidden()
+    row {
+        block(title = "Скрытое поле Binder", subtitle = "Скрытие сохраняет прежнее значение при явном сохранении") {
+            row {
+                input = textInput("Название", labelSize = 4, size = 20) {
+                    binder.forField(this).asRequired("Укажите название")
+                        .bind({ bean -> bean.name }, { bean, value -> bean.name = value }).skipWhenHidden()
+                }
             }
-        }
-        row { saved = text("Сохранено: ${draft.name}") }
-        actions {
-            action("Показать / скрыть поле") { onClick { input.isVisible = !input.isVisible } }
-            action("Сохранить явно") { onClick { if (binder.writeBeanIfValid(draft)) saved.text = "Сохранено: ${draft.name}" } }
+            row { saved = text("Сохранено: ${draft.name}") }
+            actions {
+                action("Показать / скрыть поле") { onClick { input.isVisible = !input.isVisible } }
+                action("Сохранить явно") { onClick { if (binder.writeBeanIfValid(draft)) saved.text = "Сохранено: ${draft.name}" } }
+            }
         }
     }
     binder.readBean(draft)
@@ -159,7 +179,9 @@ private fun PageScope.dialogSignalExample() {
         }
     }
     form.bindEditable(editable)
-    block(title = "Диалог по сигналу") {
-        actions { action("Открыть форму") { onClick { form.open() } } }
+    row {
+        block(title = "Диалог по сигналу") {
+            actions { action("Открыть форму") { onClick { form.open() } } }
+        }
     }
 }

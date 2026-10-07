@@ -1,7 +1,7 @@
 package tech.testsys.web.components
 
 import com.vaadin.flow.component.Component
-import com.vaadin.flow.component.HasText
+import com.vaadin.flow.component.HtmlContainer
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
@@ -30,12 +30,12 @@ open class ElementHandle internal constructor(internal val component: Component)
 }
 
 /**
- * Handle of an element whose text a page replaces, e.g. a stat card value or a counter.
+ * Handle of an element whose text a page replaces, e.g. a counter or a paragraph of text.
  *
  * @property text the shown text.
  * @since %CURRENT_VERSION%
  */
-class TextHandle internal constructor(private val holder: HasText, component: Component) : ElementHandle(component) {
+class TextHandle internal constructor(private val holder: HtmlContainer) : ElementHandle(holder) {
     var text: String
         get() = holder.text
         set(value) {

@@ -29,72 +29,64 @@ private class ShowcaseProfile(var login: String = "anna", var email: String = "a
 
 internal fun PageScope.fieldSection() {
     row {
-        slot(size = 12) {
+        block(size = 12, title = "Текстовые поля и выбор") {
+            row { textInput("Название", labelSize = 8, size = 16, hint = "Видно участникам") }
             row {
-                block(title = "Текстовые поля и выбор") {
-                    row { textInput("Название", labelSize = 8, size = 16, hint = "Видно участникам") }
-                    row {
-                        codeInput("Идентификатор", labelSize = 8, size = 8)
-                        codeInput("Занятый", labelSize = 4, size = 4) {
-                            isInvalid = true
-                            errorMessage = "Уже занят"
-                        }
-                    }
-                    row { textArea("Описание", labelSize = 8, size = 16) }
-                    row {
-                        textArea("Условие", labelSize = 8, size = 16, hint = "Не выше четырёх строк, дальше прокрутка", maxLines = 4) {
-                            value = LONG_TEXT
-                        }
-                    }
-                    row { textArea("Заметки", labelSize = 8, size = 16, hint = "Всегда три строки", minLines = 3, maxLines = 3) }
-                    row {
-                        select(
-                            "Язык",
-                            labelSize = 8,
-                            size = 16,
-                            items = listOf("Kotlin", "Python", "C++"),
-                            itemLabel = { language -> language },
-                        )
-                    }
-                    row { checkbox("Открытый тур", labelSize = 8, size = 16) }
-                    row { textInput("Очень длинная подпись поля, которая переносится на несколько строк", labelSize = 8, size = 16) }
-                    row { textInput("Обязательное", labelSize = 8, size = 16) { isRequiredIndicatorVisible = true } }
-                    row {
-                        textInput("Выключенное", labelSize = 8, size = 16) {
-                            value = "Недоступно"
-                            isEnabled = false
-                        }
-                    }
-                    row {
-                        textInput("Только чтение", labelSize = 8, size = 16) {
-                            value = "Можно выделить и скопировать"
-                            isEditable = false
-                        }
-                    }
-                    row {
-                        field("Теги", labelSize = 8, size = 16) {
-                            tag("графы")
-                            tag("DP")
-                            badge("Идёт", Tone.Success)
-                        }
-                    }
+                codeInput("Идентификатор", labelSize = 8, size = 8)
+                codeInput("Занятый", labelSize = 4, size = 4) {
+                    isInvalid = true
+                    errorMessage = "Уже занят"
+                }
+            }
+            row { textArea("Описание", labelSize = 8, size = 16) }
+            row {
+                textArea("Условие", labelSize = 8, size = 16, hint = "Не выше четырёх строк, дальше прокрутка", maxLines = 4) {
+                    value = LONG_TEXT
+                }
+            }
+            row { textArea("Заметки", labelSize = 8, size = 16, hint = "Всегда три строки", minLines = 3, maxLines = 3) }
+            row {
+                select(
+                    "Язык",
+                    labelSize = 8,
+                    size = 16,
+                    items = listOf("Kotlin", "Python", "C++"),
+                    itemLabel = { language -> language },
+                )
+            }
+            row { checkbox("Открытый тур", labelSize = 8, size = 16) }
+            row { textInput("Очень длинная подпись поля, которая переносится на несколько строк", labelSize = 8, size = 16) }
+            row { textInput("Обязательное", labelSize = 8, size = 16) { isRequiredIndicatorVisible = true } }
+            row {
+                textInput("Выключенное", labelSize = 8, size = 16) {
+                    value = "Недоступно"
+                    isEnabled = false
+                }
+            }
+            row {
+                textInput("Только чтение", labelSize = 8, size = 16) {
+                    value = "Можно выделить и скопировать"
+                    isEditable = false
+                }
+            }
+            row {
+                field("Теги", labelSize = 8, size = 16) {
+                    tag("графы")
+                    tag("DP")
+                    badge("Идёт", Tone.Success)
                 }
             }
         }
-        slot(size = 12) {
+        block(size = 12, title = "Даты и числа") {
+            row { dateInput("Дата", labelSize = 8, size = 16) }
+            row { timeInput("Время", labelSize = 8, size = 16, step = Duration.ofMinutes(TIME_STEP_MINUTES)) }
+            row { dateTimeInput("Начало тура", labelSize = 8, size = 16) }
+            row { dateRangeInput("Период регистрации", labelSize = 8, size = 16) }
+            row { integerInput("Длительность", labelSize = 8, size = 16, min = 10, max = 300, step = 5, unit = "минут") }
+            row { decimalInput("Балл", labelSize = 8, size = 16, min = 0.0, max = 100.0, step = 0.5) }
             row {
-                block(title = "Даты и числа") {
-                    row { dateInput("Дата", labelSize = 8, size = 16) }
-                    row { timeInput("Время", labelSize = 8, size = 16, step = Duration.ofMinutes(TIME_STEP_MINUTES)) }
-                    row { dateTimeInput("Начало тура", labelSize = 8, size = 16) }
-                    row { dateRangeInput("Период регистрации", labelSize = 8, size = 16) }
-                    row { integerInput("Длительность", labelSize = 8, size = 16, min = 10, max = 300, step = 5, unit = "минут") }
-                    row { decimalInput("Балл", labelSize = 8, size = 16, min = 0.0, max = 100.0, step = 0.5) }
-                    row {
-                        integerInput("Задач", labelSize = 4, size = 8)
-                        integerInput("Попыток", labelSize = 4, size = 8)
-                    }
-                }
+                integerInput("Задач", labelSize = 4, size = 8)
+                integerInput("Попыток", labelSize = 4, size = 8)
             }
         }
     }
@@ -105,45 +97,39 @@ internal fun PageScope.editingSection() {
     val binder = Binder<ShowcaseProfile>()
     lateinit var switched: BlockHandle
     row {
-        slot(size = 12) {
+        block(size = 12, title = "Режим редактирования", subtitle = "Сохранение с пустым логином оставляет режим") {
+            editing(onSave = { binder.writeBeanIfValid(profile) }, onCancel = { binder.readBean(profile) })
             row {
-                block(title = "Режим редактирования", subtitle = "Сохранение с пустым логином оставляет режим") {
-                    editing(onSave = { binder.writeBeanIfValid(profile) }, onCancel = { binder.readBean(profile) })
-                    row {
-                        textInput("Логин", labelSize = 8, size = 16) {
-                            binder.forField(this)
-                                .asRequired("Заполните логин")
-                                .bind({ source -> source.login }, { target, value -> target.login = value })
-                        }
-                    }
-                    row {
-                        textInput("Почта", labelSize = 8, size = 16) {
-                            binder.forField(this).bind({ source -> source.email }, { target, value -> target.email = value })
-                        }
-                    }
-                    row {
-                        dateInput("Создан", labelSize = 8, size = 16) {
-                            value = LocalDate.parse("2026-09-12")
-                            isEditable = false
-                        }
-                    }
+                textInput("Логин", labelSize = 8, size = 16) {
+                    binder.forField(this)
+                        .asRequired("Заполните логин")
+                        .bind({ source -> source.login }, { target, value -> target.login = value })
+                }
+            }
+            row {
+                textInput("Почта", labelSize = 8, size = 16) {
+                    binder.forField(this).bind({ source -> source.email }, { target, value -> target.email = value })
+                }
+            }
+            row {
+                dateInput("Создан", labelSize = 8, size = 16) {
+                    value = LocalDate.parse("2026-09-12")
+                    isEditable = false
                 }
             }
         }
-        slot(size = 12) {
-            row {
-                switched = block(title = "Переключение из кода", subtitle = "BlockHandle.isEditable") {
-                    actions { action("Переключить") { onClick { switched.isEditable = !switched.isEditable } } }
-                    row { textInput("Название", labelSize = 8, size = 16) { value = "Весенний тур" } }
-                }
-            }
+        switched = block(size = 12, title = "Переключение из кода", subtitle = "BlockHandle.isEditable") {
+            actions { action("Переключить") { onClick { switched.isEditable = !switched.isEditable } } }
+            row { textInput("Название", labelSize = 8, size = 16) { value = "Весенний тур" } }
         }
     }
     binder.readBean(profile)
     switched.isEditable = false
-    highlightBlock(title = "Подсветка в режиме редактирования", subtitle = "Поля только для чтения в тёмном блоке") {
-        editing(onSave = { true }, onCancel = {})
-        row { textInput("Название", labelSize = 4, size = 8) { value = "Весенний тур" } }
-        row { dateInput("Дата", labelSize = 4, size = 8) { value = LocalDate.parse("2026-09-12") } }
+    row {
+        highlightBlock(title = "Подсветка в режиме редактирования", subtitle = "Поля только для чтения в тёмном блоке") {
+            editing(onSave = { true }, onCancel = {})
+            row { textInput("Название", labelSize = 4, size = 8) { value = "Весенний тур" } }
+            row { dateInput("Дата", labelSize = 4, size = 8) { value = LocalDate.parse("2026-09-12") } }
+        }
     }
 }

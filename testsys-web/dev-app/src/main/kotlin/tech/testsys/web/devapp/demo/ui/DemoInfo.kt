@@ -10,14 +10,16 @@ private const val FIELDS_PER_ROW = 2
 
 /** Common composition of selectable information fields, pairing short values without reordering them. */
 internal fun PageScope.demoInfo(title: String, fields: List<Pair<String, String>>, wideLabels: Set<String> = emptySet()) {
-    block(title) {
-        demoInfoRows(fields, wideLabels).forEach { fieldsInRow ->
-            row {
-                fieldsInRow.forEach { (label, content) ->
-                    val columns = if (label in wideLabels) FULL_FIELD_COLUMNS else SHORT_FIELD_COLUMNS
-                    textInput(label, labelSize = INFO_LABEL_COLUMNS, size = columns - INFO_LABEL_COLUMNS) {
-                        value = content
-                        isEditable = false
+    row {
+        block(title = title) {
+            demoInfoRows(fields, wideLabels).forEach { fieldsInRow ->
+                row {
+                    fieldsInRow.forEach { (label, content) ->
+                        val columns = if (label in wideLabels) FULL_FIELD_COLUMNS else SHORT_FIELD_COLUMNS
+                        textInput(label, labelSize = INFO_LABEL_COLUMNS, size = columns - INFO_LABEL_COLUMNS) {
+                            value = content
+                            isEditable = false
+                        }
                     }
                 }
             }

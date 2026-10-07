@@ -265,10 +265,12 @@ class TableTests : MockVaadinTests() {
         val source = Source(size = 3)
 
         buildTestPage {
-            block(title = "Посылки") {
-                footer { text("Итого") }
-                table(key = { row: Row -> row.id }, pageSize = 5, fetch = source::fetch) {
-                    textColumn("Участник", size = 1) { row -> row.name }
+            row {
+                block(title = "Посылки") {
+                    footer { text("Итого") }
+                    table(key = { row: Row -> row.id }, pageSize = 5, fetch = source::fetch) {
+                        textColumn("Участник", size = 1) { row -> row.name }
+                    }
                 }
             }
         }
@@ -282,10 +284,12 @@ class TableTests : MockVaadinTests() {
         val source = Source(size = 12)
 
         buildTestPage {
-            block(title = "Посылки") {
-                footer { text("Итого") }
-                table(key = { row: Row -> row.id }, pageSize = 5, fetch = source::fetch) {
-                    textColumn("Участник", size = 1) { row -> row.name }
+            row {
+                block(title = "Посылки") {
+                    footer { text("Итого") }
+                    table(key = { row: Row -> row.id }, pageSize = 5, fetch = source::fetch) {
+                        textColumn("Участник", size = 1) { row -> row.name }
+                    }
                 }
             }
         }
@@ -299,11 +303,13 @@ class TableTests : MockVaadinTests() {
         val source = Source(size = 12)
 
         buildTestPage {
-            block(title = "Посылки") {
-                table(key = { row: Row -> row.id }, pageSize = 5, fetch = source::fetch) {
-                    textColumn("Участник", size = 1) { row -> row.name }
+            row {
+                block(title = "Посылки") {
+                    table(key = { row: Row -> row.id }, pageSize = 5, fetch = source::fetch) {
+                        textColumn("Участник", size = 1) { row -> row.name }
+                    }
+                    footer { text("Итого") }
                 }
-                footer { text("Итого") }
             }
         }
 
@@ -403,9 +409,11 @@ class TableTests : MockVaadinTests() {
 
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    row { text("…") }
-                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
+                row {
+                    block {
+                        row { text("…") }
+                        table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
+                    }
                 }
             }
         }
@@ -417,9 +425,11 @@ class TableTests : MockVaadinTests() {
 
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
-                    row { text("…") }
+                row {
+                    block {
+                        table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
+                        row { text("…") }
+                    }
                 }
             }
         }
@@ -431,9 +441,11 @@ class TableTests : MockVaadinTests() {
 
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
-                    table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
+                row {
+                    block {
+                        table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
+                        table(key = { row: Row -> row.id }, fetch = source::fetch) { textColumn("Участник", size = 1) { row -> row.name } }
+                    }
                 }
             }
         }
@@ -505,7 +517,7 @@ class TableTests : MockVaadinTests() {
         val source = Source(size = 3)
 
         assertThrows<IllegalArgumentException> {
-            buildTestPage { block { table(key = { row: Row -> row.id }, fetch = source::fetch) { empty("Посылок нет") } } }
+            buildTestPage { row { block { table(key = { row: Row -> row.id }, fetch = source::fetch) { empty("Посылок нет") } } } }
         }
     }
 
@@ -517,12 +529,14 @@ class TableTests : MockVaadinTests() {
     private fun buildTable(source: Source, pageSize: Int = 5, extra: TableScope<Row>.() -> Unit = {}): TableHandle<Row> {
         lateinit var handle: TableHandle<Row>
         buildTestPage {
-            block(title = "Посылки") {
-                handle = table(key = { row -> row.id }, pageSize = pageSize, fetch = source::fetch) {
-                    codeColumn("ID", sortKey = "id", size = 1) { row -> row.id.toString() }
-                    textColumn("Участник", size = 1) { row -> row.name }
-                    numberColumn("Баллы", sortKey = "score", size = 1) { row -> row.score }
-                    extra()
+            row {
+                block(title = "Посылки") {
+                    handle = table(key = { row -> row.id }, pageSize = pageSize, fetch = source::fetch) {
+                        codeColumn("ID", sortKey = "id", size = 1) { row -> row.id.toString() }
+                        textColumn("Участник", size = 1) { row -> row.name }
+                        numberColumn("Баллы", sortKey = "score", size = 1) { row -> row.score }
+                        extra()
+                    }
                 }
             }
         }

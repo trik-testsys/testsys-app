@@ -26,35 +26,41 @@ private class ShowcaseTour(var name: String = "", var period: DateRange = DateRa
 /** Confirmations of every kind and a form dialog that stays open until its fields are valid. */
 internal fun PageScope.dialogSection() {
     val newTour = tourDialog()
-    block(title = "Диалоги", subtitle = "«Создать» с пустым названием диалог не закрывает") {
-        row {
-            horizontal {
-                action("Подтвердить") {
-                    onClick {
-                        confirm(title = "Опубликовать тур?", text = "Участники увидят тур в своих кабинетах.", action = "Опубликовать") {
-                            toast(FeedbackKind.Success, "Тур опубликован")
+    row {
+        block(title = "Диалоги", subtitle = "«Создать» с пустым названием диалог не закрывает") {
+            row {
+                horizontal {
+                    action("Подтвердить") {
+                        onClick {
+                            confirm(
+                                title = "Опубликовать тур?",
+                                text = "Участники увидят тур в своих кабинетах.",
+                                action = "Опубликовать",
+                            ) {
+                                toast(FeedbackKind.Success, "Тур опубликован")
+                            }
                         }
                     }
-                }
-                destructiveAction("Удалить тур") {
-                    onClick {
-                        confirm(title = "Удалить тур?", text = "Это действие нельзя отменить.", action = "Удалить", isDanger = true) {
-                            toast(FeedbackKind.Success, "Тур удалён")
+                    destructiveAction("Удалить тур") {
+                        onClick {
+                            confirm(title = "Удалить тур?", text = "Это действие нельзя отменить.", action = "Удалить", isDanger = true) {
+                                toast(FeedbackKind.Success, "Тур удалён")
+                            }
                         }
                     }
-                }
-                destructiveAction("Удалить с вводом названия") {
-                    onClick {
-                        confirm(
-                            title = "Удалить тур «$DANGER_TOUR_NAME»?",
-                            text = "Вместе с туром удалятся все посылки.",
-                            action = "Удалить",
-                            isDanger = true,
-                            typeToConfirm = DANGER_TOUR_NAME,
-                        ) { toast(FeedbackKind.Success, "Тур удалён") }
+                    destructiveAction("Удалить с вводом названия") {
+                        onClick {
+                            confirm(
+                                title = "Удалить тур «$DANGER_TOUR_NAME»?",
+                                text = "Вместе с туром удалятся все посылки.",
+                                action = "Удалить",
+                                isDanger = true,
+                                typeToConfirm = DANGER_TOUR_NAME,
+                            ) { toast(FeedbackKind.Success, "Тур удалён") }
+                        }
                     }
+                    mainAction("Создать тур") { onClick { newTour.open() } }
                 }
-                mainAction("Создать тур") { onClick { newTour.open() } }
             }
         }
     }

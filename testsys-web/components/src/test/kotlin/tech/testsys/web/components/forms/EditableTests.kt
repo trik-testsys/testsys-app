@@ -31,7 +31,7 @@ class EditableTests : MockVaadinTests() {
         isReadOnly: Boolean,
     ) {
         lateinit var handle: BlockHandle
-        buildTestPage { handle = block { row { textInput("Логин", labelSize = 4, size = 20) { isEditable = isFieldEditable } } } }
+        buildTestPage { row { handle = block { row { textInput("Логин", labelSize = 4, size = 20) { isEditable = isFieldEditable } } } } }
 
         handle.isEditable = isBlockEditable
 
@@ -41,7 +41,7 @@ class EditableTests : MockVaadinTests() {
     @Test
     fun `should make a field editable again with its block`() {
         lateinit var handle: BlockHandle
-        buildTestPage { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } }
+        buildTestPage { row { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } } }
 
         handle.isEditable = false
         handle.isEditable = true
@@ -83,7 +83,7 @@ class EditableTests : MockVaadinTests() {
         @Test
         fun `should make the fields of the block read-only from a false signal`() {
             lateinit var handle: BlockHandle
-            buildTestPage { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } }
+            buildTestPage { row { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } } }
 
             handle.bindEditable(ValueSignal(false))
 
@@ -93,7 +93,7 @@ class EditableTests : MockVaadinTests() {
         @Test
         fun `should make the fields of the block follow the signal`() {
             lateinit var handle: BlockHandle
-            buildTestPage { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } }
+            buildTestPage { row { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } } }
             val signal = ValueSignal(false)
             handle.bindEditable(signal)
 
@@ -106,7 +106,7 @@ class EditableTests : MockVaadinTests() {
         @Test
         fun `should reject a manual value while bound`() {
             lateinit var handle: BlockHandle
-            buildTestPage { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } }
+            buildTestPage { row { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } } }
             handle.bindEditable(ValueSignal(true))
 
             assertThrows<BindingActiveException> { handle.isEditable = false }
@@ -115,7 +115,7 @@ class EditableTests : MockVaadinTests() {
         @Test
         fun `should reject a second binding`() {
             lateinit var handle: BlockHandle
-            buildTestPage { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } }
+            buildTestPage { row { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } } }
             handle.bindEditable(ValueSignal(true))
 
             assertThrows<BindingActiveException> { handle.bindEditable(ValueSignal(false)) }
@@ -192,7 +192,7 @@ class EditableTests : MockVaadinTests() {
         ) {
             lateinit var handle: BlockHandle
             lateinit var input: ValueInput<String>
-            buildTestPage { handle = block { row { input = textInput("Логин", labelSize = 4, size = 20) } } }
+            buildTestPage { row { handle = block { row { input = textInput("Логин", labelSize = 4, size = 20) } } } }
             input.bindEditable(ValueSignal(isFieldEditable))
 
             handle.isEditable = isBlockEditable
@@ -209,7 +209,7 @@ class EditableTests : MockVaadinTests() {
         ) {
             lateinit var handle: BlockHandle
             lateinit var input: ValueInput<String>
-            buildTestPage { handle = block { row { input = textInput("Логин", labelSize = 4, size = 20) } } }
+            buildTestPage { row { handle = block { row { input = textInput("Логин", labelSize = 4, size = 20) } } } }
             val block = ValueSignal(!isBlockEditable)
             handle.bindEditable(block)
             input.isEditable = isFieldEditable
@@ -228,7 +228,7 @@ class EditableTests : MockVaadinTests() {
         ) {
             lateinit var handle: BlockHandle
             lateinit var input: ValueInput<String>
-            buildTestPage { handle = block { row { input = textInput("Логин", labelSize = 4, size = 20) } } }
+            buildTestPage { row { handle = block { row { input = textInput("Логин", labelSize = 4, size = 20) } } } }
             val field = ValueSignal(!isFieldEditable)
             val block = ValueSignal(!isBlockEditable)
             input.bindEditable(field)

@@ -75,8 +75,10 @@ internal fun PageScope.demoCabinet(context: DemoContext, cabinet: DemoCabinet, a
     if (cabinet.key == "judge") demoJudge(context, actor, objects, section)
     if (cabinet.key == "observer" && section == "results") demoObserverResults(context, actor, objects)
     if (cabinet.key == "supervisor") {
-        block("Назначение роли") {
-            row { text("Управление пользователями в пределах одного сообщества. Новые операции в демонстрации не добавлены.") }
+        row {
+            block(title = "Назначение роли") {
+                row { text("Управление пользователями в пределах одного сообщества. Новые операции в демонстрации не добавлены.") }
+            }
         }
     }
 }
@@ -105,22 +107,24 @@ private fun PageScope.demoResources(context: DemoContext, actor: DemoUser, objec
             "Сведения о ресурсе",
             listOf("ID" to resource.id, "Название" to resource.name, "Тип" to resource.category, "Файл" to resource.fileName),
         )
-        block("История изменений") {
-            val revisions = resource.history.map { change ->
-                DemoRow(id = change.modifiedAt, title = change.fileName, date = demoDate(change.modifiedAt), detail = change.comment)
+        row {
+            block(title = "История изменений") {
+                val revisions = resource.history.map { change ->
+                    DemoRow(id = change.modifiedAt, title = change.fileName, date = demoDate(change.modifiedAt), detail = change.comment)
+                }
+                demoTable(
+                    state = context.table("${actor.id}:${resource.id}:history"),
+                    rows = revisions,
+                    columns = {
+                        textColumn("Изменён", size = 4) { revision -> revision.id }
+                        textColumn("Файл", size = 6) { revision -> revision.title }
+                        textColumn("Комментарий", size = 11) { revision -> revision.detail }
+                        column("Версия", size = 3) { revision ->
+                            demoDownload(filename = revision.title, content = "Демонстрационный ресурс: ${resource.name}")
+                        }
+                    },
+                )
             }
-            demoTable(
-                state = context.table("${actor.id}:${resource.id}:history"),
-                rows = revisions,
-                columns = {
-                    textColumn("Изменён", size = 4) { revision -> revision.id }
-                    textColumn("Файл", size = 6) { revision -> revision.title }
-                    textColumn("Комментарий", size = 11) { revision -> revision.detail }
-                    column("Версия", size = 3) { revision ->
-                        demoDownload(filename = revision.title, content = "Демонстрационный ресурс: ${resource.name}")
-                    }
-                },
-            )
         }
     }
 }
@@ -144,8 +148,10 @@ private fun PageScope.demoList(
     details: PageScope.(DemoRow) -> Unit,
 ) {
     val contextKey = "${actor.id}:$key"
-    block(title) {
-        demoTable(context.table(contextKey), rows) { row -> context.select(key = contextKey, id = row.id) }
+    row {
+        block(title = title) {
+            demoTable(context.table(contextKey), rows) { row -> context.select(key = contextKey, id = row.id) }
+        }
     }
     rows.firstOrNull { it.id == context.selection(key = contextKey, fallback = rows.firstOrNull()?.id) }?.let { details(it) }
 }
@@ -180,11 +186,13 @@ internal fun PageScope.demoTourMaterials(context: DemoContext, tour: DemoTour) {
         wideLabels = setOf("Описание"),
     )
     val tasks = tour.taskIds.map { id -> context.state.tasks.first { task -> task.id == id } }
-    block("Задачи тура") {
-        demoTable(
-            context.table("${context.screen}:${tour.id}:materials"),
-            tasks.map { task -> DemoRow(id = task.id, title = task.name, detail = task.description) },
-        )
+    row {
+        block(title = "Задачи тура") {
+            demoTable(
+                context.table("${context.screen}:${tour.id}:materials"),
+                tasks.map { task -> DemoRow(id = task.id, title = task.name, detail = task.description) },
+            )
+        }
     }
 }
 

@@ -6,8 +6,8 @@ import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.load
+import tech.testsys.web.components.layout.PageRowScope
 import tech.testsys.web.components.layout.PageScope
-import tech.testsys.web.components.layout.SlotRowScope
 import java.time.Duration
 import java.time.LocalDateTime
 import java.util.concurrent.CopyOnWriteArrayList
@@ -47,17 +47,17 @@ private fun pause(duration: Duration) {
 /** Showcase of `load()`, a table refreshed from the background and a clock following a [Signal]. */
 internal fun PageScope.liveSection(clock: Signal<String>) {
     row {
-        slot(size = HALF) { row { loadBlock() } }
-        slot(size = HALF) { row { loadFailureBlock() } }
+        loadBlock()
+        loadFailureBlock()
     }
     row {
-        slot(size = HALF) { row { liveSubmissionsBlock() } }
-        slot(size = HALF) { row { clockBlock(clock) } }
+        liveSubmissionsBlock()
+        clockBlock(clock)
     }
 }
 
-private fun SlotRowScope.loadBlock() {
-    block(title = "Загрузка", subtitle = "Скелетон, пока фоновый запрос выполняется") {
+private fun PageRowScope.loadBlock() {
+    block(size = HALF, title = "Загрузка", subtitle = "Скелетон, пока фоновый запрос выполняется") {
         val handle = load({
             pause(LOAD_DELAY)
             LOAD_SAMPLE_ROWS
@@ -66,9 +66,9 @@ private fun SlotRowScope.loadBlock() {
     }
 }
 
-private fun SlotRowScope.loadFailureBlock() {
+private fun PageRowScope.loadFailureBlock() {
     val attempts = AtomicInteger()
-    block(title = "Ошибка загрузки", subtitle = "Первая загрузка падает, «Повторить» показывает успех") {
+    block(size = HALF, title = "Ошибка загрузки", subtitle = "Первая загрузка падает, «Повторить» показывает успех") {
         load({
             pause(LOAD_DELAY)
             if (attempts.getAndIncrement() == 0) error("Showcase load failure")
@@ -77,9 +77,9 @@ private fun SlotRowScope.loadFailureBlock() {
     }
 }
 
-private fun SlotRowScope.liveSubmissionsBlock() {
+private fun PageRowScope.liveSubmissionsBlock() {
     val submissions: MutableList<ShowcaseSubmission> = CopyOnWriteArrayList(SUBMISSIONS.take(LIVE_ROW_COUNT))
-    block(title = "Посылки", subtitle = "«Новая посылка» добавляет строку в фоне; новая строка подсвечивается") {
+    block(size = HALF, title = "Посылки", subtitle = "«Новая посылка» добавляет строку в фоне; новая строка подсвечивается") {
         val rows = table(
             key = { row -> row.id },
             fetch = { request -> Page(submissions.drop(request.offset).take(request.limit), submissions.size) },
@@ -98,8 +98,8 @@ private fun SlotRowScope.liveSubmissionsBlock() {
     }
 }
 
-private fun SlotRowScope.clockBlock(clock: Signal<String>) {
-    block(title = "Часы", subtitle = "Обновляются раз в секунду через ValueSignal") {
+private fun PageRowScope.clockBlock(clock: Signal<String>) {
+    block(size = HALF, title = "Часы", subtitle = "Обновляются раз в секунду через ValueSignal") {
         row { text(clock) }
     }
 }

@@ -25,7 +25,7 @@ import tech.testsys.web.components.testTexts
 class EmptyStateTests : MockVaadinTests() {
     @Test
     fun `should show the title with the default icon and nothing else`() {
-        buildTestPage { block(title = "Посылки") { emptyState("Посылок пока нет") } }
+        buildTestPage { row { block(title = "Посылки") { emptyState("Посылок пока нет") } } }
 
         val state = ui().find("ts-empty")
         assertEquals("Посылок пока нет", state.find("ts-empty__title").element.text)
@@ -39,9 +39,11 @@ class EmptyStateTests : MockVaadinTests() {
     @Test
     fun `should show the description and small actions`() {
         buildTestPage {
-            block {
-                emptyState("Посылок пока нет", description = "Отправьте решение", icon = IconName.Upload) {
-                    action("Перейти к задачам")
+            row {
+                block {
+                    emptyState("Посылок пока нет", description = "Отправьте решение", icon = IconName.Upload) {
+                        action("Перейти к задачам")
+                    }
                 }
             }
         }
@@ -61,7 +63,7 @@ class EmptyStateTests : MockVaadinTests() {
 
     @Test
     fun `should take the whole body that is no longer a grid`() {
-        buildTestPage { block { emptyState("Пусто") } }
+        buildTestPage { row { block { emptyState("Пусто") } } }
 
         val body = ui().find("ts-block__body")
         assertFalse("ts-block__body--grid" in body.classes())
@@ -71,7 +73,7 @@ class EmptyStateTests : MockVaadinTests() {
     @Test
     fun `should hide the empty state through its handle`() {
         lateinit var handle: ElementHandle
-        buildTestPage { block { handle = emptyState("Пусто") } }
+        buildTestPage { row { block { handle = emptyState("Пусто") } } }
 
         handle.isVisible = false
 
@@ -82,9 +84,11 @@ class EmptyStateTests : MockVaadinTests() {
     fun `should reject rows after an empty state`() {
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    emptyState("Пусто")
-                    row { text("x") }
+                row {
+                    block {
+                        emptyState("Пусто")
+                        row { text("x") }
+                    }
                 }
             }
         }
@@ -94,9 +98,11 @@ class EmptyStateTests : MockVaadinTests() {
     fun `should reject an empty state after rows`() {
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    row { text("x") }
-                    emptyState("Пусто")
+                row {
+                    block {
+                        row { text("x") }
+                        emptyState("Пусто")
+                    }
                 }
             }
         }
@@ -106,9 +112,11 @@ class EmptyStateTests : MockVaadinTests() {
     fun `should reject a second empty state`() {
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    emptyState("Пусто")
-                    emptyState("Пусто")
+                row {
+                    block {
+                        emptyState("Пусто")
+                        emptyState("Пусто")
+                    }
                 }
             }
         }
@@ -118,9 +126,11 @@ class EmptyStateTests : MockVaadinTests() {
     fun `should reject a table after an empty state`() {
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    emptyState("Пусто")
-                    table<Int>(key = { row -> row }, fetch = { Page(emptyList(), 0) }) { textColumn("Номер") { row -> "$row" } }
+                row {
+                    block {
+                        emptyState("Пусто")
+                        table<Int>(key = { row -> row }, fetch = { Page(emptyList(), 0) }) { textColumn("Номер") { row -> "$row" } }
+                    }
                 }
             }
         }
@@ -130,9 +140,11 @@ class EmptyStateTests : MockVaadinTests() {
     fun `should reject an empty state after a table`() {
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    table<Int>(key = { row -> row }, fetch = { Page(emptyList(), 0) }) { textColumn("Номер") { row -> "$row" } }
-                    emptyState("Пусто")
+                row {
+                    block {
+                        table<Int>(key = { row -> row }, fetch = { Page(emptyList(), 0) }) { textColumn("Номер") { row -> "$row" } }
+                        emptyState("Пусто")
+                    }
                 }
             }
         }

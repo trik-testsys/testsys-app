@@ -10,7 +10,6 @@ import org.junit.jupiter.params.provider.EnumSource
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.TextHandle
 import tech.testsys.web.components.buildTestContent
-import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.buildTestRow
 import tech.testsys.web.components.child
 import tech.testsys.web.components.classes
@@ -113,54 +112,6 @@ class DisplayTests : MockVaadinTests() {
 
             assertTrue("ts-counter" in counter.classes())
             assertEquals("span 2", counter.element.style.get("grid-column"))
-        }
-    }
-
-    @Nested
-    inner class StatCardTests {
-        @Test
-        fun `should render stat card as a block of the whole slot`() {
-            val page = buildTestPage { row { slot(size = 3) { row { statCard(label = "Решено", value = "42") } } } }
-
-            val block = page.find("ts-block")
-            assertEquals("span 24", block.element.style.get("grid-column"))
-            assertEquals("Решено", block.find("ts-stat__label").element.textRecursively)
-            assertEquals("42", block.find("ts-stat__value").element.textRecursively)
-        }
-
-        @Test
-        fun `should colour delta by trend`() {
-            val page = buildTestPage {
-                row { slot(size = 3) { row { statCard(label = "Рейтинг", value = "1 842", delta = "+38", trend = Trend.Up) } } }
-            }
-
-            assertTrue("ts-stat__delta--up" in page.find("ts-stat__delta").classes())
-        }
-
-        @Test
-        fun `should update stat card value through its handle`() {
-            lateinit var card: TextHandle
-            val page = buildTestPage {
-                row { slot(size = 3) { row { card = statCard(label = "Решено", value = "42") } } }
-            }
-
-            card.text = "43"
-
-            assertEquals("43", page.find("ts-stat__value").element.textRecursively)
-        }
-
-        @Test
-        fun `should render stat card in a block row without its own block`() {
-            lateinit var card: TextHandle
-            val page = buildTestPage { block { row { card = statCard(label = "Решено", value = "42", size = 6) } } }
-
-            card.text = "43"
-
-            val stat = page.find("ts-block__row").child(0)
-            assertTrue("ts-stat" in stat.classes())
-            assertEquals("span 6", stat.element.style.get("grid-column"))
-            assertEquals(1, page.findAll("ts-block").size)
-            assertEquals("43", stat.find("ts-stat__value").element.textRecursively)
         }
     }
 }

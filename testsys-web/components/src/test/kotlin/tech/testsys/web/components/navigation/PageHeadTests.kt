@@ -17,7 +17,6 @@ import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.classes
 import tech.testsys.web.components.display.CounterKind
 import tech.testsys.web.components.display.Tone
-import tech.testsys.web.components.display.text
 import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.findAllButtons
@@ -211,26 +210,6 @@ class PageHeadTests : MockVaadinTests() {
         assertThrows<IllegalStateException> {
             buildTestPage {
                 row {}
-                head("Тур")
-            }
-        }
-    }
-
-    @Test
-    fun `should reject the head after a block`() {
-        assertThrows<IllegalStateException> {
-            buildTestPage {
-                block { row { text("x") } }
-                head("Тур")
-            }
-        }
-    }
-
-    @Test
-    fun `should reject the head after a highlighted block`() {
-        assertThrows<IllegalStateException> {
-            buildTestPage {
-                highlightBlock { row { text("x") } }
                 head("Тур")
             }
         }

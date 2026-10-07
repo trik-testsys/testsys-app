@@ -109,7 +109,7 @@ class DemoResultMatrixTests {
         val view = object : TestSysView(buildUiTexts()) {
             init {
                 page(CabinetHeader()) {
-                    block("Результаты") { demoResultMatrix(context, actor, tour, listOf(participant)) }
+                    row { block(title = "Результаты") { demoResultMatrix(context, actor, tour, listOf(participant)) } }
                 }
             }
         }

@@ -52,21 +52,21 @@ Radio и segmented control реализованы в `forms/RadioChoices.kt`, п
 class ProfileView(texts: UiTexts) : TestSysView(texts) {
     init {
         page(CabinetHeader(items = sections, active = "profile", user = HeaderUser(name))) {
-            block(title = "Профиль") {
-                editing(onSave = { binder.writeBeanIfValid(user) }, onCancel = { binder.readBean(user) })
-                row {
-                    textInput("Логин", labelSize = 4, size = 20) {
-                        binder.forField(this).bind({ it.login }, { target, login -> target.login = login })
+            row {
+                block(title = "Профиль") {
+                    editing(onSave = { binder.writeBeanIfValid(user) }, onCancel = { binder.readBean(user) })
+                    row {
+                        textInput("Логин", labelSize = 4, size = 20) {
+                            binder.forField(this).bind({ it.login }, { target, login -> target.login = login })
+                        }
                     }
                 }
             }
             row {
-                slot(size = 16) { row { block(title = "Решения") { … } } }
-                slot(size = 8) {
-                    row { highlightBlock(title = "Идёт тур") { … } }
-                    row { block(title = "Туры") { … } }
-                }
+                block(size = 16, title = "Решения") { … }
+                highlightBlock(size = 8, title = "Идёт тур") { … }
             }
+            row { block(title = "Туры") { … } }
         }
     }
 }
@@ -122,7 +122,7 @@ class ProfileView(texts: UiTexts) : TestSysView(texts) {
 | `actions { }` | Кнопки справа в строке заголовка — `ContentScope`, кнопки обычного размера |
 | `tabs { }` | Вкладки разделов одного объекта — `PageTabsScope`, см. [Вкладки страницы](#вкладки-страницы) |
 
-- `head` — первый вызов тела страницы и не больше одного: после `row`, `block`, `highlightBlock`, настройки `footer` или второго `head` —
+- `head` — первый вызов тела страницы и не больше одного: после `row`, настройки `footer` или второго `head` —
   `IllegalStateException`.
 - `actions` и `tabs` — не больше одного раза каждый (`IllegalStateException`), `badge` и `meta` — сколько угодно,
   в порядке вызова. В остальном порядок вызовов внутри `head` не важен.
@@ -180,11 +180,9 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 
 | Уровень | Что внутри | Правило |
 |---------|------------|---------|
-| `page` | `row`, `block`, `highlightBlock` | Блок прямо в странице занимает всю ширину |
-| `row` страницы | `slot(size)` | `size` от 1 до 24, сумма слотов ряда — не больше 24 |
-| `slot` | `row` | Ряды слота стоят друг под другом |
-| `row` слота | `block(size)`, `highlightBlock(size)`, `statCard(…)`, `contestCard(…)` | `size` от 1 до 24 — доля ширины слота, по умолчанию весь слот; элемент не уже одной колонки страницы (размер слота × `size` ≥ 24); сумма — не больше 24 |
-| `row` блока, диалога и `drawer` | поля, `field`, `text`, `tag`, `badge`, `counter`, `icon`, `alert`, `statCard`, `pills`, `horizontal`, `vertical` | Поле занимает `labelSize + size`, остальные — `size`; без `size` элемент занимает остаток строки, после него строка закрыта; сумма — не больше 24 колонок контейнера |
+| `page` | `row` | Ряды страницы стоят друг под другом |
+| `row` страницы | `block(size)`, `highlightBlock(size)` | `size` от 1 до 24; без `size` блок занимает остаток ряда, после него ряд закрыт; сумма — не больше 24 |
+| `row` блока, диалога и `drawer` | поля, `field`, `text`, `tag`, `badge`, `counter`, `icon`, `alert`, `pills`, `horizontal`, `vertical` | Поле занимает `labelSize + size`, остальные — `size`; без `size` элемент занимает остаток строки, после него строка закрыта; сумма — не больше 24 колонок контейнера |
 
 - Неверный размер — `IllegalArgumentException`, переполнение ряда и элемент после занявшего остаток строки —
   `IllegalStateException` с перечнем размеров. Ошибка возникает при построении страницы, поэтому каждая
@@ -192,11 +190,11 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
   [unit-tests.md](../../docs/project/unit-tests.md#построение-страниц).
 - Строки блока и поля — подсетки сетки блока, поэтому подписи полей одного блока стоят на одних вертикалях.
   Правила компоновки — в [ui-design.md](../../docs/project/ui-design.md), раздел «Компоновка страницы».
-- `highlightBlock` — не больше одного на ряд страницы, включая блоки в его слотах.
+- `highlightBlock` — не больше одного на ряд страницы.
 - Блоки одного ряда всегда одной высоты, промежутки фиксированы.
 - Строка блока без элементов не выводится; блок без непустых строк выводится без тела.
 - Скрытый элемент строки блока (`isVisible = false`) освобождает свои колонки: следующие элементы сдвигаются влево.
-- Размеры передаются именованным аргументом (`slot(size = 16)`, `block(size = 8)`, `labelSize = 4`): Detekt
+- Размеры передаются именованным аргументом (`block(size = 16)`, `text(size = 8)`, `labelSize = 4`): Detekt
   `MagicNumber` не проверяет именованные аргументы.
 
 ## Скоупы
@@ -208,12 +206,10 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 
 | Скоуп | Доступно |
 |-------|----------|
-| `PageScope` | `head` (первым вызовом), `row`, `block`, `highlightBlock` |
+| `PageScope` | `head` (первым вызовом), `row` |
 | `PageHeadScope` | `crumb`, `badge`, `meta`, `actions { }`, `tabs { }` |
 | `PageTabsScope` | `tab` (вкладка-маршрут) |
-| `PageRowScope` | `slot` |
-| `SlotScope` | `row` |
-| `SlotRowScope` | `block`, `highlightBlock`, `statCard`, `contestCard` |
+| `PageRowScope` | `block`, `highlightBlock` |
 | `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
 | `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `segmentedControl`, `multiSelect`), `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
@@ -232,9 +228,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 и для `BlockRowScope` (с необязательным `size`). Поля с подписью есть только в `BlockRowScope`; в `ContentScope`
 есть поля без подписи: `select` (см. [Фильтры в шапке](#фильтры-в-шапке)), `segmentedControl` и `multiSelect`.
 `fileDrop` объявлен в обоих скоупах и всегда выводит свою подпись. Действия, `menu`, `filterChip` и `pagination`
-объявлены для `ContentScope`; `downloadAction` есть также в `BlockRowScope`. `tabs` и `emptyState` — только для `BlockScope`. `statCard` в ряду слота создаёт свой блок,
-в строке блока — только разметку `.ts-stat`. `contestCard` в ряду слота — самостоятельная поверхность уровня блока
-без обёртки в блок.
+объявлены для `ContentScope`; `downloadAction` есть также в `BlockRowScope`. `tabs` и `emptyState` — только для `BlockScope`.
 
 ## Поля
 
@@ -818,7 +812,7 @@ block(title = "Туры") {
 Соглашение об изменяемом состоянии — в [code-style.md](../../docs/project/code-style.md#неизменяемость).
 
 Функции возвращают ручку. Действия и поля ввода принимают завершающую лямбду `configure` с ней же; элементы
-отображения (`text`, `tag`, `badge`, `counter`, `statCard`, …) и `field { }` возвращают ручку без `configure`. Расширенное представление `brandImage`
+отображения (`text`, `tag`, `badge`, `counter`, …) и `field { }` возвращают ручку без `configure`. Расширенное представление `brandImage`
 и компоненты с `DataHandle` принимают необязательный `configure` для настройки своей ручки:
 
 ```kotlin
@@ -832,7 +826,7 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 |-------|----------|
 | `ElementHandle` | `isVisible`, `bindVisible(signal)` (в том числе у `emptyState` и `menu`) |
 | `FieldHandle` | всё из `ElementHandle` и `isObscured`, `bindObscured(signal)`, см. [Скрытые значения](#скрытые-значения) |
-| `TextHandle` | `isVisible`, `bindVisible`, `text`, `bindText(signal)` (значение `statCard`, `counter`, `text`) |
+| `TextHandle` | `isVisible`, `bindVisible`, `text`, `bindText(signal)` (значение `counter`, `text`) |
 | `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick` |
 | `BlockHandle` | `isVisible`, `bindVisible`, `isEditable`, `bindEditable(signal)` (возвращают `block` и `highlightBlock`) |
 | `ChoiceHandle<V>` | `isVisible`, `bindVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает; новый слушатель заменяет прежний) — возвращает `pills` |
@@ -1011,13 +1005,12 @@ Escape и закрытие снаружи отменяют черновик. У�
 | `verdict` | Нейтральный числовой балл `Double` (включая 0), необязательная подпись; `DataHandle<Double>`, configure и размещение в строке через `size` |
 | `progressBar` | `ProgressValue.Determinate` (0–100) или `Indeterminate`; доступное имя обязательно |
 | `timer` | `TimerValue.Static(Duration)` либо `Until(Instant)`, варианты `Chip`, `Hero`, `Tiles`, `Text`; `TimerHandle.remainingSeconds` — сигнал только для чтения |
-| `contestCard` | `ContestCardData`; отдельные `onClick` и `onAction`, необязательное CTA; есть размещение в слоте страницы |
 | `skeleton`, `skeletonRows` | Геометрия в ядре; страница выбирает форму, число строк и `size`. Декоративные формы `Text`, `Circle`, `Badge`, `Rectangle` и строки внутри одного доступного статуса загрузки |
 
 `verdict` не зависит от домена и не вычисляет успешность: конечное число показывается с нейтральным цветом.
 Статусы очереди, проверки, ошибки и тайм-аута остаются отдельными бейджами. Образец числового API —
 [ShowcaseDisplayView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseDisplayView.kt).
-Карточки разделяют открытие и CTA. Другие демонстрационные сценарии описаны в [dev-app/README.md](../dev-app/README.md).
+Другие демонстрационные сценарии описаны в [dev-app/README.md](../dev-app/README.md).
 
 Отображение с изменяемыми данными возвращает `DataHandle<T>` (`data`, `bindData`).
 Таймер округляет остаток вниз и ограничивает нулём; статический вариант не планирует задач. Живой таймер запускается

@@ -92,11 +92,15 @@ internal class IconActionTests : MockVaadinTests() {
 
     private fun buildInPlacement(role: ActionRole, placement: Placement) {
         buildTestPage {
-            block {
-                when (placement) {
-                    Placement.Head -> actions { iconOnly(role) }
-                    Placement.Cell -> table(key = { id: Int -> id }, fetch = { Page(listOf(1), 1) }) { column("Action") { iconOnly(role) } }
-                    else -> row { horizontal { iconOnly(role) } }
+            row {
+                block {
+                    when (placement) {
+                        Placement.Head -> actions { iconOnly(role) }
+                        Placement.Cell -> table(key = { id: Int -> id }, fetch = { Page(listOf(1), 1) }) {
+                            column("Action") { iconOnly(role) }
+                        }
+                        else -> row { horizontal { iconOnly(role) } }
+                    }
                 }
             }
         }

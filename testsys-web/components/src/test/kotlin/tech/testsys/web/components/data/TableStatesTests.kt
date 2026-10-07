@@ -175,10 +175,12 @@ class TableStatesTests : MockVaadinTests() {
     ): TableHandle<Row> {
         lateinit var handle: TableHandle<Row>
         buildTestPage {
-            block(title = "Посылки") {
-                handle = table(key = { row -> row.id }, pageSize = 5, selectable = selectable, fetch = fetch) {
-                    textColumn("Участник", size = 1) { row -> row.name }
-                    extra()
+            row {
+                block(title = "Посылки") {
+                    handle = table(key = { row -> row.id }, pageSize = 5, selectable = selectable, fetch = fetch) {
+                        textColumn("Участник", size = 1) { row -> row.name }
+                        extra()
+                    }
                 }
             }
         }

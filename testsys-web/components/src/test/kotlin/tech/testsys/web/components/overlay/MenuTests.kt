@@ -24,7 +24,7 @@ import tech.testsys.web.components.testTexts
 class MenuTests : MockVaadinTests() {
     @Test
     fun `should open the menu from an ellipsis named for screen readers`() {
-        buildTestPage { block(title = "Тур") { actions { menu { item("Открыть") {} } } } }
+        buildTestPage { row { block(title = "Тур") { actions { menu { item("Открыть") {} } } } } }
 
         val trigger = ellipsis()
         assertEquals(testTexts.menu.actions, trigger.element.getAttribute("aria-label"))
@@ -36,7 +36,7 @@ class MenuTests : MockVaadinTests() {
 
     @Test
     fun `should open the menu from a text button`() {
-        buildTestPage { block(title = "Тур") { actions { menu(label = "Ещё") { item("Открыть") {} } } } }
+        buildTestPage { row { block(title = "Тур") { actions { menu(label = "Ещё") { item("Открыть") {} } } } } }
 
         assertEquals("menu", button("Ещё").element.getAttribute("aria-haspopup"))
     }
@@ -44,13 +44,15 @@ class MenuTests : MockVaadinTests() {
     @Test
     fun `should list items in order with a separator before destructive ones`() {
         buildTestPage {
-            block(title = "Тур") {
-                actions {
-                    menu {
-                        item("Открыть") {}
-                        item("Дублировать") {}
-                        destructiveItem("Удалить") {}
-                        destructiveItem("Архивировать") {}
+            row {
+                block(title = "Тур") {
+                    actions {
+                        menu {
+                            item("Открыть") {}
+                            item("Дублировать") {}
+                            destructiveItem("Удалить") {}
+                            destructiveItem("Архивировать") {}
+                        }
                     }
                 }
             }
@@ -65,11 +67,13 @@ class MenuTests : MockVaadinTests() {
     @Test
     fun `should mark every item of the menu as a menu item`() {
         buildTestPage {
-            block(title = "Тур") {
-                actions {
-                    menu {
-                        item("Открыть") {}
-                        destructiveItem("Удалить") {}
+            row {
+                block(title = "Тур") {
+                    actions {
+                        menu {
+                            item("Открыть") {}
+                            destructiveItem("Удалить") {}
+                        }
                     }
                 }
             }
@@ -81,7 +85,7 @@ class MenuTests : MockVaadinTests() {
 
     @Test
     fun `should not add a separator to a menu of destructive items only`() {
-        buildTestPage { block(title = "Тур") { actions { menu { destructiveItem("Удалить") {} } } } }
+        buildTestPage { row { block(title = "Тур") { actions { menu { destructiveItem("Удалить") {} } } } } }
 
         assertEquals(listOf("Удалить"), menuOf(ellipsis()).children.toList().map(::caption))
     }
@@ -89,7 +93,7 @@ class MenuTests : MockVaadinTests() {
     @Test
     fun `should run the handler of the chosen item`() {
         val chosen = mutableListOf<String>()
-        buildTestPage { block(title = "Тур") { actions { menu { item("Открыть") { chosen += "open" } } } } }
+        buildTestPage { row { block(title = "Тур") { actions { menu { item("Открыть") { chosen += "open" } } } } } }
 
         menuOf(ellipsis())._clickItemWithCaption("Открыть")
 
@@ -98,32 +102,34 @@ class MenuTests : MockVaadinTests() {
 
     @Test
     fun `should show a disabled item`() {
-        buildTestPage { block(title = "Тур") { actions { menu { item("Открыть", isEnabled = false) {} } } } }
+        buildTestPage { row { block(title = "Тур") { actions { menu { item("Открыть", isEnabled = false) {} } } } } }
 
         assertFalse((menuOf(ellipsis()).children.toList().single() as MenuItem).isEnabled)
     }
 
     @Test
     fun `should hide the trigger through the returned handle`() {
-        buildTestPage { block(title = "Тур") { actions { menu { item("Открыть") {} }.isVisible = false } } }
+        buildTestPage { row { block(title = "Тур") { actions { menu { item("Открыть") {} }.isVisible = false } } } }
 
         assertFalse(ellipsis().isVisible)
     }
 
     @Test
     fun `should reject a menu without items`() {
-        assertThrows<IllegalStateException> { buildTestPage { block { actions { menu {} } } } }
+        assertThrows<IllegalStateException> { buildTestPage { row { block { actions { menu {} } } } } }
     }
 
     @Test
     fun `should reject an item after a destructive one`() {
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    actions {
-                        menu {
-                            destructiveItem("Удалить") {}
-                            item("Открыть") {}
+                row {
+                    block {
+                        actions {
+                            menu {
+                                destructiveItem("Удалить") {}
+                                item("Открыть") {}
+                            }
                         }
                     }
                 }
@@ -188,13 +194,15 @@ class MenuTests : MockVaadinTests() {
         val chosen = mutableListOf<Int>()
         val clicked = mutableListOf<Int>()
         buildTestPage {
-            block {
-                table<Int>(key = { row -> row }, fetch = { Page(listOf(41, 42), 2) }) {
-                    textColumn("Номер", size = 1) { row -> "$row" }
-                    menuColumn(ariaLabel = { row -> "Действия с посылкой №$row" }) { row ->
-                        item("Открыть") { chosen += row }
+            row {
+                block {
+                    table<Int>(key = { row -> row }, fetch = { Page(listOf(41, 42), 2) }) {
+                        textColumn("Номер", size = 1) { row -> "$row" }
+                        menuColumn(ariaLabel = { row -> "Действия с посылкой №$row" }) { row ->
+                            item("Открыть") { chosen += row }
+                        }
+                        onRowClick { row -> clicked += row }
                     }
-                    onRowClick { row -> clicked += row }
                 }
             }
         }
@@ -212,11 +220,13 @@ class MenuTests : MockVaadinTests() {
 
     private fun buildMenuTable(extra: TableScope<Int>.() -> Unit = {}, content: MenuScope.(Int) -> Unit) {
         buildTestPage {
-            block {
-                table<Int>(key = { row -> row }, fetch = { Page(listOf(1, 2, 3), 3) }) {
-                    textColumn("Номер", size = 1) { row -> "$row" }
-                    menuColumn(content = content)
-                    extra()
+            row {
+                block {
+                    table<Int>(key = { row -> row }, fetch = { Page(listOf(1, 2, 3), 3) }) {
+                        textColumn("Номер", size = 1) { row -> "$row" }
+                        menuColumn(content = content)
+                        extra()
+                    }
                 }
             }
         }

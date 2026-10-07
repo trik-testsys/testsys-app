@@ -63,7 +63,7 @@ class BindingTests : MockVaadinTests() {
         lateinit var input: ValueInput<String>
         lateinit var block: BlockHandle
         buildTestPage {
-            block = block { row { input = textInput("Количество", labelSize = 4, size = 20) } }
+            row { block = block { row { input = textInput("Количество", labelSize = 4, size = 20) } } }
         }
         val binder = bind(input)
         val form = Form()
@@ -82,7 +82,7 @@ class BindingTests : MockVaadinTests() {
         lateinit var input: ValueInput<String>
         lateinit var block: BlockHandle
         buildTestPage {
-            block = block { row { input = textInput("Количество", labelSize = 4, size = 20) } }
+            row { block = block { row { input = textInput("Количество", labelSize = 4, size = 20) } } }
         }
         val binder = bind(input)
         val form = Form()

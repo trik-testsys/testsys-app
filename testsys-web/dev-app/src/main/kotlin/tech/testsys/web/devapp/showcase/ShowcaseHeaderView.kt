@@ -49,11 +49,17 @@ class ShowcaseHeaderView(texts: UiTexts, private val environment: Environment) :
     init {
         page(header()) {
             showcaseHead("Шапка Кабинета")
-            block(title = "Результат действий") { row { text(status) } }
+            row { block(title = "Результат действий") { row { text(status) } } }
             notificationControls()
-            block(title = "Клавиатура и навигация") {
-                row { text("Cmd/Ctrl+K — поиск по разделам; стрелки, Home, End и Enter — пункт меню; Escape — закрытие.") }
-                row { text("Разделы открываются наведением и кликом. Профиль, настройки, выход и действия меню меняют результат выше.") }
+            row {
+                block(title = "Клавиатура и навигация") {
+                    row {
+                        text("Cmd/Ctrl+K — поиск по разделам; стрелки, Home, End и Enter — пункт меню; Escape — закрытие.")
+                    }
+                    row {
+                        text("Разделы открываются наведением и кликом. Профиль, настройки, выход и действия меню меняют результат выше.")
+                    }
+                }
             }
         }
     }
@@ -129,38 +135,46 @@ class ShowcaseHeaderView(texts: UiTexts, private val environment: Environment) :
     )
 
     private fun PageScope.notificationControls() {
-        block(title = "Живые уведомления") {
-            row {
-                horizontal {
-                    action("Добавить уведомление") { onClick { addNotification() } }
-                    action("Добавить 3 уведомления") { onClick { addNotification(count = 3) } }
-                    action("Добавить через 2 секунды") { onClick { addNotificationLater() } }
-                    action("Удалить первое") {
-                        onClick {
-                            notifications.set(notifications.peek().drop(1))
-                            status.set("Первое уведомление удалено")
+        row {
+            block(title = "Живые уведомления") {
+                row {
+                    horizontal {
+                        action("Добавить уведомление") { onClick { addNotification() } }
+                        action("Добавить 3 уведомления") { onClick { addNotification(count = 3) } }
+                        action("Добавить через 2 секунды") { onClick { addNotificationLater() } }
+                        action("Удалить первое") {
+                            onClick {
+                                notifications.set(notifications.peek().drop(1))
+                                status.set("Первое уведомление удалено")
+                            }
                         }
-                    }
-                    action("Очистить уведомления") {
-                        onClick {
-                            notifications.set(emptyList())
-                            status.set("Уведомления очищены")
+                        action("Очистить уведомления") {
+                            onClick {
+                                notifications.set(emptyList())
+                                status.set("Уведомления очищены")
+                            }
                         }
-                    }
-                    action("Показать обычный тост результата") {
-                        onClick {
-                            toast(FeedbackKind.Success, title = "Действие выполнено", description = "Обычный тост остаётся справа снизу")
+                        action("Показать обычный тост результата") {
+                            onClick {
+                                toast(
+                                    FeedbackKind.Success,
+                                    title = "Действие выполнено",
+                                    description = "Обычный тост остаётся справа снизу",
+                                )
+                            }
                         }
-                    }
-                    action("Восстановить уведомления") {
-                        onClick {
-                            notifications.set(initialNotifications())
-                            status.set("Уведомления восстановлены")
+                        action("Восстановить уведомления") {
+                            onClick {
+                                notifications.set(initialNotifications())
+                                status.set("Уведомления восстановлены")
+                            }
                         }
                     }
                 }
+                row {
+                    text("Отметки чтения и список меняются только сигналом приложения. Прочитать все остаётся доступным в открытом попапе.")
+                }
             }
-            row { text("Отметки чтения и список меняются только сигналом приложения. Прочитать все остаётся доступным в открытом попапе.") }
         }
     }
 

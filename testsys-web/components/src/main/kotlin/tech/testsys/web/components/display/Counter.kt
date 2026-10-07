@@ -42,4 +42,4 @@ fun BlockRowScope.counter(value: Int, kind: CounterKind = CounterKind.Attention,
 internal fun buildCounter(value: Int, kind: CounterKind, texts: UiTexts): Span =
     Span(formatNumber(value, texts)).apply { addClassNames(CssClass.Counter, kind.cssClass) }
 
-private fun counterHandle(counter: Span): TextHandle = TextHandle(counter, counter)
+private fun counterHandle(counter: Span): TextHandle = TextHandle(counter)

@@ -22,19 +22,21 @@ private enum class Category(val label: String) {
 }
 
 internal fun PageScope.pillsSection() {
-    block(title = "Пилюли", subtitle = "В шапке блока и в строке блока") {
-        lateinit var chosen: TextHandle
-        actions {
-            val category = pills(initial = Category.All) {
-                Category.entries.forEach { value -> pill(value, value.label) }
+    row {
+        block(title = "Пилюли", subtitle = "В шапке блока и в строке блока") {
+            lateinit var chosen: TextHandle
+            actions {
+                val category = pills(initial = Category.All) {
+                    Category.entries.forEach { value -> pill(value, value.label) }
+                }
+                category.onChange { value -> chosen.text = "Выбрано в шапке: ${value.label}" }
             }
-            category.onChange { value -> chosen.text = "Выбрано в шапке: ${value.label}" }
-        }
-        row { chosen = text("Выбрано в шапке: ${Category.All.label}") }
-        row {
-            pills(initial = Category.Contests, size = HALF) {
-                Category.entries.forEach { value -> pill(value, value.label) }
-            }.onChange { value -> chosen.text = "Выбрано в строке: ${value.label}" }
+            row { chosen = text("Выбрано в шапке: ${Category.All.label}") }
+            row {
+                pills(initial = Category.Contests, size = HALF) {
+                    Category.entries.forEach { value -> pill(value, value.label) }
+                }.onChange { value -> chosen.text = "Выбрано в строке: ${value.label}" }
+            }
         }
     }
 }
@@ -42,18 +44,20 @@ internal fun PageScope.pillsSection() {
 /** A pagination of many pages bound to a [ValueSignal] of the page, which the rows below follow. */
 internal fun PageScope.paginationSection() {
     val page = ValueSignal(1)
-    block(title = "Пагинация", subtitle = "Длинный диапазон — с пропусками; страница хранится в сигнале") {
-        row {
-            horizontal {
-                pagination(pageCount = PAGINATION_PAGES) {
-                    bindPage(page)
-                    onChange { chosen -> page.set(chosen) }
+    row {
+        block(title = "Пагинация", subtitle = "Длинный диапазон — с пропусками; страница хранится в сигнале") {
+            row {
+                horizontal {
+                    pagination(pageCount = PAGINATION_PAGES) {
+                        bindPage(page)
+                        onChange { chosen -> page.set(chosen) }
+                    }
                 }
             }
-        }
-        row { text(page.map { current -> "Страница $current из $PAGINATION_PAGES" }) }
-        for (line in 1..PAGINATION_ROWS) {
-            row { text(page.map { current -> "Участник ${(current - 1) * PAGINATION_ROWS + line}" }) }
+            row { text(page.map { current -> "Страница $current из $PAGINATION_PAGES" }) }
+            for (line in 1..PAGINATION_ROWS) {
+                row { text(page.map { current -> "Участник ${(current - 1) * PAGINATION_ROWS + line}" }) }
+            }
         }
     }
 }

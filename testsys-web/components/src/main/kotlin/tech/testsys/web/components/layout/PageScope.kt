@@ -14,7 +14,7 @@ import tech.testsys.web.components.navigation.PageHeadScope
 import tech.testsys.web.components.texts.UiTexts
 
 /**
- * Scope of a page: the head, rows and full-width blocks, and the links of its footer.
+ * Scope of a page: the head, rows and the links of its footer.
  *
  * @since %CURRENT_VERSION%
  */
@@ -54,7 +54,7 @@ class PageScope internal constructor(
     }
 
     /**
-     * Adds a row of the 24-column page grid filled with slots.
+     * Adds a row of the 24-column page grid below the previous rows; its blocks lie side by side.
      *
      * @since %CURRENT_VERSION%
      */
@@ -65,28 +65,5 @@ class PageScope internal constructor(
         PageRowScope(row, texts).content()
     }
 
-    /**
-     * Adds a full-width block with an optional [title] and [subtitle].
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun block(title: String? = null, subtitle: String? = null, content: BlockScope.() -> Unit): BlockHandle =
-        place(BlockHeading(title, subtitle), highlight = false, content)
-
-    /**
-     * Adds a full-width dark block that highlights one thing, such as a running timer.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun highlightBlock(title: String? = null, subtitle: String? = null, content: BlockScope.() -> Unit): BlockHandle =
-        place(BlockHeading(title, subtitle), highlight = true, content)
-
     internal fun buildFooter(): Footer = buildPageFooter(texts, footerLinks ?: PageFooterScope())
-
-    private fun place(heading: BlockHeading, highlight: Boolean, content: BlockScope.() -> Unit): BlockHandle {
-        isHeadAllowed = false
-        val block = buildBlock(texts, heading, highlight, span = null, columns = GRID_COLUMNS, content)
-        main.add(block.component)
-        return block
-    }
 }

@@ -38,7 +38,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
 import tech.testsys.web.components.display.TagKind
 import tech.testsys.web.components.display.Tone
-import tech.testsys.web.components.display.Trend
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.devapp.MockSpringVaadinTests
 import tech.testsys.web.devapp.error.NotFoundView
@@ -87,12 +86,6 @@ class ShowcaseViewTests {
         @EnumSource(FeedbackKind::class)
         fun `should show a toast action of every feedback kind`(kind: FeedbackKind) {
             assertTrue(_find<Button>().any { button -> button.text == "Показать тост ${kind.name}" })
-        }
-
-        @ParameterizedTest
-        @EnumSource(Trend::class)
-        fun `should show a stat delta of every trend`(trend: Trend) {
-            assertTrue(_find<Component> { classes = "ts-stat__delta--${trend.name.lowercase()}" }.isNotEmpty())
         }
 
         @ParameterizedTest

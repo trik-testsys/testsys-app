@@ -27,7 +27,7 @@ class DemoTablesTests {
         UI.getCurrent().add(
             object : TestSysView(buildUiTexts()) {
                 init {
-                    page(CabinetHeader()) { block("Участники") { demoTable(state, rows) } }
+                    page(CabinetHeader()) { row { block(title = "Участники") { demoTable(state, rows) } } }
                 }
             },
         )

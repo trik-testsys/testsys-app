@@ -47,8 +47,8 @@ class BlockRowScopeTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should give rows of a block inside a slot its own 24 columns`() {
-        val page = buildTestPage { row { slot(size = 12) { row { block(size = 12) { row { text("x") } } } } } }
+    fun `should give rows of a narrow block its own 24 columns`() {
+        val page = buildTestPage { row { block(size = 12) { row { text("x") } } } }
 
         assertEquals("span 24", page.find("ts-block__row").child(0).element.style.get("grid-column"))
     }
@@ -58,14 +58,10 @@ class BlockRowScopeTests : MockVaadinTests() {
         val error = assertThrows<IllegalStateException> {
             buildTestPage {
                 row {
-                    slot(size = 8) {
+                    block(size = 8) {
                         row {
-                            block {
-                                row {
-                                    text("a", size = 18)
-                                    text("b", size = 12)
-                                }
-                            }
+                            text("a", size = 18)
+                            text("b", size = 12)
                         }
                     }
                 }

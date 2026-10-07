@@ -63,9 +63,11 @@ class FileDropDisplayTests : MockVaadinTests() {
     fun `should keep reception disabled when its block is not editable`() {
         lateinit var input: FileDropHandle
         val root = buildTestPage {
-            block {
-                editing(onSave = { true }, onCancel = {})
-                row { input = fileDrop("Files", limits = limits, consume = {}) }
+            row {
+                block {
+                    editing(onSave = { true }, onCancel = {})
+                    row { input = fileDrop("Files", limits = limits, consume = {}) }
+                }
             }
         }
 

@@ -70,7 +70,7 @@ internal class ProgressBarTests : MockVaadinTests() {
     @Test
     fun `should use a thin bar in a compact place`() {
         val root = buildTestPage {
-            block(title = "Блок") { actions { progressBar("Progress", ProgressValue.Determinate(1.0)) } }
+            row { block(title = "Блок") { actions { progressBar("Progress", ProgressValue.Determinate(1.0)) } } }
         }
 
         assertTrue("ts-progress--thin" in root.find("ts-progress").element.classList)

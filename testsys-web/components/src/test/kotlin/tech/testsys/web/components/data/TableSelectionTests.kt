@@ -303,11 +303,18 @@ class TableSelectionTests : MockVaadinTests() {
     fun `should update a text in the block actions bound to the selection signal when rows are selected`() {
         val source = Source(size = 12)
         buildTestPage {
-            block(title = "Посылки") {
-                val handle = table(key = { row -> row.id }, pageSize = 5, selectable = true, fetch = source::fetch) {
-                    textColumn("Участник", size = 1) { row -> row.name }
+            row {
+                block(title = "Посылки") {
+                    val handle = table(
+                        key = { row -> row.id },
+                        pageSize = 5,
+                        selectable = true,
+                        fetch = source::fetch,
+                    ) {
+                        textColumn("Участник", size = 1) { row -> row.name }
+                    }
+                    actions { text(handle.selection.map { keys -> "Выбрано: ${keys.size}" }) }
                 }
-                actions { text(handle.selection.map { keys -> "Выбрано: ${keys.size}" }) }
             }
         }
 
@@ -322,9 +329,11 @@ class TableSelectionTests : MockVaadinTests() {
         lateinit var handle: TableHandle<Row>
         val source = Source(size = 12)
         buildTestPage {
-            block(title = "Посылки") {
-                handle = table(key = { row -> row.id }, pageSize = 5, fetch = source::fetch) {
-                    textColumn("Участник", size = 1) { row -> row.name }
+            row {
+                block(title = "Посылки") {
+                    handle = table(key = { row -> row.id }, pageSize = 5, fetch = source::fetch) {
+                        textColumn("Участник", size = 1) { row -> row.name }
+                    }
                 }
             }
         }
@@ -381,11 +390,13 @@ class TableSelectionTests : MockVaadinTests() {
     private fun buildTable(source: Source, extra: TableScope<Row>.() -> Unit = {}): TableHandle<Row> {
         lateinit var handle: TableHandle<Row>
         buildTestPage {
-            block(title = "Посылки") {
-                handle = table(key = { row -> row.id }, pageSize = 5, selectable = true, fetch = source::fetch) {
-                    codeColumn("ID", sortKey = "id", size = 1) { row -> row.id.toString() }
-                    textColumn("Участник", size = 1) { row -> row.name }
-                    extra()
+            row {
+                block(title = "Посылки") {
+                    handle = table(key = { row -> row.id }, pageSize = 5, selectable = true, fetch = source::fetch) {
+                        codeColumn("ID", sortKey = "id", size = 1) { row -> row.id.toString() }
+                        textColumn("Участник", size = 1) { row -> row.name }
+                        extra()
+                    }
                 }
             }
         }
@@ -393,10 +404,12 @@ class TableSelectionTests : MockVaadinTests() {
     }
 
     private fun buildSelectTable(onClick: () -> Unit): Component = buildTestPage {
-        block {
-            table(key = { value: String -> value }, fetch = { Page(listOf("row"), 1) }) {
-                column("Choice", size = 1) { select("Choice", listOf("One", "Two"), { choice -> choice }) }
-                onRowClick { onClick() }
+        row {
+            block {
+                table(key = { value: String -> value }, fetch = { Page(listOf("row"), 1) }) {
+                    column("Choice", size = 1) { select("Choice", listOf("One", "Two"), { choice -> choice }) }
+                    onRowClick { onClick() }
+                }
             }
         }
     }

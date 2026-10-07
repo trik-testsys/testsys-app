@@ -206,25 +206,27 @@ internal class DemoContext(
 
 /** Home links preserve all eight existing cabinets and the mock authentication screen. */
 private fun PageScope.demoHome(context: DemoContext) {
-    block("Демонстрация сценариев") {
-        row {
-            horizontal {
-                action("Открыть вход и регистрацию") {
-                    onClick {
-                        context.navigate("login")
-                    }
-                }
-                DEMO_CABINETS.forEach { cabinet ->
-                    action("Войти как ${demoRoleLabel(cabinet.role)}") {
+    row {
+        block(title = "Демонстрация сценариев") {
+            row {
+                horizontal {
+                    action("Открыть вход и регистрацию") {
                         onClick {
-                            context.navigate("${cabinet.key}.overview")
+                            context.navigate("login")
+                        }
+                    }
+                    DEMO_CABINETS.forEach { cabinet ->
+                        action("Войти как ${demoRoleLabel(cabinet.role)}") {
+                            onClick {
+                                context.navigate("${cabinet.key}.overview")
+                            }
                         }
                     }
                 }
             }
-        }
-        row {
-            text("Выбор кабинета здесь — инструмент демонстрации. Права реального приложения не реализованы.")
+            row {
+                text("Выбор кабинета здесь — инструмент демонстрации. Права реального приложения не реализованы.")
+            }
         }
     }
 }

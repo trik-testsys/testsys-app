@@ -26,14 +26,16 @@ private const val DEMO_FILE_BYTES = 1_048_576
 /** Accessible class, tour and task choice and the existing mock submission workflow. */
 internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects: DemoObjects, section: String) {
     if (objects.classes.isNotEmpty()) {
-        block("Классы") {
-            demoTable(
-                context.table("${actor.id}:classes"),
-                objects.classes.map { item ->
-                    DemoRow(id = item.id, title = item.name)
-                },
-            ) { selected ->
-                context.select(key = "${actor.id}:class", id = selected.id)
+        row {
+            block(title = "Классы") {
+                demoTable(
+                    context.table("${actor.id}:classes"),
+                    objects.classes.map { item ->
+                        DemoRow(id = item.id, title = item.name)
+                    },
+                ) { selected ->
+                    context.select(key = "${actor.id}:class", id = selected.id)
+                }
             }
         }
     }
@@ -43,14 +45,16 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
     val tours = objects.tours.filter {
         selectedClass == null || it.id in selectedClass.tourIds
     }
-    block("Доступные туры") {
-        demoTable(
-            context.table("${actor.id}:${selectedClass?.id}:tours"),
-            tours.map { tour ->
-                tour.row()
-            },
-        ) { selected ->
-            context.select(key = "${actor.id}:study-tour", id = selected.id)
+    row {
+        block(title = "Доступные туры") {
+            demoTable(
+                context.table("${actor.id}:${selectedClass?.id}:tours"),
+                tours.map { tour ->
+                    tour.row()
+                },
+            ) { selected ->
+                context.select(key = "${actor.id}:study-tour", id = selected.id)
+            }
         }
     }
     val tour = tours.firstOrNull {
@@ -61,15 +65,17 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
         it.id in tour.taskIds
     }
     val taskKey = "${actor.id}:${tour.id}:task"
-    block("Выбор задачи") {
-        row {
-            select("Задача", items = tasks, itemLabel = DemoTask::name, labelSize = 4, size = 20) {
-                value = tasks.firstOrNull { task ->
-                    task.id == context.selection(key = taskKey, fallback = tasks.firstOrNull()?.id)
-                }
-                addValueChangeListener { event ->
-                    event.value?.let { task ->
-                        context.select(key = taskKey, id = task.id)
+    row {
+        block(title = "Выбор задачи") {
+            row {
+                select("Задача", items = tasks, itemLabel = DemoTask::name, labelSize = 4, size = 20) {
+                    value = tasks.firstOrNull { task ->
+                        task.id == context.selection(key = taskKey, fallback = tasks.firstOrNull()?.id)
+                    }
+                    addValueChangeListener { event ->
+                        event.value?.let { task ->
+                            context.select(key = taskKey, id = task.id)
+                        }
                     }
                 }
             }
@@ -78,66 +84,68 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
     val task = tasks.firstOrNull {
         it.id == context.selection(key = taskKey, fallback = tasks.firstOrNull()?.id)
     } ?: return
-    block(task.name) {
-        row {
-            text(task.description)
-        }
-        row {
-            val score = bestScore(solutions = context.state.solutions, userId = actor.id, taskId = task.id)
-            text("Лучший балл: ${score?.toString() ?: "Нет проверенных решений"}")
-        }
-        actions {
-            demoDownload(filename = "${task.id}-statement.txt", content = "${task.name}\n${task.description}\nДемонстрационное условие")
-            demoDownload(filename = "${task.id}-exercise-demo.qrs", content = "TestSys demo exercise: ${task.name}")
-        }
-        if (section != "solutions" || actor.role == DemoRole.Participant) {
-            lateinit var kind: ValueInput<DemoSolutionKind?>
-            val filename = ValueSignal("")
+    row {
+        block(title = task.name) {
             row {
-                kind = select(
-                    "Вид решения",
-                    items = task.authorSolutionKinds,
-                    itemLabel = ::demoKindLabel,
-                    labelSize = 4,
-                    size = 20,
-                ) {
-                    value = task.authorSolutionKinds.first()
-                }
+                text(task.description)
             }
             row {
-                fileDrop(
-                    "Файл решения (демонстрация)",
-                    UploadLimits(maxFiles = 1, maxFileBytes = DEMO_FILE_BYTES, maxMemoryBytes = DEMO_FILE_BYTES.toLong()),
-                    consume = { file ->
-                        filename.set(file.filename)
-                    },
-                )
+                val score = bestScore(solutions = context.state.solutions, userId = actor.id, taskId = task.id)
+                text("Лучший балл: ${score?.toString() ?: "Нет проверенных решений"}")
             }
-            footer {
-                mainAction("Отправить решение") {
-                    onClick {
-                        if (
-                            context.apply(
-                                context.state.submitSolution(
-                                    userId = actor.id,
-                                    taskId = task.id,
-                                    kind = kind.value,
-                                    fileName = filename.peek(),
-                                ),
-                            )
-                        ) {
-                            val id = context.state.solutions.last().id
-                            context.session.check(id, context.render)
-                        }
-                        context.render()
+            actions {
+                demoDownload(filename = "${task.id}-statement.txt", content = "${task.name}\n${task.description}\nДемонстрационное условие")
+                demoDownload(filename = "${task.id}-exercise-demo.qrs", content = "TestSys demo exercise: ${task.name}")
+            }
+            if (section != "solutions" || actor.role == DemoRole.Participant) {
+                lateinit var kind: ValueInput<DemoSolutionKind?>
+                val filename = ValueSignal("")
+                row {
+                    kind = select(
+                        "Вид решения",
+                        items = task.authorSolutionKinds,
+                        itemLabel = ::demoKindLabel,
+                        labelSize = 4,
+                        size = 20,
+                    ) {
+                        value = task.authorSolutionKinds.first()
                     }
                 }
-            }
-        } else {
-            footer {
-                action("Открыть задачу и отправку решения") {
-                    onClick {
-                        context.navigate("student.study")
+                row {
+                    fileDrop(
+                        "Файл решения (демонстрация)",
+                        UploadLimits(maxFiles = 1, maxFileBytes = DEMO_FILE_BYTES, maxMemoryBytes = DEMO_FILE_BYTES.toLong()),
+                        consume = { file ->
+                            filename.set(file.filename)
+                        },
+                    )
+                }
+                footer {
+                    mainAction("Отправить решение") {
+                        onClick {
+                            if (
+                                context.apply(
+                                    context.state.submitSolution(
+                                        userId = actor.id,
+                                        taskId = task.id,
+                                        kind = kind.value,
+                                        fileName = filename.peek(),
+                                    ),
+                                )
+                            ) {
+                                val id = context.state.solutions.last().id
+                                context.session.check(id, context.render)
+                            }
+                            context.render()
+                        }
+                    }
+                }
+            } else {
+                footer {
+                    action("Открыть задачу и отправку решения") {
+                        onClick {
+                            context.navigate("student.study")
+                        }
                     }
                 }
             }
@@ -159,25 +167,27 @@ internal fun PageScope.demoSolutionTable(
     solutions: List<DemoSolution>,
     onSelect: (DemoRow) -> Unit = {},
 ) {
-    block(
-        if (actor.role == DemoRole.Judge) {
-            "Решения учеников и участников"
-        } else {
-            "Мои решения"
-        },
-    ) {
-        demoTable(
-            context.table("${actor.id}:${context.screen}:solutions"),
-            solutions.map { solution ->
-                DemoRow(
-                    id = solution.id,
-                    title = solution.fileName,
-                    category = demoStatusLabel(solution.status),
-                    date = demoDate(solution.submittedAt),
-                    detail = "${solution.taskId} · ${solution.score?.toString() ?: "—"}",
-                )
+    row {
+        block(
+            title = if (actor.role == DemoRole.Judge) {
+                "Решения учеников и участников"
+            } else {
+                "Мои решения"
             },
-            onSelect = onSelect,
-        )
+        ) {
+            demoTable(
+                context.table("${actor.id}:${context.screen}:solutions"),
+                solutions.map { solution ->
+                    DemoRow(
+                        id = solution.id,
+                        title = solution.fileName,
+                        category = demoStatusLabel(solution.status),
+                        date = demoDate(solution.submittedAt),
+                        detail = "${solution.taskId} · ${solution.score?.toString() ?: "—"}",
+                    )
+                },
+                onSelect = onSelect,
+            )
+        }
     }
 }

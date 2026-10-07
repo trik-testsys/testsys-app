@@ -37,7 +37,7 @@ fun BlockRowScope.text(value: String, size: Int? = null): TextHandle = textHandl
  */
 fun BlockRowScope.text(signal: Signal<String>, size: Int? = null): TextHandle = bindTextHandle(place(size, Div()), signal)
 
-private fun textHandle(paragraph: Div): TextHandle = TextHandle(paragraph, paragraph)
+private fun textHandle(paragraph: Div): TextHandle = TextHandle(paragraph)
 
 private fun bindTextHandle(paragraph: Div, signal: Signal<String>): TextHandle =
     textHandle(paragraph).also { handle -> handle.bindText(signal) }

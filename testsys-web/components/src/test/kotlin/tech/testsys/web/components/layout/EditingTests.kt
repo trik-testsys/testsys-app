@@ -45,7 +45,7 @@ class EditingTests : MockVaadinTests() {
 
     @Test
     fun `should request fallback focus even when block body is detached`() {
-        buildTestPage { block { editing(onSave = { true }, onCancel = {}) } }
+        buildTestPage { row { block { editing(onSave = { true }, onCancel = {}) } } }
         pendingJavaScript()
 
         button("Изменить")._click()
@@ -58,7 +58,7 @@ class EditingTests : MockVaadinTests() {
     fun `should not request focus when mode follows a signal`() {
         val editable = ValueSignal(false)
         buildTestPage {
-            block { row { textInput("Логин", labelSize = 4, size = 20) } }.bindEditable(editable)
+            row { block { row { textInput("Логин", labelSize = 4, size = 20) } }.bindEditable(editable) }
         }
         pendingJavaScript()
 
@@ -147,9 +147,11 @@ class EditingTests : MockVaadinTests() {
     @Test
     fun `should put the switch after the head actions`() {
         val bar = buildTestPage {
-            block(title = "Профиль") {
-                editing(onSave = { true }, onCancel = {})
-                actions { action("Отфильтровать") }
+            row {
+                block(title = "Профиль") {
+                    editing(onSave = { true }, onCancel = {})
+                    actions { action("Отфильтровать") }
+                }
             }
         }.find("ts-block__actions")
 
@@ -159,7 +161,7 @@ class EditingTests : MockVaadinTests() {
 
     @Test
     fun `should add a head with the switch to a block without a title`() {
-        val page = buildTestPage { block { editing(onSave = { true }, onCancel = {}) } }
+        val page = buildTestPage { row { block { editing(onSave = { true }, onCancel = {}) } } }
 
         val labels = findAllButtons(page.find("ts-block__head")).map { button -> button.text }
         assertEquals(listOf("Изменить", "Отменить", "Сохранить"), labels)
@@ -169,9 +171,11 @@ class EditingTests : MockVaadinTests() {
     fun `should reject a second editing switch`() {
         assertThrows<IllegalStateException> {
             buildTestPage {
-                block {
-                    editing(onSave = { true }, onCancel = {})
-                    editing(onSave = { true }, onCancel = {})
+                row {
+                    block {
+                        editing(onSave = { true }, onCancel = {})
+                        editing(onSave = { true }, onCancel = {})
+                    }
                 }
             }
         }
@@ -189,16 +193,18 @@ class EditingTests : MockVaadinTests() {
     private fun buildEditingBlock(isSaved: Boolean = true): BlockHandle {
         lateinit var handle: BlockHandle
         buildTestPage {
-            handle = block(title = "Профиль") {
-                editing(
-                    onSave = {
-                        saves++
-                        isSaved
-                    },
-                    onCancel = { cancels++ },
-                )
-                row { textInput("Логин", labelSize = 4, size = 20) }
-                row { textInput("Создан", labelSize = 4, size = 20) { isEditable = false } }
+            row {
+                handle = block(title = "Профиль") {
+                    editing(
+                        onSave = {
+                            saves++
+                            isSaved
+                        },
+                        onCancel = { cancels++ },
+                    )
+                    row { textInput("Логин", labelSize = 4, size = 20) }
+                    row { textInput("Создан", labelSize = 4, size = 20) { isEditable = false } }
+                }
             }
         }
         return handle

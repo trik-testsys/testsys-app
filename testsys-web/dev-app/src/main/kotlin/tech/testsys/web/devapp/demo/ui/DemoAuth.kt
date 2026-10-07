@@ -14,87 +14,95 @@ import tech.testsys.web.devapp.demo.model.restoreAccess
 
 /** Mock access, email confirmation and recovery use only the UI-owned model. */
 internal fun PageScope.demoLogin(context: DemoContext) {
-    block("Вход по коду-доступа", subtitle = "Примеры: STUDENT-2026 · ORG-2026 · PART-101") {
-        lateinit var code: tech.testsys.web.components.forms.ValueInput<String>
-        row {
-            code = textInput("Код-доступа", labelSize = 4, size = 20)
-        }
-        footer {
-            mainAction("Войти") {
-                onClick {
-                    if (context.apply(context.state.login(code.value))) {
-                        val role = context.state.users.first { user ->
-                            user.id == context.state.sessionUserId
-                        }.role
-                        context.navigate("${DEMO_CABINETS.first { cabinet -> cabinet.role == role }.key}.overview")
-                    } else {
-                        context.render()
+    row {
+        block(title = "Вход по коду-доступа", subtitle = "Примеры: STUDENT-2026 · ORG-2026 · PART-101") {
+            lateinit var code: tech.testsys.web.components.forms.ValueInput<String>
+            row {
+                code = textInput("Код-доступа", labelSize = 4, size = 20)
+            }
+            footer {
+                mainAction("Войти") {
+                    onClick {
+                        if (context.apply(context.state.login(code.value))) {
+                            val role = context.state.users.first { user ->
+                                user.id == context.state.sessionUserId
+                            }.role
+                            context.navigate("${DEMO_CABINETS.first { cabinet -> cabinet.role == role }.key}.overview")
+                        } else {
+                            context.render()
+                        }
                     }
                 }
             }
         }
     }
-    block("Регистрация") {
-        lateinit var alias: tech.testsys.web.components.forms.ValueInput<String>
-        lateinit var email: tech.testsys.web.components.forms.ValueInput<String>
-        lateinit var role: tech.testsys.web.components.forms.ValueInput<DemoRole?>
-        row {
-            alias = textInput("Псевдоним", labelSize = 4, size = 8)
-            role = select(
-                "Роль",
-                items = listOf(DemoRole.Student, DemoRole.Organizer),
-                itemLabel = ::demoRoleLabel,
-                labelSize = 4,
-                size = 8,
-            ) {
-                value = DemoRole.Student
+    row {
+        block(title = "Регистрация") {
+            lateinit var alias: tech.testsys.web.components.forms.ValueInput<String>
+            lateinit var email: tech.testsys.web.components.forms.ValueInput<String>
+            lateinit var role: tech.testsys.web.components.forms.ValueInput<DemoRole?>
+            row {
+                alias = textInput("Псевдоним", labelSize = 4, size = 8)
+                role = select(
+                    "Роль",
+                    items = listOf(DemoRole.Student, DemoRole.Organizer),
+                    itemLabel = ::demoRoleLabel,
+                    labelSize = 4,
+                    size = 8,
+                ) {
+                    value = DemoRole.Student
+                }
             }
-        }
-        row {
-            email = textInput("Почта", labelSize = 4, size = 20)
-        }
-        footer {
-            mainAction("Зарегистрироваться") {
-                onClick {
-                    context.apply(context.state.register(alias = alias.value, email = email.value, role = role.value))
-                    context.render()
+            row {
+                email = textInput("Почта", labelSize = 4, size = 20)
+            }
+            footer {
+                mainAction("Зарегистрироваться") {
+                    onClick {
+                        context.apply(context.state.register(alias = alias.value, email = email.value, role = role.value))
+                        context.render()
+                    }
                 }
             }
         }
     }
     if (context.state.pendingRegistration != null) {
-        block("Демонстрационное письмо", subtitle = "Код подтверждения: 246810") {
-            lateinit var confirmation: tech.testsys.web.components.forms.ValueInput<String>
-            row {
-                confirmation = textInput("Код подтверждения", labelSize = 4, size = 20)
-            }
-            footer {
-                mainAction("Подтвердить") {
-                    onClick {
-                        context.apply(context.state.confirmRegistration(confirmation.value))
-                        context.render()
+        row {
+            block(title = "Демонстрационное письмо", subtitle = "Код подтверждения: 246810") {
+                lateinit var confirmation: tech.testsys.web.components.forms.ValueInput<String>
+                row {
+                    confirmation = textInput("Код подтверждения", labelSize = 4, size = 20)
+                }
+                footer {
+                    mainAction("Подтвердить") {
+                        onClick {
+                            context.apply(context.state.confirmRegistration(confirmation.value))
+                            context.render()
+                        }
                     }
                 }
             }
         }
     }
-    block("Восстановление доступа") {
-        lateinit var email: tech.testsys.web.components.forms.ValueInput<String>
-        row {
-            email = textInput("Почта", labelSize = 4, size = 20)
-        }
-        footer {
-            action("Подготовить письмо") {
-                onClick {
-                    context.apply(context.state.requestRecovery(email.value))
-                    context.render()
-                }
+    row {
+        block(title = "Восстановление доступа") {
+            lateinit var email: tech.testsys.web.components.forms.ValueInput<String>
+            row {
+                email = textInput("Почта", labelSize = 4, size = 20)
             }
-            context.state.recovery?.let { recovery ->
-                action("Открыть демонстрационную ссылку") {
+            footer {
+                action("Подготовить письмо") {
                     onClick {
-                        context.apply(context.state.restoreAccess(recovery.token))
+                        context.apply(context.state.requestRecovery(email.value))
                         context.render()
+                    }
+                }
+                context.state.recovery?.let { recovery ->
+                    action("Открыть демонстрационную ссылку") {
+                        onClick {
+                            context.apply(context.state.restoreAccess(recovery.token))
+                            context.render()
+                        }
                     }
                 }
             }

@@ -8,14 +8,16 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.ValueSource
+import tech.testsys.web.components.display.Tone
 
 class TestSysThemeTests {
     @Test
     fun `should package design system stylesheet with its tokens`() {
         assertEquals("testsys-ui/styles/styles.css", TestSysTheme.DESIGN_SYSTEM)
         assertNotNull(resource(TestSysTheme.DESIGN_SYSTEM))
-        assertTrue(resource("testsys-ui/tokens/components.css")!!.readText().contains(".ts-slot__row"))
+        assertTrue(resource("testsys-ui/tokens/components.css")!!.readText().contains(".ts-row"))
     }
 
     @Test
@@ -122,8 +124,8 @@ class TestSysThemeTests {
 
         assertFalse(components.contains("var(--ease)"))
         assertEquals(
-            "box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)",
-            rule(components, ".ts-ccard")["transition"],
+            "background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out)",
+            rule(components, ".ts-drop")["transition"],
         )
     }
 
@@ -189,25 +191,29 @@ class TestSysThemeTests {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = [".ts-slot", ".ts-block--grid", ".ts-dialog__grid"])
-    fun `should give a slot, a block and a dialog their own 24-column grid`(selector: String) {
+    @ValueSource(strings = [".ts-row", ".ts-block--grid", ".ts-dialog__grid"])
+    fun `should give a page row, a block and a dialog their own 24-column grid`(selector: String) {
         val css = text("testsys-ui/tokens/components.css")
 
         assertEquals("repeat(var(--grid-columns), minmax(0, 1fr))", rule(css, selector)["grid-template-columns"])
+    }
+
+    @Test
+    fun `should stretch the blocks of a page row to one height`() {
+        val css = text("testsys-ui/tokens/components.css")
+
+        assertEquals("stretch", rule(css, ".ts-row")["align-items"])
     }
 
     @ParameterizedTest
     @CsvSource(
         delimiter = '|',
         value = [
-            ".ts-slot | column-gap | 0",
-            ".ts-slot | margin-inline | calc(var(--grid-gap) / -2)",
-            ".ts-slot__row > * | margin-inline | calc(var(--grid-gap) / 2)",
             ".ts-block--grid | column-gap | calc(var(--grid-gap) * var(--ts-page-columns, 24) / 24)",
             ".ts-table-filters__fields | column-gap | calc(var(--grid-gap) * var(--ts-page-columns, 24) / 24)",
         ],
     )
-    fun `should fit nested grid gaps into any slot and block width`(selector: String, property: String, value: String) {
+    fun `should fit nested grid gaps into any block width`(selector: String, property: String, value: String) {
         val css = text("testsys-ui/tokens/components.css")
 
         assertEquals(value, rule(css, selector)[property])
@@ -218,6 +224,32 @@ class TestSysThemeTests {
         val css = text("testsys-ui/tokens/components.css")
 
         assertEquals("auto", rule(css, ".ts-brand-image")["width"])
+    }
+
+    @Test
+    fun `should draw a status badge as a pill with a 6px dot`() {
+        val css = text("testsys-ui/tokens/components.css")
+
+        assertEquals("var(--radius-pill)", rule(css, ".ts-status")["border-radius"])
+        assertEquals("6px", rule(css, ".ts-status__dot")["width"])
+        assertEquals("50%", rule(css, ".ts-status__dot")["border-radius"])
+    }
+
+    @ParameterizedTest
+    @EnumSource(Tone::class)
+    fun `should colour the status badge and its dot by every tone`(tone: Tone) {
+        val css = text("testsys-ui/tokens/components.css")
+        val selector = ".ts-status--${tone.name.lowercase()}"
+        val (background, dot) = when (tone) {
+            Tone.Neutral -> "var(--muted)" to "var(--ink-500)"
+            Tone.Info -> "var(--info-bg)" to "var(--accent)"
+            Tone.Success -> "var(--success-bg)" to "var(--success)"
+            Tone.Warning -> "var(--warning-bg)" to "var(--warning)"
+            Tone.Danger -> "var(--danger-bg)" to "var(--danger)"
+        }
+
+        assertEquals(background, rule(css, selector)["background"])
+        assertEquals(dot, rule(css, "$selector .ts-status__dot")["background"])
     }
 
     private fun assertCodeGeometry(css: String, selector: String) {

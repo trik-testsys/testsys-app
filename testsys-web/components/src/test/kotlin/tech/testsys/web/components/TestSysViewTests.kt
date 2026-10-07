@@ -54,18 +54,18 @@ class TestSysViewTests : MockVaadinTests() {
         init {
             page(CabinetHeader()) {
                 footer { link(label = "First", href = "/first") }
-                block { row { text("first") } }
+                row { block { row { text("first") } } }
             }
             page(CabinetHeader()) {
                 footer { link(label = "Second", href = "/second") }
-                block { row { text("second") } }
+                row { block { row { text("second") } } }
             }
         }
     }
 
     @Test
     fun `should build app root with header and page body`() {
-        val root = SampleView { block { row { text("x") } } }.child(0)
+        val root = SampleView { row { block { row { text("x") } } } }.child(0)
 
         assertTrue("ts-app" in root.classes())
         assertTrue("ts-header" in root.child(0).classes())
@@ -97,7 +97,7 @@ class TestSysViewTests : MockVaadinTests() {
         val root = SampleView {
             head("Sample")
             footer { link("Other view", SecondTestView::class.java) }
-            block {}
+            row { block {} }
         }.child(0)
 
         assertEquals("main", root.child(2).element.tag)

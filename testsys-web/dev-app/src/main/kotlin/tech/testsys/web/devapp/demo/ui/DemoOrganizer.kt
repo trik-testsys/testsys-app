@@ -69,33 +69,37 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
         }
     }
     if (section in listOf("overview", "competitions")) {
-        block("Соревнования") {
-            actions {
-                mainAction("Создать соревнование") {
-                    onClick {
-                        createBinder.readBean(DemoCreation())
-                        create.open()
+        row {
+            block(title = "Соревнования") {
+                actions {
+                    mainAction("Создать соревнование") {
+                        onClick {
+                            createBinder.readBean(DemoCreation())
+                            create.open()
+                        }
                     }
                 }
-            }
-            demoTable(
-                context.table("${actor.id}:competitions"),
-                competitions.map { item ->
-                    DemoRow(id = item.id, title = item.name)
-                },
-            ) { selected ->
-                context.select(key = selectionKey, id = selected.id)
+                demoTable(
+                    context.table("${actor.id}:competitions"),
+                    competitions.map { item ->
+                        DemoRow(id = item.id, title = item.name)
+                    },
+                ) { selected ->
+                    context.select(key = selectionKey, id = selected.id)
+                }
             }
         }
     }
     if (competition == null) {
         return
     }
-    block("Выбранное соревнование") {
-        row {
-            textInput("Название", labelSize = 4, size = 20) {
-                value = competition.name
-                isEditable = false
+    row {
+        block(title = "Выбранное соревнование") {
+            row {
+                textInput("Название", labelSize = 4, size = 20) {
+                    value = competition.name
+                    isEditable = false
+                }
             }
         }
     }
@@ -154,21 +158,23 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                 }
             }
         }
-        block("Участники") {
-            actions {
-                mainAction("Создать участников") {
-                    onClick {
-                        participantsBinder.readBean(DemoCreation())
-                        createParticipants.open()
+        row {
+            block(title = "Участники") {
+                actions {
+                    mainAction("Создать участников") {
+                        onClick {
+                            participantsBinder.readBean(DemoCreation())
+                            createParticipants.open()
+                        }
                     }
                 }
+                demoTable(
+                    context.table("${actor.id}:${competition.id}:participants"),
+                    participants.map { participant ->
+                        DemoRow(id = participant.id, title = participant.alias, detail = participant.accessCode)
+                    },
+                )
             }
-            demoTable(
-                context.table("${actor.id}:${competition.id}:participants"),
-                participants.map { participant ->
-                    DemoRow(id = participant.id, title = participant.alias, detail = participant.accessCode)
-                },
-            )
         }
     }
     if (section in listOf("overview", "tours", "results")) {
@@ -221,22 +227,24 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
             it.id in competition.tourIds
         }
         val tourKey = "${actor.id}:tour"
-        block("Туры") {
-            actions {
-                mainAction("Добавить доступный тур") {
-                    onClick {
-                        tourBinder.readBean(DemoCreation())
-                        add.open()
+        row {
+            block(title = "Туры") {
+                actions {
+                    mainAction("Добавить доступный тур") {
+                        onClick {
+                            tourBinder.readBean(DemoCreation())
+                            add.open()
+                        }
                     }
                 }
-            }
-            demoTable(
-                context.table("${actor.id}:${competition.id}:tours"),
-                tours.map { tour ->
-                    tour.row()
-                },
-            ) { selected ->
-                context.select(key = tourKey, id = selected.id)
+                demoTable(
+                    context.table("${actor.id}:${competition.id}:tours"),
+                    tours.map { tour ->
+                        tour.row()
+                    },
+                ) { selected ->
+                    context.select(key = tourKey, id = selected.id)
+                }
             }
         }
         val tour = tours.firstOrNull {
@@ -244,25 +252,27 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
         }
         if (tour != null) {
             demoTourMaterials(context, tour)
-            block("Результаты", subtitle = "CSV содержит полную матрицу выбранного тура") {
-                actions {
-                    downloadAction(
-                        "Скачать CSV",
-                        produce = {
-                            val bytes = context.state.resultsCsv(competitionId = competition.id, tourId = tour.id)
-                                .toByteArray(Charsets.UTF_8)
-                            DownloadContent(
-                                filename = "results.csv",
-                                contentType = "text/csv;charset=utf-8",
-                                length = bytes.size.toLong(),
-                            ) {
-                                ByteArrayInputStream(bytes)
-                            }
-                        },
-                    )
+            row {
+                block(title = "Результаты", subtitle = "CSV содержит полную матрицу выбранного тура") {
+                    actions {
+                        downloadAction(
+                            "Скачать CSV",
+                            produce = {
+                                val bytes = context.state.resultsCsv(competitionId = competition.id, tourId = tour.id)
+                                    .toByteArray(Charsets.UTF_8)
+                                DownloadContent(
+                                    filename = "results.csv",
+                                    contentType = "text/csv;charset=utf-8",
+                                    length = bytes.size.toLong(),
+                                ) {
+                                    ByteArrayInputStream(bytes)
+                                }
+                            },
+                        )
+                    }
+                    val participants = competition.participantIds.map { id -> context.state.users.first { user -> user.id == id } }
+                    demoResultMatrix(context, actor, tour, participants)
                 }
-                val participants = competition.participantIds.map { id -> context.state.users.first { user -> user.id == id } }
-                demoResultMatrix(context, actor, tour, participants)
             }
         }
     }

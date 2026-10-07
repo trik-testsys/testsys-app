@@ -58,27 +58,35 @@ class ShowcaseFormsView(texts: UiTexts, private val environment: Environment) : 
             showcaseHead("Поля и файлы")
             ordinaryFields()
             obscuredFields()
-            block(title = "Режимы поля") {
-                editing(onSave = { true }, onCancel = {})
-                row {
-                    segmentedControl(
-                        label = "Изменяемое",
-                        labelSize = LABEL_COLUMNS,
-                        size = VALUE_COLUMNS,
-                        items = listOf("A", "B"),
-                        itemLabel = { value -> value },
-                    ) { value = "A" }
-                }
-                row {
-                    multiSelect("Только чтение", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS, listOf("A", "B"), { value -> value }) {
-                        value = setOf("A")
-                        isEditable = false
+            row {
+                block(title = "Режимы поля") {
+                    editing(onSave = { true }, onCancel = {})
+                    row {
+                        segmentedControl(
+                            label = "Изменяемое",
+                            labelSize = LABEL_COLUMNS,
+                            size = VALUE_COLUMNS,
+                            items = listOf("A", "B"),
+                            itemLabel = { value -> value },
+                        ) { value = "A" }
                     }
-                }
-                row {
-                    codeEditor("Выключенное", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS, minLines = COMPACT_EDITOR_LINES) {
-                        value = "readonly example"
-                        isEnabled = false
+                    row {
+                        multiSelect(
+                            "Только чтение",
+                            labelSize = LABEL_COLUMNS,
+                            size = VALUE_COLUMNS,
+                            listOf("A", "B"),
+                            { value -> value },
+                        ) {
+                            value = setOf("A")
+                            isEditable = false
+                        }
+                    }
+                    row {
+                        codeEditor("Выключенное", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS, minLines = COMPACT_EDITOR_LINES) {
+                            value = "readonly example"
+                            isEnabled = false
+                        }
                     }
                 }
             }
@@ -98,58 +106,60 @@ private fun PageScope.ordinaryFields() {
     lateinit var format: ValueInput<String?>
     lateinit var publication: ValueInput<Boolean>
     lateinit var mode: ValueInput<String?>
-    block(title = "Обычные поля") {
-        row {
-            format = radio(
-                label = "Формат",
-                labelSize = LABEL_COLUMNS,
-                size = VALUE_COLUMNS,
-                items = listOf("Практика", "Контест"),
-                itemLabel = { value -> value },
-            ) {
-                value = "Практика"
-                addValueChangeListener { event -> result.text = "Формат: ${event.value}" }
+    row {
+        block(title = "Обычные поля") {
+            row {
+                format = radio(
+                    label = "Формат",
+                    labelSize = LABEL_COLUMNS,
+                    size = VALUE_COLUMNS,
+                    items = listOf("Практика", "Контест"),
+                    itemLabel = { value -> value },
+                ) {
+                    value = "Практика"
+                    addValueChangeListener { event -> result.text = "Формат: ${event.value}" }
+                }
             }
-        }
-        row {
-            publication = switchInput("Публикация", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) {
-                value = true
-                addValueChangeListener { event -> result.text = "Публикация: ${event.value}" }
+            row {
+                publication = switchInput("Публикация", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) {
+                    value = true
+                    addValueChangeListener { event -> result.text = "Публикация: ${event.value}" }
+                }
             }
-        }
-        row {
-            mode = segmentedControl(
-                label = "Режим",
-                labelSize = LABEL_COLUMNS,
-                size = VALUE_COLUMNS,
-                items = listOf("День", "Неделя", "Месяц"),
-                itemLabel = { value -> value },
-            ) {
-                value = "Неделя"
-                addValueChangeListener { event -> result.text = "Режим: ${event.value}" }
+            row {
+                mode = segmentedControl(
+                    label = "Режим",
+                    labelSize = LABEL_COLUMNS,
+                    size = VALUE_COLUMNS,
+                    items = listOf("День", "Неделя", "Месяц"),
+                    itemLabel = { value -> value },
+                ) {
+                    value = "Неделя"
+                    addValueChangeListener { event -> result.text = "Режим: ${event.value}" }
+                }
             }
-        }
-        row { codeEditor("Код", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) { value = "fun main() {\n    println(42)\n}" } }
-        row {
-            multiSelect(
-                label = "Группы",
-                labelSize = LABEL_COLUMNS,
-                size = VALUE_COLUMNS,
-                items = listOf("Первая", "Вторая", "Третья", "Четвёртая"),
-                itemLabel = { value -> value },
-            ) {
-                value = setOf("Первая", "Третья")
+            row { codeEditor("Код", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) { value = "fun main() {\n    println(42)\n}" } }
+            row {
+                multiSelect(
+                    label = "Группы",
+                    labelSize = LABEL_COLUMNS,
+                    size = VALUE_COLUMNS,
+                    items = listOf("Первая", "Вторая", "Третья", "Четвёртая"),
+                    itemLabel = { value -> value },
+                ) {
+                    value = setOf("Первая", "Третья")
+                }
             }
-        }
-        row { dateRangeInput("Период", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) }
-        row { result = text("Выборы ещё не менялись") }
-        footer {
-            action("Сбросить поля выбора") {
-                onClick {
-                    format.value = "Практика"
-                    publication.value = true
-                    mode.value = "Неделя"
-                    result.text = "Выборы ещё не менялись"
+            row { dateRangeInput("Период", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) }
+            row { result = text("Выборы ещё не менялись") }
+            footer {
+                action("Сбросить поля выбора") {
+                    onClick {
+                        format.value = "Практика"
+                        publication.value = true
+                        mode.value = "Неделя"
+                        result.text = "Выборы ещё не менялись"
+                    }
                 }
             }
         }
@@ -157,41 +167,45 @@ private fun PageScope.ordinaryFields() {
 }
 
 private fun PageScope.fileExamples() {
-    block(title = "Настоящий приём файлов", subtitle = "До 2 TXT-файлов по 1 МБ; fail.txt демонстрирует ошибку обработчика") {
-        val ui = UI.getCurrent()
-        val status = ValueSignal("Файл ещё не получен")
-        row {
-            fileDrop(
-                label = "Файлы",
-                limits = UploadLimits(
-                    maxFiles = 2,
-                    maxFileBytes = MAX_FILE_BYTES,
-                    maxMemoryBytes = MAX_MEMORY_BYTES,
-                    mimeTypes = setOf("text/*"),
-                    extensions = setOf(".txt"),
-                ),
-                consume = { file ->
-                    file.ensureActive()
-                    val content = file.openStream().use { stream -> stream.readAllBytes() }
-                    if (file.filename == "fail.txt") throw IOException("Demonstration handler failure")
-                    ui.access { status.set("Получено: ${file.filename}, ${content.size} байт") }
-                },
-            ) { isObscured = true }
+    row {
+        block(title = "Настоящий приём файлов", subtitle = "До 2 TXT-файлов по 1 МБ; fail.txt демонстрирует ошибку обработчика") {
+            val ui = UI.getCurrent()
+            val status = ValueSignal("Файл ещё не получен")
+            row {
+                fileDrop(
+                    label = "Файлы",
+                    limits = UploadLimits(
+                        maxFiles = 2,
+                        maxFileBytes = MAX_FILE_BYTES,
+                        maxMemoryBytes = MAX_MEMORY_BYTES,
+                        mimeTypes = setOf("text/*"),
+                        extensions = setOf(".txt"),
+                    ),
+                    consume = { file ->
+                        file.ensureActive()
+                        val content = file.openStream().use { stream -> stream.readAllBytes() }
+                        if (file.filename == "fail.txt") throw IOException("Demonstration handler failure")
+                        ui.access { status.set("Получено: ${file.filename}, ${content.size} байт") }
+                    },
+                ) { isObscured = true }
+            }
+            row { vertical { text("Статус").bindText(status) } }
         }
-        row { vertical { text("Статус").bindText(status) } }
     }
-    block(title = "Настоящее скачивание", subtitle = "Небольшие генерируемые файлы; повторный клик отменяет текущую передачу") {
-        row {
-            horizontal {
-                downloadAction("Скачать пример TXT", produce = { context -> demoDownload(context, knownLength = true) })
-                downloadAction("Скачать без известной длины", produce = { context -> demoDownload(context, knownLength = false) })
-                iconDownloadAction("Скачать пример со значком", produce = { context -> demoDownload(context, knownLength = true) })
-                val attempts = AtomicInteger()
-                downloadAction("Скачать с ошибкой и повтором", produce = { context ->
-                    context.ensureActive()
-                    if (attempts.getAndIncrement() == 0) throw IOException("Demonstration producer failure")
-                    demoDownload(context, knownLength = true)
-                })
+    row {
+        block(title = "Настоящее скачивание", subtitle = "Небольшие генерируемые файлы; повторный клик отменяет текущую передачу") {
+            row {
+                horizontal {
+                    downloadAction("Скачать пример TXT", produce = { context -> demoDownload(context, knownLength = true) })
+                    downloadAction("Скачать без известной длины", produce = { context -> demoDownload(context, knownLength = false) })
+                    iconDownloadAction("Скачать пример со значком", produce = { context -> demoDownload(context, knownLength = true) })
+                    val attempts = AtomicInteger()
+                    downloadAction("Скачать с ошибкой и повтором", produce = { context ->
+                        context.ensureActive()
+                        if (attempts.getAndIncrement() == 0) throw IOException("Demonstration producer failure")
+                        demoDownload(context, knownLength = true)
+                    })
+                }
             }
         }
     }
@@ -235,22 +249,24 @@ private fun PageScope.resourceEditorExample() {
     val initial = "print(42)"
     lateinit var source: ValueInput<String>
     lateinit var result: TextHandle
-    block(
-        title = "Кабинет разработчика: пример редактора ресурса",
-        subtitle = "Отдельная локальная демонстрация авторского решения Python",
-    ) {
-        row {
-            source = codeEditor("author-solution-demo.py", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) {
-                value = initial
+    row {
+        block(
+            title = "Кабинет разработчика: пример редактора ресурса",
+            subtitle = "Отдельная локальная демонстрация авторского решения Python",
+        ) {
+            row {
+                source = codeEditor("author-solution-demo.py", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) {
+                    value = initial
+                }
             }
-        }
-        row { result = text("Текст примера ещё не сохранён") }
-        footer {
-            action("Сохранить текст примера") { onClick { result.text = "Сохранён текст ресурса: ${source.value}" } }
-            action("Сбросить текст примера") {
-                onClick {
-                    source.value = initial
-                    result.text = "Текст примера ещё не сохранён"
+            row { result = text("Текст примера ещё не сохранён") }
+            footer {
+                action("Сохранить текст примера") { onClick { result.text = "Сохранён текст ресурса: ${source.value}" } }
+                action("Сбросить текст примера") {
+                    onClick {
+                        source.value = initial
+                        result.text = "Текст примера ещё не сохранён"
+                    }
                 }
             }
         }
@@ -258,22 +274,24 @@ private fun PageScope.resourceEditorExample() {
 }
 
 private fun PageScope.remainingFieldStates() {
-    block(title = "MultiSelect Count и пустой CodeEditor") {
-        row {
-            multiSelect(
-                label = "Количество ресурсов",
-                labelSize = LABEL_COLUMNS,
-                size = VALUE_COLUMNS,
-                items = listOf("Условие", "Полигон", "Упражнение", "Решение"),
-                itemLabel = { value -> value },
-                display = MultiSelectDisplay.Count,
-            ) { value = setOf("Условие", "Полигон") }
-        }
-        row { codeEditor("Пустое решение", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) }
-        row {
-            codeEditor("Текст только для чтения", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) {
-                value = "print(42)"
-                isEditable = false
+    row {
+        block(title = "MultiSelect Count и пустой CodeEditor") {
+            row {
+                multiSelect(
+                    label = "Количество ресурсов",
+                    labelSize = LABEL_COLUMNS,
+                    size = VALUE_COLUMNS,
+                    items = listOf("Условие", "Полигон", "Упражнение", "Решение"),
+                    itemLabel = { value -> value },
+                    display = MultiSelectDisplay.Count,
+                ) { value = setOf("Условие", "Полигон") }
+            }
+            row { codeEditor("Пустое решение", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) }
+            row {
+                codeEditor("Текст только для чтения", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) {
+                    value = "print(42)"
+                    isEditable = false
+                }
             }
         }
     }

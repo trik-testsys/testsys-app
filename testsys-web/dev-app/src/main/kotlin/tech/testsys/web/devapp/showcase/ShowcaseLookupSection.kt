@@ -65,24 +65,26 @@ private val CONTESTS: List<ShowcaseContest> = (0 until SEASONS.size * CONTEST_KI
 internal fun PageScope.lookupSection() {
     val choice = ShowcaseChoice()
     val binder = Binder<ShowcaseChoice>()
-    block(title = "Лукап", subtitle = "Выбор тура или нескольких задач в диалоге с поиском по названию") {
-        row { contestLookup("Тур", hint = "Поиск по части названия") }
-        row {
-            contestLookup("Обязательный") {
-                binder.forField(this)
-                    .asRequired("Выберите тур")
-                    .bind({ source -> source.contest }, { target, value -> target.contest = value })
+    row {
+        block(title = "Лукап", subtitle = "Выбор тура или нескольких задач в диалоге с поиском по названию") {
+            row { contestLookup("Тур", hint = "Поиск по части названия") }
+            row {
+                contestLookup("Обязательный") {
+                    binder.forField(this)
+                        .asRequired("Выберите тур")
+                        .bind({ source -> source.contest }, { target, value -> target.contest = value })
+                }
             }
-        }
-        row {
-            contestLookup("Только чтение") {
-                value = CONTESTS.first()
-                isEditable = false
+            row {
+                contestLookup("Только чтение") {
+                    value = CONTESTS.first()
+                    isEditable = false
+                }
             }
+            row { taskLookup("Задачи", hint = "Несколько задач; отметки сохраняются при поиске и листании") }
+            row { taskLookup("Задачи тура") { value = SHOWCASE_TASKS.take(TOUR_TASK_COUNT).toSet() } }
+            footer { mainAction("Проверить") { onClick { binder.writeBeanIfValid(choice) } } }
         }
-        row { taskLookup("Задачи", hint = "Несколько задач; отметки сохраняются при поиске и листании") }
-        row { taskLookup("Задачи тура") { value = SHOWCASE_TASKS.take(TOUR_TASK_COUNT).toSet() } }
-        footer { mainAction("Проверить") { onClick { binder.writeBeanIfValid(choice) } } }
     }
     binder.readBean(choice)
 }

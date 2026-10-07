@@ -190,7 +190,8 @@ internal fun buildTestPage(view: Class<out Component>? = null, body: PageScope.(
 }
 
 /** Builds a full-width block with one row filled by [content] and returns the row. */
-internal fun buildTestRow(content: BlockRowScope.() -> Unit): Component = buildTestPage { block { row(content) } }.find("ts-block__row")
+internal fun buildTestRow(content: BlockRowScope.() -> Unit): Component =
+    buildTestPage { row { block { row(content) } } }.find("ts-block__row")
 
 /** Builds a full-width block whose only row holds a vertical group filled by [content] and returns the group. */
 internal fun buildTestContent(content: ContentScope.() -> Unit): Component = buildTestRow { vertical { content() } }.child(0)

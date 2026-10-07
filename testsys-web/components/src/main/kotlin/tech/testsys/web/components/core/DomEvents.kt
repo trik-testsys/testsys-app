@@ -41,8 +41,6 @@ internal enum class DomEventData(internal val value: String) {
 
 @InternalComponentsApi
 internal enum class DomEventFilter(internal val value: String) {
-    CardClick("!event.target.closest('button')"),
-    CardKey("event.target === element && (event.key === 'Enter' || event.key === ' ')"),
     TableSortKey(TABLE_SORT_KEY_FILTER),
     TableRowClick(TABLE_ROW_CLICK_FILTER),
     LookupClick(LOOKUP_CLICK_EXPRESSION),

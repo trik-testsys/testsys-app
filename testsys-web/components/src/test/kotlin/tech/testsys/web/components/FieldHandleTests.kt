@@ -172,7 +172,7 @@ class FieldHandleTests : MockVaadinTests() {
     @Test
     fun `should preserve a label less control tab position when obscuring is disabled`() {
         lateinit var input: ValueInput<String?>
-        buildTestPage { block { footer { input = select("Mode", items = listOf("A"), itemLabel = { value -> value }) } } }
+        buildTestPage { row { block { footer { input = select("Mode", items = listOf("A"), itemLabel = { value -> value }) } } } }
 
         input.isObscured = true
         input.isObscured = false

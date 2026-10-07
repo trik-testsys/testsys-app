@@ -38,9 +38,11 @@ class ShowcaseStatesView(texts: UiTexts, private val environment: Environment) :
     init {
         page(showcaseHeader()) {
             showcaseHead("Навигация и состояния")
-            block(title = "Доступность") {
-                actions {
-                    action("Открыть примеры доступности") { onClick { UI.getCurrent().navigate(ShowcaseNestedView::class.java) } }
+            row {
+                block(title = "Доступность") {
+                    actions {
+                        action("Открыть примеры доступности") { onClick { UI.getCurrent().navigate(ShowcaseNestedView::class.java) } }
+                    }
                 }
             }
             tabsSection()

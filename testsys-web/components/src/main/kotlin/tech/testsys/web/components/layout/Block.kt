@@ -20,13 +20,13 @@ internal class BlockHeading(val title: String?, val subtitle: String?)
 
 /**
  * Builds the `section.ts-block` markup whose rows lie on [columns] grid columns;
- * [span] sets the grid span inside a slot row, `null` for a page block.
+ * [span] sets the grid span of the block in its page row.
  */
 internal fun buildBlock(
     texts: UiTexts,
     heading: BlockHeading,
     highlight: Boolean,
-    span: Int?,
+    span: Int,
     columns: Int,
     content: BlockScope.() -> Unit,
 ): BlockHandle {
@@ -38,7 +38,7 @@ internal fun buildBlock(
         addClassNames(CssClass.Block, CssClass.BlockGrid)
         if (scope.filtersBar != null) addClassName(CssClass.BlockFilters)
         if (highlight) addClassName(CssClass.BlockDark)
-        if (span != null) style.setGridColumnSpan(span)
+        style.setGridColumnSpan(span)
         blockHead(heading = heading, actions = scope.actionsBar, tabs = scope.tabsBar)?.let { head -> add(head) }
         scope.filtersBar?.let { filters -> add(filters) }
         if (body.children.findAny().isPresent) {

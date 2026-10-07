@@ -117,7 +117,6 @@
 .ts-verdict { display:inline-flex; align-items:center; gap:6px; height:20px; padding:0 var(--space-2); border-radius:var(--radius-sm); font:var(--fw-semibold) var(--fs-caption) var(--font-mono); white-space:nowrap; }
 .ts-verdict__label { font:var(--fw-medium) var(--fs-caption) var(--font-sans); }
 .ts-tag { display:inline-flex; align-items:center; gap:4px; height:20px; padding:0 var(--space-2); border-radius:var(--radius-sm); background:var(--canvas); border:1px solid var(--border-default); font:var(--fw-medium) var(--fs-caption) var(--font-sans); color:var(--ink-700); }
-.ts-tag--plain { border-color:transparent; }
 .ts-tag--mono { font-family:var(--font-mono); font-weight:var(--fw-semibold); }
 .ts-tag--dark { background:var(--ink-900); color:var(--white); border-color:var(--ink-900); }
 .ts-tag--up { background:var(--success-bg); color:var(--success-fg); border-color:transparent; }
@@ -153,14 +152,9 @@
 .ts-footer__link { color:var(--text-secondary); }
 .ts-footer__link:hover { color:var(--text-primary); }
 .ts-footer__link:focus-visible { outline:1px solid var(--border-focus); outline-offset:0; box-shadow:0 0 0 3px var(--accent-ring); border-radius:var(--radius-sm); }
-.ts-row { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); gap:var(--grid-gap); align-items:start; }
-.ts-row--stretch { align-items:stretch; }
+.ts-row { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); gap:var(--grid-gap); align-items:stretch; }
 .ts-row--tight { gap:var(--grid-gap-tight); }
 .ts-stack { display:flex; flex-direction:column; gap:var(--row-gap); min-width:0; }
-.ts-slot { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); column-gap:0; row-gap:var(--row-gap); align-content:start; min-width:0; margin-inline:calc(var(--grid-gap) / -2); }
-.ts-slot__row { grid-column:1 / -1; display:grid; grid-template-columns:subgrid; align-items:stretch; }
-/* The gap between slot elements comes from their margins, so the slot grid has no fixed gaps in any width. */
-.ts-slot__row > * { margin-inline:calc(var(--grid-gap) / 2); }
 .ts-hstack { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); min-width:0; }
 .ts-vstack { display:flex; flex-direction:column; gap:var(--space-2); min-width:0; }
 .ts-block { background:var(--surface-card); border:1px solid var(--border-default); border-radius:var(--radius-xl); box-shadow:var(--shadow-block); min-width:0; display:flex; flex-direction:column; }
@@ -178,8 +172,8 @@
 .ts-block__body { padding:var(--space-3); display:flex; flex-direction:column; gap:var(--space-3); flex:1; min-width:0; }
 .ts-block__body--flush { padding:0; gap:0; }
 .ts-block__foot { display:flex; align-items:center; gap:var(--space-2); padding:var(--space-2) var(--space-3); border-top:1px solid var(--border-default); background:var(--sunken); border-radius:0 0 var(--radius-xl) var(--radius-xl); }
-/* Grid inside blocks (React and Kotlin DSL): a slot and every block start their own 24-column grid scaled to their
-   width; the block body, its rows and fields are subgrids of the block columns. The column gap of a block shrinks
+/* Grid inside blocks (React and Kotlin DSL): every block starts its own 24-column grid scaled to its width;
+   the block body, its rows and fields are subgrids of the block columns. The column gap of a block shrinks
    with its width in page columns, so its 23 gaps fit any block width allowed by the DSL. */
 .ts-block--grid { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); column-gap:calc(var(--grid-gap) * var(--ts-page-columns, 24) / 24); grid-template-rows:auto 1fr auto; }
 .ts-block--grid > .ts-block__head { grid-row:1; grid-column:1 / -1; }
@@ -228,12 +222,6 @@ span.ts-obscured-value:not(.ts-chip, .ts-counter) { display:inline-block; }
     filter:var(--ts-value-filter, none);
   }
 }
-.ts-stat { display:flex; flex-direction:column; gap:6px; }
-.ts-stat__label { font:var(--fw-medium) var(--fs-xs) var(--font-sans); color:var(--text-secondary); }
-.ts-stat__value { font:var(--fw-bold) 24px/32px var(--font-mono); }
-.ts-stat__delta { font:var(--fw-medium) var(--fs-caption) var(--font-sans); color:var(--text-secondary); }
-.ts-stat__delta--up { color:var(--success-fg); }
-.ts-stat__delta--down { color:var(--danger-fg); }
 
 /* ---------- Header ---------- */
 .ts-header { position:relative; z-index:30; }
@@ -423,20 +411,6 @@ a.ts-tab { text-decoration:none; }
 .ts-timer__tile b { font:var(--fw-semibold) 28px/32px var(--font-mono); }
 .ts-timer__tile span { font:var(--fw-medium) var(--fs-micro) var(--font-sans); color:var(--text-secondary); }
 
-/* ---------- Contest card ---------- */
-.ts-ccard { background:var(--surface-card); border:1px solid var(--border-default); border-radius:var(--radius-xl); box-shadow:var(--shadow-block); overflow:hidden; display:flex; flex-direction:column; cursor:pointer; transition:box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out); min-width:0; }
-.ts-ccard:hover { border-color:var(--ink-300); box-shadow:var(--shadow-block-hover); }
-.ts-ccard__cover { height:104px; padding:var(--space-4); display:flex; flex-direction:column; justify-content:space-between; }
-.ts-ccard__cover--info { background:var(--accent-soft); color:var(--accent); }
-.ts-ccard__cover--live { background:var(--ink-900); color:var(--white); }
-.ts-ccard__cover--neutral { background:var(--canvas); color:var(--text-primary); }
-.ts-ccard__fmt { font:var(--fw-semibold) var(--fs-caption) var(--font-mono); letter-spacing:0.04em; text-transform:uppercase; }
-.ts-ccard__when { font:var(--fw-semibold) 28px/1 var(--font-mono); letter-spacing:-0.02em; }
-.ts-ccard__body { padding:var(--space-4); display:flex; flex-direction:column; gap:10px; flex:1; }
-.ts-ccard__title { font:var(--fw-semibold) var(--fs-h3)/var(--lh-h3) var(--font-sans); }
-.ts-ccard__foot { display:flex; align-items:center; gap:10px; padding-top:var(--space-3); border-top:1px solid var(--line-subtle); margin-top:auto; }
-.ts-ccard__people { flex:1; font:var(--fw-regular) var(--fs-xs) var(--font-sans); color:var(--text-secondary); }
-
 /* ---------- Calendar ---------- */
 .ts-cal { display:flex; flex-direction:column; gap:14px; }
 .ts-cal__head { display:flex; align-items:center; gap:var(--space-2); }
@@ -504,9 +478,6 @@ a.ts-tab { text-decoration:none; }
 
 /* Shared accessibility. */
 .ts-sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
-.ts-ccard__head { display:flex; align-items:center; justify-content:space-between; gap:var(--space-2); }
-.ts-ccard__tags { display:flex; flex-wrap:wrap; gap:6px; }
-.ts-ccard[role="link"] { cursor:pointer; }
 .ts-download { display:inline-flex; }
 
 .ts-btn--progress { min-width:128px; }
@@ -552,7 +523,6 @@ button.ts-choice { background:transparent; border:0; padding:0; text-align:left;
   :scope .ts-table-filters__toggle { color:var(--white); }
   :scope .ts-table-filters__toggle:hover { background:var(--ink-800); }
   :scope .ts-field__label:where(:not(.ts-field--disabled *)) { color:#C9CBD1; }
-  :scope .ts-stat__label { color:#C9CBD1; }
   :scope .ts-tab { color:#C9CBD1; }
   :scope .ts-tab:hover, :scope .ts-tab--active { color:var(--white); }
   :scope .ts-tab--active::after { background:var(--white); }

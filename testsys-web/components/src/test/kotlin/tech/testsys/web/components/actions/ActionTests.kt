@@ -53,7 +53,7 @@ class ActionTests : MockVaadinTests() {
     inner class SizeTests {
         @Test
         fun `should render actions in the block head small`() {
-            buildTestPage { block(title = "Задачи") { actions { action("Отфильтровать") } } }
+            buildTestPage { row { block(title = "Задачи") { actions { action("Отфильтровать") } } } }
 
             assertEquals("sm", _get<Button> { text = "Отфильтровать" }.element.getAttribute("data-ts-size"))
         }
@@ -61,9 +61,11 @@ class ActionTests : MockVaadinTests() {
         @Test
         fun `should render actions in the body and footer medium`() {
             buildTestPage {
-                block {
-                    row { horizontal { action("В теле") } }
-                    footer { mainAction("В подвале") }
+                row {
+                    block {
+                        row { horizontal { action("В теле") } }
+                        footer { mainAction("В подвале") }
+                    }
                 }
             }
 
@@ -74,8 +76,10 @@ class ActionTests : MockVaadinTests() {
         @Test
         fun `should render actions in table cells small`() {
             buildTestPage {
-                block {
-                    table(key = { id: Int -> id }, fetch = { Page(listOf(1), total = 1) }) { column("Посылка") { action("Открыть") } }
+                row {
+                    block {
+                        table(key = { id: Int -> id }, fetch = { Page(listOf(1), total = 1) }) { column("Посылка") { action("Открыть") } }
+                    }
                 }
             }
 

@@ -132,7 +132,7 @@ class ShowcasePagesTests {
             UI.getCurrent().navigate("dev/showcase/display")
 
             expectView<ShowcaseDisplayView>()
-            assertTrue(_find<Div>().any { card -> "ts-ccard" in card.element.classList })
+            assertTrue(_find<Div>().any { progress -> "ts-progress" in progress.element.classList })
         }
 
         @Test

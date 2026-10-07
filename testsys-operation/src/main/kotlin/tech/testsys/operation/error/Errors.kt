@@ -527,7 +527,11 @@ data class ContestNotExistsError(
     EnterParticipantContestError,
     EnterStudentContestError,
     ViewParticipantContestError,
-    ViewStudentContestError
+    ViewStudentContestError,
+    ViewParticipantTaskError,
+    ViewStudentTaskError,
+    DownloadParticipantTaskResourceError,
+    DownloadStudentTaskResourceError
 
 /**
  * The user has no access to the contest for the requested operation.
@@ -547,7 +551,11 @@ data class ContestAccessDeniedError(
     EnterParticipantContestError,
     EnterStudentContestError,
     ViewParticipantContestError,
-    ViewStudentContestError
+    ViewStudentContestError,
+    ViewParticipantTaskError,
+    ViewStudentTaskError,
+    DownloadParticipantTaskResourceError,
+    DownloadStudentTaskResourceError
 
 /**
  * The contest is shared to at least one community.
@@ -591,7 +599,11 @@ data class TaskNotExistsError(val taskId: TaskId) :
     ShareTaskError,
     AttachExerciseError,
     AttachTestError,
-    AttachDeveloperSolutionError
+    AttachDeveloperSolutionError,
+    ViewParticipantTaskError,
+    ViewStudentTaskError,
+    DownloadParticipantTaskResourceError,
+    DownloadStudentTaskResourceError
 
 /**
  * The statement does not exist.
@@ -666,7 +678,11 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
     ShareTaskError,
     AttachExerciseError,
     AttachTestError,
-    AttachDeveloperSolutionError
+    AttachDeveloperSolutionError,
+    ViewParticipantTaskError,
+    ViewStudentTaskError,
+    DownloadParticipantTaskResourceError,
+    DownloadStudentTaskResourceError
 
 /**
  * The user is not a member of the community.
@@ -946,19 +962,58 @@ sealed interface EnterParticipantContestError : OperationError
 sealed interface EnterStudentContestError : OperationError
 
 /**
+ * Failure of viewing a task of a contest in the participant's competition.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewParticipantTaskError : OperationError
+
+/**
+ * Failure of viewing a task of a contest in the selected class.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewStudentTaskError : OperationError
+
+/**
+ * Failure of downloading a statement or an exercise of a task in the participant's competition.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadParticipantTaskResourceError : OperationError
+
+/**
+ * Failure of downloading a statement or an exercise of a task in the selected class.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadStudentTaskResourceError : OperationError
+
+/**
  * The user is not a participant.
  *
  * @since %CURRENT_VERSION%
  */
 data object MissedParticipantRoleError :
-    MissedRequiredRoleError, ViewParticipantContestsError, EnterParticipantContestError, ViewParticipantContestError
+    MissedRequiredRoleError,
+    ViewParticipantContestsError,
+    EnterParticipantContestError,
+    ViewParticipantContestError,
+    ViewParticipantTaskError,
+    DownloadParticipantTaskResourceError
 
 /**
  * The user does not hold the student role.
  *
  * @since %CURRENT_VERSION%
  */
-data object MissedStudentRoleError : MissedRequiredRoleError, ViewStudentContestsError, EnterStudentContestError, ViewStudentContestError
+data object MissedStudentRoleError :
+    MissedRequiredRoleError,
+    ViewStudentContestsError,
+    EnterStudentContestError,
+    ViewStudentContestError,
+    ViewStudentTaskError,
+    DownloadStudentTaskResourceError
 
 /**
  * The competition does not exist.
@@ -967,7 +1022,12 @@ data object MissedStudentRoleError : MissedRequiredRoleError, ViewStudentContest
  * @since %CURRENT_VERSION%
  */
 data class CompetitionNotExistsError(val competitionId: CompetitionId) :
-    EntityNotExistsError, ViewParticipantContestsError, EnterParticipantContestError, ViewParticipantContestError
+    EntityNotExistsError,
+    ViewParticipantContestsError,
+    EnterParticipantContestError,
+    ViewParticipantContestError,
+    ViewParticipantTaskError,
+    DownloadParticipantTaskResourceError
 
 /**
  * The class does not exist.
@@ -976,7 +1036,12 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
  * @since %CURRENT_VERSION%
  */
 data class ClassNotExistsError(val classId: ClassId) :
-    EntityNotExistsError, ViewStudentContestsError, EnterStudentContestError, ViewStudentContestError
+    EntityNotExistsError,
+    ViewStudentContestsError,
+    EnterStudentContestError,
+    ViewStudentContestError,
+    ViewStudentTaskError,
+    DownloadStudentTaskResourceError
 
 /**
  * The user is not enrolled in the selected class.
@@ -985,7 +1050,12 @@ data class ClassNotExistsError(val classId: ClassId) :
  * @since %CURRENT_VERSION%
  */
 data class ClassAccessDeniedError(val classId: ClassId) :
-    AccessDeniedError, ViewStudentContestsError, EnterStudentContestError, ViewStudentContestError
+    AccessDeniedError,
+    ViewStudentContestsError,
+    EnterStudentContestError,
+    ViewStudentContestError,
+    ViewStudentTaskError,
+    DownloadStudentTaskResourceError
 
 /**
  * The first entry precedes the contest start.
@@ -1006,5 +1076,29 @@ data class ContestNotStartedError(val contestId: ContestId, val startsAt: Instan
  */
 data class ContestEndedError(val contestId: ContestId, val endsAt: Instant) :
     EnterParticipantContestError, EnterStudentContestError
+
+/**
+ * The user has no first entry to the contest in the selected context.
+ *
+ * @property contestId the requested contest.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestNotEnteredError(val contestId: ContestId) :
+    ViewParticipantTaskError,
+    ViewStudentTaskError,
+    DownloadParticipantTaskResourceError,
+    DownloadStudentTaskResourceError
+
+/**
+ * The requested version is not a statement or an exercise of the last committed revision of the task.
+ *
+ * @property taskId the requested task.
+ * @property resourceId the requested version identifier.
+ * @since %CURRENT_VERSION%
+ */
+data class ResourceNotInCommittedTaskError(val taskId: TaskId, val resourceId: DomainId) :
+    ResourceAccessError,
+    DownloadParticipantTaskResourceError,
+    DownloadStudentTaskResourceError
 
 // endregion

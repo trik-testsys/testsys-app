@@ -349,8 +349,8 @@ class DatabaseFixtures(
         )
     }
 
-    fun gradingSubmission(authorId: UserId = student().id, contest: Contest = contest()): Submission {
-        val taskId = task().id.value
+    fun gradingSubmission(authorId: UserId = student().id, contest: Contest = contest(), task: Task = task()): Submission {
+        val taskId = task.id.value
         val solutionId = solution().id.value
         return submissions.save(
             submissionData {

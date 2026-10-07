@@ -53,6 +53,7 @@ import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.UserId
 
 /**
  * Persistence port for [Contest] entities.
@@ -281,6 +282,18 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @since %CURRENT_VERSION%
      */
     fun findGradingByTaskId(taskId: TaskId): List<Submission>
+
+    /**
+     * Synchronously finds grading submissions of [authorId] for [taskId] in [contestId], without changing stored state.
+     * Storage exceptions propagate to the caller.
+     *
+     * @param authorId the user who submitted the solutions.
+     * @param taskId the task the solutions were submitted to.
+     * @param contestId the contest the solutions were submitted in.
+     * @return matching submissions ordered by creation time and then by id, both ascending; an empty list if none match.
+     * @since %CURRENT_VERSION%
+     */
+    fun findGradingByContext(authorId: UserId, taskId: TaskId, contestId: ContestId): List<Submission>
 }
 
 /**

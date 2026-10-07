@@ -632,7 +632,7 @@ lookup(
     fetch = { query, request -> contests.search(query, request) },
     display = { it.name },
     columns = {
-        textColumn("Название") { it.name }
+        textColumn("Название", size = 8) { it.name }
         dateColumn("Начало") { it.startsOn }
     },
 ) { binder.forField(this).asRequired("Выберите тур").bind(…) }

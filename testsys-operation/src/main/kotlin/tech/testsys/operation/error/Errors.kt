@@ -68,6 +68,13 @@ sealed interface ResourceAccessError : OperationError
 sealed interface CreateClassError : OperationError
 
 /**
+ * Failure of creating a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateCompetitionError : OperationError
+
+/**
  * Failure of listing classes owned by the manager.
  *
  * @since %CURRENT_VERSION%
@@ -86,7 +93,7 @@ sealed interface ViewClassError : OperationError
  *
  * @since %CURRENT_VERSION%
  */
-data object MissedManagerRoleError : CreateClassError, ViewClassesError, ViewClassError, MissedRequiredRoleError
+data object MissedManagerRoleError : CreateClassError, CreateCompetitionError, ViewClassesError, ViewClassError, MissedRequiredRoleError
 
 /**
  * The class name is empty or contains only whitespace.
@@ -102,6 +109,21 @@ data object ClassNameBlankError : CreateClassError
  * @since %CURRENT_VERSION%
  */
 data class ClassNameTooLongError(val className: String) : CreateClassError
+
+/**
+ * The competition name is empty or contains only whitespace.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object CompetitionNameBlankError : CreateCompetitionError
+
+/**
+ * The competition name exceeds 255 Unicode code points.
+ *
+ * @property competitionName the supplied competition name.
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionNameTooLongError(val competitionName: String) : CreateCompetitionError
 
 /**
  * The class does not exist.

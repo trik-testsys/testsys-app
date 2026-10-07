@@ -17,31 +17,41 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.`class`
 import tech.testsys.domain.builder.api.classData
+import tech.testsys.domain.builder.api.competition
+import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.contest
 import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.builder.api.multipleRoleUser
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.group.ClassDataBuilder
+import tech.testsys.domain.builder.group.CompetitionDataBuilder
 import tech.testsys.domain.contract.persistence.ClassFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
+import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassData
 import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.Competition
+import tech.testsys.domain.model.group.CompetitionData
+import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.operation.error.ClassAccessDeniedError
 import tech.testsys.operation.error.ClassNameBlankError
 import tech.testsys.operation.error.ClassNameTooLongError
 import tech.testsys.operation.error.ClassNotExistsError
+import tech.testsys.operation.error.CompetitionNameBlankError
+import tech.testsys.operation.error.CompetitionNameTooLongError
 import tech.testsys.operation.error.MissedManagerRoleError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
@@ -55,10 +65,12 @@ import java.time.Instant
 class ManagerOperationsTests {
 
     private val repository = mockk<ClassRepository>()
+    private val competitionRepository = mockk<CompetitionRepository>()
     private val multipleRoleUserRepository = mockk<MultipleRoleUserRepository>()
     private val contestRepository = mockk<ContestRepository>()
     private val operations = ManagerOperations(
         classRepository = repository,
+        competitionRepository = competitionRepository,
         multipleRoleUserRepository = multipleRoleUserRepository,
         contestRepository = contestRepository,
     )
@@ -233,6 +245,191 @@ class ManagerOperationsTests {
                     createdAt = Instant.EPOCH
                     version = EntityVersion(0)
                     data = firstArg<ClassData>()
+                }
+            }
+        }
+    }
+
+    @Nested
+    inner class CreateCompetitionTests {
+
+        private val manager = testManager { data = managerData {} }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["", "Valid name", "a"])
+        fun `should raise MissedManagerRoleError before saving or validating the name if user is not a Manager`(name: String) {
+            val user = testAdministrator {}
+
+            assertRaises(MissedManagerRoleError) { operations.createCompetition(user = user, competitionName = name) }
+
+            verify { listOf(repository, competitionRepository, multipleRoleUserRepository, contestRepository) wasNot Called }
+        }
+
+        @Test
+        fun `should raise MissedManagerRoleError before validating a name with 256 Unicode code points`() {
+            val user = testAdministrator {}
+            val name = "a".repeat(256)
+
+            assertRaises(MissedManagerRoleError) { operations.createCompetition(user = user, competitionName = name) }
+
+            verify { listOf(repository, competitionRepository, multipleRoleUserRepository, contestRepository) wasNot Called }
+        }
+
+        @Test
+        fun `should create an owned empty competition and save it exactly once`() {
+            prepareSaving()
+
+            val actual = operations.createCompetition(user = manager, competitionName = "New competition").getOrThrow()
+
+            assertEquals(manager.id, actual.data.owner.id)
+            assertEquals("New competition", actual.data.name)
+            assertEquals("", actual.data.description)
+            assertEquals(emptyList<SingleRoleUserId>(), actual.data.participants.ids)
+            assertEquals(emptyList<ContestId>(), actual.data.contests.ids)
+            verify(exactly = 1) {
+                competitionRepository.save(
+                    match<CompetitionData> { data ->
+                        data.owner.id == manager.id && data.name == "New competition" && data.description == "" &&
+                            data.participants.ids.isEmpty() && data.contests.ids.isEmpty()
+                    },
+                )
+            }
+            confirmVerified(repository, competitionRepository, multipleRoleUserRepository, contestRepository)
+        }
+
+        @Test
+        fun `should return the stored competition with its identity timestamp and version unchanged`() {
+            val stored = testCompetition { name = "New competition" }
+            every { competitionRepository.save(any<CompetitionData>()) } returns stored
+
+            val actual = operations.createCompetition(user = manager, competitionName = "New competition").getOrThrow()
+
+            assertSame(stored, actual)
+            assertEquals(CompetitionId(21), actual.id)
+            assertEquals(Instant.EPOCH, actual.createdAt)
+            assertEquals(0L, actual.version?.value)
+        }
+
+        @Test
+        fun `should allow a Manager who also has other roles`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    manager { data = managerData {} }
+                    student { data = studentData {} }
+                    administrator {}
+                }
+            }
+            prepareSaving()
+
+            val actual = operations.createCompetition(user = user, competitionName = "New competition").getOrThrow()
+
+            assertEquals(user.id, actual.data.owner.id)
+            assertEquals("New competition", actual.data.name)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["  Mixed CASE  ", "\tA\n", "é", "😀"])
+        fun `should preserve a nonblank name including its whitespace case and Unicode characters`(name: String) {
+            prepareSaving()
+
+            val actual = operations.createCompetition(user = manager, competitionName = name).getOrThrow()
+
+            assertEquals(name, actual.data.name)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["", " ", "\t", "\n", " \t\r\n", "\u00A0"])
+        fun `should raise CompetitionNameBlankError without saving if the name is blank`(name: String) {
+            assertRaises(CompetitionNameBlankError) { operations.createCompetition(user = manager, competitionName = name) }
+
+            verify { listOf(repository, competitionRepository, multipleRoleUserRepository, contestRepository) wasNot Called }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should accept a name with exactly 255 Unicode code points`(symbol: String) {
+            val name = symbol.repeat(255)
+            prepareSaving()
+
+            val actual = operations.createCompetition(user = manager, competitionName = name).getOrThrow()
+
+            assertEquals(name, actual.data.name)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should raise CompetitionNameTooLongError without saving if the name has 256 Unicode code points`(symbol: String) {
+            val name = symbol.repeat(256)
+
+            assertRaises(CompetitionNameTooLongError(name)) { operations.createCompetition(user = manager, competitionName = name) }
+
+            verify { listOf(repository, competitionRepository, multipleRoleUserRepository, contestRepository) wasNot Called }
+        }
+
+        @Test
+        fun `should allow duplicate names without changing the existing competition`() {
+            val first = testCompetition {
+                name = "Same name"
+                participants(emptyList())
+            }
+            val second = competition {
+                id = 22
+                createdAt = Instant.EPOCH
+                version = EntityVersion(0)
+                data = first.data
+            }
+            every { competitionRepository.save(any<CompetitionData>()) } returnsMany listOf(first, second)
+            val existing = operations.createCompetition(user = manager, competitionName = "Same name").getOrThrow()
+            val existingData = existing.data
+
+            val actual = operations.createCompetition(user = manager, competitionName = "Same name").getOrThrow()
+
+            assertSame(second, actual)
+            assertEquals(CompetitionId(22), actual.id)
+            assertEquals("Same name", actual.data.name)
+            assertSame(existingData, existing.data)
+            assertEquals(CompetitionId(21), existing.id)
+            verify(exactly = 2) { competitionRepository.save(match<CompetitionData> { data -> data.name == "Same name" }) }
+            confirmVerified(repository, competitionRepository, multipleRoleUserRepository, contestRepository)
+        }
+
+        @Test
+        fun `should preserve the user and Manager competition snapshot without saving other entities`() {
+            val user = testManager { data = managerData { competitions(listOf(99)) } }
+            val userData = user.data
+            val managerRole = user.data.roles.filterIsInstance<Manager>().single()
+            prepareSaving()
+
+            val actual = operations.createCompetition(user = user, competitionName = "New competition").getOrThrow()
+
+            assertEquals(user.id, actual.data.owner.id)
+            assertSame(userData, user.data)
+            assertSame(managerRole, user.data.roles.filterIsInstance<Manager>().single())
+            assertEquals(listOf(CompetitionId(99)), managerRole.data.competitions.ids)
+            assertEquals(0L, user.version?.value)
+            verify(exactly = 1) { competitionRepository.save(any<CompetitionData>()) }
+            confirmVerified(repository, competitionRepository, multipleRoleUserRepository, contestRepository)
+        }
+
+        @Test
+        fun `should propagate a technical storage exception when saving the competition`() {
+            val failure = IllegalStateException("Competition storage unavailable")
+            every { competitionRepository.save(any<CompetitionData>()) } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) {
+                operations.createCompetition(user = manager, competitionName = "New competition")
+            }
+
+            assertSame(failure, actual)
+        }
+
+        private fun prepareSaving() {
+            every { competitionRepository.save(any<CompetitionData>()) } answers {
+                competition {
+                    id = 22
+                    createdAt = Instant.EPOCH
+                    version = EntityVersion(0)
+                    data = firstArg<CompetitionData>()
                 }
             }
         }
@@ -672,6 +869,18 @@ class ManagerOperationsTests {
                 this.name = name
                 roles { student { data = studentData {} } }
             }.data
+        }
+    }
+
+    private fun testCompetition(builder: CompetitionDataBuilder.() -> Unit = {}): Competition = competition {
+        id = 21
+        createdAt = Instant.EPOCH
+        version = EntityVersion(0)
+        data = competitionData {
+            owner = MultipleRoleUserId(0)
+            name = "Existing competition"
+            description = "Competition description"
+            builder()
         }
     }
 

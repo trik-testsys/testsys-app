@@ -1,14 +1,17 @@
 package tech.testsys.operation.user
 
 import tech.testsys.domain.builder.api.classData
+import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.contract.persistence.ClassFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
+import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -18,7 +21,10 @@ import tech.testsys.operation.error.ClassAccessDeniedError
 import tech.testsys.operation.error.ClassNameBlankError
 import tech.testsys.operation.error.ClassNameTooLongError
 import tech.testsys.operation.error.ClassNotExistsError
+import tech.testsys.operation.error.CompetitionNameBlankError
+import tech.testsys.operation.error.CompetitionNameTooLongError
 import tech.testsys.operation.error.CreateClassError
+import tech.testsys.operation.error.CreateCompetitionError
 import tech.testsys.operation.error.MissedManagerRoleError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ViewClassError
@@ -29,6 +35,7 @@ import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.hasRole
 
 private const val MAX_CLASS_NAME_CODE_POINTS = 255
+private const val MAX_COMPETITION_NAME_CODE_POINTS = 255
 
 /**
  * Operations of a user with the [Manager] role.
@@ -38,6 +45,7 @@ private const val MAX_CLASS_NAME_CODE_POINTS = 255
 @OptIn(InternalOperationsApi::class)
 class ManagerOperations(
     private val classRepository: ClassRepository,
+    private val competitionRepository: CompetitionRepository,
     private val multipleRoleUserRepository: MultipleRoleUserRepository,
     private val contestRepository: ContestRepository,
 ) {
@@ -63,6 +71,31 @@ class ManagerOperations(
 
             val studyClass = classRepository.save(classData)
             return studyClass.asSuccess()
+        }
+
+    /**
+     * Creates a competition owned by [user] with unchanged [competitionName], an empty description and no participants or contests.
+     * The name must be nonblank and contain at most 255 Unicode code points; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.competition.createCompetition")
+    fun createCompetition(user: MultipleRoleUser, competitionName: String): OperationResult<Competition, CreateCompetitionError> =
+        operation<Competition, CreateCompetitionError> {
+            ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+            ensure(competitionName.isNotBlank(), CompetitionNameBlankError)
+            ensure(competitionName.codePointCount(0, competitionName.length) <= MAX_COMPETITION_NAME_CODE_POINTS) {
+                CompetitionNameTooLongError(competitionName)
+            }
+
+            val competitionData = competitionData {
+                owner = user.id
+                name = competitionName
+                description = ""
+            }
+
+            val competition = competitionRepository.save(competitionData)
+            return competition.asSuccess()
         }
 
     /**

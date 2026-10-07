@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.JudgmentOrderId
@@ -55,8 +56,7 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 /**
  * Persistence adapter of [MultipleRoleUser] entities backed by [UserJpaEntity] rows of the multiple-role type.
  * Writes cover the user scalars, the held roles and their community memberships ([MultipleRoleToUserJpaEntity]);
- * the per-role id lists (tasks, classes, submissions, ...) are read-only projections of the owning side.
- *
+ * the per-role id lists (tasks, classes, submissions, ...) are read-only projections of the owning side. *
  * @since %CURRENT_VERSION%
  */
 @Component
@@ -79,6 +79,8 @@ class MultipleRoleUserPersistenceAdapter(
 ) : AbstractUserPersistenceAdapter<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>(jpaEntityRepository),
     MultipleRoleUserRepository {
 
+    private val users: UserJpaEntityRepository = jpaEntityRepository
+
     @Transactional
     override fun save(data: MultipleRoleUserData): MultipleRoleUser {
         val savedUserJpaEntity = jpaEntityRepository.save(MultipleRoleUserMapping.toUserJpaEntity(data))
@@ -100,6 +102,36 @@ class MultipleRoleUserPersistenceAdapter(
 
         val domainEntity = MultipleRoleUserMapping.toDomain(updatedUserJpaEntity, assembleRoles(userId))
         return domainEntity
+    }
+
+    @Transactional
+    override fun addCommunityMembership(
+        userId: MultipleRoleUserId,
+        communityId: CommunityId,
+        kind: CommunityInvite.Kind,
+    ): MultipleRoleUser {
+        val userJpaEntity = requireNotNull(users.lockById(userId.value)?.takeIf { supports(it) }) {
+            "Multiple-role user ${userId.value} does not exist for community membership"
+        }
+        val roleEnum = when (kind) {
+            CommunityInvite.Kind.Manager -> {
+                syncManagerPresence(userId.value, isTarget = true)
+                UserMultipleRoleJpaEnum.MANAGER
+            }
+            CommunityInvite.Kind.Developer -> {
+                syncDeveloperPresence(userId.value, isTarget = true)
+                UserMultipleRoleJpaEnum.DEVELOPER
+            }
+        }
+        val membershipId = MultipleRoleToUserId(
+            multipleRole = roleEnum,
+            userId = userId.value,
+            communityId = communityId.value,
+        )
+        if (!multipleRoleToUserJpaEntityRepository.existsById(membershipId)) {
+            multipleRoleToUserJpaEntityRepository.saveAndFlush(MultipleRoleToUserJpaEntity(membershipId))
+        }
+        return assemble(userJpaEntity)
     }
 
     @Transactional

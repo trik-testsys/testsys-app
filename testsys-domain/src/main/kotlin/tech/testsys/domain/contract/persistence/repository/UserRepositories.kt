@@ -1,5 +1,7 @@
 package tech.testsys.domain.contract.persistence.repository
 
+import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -18,7 +20,22 @@ import tech.testsys.domain.model.user.SupervisorData
  *
  * @since %CURRENT_VERSION%
  */
-interface MultipleRoleUserRepository : EntityRepository<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>
+interface MultipleRoleUserRepository : EntityRepository<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser> {
+
+    /**
+     * Synchronously and atomically grants [kind] to [userId] if it is not held yet and makes the user a member of
+     * [communityId] in that role unless already a member. Other roles and memberships are unchanged;
+     * storage exceptions propagate to the caller.
+     *
+     * @param userId the user joining the community.
+     * @param communityId the community the user joins.
+     * @param kind the role held in [communityId]; a newly granted role has empty role data.
+     * @return the stored user after joining.
+     * @throws IllegalArgumentException if the user does not exist.
+     * @since %CURRENT_VERSION%
+     */
+    fun addCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, kind: CommunityInvite.Kind): MultipleRoleUser
+}
 
 /**
  * Persistence port for [Observer] entities.

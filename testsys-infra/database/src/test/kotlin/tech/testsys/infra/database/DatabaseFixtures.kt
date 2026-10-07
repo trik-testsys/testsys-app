@@ -2,7 +2,9 @@ package tech.testsys.infra.database
 
 import org.springframework.boot.test.context.TestComponent
 import tech.testsys.domain.builder.api.classData
+import tech.testsys.domain.builder.api.classInviteData
 import tech.testsys.domain.builder.api.communityData
+import tech.testsys.domain.builder.api.communityInviteData
 import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.developerData
@@ -29,14 +31,17 @@ import tech.testsys.domain.builder.api.verdictData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
+import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
 import tech.testsys.domain.contract.persistence.repository.LogsRepository
+import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantContestEntryRepository
@@ -54,7 +59,11 @@ import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.entry.ParticipantContestEntry
 import tech.testsys.domain.model.entry.StudentContestEntry
 import tech.testsys.domain.model.group.Class
+import tech.testsys.domain.model.group.ClassInvite
+import tech.testsys.domain.model.group.ClassInviteData
 import tech.testsys.domain.model.group.Community
+import tech.testsys.domain.model.group.CommunityInvite
+import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.DeveloperSolution
@@ -102,6 +111,9 @@ class DatabaseFixtures(
     private val communities: CommunityRepository,
     private val competitions: CompetitionRepository,
     private val classes: ClassRepository,
+    private val classInvites: ClassInviteRepository,
+    private val managerCommunityInvites: ManagerCommunityInviteRepository,
+    private val developerCommunityInvites: DeveloperCommunityInviteRepository,
     private val solutions: SolutionRepository,
     private val polygons: TestRepository,
     private val exercises: ExerciseRepository,
@@ -166,6 +178,8 @@ class DatabaseFixtures(
 
     fun manager(): MultipleRoleUser = multipleRoleUser { roles { manager { data = managerData {} } } }
 
+    fun administrator(): MultipleRoleUser = multipleRoleUser { roles { administrator {} } }
+
     fun participant(competition: Competition = competition()): Participant {
         val competitionId = competition.id.value
         return participants.save(
@@ -197,13 +211,18 @@ class DatabaseFixtures(
 
     fun community(owner: MultipleRoleUser = developer()): Community {
         val ownerId = owner.id.value
-        return communities.save(
+        return communities.saveWithInvites(
+            managerInvite = communityInviteDataOf(),
+            developerInvite = communityInviteDataOf(),
+        ) { managerInviteId, developerInviteId ->
             communityData {
                 owner(ownerId)
                 name = unique("Community")
                 description = "Community description"
-            },
-        )
+                managerInvite = managerInviteId
+                developerInvite = developerInviteId
+            }
+        }
     }
 
     fun competition(owner: MultipleRoleUser = manager()): Competition {
@@ -220,14 +239,34 @@ class DatabaseFixtures(
     fun studentClass(owner: MultipleRoleUser = manager(), students: List<MultipleRoleUser> = emptyList()): Class {
         val ownerId = owner.id.value
         val studentIds = students.map { it.id.value }
-        return classes.save(
+        return classes.saveWithInvite(classInviteDataOf()) { inviteId ->
             classData {
                 owner(ownerId)
                 name = unique("Class")
                 description = "Class description"
                 students(studentIds)
-            },
-        )
+                invite = inviteId
+            }
+        }
+    }
+
+    fun classInvite(code: String = unique("code"), expiresAt: Instant = FAR_FUTURE): ClassInvite =
+        classInvites.save(classInviteDataOf(code = code, expiresAt = expiresAt))
+
+    fun managerCommunityInvite(code: String = unique("code"), expiresAt: Instant = FAR_FUTURE): CommunityInvite.Manager =
+        managerCommunityInvites.save(communityInviteDataOf(code = code, expiresAt = expiresAt))
+
+    fun developerCommunityInvite(code: String = unique("code"), expiresAt: Instant = FAR_FUTURE): CommunityInvite.Developer =
+        developerCommunityInvites.save(communityInviteDataOf(code = code, expiresAt = expiresAt))
+
+    fun communityInviteDataOf(code: String = unique("code"), expiresAt: Instant = FAR_FUTURE): CommunityInviteData = communityInviteData {
+        this.code(code, HashAlgorithm.Identity)
+        this.expiresAt = expiresAt
+    }
+
+    fun classInviteDataOf(code: String = unique("code"), expiresAt: Instant = FAR_FUTURE): ClassInviteData = classInviteData {
+        this.code(code, HashAlgorithm.Identity)
+        this.expiresAt = expiresAt
     }
 
     fun trikStudioVersion(tag: String = unique("tsv")): TrikStudioVersion {
@@ -405,6 +444,11 @@ class DatabaseFixtures(
     fun recording(): Recording = recordings.save(recordingData { file(unique("recording") + ".mp4", "recording".toByteArray()) })
 
     companion object {
+
+        /**
+         * Expiration moment of fixture invites that keeps them valid in every test.
+         */
+        val FAR_FUTURE: Instant = Instant.parse("2030-01-01T00:00:00Z")
 
         /**
          * Selects [language] on this chooser.

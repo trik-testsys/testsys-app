@@ -1,6 +1,7 @@
 package tech.testsys.operation.user
 
 import tech.testsys.domain.builder.api.classData
+import tech.testsys.domain.builder.api.classInviteData
 import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.ClassFilter
@@ -8,6 +9,7 @@ import tech.testsys.domain.contract.persistence.CompetitionFilter
 import tech.testsys.domain.contract.persistence.ContestTaskResult
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
@@ -15,8 +17,10 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.ClassInvite
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.AccessTokenHash
@@ -27,6 +31,7 @@ import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
+import tech.testsys.operation.config.ClassInviteConfig
 import tech.testsys.operation.config.CompetitionConfig
 import tech.testsys.operation.error.AddClassContestError
 import tech.testsys.operation.error.AddCompetitionContestError
@@ -46,11 +51,14 @@ import tech.testsys.operation.error.ContestNotAddedToClassError
 import tech.testsys.operation.error.ContestNotAddedToCompetitionError
 import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.CreateClassError
+import tech.testsys.operation.error.CreateClassInviteError
 import tech.testsys.operation.error.CreateCompetitionError
 import tech.testsys.operation.error.CreateParticipantsError
+import tech.testsys.operation.error.ExtendClassInviteError
 import tech.testsys.operation.error.MissedManagerRoleError
 import tech.testsys.operation.error.NonPositiveParticipantCountError
 import tech.testsys.operation.error.OperationResult
+import tech.testsys.operation.error.RefreshClassInviteError
 import tech.testsys.operation.error.ViewClassContestError
 import tech.testsys.operation.error.ViewClassError
 import tech.testsys.operation.error.ViewClassesError
@@ -60,7 +68,12 @@ import tech.testsys.operation.error.ViewCompetitionsError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
+import tech.testsys.operation.util.generateInviteCode
 import tech.testsys.operation.util.hasRole
+import tech.testsys.operation.util.inviteExpiresAt
+import java.security.SecureRandom
+import java.time.Clock
+import java.time.Instant
 import java.util.UUID
 
 private const val MAX_CLASS_NAME_CODE_POINTS = 255
@@ -79,10 +92,15 @@ class ManagerOperations(
     private val submissionRepository: SubmissionRepository,
     private val participantRepository: ParticipantRepository,
     private val competitionConfig: CompetitionConfig,
+    private val classInviteRepository: ClassInviteRepository,
+    private val classInviteConfig: ClassInviteConfig,
+    private val clock: Clock,
 ) {
 
+    private val random = SecureRandom()
+
     /**
-     * Creates a class owned by [user] with unchanged [className], an empty description and no students or contests.
+     * Creates a class owned by [user] with unchanged [className], an empty description, no students or contests and a new invite code.
      * The name must be nonblank and contain at most 255 Unicode code points; storage exceptions propagate to the caller.
      *
      * @since %CURRENT_VERSION%
@@ -94,13 +112,19 @@ class ManagerOperations(
             ensure(className.isNotBlank(), ClassNameBlankError)
             ensure(className.codePointCount(0, className.length) <= MAX_CLASS_NAME_CODE_POINTS) { ClassNameTooLongError(className) }
 
-            val classData = classData {
-                owner = user.id
-                name = className
-                description = ""
+            val expiresAt = inviteExpiresAt(now = clock.instant(), ttl = classInviteConfig.ttl)
+            val inviteData = classInviteData {
+                code(generateInviteCode(random = random, previous = null), HashAlgorithm.Identity)
+                this.expiresAt = expiresAt
             }
-
-            val studyClass = classRepository.save(classData)
+            val studyClass = classRepository.saveWithInvite(inviteData) { inviteId ->
+                classData {
+                    owner = user.id
+                    name = className
+                    description = ""
+                    invite = inviteId
+                }
+            }
             return studyClass.asSuccess()
         }
 
@@ -147,12 +171,13 @@ class ManagerOperations(
     }
 
     /**
-     * Returns [classId] owned by [user], preserving its data, including the stored student and contest ids.
+     * Returns [classId] owned by [user], preserving its data, including the stored student and contest ids and the invite reference.
      * Missing role, class and access are expected failures; storage exceptions propagate to the caller.
      *
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.manager.class.viewClass")
+    @RawInviteCodeDependency(reason = "Returns the reference to the class invite whose stored value is shown as the issued code.")
     fun viewClass(user: MultipleRoleUser, classId: ClassId): OperationResult<Class, ViewClassError> = operation<Class, ViewClassError> {
         ensure(user.hasRole<Manager>(), MissedManagerRoleError)
         val studyClass = classRepository.findById(classId)
@@ -160,6 +185,64 @@ class ManagerOperations(
         ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
         return studyClass.asSuccess()
     }
+
+    /**
+     * Replaces the invite code of [classId] owned by [user] with a new code and a fresh expiration moment.
+     * Missing role, class and access are expected failures; storage exceptions, including a code collision, propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.class.createInvite")
+    @RawInviteCodeDependency(reason = "Returns the issued invite code from the stored value.")
+    fun createClassInvite(user: MultipleRoleUser, classId: ClassId): OperationResult<ClassInvite, CreateClassInviteError> =
+        operation<ClassInvite, CreateClassInviteError> {
+            ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+            val studyClass = classRepository.findById(classId)
+            ensure(studyClass != null) { ClassNotExistsError(classId) }
+            ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
+            val expiresAt = inviteExpiresAt(now = clock.instant(), ttl = classInviteConfig.ttl)
+            return replaceCode(invite = studyClass.data.invite.load(classInviteRepository), expiresAt = expiresAt).asSuccess()
+        }
+
+    /**
+     * Restarts the validity period of the invite code of [classId] owned by [user] without changing the code,
+     * including an expired code. Missing role, class and access are expected failures; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.class.extendInvite")
+    @RawInviteCodeDependency(reason = "Returns the issued invite code from the stored value.")
+    fun extendClassInvite(user: MultipleRoleUser, classId: ClassId): OperationResult<ClassInvite, ExtendClassInviteError> =
+        operation<ClassInvite, ExtendClassInviteError> {
+            ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+            val studyClass = classRepository.findById(classId)
+            ensure(studyClass != null) { ClassNotExistsError(classId) }
+            ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
+            val existing = studyClass.data.invite.load(classInviteRepository)
+            val expiresAt = inviteExpiresAt(now = clock.instant(), ttl = classInviteConfig.ttl)
+            val extended = existing.withData { this.expiresAt = expiresAt }
+            return classInviteRepository.update(extended).asSuccess()
+        }
+
+    /**
+     * Replaces the expired invite code of [classId] owned by [user] with a new code and a fresh expiration moment;
+     * a still valid code is returned unchanged. Missing role, class and access are expected failures.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.class.createInvite")
+    fun refreshClassInvite(user: MultipleRoleUser, classId: ClassId): OperationResult<ClassInvite, RefreshClassInviteError> =
+        operation<ClassInvite, RefreshClassInviteError> {
+            ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+            val studyClass = classRepository.findById(classId)
+            ensure(studyClass != null) { ClassNotExistsError(classId) }
+            ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
+            val existing = studyClass.data.invite.load(classInviteRepository)
+            val now = clock.instant()
+            if (now < existing.data.expiresAt) return existing.asSuccess()
+            val expiresAt = inviteExpiresAt(now = now, ttl = classInviteConfig.ttl)
+            return replaceCode(invite = existing, expiresAt = expiresAt).asSuccess()
+        }
 
     /**
      * Returns a [pagination] page matching [filter] of competitions owned by [user], preserving stored state.
@@ -336,6 +419,15 @@ class ManagerOperations(
             "st${participantId.value}"
         }
         return participants.asSuccess()
+    }
+
+    private fun replaceCode(invite: ClassInvite, expiresAt: Instant): ClassInvite {
+        val rawCode = generateInviteCode(random = random, previous = invite.data.codeHash)
+        val replaced = invite.withData {
+            code(rawCode, HashAlgorithm.Identity)
+            this.expiresAt = expiresAt
+        }
+        return classInviteRepository.update(replaced)
     }
 
     private fun isAvailableToManager(user: MultipleRoleUser, contest: Contest): Boolean {

@@ -18,4 +18,5 @@
     <include file="db/changelog/changes/1.0.0/changelog.12-init-uploaded-resources.xml"/>
     <include file="db/changelog/changes/1.0.0/changelog.13-init-task-validation-request.xml"/>
     <include file="db/changelog/changes/1.0.0/changelog.14-init-study-entry.xml"/>
+    <include file="db/changelog/changes/1.0.0/changelog.15-init-invite.xml"/>
 </databaseChangeLog>

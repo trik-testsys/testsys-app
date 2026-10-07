@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1.0.0-15-1" author="testsys">
+        <createTable tableName="ts_class_invite">
+            <column name="id" type="BIGINT"><constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_class_invite"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="version" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="code" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="code_hash_algorithm" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="expires_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="ts_class_invite" columnNames="code" constraintName="uk_ts_class_invite_code"/>
+    </changeSet>
+
+    <changeSet id="1.0.0-15-2" author="testsys">
+        <createTable tableName="ts_community_invite">
+            <column name="id" type="BIGINT"><constraints nullable="false" primaryKey="true" primaryKeyName="pk_ts_community_invite"/></column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+            <column name="version" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="role" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="code" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="code_hash_algorithm" type="VARCHAR(64)"><constraints nullable="false"/></column>
+            <column name="expires_at" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+        </createTable>
+        <addUniqueConstraint tableName="ts_community_invite" columnNames="code" constraintName="uk_ts_community_invite_code"/>
+    </changeSet>
+
+    <changeSet id="1.0.0-15-3" author="testsys">
+        <createIndex tableName="ts_class_invite" indexName="ix_ts_class_invite_expires_at">
+            <column name="expires_at"/>
+        </createIndex>
+        <createIndex tableName="ts_community_invite" indexName="ix_ts_community_invite_expires_at">
+            <column name="expires_at"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- The database holds no classes or communities yet, so the required invite columns are added without values. -->
+    <changeSet id="1.0.0-15-4" author="testsys">
+        <addColumn tableName="ts_class">
+            <column name="invite_id" type="BIGINT"><constraints nullable="false"/></column>
+        </addColumn>
+        <addUniqueConstraint tableName="ts_class" columnNames="invite_id" constraintName="uk_ts_class_invite_id"/>
+        <addForeignKeyConstraint baseTableName="ts_class" baseColumnNames="invite_id"
+                                 referencedTableName="ts_class_invite" referencedColumnNames="id"
+                                 constraintName="fk_ts_class_invite_id"/>
+    </changeSet>
+
+    <changeSet id="1.0.0-15-5" author="testsys">
+        <addColumn tableName="ts_community">
+            <column name="manager_invite_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="developer_invite_id" type="BIGINT"><constraints nullable="false"/></column>
+        </addColumn>
+        <addUniqueConstraint tableName="ts_community" columnNames="manager_invite_id" constraintName="uk_ts_community_manager_invite_id"/>
+        <addUniqueConstraint tableName="ts_community" columnNames="developer_invite_id" constraintName="uk_ts_community_developer_invite_id"/>
+        <addForeignKeyConstraint baseTableName="ts_community" baseColumnNames="manager_invite_id"
+                                 referencedTableName="ts_community_invite" referencedColumnNames="id"
+                                 constraintName="fk_ts_community_manager_invite_id"/>
+        <addForeignKeyConstraint baseTableName="ts_community" baseColumnNames="developer_invite_id"
+                                 referencedTableName="ts_community_invite" referencedColumnNames="id"
+                                 constraintName="fk_ts_community_developer_invite_id"/>
+    </changeSet>
+
+</databaseChangeLog>

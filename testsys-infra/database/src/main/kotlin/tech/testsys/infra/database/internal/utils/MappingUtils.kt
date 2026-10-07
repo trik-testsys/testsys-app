@@ -6,11 +6,13 @@ import tech.testsys.domain.builder.util.chooser.LanguageChooser
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.EntityVersion
+import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.JpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.group.CommunityInviteRoleJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikSupportedLanguageEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
 
@@ -61,4 +63,10 @@ internal fun HashAlgorithmJpaEnum.toDomain(): HashAlgorithm = when (this) {
 @InternalDatabaseApi
 internal fun HashAlgorithm.toJpaEnum() = when (this) {
     HashAlgorithm.Identity -> HashAlgorithmJpaEnum.IDENTITY
+}
+
+@InternalDatabaseApi
+internal fun CommunityInvite.Kind.toJpaEnum() = when (this) {
+    CommunityInvite.Kind.Manager -> CommunityInviteRoleJpaEnum.MANAGER
+    CommunityInvite.Kind.Developer -> CommunityInviteRoleJpaEnum.DEVELOPER
 }

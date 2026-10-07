@@ -12,6 +12,8 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
  * @property name the name of the community.
  * @property description the description of the community.
  * @property ownerId id of the user owning the community.
+ * @property managerInviteId id of the manager-role invite code of the community.
+ * @property developerInviteId id of the developer-role invite code of the community.
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -21,5 +23,7 @@ class CommunityJpaEntity(
     @field:JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     val description: String,
     val ownerId: Long,
+    val managerInviteId: Long,
+    val developerInviteId: Long,
     id: Long? = null,
 ) : SnowflakeJpaEntity(id)

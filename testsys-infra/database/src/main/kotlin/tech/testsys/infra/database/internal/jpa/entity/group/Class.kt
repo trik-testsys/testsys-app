@@ -64,6 +64,7 @@ class ContestToClassJpaEntity(id: ContestToClassId) : CompositeJpaEntity<Contest
  * @property name the name of the class.
  * @property description the description of the class.
  * @property ownerId id of the manager owning the class.
+ * @property inviteId id of the invite code of the class.
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -73,5 +74,6 @@ class ClassJpaEntity(
     @field:JdbcTypeCode(SqlTypes.LONG32VARCHAR)
     val description: String,
     val ownerId: Long,
+    val inviteId: Long,
     id: Long? = null,
 ) : SnowflakeJpaEntity(id)

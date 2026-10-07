@@ -10,11 +10,14 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.`class`
+import tech.testsys.domain.builder.api.classInvite
+import tech.testsys.domain.builder.api.classInviteData
 import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.builder.api.studentContestEntry
 import tech.testsys.domain.builder.api.studentContestEntryData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
@@ -22,8 +25,11 @@ import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.entry.StudentContestEntryData
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.ClassInviteId
+import tech.testsys.domain.model.group.InviteCodeHash
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.operation.error.*
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.testContest
@@ -43,11 +49,13 @@ class StudentOperationsTests {
     private val contests = mockk<ContestRepository>()
     private val entries = mockk<StudentContestEntryRepository>()
     private val clock = mockk<Clock>()
+    private val invites = mockk<ClassInviteRepository>()
     private val operations = StudentOperations(
         classRepository = groups,
         contestRepository = contests,
         contestEntryRepository = entries,
         clock = clock,
+        classInviteRepository = invites,
     )
     private val user = testStudent { data = studentData {} }
     private val group = testStudyClass {
@@ -439,6 +447,118 @@ class StudentOperationsTests {
             }
 
             assertSame(failure, thrown)
+        }
+    }
+
+    @Nested
+    inner class JoinClassTests {
+
+        private val now = Instant.parse("2026-01-01T10:00:00Z")
+        private val foreignGroup = testStudyClass { students(listOf(5)) }
+
+        @Test
+        fun `should raise MissedStudentRoleError before reading invites if user is not a Student`() {
+            assertRaises(MissedStudentRoleError) { operations.joinClass(user = wrongRole, inviteCode = "abcdefghjkmn") }
+
+            verify { listOf(invites, groups, clock) wasNot Called }
+        }
+
+        @Test
+        fun `should raise ClassInviteCodeNotValidError with the entered code if no invite matches`() {
+            every { invites.findByCode(any()) } returns null
+
+            assertRaises(ClassInviteCodeNotValidError("abcdefghjkmn")) { operations.joinClass(user = user, inviteCode = "abcdefghjkmn") }
+
+            verify { listOf(groups, clock) wasNot Called }
+        }
+
+        @Test
+        fun `should look the invite up by the lowercase entered code stored with Identity`() {
+            every { invites.findByCode(InviteCodeHash("abcdefghjkmn", HashAlgorithm.Identity)) } returns testInvite()
+            every { clock.instant() } returns now
+            every { groups.findByInvite(ClassInviteId(31)) } returns group
+
+            val result = operations.joinClass(user = user, inviteCode = "ABCDEFGHJKMN").getOrThrow()
+
+            assertSame(group, result)
+        }
+
+        @Test
+        fun `should keep spaces of the entered code when looking the invite up`() {
+            every { invites.findByCode(InviteCodeHash(" abcdefghjkmn ", HashAlgorithm.Identity)) } returns null
+
+            assertRaises(ClassInviteCodeNotValidError(" ABCDEFGHJKMN ")) {
+                operations.joinClass(user = user, inviteCode = " ABCDEFGHJKMN ")
+            }
+        }
+
+        @Test
+        fun `should raise ClassInviteCodeExpiredError without enrolling if the invite expires at the current time`() {
+            every { invites.findByCode(any()) } returns testInvite(expiresAt = now)
+            every { clock.instant() } returns now
+
+            assertRaises(ClassInviteCodeExpiredError("abcdefghjkmn")) { operations.joinClass(user = user, inviteCode = "abcdefghjkmn") }
+
+            verify { groups wasNot Called }
+        }
+
+        @Test
+        fun `should raise ClassInviteCodeExpiredError for an already enrolled student`() {
+            every { invites.findByCode(any()) } returns testInvite(expiresAt = now.minusSeconds(1))
+            every { clock.instant() } returns now
+
+            assertRaises(ClassInviteCodeExpiredError("abcdefghjkmn")) { operations.joinClass(user = user, inviteCode = "abcdefghjkmn") }
+        }
+
+        @Test
+        fun `should enroll the student if the invite expires one microsecond later`() {
+            val enrolled = foreignGroup.withData { students.add(user.id) }
+            every { invites.findByCode(any()) } returns testInvite(expiresAt = now.plusNanos(1_000))
+            every { clock.instant() } returns now
+            every { groups.findByInvite(ClassInviteId(31)) } returns foreignGroup
+            every { groups.addStudent(foreignGroup.id, user.id) } returns enrolled
+
+            val result = operations.joinClass(user = user, inviteCode = "abcdefghjkmn").getOrThrow()
+
+            assertSame(enrolled, result)
+            verify(exactly = 1) { groups.addStudent(foreignGroup.id, user.id) }
+            verify(exactly = 1) { clock.instant() }
+        }
+
+        @Test
+        fun `should return the class without enrolling again if the student is already enrolled`() {
+            every { invites.findByCode(any()) } returns testInvite()
+            every { clock.instant() } returns now
+            every { groups.findByInvite(ClassInviteId(31)) } returns group
+
+            val result = operations.joinClass(user = user, inviteCode = "abcdefghjkmn").getOrThrow()
+
+            assertSame(group, result)
+            verify(exactly = 0) { groups.addStudent(any(), any()) }
+        }
+
+        @Test
+        fun `should propagate storage exceptions when enrolling`() {
+            val failure = IllegalStateException("storage failed")
+            every { invites.findByCode(any()) } returns testInvite()
+            every { clock.instant() } returns now
+            every { groups.findByInvite(ClassInviteId(31)) } returns foreignGroup
+            every { groups.addStudent(foreignGroup.id, user.id) } throws failure
+
+            val thrown = assertFailsWith<IllegalStateException> {
+                operations.joinClass(user = user, inviteCode = "abcdefghjkmn")
+            }
+
+            assertSame(failure, thrown)
+        }
+
+        private fun testInvite(expiresAt: Instant = Instant.parse("2030-01-01T00:00:00Z")) = classInvite {
+            id = 31
+            createdAt = Instant.EPOCH
+            data = classInviteData {
+                code("abcdefghjkmn", HashAlgorithm.Identity)
+                this.expiresAt = expiresAt
+            }
         }
     }
 }

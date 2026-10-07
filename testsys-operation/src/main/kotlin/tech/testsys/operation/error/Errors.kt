@@ -354,6 +354,13 @@ sealed interface AttachTaskError : OperationError
 sealed interface DetachTaskError : OperationError
 
 /**
+ * Failure of deleting a contest owned by the developer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DeleteContestError : OperationError
+
+/**
  * Failure of attaching a statement to a task.
  *
  * @since %CURRENT_VERSION%
@@ -430,6 +437,7 @@ data object MissedDeveloperRoleError :
     CommitTaskError,
     AttachTaskError,
     DetachTaskError,
+    DeleteContestError,
     ViewContestsError,
     ViewContestError,
     RevertTaskError,
@@ -507,7 +515,7 @@ data class AttemptDurationExceedsContestDurationError(
  */
 data class ContestNotExistsError(
     val contestId: ContestId,
-) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError, DetachTaskError, ViewContestError
+) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError, DetachTaskError, ViewContestError, DeleteContestError
 
 /**
  * The user has no access to the contest for the requested operation.
@@ -517,7 +525,7 @@ data class ContestNotExistsError(
  */
 data class ContestAccessDeniedError(
     val contestId: ContestId,
-) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError, DetachTaskError, ViewContestError
+) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError, DetachTaskError, ViewContestError, DeleteContestError
 
 /**
  * The contest is shared to at least one community.
@@ -525,7 +533,7 @@ data class ContestAccessDeniedError(
  * @property contestId the id of the shared contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestAlreadySharedError(val contestId: ContestId) : EditContestError, AttachTaskError, DetachTaskError
+data class ContestAlreadySharedError(val contestId: ContestId) : EditContestError, AttachTaskError, DetachTaskError, DeleteContestError
 
 /**
  * The task does not exist.

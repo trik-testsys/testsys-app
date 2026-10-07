@@ -1,6 +1,8 @@
 package tech.testsys.operation.user
 
+import io.mockk.Runs
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.slot
@@ -2927,6 +2929,183 @@ class DeveloperOperationsTests {
         private fun assertNoContestUpdate() {
             verify(exactly = 0) { contestRepository.update(any<Contest>()) }
             verify(exactly = 0) { contestRepository.update(any<List<Contest>>()) }
+        }
+    }
+
+    @Nested
+    inner class DeleteContestTests {
+
+        private val contestId = ContestId(19)
+
+        @AfterEach
+        fun verifyNoWrites() {
+            verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            verify(exactly = 0) { taskRepository.update(any<List<Task>>()) }
+            verify(exactly = 0) { taskRepository.save(any<TaskData>()) }
+            verify(exactly = 0) { taskRepository.save(any<List<TaskData>>()) }
+            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+            verify(exactly = 0) { contestRepository.update(any<List<Contest>>()) }
+            verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+            verify(exactly = 0) { contestRepository.save(any<List<ContestData>>()) }
+        }
+
+        @Test
+        fun `should raise MissedDeveloperRoleError without reading or deleting the contest if user is not a Developer`() {
+            assertRaises(MissedDeveloperRoleError) {
+                developerOperations.deleteContest(testAdministrator {}, contestId)
+            }
+
+            verify(exactly = 0) { contestRepository.findById(any()) }
+            assertNoContestRemoval()
+        }
+
+        @Test
+        fun `should raise ContestNotExistsError without deleting if contest is missing`() {
+            every { contestRepository.findById(contestId) } returns null
+
+            assertRaises(ContestNotExistsError(contestId)) {
+                developerOperations.deleteContest(developer, contestId)
+            }
+
+            assertNoContestRemoval()
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [0, 1])
+        fun `should raise ContestAccessDeniedError for another owners contest even when shared to Developer communities`(
+            recipientCount: Int,
+        ) {
+            val user = testDeveloper {
+                memberOf(listOf(1))
+                data = developerData {}
+            }
+            val recipients = listOf(1L).take(recipientCount)
+            prepare(
+                originalContest = testContest {
+                    owner(99)
+                    sharedTo(recipients)
+                },
+            )
+
+            assertRaises(ContestAccessDeniedError(contestId)) {
+                developerOperations.deleteContest(user, contestId)
+            }
+
+            assertNoContestRemoval()
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [1, 2])
+        fun `should raise ContestAlreadySharedError without deleting if contest is shared to communities`(recipientCount: Int) {
+            val recipients = listOf(1L, 2L).take(recipientCount)
+            prepare(originalContest = testContest { sharedTo(recipients) })
+
+            assertRaises(ContestAlreadySharedError(contestId)) {
+                developerOperations.deleteContest(developer, contestId)
+            }
+
+            assertNoContestRemoval()
+        }
+
+        @Test
+        fun `should delete an unshared own contest by its id and return it as it was before deletion`() {
+            val original = testContest {
+                tasks(listOf(7))
+                name = "Original contest"
+                description = "Original description"
+                startsAt = Instant.parse("2020-01-01T10:00:00Z")
+                contestDuration = Duration.ofHours(2)
+                attemptDuration = Duration.ofMinutes(30)
+            }
+            prepare(originalContest = original)
+
+            val result = developerOperations.deleteContest(developer, contestId).getOrThrow()
+
+            Assertions.assertSame(original, result)
+            Assertions.assertEquals(contestId, result.id)
+            Assertions.assertEquals(0L, result.version?.value)
+            Assertions.assertEquals("Original contest", result.data.name)
+            Assertions.assertEquals(listOf(TaskId(7)), result.data.tasks.ids)
+            verify(exactly = 1) { contestRepository.removeById(contestId) }
+            verify(exactly = 1) { contestRepository.removeById(any()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [0, 2])
+        fun `should delete the contest without accessing tasks with any number of attached tasks`(attachedTaskCount: Int) {
+            val tasks = listOf(7L, 8L).take(attachedTaskCount)
+            prepare(originalContest = testContest { tasks(tasks) })
+
+            val result = developerOperations.deleteContest(developer, contestId).getOrThrow()
+
+            Assertions.assertEquals(tasks.map(::TaskId), result.data.tasks.ids)
+            verify(exactly = 1) { contestRepository.removeById(contestId) }
+            verify(exactly = 0) { taskRepository.findById(any()) }
+        }
+
+        @Test
+        fun `should delete a contest without schedule and limits`() {
+            prepare(originalContest = testContest())
+
+            val result = developerOperations.deleteContest(developer, contestId).getOrThrow()
+
+            Assertions.assertNull(result.data.startsAt)
+            Assertions.assertNull(result.data.contestDuration)
+            Assertions.assertNull(result.data.attemptDuration)
+            verify(exactly = 1) { contestRepository.removeById(contestId) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["New", "Committed", "Uncommitted"])
+        fun `should keep an attached task unchanged in every state`(state: String) {
+            val attachedTask = taskInState(state)
+            val attachedData = attachedTask.data
+            prepare(originalContest = testContest { tasks(listOf(attachedTask.id.value)) })
+
+            developerOperations.deleteContest(developer, contestId).getOrThrow()
+
+            Assertions.assertSame(attachedData, attachedTask.data)
+            Assertions.assertEquals(0L, attachedTask.version?.value)
+            verify(exactly = 0) { taskRepository.findById(any()) }
+        }
+
+        @Test
+        fun `should propagate storage exceptions when loading the contest`() {
+            val failure = IllegalStateException("Contest storage read failure")
+            every { contestRepository.findById(contestId) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.deleteContest(developer, contestId)
+            }
+
+            Assertions.assertSame(failure, thrown)
+            assertNoContestRemoval()
+        }
+
+        @Test
+        fun `should propagate storage exceptions when removing the contest`() {
+            prepare(originalContest = testContest())
+            val failure = IllegalStateException("Contest storage remove failure")
+            every { contestRepository.removeById(contestId) } throws failure
+
+            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.deleteContest(developer, contestId)
+            }
+
+            Assertions.assertSame(failure, thrown)
+            verify(exactly = 1) { contestRepository.removeById(contestId) }
+        }
+
+        private fun prepare(originalContest: Contest) {
+            every { contestRepository.findById(contestId) } returns originalContest
+            every { contestRepository.removeById(contestId) } just Runs
+        }
+
+        private fun assertNoContestRemoval() {
+            verify(exactly = 0) { contestRepository.removeById(any()) }
+            verify(exactly = 0) { contestRepository.removeByIds(any()) }
+            verify(exactly = 0) { contestRepository.remove(any<Contest>()) }
+            verify(exactly = 0) { contestRepository.remove(any<List<Contest>>()) }
         }
     }
 

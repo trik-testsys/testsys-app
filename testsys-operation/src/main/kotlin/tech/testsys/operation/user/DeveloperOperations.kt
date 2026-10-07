@@ -73,6 +73,7 @@ import tech.testsys.operation.error.ContestEndWithoutStartError
 import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.CreateContestError
 import tech.testsys.operation.error.CreateTaskError
+import tech.testsys.operation.error.DeleteContestError
 import tech.testsys.operation.error.DetachDeveloperSolutionError
 import tech.testsys.operation.error.DetachExerciseError
 import tech.testsys.operation.error.DetachStatementError
@@ -498,6 +499,25 @@ class DeveloperOperations(
 
             val updatedContest = contest.withData { tasks.remove(taskId) }
             return contestRepository.update(updatedContest).asSuccess()
+        }
+
+    /**
+     * Deletes an unshared [contestId] owned by [user] with its task attachments and returns the contest as it was before
+     * deletion; its version can no longer be used for updates. Attached tasks do not change; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.contest.deleteContest")
+    fun deleteContest(user: MultipleRoleUser, contestId: ContestId): OperationResult<Contest, DeleteContestError> =
+        operation<Contest, DeleteContestError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val contest = contestRepository.findById(contestId)
+            ensure(contest != null) { ContestNotExistsError(contestId) }
+            ensure(contest.data.owner.id == user.id) { ContestAccessDeniedError(contestId) }
+            ensure(contest.data.sharedTo.ids.isEmpty()) { ContestAlreadySharedError(contestId) }
+
+            contestRepository.removeById(contestId)
+            return contest.asSuccess()
         }
 
     /**

@@ -68,11 +68,34 @@ sealed interface ResourceAccessError : OperationError
 sealed interface ViewClassesError : OperationError
 
 /**
+ * Failure of viewing a class owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewClassError : OperationError
+
+/**
  * The user does not hold the manager role.
  *
  * @since %CURRENT_VERSION%
  */
-data object MissedManagerRoleError : ViewClassesError, MissedRequiredRoleError
+data object MissedManagerRoleError : ViewClassesError, ViewClassError, MissedRequiredRoleError
+
+/**
+ * The class does not exist.
+ *
+ * @property classId the id of the missing class.
+ * @since %CURRENT_VERSION%
+ */
+data class ClassNotExistsError(val classId: ClassId) : ViewClassError, EntityNotExistsError
+
+/**
+ * The class belongs to another user.
+ *
+ * @property classId the id of the inaccessible class.
+ * @since %CURRENT_VERSION%
+ */
+data class ClassAccessDeniedError(val classId: ClassId) : ViewClassError, AccessDeniedError
 
 // endregion
 

@@ -87,3 +87,25 @@ data class ClassFilter(
         }
     }
 }
+
+/**
+ * Optional competition selection criteria, combined with AND before paging and counting owned competitions.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property createdFrom the inclusive lower creation-time bound, or null for no lower bound.
+ * @property createdTo the inclusive upper creation-time bound, or null for no upper bound.
+ * @throws IllegalArgumentException if [createdFrom] is later than [createdTo].
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionFilter(
+    val name: String? = null,
+    val createdFrom: Instant? = null,
+    val createdTo: Instant? = null,
+) {
+
+    init {
+        require(createdFrom == null || createdTo == null || createdFrom <= createdTo) {
+            "Competition creation lower bound $createdFrom must not be later than upper bound $createdTo"
+        }
+    }
+}

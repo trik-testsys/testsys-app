@@ -44,6 +44,18 @@
 Адаптеры собирают доменные сущности только выбранной страницы и возвращают исходные параметры пагинации.
 Все чтения выполняются в транзакции с `readOnly = true`; исключения хранилища выходят к вызывающему коду.
 
+## Постраничный поиск Классов и Соревнований
+
+Методы `findAvailableToManager` в
+[ClassPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/group/ClassPersistenceAdapter.kt)
+и [CompetitionPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/group/CompetitionPersistenceAdapter.kt)
+передают владельца и фильтры в `JpaSpecificationExecutor`. БД выбирает только сущности переданного владельца.
+
+Фильтры названия и даты создания применяются до выбора страницы и подсчёта общего числа.
+Подсчёт использует ту же спецификацию. Правила фильтрации определены в [features.md](../../docs/domain/features.md).
+Порядок по умолчанию, сборка страницы и транзакция чтения устроены так же, как в разделе
+[«Постраничный поиск Задач и Туров»](#постраничный-поиск-задач-и-туров).
+
 ## Постраничный поиск Вердиктов
 
 Метод `findAvailableToJudge` в

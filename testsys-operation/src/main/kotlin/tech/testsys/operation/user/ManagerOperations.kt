@@ -3,6 +3,7 @@ package tech.testsys.operation.user
 import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.contract.persistence.ClassFilter
+import tech.testsys.domain.contract.persistence.CompetitionFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
@@ -29,6 +30,7 @@ import tech.testsys.operation.error.MissedManagerRoleError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ViewClassError
 import tech.testsys.operation.error.ViewClassesError
+import tech.testsys.operation.error.ViewCompetitionsError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
@@ -134,6 +136,23 @@ class ManagerOperations(
             val contests = studyClass.data.contests.load(contestRepository)
             return ClassView(studyClass = studyClass, students = students, contests = contests).asSuccess()
         }
+
+    /**
+     * Returns a [pagination] page matching [filter] of competitions owned by [user], preserving stored state.
+     * Missing manager role is an expected failure; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.competition.viewCompetitions")
+    fun viewCompetitions(
+        user: MultipleRoleUser,
+        pagination: Pagination,
+        filter: CompetitionFilter = CompetitionFilter(),
+    ): OperationResult<Page<Competition>, ViewCompetitionsError> = operation<Page<Competition>, ViewCompetitionsError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val competitions = competitionRepository.findAvailableToManager(ownerId = user.id, pagination = pagination, filter = filter)
+        return competitions.asSuccess()
+    }
 
     /**
      * A class and its loaded membership and assigned contests returned by the viewing operation.

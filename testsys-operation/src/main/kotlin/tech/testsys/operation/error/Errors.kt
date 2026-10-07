@@ -89,11 +89,24 @@ sealed interface ViewClassesError : OperationError
 sealed interface ViewClassError : OperationError
 
 /**
+ * Failure of listing competitions owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewCompetitionsError : OperationError
+
+/**
  * The user does not hold the manager role.
  *
  * @since %CURRENT_VERSION%
  */
-data object MissedManagerRoleError : CreateClassError, CreateCompetitionError, ViewClassesError, ViewClassError, MissedRequiredRoleError
+data object MissedManagerRoleError :
+    CreateClassError,
+    CreateCompetitionError,
+    ViewClassesError,
+    ViewClassError,
+    ViewCompetitionsError,
+    MissedRequiredRoleError
 
 /**
  * The class name is empty or contains only whitespace.

@@ -36,6 +36,8 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.EntityVersion
+import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderData
 import tech.testsys.domain.model.task.Score
@@ -85,6 +87,24 @@ class JudgeOperationsTests {
             assertRaises(MissedJudgeRoleError) { operations.viewResults(user = user, pagination = Pagination(page = 0, size = 10)) }
 
             verify { repository wasNot Called }
+        }
+
+        @Test
+        fun `should forward all supplied verdict filters unchanged`() {
+            val pagination = Pagination(page = 1, size = 2)
+            val filter = VerdictFilter(
+                authorId = MultipleRoleUserId(5),
+                submissionId = SubmissionId(6),
+                classId = ClassId(7),
+                competitionId = CompetitionId(8),
+            )
+            val page = Page<Verdict>(content = emptyList(), pagination = pagination, totalElements = 0)
+            every { repository.findAvailableToJudge(refEq(pagination), refEq(filter)) } returns page
+
+            val result = operations.viewResults(user = judge, pagination = pagination, filter = filter).getOrThrow()
+
+            assertSame(page, result)
+            verify(exactly = 1) { repository.findAvailableToJudge(refEq(pagination), refEq(filter)) }
         }
 
         @Test

@@ -72,7 +72,13 @@ class VerdictPersistenceAdapter(
             },
         )
         val pageable = PageRequest.of(pagination.page, pagination.size, jpaSort)
-        val page = verdictJpaEntityRepository.findAvailableToJudge(authorId = filter.authorId?.value, pageable = pageable)
+        val page = verdictJpaEntityRepository.findAvailableToJudge(
+            authorId = filter.authorId?.value,
+            submissionId = filter.submissionId?.value,
+            classId = filter.classId?.value,
+            competitionId = filter.competitionId?.value,
+            pageable = pageable,
+        )
         val verdictIds = page.content.map { jpaEntity -> jpaEntity.requireId() }
         val outcomesByVerdict = if (verdictIds.isEmpty()) {
             emptyMap()

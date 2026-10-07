@@ -238,6 +238,85 @@ class TaskPaginationQueryTests : DatabaseIntegrationTests() {
         assertSame(request, page.pagination)
     }
 
+    @Test
+    fun `should filter shared communities before paging without expanding access`() {
+        val owner = fixtures.developer().id
+        val otherOwner = fixtures.developer().id
+        val selected = fixtures.community().id
+        val access = fixtures.community().id
+        saveTask(ownerId = owner, name = "Alpha")
+        val first = saveTask(ownerId = owner, name = "Alpha", communityIds = listOf(selected, access))
+        val second = saveTask(ownerId = otherOwner, name = "Alpha", communityIds = listOf(selected, access))
+        saveTask(ownerId = otherOwner, name = "Alpha", communityIds = listOf(selected))
+        saveTask(ownerId = otherOwner, name = "Alpha", communityIds = listOf(access))
+        saveTask(ownerId = owner, name = "Other", communityIds = listOf(selected))
+        val filter = TaskFilter(name = "Alpha", communityId = selected)
+
+        val page = repository.findAvailableToDeveloper(
+            ownerId = owner,
+            communityIds = setOf(access),
+            pagination = Pagination(page = 1, size = 1),
+            filter = filter,
+        )
+
+        assertEquals(listOf(second.id), page.content.map { entity -> entity.id })
+        assertTrue(first.id.value < second.id.value)
+        assertEquals(2L, page.totalElements)
+        assertEquals(2, page.totalPages)
+        assertFalse(page.hasNext)
+    }
+
+    @Test
+    fun `should filter owned entities by community without requiring membership`() {
+        val owner = fixtures.developer().id
+        val selected = fixtures.community().id
+        val expected = saveTask(ownerId = owner, name = "Alpha", communityIds = listOf(selected))
+        saveTask(ownerId = owner, name = "Alpha")
+
+        val page = repository.findAvailableToDeveloper(
+            ownerId = owner,
+            communityIds = emptySet(),
+            pagination = Pagination(page = 0, size = 1),
+            filter = TaskFilter(ownerId = owner, communityId = selected),
+        )
+
+        assertEquals(listOf(expected.id), page.content.map { entity -> entity.id })
+        assertEquals(1L, page.totalElements)
+    }
+
+    @Test
+    fun `should retain the community filtered total beyond the last page`() {
+        val owner = fixtures.developer().id
+        val selected = fixtures.community().id
+        saveTask(ownerId = owner, name = "Alpha", communityIds = listOf(selected))
+
+        val page = repository.findAvailableToDeveloper(
+            ownerId = owner,
+            communityIds = emptySet(),
+            pagination = Pagination(page = 3, size = 1),
+            filter = TaskFilter(communityId = selected),
+        )
+
+        assertTrue(page.content.isEmpty())
+        assertEquals(1L, page.totalElements)
+    }
+
+    @Test
+    fun `should return no entities for an unknown community`() {
+        val owner = fixtures.developer().id
+        saveTask(ownerId = owner, name = "Alpha", communityIds = listOf(fixtures.community().id))
+
+        val page = repository.findAvailableToDeveloper(
+            ownerId = owner,
+            communityIds = emptySet(),
+            pagination = Pagination(page = 0, size = 1),
+            filter = TaskFilter(communityId = CommunityId(-1)),
+        )
+
+        assertTrue(page.content.isEmpty())
+        assertEquals(0L, page.totalElements)
+    }
+
     private fun filterOwner(byOwner: Boolean, owner: MultipleRoleUserId): MultipleRoleUserId? = if (byOwner) owner else null
 
     private fun saveTask(

@@ -78,6 +78,15 @@ class ContestPersistenceAdapter(
                 predicates.add(builder.equal(entity.get<Long>("ownerId"), owner.value))
             }
 
+            filter.communityId?.let { community ->
+                val shared = requireNotNull(query).subquery(Long::class.java)
+                val association = shared.from(CommunityToContestJpaEntity::class.java)
+                shared.select(association.get<Any>("id").get<Long>("contestId")).where(
+                    builder.equal(association.get<Any>("id").get<Long>("contestId"), entity.get<Long>("id")),
+                    builder.equal(association.get<Any>("id").get<Long>("communityId"), community.value),
+                )
+                predicates.add(builder.exists(shared))
+            }
             builder.and(*predicates.toTypedArray())
         }
         val orders = pagination.sort.orders.map { order ->

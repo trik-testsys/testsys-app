@@ -22,9 +22,14 @@ import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
 import tech.testsys.domain.contract.persistence.VerdictFilter
+import tech.testsys.domain.contract.persistence.repository.ClassRepository
+import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
+import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.UserId
@@ -42,6 +47,12 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
 
     @Autowired
     private lateinit var users: MultipleRoleUserRepository
+
+    @Autowired
+    private lateinit var classes: ClassRepository
+
+    @Autowired
+    private lateinit var competitions: CompetitionRepository
 
     @Autowired
     private lateinit var jdbcTemplate: JdbcTemplate
@@ -364,6 +375,185 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         }
 
         assertTrue(requireNotNull(failure.message).contains(verdict.data.submission.id.value.toString()))
+    }
+
+    @Test
+    fun `should filter by the current successful verdict of one submission`() {
+        val author = fixtures.student().id
+        val submission = fixtures.gradingSubmission(author)
+        fixtures.successfulGradingVerdict(submission)
+        val current = fixtures.successfulGradingVerdict(requireNotNull(submissions.findById(submission.id)))
+        successfulVerdict(author)
+        val filter = VerdictFilter(authorId = author, submissionId = submission.id)
+
+        val page = repository.findAvailableToJudge(pagination = Pagination(page = 0, size = 1), filter = filter)
+
+        assertEquals(listOf(current.id), page.content.map { it.id })
+        assertEquals(1L, page.totalElements)
+    }
+
+    @Test
+    fun `should not broaden author access when a submission filter is provided`() {
+        val author = fixtures.developer().id
+        val verdict = successfulVerdict(author)
+
+        val page = repository.findAvailableToJudge(
+            pagination = Pagination(page = 0, size = 1),
+            filter = VerdictFilter(submissionId = verdict.data.submission.id),
+        )
+
+        assertTrue(page.content.isEmpty())
+        assertEquals(0L, page.totalElements)
+    }
+
+    @Test
+    fun `should require both student membership and contest assignment before class paging`() {
+        val author = fixtures.student()
+        val outsider = fixtures.student()
+        val contest = fixtures.contest()
+        val selected = fixtures.studentClass(students = listOf(author))
+        val neighbor = fixtures.studentClass(students = listOf(author, outsider))
+        classes.update(selected.withData { contests = mutableListOf(contest.id) })
+        classes.update(neighbor.withData { contests = mutableListOf(contest.id) })
+        val matches = (0..2).map {
+            fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = author.id, contest = contest))
+        }
+        fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = outsider.id, contest = contest))
+        successfulVerdict(author.id)
+        val pagination = Pagination(page = 1, size = 1, sort = Sort(listOf(Sort.Order("id"))))
+
+        val page = repository.findAvailableToJudge(pagination = pagination, filter = VerdictFilter(classId = selected.id))
+
+        assertEquals(listOf(matches[1].id), page.content.map { it.id })
+        assertEquals(3L, page.totalElements)
+        assertEquals(3, page.totalPages)
+        assertTrue(page.hasNext)
+        assertSame(pagination, page.pagination)
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun `should reflect current class membership and contest assignment`(removeMember: Boolean) {
+        val author = fixtures.student()
+        val contest = fixtures.contest()
+        val selected = fixtures.studentClass(students = listOf(author))
+        val assigned = classes.update(selected.withData { contests = mutableListOf(contest.id) })
+        fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = author.id, contest = contest))
+        classes.update(
+            assigned.withData {
+                if (removeMember) students.clear() else contests.clear()
+            },
+        )
+
+        val page = repository.findAvailableToJudge(
+            pagination = Pagination(page = 0, size = 1),
+            filter = VerdictFilter(classId = selected.id),
+        )
+
+        assertTrue(page.content.isEmpty())
+        assertEquals(0L, page.totalElements)
+    }
+
+    @Test
+    fun `should combine the class author and submission filters and retain totals beyond the last page`() {
+        val author = fixtures.student()
+        val secondAuthor = fixtures.student()
+        val contest = fixtures.contest()
+        val selected = fixtures.studentClass(students = listOf(author, secondAuthor))
+        classes.update(selected.withData { contests = mutableListOf(contest.id) })
+        val match = fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = author.id, contest = contest))
+        fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = secondAuthor.id, contest = contest))
+        val filter = VerdictFilter(authorId = author.id, submissionId = match.data.submission.id, classId = selected.id)
+
+        val page = repository.findAvailableToJudge(pagination = Pagination(page = 2, size = 1), filter = filter)
+
+        assertTrue(page.content.isEmpty())
+        assertEquals(1L, page.totalElements)
+        assertFalse(page.hasNext)
+    }
+
+    @Test
+    fun `should require participant membership and contest assignment before competition paging`() {
+        val selected = fixtures.competition()
+        val neighbor = fixtures.competition()
+        val author = fixtures.participant(selected)
+        val outsider = fixtures.participant(neighbor)
+        val contest = fixtures.contest()
+        competitions.update(selected.withData { contests = mutableListOf(contest.id) })
+        competitions.update(neighbor.withData { contests = mutableListOf(contest.id) })
+        val matches = (0..2).map {
+            fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = author.id, contest = contest))
+        }
+        fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = outsider.id, contest = contest))
+        fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = fixtures.student().id, contest = contest))
+        successfulVerdict(author.id)
+        val pagination = Pagination(page = 1, size = 1, sort = Sort(listOf(Sort.Order("id"))))
+
+        val page = repository.findAvailableToJudge(
+            pagination = pagination,
+            filter = VerdictFilter(competitionId = selected.id),
+        )
+
+        assertEquals(listOf(matches[1].id), page.content.map { it.id })
+        assertEquals(3L, page.totalElements)
+        assertTrue(page.hasNext)
+    }
+
+    @Test
+    fun `should combine competition and author and submission filters`() {
+        val selected = fixtures.competition()
+        val author = fixtures.participant(selected)
+        val contest = fixtures.contest()
+        competitions.update(selected.withData { contests = mutableListOf(contest.id) })
+        val match = fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = author.id, contest = contest))
+        fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = author.id, contest = contest))
+        val filter = VerdictFilter(
+            authorId = author.id,
+            submissionId = match.data.submission.id,
+            competitionId = selected.id,
+        )
+
+        val page = repository.findAvailableToJudge(pagination = Pagination(page = 0, size = 1), filter = filter)
+
+        assertEquals(listOf(match.id), page.content.map { it.id })
+        assertEquals(1L, page.totalElements)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["submission", "class", "competition"])
+    fun `should return no verdicts for unknown filter identifiers`(kind: String) {
+        successfulVerdict(fixtures.student().id)
+        successfulVerdict(fixtures.participant().id)
+        val filter = when (kind) {
+            "submission" -> VerdictFilter(submissionId = SubmissionId(-1))
+            "class" -> VerdictFilter(classId = ClassId(-1))
+            "competition" -> VerdictFilter(competitionId = CompetitionId(-1))
+            else -> error("Unexpected filter $kind")
+        }
+
+        val page = repository.findAvailableToJudge(pagination = Pagination(page = 0, size = 1), filter = filter)
+
+        assertTrue(page.content.isEmpty())
+        assertEquals(0L, page.totalElements)
+    }
+
+    @Test
+    fun `should combine class and competition filters with AND`() {
+        val author = fixtures.student()
+        val selectedClass = fixtures.studentClass(students = listOf(author))
+        val selectedCompetition = fixtures.competition()
+        val participant = fixtures.participant(selectedCompetition)
+        val contest = fixtures.contest()
+        classes.update(selectedClass.withData { contests = mutableListOf(contest.id) })
+        competitions.update(selectedCompetition.withData { contests = mutableListOf(contest.id) })
+        fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = author.id, contest = contest))
+        fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = participant.id, contest = contest))
+        val filter = VerdictFilter(classId = selectedClass.id, competitionId = selectedCompetition.id)
+
+        val page = repository.findAvailableToJudge(pagination = Pagination(page = 0, size = 1), filter = filter)
+
+        assertTrue(page.content.isEmpty())
+        assertEquals(0L, page.totalElements)
     }
 
     private fun successfulVerdict(authorId: UserId): Verdict = fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId))

@@ -23,8 +23,8 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 interface VerdictJpaEntityRepository : SnowflakeJpaEntityRepository<VerdictJpaEntity> {
 
     /**
-     * Finds a page of current successful grading verdicts, filtering authors before paging and counting.
-     * Role data rows identify current roles even when the author has no community memberships.
+     * Finds current successful grading verdicts of current students or participants, applying filters before paging and counting.
+     * Group filters require current author membership and contest assignment to the same group.
      *
      * @since %CURRENT_VERSION%
      */
@@ -37,6 +37,17 @@ interface VerdictJpaEntityRepository : SnowflakeJpaEntityRepository<VerdictJpaEn
               and s.gradingResult = tech.testsys.infra.database.internal.jpa.entity.task.GradingResultJpaEnum.SUCCESS
               and s.gradingVerdictId = v.id
               and (:authorId is null or s.authorId = :authorId)
+              and (:submissionId is null or s.id = :submissionId)
+              and (:classId is null or (
+                exists (select membership.id.studentId from StudentToClassJpaEntity membership
+                  where membership.id.studentId = s.authorId and membership.id.classId = :classId)
+                and exists (select assignment.id.contestId from ContestToClassJpaEntity assignment
+                  where assignment.id.contestId = s.gradingContestId and assignment.id.classId = :classId)))
+              and (:competitionId is null or (
+                exists (select participant.userId from ParticipantDataJpaEntity participant
+                  where participant.userId = s.authorId and participant.competitionId = :competitionId)
+                and exists (select assignment.id.contestId from ContestToCompetitionJpaEntity assignment
+                  where assignment.id.contestId = s.gradingContestId and assignment.id.competitionId = :competitionId)))
               and (s.authorId in (select student.userId from StudentDataJpaEntity student)
                 or s.authorId in (select participant.userId from ParticipantDataJpaEntity participant))
         """,
@@ -48,11 +59,28 @@ interface VerdictJpaEntityRepository : SnowflakeJpaEntityRepository<VerdictJpaEn
               and s.gradingResult = tech.testsys.infra.database.internal.jpa.entity.task.GradingResultJpaEnum.SUCCESS
               and s.gradingVerdictId = v.id
               and (:authorId is null or s.authorId = :authorId)
+              and (:submissionId is null or s.id = :submissionId)
+              and (:classId is null or (
+                exists (select membership.id.studentId from StudentToClassJpaEntity membership
+                  where membership.id.studentId = s.authorId and membership.id.classId = :classId)
+                and exists (select assignment.id.contestId from ContestToClassJpaEntity assignment
+                  where assignment.id.contestId = s.gradingContestId and assignment.id.classId = :classId)))
+              and (:competitionId is null or (
+                exists (select participant.userId from ParticipantDataJpaEntity participant
+                  where participant.userId = s.authorId and participant.competitionId = :competitionId)
+                and exists (select assignment.id.contestId from ContestToCompetitionJpaEntity assignment
+                  where assignment.id.contestId = s.gradingContestId and assignment.id.competitionId = :competitionId)))
               and (s.authorId in (select student.userId from StudentDataJpaEntity student)
                 or s.authorId in (select participant.userId from ParticipantDataJpaEntity participant))
         """,
     )
-    fun findAvailableToJudge(@Param("authorId") authorId: Long?, pageable: Pageable): Page<VerdictJpaEntity>
+    fun findAvailableToJudge(
+        @Param("authorId") authorId: Long?,
+        @Param("submissionId") submissionId: Long?,
+        @Param("classId") classId: Long?,
+        @Param("competitionId") competitionId: Long?,
+        pageable: Pageable,
+    ): Page<VerdictJpaEntity>
 }
 
 /**

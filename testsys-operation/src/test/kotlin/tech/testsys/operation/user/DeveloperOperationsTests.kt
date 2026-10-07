@@ -346,7 +346,7 @@ class DeveloperOperationsTests {
         @Test
         fun `should forward pagination and all filters unchanged`() {
             val request = Pagination(page = 3, size = 2, sort = Sort(listOf(Sort.Order("name", Sort.Direction.DESC))))
-            val filter = ContestFilter(name = " %_ ", ownerId = MultipleRoleUserId(99))
+            val filter = ContestFilter(name = " %_ ", ownerId = MultipleRoleUserId(99), communityId = CommunityId(100))
             val page = Page<Contest>(content = emptyList(), pagination = request, totalElements = 5)
             every {
                 contestRepository.findAvailableToDeveloper(
@@ -2221,7 +2221,12 @@ class DeveloperOperationsTests {
         fun `should forward pagination and all filters unchanged`() {
             val request = Pagination(page = 3, size = 2, sort = Sort(listOf(Sort.Order("name", Sort.Direction.DESC))))
             val filter =
-                TaskFilter(name = " %_ ", ownerId = MultipleRoleUserId(99), state = TaskFilter.State.UNCOMMITTED)
+                TaskFilter(
+                    name = " %_ ",
+                    ownerId = MultipleRoleUserId(99),
+                    state = TaskFilter.State.UNCOMMITTED,
+                    communityId = CommunityId(100),
+                )
             val page = Page<Task>(content = emptyList(), pagination = request, totalElements = 5)
             every {
                 taskRepository.findAvailableToDeveloper(

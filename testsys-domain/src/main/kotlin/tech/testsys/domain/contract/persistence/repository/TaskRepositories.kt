@@ -65,7 +65,7 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> 
      * @param ownerId the developer whose own contests are included.
      * @param communityIds the communities granting access; an empty set searches only by owner.
      * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
-     * @param filter optional conditions combined with AND before paging and counting; missing owners match nothing.
+     * @param filter conditions combined with AND before paging and counting, including shared community; unknown ids match nothing.
      * @return distinct authorized contests, the original pagination and exact filtered total; missing pages are empty.
      * @since %CURRENT_VERSION%
      */
@@ -272,8 +272,8 @@ interface VerdictRepository : EntityRepository<VerdictData, VerdictId, Verdict> 
      * Repeated calls reflect current data without changing it or loading file contents; technical exceptions propagate.
      *
      * @param pagination the requested page and ordering.
-     * @param filter optional author selection applied before paging and counting.
-     * @return verdicts with lazy references, requested pagination and exact total; missing authors or pages are empty.
+     * @param filter conjunctive author, submission and current group conditions applied before paging and counting.
+     * @return verdicts with lazy references, requested pagination and exact total; unmatched filters or pages are empty.
      * @since %CURRENT_VERSION%
      */
     fun findAvailableToJudge(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<Verdict>
@@ -293,7 +293,7 @@ interface TaskRepository : EntityRepository<TaskData, TaskId, Task> {
      * @param ownerId the developer whose own tasks are included.
      * @param communityIds the communities granting access; an empty set searches only by owner.
      * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
-     * @param filter optional conditions combined with AND before paging and counting; missing owners match nothing.
+     * @param filter conditions combined with AND before paging and counting, including shared community; unknown ids match nothing.
      * @return distinct authorized tasks, the original pagination and exact filtered total; missing pages are empty.
      * @since %CURRENT_VERSION%
      */

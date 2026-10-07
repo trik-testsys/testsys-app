@@ -201,6 +201,85 @@ class ContestPaginationQueryTests : DatabaseIntegrationTests() {
         assertEquals(0L, page.totalElements)
     }
 
+    @Test
+    fun `should filter shared communities before paging without expanding access`() {
+        val owner = fixtures.developer().id
+        val otherOwner = fixtures.developer().id
+        val selected = fixtures.community().id
+        val access = fixtures.community().id
+        saveContest(ownerId = owner, name = "Alpha")
+        val first = saveContest(ownerId = owner, name = "Alpha", communityIds = listOf(selected, access))
+        val second = saveContest(ownerId = otherOwner, name = "Alpha", communityIds = listOf(selected, access))
+        saveContest(ownerId = otherOwner, name = "Alpha", communityIds = listOf(selected))
+        saveContest(ownerId = otherOwner, name = "Alpha", communityIds = listOf(access))
+        saveContest(ownerId = owner, name = "Other", communityIds = listOf(selected))
+        val filter = ContestFilter(name = "Alpha", communityId = selected)
+
+        val page = repository.findAvailableToDeveloper(
+            ownerId = owner,
+            communityIds = setOf(access),
+            pagination = Pagination(page = 1, size = 1),
+            filter = filter,
+        )
+
+        assertEquals(listOf(second.id), page.content.map { entity -> entity.id })
+        assertTrue(first.id.value < second.id.value)
+        assertEquals(2L, page.totalElements)
+        assertEquals(2, page.totalPages)
+        assertFalse(page.hasNext)
+    }
+
+    @Test
+    fun `should filter owned entities by community without requiring membership`() {
+        val owner = fixtures.developer().id
+        val selected = fixtures.community().id
+        val expected = saveContest(ownerId = owner, name = "Alpha", communityIds = listOf(selected))
+        saveContest(ownerId = owner, name = "Alpha")
+
+        val page = repository.findAvailableToDeveloper(
+            ownerId = owner,
+            communityIds = emptySet(),
+            pagination = Pagination(page = 0, size = 1),
+            filter = ContestFilter(ownerId = owner, communityId = selected),
+        )
+
+        assertEquals(listOf(expected.id), page.content.map { entity -> entity.id })
+        assertEquals(1L, page.totalElements)
+    }
+
+    @Test
+    fun `should retain the community filtered total beyond the last page`() {
+        val owner = fixtures.developer().id
+        val selected = fixtures.community().id
+        saveContest(ownerId = owner, name = "Alpha", communityIds = listOf(selected))
+
+        val page = repository.findAvailableToDeveloper(
+            ownerId = owner,
+            communityIds = emptySet(),
+            pagination = Pagination(page = 3, size = 1),
+            filter = ContestFilter(communityId = selected),
+        )
+
+        assertTrue(page.content.isEmpty())
+        assertEquals(1L, page.totalElements)
+    }
+
+    @Test
+    fun `should return no entities for an unknown community`() {
+        val owner = fixtures.developer().id
+        saveContest(ownerId = owner, name = "Alpha", communityIds = listOf(fixtures.community().id))
+
+        val page = repository.findAvailableToDeveloper(
+            ownerId = owner,
+            communityIds = emptySet(),
+            pagination = Pagination(page = 0, size = 1),
+            filter = ContestFilter(communityId = CommunityId(-1)),
+        )
+
+        assertTrue(page.content.isEmpty())
+        assertEquals(0L, page.totalElements)
+    }
+
     private fun filterOwner(byOwner: Boolean, owner: MultipleRoleUserId): MultipleRoleUserId? = if (byOwner) owner else null
 
     private fun saveContest(ownerId: MultipleRoleUserId, name: String, communityIds: List<CommunityId> = emptyList()): Contest =

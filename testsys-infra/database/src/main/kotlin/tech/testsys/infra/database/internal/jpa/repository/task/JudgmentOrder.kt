@@ -22,6 +22,13 @@ interface JudgmentOrderJpaEntityRepository : SnowflakeJpaEntityRepository<Judgme
     fun findAllBySubmissionId(submissionId: Long): List<JudgmentOrderJpaEntity>
 
     /**
+     * Finds the judgment orders issued for any of the submissions [submissionIds] in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllBySubmissionIdIn(submissionIds: Collection<Long>): List<JudgmentOrderJpaEntity>
+
+    /**
      * Finds the judgment orders issued by the judge [judgeId].
      *
      * @since %CURRENT_VERSION%

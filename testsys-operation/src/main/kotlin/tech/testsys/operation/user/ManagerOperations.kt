@@ -4,16 +4,22 @@ import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.contract.persistence.ClassFilter
 import tech.testsys.domain.contract.persistence.CompetitionFilter
+import tech.testsys.domain.contract.persistence.ContestTaskResult
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
+import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.Contest
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.error.ClassAccessDeniedError
@@ -24,12 +30,17 @@ import tech.testsys.operation.error.CompetitionAccessDeniedError
 import tech.testsys.operation.error.CompetitionNameBlankError
 import tech.testsys.operation.error.CompetitionNameTooLongError
 import tech.testsys.operation.error.CompetitionNotExistsError
+import tech.testsys.operation.error.ContestNotAddedToClassError
+import tech.testsys.operation.error.ContestNotAddedToCompetitionError
+import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.CreateClassError
 import tech.testsys.operation.error.CreateCompetitionError
 import tech.testsys.operation.error.MissedManagerRoleError
 import tech.testsys.operation.error.OperationResult
+import tech.testsys.operation.error.ViewClassContestError
 import tech.testsys.operation.error.ViewClassError
 import tech.testsys.operation.error.ViewClassesError
+import tech.testsys.operation.error.ViewCompetitionContestError
 import tech.testsys.operation.error.ViewCompetitionError
 import tech.testsys.operation.error.ViewCompetitionsError
 import tech.testsys.operation.error.asSuccess
@@ -49,6 +60,8 @@ private const val MAX_COMPETITION_NAME_CODE_POINTS = 255
 class ManagerOperations(
     private val classRepository: ClassRepository,
     private val competitionRepository: CompetitionRepository,
+    private val contestRepository: ContestRepository,
+    private val submissionRepository: SubmissionRepository,
 ) {
 
     /**
@@ -163,4 +176,73 @@ class ManagerOperations(
             ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
             return competition.asSuccess()
         }
+
+    /**
+     * Returns [contestId] added to [classId] owned by [user] with the stored student ids and their results by contest task.
+     * Missing role, class, contest, access and contest assignment are expected failures; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.viewContest")
+    fun viewClassContest(
+        user: MultipleRoleUser,
+        classId: ClassId,
+        contestId: ContestId,
+    ): OperationResult<ContestResults, ViewClassContestError> = operation<ContestResults, ViewClassContestError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val studyClass = classRepository.findById(classId)
+        ensure(studyClass != null) { ClassNotExistsError(classId) }
+        val contest = contestRepository.findById(contestId)
+        ensure(contest != null) { ContestNotExistsError(contestId) }
+        ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
+        ensure(contestId in studyClass.data.contests.ids) { ContestNotAddedToClassError(classId = classId, contestId = contestId) }
+        return findContestResults(contest = contest, memberIds = studyClass.data.students.ids).asSuccess()
+    }
+
+    /**
+     * Returns [contestId] added to [competitionId] owned by [user] with the stored participant ids and their results by contest task.
+     * Missing role, competition, contest, access and contest assignment are expected failures; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.viewContest")
+    fun viewCompetitionContest(
+        user: MultipleRoleUser,
+        competitionId: CompetitionId,
+        contestId: ContestId,
+    ): OperationResult<ContestResults, ViewCompetitionContestError> = operation<ContestResults, ViewCompetitionContestError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val competition = competitionRepository.findById(competitionId)
+        ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+        val contest = contestRepository.findById(contestId)
+        ensure(contest != null) { ContestNotExistsError(contestId) }
+        ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
+        ensure(contestId in competition.data.contests.ids) {
+            ContestNotAddedToCompetitionError(competitionId = competitionId, contestId = contestId)
+        }
+        return findContestResults(contest = contest, memberIds = competition.data.participants.ids).asSuccess()
+    }
+
+    private fun findContestResults(contest: Contest, memberIds: List<UserId>): ContestResults {
+        val results = submissionRepository.findContestResults(
+            contestId = contest.id,
+            authorIds = memberIds.toSet(),
+            taskIds = contest.data.tasks.ids.toSet(),
+        )
+        return ContestResults(contest = contest, memberIds = memberIds, results = results)
+    }
+
+    /**
+     * Results of a contest within a class or competition owned by the manager.
+     *
+     * @property contest the viewed contest.
+     * @property memberIds the ids of the class students or competition participants in stored order.
+     * @property results the results of member and task pairs having submissions, ordered by member id and then task id.
+     * @since %CURRENT_VERSION%
+     */
+    data class ContestResults(
+        val contest: Contest,
+        val memberIds: List<UserId>,
+        val results: List<ContestTaskResult>,
+    )
 }

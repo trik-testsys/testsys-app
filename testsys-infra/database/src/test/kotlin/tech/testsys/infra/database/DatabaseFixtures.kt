@@ -24,6 +24,7 @@ import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.verdictData
+import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
@@ -69,6 +70,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.Supervisor
+import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
@@ -309,6 +311,26 @@ class DatabaseFixtures(
                 kind.developerSolutionTest { trikStudioVersion = version }
             },
         )
+    }
+
+    fun gradingSubmission(authorId: UserId = student().id, contest: Contest = contest()): Submission {
+        val taskId = task().id.value
+        val solutionId = solution().id.value
+        return submissions.save(
+            submissionData {
+                author = authorId
+                task(taskId)
+                solution(solutionId)
+                status.queued()
+                kind.grading { this.contest = contest.id }
+            },
+        )
+    }
+
+    fun successfulGradingVerdict(submission: Submission = gradingSubmission()): Verdict {
+        val verdict = verdict(submission)
+        submissions.update(submission.withData { status.graded { status.success { this.verdict = verdict.id } } })
+        return verdict
     }
 
     fun verdict(submission: Submission = submission(), polygon: Polygon = polygon()): Verdict {

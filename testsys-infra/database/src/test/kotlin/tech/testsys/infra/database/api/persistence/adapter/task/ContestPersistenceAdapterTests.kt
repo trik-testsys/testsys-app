@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import tech.testsys.domain.builder.api.contest
 import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.Contest
@@ -42,7 +43,11 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
             saveContest(ownerId = otherOwner, communityIds = emptyList())
             saveContest(ownerId = otherOwner, communityIds = listOf(unrelatedCommunity))
 
-            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = setOf(community))
+            val result = repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = setOf(community),
+                pagination = Pagination(page = 0, size = 10),
+            ).content
 
             assertEquals(setOf(owned.id, shared.id), result.map { it.id }.toSet())
             assertSameData(owned, result.single { it.id == owned.id })
@@ -57,7 +62,11 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
             val owned = saveContest(ownerId = owner, communityIds = communities)
             val shared = saveContest(ownerId = fixtures.developer().id, communityIds = communities)
 
-            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = communities.toSet())
+            val result = repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = communities.toSet(),
+                pagination = Pagination(page = 0, size = 10),
+            ).content
 
             assertEquals(2, result.size)
             assertEquals(setOf(owned.id, shared.id), result.map { it.id }.toSet())
@@ -70,7 +79,11 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
             val owned = saveContest(ownerId = owner, communityIds = listOf(community))
             saveContest(ownerId = fixtures.developer().id, communityIds = listOf(community))
 
-            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = emptySet())
+            val result = repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = emptySet(),
+                pagination = Pagination(page = 0, size = 10),
+            ).content
 
             assertEquals(listOf(owned.id), result.map { it.id })
         }

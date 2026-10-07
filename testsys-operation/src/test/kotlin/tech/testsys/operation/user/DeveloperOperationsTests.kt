@@ -17,6 +17,11 @@ import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.builder.task.TaskContentBuilder
 import tech.testsys.domain.contract.StoredBlobRef
+import tech.testsys.domain.contract.persistence.ContestFilter
+import tech.testsys.domain.contract.persistence.Page
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.Sort
+import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
@@ -222,6 +227,8 @@ class DeveloperOperationsTests {
     @Nested
     inner class ViewContestsTests {
 
+        private val pagination = Pagination(page = 0, size = 10)
+
         @Test
         fun `should consider shared communities only from the Developer role`() {
             val user = testMultipleRoleUser {
@@ -238,26 +245,30 @@ class DeveloperOperationsTests {
                 }
             }
             every {
-                contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(1)))
-            } returns emptyList()
+                contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(1)), pagination = pagination)
+            } returns Page(content = emptyList(), pagination = pagination, totalElements = 0)
 
-            val result = developerOperations.viewContests(user).getOrThrow()
+            val result = developerOperations.viewContests(user, pagination = pagination).getOrThrow().content
 
             Assertions.assertEquals(emptyList<Contest>(), result)
         }
 
         @Test
         fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
-            assertRaises(MissedDeveloperRoleError) { developerOperations.viewContests(testAdministrator {}) }
+            assertRaises(MissedDeveloperRoleError) { developerOperations.viewContests(testAdministrator {}, pagination = pagination) }
 
-            verify(exactly = 0) { contestRepository.findAvailableToDeveloper(any(), any()) }
+            verify(exactly = 0) {
+                contestRepository.findAvailableToDeveloper(any(), any(), any(), any())
+            }
         }
 
         @Test
-        fun `should return an empty list when developer has no contests`() {
-            every { contestRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet()) } returns emptyList()
+        fun `should return an empty page when developer has no contests`() {
+            every {
+                contestRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet(), pagination = pagination)
+            } returns Page(content = emptyList(), pagination = pagination, totalElements = 0)
 
-            val result = developerOperations.viewContests(developer).getOrThrow()
+            val result = developerOperations.viewContests(developer, pagination = pagination).getOrThrow().content
 
             Assertions.assertEquals(emptyList<Contest>(), result)
         }
@@ -270,9 +281,11 @@ class DeveloperOperationsTests {
                 tasks(listOf(1, 2))
                 sharedTo(listOf(3, 4))
             }
-            every { contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = emptySet()) } returns listOf(original)
+            every {
+                contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = emptySet(), pagination = pagination)
+            } returns Page(content = listOf(original), pagination = pagination, totalElements = 1)
 
-            val result = developerOperations.viewContests(user).getOrThrow().single()
+            val result = developerOperations.viewContests(user, pagination = pagination).getOrThrow().content.single()
 
             Assertions.assertSame(original, result)
             Assertions.assertEquals(ContestId(19), result.id)
@@ -288,9 +301,11 @@ class DeveloperOperationsTests {
         fun `should return available contests absent from the Developer contest list`() {
             val user = testDeveloper { data = developerData {} }
             val original = testContest()
-            every { contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = emptySet()) } returns listOf(original)
+            every {
+                contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = emptySet(), pagination = pagination)
+            } returns Page(content = listOf(original), pagination = pagination, totalElements = 1)
 
-            val result = developerOperations.viewContests(user).getOrThrow()
+            val result = developerOperations.viewContests(user, pagination = pagination).getOrThrow().content
 
             Assertions.assertEquals(listOf(original), result)
         }
@@ -306,10 +321,10 @@ class DeveloperOperationsTests {
                 sharedTo(listOf(4))
             }
             every {
-                contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(4)))
-            } returns listOf(foreign)
+                contestRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(4)), pagination = pagination)
+            } returns Page(content = listOf(foreign), pagination = pagination, totalElements = 1)
 
-            val result = developerOperations.viewContests(user).getOrThrow()
+            val result = developerOperations.viewContests(user, pagination = pagination).getOrThrow().content
 
             Assertions.assertEquals(listOf(foreign), result)
         }
@@ -317,11 +332,36 @@ class DeveloperOperationsTests {
         @Test
         fun `should propagate a storage exception when listing contests`() {
             val failure = IllegalStateException("Contest storage unavailable")
-            every { contestRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet()) } throws failure
+            every {
+                contestRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet(), pagination = pagination)
+            } throws failure
 
-            val actual = Assertions.assertThrows(IllegalStateException::class.java) { developerOperations.viewContests(developer) }
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.viewContests(developer, pagination = pagination)
+            }
 
             Assertions.assertSame(failure, actual)
+        }
+
+        @Test
+        fun `should forward pagination and all filters unchanged`() {
+            val request = Pagination(page = 3, size = 2, sort = Sort(listOf(Sort.Order("name", Sort.Direction.DESC))))
+            val filter = ContestFilter(name = " %_ ", ownerId = MultipleRoleUserId(99), communityId = CommunityId(100))
+            val page = Page<Contest>(content = emptyList(), pagination = request, totalElements = 5)
+            every {
+                contestRepository.findAvailableToDeveloper(
+                    ownerId = developer.id,
+                    communityIds = emptySet(),
+                    pagination = refEq(request),
+                    filter = refEq(filter),
+                )
+            } returns page
+
+            val result = developerOperations.viewContests(user = developer, pagination = request, filter = filter).getOrThrow()
+
+            Assertions.assertSame(page, result)
+            Assertions.assertSame(request, result.pagination)
+            Assertions.assertEquals(5L, result.totalElements)
         }
     }
 
@@ -2060,18 +2100,24 @@ class DeveloperOperationsTests {
     @Nested
     inner class ViewTasksTests {
 
+        private val pagination = Pagination(page = 0, size = 10)
+
         @Test
         fun `should raise MissedDeveloperRoleError if user is not a Developer`() {
-            assertRaises(MissedDeveloperRoleError) { developerOperations.viewTasks(testAdministrator {}) }
+            assertRaises(MissedDeveloperRoleError) { developerOperations.viewTasks(testAdministrator {}, pagination = pagination) }
 
-            verify(exactly = 0) { taskRepository.findAvailableToDeveloper(any(), any()) }
+            verify(exactly = 0) {
+                taskRepository.findAvailableToDeveloper(any(), any(), any(), any())
+            }
         }
 
         @Test
-        fun `should return an empty list when no tasks are available`() {
-            every { taskRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet()) } returns emptyList()
+        fun `should return an empty page when no tasks are available`() {
+            every {
+                taskRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet(), pagination = pagination)
+            } returns Page(content = emptyList(), pagination = pagination, totalElements = 0)
 
-            val result = developerOperations.viewTasks(developer).getOrThrow()
+            val result = developerOperations.viewTasks(developer, pagination = pagination).getOrThrow().content
 
             Assertions.assertEquals(emptyList<Task>(), result)
         }
@@ -2097,10 +2143,14 @@ class DeveloperOperationsTests {
                 }.data
             }
             every {
-                taskRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(1), CommunityId(2)))
-            } returns listOf(owned, shared)
+                taskRepository.findAvailableToDeveloper(
+                    ownerId = user.id,
+                    communityIds = setOf(CommunityId(1), CommunityId(2)),
+                    pagination = pagination,
+                )
+            } returns Page(content = listOf(owned, shared), pagination = pagination, totalElements = 2)
 
-            val result = developerOperations.viewTasks(user).getOrThrow()
+            val result = developerOperations.viewTasks(user, pagination = pagination).getOrThrow().content
 
             Assertions.assertEquals(listOf(TaskId(1), TaskId(2)), result.map { it.id })
             Assertions.assertEquals(listOf("name", "Shared task"), result.map { it.data.name })
@@ -2125,20 +2175,26 @@ class DeveloperOperationsTests {
                     administrator { memberOf(listOf(3)) }
                 }
             }
-            every { taskRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(1))) } returns emptyList()
+            every {
+                taskRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(1)), pagination = pagination)
+            } returns Page(content = emptyList(), pagination = pagination, totalElements = 0)
 
-            developerOperations.viewTasks(user).getOrThrow()
+            developerOperations.viewTasks(user, pagination = pagination).getOrThrow().content
 
-            verify(exactly = 1) { taskRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(1))) }
+            verify(exactly = 1) {
+                taskRepository.findAvailableToDeveloper(ownerId = user.id, communityIds = setOf(CommunityId(1)), pagination = pagination)
+            }
         }
 
         @ParameterizedTest
         @ValueSource(strings = ["New", "Uncommitted", "Committed"])
         fun `should retain task state and data when viewing tasks`(state: String) {
             val original = taskInState(state)
-            every { taskRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet()) } returns listOf(original)
+            every {
+                taskRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet(), pagination = pagination)
+            } returns Page(content = listOf(original), pagination = pagination, totalElements = 1)
 
-            val result = developerOperations.viewTasks(developer).getOrThrow().single()
+            val result = developerOperations.viewTasks(developer, pagination = pagination).getOrThrow().content.single()
 
             Assertions.assertSame(original, result)
             Assertions.assertEquals(original.data, result.data)
@@ -2150,11 +2206,42 @@ class DeveloperOperationsTests {
         @Test
         fun `should propagate a storage exception when listing tasks`() {
             val failure = IllegalStateException("Task storage unavailable")
-            every { taskRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet()) } throws failure
+            every {
+                taskRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet(), pagination = pagination)
+            } throws failure
 
-            val actual = Assertions.assertThrows(IllegalStateException::class.java) { developerOperations.viewTasks(developer) }
+            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                developerOperations.viewTasks(developer, pagination = pagination)
+            }
 
             Assertions.assertSame(failure, actual)
+        }
+
+        @Test
+        fun `should forward pagination and all filters unchanged`() {
+            val request = Pagination(page = 3, size = 2, sort = Sort(listOf(Sort.Order("name", Sort.Direction.DESC))))
+            val filter =
+                TaskFilter(
+                    name = " %_ ",
+                    ownerId = MultipleRoleUserId(99),
+                    state = TaskFilter.State.UNCOMMITTED,
+                    communityId = CommunityId(100),
+                )
+            val page = Page<Task>(content = emptyList(), pagination = request, totalElements = 5)
+            every {
+                taskRepository.findAvailableToDeveloper(
+                    ownerId = developer.id,
+                    communityIds = emptySet(),
+                    pagination = refEq(request),
+                    filter = refEq(filter),
+                )
+            } returns page
+
+            val result = developerOperations.viewTasks(user = developer, pagination = request, filter = filter).getOrThrow()
+
+            Assertions.assertSame(page, result)
+            Assertions.assertSame(request, result.pagination)
+            Assertions.assertEquals(5L, result.totalElements)
         }
     }
 

@@ -9,6 +9,8 @@ import org.springframework.dao.DataIntegrityViolationException
 import tech.testsys.domain.builder.api.task
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
@@ -128,7 +130,11 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
             saveTask(ownerId = otherOwner, communityIds = emptyList())
             saveTask(ownerId = otherOwner, communityIds = listOf(unrelatedCommunity))
 
-            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = setOf(community))
+            val result = repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = setOf(community),
+                pagination = Pagination(page = 0, size = 10),
+            ).content
 
             assertEquals(setOf(owned.id, shared.id), result.map { it.id }.toSet())
             assertUnchangedTask(owned, result.single { it.id == owned.id })
@@ -142,7 +148,11 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
             val owned = saveTask(ownerId = owner, communityIds = communities)
             val shared = saveTask(ownerId = fixtures.developer().id, communityIds = communities)
 
-            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = communities.toSet())
+            val result = repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = communities.toSet(),
+                pagination = Pagination(page = 0, size = 10),
+            ).content
 
             assertEquals(2, result.size)
             assertEquals(setOf(owned.id, shared.id), result.map { it.id }.toSet())
@@ -155,7 +165,11 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
             val owned = saveTask(ownerId = owner, communityIds = listOf(community))
             saveTask(ownerId = fixtures.developer().id, communityIds = listOf(community))
 
-            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = emptySet())
+            val result = repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = emptySet(),
+                pagination = Pagination(page = 0, size = 10),
+            ).content
 
             assertEquals(listOf(owned.id), result.map { it.id })
         }
@@ -168,7 +182,11 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
             saveTask(ownerId = fixtures.developer().id, communityIds = emptyList())
             val communities = communityIds(withCommunities, community)
 
-            val result = repository.findAvailableToDeveloper(ownerId = owner, communityIds = communities)
+            val result = repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = communities,
+                pagination = Pagination(page = 0, size = 10),
+            ).content
 
             assertEquals(emptyList(), result)
         }
@@ -184,7 +202,9 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
             val result = repository.findAvailableToDeveloper(
                 ownerId = unrelatedOwner,
                 communityIds = expected.data.sharedTo.ids.toSet(),
-            ).single()
+                pagination = Pagination(page = 0, size = 10),
+                filter = TaskFilter(state = TaskFilter.State.valueOf(state.uppercase())),
+            ).content.single()
 
             assertEquals(expected.id, result.id)
             assertSameData(expected, result)

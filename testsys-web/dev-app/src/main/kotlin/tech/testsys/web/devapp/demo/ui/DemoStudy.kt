@@ -29,11 +29,11 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
         block("Классы") {
             demoTable(
                 context.table("${actor.id}:classes"),
-                objects.classes.map {
-                    DemoRow(id = it.id, title = it.name)
+                objects.classes.map { item ->
+                    DemoRow(id = item.id, title = item.name)
                 },
-            ) {
-                context.select(key = "${actor.id}:class", id = it.id)
+            ) { selected ->
+                context.select(key = "${actor.id}:class", id = selected.id)
             }
         }
     }
@@ -46,11 +46,11 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
     block("Доступные туры") {
         demoTable(
             context.table("${actor.id}:${selectedClass?.id}:tours"),
-            tours.map {
-                it.row()
+            tours.map { tour ->
+                tour.row()
             },
-        ) {
-            context.select(key = "${actor.id}:study-tour", id = it.id)
+        ) { selected ->
+            context.select(key = "${actor.id}:study-tour", id = selected.id)
         }
     }
     val tour = tours.firstOrNull {
@@ -64,12 +64,12 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
     block("Выбор задачи") {
         row {
             select("Задача", items = tasks, itemLabel = DemoTask::name, labelSize = 4, size = 20) {
-                value = tasks.firstOrNull {
-                    it.id == context.selection(key = taskKey, fallback = tasks.firstOrNull()?.id)
+                value = tasks.firstOrNull { task ->
+                    task.id == context.selection(key = taskKey, fallback = tasks.firstOrNull()?.id)
                 }
                 addValueChangeListener { event ->
-                    event.value?.let {
-                        context.select(key = taskKey, id = it.id)
+                    event.value?.let { task ->
+                        context.select(key = taskKey, id = task.id)
                     }
                 }
             }
@@ -168,13 +168,13 @@ internal fun PageScope.demoSolutionTable(
     ) {
         demoTable(
             context.table("${actor.id}:${context.screen}:solutions"),
-            solutions.map {
+            solutions.map { solution ->
                 DemoRow(
-                    id = it.id,
-                    title = it.fileName,
-                    category = demoStatusLabel(it.status),
-                    date = demoDate(it.submittedAt),
-                    detail = "${it.taskId} · ${it.score?.toString() ?: "—"}",
+                    id = solution.id,
+                    title = solution.fileName,
+                    category = demoStatusLabel(solution.status),
+                    date = demoDate(solution.submittedAt),
+                    detail = "${solution.taskId} · ${solution.score?.toString() ?: "—"}",
                 )
             },
             onSelect = onSelect,

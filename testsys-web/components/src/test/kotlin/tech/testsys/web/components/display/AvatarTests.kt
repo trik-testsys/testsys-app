@@ -31,7 +31,7 @@ class AvatarTests : MockVaadinTests() {
         lateinit var handle: DataHandle<AvatarData>
         val root = buildTestContent { handle = avatar(AvatarData("Иван Петров")) }
 
-        handle.data = AvatarData("Organization", "TS", isSquare = true)
+        handle.data = AvatarData(name = "Organization", initials = "TS", isSquare = true)
 
         val avatar = root.find("ts-avatar")
         assertEquals("TS", avatar.element.text)
@@ -54,6 +54,17 @@ class AvatarTests : MockVaadinTests() {
         assertEquals(2, avatars.size)
         assertTrue(avatars.all { avatar -> "ts-avatar--compact" in avatar.element.classList })
         assertEquals(testTexts.components.avatarOverflow(2), avatars.last().element.getAttribute("aria-label"))
+    }
+
+    @Test
+    fun `should group digits of the overflow count by the locale`() {
+        val many = List(1001) { index -> AvatarData("Person $index") }
+
+        val root = buildTestContent {
+            ContentScope(container, texts, Placement.Head, gridColumns).avatarGroup(many, maxVisible = 1)
+        }
+
+        assertEquals("+1 000", root.findAll("ts-avatar").last().element.text)
     }
 
     @Test

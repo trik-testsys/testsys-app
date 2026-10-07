@@ -169,7 +169,7 @@ class TableScope<T> internal constructor(
      * @since %CURRENT_VERSION%
      */
     fun empty(title: String, description: String? = null, icon: IconName = IconName.File, actions: ContentScope.() -> Unit = {}) {
-        emptyContent = EmptyContent(title, description, icon, actions)
+        emptyContent = EmptyContent(title = title, description = description, icon = icon, actions = actions)
         hasOwnEmpty = true
     }
 
@@ -185,7 +185,12 @@ class TableScope<T> internal constructor(
     internal fun spec(): TableSpec<T> {
         val ordinary = columns.filter { column -> column.kind != CellKind.Menu }
         val menuSize = columns.firstOrNull { column -> column.kind == CellKind.Menu }?.size ?: 0
-        val layout = resolveTableLayout(gridColumns, ordinary.map { column -> column.size }, selectionSize, menuSize)
+        val layout = resolveTableLayout(
+            gridColumns = gridColumns,
+            sizes = ordinary.map { column -> column.size },
+            selectionSize = selectionSize,
+            menuSize = menuSize,
+        )
         return TableSpec(columns.toList(), emptyContent, layout, rowClick)
     }
 

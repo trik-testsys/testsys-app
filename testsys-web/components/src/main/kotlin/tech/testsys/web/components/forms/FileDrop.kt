@@ -428,7 +428,7 @@ internal class FileDropDisplay(
             val wasActive = engine.remove(event.eventData.get(DomEventData.DetailIdentity).asString())
             when {
                 engine.fileCount() == 0 -> state.set(FileUploadState.Idle)
-                wasActive && state.peek().isRunning() -> state.set(FileUploadState.Cancelled)
+                wasActive -> state.set(FileUploadState.Cancelled)
             }
         }.addEventData(DomEventData.DetailIdentity)
         addClassName(CssClass.Filedrop)
@@ -452,11 +452,11 @@ internal class FileDropDisplay(
         }
         addDetachListener {
             upload.element.detachFileTransfers()
-            val wasRunning = state.peek().isRunning()
+            val hadActive = engine.hasActive() || state.peek().isRunning()
             engine.cancel()
             engine.allow(false)
             attachedUi = null
-            if (wasRunning) state.set(FileUploadState.Cancelled)
+            if (hadActive) state.set(FileUploadState.Cancelled)
         }
         status.element.bindText(
             state.map { value ->
@@ -550,14 +550,27 @@ internal class BoundedUploads(
         try {
             reservationGateOverride?.invoke()
             val current = synchronized(lock) {
-                if (eventEpoch == null) throw UploadRejectedException("Invalid transfer identity")
+                if (eventEpoch == null) throw UploadRejectedException("Invalid transfer identity '$transferId' of upload '$filename'")
                 if (eventEpoch != epoch.get()) throw InterruptedIOException("Upload '$filename' was cancelled before reservation")
-                if (transferId in slots || !isEnabled || declared > limits.maxFileBytes || !accepts(
-                        filename,
-                        mime,
-                    ) || slots.size >= limits.maxFiles || memory + limits.maxFileBytes > limits.maxMemoryBytes
-                ) {
-                    throw UploadRejectedException("Upload '$filename' rejected by server quotas or types")
+                if (transferId in slots) throw UploadRejectedException("Upload '$filename' repeats transfer identity '$transferId'")
+                if (!isEnabled) throw UploadRejectedException("Upload '$filename' arrived while uploads are disabled")
+                if (declared > limits.maxFileBytes) {
+                    throw UploadRejectedException("Upload '$filename' declares $declared bytes, the limit is ${limits.maxFileBytes}")
+                }
+                if (!accepts(filename, mime)) {
+                    throw UploadRejectedException(
+                        "Upload '$filename' of type '$mime' is not accepted, expected extensions ${limits.extensions} " +
+                            "or types ${limits.mimeTypes}",
+                    )
+                }
+                if (slots.size >= limits.maxFiles) {
+                    throw UploadRejectedException("Upload '$filename' exceeds the file count: ${slots.size} of ${limits.maxFiles} taken")
+                }
+                if (memory + limits.maxFileBytes > limits.maxMemoryBytes) {
+                    throw UploadRejectedException(
+                        "Upload '$filename' needs ${limits.maxFileBytes} bytes beyond the reserved $memory, " +
+                            "the memory limit is ${limits.maxMemoryBytes}",
+                    )
                 }
                 val created = Active(transferId, filename, epoch.get(), AtomicBoolean(false), stream)
                 slots[transferId] = id

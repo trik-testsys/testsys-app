@@ -41,13 +41,13 @@ class EmptyStateTests : MockVaadinTests() {
         buildTestPage {
             block {
                 emptyState("Посылок пока нет", description = "Отправьте решение", icon = IconName.Upload) {
-                    action("К задачам")
+                    action("Перейти к задачам")
                 }
             }
         }
 
         assertEquals("Отправьте решение", ui().find("ts-empty__desc").element.text)
-        assertEquals("sm", button("К задачам").element.getAttribute("data-ts-size"))
+        assertEquals("sm", button("Перейти к задачам").element.getAttribute("data-ts-size"))
     }
 
     @Test

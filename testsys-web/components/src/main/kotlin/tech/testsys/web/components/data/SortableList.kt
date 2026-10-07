@@ -77,7 +77,14 @@ fun <T : Any> ContentScope.sortableList(
     content: ContentScope.(T) -> Unit,
     configure: SortableListHandle<T>.() -> Unit = {},
 ): SortableListHandle<T> {
-    val adapter = SortableListAdapter(texts, items, itemKey, itemLabel, content, gridColumns)
+    val adapter = SortableListAdapter(
+        texts = texts,
+        initial = items,
+        itemKey = itemKey,
+        itemLabel = itemLabel,
+        content = content,
+        gridColumns = gridColumns,
+    )
     add(adapter)
     return SortableListHandle(adapter, items).apply(configure)
 }

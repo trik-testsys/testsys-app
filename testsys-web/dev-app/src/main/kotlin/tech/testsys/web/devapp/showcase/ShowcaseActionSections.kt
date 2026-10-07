@@ -22,30 +22,34 @@ import tech.testsys.web.components.layout.PageScope
 internal fun PageScope.actionSection() {
     block(title = "Кнопки", subtitle = "Роли, размеры и состояния") {
         actions {
-            mainAction("Главная") { onClick { toast(FeedbackKind.Info, "Главная: действие выполнено") } }
-            action("Обычная", icon = IconName.ListFilter) { onClick { toast(FeedbackKind.Info, "Обычная: действие выполнено") } }
+            mainAction("Выполнить главное действие") { onClick { toast(FeedbackKind.Info, "Главное действие выполнено") } }
+            action("Выполнить обычное действие", icon = IconName.ListFilter) {
+                onClick { toast(FeedbackKind.Info, "Обычное действие выполнено") }
+            }
             destructiveAction("Удалить") { onClick { toast(FeedbackKind.Info, "Удалить: действие выполнено") } }
-            linkAction("Ссылка") { onClick { toast(FeedbackKind.Info, "Ссылка: действие выполнено") } }
-            iconAction(IconName.Settings, "Настройки") { onClick { toast(FeedbackKind.Info, "Настройки: действие выполнено") } }
+            linkAction("Открыть ссылку") { onClick { toast(FeedbackKind.Info, "Ссылка открыта") } }
+            iconAction(IconName.Settings, "Открыть настройки") { onClick { toast(FeedbackKind.Info, "Настройки открыты") } }
         }
         row {
             horizontal {
-                mainAction("Главная", icon = IconName.Check) { onClick { toast(FeedbackKind.Info, "Главная: действие выполнено") } }
-                action("Обычная") { onClick { toast(FeedbackKind.Info, "Обычная: действие выполнено") } }
+                mainAction("Выполнить главное действие", icon = IconName.Check) {
+                    onClick { toast(FeedbackKind.Info, "Главное действие выполнено") }
+                }
+                action("Выполнить обычное действие") { onClick { toast(FeedbackKind.Info, "Обычное действие выполнено") } }
                 destructiveAction("Удалить", icon = IconName.Trash) { onClick { toast(FeedbackKind.Info, "Удалить: действие выполнено") } }
-                linkAction("Подробнее") { onClick { toast(FeedbackKind.Info, "Подробнее: действие выполнено") } }
-                iconAction(IconName.Settings, "Настройки") { onClick { toast(FeedbackKind.Info, "Настройки: действие выполнено") } }
+                linkAction("Показать подробности") { onClick { toast(FeedbackKind.Info, "Подробности показаны") } }
+                iconAction(IconName.Settings, "Открыть настройки") { onClick { toast(FeedbackKind.Info, "Настройки открыты") } }
                 mainIconAction(IconName.Plus, "Добавить объект") { onClick { toast(FeedbackKind.Success, "Объект добавлен") } }
                 destructiveIconAction(IconName.Trash, "Удалить объект") { onClick { toast(FeedbackKind.Info, "Объект удалён") } }
             }
         }
         row {
             horizontal {
-                mainAction("Главная") { isEnabled = false }
-                action("Обычная") { isEnabled = false }
+                mainAction("Выполнить главное действие") { isEnabled = false }
+                action("Выполнить обычное действие") { isEnabled = false }
                 destructiveAction("Удалить", icon = IconName.Trash) { isEnabled = false }
-                linkAction("Ссылка") { isEnabled = false }
-                iconAction(IconName.Settings, "Настройки") { isEnabled = false }
+                linkAction("Открыть ссылку") { isEnabled = false }
+                iconAction(IconName.Settings, "Открыть настройки") { isEnabled = false }
             }
         }
         row {
@@ -56,7 +60,7 @@ internal fun PageScope.actionSection() {
         }
         footer {
             action("Отменить") { onClick { toast(FeedbackKind.Info, "Отменить: действие выполнено") } }
-            mainAction("В подвале") { onClick { toast(FeedbackKind.Info, "В подвале: действие выполнено") } }
+            mainAction("Выполнить действие подвала") { onClick { toast(FeedbackKind.Info, "Действие подвала выполнено") } }
         }
     }
 }
@@ -72,14 +76,14 @@ internal fun PageScope.propertySection() {
                 block(title = "Служебные свойства", subtitle = "Переключатели меняют цели справа") {
                     row {
                         vertical {
-                            action("Поле: видимость") { onClick { targetField.isVisible = !targetField.isVisible } }
-                            action("Поле: включено") { onClick { targetField.isEnabled = !targetField.isEnabled } }
-                            action("Поле: редактируемо") { onClick { targetField.isEditable = !targetField.isEditable } }
-                            action("Текст: видимость") { onClick { targetText.isVisible = !targetText.isVisible } }
-                            action("Кнопка: включена") { onClick { targetAction.isEnabled = !targetAction.isEnabled } }
-                            action("Кнопка: загрузка") { onClick { targetAction.isLoading = !targetAction.isLoading } }
-                            action("Блок: видимость") { onClick { targetBlock.isVisible = !targetBlock.isVisible } }
-                            action("Блок: редактируемость") { onClick { targetBlock.isEditable = !targetBlock.isEditable } }
+                            action("Переключить видимость поля") { onClick { targetField.isVisible = !targetField.isVisible } }
+                            action("Переключить доступность поля") { onClick { targetField.isEnabled = !targetField.isEnabled } }
+                            action("Переключить редактирование поля") { onClick { targetField.isEditable = !targetField.isEditable } }
+                            action("Переключить видимость текста") { onClick { targetText.isVisible = !targetText.isVisible } }
+                            action("Переключить доступность кнопки") { onClick { targetAction.isEnabled = !targetAction.isEnabled } }
+                            action("Переключить загрузку кнопки") { onClick { targetAction.isLoading = !targetAction.isLoading } }
+                            action("Переключить видимость блока") { onClick { targetBlock.isVisible = !targetBlock.isVisible } }
+                            action("Переключить редактирование блока") { onClick { targetBlock.isEditable = !targetBlock.isEditable } }
                         }
                     }
                 }
@@ -95,7 +99,7 @@ internal fun PageScope.propertySection() {
                     row { targetText = text("Скрываемый текст") }
                     row {
                         horizontal {
-                            targetAction = mainAction("Цель") { onClick { toast(FeedbackKind.Info, "Нажата цель") } }
+                            targetAction = mainAction("Нажать цель") { onClick { toast(FeedbackKind.Info, "Нажата цель") } }
                         }
                     }
                 }

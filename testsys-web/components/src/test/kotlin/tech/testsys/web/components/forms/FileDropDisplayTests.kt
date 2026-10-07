@@ -17,6 +17,7 @@ import tech.testsys.web.components.find
 import tech.testsys.web.components.testTexts
 import tools.jackson.databind.ObjectMapper
 import java.io.ByteArrayInputStream
+import java.io.IOException
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -118,6 +119,37 @@ class FileDropDisplayTests : MockVaadinTests() {
 
         assertEquals(FileUploadState.Cancelled, input.state.peek())
         assertFalse(button(testTexts.components.cancel).isVisible)
+    }
+
+    @Test
+    fun `should cancel the state when a running transfer is removed while another transfer shows its result`() {
+        lateinit var input: FileDropHandle
+        buildTestRow { input = fileDrop("Files", limits = limits, consume = { file -> blockFor(file, "running.txt") }) }
+        val engine = display().engine
+        engine.receiveFile("done.txt")
+        pool.submit { engine.receiveFile("running.txt") }
+        entered.await(5, TimeUnit.SECONDS)
+        display().state.set(FileUploadState.Done("done.txt", 1))
+
+        _find<Upload>().single()._fireDomEvent("testsys-transfer-remove", removal(identity(engine, "running.txt")))
+
+        assertEquals(FileUploadState.Cancelled, input.state.peek())
+    }
+
+    @Test
+    fun `should cancel the state when detached while another transfer shows its error`() {
+        lateinit var input: FileDropHandle
+        val row = buildTestRow {
+            input = fileDrop("Files", limits = limits, consume = { file -> blockFor(file, "running.txt") })
+        }
+        val engine = display().engine
+        pool.submit { engine.receiveFile("running.txt") }
+        entered.await(5, TimeUnit.SECONDS)
+        display().state.set(FileUploadState.Error("other.txt", IOException("Other transfer failure")))
+
+        row.element.removeFromParent()
+
+        assertEquals(FileUploadState.Cancelled, input.state.peek())
     }
 
     @Test

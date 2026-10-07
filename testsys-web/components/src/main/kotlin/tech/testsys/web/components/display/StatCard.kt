@@ -29,7 +29,7 @@ enum class Trend(internal val cssClass: CssClass) {
  * @since %CURRENT_VERSION%
  */
 fun SlotRowScope.statCard(label: String, value: String, size: Int? = null, delta: String? = null, trend: Trend? = null): TextHandle {
-    val stat = buildStat(label, value, delta, trend)
+    val stat = buildStat(label = label, value = value, delta = delta, trend = trend)
     val block = place(size, BlockHeading(title = null, subtitle = null), highlight = false) {
         row { place(size = null, stat.card) }
     }
@@ -42,7 +42,7 @@ fun SlotRowScope.statCard(label: String, value: String, size: Int? = null, delta
  * @since %CURRENT_VERSION%
  */
 fun BlockRowScope.statCard(label: String, value: String, size: Int? = null, delta: String? = null, trend: Trend? = null): TextHandle {
-    val stat = buildStat(label, value, delta, trend)
+    val stat = buildStat(label = label, value = value, delta = delta, trend = trend)
     place(size, stat.card)
     return TextHandle(stat.value, stat.card)
 }

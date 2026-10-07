@@ -78,12 +78,12 @@ internal fun PageScope.blockSection() {
                 block(title = "Шапка с действиями и подвал") {
                     actions {
                         badge("Идёт", Tone.Success)
-                        action("Фильтр", icon = IconName.ListFilter) { onClick { toast(FeedbackKind.Info, "Фильтр: действие выполнено") } }
-                        iconAction(IconName.Settings, "Настройки") { onClick { toast(FeedbackKind.Info, "Настройки: действие выполнено") } }
+                        action("Отфильтровать", icon = IconName.ListFilter) { onClick { toast(FeedbackKind.Info, "Фильтр применён") } }
+                        iconAction(IconName.Settings, "Открыть настройки") { onClick { toast(FeedbackKind.Info, "Настройки открыты") } }
                     }
                     row { text("Кнопки шапки — маленькие, в теле и подвале — обычные") }
                     footer {
-                        linkAction("Подробнее") { onClick { toast(FeedbackKind.Info, "Подробнее: действие выполнено") } }
+                        linkAction("Показать подробности") { onClick { toast(FeedbackKind.Info, "Подробности показаны") } }
                         mainAction("Сохранить") { onClick { toast(FeedbackKind.Info, "Сохранить: действие выполнено") } }
                     }
                 }

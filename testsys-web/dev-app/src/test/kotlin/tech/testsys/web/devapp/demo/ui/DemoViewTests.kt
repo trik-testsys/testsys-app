@@ -217,7 +217,7 @@ class DemoViewTests : MockSpringVaadinTests() {
             navigate("organizer.competitions")
 
             val toggle = UI.getCurrent()._find<NativeButton> { classes = "ts-table-filters__toggle" }.first()
-            assertEquals("Фильтры", toggle.text)
+            assertEquals("Настроить фильтры", toggle.text)
             assertEquals("false", toggle.element.getAttribute("aria-expanded"))
         }
     }

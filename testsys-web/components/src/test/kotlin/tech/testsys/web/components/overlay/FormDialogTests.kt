@@ -28,6 +28,17 @@ import tech.testsys.web.components.testTexts
 
 class FormDialogTests : MockVaadinTests() {
     @Test
+    fun `should open read-only fields if the edit mode is bound to a false signal before opening`() {
+        val handle = dialog(title = "Тур") { row { textInput("Название", labelSize = 4, size = 8) } }
+        handle.bindEditable(ValueSignal(false))
+
+        handle.open()
+
+        openDialogs()
+        assertTrue(control<TextField>("Название").isReadOnly)
+    }
+
+    @Test
     fun `should bind edit mode before opening and preserve own read-only fields`() {
         val editable = ValueSignal(false)
         val handle = dialog(title = "Тур") {
@@ -37,7 +48,6 @@ class FormDialogTests : MockVaadinTests() {
         handle.bindEditable(editable)
         handle.open()
         openDialogs()
-        assertTrue(control<TextField>("Название").isReadOnly)
 
         editable.set(true)
 

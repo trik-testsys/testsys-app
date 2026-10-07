@@ -219,7 +219,7 @@ class ShowcaseHeaderView(texts: UiTexts, private val environment: Environment) :
                             status.set("Уведомления очищены")
                         }
                     }
-                    action("Обычный тост результата") {
+                    action("Показать обычный тост результата") {
                         onClick {
                             toast(FeedbackKind.Success, title = "Действие выполнено", description = "Обычный тост остаётся справа снизу")
                         }

@@ -81,12 +81,21 @@ class EditableTests : MockVaadinTests() {
     @Nested
     inner class BlockBindEditableTests {
         @Test
+        fun `should make the fields of the block read-only from a false signal`() {
+            lateinit var handle: BlockHandle
+            buildTestPage { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } }
+
+            handle.bindEditable(ValueSignal(false))
+
+            assertTrue(control<TextField>("Логин").isReadOnly)
+        }
+
+        @Test
         fun `should make the fields of the block follow the signal`() {
             lateinit var handle: BlockHandle
             buildTestPage { handle = block { row { textInput("Логин", labelSize = 4, size = 20) } } }
             val signal = ValueSignal(false)
             handle.bindEditable(signal)
-            assertTrue(control<TextField>("Логин").isReadOnly)
 
             signal.set(true)
 
@@ -116,12 +125,21 @@ class EditableTests : MockVaadinTests() {
     @Nested
     inner class FieldBindEditableTests {
         @Test
+        fun `should make the field read-only from a false editable signal`() {
+            lateinit var input: ValueInput<String>
+            buildTestRow { input = textInput("Логин", labelSize = 4, size = 20) }
+
+            input.bindEditable(ValueSignal(false))
+
+            assertTrue(control<TextField>("Логин").isReadOnly)
+        }
+
+        @Test
         fun `should make the field follow the signal`() {
             lateinit var input: ValueInput<String>
             buildTestRow { input = textInput("Логин", labelSize = 4, size = 20) }
             val signal = ValueSignal(false)
             input.bindEditable(signal)
-            assertTrue(control<TextField>("Логин").isReadOnly)
 
             signal.set(true)
 
@@ -130,12 +148,21 @@ class EditableTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should make the field read-only from a true read-only signal`() {
+            lateinit var input: ValueInput<String>
+            buildTestRow { input = textInput("Логин", labelSize = 4, size = 20) }
+
+            input.bindReadOnly(ValueSignal(true))
+
+            assertTrue(control<TextField>("Логин").isReadOnly)
+        }
+
+        @Test
         fun `should make the field follow the read-only signal`() {
             lateinit var input: ValueInput<String>
             buildTestRow { input = textInput("Логин", labelSize = 4, size = 20) }
             val signal = ValueSignal(true)
             input.bindReadOnly(signal)
-            assertTrue(control<TextField>("Логин").isReadOnly)
 
             signal.set(false)
 

@@ -43,23 +43,32 @@ class FieldHandleTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should obscure only the value area and retain Binder writes`() {
+    fun `should obscure only the value area`() {
         lateinit var input: ValueInput<String>
         buildTestRow { input = textInput("Code", labelSize = 4, size = 8, hint = "Hint") { value = "secret" } }
-        val binder = Binder<Draft>()
-        val draft = Draft()
-        binder.forField(input).bind({ bean -> bean.code }, { bean, code -> bean.code = code })
 
         input.isObscured = true
-        binder.writeBean(draft)
 
         assertTrue(input.isObscured)
         assertTrue(input.component.find("ts-field__value").element.hasAttribute("data-ts-obscured"))
         assertFalse(input.component.find("ts-field__label").element.hasAttribute("data-ts-obscured"))
-        assertEquals("secret", draft.code)
         assertEquals("Hint", control<TextField>("Code").helperText)
         assertTrue(input.isVisible)
         assertTrue(input.isEditable)
+    }
+
+    @Test
+    fun `should write an obscured value through Binder`() {
+        lateinit var input: ValueInput<String>
+        buildTestRow { input = textInput("Code", labelSize = 4, size = 8) { value = "secret" } }
+        val binder = Binder<Draft>()
+        val draft = Draft()
+        binder.forField(input).bind({ bean -> bean.code }, { bean, code -> bean.code = code })
+        input.isObscured = true
+
+        binder.writeBean(draft)
+
+        assertEquals("secret", draft.code)
     }
 
     @Test
@@ -96,12 +105,21 @@ class FieldHandleTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should obscure the value while the bound signal is true`() {
+        lateinit var input: ValueInput<String>
+        buildTestRow { input = textInput("Code", labelSize = 4, size = 8) }
+
+        input.bindObscured(ValueSignal(true))
+
+        assertTrue(input.isObscured)
+    }
+
+    @Test
     fun `should follow obscuring signals without changing visibility`() {
         lateinit var input: ValueInput<String>
         buildTestRow { input = textInput("Code", labelSize = 4, size = 8) }
         val source = ValueSignal(true)
         input.bindObscured(source)
-        assertTrue(input.isObscured)
 
         source.set(false)
 

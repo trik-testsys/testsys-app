@@ -36,7 +36,7 @@ html {
 /* Header: Vaadin renders links where the shared markup renders buttons. */
 .ts-header__spacer { flex: 1 1 0; min-width: 0; }
 .ts-header__action { height: 30px; }
-.ts-header__avatar { width: 24px; height: 24px; font-size: 9px; }
+.ts-header__avatar { width: 24px; height: 24px; font-size: var(--fs-micro); }
 a.ts-brand:hover, a.ts-nav__item:hover, a.ts-btn:hover { text-decoration: none; }
 
 /* Block titles: override Lumo's header text color to prevent dark-on-dark. */
@@ -357,7 +357,7 @@ vaadin-dialog[theme~="ts-drawer"]::part(content) { height:100%; border-radius:in
 vaadin-dialog[theme~="ts-drawer"] .ts-dialog { animation:none; width:480px; max-width:100vw; height:100%; max-height:100%; display:flex; flex-direction:column; border-radius:var(--radius-xl); overflow:hidden; }
 vaadin-dialog[theme~="ts-drawer"] .ts-dialog__body { flex:1; overflow:auto; }
 vaadin-dialog[theme~="ts-drawer"] .ts-dialog__foot { border-radius:0; }
-vaadin-tooltip-overlay::part(overlay) { background:var(--ink-900); color:var(--white); font:var(--fw-medium) var(--fs-caption)/18px var(--font-sans); border-radius:var(--radius-sm); padding:6px 10px; max-width:240px; }
+vaadin-tooltip::part(overlay) { background:var(--ink-900); color:var(--white); font:var(--fw-medium) var(--fs-caption)/18px var(--font-sans); border-radius:var(--radius-sm); padding:6px 10px; max-width:240px; }
 
 /* Upload keeps the browser's native transport and file-list accessibility. */
 vaadin-upload.ts-drop { width:100%; box-sizing:border-box; }

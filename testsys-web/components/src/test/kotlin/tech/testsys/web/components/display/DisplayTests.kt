@@ -120,7 +120,7 @@ class DisplayTests : MockVaadinTests() {
     inner class StatCardTests {
         @Test
         fun `should render stat card as a block of the whole slot`() {
-            val page = buildTestPage { row { slot(3) { row { statCard("Решено", "42") } } } }
+            val page = buildTestPage { row { slot(size = 3) { row { statCard(label = "Решено", value = "42") } } } }
 
             val block = page.find("ts-block")
             assertEquals("span 3", block.element.style.get("grid-column"))
@@ -131,7 +131,7 @@ class DisplayTests : MockVaadinTests() {
         @Test
         fun `should colour delta by trend`() {
             val page = buildTestPage {
-                row { slot(3) { row { statCard("Рейтинг", "1 842", delta = "+38", trend = Trend.Up) } } }
+                row { slot(size = 3) { row { statCard(label = "Рейтинг", value = "1 842", delta = "+38", trend = Trend.Up) } } }
             }
 
             assertTrue("ts-stat__delta--up" in page.find("ts-stat__delta").classes())
@@ -140,7 +140,9 @@ class DisplayTests : MockVaadinTests() {
         @Test
         fun `should update stat card value through its handle`() {
             lateinit var card: TextHandle
-            val page = buildTestPage { row { slot(3) { row { card = statCard("Решено", "42") } } } }
+            val page = buildTestPage {
+                row { slot(size = 3) { row { card = statCard(label = "Решено", value = "42") } } }
+            }
 
             card.text = "43"
 
@@ -150,7 +152,7 @@ class DisplayTests : MockVaadinTests() {
         @Test
         fun `should render stat card in a block row without its own block`() {
             lateinit var card: TextHandle
-            val page = buildTestPage { block { row { card = statCard("Решено", "42", size = 6) } } }
+            val page = buildTestPage { block { row { card = statCard(label = "Решено", value = "42", size = 6) } } }
 
             card.text = "43"
 

@@ -44,11 +44,21 @@ internal class DomNamesTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should return the same registration from event data and filter settings`() {
+    fun `should return the same registration from event data settings`() {
         val listener = Div().also { component -> UI.getCurrent().add(component) }.element.addEventListener(DomEvent.HeaderInput) {}
 
-        assertSame(listener, listener.addEventData(DomEventData.DetailQuery))
-        assertSame(listener, listener.setFilter(DomEventFilter.TableSortKey))
+        val result = listener.addEventData(DomEventData.DetailQuery)
+
+        assertSame(listener, result)
+    }
+
+    @Test
+    fun `should return the same registration from filter settings`() {
+        val listener = Div().also { component -> UI.getCurrent().add(component) }.element.addEventListener(DomEvent.HeaderInput) {}
+
+        val result = listener.setFilter(DomEventFilter.TableSortKey)
+
+        assertSame(listener, result)
     }
 
     @Test

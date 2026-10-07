@@ -209,13 +209,13 @@ private fun PageScope.demoHome(context: DemoContext) {
     block("Демонстрация сценариев") {
         row {
             horizontal {
-                action("Вход и регистрация") {
+                action("Открыть вход и регистрацию") {
                     onClick {
                         context.navigate("login")
                     }
                 }
                 DEMO_CABINETS.forEach { cabinet ->
-                    action(demoRoleLabel(cabinet.role)) {
+                    action("Войти как ${demoRoleLabel(cabinet.role)}") {
                         onClick {
                             context.navigate("${cabinet.key}.overview")
                         }

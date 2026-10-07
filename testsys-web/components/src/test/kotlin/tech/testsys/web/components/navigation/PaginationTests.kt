@@ -90,6 +90,13 @@ class PaginationTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should group digits of page numbers by the locale`() {
+            buildPagination(pageCount = 1412, page = 1412)
+
+            assertEquals(listOf("1 412"), activePages())
+        }
+
+        @Test
         fun `should mark the current page only`() {
             buildPagination(pageCount = 5, page = 3)
 

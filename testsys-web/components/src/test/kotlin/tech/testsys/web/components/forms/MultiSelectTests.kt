@@ -12,6 +12,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestRow
 import tech.testsys.web.components.control
@@ -141,17 +143,50 @@ internal class MultiSelectTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should return focus to the trigger only if it stayed in the popup`() {
+    fun `should ask the client to return focus to the trigger with the closed popup`() {
         buildMultiSelect()
         field().open()
+        val popup = _find<Popover>().single()
+        val trigger = field().find("ts-lookup__text")
         pendingJavaScript()
 
         field().close()
 
-        val trigger = field().find("ts-lookup__text")
-        val calls = pendingJavaScript().filter { call -> call.owner == trigger.element.node }
-        assertTrue(calls.isNotEmpty())
-        assertTrue(calls.all { call -> "document.activeElement" in call.invocation.expression })
+        val call = pendingJavaScript().single { call -> call.owner == trigger.element.node }
+        assertTrue("window.testsysPopupFocus.restore(this, \$0)" in call.invocation.expression)
+        assertEquals(popup.element, call.invocation.parameters.first())
+    }
+
+    @ParameterizedTest
+    @EnumSource(Lock::class)
+    fun `should close the popup when the field stops accepting choices`(lock: Lock) {
+        buildMultiSelect()
+        field().open()
+        field().toggle("Анна")
+
+        lock.apply(field())
+
+        assertFalse(_find<Popover>().single().isOpened)
+    }
+
+    @Test
+    fun `should open again from the accepted value after a read-only period`() {
+        buildMultiSelect()
+        field().open()
+        field().toggle("Анна")
+        field().isReadOnly = true
+        field().isReadOnly = false
+
+        field().open()
+
+        assertTrue(_find<Span>().any { count -> count.text == testTexts.lookup.selectedCount(0) })
+        assertEquals(emptySet<String>(), input.value)
+    }
+
+    /** Ways a multi-selection stops accepting user choices. */
+    enum class Lock(val apply: (MultiSelectField<String>) -> Unit) {
+        Disabled({ field -> field.isEnabled = false }),
+        ReadOnly({ field -> field.isReadOnly = true }),
     }
 
     private fun buildMultiSelect(display: MultiSelectDisplay = MultiSelectDisplay.Chips, maxChips: Int = 3) {

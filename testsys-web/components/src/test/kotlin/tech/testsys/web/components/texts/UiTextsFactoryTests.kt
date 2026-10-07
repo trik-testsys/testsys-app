@@ -11,7 +11,7 @@ class UiTextsFactoryTests {
 
     @Test
     internal fun `should localize the filter disclosure and its actions`() {
-        assertEquals("Фильтры", texts.tableFilters.title)
+        assertEquals("Настроить фильтры", texts.tableFilters.title)
         assertEquals("Применить", texts.tableFilters.apply)
         assertEquals("Сбросить", texts.tableFilters.reset)
     }
@@ -80,8 +80,8 @@ class UiTextsFactoryTests {
 
     @Test
     fun `should take pagination texts from the Russian text factory`() {
-        assertEquals("Назад", texts.pagination.previous)
-        assertEquals("Вперёд", texts.pagination.next)
+        assertEquals("Перейти на предыдущую страницу", texts.pagination.previous)
+        assertEquals("Перейти на следующую страницу", texts.pagination.next)
         assertEquals("Страница 1 412", texts.pagination.page(1412))
     }
 

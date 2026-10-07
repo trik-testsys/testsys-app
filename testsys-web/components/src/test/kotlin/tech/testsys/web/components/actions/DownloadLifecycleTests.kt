@@ -179,9 +179,9 @@ class DownloadLifecycleTests : MockVaadinTests() {
             unknownLength(context)
         }
         handle.start()
-
         handle.component.element.removeFromParent()
-        tasks.toList().forEach(Runnable::run)
+
+        runQueuedTasks()
 
         assertEquals(0, preparations)
         assertEquals(DownloadState.Idle, handle.state.peek())
@@ -251,6 +251,9 @@ class DownloadLifecycleTests : MockVaadinTests() {
 
         verify { response.setStatus(410) }
     }
+
+    /** Runs the background tasks queued so far, as the executor would. */
+    private fun runQueuedTasks() = tasks.toList().forEach(Runnable::run)
 
     private fun buildDownload(isIconOnly: Boolean, produce: (DownloadContext) -> DownloadContent): DownloadHandle {
         lateinit var handle: DownloadHandle

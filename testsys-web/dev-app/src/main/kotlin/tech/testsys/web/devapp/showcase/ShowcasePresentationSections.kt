@@ -78,7 +78,7 @@ internal fun PageScope.feedbackSection() {
         row {
             horizontal {
                 FeedbackKind.entries.forEach { kind ->
-                    action("Тост ${kind.name}") {
+                    action("Показать тост ${kind.name}") {
                         onClick { toast(kind = kind, title = "Тост ${kind.name}", description = "Описание тоста") }
                     }
                 }

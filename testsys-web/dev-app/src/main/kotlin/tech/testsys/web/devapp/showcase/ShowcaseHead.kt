@@ -31,7 +31,7 @@ internal fun PageScope.showcaseHead(title: String) {
         badge("dev", Tone.Info)
         meta("Только в профиле dev")
         actions {
-            action("Действие заголовка", IconName.Megaphone) {
+            action("Выполнить действие заголовка", IconName.Megaphone) {
                 onClick { toast(FeedbackKind.Info, "Кнопка в заголовке страницы") }
             }
         }

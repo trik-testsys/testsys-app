@@ -38,7 +38,13 @@ internal fun <C, T> BlockRowScope.addInput(
     control.element.setInput(true)
     // A native label toggles its checkbox on a click and focuses any other control.
     val labelAction = if (control is Checkbox) LabelAction.Click else LabelAction.Focus
-    val parts = placeField(label, labelSize, size, control, labelAction)
+    val parts = placeField(
+        label = label,
+        labelSize = labelSize,
+        size = size,
+        value = control,
+        labelAction = labelAction,
+    )
     val input = ValueInput(
         parts = parts,
         component = control,

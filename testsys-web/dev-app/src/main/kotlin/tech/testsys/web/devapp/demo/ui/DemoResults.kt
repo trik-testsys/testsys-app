@@ -25,7 +25,7 @@ internal fun BlockScope.demoResultMatrix(context: DemoContext, actor: DemoUser, 
         rows = rows,
         gridColumns = maxOf(ResultGrid.CAPACITY, ResultGrid.IDENTITY_SIZE + tasks.size * ResultGrid.RESULT_SIZE),
         columns = {
-            textColumn("Участник", size = ResultGrid.IDENTITY_SIZE.takeIf { tasks.isNotEmpty() }) { it.title }
+            textColumn("Участник", size = ResultGrid.IDENTITY_SIZE.takeIf { tasks.isNotEmpty() }) { row -> row.title }
             if (tasks.isNotEmpty()) {
                 val remainingColumns = gridColumns - ResultGrid.IDENTITY_SIZE
                 val taskSize = remainingColumns / tasks.size
@@ -85,7 +85,7 @@ internal fun PageScope.demoJudge(context: DemoContext, actor: DemoUser, objects:
                 }
             }
             footer {
-                action("К списку решений") {
+                action("Вернуться к списку решений") {
                     onClick { context.navigate("judge.solutions") }
                 }
             }
@@ -97,7 +97,9 @@ internal fun PageScope.demoJudge(context: DemoContext, actor: DemoUser, objects:
 internal fun PageScope.demoObserverResults(context: DemoContext, actor: DemoUser, objects: DemoObjects) {
     val tourKey = "${actor.id}:observer-tour"
     block("Доступные туры") {
-        demoTable(context.table(tourKey), objects.tours.map { it.row() }) { context.select(key = tourKey, id = it.id) }
+        demoTable(context.table(tourKey), objects.tours.map { tour -> tour.row() }) { selected ->
+            context.select(key = tourKey, id = selected.id)
+        }
     }
     val selectedId = context.selection(key = tourKey, fallback = objects.tours.firstOrNull()?.id)
     val tour = objects.tours.firstOrNull { it.id == selectedId } ?: return

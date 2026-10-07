@@ -36,7 +36,7 @@ class PageScopeTests : MockVaadinTests() {
     fun `should stack full-width blocks and rows in order`() {
         val main = buildTestPage {
             block(title = "Профиль") {}
-            row { slot(24) { row { block {} } } }
+            row { slot(size = 24) { row { block {} } } }
         }
 
         assertTrue("ts-block" in main.child(0).classes())
@@ -47,8 +47,8 @@ class PageScopeTests : MockVaadinTests() {
     fun `should span a slot over its size`() {
         val main = buildTestPage {
             row {
-                slot(16) {}
-                slot(8) {}
+                slot(size = 16) {}
+                slot(size = 8) {}
             }
         }
 
@@ -60,7 +60,7 @@ class PageScopeTests : MockVaadinTests() {
 
     @Test
     fun `should accept a row that is not full`() {
-        val main = buildTestPage { row { slot(16) {} } }
+        val main = buildTestPage { row { slot(size = 16) {} } }
 
         assertEquals(1, main.child(0).children.toList().size)
     }
@@ -70,8 +70,8 @@ class PageScopeTests : MockVaadinTests() {
         val error = assertThrows<IllegalStateException> {
             buildTestPage {
                 row {
-                    slot(16) {}
-                    slot(12) {}
+                    slot(size = 16) {}
+                    slot(size = 12) {}
                 }
             }
         }
@@ -81,6 +81,6 @@ class PageScopeTests : MockVaadinTests() {
 
     @Test
     fun `should reject a slot wider than the page`() {
-        assertThrows<IllegalArgumentException> { buildTestPage { row { slot(25) {} } } }
+        assertThrows<IllegalArgumentException> { buildTestPage { row { slot(size = 25) {} } } }
     }
 }

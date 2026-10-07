@@ -14,6 +14,7 @@ import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setRole
+import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
@@ -94,7 +95,7 @@ fun ContentScope.avatarGroup(
         values.take(maxVisible).forEach { value -> ContentScope(root, texts, placement, gridColumns).avatar(value) }
         if (values.size > maxVisible) {
             root.add(
-                Span("+${values.size - maxVisible}").apply {
+                Span("+${formatNumber(values.size - maxVisible, texts)}").apply {
                     addClassNames(CssClass.Avatar, CssClass.AvatarT3)
                     avatarGeometry(placement)
                     element.setRole(ElementRole.Image)

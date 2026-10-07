@@ -22,8 +22,8 @@ class LeaderboardTests : MockVaadinTests() {
             identityLabel = "Participant",
             placeSize = 1,
             identitySize = 4,
-            columns = listOf(LeaderboardColumn("score", "Score", isMetric = true, size = null)),
-            rows = listOf(LeaderboardRow("user", "1", "Name", cells = mapOf("score" to LeaderboardCell("50")))),
+            columns = listOf(LeaderboardColumn(key = "score", label = "Score", isMetric = true, size = null)),
+            rows = listOf(LeaderboardRow(key = "user", place = "1", name = "Name", cells = mapOf("score" to LeaderboardCell("50")))),
         )
         val root = buildTestPage {
             row { slot(size = 8) { row { block { leaderboard(data) } } } }
@@ -43,7 +43,7 @@ class LeaderboardTests : MockVaadinTests() {
             label = "Results",
             placeLabel = "Rank",
             identityLabel = "Participant",
-            columns = listOf(LeaderboardColumn("score", "Score", size = 1)),
+            columns = listOf(LeaderboardColumn(key = "score", label = "Score", size = 1)),
             rows = emptyList(),
             gridColumns = 8,
         )
@@ -203,7 +203,9 @@ class LeaderboardTests : MockVaadinTests() {
     @Test
     fun `should reject repeated column keys`() {
         val error = assertThrows<IllegalArgumentException> {
-            board().copy(columns = listOf(LeaderboardColumn("score", "Score"), LeaderboardColumn("score", "Again")))
+            board().copy(
+                columns = listOf(LeaderboardColumn(key = "score", label = "Score"), LeaderboardColumn(key = "score", label = "Again")),
+            )
         }
 
         assertTrue("[score]" in error.message.orEmpty())
@@ -242,8 +244,10 @@ class LeaderboardTests : MockVaadinTests() {
         label = "Results",
         placeLabel = "Rank",
         identityLabel = "Participant",
-        columns = listOf(LeaderboardColumn("score", "Score")),
-        rows = listOf(LeaderboardRow("user", "1", "Name", cells = mapOf("score" to cell), isHighlighted = isHighlighted)),
+        columns = listOf(LeaderboardColumn(key = "score", label = "Score")),
+        rows = listOf(
+            LeaderboardRow(key = "user", place = "1", name = "Name", cells = mapOf("score" to cell), isHighlighted = isHighlighted),
+        ),
     )
 
     private fun smallBoard(totalSize: Int): LeaderboardData = LeaderboardData(
@@ -252,7 +256,7 @@ class LeaderboardTests : MockVaadinTests() {
         identityLabel = "Name",
         placeSize = 1,
         identitySize = totalSize - 2,
-        columns = listOf(LeaderboardColumn("score", "Score", size = 1)),
+        columns = listOf(LeaderboardColumn(key = "score", label = "Score", size = 1)),
         rows = emptyList(),
     )
 }

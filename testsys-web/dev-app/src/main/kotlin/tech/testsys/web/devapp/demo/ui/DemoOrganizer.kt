@@ -40,8 +40,8 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
         row {
             textInput("Название", labelSize = 4, size = 8) {
                 binder.forField(this).asRequired("Введите название соревнования").bind(
-                    {
-                        it.name
+                    { draft ->
+                        draft.name
                     },
                     { target, value ->
                         target.name = value
@@ -80,11 +80,11 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
             }
             demoTable(
                 context.table("${actor.id}:competitions"),
-                competitions.map {
-                    DemoRow(id = it.id, title = it.name)
+                competitions.map { item ->
+                    DemoRow(id = item.id, title = item.name)
                 },
-            ) {
-                context.select(key = selectionKey, id = it.id)
+            ) { selected ->
+                context.select(key = selectionKey, id = selected.id)
             }
         }
     }
@@ -114,14 +114,14 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                     value = 3
                     binder.forField(this).asRequired("Укажите количество")
                         .withValidator(
-                            {
-                                it != null && it in 1..DEMO_PARTICIPANT_LIMIT
+                            { count ->
+                                count != null && count in 1..DEMO_PARTICIPANT_LIMIT
                             },
                             "Укажите целое количество от 1 до 100",
                         )
                         .bind(
-                            {
-                                it.count
+                            { draft ->
+                                draft.count
                             },
                             { target, value ->
                                 target.count = value
@@ -165,8 +165,8 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
             }
             demoTable(
                 context.table("${actor.id}:${competition.id}:participants"),
-                participants.map {
-                    DemoRow(id = it.id, title = it.alias, detail = it.accessCode)
+                participants.map { participant ->
+                    DemoRow(id = participant.id, title = participant.alias, detail = participant.accessCode)
                 },
             )
         }
@@ -182,8 +182,8 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
                 select("Тур", items = available, itemLabel = DemoTour::name, labelSize = 4, size = 8) {
                     binder.forField(this).asRequired("Выберите тур").bind(
                         { draft ->
-                            available.firstOrNull {
-                                it.id == draft.tourId
+                            available.firstOrNull { tour ->
+                                tour.id == draft.tourId
                             }
                         },
                         { target, value ->
@@ -232,11 +232,11 @@ internal fun PageScope.demoOrganizer(context: DemoContext, actor: DemoUser, sect
             }
             demoTable(
                 context.table("${actor.id}:${competition.id}:tours"),
-                tours.map {
-                    it.row()
+                tours.map { tour ->
+                    tour.row()
                 },
-            ) {
-                context.select(key = tourKey, id = it.id)
+            ) { selected ->
+                context.select(key = tourKey, id = selected.id)
             }
         }
         val tour = tours.firstOrNull {

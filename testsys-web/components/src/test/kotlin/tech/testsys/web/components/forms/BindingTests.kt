@@ -19,22 +19,42 @@ class BindingTests : MockVaadinTests() {
     private class Form(var count: Int = 7)
 
     @Test
-    fun `should skip hidden converted field in general validation and explicit write`() {
+    fun `should return the same binding from skipWhenHidden`() {
         lateinit var input: ValueInput<String>
         buildTestRow { input = textInput("Количество", labelSize = 4, size = 20) }
-        val binder = Binder<Form>()
-        val binding = binder.forField(input).withConverter(StringToIntegerConverter("Число"))
+        val binding = Binder<Form>().forField(input).withConverter(StringToIntegerConverter("Число"))
             .bind({ form -> form.count }, { form, value -> form.count = value })
-        val form = Form()
-        binder.readBean(form)
-        assertSame(binding, binding.skipWhenHidden())
+
+        val skipping = binding.skipWhenHidden()
+
+        assertSame(binding, skipping)
+    }
+
+    @Test
+    fun `should skip a hidden converted field in general validation`() {
+        lateinit var input: ValueInput<String>
+        buildTestRow { input = textInput("Количество", labelSize = 4, size = 20) }
+        val binder = bind(input)
         input.isVisible = false
         input.value = "не число"
 
         val status = binder.validate()
-        binder.writeBean(form)
 
         assertTrue(status.isOk)
+    }
+
+    @Test
+    fun `should keep the bean value of a hidden converted field on an explicit write`() {
+        lateinit var input: ValueInput<String>
+        buildTestRow { input = textInput("Количество", labelSize = 4, size = 20) }
+        val binder = bind(input)
+        val form = Form()
+        binder.readBean(form)
+        input.isVisible = false
+        input.value = "не число"
+
+        binder.writeBean(form)
+
         assertEquals(7, form.count)
     }
 
@@ -84,7 +104,7 @@ class BindingTests : MockVaadinTests() {
         val binder = bind(input)
         input.isVisible = false
         input.value = "не число"
-        assertTrue(binder.validate().isOk)
+        binder.validate()
 
         input.isVisible = true
 

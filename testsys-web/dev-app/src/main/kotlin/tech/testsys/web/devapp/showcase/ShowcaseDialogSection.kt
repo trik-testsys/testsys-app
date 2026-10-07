@@ -54,7 +54,7 @@ internal fun PageScope.dialogSection() {
                         ) { toast(FeedbackKind.Success, "Тур удалён") }
                     }
                 }
-                mainAction("Новый тур") { onClick { newTour.open() } }
+                mainAction("Создать тур") { onClick { newTour.open() } }
             }
         }
     }

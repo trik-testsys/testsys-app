@@ -23,8 +23,9 @@ import tech.testsys.web.components.core.pagerArrow
 import tech.testsys.web.components.core.setAriaCurrent
 import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setType
+import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.texts.PaginationTexts
+import tech.testsys.web.components.texts.UiTexts
 
 /** The most pages shown without gaps. */
 private const val MAX_PAGES_WITHOUT_GAPS = 7
@@ -46,12 +47,12 @@ private const val EDGE_REACH = 4
  */
 class PaginationHandle internal constructor(
     private val root: Div,
-    private val texts: PaginationTexts,
+    private val texts: UiTexts,
     pageCount: Int,
     page: Int,
 ) : ElementHandle(root) {
-    private val previous = pagerArrow(IconName.ChevronLeft, texts.previous)
-    private val next = pagerArrow(IconName.ChevronRight, texts.next)
+    private val previous = pagerArrow(IconName.ChevronLeft, texts.pagination.previous)
+    private val next = pagerArrow(IconName.ChevronRight, texts.pagination.next)
     private var count = pageCount
     private var items: List<Component> = emptyList()
     private var listener: (Int) -> Unit = {}
@@ -131,10 +132,10 @@ class PaginationHandle internal constructor(
     private fun activeButton(): NativeButton =
         items.filterIsInstance<NativeButton>().single { button -> button.hasClassName(CssClass.PagerBtnActive) }
 
-    private fun pageButton(target: Int, shown: Int): NativeButton = NativeButton(target.toString()).apply {
+    private fun pageButton(target: Int, shown: Int): NativeButton = NativeButton(formatNumber(target, texts)).apply {
         addClassName(CssClass.PagerBtn)
         element.setType(ElementType.Button)
-        element.setAttribute(HtmlAttribute.AriaLabel, texts.page(target))
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.pagination.page(target))
         if (target == shown) {
             addClassName(CssClass.PagerBtnActive)
             element.setAriaCurrent(AriaCurrent.Page)
@@ -151,7 +152,7 @@ class PaginationHandle internal constructor(
  * @since %CURRENT_VERSION%
  */
 fun ContentScope.pagination(pageCount: Int, page: Int = 1, configure: PaginationHandle.() -> Unit = {}): PaginationHandle {
-    val handle = PaginationHandle(Div(), texts.pagination, pageCount = pageCount, page = page)
+    val handle = PaginationHandle(Div(), texts, pageCount = pageCount, page = page)
     add(handle.component)
     return handle.apply(configure)
 }

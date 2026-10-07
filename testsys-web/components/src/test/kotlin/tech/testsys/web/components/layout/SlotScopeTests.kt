@@ -13,7 +13,7 @@ import tech.testsys.web.components.findAll
 class SlotScopeTests : MockVaadinTests() {
     @Test
     fun `should size a block to the whole slot by default`() {
-        val main = buildTestPage { row { slot(16) { row { block {} } } } }
+        val main = buildTestPage { row { slot(size = 16) { row { block {} } } } }
 
         val slotRow = main.child(0).child(0).child(0)
         assertTrue("ts-slot__row" in slotRow.classes())
@@ -24,10 +24,10 @@ class SlotScopeTests : MockVaadinTests() {
     fun `should place blocks of a slot row side by side`() {
         val main = buildTestPage {
             row {
-                slot(16) {
+                slot(size = 16) {
                     row {
-                        block(8) {}
-                        block(8) {}
+                        block(size = 8) {}
+                        block(size = 8) {}
                     }
                 }
             }
@@ -43,10 +43,10 @@ class SlotScopeTests : MockVaadinTests() {
         val error = assertThrows<IllegalStateException> {
             buildTestPage {
                 row {
-                    slot(16) {
+                    slot(size = 16) {
                         row {
-                            block(8) {}
-                            block(12) {}
+                            block(size = 8) {}
+                            block(size = 12) {}
                         }
                     }
                 }
@@ -61,8 +61,8 @@ class SlotScopeTests : MockVaadinTests() {
         assertThrows<IllegalStateException> {
             buildTestPage {
                 row {
-                    slot(12) { row { highlightBlock {} } }
-                    slot(12) { row { highlightBlock {} } }
+                    slot(size = 12) { row { highlightBlock {} } }
+                    slot(size = 12) { row { highlightBlock {} } }
                 }
             }
         }

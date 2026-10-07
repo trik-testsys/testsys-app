@@ -86,7 +86,7 @@ class ShowcaseViewTests {
         @ParameterizedTest
         @EnumSource(FeedbackKind::class)
         fun `should show a toast action of every feedback kind`(kind: FeedbackKind) {
-            assertTrue(_find<Button>().any { button -> button.text == "Тост ${kind.name}" })
+            assertTrue(_find<Button>().any { button -> button.text == "Показать тост ${kind.name}" })
         }
 
         @ParameterizedTest
@@ -195,7 +195,7 @@ class ShowcaseViewTests {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = ["Подтвердить", "Удалить тур", "Удалить с вводом названия", "Новый тур"])
+        @ValueSource(strings = ["Подтвердить", "Удалить тур", "Удалить с вводом названия", "Создать тур"])
         fun `should open a dialog from the dialog action`(text: String) {
             _get<Button> { this.text = text }._click()
 
@@ -205,7 +205,7 @@ class ShowcaseViewTests {
 
         @Test
         fun `should keep the new tour dialog open if the tour has no name`() {
-            _get<Button> { text = "Новый тур" }._click()
+            _get<Button> { text = "Создать тур" }._click()
             MockVaadin.clientRoundtrip()
 
             _get<Button> { text = "Создать" }._click()
@@ -300,7 +300,7 @@ class ShowcaseViewTests {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = ["Загрузить снова", "Новая посылка через 2 с"])
+        @ValueSource(strings = ["Загрузить снова", "Добавить посылку через 2 с"])
         fun `should show a live updates action`(text: String) {
             assertTrue(_find<Button>().any { button -> button.text == text })
         }

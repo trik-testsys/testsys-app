@@ -4,6 +4,7 @@ package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.checkbox.Checkbox
 import com.vaadin.flow.component.customfield.CustomField
+import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
@@ -29,6 +30,7 @@ import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setReadOnly
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
+import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.texts.UiTexts
@@ -56,6 +58,7 @@ fun <T : Any> BlockRowScope.multiSelect(
     return addInput(label, labelSize, size, field, hint, configure)
 }
 
+@JsModule(POPUP_FOCUS_MODULE)
 internal class MultiSelectField<T : Any>(
     private val texts: UiTexts,
     label: String,
@@ -106,7 +109,8 @@ internal class MultiSelectField<T : Any>(
         trigger.addClickListener { if (popup.isOpened) close() else open() }
         search.addValueChangeListener { renderDraft() }
         require(maxChips > 0) { "MultiSelect max chips must be positive, got $maxChips" }
-        require(items.distinct().size == items.size) { "MultiSelect '$label' items must be unique" }
+        val duplicates = items.groupBy { item -> item }.filterValues { same -> same.size > 1 }.keys
+        require(duplicates.isEmpty()) { "MultiSelect '$label' items must be unique, repeated: $duplicates" }
         val foot = Div(count).apply { addClassName(CssClass.PopoverFoot) }
         foot.add(
             NativeButton(texts.lookup.reset).apply {
@@ -232,7 +236,7 @@ internal class MultiSelectField<T : Any>(
             chips.add(counter)
         }
         if (display == MultiSelectDisplay.Chips && selected.size > maxChips) {
-            val more = Span("+${selected.size - maxChips}").apply {
+            val more = Span("+${formatNumber(selected.size - maxChips, texts)}").apply {
                 addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue)
                 element.setAttribute(HtmlAttribute.AriaLabel, texts.components.more(selected.size - maxChips))
             }

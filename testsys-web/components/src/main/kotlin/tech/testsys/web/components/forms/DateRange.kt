@@ -4,6 +4,7 @@ package tech.testsys.web.components.forms
 
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.datepicker.DatePicker
+import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
@@ -48,6 +49,7 @@ import java.util.UUID
 data class DateRange(val from: LocalDate? = null, val to: LocalDate? = null)
 
 /** Keeps typed boundaries and their validators while one canonical React calendar chooses the range. */
+@JsModule(POPUP_FOCUS_MODULE)
 internal class DateRangeField(
     private val start: DatePicker,
     private val end: DatePicker,

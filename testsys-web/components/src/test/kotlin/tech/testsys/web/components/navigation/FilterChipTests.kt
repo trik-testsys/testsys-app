@@ -49,7 +49,7 @@ class FilterChipTests : MockVaadinTests() {
             val svg = chip().find("ts-icon").element.getProperty("innerHTML")
             assertTrue(svg.contains("""testsys-ui/icons.svg#check"""))
             assertTrue(svg.contains("""width="12""""))
-            assertTrue(svg.contains("""stroke-width="3""""))
+            assertTrue(svg.contains("""stroke-width="2""""))
         }
 
         @Test

@@ -3,8 +3,11 @@ package tech.testsys.web.components
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class TestSysThemeTests {
     @Test
@@ -35,6 +38,43 @@ class TestSysThemeTests {
 
         assertEquals("0 0 0 3px var(--accent-ring)", rule(components, ".ts-header__search:focus-within")["box-shadow"])
         assertEquals("0 0 0 3px var(--accent-ring)", rule(components, ".ts-sort-handle:focus-visible")["box-shadow"])
+    }
+
+    @Test
+    fun `should draw the focus ring outside a footer link and inside a scrolled header item`() {
+        val components = text("testsys-ui/tokens/components.css")
+
+        assertEquals("0 0 0 3px var(--accent-ring)", rule(components, ".ts-footer__link:focus-visible")["box-shadow"])
+        assertEquals("inset 0 0 0 4px var(--accent-ring)", rule(components, ".ts-nav__item:focus-visible")["box-shadow"])
+    }
+
+    @Test
+    fun `should not replace the focus ring with a thick outline`() {
+        val components = text("testsys-ui/tokens/components.css")
+
+        assertFalse(components.contains("outline:2px"))
+    }
+
+    @Test
+    fun `should draw the spinner without transparency`() {
+        val components = text("testsys-ui/tokens/components.css")
+
+        assertNull(rule(components, ".ts-spinner")["opacity"])
+    }
+
+    @Test
+    fun `should set header avatar initials in the micro size`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+
+        assertEquals("var(--fs-micro)", rule(overrides, ".ts-header__avatar")["font-size"])
+    }
+
+    @Test
+    fun `should style tooltips through the overlay part of the tooltip`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+
+        assertEquals("var(--ink-900)", rule(overrides, "vaadin-tooltip::part(overlay)")["background"])
+        assertFalse(overrides.contains("vaadin-tooltip-overlay"))
     }
 
     @Test
@@ -86,16 +126,26 @@ class TestSysThemeTests {
     }
 
     @Test
-    fun `should share editor geometry and retain opaque disabled controls`() {
-        val components = resource("testsys-ui/tokens/components.css")!!.readText()
-        val overrides = resource(TestSysTheme.VAADIN_OVERRIDES)!!.readText()
-        val box = rule(components, ".ts-code")
-        assertTrue(box.getValue("--ts-code-height").contains("--ts-code-min-lines"))
+    fun `should share editor geometry between the line numbers and the text`() {
+        val components = text("testsys-ui/tokens/components.css")
+
+        assertTrue(rule(components, ".ts-code").getValue("--ts-code-height").contains("--ts-code-min-lines"))
         assertCodeGeometry(components, ".ts-code__lines")
         assertCodeGeometry(components, ".ts-code__area")
-        assertOpaqueDisabled(overrides, "vaadin-custom-field[disabled] .ts-code")
-        assertOpaqueDisabled(overrides, "vaadin-radio-group.ts-seg[disabled]::part(group-field)")
-        assertOpaqueDisabled(overrides, "vaadin-switch[disabled]::part(switch)")
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+        strings = [
+            "vaadin-custom-field[disabled] .ts-code",
+            "vaadin-radio-group.ts-seg[disabled]::part(group-field)",
+            "vaadin-switch[disabled]::part(switch)",
+        ],
+    )
+    fun `should retain opaque disabled controls`(selector: String) {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+
+        assertOpaqueDisabled(overrides, selector)
     }
 
     @Test

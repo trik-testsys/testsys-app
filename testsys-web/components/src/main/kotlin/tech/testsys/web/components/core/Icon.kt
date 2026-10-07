@@ -23,9 +23,6 @@ internal const val ICON_SIZE_TINY: Int = 12
 /** Default stroke width of an icon on its 24×24 grid. */
 internal const val ICON_STROKE: Int = 2
 
-/** Stroke width of the bold check mark of a filter chip. */
-internal const val ICON_STROKE_BOLD: Int = 3
-
 /** Builds the inline SVG of [name] drawn with [strokeWidth]; the icon inherits `currentColor`. */
 internal fun svgIcon(name: IconName, size: Int = ICON_SIZE, strokeWidth: Int = ICON_STROKE): Svg = Svg(
     """<svg xmlns="http://www.w3.org/2000/svg" width="$size" height="$size" viewBox="0 0 24 24" fill="none" """ +

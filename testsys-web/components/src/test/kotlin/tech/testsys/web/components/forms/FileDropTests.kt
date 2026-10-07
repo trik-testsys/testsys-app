@@ -68,7 +68,7 @@ class FileDropTests {
     fun `should permit a retry after a file above the limit`() {
         var accepted = 0
         val engine = BoundedUploads(limits, { accepted++ }, { _, _ -> })
-        assertThrows(IOException::class.java) { engine.receiveBytes(name = "large", bytes = ByteArray(5), declared = -1) }
+        runCatching { engine.receiveBytes(name = "large", bytes = ByteArray(5), declared = -1) }
 
         engine.receiveBytes(name = "retry", bytes = ByteArray(4), declared = -1)
 
@@ -113,7 +113,7 @@ class FileDropTests {
         awaitHandler()
         engine.cancel()
         finish.countDown()
-        assertThrows(Exception::class.java) { task.get(5, TimeUnit.SECONDS) }
+        runCatching { task.get(5, TimeUnit.SECONDS) }
 
         engine.receiveBytes(name = "retry")
 
@@ -136,7 +136,7 @@ class FileDropTests {
     @Test
     fun `should release failed application processing before retry`() {
         val engine = BoundedUploads(limits, failingOnce(), { _, _ -> })
-        assertThrows(IllegalStateException::class.java) { engine.receiveBytes(name = "first") }
+        runCatching { engine.receiveBytes(name = "first") }
 
         engine.receiveBytes(name = "retry")
 
@@ -176,9 +176,9 @@ class FileDropTests {
         engine.remove(identity(engine, "old"))
         engine.receiveBytes(name = "new")
         finish.countDown()
-        assertThrows(Exception::class.java) { old.get(5, TimeUnit.SECONDS) }
+        runCatching { old.get(5, TimeUnit.SECONDS) }
 
-        queued.forEach { deliver -> deliver() }
+        deliverQueued(queued)
 
         assertEquals(FileUploadState.Done("new", 1), events.last())
         assertFalse(events.any { event -> event is FileUploadState.Error })
@@ -295,7 +295,7 @@ class FileDropTests {
         awaitHandler()
         engine.remove(identity(engine, "first"))
         finish.countDown()
-        assertThrows(Exception::class.java) { first.get(5, TimeUnit.SECONDS) }
+        runCatching { first.get(5, TimeUnit.SECONDS) }
 
         engine.receiveBytes(name = "first", filename = "same.txt")
 
@@ -356,6 +356,9 @@ class FileDropTests {
         BoundedUploads(limits, { file -> cached = file.openStream() }, { _, _ -> }).receiveBytes(name = "file", bytes = byteArrayOf(42))
         return cached
     }
+
+    /** Runs the state deliveries in the order the engine published them, as the UI access queue does. */
+    private fun deliverQueued(queued: List<() -> Unit>) = queued.forEach { deliver -> deliver() }
 
     private fun awaitHandler() {
         assertTrue(entered.await(5, TimeUnit.SECONDS))

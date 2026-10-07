@@ -53,9 +53,9 @@ class ActionTests : MockVaadinTests() {
     inner class SizeTests {
         @Test
         fun `should render actions in the block head small`() {
-            buildTestPage { block(title = "Задачи") { actions { action("Фильтр") } } }
+            buildTestPage { block(title = "Задачи") { actions { action("Отфильтровать") } } }
 
-            assertEquals("sm", _get<Button> { text = "Фильтр" }.element.getAttribute("data-ts-size"))
+            assertEquals("sm", _get<Button> { text = "Отфильтровать" }.element.getAttribute("data-ts-size"))
         }
 
         @Test

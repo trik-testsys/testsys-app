@@ -43,7 +43,7 @@ internal val testTexts = UiTexts(
     brand = "TestSys",
     signIn = "Войти",
     footer = FooterTexts(year = { year -> year.toString() }, links = "Ссылки подвала"),
-    tableFilters = TableFiltersTexts(title = "Фильтры", apply = "Применить", reset = "Сбросить"),
+    tableFilters = TableFiltersTexts(title = "Настроить фильтры", apply = "Применить", reset = "Сбросить"),
     calendar = CalendarTexts(
         monthNames = listOf(
             "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
@@ -70,7 +70,11 @@ internal val testTexts = UiTexts(
         selectAll = "Отметить всё на странице",
         selectRow = "Отметить строку",
     ),
-    pagination = PaginationTexts(previous = "Назад", next = "Вперёд", page = { page -> "Стр. $page" }),
+    pagination = PaginationTexts(
+        previous = "Перейти на предыдущую страницу",
+        next = "Перейти на следующую страницу",
+        page = { page -> "Стр. $page" },
+    ),
     load = LoadTexts(failed = "Сбой загрузки", failedHint = "Повторите позже", retry = "Ещё раз"),
     dialog = DialogTexts(cancel = "Отказаться", close = "Закрыть", typeToConfirm = { name -> "Введите $name" }),
     lookup = LookupTexts(
@@ -96,8 +100,8 @@ internal val testTexts = UiTexts(
     ),
     components = ComponentTexts(
         selectAll = "Выбрать все",
-        previousMonth = "Предыдущий месяц",
-        nextMonth = "Следующий месяц",
+        previousMonth = "Показать предыдущий месяц",
+        nextMonth = "Показать следующий месяц",
         calendar = "Открыть календарь",
         drag = "Переместить: пробел, затем стрелки; Enter применяет, Escape отменяет",
         upload = "Выбрать файлы",

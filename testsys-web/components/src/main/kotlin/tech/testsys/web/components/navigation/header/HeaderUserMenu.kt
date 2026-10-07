@@ -35,8 +35,9 @@ import tech.testsys.web.components.texts.HeaderTexts
 data class HeaderUserMenu(val items: List<HeaderUserMenuItem>) {
     init {
         require(items.isNotEmpty()) { "Header user menu must have at least one item" }
-        require(items.dropWhile { item -> !item.isDestructive }.all { item -> item.isDestructive }) {
-            "Header user menu destructive items must come last"
+        val misplaced = items.dropWhile { item -> !item.isDestructive }.firstOrNull { item -> !item.isDestructive }
+        require(misplaced == null) {
+            "Header user menu item '${misplaced?.label}' follows a destructive item; destructive items come last"
         }
     }
 }

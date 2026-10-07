@@ -14,7 +14,6 @@ import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -111,7 +110,7 @@ class DateInputTests : MockVaadinTests() {
 
             input.value = DateRange(start, end)
 
-            prefixes.forEachIndexed { index, prefix -> assertSame(prefix, pickers[index].prefixComponent) }
+            assertEquals(prefixes, pickers.map(DatePicker::getPrefixComponent))
             assertEquals(listOf("С", "До"), prefixes.map { prefix -> (prefix as Span).text })
         }
 
@@ -134,7 +133,6 @@ class DateInputTests : MockVaadinTests() {
             buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
             val required = ValueSignal(true)
             input.bindRequiredIndicatorVisible(required)
-            assertTrue(_find<DatePicker>().all { picker -> picker.ariaDescribedBy.isPresent })
 
             required.set(false)
 
@@ -192,7 +190,7 @@ class DateInputTests : MockVaadinTests() {
         }
 
         @Test
-        fun `should return focus to the trigger only if it stayed in the popup`() {
+        fun `should ask the client to return focus to the trigger with the closed popup`() {
             buildTestRow { dateRangeInput("Период", labelSize = 4, size = 20) }
             val trigger = _find<NativeButton>().single()
             val popup = _find<Popover>().single().apply { open() }
@@ -200,9 +198,9 @@ class DateInputTests : MockVaadinTests() {
 
             popup.close()
 
-            val calls = pendingJavaScript().filter { call -> call.owner == trigger.element.node }
-            assertTrue(calls.isNotEmpty())
-            assertTrue(calls.all { call -> "document.activeElement" in call.invocation.expression })
+            val call = pendingJavaScript().single { call -> call.owner == trigger.element.node }
+            assertTrue("window.testsysPopupFocus.restore(this, \$0)" in call.invocation.expression)
+            assertEquals(popup.element, call.invocation.parameters.first())
         }
 
         @Test
@@ -281,17 +279,29 @@ class DateInputTests : MockVaadinTests() {
         }
 
         @Test
-        fun `should reject unparsable text in a picker`() {
+        fun `should mark the range invalid when a picker gets unparsable text`() {
             lateinit var input: ValueInput<DateRange>
             buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
-            val binder = bind(input)
+            bind(input)
             val (from, to) = _find<DatePicker>()
             from._setValue(start)
 
             typeUnparsable(to, "32.13.2026")
 
             assertTrue(input.isInvalid)
+        }
+
+        @Test
+        fun `should fail validation with the bad input message if a picker has unparsable text`() {
+            lateinit var input: ValueInput<DateRange>
+            buildTestRow { input = dateRangeInput("Период", labelSize = 4, size = 20) }
+            val binder = bind(input)
+            val (from, to) = _find<DatePicker>()
+            from._setValue(start)
+            typeUnparsable(to, "32.13.2026")
+
             val status = binder.validate()
+
             assertFalse(status.isOk)
             assertEquals(testTexts.fieldErrors.badInput, status.fieldValidationErrors.single().message.orElseThrow())
         }

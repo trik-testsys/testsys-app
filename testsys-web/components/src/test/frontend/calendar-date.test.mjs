@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {calendarIso, civilDate} from '../../main/resources/META-INF/frontend/testsys-ui/calendar-date.ts';
+import {calendarIso, civilDate, inCalendarRange, pickCalendarDate} from '../../main/resources/META-INF/frontend/testsys-ui/calendar-date.ts';
 
 test('civil years below 100 preserve the selected year', () => {
   assert.equal(civilDate(99, 0, 1).getUTCFullYear(), 99);
@@ -20,17 +20,30 @@ test('ISO boundaries retain signed years and literal calendar months', () => {
   assert.equal(calendarIso(2026, 9, 2), '2026-10-02');
 });
 
-const behavior = await import('../../main/resources/META-INF/frontend/testsys-ui/calendar-date.ts');
-test('signed civil ranges complete and highlight chronologically', () => {
-  for (const [start, day, end] of [
-    ['-0002-12-30', '-0002-12-31', '-0001-01-01'],
-    ['9999-12-30', '9999-12-31', '+10000-01-01'],
-    ['2026-10-01', '2026-10-02', '2026-10-03'],
-  ]) {
-    assert.deepEqual(behavior.pickCalendarDate(start, null, end), {start, end});
-    assert.equal(behavior.inCalendarRange(day, start, end), true);
-    assert.equal(behavior.inCalendarRange(start, start, end), false);
-    assert.deepEqual(behavior.pickCalendarDate(end, null, start), {start, end:null});
-    assert.deepEqual(behavior.pickCalendarDate(start, end, day), {start:day, end:null});
-  }
-});
+const signedRanges = [
+  ['-0002-12-30', '-0002-12-31', '-0001-01-01'],
+  ['9999-12-30', '9999-12-31', '+10000-01-01'],
+  ['2026-10-01', '2026-10-02', '2026-10-03'],
+];
+
+for (const [start, day, end] of signedRanges) {
+  test(`a later pick completes the range ${start}..${end}`, () => {
+    assert.deepEqual(pickCalendarDate(start, null, end), {start, end});
+  });
+
+  test(`a day inside ${start}..${end} is highlighted`, () => {
+    assert.equal(inCalendarRange(day, start, end), true);
+  });
+
+  test(`the start of ${start}..${end} is not highlighted as inside`, () => {
+    assert.equal(inCalendarRange(start, start, end), false);
+  });
+
+  test(`an earlier pick restarts the range ${start}..${end}`, () => {
+    assert.deepEqual(pickCalendarDate(end, null, start), {start, end: null});
+  });
+
+  test(`a pick after the complete range ${start}..${end} starts a new one`, () => {
+    assert.deepEqual(pickCalendarDate(start, end, day), {start: day, end: null});
+  });
+}

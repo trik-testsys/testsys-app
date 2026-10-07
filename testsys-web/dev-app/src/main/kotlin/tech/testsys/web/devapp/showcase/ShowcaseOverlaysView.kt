@@ -37,9 +37,9 @@ class ShowcaseOverlaysView(texts: UiTexts, private val environment: Environment)
             block(title = "Drawer") {
                 val editor = drawer(title = "Параметры", subtitle = "Значения сохраняются между открытиями") {
                     row { textInput("Название", labelSize = LABEL_COLUMNS, size = VALUE_COLUMNS) { value = "Сохранённое значение" } }
-                    row { vertical { popover("Вложенный попап") { text("Попап внутри Drawer") } } }
+                    row { vertical { popover("Открыть вложенный попап") { text("Попап внутри Drawer") } } }
                     footer { handle ->
-                        action("Готово") {
+                        action("Сохранить") {
                             onClick {
                                 toast(FeedbackKind.Success, "Значения Drawer сохранены")
                                 handle.close()
@@ -55,7 +55,7 @@ class ShowcaseOverlaysView(texts: UiTexts, private val environment: Environment)
                 row {
                     horizontal {
                         popover("Открыть Popover") { text("Закрывается по Escape и клику вне. Фон остаётся доступен.") }
-                        action("Действие за попапом") {
+                        action("Выполнить действие за попапом") {
                             onClick {
                                 clicks++
                                 result.text = "Действие выполнено: $clicks"
@@ -69,12 +69,12 @@ class ShowcaseOverlaysView(texts: UiTexts, private val environment: Environment)
                 row {
                     horizontal {
                         TooltipPlacement.entries.forEach { side ->
-                            action("Подсказка $side").tooltip("Обычный текст: $side", side)
+                            action("Показать подсказку $side").tooltip("Обычный текст: $side", side)
                         }
                     }
                 }
                 val nested = dialog("Диалог с попапом") {
-                    row { vertical { popover("Попап в диалоге") { text("Вложенность и возврат фокуса") } } }
+                    row { vertical { popover("Открыть попап в диалоге") { text("Вложенность и возврат фокуса") } } }
                     footer { handle -> action("Закрыть") { onClick { handle.close() } } }
                 }
                 row { horizontal { action("Проверить вложенность") { onClick { nested.open() } } } }

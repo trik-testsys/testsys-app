@@ -163,13 +163,22 @@ class FieldTests : MockVaadinTests() {
     @Nested
     inner class BindEnabledTests {
         @Test
+        fun `should disable and dim the field from a false signal`() {
+            lateinit var input: ValueInput<String>
+            val field = buildTestRow { input = textInput("Логин", labelSize = 4, size = 8) }.child(0)
+
+            input.bindEnabled(ValueSignal(false))
+
+            assertFalse(input.isEnabled)
+            assertTrue("ts-field--disabled" in field.classes())
+        }
+
+        @Test
         fun `should enable and dim the field after the signal`() {
             lateinit var input: ValueInput<String>
             val field = buildTestRow { input = textInput("Логин", labelSize = 4, size = 8) }.child(0)
             val signal = ValueSignal(false)
             input.bindEnabled(signal)
-            assertFalse(input.isEnabled)
-            assertTrue("ts-field--disabled" in field.classes())
 
             signal.set(true)
 
@@ -200,12 +209,21 @@ class FieldTests : MockVaadinTests() {
     @Nested
     inner class BindRequiredIndicatorVisibleTests {
         @Test
-        fun `should show the indicator and the required mark after the signal`() {
+        fun `should show the required mark from a true signal`() {
+            lateinit var input: ValueInput<String>
+            val field = buildTestRow { input = textInput("Логин", labelSize = 4, size = 8) }.child(0)
+
+            input.bindRequiredIndicatorVisible(ValueSignal(true))
+
+            assertTrue(field.find("ts-field__required").isVisible)
+        }
+
+        @Test
+        fun `should hide the indicator and the required mark after the signal`() {
             lateinit var input: ValueInput<String>
             val field = buildTestRow { input = textInput("Логин", labelSize = 4, size = 8) }.child(0)
             val signal = ValueSignal(true)
             input.bindRequiredIndicatorVisible(signal)
-            assertTrue(field.find("ts-field__required").isVisible)
 
             signal.set(false)
 

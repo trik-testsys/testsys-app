@@ -20,6 +20,7 @@ import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setFlagged
 import tech.testsys.web.components.core.setType
+import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
@@ -41,10 +42,10 @@ data class QuestionNavData(
     val unavailable: Set<Int> = emptySet(),
 ) {
     init {
-        require(total > 0 && current in 1..total) { "Question current $current must belong to 1..$total" }
-        require(
-            (answered + flagged + unavailable).all { number -> number in 1..total },
-        ) { "Question status numbers must belong to 1..$total" }
+        require(total > 0) { "Question total must be positive, got $total" }
+        require(current in 1..total) { "Question current must belong to 1..$total, got $current" }
+        val outside = (answered + flagged + unavailable).filterNot { number -> number in 1..total }.sorted()
+        require(outside.isEmpty()) { "Question status numbers must belong to 1..$total, got $outside" }
     }
 }
 
@@ -64,7 +65,7 @@ fun ContentScope.questionNav(
         root.removeAll()
         for (number in 1..value.total) {
             root.add(
-                NativeButton(number.toString()).apply {
+                NativeButton(formatNumber(number, texts)).apply {
                     element.setType(ElementType.Button)
                     element.setAttribute(
                         HtmlAttribute.AriaLabel,

@@ -53,7 +53,9 @@ class ShowcasePagesTests {
             UI.getCurrent().navigate("dev/showcase/states")
             val table = wideMatrix()
             val block = table.parent.orElseThrow().parent.orElseThrow().parent.orElseThrow()
-            val next = block._find<NativeButton>().single { button -> button.element.getAttribute("aria-label") == "Вперёд" }
+            val next = block._find<NativeButton>().single { button ->
+                button.element.getAttribute("aria-label") == "Перейти на следующую страницу"
+            }
 
             next._click()
 
@@ -97,7 +99,7 @@ class ShowcasePagesTests {
         @Test
         fun `should show the background action result in overlays route`() {
             UI.getCurrent().navigate("dev/showcase/overlays")
-            val action = _find<Button>().single { button -> button.text == "Действие за попапом" }
+            val action = _find<Button>().single { button -> button.text == "Выполнить действие за попапом" }
 
             action._click()
 
@@ -107,7 +109,7 @@ class ShowcasePagesTests {
         @Test
         fun `should count repeated background actions in overlays route`() {
             UI.getCurrent().navigate("dev/showcase/overlays")
-            val action = _find<Button>().single { button -> button.text == "Действие за попапом" }
+            val action = _find<Button>().single { button -> button.text == "Выполнить действие за попапом" }
             action._click()
 
             action._click()

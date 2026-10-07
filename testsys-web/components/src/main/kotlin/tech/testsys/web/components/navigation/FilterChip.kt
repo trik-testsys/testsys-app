@@ -11,7 +11,6 @@ import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementType
 import tech.testsys.web.components.core.ICON_SIZE_TINY
-import tech.testsys.web.components.core.ICON_STROKE_BOLD
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
@@ -29,7 +28,7 @@ import tech.testsys.web.components.layout.ContentScope
  * @since %CURRENT_VERSION%
  */
 class FilterChipHandle internal constructor(private val button: NativeButton, isSelected: Boolean) : ElementHandle(button) {
-    private val check = svgIcon(IconName.Check, size = ICON_SIZE_TINY, strokeWidth = ICON_STROKE_BOLD)
+    private val check = svgIcon(IconName.Check, size = ICON_SIZE_TINY)
     private val selected = Bindable(button.element, initial = isSelected) { value -> render(value) }
     private var listener: (Boolean) -> Unit = {}
 

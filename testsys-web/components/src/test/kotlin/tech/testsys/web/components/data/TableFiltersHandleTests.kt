@@ -170,7 +170,7 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
         assertThrows<IllegalArgumentException> {
             buildTestPage {
                 row {
-                    slot(12) {
+                    slot(size = 12) {
                         row {
                             block {
                                 filters(onApply = { true }, onReset = {}, onRefresh = {}) {

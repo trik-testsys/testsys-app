@@ -195,7 +195,7 @@ internal class DataTable<T>(
                 cell.element.addEventListener(DomEvent.Click) { toggleSort(sortKey) }
                 cell.element.addEventListener(DomEvent.KeyDown) { toggleSort(sortKey) }
                     .setFilter(DomEventFilter.TableSortKey).preventDefault()
-                sortHeaders += SortHeader(sortKey, column.title, cell)
+                sortHeaders += SortHeader(sortKey = sortKey, title = column.title, cell = cell)
             }
             add(cell)
         }

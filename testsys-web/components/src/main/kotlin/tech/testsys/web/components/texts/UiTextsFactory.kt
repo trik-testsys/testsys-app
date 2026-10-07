@@ -21,7 +21,7 @@ fun buildUiTexts(): UiTexts {
         brand = "TestSys",
         signIn = "Войти",
         footer = FooterTexts(year = { year -> year.toString() }, links = "Ссылки футтера"),
-        tableFilters = TableFiltersTexts(title = "Фильтры", apply = "Применить", reset = "Сбросить"),
+        tableFilters = TableFiltersTexts(title = "Настроить фильтры", apply = "Применить", reset = "Сбросить"),
         calendar = CalendarTexts(
             monthNames = Month.entries.map { month ->
                 month.getDisplayName(TextStyle.FULL_STANDALONE, locale).replaceFirstChar { letter -> letter.titlecase(locale) }
@@ -48,8 +48,8 @@ fun buildUiTexts(): UiTexts {
             selectRow = "Выбрать строку",
         ),
         pagination = PaginationTexts(
-            previous = "Назад",
-            next = "Вперёд",
+            previous = "Перейти на предыдущую страницу",
+            next = "Перейти на следующую страницу",
             page = { page -> "Страница ${formatNumber(page)}" },
         ),
         load = LoadTexts(
@@ -85,8 +85,8 @@ fun buildUiTexts(): UiTexts {
         ),
         components = ComponentTexts(
             selectAll = "Выбрать все",
-            previousMonth = "Предыдущий месяц",
-            nextMonth = "Следующий месяц",
+            previousMonth = "Показать предыдущий месяц",
+            nextMonth = "Показать следующий месяц",
             calendar = "Открыть календарь",
             drag = "Переместить: пробел, затем стрелки; Enter применяет, Escape отменяет",
             upload = "Выбрать файлы",

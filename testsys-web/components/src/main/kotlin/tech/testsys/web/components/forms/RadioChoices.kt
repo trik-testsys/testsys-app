@@ -80,11 +80,11 @@ internal class ChoiceField<T : Any>(
         require(duplicates.isEmpty()) { "Choice items of '$label' must be unique, repeated: $duplicates" }
         setAriaLabel(label)
         addClassName(if (isSegmented) CssClass.Seg else CssClass.RadioGroup)
-        setItemLabelGenerator { item -> itemLabel(requireNotNull(item)) }
+        setItemLabelGenerator { item -> itemLabel(requireNotNull(item) { "Choice of '$label' has no item to render" }) }
         if (isSegmented || itemMeta != null) {
             setRenderer(
                 ComponentRenderer<Span, T?> { item ->
-                    val choice = requireNotNull(item)
+                    val choice = requireNotNull(item) { "Choice of '$label' has no item to render" }
                     Span(Span(itemLabel(choice))).apply {
                         addClassName(CssClass.ChoiceLabel)
                         itemMeta?.let { meta -> add(Span(meta(choice)).apply { addClassName(CssClass.OptionMeta) }) }

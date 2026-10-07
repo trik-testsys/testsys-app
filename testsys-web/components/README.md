@@ -215,7 +215,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `SlotRowScope` | `block`, `highlightBlock`, `statCard`, `contestCard` |
 | `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
-| `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `segmentedControl`, `multiSelect`, `fileDrop`), `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
+| `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `segmentedControl`, `multiSelect`), `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
 | `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
 | `TableScope<T>` | колонки таблицы, `menuColumn`, `empty`, `onRowClick` |
 | `MenuScope` | `item`, `destructiveItem` |
@@ -229,9 +229,9 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 `overlay`, `quiz`, `core`; `toast`, `confirm` и `dialog` — функции верхнего уровня в пакетах `feedback` и `overlay`.
 Функции отображения (`text`, `icon`, `tag`, `badge`, `counter`, `alert`) и `pills` объявлены и для `ContentScope`,
 и для `BlockRowScope` (с необязательным `size`). Поля с подписью есть только в `BlockRowScope`; в `ContentScope`
-есть поля без подписи: `select` (см. [Фильтры в шапке](#фильтры-в-шапке)), `segmentedControl`, `multiSelect`
-и `fileDrop`. Действия, `menu`, `filterChip` и `pagination` объявлены для `ContentScope`; `downloadAction` есть также
-в `BlockRowScope`. `tabs` и `emptyState` — только для `BlockScope`. `statCard` в ряду слота создаёт свой блок,
+есть поля без подписи: `select` (см. [Фильтры в шапке](#фильтры-в-шапке)), `segmentedControl` и `multiSelect`.
+`fileDrop` объявлен в обоих скоупах и всегда выводит свою подпись. Действия, `menu`, `filterChip` и `pagination`
+объявлены для `ContentScope`; `downloadAction` есть также в `BlockRowScope`. `tabs` и `emptyState` — только для `BlockScope`. `statCard` в ряду слота создаёт свой блок,
 в строке блока — только разметку `.ts-stat`. `contestCard` в ряду слота — самостоятельная поверхность уровня блока
 без обёртки в блок.
 
@@ -1090,8 +1090,9 @@ InputStream на каждую попытку. Подготовка и чтени
 `DateRangeCalendarAdapter` и `SortableListAdapter` подключают `META-INF/frontend/testsys-ui/*.tsx` из jar.
 Их фактические JSX-реализации, типы и внутренние sprite controls лежат рядом с адаптерами.
 Это части двух компонентов, а не отдельная библиотека или эталон. Они импортируют
-`Frontend/generated/flow/ReactAdapter`. Синхронизация CodeEditor и поиск поля для фокуса при включении
-редактирования (`editing-focus.ts`) находятся в том же frontend-каталоге.
+`Frontend/generated/flow/ReactAdapter`. Синхронизация CodeEditor, поиск поля для фокуса при включении
+редактирования (`editing-focus.ts`) и возврат фокуса на кнопку после закрытия popup (`popup-focus.ts`) находятся
+в том же frontend-каталоге.
 Стандартная упаковка ресурсов сохраняет единственную исходную копию.
 
 Снимки состояния сервера проходят через собственный `ServerSnapshot` на `React.useSyncExternalStore`: текущий

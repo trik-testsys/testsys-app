@@ -85,7 +85,7 @@ private fun SlotRowScope.liveSubmissionsBlock() {
             fetch = { request -> Page(submissions.drop(request.offset).take(request.limit), submissions.size) },
         ) { submissionColumns() }
         actions {
-            action("Новая посылка через 2 с") {
+            action("Добавить посылку через 2 с") {
                 onClick {
                     thread(isDaemon = true, name = "showcase-new-submission") {
                         pause(NEW_ROW_DELAY)

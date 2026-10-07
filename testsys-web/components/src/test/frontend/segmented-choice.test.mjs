@@ -60,14 +60,21 @@ test('all disabled choices leave the key unhandled', () => {
   assert.equal(group.clicks, 0);
 });
 
-test('repeated attach installs one handler and detach removes it', () => {
+test('repeated attach installs one handler', () => {
   const {group, key} = fixture();
   segmentedChoice.attach(group);
+
   key('End');
+
   assert.equal(group.clicks, 1);
+});
+
+test('detach removes the handler', () => {
+  const {group, key} = fixture();
   segmentedChoice.detach(group);
+
   assert.equal(key('Home'), false);
-  assert.equal(group.clicks, 1);
+  assert.equal(group.clicks, 0);
 });
 
 test('arrows and keys outside radio choices remain native', () => {

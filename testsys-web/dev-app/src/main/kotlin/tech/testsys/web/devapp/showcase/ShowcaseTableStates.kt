@@ -99,7 +99,7 @@ internal fun PageScope.tabsSection() {
                 block(title = "Посылки тура", subtitle = "Заголовок и вкладки второй строкой") {
                     val filter = tabs(initial = RowFilter.All) { filterTabs() }
                     actions {
-                        action("Экспорт", IconName.Download) {
+                        action("Экспортировать", IconName.Download) {
                             onClick { toast(FeedbackKind.Info, "Экспорт демонстрационной таблицы") }
                         }
                     }
@@ -142,7 +142,7 @@ internal fun PageScope.emptySection() {
             row {
                 block(title = "Пустой блок") {
                     emptyState("Посылок пока нет", description = "Отправьте решение любой задачи.", icon = IconName.Upload) {
-                        action("К задачам") { onClick { toast(FeedbackKind.Info, "Переход к задачам") } }
+                        action("Перейти к задачам") { onClick { toast(FeedbackKind.Info, "Переход к задачам") } }
                     }
                 }
             }
@@ -197,7 +197,7 @@ internal fun PageScope.menuSection() {
                 block(title = "Меню в шапке") {
                     actions {
                         menu(label = "Ещё") {
-                            item("Экспорт") { toast(FeedbackKind.Info, "Экспорт") }
+                            item("Экспортировать") { toast(FeedbackKind.Info, "Экспорт") }
                             item("Недоступно", isEnabled = false) {}
                         }
                         menu {

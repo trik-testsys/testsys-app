@@ -149,12 +149,12 @@ class EditingTests : MockVaadinTests() {
         val bar = buildTestPage {
             block(title = "Профиль") {
                 editing(onSave = { true }, onCancel = {})
-                actions { action("Фильтр") }
+                actions { action("Отфильтровать") }
             }
         }.find("ts-block__actions")
 
         val labels = findAllButtons(bar).map { button -> button.text }
-        assertEquals(listOf("Фильтр", "Изменить", "Отменить", "Сохранить"), labels)
+        assertEquals(listOf("Отфильтровать", "Изменить", "Отменить", "Сохранить"), labels)
     }
 
     @Test

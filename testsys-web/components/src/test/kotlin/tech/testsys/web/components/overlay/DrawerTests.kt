@@ -44,9 +44,9 @@ internal class DrawerTests : MockVaadinTests() {
 
     @Test
     fun `should close the drawer from a footer action that receives its handle`() {
-        val handle = drawer("Drawer") { footer { opened -> action("Готово") { onClick { opened.close() } } } }
+        val handle = drawer("Drawer") { footer { opened -> action("Завершить") { onClick { opened.close() } } } }
         handle.open()
-        val done = openDialogs().single()._find<Button>().single { action -> action.text == "Готово" }
+        val done = openDialogs().single()._find<Button>().single { action -> action.text == "Завершить" }
 
         done._click()
 

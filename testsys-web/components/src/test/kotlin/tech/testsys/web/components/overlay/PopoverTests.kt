@@ -59,7 +59,18 @@ internal class PopoverTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should close popup and replace close callback`() {
+    fun `should close an open popup`() {
+        lateinit var handle: PopoverHandle
+        buildTestContent { handle = popover("Popup") { text("Body") } }
+        handle.open()
+
+        handle.close()
+
+        assertFalse(handle.isOpen)
+    }
+
+    @Test
+    fun `should run only the last close callback`() {
         lateinit var handle: PopoverHandle
         var calls = 0
         buildTestContent { handle = popover("Popup") { text("Body") } }
@@ -69,7 +80,6 @@ internal class PopoverTests : MockVaadinTests() {
 
         handle.close()
 
-        assertFalse(handle.isOpen)
         assertEquals(1, calls)
     }
 

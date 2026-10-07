@@ -14,8 +14,8 @@ import tech.testsys.web.components.display.text
 class SortableListTests : MockVaadinTests() {
     private data class Item(val key: String, val caption: String)
 
-    private val first = Item("a", "First")
-    private val second = Item("b", "Second")
+    private val first = Item(key = "a", caption = "First")
+    private val second = Item(key = "b", caption = "Second")
     private var changes = 0
     private val rendered = mutableListOf<String>()
 
@@ -90,13 +90,13 @@ class SortableListTests : MockVaadinTests() {
 
     @Test
     fun `should reject an empty key`() {
-        assertThrows(IllegalArgumentException::class.java) { buildItems(listOf(Item("", "Empty"))) }
+        assertThrows(IllegalArgumentException::class.java) { buildItems(listOf(Item(key = "", caption = "Empty"))) }
     }
 
     @Test
     fun `should replace content data for new instance of same key without firing user callback`() {
-        val handle = buildItems(listOf(Item("a", "Before")))
-        val fresh = Item("a", "After")
+        val handle = buildItems(listOf(Item(key = "a", caption = "Before")))
+        val fresh = Item(key = "a", caption = "After")
 
         handle.items = listOf(fresh)
 

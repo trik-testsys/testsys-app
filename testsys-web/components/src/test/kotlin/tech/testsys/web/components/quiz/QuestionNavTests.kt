@@ -41,6 +41,13 @@ class QuestionNavTests : MockVaadinTests() {
         assertTrue(root.findAll("ts-qnav__flag").isEmpty())
     }
 
+    @Test
+    fun `should group digits of question numbers by the locale`() {
+        val root = buildTestContent { questionNav(QuestionNavData(total = 1000, current = 1000)) }
+
+        assertEquals("1 000", root.findAll("ts-qnav__cell").last().element.text)
+    }
+
     @ParameterizedTest
     @CsvSource("0,1", "3,0", "3,4")
     fun `should reject an empty navigator or a current number outside it`(total: Int, current: Int) {
@@ -49,6 +56,8 @@ class QuestionNavTests : MockVaadinTests() {
 
     @Test
     fun `should reject a status number outside the questions`() {
-        assertThrows(IllegalArgumentException::class.java) { QuestionNavData(3, answered = setOf(4)) }
+        val error = assertThrows(IllegalArgumentException::class.java) { QuestionNavData(3, answered = setOf(4)) }
+
+        assertTrue("[4]" in error.message.orEmpty())
     }
 }

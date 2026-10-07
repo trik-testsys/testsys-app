@@ -41,11 +41,21 @@ internal class PresentationNamesTests {
     }
 
     @Test
-    fun `should report whether a class name was removed`() {
+    fun `should report the removal of a present class name`() {
         val component = Div().apply { setClassName(CssClass.TableScroll) }
 
-        assertTrue(component.removeClassName(CssClass.TableScroll))
-        assertFalse(component.removeClassName(CssClass.TableScroll))
+        val isRemoved = component.removeClassName(CssClass.TableScroll)
+
+        assertTrue(isRemoved)
+    }
+
+    @Test
+    fun `should report no removal of an absent class name`() {
+        val component = Div()
+
+        val isRemoved = component.removeClassName(CssClass.TableScroll)
+
+        assertFalse(isRemoved)
     }
 
     @Test
@@ -67,8 +77,10 @@ internal class PresentationNamesTests {
     fun `should report a change when unsetting a present class`() {
         val classes = Element("div").classList.apply { add(CssClass.Icon) }
 
-        assertTrue(classes.set(CssClass.Icon, false))
-        assertFalse(classes.remove(CssClass.Icon))
+        val isChanged = classes.set(CssClass.Icon, false)
+
+        assertTrue(isChanged)
+        assertFalse(classes.contains(CssClass.Icon))
     }
 
     @Test

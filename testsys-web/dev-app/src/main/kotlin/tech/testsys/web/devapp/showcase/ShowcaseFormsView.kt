@@ -183,11 +183,11 @@ private fun PageScope.fileExamples() {
     block(title = "Настоящее скачивание", subtitle = "Небольшие генерируемые файлы; повторный клик отменяет текущую передачу") {
         row {
             horizontal {
-                downloadAction("Пример TXT", produce = { context -> demoDownload(context, knownLength = true) })
-                downloadAction("Без известной длины", produce = { context -> demoDownload(context, knownLength = false) })
+                downloadAction("Скачать пример TXT", produce = { context -> demoDownload(context, knownLength = true) })
+                downloadAction("Скачать без известной длины", produce = { context -> demoDownload(context, knownLength = false) })
                 iconDownloadAction("Скачать пример со значком", produce = { context -> demoDownload(context, knownLength = true) })
                 val attempts = AtomicInteger()
-                downloadAction("Ошибка и повтор", produce = { context ->
+                downloadAction("Скачать с ошибкой и повтором", produce = { context ->
                     context.ensureActive()
                     if (attempts.getAndIncrement() == 0) throw IOException("Demonstration producer failure")
                     demoDownload(context, knownLength = true)

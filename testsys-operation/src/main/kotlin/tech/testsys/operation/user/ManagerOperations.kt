@@ -11,6 +11,7 @@ import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
@@ -18,11 +19,15 @@ import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
+import tech.testsys.operation.config.CompetitionConfig
 import tech.testsys.operation.error.AddClassContestError
 import tech.testsys.operation.error.AddCompetitionContestError
 import tech.testsys.operation.error.ClassAccessDeniedError
@@ -33,6 +38,7 @@ import tech.testsys.operation.error.CompetitionAccessDeniedError
 import tech.testsys.operation.error.CompetitionNameBlankError
 import tech.testsys.operation.error.CompetitionNameTooLongError
 import tech.testsys.operation.error.CompetitionNotExistsError
+import tech.testsys.operation.error.CompetitionParticipantLimitExceededError
 import tech.testsys.operation.error.ContestAccessDeniedError
 import tech.testsys.operation.error.ContestAlreadyAddedToClassError
 import tech.testsys.operation.error.ContestAlreadyAddedToCompetitionError
@@ -41,7 +47,9 @@ import tech.testsys.operation.error.ContestNotAddedToCompetitionError
 import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.CreateClassError
 import tech.testsys.operation.error.CreateCompetitionError
+import tech.testsys.operation.error.CreateParticipantsError
 import tech.testsys.operation.error.MissedManagerRoleError
+import tech.testsys.operation.error.NonPositiveParticipantCountError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ViewClassContestError
 import tech.testsys.operation.error.ViewClassError
@@ -53,6 +61,7 @@ import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.hasRole
+import java.util.UUID
 
 private const val MAX_CLASS_NAME_CODE_POINTS = 255
 private const val MAX_COMPETITION_NAME_CODE_POINTS = 255
@@ -68,6 +77,8 @@ class ManagerOperations(
     private val competitionRepository: CompetitionRepository,
     private val contestRepository: ContestRepository,
     private val submissionRepository: SubmissionRepository,
+    private val participantRepository: ParticipantRepository,
+    private val competitionConfig: CompetitionConfig,
 ) {
 
     /**
@@ -282,6 +293,49 @@ class ManagerOperations(
             contests.add(contestId)
         }
         return competitionRepository.update(updatedCompetition).asSuccess()
+    }
+
+    /**
+     * Creates [participantCount] participants with random UUID access codes and `st<id>` names in [competitionId] owned by [user].
+     * Missing role, competition, access, a nonpositive count and exceeding the participant limit are expected failures.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.competition.createParticipants")
+    fun createParticipants(
+        user: MultipleRoleUser,
+        competitionId: CompetitionId,
+        participantCount: Int,
+    ): OperationResult<List<Participant>, CreateParticipantsError> = operation<List<Participant>, CreateParticipantsError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val competition = competitionRepository.findById(competitionId)
+        ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+        ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
+        ensure(participantCount > 0) { NonPositiveParticipantCountError(participantCount) }
+
+        val maxParticipants = competitionConfig.maxParticipants
+        val currentParticipantCount = competition.data.participants.ids.size
+        ensure(currentParticipantCount.toLong() + participantCount <= maxParticipants) {
+            CompetitionParticipantLimitExceededError(
+                competitionId = competitionId,
+                currentParticipantCount = currentParticipantCount,
+                participantCount = participantCount,
+                maxParticipants = maxParticipants,
+            )
+        }
+
+        val accessTokenHashes = generateSequence { UUID.randomUUID().toString() }
+            .distinct()
+            .take(participantCount)
+            .map { accessToken -> AccessTokenHash.hashAccessToken(rawAccessToken = accessToken, algorithm = HashAlgorithm.Identity) }
+            .toList()
+        val participants = participantRepository.saveToCompetition(
+            competitionId = competitionId,
+            accessTokenHashes = accessTokenHashes,
+        ) { participantId ->
+            "st${participantId.value}"
+        }
+        return participants.asSuccess()
     }
 
     private fun isAvailableToManager(user: MultipleRoleUser, contest: Contest): Boolean {

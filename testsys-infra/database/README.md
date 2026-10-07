@@ -88,6 +88,15 @@
 а при равном времени — по идентификатору. Правила подсчёта определены в [features.md](../../docs/domain/features.md).
 Чтение выполняется в транзакции с `readOnly = true`.
 
+## Создание Участников Соревнования
+
+Метод `saveToCompetition` в
+[ParticipantPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/single/ParticipantPersistenceAdapter.kt)
+сохраняет переданный пакет Участников в одной транзакции. Имя Участника зависит от выданного ему идентификатора,
+поэтому адаптер сначала сохраняет Участника с пустым именем, а затем в той же транзакции записывает имя через `update`.
+Любое исключение, в том числе нарушение ограничения `uk_ts_user_access_token`, откатывает весь пакет.
+Правила псевдонима и Кода-доступа Участника определены в [features.md](../../docs/domain/features.md).
+
 ## Идентификаторы
 
 Идентификаторы сущностей выдаёт [SnowflakeIdGenerator.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/id/SnowflakeIdGenerator.kt),

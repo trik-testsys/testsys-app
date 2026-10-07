@@ -4,10 +4,12 @@ import io.mockk.Called
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -19,6 +21,8 @@ import tech.testsys.domain.builder.api.competition
 import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.managerData
+import tech.testsys.domain.builder.api.participant
+import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.group.ClassDataBuilder
 import tech.testsys.domain.builder.group.CompetitionDataBuilder
@@ -31,6 +35,7 @@ import tech.testsys.domain.contract.persistence.Sort
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.group.Class
@@ -42,10 +47,14 @@ import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.UserId
+import tech.testsys.operation.config.CompetitionConfig
 import tech.testsys.operation.error.ClassAccessDeniedError
 import tech.testsys.operation.error.ClassNameBlankError
 import tech.testsys.operation.error.ClassNameTooLongError
@@ -54,6 +63,7 @@ import tech.testsys.operation.error.CompetitionAccessDeniedError
 import tech.testsys.operation.error.CompetitionNameBlankError
 import tech.testsys.operation.error.CompetitionNameTooLongError
 import tech.testsys.operation.error.CompetitionNotExistsError
+import tech.testsys.operation.error.CompetitionParticipantLimitExceededError
 import tech.testsys.operation.error.ContestAccessDeniedError
 import tech.testsys.operation.error.ContestAlreadyAddedToClassError
 import tech.testsys.operation.error.ContestAlreadyAddedToCompetitionError
@@ -61,6 +71,7 @@ import tech.testsys.operation.error.ContestNotAddedToClassError
 import tech.testsys.operation.error.ContestNotAddedToCompetitionError
 import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.MissedManagerRoleError
+import tech.testsys.operation.error.NonPositiveParticipantCountError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.testAdministrator
@@ -77,11 +88,15 @@ class ManagerOperationsTests {
     private val competitionRepository = mockk<CompetitionRepository>()
     private val contestRepository = mockk<ContestRepository>()
     private val submissionRepository = mockk<SubmissionRepository>()
+    private val participantRepository = mockk<ParticipantRepository>()
+    private val competitionConfig = mockk<CompetitionConfig>()
     private val operations = ManagerOperations(
         classRepository = repository,
         competitionRepository = competitionRepository,
         contestRepository = contestRepository,
         submissionRepository = submissionRepository,
+        participantRepository = participantRepository,
+        competitionConfig = competitionConfig,
     )
 
     @Nested
@@ -1873,6 +1888,248 @@ class ManagerOperationsTests {
             }
 
             assertSame(failure, actual)
+        }
+    }
+
+    @Nested
+    inner class CreateParticipantsTests {
+
+        private val competitionId = CompetitionId(21)
+        private val manager = testManager { data = managerData {} }
+        private val canonicalUuid = Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+        private val allMocks = arrayOf(
+            repository,
+            competitionRepository,
+            contestRepository,
+            submissionRepository,
+            participantRepository,
+            competitionConfig,
+        )
+
+        @Test
+        fun `should raise MissedManagerRoleError before reading storage or configuration if user is not a Manager`() {
+            val user = testAdministrator {}
+
+            assertRaises(MissedManagerRoleError) {
+                operations.createParticipants(user = user, competitionId = competitionId, participantCount = 1)
+            }
+
+            verify { allMocks.toList() wasNot Called }
+        }
+
+        @Test
+        fun `should raise CompetitionNotExistsError without creating participants if competition does not exist`() {
+            every { competitionRepository.findById(competitionId) } returns null
+
+            assertRaises(CompetitionNotExistsError(competitionId)) {
+                operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 1)
+            }
+
+            verify { competitionRepository.findById(competitionId) }
+            confirmVerified(*allMocks)
+        }
+
+        @Test
+        fun `should raise CompetitionAccessDeniedError without creating participants if competition belongs to another owner`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition { owner = MultipleRoleUserId(99) }
+
+            assertRaises(CompetitionAccessDeniedError(competitionId)) {
+                operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 1)
+            }
+
+            verify { competitionRepository.findById(competitionId) }
+            confirmVerified(*allMocks)
+        }
+
+        @ParameterizedTest
+        @ValueSource(ints = [0, -1])
+        fun `should raise NonPositiveParticipantCountError without creating participants if the count is not positive`(count: Int) {
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+
+            assertRaises(NonPositiveParticipantCountError(count)) {
+                operations.createParticipants(user = manager, competitionId = competitionId, participantCount = count)
+            }
+
+            verify { competitionRepository.findById(competitionId) }
+            confirmVerified(*allMocks)
+        }
+
+        @Test
+        fun `should raise CompetitionParticipantLimitExceededError without creating participants if the total would exceed the maximum`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31, 32)) }
+            every { competitionConfig.maxParticipants } returns 3
+
+            assertRaises(
+                CompetitionParticipantLimitExceededError(
+                    competitionId = competitionId,
+                    currentParticipantCount = 2,
+                    participantCount = 2,
+                    maxParticipants = 3,
+                ),
+            ) {
+                operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 2)
+            }
+
+            verify { participantRepository wasNot Called }
+        }
+
+        @Test
+        fun `should raise CompetitionParticipantLimitExceededError if the competition already has more participants than the maximum`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31, 32, 33)) }
+            every { competitionConfig.maxParticipants } returns 2
+
+            assertRaises(
+                CompetitionParticipantLimitExceededError(
+                    competitionId = competitionId,
+                    currentParticipantCount = 3,
+                    participantCount = 1,
+                    maxParticipants = 2,
+                ),
+            ) {
+                operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 1)
+            }
+
+            verify { participantRepository wasNot Called }
+        }
+
+        @Test
+        fun `should raise CompetitionParticipantLimitExceededError without overflow for Int MAX_VALUE new participants`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
+            every { competitionConfig.maxParticipants } returns Int.MAX_VALUE
+
+            assertRaises(
+                CompetitionParticipantLimitExceededError(
+                    competitionId = competitionId,
+                    currentParticipantCount = 1,
+                    participantCount = Int.MAX_VALUE,
+                    maxParticipants = Int.MAX_VALUE,
+                ),
+            ) {
+                operations.createParticipants(user = manager, competitionId = competitionId, participantCount = Int.MAX_VALUE)
+            }
+
+            verify { participantRepository wasNot Called }
+        }
+
+        @Test
+        fun `should create participants if the total equals the maximum`() {
+            val accessTokenHashes = slot<List<AccessTokenHash>>()
+            every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31, 32)) }
+            every { competitionConfig.maxParticipants } returns 4
+            every { participantRepository.saveToCompetition(competitionId, capture(accessTokenHashes), any()) } returns emptyList()
+
+            operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 2).getOrThrow()
+
+            assertEquals(2, accessTokenHashes.captured.size)
+        }
+
+        @Test
+        fun `should save the requested number of distinct UUID access codes hashed by Identity in the competition once`() {
+            val accessTokenHashes = slot<List<AccessTokenHash>>()
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { competitionConfig.maxParticipants } returns 10
+            every { participantRepository.saveToCompetition(competitionId, capture(accessTokenHashes), any()) } returns emptyList()
+
+            operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 3).getOrThrow()
+
+            val values = accessTokenHashes.captured.map { hash -> hash.value }
+            assertEquals(List(3) { HashAlgorithm.Identity }, accessTokenHashes.captured.map { hash -> hash.algorithm })
+            assertTrue(values.all { value -> canonicalUuid.matches(value) }) { "Access codes are not canonical UUIDs: $values" }
+            assertEquals(3, values.toSet().size)
+            verify(exactly = 1) { participantRepository.saveToCompetition(competitionId, any(), any()) }
+        }
+
+        @Test
+        fun `should name each participant st followed by its decimal id`() {
+            val nameOf = slot<(SingleRoleUserId) -> String>()
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { competitionConfig.maxParticipants } returns 10
+            every { participantRepository.saveToCompetition(competitionId, any(), capture(nameOf)) } returns emptyList()
+
+            operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 1).getOrThrow()
+
+            assertEquals("st42", nameOf.captured(SingleRoleUserId(42)))
+        }
+
+        @Test
+        fun `should return exactly the participants saved by the port`() {
+            val saved = listOf(testParticipant(41), testParticipant(42))
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { competitionConfig.maxParticipants } returns 10
+            every { participantRepository.saveToCompetition(competitionId, any(), any()) } returns saved
+
+            val actual = operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 2).getOrThrow()
+
+            assertSame(saved, actual)
+        }
+
+        @Test
+        fun `should read the maximum number of participants exactly once`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
+            every { competitionConfig.maxParticipants } returns 10
+            every { participantRepository.saveToCompetition(competitionId, any(), any()) } returns emptyList()
+
+            operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 2).getOrThrow()
+
+            verify(exactly = 1) { competitionConfig.maxParticipants }
+        }
+
+        @Test
+        fun `should only read the competition and save the participants without updating other entities`() {
+            every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
+            every { competitionConfig.maxParticipants } returns 10
+            every { participantRepository.saveToCompetition(competitionId, any(), any()) } returns emptyList()
+
+            operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 2).getOrThrow()
+
+            verify { competitionRepository.findById(competitionId) }
+            verify { competitionConfig.maxParticipants }
+            verify { participantRepository.saveToCompetition(competitionId, any(), any()) }
+            confirmVerified(*allMocks)
+        }
+
+        @Test
+        fun `should allow a Manager who also has other roles`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    manager { data = managerData {} }
+                    student { data = studentData {} }
+                    administrator {}
+                }
+            }
+            val saved = listOf(testParticipant(41))
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { competitionConfig.maxParticipants } returns 10
+            every { participantRepository.saveToCompetition(competitionId, any(), any()) } returns saved
+
+            val actual = operations.createParticipants(user = user, competitionId = competitionId, participantCount = 1).getOrThrow()
+
+            assertSame(saved, actual)
+        }
+
+        @Test
+        fun `should propagate a technical exception when saving the participants`() {
+            val failure = IllegalStateException("Duplicate access code")
+            every { competitionRepository.findById(competitionId) } returns testCompetition()
+            every { competitionConfig.maxParticipants } returns 10
+            every { participantRepository.saveToCompetition(competitionId, any(), any()) } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) {
+                operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 1)
+            }
+
+            assertSame(failure, actual)
+        }
+
+        private fun testParticipant(participantId: Long): Participant = participant {
+            id = participantId
+            createdAt = Instant.EPOCH
+            version = EntityVersion(0)
+            data = participantData {
+                accessToken("code-$participantId", algorithm = HashAlgorithm.Identity)
+                competition(21)
+                name = "st$participantId"
+            }
         }
     }
 

@@ -2,7 +2,11 @@ package tech.testsys.infra.database.api.persistence.adapter.user.single
 
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import tech.testsys.domain.builder.api.participantData
+import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
+import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
 import tech.testsys.domain.model.user.SingleRoleUserId
@@ -62,6 +66,23 @@ class ParticipantPersistenceAdapter(
 
         val domainEntity = ParticipantMapping.toDomain(updatedUserJpaEntity, updatedDataJpaEntity)
         return domainEntity
+    }
+
+    @Transactional
+    override fun saveToCompetition(
+        competitionId: CompetitionId,
+        accessTokenHashes: List<AccessTokenHash>,
+        nameOf: (SingleRoleUserId) -> String,
+    ): List<Participant> = accessTokenHashes.map { accessTokenHash ->
+        val savedParticipant = save(
+            participantData {
+                storedAccessToken(accessTokenHash)
+                competition = competitionId
+                // The name depends on the id assigned by this save, so it is replaced right below.
+                name = ""
+            },
+        )
+        update(savedParticipant.withData { name = nameOf(savedParticipant.id) })
     }
 
     @Transactional

@@ -131,6 +131,13 @@ sealed interface AddClassContestError : OperationError
 sealed interface AddCompetitionContestError : OperationError
 
 /**
+ * Failure of creating participants in a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateParticipantsError : OperationError
+
+/**
  * The user does not hold the manager role.
  *
  * @since %CURRENT_VERSION%
@@ -146,6 +153,7 @@ data object MissedManagerRoleError :
     ViewCompetitionContestError,
     AddClassContestError,
     AddCompetitionContestError,
+    CreateParticipantsError,
     MissedRequiredRoleError
 
 /**
@@ -212,6 +220,7 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,
+    CreateParticipantsError,
     EntityNotExistsError
 
 /**
@@ -224,6 +233,7 @@ data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,
+    CreateParticipantsError,
     AccessDeniedError
 
 /**
@@ -263,6 +273,30 @@ data class ContestAlreadyAddedToClassError(val classId: ClassId, val contestId: 
  */
 data class ContestAlreadyAddedToCompetitionError(val competitionId: CompetitionId, val contestId: ContestId) :
     AddCompetitionContestError
+
+/**
+ * The requested number of new participants is zero or negative.
+ *
+ * @property participantCount the requested number of new participants.
+ * @since %CURRENT_VERSION%
+ */
+data class NonPositiveParticipantCountError(val participantCount: Int) : CreateParticipantsError
+
+/**
+ * The total number of participants in the competition would exceed the configured maximum.
+ *
+ * @property competitionId the id of the competition.
+ * @property currentParticipantCount the number of participants already in the competition.
+ * @property participantCount the requested number of new participants.
+ * @property maxParticipants the maximum total number of participants read for this call.
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionParticipantLimitExceededError(
+    val competitionId: CompetitionId,
+    val currentParticipantCount: Int,
+    val participantCount: Int,
+    val maxParticipants: Int,
+) : CreateParticipantsError
 
 // endregion
 

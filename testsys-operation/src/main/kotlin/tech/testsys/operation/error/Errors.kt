@@ -58,6 +58,267 @@ sealed interface ResourceAccessError : OperationError
 
 // endregion
 
+// region ManagerOperations
+
+/**
+ * Failure of creating a class owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateClassError : OperationError
+
+/**
+ * Failure of creating a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateCompetitionError : OperationError
+
+/**
+ * Failure of listing classes owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewClassesError : OperationError
+
+/**
+ * Failure of viewing a class owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewClassError : OperationError
+
+/**
+ * Failure of listing competitions owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewCompetitionsError : OperationError
+
+/**
+ * Failure of viewing a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewCompetitionError : OperationError
+
+/**
+ * Failure of viewing the results of a contest added to a class owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewClassContestError : OperationError
+
+/**
+ * Failure of viewing the results of a contest added to a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewCompetitionContestError : OperationError
+
+/**
+ * Failure of adding a contest to a class owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AddClassContestError : OperationError
+
+/**
+ * Failure of adding a contest to a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AddCompetitionContestError : OperationError
+
+/**
+ * Failure of creating participants in a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateParticipantsError : OperationError
+
+/**
+ * The user does not hold the manager role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object MissedManagerRoleError :
+    CreateClassError,
+    CreateCompetitionError,
+    ViewClassesError,
+    ViewClassError,
+    ViewCompetitionsError,
+    ViewCompetitionError,
+    ViewClassContestError,
+    ViewCompetitionContestError,
+    AddClassContestError,
+    AddCompetitionContestError,
+    CreateParticipantsError,
+    MissedRequiredRoleError
+
+/**
+ * The class name is empty or contains only whitespace.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object ClassNameBlankError : CreateClassError
+
+/**
+ * The class name exceeds 255 Unicode code points.
+ *
+ * @property className the supplied class name.
+ * @since %CURRENT_VERSION%
+ */
+data class ClassNameTooLongError(val className: String) : CreateClassError
+
+/**
+ * The competition name is empty or contains only whitespace.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object CompetitionNameBlankError : CreateCompetitionError
+
+/**
+ * The competition name exceeds 255 Unicode code points.
+ *
+ * @property competitionName the supplied competition name.
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionNameTooLongError(val competitionName: String) : CreateCompetitionError
+
+/**
+ * The class does not exist.
+ *
+ * @property classId the id of the missing class.
+ * @since %CURRENT_VERSION%
+ */
+data class ClassNotExistsError(val classId: ClassId) :
+    ViewClassError,
+    ViewClassContestError,
+    AddClassContestError,
+    ViewStudentContestsError,
+    EnterStudentContestError,
+    ViewStudentContestError,
+    ViewStudentTaskError,
+    DownloadStudentTaskResourceError,
+    SendStudentSolutionError,
+    EntityNotExistsError
+
+/**
+ * The user has no access to the class for the requested operation: it belongs to another user,
+ * or the user is not enrolled in it.
+ *
+ * @property classId the id of the inaccessible class.
+ * @since %CURRENT_VERSION%
+ */
+data class ClassAccessDeniedError(val classId: ClassId) :
+    ViewClassError,
+    ViewClassContestError,
+    AddClassContestError,
+    ViewStudentContestsError,
+    EnterStudentContestError,
+    ViewStudentContestError,
+    ViewStudentTaskError,
+    DownloadStudentTaskResourceError,
+    SendStudentSolutionError,
+    AccessDeniedError
+
+/**
+ * The competition does not exist.
+ *
+ * @property competitionId the id of the missing competition.
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionNotExistsError(val competitionId: CompetitionId) :
+    ViewCompetitionError,
+    ViewCompetitionContestError,
+    AddCompetitionContestError,
+    CreateParticipantsError,
+    ViewParticipantContestsError,
+    EnterParticipantContestError,
+    ViewParticipantContestError,
+    ViewParticipantTaskError,
+    DownloadParticipantTaskResourceError,
+    SendParticipantSolutionError,
+    EntityNotExistsError
+
+/**
+ * The competition belongs to another user.
+ *
+ * @property competitionId the id of the inaccessible competition.
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
+    ViewCompetitionError,
+    ViewCompetitionContestError,
+    AddCompetitionContestError,
+    CreateParticipantsError,
+    AccessDeniedError
+
+/**
+ * The contest is not added to the class.
+ *
+ * @property classId the id of the class.
+ * @property contestId the id of the contest missing from the class.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestNotAddedToClassError(val classId: ClassId, val contestId: ContestId) : ViewClassContestError
+
+/**
+ * The contest is not added to the competition.
+ *
+ * @property competitionId the id of the competition.
+ * @property contestId the id of the contest missing from the competition.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestNotAddedToCompetitionError(val competitionId: CompetitionId, val contestId: ContestId) :
+    ViewCompetitionContestError
+
+/**
+ * The contest is already added to the class.
+ *
+ * @property classId the id of the class.
+ * @property contestId the id of the contest already added to the class.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestAlreadyAddedToClassError(val classId: ClassId, val contestId: ContestId) : AddClassContestError
+
+/**
+ * The contest is already added to the competition.
+ *
+ * @property competitionId the id of the competition.
+ * @property contestId the id of the contest already added to the competition.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestAlreadyAddedToCompetitionError(val competitionId: CompetitionId, val contestId: ContestId) :
+    AddCompetitionContestError
+
+/**
+ * The requested number of new participants is zero or negative.
+ *
+ * @property participantCount the requested number of new participants.
+ * @since %CURRENT_VERSION%
+ */
+data class NonPositiveParticipantCountError(val participantCount: Int) : CreateParticipantsError
+
+/**
+ * The total number of participants in the competition would exceed the configured maximum.
+ *
+ * @property competitionId the id of the competition.
+ * @property currentParticipantCount the number of participants already in the competition.
+ * @property participantCount the requested number of new participants.
+ * @property maxParticipants the maximum total number of participants read for this call.
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionParticipantLimitExceededError(
+    val competitionId: CompetitionId,
+    val currentParticipantCount: Int,
+    val participantCount: Int,
+    val maxParticipants: Int,
+) : CreateParticipantsError
+
+// endregion
+
 // region JudgeOperations
 
 /**
@@ -533,7 +794,11 @@ data class ContestNotExistsError(
     DownloadParticipantTaskResourceError,
     DownloadStudentTaskResourceError,
     SendParticipantSolutionError,
-    SendStudentSolutionError
+    SendStudentSolutionError,
+    ViewClassContestError,
+    ViewCompetitionContestError,
+    AddClassContestError,
+    AddCompetitionContestError
 
 /**
  * The user has no access to the contest for the requested operation.
@@ -559,7 +824,9 @@ data class ContestAccessDeniedError(
     DownloadParticipantTaskResourceError,
     DownloadStudentTaskResourceError,
     SendParticipantSolutionError,
-    SendStudentSolutionError
+    SendStudentSolutionError,
+    AddClassContestError,
+    AddCompetitionContestError
 
 /**
  * The contest is shared to at least one community.
@@ -1041,51 +1308,6 @@ data object MissedStudentRoleError :
     MissedRequiredRoleError,
     ViewStudentContestsError,
     ViewStudentClassesError,
-    EnterStudentContestError,
-    ViewStudentContestError,
-    ViewStudentTaskError,
-    DownloadStudentTaskResourceError,
-    SendStudentSolutionError
-
-/**
- * The competition does not exist.
- *
- * @property competitionId the missing competition.
- * @since %CURRENT_VERSION%
- */
-data class CompetitionNotExistsError(val competitionId: CompetitionId) :
-    EntityNotExistsError,
-    ViewParticipantContestsError,
-    EnterParticipantContestError,
-    ViewParticipantContestError,
-    ViewParticipantTaskError,
-    DownloadParticipantTaskResourceError,
-    SendParticipantSolutionError
-
-/**
- * The class does not exist.
- *
- * @property classId the missing class.
- * @since %CURRENT_VERSION%
- */
-data class ClassNotExistsError(val classId: ClassId) :
-    EntityNotExistsError,
-    ViewStudentContestsError,
-    EnterStudentContestError,
-    ViewStudentContestError,
-    ViewStudentTaskError,
-    DownloadStudentTaskResourceError,
-    SendStudentSolutionError
-
-/**
- * The user is not enrolled in the selected class.
- *
- * @property classId the inaccessible class.
- * @since %CURRENT_VERSION%
- */
-data class ClassAccessDeniedError(val classId: ClassId) :
-    AccessDeniedError,
-    ViewStudentContestsError,
     EnterStudentContestError,
     ViewStudentContestError,
     ViewStudentTaskError,

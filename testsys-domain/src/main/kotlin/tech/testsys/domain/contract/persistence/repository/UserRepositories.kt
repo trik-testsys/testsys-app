@@ -1,5 +1,7 @@
 package tech.testsys.domain.contract.persistence.repository
 
+import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -30,7 +32,24 @@ interface ObserverRepository : EntityRepository<ObserverData, SingleRoleUserId, 
  *
  * @since %CURRENT_VERSION%
  */
-interface ParticipantRepository : EntityRepository<ParticipantData, SingleRoleUserId, Participant>
+interface ParticipantRepository : EntityRepository<ParticipantData, SingleRoleUserId, Participant> {
+
+    /**
+     * Synchronously saves one new participant of [competitionId] per access-code hash, all of them or none.
+     * Storage exceptions, including an access code already held by another user, propagate and leave no participant saved.
+     *
+     * @param competitionId the competition the new participants belong to.
+     * @param accessTokenHashes the stored access codes of the new participants; an empty list saves nothing.
+     * @param nameOf the name of a new participant computed from its assigned id.
+     * @return the saved participants in the order of [accessTokenHashes].
+     * @since %CURRENT_VERSION%
+     */
+    fun saveToCompetition(
+        competitionId: CompetitionId,
+        accessTokenHashes: List<AccessTokenHash>,
+        nameOf: (SingleRoleUserId) -> String,
+    ): List<Participant>
+}
 
 /**
  * Persistence port for [Supervisor] entities.

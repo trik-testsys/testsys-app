@@ -2,10 +2,13 @@ package tech.testsys.infra.database.api.persistence.adapter.user.single
 
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.dao.DataIntegrityViolationException
 import tech.testsys.domain.builder.api.participant
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
@@ -17,6 +20,8 @@ import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRep
 import tech.testsys.infra.database.internal.jpa.repository.user.single.ParticipantDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -34,6 +39,9 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
 
     @Autowired
     private lateinit var singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository
+
+    @Autowired
+    private lateinit var competitionRepository: CompetitionRepository
 
     override fun newData(): ParticipantData {
         val competitionId = fixtures.competition().id.value
@@ -110,4 +118,48 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         repository.removeById(observerId)
         assertTrue(userJpaEntityRepository.findById(observerId.value).isPresent)
     }
+
+    @Test
+    fun `should save a participant of the competition per access code in order with the name computed from its id`() {
+        val competition = fixtures.competition()
+        val hashes = listOf(identityHash(fixtures.unique("first")), identityHash(fixtures.unique("second")))
+
+        val saved = repository.saveToCompetition(competition.id, hashes) { participantId -> "named-${participantId.value}" }
+
+        val found = saved.map { participant -> assertNotNull(repository.findById(participant.id)) }
+        assertEquals(hashes, found.map { participant -> participant.data.accessTokenHash })
+        assertEquals(saved.map { participant -> "named-${participant.id.value}" }, found.map { participant -> participant.data.name })
+        assertEquals(listOf(competition.id, competition.id), found.map { participant -> participant.data.competition.id })
+        assertEquals(
+            saved.map { participant -> participant.id }.toSet(),
+            assertNotNull(competitionRepository.findById(competition.id)).data.participants.ids.toSet(),
+        )
+    }
+
+    @Test
+    fun `should save no participant of the batch if an access code is already held by another user`() {
+        val existing = fixtures.participant()
+        val competition = fixtures.competition()
+        val usersBefore = userJpaEntityRepository.count()
+        val hashes = listOf(identityHash(fixtures.unique("fresh")), existing.data.accessTokenHash)
+
+        assertFailsWith<DataIntegrityViolationException> {
+            repository.saveToCompetition(competition.id, hashes) { participantId -> "st${participantId.value}" }
+        }
+
+        assertEquals(emptyList(), participantDataJpaEntityRepository.findAllByCompetitionId(competition.id.value))
+        assertEquals(usersBefore, userJpaEntityRepository.count())
+    }
+
+    @Test
+    fun `should save nothing for an empty list of access codes`() {
+        val competition = fixtures.competition()
+
+        val saved = repository.saveToCompetition(competition.id, emptyList()) { participantId -> "st${participantId.value}" }
+
+        assertEquals(emptyList(), saved)
+        assertEquals(emptyList(), participantDataJpaEntityRepository.findAllByCompetitionId(competition.id.value))
+    }
+
+    private fun identityHash(value: String) = AccessTokenHash(value = value, algorithm = HashAlgorithm.Identity)
 }

@@ -347,6 +347,13 @@ sealed interface ShareContestError : OperationError
 sealed interface AttachTaskError : OperationError
 
 /**
+ * Failure of detaching a task from a contest.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DetachTaskError : OperationError
+
+/**
  * Failure of attaching a statement to a task.
  *
  * @since %CURRENT_VERSION%
@@ -422,6 +429,7 @@ data object MissedDeveloperRoleError :
     ViewTaskValidationRequestsError,
     CommitTaskError,
     AttachTaskError,
+    DetachTaskError,
     ViewContestsError,
     ViewContestError,
     RevertTaskError,
@@ -499,7 +507,7 @@ data class AttemptDurationExceedsContestDurationError(
  */
 data class ContestNotExistsError(
     val contestId: ContestId,
-) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
+) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError, DetachTaskError, ViewContestError
 
 /**
  * The user has no access to the contest for the requested operation.
@@ -509,7 +517,7 @@ data class ContestNotExistsError(
  */
 data class ContestAccessDeniedError(
     val contestId: ContestId,
-) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError, ViewContestError
+) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError, DetachTaskError, ViewContestError
 
 /**
  * The contest is shared to at least one community.
@@ -517,7 +525,7 @@ data class ContestAccessDeniedError(
  * @property contestId the id of the shared contest.
  * @since %CURRENT_VERSION%
  */
-data class ContestAlreadySharedError(val contestId: ContestId) : EditContestError, AttachTaskError
+data class ContestAlreadySharedError(val contestId: ContestId) : EditContestError, AttachTaskError, DetachTaskError
 
 /**
  * The task does not exist.
@@ -530,6 +538,7 @@ data class TaskNotExistsError(val taskId: TaskId) :
     ViewTaskValidationRequestsError,
     CommitTaskError,
     AttachTaskError,
+    DetachTaskError,
     RevertTaskError,
     EditTaskInfoError,
     ViewTaskError,
@@ -665,6 +674,15 @@ data class TaskTrikStudioVersionNotSupportedError(
  * @since %CURRENT_VERSION%
  */
 data class TaskAlreadyAttachedToContestError(val contestId: ContestId, val taskId: TaskId) : AttachTaskError
+
+/**
+ * The task is not attached to the contest.
+ *
+ * @property contestId the id of the contest.
+ * @property taskId the id of the task absent from the contest.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskNotAttachedToContestError(val contestId: ContestId, val taskId: TaskId) : DetachTaskError
 
 /**
  * The task has no uncommitted changes to revert.

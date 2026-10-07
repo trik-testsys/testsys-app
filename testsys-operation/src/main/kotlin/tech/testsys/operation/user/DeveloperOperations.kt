@@ -76,6 +76,7 @@ import tech.testsys.operation.error.CreateTaskError
 import tech.testsys.operation.error.DetachDeveloperSolutionError
 import tech.testsys.operation.error.DetachExerciseError
 import tech.testsys.operation.error.DetachStatementError
+import tech.testsys.operation.error.DetachTaskError
 import tech.testsys.operation.error.DetachTestError
 import tech.testsys.operation.error.DeveloperSolutionNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotUploadedToTaskError
@@ -105,6 +106,7 @@ import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskAlreadyAttachedToContestError
 import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
+import tech.testsys.operation.error.TaskNotAttachedToContestError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
 import tech.testsys.operation.error.TaskNotTestedError
@@ -474,6 +476,27 @@ class DeveloperOperations(
             ensure(taskId !in contest.data.tasks.ids) { TaskAlreadyAttachedToContestError(contestId, taskId) }
 
             val updatedContest = contest.withData { tasks.add(taskId) }
+            return contestRepository.update(updatedContest).asSuccess()
+        }
+
+    /**
+     * Detaches [taskId] from an unshared [contestId] owned by [user], changing only the contest's tasks.
+     * Access to the task and its state are not checked; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.contest.detachTask")
+    fun detachTask(user: MultipleRoleUser, contestId: ContestId, taskId: TaskId): OperationResult<Contest, DetachTaskError> =
+        operation<Contest, DetachTaskError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val contest = contestRepository.findById(contestId)
+            ensure(contest != null) { ContestNotExistsError(contestId) }
+            ensure(taskRepository.findById(taskId) != null) { TaskNotExistsError(taskId) }
+            ensure(contest.data.owner.id == user.id) { ContestAccessDeniedError(contestId) }
+            ensure(contest.data.sharedTo.ids.isEmpty()) { ContestAlreadySharedError(contestId) }
+            ensure(taskId in contest.data.tasks.ids) { TaskNotAttachedToContestError(contestId, taskId) }
+
+            val updatedContest = contest.withData { tasks.remove(taskId) }
             return contestRepository.update(updatedContest).asSuccess()
         }
 

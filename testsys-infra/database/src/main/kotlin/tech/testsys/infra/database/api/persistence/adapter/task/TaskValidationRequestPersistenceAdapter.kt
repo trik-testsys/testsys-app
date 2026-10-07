@@ -280,7 +280,7 @@ class TaskValidationRequestPersistenceAdapter(
         val requestId = jpaEntity.requireId()
         val snapshot = taskValidationSnapshot {
             tests = this@TaskValidationRequestPersistenceAdapter.tests.findAllByIdRequestId(requestId)
-                .map { TestId(it.id.testId) }.toMutableList()
+                .map { TestId(it.id.testId) }.sortedBy { it.value }.toMutableList()
             developerSolutions = solutions.findAllByIdRequestId(requestId).sortedBy { it.id.developerSolutionId }
                 .map { row ->
                     developerSolutionValidationInput {
@@ -334,7 +334,7 @@ class TaskValidationRequestPersistenceAdapter(
             is TaskContent.Committed -> error("Task id=${task.id.value} has no working revision for diagnostics")
         }
         return taskValidationSnapshot {
-            tests = content.tests.ids.toMutableList()
+            tests = content.tests.ids.sortedBy { it.value }.toMutableList()
             developerSolutions = developerSolutionRepository.load(content.developerSolutions).sortedBy { it.id.value }.map { solution ->
                 developerSolutionValidationInput {
                     developerSolution = solution.id

@@ -503,6 +503,21 @@ class TaskValidationRequestPersistenceAdapterTests :
     }
 
     @Test
+    fun `should ignore polygon order when deduplicating`() {
+        val task = fixtures.workingTask()
+        val first = fixtures.polygon()
+        val second = fixtures.polygon()
+        val editable = taskRepository.update(task.withData { content.new { tests = mutableListOf(first.id, second.id) } })
+        val request = repository.findOrCreateActive(task.id, task.data.owner.id)
+        taskRepository.update(editable.withData { content.new { tests = mutableListOf(second.id, first.id) } })
+
+        val repeated = repository.findOrCreateActive(task.id, task.data.owner.id)
+
+        assertEquals(request.id, repeated.id)
+        assertEquals(1, repository.findHistory(task.id).size)
+    }
+
+    @Test
     fun `should pin one complete snapshot when task editing races request creation`() {
         val task = fixtures.workingTask()
         val oldTest = fixtures.polygon()

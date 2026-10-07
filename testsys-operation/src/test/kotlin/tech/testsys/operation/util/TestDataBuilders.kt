@@ -11,8 +11,10 @@ import tech.testsys.domain.builder.user.DeveloperBuilder
 import tech.testsys.domain.builder.user.JudgeBuilder
 import tech.testsys.domain.builder.user.ManagerBuilder
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
+import tech.testsys.domain.builder.user.ObserverDataBuilder
 import tech.testsys.domain.builder.user.ParticipantDataBuilder
 import tech.testsys.domain.builder.user.StudentBuilder
+import tech.testsys.domain.builder.user.SupervisorDataBuilder
 import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.group.Class
@@ -29,7 +31,9 @@ import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.Supervisor
 import java.time.Instant
 import java.util.UUID
 
@@ -166,6 +170,27 @@ fun testParticipant(builder: ParticipantDataBuilder.() -> Unit = {}): Participan
         accessToken("participant", algorithm = HashAlgorithm.Identity)
         name = "Participant"
         competition(23)
+        builder()
+    }
+}
+
+fun testObserver(builder: ObserverDataBuilder.() -> Unit = {}): Observer = observer {
+    id = 18
+    createdAt = Instant.EPOCH
+    data = observerData {
+        accessToken("observer", algorithm = HashAlgorithm.Identity)
+        name = "Observer"
+        community(29)
+        builder()
+    }
+}
+
+fun testSupervisor(builder: SupervisorDataBuilder.() -> Unit = {}): Supervisor = supervisor {
+    id = 19
+    createdAt = Instant.EPOCH
+    data = supervisorData {
+        accessToken("supervisor", algorithm = HashAlgorithm.Identity)
+        name = "Supervisor"
         builder()
     }
 }

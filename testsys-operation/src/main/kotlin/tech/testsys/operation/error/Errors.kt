@@ -1558,3 +1558,21 @@ data class ResourceNotInCommittedTaskError(val taskId: TaskId, val resourceId: D
     DownloadStudentTaskResourceError
 
 // endregion
+
+// region UserOperations
+
+/**
+ * Failure of signing in to the system by an access code.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AuthenticateError : OperationError
+
+/**
+ * The entered access code is not assigned to any user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object InvalidAccessTokenError : AuthenticateError
+
+// endregion

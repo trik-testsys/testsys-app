@@ -40,12 +40,14 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
     @Autowired
     private lateinit var competitionToObserverJpaEntityRepository: CompetitionToObserverJpaEntityRepository
 
-    override fun newData(): ObserverData {
+    override fun newData() = newData(fixtures.unique("token"))
+
+    private fun newData(rawAccessToken: String): ObserverData {
         val communityId = fixtures.community().id.value
         val competitionIds = listOf(fixtures.competition().id.value, fixtures.competition().id.value)
         return observerData {
             community(communityId)
-            accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
             name = fixtures.unique("Observer")
             competitions(competitionIds)
         }
@@ -138,5 +140,36 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         assertEquals(listOf(observer.id), repository.findByIds(listOf(participantId, observer.id, developerId)).map { it.id })
         repository.removeById(participantId)
         assertTrue(userJpaEntityRepository.findById(participantId.value).isPresent)
+    }
+
+    @Test
+    fun `should find user by its access code`() {
+        val token = fixtures.unique("token")
+        val saved = repository.save(newData(token))
+
+        val found = repository.findByAccessToken(token)
+
+        assertNotNull(found)
+        assertEquals(saved.id, found.id)
+        assertSameData(saved, found)
+    }
+
+    @Test
+    fun `should not find user of another kind by its access code`() {
+        val token = fixtures.unique("token")
+        fixtures.participant(rawAccessToken = token)
+
+        val found = repository.findByAccessToken(token)
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should not find user by unknown access code`() {
+        repository.save(newData())
+
+        val found = repository.findByAccessToken(fixtures.unique("unknown"))
+
+        assertNull(found)
     }
 }

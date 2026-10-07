@@ -126,6 +126,12 @@
 `withData` переносит сохранённый `AccessTokenHash`. Для замены КД вызывается `accessToken(newToken, algorithm)` внутри блока `withData`.
 Конструкторы классов данных и их `copy` принимают готовый `AccessTokenHash`.
 
+Порты хранения Пользователей `MultipleRoleUserRepository`, `ParticipantRepository`, `ObserverRepository`
+и `SupervisorRepository` расширяют `UserAccessTokenFinder`
+([UserRepositories.kt](src/main/kotlin/tech/testsys/domain/contract/persistence/repository/UserRepositories.kt)).
+Его метод `findByAccessToken` принимает исходный КД и возвращает Пользователя своего вида, которому этот КД
+присвоен сейчас, или `null`. КД сравнивается без нормализации. Хэширование и сравнение выполняет адаптер хранения.
+
 ### Коды-приглашения
 
 [`ClassInvite`](src/main/kotlin/tech/testsys/domain/model/group/ClassInvite.kt) хранит Код-приглашение

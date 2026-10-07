@@ -155,6 +155,13 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 это ограничение нужно пересмотреть. Семантика сохранённого КД и правило аннотации — в разделе
 [«Пользователи»](../../testsys-domain/README.md#пользователи).
 
+`AbstractUserPersistenceAdapter.findByAccessToken` хэширует исходный КД алгоритмом `Identity` и ищет строку
+`ts_user` по сохранённому значению и алгоритму
+([AbstractUserPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/AbstractUserPersistenceAdapter.kt)).
+Строку Пользователя другого вида адаптер отбрасывает через `supports`. Поиск находит Пользователя, только пока
+сохранённое значение совпадает с исходным КД, поэтому метод помечен `@RawAccessTokenDependency`.
+При переходе к хэшированию с солью этот поиск нужно пересмотреть.
+
 ## Коды-приглашения
 
 Коды-приглашения хранятся в таблицах `ts_class_invite` и `ts_community_invite`, созданных в

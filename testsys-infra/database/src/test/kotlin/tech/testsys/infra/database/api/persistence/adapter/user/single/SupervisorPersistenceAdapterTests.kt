@@ -17,6 +17,7 @@ import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRep
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SupervisorDataJpaEntityRepository
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -35,8 +36,10 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     @Autowired
     private lateinit var singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository
 
-    override fun newData() = supervisorData {
-        accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+    override fun newData() = newData(fixtures.unique("token"))
+
+    private fun newData(rawAccessToken: String) = supervisorData {
+        accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
         name = fixtures.unique("Supervisor")
     }
 
@@ -98,5 +101,36 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         assertEquals(listOf(supervisor.id), repository.findByIds(listOf(participantId, supervisor.id, developerId)).map { it.id })
         repository.removeById(participantId)
         assertTrue(userJpaEntityRepository.findById(participantId.value).isPresent)
+    }
+
+    @Test
+    fun `should find user by its access code`() {
+        val token = fixtures.unique("token")
+        val saved = repository.save(newData(token))
+
+        val found = repository.findByAccessToken(token)
+
+        assertNotNull(found)
+        assertEquals(saved.id, found.id)
+        assertSameData(saved, found)
+    }
+
+    @Test
+    fun `should not find user of another kind by its access code`() {
+        val token = fixtures.unique("token")
+        fixtures.participant(rawAccessToken = token)
+
+        val found = repository.findByAccessToken(token)
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should not find user by unknown access code`() {
+        repository.save(newData())
+
+        val found = repository.findByAccessToken(fixtures.unique("unknown"))
+
+        assertNull(found)
     }
 }

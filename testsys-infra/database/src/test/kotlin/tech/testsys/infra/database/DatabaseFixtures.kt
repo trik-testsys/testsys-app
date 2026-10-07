@@ -180,31 +180,31 @@ class DatabaseFixtures(
 
     fun administrator(): MultipleRoleUser = multipleRoleUser { roles { administrator {} } }
 
-    fun participant(competition: Competition = competition()): Participant {
+    fun participant(competition: Competition = competition(), rawAccessToken: String = unique("token")): Participant {
         val competitionId = competition.id.value
         return participants.save(
             participantData {
                 competition(competitionId)
-                accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
+                accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
                 name = unique("Participant")
             },
         )
     }
 
-    fun observer(community: Community = community()): Observer {
+    fun observer(community: Community = community(), rawAccessToken: String = unique("token")): Observer {
         val communityId = community.id.value
         return observers.save(
             observerData {
                 community(communityId)
-                accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
+                accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
                 name = unique("Observer")
             },
         )
     }
 
-    fun supervisor(): Supervisor = supervisors.save(
+    fun supervisor(rawAccessToken: String = unique("token")): Supervisor = supervisors.save(
         supervisorData {
-            accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
+            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
             name = unique("Supervisor")
         },
     )

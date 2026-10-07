@@ -66,11 +66,33 @@ interface UserRepository {
 }
 
 /**
+ * Finds users of one kind by their access code.
+ *
+ * @param Id the identifier type of the user kind.
+ * @param Entity the user kind.
+ * @since %CURRENT_VERSION%
+ */
+interface UserAccessTokenFinder<Id : UserId, Entity : User<Id>> {
+
+    /**
+     * Finds the user of this kind whose current access code equals [rawAccessToken] exactly, without normalization.
+     * Technical exceptions of the adapter are propagated.
+     *
+     * @param rawAccessToken the access code entered by the user.
+     * @return the user, or `null` if no user of this kind has this access code.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByAccessToken(rawAccessToken: String): Entity?
+}
+
+/**
  * Persistence port for [MultipleRoleUser] entities.
  *
  * @since %CURRENT_VERSION%
  */
-interface MultipleRoleUserRepository : EntityRepository<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser> {
+interface MultipleRoleUserRepository :
+    EntityRepository<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>,
+    UserAccessTokenFinder<MultipleRoleUserId, MultipleRoleUser> {
 
     /**
      * Synchronously and atomically grants [kind] to [userId] if it is not held yet and makes the user a member of
@@ -92,14 +114,18 @@ interface MultipleRoleUserRepository : EntityRepository<MultipleRoleUserData, Mu
  *
  * @since %CURRENT_VERSION%
  */
-interface ObserverRepository : EntityRepository<ObserverData, SingleRoleUserId, Observer>
+interface ObserverRepository :
+    EntityRepository<ObserverData, SingleRoleUserId, Observer>,
+    UserAccessTokenFinder<SingleRoleUserId, Observer>
 
 /**
  * Persistence port for [Participant] entities.
  *
  * @since %CURRENT_VERSION%
  */
-interface ParticipantRepository : EntityRepository<ParticipantData, SingleRoleUserId, Participant> {
+interface ParticipantRepository :
+    EntityRepository<ParticipantData, SingleRoleUserId, Participant>,
+    UserAccessTokenFinder<SingleRoleUserId, Participant> {
 
     /**
      * Synchronously saves one new participant of [competitionId] per access-code hash, all of them or none.
@@ -123,4 +149,6 @@ interface ParticipantRepository : EntityRepository<ParticipantData, SingleRoleUs
  *
  * @since %CURRENT_VERSION%
  */
-interface SupervisorRepository : EntityRepository<SupervisorData, SingleRoleUserId, Supervisor>
+interface SupervisorRepository :
+    EntityRepository<SupervisorData, SingleRoleUserId, Supervisor>,
+    UserAccessTokenFinder<SingleRoleUserId, Supervisor>

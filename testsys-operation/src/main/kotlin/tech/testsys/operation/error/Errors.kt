@@ -1,7 +1,9 @@
 package tech.testsys.operation.error
 
 import tech.testsys.domain.model.DomainId
+import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.ExerciseId
@@ -515,7 +517,15 @@ data class AttemptDurationExceedsContestDurationError(
  */
 data class ContestNotExistsError(
     val contestId: ContestId,
-) : EntityNotExistsError, EditContestError, ShareContestError, AttachTaskError, DetachTaskError, ViewContestError, DeleteContestError
+) : EntityNotExistsError,
+    EditContestError,
+    ShareContestError,
+    AttachTaskError,
+    DetachTaskError,
+    ViewContestError,
+    DeleteContestError,
+    EnterParticipantContestError,
+    EnterStudentContestError
 
 /**
  * The user has no access to the contest for the requested operation.
@@ -525,7 +535,15 @@ data class ContestNotExistsError(
  */
 data class ContestAccessDeniedError(
     val contestId: ContestId,
-) : AccessDeniedError, EditContestError, ShareContestError, AttachTaskError, DetachTaskError, ViewContestError, DeleteContestError
+) : AccessDeniedError,
+    EditContestError,
+    ShareContestError,
+    AttachTaskError,
+    DetachTaskError,
+    ViewContestError,
+    DeleteContestError,
+    EnterParticipantContestError,
+    EnterStudentContestError
 
 /**
  * The contest is shared to at least one community.
@@ -878,3 +896,97 @@ data class ResourceNotUploadedToTaskError(val taskId: TaskId, val versionBucket:
 data class ResourceVersionNotExistsError(val versionBucket: VersionBucket, val versionId: DomainId) :
     EntityNotExistsError,
     DownloadResourceVersionError
+
+// region StudyOperations
+
+/**
+ * Failure of listing contests of the participant.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewParticipantContestsError : OperationError
+
+/**
+ * Failure of listing contests of the selected class.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewStudentContestsError : OperationError
+
+/**
+ * Failure of entering a participant contest.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EnterParticipantContestError : OperationError
+
+/**
+ * Failure of entering a student contest.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EnterStudentContestError : OperationError
+
+/**
+ * The user is not a participant.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object MissedParticipantRoleError :
+    MissedRequiredRoleError, ViewParticipantContestsError, EnterParticipantContestError
+
+/**
+ * The user does not hold the student role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object MissedStudentRoleError : MissedRequiredRoleError, ViewStudentContestsError, EnterStudentContestError
+
+/**
+ * The competition does not exist.
+ *
+ * @property competitionId the missing competition.
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionNotExistsError(val competitionId: CompetitionId) :
+    EntityNotExistsError, ViewParticipantContestsError, EnterParticipantContestError
+
+/**
+ * The class does not exist.
+ *
+ * @property classId the missing class.
+ * @since %CURRENT_VERSION%
+ */
+data class ClassNotExistsError(val classId: ClassId) :
+    EntityNotExistsError, ViewStudentContestsError, EnterStudentContestError
+
+/**
+ * The user is not enrolled in the selected class.
+ *
+ * @property classId the inaccessible class.
+ * @since %CURRENT_VERSION%
+ */
+data class ClassAccessDeniedError(val classId: ClassId) :
+    AccessDeniedError, ViewStudentContestsError, EnterStudentContestError
+
+/**
+ * The first entry precedes the contest start.
+ *
+ * @property contestId the requested contest.
+ * @property startsAt the interval boundary.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestNotStartedError(val contestId: ContestId, val startsAt: Instant) :
+    EnterParticipantContestError, EnterStudentContestError
+
+/**
+ * The first entry is at or after the contest end.
+ *
+ * @property contestId the requested contest.
+ * @property endsAt the interval boundary.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestEndedError(val contestId: ContestId, val endsAt: Instant) :
+    EnterParticipantContestError, EnterStudentContestError
+
+// endregion

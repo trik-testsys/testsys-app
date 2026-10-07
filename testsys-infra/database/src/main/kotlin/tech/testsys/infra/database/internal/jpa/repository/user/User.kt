@@ -1,5 +1,9 @@
 package tech.testsys.infra.database.internal.jpa.repository.user
 
+import jakarta.persistence.LockModeType
+import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
@@ -12,4 +16,14 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
  */
 @Repository
 @InternalDatabaseApi
-interface UserJpaEntityRepository : SnowflakeJpaEntityRepository<UserJpaEntity>
+interface UserJpaEntityRepository : SnowflakeJpaEntityRepository<UserJpaEntity> {
+
+    /**
+     * Locks the user row of [id] for context entry creation.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from UserJpaEntity u where u.id = :id")
+    fun lockById(@Param("id") id: Long): UserJpaEntity?
+}

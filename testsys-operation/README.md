@@ -214,3 +214,17 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   [Assertions.kt](src/test/kotlin/tech/testsys/operation/util/Assertions.kt).
 
 Образец — [DeveloperOperationsTests.kt](src/test/kotlin/tech/testsys/operation/user/DeveloperOperationsTests.kt).
+
+## Вход в Тур
+
+[ParticipantOperations](src/main/kotlin/tech/testsys/operation/user/ParticipantOperations.kt) предоставляет
+`viewContests` и `enterContest`.
+[StudentOperations](src/main/kotlin/tech/testsys/operation/user/StudentOperations.kt) предоставляет
+`viewContests` и `enterContest` для выбранного Класса.
+
+Обе операции `viewContests` возвращают `List<Pair<Instant?, Contest>>`:
+первый элемент — сохранённый момент входа в выбранном контексте либо `null`, второй — сам Тур.
+Операции не вычисляют оставшееся время и не записывают вход.
+`Clock` передаётся в конструктор и используется только в операциях входа.
+Вызов читает время не более одного раза; сохранённый момент нормализуется до микросекунд.
+Проверки первого и повторного входа описаны в [features.md](../docs/domain/features.md).

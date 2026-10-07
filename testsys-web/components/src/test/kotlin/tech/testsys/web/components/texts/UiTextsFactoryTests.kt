@@ -136,8 +136,23 @@ class UiTextsFactoryTests {
 
     @ParameterizedTest
     @CsvSource("1, файла", "2, файлов", "5, файлов", "11, файлов", "21, файла", "22, файлов", "25, файлов")
-    internal fun `should preserve Russian upload limit forms and byte grouping`(count: Int, files: String) {
-        assertEquals("До $count $files, до 1 412 Б каждый", texts.components.uploadLimits(count, 1412))
+    internal fun `should preserve Russian upload limit forms`(count: Int, files: String) {
+        assertEquals("До $count $files, до 512 Б каждый", texts.components.uploadLimits(count, 512))
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        delimiter = '|',
+        value = [
+            "1023|1 023 Б",
+            "1024|1 КБ",
+            "1536|1,5 КБ",
+            "10485760|10 МБ",
+            "2147483648|2 ГБ",
+        ],
+    )
+    internal fun `should show upload size limits in binary units`(bytes: Long, size: String) {
+        assertEquals("До 1 файла, до $size каждый", texts.components.uploadLimits(1, bytes))
     }
 
     @ParameterizedTest

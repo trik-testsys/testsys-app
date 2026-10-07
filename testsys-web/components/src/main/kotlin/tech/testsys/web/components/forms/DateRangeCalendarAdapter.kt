@@ -38,7 +38,6 @@ internal class DateRangeCalendarAdapter(private val texts: UiTexts) : ReactAdapt
             mapOf(
                 "start" to value.from?.toString(),
                 "end" to value.to?.toString(),
-                "today" to LocalDate.now().toString(),
                 "months" to calendar.monthNames,
                 "weekdays" to (0 until DAYS_IN_WEEK).map { day -> calendar.weekdaysShort[(day + firstDay) % DAYS_IN_WEEK] },
                 "firstDay" to firstDay,

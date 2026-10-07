@@ -239,6 +239,23 @@ class DownloadLifecycleTests : MockVaadinTests() {
         verify { response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate") }
     }
 
+    @ParameterizedTest
+    @CsvSource(
+        delimiter = '|',
+        value = [
+            "report \"final\".txt|report _final_.txt",
+            "a\\b.txt|a_b.txt",
+            "tab\there.txt|tab_here.txt",
+            "Решение \"1\".qrs|Решение _1_.qrs",
+            "report.txt|report.txt",
+        ],
+    )
+    fun `should replace header unsafe characters in the download filename`(filename: String, expected: String) {
+        val actual = headerSafeFilename(filename)
+
+        assertEquals(expected, actual)
+    }
+
     @Test
     fun `should reject a second transfer of the same attempt as gone`() {
         val content = knownContent()

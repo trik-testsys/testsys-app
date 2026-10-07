@@ -51,7 +51,8 @@ open class NotFoundPage(private val texts: UiTexts) : Div(), HasDynamicTitle {
     }
 
     /**
-     * Resets history navigation until the browser reports the completed navigation state.
+     * Resets history navigation until the browser reports the completed navigation state; every missing-route
+     * handler calls it from `setErrorParameter`, otherwise the back action stays disabled.
      *
      * @since %CURRENT_VERSION%
      */
@@ -70,6 +71,8 @@ private fun Element.readCompletedHistory() = executeJs(
         const readHistory = () => resolve(window.navigation ? window.navigation.canGoBack : window.history.length > 1);
         if (window.Vaadin?.Flow?.navigation) {
             window.addEventListener('vaadin-navigated', readHistory, {once: true});
+            // The flag is Flow-internal; read history anyway if the completion event never arrives.
+            setTimeout(readHistory, 1000);
         } else {
             requestAnimationFrame(() => setTimeout(readHistory));
         }

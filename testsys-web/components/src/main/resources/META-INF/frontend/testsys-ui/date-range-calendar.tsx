@@ -3,6 +3,7 @@ import {ConnectedReactAdapterElement} from './connected-react-adapter';
 import { type RenderHooks } from 'Frontend/generated/flow/ReactAdapter';
 import { ServerSnapshot } from './server-snapshot';
 import { DateRangeCalendar } from './DateRangeCalendar.jsx';
+import { localTodayIso } from './calendar-date.ts';
 function viewMonth(value?: string) {
   const parts = value?.match(/^([+-]?\d+)-(\d{2})-\d{2}$/);
   if (parts) return {year: Number(parts[1]), month: Number(parts[2])-1};
@@ -14,12 +15,13 @@ class CalendarAdapter extends ConnectedReactAdapterElement {
   protected render(hooks: RenderHooks) {
     const data = this.snapshot.useSnapshot();
     const changed = hooks.useCustomEvent<any>('range-pick');
-    const anchor = data?.start ?? data?.end ?? data?.today;
+    const today = localTodayIso();
+    const anchor = data?.start ?? data?.end ?? today;
     const [month, setMonth] = React.useState(() => viewMonth(anchor));
     React.useEffect(() => { if (anchor) setMonth(viewMonth(anchor)); }, [anchor]);
     if (!data) return null;
     const move = (delta: number) => setMonth(current => ({year: current.year + Math.floor((current.month+delta)/12), month: (current.month+delta+12)%12}));
-    return <DateRangeCalendar year={month.year} month={month.month} {...data}
+    return <DateRangeCalendar year={month.year} month={month.month} {...data} today={today}
       onMonthChange={(year: number, month: number) => setMonth({year, month})}
       onChange={changed} onPrev={() => move(-1)} onNext={() => move(1)} />;
   }

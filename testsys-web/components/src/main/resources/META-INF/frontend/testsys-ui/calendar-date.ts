@@ -6,6 +6,11 @@ export function civilDate(year: number, month: number, day: number): Date {
   return date;
 }
 
+/** The user's local calendar date, so "today" follows the browser time zone rather than the server's. */
+export function localTodayIso(now: Date = new Date()): string {
+  return calendarIso(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
 export function calendarIso(year: number, month: number, day: number): string {
   const prefix = year >= 0 && year <= 9999
     ? String(year).padStart(4, '0')

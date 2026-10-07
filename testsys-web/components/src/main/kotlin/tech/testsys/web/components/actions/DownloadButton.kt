@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 private const val HTTP_GONE = 410
+private val HEADER_UNSAFE_FILENAME_CHARS = Regex("[\"\\\\\\p{Cntrl}]")
 private const val HTTP_SERVER_ERROR = 500
 private const val PERCENT_MAX = 100.0
 private const val RING_CIRCUMFERENCE = 81.7
@@ -407,7 +408,7 @@ internal class DownloadDisplay(
             return
         }
         event.response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate")
-        event.setFileName(content.filename)
+        event.setFileName(headerSafeFilename(content.filename))
         event.setContentType(content.contentType)
         content.length?.let(event::setContentLength)
         try {
@@ -573,6 +574,9 @@ internal fun streamDownload(
         throw failure
     }
 }
+
+/** Replaces characters that Vaadin writes unescaped into the quoted ASCII `Content-Disposition` filename. */
+internal fun headerSafeFilename(filename: String): String = filename.replace(HEADER_UNSAFE_FILENAME_CHARS, "_")
 
 private fun Element.bindDownloadState(state: Signal<DownloadState>): SignalBinding<String> = bindAttribute(
     "data-state",

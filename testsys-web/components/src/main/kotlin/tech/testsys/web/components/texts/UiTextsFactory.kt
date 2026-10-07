@@ -107,7 +107,7 @@ fun buildUiTexts(): UiTexts {
             openCalendar = { label -> "Открыть календарь: $label" },
             uploadLimits = { count, bytes ->
                 val files = plural(count, one = "файла", few = "файлов", many = "файлов")
-                "До ${formatNumber(count)} $files, до ${formatNumber(bytes)} Б каждый"
+                "До ${formatNumber(count)} $files, до ${formatBytes(bytes)} каждый"
             },
             difficultyLabels = listOf("Лёгкая", "Средняя", "Сложная"),
             questionStatus = { number, answered, flagged ->
@@ -172,6 +172,21 @@ fun buildUiTexts(): UiTexts {
 }
 
 private fun formatNumber(value: Number): String = NumberFormat.getNumberInstance(Locale.forLanguageTag("ru-RU")).format(value)
+
+private const val BYTES_PER_UNIT = 1024.0
+private val BYTE_UNITS = listOf("Б", "КБ", "МБ", "ГБ")
+
+/** Formats [bytes] in the largest binary unit that keeps at least one whole unit, with one fractional digit. */
+private fun formatBytes(bytes: Long): String {
+    var value = bytes.toDouble()
+    var unit = 0
+    while (value >= BYTES_PER_UNIT && unit < BYTE_UNITS.lastIndex) {
+        value /= BYTES_PER_UNIT
+        unit++
+    }
+    val format = NumberFormat.getNumberInstance(Locale.forLanguageTag("ru-RU")).apply { maximumFractionDigits = 1 }
+    return "${format.format(value)} ${BYTE_UNITS[unit]}"
+}
 
 @Suppress("MagicNumber")
 private fun plural(count: Int, one: String, few: String, many: String): String {

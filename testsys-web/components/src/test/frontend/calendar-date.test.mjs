@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {calendarIso, civilDate, inCalendarRange, pickCalendarDate} from '../../main/resources/META-INF/frontend/testsys-ui/calendar-date.ts';
+import {calendarIso, civilDate, inCalendarRange, localTodayIso, pickCalendarDate} from '../../main/resources/META-INF/frontend/testsys-ui/calendar-date.ts';
 
 test('civil years below 100 preserve the selected year', () => {
   assert.equal(civilDate(99, 0, 1).getUTCFullYear(), 99);
@@ -47,3 +47,11 @@ for (const [start, day, end] of signedRanges) {
     assert.deepEqual(pickCalendarDate(start, end, day), {start: day, end: null});
   });
 }
+
+test('today is the local calendar date of the browser', () => {
+  const lateEvening = new Date(2026, 9, 7, 23, 30);
+
+  const today = localTodayIso(lateEvening);
+
+  assert.equal(today, '2026-10-07');
+});

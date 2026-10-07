@@ -93,7 +93,7 @@ internal class PopoverTests : MockVaadinTests() {
         handle.close()
 
         val trigger = trigger(root)
-        assertTrue(pendingJavaScript().none { call -> call.owner == trigger.element.node && "focus()" in call.invocation.expression })
+        assertTrue(pendingJavaScript().none { call -> call.owner == trigger.element.node && ".focus(" in call.invocation.expression })
     }
 
     private fun trigger(root: Component): Button = root.children.toList().single().children.toList().filterIsInstance<Button>().single()

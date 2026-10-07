@@ -8,9 +8,7 @@ import org.springframework.core.env.Environment
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.display.BrandAsset
-import tech.testsys.web.components.display.FoundationCategory
 import tech.testsys.web.components.display.brandImage
-import tech.testsys.web.components.display.foundationSamples
 import tech.testsys.web.components.feedback.skeleton
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.texts.UiTexts
@@ -36,11 +34,6 @@ internal class ShowcaseFoundationsView(texts: UiTexts, private val environment: 
 }
 
 private fun PageScope.foundations() {
-    block("Палитра") { foundationSamples(FoundationCategory.Palette) }
-    block("Типографика") {
-        foundationSamples(FoundationCategory.Typography, sampleText = "TestSys · Кириллица · 0123456789")
-    }
-    block("Отступы, радиусы, тени и движение") { foundationSamples(FoundationCategory.Layout) }
     block("Состояния движения") {
         row { horizontal { action("Навести или сфокусировать") } }
         row { skeleton() }

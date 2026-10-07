@@ -88,7 +88,6 @@ fun buildUiTexts(): UiTexts {
             previousMonth = "Показать предыдущий месяц",
             nextMonth = "Показать следующий месяц",
             calendar = "Открыть календарь",
-            drag = "Переместить: пробел, затем стрелки; Enter применяет, Escape отменяет",
             upload = "Выбрать файлы",
             drop = "Перетащите файлы сюда",
             cancel = "Отменить",
@@ -103,21 +102,11 @@ fun buildUiTexts(): UiTexts {
             downloadAgain = "Скачать снова",
             uploadRejected = "Файл не соответствует ограничениям",
             loading = "Загрузка",
-            overflow = "Другие участники",
             openCalendar = { label -> "Открыть календарь: $label" },
             uploadLimits = { count, bytes ->
                 val files = plural(count, one = "файла", few = "файлов", many = "файлов")
                 "До ${formatNumber(count)} $files, до ${formatBytes(bytes)} каждый"
             },
-            difficultyLabels = listOf("Лёгкая", "Средняя", "Сложная"),
-            questionStatus = { number, answered, flagged ->
-                buildString {
-                    append("Вопрос ${formatNumber(number)}")
-                    if (answered) append(", отвечен")
-                    if (flagged) append(", отмечен")
-                }
-            },
-            reorderPosition = { label, position, total -> "$label: позиция ${formatNumber(position)} из ${formatNumber(total)}" },
             downloadLabel = { label, state -> "$label: $state" },
             percent = { value -> "${formatNumber(value)}%" },
             byteUnits = listOf(
@@ -132,13 +121,8 @@ fun buildUiTexts(): UiTexts {
                 "минуты",
                 "секунды",
             ),
-            avatarOverflow = { count ->
-                val participants = plural(count, one = "участник", few = "участника", many = "участников")
-                "Ещё ${formatNumber(count)} $participants"
-            },
             more = { count -> "Ещё ${formatNumber(count)}" },
             transferBytes = { count -> "Передано: ${formatNumber(count)} Б" },
-            question = { number -> "Вопрос ${formatNumber(number)}" },
         ),
         header = HeaderTexts(
             search = "Поиск задач, соревнований…",

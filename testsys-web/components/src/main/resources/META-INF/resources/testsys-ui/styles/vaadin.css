@@ -142,7 +142,7 @@ vaadin-button > .ts-spinner { display: inline-block; }
   color: var(--text-primary);
 }
 /* Inverse read-only controls stop at tables, which own a neutral surface and reuse normal field styling. */
-@scope (.ts-block--dark) to (.ts-table, .ts-leaderboard table) {
+@scope (.ts-block--dark) to (.ts-table) {
   :scope :is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
       vaadin-integer-field, vaadin-number-field)[readonly]:not([disabled])::part(input-field) {
     color: var(--white);

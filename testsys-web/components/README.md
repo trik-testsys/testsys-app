@@ -33,7 +33,7 @@
 
 Публичные точки входа и общие ручки находятся в корне `tech.testsys.web.components`.
 Реализации сгруппированы по назначению: `layout`, `forms`, `display`, `actions`, `feedback`, `data`, `overlay`,
-`quiz` и `navigation`. Шапка и связанные меню, поиск и уведомления находятся в `navigation.header`.
+и `navigation`. Шапка и связанные меню, поиск и уведомления находятся в `navigation.header`.
 Пакет `texts` объединяет `UiTexts`, фабрику `buildUiTexts()`, настройку локали и привязку текстов к UI.
 Пакет `core` содержит внутренние средства работы с DOM, сигналами и фоновыми задачами.
 
@@ -226,7 +226,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 ячейки `column` таблицы, подвал диалога, кнопки заголовка страницы и пустого состояния.
 
 Функции содержимого — расширения скоупов в пакетах `actions`, `forms`, `display`, `feedback`, `data`, `navigation`,
-`overlay`, `quiz`, `core`; `toast`, `confirm` и `dialog` — функции верхнего уровня в пакетах `feedback` и `overlay`.
+`overlay`, `core`; `toast`, `confirm` и `dialog` — функции верхнего уровня в пакетах `feedback` и `overlay`.
 Функции отображения (`text`, `icon`, `tag`, `badge`, `counter`, `alert`) и `pills` объявлены и для `ContentScope`,
 и для `BlockRowScope` (с необязательным `size`). Поля с подписью есть только в `BlockRowScope`; в `ContentScope`
 есть поля без подписи: `select` (см. [Фильтры в шапке](#фильтры-в-шапке)), `segmentedControl` и `multiSelect`.
@@ -815,7 +815,7 @@ block(title = "Туры") {
 Соглашение об изменяемом состоянии — в [code-style.md](../../docs/project/code-style.md#неизменяемость).
 
 Функции возвращают ручку. Действия и поля ввода принимают завершающую лямбду `configure` с ней же; элементы
-отображения (`text`, `tag`, `badge`, `counter`, `statCard`, …) и `field { }` возвращают ручку без `configure`. Расширенные представления `foundationSamples`, `brandImage`
+отображения (`text`, `tag`, `badge`, `counter`, `statCard`, …) и `field { }` возвращают ручку без `configure`. Расширенное представление `brandImage`
 и компоненты с `DataHandle` принимают необязательный `configure` для настройки своей ручки:
 
 ```kotlin
@@ -932,8 +932,7 @@ inline-стили — в [CssStyles.kt](src/main/kotlin/tech/testsys/web/compone
 
 Клиентские эффекты принадлежат смысловым расширениям рядом с компонентом-владельцем. Внутри этих границ
 хранятся JavaScript-программы, селекторы и сериализация native HTML/SVG; аннотации используют именованные
-константы ресурсов и тегов. Динамические значения передаются параметрами. Каталог `foundationSamples`
-продолжает читать имена токенов из канонических CSS-файлов.
+константы ресурсов и тегов. Динамические значения передаются параметрами.
 
 Маршруты Vaadin, Binder, Signals, URL предметных ресурсов и Spring lifecycle остаются интеграциями приложения.
 Унаследованный API Vaadin у `TestSysView` технически существует, но поддерживаемая конфигурация страниц им
@@ -942,8 +941,6 @@ inline-стили — в [CssStyles.kt](src/main/kotlin/tech/testsys/web/compone
 `initializeUiLocale(ui, texts)` настраивает язык UI и документа внутри ядра; приложения подключают его
 через свой обычный lifecycle.
 
-`BlockScope.foundationSamples(category, sampleText)` иллюстрирует канонические токены категорий
-`FoundationCategory.Palette`, `Typography` и `Layout`; каталог читается внутри components.
 `brandImage(asset, label)` использует `BrandAsset` с сохранёнными ресурсами, пропорциями и доступным именем.
 Примеры — [ShowcaseFoundationsView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseFoundationsView.kt).
 
@@ -998,7 +995,7 @@ Escape и закрытие снаружи отменяют черновик. У�
 в пределах недели, PageUp/PageDown — по месяцам; Enter/Space выбирают, Escape закрывает popup.
 Открытый диапазон и required по-прежнему проверяются существующим полем `DateRangeField`.
 
-## Оверлеи, отображение и упорядоченные данные
+## Оверлеи и отображение
 
 `drawer` строит повторно открываемую форму на 12 колонках с `row` и `footer`: `DrawerHandle` управляет открытием,
 закрытием и редактируемостью. Значения сохраняются. `popover` добавляется в `ContentScope` или строку блока,
@@ -1009,41 +1006,20 @@ Escape и закрытие снаружи отменяют черновик. У�
 | Функция | Данные и ручка |
 |---------|----------------|
 | `verdict` | Нейтральный числовой балл `Double` (включая 0), необязательная подпись; `DataHandle<Double>`, configure и размещение в строке через `size` |
-| `avatar`, `avatarGroup` | `AvatarData` и список идентичностей; доступное имя сохраняется при сокращении до инициалов |
 | `progressBar` | `ProgressValue.Determinate` (0–100) или `Indeterminate`; доступное имя обязательно |
-| `difficulty` | `DifficultyLevel`; локализованная подпись по умолчанию, собственная подпись или `showLabel=false` |
 | `timer` | `TimerValue.Static(Duration)` либо `Until(Instant)`, варианты `Chip`, `Hero`, `Tiles`, `Text`; `TimerHandle.remainingSeconds` — сигнал только для чтения |
 | `contestCard` | `ContestCardData`; отдельные `onClick` и `onAction`, необязательное CTA; есть размещение в слоте страницы |
 | `skeleton`, `skeletonRows` | Геометрия в ядре; страница выбирает форму, число строк и `size`. Декоративные формы `Text`, `Circle`, `Badge`, `Rectangle` и строки внутри одного доступного статуса загрузки |
-| `leaderboard` | `LeaderboardData`: устойчивые ключи строк и колонок, переданные места, ячейки, метрики и явная подсветка |
-| `sortableList` | Уникальные `itemKey`, подпись и Flow-renderer; `SortableListHandle.items`, `bindItems`, `onChange` |
-| `stepper` | `StepperData`, индекс с нуля, доступность отдельного шага задаёт приложение |
-| `quizOption` | `QuizOptionData`; `Correct`/`Wrong` блокируют выбор, UI не вычисляет правильность |
-| `questionNav` | `QuestionNavData`, номера с единицы, answered/flagged/unavailable задаёт приложение |
 
 `verdict` не зависит от домена и не вычисляет успешность: конечное число показывается с нейтральным цветом.
-Статусы очереди, проверки, ошибки и тайм-аута остаются отдельными бейджами. Образец числового API и типизированный показ
-`legacyVerdict(LegacyVerdict)` для кодов совместимости — [ShowcaseDisplayView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseDisplayView.kt).
-Выбор Stepper/QuizOption/QuestionNav и перестановка показывают результат, имеют сброс; карточки разделяют открытие
-и CTA. Другие демонстрационные сценарии описаны в [dev-app/README.md](../dev-app/README.md).
+Статусы очереди, проверки, ошибки и тайм-аута остаются отдельными бейджами. Образец числового API —
+[ShowcaseDisplayView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseDisplayView.kt).
+Карточки разделяют открытие и CTA. Другие демонстрационные сценарии описаны в [dev-app/README.md](../dev-app/README.md).
 
-Отображение с изменяемыми данными возвращает `DataHandle<T>` (`data`, `bindData`); компоненты выбора —
-`SelectionHandle<T>` с теми же данными и `onChange`/`isEnabled`. Программная запись не вызывает callback.
-При привязке данных к сигналу пользовательский callback запрашивает изменение, а значение остаётся у сигнала.
+Отображение с изменяемыми данными возвращает `DataHandle<T>` (`data`, `bindData`).
 Таймер округляет остаток вниз и ограничивает нулём; статический вариант не планирует задач. Живой таймер запускается
 при attach, останавливается при detach и достижении нуля, пересчитывается при повторном attach.
 
-Leaderboard не знает правил подсчёта результатов, штрафов или других состояний Соревнования. Варианты ячеек —
-`None`, `Success`, `HighlightedSuccess`, `Error`, `Pending`. `placeSize`, `identitySize` и `LeaderboardColumn.size` задают доли общей сетки;
-`gridColumns = null` наследует содержащую сетку, явное число расширяет логическую вместимость.
-Остаток и ошибки размеров следуют [контракту таблицы](#колонки). Таблица прокручивается внутри собственного блока.
-`BlockScope.leaderboard` занимает всё тело блока без отступов, поэтому рядом с ним нельзя добавить обычную строку.
-
-SortableList использует клиентскую React-реализацию и именованные keyed slots для Flow-содержимого: перестановка сохраняет
-идентичность компонентов. Мышью перетаскивают ручку; Space/Enter начинают и завершают перемещение, стрелки и Home/End
-меняют позицию, Escape отменяет. Сервер принимает только точную перестановку ключей актуальной версии.
-Программная смена списка, режима или detach отменяют старое перемещение. При `bindItems` пользовательское действие
-запрашивает порядок через callback, а подтверждённый порядок остаётся у сигнала.
 
 ## Настоящая передача файлов
 
@@ -1086,9 +1062,9 @@ UI обновляется через access.
 
 ## Клиентская реализация компонентов
 
-`DateRangeCalendarAdapter` и `SortableListAdapter` подключают `META-INF/frontend/testsys-ui/*.tsx` из jar.
-Их фактические JSX-реализации, типы и внутренние sprite controls лежат рядом с адаптерами.
-Это части двух компонентов, а не отдельная библиотека или эталон. Они импортируют
+`DateRangeCalendarAdapter` подключает `META-INF/frontend/testsys-ui/*.tsx` из jar.
+Его фактическая JSX-реализация, типы и внутренние sprite controls лежат рядом с адаптером.
+Это часть одного компонента, а не отдельная библиотека или эталон. Она импортирует
 `Frontend/generated/flow/ReactAdapter`. Синхронизация CodeEditor, поиск поля для фокуса при включении
 редактирования (`editing-focus.ts`) и возврат фокуса на кнопку после закрытия popup (`popup-focus.ts`) находятся
 в том же frontend-каталоге.

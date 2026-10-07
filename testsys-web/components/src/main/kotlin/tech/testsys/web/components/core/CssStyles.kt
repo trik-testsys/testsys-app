@@ -17,13 +17,7 @@ internal enum class CssDisplay(internal val value: String) {
 
 @InternalComponentsApi
 internal enum class CssProperty(internal val value: String) {
-    Background("background"),
-    FontFamily("font-family"),
-    FontSize("font-size"),
-    FontWeight("font-weight"),
     Padding("padding"),
-    BorderRadius("border-radius"),
-    BoxShadow("box-shadow"),
     Width("width"),
     Height("height"),
     Display("display"),
@@ -38,9 +32,6 @@ internal enum class CssProperty(internal val value: String) {
 
 @InternalComponentsApi
 internal fun Style.set(property: CssProperty, value: String): Style = set(property.value, value)
-
-@InternalComponentsApi
-internal fun Style.setToken(property: CssProperty, tokenName: String): Style = set(property, "var($tokenName)")
 
 @InternalComponentsApi
 internal fun Style.setGridColumnSpan(value: Int): Style = set(CssProperty.GridColumn, "span $value")

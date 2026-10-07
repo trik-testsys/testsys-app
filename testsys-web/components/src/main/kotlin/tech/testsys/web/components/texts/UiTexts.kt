@@ -271,7 +271,6 @@ class NotFoundTexts(
  * @property previousMonth the previous month action.
  * @property nextMonth the next month action.
  * @property calendar the action opening the range calendar.
- * @property drag the accessible instruction for reordering.
  * @property upload the action selecting files.
  * @property drop the hint for dropping files.
  * @property cancel the action cancelling a transfer.
@@ -288,18 +287,12 @@ class NotFoundTexts(
  * @property loading the accessible name of a skeleton.
  * @property openCalendar the contextual accessible name of a calendar trigger.
  * @property uploadLimits the human-readable file count and size limits.
- * @property difficultyLabels the easy, medium and hard difficulty labels.
- * @property questionStatus the question number and answered/flagged statuses.
- * @property reorderPosition the reorder item and current position announcement.
  * @property downloadLabel the contextual accessible label from an action name and state caption.
  * @property percent the progress percentage.
  * @property byteUnits the localized byte-size unit labels.
  * @property timerUnits the labels of days, hours, minutes and seconds.
- * @property avatarOverflow the accessible count of hidden avatars.
  * @property more the accessible count of hidden selected values.
  * @property transferBytes the accessible transferred byte count.
- * @property question the accessible question number.
- * @property overflow the label of the remaining avatars.
  * @since %CURRENT_VERSION%
  */
 class ComponentTexts(
@@ -307,7 +300,6 @@ class ComponentTexts(
     val previousMonth: String,
     val nextMonth: String,
     val calendar: String,
-    val drag: String,
     val upload: String,
     val drop: String,
     val cancel: String,
@@ -322,20 +314,14 @@ class ComponentTexts(
     val downloadAgain: String,
     val uploadRejected: String,
     val loading: String,
-    val overflow: String,
     val openCalendar: (String) -> String,
     val uploadLimits: (Int, Long) -> String,
-    val difficultyLabels: List<String>,
-    val questionStatus: (Int, Boolean, Boolean) -> String,
-    val reorderPosition: (String, Int, Int) -> String,
     val downloadLabel: (String, String) -> String,
     val percent: (Int) -> String,
     val byteUnits: List<String>,
     val timerUnits: List<String>,
-    val avatarOverflow: (Int) -> String,
     val more: (Int) -> String,
     val transferBytes: (Long) -> String,
-    val question: (Int) -> String,
 )
 
 /**

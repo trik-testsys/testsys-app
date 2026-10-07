@@ -26,7 +26,6 @@ internal enum class DomEvent(internal val value: String) {
     HeaderQuery("header-query"),
     Input("input"),
     KeyDown("keydown"),
-    ListReorder("list-reorder"),
     MouseEnter("mouseenter"),
     RangePick("range-pick"),
     TransferRemove("testsys-transfer-remove"),

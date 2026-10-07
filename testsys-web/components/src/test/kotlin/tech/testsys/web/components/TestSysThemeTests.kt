@@ -37,7 +37,6 @@ class TestSysThemeTests {
         val components = text("testsys-ui/tokens/components.css")
 
         assertEquals("0 0 0 3px var(--accent-ring)", rule(components, ".ts-header__search:focus-within")["box-shadow"])
-        assertEquals("0 0 0 3px var(--accent-ring)", rule(components, ".ts-sort-handle:focus-visible")["box-shadow"])
     }
 
     @Test
@@ -151,7 +150,7 @@ class TestSysThemeTests {
     @Test
     fun `should retain fixed readable fractions and local table scrolling`() {
         val css = resource("testsys-ui/tokens/components.css")!!.readText()
-        val layout = rule(css, ".ts-table.ts-table-grid, .ts-leaderboard table.ts-table-grid")
+        val layout = rule(css, ".ts-table.ts-table-grid")
 
         assertEquals("fixed", layout["table-layout"])
         assertEquals("var(--ts-table-width)", layout["width"])

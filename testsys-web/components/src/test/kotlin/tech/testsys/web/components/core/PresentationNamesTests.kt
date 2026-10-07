@@ -125,15 +125,6 @@ internal class PresentationNamesTests {
     }
 
     @Test
-    fun `should reference a design token`() {
-        val style = Element("div").style
-
-        style.setToken(CssProperty.Background, "--accent")
-
-        assertEquals("var(--accent)", style.get("background"))
-    }
-
-    @Test
     fun `should remove the width and return the style`() {
         val style = Element("div").style.apply { setWidth(100.0, CssUnit.Percent) }
 

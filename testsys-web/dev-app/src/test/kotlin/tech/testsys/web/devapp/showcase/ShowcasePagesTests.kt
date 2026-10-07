@@ -26,14 +26,13 @@ class ShowcasePagesTests {
     @ActiveProfiles("dev")
     inner class DevTests : MockSpringVaadinTests() {
         @Test
-        fun `should build foundations from packaged tokens and brand`() {
+        fun `should build foundations from motion states and brand`() {
             UI.getCurrent().navigate("dev/showcase/foundations")
             expectView<ShowcaseFoundationsView>()
             assertEquals(
-                listOf("Палитра", "Типографика", "Отступы, радиусы, тени и движение", "Состояния движения", "Бренд"),
+                listOf("Состояния движения", "Бренд"),
                 _find<com.vaadin.flow.component.html.H3>().filter { "ts-block__title" in it.element.classList }.map { it.text },
             )
-            assertTrue(_find<Div>().any { it.text == "--accent" })
             assertTrue(_find<com.vaadin.flow.component.html.Image>().any { it.src.contains("brand/") })
         }
 
@@ -133,105 +132,19 @@ class ShowcasePagesTests {
             UI.getCurrent().navigate("dev/showcase/display")
 
             expectView<ShowcaseDisplayView>()
-            assertTrue(_find<NativeButton>().any { button -> "ts-qopt" in button.element.classList })
+            assertTrue(_find<Div>().any { card -> "ts-ccard" in card.element.classList })
         }
 
         @Test
-        fun `should render numeric zero and legacy compatibility separately`() {
+        fun `should render numeric zero verdicts`() {
             UI.getCurrent().navigate("dev/showcase/display")
 
             val scores = _find<Span>().filter { span -> "ts-verdict--score" in span.element.classList }
             assertEquals(listOf("0", "65баллов", "0баллов"), scores.map { score -> score.element.textRecursively })
-            assertEquals(
-                7,
-                _find<Span>().count { span -> "ts-verdict" in span.element.classList && "ts-verdict--score" !in span.element.classList },
-            )
-        }
-
-        @Test
-        fun `should show the selected step`() {
-            UI.getCurrent().navigate("dev/showcase/display")
-            val first = _find<NativeButton>().single { button -> button.element.getAttribute("aria-label") == "Начало" }
-
-            first._click()
-
-            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Выбран шаг: 1" })
-        }
-
-        @Test
-        fun `should restore the initial step on reset`() {
-            UI.getCurrent().navigate("dev/showcase/display")
-            _find<NativeButton>().single { button -> button.element.getAttribute("aria-label") == "Начало" }._click()
-
-            resetChoices()
-
-            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Выбран шаг: 2" })
-        }
-
-        @Test
-        fun `should show the selected answer`() {
-            UI.getCurrent().navigate("dev/showcase/display")
-
-            answer("Обычный ответ")._click()
-
-            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Ответ выбран: true" })
-        }
-
-        @Test
-        fun `should clear the selected answer on reset`() {
-            UI.getCurrent().navigate("dev/showcase/display")
-            answer("Обычный ответ")._click()
-
-            resetChoices()
-
-            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Ответ выбран: false" })
-        }
-
-        @Test
-        fun `should deselect the initially selected multiple answer on click`() {
-            UI.getCurrent().navigate("dev/showcase/display")
-            val answer = answer("Несколько ответов")
-
-            answer._click()
-
-            assertEquals("false", answer.element.getAttribute("aria-pressed"))
-        }
-
-        @Test
-        fun `should restore the initial multiple answer selection on reset`() {
-            UI.getCurrent().navigate("dev/showcase/display")
-            val answer = answer("Несколько ответов")
-            answer._click()
-
-            resetChoices()
-
-            assertEquals("true", answer.element.getAttribute("aria-pressed"))
-            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Ответ выбран: false" })
-        }
-
-        @Test
-        fun `should show selected question and keep unavailable question disabled`() {
-            UI.getCurrent().navigate("dev/showcase/display")
-            val question = _find<NativeButton>().single { button -> "ts-qnav__cell" in button.element.classList && button.text == "4" }
-
-            question._click()
-
-            assertTrue(_find<Div>().any { paragraph -> paragraph.text == "Текущий вопрос: 4" })
-            assertTrue(
-                _find<NativeButton>().single { button ->
-                    "ts-qnav__cell" in button.element.classList && button.text == "10"
-                }.isEnabled.not(),
-            )
         }
 
         private fun wideMatrix(): com.vaadin.flow.component.html.Table =
             _find<com.vaadin.flow.component.html.Table>().single { candidate -> candidate.element.style.get("--ts-table-used") == "66" }
-
-        private fun answer(text: String): NativeButton = _find<NativeButton>().single { button ->
-            "ts-qopt" in button.element.classList && button.element.textRecursively.contains(text)
-        }
-
-        private fun resetChoices() = _find<Button>().single { button -> button.text == "Сбросить выборы" }._click()
     }
 
     @Nested

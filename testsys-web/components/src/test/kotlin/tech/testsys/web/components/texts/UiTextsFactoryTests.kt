@@ -105,22 +105,6 @@ class UiTextsFactoryTests {
 
     @ParameterizedTest
     @CsvSource(
-        "0, Ещё 0 участников",
-        "1, Ещё 1 участник",
-        "2, Ещё 2 участника",
-        "5, Ещё 5 участников",
-        "11, Ещё 11 участников",
-        "21, Ещё 21 участник",
-        "22, Ещё 22 участника",
-        "25, Ещё 25 участников",
-        "1412, Ещё 1 412 участников",
-    )
-    internal fun `should preserve Russian avatar count forms at plural boundaries`(count: Int, expected: String) {
-        assertEquals(expected, texts.components.avatarOverflow(count))
-    }
-
-    @ParameterizedTest
-    @CsvSource(
         "0, Получено 0 новых уведомлений",
         "1, Получено 1 новое уведомление",
         "2, Получено 2 новых уведомления",
@@ -153,17 +137,6 @@ class UiTextsFactoryTests {
     )
     internal fun `should show upload size limits in binary units`(bytes: Long, size: String) {
         assertEquals("До 1 файла, до $size каждый", texts.components.uploadLimits(1, bytes))
-    }
-
-    @ParameterizedTest
-    @CsvSource(
-        "false, false, Вопрос 7",
-        "true, false, 'Вопрос 7, отвечен'",
-        "false, true, 'Вопрос 7, отмечен'",
-        "true, true, 'Вопрос 7, отвечен, отмечен'",
-    )
-    internal fun `should describe a question by its answered and flagged statuses`(answered: Boolean, flagged: Boolean, expected: String) {
-        assertEquals(expected, texts.components.questionStatus(7, answered, flagged))
     }
 
     @Test

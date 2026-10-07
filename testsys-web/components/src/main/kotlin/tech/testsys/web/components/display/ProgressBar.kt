@@ -3,21 +3,16 @@
 package tech.testsys.web.components.display
 
 import com.vaadin.flow.component.html.Div
-import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.DataHandle
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssUnit
 import tech.testsys.web.components.core.ElementRole
 import tech.testsys.web.components.core.HtmlAttribute
-import tech.testsys.web.components.core.HtmlTag
 import tech.testsys.web.components.core.InternalComponentsApi
-import tech.testsys.web.components.core.add
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
-import tech.testsys.web.components.core.htmlElement
 import tech.testsys.web.components.core.removeAttribute
 import tech.testsys.web.components.core.removeWidth
-import tech.testsys.web.components.core.setAriaHidden
 import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setRole
@@ -26,7 +21,6 @@ import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 
 private const val PERCENT_MAX = 100.0
-private const val DIFFICULTY_INDICATORS = 3
 
 /**
  * Progress with either a known percentage or an unknown remaining duration.
@@ -108,81 +102,6 @@ fun BlockRowScope.progressBar(
     configure: DataHandle<ProgressValue>.() -> Unit = {},
 ): DataHandle<ProgressValue> = placeContent(size, Div()).progressBar(label, value, tone, configure)
 
-/**
- * Difficulty with one, two or three filled indicators.
- *
- * @since %CURRENT_VERSION%
- */
-enum class DifficultyLevel {
-    /**
-     * One filled indicator.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    Easy,
-
-    /**
-     * Two filled indicators.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    Medium,
-
-    /**
-     * Three filled indicators.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    Hard,
-}
-
-/**
- * Adds a difficulty indicator for [level], with application-provided [label].
- *
- * @since %CURRENT_VERSION%
- */
-fun ContentScope.difficulty(
-    level: DifficultyLevel,
-    label: String? = null,
-    showLabel: Boolean = true,
-    configure: DataHandle<DifficultyLevel>.() -> Unit = {},
-): DataHandle<DifficultyLevel> {
-    val root = Span().apply { addClassName(CssClass.Difficulty) }
-    fun render(current: DifficultyLevel) {
-        root.removeAll()
-        val caption = label ?: texts.components.difficultyLabels[current.ordinal]
-        root.element.setAttribute(HtmlAttribute.AriaLabel, caption)
-        DifficultyLevel.entries.forEach { candidate -> root.setClassName(candidate.cssClass, candidate == current) }
-        val marks = Span()
-        repeat(DIFFICULTY_INDICATORS) { index ->
-            marks.element.appendChild(
-                htmlElement(HtmlTag.I).apply {
-                    if (index <= current.ordinal) classList.add(CssClass.DifficultyMarkOn)
-                },
-            )
-        }
-        marks.element.setAriaHidden(true)
-        root.add(marks)
-        if (showLabel) root.add(Span(caption))
-    }
-    render(level)
-    add(root)
-    return DataHandle(root, level, ::render).apply(configure)
-}
-
-/**
- * Adds a difficulty indicator on [size] columns, or the remaining columns.
- *
- * @since %CURRENT_VERSION%
- */
-fun BlockRowScope.difficulty(
-    level: DifficultyLevel,
-    label: String? = null,
-    size: Int? = null,
-    showLabel: Boolean = true,
-    configure: DataHandle<DifficultyLevel>.() -> Unit = {},
-): DataHandle<DifficultyLevel> = placeContent(size, Div()).difficulty(level, label, showLabel, configure)
-
 private val Tone.progressClass: CssClass
     get() = when (this) {
         Tone.Neutral -> CssClass.ProgressNeutral
@@ -190,11 +109,4 @@ private val Tone.progressClass: CssClass
         Tone.Success -> CssClass.ProgressSuccess
         Tone.Warning -> CssClass.ProgressWarning
         Tone.Danger -> CssClass.ProgressDanger
-    }
-
-private val DifficultyLevel.cssClass: CssClass
-    get() = when (this) {
-        DifficultyLevel.Easy -> CssClass.DifficultyEasy
-        DifficultyLevel.Medium -> CssClass.DifficultyMedium
-        DifficultyLevel.Hard -> CssClass.DifficultyHard
     }

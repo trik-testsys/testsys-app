@@ -30,10 +30,10 @@ import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.texts.HeaderTexts
 import java.util.UUID
 
-/** Common native input and visual shell for both supported search modes. */
-internal class HeaderSearchField(val field: Input, val component: Div)
+/** Native input and visual shell of the menu search. */
+private class HeaderSearchField(val field: Input, val component: Div)
 
-internal fun headerSearchField(label: String): HeaderSearchField {
+private fun headerSearchField(label: String): HeaderSearchField {
     val field = Input(null).apply {
         element.setType(ElementType.Search)
         element.setAttribute(HtmlAttribute.Placeholder, label)

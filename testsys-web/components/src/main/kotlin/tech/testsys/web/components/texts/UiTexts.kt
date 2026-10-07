@@ -328,11 +328,7 @@ class ComponentTexts(
  * Built-in header labels and announcements; application data labels remain with the application.
  *
  * @property search the search field name and placeholder.
- * @property searchLoading the announcement of a pending request.
  * @property searchEmpty the empty result message.
- * @property searchFailed the provider failure message.
- * @property searchCount the announcement of the result count.
- * @property retry the retry action.
  * @property notifications the notification popup heading.
  * @property notificationsEmpty the empty notification message.
  * @property readAll the read-all action.
@@ -347,11 +343,7 @@ class ComponentTexts(
  */
 class HeaderTexts(
     val search: String,
-    val searchLoading: String,
     val searchEmpty: String,
-    val searchFailed: String,
-    val searchCount: (Int) -> String,
-    val retry: String,
     val notifications: String,
     val notificationsEmpty: String,
     val readAll: String,

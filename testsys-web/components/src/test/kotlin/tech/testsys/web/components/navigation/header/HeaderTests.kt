@@ -5,6 +5,7 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.router.RouteParameters
+import com.vaadin.flow.signals.local.ValueSignal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -105,19 +106,20 @@ class HeaderTests : MockVaadinTests() {
         val header = buildHeader(
             CabinetHeader(
                 items = listOf(MegaMenuItem(key = "menu", label = "Menu", menu = HeaderMegaMenu(emptyList()))),
-                search = HeaderSearch { emptyList() },
+                user = HeaderUser("Анна Петрова"),
+                notifications = HeaderNotifications(ValueSignal(emptyList()), onRead = {}, onReadAll = {}),
             ),
             testTexts,
         )
         UI.getCurrent().add(header)
         val mega = header.find("ts-header-mega-trigger").children.toList().filterIsInstance<Popover>().single()
-        val search = header.find("ts-header__search").children.toList().filterIsInstance<Popover>().single()
+        val bell = header.find("ts-bell").parent.orElseThrow().children.toList().filterIsInstance<Popover>().single()
         mega.open()
 
-        search.open()
+        bell.open()
 
         assertFalse(mega.isOpened)
-        assertTrue(search.isOpened)
+        assertTrue(bell.isOpened)
         assertTrue(mega.isOpenOnHover)
         assertTrue(mega.isOpenOnClick)
     }

@@ -19,11 +19,8 @@ internal const val LOOKUP_CLICK_EXPRESSION: String = "!event.target.closest('$LO
 internal enum class DomEvent(internal val value: String) {
     Click("click"),
     HeaderArrivalExpired("header-arrival-expired"),
-    HeaderInput("header-input"),
-    HeaderKey("header-key"),
     HeaderMenuClose("header-menu-close"),
     HeaderMenuInput("header-menu-input"),
-    HeaderQuery("header-query"),
     Input("input"),
     KeyDown("keydown"),
     MouseEnter("mouseenter"),
@@ -35,7 +32,6 @@ internal enum class DomEvent(internal val value: String) {
 internal enum class DomEventData(internal val value: String) {
     DetailEnd("event.detail.end"),
     DetailIdentity("event.detail.identity"),
-    DetailKey("event.detail.key"),
     DetailKeys("event.detail.keys"),
     DetailQuery("event.detail.query"),
     DetailRevision("event.detail.revision"),

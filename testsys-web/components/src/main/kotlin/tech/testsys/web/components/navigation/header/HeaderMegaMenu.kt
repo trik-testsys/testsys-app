@@ -32,13 +32,12 @@ import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 
 /**
- * Columns and an optional promotion in a header section.
+ * Columns of a header section.
  *
  * @property columns the groups of links, in their displayed order.
- * @property promotion the optional highlighted card.
  * @since %CURRENT_VERSION%
  */
-data class HeaderMegaMenu(val columns: List<HeaderMegaColumn>, val promotion: HeaderPromotion? = null)
+data class HeaderMegaMenu(val columns: List<HeaderMegaColumn>)
 
 /**
  * Named group of header links.
@@ -65,24 +64,6 @@ data class HeaderMegaColumn(
  * @since %CURRENT_VERSION%
  */
 data class HeaderMegaLink(val label: String, val destination: HeaderDestination, val description: String? = null)
-
-/**
- * Optional highlighted card of a mega-menu.
- *
- * @property title the heading of the promotion.
- * @property description the explanatory text.
- * @property actionLabel the label of the call to action.
- * @property destination the destination of the call to action.
- * @property tag the optional short note above the heading.
- * @since %CURRENT_VERSION%
- */
-data class HeaderPromotion(
-    val title: String,
-    val description: String,
-    val actionLabel: String,
-    val destination: HeaderDestination,
-    val tag: String? = null,
-)
 
 private const val MAX_MENU_COLUMNS = 4
 
@@ -137,7 +118,12 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
         popup.element.style.setMenuColumns(visibleColumns)
         grid.element.style.setMenuColumns(visibleColumns)
         if (columns.isEmpty() && emptyText != null) {
-            grid.add(Span(emptyText).apply { element.setRole(ElementRole.Status) })
+            grid.add(
+                Span(emptyText).apply {
+                    addClassName(CssClass.HeaderSearchStatus)
+                    element.setRole(ElementRole.Status)
+                },
+            )
         }
         columns.forEach { column ->
             val group = Div().apply { addClassName(CssClass.MegaCol) }
@@ -158,17 +144,12 @@ internal class MegaMenuHandle(private val item: MegaMenuItem, interactions: Head
                 val target = menuDestination(destinationLink(link.label, link.destination) { popup.close() })
                 target.element.classList.add(CssClass.MegaLink)
                 target.element.setText("")
-                val title = Span().apply {
-                    addClassName(CssClass.HeaderLinkTitle)
-                    highlight(this, link.label, query)
-                }
-                target.element.appendChild(title.element)
+                target.element.appendChild(headerLinkTitle(link.label, query).element)
                 link.description?.let { description -> target.element.appendChild(Span(description).element) }
                 children.add(target)
             }
             grid.add(group)
         }
-        item.menu.promotion?.let { promotion -> grid.add(promotionCard(promotion) { popup.close() }) }
     }
 
     private fun position() {
@@ -204,6 +185,12 @@ private fun markMenuCurrent(link: RouterLink, isCurrent: Boolean) {
     if (isCurrent) link.element.setAriaCurrent(AriaCurrent.Page) else link.element.setAriaCurrent(null)
 }
 
+/** Title of a header item with literal, case-insensitive query matches marked. */
+private fun headerLinkTitle(label: String, query: String): Span = Span().apply {
+    addClassName(CssClass.HeaderLinkTitle)
+    highlight(this, label, query)
+}
+
 private fun highlight(target: Component, value: String, query: String) {
     target.element.removeAllChildren()
     target.element.setText("")
@@ -211,18 +198,4 @@ private fun highlight(target: Component, value: String, query: String) {
         val text = if (part.isMatched) htmlElement(HtmlTag.Mark).apply { this.text = part.text } else Text(part.text).element
         target.element.appendChild(text)
     }
-}
-
-private fun promotionCard(promotion: HeaderPromotion, close: () -> Unit): Div = Div().apply {
-    addClassName(CssClass.MegaFeat)
-    promotion.tag?.let { tag -> add(Span(tag).apply { addClassName(CssClass.HeaderPromotionTag) }) }
-    add(Div(promotion.title).apply { addClassName(CssClass.HeaderPromotionTitle) })
-    add(Div(promotion.description).apply { addClassName(CssClass.HeaderPromotionDescription) })
-    add(
-        destinationLink(promotion.actionLabel, promotion.destination, close).apply {
-            element.classList.add(CssClass.Btn)
-            element.classList.add(CssClass.BtnSm)
-            element.classList.add(CssClass.HeaderPromotionAction)
-        },
-    )
 }

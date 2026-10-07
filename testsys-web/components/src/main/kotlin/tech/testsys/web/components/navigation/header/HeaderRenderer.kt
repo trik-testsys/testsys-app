@@ -25,18 +25,13 @@ internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
     require(header.menuSearchKey == null || header.menuSearchKey in menus) {
         "Menu search key '${header.menuSearchKey}' must be one of the mega-menu keys ${menus.keys}"
     }
-    require(header.menuSearchKey == null || header.search == null) {
-        "Menu search '${header.menuSearchKey}' excludes provider search"
-    }
     val bar = Div().apply { addClassName(CssClass.HeaderBar) }
     bar.add(buildBrand(texts.brand, href = "."), navigation(header, texts, menus))
+    // The search looks through the section items, so the field follows the navigation.
     if (header.menuSearchKey != null) {
         bar.add(HeaderMenuSearchController(menus.getValue(header.menuSearchKey), texts.header).component)
     }
     bar.add(Div().apply { addClassName(CssClass.HeaderSpacer) })
-    if (header.menuSearchKey == null) {
-        header.search?.let { search -> bar.add(HeaderSearchController(search, texts.header, interactions).component) }
-    }
     val user = header.user
     val signIn = header.signIn
     if (user != null) {

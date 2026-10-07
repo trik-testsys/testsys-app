@@ -16,15 +16,12 @@ internal enum class ElementType(internal val attribute: String) {
 internal enum class ElementRole(internal val attribute: String) {
     Alert("alert"),
     AlertDialog("alertdialog"),
-    ComboBox("combobox"),
     Dialog("dialog"),
     Group("group"),
     Image("img"),
     Link("link"),
-    ListBox("listbox"),
     Menu("menu"),
     MenuItem("menuitem"),
-    Option("option"),
     Presentation("presentation"),
     ProgressBar("progressbar"),
     Region("region"),
@@ -50,18 +47,12 @@ internal enum class AriaCurrent(internal val attribute: String) {
 @InternalComponentsApi
 internal enum class AriaPopup(internal val attribute: String) {
     Dialog("dialog"),
-    ListBox("listbox"),
     Menu("menu"),
 }
 
 @InternalComponentsApi
 internal enum class AriaLive(internal val attribute: String) {
     Polite("polite"),
-}
-
-@InternalComponentsApi
-internal enum class AriaAutocomplete(internal val attribute: String) {
-    List("list"),
 }
 
 @InternalComponentsApi
@@ -107,9 +98,6 @@ internal fun Element.setAriaHasPopup(value: AriaPopup?): Element = setOrRemove(n
 internal fun Element.setAriaLive(value: AriaLive): Element = setAttribute("aria-live", value.attribute)
 
 @InternalComponentsApi
-internal fun Element.setAriaAutocomplete(value: AriaAutocomplete): Element = setAttribute("aria-autocomplete", value.attribute)
-
-@InternalComponentsApi
 internal fun Element.setAriaSort(value: AriaSort): Element = setAttribute("aria-sort", value.attribute)
 
 @InternalComponentsApi
@@ -138,9 +126,6 @@ internal fun Element.setAriaPressed(value: Boolean?): Element = setOrRemove(name
 
 @InternalComponentsApi
 internal fun Element.setAriaRequired(value: Boolean?): Element = setOrRemove(name = "aria-required", value = value?.toString())
-
-@InternalComponentsApi
-internal fun Element.setAriaSelected(value: Boolean?): Element = setOrRemove(name = "aria-selected", value = value?.toString())
 
 @InternalComponentsApi
 internal fun Element.setAnswered(value: Boolean?): Element = setOrRemove(name = "data-answered", value = value?.toString())

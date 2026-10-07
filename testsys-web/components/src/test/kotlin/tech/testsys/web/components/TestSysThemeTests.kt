@@ -49,6 +49,34 @@ class TestSysThemeTests {
     }
 
     @Test
+    fun `should fill a header layer item focused from the keyboard`() {
+        val components = text("testsys-ui/tokens/components.css")
+
+        assertEquals("var(--canvas)", rule(components, ".ts-header-user-item:focus-visible")["background"])
+    }
+
+    @Test
+    fun `should keep a highlighted menu heading on one line`() {
+        val components = text("testsys-ui/tokens/components.css")
+
+        assertEquals("block", rule(components, ".ts-header-mega__heading")["display"])
+    }
+
+    @Test
+    fun `should keep a search match visible inside the current header item`() {
+        val components = text("testsys-ui/tokens/components.css")
+
+        assertEquals("var(--surface-card)", rule(components, ".ts-header-mega__heading[highlight] mark")["background"])
+    }
+
+    @Test
+    fun `should set the notifications popup heading in semibold`() {
+        val components = text("testsys-ui/tokens/components.css")
+
+        assertTrue(rule(components, ".ts-header-popup-head").getValue("font").contains("var(--fw-semibold)"))
+    }
+
+    @Test
     fun `should not replace the focus ring with a thick outline`() {
         val components = text("testsys-ui/tokens/components.css")
 

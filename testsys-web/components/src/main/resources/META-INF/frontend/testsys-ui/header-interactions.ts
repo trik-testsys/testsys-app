@@ -2,8 +2,6 @@ const menuSearches = new WeakMap<HTMLInputElement, () => void>();
 import './header-arrivals.ts';
 
 const headers = new WeakMap<HTMLElement, () => void>();
-const searches = new WeakMap<HTMLInputElement, () => void>();
-const searchDelay = 300;
 const interactive = 'a[href], button:not([disabled]), [tabindex="0"]';
 
 function send(input: HTMLInputElement, name: string, detail: object) {
@@ -65,61 +63,10 @@ function send(input: HTMLInputElement, name: string, detail: object) {
       document.removeEventListener('keydown', restoreMegaFocus, true);
       document.removeEventListener('keydown', keydown);
       observer.disconnect();
-      root.querySelectorAll<HTMLInputElement>('.ts-header__search input').forEach(input => {
-        this.searchDetach(input);
-        this.menuSearchDetach(input);
-      });
+      root.querySelectorAll<HTMLInputElement>('.ts-header__search input').forEach(input => this.menuSearchDetach(input));
     });
   },
   detach(root: HTMLElement) { headers.get(root)?.(); headers.delete(root); },
-  searchAttach(input: HTMLInputElement, popup: any) {
-    this.searchDetach(input);
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const change = () => {
-      clearTimeout(timer);
-      // The eager event invalidates old answers before the delayed provider request.
-      send(input, 'header-input', {query: input.value});
-      if (input.value.trim()) timer = setTimeout(() => send(input, 'header-query', {query: input.value}), searchDelay);
-    };
-    const keydown = (event: KeyboardEvent) => {
-      if (!['ArrowDown', 'ArrowUp', 'Enter', 'Escape', 'Tab'].includes(event.key)) return;
-      if (event.key !== 'Tab') event.preventDefault();
-      if (event.key === 'Escape' || event.key === 'Tab') clearTimeout(timer);
-      send(input, 'header-key', {key: event.key});
-    };
-    const dismiss = () => {
-      clearTimeout(timer);
-      popup.opened = false;
-      send(input, 'header-key', {key: 'Escape'});
-    };
-    const outside = (event: Event) => {
-      const path = event.composedPath();
-      const body = popup.querySelector('.ts-header-search-body');
-      if (popup.opened && !path.includes(input) && !path.includes(popup) &&
-          !path.some(node => node instanceof Node && body?.contains(node))) dismiss();
-    };
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !event.defaultPrevented && event.target !== input && popup.opened) dismiss();
-    };
-    const pointerdown = (event: Event) => {
-      // Suggestion clicks retain the combobox focus until the application opens the destination.
-      if ((event.target as HTMLElement).closest('[role="option"]')) event.preventDefault();
-    };
-    document.addEventListener('pointerdown', outside, true);
-    document.addEventListener('keydown', escape);
-    input.addEventListener('input', change);
-    input.addEventListener('keydown', keydown);
-    popup.addEventListener('pointerdown', pointerdown);
-    searches.set(input, () => {
-      clearTimeout(timer);
-      document.removeEventListener('pointerdown', outside, true);
-      document.removeEventListener('keydown', escape);
-      input.removeEventListener('input', change);
-      input.removeEventListener('keydown', keydown);
-      popup.removeEventListener('pointerdown', pointerdown);
-    });
-  },
-  searchDetach(input: HTMLInputElement) { searches.get(input)?.(); searches.delete(input); },
   menuSearchAttach(input: HTMLInputElement, popup: any, trigger: HTMLElement) {
     this.menuSearchDetach(input);
     let suppressFocus = false;

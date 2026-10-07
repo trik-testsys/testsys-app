@@ -23,7 +23,6 @@ internal enum class HtmlTag(internal val value: String) {
 
 @InternalComponentsApi
 internal enum class HtmlAttribute(internal val value: String) {
-    AriaActiveDescendant("aria-activedescendant"),
     AriaControls("aria-controls"),
     AriaDescribedBy("aria-describedby"),
     AriaLabel("aria-label"),

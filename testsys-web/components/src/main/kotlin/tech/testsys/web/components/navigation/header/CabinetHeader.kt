@@ -26,7 +26,7 @@ data class NavItem(override val key: String, override val label: String, val tar
 /**
  * Section that opens a menu without requiring a route.
  *
- * @property menu the columns and optional promotion of the section.
+ * @property menu the columns of the section.
  * @since %CURRENT_VERSION%
  */
 data class MegaMenuItem(override val key: String, override val label: String, val menu: HeaderMegaMenu) : HeaderItem
@@ -41,15 +41,14 @@ data class MegaMenuItem(override val key: String, override val label: String, va
 data class HeaderUser(val name: String, val menu: HeaderUserMenu? = null)
 
 /**
- * Top bar of a Cabinet page: the brand, sections and optional search, notifications and user menu.
+ * Top bar of a Cabinet page: the brand, sections and optional menu search, notifications and user menu.
  *
  * @property items the sections.
  * @property active the key of the current section, or `null` if no section is current.
  * @property user the signed-in user, or `null` for a guest.
  * @property signIn the route of the sign-in page shown to a guest, or `null` to hide the link.
- * @property search the optional background search, also available to guests.
  * @property notifications the optional application-owned notifications, shown only to signed-in users.
- * @property menuSearchKey the optional mega-menu key filtered by the search field instead of a provider search.
+ * @property menuSearchKey the optional mega-menu key filtered by the search field after the sections, also available to guests.
  * @property signInParameters route parameters of the guest sign-in link, empty by default.
  * @since %CURRENT_VERSION%
  */
@@ -58,7 +57,6 @@ data class CabinetHeader(
     val active: String? = null,
     val user: HeaderUser? = null,
     val signIn: Class<out Component>? = null,
-    val search: HeaderSearch? = null,
     val notifications: HeaderNotifications? = null,
     val menuSearchKey: String? = null,
     val signInParameters: RouteParameters = RouteParameters.empty(),

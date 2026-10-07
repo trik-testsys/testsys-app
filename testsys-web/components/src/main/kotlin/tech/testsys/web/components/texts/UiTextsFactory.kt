@@ -125,12 +125,8 @@ fun buildUiTexts(): UiTexts {
             transferBytes = { count -> "Передано: ${formatNumber(count)} Б" },
         ),
         header = HeaderTexts(
-            search = "Поиск задач, соревнований…",
-            searchLoading = "Поиск…",
+            search = "Поиск по разделам",
             searchEmpty = "Ничего не найдено",
-            searchFailed = "Не удалось выполнить поиск",
-            searchCount = { count -> "Найдено: ${formatNumber(count)}" },
-            retry = "Повторить",
             notifications = "Уведомления",
             notificationsEmpty = "Нет уведомлений",
             readAll = "Прочитать все",

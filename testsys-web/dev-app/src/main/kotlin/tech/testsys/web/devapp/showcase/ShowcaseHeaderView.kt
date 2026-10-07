@@ -22,9 +22,6 @@ import tech.testsys.web.components.navigation.header.HeaderMegaLink
 import tech.testsys.web.components.navigation.header.HeaderMegaMenu
 import tech.testsys.web.components.navigation.header.HeaderNotification
 import tech.testsys.web.components.navigation.header.HeaderNotifications
-import tech.testsys.web.components.navigation.header.HeaderPromotion
-import tech.testsys.web.components.navigation.header.HeaderSearch
-import tech.testsys.web.components.navigation.header.HeaderSearchResult
 import tech.testsys.web.components.navigation.header.HeaderUser
 import tech.testsys.web.components.navigation.header.HeaderUserMenu
 import tech.testsys.web.components.navigation.header.HeaderUserMenuItem
@@ -33,20 +30,9 @@ import tech.testsys.web.components.navigation.header.NavItem
 import tech.testsys.web.components.texts.UiTexts
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 
-private const val SLOW_SEARCH_MILLIS = 1500L
 private const val NOTIFICATION_DELAY_SECONDS = 2L
-
-/** Controls the provider outcome without changing the search component. */
-private enum class SearchMode(val label: String) {
-    Success("Успех"),
-    Slow("Медленный ответ"),
-    Empty("Пустая выдача"),
-    Failure("Ошибка и повтор"),
-}
 
 /**
  * Functional showcase of the Cabinet header and its application-owned data, available only in dev.
@@ -57,8 +43,6 @@ private enum class SearchMode(val label: String) {
 @PageTitle("Шапка Кабинета")
 class ShowcaseHeaderView(texts: UiTexts, private val environment: Environment) : TestSysView(texts), BeforeEnterObserver {
     private val status = ValueSignal("Действий пока нет")
-    private val mode = AtomicReference(SearchMode.Success)
-    private val failNext = AtomicBoolean()
     private val nextNotification = AtomicInteger()
     private val notifications = ValueSignal(initialNotifications())
 
@@ -66,10 +50,9 @@ class ShowcaseHeaderView(texts: UiTexts, private val environment: Environment) :
         page(header()) {
             showcaseHead("Шапка Кабинета")
             block(title = "Результат действий") { row { text(status) } }
-            searchControls()
             notificationControls()
             block(title = "Клавиатура и навигация") {
-                row { text("Cmd/Ctrl+K — поиск; стрелки и Enter — результат; Escape — закрытие. Tab сохраняет порядок.") }
+                row { text("Cmd/Ctrl+K — поиск по разделам; стрелки, Home, End и Enter — пункт меню; Escape — закрытие.") }
                 row { text("Разделы открываются наведением и кликом. Профиль, настройки, выход и действия меню меняют результат выше.") }
             }
         }
@@ -96,7 +79,7 @@ class ShowcaseHeaderView(texts: UiTexts, private val environment: Environment) :
                 ),
             ),
         ),
-        search = HeaderSearch(::fetch),
+        menuSearchKey = "sections",
         notifications = HeaderNotifications(
             items = notifications,
             onRead = { key ->
@@ -143,62 +126,7 @@ class ShowcaseHeaderView(texts: UiTexts, private val environment: Environment) :
                 ),
             ),
         ),
-        promotion = HeaderPromotion(
-            title = "Весенний кубок",
-            description = "Пример промокарточки с действием приложения",
-            actionLabel = "Участвовать",
-            destination = actionDestination("Участие в Весеннем кубке: выполнено"),
-            tag = "Витрина",
-        ),
     )
-
-    private fun fetch(query: String): List<HeaderSearchResult> {
-        when (mode.get()) {
-            SearchMode.Success -> Unit
-            SearchMode.Slow -> Thread.sleep(SLOW_SEARCH_MILLIS)
-            SearchMode.Empty -> return emptyList()
-            SearchMode.Failure -> if (failNext.getAndSet(false)) error("Showcase search failure")
-        }
-        return listOf(
-            HeaderSearchResult(
-                key = "query",
-                label = "Результат: $query",
-                destination = actionDestination("Открыт результат: $query"),
-                description = "Действие приложения",
-            ),
-            HeaderSearchResult(
-                key = "forms",
-                label = "Поля и файлы",
-                destination = HeaderDestination.Route(ShowcaseFormsView::class.java),
-                description = "Настоящий маршрут витрины",
-            ),
-            HeaderSearchResult(
-                key = "long",
-                label = "Результат с очень длинным названием и подробным пояснением",
-                destination = actionDestination("Открыт длинный результат"),
-                description = "Проверка переноса текста",
-            ),
-        )
-    }
-
-    private fun PageScope.searchControls() {
-        block(title = "Состояния поиска") {
-            row {
-                horizontal {
-                    SearchMode.entries.forEach { selected ->
-                        action(selected.label) {
-                            onClick {
-                                mode.set(selected)
-                                failNext.set(selected == SearchMode.Failure)
-                                status.set("Режим поиска: ${selected.label}. Введите запрос в шапке.")
-                            }
-                        }
-                    }
-                }
-            }
-            row { text("Пустой запрос скрывает список. Медленный ответ позволяет проверить смену запроса и закрытие во время загрузки.") }
-        }
-    }
 
     private fun PageScope.notificationControls() {
         block(title = "Живые уведомления") {

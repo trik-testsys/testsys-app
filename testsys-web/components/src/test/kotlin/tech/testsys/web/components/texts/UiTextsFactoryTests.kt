@@ -24,8 +24,7 @@ class UiTextsFactoryTests {
 
     @Test
     fun `should localize header accessible names with application labels and counts`() {
-        assertEquals("Поиск задач, соревнований…", texts.header.search)
-        assertEquals("Найдено: 12", texts.header.searchCount(12))
+        assertEquals("Поиск по разделам", texts.header.search)
         assertEquals("Уведомления: непрочитанных 2", texts.header.unreadCount(2))
         assertEquals("Тур опубликован — не прочитано", texts.header.unreadItem("Тур опубликован"))
         assertEquals("Меню пользователя: Анна", texts.header.userMenu("Анна"))

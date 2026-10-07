@@ -128,11 +128,7 @@ internal val testTexts = UiTexts(
     ),
     header = HeaderTexts(
         search = "Поиск",
-        searchLoading = "Ищем",
         searchEmpty = "Пустой поиск",
-        searchFailed = "Ошибка поиска",
-        searchCount = { count -> "Результатов: $count" },
-        retry = "Повтор поиска",
         notifications = "Уведомления",
         notificationsEmpty = "Пустые уведомления",
         readAll = "Прочитать всё",

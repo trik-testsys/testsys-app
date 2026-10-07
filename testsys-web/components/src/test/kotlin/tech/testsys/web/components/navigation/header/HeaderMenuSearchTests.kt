@@ -98,13 +98,6 @@ class HeaderMenuSearchTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should retain provider search after the spacer`() {
-        val header = buildHeader(CabinetHeader(search = HeaderSearch { emptyList() }), testTexts)
-
-        assertEquals(listOf("ts-nav", "ts-header__spacer", "ts-header__search"), barParts(header))
-    }
-
-    @Test
     fun `should group child destinations beneath their linked heading`() {
         val menu = menu()
 
@@ -180,6 +173,18 @@ class HeaderMenuSearchTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should show the empty status if no menu item matches the query`() {
+        val menu = menu()
+        val search = HeaderMenuSearchController(menu, testTexts.header)
+
+        search.inputChanged("missing")
+
+        val status = menu.component.find("ts-header-search-status").element
+        assertEquals(testTexts.header.searchEmpty, status.text)
+        assertEquals("status", status.getAttribute("role"))
+    }
+
+    @Test
     fun `should show all groups again when the query is cleared`() {
         val menu = menu()
         val search = HeaderMenuSearchController(menu, testTexts.header)
@@ -205,15 +210,6 @@ class HeaderMenuSearchTests : MockVaadinTests() {
     @Test
     fun `should reject a missing menu search key`() {
         assertThrows(IllegalArgumentException::class.java) { buildHeader(CabinetHeader(menuSearchKey = "missing"), testTexts) }
-    }
-
-    @Test
-    fun `should reject provider and menu search together`() {
-        val item = MegaMenuItem(key = "menu", label = "Меню", menu = HeaderMegaMenu(columns))
-
-        assertThrows(IllegalArgumentException::class.java) {
-            buildHeader(CabinetHeader(items = listOf(item), search = HeaderSearch { emptyList() }, menuSearchKey = "menu"), testTexts)
-        }
     }
 
     @Test

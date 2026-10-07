@@ -45,7 +45,7 @@ internal class DomNamesTests : MockVaadinTests() {
 
     @Test
     fun `should return the same registration from event data settings`() {
-        val listener = Div().also { component -> UI.getCurrent().add(component) }.element.addEventListener(DomEvent.HeaderInput) {}
+        val listener = Div().also { component -> UI.getCurrent().add(component) }.element.addEventListener(DomEvent.HeaderMenuInput) {}
 
         val result = listener.addEventData(DomEventData.DetailQuery)
 
@@ -54,7 +54,7 @@ internal class DomNamesTests : MockVaadinTests() {
 
     @Test
     fun `should return the same registration from filter settings`() {
-        val listener = Div().also { component -> UI.getCurrent().add(component) }.element.addEventListener(DomEvent.HeaderInput) {}
+        val listener = Div().also { component -> UI.getCurrent().add(component) }.element.addEventListener(DomEvent.HeaderMenuInput) {}
 
         val result = listener.setFilter(DomEventFilter.TableSortKey)
 
@@ -65,14 +65,14 @@ internal class DomNamesTests : MockVaadinTests() {
     fun `should dispatch an event that passes the filter with its data`() {
         val component = Div().also { div -> UI.getCurrent().add(div) }
         var query = ""
-        component.element.addEventListener(DomEvent.HeaderInput) { event ->
+        component.element.addEventListener(DomEvent.HeaderMenuInput) { event ->
             query = event.eventData.get(DomEventData.DetailQuery).asString()
         }.addEventData(DomEventData.DetailQuery).setFilter(DomEventFilter.TableSortKey)
         val data = ObjectMapper().createObjectNode()
             .put("event.detail.query", "chosen")
             .put(DomEventFilter.TableSortKey.value, true)
 
-        component._fireDomEvent("header-input", data)
+        component._fireDomEvent("header-menu-input", data)
 
         assertEquals("chosen", query)
     }

@@ -47,6 +47,7 @@
 | `testsys.user.*`                    | `UserOperations`             |
 | `testsys.user.single.*`             | `SingleRoleUserOperations`   |
 | `testsys.user.single.participant.*` | `ParticipantOperations`      |
+| `testsys.user.study.*`              | `StudyOperations`            |
 | `testsys.user.single.observer.*`    | `ObserverOperations`         |
 | `testsys.user.multi.*`              | `MultipleRoleUserOperations` |
 | `testsys.user.multi.developer.*`    | `DeveloperOperations`        |
@@ -214,3 +215,38 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   [Assertions.kt](src/test/kotlin/tech/testsys/operation/util/Assertions.kt).
 
 Образец — [DeveloperOperationsTests.kt](src/test/kotlin/tech/testsys/operation/user/DeveloperOperationsTests.kt).
+
+## Просмотр Тура
+
+[StudyOperations](src/main/kotlin/tech/testsys/operation/user/StudyOperations.kt) предоставляет две перегрузки
+`viewContest`: для Участника и для Ученика с идентификатором выбранного Класса.
+Требования просмотра определены в `testsys.user.study.viewContest` в [features.md](../docs/domain/features.md).
+
+Обе перегрузки возвращают `Pair<Instant?, Contest>`: сохранённый момент первого входа
+в выбранном контексте либо `null` и исходный `Contest`.
+Просмотр не загружает Задачи, не записывает вход и не вычисляет оставшееся время.
+
+## Отправка Решения
+
+[StudyOperations](src/main/kotlin/tech/testsys/operation/user/StudyOperations.kt) предоставляет две перегрузки
+`sendSolution`: для Участника и для Ученика с идентификатором выбранного Класса.
+Требования отправки определены в `testsys.user.study.sendSolution` в [features.md](../docs/domain/features.md).
+
+Обе перегрузки сохраняют `Solution` и `Submission` и возвращают сохранённую `Submission`.
+Операция не передаёт Посылку в `Grader`: это делает вызывающая сторона после фиксации транзакции.
+`StudyOperations` получает `Clock` через конструктор и использует его только для проверки времени отправки.
+Вызов читает время не более одного раза.
+
+## Вход в Тур
+
+[ParticipantOperations](src/main/kotlin/tech/testsys/operation/user/ParticipantOperations.kt) предоставляет
+`viewContests` и `enterContest`.
+[StudentOperations](src/main/kotlin/tech/testsys/operation/user/StudentOperations.kt) предоставляет
+`viewContests` и `enterContest` для выбранного Класса.
+
+Обе операции `viewContests` возвращают `List<Pair<Instant?, Contest>>`:
+первый элемент — сохранённый момент входа в выбранном контексте либо `null`, второй — сам Тур.
+Операции не вычисляют оставшееся время и не записывают вход.
+`ParticipantOperations` и `StudentOperations` получают `Clock` через конструктор и используют его только в операциях входа.
+Вызов читает время не более одного раза; сохранённый момент нормализуется до микросекунд.
+Проверки первого и повторного входа описаны в [features.md](../docs/domain/features.md).

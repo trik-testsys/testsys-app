@@ -1,5 +1,6 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.jdbc.core.JdbcTemplate
@@ -20,6 +21,8 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.SubmissionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 import tech.testsys.infra.database.internal.utils.findIdByTagOrError
+import java.sql.Timestamp
+import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -331,6 +334,78 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val found = repository.findGradingByTaskId(task.id)
 
         assertEquals(emptyList(), found)
+    }
+
+    @Nested
+    inner class FindGradingByContextTests {
+
+        @Test
+        fun `should find grading submissions of the author for the task in the contest ordered by creation time`() {
+            val author = fixtures.student()
+            val task = fixtures.task()
+            val contest = fixtures.contest()
+            val later = fixtures.gradingSubmission(authorId = author.id, contest = contest, task = task)
+            val earlier = fixtures.gradingSubmission(authorId = author.id, contest = contest, task = task)
+            setCreatedAt(later, "2030-01-02T00:00:00Z")
+            setCreatedAt(earlier, "2030-01-01T00:00:00Z")
+            fixtures.gradingSubmission(authorId = fixtures.student().id, contest = contest, task = task)
+            fixtures.gradingSubmission(authorId = author.id, contest = contest)
+            fixtures.gradingSubmission(authorId = author.id, task = task)
+            fixtures.submission(author = author, task = task)
+
+            val found = repository.findGradingByContext(authorId = author.id, taskId = task.id, contestId = contest.id)
+
+            assertEquals(listOf(earlier.id, later.id), found.map { it.id })
+            assertEquals(contest.id, assertIs<SubmissionKind.Grading>(found.first().data.kind).contest.id)
+        }
+
+        @Test
+        fun `should order grading submissions by id if they were created at the same time`() {
+            val author = fixtures.student()
+            val task = fixtures.task()
+            val contest = fixtures.contest()
+            val first = fixtures.gradingSubmission(authorId = author.id, contest = contest, task = task)
+            val second = fixtures.gradingSubmission(authorId = author.id, contest = contest, task = task)
+            setCreatedAt(first, "2030-01-01T00:00:00Z")
+            setCreatedAt(second, "2030-01-01T00:00:00Z")
+
+            val found = repository.findGradingByContext(authorId = author.id, taskId = task.id, contestId = contest.id)
+
+            assertEquals(listOf(first.id, second.id), found.map { it.id })
+        }
+
+        @Test
+        fun `should return an empty list if the author has no grading submissions in the context`() {
+            val author = fixtures.student()
+            val task = fixtures.task()
+            val contest = fixtures.contest()
+            fixtures.gradingSubmission(contest = contest, task = task)
+
+            val found = repository.findGradingByContext(authorId = author.id, taskId = task.id, contestId = contest.id)
+
+            assertEquals(emptyList(), found)
+        }
+
+        @Test
+        fun `should keep the fixed-role kind of a participant author`() {
+            val participantId = fixtures.participant().id
+            val task = fixtures.task()
+            val contest = fixtures.contest()
+            val saved = fixtures.gradingSubmission(authorId = participantId, contest = contest, task = task)
+
+            val found = repository.findGradingByContext(authorId = participantId, taskId = task.id, contestId = contest.id)
+
+            assertEquals(listOf(saved.id), found.map { it.id })
+            assertIs<SingleRoleUserId>(found.single().data.author.id)
+        }
+
+        private fun setCreatedAt(submission: Submission, value: String) {
+            jdbcTemplate.update(
+                "update ts_submission set created_at = ? where id = ?",
+                Timestamp.from(Instant.parse(value)),
+                submission.id.value,
+            )
+        }
     }
 
     private fun developerSolutionTestData(version: TrikStudioVersion, submittedTaskId: Long? = null): SubmissionData {

@@ -148,4 +148,16 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
      * @since %CURRENT_VERSION%
      */
     fun findAllByTaskIdAndKindOrderByIdAsc(taskId: Long, kind: SubmissionKindJpaEnum): List<SubmissionJpaEntity>
+
+    /**
+     * Finds submissions of [kind] by [authorId] for [taskId] in [gradingContestId], ordered by creation time and then id.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByAuthorIdAndTaskIdAndKindAndGradingContestIdOrderByCreatedAtAscIdAsc(
+        authorId: Long,
+        taskId: Long,
+        kind: SubmissionKindJpaEnum,
+        gradingContestId: Long,
+    ): List<SubmissionJpaEntity>
 }

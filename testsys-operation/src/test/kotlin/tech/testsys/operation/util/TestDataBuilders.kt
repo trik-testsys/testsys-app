@@ -2,6 +2,8 @@ package tech.testsys.operation.util
 
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.builder.api.multipleRoleUser
+import tech.testsys.domain.builder.group.ClassDataBuilder
+import tech.testsys.domain.builder.group.CompetitionDataBuilder
 import tech.testsys.domain.builder.task.ContestDataBuilder
 import tech.testsys.domain.builder.task.TaskValidationRequestDataBuilder
 import tech.testsys.domain.builder.user.AdministratorBuilder
@@ -9,10 +11,13 @@ import tech.testsys.domain.builder.user.DeveloperBuilder
 import tech.testsys.domain.builder.user.JudgeBuilder
 import tech.testsys.domain.builder.user.ManagerBuilder
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
+import tech.testsys.domain.builder.user.ParticipantDataBuilder
 import tech.testsys.domain.builder.user.StudentBuilder
 import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.model.EntityVersion
+import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.Community
+import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.Statement
@@ -24,6 +29,7 @@ import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.Participant
 import java.time.Instant
 import java.util.UUID
 
@@ -148,5 +154,38 @@ fun testStatement(statementId: Long = 0L): Statement = statement {
         description = "description"
         versionBucket = VersionBucket(UUID(0, 0))
         file("file.pdf", "".toByteArray())
+    }
+}
+
+fun testParticipant(builder: ParticipantDataBuilder.() -> Unit = {}): Participant = participant {
+    id = 17
+    createdAt = Instant.EPOCH
+    data = participantData {
+        accessToken("participant", algorithm = HashAlgorithm.Identity)
+        name = "Participant"
+        competition(23)
+        builder()
+    }
+}
+
+fun testCompetition(builder: CompetitionDataBuilder.() -> Unit = {}): Competition = competition {
+    id = 23
+    createdAt = Instant.EPOCH
+    data = competitionData {
+        owner(1)
+        name = "Competition"
+        description = ""
+        builder()
+    }
+}
+
+fun testStudyClass(builder: ClassDataBuilder.() -> Unit = {}): Class = `class` {
+    id = 23
+    createdAt = Instant.EPOCH
+    data = classData {
+        owner(1)
+        name = "Class"
+        description = ""
+        builder()
     }
 }

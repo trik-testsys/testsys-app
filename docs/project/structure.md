@@ -115,7 +115,7 @@ Workflow лежат в `.github/workflows`.
 
 | Что добавляем                                   | Куда                                                                                              |
 |-------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| Новую доменную сущность                         | `domain/model/<group\|task\|user>` + билдер + порт хранения, см. [implement-entity.md](../guides/implement-entity.md) |
+| Новую доменную сущность                         | `domain/model/<entry\|group\|task\|user>` + билдер + порт хранения, см. [implement-entity.md](../guides/implement-entity.md) |
 | Хранение сущности в БД                          | `testsys-infra:database`, см. [implement-entity.md](../guides/implement-entity.md)               |
 | Новый внешний порт (хранилище, внешняя система) | Интерфейс в `domain/contract`, реализация — в `testsys-infra`, см. [implement-port.md](../guides/implement-port.md) |
 | Пользовательскую фичу                           | Метод с `@Feature` в `operation/user/<Actor>Operations.kt`, см. [implement-feature.md](../guides/implement-feature.md) |

@@ -14,10 +14,12 @@ import tech.testsys.domain.builder.api.logsData
 import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.observerData
+import tech.testsys.domain.builder.api.participantContestEntryData
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.recordingData
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.statementData
+import tech.testsys.domain.builder.api.studentContestEntryData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.api.submissionData
 import tech.testsys.domain.builder.api.supervisorData
@@ -37,16 +39,20 @@ import tech.testsys.domain.contract.persistence.repository.JudgmentOrderReposito
 import tech.testsys.domain.contract.persistence.repository.LogsRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
+import tech.testsys.domain.contract.persistence.repository.ParticipantContestEntryRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
+import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
+import tech.testsys.domain.model.entry.ParticipantContestEntry
+import tech.testsys.domain.model.entry.StudentContestEntry
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.Competition
@@ -75,6 +81,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 import tech.testsys.domain.model.task.Test as Polygon
 
@@ -86,6 +93,8 @@ import tech.testsys.domain.model.task.Test as Polygon
 @OptIn(InternalDatabaseApi::class)
 @Suppress("LongParameterList", "TooManyFunctions")
 class DatabaseFixtures(
+    private val participantContestEntryRepository: ParticipantContestEntryRepository,
+    private val studentContestEntryRepository: StudentContestEntryRepository,
     private val multipleRoleUsers: MultipleRoleUserRepository,
     private val participants: ParticipantRepository,
     private val observers: ObserverRepository,
@@ -108,6 +117,33 @@ class DatabaseFixtures(
     private val recordings: RecordingRepository,
     private val trikStudioVersionJpaEntityRepository: TrikStudioVersionJpaEntityRepository,
 ) {
+
+    fun participantContestEntry(
+        participant: Participant = participant(),
+        contest: Contest = contest(),
+        enteredAt: Instant = Instant.EPOCH,
+    ): ParticipantContestEntry = participantContestEntryRepository.save(
+        participantContestEntryData {
+            this.participant = participant.id
+            competition = participant.data.competition.id
+            this.contest = contest.id
+            this.enteredAt = enteredAt
+        },
+    )
+
+    fun studentContestEntry(
+        user: MultipleRoleUser = student(),
+        studyClass: Class = studentClass(),
+        contest: Contest = contest(),
+        enteredAt: Instant = Instant.EPOCH,
+    ): StudentContestEntry = studentContestEntryRepository.save(
+        studentContestEntryData {
+            this.user = user.id
+            this.studyClass = studyClass.id
+            this.contest = contest.id
+            this.enteredAt = enteredAt
+        },
+    )
 
     fun unique(prefix: String) = "$prefix-${UUID.randomUUID()}"
 
@@ -313,8 +349,8 @@ class DatabaseFixtures(
         )
     }
 
-    fun gradingSubmission(authorId: UserId = student().id, contest: Contest = contest()): Submission {
-        val taskId = task().id.value
+    fun gradingSubmission(authorId: UserId = student().id, contest: Contest = contest(), task: Task = task()): Submission {
+        val taskId = task.id.value
         val solutionId = solution().id.value
         return submissions.save(
             submissionData {

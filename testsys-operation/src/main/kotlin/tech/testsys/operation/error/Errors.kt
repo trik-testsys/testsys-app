@@ -531,7 +531,9 @@ data class ContestNotExistsError(
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
-    DownloadStudentTaskResourceError
+    DownloadStudentTaskResourceError,
+    SendParticipantSolutionError,
+    SendStudentSolutionError
 
 /**
  * The user has no access to the contest for the requested operation.
@@ -555,7 +557,9 @@ data class ContestAccessDeniedError(
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
-    DownloadStudentTaskResourceError
+    DownloadStudentTaskResourceError,
+    SendParticipantSolutionError,
+    SendStudentSolutionError
 
 /**
  * The contest is shared to at least one community.
@@ -603,7 +607,9 @@ data class TaskNotExistsError(val taskId: TaskId) :
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
-    DownloadStudentTaskResourceError
+    DownloadStudentTaskResourceError,
+    SendParticipantSolutionError,
+    SendStudentSolutionError
 
 /**
  * The statement does not exist.
@@ -682,7 +688,9 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
-    DownloadStudentTaskResourceError
+    DownloadStudentTaskResourceError,
+    SendParticipantSolutionError,
+    SendStudentSolutionError
 
 /**
  * The user is not a member of the community.
@@ -990,6 +998,20 @@ sealed interface DownloadParticipantTaskResourceError : OperationError
 sealed interface DownloadStudentTaskResourceError : OperationError
 
 /**
+ * Failure of sending a solution for a task of a contest in the participant's competition.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface SendParticipantSolutionError : OperationError
+
+/**
+ * Failure of sending a solution for a task of a contest in the selected class.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface SendStudentSolutionError : OperationError
+
+/**
  * The user is not a participant.
  *
  * @since %CURRENT_VERSION%
@@ -1000,7 +1022,8 @@ data object MissedParticipantRoleError :
     EnterParticipantContestError,
     ViewParticipantContestError,
     ViewParticipantTaskError,
-    DownloadParticipantTaskResourceError
+    DownloadParticipantTaskResourceError,
+    SendParticipantSolutionError
 
 /**
  * The user does not hold the student role.
@@ -1013,7 +1036,8 @@ data object MissedStudentRoleError :
     EnterStudentContestError,
     ViewStudentContestError,
     ViewStudentTaskError,
-    DownloadStudentTaskResourceError
+    DownloadStudentTaskResourceError,
+    SendStudentSolutionError
 
 /**
  * The competition does not exist.
@@ -1027,7 +1051,8 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
     EnterParticipantContestError,
     ViewParticipantContestError,
     ViewParticipantTaskError,
-    DownloadParticipantTaskResourceError
+    DownloadParticipantTaskResourceError,
+    SendParticipantSolutionError
 
 /**
  * The class does not exist.
@@ -1041,7 +1066,8 @@ data class ClassNotExistsError(val classId: ClassId) :
     EnterStudentContestError,
     ViewStudentContestError,
     ViewStudentTaskError,
-    DownloadStudentTaskResourceError
+    DownloadStudentTaskResourceError,
+    SendStudentSolutionError
 
 /**
  * The user is not enrolled in the selected class.
@@ -1055,7 +1081,8 @@ data class ClassAccessDeniedError(val classId: ClassId) :
     EnterStudentContestError,
     ViewStudentContestError,
     ViewStudentTaskError,
-    DownloadStudentTaskResourceError
+    DownloadStudentTaskResourceError,
+    SendStudentSolutionError
 
 /**
  * The first entry precedes the contest start.
@@ -1068,14 +1095,17 @@ data class ContestNotStartedError(val contestId: ContestId, val startsAt: Instan
     EnterParticipantContestError, EnterStudentContestError
 
 /**
- * The first entry is at or after the contest end.
+ * The first entry or a solution submission is at or after the contest end.
  *
  * @property contestId the requested contest.
  * @property endsAt the interval boundary.
  * @since %CURRENT_VERSION%
  */
 data class ContestEndedError(val contestId: ContestId, val endsAt: Instant) :
-    EnterParticipantContestError, EnterStudentContestError
+    EnterParticipantContestError,
+    EnterStudentContestError,
+    SendParticipantSolutionError,
+    SendStudentSolutionError
 
 /**
  * The user has no first entry to the contest in the selected context.
@@ -1087,7 +1117,31 @@ data class ContestNotEnteredError(val contestId: ContestId) :
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
-    DownloadStudentTaskResourceError
+    DownloadStudentTaskResourceError,
+    SendParticipantSolutionError,
+    SendStudentSolutionError
+
+/**
+ * A solution submission is at or after the first entry in the selected context plus the contest attempt duration.
+ *
+ * @property contestId the requested contest.
+ * @property expiresAt the end of the individual attempt.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestAttemptExpiredError(val contestId: ContestId, val expiresAt: Instant) :
+    SendParticipantSolutionError,
+    SendStudentSolutionError
+
+/**
+ * The last committed revision of the task has no developer solution in the language of the sent solution.
+ *
+ * @property taskId the requested task.
+ * @property language the language of the sent solution.
+ * @since %CURRENT_VERSION%
+ */
+data class SolutionLanguageNotAllowedError(val taskId: TaskId, val language: TrikSupportedLanguage) :
+    SendParticipantSolutionError,
+    SendStudentSolutionError
 
 /**
  * The requested version is not a statement or an exercise of the last committed revision of the task.

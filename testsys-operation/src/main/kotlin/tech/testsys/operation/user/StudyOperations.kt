@@ -1,11 +1,15 @@
 package tech.testsys.operation.user
 
+import tech.testsys.domain.builder.api.solutionData
+import tech.testsys.domain.builder.api.submissionData
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantContestEntryRepository
+import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
@@ -25,16 +29,20 @@ import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUser
 import tech.testsys.domain.model.user.Student
+import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.error.ClassAccessDeniedError
 import tech.testsys.operation.error.ClassNotExistsError
 import tech.testsys.operation.error.CompetitionNotExistsError
 import tech.testsys.operation.error.ContestAccessDeniedError
+import tech.testsys.operation.error.ContestAttemptExpiredError
+import tech.testsys.operation.error.ContestEndedError
 import tech.testsys.operation.error.ContestNotEnteredError
 import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.DownloadParticipantTaskResourceError
@@ -43,6 +51,9 @@ import tech.testsys.operation.error.MissedParticipantRoleError
 import tech.testsys.operation.error.MissedStudentRoleError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ResourceNotInCommittedTaskError
+import tech.testsys.operation.error.SendParticipantSolutionError
+import tech.testsys.operation.error.SendStudentSolutionError
+import tech.testsys.operation.error.SolutionLanguageNotAllowedError
 import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskNotExistsError
 import tech.testsys.operation.error.ViewParticipantContestError
@@ -53,6 +64,7 @@ import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.hasRole
+import java.time.Clock
 import java.time.Instant
 
 /**
@@ -73,6 +85,9 @@ class StudyOperations(
     private val judgmentOrderRepository: JudgmentOrderRepository,
     private val statementRepository: StatementRepository,
     private val exerciseRepository: ExerciseRepository,
+    private val solutionRepository: SolutionRepository,
+    private val developerSolutionRepository: DeveloperSolutionRepository,
+    private val clock: Clock,
 ) {
 
     /**
@@ -267,6 +282,85 @@ class StudyOperations(
     }
 
     /**
+     * Saves [file] in [language] as a queued grading submission of [user] for [taskId] of [contestId] in their competition.
+     * Requires a first entry before the contest and attempt ends; the caller passes the result to the grader after commit.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.study.sendSolution")
+    fun sendSolution(
+        user: SingleRoleUser,
+        contestId: ContestId,
+        taskId: TaskId,
+        file: FileData,
+        language: TrikSupportedLanguage,
+    ): OperationResult<Submission, SendParticipantSolutionError> = operation<Submission, SendParticipantSolutionError> {
+        ensure(user is Participant, MissedParticipantRoleError)
+        val competitionId = user.data.competition.id
+        val competition = competitionRepository.findById(competitionId)
+        ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+        val contest = contestRepository.findById(contestId)
+        ensure(contest != null) { ContestNotExistsError(contestId) }
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(contestId in competition.data.contests.ids) { ContestAccessDeniedError(contestId) }
+        ensure(taskId in contest.data.tasks.ids) { TaskAccessDeniedError(taskId) }
+        val entry = participantContestEntryRepository.findByContext(
+            participantId = user.id,
+            competitionId = competitionId,
+            contestId = contestId,
+        )
+        ensure(entry != null) { ContestNotEnteredError(contestId) }
+        val now = clock.instant()
+        val endsAt = contest.data.endsAt
+        ensure(endsAt == null || now.isBefore(endsAt)) { ContestEndedError(contestId, requireNotNull(endsAt)) }
+        val expiresAt = contest.data.attemptDuration?.let { duration -> entry.data.enteredAt + duration }
+        ensure(expiresAt == null || now.isBefore(expiresAt)) { ContestAttemptExpiredError(contestId, requireNotNull(expiresAt)) }
+        ensure(isLanguageAllowed(task, language)) { SolutionLanguageNotAllowedError(taskId, language) }
+        return saveSubmission(author = user.id, contestId = contestId, taskId = taskId, file = file, language = language).asSuccess()
+    }
+
+    /**
+     * Saves [file] in [language] as a queued grading submission of [user] for [taskId] of [contestId] in [classId].
+     * Requires a first entry in [classId] before the contest and attempt ends; the caller passes the result to the grader after commit.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.study.sendSolution")
+    fun sendSolution(
+        user: MultipleRoleUser,
+        classId: ClassId,
+        contestId: ContestId,
+        taskId: TaskId,
+        file: FileData,
+        language: TrikSupportedLanguage,
+    ): OperationResult<Submission, SendStudentSolutionError> = operation<Submission, SendStudentSolutionError> {
+        ensure(user.hasRole<Student>(), MissedStudentRoleError)
+        val studyClass = classRepository.findById(classId)
+        ensure(studyClass != null) { ClassNotExistsError(classId) }
+        val contest = contestRepository.findById(contestId)
+        ensure(contest != null) { ContestNotExistsError(contestId) }
+        val task = taskRepository.findById(taskId)
+        ensure(task != null) { TaskNotExistsError(taskId) }
+        ensure(user.id in studyClass.data.students.ids) { ClassAccessDeniedError(classId) }
+        ensure(contestId in studyClass.data.contests.ids) { ContestAccessDeniedError(contestId) }
+        ensure(taskId in contest.data.tasks.ids) { TaskAccessDeniedError(taskId) }
+        val entry = studentContestEntryRepository.findByContext(
+            userId = user.id,
+            studyClassId = classId,
+            contestId = contestId,
+        )
+        ensure(entry != null) { ContestNotEnteredError(contestId) }
+        val now = clock.instant()
+        val endsAt = contest.data.endsAt
+        ensure(endsAt == null || now.isBefore(endsAt)) { ContestEndedError(contestId, requireNotNull(endsAt)) }
+        val expiresAt = contest.data.attemptDuration?.let { duration -> entry.data.enteredAt + duration }
+        ensure(expiresAt == null || now.isBefore(expiresAt)) { ContestAttemptExpiredError(contestId, requireNotNull(expiresAt)) }
+        ensure(isLanguageAllowed(task, language)) { SolutionLanguageNotAllowedError(taskId, language) }
+        return saveSubmission(author = user.id, contestId = contestId, taskId = taskId, file = file, language = language).asSuccess()
+    }
+
+    /**
      * Selects the submission with the highest final score; ties go to the earlier one by creation time and then id.
      */
     private fun bestSubmission(submissions: List<Submission>): Submission? = submissions
@@ -325,5 +419,50 @@ class StudyOperations(
             }
             else -> null
         }
+    }
+
+    /**
+     * Checks whether the last committed revision of [task] has a developer solution in [language]; a new task has none.
+     */
+    private fun isLanguageAllowed(task: Task, language: TrikSupportedLanguage): Boolean {
+        val committed = when (val content = task.data.content) {
+            is TaskContent.New -> return false
+            is TaskContent.Uncommitted -> content.lastCommitted
+            is TaskContent.Committed -> content.lastCommitted
+        }
+        return developerSolutionRepository.load(committed.developerSolutions).any { developerSolution ->
+            solutionRepository.load(developerSolution.data.solution).data.language == language
+        }
+    }
+
+    /**
+     * Saves a new solution from [file] and [language] and a queued grading submission of it by [author].
+     */
+    private fun saveSubmission(
+        author: UserId,
+        contestId: ContestId,
+        taskId: TaskId,
+        file: FileData,
+        language: TrikSupportedLanguage,
+    ): Submission {
+        val solution = solutionRepository.save(
+            solutionData {
+                file(file.uploadedFilename, file.content)
+                when (language) {
+                    TrikSupportedLanguage.Python -> this.language.python()
+                    TrikSupportedLanguage.JavaScript -> this.language.javaScript()
+                    TrikSupportedLanguage.VisualLanguage -> this.language.visualLanguage()
+                }
+            },
+        )
+        return submissionRepository.save(
+            submissionData {
+                this.author = author
+                this.solution = solution.id
+                task = taskId
+                status.queued()
+                kind.grading { contest = contestId }
+            },
+        )
     }
 }

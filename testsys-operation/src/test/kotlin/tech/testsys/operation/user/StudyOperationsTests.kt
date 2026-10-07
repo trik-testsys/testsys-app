@@ -4,8 +4,11 @@ import io.mockk.Called
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -15,14 +18,17 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
+import tech.testsys.domain.builder.util.chooser.LanguageChooser
 import tech.testsys.domain.builder.util.chooser.SubmissionStatusChooser
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.EntityLoader
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantContestEntryRepository
+import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
@@ -33,26 +39,41 @@ import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.task.Contest
+import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.DeveloperSolution
+import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseId
+import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderId
+import tech.testsys.domain.model.task.Solution
+import tech.testsys.domain.model.task.SolutionData
+import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Submission
+import tech.testsys.domain.model.task.SubmissionData
+import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.SingleRoleUser
 import tech.testsys.operation.error.*
 import tech.testsys.operation.util.*
+import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.time.ZoneOffset
 import java.util.UUID
 
 class StudyOperationsTests {
@@ -68,6 +89,9 @@ class StudyOperationsTests {
     private val judgmentOrderRepository = mockk<JudgmentOrderRepository>()
     private val statementRepository = mockk<StatementRepository>()
     private val exerciseRepository = mockk<ExerciseRepository>()
+    private val solutionRepository = mockk<SolutionRepository>()
+    private val developerSolutionRepository = mockk<DeveloperSolutionRepository>()
+    private val now = Instant.parse("2026-01-01T12:00:00Z")
     private val operations = StudyOperations(
         competitionRepository = competitions,
         classRepository = classes,
@@ -80,6 +104,9 @@ class StudyOperationsTests {
         judgmentOrderRepository = judgmentOrderRepository,
         statementRepository = statementRepository,
         exerciseRepository = exerciseRepository,
+        solutionRepository = solutionRepository,
+        developerSolutionRepository = developerSolutionRepository,
+        clock = Clock.fixed(now, ZoneOffset.UTC),
     )
     private val participant = testParticipant()
     private val student = testStudent { data = studentData {} }
@@ -1229,6 +1256,530 @@ class StudyOperationsTests {
                 file("exercise.qrs", "exercise".toByteArray())
                 language.python()
             }
+        }
+    }
+
+    @Nested
+    inner class SendSolutionTests {
+
+        private val file = FileData(uploadedFilename = "solution.py", content = "print(1)".toByteArray())
+        private val sentSolution = slot<SolutionData>()
+        private val sentSubmission = slot<SubmissionData>()
+        private val savedSolution = solution {
+            id = 101
+            createdAt = now
+            data = solutionData {
+                file(file.uploadedFilename, file.content)
+                language.python()
+            }
+        }
+        private val savedSubmission = submission {
+            id = 111
+            createdAt = now
+            data = submissionData {
+                author(0)
+                solution(101)
+                task(0)
+                status.queued()
+                kind.grading { contest(19) }
+            }
+        }
+
+        @Nested
+        inner class ParticipantTests {
+
+            @Test
+            fun `should raise MissedParticipantRoleError if user is a Supervisor`() {
+                val user = supervisor {
+                    id = 18
+                    createdAt = Instant.EPOCH
+                    data = supervisorData {
+                        accessToken("supervisor", algorithm = HashAlgorithm.Identity)
+                        name = "Supervisor"
+                    }
+                }
+
+                assertRaises(MissedParticipantRoleError) { send(user = user) }
+
+                verify { competitions wasNot Called }
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise CompetitionNotExistsError if participant competition is missing`() {
+                every { competitions.findById(competition.id) } returns null
+
+                assertRaises(CompetitionNotExistsError(competition.id)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise ContestNotExistsError if contest is missing`() {
+                every { competitions.findById(competition.id) } returns competition
+                every { contests.findById(taskContest.id) } returns null
+
+                assertRaises(ContestNotExistsError(taskContest.id)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise TaskNotExistsError if task is missing`() {
+                every { competitions.findById(competition.id) } returns competition
+                every { contests.findById(taskContest.id) } returns taskContest
+                every { taskRepository.findById(task.id) } returns null
+
+                assertRaises(TaskNotExistsError(task.id)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise ContestAccessDeniedError if contest belongs to another competition`() {
+                every { competitions.findById(competition.id) } returns competition.withData { contests = mutableListOf() }
+                every { contests.findById(taskContest.id) } returns taskContest
+                every { taskRepository.findById(task.id) } returns task
+
+                assertRaises(ContestAccessDeniedError(taskContest.id)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise TaskAccessDeniedError if task is outside the contest`() {
+                prepareParticipantSend(current = contest)
+
+                assertRaises(TaskAccessDeniedError(task.id)) { send(contestId = contest.id) }
+
+                verify { participantEntries wasNot Called }
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise ContestNotEnteredError if participant has not entered the contest`() {
+                prepareParticipantSend(enteredAt = null)
+
+                assertRaises(ContestNotEnteredError(taskContest.id)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise ContestEndedError if solution is sent exactly at the contest end`() {
+                val current = taskContest.withData {
+                    startsAt = firstEntry
+                    contestDuration = Duration.between(firstEntry, now)
+                }
+                prepareParticipantSend(current = current)
+
+                assertRaises(ContestEndedError(current.id, now)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should accept a solution sent one millisecond before the contest end`() {
+                val current = taskContest.withData {
+                    startsAt = firstEntry
+                    contestDuration = Duration.between(firstEntry, now).plusMillis(1)
+                }
+                prepareParticipantSend(current = current)
+
+                val result = send().getOrThrow()
+
+                assertSame(savedSubmission, result)
+            }
+
+            @Test
+            fun `should raise ContestAttemptExpiredError if solution is sent exactly at the end of the attempt`() {
+                val current = taskContest.withData { attemptDuration = Duration.between(firstEntry, now) }
+                prepareParticipantSend(current = current)
+
+                assertRaises(ContestAttemptExpiredError(current.id, now)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should accept a solution sent one millisecond before the end of the attempt`() {
+                val current = taskContest.withData { attemptDuration = Duration.between(firstEntry, now).plusMillis(1) }
+                prepareParticipantSend(current = current)
+
+                val result = send().getOrThrow()
+
+                assertSame(savedSubmission, result)
+            }
+
+            @Test
+            fun `should accept a solution long after the first entry if contest has neither end nor attempt limit`() {
+                val current = taskContest.withData { startsAt = firstEntry }
+                prepareParticipantSend(current = current)
+
+                val result = send().getOrThrow()
+
+                assertSame(savedSubmission, result)
+            }
+
+            @Test
+            fun `should raise SolutionLanguageNotAllowedError if committed task has no developer solution in that language`() {
+                prepareParticipantSend()
+
+                assertRaises(SolutionLanguageNotAllowedError(task.id, TrikSupportedLanguage.VisualLanguage)) {
+                    send(language = TrikSupportedLanguage.VisualLanguage)
+                }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise SolutionLanguageNotAllowedError if the language is only in the working revision`() {
+                prepareParticipantSend(currentTask = uncommittedSolutionTask(committed = listOf(81), wip = listOf(81, 82)))
+                stubDeveloperSolutions(
+                    stubReferenceSolution(developerSolutionId = 81) { python() },
+                    stubReferenceSolution(developerSolutionId = 82) { javaScript() },
+                )
+
+                assertRaises(SolutionLanguageNotAllowedError(task.id, TrikSupportedLanguage.JavaScript)) {
+                    send(language = TrikSupportedLanguage.JavaScript)
+                }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should accept a language of the last committed revision of an uncommitted task`() {
+                prepareParticipantSend(currentTask = uncommittedSolutionTask(committed = listOf(82), wip = listOf(81)))
+                stubDeveloperSolutions(stubReferenceSolution(developerSolutionId = 82) { javaScript() })
+
+                val result = send(language = TrikSupportedLanguage.JavaScript).getOrThrow()
+
+                assertSame(savedSubmission, result)
+            }
+
+            @Test
+            fun `should raise SolutionLanguageNotAllowedError for a new task without a committed revision`() {
+                prepareParticipantSend(currentTask = testNewTask())
+
+                assertRaises(SolutionLanguageNotAllowedError(task.id, TrikSupportedLanguage.Python)) { send() }
+
+                verify { developerSolutionRepository wasNot Called }
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should save the solution and a queued grading submission of the participant and return it`() {
+                prepareParticipantSend()
+
+                val result = send().getOrThrow()
+
+                assertSame(savedSubmission, result)
+                assertEquals(file.uploadedFilename, sentSolution.captured.file.uploadedFilename)
+                assertArrayEquals(file.content, sentSolution.captured.file.content)
+                assertSame(TrikSupportedLanguage.Python, sentSolution.captured.language)
+                assertEquals(participant.id, sentSubmission.captured.author.id)
+                assertEquals(savedSolution.id, sentSubmission.captured.solution.id)
+                assertEquals(task.id, sentSubmission.captured.task.id)
+                assertSame(SubmissionStatus.Queued, sentSubmission.captured.status)
+                assertEquals(taskContest.id, assertInstanceOf(SubmissionKind.Grading::class.java, sentSubmission.captured.kind).contest.id)
+                assertEquals(emptyList<JudgmentOrderId>(), sentSubmission.captured.judgmentOrders.ids)
+            }
+
+            @Test
+            fun `should save a solution in the visual language of TRIK Studio if the task allows it`() {
+                prepareParticipantSend(allowed = { visualLanguage() })
+
+                send(language = TrikSupportedLanguage.VisualLanguage).getOrThrow()
+
+                assertSame(TrikSupportedLanguage.VisualLanguage, sentSolution.captured.language)
+            }
+
+            @Test
+            fun `should not change the task, contest, competition or entry when sending a solution`() {
+                prepareParticipantSend()
+
+                send().getOrThrow()
+
+                verify(exactly = 0) {
+                    taskRepository.update(any<Task>())
+                    contests.update(any<Contest>())
+                    competitions.update(any<Competition>())
+                    participantEntries.findOrCreate(any())
+                }
+            }
+
+            @Test
+            fun `should propagate a technical exception while saving the submission`() {
+                val failure = IllegalStateException("Submission storage failed")
+                prepareParticipantSend()
+                every { submissionRepository.save(any<SubmissionData>()) } throws failure
+
+                val thrown = assertThrows(IllegalStateException::class.java) { send() }
+
+                assertSame(failure, thrown)
+            }
+
+            private fun send(
+                user: SingleRoleUser = participant,
+                contestId: ContestId = taskContest.id,
+                language: TrikSupportedLanguage = TrikSupportedLanguage.Python,
+            ) = operations.sendSolution(user = user, contestId = contestId, taskId = task.id, file = file, language = language)
+
+            private fun prepareParticipantSend(
+                current: Contest = taskContest,
+                currentTask: Task = solutionTask(),
+                enteredAt: Instant? = firstEntry,
+                allowed: LanguageChooser.() -> Unit = { python() },
+            ) {
+                prepareParticipantTask(current = current, currentTask = currentTask, enteredAt = enteredAt)
+                stubDeveloperSolutions(stubReferenceSolution(developerSolutionId = 81, chooseLanguage = allowed))
+                stubSaving()
+            }
+        }
+
+        @Nested
+        inner class StudentTests {
+
+            @Test
+            fun `should raise MissedStudentRoleError if user has other roles without Student`() {
+                val user = testMultipleRoleUser { roles { developer { data = developerData {} } } }
+
+                assertRaises(MissedStudentRoleError) { send(user = user) }
+
+                verify { classes wasNot Called }
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise ClassNotExistsError if selected class is missing`() {
+                every { classes.findById(studyClass.id) } returns null
+
+                assertRaises(ClassNotExistsError(studyClass.id)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise ContestNotExistsError if contest is missing`() {
+                every { classes.findById(studyClass.id) } returns studyClass
+                every { contests.findById(taskContest.id) } returns null
+
+                assertRaises(ContestNotExistsError(taskContest.id)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise TaskNotExistsError if task is missing`() {
+                every { classes.findById(studyClass.id) } returns studyClass
+                every { contests.findById(taskContest.id) } returns taskContest
+                every { taskRepository.findById(task.id) } returns null
+
+                assertRaises(TaskNotExistsError(task.id)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise ClassAccessDeniedError if student is not enrolled in selected class`() {
+                every { classes.findById(studyClass.id) } returns studyClass.withData { students = mutableListOf() }
+                every { contests.findById(taskContest.id) } returns taskContest
+                every { taskRepository.findById(task.id) } returns task
+
+                assertRaises(ClassAccessDeniedError(studyClass.id)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise ContestAccessDeniedError if contest is outside selected class`() {
+                every { classes.findById(studyClass.id) } returns studyClass.withData { contests = mutableListOf() }
+                every { contests.findById(taskContest.id) } returns taskContest
+                every { taskRepository.findById(task.id) } returns task
+
+                assertRaises(ContestAccessDeniedError(taskContest.id)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise TaskAccessDeniedError if task is outside the contest`() {
+                prepareStudentSend(current = contest)
+
+                assertRaises(TaskAccessDeniedError(task.id)) { send(contestId = contest.id) }
+
+                verify { studentEntries wasNot Called }
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise ContestNotEnteredError if the contest was entered only in another class`() {
+                val otherClass = `class` {
+                    id = 24
+                    createdAt = Instant.EPOCH
+                    data = studyClass.data
+                }
+                prepareStudentSend(enteredAt = null)
+                every {
+                    studentEntries.findByContext(userId = student.id, studyClassId = otherClass.id, contestId = taskContest.id)
+                } returns studentEntry(selectedClass = otherClass, enteredAt = firstEntry)
+
+                assertRaises(ContestNotEnteredError(taskContest.id)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise ContestEndedError if solution is sent exactly at the contest end`() {
+                val current = taskContest.withData {
+                    startsAt = firstEntry
+                    contestDuration = Duration.between(firstEntry, now)
+                }
+                prepareStudentSend(current = current)
+
+                assertRaises(ContestEndedError(current.id, now)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should raise ContestAttemptExpiredError if solution is sent exactly at the end of the attempt in selected class`() {
+                val current = taskContest.withData { attemptDuration = Duration.between(firstEntry, now) }
+                prepareStudentSend(current = current)
+
+                assertRaises(ContestAttemptExpiredError(current.id, now)) { send() }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should accept a solution sent one millisecond before the end of the attempt in selected class`() {
+                val current = taskContest.withData { attemptDuration = Duration.between(firstEntry, now).plusMillis(1) }
+                prepareStudentSend(current = current)
+
+                val result = send().getOrThrow()
+
+                assertSame(savedSubmission, result)
+            }
+
+            @Test
+            fun `should raise SolutionLanguageNotAllowedError if committed task has no developer solution in that language`() {
+                prepareStudentSend()
+
+                assertRaises(SolutionLanguageNotAllowedError(task.id, TrikSupportedLanguage.Python)) {
+                    send(language = TrikSupportedLanguage.Python)
+                }
+
+                verifyNothingSaved()
+            }
+
+            @Test
+            fun `should save the solution and a queued grading submission of the student and return it`() {
+                prepareStudentSend()
+
+                val result = send().getOrThrow()
+
+                assertSame(savedSubmission, result)
+                assertSame(TrikSupportedLanguage.JavaScript, sentSolution.captured.language)
+                assertEquals(student.id, sentSubmission.captured.author.id)
+                assertEquals(task.id, sentSubmission.captured.task.id)
+                assertSame(SubmissionStatus.Queued, sentSubmission.captured.status)
+                assertEquals(taskContest.id, assertInstanceOf(SubmissionKind.Grading::class.java, sentSubmission.captured.kind).contest.id)
+            }
+
+            @Test
+            fun `should propagate a technical exception while saving the solution`() {
+                val failure = IllegalStateException("Solution storage failed")
+                prepareStudentSend()
+                every { solutionRepository.save(any<SolutionData>()) } throws failure
+
+                val thrown = assertThrows(IllegalStateException::class.java) { send() }
+
+                assertSame(failure, thrown)
+                verify { submissionRepository wasNot Called }
+            }
+
+            private fun send(
+                user: MultipleRoleUser = student,
+                contestId: ContestId = taskContest.id,
+                language: TrikSupportedLanguage = TrikSupportedLanguage.JavaScript,
+            ) = operations.sendSolution(
+                user = user,
+                classId = studyClass.id,
+                contestId = contestId,
+                taskId = task.id,
+                file = file,
+                language = language,
+            )
+
+            private fun prepareStudentSend(current: Contest = taskContest, enteredAt: Instant? = firstEntry) {
+                prepareStudentTask(current = current, currentTask = solutionTask(), enteredAt = enteredAt)
+                stubDeveloperSolutions(stubReferenceSolution(developerSolutionId = 81) { javaScript() })
+                stubSaving()
+            }
+        }
+
+        private fun verifyNothingSaved() {
+            verify(exactly = 0) {
+                solutionRepository.save(any<SolutionData>())
+                submissionRepository.save(any<SubmissionData>())
+            }
+        }
+
+        private fun stubSaving() {
+            every { solutionRepository.save(capture(sentSolution)) } returns savedSolution
+            every { submissionRepository.save(capture(sentSubmission)) } returns savedSubmission
+        }
+
+        private fun solutionTask(): Task = testTask {
+            committed {
+                exercises(listOf(1))
+                statement(1)
+                developerSolutions(listOf(81))
+            }
+        }
+
+        private fun uncommittedSolutionTask(committed: List<Long>, wip: List<Long>): Task = testTask {
+            uncommitted(
+                wipBuilder = { developerSolutions(wip) },
+                lastCommittedBuilder = {
+                    exercises(listOf(1))
+                    statement(1)
+                    developerSolutions(committed)
+                },
+            )
+        }
+
+        private fun stubReferenceSolution(developerSolutionId: Long, chooseLanguage: LanguageChooser.() -> Unit): DeveloperSolution {
+            val reference = solution {
+                id = developerSolutionId + 10
+                createdAt = Instant.EPOCH
+                data = solutionData {
+                    file("reference.qrs", "reference".toByteArray())
+                    language.chooseLanguage()
+                }
+            }
+            every {
+                solutionRepository.load(match<LazyEntity<SolutionId, Solution>> { field -> field.id == reference.id })
+            } returns reference
+            return developerSolution {
+                id = developerSolutionId
+                createdAt = Instant.EPOCH
+                data = developerSolutionData {
+                    name = "Reference"
+                    description = "Reference solution"
+                    solution(reference.id.value)
+                    expectedScore(100)
+                    versionBucket = VersionBucket(UUID(0, developerSolutionId))
+                }
+            }
+        }
+
+        private fun stubDeveloperSolutions(vararg developerSolutions: DeveloperSolution) {
+            val ids = developerSolutions.map { developerSolution -> developerSolution.id }
+            every {
+                developerSolutionRepository.load(match<LazyEntityList<DeveloperSolutionId, DeveloperSolution>> { list -> list.ids == ids })
+            } returns developerSolutions.toList()
         }
     }
 

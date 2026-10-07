@@ -5,6 +5,7 @@ import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
 import tech.testsys.domain.model.entry.StudentContestEntry
+import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
@@ -21,6 +22,7 @@ import tech.testsys.operation.error.ContestNotStartedError
 import tech.testsys.operation.error.EnterStudentContestError
 import tech.testsys.operation.error.MissedStudentRoleError
 import tech.testsys.operation.error.OperationResult
+import tech.testsys.operation.error.ViewStudentClassesError
 import tech.testsys.operation.error.ViewStudentContestsError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
@@ -111,4 +113,21 @@ class StudentOperations(
         }
         return contestEntryRepository.findOrCreate(data).asSuccess()
     }
+
+    /**
+     * Returns the classes [user] is enrolled in as a student, ordered by identifier.
+     * Classes are taken from the student role of [user] and kept only if they still list [user] as a student.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.student.viewClasses")
+    fun viewClasses(user: MultipleRoleUser): OperationResult<List<Class>, ViewStudentClassesError> =
+        operation<List<Class>, ViewStudentClassesError> {
+            ensure(user.hasRole<Student>(), MissedStudentRoleError)
+            val student = user.data.roles.filterIsInstance<Student>().single()
+            return classRepository.findByIds(student.data.classes.ids)
+                .filter { studyClass -> user.id in studyClass.data.students.ids }
+                .sortedBy { studyClass -> studyClass.id.value }
+                .asSuccess()
+        }
 }

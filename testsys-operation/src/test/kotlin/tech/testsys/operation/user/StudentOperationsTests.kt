@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import tech.testsys.domain.builder.api.`class`
+import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.builder.api.studentContestEntry
 import tech.testsys.domain.builder.api.studentContestEntryData
 import tech.testsys.domain.builder.api.studentData
@@ -18,6 +20,8 @@ import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.entry.StudentContestEntryData
+import tech.testsys.domain.model.group.Class
+import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.operation.error.*
@@ -345,6 +349,96 @@ class StudentOperationsTests {
             operations.enterContest(user = user, classId = group.id, contestId = contest.id).getOrThrow()
 
             assertEquals(Instant.parse("2026-01-01T00:00:00.123456Z"), data.captured.enteredAt)
+        }
+    }
+
+    @Nested
+    inner class ViewClassesTests {
+
+        private val otherGroup = `class` {
+            id = 31
+            createdAt = Instant.EPOCH
+            data = group.data
+        }
+
+        @Test
+        fun `should reject the missing required role before reading classes`() {
+            assertRaises(MissedStudentRoleError) {
+                operations.viewClasses(user = wrongRole)
+            }
+
+            verify { groups wasNot Called }
+        }
+
+        @Test
+        fun `should return classes of the student ordered by identifier`() {
+            val student = testStudent { data = studentData { classes(listOf(31, 23)) } }
+            every { groups.findByIds(listOf(ClassId(31), ClassId(23))) } returns listOf(otherGroup, group)
+
+            val result = operations.viewClasses(user = student).getOrThrow()
+
+            assertEquals(listOf(ClassId(23), ClassId(31)), result.map { studyClass -> studyClass.id })
+            assertSame(group, result.first())
+            verify(exactly = 0) { groups.update(any<Class>()) }
+        }
+
+        @Test
+        fun `should return an empty list if the student is not enrolled in any class`() {
+            every { groups.findByIds(emptyList()) } returns emptyList()
+
+            val result = operations.viewClasses(user = user).getOrThrow()
+
+            assertEquals(emptyList(), result)
+        }
+
+        @Test
+        fun `should exclude a class that no longer lists the student`() {
+            val student = testStudent { data = studentData { classes(listOf(23, 31)) } }
+            val leftGroup = otherGroup.withData { students = mutableListOf() }
+            every { groups.findByIds(listOf(ClassId(23), ClassId(31))) } returns listOf(group, leftGroup)
+
+            val result = operations.viewClasses(user = student).getOrThrow()
+
+            assertEquals(listOf(group), result)
+        }
+
+        @Test
+        fun `should include a class without contests`() {
+            val student = testStudent { data = studentData { classes(listOf(23)) } }
+            val emptyGroup = group.withData { this.contests = mutableListOf() }
+            every { groups.findByIds(listOf(ClassId(23))) } returns listOf(emptyGroup)
+
+            val result = operations.viewClasses(user = student).getOrThrow()
+
+            assertEquals(listOf(emptyGroup), result)
+        }
+
+        @Test
+        fun `should not include classes owned in the manager role`() {
+            val studentAndManager = testMultipleRoleUser {
+                roles {
+                    student { data = studentData { classes(listOf(23)) } }
+                    manager { data = managerData { classes(listOf(31)) } }
+                }
+            }
+            every { groups.findByIds(listOf(ClassId(23))) } returns listOf(group)
+
+            val result = operations.viewClasses(user = studentAndManager).getOrThrow()
+
+            assertEquals(listOf(group), result)
+        }
+
+        @Test
+        fun `should propagate storage exceptions`() {
+            val student = testStudent { data = studentData { classes(listOf(23)) } }
+            val failure = IllegalStateException("storage failed")
+            every { groups.findByIds(listOf(ClassId(23))) } throws failure
+
+            val thrown = assertFailsWith<IllegalStateException> {
+                operations.viewClasses(user = student)
+            }
+
+            assertSame(failure, thrown)
         }
     }
 }

@@ -956,6 +956,13 @@ sealed interface ViewParticipantContestsError : OperationError
 sealed interface ViewStudentContestsError : OperationError
 
 /**
+ * Failure of listing classes of the student.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewStudentClassesError : OperationError
+
+/**
  * Failure of entering a participant contest.
  *
  * @since %CURRENT_VERSION%
@@ -1033,6 +1040,7 @@ data object MissedParticipantRoleError :
 data object MissedStudentRoleError :
     MissedRequiredRoleError,
     ViewStudentContestsError,
+    ViewStudentClassesError,
     EnterStudentContestError,
     ViewStudentContestError,
     ViewStudentTaskError,

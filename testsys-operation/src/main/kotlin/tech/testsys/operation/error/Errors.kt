@@ -352,6 +352,13 @@ data class CompetitionParticipantLimitExceededError(
 // region AdministratorOperations
 
 /**
+ * Failure of listing users available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUsersError : OperationError
+
+/**
  * Failure of creating or replacing the invite code of a community owned by the administrator for a role.
  *
  * @since %CURRENT_VERSION%
@@ -385,6 +392,7 @@ sealed interface RefreshCommunityInviteError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedAdministratorRoleError :
+    ViewUsersError,
     CreateCommunityInviteError,
     ExtendCommunityInviteError,
     RefreshCommunityInviteError,

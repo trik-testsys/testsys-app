@@ -2,9 +2,13 @@ package tech.testsys.operation.user
 
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.builder.group.CommunityInviteDataBuilder
+import tech.testsys.domain.contract.persistence.Page
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
+import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
@@ -12,6 +16,8 @@ import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.User
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.config.CommunityInviteConfig
@@ -23,6 +29,7 @@ import tech.testsys.operation.error.MissedAdministratorRoleError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.RefreshCommunityInviteError
 import tech.testsys.operation.error.ViewCommunityInvitesError
+import tech.testsys.operation.error.ViewUsersError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
@@ -45,9 +52,30 @@ class AdministratorOperations(
     private val developerInviteRepository: DeveloperCommunityInviteRepository,
     private val communityInviteConfig: CommunityInviteConfig,
     private val clock: Clock,
+    private val userRepository: UserRepository,
 ) {
 
     private val random = SecureRandom()
+
+    /**
+     * Returns a [pagination] page matching [filter] of users of communities created by [user], preserving stored state.
+     * Missing administrator role is an expected failure; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.viewUsers")
+    @RawAccessTokenDependency(
+        reason = "Returned users carry stored access codes that the administrator sees as the original codes only with Identity.",
+    )
+    fun viewUsers(
+        user: MultipleRoleUser,
+        pagination: Pagination,
+        filter: UserFilter = UserFilter(),
+    ): OperationResult<Page<User<*>>, ViewUsersError> = operation<Page<User<*>>, ViewUsersError> {
+        ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
+        val users = userRepository.findAvailableToAdministrator(administratorId = user.id, pagination = pagination, filter = filter)
+        return users.asSuccess()
+    }
 
     /**
      * Replaces the invite code for [kind] in [communityId] owned by [user] with a new code and a fresh expiration moment.

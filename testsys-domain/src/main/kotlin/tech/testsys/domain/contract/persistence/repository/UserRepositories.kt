@@ -1,5 +1,8 @@
 package tech.testsys.domain.contract.persistence.repository
 
+import tech.testsys.domain.contract.persistence.Page
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CompetitionId
@@ -14,6 +17,31 @@ import tech.testsys.domain.model.user.ParticipantData
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
+import tech.testsys.domain.model.user.User
+
+/**
+ * Search port for users of every kind available to an administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+interface UserRepository {
+
+    /**
+     * Synchronously finds distinct users of communities created by [administratorId], without changing stored state.
+     * Repeated calls reflect current data; storage exceptions propagate to the caller.
+     *
+     * @param administratorId the creator of the communities whose multiple-role members, observers and creator are included.
+     * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
+     * @param filter conditions combined with AND before paging and counting; foreign or unknown communities match nothing.
+     * @return available users of their concrete kinds, the original pagination and exact filtered total; missing pages are empty.
+     * @since %CURRENT_VERSION%
+     */
+    fun findAvailableToAdministrator(
+        administratorId: MultipleRoleUserId,
+        pagination: Pagination,
+        filter: UserFilter = UserFilter(),
+    ): Page<User<*>>
+}
 
 /**
  * Persistence port for [MultipleRoleUser] entities.

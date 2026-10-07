@@ -18,11 +18,19 @@ import tech.testsys.domain.builder.api.community
 import tech.testsys.domain.builder.api.communityData
 import tech.testsys.domain.builder.api.communityInviteData
 import tech.testsys.domain.builder.api.developerCommunityInvite
+import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.managerCommunityInvite
 import tech.testsys.domain.builder.api.managerData
+import tech.testsys.domain.builder.api.observer
+import tech.testsys.domain.builder.api.observerData
+import tech.testsys.domain.contract.persistence.Page
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.Sort
+import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
+import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.group.Community
@@ -32,6 +40,8 @@ import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.group.CommunityInviteId
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.Observer
+import tech.testsys.domain.model.user.User
 import tech.testsys.operation.config.CommunityInviteConfig
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
@@ -52,16 +62,108 @@ class AdministratorOperationsTests {
     private val developerInvites = mockk<DeveloperCommunityInviteRepository>()
     private val config = mockk<CommunityInviteConfig>()
     private val clock = mockk<Clock>()
+    private val userRepository = mockk<UserRepository>()
     private val operations = AdministratorOperations(
         communityRepository = communities,
         managerInviteRepository = managerInvites,
         developerInviteRepository = developerInvites,
         communityInviteConfig = config,
         clock = clock,
+        userRepository = userRepository,
     )
     private val administrator = testAdministrator {}
     private val communityId = CommunityId(41)
     private val now = Instant.parse("2026-01-01T10:00:00Z")
+
+    @Nested
+    inner class ViewUsersTests {
+
+        private val pagination = Pagination(page = 0, size = 10)
+
+        @Test
+        fun `should raise MissedAdministratorRoleError before reading storage if user is not an Administrator`() {
+            val user = testManager { data = managerData {} }
+
+            assertRaises(MissedAdministratorRoleError) { operations.viewUsers(user = user, pagination = pagination) }
+
+            verify(exactly = 0) { userRepository.findAvailableToAdministrator(any(), any(), any()) }
+        }
+
+        @Test
+        fun `should allow an Administrator who also has other roles`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    developer { data = developerData {} }
+                    administrator {}
+                }
+            }
+            val expected = Page<User<*>>(content = listOf(user), pagination = pagination, totalElements = 1)
+            every { userRepository.findAvailableToAdministrator(administratorId = user.id, pagination = pagination) } returns expected
+
+            val actual = operations.viewUsers(user = user, pagination = pagination).getOrThrow()
+
+            assertSame(expected, actual)
+        }
+
+        @Test
+        fun `should forward the administrator id pagination and every filter unchanged`() {
+            val request =
+                Pagination(page = 3, size = 2, sort = Sort(listOf(Sort.Order(field = "name", direction = Sort.Direction.DESC))))
+            val filter = UserFilter(
+                name = "  Alpha%_  ",
+                roles = setOf(UserFilter.Role.OBSERVER, UserFilter.Role.ADMINISTRATOR),
+                communityId = CommunityId(5),
+            )
+            val expected = Page<User<*>>(content = emptyList(), pagination = request, totalElements = 7)
+            every {
+                userRepository.findAvailableToAdministrator(administratorId = administrator.id, pagination = request, filter = filter)
+            } returns expected
+
+            val actual = operations.viewUsers(user = administrator, pagination = request, filter = filter).getOrThrow()
+
+            assertSame(expected, actual)
+        }
+
+        @Test
+        fun `should return users of different kinds in the page order of the port`() {
+            val observer = testObserver()
+            val expected =
+                Page<User<*>>(content = listOf(observer, administrator), pagination = pagination, totalElements = 2)
+            every {
+                userRepository.findAvailableToAdministrator(administratorId = administrator.id, pagination = pagination)
+            } returns expected
+
+            val actual = operations.viewUsers(user = administrator, pagination = pagination).getOrThrow()
+
+            assertSame(expected, actual)
+            assertSame(observer, actual.content.first())
+            assertSame(administrator, actual.content.last())
+        }
+
+        @Test
+        fun `should propagate a technical storage exception when listing users`() {
+            val failure = IllegalStateException("User storage unavailable")
+            every {
+                userRepository.findAvailableToAdministrator(administratorId = administrator.id, pagination = pagination)
+            } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) {
+                operations.viewUsers(user = administrator, pagination = pagination)
+            }
+
+            assertSame(failure, actual)
+        }
+
+        private fun testObserver(): Observer = observer {
+            id = 31
+            createdAt = Instant.EPOCH
+            data = observerData {
+                accessToken("observer", algorithm = HashAlgorithm.Identity)
+                name = "Observer"
+                community(5)
+            }
+        }
+    }
 
     @Nested
     inner class CreateCommunityInviteTests {

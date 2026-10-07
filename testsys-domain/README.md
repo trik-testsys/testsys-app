@@ -111,8 +111,7 @@
 `@RawAccessTokenDependency` с объяснением зависимости в обязательном параметре `reason`
 ([RawAccessTokenDependency.kt](src/main/kotlin/tech/testsys/domain/model/user/RawAccessTokenDependency.kt)).
 При замене `Identity` все отмеченные объявления должны быть проверены и исправлены до включения нового алгоритма.
-Простое копирование значения между объектами такой зависимости не создаёт. При реализации фич
-`testsys.user.multi.admin.viewUser` и `testsys.user.multi.manager.competition.viewCompetition` методы,
+Простое копирование значения между объектами такой зависимости не создаёт. Методы,
 показывающие исходный КД, должны получить эту аннотацию.
 
 Все четыре билдера данных Пользователей наследуют `UserDataBuilder`

@@ -57,14 +57,16 @@ internal val SUBMISSIONS: List<ShowcaseSubmission> = (0 until SUBMISSION_COUNT).
     )
 }
 
-internal fun TableScope<ShowcaseSubmission>.submissionColumns() {
+/** Adds the submission columns; [isCompact] gives every sized column the same width for a half-width block. */
+internal fun TableScope<ShowcaseSubmission>.submissionColumns(isCompact: Boolean = false) {
     val fraction = gridColumns / SubmissionGrid.PARTS
-    val shortSize = maxOf(SubmissionGrid.MIN_COLUMN_SIZE, fraction)
-    val titleSize = if (fraction == 1) shortSize else fraction * SubmissionGrid.TITLE_PARTS
+    val wideSize = fraction * 2
+    val shortSize = if (isCompact) wideSize else maxOf(SubmissionGrid.MIN_COLUMN_SIZE, fraction)
+    val titleSize = if (isCompact) wideSize else fraction * SubmissionGrid.TITLE_PARTS
     codeColumn("ID", size = shortSize) { row -> "#${row.id}" }
-    textColumn("Участник", size = fraction * 2) { row -> row.author }
+    textColumn("Участник", size = wideSize) { row -> row.author }
     textColumn("Задача", size = titleSize) { row -> row.task }
-    column("Вердикт", size = fraction * 2) { row -> badge(row.verdict.label, row.verdict.tone) }
+    column("Вердикт", size = wideSize) { row -> badge(row.verdict.label, row.verdict.tone) }
     column("Баллы", sortKey = SCORE_SORT, size = shortSize) { row ->
         row.score?.let { score -> verdict(score.toDouble()) } ?: text("—")
     }

@@ -166,7 +166,7 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should enforce the containing slot column capacity using ordinary field placement`() {
+    fun `should enforce the block column capacity using ordinary field placement`() {
         assertThrows<IllegalArgumentException> {
             buildTestPage {
                 row {
@@ -174,7 +174,7 @@ internal class TableFiltersHandleTests : MockVaadinTests() {
                         row {
                             block {
                                 filters(onApply = { true }, onReset = {}, onRefresh = {}) {
-                                    row { textInput("Too wide", labelSize = 4, size = 20) }
+                                    row { textInput("Too wide", labelSize = 4, size = 21) }
                                 }
                             }
                         }

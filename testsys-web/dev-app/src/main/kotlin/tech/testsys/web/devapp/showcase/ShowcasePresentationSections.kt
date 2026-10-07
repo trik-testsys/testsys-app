@@ -56,15 +56,15 @@ internal fun PageScope.displaySection() {
         slot(size = 12) {
             row {
                 Trend.entries.forEach { trend ->
-                    statCard(label = "Тренд ${trend.name}", value = "1 842", size = 6, delta = "+38", trend = trend)
+                    statCard(label = "Тренд ${trend.name}", value = "1 842", size = 12, delta = "+38", trend = trend)
                 }
             }
             row { statCard(label = "Без изменения", value = "42") }
             row {
                 block(title = "Метрики в строке блока") {
                     row {
-                        statCard(label = "Решено", value = "42", size = 6, delta = "+3", trend = Trend.Up)
-                        statCard(label = "Попытки", value = "118", size = 6, delta = "−2", trend = Trend.Down)
+                        statCard(label = "Решено", value = "42", size = 12, delta = "+3", trend = Trend.Up)
+                        statCard(label = "Попытки", value = "118", size = 12, delta = "−2", trend = Trend.Down)
                     }
                 }
             }

@@ -25,6 +25,7 @@ internal enum class CssProperty(internal val value: String) {
     GridTemplateColumns("grid-template-columns"),
     TableUsed("--ts-table-used"),
     TableWidth("--ts-table-width"),
+    PageColumns("--ts-page-columns"),
     MenuColumns("--ts-menu-columns"),
     DownloadOffset("--ts-download-offset"),
     CodeMinLines("--ts-code-min-lines"),
@@ -59,6 +60,9 @@ internal fun Style.setTableUsed(value: Int): Style = set(CssProperty.TableUsed, 
 
 @InternalComponentsApi
 internal fun Style.setTableWidth(value: Number): Style = set(CssProperty.TableWidth, "$value%")
+
+@InternalComponentsApi
+internal fun Style.setPageColumns(value: Double): Style = set(CssProperty.PageColumns, value.toString())
 
 @InternalComponentsApi
 internal fun Style.setMenuColumns(value: Int): Style = set(CssProperty.MenuColumns, value.toString())

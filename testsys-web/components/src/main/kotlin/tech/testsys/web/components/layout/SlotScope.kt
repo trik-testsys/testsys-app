@@ -10,7 +10,7 @@ import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.texts.UiTexts
 
 /**
- * Scope of a slot: rows stacked vertically on the columns of the slot.
+ * Scope of a slot: rows stacked vertically on the own 24-column grid of the slot.
  *
  * @since %CURRENT_VERSION%
  */
@@ -22,7 +22,7 @@ class SlotScope internal constructor(
     private val highlights: HighlightGuard,
 ) {
     /**
-     * Adds a row of the slot; its blocks take at most the slot columns in total.
+     * Adds a row of the slot; its blocks take at most the 24 slot columns in total.
      *
      * @since %CURRENT_VERSION%
      */

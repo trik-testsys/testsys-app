@@ -1,6 +1,6 @@
 package tech.testsys.web.components.layout
 
-/** Number of columns of the page grid. */
+/** Number of columns of every layout grid: a page row, a slot and a block. */
 internal const val GRID_COLUMNS: Int = 24
 
 /**

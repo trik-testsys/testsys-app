@@ -83,7 +83,7 @@ private fun SlotRowScope.liveSubmissionsBlock() {
         val rows = table(
             key = { row -> row.id },
             fetch = { request -> Page(submissions.drop(request.offset).take(request.limit), submissions.size) },
-        ) { submissionColumns() }
+        ) { submissionColumns(isCompact = true) }
         actions {
             action("Добавить посылку через 2 с") {
                 onClick {

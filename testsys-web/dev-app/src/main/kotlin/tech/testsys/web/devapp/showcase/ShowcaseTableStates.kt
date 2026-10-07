@@ -87,7 +87,7 @@ internal fun PageScope.tabsSection() {
                         pageSize = PAGE_SIZE,
                         fetch = { request -> filtered(filter.value, request) },
                     ) {
-                        codeColumn("ID", size = 3) { row -> row.id.toString() }
+                        codeColumn("ID", size = 6) { row -> row.id.toString() }
                         textColumn("Автор") { row -> row.author }
                     }
                     filter.onChange { rows.refresh(toFirstPage = true) }
@@ -108,7 +108,7 @@ internal fun PageScope.tabsSection() {
                         pageSize = PAGE_SIZE,
                         fetch = { request -> filtered(filter.value, request) },
                     ) {
-                        codeColumn("ID", size = 3) { row -> row.id.toString() }
+                        codeColumn("ID", size = 6) { row -> row.id.toString() }
                         textColumn("Автор") { row -> row.author }
                     }
                     filter.onChange { rows.refresh(toFirstPage = true) }
@@ -214,11 +214,11 @@ internal fun PageScope.menuSection() {
             row {
                 block(title = "Меню в строках") {
                     table(key = { row -> row.id }, pageSize = PAGE_SIZE, fetch = { request -> filtered(RowFilter.All, request) }) {
-                        codeColumn("ID", size = 3) { row -> row.id.toString() }
-                        textColumn("Автор", size = 5) { row -> row.author }
-                        column("Выбор", size = 3) { select("Статус", listOf("Новый", "Принят"), { label -> label }) }
+                        codeColumn("ID", size = 6) { row -> row.id.toString() }
+                        textColumn("Автор", size = 10) { row -> row.author }
+                        column("Выбор", size = 6) { select("Статус", listOf("Новый", "Принят"), { label -> label }) }
                         onRowClick { row -> toast(FeedbackKind.Info, "Строка ${row.id}") }
-                        menuColumn(ariaLabel = { row -> "Действия с посылкой №${row.id}" }) { row ->
+                        menuColumn(size = 2, ariaLabel = { row -> "Действия с посылкой №${row.id}" }) { row ->
                             item("Открыть") { toast(FeedbackKind.Info, "Открыть ${row.id}") }
                             item("Перепроверить") { toast(FeedbackKind.Info, "Перепроверить ${row.id}") }
                             destructiveItem("Дисквалифицировать") { toast(FeedbackKind.Error, "Дисквалифицировать ${row.id}") }

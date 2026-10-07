@@ -21,7 +21,7 @@ class PageRowScope internal constructor(private val row: Div, private val texts:
     private val highlights = HighlightGuard()
 
     /**
-     * Adds a slot of [size] columns; its content is laid out in rows of the same columns.
+     * Adds a slot of [size] columns; its content is laid out in rows on the own 24-column grid of the slot.
      *
      * @since %CURRENT_VERSION%
      */

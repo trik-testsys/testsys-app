@@ -10,7 +10,7 @@ import org.junit.jupiter.params.provider.ValueSource
 
 class GridTrackTests {
     @Test
-    fun `should span the page over 24 columns`() {
+    fun `should give every layout grid 24 columns`() {
         assertEquals(24, GRID_COLUMNS)
     }
 

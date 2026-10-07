@@ -6,19 +6,20 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestPage
+import tech.testsys.web.components.find
 
 class TableGridTests : MockVaadinTests() {
     @Test
-    fun `should inherit containing slot fractions with selection and menu`() {
-        buildTestPage {
+    fun `should split the 24 fractions of a block inside a slot`() {
+        val page = buildTestPage {
             row {
                 slot(size = 8) {
                     row {
                         block {
-                            table(key = { row: Int -> row }, selectable = true, fetch = { Page(listOf(1), 1) }) {
-                                textColumn("Name", size = 2) { "Name" }
+                            table(key = { row: Int -> row }, selectable = true, selectionSize = 3, fetch = { Page(listOf(1), 1) }) {
+                                textColumn("Name", size = 6) { "Name" }
                                 numberColumn("Score") { 50 }
-                                menuColumn { item("Open") {} }
+                                menuColumn(size = 3) { item("Open") {} }
                             }
                         }
                     }
@@ -27,12 +28,13 @@ class TableGridTests : MockVaadinTests() {
         }
 
         val table = _get<Table>().element
-        assertEquals("8", table.style.get("--ts-table-used"))
+        assertEquals("24", table.style.get("--ts-table-used"))
         assertEquals("100.0%", table.style.get("--ts-table-width"))
         assertEquals(
             listOf("12.5%", "25.0%", "50.0%", "12.5%"),
             table.getChild(0).children.toList().map { col -> col.style.get("width") },
         )
+        assertEquals("8.0", page.find("ts-block").element.style.get("--ts-page-columns"))
     }
 
     @Test

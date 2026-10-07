@@ -174,7 +174,7 @@ internal class ContestCardDisplay(initial: ContestCardData) : Div() {
 }
 
 /**
- * Adds a contest card on [size] columns of the page slot, or the whole slot.
+ * Adds a contest card on [size] of the 24 slot columns, or the whole slot.
  *
  * @since %CURRENT_VERSION%
  */

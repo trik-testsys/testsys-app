@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 
 class TestSysThemeTests {
@@ -154,9 +155,34 @@ class TestSysThemeTests {
 
         assertEquals("fixed", layout["table-layout"])
         assertEquals("var(--ts-table-width)", layout["width"])
-        assertEquals("calc(var(--ts-table-used) * 52px)", layout["min-width"])
+        assertEquals("calc(var(--ts-table-used) * 52px * var(--ts-page-columns, 24) / 24)", layout["min-width"])
         assertEquals("auto", rule(css, ".ts-table-scroll")["overflow-x"])
         assertEquals("anywhere", rule(css, ".ts-table-grid th, .ts-table-grid td")["overflow-wrap"])
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = [".ts-slot", ".ts-block--grid"])
+    fun `should give a slot and a block their own 24-column grid`(selector: String) {
+        val css = text("testsys-ui/tokens/components.css")
+
+        assertEquals("repeat(var(--grid-columns), minmax(0, 1fr))", rule(css, selector)["grid-template-columns"])
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        delimiter = '|',
+        value = [
+            ".ts-slot | column-gap | 0",
+            ".ts-slot | margin-inline | calc(var(--grid-gap) / -2)",
+            ".ts-slot__row > * | margin-inline | calc(var(--grid-gap) / 2)",
+            ".ts-block--grid | column-gap | calc(var(--grid-gap) * var(--ts-page-columns, 24) / 24)",
+            ".ts-table-filters__fields | column-gap | calc(var(--grid-gap) * var(--ts-page-columns, 24) / 24)",
+        ],
+    )
+    fun `should fit nested grid gaps into any slot and block width`(selector: String, property: String, value: String) {
+        val css = text("testsys-ui/tokens/components.css")
+
+        assertEquals(value, rule(css, selector)[property])
     }
 
     @Test

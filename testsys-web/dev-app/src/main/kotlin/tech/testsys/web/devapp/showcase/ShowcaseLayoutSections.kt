@@ -18,7 +18,7 @@ import tech.testsys.web.components.layout.PageScope
 private const val RULER_COLUMNS = 24
 
 internal fun PageScope.gridSection() {
-    block(title = "Сетка", subtitle = "24 колонки: ряд страницы → слот → ряд слота → блок → строка блока") {
+    block(title = "Сетка", subtitle = "Своя сетка из 24 колонок у ряда страницы, слота и блока") {
         row {
             for (column in 1..RULER_COLUMNS) text("$column", size = 1)
         }
@@ -43,13 +43,13 @@ internal fun PageScope.gridSection() {
         }
         slot(size = 18) {
             row {
-                block(size = 12, title = "Блок 12") { row { text("Ряд слота 18: 12 + 6") } }
-                block(size = 6, title = "Блок 6") { row { text("Остаток слота") } }
+                block(size = 16, title = "Блок 16") { row { text("Ряд слота 18: 16 + 8") } }
+                block(size = 8, title = "Блок 8") { row { text("Остаток слота") } }
             }
             row {
-                block(size = 6, title = "Блок 6") { row { text("Второй ряд слота") } }
-                block(size = 6, title = "Блок 6") { row { text("Три блока") } }
-                block(size = 6, title = "Блок 6") { row { text("По 6 колонок") } }
+                block(size = 8, title = "Блок 8") { row { text("Второй ряд слота") } }
+                block(size = 8, title = "Блок 8") { row { text("Три блока") } }
+                block(size = 8, title = "Блок 8") { row { text("По 8 колонок") } }
             }
         }
     }
@@ -57,8 +57,8 @@ internal fun PageScope.gridSection() {
         slot(size = 16) { row { block(title = "Слот 16") { row { text("Две трети") } } } }
         slot(size = 8) {
             row {
-                highlightBlock(size = 4, title = "Блок 4") { row { text("Частичная подсветка") } }
-                block(size = 4, title = "Блок 4") { row { text("Рядом") } }
+                highlightBlock(size = 12, title = "Блок 12") { row { text("Частичная подсветка") } }
+                block(size = 12, title = "Блок 12") { row { text("Рядом") } }
             }
         }
     }
@@ -93,13 +93,13 @@ internal fun PageScope.blockSection() {
             row {
                 block(title = "Строки блока", subtitle = "Элемент без size занимает остаток строки") {
                     row {
-                        text("size = 6", size = 6)
-                        text("Без size — остаток, 6 колонок")
+                        text("size = 12", size = 12)
+                        text("Без size — остаток, 12 колонок")
                     }
                     row {
-                        tag("size = 4", size = 4)
-                        badge("size = 6", Tone.Info, size = 6)
-                        counter(value = 7, size = 2)
+                        tag("size = 8", size = 8)
+                        badge("size = 12", Tone.Info, size = 12)
+                        counter(value = 7, size = 4)
                     }
                 }
             }

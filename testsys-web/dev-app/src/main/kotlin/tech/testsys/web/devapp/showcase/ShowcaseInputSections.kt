@@ -32,47 +32,47 @@ internal fun PageScope.fieldSection() {
         slot(size = 12) {
             row {
                 block(title = "Текстовые поля и выбор") {
-                    row { textInput("Название", labelSize = 4, size = 8, hint = "Видно участникам") }
+                    row { textInput("Название", labelSize = 8, size = 16, hint = "Видно участникам") }
                     row {
-                        codeInput("Идентификатор", labelSize = 4, size = 4)
-                        codeInput("Занятый", labelSize = 2, size = 2) {
+                        codeInput("Идентификатор", labelSize = 8, size = 8)
+                        codeInput("Занятый", labelSize = 4, size = 4) {
                             isInvalid = true
                             errorMessage = "Уже занят"
                         }
                     }
-                    row { textArea("Описание", labelSize = 4, size = 8) }
+                    row { textArea("Описание", labelSize = 8, size = 16) }
                     row {
-                        textArea("Условие", labelSize = 4, size = 8, hint = "Не выше четырёх строк, дальше прокрутка", maxLines = 4) {
+                        textArea("Условие", labelSize = 8, size = 16, hint = "Не выше четырёх строк, дальше прокрутка", maxLines = 4) {
                             value = LONG_TEXT
                         }
                     }
-                    row { textArea("Заметки", labelSize = 4, size = 8, hint = "Всегда три строки", minLines = 3, maxLines = 3) }
+                    row { textArea("Заметки", labelSize = 8, size = 16, hint = "Всегда три строки", minLines = 3, maxLines = 3) }
                     row {
                         select(
                             "Язык",
-                            labelSize = 4,
-                            size = 8,
+                            labelSize = 8,
+                            size = 16,
                             items = listOf("Kotlin", "Python", "C++"),
                             itemLabel = { language -> language },
                         )
                     }
-                    row { checkbox("Открытый тур", labelSize = 4, size = 8) }
-                    row { textInput("Очень длинная подпись поля, которая переносится на несколько строк", labelSize = 4, size = 8) }
-                    row { textInput("Обязательное", labelSize = 4, size = 8) { isRequiredIndicatorVisible = true } }
+                    row { checkbox("Открытый тур", labelSize = 8, size = 16) }
+                    row { textInput("Очень длинная подпись поля, которая переносится на несколько строк", labelSize = 8, size = 16) }
+                    row { textInput("Обязательное", labelSize = 8, size = 16) { isRequiredIndicatorVisible = true } }
                     row {
-                        textInput("Выключенное", labelSize = 4, size = 8) {
+                        textInput("Выключенное", labelSize = 8, size = 16) {
                             value = "Недоступно"
                             isEnabled = false
                         }
                     }
                     row {
-                        textInput("Только чтение", labelSize = 4, size = 8) {
+                        textInput("Только чтение", labelSize = 8, size = 16) {
                             value = "Можно выделить и скопировать"
                             isEditable = false
                         }
                     }
                     row {
-                        field("Теги", labelSize = 4, size = 8) {
+                        field("Теги", labelSize = 8, size = 16) {
                             tag("графы")
                             tag("DP")
                             badge("Идёт", Tone.Success)
@@ -84,15 +84,15 @@ internal fun PageScope.fieldSection() {
         slot(size = 12) {
             row {
                 block(title = "Даты и числа") {
-                    row { dateInput("Дата", labelSize = 4, size = 8) }
-                    row { timeInput("Время", labelSize = 4, size = 8, step = Duration.ofMinutes(TIME_STEP_MINUTES)) }
-                    row { dateTimeInput("Начало тура", labelSize = 4, size = 8) }
-                    row { dateRangeInput("Период регистрации", labelSize = 4, size = 8) }
-                    row { integerInput("Длительность", labelSize = 4, size = 8, min = 10, max = 300, step = 5, unit = "минут") }
-                    row { decimalInput("Балл", labelSize = 4, size = 8, min = 0.0, max = 100.0, step = 0.5) }
+                    row { dateInput("Дата", labelSize = 8, size = 16) }
+                    row { timeInput("Время", labelSize = 8, size = 16, step = Duration.ofMinutes(TIME_STEP_MINUTES)) }
+                    row { dateTimeInput("Начало тура", labelSize = 8, size = 16) }
+                    row { dateRangeInput("Период регистрации", labelSize = 8, size = 16) }
+                    row { integerInput("Длительность", labelSize = 8, size = 16, min = 10, max = 300, step = 5, unit = "минут") }
+                    row { decimalInput("Балл", labelSize = 8, size = 16, min = 0.0, max = 100.0, step = 0.5) }
                     row {
-                        integerInput("Задач", labelSize = 2, size = 4)
-                        integerInput("Попыток", labelSize = 2, size = 4)
+                        integerInput("Задач", labelSize = 4, size = 8)
+                        integerInput("Попыток", labelSize = 4, size = 8)
                     }
                 }
             }
@@ -110,19 +110,19 @@ internal fun PageScope.editingSection() {
                 block(title = "Режим редактирования", subtitle = "Сохранение с пустым логином оставляет режим") {
                     editing(onSave = { binder.writeBeanIfValid(profile) }, onCancel = { binder.readBean(profile) })
                     row {
-                        textInput("Логин", labelSize = 4, size = 8) {
+                        textInput("Логин", labelSize = 8, size = 16) {
                             binder.forField(this)
                                 .asRequired("Заполните логин")
                                 .bind({ source -> source.login }, { target, value -> target.login = value })
                         }
                     }
                     row {
-                        textInput("Почта", labelSize = 4, size = 8) {
+                        textInput("Почта", labelSize = 8, size = 16) {
                             binder.forField(this).bind({ source -> source.email }, { target, value -> target.email = value })
                         }
                     }
                     row {
-                        dateInput("Создан", labelSize = 4, size = 8) {
+                        dateInput("Создан", labelSize = 8, size = 16) {
                             value = LocalDate.parse("2026-09-12")
                             isEditable = false
                         }
@@ -134,7 +134,7 @@ internal fun PageScope.editingSection() {
             row {
                 switched = block(title = "Переключение из кода", subtitle = "BlockHandle.isEditable") {
                     actions { action("Переключить") { onClick { switched.isEditable = !switched.isEditable } } }
-                    row { textInput("Название", labelSize = 4, size = 8) { value = "Весенний тур" } }
+                    row { textInput("Название", labelSize = 8, size = 16) { value = "Весенний тур" } }
                 }
             }
         }

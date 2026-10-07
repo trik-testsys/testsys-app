@@ -113,12 +113,14 @@ internal class PresentationNamesTests {
 
         style.setTableUsed(8)
         style.setTableWidth(100.0)
+        style.setPageColumns(8.0)
         style.setMenuColumns(4)
         style.setDownloadOffset(81.7)
         style.setCodeMinLines(10)
 
         assertEquals("8", style.get("--ts-table-used"))
         assertEquals("100.0%", style.get("--ts-table-width"))
+        assertEquals("8.0", style.get("--ts-page-columns"))
         assertEquals("4", style.get("--ts-menu-columns"))
         assertEquals("81.7", style.get("--ts-download-offset"))
         assertEquals("10", style.get("--ts-code-min-lines"))

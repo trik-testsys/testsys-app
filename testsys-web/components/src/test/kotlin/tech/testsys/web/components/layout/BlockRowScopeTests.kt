@@ -47,10 +47,10 @@ class BlockRowScopeTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should size rows on the columns of a block inside a slot`() {
-        val page = buildTestPage { row { slot(size = 12) { row { block(size = 8) { row { text("x") } } } } } }
+    fun `should give rows of a block inside a slot its own 24 columns`() {
+        val page = buildTestPage { row { slot(size = 12) { row { block(size = 12) { row { text("x") } } } } } }
 
-        assertEquals("span 8", page.find("ts-block__row").child(0).element.style.get("grid-column"))
+        assertEquals("span 24", page.find("ts-block__row").child(0).element.style.get("grid-column"))
     }
 
     @Test
@@ -62,8 +62,8 @@ class BlockRowScopeTests : MockVaadinTests() {
                         row {
                             block {
                                 row {
-                                    text("a", size = 6)
-                                    text("b", size = 4)
+                                    text("a", size = 18)
+                                    text("b", size = 12)
                                 }
                             }
                         }
@@ -72,7 +72,7 @@ class BlockRowScopeTests : MockVaadinTests() {
             }
         }
 
-        assertTrue(requireNotNull(error.message).contains("6+4 = 10 exceed 8"))
+        assertTrue(requireNotNull(error.message).contains("18+12 = 30 exceed 24"))
     }
 
     @Test

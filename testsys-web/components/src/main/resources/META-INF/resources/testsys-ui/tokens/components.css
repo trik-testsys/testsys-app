@@ -157,8 +157,10 @@
 .ts-row--stretch { align-items:stretch; }
 .ts-row--tight { gap:var(--grid-gap-tight); }
 .ts-stack { display:flex; flex-direction:column; gap:var(--row-gap); min-width:0; }
-.ts-slot { display:grid; grid-template-columns:subgrid; row-gap:var(--row-gap); align-content:start; min-width:0; }
+.ts-slot { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); column-gap:0; row-gap:var(--row-gap); align-content:start; min-width:0; margin-inline:calc(var(--grid-gap) / -2); }
 .ts-slot__row { grid-column:1 / -1; display:grid; grid-template-columns:subgrid; align-items:stretch; }
+/* The gap between slot elements comes from their margins, so the slot grid has no fixed gaps in any width. */
+.ts-slot__row > * { margin-inline:calc(var(--grid-gap) / 2); }
 .ts-hstack { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2); min-width:0; }
 .ts-vstack { display:flex; flex-direction:column; gap:var(--space-2); min-width:0; }
 .ts-block { background:var(--surface-card); border:1px solid var(--border-default); border-radius:var(--radius-xl); box-shadow:var(--shadow-block); min-width:0; display:flex; flex-direction:column; }
@@ -176,10 +178,10 @@
 .ts-block__body { padding:var(--space-3); display:flex; flex-direction:column; gap:var(--space-3); flex:1; min-width:0; }
 .ts-block__body--flush { padding:0; gap:0; }
 .ts-block__foot { display:flex; align-items:center; gap:var(--space-2); padding:var(--space-2) var(--space-3); border-top:1px solid var(--border-default); background:var(--sunken); border-radius:0 0 var(--radius-xl) var(--radius-xl); }
-/* Grid inside blocks (React and Kotlin DSL): a page-level block starts its own 24-column grid; the block, its body and its
-   rows are otherwise subgrids of the page columns. */
-.ts-block--grid { display:grid; grid-template-columns:subgrid; grid-template-rows:auto 1fr auto; }
-.ts-page > .ts-block--grid { grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); column-gap:var(--grid-gap); }
+/* Grid inside blocks (React and Kotlin DSL): a slot and every block start their own 24-column grid scaled to their
+   width; the block body, its rows and fields are subgrids of the block columns. The column gap of a block shrinks
+   with its width in page columns, so its 23 gaps fit any block width allowed by the DSL. */
+.ts-block--grid { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); column-gap:calc(var(--grid-gap) * var(--ts-page-columns, 24) / 24); grid-template-rows:auto 1fr auto; }
 .ts-block--grid > .ts-block__head { grid-row:1; grid-column:1 / -1; }
 .ts-block--grid > .ts-block__body { grid-row:2; grid-column:1 / -1; }
 .ts-block--grid > .ts-block__foot { grid-row:3; grid-column:1 / -1; }
@@ -198,7 +200,7 @@
 .ts-table-filters__toggle[aria-expanded="true"] svg { transform:rotate(180deg); }
 .ts-table-filters__content { display:flex; flex-direction:column; gap:var(--space-3); padding:var(--space-3); }
 .ts-table-filters__content[hidden] { display:none; }
-.ts-table-filters__fields { display:grid; column-gap:var(--grid-gap); row-gap:var(--space-3); min-width:0; }
+.ts-table-filters__fields { display:grid; column-gap:calc(var(--grid-gap) * var(--ts-page-columns, 24) / 24); row-gap:var(--space-3); min-width:0; }
 .ts-table-filters__actions { display:flex; justify-content:flex-end; gap:var(--space-2); }
 .ts-block__row > * { min-width:0; }
 .ts-block__row > :is(.ts-tag, .ts-status, .ts-counter, .ts-icon) { justify-self:start; }
@@ -590,7 +592,7 @@ button.ts-choice { background:transparent; border:0; padding:0; text-align:left;
 
 /* Logical table fractions retain their size even when the content needs a wider viewport. */
 .ts-table.ts-table-grid {
-  table-layout:fixed; width:var(--ts-table-width); min-width:calc(var(--ts-table-used) * 52px);
+  table-layout:fixed; width:var(--ts-table-width); min-width:calc(var(--ts-table-used) * 52px * var(--ts-page-columns, 24) / 24);
 }
 .ts-table-grid th, .ts-table-grid td { overflow-wrap:anywhere; white-space:normal; }
 .ts-brand-image { height:32px; width:auto; max-width:100%; object-fit:contain; }

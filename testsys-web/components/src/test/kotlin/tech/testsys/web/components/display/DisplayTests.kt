@@ -123,7 +123,7 @@ class DisplayTests : MockVaadinTests() {
             val page = buildTestPage { row { slot(size = 3) { row { statCard(label = "Решено", value = "42") } } } }
 
             val block = page.find("ts-block")
-            assertEquals("span 3", block.element.style.get("grid-column"))
+            assertEquals("span 24", block.element.style.get("grid-column"))
             assertEquals("Решено", block.find("ts-stat__label").element.textRecursively)
             assertEquals("42", block.find("ts-stat__value").element.textRecursively)
         }

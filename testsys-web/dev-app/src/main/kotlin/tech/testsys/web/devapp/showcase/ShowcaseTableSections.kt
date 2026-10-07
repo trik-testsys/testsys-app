@@ -65,7 +65,7 @@ internal fun PageScope.tableSection() {
             row {
                 block(title = "Пустая таблица") {
                     table(key = { row -> row.id }, fetch = { request -> submissionPage(emptyList(), request) }) {
-                        submissionColumns()
+                        submissionColumns(isCompact = true)
                         empty("Посылок пока нет")
                     }
                 }
@@ -75,9 +75,9 @@ internal fun PageScope.tableSection() {
             row {
                 block(title = "Маленькая таблица", subtitle = "Одна страница — без пагинации") {
                     table(key = { row -> row.id }, fetch = { request -> submissionPage(SUBMISSIONS.take(SMALL_TABLE_ROWS), request) }) {
-                        codeColumn("ID", size = 2) { row -> "#${row.id}" }
-                        textColumn("Участник", size = 6) { row -> row.author }
-                        column("Вердикт", size = 4) { row -> badge(row.verdict.label, row.verdict.tone) }
+                        codeColumn("ID", size = 4) { row -> "#${row.id}" }
+                        textColumn("Участник", size = 12) { row -> row.author }
+                        column("Вердикт", size = 8) { row -> badge(row.verdict.label, row.verdict.tone) }
                     }
                 }
             }

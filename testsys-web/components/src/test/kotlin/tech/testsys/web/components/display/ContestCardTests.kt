@@ -95,11 +95,11 @@ internal class ContestCardTests : MockVaadinTests() {
 
     @Test
     fun `should place the card on the requested columns of a slot row`() {
-        val main = buildTestPage { row { slot(size = 16) { row { contestCard(card(), size = 8) } } } }
+        val main = buildTestPage { row { slot(size = 16) { row { contestCard(card(), size = 12) } } } }
 
         val card = main.child(0).child(0).child(0).child(0)
         assertTrue("ts-ccard" in card.element.classList)
-        assertEquals("span 8", card.element.style.get("grid-column"))
+        assertEquals("span 12", card.element.style.get("grid-column"))
     }
 
     private fun card(actionLabel: String? = "Join") = ContestCardData(

@@ -93,8 +93,8 @@ internal fun PageScope.propertySection() {
             row {
                 targetBlock = block(title = "Цели") {
                     row {
-                        targetField = textInput("Поле", labelSize = 4, size = 4) { value = "Скрываемое поле" }
-                        text("Сдвинется влево", size = 4)
+                        targetField = textInput("Поле", labelSize = 8, size = 8) { value = "Скрываемое поле" }
+                        text("Сдвинется влево", size = 8)
                     }
                     row { targetText = text("Скрываемый текст") }
                     row {

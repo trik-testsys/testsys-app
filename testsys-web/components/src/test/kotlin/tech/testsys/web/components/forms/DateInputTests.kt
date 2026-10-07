@@ -5,6 +5,7 @@ import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._setValue
 import com.vaadin.flow.component.datepicker.DatePicker
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
+import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.component.timepicker.TimePicker
@@ -188,6 +189,20 @@ class DateInputTests : MockVaadinTests() {
 
             assertEquals(DateRange(from = start), input.value)
             assertTrue(popup.isOpened)
+        }
+
+        @Test
+        fun `should return focus to the trigger only if it stayed in the popup`() {
+            buildTestRow { dateRangeInput("Период", labelSize = 4, size = 20) }
+            val trigger = _find<NativeButton>().single()
+            val popup = _find<Popover>().single().apply { open() }
+            pendingJavaScript()
+
+            popup.close()
+
+            val calls = pendingJavaScript().filter { call -> call.owner == trigger.element.node }
+            assertTrue(calls.isNotEmpty())
+            assertTrue(calls.all { call -> "document.activeElement" in call.invocation.expression })
         }
 
         @Test

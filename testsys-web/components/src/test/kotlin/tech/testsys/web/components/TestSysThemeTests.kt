@@ -70,6 +70,14 @@ class TestSysThemeTests {
     }
 
     @Test
+    fun `should pin the drawer to the right edge of the viewport`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+
+        assertEquals("0px", rule(overrides, "vaadin-dialog[theme~=\"ts-drawer\"]")["--vaadin-overlay-viewport-inset"])
+        assertEquals("0 0 0 auto", rule(overrides, "vaadin-dialog[theme~=\"ts-drawer\"]::part(overlay)")["margin"])
+    }
+
+    @Test
     fun `should dim the page behind dialogs and drawers with the overlay tokens`() {
         val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
 

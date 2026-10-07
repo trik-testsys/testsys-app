@@ -447,7 +447,6 @@ a.ts-tab { text-decoration:none; }
 .ts-lb-cell--first { background:var(--success); color:var(--white); }
 .ts-lb-cell--ok { background:var(--success-bg); color:var(--success-fg); }
 .ts-lb-cell--fail { background:var(--danger-bg); color:var(--danger-fg); }
-.ts-lb-cell--frozen { background:var(--warning-bg); color:var(--warning-fg); }
 .ts-lb-cell--none { color:var(--ink-300); }
 
 /* ---------- Timer ---------- */

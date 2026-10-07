@@ -98,7 +98,7 @@ internal class DateRangeField(
             if (event.isOpened) {
                 if (isEnabled && !isReadOnly) calendar.present(value) else popup.close()
             } else if (isAttached) {
-                trigger.focus()
+                trigger.element.restoreTriggerFocus(popup.element)
             }
         }
         listOf(start, end).forEach { picker ->

@@ -7,12 +7,10 @@ import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
-import com.vaadin.flow.component.page.PendingJavaScriptResult
 import com.vaadin.flow.component.popover.Popover
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.binder.HasValidator
 import com.vaadin.flow.data.value.ValueChangeMode
-import com.vaadin.flow.dom.Element
 import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
@@ -307,7 +305,3 @@ fun <T : Any> ContentScope.multiSelect(
     ),
     configure,
 )
-
-/** Returns focus to the trigger only if it stayed in [popup] or was lost, so a click elsewhere keeps its target. */
-private fun Element.restoreTriggerFocus(popup: Element): PendingJavaScriptResult =
-    executeJs("const active = document.activeElement; if (active === document.body || $0.contains(active)) this.focus();", popup)

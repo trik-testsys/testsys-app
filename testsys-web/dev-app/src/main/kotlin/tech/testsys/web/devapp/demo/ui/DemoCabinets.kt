@@ -106,16 +106,16 @@ private fun PageScope.demoResources(context: DemoContext, actor: DemoUser, objec
             listOf("ID" to resource.id, "Название" to resource.name, "Тип" to resource.category, "Файл" to resource.fileName),
         )
         block("История изменений") {
-            val revisions = resource.history.map {
-                DemoRow(id = it.modifiedAt, title = it.fileName, date = demoDate(it.modifiedAt), detail = it.comment)
+            val revisions = resource.history.map { change ->
+                DemoRow(id = change.modifiedAt, title = change.fileName, date = demoDate(change.modifiedAt), detail = change.comment)
             }
             demoTable(
                 state = context.table("${actor.id}:${resource.id}:history"),
                 rows = revisions,
                 columns = {
-                    textColumn("Изменён", size = 4) { it.id }
-                    textColumn("Файл", size = 6) { it.title }
-                    textColumn("Комментарий", size = 11) { it.detail }
+                    textColumn("Изменён", size = 4) { revision -> revision.id }
+                    textColumn("Файл", size = 6) { revision -> revision.title }
+                    textColumn("Комментарий", size = 11) { revision -> revision.detail }
                     column("Версия", size = 3) { revision ->
                         demoDownload(filename = revision.title, content = "Демонстрационный ресурс: ${resource.name}")
                     }
@@ -145,7 +145,7 @@ private fun PageScope.demoList(
 ) {
     val contextKey = "${actor.id}:$key"
     block(title) {
-        demoTable(context.table(contextKey), rows) { context.select(key = contextKey, id = it.id) }
+        demoTable(context.table(contextKey), rows) { row -> context.select(key = contextKey, id = row.id) }
     }
     rows.firstOrNull { it.id == context.selection(key = contextKey, fallback = rows.firstOrNull()?.id) }?.let { details(it) }
 }

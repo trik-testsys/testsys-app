@@ -26,7 +26,19 @@ enum class TooltipPlacement {
      * @since %CURRENT_VERSION%
      */
     Bottom,
+
+    /**
+     * Before the target in the reading direction: on the left in left-to-right text.
+     *
+     * @since %CURRENT_VERSION%
+     */
     Left,
+
+    /**
+     * After the target in the reading direction: on the right in left-to-right text.
+     *
+     * @since %CURRENT_VERSION%
+     */
     Right,
 }
 
@@ -53,7 +65,7 @@ class TooltipHandle internal constructor(private val tooltip: Tooltip, element: 
 }
 
 /**
- * Attaches plain [text] above or below this element, according to [placement].
+ * Attaches plain [text] beside this element, on the side given by [placement].
  *
  * @since %CURRENT_VERSION%
  */
@@ -64,8 +76,7 @@ fun ElementHandle.tooltip(
 ): TooltipHandle = TooltipHandle(
     Tooltip.forComponent(component).withText(text).withPosition(
         when (placement) {
-            TooltipPlacement.Top ->
-                Tooltip.TooltipPosition.TOP
+            TooltipPlacement.Top -> Tooltip.TooltipPosition.TOP
             TooltipPlacement.Bottom -> Tooltip.TooltipPosition.BOTTOM
             TooltipPlacement.Left -> Tooltip.TooltipPosition.START
             TooltipPlacement.Right -> Tooltip.TooltipPosition.END

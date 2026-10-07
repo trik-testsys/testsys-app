@@ -55,7 +55,7 @@ internal fun PageScope.actionSection() {
             }
         }
         footer {
-            action("Отмена") { onClick { toast(FeedbackKind.Info, "Отмена: действие выполнено") } }
+            action("Отменить") { onClick { toast(FeedbackKind.Info, "Отменить: действие выполнено") } }
             mainAction("В подвале") { onClick { toast(FeedbackKind.Info, "В подвале: действие выполнено") } }
         }
     }

@@ -21,6 +21,7 @@ import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceA
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.ExerciseJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
+import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 import kotlin.test.assertContentEquals
@@ -265,7 +266,7 @@ class ExercisePersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val fileId = row.fileDataId
         val file = fileDataJpaEntityRepository.findById(fileId).orElseThrow()
         val expected = StoredBlobRef(file.storedFileName)
-        fileBlobStorage.delete(expected)
+        fileBlobStorage.delete(expected, Path.of(EXERCISE_PATH))
 
         val reference = repository.findFileRef(old.data.versionBucket, old.id)
         val hasVersions = repository.existsByVersionBucket(old.data.versionBucket)
@@ -288,6 +289,14 @@ class ExercisePersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val reference = repository.findFileRef(VersionBucket(UUID(0, 99)), ExerciseId(99))
 
         assertNull(reference)
+    }
+
+    @Test
+    fun `should store the exercise file under the exercise path`() {
+        val saved = repository.save(newData())
+
+        val ref = StoredBlobRef(fileDataJpaEntityRepository.findAll().single().storedFileName)
+        assertContentEquals(saved.data.file.content, fileBlobStorage.load(ref, Path.of(EXERCISE_PATH)))
     }
 
     private fun setCreatedAt(id: ExerciseId, createdAt: Instant) {

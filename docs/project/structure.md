@@ -23,7 +23,7 @@ testsys-app/
 ├── testsys-operation/        # Операции (сценарии фич testsys.user.*)
 ├── testsys-infra/            # Реализации портов
 ├── testsys-web/              # Контейнер веб-модулей
-│   ├── components/           # Kotlin-DSL, общие тексты и экран 404
+│   ├── components/           # Kotlin-DSL, общие тексты и экраны ошибок
 │   ├── app/                  # Основное приложение
 │   └── dev-app/              # Независимая витрина компонентов
 ├── detekt.yml                # Конфигурация Detekt
@@ -41,8 +41,8 @@ testsys-app/
 | `testsys-infra:diagnostics`          | Синхронный анализ XML одного Полигона через порт `PolygonDiagnostics`.                           | Реализован        |
 | `testsys-infra:grpc`                 | Связь с Проверяющими узлами и балансировка проверок (реализация порта `Grader`).                    | Реализован        |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
-| `testsys-web:app` | Основное приложение Vaadin Flow: точка входа, конфигурация и маршрутизация ошибок, см. [app/README.md](../../testsys-web/app/README.md). | Каркас; предметных страниц Кабинетов нет |
-| `testsys-web:components` | Kotlin-DSL, общая фабрика текстов и визуальная часть 404, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
+| `testsys-web:app` | Основное приложение Vaadin Flow: точка входа, конфигурация, маршрутизация ошибок и подключение операций через прокси-сервисы, см. [app/README.md](../../testsys-web/app/README.md). | Каркас; предметных страниц Кабинетов и безопасности нет |
+| `testsys-web:components` | Kotlin-DSL, общая фабрика текстов и визуальная часть страниц ошибок, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
 | `testsys-web:dev-app` | Самостоятельная витрина компонентов и демонстраций, см. [dev-app/README.md](../../testsys-web/dev-app/README.md). | Реализован |
 
 Отсутствующие маршруты каждое веб-приложение обрабатывает само: см. раздел «Отсутствующие маршруты»
@@ -59,8 +59,11 @@ testsys-app/
 - `testsys-domain` ни от чего не зависит. Любой новый код, которому нужен Spring, JPA или сеть, живёт вне домена.
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
 - Сейчас в Gradle прописаны связи `operation → domain`, `database → domain`, `database → codegen-api`,
-  `database → codegen` (через `ksp`), `grpc → domain`, `diagnostics → domain`, `app → components`
-  и `dev-app → components`. Остальные связи — целевая архитектура.
+  `database → codegen` (через `ksp`), `grpc → domain`, `diagnostics → domain`, `app → components`, `app → domain`,
+  `app → operation`, `app → grpc`, `app → database`, `app → diagnostics` и `dev-app → components`.
+  Остальные связи — целевая архитектура.
+- Приложение подключает конфигурации инфраструктурных модулей через `@Import` в `InfraConfiguration`;
+  см. шаг «Регистрация бина» в [implement-port.md](../guides/implement-port.md#5-регистрация-бина).
 
 ## Сборка
 
@@ -120,7 +123,8 @@ testsys-app/
 
 ### Сборка веб-приложений
 
-Запуск основного приложения (порт 8080; пока доступны только обработчики отсутствующих маршрутов):
+Запуск основного приложения (порт 8080; нужны PostgreSQL и каталоги файлов, см. раздел «Запуск и проверка»
+в [app/README.md](../../testsys-web/app/README.md#запуск-и-проверка)):
 
 ```bash
 ./gradlew :testsys-web:app:bootRun -Pdetekt.autoCorrect=false
@@ -197,6 +201,7 @@ Workflow лежат в `.github/workflows`.
 | Новый внешний порт (хранилище, внешняя система) | Интерфейс в `domain/contract`, реализация — в `testsys-infra`, см. [implement-port.md](../guides/implement-port.md) |
 | Пользовательскую фичу                           | Метод с `@Feature` в `operation/user/<Actor>Operations.kt`, см. [implement-feature.md](../guides/implement-feature.md) |
 | Служебную обработку запроса валидации           | `TaskValidationOperations` в `testsys-operation`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
+| Прокси-сервис операций                          | `testsys-web/app/.../service/<actor>/<Actor>Service.kt`, см. [app/README.md](../../testsys-web/app/README.md#прокси-сервисы) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
 | Токены, стили, бренд и иконки | `components/src/main/resources/META-INF/resources/testsys-ui/`, правила — [ui-design.md](ui-design.md) |

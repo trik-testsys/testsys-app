@@ -148,6 +148,23 @@ fun buildUiTexts(): UiTexts {
             back = "Вернуться",
             pageTitle = "Страница не найдена — TestSys",
         ),
+        forbidden = ErrorPageTexts(
+            title = "Нет доступа",
+            description = "У вас нет доступа к этой странице или нет нужной для неё роли.",
+            pageTitle = "Нет доступа — TestSys",
+        ),
+        pageFailed = ErrorPageTexts(
+            title = "Не удалось открыть страницу",
+            description = "Обновите страницу или вернитесь на предыдущую.",
+            pageTitle = "Не удалось открыть страницу — TestSys",
+        ),
+        failures = FailureTexts(
+            notFound = "Объект не найден",
+            accessDenied = "Нет доступа",
+            missingRole = "Нет нужной роли",
+            resourceNotInTask = "Ресурс недоступен в этой задаче",
+            failed = "Действие не выполнено",
+        ),
     )
 }
 

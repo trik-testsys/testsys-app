@@ -9,11 +9,13 @@ import tech.testsys.infra.database.internal.jpa.entity.task.FileDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireId
+import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.HexFormat
 
 /**
- * Append-only storage of [FileData]: metadata goes to a [FileDataJpaEntity] row, content to [FileBlobStorage].
+ * Append-only storage of [FileData]: metadata goes to a [FileDataJpaEntity] row, content to [FileBlobStorage]
+ * in the path chosen by the caller.
  * A stored file never changes; [matches] compares a file with a stored one by uploaded name and content hash.
  *
  * @since %CURRENT_VERSION%
@@ -26,13 +28,13 @@ class FileDataStorage(
 ) {
 
     /**
-     * Stores [file] as a new row and blob.
+     * Stores [file] as a new row and a blob in [path].
      *
      * @return the id of the inserted [FileDataJpaEntity].
      * @since %CURRENT_VERSION%
      */
-    fun store(file: FileData): Long {
-        val blobRef = fileBlobStorage.store(file.content)
+    fun store(file: FileData, path: Path): Long {
+        val blobRef = fileBlobStorage.store(file.content, path)
         val saved = fileDataJpaEntityRepository.save(
             FileDataJpaEntity(
                 uploadedFileName = file.uploadedFilename,
@@ -54,13 +56,13 @@ class FileDataStorage(
     }
 
     /**
-     * Loads the uploaded filename and content of the file referenced by [fileDataId].
+     * Loads the uploaded filename and content of the file referenced by [fileDataId] from [path].
      *
      * @since %CURRENT_VERSION%
      */
-    fun load(fileDataId: Long): LoadedFile {
+    fun load(fileDataId: Long, path: Path): LoadedFile {
         val fileData = fileDataJpaEntityRepository.findByIdOrError(fileDataId)
-        val content = fileBlobStorage.load(StoredBlobRef(fileData.storedFileName))
+        val content = fileBlobStorage.load(StoredBlobRef(fileData.storedFileName), path)
         return LoadedFile(uploadedFilename = fileData.uploadedFileName, content = content)
     }
 

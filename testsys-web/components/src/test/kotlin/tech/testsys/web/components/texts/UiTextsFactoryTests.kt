@@ -55,6 +55,12 @@ class UiTextsFactoryTests {
     }
 
     @Test
+    fun `should include brand in page titles of error screens`() {
+        assertEquals("Нет доступа — TestSys", texts.forbidden.pageTitle)
+        assertEquals("Не удалось открыть страницу — TestSys", texts.pageFailed.pageTitle)
+    }
+
+    @Test
     fun `should take calendar names and first weekday from the standard locale data`() {
         assertEquals(12, texts.calendar.monthNames.size)
         assertEquals("Январь", texts.calendar.monthNames.first())

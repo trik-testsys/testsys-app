@@ -83,8 +83,8 @@ class ProfileView(texts: UiTexts) : TestSysView(texts) {
 
 ## Футтер страницы
 
-`Page` и `NotFoundPage` автоматически выводят футтер после `main`. На короткой странице тело заполняет свободную
-высоту окна; на длинной футтер следует после содержимого. Логотип, размеры и оформление принадлежат
+`Page` и `ErrorPage`, включая `NotFoundPage`, автоматически выводят футтер после `main`. На короткой странице
+тело заполняет свободную высоту окна; на длинной футтер следует после содержимого. Логотип, размеры и оформление принадлежат
 [ui-design.md](../../docs/project/ui-design.md), раздел «Футтер страницы».
 
 `footer { }` в `PageScope` настраивает ссылки одной страницы. Без вызова список пуст, навигация не создаётся.
@@ -896,7 +896,9 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 текущая политика текстов — в [ui-design.md](../../docs/project/ui-design.md#текст-интерфейса).
 
 В `UiTexts` входят бренд, календарь, ограничения полей и группы `table`, `pagination`, `load`, `dialog`,
-`lookup`, `navigation`, `menu`, `dateFields`, `notFound`, `footer`, `tableFilters`, `components` и `header`.
+`lookup`, `navigation`, `menu`, `dateFields`, `notFound`, `forbidden`, `pageFailed`, `failures`, `footer`,
+`tableFilters`, `components` и `header`. Группы `forbidden` и `pageFailed` — тексты экранов ошибок,
+`failures` — заголовки тостов о неудачном действии по роду отказа.
 Группа `pagination` (`previous`, `next`, `page(n)`) общая для `pagination` и компактного пейджера таблицы.
 Строки со значением — функции: `pagination.page(n)`, `lookup.remove(value)`, `lookup.selectedCount(n)`,
 `components.more(n)`.
@@ -1147,7 +1149,7 @@ Detach закрывает карточку и освобождает её тай
 
 ## Ресурсы бренда
 
-`TestSysBrand.HEADER` задает путь выбранного горизонтального PNG для шапки и `NotFoundPage`;
+`TestSysBrand.HEADER` задает путь выбранного горизонтального PNG для шапки и `ErrorPage`;
 `TestSysBrand.FOOTER` — путь прозрачного SVG для футтера страницы;
 `TestSysBrand.FAVICON` — к синей эмблеме на бежевом фоне со скругленными углами.
 `EMBLEM` и `WORDMARK` сохраняют публичные пути к отдельным прозрачным векторным вариантам.
@@ -1163,6 +1165,8 @@ URL содержит версию для обновления браузерно
 
 Основное и dev-приложение используют эту библиотеку независимо друг от друга; их запуск и маршруты описаны
 в [app/README.md](../app/README.md) и [dev-app/README.md](../dev-app/README.md).
-`NotFoundPage` содержит общую визуальную часть 404 и возврат по истории. Обработчик `HasErrorParameter`
-принадлежит каждому приложению и вызывает `refreshHistoryNavigation()` из `setErrorParameter`: без этого вызова
-кнопка «Вернуться» остаётся недоступной. Библиотека не регистрирует маршруты, Spring-компоненты или `AppShell`.
+`ErrorPage` содержит общую визуальную часть страниц ошибок и возврат по истории.
+`show(title, description, pageTitle)` задаёт заголовок, пояснение и заголовок вкладки. `NotFoundPage` построен
+на `ErrorPage` и показывает тексты `notFound`. Обработчик `HasErrorParameter` принадлежит каждому приложению
+и вызывает `refreshHistoryNavigation()` из `setErrorParameter`: без этого вызова кнопка «Вернуться» остаётся
+недоступной. Библиотека не регистрирует маршруты, Spring-компоненты или `AppShell`.

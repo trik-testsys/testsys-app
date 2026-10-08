@@ -34,6 +34,7 @@ import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.DatabaseIntegrationTests
+import java.nio.file.Path
 import java.sql.Timestamp
 import java.time.Instant
 
@@ -269,7 +270,10 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         )
         submissions.update(submission.withData { status.graded { status.success { this.verdict = verdict.id } } })
         jdbcTemplate.queryForList("select stored_file_name from ts_file_data", String::class.java).filterNotNull()
-            .forEach { key -> blobStorage.delete(StoredBlobRef(key)) }
+            .forEach { key ->
+                listOf(STATEMENT_PATH, EXERCISE_PATH, TEST_PATH, SOLUTION_PATH, RECORDING_PATH, LOGS_PATH)
+                    .forEach { path -> blobStorage.delete(StoredBlobRef(key), Path.of(path)) }
+            }
 
         val page = repository.findAvailableToJudge(Pagination(page = 0, size = 1))
 

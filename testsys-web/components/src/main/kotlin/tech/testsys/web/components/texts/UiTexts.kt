@@ -26,6 +26,9 @@ import java.util.Locale
  * @property dateFields the accessible names and instructions of compound date fields.
  * @property components the texts of selections, overlays and transfers.
  * @property notFound the texts of the missing page screen.
+ * @property forbidden the texts of the screen of a page the user has no access to.
+ * @property pageFailed the texts of the screen of a page that failed to open.
+ * @property failures the toast titles of failed actions.
  * @since %CURRENT_VERSION%
  */
 class UiTexts(
@@ -45,6 +48,9 @@ class UiTexts(
     val menu: MenuTexts,
     val dateFields: DateFieldTexts,
     val notFound: NotFoundTexts,
+    val forbidden: ErrorPageTexts,
+    val pageFailed: ErrorPageTexts,
+    val failures: FailureTexts,
     val components: ComponentTexts,
     val header: HeaderTexts,
     val footer: FooterTexts,
@@ -262,6 +268,38 @@ class NotFoundTexts(
     val description: String,
     val back: String,
     val pageTitle: String,
+)
+
+/**
+ * Texts of an error screen; its back action uses the label of the missing page screen.
+ *
+ * @property title the screen heading.
+ * @property description the explanation of the error.
+ * @property pageTitle the browser title including the brand.
+ * @since %CURRENT_VERSION%
+ */
+class ErrorPageTexts(
+    val title: String,
+    val description: String,
+    val pageTitle: String,
+)
+
+/**
+ * Toast titles of failed actions by the kind of failure.
+ *
+ * @property notFound the title when an object of the action does not exist.
+ * @property accessDenied the title when the user has no access to an object of the action.
+ * @property missingRole the title when the user lacks the role the action requires.
+ * @property resourceNotInTask the title when a resource of the action is not available in the task context.
+ * @property failed the title of any other failure.
+ * @since %CURRENT_VERSION%
+ */
+class FailureTexts(
+    val notFound: String,
+    val accessDenied: String,
+    val missingRole: String,
+    val resourceNotInTask: String,
+    val failed: String,
 )
 
 /**

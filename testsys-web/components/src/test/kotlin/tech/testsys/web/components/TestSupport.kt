@@ -22,6 +22,8 @@ import tech.testsys.web.components.texts.ComponentTexts
 import tech.testsys.web.components.texts.DateFieldTexts
 import tech.testsys.web.components.texts.DialogTexts
 import tech.testsys.web.components.texts.EditingTexts
+import tech.testsys.web.components.texts.ErrorPageTexts
+import tech.testsys.web.components.texts.FailureTexts
 import tech.testsys.web.components.texts.FieldErrorTexts
 import tech.testsys.web.components.texts.FooterTexts
 import tech.testsys.web.components.texts.HeaderTexts
@@ -145,6 +147,15 @@ internal val testTexts = UiTexts(
         description = "Проверьте адрес",
         back = "Вернуться",
         pageTitle = "Страница не найдена — TestSys",
+    ),
+    forbidden = ErrorPageTexts(title = "Нет доступа", description = "Нет прав", pageTitle = "Нет доступа — TestSys"),
+    pageFailed = ErrorPageTexts(title = "Сбой страницы", description = "Обновите", pageTitle = "Сбой страницы — TestSys"),
+    failures = FailureTexts(
+        notFound = "Не найдено",
+        accessDenied = "Запрещено",
+        missingRole = "Нет роли",
+        resourceNotInTask = "Не в задаче",
+        failed = "Не выполнено",
     ),
 )
 

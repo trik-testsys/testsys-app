@@ -10,6 +10,7 @@ import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.api.persistence.FileDataStorage
+import tech.testsys.infra.database.api.persistence.FileStoragePaths
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.TestJpaEntity
@@ -20,8 +21,8 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 
 /**
  * Persistence adapter of [Test] entities backed by [TestJpaEntity].
- * The polygon file is stored through [FileDataStorage] and fixed on creation: [update] with another file throws
- * [UnsupportedOperationException].
+ * The polygon file is stored through [FileDataStorage] in [FileStoragePaths.test]
+ * and fixed on creation: [update] with another file throws [UnsupportedOperationException].
  *
  * @since %CURRENT_VERSION%
  */
@@ -30,6 +31,7 @@ import tech.testsys.infra.database.internal.utils.findByIdOrError
 class TestPersistenceAdapter(
     jpaEntityRepository: TestJpaEntityRepository,
     private val fileDataStorage: FileDataStorage,
+    private val paths: FileStoragePaths,
     private val fileDataJpaEntityRepository: FileDataJpaEntityRepository,
 ) : AbstractPersistenceAdapter<TestData, TestId, Test, TestJpaEntity>(jpaEntityRepository),
     TestRepository {
@@ -38,7 +40,7 @@ class TestPersistenceAdapter(
 
     @Transactional
     override fun save(data: TestData): Test {
-        val fileDataId = fileDataStorage.store(data.file)
+        val fileDataId = fileDataStorage.store(data.file, paths.test)
         val savedJpaEntity = jpaEntityRepository.save(TestMapping.toJpaEntity(data, fileDataId))
 
         val domainEntity = TestMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)
@@ -79,7 +81,7 @@ class TestPersistenceAdapter(
     }
 
     override fun assemble(jpaEntity: TestJpaEntity): Test {
-        val file = fileDataStorage.load(jpaEntity.fileDataId)
+        val file = fileDataStorage.load(jpaEntity.fileDataId, paths.test)
         val domainEntity = TestMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)
         return domainEntity
     }

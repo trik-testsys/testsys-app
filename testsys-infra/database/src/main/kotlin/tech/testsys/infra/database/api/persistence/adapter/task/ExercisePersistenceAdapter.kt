@@ -10,6 +10,7 @@ import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.api.persistence.FileDataStorage
+import tech.testsys.infra.database.api.persistence.FileStoragePaths
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.ExerciseJpaEntity
@@ -21,8 +22,8 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 
 /**
  * Persistence adapter of [Exercise] entities backed by [ExerciseJpaEntity].
- * The exercise file is stored through [FileDataStorage]; the file and the language are fixed on creation:
- * [update] with another one throws [UnsupportedOperationException].
+ * The exercise file is stored through [FileDataStorage] in [FileStoragePaths.exercise];
+ * the file and the language are fixed on creation: [update] with another one throws [UnsupportedOperationException].
  *
  * @since %CURRENT_VERSION%
  */
@@ -31,6 +32,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 class ExercisePersistenceAdapter(
     jpaEntityRepository: ExerciseJpaEntityRepository,
     private val fileDataStorage: FileDataStorage,
+    private val paths: FileStoragePaths,
     private val fileDataJpaEntityRepository: FileDataJpaEntityRepository,
 ) : AbstractPersistenceAdapter<ExerciseData, ExerciseId, Exercise, ExerciseJpaEntity>(jpaEntityRepository),
     ExerciseRepository {
@@ -39,7 +41,7 @@ class ExercisePersistenceAdapter(
 
     @Transactional
     override fun save(data: ExerciseData): Exercise {
-        val fileDataId = fileDataStorage.store(data.file)
+        val fileDataId = fileDataStorage.store(data.file, paths.exercise)
         val savedJpaEntity = jpaEntityRepository.save(ExerciseMapping.toJpaEntity(data, fileDataId))
 
         val domainEntity = ExerciseMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)
@@ -84,7 +86,7 @@ class ExercisePersistenceAdapter(
     }
 
     override fun assemble(jpaEntity: ExerciseJpaEntity): Exercise {
-        val file = fileDataStorage.load(jpaEntity.fileDataId)
+        val file = fileDataStorage.load(jpaEntity.fileDataId, paths.exercise)
         val domainEntity = ExerciseMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)
         return domainEntity
     }

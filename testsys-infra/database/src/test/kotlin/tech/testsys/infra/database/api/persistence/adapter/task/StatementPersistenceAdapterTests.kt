@@ -19,6 +19,7 @@ import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceA
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.StatementJpaEntityRepository
+import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 import kotlin.test.assertContentEquals
@@ -231,7 +232,7 @@ class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
         val fileId = row.fileDataId
         val file = fileDataJpaEntityRepository.findById(fileId).orElseThrow()
         val expected = StoredBlobRef(file.storedFileName)
-        fileBlobStorage.delete(expected)
+        fileBlobStorage.delete(expected, Path.of(STATEMENT_PATH))
 
         val reference = repository.findFileRef(old.data.versionBucket, old.id)
         val hasVersions = repository.existsByVersionBucket(old.data.versionBucket)
@@ -254,6 +255,14 @@ class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
         val reference = repository.findFileRef(VersionBucket(UUID(0, 99)), StatementId(99))
 
         assertNull(reference)
+    }
+
+    @Test
+    fun `should store the statement file under the statement path`() {
+        val saved = repository.save(newData())
+
+        val ref = StoredBlobRef(fileDataJpaEntityRepository.findAll().single().storedFileName)
+        assertContentEquals(saved.data.file.content, fileBlobStorage.load(ref, Path.of(STATEMENT_PATH)))
     }
 
     private fun setCreatedAt(id: StatementId, createdAt: Instant) {

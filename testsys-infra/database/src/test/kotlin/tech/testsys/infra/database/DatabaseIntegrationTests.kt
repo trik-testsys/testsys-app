@@ -21,6 +21,12 @@ import org.springframework.test.context.TestPropertySource
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
+        "testsys.file-storage.paths.statement=${DatabaseIntegrationTests.STATEMENT_PATH}",
+        "testsys.file-storage.paths.exercise=${DatabaseIntegrationTests.EXERCISE_PATH}",
+        "testsys.file-storage.paths.test=${DatabaseIntegrationTests.TEST_PATH}",
+        "testsys.file-storage.paths.solution=${DatabaseIntegrationTests.SOLUTION_PATH}",
+        "testsys.file-storage.paths.recording=${DatabaseIntegrationTests.RECORDING_PATH}",
+        "testsys.file-storage.paths.logs=${DatabaseIntegrationTests.LOGS_PATH}",
     ],
 )
 abstract class DatabaseIntegrationTests {
@@ -43,5 +49,15 @@ abstract class DatabaseIntegrationTests {
         } finally {
             jdbcTemplate.execute("set referential_integrity true")
         }
+    }
+
+    companion object {
+
+        const val STATEMENT_PATH = "/testsys/statement"
+        const val EXERCISE_PATH = "/testsys/exercise"
+        const val TEST_PATH = "/testsys/test"
+        const val SOLUTION_PATH = "/testsys/solution"
+        const val RECORDING_PATH = "/testsys/recording"
+        const val LOGS_PATH = "/testsys/logs"
     }
 }

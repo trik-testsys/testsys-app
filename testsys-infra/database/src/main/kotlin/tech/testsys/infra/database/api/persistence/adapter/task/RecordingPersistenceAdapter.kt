@@ -7,6 +7,7 @@ import tech.testsys.domain.model.task.Recording
 import tech.testsys.domain.model.task.RecordingData
 import tech.testsys.domain.model.task.RecordingId
 import tech.testsys.infra.database.api.persistence.FileDataStorage
+import tech.testsys.infra.database.api.persistence.FileStoragePaths
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.RecordingJpaEntity
@@ -15,7 +16,8 @@ import tech.testsys.infra.database.internal.mapping.task.RecordingMapping
 
 /**
  * Persistence adapter of [Recording] entities backed by [RecordingJpaEntity].
- * The recording file is stored through [FileDataStorage]; a recording is fixed on creation, so [update] always fails.
+ * The recording file is stored through [FileDataStorage] in [FileStoragePaths.recording];
+ * a recording is fixed on creation, so [update] always fails.
  *
  * @since %CURRENT_VERSION%
  */
@@ -24,12 +26,13 @@ import tech.testsys.infra.database.internal.mapping.task.RecordingMapping
 class RecordingPersistenceAdapter(
     jpaEntityRepository: RecordingJpaEntityRepository,
     private val fileDataStorage: FileDataStorage,
+    private val paths: FileStoragePaths,
 ) : AbstractPersistenceAdapter<RecordingData, RecordingId, Recording, RecordingJpaEntity>(jpaEntityRepository),
     RecordingRepository {
 
     @Transactional
     override fun save(data: RecordingData): Recording {
-        val fileDataId = fileDataStorage.store(data.file)
+        val fileDataId = fileDataStorage.store(data.file, paths.recording)
         val savedJpaEntity = jpaEntityRepository.save(RecordingMapping.toJpaEntity(data, fileDataId))
 
         val domainEntity = RecordingMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)
@@ -41,7 +44,7 @@ class RecordingPersistenceAdapter(
     )
 
     override fun assemble(jpaEntity: RecordingJpaEntity): Recording {
-        val file = fileDataStorage.load(jpaEntity.fileDataId)
+        val file = fileDataStorage.load(jpaEntity.fileDataId, paths.recording)
         val domainEntity = RecordingMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)
         return domainEntity
     }

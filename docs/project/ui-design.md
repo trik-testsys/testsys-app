@@ -126,7 +126,7 @@ Hover, выбранная строка и временная подсветка 
 ## Логотип и фирменная надпись
 
 Предоставленные варианты SVG/PNG хранятся в `testsys-ui/brand/`; формы, цвета и пропорции сохраняются.
-Шапка и 404 используют `TestSys-mono-horizontal-large-type-05-split-cream.png` высотой 40 px,
+Шапка и страницы ошибок используют `TestSys-mono-horizontal-large-type-05-split-cream.png` высотой 40 px,
 с автоматической шириной и radius-md. Favicon — синяя эмблема на кремовом фоне из
 `TestSys-mono-emblem.svg`, фон имеет rx/ry 96 на холсте 768. Версия URL обновляется при изменении изображения.
 Футтер использует `TestSys-mono-horizontal-large-type-07-transparent-blue.svg` высотой 32 px;

@@ -11,6 +11,7 @@ import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.FileDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
+import java.nio.file.Path
 import java.util.Optional
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -32,7 +33,7 @@ class FileDataStorageTests {
 
         @BeforeEach
         fun setUp() {
-            every { fileBlobStorage.store(capture(storedContents)) } returns StoredBlobRef(STORED_KEY)
+            every { fileBlobStorage.store(capture(storedContents), PATH) } returns StoredBlobRef(STORED_KEY)
             every { fileDataJpaEntityRepository.save(capture(savedRows)) } answers {
                 val row = firstArg<FileDataJpaEntity>()
                 FileDataJpaEntity(row.uploadedFileName, row.storedFileName, row.contentHash, id = NEW_ID)
@@ -40,8 +41,8 @@ class FileDataStorageTests {
         }
 
         @Test
-        fun `should store the content as a blob and a row with the name, blob key and content hash`() {
-            val result = storage.store(fileData(CURRENT_NAME, CURRENT_CONTENT))
+        fun `should store the content as a blob in the given path and a row with the name, blob key and content hash`() {
+            val result = storage.store(fileData(CURRENT_NAME, CURRENT_CONTENT), PATH)
 
             assertEquals(NEW_ID, result)
             assertContentEquals(CURRENT_CONTENT, storedContents.single())
@@ -98,6 +99,7 @@ class FileDataStorageTests {
         private const val CURRENT_NAME = "solution.qrs"
         private const val RENAMED_NAME = "renamed.txt"
         private const val STORED_KEY = "stored-key"
+        private val PATH: Path = Path.of("/testsys/logs")
         private const val CURRENT_CONTENT_HASH = "97b0560280ed60a5a1eaa1bc45492543c8a986ad5a25b468c427eb83c3e88191"
         private val CURRENT_CONTENT = "current".toByteArray()
     }

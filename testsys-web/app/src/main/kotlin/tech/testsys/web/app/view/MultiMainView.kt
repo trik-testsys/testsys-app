@@ -51,7 +51,7 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
     }
 
     private fun show(accessToken: String?) {
-        val profile = multipleRoleUserService.viewProfile()
+        val profile = multipleRoleUserService.viewProfile().roles
         page(headers.cabinet(active = CabinetHeaders.MAIN_SECTION)) {
             head("Главная")
             accessToken?.let { issued -> accessTokenBlock(issued) }

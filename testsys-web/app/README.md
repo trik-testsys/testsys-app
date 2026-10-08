@@ -76,8 +76,8 @@
 | `ParticipantView`, `ObserverView`, `SupervisorView` | `participant`, `observer`, `supervisor` | Соответствующий вид |
 
 Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
-кроме Кабинета Администратора, и профиль пока показывают только шапку и пустое состояние: их маршруты и доступ
-окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
+кроме Кабинета Администратора, пока показывают только шапку и пустое состояние: их маршруты и доступ окончательные,
+поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
 
 Страницы Кабинета Администратора вызывают прокси-сервис в `beforeEnter`, до построения таблиц. Поэтому отсутствие
 Роли, Сообщества или доступа открывает экран ошибки из раздела [Ошибки операций](#ошибки-операций), а не ошибку
@@ -105,10 +105,11 @@
 
 Страницы вызывают операции только через прокси-сервисы `<Actor>Service` в пакете `service/<actor>`:
 `AdministratorService`, `DeveloperService`, `JudgeService`, `MultipleRoleUserService`, `ParticipantService`,
-`StudentService`, `StudyService` и `UserService`. Методы сервиса соответствуют операциям один к одному и принимают те же входные данные без
-Пользователя. Сервиса для `TaskValidationOperations` нет: её вызывает только диспетчер. У `ManagerOperations`
-и `ObserverOperations` сервисов пока нет: страницы их не вызывают. `MultipleRoleUserService` пока выставляет только
-`viewProfile` и `joinCommunity`.
+`StudentService`, `StudyService` и `UserService`. Методы сервиса соответствуют операциям один к одному
+и принимают те же входные данные без Пользователя. Сервиса для `TaskValidationOperations` нет: её вызывает только
+диспетчер. У `ManagerOperations` и `ObserverOperations` сервисов пока нет: страницы их не вызывают.
+`MultipleRoleUserService.viewProfile` добавляет к Ролям Псевдоним и почту текущего Пользователя и возвращает их
+в `ProfileVo`.
 `AdministratorService` не выставляет служебную `refreshCommunityInvite`.
 
 Классы операций, у которых есть сервис, `TaskValidationOperations` и `TaskValidationDispatcher` создаются
@@ -131,7 +132,7 @@
 - Исключения из этих правил есть у `UserService`. `authenticate` возвращает `CabinetPrincipal` вместо VO, чтобы
   данные Пользователя не попадали в сессию. `confirmRegistration` возвращает исходный Код-доступа и выполняется
   с `noRollbackFor = OperationException`: потраченная попытка ввода кода сохраняется и при ошибке, а другие
-  отказы этой операции ничего не меняют.
+  отказы этой операции ничего не меняют. Так же выполняется `MultipleRoleUserService.confirmEmailChange`.
 - VO не содержат сущностей и ленивых ссылок: связи заменены идентификаторами и списками идентификаторов,
   доменные value-типы сохраняются. VO содержит все поля данных сущности, её `id` и `createdAt`. Файлы Ресурсов
   представлены именем без содержимого.

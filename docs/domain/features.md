@@ -449,9 +449,9 @@ Page: **testsys.web.page.registration**
 и ограничение числа попыток ввода. Любой, кто знает почту, может запросить на неё регистрацию и израсходовать
 все попытки неверными кодами. Тогда владелец почты запрашивает код повторно.
 
-### testsys.user.multi.changeMail (Partially implemented)
+### testsys.user.multi.changeMail (Implemented)
 
-Page: **testsys.web.page.multi.main**
+Page: **testsys.web.page.multi.profile**
 
 *Описание*:\
 Пользователь может сменить почту в два шага: запрос смены почты и подтверждение новой почты. Сначала он указывает
@@ -517,9 +517,7 @@ Page: **testsys.web.page.multi.main**
 - Число сравнений кода по запросу не превышает числа попыток, в том числе при одновременных подтверждениях.
 - Смена почты не меняет Код-доступа, Псевдоним, Роли и Сообщества Пользователя.
 
-Реализованы операции запроса и подтверждения смены почты, хранение запросов смены почты и отправка писем.
-Веб-страница и уведомления об отказах не реализованы. Недействующие запросы смены почты не удаляются
-автоматически. Число писем с кодом подтверждения Система не ограничивает: от подбора кода защищают его длина
+Недействующие запросы смены почты не удаляются автоматически. Число писем с кодом подтверждения Система не ограничивает: от подбора кода защищают его длина
 и ограничение числа попыток ввода.
 
 ### testsys.user.multi.restoreAccess (Not implemented)
@@ -618,7 +616,7 @@ Page: **testsys.web.page.multi.main**
 
 Реализованы операция присоединения к Сообществу и форма на странице **testsys.web.page.multi.main**.
 
-### testsys.user.multi.viewProfile (Partially implemented)
+### testsys.user.multi.viewProfile (Implemented)
 
 Page: **testsys.web.page.multi.main**, **testsys.web.page.multi.profile**
 
@@ -643,10 +641,6 @@ Page: **testsys.web.page.multi.main**, **testsys.web.page.multi.profile**
 *Инварианты*:
 
 - Просмотр не изменяет Пользователя, его Роли и членство в Сообществах.
-
-Реализованы операция, которая возвращает Роли с Сообществами, и списки Ролей и Сообществ на странице
-**testsys.web.page.multi.main**. Псевдоним и почту покажет страница **testsys.web.page.multi.profile**,
-она не реализована.
 
 <!-- testsys.user.single.participant -->
 
@@ -3867,7 +3861,7 @@ flowchart TD;
 - Страницы Ролей — из списка Ролей и из **testsys.web.component.header**.
 - **testsys.web.page.multi.profile** — из **testsys.web.component.header**.
 
-### testsys.web.page.multi.profile (Not implemented)
+### testsys.web.page.multi.profile (Implemented)
 
 *Назначение*:\
 Данные Пользователя с Нефиксированными Ролями.
@@ -3878,11 +3872,17 @@ flowchart TD;
 *Содержимое*:
 
 - Профиль — **testsys.user.multi.viewProfile**: Псевдоним и почта.
-- Почта — **testsys.user.multi.changeMail**: поле новой почты, затем поле кода из письма.
+- Почта — **testsys.user.multi.changeMail**: поле новой почты и действие «Получить код», затем новая почта,
+  поле кода из письма и действия «Сменить почту», «Отправить код повторно» и «Изменить почту». Повторная отправка
+  выполняет запрос смены для той же почты; «Изменить почту» возвращает к полю новой почты.
+
+При отказе показывается уведомление с его причиной. Если срок кода истёк или попытки исчерпаны, уведомление
+предлагает отправить код повторно.
 
 *Переходы*:
 
 - Любая страница — из **testsys.web.component.header**.
+- **testsys.web.page.multi.main** — по крошке «Главная».
 
 ### testsys.web.page.supervisor (Not implemented)
 

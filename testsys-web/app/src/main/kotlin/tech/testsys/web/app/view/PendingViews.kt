@@ -101,14 +101,3 @@ class JudgeView(texts: UiTexts, headers: CabinetHeaders) :
 @RolesAllowed("MULTIPLE_ROLE")
 class StudentView(texts: UiTexts, headers: CabinetHeaders) :
     PendingCabinetView(texts, headers, title = "Кабинет Ученика", active = CabinetHeaders.MENU_SECTION, hasHomeCrumb = true)
-
-/**
- * Profile of a user with non-fixed roles (testsys.web.page.multi.profile), not implemented yet.
- *
- * @since %CURRENT_VERSION%
- */
-@Route("profile")
-@PageTitle("Профиль")
-@RolesAllowed("MULTIPLE_ROLE")
-class ProfileView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Профиль", active = null, hasHomeCrumb = true)

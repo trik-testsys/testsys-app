@@ -90,6 +90,9 @@ class StudyOperationsTests {
     private val exerciseRepository = mockk<ExerciseRepository>()
     private val solutionRepository = mockk<SolutionRepository>()
     private val developerSolutionRepository = mockk<DeveloperSolutionRepository>()
+    private val storedVerdicts = mutableMapOf<VerdictId, Verdict>()
+    private val storedJudgmentOrders = mutableMapOf<JudgmentOrderId, JudgmentOrder>()
+    private val storedSolutions = mutableMapOf<SolutionId, Solution>()
     private val now = Instant.parse("2026-01-01T12:00:00Z")
     private val operations = StudyOperations(
         competitionRepository = competitions,
@@ -737,6 +740,36 @@ class StudyOperationsTests {
                     val thrown = assertThrows(IllegalStateException::class.java) { view() }
 
                     assertSame(failure, thrown)
+                }
+
+                @Test
+                fun `should load judgment orders and verdicts with one call each and match answers given out of order`() {
+                    val lowJudged = testSubmission(submissionId = 51, orders = listOf(61))
+                    val highJudged = testSubmission(submissionId = 52, orders = listOf(62))
+                    val lowGraded = testSubmission(submissionId = 53)
+                    val highGraded = testSubmission(submissionId = 54)
+                    stubVerdict(verdictId = 53, scores = listOf(30))
+                    stubVerdict(verdictId = 54, scores = listOf(70))
+                    stubJudgmentOrders(testJudgmentOrder(orderId = 61, score = 10), testJudgmentOrder(orderId = 62, score = 50))
+
+                    prepareParticipantTask()
+                    stubSubmissions(lowJudged, highGraded, highJudged, lowGraded)
+
+                    val best = view().getOrThrow().third
+
+                    assertSame(highGraded, best)
+                    verify(exactly = 1) {
+                        judgmentOrderRepository.load(
+                            match<LazyEntityList<JudgmentOrderId, JudgmentOrder>> { list ->
+                                list.ids.toSet() == setOf(JudgmentOrderId(61), JudgmentOrderId(62))
+                            },
+                        )
+                        verdictRepository.load(
+                            match<LazyEntityList<VerdictId, Verdict>> { list -> list.ids.toSet() == setOf(VerdictId(53), VerdictId(54)) },
+                        )
+                    }
+                    verify(exactly = 1) { verdictRepository.load(any<LazyEntityList<VerdictId, Verdict>>()) }
+                    verify(exactly = 1) { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) }
                 }
             }
 
@@ -1699,6 +1732,36 @@ class StudyOperationsTests {
 
                     assertSame(failure, thrown)
                 }
+
+                @Test
+                fun `should load the solutions of all committed developer solutions with one call if they share a solution`() {
+                    prepareParticipantSend(
+                        currentTask = testTask {
+                            committed {
+                                exercises(listOf(1))
+                                statement(1)
+                                developerSolutions(listOf(81, 82))
+                            }
+                        },
+                    )
+                    val first = stubReferenceSolution(developerSolutionId = 81) { python() }
+                    stubDeveloperSolutions(
+                        first,
+                        developerSolution {
+                            id = 82
+                            createdAt = Instant.EPOCH
+                            data = first.data
+                        },
+                    )
+
+                    send().getOrThrow()
+
+                    verify(exactly = 1) {
+                        solutionRepository.load(
+                            match<LazyEntityList<SolutionId, Solution>> { list -> list.ids == listOf(first.data.solution.id) },
+                        )
+                    }
+                }
             }
 
             private fun send(
@@ -2078,9 +2141,10 @@ class StudyOperationsTests {
                     language.chooseLanguage()
                 }
             }
-            every {
-                solutionRepository.load(match<LazyEntity<SolutionId, Solution>> { field -> field.id == reference.id })
-            } returns reference
+            storedSolutions[reference.id] = reference
+            every { solutionRepository.load(any<LazyEntityList<SolutionId, Solution>>()) } answers {
+                firstArg<LazyEntityList<SolutionId, Solution>>().ids.reversed().map(storedSolutions::getValue)
+            }
             return developerSolution {
                 id = developerSolutionId
                 createdAt = Instant.EPOCH
@@ -2198,17 +2262,20 @@ class StudyOperationsTests {
             }
         }
 
+    /** Stores a verdict; list loads of verdicts answer with the requested stored ones in reverse request order. */
     private fun stubVerdict(verdictId: Long, scores: List<Int>) {
-        every {
-            verdictRepository.load(match<LazyEntity<VerdictId, Verdict>> { reference -> reference.id == VerdictId(verdictId) })
-        } returns testVerdict(verdictId = verdictId, scores = scores)
+        storedVerdicts[VerdictId(verdictId)] = testVerdict(verdictId = verdictId, scores = scores)
+        every { verdictRepository.load(any<LazyEntityList<VerdictId, Verdict>>()) } answers {
+            firstArg<LazyEntityList<VerdictId, Verdict>>().ids.reversed().map(storedVerdicts::getValue)
+        }
     }
 
+    /** Stores [orders]; list loads of judgment orders answer with the requested stored ones in reverse request order. */
     private fun stubJudgmentOrders(vararg orders: JudgmentOrder) {
-        val ids = orders.map { order -> order.id }.toSet()
-        every {
-            judgmentOrderRepository.load(match<LazyEntityList<JudgmentOrderId, JudgmentOrder>> { list -> list.ids.toSet() == ids })
-        } returns orders.toList()
+        storedJudgmentOrders.putAll(orders.associateBy { order -> order.id })
+        every { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) } answers {
+            firstArg<LazyEntityList<JudgmentOrderId, JudgmentOrder>>().ids.reversed().map(storedJudgmentOrders::getValue)
+        }
     }
 
     private fun Submission.verdictReference(): LazyEntity<VerdictId, Verdict> {

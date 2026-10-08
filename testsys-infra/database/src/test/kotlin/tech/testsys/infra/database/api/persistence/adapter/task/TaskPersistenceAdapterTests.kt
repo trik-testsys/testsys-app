@@ -251,6 +251,41 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
         }
     }
 
+    @Test
+    fun `should save one link per id of the shared communities and revision resources when ids repeat`() {
+        val ownerId = fixtures.developer().id.value
+        val communityId = fixtures.community().id.value
+        val exerciseId = fixtures.exercise().id.value
+        val statementId = fixtures.statement().id.value
+        val polygonId = fixtures.polygon().id.value
+        val developerSolutionId = fixtures.developerSolution().id.value
+        val version = fixtures.trikStudioVersion()
+
+        val saved = repository.save(
+            taskData {
+                owner(ownerId)
+                name = fixtures.unique("Task")
+                description = "Task description"
+                sharedTo(listOf(communityId, communityId))
+                content.committed {
+                    exercises(listOf(exerciseId, exerciseId))
+                    statement(statementId)
+                    tests(listOf(polygonId, polygonId))
+                    developerSolutions(listOf(developerSolutionId, developerSolutionId))
+                    supportedTrikStudioVersions = mutableListOf(version, version)
+                }
+            },
+        )
+
+        val found = assertNotNull(repository.findById(saved.id))
+        val committed = assertIs<TaskContent.Committed>(found.data.content).lastCommitted
+        assertEquals(listOf(communityId), found.data.sharedTo.ids.map { id -> id.value })
+        assertEquals(listOf(exerciseId), committed.exercises.ids.map { id -> id.value })
+        assertEquals(listOf(polygonId), committed.tests.ids.map { id -> id.value })
+        assertEquals(listOf(developerSolutionId), committed.developerSolutions.ids.map { id -> id.value })
+        assertEquals(listOf(version), committed.supportedTrikStudioVersions)
+    }
+
     private fun assertSameContent(expected: TaskContent, actual: TaskContent) {
         when (expected) {
             is TaskContent.New -> assertSameWip(expected.wip, assertIs<TaskContent.New>(actual).wip)

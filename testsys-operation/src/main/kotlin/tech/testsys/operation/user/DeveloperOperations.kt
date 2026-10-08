@@ -136,8 +136,10 @@ import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.changeEditableContent
+import tech.testsys.operation.util.findByIdsAsMap
 import tech.testsys.operation.util.getEditableContent
 import tech.testsys.operation.util.hasRole
+import tech.testsys.operation.util.loadByIdsAsMap
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -184,8 +186,11 @@ class DeveloperOperations(
             ensure(content.developerSolutions.ids.isNotEmpty()) { TaskTestingNoDeveloperSolutionsError(taskId) }
             ensure(content.supportedTrikStudioVersions.isNotEmpty()) { TaskTestingNoTrikStudioVersionsError(taskId) }
             val exercises = exerciseRepository.load(content.exercises)
-            developerSolutionRepository.load(content.developerSolutions).forEach { developerSolution ->
-                val solution = solutionRepository.load(developerSolution.data.solution)
+            val authorSolutions = developerSolutionRepository.load(content.developerSolutions)
+            val solutionIds = authorSolutions.map { developerSolution -> developerSolution.data.solution.id }
+            val solutions = solutionRepository.loadByIdsAsMap(solutionIds)
+            authorSolutions.forEach { developerSolution ->
+                val solution = solutions.getValue(developerSolution.data.solution.id)
                 ensure(exercises.any { exercise -> exercise.data.language == solution.data.language }) {
                     TaskTestingNoExerciseForLanguageError(taskId = taskId, language = solution.data.language)
                 }
@@ -242,8 +247,11 @@ class DeveloperOperations(
             val statement = wip.statement
             ensure(statement != null) { TaskTestingNoStatementError(taskId) }
             val exercises = exerciseRepository.load(wip.exercises)
-            developerSolutionRepository.load(wip.developerSolutions).forEach { developerSolution ->
-                val solution = solutionRepository.load(developerSolution.data.solution)
+            val authorSolutions = developerSolutionRepository.load(wip.developerSolutions)
+            val solutionIds = authorSolutions.map { developerSolution -> developerSolution.data.solution.id }
+            val solutions = solutionRepository.loadByIdsAsMap(solutionIds)
+            authorSolutions.forEach { developerSolution ->
+                val solution = solutions.getValue(developerSolution.data.solution.id)
                 ensure(exercises.any { exercise -> exercise.data.language == solution.data.language }) {
                     TaskTestingNoExerciseForLanguageError(taskId = taskId, language = solution.data.language)
                 }
@@ -422,8 +430,9 @@ class DeveloperOperations(
         ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
         val contest = contestRepository.findById(contestId)
         ensure(contest != null) { ContestNotExistsError(contestId) }
+        val communities = communityRepository.findByIdsAsMap(communityIds)
         communityIds.forEach { communityId ->
-            ensure(communityRepository.findById(communityId) != null) { CommunityNotExistsError(communityId) }
+            ensure(communityId in communities) { CommunityNotExistsError(communityId) }
         }
         ensure(contest.data.owner.id == user.id) { ContestAccessDeniedError(contestId) }
 
@@ -1316,8 +1325,9 @@ class DeveloperOperations(
             val task = taskRepository.findById(taskId)
             ensure(task != null) { TaskNotExistsError(taskId) }
 
+            val communities = communityRepository.findByIdsAsMap(communityIds)
             communityIds.forEach { communityId ->
-                ensure(communityRepository.findById(communityId) != null) { CommunityNotExistsError(communityId) }
+                ensure(communityId in communities) { CommunityNotExistsError(communityId) }
             }
 
             ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }

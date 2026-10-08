@@ -1,5 +1,6 @@
 package tech.testsys.operation
 
+import io.mockk.Called
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -20,7 +21,7 @@ import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
-import tech.testsys.domain.model.LazyEntity
+import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.task.*
 import tech.testsys.operation.util.testTaskValidationRequest
 import java.time.Instant
@@ -30,10 +31,12 @@ class TaskValidationOperationsTests {
     private val requests = mockk<TaskValidationRequestRepository>()
     private val tests = mockk<TestRepository>()
     private val diagnostics = mockk<PolygonDiagnostics>()
+    // List loads answer through the stubbed findById in reverse request order.
     private val submissions = mockk<SubmissionRepository>().also { repository ->
-        every { repository.load(any<LazyEntity<SubmissionId, Submission>>()) } answers {
-            val reference = firstArg<LazyEntity<SubmissionId, Submission>>()
-            requireNotNull(repository.findById(reference.id)) { "Missing submission ${reference.id.value}" }
+        every { repository.load(any<LazyEntityList<SubmissionId, Submission>>()) } answers {
+            firstArg<LazyEntityList<SubmissionId, Submission>>().ids.reversed().map { id ->
+                requireNotNull(repository.findById(id)) { "Missing submission ${id.value}" }
+            }
         }
     }
     private val verdicts = mockk<VerdictRepository>()
@@ -290,6 +293,43 @@ class TaskValidationOperationsTests {
 
                 verify(exactly = 0) { requests.completeTesting(any(), any()) }
             }
+
+            @Test
+            fun `should load submissions and verdicts with one call each and keep failures in submission order`() {
+                val saved = stored(createdRequest())
+                every { submissions.findById(SubmissionId(101)) } returns run(101, "v1") { status.graded { status.timeout() } }
+                every { submissions.findById(SubmissionId(102)) } returns run(102, "v2") { status.graded { status.success { verdict(202) } } }
+                stubVerdicts(mapOf(VerdictId(202) to listOf(4, 2)))
+
+                operations.proceed(requestId)
+
+                assertEquals(
+                    listOf(
+                        AuthorSubmissionFailure.GradingFailed(SubmissionId(101)),
+                        AuthorSubmissionFailure.ScoreMismatch(submission = SubmissionId(102), actualScore = 6),
+                    ),
+                    (saved.current.data.execution as TaskValidationExecution.Completed).failures,
+                )
+                verify(exactly = 1) {
+                    submissions.load(
+                        match<LazyEntityList<SubmissionId, Submission>> { list -> list.ids == listOf(SubmissionId(101), SubmissionId(102)) },
+                    )
+                    verdicts.load(match<LazyEntityList<VerdictId, Verdict>> { list -> list.ids == listOf(VerdictId(202)) })
+                }
+            }
+
+            @Test
+            fun `should not load verdicts if grading failed for every submission`() {
+                stored(createdRequest())
+                every { submissions.findById(SubmissionId(101)) } returns run(101, "v1") { status.graded { status.timeout() } }
+                every { submissions.findById(SubmissionId(102)) } returns run(102, "v2") {
+                    status.graded { status.error { description = "Crash" } }
+                }
+
+                operations.proceed(requestId)
+
+                verify { verdicts wasNot Called }
+            }
         }
     }
 
@@ -539,28 +579,7 @@ class TaskValidationOperationsTests {
     private fun gradedRuns(firstScores: List<Int>, secondScores: List<Int>) {
         every { submissions.findById(SubmissionId(101)) } returns run(101, "v1") { status.graded { status.success { verdict(201) } } }
         every { submissions.findById(SubmissionId(102)) } returns run(102, "v2") { status.graded { status.success { verdict(202) } } }
-        every { verdicts.load(any<LazyEntity<VerdictId, Verdict>>()) } answers {
-            val reference = firstArg<LazyEntity<VerdictId, Verdict>>()
-            val scores = if (reference.id == VerdictId(201)) firstScores else secondScores
-            verdict {
-                id = reference.id.value
-                createdAt = Instant.EPOCH
-                data {
-                    task(0)
-                    submission(if (reference.id == VerdictId(201)) 101 else 102)
-                    testVerdict {
-                        test(1)
-                        logs(1)
-                        score = scores[0]
-                    }
-                    testVerdict {
-                        test(2)
-                        logs(2)
-                        score = scores[1]
-                    }
-                }
-            }
-        }
+        stubVerdicts(mapOf(VerdictId(201) to firstScores, VerdictId(202) to secondScores))
     }
 
     private fun polygon(identifier: Long): tech.testsys.domain.model.task.Test = test {
@@ -676,6 +695,32 @@ class TaskValidationOperationsTests {
                 kind.developerSolutionTest { trikStudioVersion(version) }
                 status.queued()
                 builder()
+            }
+        }
+    }
+
+    private fun stubVerdicts(scoresByVerdict: Map<VerdictId, List<Int>>) {
+        every { verdicts.load(any<LazyEntityList<VerdictId, Verdict>>()) } answers {
+            firstArg<LazyEntityList<VerdictId, Verdict>>().ids.reversed().map { verdictId ->
+                val scores = scoresByVerdict.getValue(verdictId)
+                verdict {
+                    id = verdictId.value
+                    createdAt = Instant.EPOCH
+                    data {
+                        task(0)
+                        submission(verdictId.value - 100)
+                        testVerdict {
+                            test(1)
+                            logs(1)
+                            score = scores[0]
+                        }
+                        testVerdict {
+                            test(2)
+                            logs(2)
+                            score = scores[1]
+                        }
+                    }
+                }
             }
         }
     }

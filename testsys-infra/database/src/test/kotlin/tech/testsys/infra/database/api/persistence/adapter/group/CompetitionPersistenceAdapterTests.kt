@@ -88,6 +88,23 @@ class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
     }
 
     @Test
+    fun `should save one contest link per id when ids repeat`() {
+        val ownerId = fixtures.manager().id.value
+        val contestId = fixtures.contest().id
+
+        val saved = repository.save(
+            competitionData {
+                owner(ownerId)
+                name = fixtures.unique("Competition")
+                description = "Competition description"
+                contests = mutableListOf(contestId, contestId)
+            },
+        )
+
+        assertEquals(listOf(contestId), assertNotNull(repository.findById(saved.id)).data.contests.ids)
+    }
+
+    @Test
     fun `should keep the owner if another owner is passed on update`() {
         val saved = repository.save(newData())
         val otherOwner = fixtures.manager().id

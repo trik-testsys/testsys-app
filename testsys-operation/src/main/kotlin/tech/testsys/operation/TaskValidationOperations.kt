@@ -1,6 +1,5 @@
 package tech.testsys.operation
 
-import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.contract.Grader
 import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
@@ -16,7 +15,10 @@ import tech.testsys.domain.model.task.TaskValidationExecution
 import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.TaskValidationSnapshot
+import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.operation.annotation.Feature
+import tech.testsys.operation.annotation.InternalOperationsApi
+import tech.testsys.operation.util.loadByIdsAsMap
 
 /**
  * Application-invoked processing of saved task validation requests: polygon diagnostics, then author testing.
@@ -24,6 +26,7 @@ import tech.testsys.operation.annotation.Feature
  *
  * @since %CURRENT_VERSION%
  */
+@OptIn(InternalOperationsApi::class)
 class TaskValidationOperations(
     private val requests: TaskValidationRequestRepository,
     private val tests: TestRepository,
@@ -115,14 +118,23 @@ class TaskValidationOperations(
             "Request id=${request.id.value} has ${created.size} submissions for ${runs.size} author runs"
         }
         val grades = created.map { submission -> (submission.data.status as? SubmissionStatus.Graded)?.grade ?: return request }
-        val failures = runs.indices.mapNotNull { index -> failureOf(runs[index], created[index], grades[index]) }
+        val verdictIds = grades.filterIsInstance<GradingResult.Success>().map { grade -> grade.verdict.id }
+        val actualScores = verdicts.loadByIdsAsMap(verdictIds).mapValues { (_, verdict) ->
+            verdict.data.testVerdicts.sumOf { it.score.value.toLong() }
+        }
+        val failures = runs.indices.mapNotNull { index -> failureOf(runs[index], created[index], grades[index], actualScores) }
         return requests.completeTesting(requestId = request.id, failures = failures)
     }
 
-    private fun failureOf(run: AuthorSolutionRun, submission: Submission, grade: GradingResult): AuthorSubmissionFailure? {
+    private fun failureOf(
+        run: AuthorSolutionRun,
+        submission: Submission,
+        grade: GradingResult,
+        actualScores: Map<VerdictId, Long>,
+    ): AuthorSubmissionFailure? {
         return when (grade) {
             is GradingResult.Success -> {
-                val actualScore = verdicts.load(grade.verdict).data.testVerdicts.sumOf { it.score.value.toLong() }
+                val actualScore = actualScores.getValue(grade.verdict.id)
                 if (actualScore == run.input.expectedScore.value.toLong()) {
                     null
                 } else {
@@ -135,6 +147,9 @@ class TaskValidationOperations(
         }
     }
 
-    private fun loadSubmissions(state: TaskValidationExecution.WithSubmissions): List<Submission> =
-        state.submissions.ids.map { id -> submissions.load(id.lazify()) }
+    private fun loadSubmissions(state: TaskValidationExecution.WithSubmissions): List<Submission> {
+        val ids = state.submissions.ids
+        val submissionsById = submissions.loadByIdsAsMap(ids)
+        return ids.map(submissionsById::getValue)
+    }
 }

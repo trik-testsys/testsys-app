@@ -127,7 +127,9 @@
 `@CompositeKeyConstructor class AToBJpaEntity : CompositeJpaEntity<AToBId>`. Образец — `TaskToContestId`
 и `TaskToContestJpaEntity` в том же [Contest.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/jpa/entity/task/Contest.kt).
 Что генерирует `@CompositeKeyConstructor` и какие требования он предъявляет к классу, — в
-[codegen/README.md](../../testsys-infra/database/codegen/README.md).
+[codegen/README.md](../../testsys-infra/database/codegen/README.md). Как `save` отличает новую строку связи
+от сохранённой, описано в разделе «Строки с составным ключом» в
+[database/README.md](../../testsys-infra/database/README.md).
 
 ## 6. Spring Data репозиторий
 
@@ -141,6 +143,11 @@
 Для сборки списка (шаг 9) добавьте выборку по набору идентификаторов. Если нужны только идентификаторы связей,
 такая выборка возвращает пары `LinkedIdRow` вместо строк (`findLinkedIdsByContestIdIn` в образце).
 
+Выборку с необязательными фильтрами стройте через `Specification` и добавляйте условие только для заданного
+параметра. JPQL вида `(:p is null or e.field = :p)` не пишите: в общем плане подготовленного запроса PostgreSQL
+не может использовать для такого условия индекс. Образец — `availableToJudge` в
+[VerdictPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/VerdictPersistenceAdapter.kt).
+
 ## 7. Liquibase changeset
 
 Hibernate стартует с `ddl-auto=validate`, поэтому **любая новая таблица или колонка требует changeset** —
@@ -151,6 +158,11 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 - Nullability колонок — ровно как в JPA-сущности, иначе `validate` не пройдёт.
 - Внешние ключи именуются `fk_<таблица>_<поле>`, первичные — `pk_<таблица>`.
   У join-таблицы обе колонки входят в составной первичный ключ с одним `primaryKeyName`.
+- Для каждой колонки, по которой репозиторий ищет строки, создайте индекс (`createIndex`, имя
+  `ix_<таблица>_<колонки>`), если колонка не стоит первой в первичном ключе или уникальном ограничении.
+  Это внешние ключи, вторая колонка ключа join-таблицы и колонки фильтров. PostgreSQL не создаёт индексы для
+  внешних ключей сам, а составной ключ `(a, b)` ускоряет только поиск по `a`. Если выборка ещё и сортирует строки,
+  добавьте колонки сортировки в конец индекса. Образец — [changelog.18-add-indexes.xml](../../testsys-infra/database/src/main/resources/db/changelog/changes/1.0.0/changelog.18-add-indexes.xml).
 - [db.changelog-master.yaml](../../testsys-infra/database/src/main/resources/db/changelog/db.changelog-master.yaml)
   подключает каталог версии, а [changelog.master.xml](../../testsys-infra/database/src/main/resources/db/changelog/changes/1.0.0/changelog.master.xml)
   внутри версии перечисляет файлы в порядке применения — новый файл нужно в него добавить.
@@ -172,7 +184,8 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   а не из сущности. У сущности без `update` второй перегрузки нет.
 - Данные, которых нет в самой строке (идентификаторы из join-таблиц, значения справочников), приходят
   отдельными параметрами — маппинг ничего не читает из БД сам.
-- Для join-таблиц добавляются функции `toXAssociations(ownerId, ids)`, собирающие строки связи.
+- Для join-таблиц добавляются функции `toXAssociations(ownerId, ids)`, собирающие строки связи, по одной на каждый
+  различный ключ.
 - Имена `toDomain`/`toJpaEntity` и типы результата проверяются рефлексией в `EntityMappingTests` — не
   переименовывайте их и не возвращайте из перегрузок посторонние типы.
 
@@ -184,8 +197,8 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 уже реализует `findById`, `findByIds`, `load`, удаление и списочные перегрузки `save`/`update`.
 Подкласс реализует три метода:
 
-- `save(data)` — собрать строку маппингом, сохранить, при наличии связей сохранить строки join-таблиц,
-  вернуть доменный объект. Идентификатор сохранённой строки берётся через `requireId()`.
+- `save(data)` — собрать строку маппингом, сохранить, при наличии связей сохранить строки join-таблиц новыми
+  экземплярами, вернуть доменный объект. Идентификатор сохранённой строки берётся через `requireId()`.
 - `update(entity)` — прочитать текущую строку (`findByIdOrError`), собрать новую перегрузкой `toJpaEntity`
   с `current`, сохранить через `saveAndFlush` (иначе конфликт версий всплывёт не там, где ожидается),
   затем синхронизировать join-таблицы через `syncJoinTable(...)` из
@@ -202,6 +215,10 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   `assemble` не переопределяйте: базовый класс собирает одну строку через `assembleAll`. Образец без связей —
   `CommunityPersistenceAdapter`. Как адаптеры используют сборку — в разделе «Сборка доменных сущностей»
   в [database/README.md](../../testsys-infra/database/README.md).
+
+Несколько строк в одном методе сохраняйте без промежуточных `flush` и `saveAndFlush`. Hibernate отправляет INSERT
+и UPDATE пакетами, а каждый `flush` отправляет накопленное и начинает пакет заново. Образец —
+`saveToCompetition` в [ParticipantPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/single/ParticipantPersistenceAdapter.kt).
 
 Адаптеры сущностей с файлами (Условия, Упражнения, Полигоны, Решения, логи и видеозаписи) пока переопределяют
 `assemble` и собирают строки по одной — это переходное состояние, в новом адаптере его не повторяйте.
@@ -235,6 +252,11 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   `PersistenceAdapterContractTests` — тот же контракт без `update` — и отдельным `@Test` проверяет отказ
   (образец — `SolutionPersistenceAdapterTests`). Специфика сущности
   оформляется отдельными `@Test` в том же классе.
+- Если `assembleAll` дочитывает связи или справочники, отдельный `@Test` сравнивает число запросов `findByIds`
+  для одной и двадцати сущностей со всеми связями. Запросы считает `withStatementCount` из `DatabaseIntegrationTests`;
+  абсолютное число не фиксируйте. Так же проверьте свои списочные методы адаптера. Образец —
+  `should find contests by ids with the same statement count for one and twenty ids` в
+  [ContestPersistenceAdapterTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapterTests.kt).
 - Прочие сущности для теста создаются только через `fixtures`, а не руками; всё уникальное — через
   `fixtures.unique(...)`. Фикстура новой сущности пишется так же: через её же адаптер.
 - Тесты БД поднимают H2 в режиме совместимости с PostgreSQL, применяют changelog'и и проверяют схему

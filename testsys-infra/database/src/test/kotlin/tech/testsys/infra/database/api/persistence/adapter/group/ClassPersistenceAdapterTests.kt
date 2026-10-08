@@ -12,7 +12,9 @@ import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassData
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.InviteCodeHash
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.group.ContestToClassJpaEntityRepository
@@ -99,6 +101,37 @@ class ClassPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Cl
         assertEquals(setOf(addedContest), found.data.contests.ids.toSet())
         assertEquals(2, studentToClassJpaEntityRepository.findAllByClassId(saved.id.value).size)
         assertEquals(1, contestToClassJpaEntityRepository.findAllByClassId(saved.id.value).size)
+    }
+
+    @Test
+    fun `should save one student and contest link per id when ids repeat`() {
+        val studentId = fixtures.student().id
+        val contestId = fixtures.contest().id
+
+        val saved = repository.save(
+            classDataOf(students = listOf(studentId, studentId), contests = listOf(contestId, contestId)),
+        )
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(listOf(studentId), found.data.students.ids)
+        assertEquals(listOf(contestId), found.data.contests.ids)
+    }
+
+    @Test
+    fun `should add one and twenty students on update with the same statement count`() {
+        val studentIds = List(20) { fixtures.student().id }
+        val oneStudentClass = repository.save(classDataOf())
+        val twentyStudentsClass = repository.save(classDataOf())
+
+        val (_, oneStudentStatements) = withStatementCount {
+            repository.update(oneStudentClass.withData { students = studentIds.take(1).toMutableList() })
+        }
+        val (_, twentyStudentsStatements) = withStatementCount {
+            repository.update(twentyStudentsClass.withData { students = studentIds.toMutableList() })
+        }
+
+        assertEquals(studentIds.toSet(), assertNotNull(repository.findById(twentyStudentsClass.id)).data.students.ids.toSet())
+        assertEquals(oneStudentStatements, twentyStudentsStatements)
     }
 
     @Test
@@ -288,5 +321,18 @@ class ClassPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Cl
         )
         assertEquals(List(20) { contestIds }, twenty.map { studyClass -> studyClass.data.contests.ids.map { contest -> contest.value } })
         assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    private fun classDataOf(students: List<MultipleRoleUserId> = emptyList(), contests: List<ContestId> = emptyList()): ClassData {
+        val ownerId = fixtures.manager().id.value
+        val inviteId = fixtures.classInvite().id
+        return classData {
+            owner(ownerId)
+            name = fixtures.unique("Class")
+            description = "Class description"
+            this.students = students.toMutableList()
+            this.contests = contests.toMutableList()
+            invite = inviteId
+        }
     }
 }

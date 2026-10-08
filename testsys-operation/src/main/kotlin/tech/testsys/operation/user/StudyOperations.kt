@@ -16,6 +16,7 @@ import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.DomainId
+import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
@@ -30,6 +31,8 @@ import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.domain.model.task.Verdict
+import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUser
@@ -64,6 +67,7 @@ import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.hasRole
+import tech.testsys.operation.util.loadByIdsAsMap
 import java.time.Clock
 import java.time.Instant
 
@@ -363,8 +367,7 @@ class StudyOperations(
     /**
      * Selects the submission with the highest final score; ties go to the earlier one by creation time and then id.
      */
-    private fun bestSubmission(submissions: List<Submission>): Submission? = submissions
-        .mapNotNull { submission -> finalScore(submission)?.let { score -> submission to score } }
+    private fun bestSubmission(submissions: List<Submission>): Submission? = finalScores(submissions)
         .minWithOrNull(
             compareByDescending<Pair<Submission, Int>> { (_, score) -> score }
                 .thenBy { (submission, _) -> submission.createdAt }
@@ -373,24 +376,39 @@ class StudyOperations(
         ?.first
 
     /**
-     * Returns the score of the last judgment order, otherwise the verdict total, or `null` without a successful verdict.
-     * Loads through the ports so that the lazy references of the returned submissions stay unresolved.
+     * Pairs each of [submissions] with a successful verdict with its score of the last judgment order, otherwise its
+     * verdict total. Loads all judgment orders and the verdicts of submissions without orders through the ports, one call
+     * each, so that the lazy references of the returned submissions stay unresolved.
      */
-    private fun finalScore(submission: Submission): Int? {
-        val verdict = when (val status = submission.data.status) {
-            SubmissionStatus.Queued, SubmissionStatus.InProgress -> return null
-            is SubmissionStatus.Graded -> when (val grade = status.grade) {
-                is GradingResult.Success -> grade.verdict
-                is GradingResult.GradingError, GradingResult.Timeout -> return null
+    private fun finalScores(submissions: List<Submission>): List<Pair<Submission, Int>> {
+        val graded = submissions.mapNotNull { submission -> successfulVerdictOf(submission)?.let { verdict -> submission to verdict } }
+        val ordersById = judgmentOrderRepository.loadByIdsAsMap(graded.flatMap { (submission, _) -> submission.data.judgmentOrders.ids })
+        val verdictsById = verdictRepository.loadByIdsAsMap(
+            graded.filter { (submission, _) -> submission.data.judgmentOrders.ids.isEmpty() }.map { (_, verdict) -> verdict.id },
+        )
+
+        return graded.map { (submission, verdict) ->
+            val orderIds = submission.data.judgmentOrders.ids
+            val score = if (orderIds.isNotEmpty()) {
+                orderIds.map(ordersById::getValue)
+                    .maxWith(compareBy<JudgmentOrder> { order -> order.createdAt }.thenBy { order -> order.id.value })
+                    .data.score.value
+            } else {
+                verdictsById.getValue(verdict.id).data.testVerdicts.sumOf { testVerdict -> testVerdict.score.value }
             }
+            submission to score
         }
-        val judgmentOrders = submission.data.judgmentOrders
-        if (judgmentOrders.ids.isNotEmpty()) {
-            val lastOrder = judgmentOrderRepository.load(judgmentOrders)
-                .maxWith(compareBy<JudgmentOrder> { order -> order.createdAt }.thenBy { order -> order.id.value })
-            return lastOrder.data.score.value
+    }
+
+    /**
+     * Returns the verdict of [submission] if it was graded successfully, otherwise `null`.
+     */
+    private fun successfulVerdictOf(submission: Submission): LazyEntity<VerdictId, Verdict>? = when (val status = submission.data.status) {
+        SubmissionStatus.Queued, SubmissionStatus.InProgress -> null
+        is SubmissionStatus.Graded -> when (val grade = status.grade) {
+            is GradingResult.Success -> grade.verdict
+            is GradingResult.GradingError, GradingResult.Timeout -> null
         }
-        return verdictRepository.load(verdict).data.testVerdicts.sumOf { testVerdict -> testVerdict.score.value }
     }
 
     /**
@@ -430,9 +448,10 @@ class StudyOperations(
             is TaskContent.Uncommitted -> content.lastCommitted
             is TaskContent.Committed -> content.lastCommitted
         }
-        return developerSolutionRepository.load(committed.developerSolutions).any { developerSolution ->
-            solutionRepository.load(developerSolution.data.solution).data.language == language
-        }
+        val developerSolutions = developerSolutionRepository.load(committed.developerSolutions)
+        val solutionIds = developerSolutions.map { developerSolution -> developerSolution.data.solution.id }
+        val solutions = solutionRepository.loadByIdsAsMap(solutionIds)
+        return solutions.values.any { solution -> solution.data.language == language }
     }
 
     /**

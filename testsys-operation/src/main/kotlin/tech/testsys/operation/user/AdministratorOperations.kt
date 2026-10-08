@@ -49,6 +49,7 @@ import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.error.raise
+import tech.testsys.operation.util.findByIdsAsMap
 import tech.testsys.operation.util.generateInviteCode
 import tech.testsys.operation.util.hasRole
 import tech.testsys.operation.util.inviteExpiresAt
@@ -95,8 +96,9 @@ class AdministratorOperations(
         ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
+        val contestsById = contestRepository.findByIdsAsMap(contestIds)
         val contests = contestIds.map { contestId ->
-            val contest = contestRepository.findById(contestId)
+            val contest = contestsById[contestId]
             ensure(contest != null) { ContestNotExistsError(contestId) }
             contest
         }

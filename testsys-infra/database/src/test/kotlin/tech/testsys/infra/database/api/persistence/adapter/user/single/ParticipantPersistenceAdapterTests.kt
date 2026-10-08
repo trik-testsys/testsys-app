@@ -131,6 +131,7 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         val found = saved.map { participant -> assertNotNull(repository.findById(participant.id)) }
         assertEquals(hashes, found.map { participant -> participant.data.accessTokenHash })
         assertEquals(saved.map { participant -> "named-${participant.id.value}" }, found.map { participant -> participant.data.name })
+        assertEquals(saved.map { participant -> "named-${participant.id.value}" }, saved.map { participant -> participant.data.name })
         assertEquals(listOf(competition.id, competition.id), found.map { participant -> participant.data.competition.id })
         assertEquals(
             saved.map { participant -> participant.id }.toSet(),
@@ -151,6 +152,36 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
 
         assertEquals(emptyList(), participantDataJpaEntityRepository.findAllByCompetitionId(competition.id.value))
         assertEquals(usersBefore, userJpaEntityRepository.count())
+    }
+
+    @Test
+    fun `should save participants of the competition with the same statement count for one and twenty access codes`() {
+        val competition = fixtures.competition()
+        val oneHash = listOf(identityHash(fixtures.unique("one")))
+        val twentyHashes = List(20) { index -> identityHash(fixtures.unique("twenty-$index")) }
+
+        val (one, oneCodeStatements) = withStatementCount {
+            repository.saveToCompetition(competition.id, oneHash) { participantId -> "named-${participantId.value}" }
+        }
+        val (twenty, twentyCodesStatements) = withStatementCount {
+            repository.saveToCompetition(competition.id, twentyHashes) { participantId -> "named-${participantId.value}" }
+        }
+
+        assertEquals(oneHash, one.map { participant -> participant.data.accessTokenHash })
+        assertEquals(twentyHashes, twenty.map { participant -> participant.data.accessTokenHash })
+        assertEquals(oneCodeStatements, twentyCodesStatements)
+    }
+
+    @Test
+    fun `should return saved participants whose version allows a later update`() {
+        val competition = fixtures.competition()
+        val saved = repository.saveToCompetition(competition.id, listOf(identityHash(fixtures.unique("token")))) { participantId ->
+            "named-${participantId.value}"
+        }.single()
+
+        val updated = repository.update(saved.withData { name = "Renamed participant" })
+
+        assertEquals("Renamed participant", assertNotNull(repository.findById(updated.id)).data.name)
     }
 
     @Test

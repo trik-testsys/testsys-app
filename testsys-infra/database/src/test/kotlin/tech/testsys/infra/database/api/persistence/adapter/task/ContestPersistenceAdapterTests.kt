@@ -263,6 +263,22 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
         assertEquals(oneContestStatements, twentyContestsStatements)
     }
 
+    @Test
+    fun `should save one task and community link per id when ids repeat`() {
+        val taskId = fixtures.task().id
+        val communityId = fixtures.community().id
+
+        val saved = saveContest(
+            ownerId = fixtures.developer().id,
+            communityIds = listOf(communityId, communityId),
+            taskIds = listOf(taskId, taskId),
+        )
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(listOf(taskId), found.data.tasks.ids)
+        assertEquals(listOf(communityId), found.data.sharedTo.ids)
+    }
+
     private fun newDataWithLimits(total: Duration?, attempt: Duration?): ContestData {
         val ownerId = fixtures.developer().id.value
         val taskIds = listOf(fixtures.task().id, fixtures.task().id)

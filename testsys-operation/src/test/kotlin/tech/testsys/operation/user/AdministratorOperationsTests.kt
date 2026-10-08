@@ -112,6 +112,7 @@ class AdministratorOperationsTests {
     inner class CreateObserverTests {
 
         private val contestId = ContestId(19)
+        private val storedContests = mutableListOf<Contest>()
         private val otherContestId = ContestId(20)
 
         @Nested
@@ -148,7 +149,8 @@ class AdministratorOperationsTests {
             @Test
             fun `should accept a contest owned by another user if it is shared to the community`() {
                 prepareCreation()
-                every { contests.findById(contestId) } returns testContest {
+                storedContests.clear()
+                storedContests += testContest {
                     owner(99)
                     sharedTo = mutableListOf(communityId)
                 }
@@ -209,7 +211,6 @@ class AdministratorOperationsTests {
             @Test
             fun `should reject any nonexistent requested contest before checking ownership`() {
                 prepareCreation(ownerId = 99)
-                every { contests.findById(otherContestId) } returns null
 
                 assertRaises(ContestNotExistsError(otherContestId)) { create(ids = setOf(contestId, otherContestId)) }
 
@@ -246,7 +247,7 @@ class AdministratorOperationsTests {
             @Test
             fun `should raise ContestAccessDeniedError if only one of several contests is not shared to the community`() {
                 prepareCreation()
-                every { contests.findById(otherContestId) } returns contestWithId(otherContestId, shared = listOf(CommunityId(99)))
+                storedContests += contestWithId(otherContestId, shared = listOf(CommunityId(99)))
 
                 assertRaises(ContestAccessDeniedError(otherContestId)) { create(ids = setOf(contestId, otherContestId)) }
 
@@ -283,6 +284,25 @@ class AdministratorOperationsTests {
 
                 verify { listOf(contests, observers) wasNot Called }
             }
+
+            @Test
+            fun `should reject the first nonexistent contest in request order when several are missing`() {
+                prepareCreation()
+
+                assertRaises(ContestNotExistsError(ContestId(21))) { create(ids = setOf(ContestId(21), contestId, ContestId(20))) }
+
+                verify { observers wasNot Called }
+            }
+
+            @Test
+            fun `should reject the first unshared contest in request order when contests are answered out of order`() {
+                prepareCreation(shared = listOf(CommunityId(99)))
+                storedContests += storedContest(id = 20, shared = emptyList())
+
+                assertRaises(ContestAccessDeniedError(contestId)) { create(ids = setOf(contestId, ContestId(20))) }
+
+                verify { observers wasNot Called }
+            }
         }
 
         @Nested
@@ -291,8 +311,7 @@ class AdministratorOperationsTests {
             @Test
             fun `should assign exactly the requested set of contests to the observer`() {
                 prepareCreation()
-                every { contests.findById(otherContestId) } returns
-                    contestWithId(otherContestId, shared = listOf(communityId, CommunityId(99)))
+                storedContests += contestWithId(otherContestId, shared = listOf(communityId, CommunityId(99)))
                 val saved = captureSave()
 
                 create(ids = setOf(contestId, otherContestId)).getOrThrow()
@@ -341,7 +360,7 @@ class AdministratorOperationsTests {
             fun `should propagate technical contest repository exceptions`() {
                 prepareCreation()
                 val failure = IllegalStateException("Contest storage unavailable")
-                every { contests.findById(contestId) } throws failure
+                every { contests.findByIds(any()) } throws failure
 
                 val actual = assertThrows(IllegalStateException::class.java) { create() }
 
@@ -360,6 +379,18 @@ class AdministratorOperationsTests {
                 assertSame(failure, actual)
                 verify(exactly = 1) { observers.save(any<ObserverData>()) }
             }
+
+            @Test
+            fun `should find all requested contests with one repository call`() {
+                prepareCreation()
+                storedContests += storedContest(id = 20, shared = listOf(communityId))
+                captureSave()
+
+                create(ids = setOf(contestId, ContestId(20))).getOrThrow()
+
+                verify(exactly = 1) { contests.findByIds(listOf(contestId, ContestId(20))) }
+                verify(exactly = 0) { contests.findById(any()) }
+            }
         }
 
         private fun create(user: MultipleRoleUser = administrator, name: String = "Observer", ids: Set<ContestId> = setOf(contestId)) =
@@ -367,9 +398,12 @@ class AdministratorOperationsTests {
 
         private fun prepareCreation(ownerId: Long = administrator.id.value, shared: List<CommunityId> = listOf(communityId)) {
             every { communities.findById(communityId) } returns testCommunity(ownerId)
-            every { contests.findById(contestId) } returns testContest {
+            storedContests += testContest {
                 owner(administrator.id.value)
                 sharedTo = shared.toMutableList()
+            }
+            every { contests.findByIds(any()) } answers {
+                firstArg<List<ContestId>>().reversed().mapNotNull { id -> storedContests.find { contest -> contest.id == id } }
             }
         }
 
@@ -393,6 +427,12 @@ class AdministratorOperationsTests {
                 }
             }
             return saved
+        }
+
+        private fun storedContest(id: Long, shared: List<CommunityId>): Contest = contest {
+            this.id = id
+            createdAt = Instant.EPOCH
+            data = testContest { sharedTo = shared.toMutableList() }.data
         }
     }
 

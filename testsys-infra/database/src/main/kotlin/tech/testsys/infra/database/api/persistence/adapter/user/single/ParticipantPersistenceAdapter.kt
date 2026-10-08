@@ -13,6 +13,7 @@ import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.user.AbstractUserPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.user.single.ParticipantDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.SingleRoleToUserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.UserSingleRoleJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
@@ -40,14 +41,7 @@ class ParticipantPersistenceAdapter(
 
     @Transactional
     override fun save(data: ParticipantData): Participant {
-        val userJpaEntity = ParticipantMapping.toUserJpaEntity(data)
-        val savedUserJpaEntity = jpaEntityRepository.save(userJpaEntity)
-        val userId = savedUserJpaEntity.requireId()
-
-        singleRoleToUserJpaEntityRepository.save(
-            SingleRoleToUserJpaEntity(singleRole = UserSingleRoleJpaEnum.PARTICIPANT, userId = userId),
-        )
-        val savedDataJpaEntity = participantDataJpaEntityRepository.save(ParticipantMapping.toDataJpaEntity(userId, data))
+        val (savedUserJpaEntity, savedDataJpaEntity) = persistRows(data)
 
         val domainEntity = ParticipantMapping.toDomain(savedUserJpaEntity, savedDataJpaEntity)
         return domainEntity
@@ -74,16 +68,27 @@ class ParticipantPersistenceAdapter(
         competitionId: CompetitionId,
         accessTokenHashes: List<AccessTokenHash>,
         nameOf: (SingleRoleUserId) -> String,
-    ): List<Participant> = accessTokenHashes.map { accessTokenHash ->
-        val savedParticipant = save(
-            participantData {
-                storedAccessToken(accessTokenHash)
-                competition = competitionId
-                // The name depends on the id assigned by this save, so it is replaced right below.
-                name = ""
-            },
-        )
-        update(savedParticipant.withData { name = nameOf(savedParticipant.id) })
+    ): List<Participant> {
+        // The name depends on the id, which `persist` assigns before any row is written. All rows are added with an
+        // empty name, renamed while still managed and written by the single flush below, so JDBC batching applies.
+        val rows = accessTokenHashes.map { accessTokenHash ->
+            persistRows(
+                participantData {
+                    storedAccessToken(accessTokenHash)
+                    competition = competitionId
+                    name = ""
+                },
+            )
+        }
+
+        rows.forEach { (userJpaEntity, dataJpaEntity) ->
+            val participant = ParticipantMapping.toDomain(userJpaEntity, dataJpaEntity)
+            val renamed = participant.withData { name = nameOf(participant.id) }
+            jpaEntityRepository.save(ParticipantMapping.toUserJpaEntity(renamed, userJpaEntity))
+        }
+        jpaEntityRepository.flush()
+
+        return rows.map { (userJpaEntity, dataJpaEntity) -> ParticipantMapping.toDomain(userJpaEntity, dataJpaEntity) }
     }
 
     @Transactional
@@ -103,5 +108,17 @@ class ParticipantPersistenceAdapter(
             find = participantDataJpaEntityRepository::findAllByUserIdIn,
         ).associateBy { data -> data.userId }
         return rows.mapNotNull { row -> dataByUserId[row.requireId()]?.let { data -> ParticipantMapping.toDomain(row, data) } }
+    }
+
+    /** Adds the user, role and data rows of a new participant from [data] without flushing them. */
+    private fun persistRows(data: ParticipantData): Pair<UserJpaEntity, ParticipantDataJpaEntity> {
+        val savedUserJpaEntity = jpaEntityRepository.save(ParticipantMapping.toUserJpaEntity(data))
+        val userId = savedUserJpaEntity.requireId()
+
+        singleRoleToUserJpaEntityRepository.save(
+            SingleRoleToUserJpaEntity(singleRole = UserSingleRoleJpaEnum.PARTICIPANT, userId = userId),
+        )
+        val savedDataJpaEntity = participantDataJpaEntityRepository.save(ParticipantMapping.toDataJpaEntity(userId, data))
+        return savedUserJpaEntity to savedDataJpaEntity
     }
 }

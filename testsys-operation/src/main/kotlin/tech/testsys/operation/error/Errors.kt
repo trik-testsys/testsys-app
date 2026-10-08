@@ -272,10 +272,11 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
     ViewParticipantTaskError,
     DownloadParticipantTaskResourceError,
     SendParticipantSolutionError,
+    DownloadObserverResultError,
     EntityNotExistsError
 
 /**
- * The competition belongs to another user.
+ * The competition is not accessible to the user.
  *
  * @property competitionId the id of the inaccessible competition.
  * @since %CURRENT_VERSION%
@@ -285,6 +286,7 @@ data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
     ViewCompetitionContestError,
     AddCompetitionContestError,
     CreateParticipantsError,
+    DownloadObserverResultError,
     AccessDeniedError
 
 /**
@@ -1351,11 +1353,18 @@ data class ResourceVersionNotExistsError(val versionBucket: VersionBucket, val v
 sealed interface ViewObserverContestsError : OperationError
 
 /**
+ * Failure of downloading results of the observer's assigned competition.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadObserverResultError : OperationError
+
+/**
  * The user is not an observer.
  *
  * @since %CURRENT_VERSION%
  */
-data object MissedObserverRoleError : MissedRequiredRoleError, ViewObserverContestsError
+data object MissedObserverRoleError : MissedRequiredRoleError, ViewObserverContestsError, DownloadObserverResultError
 
 // endregion
 

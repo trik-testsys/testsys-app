@@ -1,9 +1,11 @@
 package tech.testsys.operation.user
 
 import io.mockk.Called
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -17,15 +19,19 @@ import tech.testsys.domain.contract.persistence.ObserverContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
+import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.operation.error.CompetitionAccessDeniedError
+import tech.testsys.operation.error.CompetitionNotExistsError
 import tech.testsys.operation.error.MissedObserverRoleError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
+import tech.testsys.operation.util.testCompetition
 import tech.testsys.operation.util.testContest
 import tech.testsys.operation.util.testObserver
 import tech.testsys.operation.util.testParticipant
@@ -35,7 +41,125 @@ import java.time.Instant
 class ObserverOperationsTests {
 
     private val contests = mockk<ContestRepository>()
-    private val operations = ObserverOperations(contestRepository = contests)
+    private val competitions = mockk<CompetitionRepository>()
+    private val operations = ObserverOperations(contestRepository = contests, competitionRepository = competitions)
+
+    @Nested
+    inner class DownloadResultTests {
+
+        @Test
+        fun `should reject a participant before reading competitions`() {
+            val user = testParticipant()
+
+            assertRaises(MissedObserverRoleError) {
+                operations.downloadResult(user = user, competitionId = CompetitionId(23))
+            }
+
+            verify { competitions wasNot Called }
+        }
+
+        @Test
+        fun `should reject a supervisor before reading competitions`() {
+            val user = supervisor {
+                id = 29
+                createdAt = Instant.EPOCH
+                data = supervisorData {
+                    name = "Supervisor"
+                    accessToken("supervisor", algorithm = HashAlgorithm.Identity)
+                }
+            }
+
+            assertRaises(MissedObserverRoleError) {
+                operations.downloadResult(user = user, competitionId = CompetitionId(23))
+            }
+
+            verify { competitions wasNot Called }
+        }
+
+        @Test
+        fun `should raise CompetitionNotExistsError before checking assignment`() {
+            val user = testObserver()
+            every { competitions.findById(CompetitionId(23)) } returns null
+
+            assertRaises(CompetitionNotExistsError(CompetitionId(23))) {
+                operations.downloadResult(user = user, competitionId = CompetitionId(23))
+            }
+        }
+
+        @Test
+        fun `should raise CompetitionAccessDeniedError when another competition is assigned`() {
+            val user = testObserver { competitions(listOf(24)) }
+            every { competitions.findById(CompetitionId(23)) } returns testCompetition()
+
+            assertRaises(CompetitionAccessDeniedError(CompetitionId(23))) {
+                operations.downloadResult(user = user, competitionId = CompetitionId(23))
+            }
+        }
+
+        @Test
+        fun `should raise CompetitionAccessDeniedError when no competitions are assigned`() {
+            val user = testObserver()
+            every { competitions.findById(CompetitionId(23)) } returns testCompetition()
+
+            assertRaises(CompetitionAccessDeniedError(CompetitionId(23))) {
+                operations.downloadResult(user = user, competitionId = CompetitionId(23))
+            }
+        }
+
+        @Test
+        fun `should return an empty CSV named after the selected assigned competition`() {
+            val user = testObserver { competitions(listOf(24, 23)) }
+            every { competitions.findById(CompetitionId(23)) } returns testCompetition { name = "Different title" }
+
+            val result = operations.downloadResult(user = user, competitionId = CompetitionId(23)).getOrThrow()
+
+            assertEquals("competition-23-results.csv", result.uploadedFilename)
+            assertArrayEquals(byteArrayOf(), result.content)
+        }
+
+        @Test
+        fun `should download results when the selected competition is assigned more than once`() {
+            val user = testObserver { competitions(listOf(23, 23)) }
+            every { competitions.findById(CompetitionId(23)) } returns testCompetition()
+
+            val result = operations.downloadResult(user = user, competitionId = CompetitionId(23)).getOrThrow()
+
+            assertEquals("competition-23-results.csv", result.uploadedFilename)
+            assertArrayEquals(byteArrayOf(), result.content)
+        }
+
+        @Test
+        fun `should keep assignments and competition data unchanged without writing or entering contests`() {
+            val user = testObserver { competitions(listOf(24, 23, 23)) }
+            val competition = testCompetition { contests(listOf(19)) }
+            val userData = user.data
+            val competitionData = competition.data
+            every { competitions.findById(CompetitionId(23)) } returns competition
+
+            operations.downloadResult(user = user, competitionId = CompetitionId(23)).getOrThrow()
+
+            assertSame(userData, user.data)
+            assertSame(competitionData, competition.data)
+            assertEquals(listOf(CompetitionId(24), CompetitionId(23), CompetitionId(23)), user.data.competitions.ids)
+            assertEquals(listOf(ContestId(19)), competition.data.contests.ids)
+            verify(exactly = 1) { competitions.findById(CompetitionId(23)) }
+            confirmVerified(competitions)
+            verify { contests wasNot Called }
+        }
+
+        @Test
+        fun `should propagate technical competition repository exceptions`() {
+            val user = testObserver { competitions(listOf(23)) }
+            val failure = IllegalStateException("Storage unavailable")
+            every { competitions.findById(CompetitionId(23)) } throws failure
+
+            val result = assertThrows(IllegalStateException::class.java) {
+                operations.downloadResult(user = user, competitionId = CompetitionId(23))
+            }
+
+            assertSame(failure, result)
+        }
+    }
 
     @Nested
     inner class ViewContestsTests {

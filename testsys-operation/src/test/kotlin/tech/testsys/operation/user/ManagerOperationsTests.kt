@@ -1,12 +1,14 @@
 package tech.testsys.operation.user
 
 import io.mockk.Called
+import io.mockk.CapturingSlot
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -17,6 +19,8 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.`class`
 import tech.testsys.domain.builder.api.classData
+import tech.testsys.domain.builder.api.classInvite
+import tech.testsys.domain.builder.api.classInviteData
 import tech.testsys.domain.builder.api.competition
 import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.developerData
@@ -32,15 +36,20 @@ import tech.testsys.domain.contract.persistence.ContestTaskResult
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
+import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.model.EntityVersion
+import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassData
 import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.ClassInvite
+import tech.testsys.domain.model.group.ClassInviteData
+import tech.testsys.domain.model.group.ClassInviteId
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionData
 import tech.testsys.domain.model.group.CompetitionId
@@ -54,6 +63,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.UserId
+import tech.testsys.operation.config.ClassInviteConfig
 import tech.testsys.operation.config.CompetitionConfig
 import tech.testsys.operation.error.ClassAccessDeniedError
 import tech.testsys.operation.error.ClassNameBlankError
@@ -79,6 +89,7 @@ import tech.testsys.operation.util.testContest
 import tech.testsys.operation.util.testDeveloper
 import tech.testsys.operation.util.testManager
 import tech.testsys.operation.util.testMultipleRoleUser
+import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
@@ -90,6 +101,9 @@ class ManagerOperationsTests {
     private val submissionRepository = mockk<SubmissionRepository>()
     private val participantRepository = mockk<ParticipantRepository>()
     private val competitionConfig = mockk<CompetitionConfig>()
+    private val classInviteRepository = mockk<ClassInviteRepository>()
+    private val classInviteConfig = mockk<ClassInviteConfig>()
+    private val clock = mockk<Clock>()
     private val operations = ManagerOperations(
         classRepository = repository,
         competitionRepository = competitionRepository,
@@ -97,12 +111,20 @@ class ManagerOperationsTests {
         submissionRepository = submissionRepository,
         participantRepository = participantRepository,
         competitionConfig = competitionConfig,
+        classInviteRepository = classInviteRepository,
+        classInviteConfig = classInviteConfig,
+        clock = clock,
     )
 
     @Nested
     inner class CreateClassTests {
 
         private val manager = testManager { data = managerData {} }
+
+        init {
+            every { clock.instant() } returns Instant.parse("2026-01-01T10:00:00Z")
+            every { classInviteConfig.ttl } returns Duration.ofDays(7)
+        }
 
         @ParameterizedTest
         @ValueSource(strings = ["", "Valid name", "a"])
@@ -125,21 +147,29 @@ class ManagerOperationsTests {
             assertEquals("", actual.data.description)
             assertEquals(emptyList<MultipleRoleUserId>(), actual.data.students.ids)
             assertEquals(emptyList<ContestId>(), actual.data.contests.ids)
-            verify(exactly = 1) {
-                repository.save(
-                    match<ClassData> { data ->
-                        data.owner.id == manager.id && data.name == "New class" && data.description == "" &&
-                            data.students.ids.isEmpty() && data.contests.ids.isEmpty()
-                    },
-                )
-            }
+            assertEquals(ClassInviteId(31), actual.data.invite.id)
+            verify(exactly = 1) { repository.saveWithInvite(any(), any()) }
             confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
+        }
+
+        @Test
+        fun `should create the class with a new identity-stored invite code expiring after the ttl`() {
+            val invite = slot<ClassInviteData>()
+            prepareSaving(invite)
+
+            operations.createClass(user = manager, className = "New class").getOrThrow()
+
+            assertEquals(HashAlgorithm.Identity, invite.captured.codeHash.algorithm)
+            assertTrue(INVITE_CODE_FORMAT.matches(invite.captured.codeHash.value), "unexpected code ${invite.captured.codeHash.value}")
+            assertEquals(Instant.parse("2026-01-08T10:00:00Z"), invite.captured.expiresAt)
+            verify(exactly = 1) { clock.instant() }
+            verify(exactly = 1) { classInviteConfig.ttl }
         }
 
         @Test
         fun `should return the stored class with its identity timestamp and version unchanged`() {
             val stored = testClass { name = "New class" }
-            every { repository.save(any<ClassData>()) } returns stored
+            every { repository.saveWithInvite(any(), any()) } returns stored
 
             val actual = operations.createClass(user = manager, className = "New class").getOrThrow()
 
@@ -217,7 +247,7 @@ class ManagerOperationsTests {
                 version = EntityVersion(0)
                 data = first.data
             }
-            every { repository.save(any<ClassData>()) } returnsMany listOf(first, second)
+            every { repository.saveWithInvite(any(), any()) } returnsMany listOf(first, second)
             val existing = operations.createClass(user = manager, className = "Same name").getOrThrow()
             val existingData = existing.data
 
@@ -228,7 +258,7 @@ class ManagerOperationsTests {
             assertEquals("Same name", actual.data.name)
             assertSame(existingData, existing.data)
             assertEquals(ClassId(11), existing.id)
-            verify(exactly = 2) { repository.save(match<ClassData> { data -> data.name == "Same name" }) }
+            verify(exactly = 2) { repository.saveWithInvite(any(), any()) }
             confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
         }
 
@@ -246,14 +276,14 @@ class ManagerOperationsTests {
             assertSame(managerRole, user.data.roles.filterIsInstance<Manager>().single())
             assertEquals(listOf(ClassId(99)), managerRole.data.classes.ids)
             assertEquals(0L, user.version?.value)
-            verify(exactly = 1) { repository.save(any<ClassData>()) }
+            verify(exactly = 1) { repository.saveWithInvite(any(), any()) }
             confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
         }
 
         @Test
         fun `should propagate a technical storage exception when saving the class`() {
             val failure = IllegalStateException("Class storage unavailable")
-            every { repository.save(any<ClassData>()) } throws failure
+            every { repository.saveWithInvite(any(), any()) } throws failure
 
             val actual = assertThrows(IllegalStateException::class.java) {
                 operations.createClass(user = manager, className = "New class")
@@ -262,13 +292,14 @@ class ManagerOperationsTests {
             assertSame(failure, actual)
         }
 
-        private fun prepareSaving() {
-            every { repository.save(any<ClassData>()) } answers {
+        private fun prepareSaving(invite: CapturingSlot<ClassInviteData> = slot()) {
+            every { repository.saveWithInvite(capture(invite), any()) } answers {
+                val data = secondArg<(ClassInviteId) -> ClassData>()
                 `class` {
                     id = 12
                     createdAt = Instant.EPOCH
                     version = EntityVersion(0)
-                    data = firstArg<ClassData>()
+                    this.data = data(ClassInviteId(31))
                 }
             }
         }
@@ -624,6 +655,16 @@ class ManagerOperationsTests {
         }
 
         @Test
+        fun `should return the stored invite reference without reading or writing invites`() {
+            every { repository.findById(classId) } returns testClass { invite(32) }
+
+            val actual = operations.viewClass(user = manager, classId = classId).getOrThrow()
+
+            assertEquals(ClassInviteId(32), actual.data.invite.id)
+            verify { listOf(classInviteRepository, clock) wasNot Called }
+        }
+
+        @Test
         fun `should allow a Manager who also has other roles`() {
             val user = testMultipleRoleUser {
                 roles {
@@ -680,6 +721,279 @@ class ManagerOperationsTests {
             }
 
             assertSame(failure, actual)
+        }
+    }
+
+    @Nested
+    inner class CreateClassInviteTests {
+
+        private val classId = ClassId(11)
+        private val manager = testManager { data = managerData {} }
+        private val now = Instant.parse("2026-01-01T10:00:00Z")
+        private val ttl = Duration.ofDays(7)
+
+        @Test
+        fun `should raise MissedManagerRoleError before reading storage, time or configuration if user is not a Manager`() {
+            val user = testAdministrator {}
+
+            assertRaises(MissedManagerRoleError) { operations.createClassInvite(user = user, classId = classId) }
+
+            verify { listOf(repository, classInviteRepository, classInviteConfig, clock) wasNot Called }
+        }
+
+        @Test
+        fun `should raise ClassNotExistsError without writing an invite if class does not exist`() {
+            every { repository.findById(classId) } returns null
+
+            assertRaises(ClassNotExistsError(classId)) { operations.createClassInvite(user = manager, classId = classId) }
+
+            verify { listOf(classInviteRepository, classInviteConfig, clock) wasNot Called }
+        }
+
+        @Test
+        fun `should raise ClassAccessDeniedError without writing an invite if class belongs to another owner`() {
+            every { repository.findById(classId) } returns testClass { owner = MultipleRoleUserId(99) }
+
+            assertRaises(ClassAccessDeniedError(classId)) { operations.createClassInvite(user = manager, classId = classId) }
+
+            verify { listOf(classInviteRepository, classInviteConfig, clock) wasNot Called }
+        }
+
+        @Test
+        fun `should replace the referenced code with a different one and restart its validity period`() {
+            val existing = testClassInvite(code = "abcdefghjkmn", expiresAt = Instant.parse("2030-01-01T00:00:00Z"))
+            prepareCreation(existing = existing)
+            val updated = slot<ClassInvite>()
+            every { classInviteRepository.update(capture(updated)) } answers { firstArg() }
+
+            val actual = operations.createClassInvite(user = manager, classId = classId).getOrThrow()
+
+            assertEquals(existing.id, updated.captured.id)
+            assertEquals(existing.version, updated.captured.version)
+            assertEquals(HashAlgorithm.Identity, updated.captured.data.codeHash.algorithm)
+            assertTrue(INVITE_CODE_FORMAT.matches(updated.captured.data.codeHash.value))
+            assertNotEquals(existing.data.codeHash, updated.captured.data.codeHash)
+            assertEquals(Instant.parse("2026-01-08T10:00:00Z"), updated.captured.data.expiresAt)
+            assertSame(updated.captured, actual)
+            verify(exactly = 0) { classInviteRepository.save(any<ClassInviteData>()) }
+        }
+
+        @Test
+        fun `should read the time and the ttl once`() {
+            prepareCreation(existing = testClassInvite())
+            every { classInviteRepository.update(any<ClassInvite>()) } answers { firstArg() }
+
+            operations.createClassInvite(user = manager, classId = classId).getOrThrow()
+
+            verify(exactly = 1) { clock.instant() }
+            verify(exactly = 1) { classInviteConfig.ttl }
+        }
+
+        @Test
+        fun `should truncate the expiration moment to microseconds`() {
+            prepareCreation(existing = testClassInvite(), now = Instant.parse("2026-01-01T10:00:00.123456789Z"))
+            every { classInviteRepository.update(any<ClassInvite>()) } answers { firstArg() }
+
+            val actual = operations.createClassInvite(user = manager, classId = classId).getOrThrow()
+
+            assertEquals(Instant.parse("2026-01-08T10:00:00.123456Z"), actual.data.expiresAt)
+        }
+
+        @Test
+        fun `should propagate a storage exception such as a code collision`() {
+            prepareCreation(existing = testClassInvite())
+            val failure = IllegalStateException("Duplicate invite code")
+            every { classInviteRepository.update(any<ClassInvite>()) } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) {
+                operations.createClassInvite(user = manager, classId = classId)
+            }
+
+            assertSame(failure, actual)
+        }
+
+        private fun prepareCreation(existing: ClassInvite, now: Instant = this.now) {
+            every { repository.findById(classId) } returns testClass()
+            every { classInviteRepository.load(any<LazyEntity<ClassInviteId, ClassInvite>>()) } returns existing
+            every { clock.instant() } returns now
+            every { classInviteConfig.ttl } returns ttl
+        }
+    }
+
+    @Nested
+    inner class ExtendClassInviteTests {
+
+        private val classId = ClassId(11)
+        private val manager = testManager { data = managerData {} }
+        private val now = Instant.parse("2026-01-01T10:00:00Z")
+
+        @Test
+        fun `should raise MissedManagerRoleError before reading storage, time or configuration if user is not a Manager`() {
+            val user = testAdministrator {}
+
+            assertRaises(MissedManagerRoleError) { operations.extendClassInvite(user = user, classId = classId) }
+
+            verify { listOf(repository, classInviteRepository, classInviteConfig, clock) wasNot Called }
+        }
+
+        @Test
+        fun `should raise ClassNotExistsError if class does not exist`() {
+            every { repository.findById(classId) } returns null
+
+            assertRaises(ClassNotExistsError(classId)) { operations.extendClassInvite(user = manager, classId = classId) }
+
+            verify { listOf(classInviteRepository, classInviteConfig, clock) wasNot Called }
+        }
+
+        @Test
+        fun `should raise ClassAccessDeniedError if class belongs to another owner`() {
+            every { repository.findById(classId) } returns testClass { owner = MultipleRoleUserId(99) }
+
+            assertRaises(ClassAccessDeniedError(classId)) { operations.extendClassInvite(user = manager, classId = classId) }
+
+            verify { listOf(classInviteRepository, classInviteConfig, clock) wasNot Called }
+        }
+
+        @Test
+        fun `should keep the code and restart the validity period from the current time`() {
+            val existing = testClassInvite(code = "abcdefghjkmn", expiresAt = Instant.parse("2026-01-02T00:00:00Z"))
+            prepareExtension(existing = existing, ttl = Duration.ofDays(7))
+
+            val actual = operations.extendClassInvite(user = manager, classId = classId).getOrThrow()
+
+            assertEquals(existing.data.codeHash, actual.data.codeHash)
+            assertEquals(existing.id, actual.id)
+            assertEquals(Instant.parse("2026-01-08T10:00:00Z"), actual.data.expiresAt)
+            verify(exactly = 1) { classInviteRepository.update(any<ClassInvite>()) }
+            verify(exactly = 1) { clock.instant() }
+            verify(exactly = 1) { classInviteConfig.ttl }
+        }
+
+        @Test
+        fun `should extend an invite code whose validity period has already ended`() {
+            val existing = testClassInvite(code = "abcdefghjkmn", expiresAt = now)
+            prepareExtension(existing = existing, ttl = Duration.ofHours(1))
+
+            val actual = operations.extendClassInvite(user = manager, classId = classId).getOrThrow()
+
+            assertEquals(existing.data.codeHash, actual.data.codeHash)
+            assertEquals(Instant.parse("2026-01-01T11:00:00Z"), actual.data.expiresAt)
+        }
+
+        @Test
+        fun `should move the expiration moment earlier if the ttl was reduced`() {
+            val existing = testClassInvite(expiresAt = Instant.parse("2026-02-01T00:00:00Z"))
+            prepareExtension(existing = existing, ttl = Duration.ofHours(1))
+
+            val actual = operations.extendClassInvite(user = manager, classId = classId).getOrThrow()
+
+            assertEquals(Instant.parse("2026-01-01T11:00:00Z"), actual.data.expiresAt)
+        }
+
+        private fun prepareExtension(existing: ClassInvite, ttl: Duration) {
+            every { repository.findById(classId) } returns testClass()
+            every { classInviteRepository.load(any<LazyEntity<ClassInviteId, ClassInvite>>()) } returns existing
+            every { clock.instant() } returns now
+            every { classInviteConfig.ttl } returns ttl
+            every { classInviteRepository.update(any<ClassInvite>()) } answers { firstArg() }
+        }
+    }
+
+    @Nested
+    inner class RefreshClassInviteTests {
+
+        private val classId = ClassId(11)
+        private val manager = testManager { data = managerData {} }
+        private val now = Instant.parse("2026-01-01T10:00:00Z")
+
+        @Test
+        fun `should raise MissedManagerRoleError before reading storage if the owner lost the Manager role`() {
+            val user = testAdministrator {}
+
+            assertRaises(MissedManagerRoleError) { operations.refreshClassInvite(user = user, classId = classId) }
+
+            verify { listOf(repository, classInviteRepository, classInviteConfig, clock) wasNot Called }
+        }
+
+        @Test
+        fun `should raise ClassNotExistsError if class does not exist`() {
+            every { repository.findById(classId) } returns null
+
+            assertRaises(ClassNotExistsError(classId)) { operations.refreshClassInvite(user = manager, classId = classId) }
+
+            verify { listOf(classInviteRepository, classInviteConfig, clock) wasNot Called }
+        }
+
+        @Test
+        fun `should raise ClassAccessDeniedError if class belongs to another owner`() {
+            every { repository.findById(classId) } returns testClass { owner = MultipleRoleUserId(99) }
+
+            assertRaises(ClassAccessDeniedError(classId)) { operations.refreshClassInvite(user = manager, classId = classId) }
+
+            verify { listOf(classInviteRepository, classInviteConfig, clock) wasNot Called }
+        }
+
+        @Test
+        fun `should return a still valid invite unchanged without writing`() {
+            val invite = testClassInvite(expiresAt = now.plusNanos(1_000))
+            prepareRefresh(invite)
+
+            val actual = operations.refreshClassInvite(user = manager, classId = classId).getOrThrow()
+
+            assertSame(invite, actual)
+            verify(exactly = 0) { classInviteRepository.update(any<ClassInvite>()) }
+            verify { classInviteConfig wasNot Called }
+        }
+
+        @Test
+        fun `should replace the code and restart the validity period if the invite expires at the current time`() {
+            val invite = testClassInvite(code = "abcdefghjkmn", expiresAt = now)
+            prepareRefresh(invite)
+            every { classInviteConfig.ttl } returns Duration.ofDays(7)
+            val updated = slot<ClassInvite>()
+            every { classInviteRepository.update(capture(updated)) } answers { firstArg() }
+
+            val actual = operations.refreshClassInvite(user = manager, classId = classId).getOrThrow()
+
+            assertSame(updated.captured, actual)
+            assertEquals(invite.id, updated.captured.id)
+            assertEquals(HashAlgorithm.Identity, updated.captured.data.codeHash.algorithm)
+            assertTrue(INVITE_CODE_FORMAT.matches(updated.captured.data.codeHash.value))
+            assertNotEquals(invite.data.codeHash, updated.captured.data.codeHash)
+            assertEquals(Instant.parse("2026-01-08T10:00:00Z"), updated.captured.data.expiresAt)
+            verify(exactly = 1) { clock.instant() }
+            verify(exactly = 1) { classInviteConfig.ttl }
+        }
+
+        @ParameterizedTest
+        @ValueSource(longs = [0, -1])
+        fun `should fail without writing if the configured ttl is not positive`(ttlSeconds: Long) {
+            prepareRefresh(testClassInvite(expiresAt = Instant.EPOCH))
+            every { classInviteConfig.ttl } returns Duration.ofSeconds(ttlSeconds)
+
+            assertThrows(IllegalStateException::class.java) { operations.refreshClassInvite(user = manager, classId = classId) }
+
+            verify(exactly = 0) { classInviteRepository.update(any<ClassInvite>()) }
+        }
+
+        @Test
+        fun `should propagate a storage exception of the update`() {
+            val failure = IllegalStateException("Stale invite version")
+            prepareRefresh(testClassInvite(expiresAt = Instant.EPOCH))
+            every { classInviteConfig.ttl } returns Duration.ofDays(7)
+            every { classInviteRepository.update(any<ClassInvite>()) } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) {
+                operations.refreshClassInvite(user = manager, classId = classId)
+            }
+
+            assertSame(failure, actual)
+        }
+
+        private fun prepareRefresh(invite: ClassInvite) {
+            every { repository.findById(classId) } returns testClass()
+            every { classInviteRepository.load(any<LazyEntity<ClassInviteId, ClassInvite>>()) } returns invite
+            every { clock.instant() } returns now
         }
     }
 
@@ -2154,7 +2468,23 @@ class ManagerOperationsTests {
             name = "Viewed class"
             description = "Class description"
             students(listOf(1, 2))
+            invite(31)
             builder()
         }
+    }
+
+    private fun testClassInvite(code: String = "pqrstuvwxyz2", expiresAt: Instant = FAR_FUTURE): ClassInvite = classInvite {
+        id = 31
+        createdAt = Instant.EPOCH
+        version = EntityVersion(0)
+        data = classInviteData {
+            this.code(code, HashAlgorithm.Identity)
+            this.expiresAt = expiresAt
+        }
+    }
+
+    private companion object {
+        val INVITE_CODE_FORMAT = Regex("[a-hjkmnp-z2-9]{12}")
+        val FAR_FUTURE: Instant = Instant.parse("2030-01-01T00:00:00Z")
     }
 }

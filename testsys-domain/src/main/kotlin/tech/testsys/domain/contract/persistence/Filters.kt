@@ -67,6 +67,40 @@ data class VerdictFilter(
 )
 
 /**
+ * Optional user selection criteria, combined with AND before paging and counting users available to an administrator.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property roles roles of which the user must hold any in an administrator's community, or null for any role.
+ * @property communityId the only administrator's community whose membership counts, or null for all; never expands access.
+ * @throws IllegalArgumentException if [roles] is empty.
+ * @since %CURRENT_VERSION%
+ */
+data class UserFilter(
+    val name: String? = null,
+    val roles: Set<Role>? = null,
+    val communityId: CommunityId? = null,
+) {
+
+    init {
+        require(roles == null || roles.isNotEmpty()) { "User role filter must be null or non-empty, but was $roles" }
+    }
+
+    /**
+     * Community role to select.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    enum class Role {
+        ADMINISTRATOR,
+        DEVELOPER,
+        JUDGE,
+        MANAGER,
+        STUDENT,
+        OBSERVER,
+    }
+}
+
+/**
  * Optional class selection criteria, combined with AND before paging and counting owned classes.
  *
  * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.

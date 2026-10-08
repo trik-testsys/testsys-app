@@ -15,6 +15,7 @@ import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.UserId
 import java.time.Duration
 import java.time.Instant
 
@@ -138,6 +139,27 @@ sealed interface AddCompetitionContestError : OperationError
 sealed interface CreateParticipantsError : OperationError
 
 /**
+ * Failure of creating or replacing the invite code of a class owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateClassInviteError : OperationError
+
+/**
+ * Failure of extending the invite code of a class owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ExtendClassInviteError : OperationError
+
+/**
+ * Failure of replacing the expired invite code of a class on behalf of its owning manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RefreshClassInviteError : OperationError
+
+/**
  * The user does not hold the manager role.
  *
  * @since %CURRENT_VERSION%
@@ -154,6 +176,9 @@ data object MissedManagerRoleError :
     AddClassContestError,
     AddCompetitionContestError,
     CreateParticipantsError,
+    CreateClassInviteError,
+    ExtendClassInviteError,
+    RefreshClassInviteError,
     MissedRequiredRoleError
 
 /**
@@ -196,6 +221,9 @@ data class ClassNotExistsError(val classId: ClassId) :
     ViewClassError,
     ViewClassContestError,
     AddClassContestError,
+    CreateClassInviteError,
+    ExtendClassInviteError,
+    RefreshClassInviteError,
     ViewStudentContestsError,
     EnterStudentContestError,
     ViewStudentContestError,
@@ -215,6 +243,9 @@ data class ClassAccessDeniedError(val classId: ClassId) :
     ViewClassError,
     ViewClassContestError,
     AddClassContestError,
+    CreateClassInviteError,
+    ExtendClassInviteError,
+    RefreshClassInviteError,
     ViewStudentContestsError,
     EnterStudentContestError,
     ViewStudentContestError,
@@ -316,6 +347,109 @@ data class CompetitionParticipantLimitExceededError(
     val participantCount: Int,
     val maxParticipants: Int,
 ) : CreateParticipantsError
+
+// endregion
+
+// region AdministratorOperations
+
+/**
+ * Failure of listing users available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUsersError : OperationError
+
+/**
+ * Failure of viewing one user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserError : OperationError
+
+/**
+ * Failure of creating or replacing the invite code of a community owned by the administrator for a role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateCommunityInviteError : OperationError
+
+/**
+ * Failure of extending the invite code of a community owned by the administrator for a role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ExtendCommunityInviteError : OperationError
+
+/**
+ * Failure of viewing the invite codes of a community owned by the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewCommunityInvitesError : OperationError
+
+/**
+ * Failure of replacing the expired invite code of a community for a role on behalf of its owning administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RefreshCommunityInviteError : OperationError
+
+/**
+ * The user does not hold the administrator role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object MissedAdministratorRoleError :
+    ViewUsersError,
+    ViewUserError,
+    CreateCommunityInviteError,
+    ExtendCommunityInviteError,
+    RefreshCommunityInviteError,
+    ViewCommunityInvitesError,
+    MissedRequiredRoleError
+
+/**
+ * The user does not exist.
+ *
+ * @property userId the id of the missing user.
+ * @since %CURRENT_VERSION%
+ */
+data class UserNotExistsError(val userId: UserId) : ViewUserError, EntityNotExistsError
+
+/**
+ * The user exists but is not available to the administrator.
+ *
+ * @property userId the id of the inaccessible user.
+ * @since %CURRENT_VERSION%
+ */
+data class UserAccessDeniedError(val userId: UserId) : ViewUserError, AccessDeniedError
+
+// endregion
+
+// region MultipleRoleUserOperations
+
+/**
+ * Failure of joining a community by an invite code.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface JoinCommunityError : OperationError
+
+/**
+ * The entered code matches no community invite code.
+ *
+ * @property inviteCode the code as entered by the user.
+ * @since %CURRENT_VERSION%
+ */
+data class CommunityInviteCodeNotValidError(val inviteCode: String) : JoinCommunityError
+
+/**
+ * The community invite code matching the entered code has expired.
+ *
+ * @property inviteCode the code as entered by the user.
+ * @since %CURRENT_VERSION%
+ */
+data class CommunityInviteCodeExpiredError(val inviteCode: String) : JoinCommunityError
 
 // endregion
 
@@ -916,7 +1050,14 @@ data object TaskAlreadyHasStatementError : AttachStatementError
  * @property communityId the id of the missing community.
  * @since %CURRENT_VERSION%
  */
-data class CommunityNotExistsError(val communityId: CommunityId) : EntityNotExistsError, ShareTaskError, ShareContestError
+data class CommunityNotExistsError(val communityId: CommunityId) :
+    EntityNotExistsError,
+    ShareTaskError,
+    ShareContestError,
+    CreateCommunityInviteError,
+    ExtendCommunityInviteError,
+    ViewCommunityInvitesError,
+    RefreshCommunityInviteError
 
 /**
  * The user lacks the access to the task required by the operation.
@@ -960,12 +1101,19 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
     SendStudentSolutionError
 
 /**
- * The user is not a member of the community.
+ * The user is not a member of the community, or it belongs to another user.
  *
  * @property communityId the id of the community.
  * @since %CURRENT_VERSION%
  */
-data class CommunityAccessDeniedError(val communityId: CommunityId) : AccessDeniedError, ShareTaskError, ShareContestError
+data class CommunityAccessDeniedError(val communityId: CommunityId) :
+    AccessDeniedError,
+    ShareTaskError,
+    ShareContestError,
+    CreateCommunityInviteError,
+    ExtendCommunityInviteError,
+    ViewCommunityInvitesError,
+    RefreshCommunityInviteError
 
 /**
  * The task has no committed version.
@@ -1286,6 +1434,13 @@ sealed interface SendParticipantSolutionError : OperationError
 sealed interface SendStudentSolutionError : OperationError
 
 /**
+ * Failure of joining a class by an invite code.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface JoinClassError : OperationError
+
+/**
  * The user is not a participant.
  *
  * @since %CURRENT_VERSION%
@@ -1312,7 +1467,24 @@ data object MissedStudentRoleError :
     ViewStudentContestError,
     ViewStudentTaskError,
     DownloadStudentTaskResourceError,
-    SendStudentSolutionError
+    SendStudentSolutionError,
+    JoinClassError
+
+/**
+ * The entered code matches no class invite code.
+ *
+ * @property inviteCode the code as entered by the user.
+ * @since %CURRENT_VERSION%
+ */
+data class ClassInviteCodeNotValidError(val inviteCode: String) : JoinClassError
+
+/**
+ * The class invite code matching the entered code has expired.
+ *
+ * @property inviteCode the code as entered by the user.
+ * @since %CURRENT_VERSION%
+ */
+data class ClassInviteCodeExpiredError(val inviteCode: String) : JoinClassError
 
 /**
  * The first entry precedes the contest start.

@@ -10,6 +10,7 @@ import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
+import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CompatibleUserRole
 import tech.testsys.domain.model.user.Developer
@@ -29,6 +30,7 @@ import tech.testsys.infra.database.internal.jpa.repository.user.multiple.Develop
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.MultipleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.StudentDataJpaEntityRepository
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -302,5 +304,53 @@ class MultipleRoleUserPersistenceAdapterTests :
         assertEquals(listOf(user.id), repository.findByIds(listOf(foreignId, user.id)).map { it.id })
         repository.removeById(foreignId)
         assertTrue(userJpaEntityRepository.findById(supervisor.id.value).isPresent)
+    }
+
+    @Test
+    fun `should grant a missing role with the community membership on addCommunityMembership`() {
+        val user = fixtures.student()
+        val community = fixtures.community(fixtures.administrator())
+
+        val updated = repository.addCommunityMembership(user.id, community.id, CommunityInvite.Kind.Manager)
+
+        val manager = updated.data.roles.filterIsInstance<Manager>().single()
+        assertEquals(listOf(community.id), manager.memberOf.ids)
+        assertEquals(1, updated.data.roles.filterIsInstance<Student>().size)
+        val stored = assertNotNull(repository.findById(user.id))
+        assertEquals(listOf(community.id), stored.data.roles.filterIsInstance<Manager>().single().memberOf.ids)
+    }
+
+    @Test
+    fun `should add a membership to an existing role and keep other memberships on addCommunityMembership`() {
+        val saved = repository.save(newData())
+        val existingCommunities = saved.data.roles.filterIsInstance<Developer>().single().memberOf.ids
+        val community = fixtures.community(fixtures.administrator())
+
+        val updated = repository.addCommunityMembership(saved.id, community.id, CommunityInvite.Kind.Developer)
+
+        val developer = updated.data.roles.filterIsInstance<Developer>().single()
+        assertEquals((existingCommunities + community.id).toSet(), developer.memberOf.ids.toSet())
+        assertEquals(1, updated.data.roles.filterIsInstance<Administrator>().size)
+    }
+
+    @Test
+    fun `should not add a second membership row if the user is already a member in the role`() {
+        val user = fixtures.developer()
+        val community = fixtures.community(fixtures.administrator())
+        repository.addCommunityMembership(user.id, community.id, CommunityInvite.Kind.Developer)
+
+        val updated = repository.addCommunityMembership(user.id, community.id, CommunityInvite.Kind.Developer)
+
+        assertEquals(listOf(community.id), updated.data.roles.filterIsInstance<Developer>().single().memberOf.ids)
+        assertEquals(1, multipleRoleToUserJpaEntityRepository.findAllByUserId(user.id.value).size)
+    }
+
+    @Test
+    fun `should fail to add a community membership for a missing user`() {
+        val community = fixtures.community(fixtures.administrator())
+
+        assertFailsWith<IllegalArgumentException> {
+            repository.addCommunityMembership(MultipleRoleUserId(UNKNOWN_ID), community.id, CommunityInvite.Kind.Manager)
+        }
     }
 }

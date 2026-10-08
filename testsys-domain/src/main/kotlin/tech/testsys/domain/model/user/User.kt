@@ -25,15 +25,16 @@ sealed class User<Id : UserId>(
 ) : DomainEntity<Id>(id, createdAt)
 
 /**
- * Algorithm used to produce the stored access-code representation of a [User].
+ * Algorithm used to produce the stored access-code representation of a [User] and the stored invite-code representation.
  *
  * @since %CURRENT_VERSION%
  */
 sealed interface HashAlgorithm {
 
     /**
-     * Temporary algorithm that leaves the original access code unchanged and provides no cryptographic protection.
-     * Declarations marked with RawAccessTokenDependency must be checked and corrected before enabling another algorithm.
+     * Temporary algorithm that leaves the original code unchanged and provides no cryptographic protection.
+     * Declarations marked with RawAccessTokenDependency or RawInviteCodeDependency must be checked and corrected
+     * before enabling another algorithm.
      *
      * @since %CURRENT_VERSION%
      */

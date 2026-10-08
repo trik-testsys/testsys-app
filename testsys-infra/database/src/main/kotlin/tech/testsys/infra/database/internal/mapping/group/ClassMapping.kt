@@ -36,6 +36,7 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
             description = jpaEntity.description
             students = studentIds.toMutableList()
             contests = contestIds.toMutableList()
+            invite(jpaEntity.inviteId)
         }
     }
 
@@ -48,10 +49,11 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
         name = data.name,
         description = data.description,
         ownerId = data.owner.id.value,
+        inviteId = data.invite.id.value,
     )
 
     /**
-     * Creates the [ClassJpaEntity] row replacing [current] from [entity], keeping `ownerId`, `createdAt` and `version`.
+     * Creates the [ClassJpaEntity] row replacing [current] from [entity], keeping `ownerId`, `inviteId`, `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
@@ -59,6 +61,7 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
         name = entity.data.name,
         description = entity.data.description,
         ownerId = current.ownerId,
+        inviteId = current.inviteId,
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt

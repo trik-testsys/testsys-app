@@ -155,6 +155,50 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 это ограничение нужно пересмотреть. Семантика сохранённого КД и правило аннотации — в разделе
 [«Пользователи»](../../testsys-domain/README.md#пользователи).
 
+## Коды-приглашения
+
+Коды-приглашения хранятся в таблицах `ts_class_invite` и `ts_community_invite`, созданных в
+[changelog.15-init-invite.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.15-init-invite.xml).
+Колонка `code` хранит сохранённое значение, `code_hash_algorithm` — алгоритм строкой из `HashAlgorithmJpaEnum`.
+Обе колонки создаются с `NOT NULL` и без значения по умолчанию. Маппинги собирают `InviteCodeHash` из этих колонок
+и передают его в `storedCode(hash)`; при записи оба поля переносятся без хэширования.
+
+Ссылки хранят группы: `ts_class.invite_id`, `ts_community.manager_invite_id` и `ts_community.developer_invite_id`
+— колонки `NOT NULL` с внешними ключами на таблицы Кодов-приглашений. В таблицах Кодов-приглашений колонок Класса
+и Сообщества нет. Колонка `ts_community_invite.role` определяет вариант `CommunityInvite`.
+
+Ограничения уникальности:
+
+| Ограничение | Что обеспечивает |
+|-------------|------------------|
+| `uk_ts_class_invite_code`, `uk_ts_community_invite_code` | Различие Кодов-приглашений одного вида |
+| `uk_ts_class_invite_id` | Код-приглашение принадлежит одному Классу |
+| `uk_ts_community_manager_invite_id`, `uk_ts_community_developer_invite_id` | Код-приглашение для каждой Роли принадлежит одному Сообществу |
+
+Ограничения на `code` обеспечивают уникальность исходных Кодов-приглашений благодаря `Identity`, поэтому
+`ClassInviteJpaEntity` и `CommunityInviteJpaEntity` помечены `@RawInviteCodeDependency`. При переходе к хэшированию
+с индивидуальной солью эти ограничения и поиск нужно пересмотреть. Правило аннотации — в разделе
+[«Коды-приглашения»](../../testsys-domain/README.md#коды-приглашения).
+
+`findByCode` ищет строку с равными значением и алгоритмом. `findExpired` возвращает идентификаторы строк
+с `expires_at` не позже переданного момента по возрастанию; для этого поиска на `expires_at` есть индексы.
+
+`ManagerCommunityInvitePersistenceAdapter` и `DeveloperCommunityInvitePersistenceAdapter` наследуют
+`AbstractCommunityInvitePersistenceAdapter` и работают со строками `ts_community_invite` своей Роли:
+строку другой Роли поиск не находит, удаление пропускает, а `update` отклоняет с `IllegalArgumentException`.
+`update` не меняет `role`:
+колонка берётся из текущей строки.
+
+`ClassPersistenceAdapter.saveWithInvite` и `CommunityPersistenceAdapter.saveWithInvites` в одной транзакции
+сохраняют строки Кодов-приглашений, а затем строку группы. `update` группы не меняет ссылки на Коды-приглашения:
+их колонки берутся из текущей строки. Каскадного удаления в БД нет: `removeById` группы удаляет её строку,
+а затем строки её Кодов-приглашений.
+
+`ClassPersistenceAdapter.addStudent` в одной транзакции добавляет строку `ts_student_to_class`, если её нет,
+и не меняет остальные данные Класса. `MultipleRoleUserPersistenceAdapter.addCommunityMembership` блокирует
+строку Пользователя через `lockById` и в той же транзакции добавляет недостающие строки данных Роли и членства
+в Сообществе.
+
 ## Схема БД
 
 - Схемой управляет Liquibase: changelog'и лежат в `src/main/resources/db/changelog/changes/<версия>/`.

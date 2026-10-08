@@ -80,6 +80,7 @@ class ClassPaginationQueryTests : DatabaseIntegrationTests() {
         val owner = fixtures.manager().id
         val students = listOf(fixtures.student().id, fixtures.student().id)
         val contest = fixtures.contest().id
+        val inviteId = fixtures.classInvite().id
         val saved = repository.save(
             classData {
                 this.owner = owner
@@ -87,6 +88,7 @@ class ClassPaginationQueryTests : DatabaseIntegrationTests() {
                 description = "Class description"
                 this.students = students.toMutableList()
                 contests = mutableListOf(contest)
+                invite = inviteId
             },
         )
 
@@ -228,11 +230,13 @@ class ClassPaginationQueryTests : DatabaseIntegrationTests() {
     }
 
     private fun saveClass(ownerId: MultipleRoleUserId, name: String, createdAt: Instant = Instant.EPOCH): Class {
+        val inviteId = fixtures.classInvite().id
         val saved = repository.save(
             classData {
                 owner = ownerId
                 this.name = name
                 description = "Pagination query test"
+                invite = inviteId
             },
         )
         setCreatedAt(id = saved.id, createdAt = createdAt)

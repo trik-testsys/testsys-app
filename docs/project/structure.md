@@ -120,5 +120,6 @@ Workflow лежат в `.github/workflows`.
 | Новый внешний порт (хранилище, внешняя система) | Интерфейс в `domain/contract`, реализация — в `testsys-infra`, см. [implement-port.md](../guides/implement-port.md) |
 | Пользовательскую фичу                           | Метод с `@Feature` в `operation/user/<Actor>Operations.kt`, см. [implement-feature.md](../guides/implement-feature.md) |
 | Служебную обработку запроса валидации           | `TaskValidationOperations` в `testsys-operation`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
+| Служебную замену Кодов-приглашений с истёкшим сроком | `refreshClassInvite` в `ManagerOperations` и `refreshCommunityInvite` в `AdministratorOperations`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |

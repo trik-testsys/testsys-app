@@ -23,6 +23,7 @@ import tech.testsys.web.app.service.judge.JudgeService
 import tech.testsys.web.app.service.participant.ParticipantService
 import tech.testsys.web.app.service.student.StudentService
 import tech.testsys.web.app.service.study.StudyService
+import tech.testsys.web.app.service.user.UserService
 
 @Import(PostgresTestConfiguration::class)
 @SpringBootTest
@@ -32,7 +33,14 @@ class ServicesContextTests {
 
     @ParameterizedTest
     @ValueSource(
-        classes = [DeveloperService::class, JudgeService::class, ParticipantService::class, StudentService::class, StudyService::class],
+        classes = [
+            DeveloperService::class,
+            JudgeService::class,
+            ParticipantService::class,
+            StudentService::class,
+            StudyService::class,
+            UserService::class,
+        ],
     )
     fun `should register the service as a single transactional proxy`(type: Class<*>) {
         val services = context.getBeansOfType(type)

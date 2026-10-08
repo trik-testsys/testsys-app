@@ -25,9 +25,10 @@ import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
+import java.time.Instant
 
 /**
- * Search port for users of every kind available to an administrator.
+ * Port for users of every kind: search of those available to an administrator and records of their logins.
  *
  * @since %CURRENT_VERSION%
  */
@@ -69,6 +70,16 @@ interface UserRepository {
      * @since %CURRENT_VERSION%
      */
     fun existsById(userId: UserId): Boolean
+
+    /**
+     * Synchronously records [loggedInAt] as the last login of [userId] protecting the user aggregate and increasing
+     * its version. Does nothing if no user of the kind matching [userId] exists; storage exceptions propagate to the caller.
+     *
+     * @param userId the id of the user who has logged in.
+     * @param loggedInAt the moment of the login.
+     * @since %CURRENT_VERSION%
+     */
+    fun recordLogin(userId: UserId, loggedInAt: Instant)
 }
 
 /**

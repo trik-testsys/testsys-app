@@ -19,6 +19,7 @@ import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
+import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Manager
@@ -64,6 +65,7 @@ class UserOperationsTests {
     private val participants = mockk<ParticipantRepository>()
     private val observers = mockk<ObserverRepository>()
     private val supervisors = mockk<SupervisorRepository>()
+    private val users = mockk<UserRepository>()
     private val registrationRequests = mockk<RegistrationRequestRepository>()
     private val mailSender = mockk<UserMailSender>()
     private val clock = mockk<Clock>()
@@ -80,6 +82,7 @@ class UserOperationsTests {
         participantRepository = participants,
         observerRepository = observers,
         supervisorRepository = supervisors,
+        userRepository = users,
         registrationRequestRepository = registrationRequests,
         mailSender = mailSender,
         communityConfig = communityConfig,
@@ -95,6 +98,7 @@ class UserOperationsTests {
         every { participants.findByAccessToken(any()) } returns null
         every { observers.findByAccessToken(any()) } returns null
         every { supervisors.findByAccessToken(any()) } returns null
+        every { users.recordLogin(any(), any()) } just runs
         every { multipleRoleUsers.findByEmail(any()) } returns null
         every { registrationRequests.findByEmail(any()) } returns null
         every { registrationRequests.save(any<RegistrationRequestData>()) } answers { savedRequest(firstArg()) }
@@ -189,6 +193,34 @@ class UserOperationsTests {
 
         @Nested
         inner class InvariantTests {
+            @Test
+            fun `should record the current moment as the last login of the found user`() {
+                val user = testParticipant()
+                every { participants.findByAccessToken("participant") } returns user
+
+                operations.authenticate(accessToken = "participant")
+
+                verify(exactly = 1) { users.recordLogin(user.id, now) }
+            }
+
+            @Test
+            fun `should record the last login truncated to microseconds`() {
+                val user = testMultipleRoleUser {}
+                every { multipleRoleUsers.findByAccessToken("token") } returns user
+                every { clock.instant() } returns Instant.parse("2026-01-01T00:00:00.123456789Z")
+
+                operations.authenticate(accessToken = "token")
+
+                verify(exactly = 1) { users.recordLogin(user.id, Instant.parse("2026-01-01T00:00:00.123456Z")) }
+            }
+
+            @Test
+            fun `should not record a login if no user has the access code`() {
+                operations.authenticate(accessToken = "unknown")
+
+                verify(exactly = 0) { users.recordLogin(any(), any()) }
+            }
+
 
             @Test
             fun `should not update any user when authenticating`() {

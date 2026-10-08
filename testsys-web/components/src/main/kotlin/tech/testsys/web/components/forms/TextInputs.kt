@@ -2,6 +2,7 @@
 
 package tech.testsys.web.components.forms
 
+import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
 import tech.testsys.web.components.core.InternalComponentsApi
@@ -35,6 +36,20 @@ fun BlockRowScope.codeInput(
     hint: String? = null,
     configure: ValueInput<String>.() -> Unit = {},
 ): ValueInput<String> = addInput(label, labelSize, size, TextField().apply { element.setMono(true) }, hint, configure)
+
+/**
+ * Adds a single-line field for secrets such as access codes: the value is masked and typed in a monospace font,
+ * and a button in the field reveals it. The label takes [labelSize] columns and the control [size] columns of the row.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun BlockRowScope.passwordInput(
+    label: String,
+    labelSize: Int,
+    size: Int,
+    hint: String? = null,
+    configure: ValueInput<String>.() -> Unit = {},
+): ValueInput<String> = addInput(label, labelSize, size, PasswordField().apply { element.setMono(true) }, hint, configure)
 
 /**
  * Adds a multi-line text field from [minLines] (two by default) to [maxLines] (no limit by default) lines high that

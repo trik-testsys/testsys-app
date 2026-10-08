@@ -447,6 +447,16 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 `MultipleRoleUserPersistenceAdapter.findByEmail` ищет строку `ts_user` по точному совпадению почты
 и не возвращает строку Пользователя другого вида.
 
+## Последний вход
+
+Момент последнего входа хранится в колонке `ts_user.last_login_at`, которая допускает `NULL`
+([changelog.18-add-user-last-login.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.18-add-user-last-login.xml)).
+`UserPersistenceAdapter.recordLogin` записывает её запросом `update` по идентификатору и виду строки
+(`UserJpaEntityRepository.updateLastLoginAt`). Перед записью адаптер защищает корень агрегата и повышает `version` по правилам
+раздела «Транзакции и согласованность». Для отсутствующего Пользователя или Пользователя другого вида
+он ничего не обновляет. Свойство `UserJpaEntity.lastLoginAt` помечено
+`insertable = false, updatable = false`, поэтому `save` и `update` адаптеров Пользователей колонку не перезаписывают.
+
 ## Схема БД
 
 Именованные `CHECK` в init-changelog проверяют сочетания состояния и nullable-полей Посылки, Задачи,

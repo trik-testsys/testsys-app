@@ -40,6 +40,12 @@ internal fun PageScope.gridSection() {
     }
 
     row {
+        space(size = 7)
+        block(size = 10, title = "Блок 10") { row { text("По центру между пустыми колонками") } }
+        space(size = 7)
+    }
+
+    row {
         highlightBlock(size = 6, title = "Блок 6", subtitle = "Подсветка") {
             row { text("Одна на ряд страницы") }
         }

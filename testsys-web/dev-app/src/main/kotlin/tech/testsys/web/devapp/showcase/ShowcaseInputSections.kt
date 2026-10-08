@@ -13,6 +13,7 @@ import tech.testsys.web.components.forms.dateRangeInput
 import tech.testsys.web.components.forms.dateTimeInput
 import tech.testsys.web.components.forms.decimalInput
 import tech.testsys.web.components.forms.integerInput
+import tech.testsys.web.components.forms.passwordInput
 import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
@@ -38,6 +39,7 @@ internal fun PageScope.fieldSection() {
                     errorMessage = "Уже занят"
                 }
             }
+            row { passwordInput("Код-доступа", labelSize = 8, size = 16) }
             row { textArea("Описание", labelSize = 8, size = 16) }
             row {
                 textArea("Условие", labelSize = 8, size = 16, hint = "Не выше четырёх строк, дальше прокрутка", maxLines = 4) {

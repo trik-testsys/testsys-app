@@ -51,6 +51,39 @@ class PageRowScopeTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should center a narrow block between spaces`() {
+        val main = buildTestPage {
+            row {
+                space(size = 7)
+                block(size = 10) {}
+                space(size = 7)
+            }
+        }
+
+        val spans = main.child(0).children.map { cell -> cell.element.style.get("grid-column") }.toList()
+        assertEquals(listOf("span 7", "span 10", "span 7"), spans)
+    }
+
+    @Test
+    fun `should hide a space from assistive technologies`() {
+        val main = buildTestPage { row { space(size = 4) } }
+
+        assertEquals("true", main.child(0).child(0).element.getAttribute("aria-hidden"))
+    }
+
+    @Test
+    fun `should reject a space that does not fit in the row`() {
+        assertThrows<IllegalStateException> {
+            buildTestPage {
+                row {
+                    block(size = 20) {}
+                    space(size = 8)
+                }
+            }
+        }
+    }
+
+    @Test
     fun `should set page columns of a block to its size`() {
         val main = buildTestPage { row { block(size = 8) {} } }
 

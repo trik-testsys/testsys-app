@@ -5,6 +5,8 @@ package tech.testsys.web.components.layout
 import com.vaadin.flow.component.html.Div
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.setAriaHidden
+import tech.testsys.web.components.core.setGridColumnSpan
 import tech.testsys.web.components.core.setPageColumns
 import tech.testsys.web.components.texts.UiTexts
 
@@ -38,6 +40,18 @@ class PageRowScope internal constructor(private val row: Div, private val texts:
      */
     fun highlightBlock(size: Int? = null, title: String? = null, subtitle: String? = null, content: BlockScope.() -> Unit): BlockHandle =
         place(size, BlockHeading(title, subtitle), highlight = true, content)
+
+    /**
+     * Leaves [size] columns of the row empty, for example on both sides of a narrow block to center it.
+     *
+     * @throws IllegalArgumentException if [size] is out of `1..24`.
+     * @throws IllegalStateException if the space does not fit in the row.
+     * @since %CURRENT_VERSION%
+     */
+    fun space(size: Int) {
+        track.take(size)
+        row.add(Div().apply { element.setAriaHidden(true).style.setGridColumnSpan(size) })
+    }
 
     private fun place(size: Int?, heading: BlockHeading, highlight: Boolean, content: BlockScope.() -> Unit): BlockHandle {
         val columns = size?.also(track::take) ?: track.takeRest()

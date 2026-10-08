@@ -1,5 +1,6 @@
 package tech.testsys.web.components.forms
 
+import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.binder.Binder
@@ -30,6 +31,20 @@ class TextInputTests : MockVaadinTests() {
         buildTestRow { codeInput("Идентификатор", labelSize = 4, size = 20) }
 
         assertTrue(control<TextField>("Идентификатор").element.hasAttribute("data-ts-mono"))
+    }
+
+    @Test
+    fun `should let a password input reveal its masked value`() {
+        buildTestRow { passwordInput("Код-доступа", labelSize = 4, size = 20) }
+
+        assertTrue(control<PasswordField>("Код-доступа").isRevealButtonVisible)
+    }
+
+    @Test
+    fun `should mark password input as monospace`() {
+        buildTestRow { passwordInput("Код-доступа", labelSize = 4, size = 20) }
+
+        assertTrue(control<PasswordField>("Код-доступа").element.hasAttribute("data-ts-mono"))
     }
 
     @Test

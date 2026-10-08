@@ -153,6 +153,9 @@
 `MultipleRoleUserRepository.findByEmail` и `RegistrationRequestRepository.findByEmail` сравнивают почту точно,
 без нормализации; нормализует почту операция.
 
+`UserRepository.recordLogin` записывает момент последнего входа Пользователя любого вида. Этот момент не входит
+в данные Пользователя: запись не меняет их и токен `version`.
+
 ### Запросы регистрации
 
 [`RegistrationRequest`](src/main/kotlin/tech/testsys/domain/model/user/RegistrationRequest.kt) хранит

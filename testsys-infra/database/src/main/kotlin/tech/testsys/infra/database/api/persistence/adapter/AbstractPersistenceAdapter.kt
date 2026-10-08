@@ -1,7 +1,6 @@
 package tech.testsys.infra.database.api.persistence.adapter
 
 import jakarta.persistence.EntityManager
-import jakarta.persistence.LockModeType
 import jakarta.persistence.PersistenceContext
 import org.hibernate.engine.spi.SessionImplementor
 import org.springframework.data.repository.findByIdOrNull
@@ -18,9 +17,9 @@ import tech.testsys.infra.database.internal.jpa.AggregateVersionTracker
 import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 import tech.testsys.infra.database.internal.utils.findAllInChunks
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.touchAggregateRoot
 import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
@@ -119,18 +118,7 @@ abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEn
         changesRootData: Boolean = false,
         writeRoot: (Root) -> Unit = {},
     ): Root {
-        val root = rootRepository.findByIdOrError(id)
-        val state = AggregateVersionTracker.state(root)
-        val isTokenAccepted = expectedVersion == null || expectedVersion == root.version ||
-            (expectedVersion == state.loadedVersion && !state.hasDataChanges)
-        if (!isTokenAccepted) throw ObjectOptimisticLockingFailureException(root.javaClass, id)
-
-        writeRoot(root)
-        if (state.loadedVersion != null && root.version == state.loadedVersion) {
-            entityManager.lock(root, LockModeType.PESSIMISTIC_FORCE_INCREMENT)
-        }
-        if (changesRootData) state.hasDataChanges = true
-        return root
+        return entityManager.touchAggregateRoot(rootRepository, id, expectedVersion, changesRootData, writeRoot)
     }
 
     /**

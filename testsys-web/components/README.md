@@ -181,7 +181,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | Уровень | Что внутри | Правило |
 |---------|------------|---------|
 | `page` | `row` | Ряды страницы стоят друг под другом |
-| `row` страницы | `block(size)`, `highlightBlock(size)` | `size` от 1 до 24; без `size` блок занимает остаток ряда, после него ряд закрыт; сумма — не больше 24 |
+| `row` страницы | `block(size)`, `highlightBlock(size)`, `space(size)` | `size` от 1 до 24; без `size` блок занимает остаток ряда, после него ряд закрыт; `space` оставляет колонки пустыми, например по бокам узкого блока; сумма — не больше 24 |
 | `row` блока, диалога и `drawer` | поля, `field`, `text`, `tag`, `badge`, `counter`, `icon`, `alert`, `pills`, `horizontal`, `vertical` | Поле занимает `labelSize + size`, остальные — `size`; без `size` элемент занимает остаток строки, после него строка закрыта; сумма — не больше 24 колонок контейнера |
 
 - Неверный размер — `IllegalArgumentException`, переполнение ряда и элемент после занявшего остаток строки —
@@ -209,7 +209,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `PageScope` | `head` (первым вызовом), `row` |
 | `PageHeadScope` | `crumb`, `badge`, `meta`, `actions { }`, `tabs { }` |
 | `PageTabsScope` | `tab` (вкладка-маршрут) |
-| `PageRowScope` | `block`, `highlightBlock` |
+| `PageRowScope` | `block`, `highlightBlock`, `space` |
 | `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
 | `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `segmentedControl`, `multiSelect`), `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
@@ -234,12 +234,15 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 
 Поле — разметка `.ts-field` из двух ячеек: подпись слева на `labelSize` колонок и значение справа на `size`
 колонок; всё поле занимает `labelSize + size` колонок строки блока. Функции полей — `textInput`, `codeInput`,
-`textArea`, `select`, `checkbox`, `dateInput`, `timeInput`, `dateTimeInput`, `dateRangeInput`, `integerInput`,
-`decimalInput`, `lookup` и `lookupMany` (см. [Лукап](#лукап)), а также
+`passwordInput`, `textArea`, `select`, `checkbox`, `dateInput`, `timeInput`, `dateTimeInput`, `dateRangeInput`,
+`integerInput`, `decimalInput`, `lookup` и `lookupMany` (см. [Лукап](#лукап)), а также
 [остальные поля](#остальные-поля-и-локальный-выбор) — объявлены на `BlockRowScope` и возвращают
 `ValueInput<T>`.
 
 - `labelSize` и `size` обязательны, каждый не меньше 1, иначе — `IllegalArgumentException`.
+- `codeInput` и `passwordInput` набирают значение моноширинным шрифтом. `passwordInput` — поле секрета, например
+  Кода-доступа: значение замаскировано, кнопка в поле показывает его. Визуальное скрытие значения любого поля —
+  `isObscured`, см. [Скрытые значения](#скрытые-значения).
 - Длинная подпись переносится, её первая строка стоит на уровне середины контрола. Подсказка (`hint`) и ошибка
   проверки — под контролом, в ячейке значения. У `checkbox` в ячейке значения только флажок, у `dateRangeInput` —
   два ввода дат и общая кнопка календаря.

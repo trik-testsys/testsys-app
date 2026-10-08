@@ -1,4 +1,4 @@
-package tech.testsys.web.devapp
+package tech.testsys.web.app
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -21,7 +21,7 @@ class PageConfigurationTests {
 
     @Test
     fun `should configure application pages without raw markup or styling`() {
-        val roots = listOf(Path.of("src/main/kotlin"), Path.of("../app/src/main/kotlin"))
+        val roots = listOf(Path.of("src/main/kotlin"))
 
         val violations = roots.flatMap { root ->
             Files.walk(root).use { paths ->

@@ -24,8 +24,6 @@ data, actions or states. Do not reopen a settled format choice.
   [components/README.md](../../../testsys-web/components/README.md). Read
   [structure.md](../../../docs/project/structure.md) for code placement and build commands, and
   [code-style.md](../../../docs/project/code-style.md) for Kotlin and KDoc.
-- Consult [dev-app/README.md](../../../testsys-web/dev-app/README.md) for demonstrations and usage examples.
-  These examples help discover components; they are not an authority for interface rules or contracts.
 - For a new business scenario, consult [features.md](../../../docs/domain/features.md) and the applicable guides
   listed in [docs.md](../../../docs/docs.md). UI work alone does not authorize business operations or access rules.
 
@@ -38,8 +36,7 @@ Read core internals, client implementations and resource details when adding or 
 ordinary page composition uses the public DSL.
 
 For application text, use [localization/README.md](../../../testsys-infra/localization/README.md); for new messages,
-follow [add-localization.md](../../../docs/guides/add-localization.md). Keep demonstration exceptions within their
-documented scope.
+follow [add-localization.md](../../../docs/guides/add-localization.md).
 
 For an explicitly requested standalone mockup, reuse the shared resources described in `components/README.md`
 and follow `ui-design.md`. Keep the artifact identifiable as a mockup; do not create another maintained component

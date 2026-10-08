@@ -17,9 +17,15 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.boot.test.context.SpringBootTest
+import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.operation.error.BlankJudgmentReasonError
+import tech.testsys.operation.error.ContestNotAddedToClassError
+import tech.testsys.operation.error.ContestNotAddedToCompetitionError
+import tech.testsys.operation.error.ContestNotEnteredError
 import tech.testsys.operation.error.MissedJudgeRoleError
 import tech.testsys.operation.error.ResourceNotInCommittedTaskError
 import tech.testsys.operation.error.SubmissionAccessDeniedError
@@ -79,6 +85,9 @@ class OperationErrorViewTests : MockSpringVaadinTests() {
             "judge" to MissedJudgeRoleError,
             "reason" to BlankJudgmentReasonError,
             "resource" to ResourceNotInCommittedTaskError(TaskId(1), TaskId(2)),
+            "class-contest" to ContestNotAddedToClassError(ClassId(1), ContestId(1)),
+            "competition-contest" to ContestNotAddedToCompetitionError(CompetitionId(1), ContestId(1)),
+            "not-entered" to ContestNotEnteredError(ContestId(1)),
         )
 
         @JvmStatic
@@ -87,9 +96,12 @@ class OperationErrorViewTests : MockSpringVaadinTests() {
             Arguments.of("submission", 403, "Нет доступа", "Нет доступа — TestSys"),
             Arguments.of("judge", 403, "Нет доступа", "Нет доступа — TestSys"),
             Arguments.of("resource", 403, "Нет доступа", "Нет доступа — TestSys"),
+            Arguments.of("class-contest", 404, "Страница не найдена", "Страница не найдена — TestSys"),
+            Arguments.of("competition-contest", 404, "Страница не найдена", "Страница не найдена — TestSys"),
+            Arguments.of("not-entered", 403, "Нет доступа", "Нет доступа — TestSys"),
             Arguments.of(
                 "reason",
-                500,
+                400,
                 "Не удалось открыть страницу",
                 "Не удалось открыть страницу — TestSys",
             ),

@@ -81,9 +81,12 @@
 
 | Род ошибки | Код | Тексты экрана |
 |------------|-----|---------------|
-| `EntityNotExistsError` | 404 | `notFound`, как у отсутствующего маршрута |
-| `AccessDeniedError`, `MissedRequiredRoleError` и `ResourceAccessError` | 403 | `forbidden` |
-| Остальные | 500 | `pageFailed` |
+| `EntityNotExistsError`, `ContestNotAddedToClassError` и `ContestNotAddedToCompetitionError` | 404 | `notFound`, как у отсутствующего маршрута |
+| `AccessDeniedError`, `MissedRequiredRoleError`, `ResourceAccessError` и `ContestNotEnteredError` | 403 | `forbidden` |
+| Остальные | 400 | `pageFailed` |
+
+Ошибка операции — ожидаемый отказ, поэтому код 500 обработчик не возвращает: технические сбои приходят другими
+исключениями и обрабатываются Vaadin. Тур вне Класса или Соревнования Пользователя считается отсутствующим.
 
 Исключение в обработчике события получает `OperationErrorHandler`. Он становится `ErrorHandler` каждой новой
 сессии и показывает тост `FeedbackKind.Error` с заголовком из группы `failures`. Свой заголовок есть

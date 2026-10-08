@@ -22,7 +22,9 @@ class TestDiagnosticResultBuilder : Builder<TestDiagnosticResult> {
      *
      * @since %CURRENT_VERSION%
      */
-    fun testId(testId: Long) { this.testId = TestId(testId) }
+    fun testId(testId: Long) {
+        this.testId = TestId(testId)
+    }
 
     override fun build(): TestDiagnosticResult = TestDiagnosticResult(
         testId = requireField(testId) { ::testId },

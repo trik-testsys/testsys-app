@@ -17,7 +17,7 @@ class OperationFailure @PublishedApi internal constructor(
     val error: OperationError,
     @PublishedApi internal val scope: Raise<*>,
     cause: Throwable? = null,
-) : RuntimeException(error.toString(), cause)      // stack trace is captured
+) : RuntimeException(error.toString(), cause) // stack trace is captured
 
 /**
  * Scope of a single [operation] call, able to interrupt it with an error.
@@ -92,9 +92,7 @@ fun <T, E : OperationError> OperationResult<T, E>.getOrRaise(): T = when (this) 
  */
 @InternalOperationsApi
 context(raise: Raise<E>)
-inline fun <T, N : OperationError, E : OperationError> OperationResult<T, N>.getOrRaise(
-    transform: (N) -> E,
-): T = when (this) {
+inline fun <T, N : OperationError, E : OperationError> OperationResult<T, N>.getOrRaise(transform: (N) -> E): T = when (this) {
     is OperationResult.Success -> value
     is OperationResult.Error -> raise.raise(transform(error), failure)
 }

@@ -21,10 +21,10 @@ object TestDiagnosticResultMapping {
      */
     fun toJpaEntity(requestId: Long, testId: Long, position: Int, report: DiagnosticReport): DiagnosticReportJpaEntity {
         val (reason, parameters) = when (val data = report.data) {
-            is DiagnosticData.UnknownElement -> "UnknownElement" to encode(listOf(data.tag.toString()))
-            is DiagnosticData.MalformedXml -> "MalformedXml" to encode(listOf(data.details.toString()))
-            is DiagnosticData.MissingChild -> "MissingChild" to encode(listOf(data.tag.toString()))
-            is DiagnosticData.MissingAttribute -> "MissingAttribute" to encode(listOf(data.attribute.toString()))
+            is DiagnosticData.UnknownElement -> "UnknownElement" to encode(listOf(data.tag))
+            is DiagnosticData.MalformedXml -> "MalformedXml" to encode(listOf(data.details))
+            is DiagnosticData.MissingChild -> "MissingChild" to encode(listOf(data.tag))
+            is DiagnosticData.MissingAttribute -> "MissingAttribute" to encode(listOf(data.attribute))
             is DiagnosticData.InvalidAttributeValue ->
                 "InvalidAttributeValue" to encode(listOf(data.attribute, data.expected, data.actual))
             is DiagnosticData.InvalidChildCount -> "InvalidChildCount" to encode(listOf(data.expected.toString(), data.actual.toString()))
@@ -32,7 +32,7 @@ object TestDiagnosticResultMapping {
             is DiagnosticData.MultipleTimeLimits -> "MultipleTimeLimits" to encode(listOf(data.count.toString()))
             is DiagnosticData.NegativeTimeLimit -> "NegativeTimeLimit" to encode(listOf(data.value.toString()))
             is DiagnosticData.ExcessiveTimeLimit -> "ExcessiveTimeLimit" to encode(listOf(data.value.toString(), data.maximum.toString()))
-            is DiagnosticData.InvalidEventId -> "InvalidEventId" to encode(listOf(data.id.toString()))
+            is DiagnosticData.InvalidEventId -> "InvalidEventId" to encode(listOf(data.id))
             DiagnosticData.MissingScoreOutput -> "MissingScoreOutput" to ""
         }
         return DiagnosticReportJpaEntity(

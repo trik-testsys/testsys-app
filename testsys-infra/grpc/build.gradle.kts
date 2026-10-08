@@ -11,6 +11,7 @@ repositories {
 }
 
 dependencies {
+    implementation(platform(libs.spring.boot.bom))
     implementation(project(":testsys-domain"))
     implementation(libs.grading.protos)
     implementation(libs.grpc.okhttp)

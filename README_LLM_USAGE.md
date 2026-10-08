@@ -18,7 +18,7 @@ LLM-клиенты, например Claude Code/Codex и другие, испо
 Прочитай AGENTS.md и testsys-llm-sync.md, подключи конфигурацию TestSys для Codex в этом checkout.
 ```
 
-После подключения откройте свежую сессию. Проверьте, что клиент видит пять скиллов из таблицы ниже без
+После подключения откройте свежую сессию. Проверьте, что клиент видит шесть скиллов из таблицы ниже без
 дубликатов и шесть именованных ролей, а агент получает корневой `AGENTS.md`. Для проверки отдельного контекста
 попросите запустить `coder` без задачи: он должен прочитать общую роль и сообщить о недостающих входных данных.
 Подробные проверки и ограничения загрузки инструкций — в [инструкции подключения](testsys-llm-sync.md#6-verify-a-fresh-context).
@@ -39,6 +39,7 @@ LLM-клиенты, например Claude Code/Codex и другие, испо
 | [fix-review](.testsys-agents/skills/fix-review/SKILL.md) | [fixer](.testsys-agents/roles/fixer.md) | Перепроверка и исправление выбранных замечаний отчёта, сборка и тесты | «Исправь замечания 1 и 3 из последнего отчёта с помощью fix-review» |
 | [generate-localization](.testsys-agents/skills/generate-localization/SKILL.md) | [localization-generator](.testsys-agents/roles/localization-generator.md), [localization-reviewer](.testsys-agents/roles/localization-reviewer.md) | Добавление региона или заполнение недостающих переводов с `ru-RU`; существующие переводы меняются только по явному запросу | «Заполни недостающие переводы EN / en-US с помощью generate-localization» |
 | [add-localization](.testsys-agents/skills/add-localization/SKILL.md) | Те же роли локализации | Создание и явное изменение исходных сообщений `ru-RU`, golden-проверки и независимое языковое ревью | «Добавь сообщение о числе оставшихся попыток с помощью add-localization» |
+| [testsys-design](.testsys-agents/skills/testsys-design/SKILL.md) | — | Проектирование и реализация интерфейсов на Vaadin/Kotlin DSL и явно запрошенных самостоятельных макетов | «Спроектируй экран Кабинета с помощью testsys-design» |
 
 Явный вызов в Claude Code — `/implement <файл-задачи.md>`, `/review-changes` или `/fix-review` с входными
 данными после команды. В Codex используйте `$implement <файл-задачи.md>`, `$review-changes` или `$fix-review`,

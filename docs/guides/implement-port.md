@@ -21,7 +21,7 @@
 | 2 | Интерфейс порта                      | `testsys-domain/.../contract/<Имя>.kt`                                |
 | 3 | Выбрать или завести модуль-адаптер   | `testsys-infra/<модуль>`, `settings.gradle.kts`                       |
 | 4 | Реализация                           | `testsys-infra/<модуль>/.../api/`                                     |
-| 5 | Регистрация бина                     | `@Configuration` модуля                                               |
+| 5 | Регистрация бина                     | `@Configuration` модуля; приложение подключает её через `@Import`     |
 | 6 | Тесты                                | Тесты адаптера + тестовая реализация порта, если она нужна другим модулям |
 
 ## 1. Убедиться, что порт нужен
@@ -41,7 +41,7 @@
 | Порт                                  | Файл                                 | Состояние                                                                 |
 |---------------------------------------|--------------------------------------|---------------------------------------------------------------------------|
 | `EntityRepository` и `XRepository`     | `contract/persistence/repository/`   | Реализованы адаптерами в `testsys-infra:database`                          |
-| `FileBlobStorage`                      | `contract/File.kt`                   | Потребитель — `FileDataStorage`; продакшен-реализации нет, в тестах `InMemoryFileBlobStorage` |
+| `FileBlobStorage`                      | `contract/File.kt`                   | Путь (`Path`) передаётся в каждом вызове. Потребитель — `FileDataStorage`; реализован `FileSystemBlobStorage` в `testsys-infra:database`, в тестах `InMemoryFileBlobStorage` |
 | `Grader`                               | `contract/Grading.kt`                | Реализован в [grpc/README.md](../../testsys-infra/grpc/README.md)          |
 | `UserMailSender`                       | `contract/Mail.kt`                   | Реализован в [mail/README.md](../../testsys-infra/mail/README.md)          |
 | `Pagination` / `Sort` / `Page`         | `contract/persistence/Pagination.kt` | Используются в портах и адаптерах `Task`, `Contest`, `Verdict`, `Class`, `Competition` и `User` |
@@ -103,15 +103,14 @@
 ## 5. Регистрация бина
 
 У модуля свой `@Configuration`, который сканирует его пакеты, — так модуль остаётся самодостаточным.
-Образец — [DatabaseConfiguration.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/jpa/DatabaseConfiguration.kt):
+Образец — [DatabaseConfiguration.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/DatabaseConfiguration.kt):
 он сканирует `...api`, поэтому новый `@Component` в этом пакете подхватывается сам.
 
 - Настройки по умолчанию кладутся в `.properties` модуля и подключаются `@PropertySource`, а не хардкодятся.
 - Если реализация создаётся не сканированием (внешний клиент, объект из библиотеки), она объявляется
   `@Bean`-методом в конфигурации модуля.
-
-> Единой точки сборки приложения пока нет: `testsys-web` — заготовка. Когда она появится, именно она будет
-> подключать конфигурации модулей и решать, какая реализация порта используется в проде.
+- Приложение подключает конфигурации модулей через `@Import` в `InfraConfiguration`,
+  см. [app/README.md](../../testsys-web/app/README.md).
 
 ## 6. Тесты
 
@@ -122,7 +121,8 @@
   проверяется, что файл сравнивается с сохранённым по имени и хешу содержимого. Инструменты — в [unit-tests.md](../project/unit-tests.md).
 - **Работа с реальным внешним миром** — интеграционный тест. Для БД это `DatabaseIntegrationTests`
   и контрактные тесты адаптеров, см. шаг 10 в [implement-entity.md](implement-entity.md).
-- **Порт без продакшен-реализации** — тестовая реализация, объявленная бином в тестовом приложении. Образец —
+- **Тестовая реализация, заменяющая основную реализацию в тестах** — объявляется бином с `@Primary`
+  в тестовом приложении. Образец —
   `InMemoryFileBlobStorage` в [DatabaseTestApp.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/DatabaseTestApp.kt).
   Такая заглушка живёт в тестах, а не в `main`.
 - **Код, который использует порт** — операции принимают порты через конструктор, в тестах порты подменяются

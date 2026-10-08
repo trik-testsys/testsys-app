@@ -23,7 +23,9 @@ class TaskValidationSnapshotBuilder : Builder<TaskValidationSnapshot> {
      *
      * @since %CURRENT_VERSION%
      */
-    fun tests(tests: Iterable<Long>) { this.tests = tests.map { TestId(it) }.toMutableList() }
+    fun tests(tests: Iterable<Long>) {
+        this.tests = tests.map { TestId(it) }.toMutableList()
+    }
 
     override fun build(): TaskValidationSnapshot = TaskValidationSnapshot(
         tests = tests.distinct().sortedBy { it.value }.lazify(),
@@ -50,14 +52,18 @@ class DeveloperSolutionValidationInputBuilder : Builder<DeveloperSolutionValidat
      *
      * @since %CURRENT_VERSION%
      */
-    fun developerSolution(developerSolution: Long) { this.developerSolution = DeveloperSolutionId(developerSolution) }
+    fun developerSolution(developerSolution: Long) {
+        this.developerSolution = DeveloperSolutionId(developerSolution)
+    }
 
     /**
      * Sets [solution] from a raw id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun solution(solution: Long) { this.solution = SolutionId(solution) }
+    fun solution(solution: Long) {
+        this.solution = SolutionId(solution)
+    }
 
     override fun build(): DeveloperSolutionValidationInput = DeveloperSolutionValidationInput(
         developerSolution = requireField(developerSolution) { ::developerSolution }.lazify(),

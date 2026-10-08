@@ -17,13 +17,14 @@
 | `internal/jpa/repository`     | Spring Data репозитории                                                                    | 6         |
 | `internal/mapping`            | `object XMapping` — преобразования между доменом и JPA                                     | 8         |
 | `api/persistence/adapter`     | Адаптеры портов хранения `XPersistenceAdapter`                                             | 9         |
-| `api/persistence`             | `FileDataStorage` — хранение файлов                                                        | —         |
+| `api/persistence`             | `FileDataStorage` — хранение файлов, `FileSystemBlobStorage` — содержимое файлов на диске  | —         |
 | `internal/jpa/id`             | Генератор идентификаторов                                                                  | —         |
 | `internal/utils`              | Общие помощники: `syncJoinTable`, `requireId`, `requireVersion`, `findByIdOrError`, `populateFields` | —         |
 
 Всё в `internal` помечено `@InternalDatabaseApi` (`@RequiresOptIn`): снаружи модуля используется только `api`.
-Бины регистрирует [DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/DatabaseConfiguration.kt),
+Бины регистрирует [DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/api/DatabaseConfiguration.kt),
 настройки Hibernate по умолчанию — в [hibernate-defaults.properties](src/main/resources/hibernate-defaults.properties).
+Приложение подключает `DatabaseConfiguration` через `@Import`.
 
 ## Постраничный поиск Задач и Туров
 
@@ -120,6 +121,20 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
   не меняется.
 - Строка сущности не переключается на другой файл: `update` сверяет переданный файл с сохранённым через
   `FileDataStorage.matches` — по имени файла и хешу содержимого — и падает, если они различаются.
+
+Основная реализация порта — компонент
+[FileSystemBlobStorage.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/FileSystemBlobStorage.kt).
+Она хранит каждый блоб отдельным файлом с именем-UUID по пути, переданному в вызов, и не перезаписывает
+существующие файлы. Путь должен быть абсолютным; `store` создаёт каталог, если его нет.
+
+Путь выбирает адаптер вида Ресурса из
+[FileStoragePaths.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/FileStoragePaths.kt) — класса
+`@ConfigurationProperties` с обязательными свойствами `testsys.file-storage.paths.<вид>`, который регистрирует
+`DatabaseConfiguration`. Виды: `statement`, `exercise`, `test`, `solution`, `recording` и `logs`. Файл Авторского
+Решения хранится по пути `solution`. Если свойства нет, приложение не запустится.
+
+`StoredBlobRef` из `findFileRef` действителен только вместе с путём своего вида, а путь знает только адаптер.
+Поэтому код вне модуля пока не может загрузить файл по такой ссылке.
 
 У каких сущностей файл фиксируется при создании и какие не поддерживают `update` — в разделе «Модель»,
 как из таких строк складываются версии Ресурсов — в разделе «Версионирование Ресурсов»
@@ -231,10 +246,16 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 
 - Схемой управляет Liquibase: changelog'и лежат в `src/main/resources/db/changelog/changes/<версия>/`.
 - Hibernate запускается с `ddl-auto=validate`, поэтому каждое изменение JPA-сущности требует changeset.
+- Диалект SQL не задаётся: Hibernate определяет его по соединению (PostgreSQL в продакшене, H2 в тестах).
 - Имена таблиц и колонок вычисляет `TestsysPhysicalNamingStrategy`.
 - `SchemaValidationTests` (H2 в режиме PostgreSQL) применяет changelog'и и выполняет ту же валидацию.
 
 Правила написания changeset — в шаге 7 [implement-entity.md](../../docs/guides/implement-entity.md).
+
+Версию Liquibase задаёт BOM Spring Boot (раздел «Сборка» в [structure.md](../../docs/project/structure.md)).
+С версии 5.0 Liquibase Community распространяется под Functional Source License (FSL) вместо Apache 2.0.
+Использование в разработке, тестах и продакшене свободное; запрещено только строить на Liquibase конкурирующий
+коммерческий сервис. Каждая версия через два года после выхода переходит на Apache 2.0.
 
 ## Хранение первого входа
 

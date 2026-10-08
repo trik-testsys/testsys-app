@@ -18,9 +18,9 @@ jobs:
 
     permissions:
       contents: read
-      # Required to upload SARIF to code scanning; `actions: read` is needed for it in private repositories.
-      security-events: write
-      actions: read
+
+    outputs:
+      modules: ${{ steps.sarif.outputs.modules }}
 
     steps:
       - name: Checkout repository
@@ -53,25 +53,40 @@ jobs:
             **/build/reports/detekt/
           retention-days: 7
 
-      # Code scanning rejects several SARIF runs sharing one category, so every module report gets its own
-      # automation id (CodeQL derives the category from it) before the reports are uploaded together.
+      # Preserve a category per module/task and separate module directories to keep uploads below the run limit.
       - name: Collect SARIF reports
+        id: sarif
         if: always()
         run: |
           mkdir -p build/sarif
-          find . -path "*/build/reports/detekt/*.sarif" | while read f; do
+          modules=()
+          while IFS= read -r f; do
             f="${f#./}"
             module="${f%%/build/reports/detekt/*}"
+            # Flatten module paths so a parent module upload cannot include its child modules.
+            directory="${module//\//_}"
+            mkdir -p "build/sarif/$directory"
             category="detekt/${module}/$(basename "$f" .sarif)"
             jq --arg category "$category" '.runs[].automationDetails.id = $category' "$f" \
-              > "build/sarif/$(echo "$f" | tr '/' '_')"
-          done
+              > "build/sarif/$directory/$(basename "$f")"
+            modules+=("$module")
+          done < <(find . -path "*/build/reports/detekt/*.sarif" -type f)
+          matrix=$(jq -cn --args '$ARGS.positional | unique | map({module: ., directory: gsub("/"; "_")})' "${modules[@]}")
+          echo "modules=$matrix" >> "$GITHUB_OUTPUT"
+
+      - name: Upload prepared SARIF reports
+        uses: actions/upload-artifact@v7
+        if: always() && steps.sarif.outputs.modules != '' && steps.sarif.outputs.modules != '[]'
+        with:
+          name: detekt-sarif
+          path: build/sarif/
+          retention-days: 7
 
       - name: Publish Detekt summary
         if: always()
         run: |
           shopt -s nullglob
-          reports=(build/sarif/*.sarif)
+          reports=(build/sarif/*/*.sarif)
           {
             echo "## Detekt"
             echo
@@ -97,8 +112,36 @@ jobs:
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload SARIF to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v4
-        if: always() && hashFiles('build/sarif/*.sarif') != ''
+  upload-sarif:
+    name: SARIF (${{ matrix.module }})
+    needs: detekt
+    if: always() && needs.detekt.outputs.modules != '' && needs.detekt.outputs.modules != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: read
+      # Required for code scanning uploads; private repositories also need `actions: read`.
+      security-events: write
+      actions: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.detekt.outputs.modules) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Download prepared SARIF reports
+        uses: actions/download-artifact@v8
         with:
-          sarif_file: build/sarif
+          name: detekt-sarif
+          path: build/sarif
+
+      - name: Upload module SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && hashFiles(format('build/sarif/{0}/*.sarif', matrix.directory)) != ''
+        with:
+          sarif_file: build/sarif/${{ matrix.directory }}

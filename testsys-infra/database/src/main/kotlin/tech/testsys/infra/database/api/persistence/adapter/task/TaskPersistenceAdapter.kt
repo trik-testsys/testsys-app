@@ -79,7 +79,7 @@ class TaskPersistenceAdapter(
             val access = if (communityIds.isEmpty()) {
                 owned
             } else {
-                val shared = requireNotNull(query).subquery(Long::class.java)
+                val shared = query.subquery(Long::class.java)
                 val association = shared.from(CommunityToTaskJpaEntity::class.java)
                 shared.select(association.get<Any>("id").get<Long>("taskId")).where(
                     builder.equal(association.get<Any>("id").get<Long>("taskId"), entity.get<Long>("id")),
@@ -98,7 +98,7 @@ class TaskPersistenceAdapter(
                 predicates.add(builder.equal(entity.get<TaskStatusJpaEnum>("status"), TaskStatusJpaEnum.valueOf(state.name)))
             }
             filter.communityId?.let { community ->
-                val shared = requireNotNull(query).subquery(Long::class.java)
+                val shared = query.subquery(Long::class.java)
                 val association = shared.from(CommunityToTaskJpaEntity::class.java)
                 shared.select(association.get<Any>("id").get<Long>("taskId")).where(
                     builder.equal(association.get<Any>("id").get<Long>("taskId"), entity.get<Long>("id")),

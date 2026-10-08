@@ -6,6 +6,7 @@ plugins {
 group = "tech.testsys.infra"
 
 dependencies {
+    implementation(platform(libs.spring.boot.bom))
     implementation(project(":testsys-domain"))
     implementation(project(":testsys-infra:localization"))
     implementation(libs.spring.context)

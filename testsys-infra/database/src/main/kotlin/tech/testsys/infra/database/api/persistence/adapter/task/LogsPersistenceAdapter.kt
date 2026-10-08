@@ -7,6 +7,7 @@ import tech.testsys.domain.model.task.Logs
 import tech.testsys.domain.model.task.LogsData
 import tech.testsys.domain.model.task.LogsId
 import tech.testsys.infra.database.api.persistence.FileDataStorage
+import tech.testsys.infra.database.api.persistence.FileStoragePaths
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.LogsJpaEntity
@@ -15,7 +16,8 @@ import tech.testsys.infra.database.internal.mapping.task.LogsMapping
 
 /**
  * Persistence adapter of [Logs] entities backed by [LogsJpaEntity].
- * The logs file is stored through [FileDataStorage]; logs are fixed on creation, so [update] always fails.
+ * The logs file is stored through [FileDataStorage] in [FileStoragePaths.logs];
+ * logs are fixed on creation, so [update] always fails.
  *
  * @since %CURRENT_VERSION%
  */
@@ -24,12 +26,13 @@ import tech.testsys.infra.database.internal.mapping.task.LogsMapping
 class LogsPersistenceAdapter(
     jpaEntityRepository: LogsJpaEntityRepository,
     private val fileDataStorage: FileDataStorage,
+    private val paths: FileStoragePaths,
 ) : AbstractPersistenceAdapter<LogsData, LogsId, Logs, LogsJpaEntity>(jpaEntityRepository),
     LogsRepository {
 
     @Transactional
     override fun save(data: LogsData): Logs {
-        val fileDataId = fileDataStorage.store(data.file)
+        val fileDataId = fileDataStorage.store(data.file, paths.logs)
         val savedJpaEntity = jpaEntityRepository.save(LogsMapping.toJpaEntity(data, fileDataId))
 
         val domainEntity = LogsMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)
@@ -41,7 +44,7 @@ class LogsPersistenceAdapter(
     )
 
     override fun assemble(jpaEntity: LogsJpaEntity): Logs {
-        val file = fileDataStorage.load(jpaEntity.fileDataId)
+        val file = fileDataStorage.load(jpaEntity.fileDataId, paths.logs)
         val domainEntity = LogsMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)
         return domainEntity
     }

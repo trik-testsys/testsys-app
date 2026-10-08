@@ -1,0 +1,117 @@
+package tech.testsys.web.components.display
+
+import com.vaadin.flow.signals.local.ValueSignal
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Nested
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
+import tech.testsys.web.components.MockVaadinTests
+import tech.testsys.web.components.TextHandle
+import tech.testsys.web.components.buildTestContent
+import tech.testsys.web.components.buildTestRow
+import tech.testsys.web.components.child
+import tech.testsys.web.components.classes
+import tech.testsys.web.components.find
+import tech.testsys.web.components.findAll
+
+class DisplayTests : MockVaadinTests() {
+    @Nested
+    inner class TextTests {
+        @Test
+        fun `should show the paragraph following a signal`() {
+            val signal = ValueSignal("Первый")
+            lateinit var handle: TextHandle
+            val page = buildTestContent { handle = text(signal) }
+
+            signal.set("Второй")
+
+            assertEquals("Второй", handle.text)
+            assertEquals("Второй", page.child(0).element.textRecursively)
+        }
+
+        @Test
+        fun `should place a signal-bound paragraph on its size in a block row`() {
+            val signal = ValueSignal("Значение")
+
+            val paragraph = buildTestRow { text(signal, size = 4) }.child(0)
+
+            assertEquals("Значение", paragraph.element.textRecursively)
+            assertEquals("span 4", paragraph.element.style.get("grid-column"))
+        }
+    }
+
+    @Nested
+    inner class TagTests {
+        @Test
+        fun `should style tag by its kind`() {
+            val page = buildTestContent {
+                tag("графы")
+                tag("#48213", TagKind.Code)
+            }
+
+            val tags = page.findAll("ts-tag")
+            assertEquals(setOf("ts-tag"), tags[0].classes())
+            assertTrue("ts-tag--mono" in tags[1].classes())
+        }
+
+        @Test
+        fun `should span tag over its size in a block row`() {
+            val tag = buildTestRow { tag("графы", size = 4) }.child(0)
+
+            assertTrue("ts-tag" in tag.classes())
+            assertEquals("span 4", tag.element.style.get("grid-column"))
+        }
+    }
+
+    @Nested
+    inner class BadgeTests {
+        @ParameterizedTest
+        @EnumSource(Tone::class)
+        fun `should colour badge by its tone`(tone: Tone) {
+            val badge = buildTestContent { badge("Идёт", tone) }.find("ts-status")
+
+            assertTrue("ts-status--${tone.name.lowercase()}" in badge.classes())
+            assertEquals("Идёт", badge.element.textRecursively)
+            assertEquals(1, badge.findAll("ts-status__dot").size)
+        }
+
+        @Test
+        fun `should place badge on its columns of the row`() {
+            val badge = buildTestRow { badge("Регистрация", Tone.Info, size = 6) }.find("ts-status")
+
+            assertEquals("span 6", badge.element.style.get("grid-column"))
+        }
+    }
+
+    @Nested
+    inner class CounterTests {
+        @Test
+        fun `should update counter through its handle`() {
+            lateinit var counter: TextHandle
+            val page = buildTestContent { counter = counter(3) }
+
+            counter.text = "4"
+
+            val badge = page.find("ts-counter")
+            assertTrue("ts-counter--danger" in badge.classes())
+            assertEquals("4", badge.element.textRecursively)
+        }
+
+        @Test
+        fun `should group the digits of a large counter`() {
+            val page = buildTestContent { counter(1412) }
+
+            assertEquals("1 412", page.find("ts-counter").element.textRecursively)
+        }
+
+        @Test
+        fun `should span counter over its size in a block row`() {
+            val counter = buildTestRow { counter(3, size = 2) }.child(0)
+
+            assertTrue("ts-counter" in counter.classes())
+            assertEquals("span 2", counter.element.style.get("grid-column"))
+        }
+    }
+}

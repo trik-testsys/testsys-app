@@ -1,0 +1,198 @@
+package tech.testsys.web.components.texts
+
+import java.text.NumberFormat
+import java.time.DayOfWeek
+import java.time.Month
+import java.time.format.TextStyle
+import java.time.temporal.WeekFields
+import java.util.Locale
+import kotlin.math.absoluteValue
+
+/**
+ * Builds the current Russian design system texts with the standard locale data.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun buildUiTexts(): UiTexts {
+    val locale = Locale.forLanguageTag("ru-RU")
+    val weekdays = DayOfWeek.entries.sortedBy { day -> day.value % DayOfWeek.entries.size }
+    return UiTexts(
+        locale = locale,
+        brand = "TestSys",
+        signIn = "Войти",
+        footer = FooterTexts(year = { year -> year.toString() }, links = "Ссылки футтера"),
+        tableFilters = TableFiltersTexts(title = "Настроить фильтры", apply = "Применить", reset = "Сбросить"),
+        calendar = CalendarTexts(
+            monthNames = Month.entries.map { month ->
+                month.getDisplayName(TextStyle.FULL_STANDALONE, locale).replaceFirstChar { letter -> letter.titlecase(locale) }
+            },
+            weekdays = weekdays.map { day -> day.getDisplayName(TextStyle.FULL, locale) },
+            weekdaysShort = weekdays.map { day -> day.getDisplayName(TextStyle.SHORT_STANDALONE, locale) },
+            firstDayOfWeek = WeekFields.of(locale).firstDayOfWeek,
+            dateFormat = "dd.MM.yyyy",
+            today = "Сегодня",
+            cancel = "Отменить",
+        ),
+        fieldErrors = FieldErrorTexts(
+            badInput = "Проверьте формат значения",
+            belowMin = "Значение меньше допустимого",
+            aboveMax = "Значение больше допустимого",
+            stepMismatch = "Значение не соответствует шагу",
+        ),
+        dateRangeReversed = "Дата окончания раньше даты начала",
+        editing = EditingTexts(start = "Изменить", save = "Сохранить", cancel = "Отменить"),
+        table = TableTexts(
+            empty = "Нет данных",
+            range = { from, to, total -> "${formatNumber(from)}–${formatNumber(to)} из ${formatNumber(total)}" },
+            selectAll = "Выбрать все строки страницы",
+            selectRow = "Выбрать строку",
+        ),
+        pagination = PaginationTexts(
+            previous = "Перейти на предыдущую страницу",
+            next = "Перейти на следующую страницу",
+            page = { page -> "Страница ${formatNumber(page)}" },
+        ),
+        load = LoadTexts(
+            failed = "Не удалось загрузить",
+            failedHint = "Попробуйте ещё раз",
+            retry = "Повторить",
+        ),
+        dialog = DialogTexts(
+            cancel = "Отменить",
+            close = "Закрыть",
+            typeToConfirm = { name -> "Введите «$name», чтобы подтвердить" },
+        ),
+        lookup = LookupTexts(
+            search = "Поиск",
+            open = "Выбрать",
+            clear = "Очистить",
+            empty = "Ничего не найдено",
+            remove = { value -> "Убрать $value" },
+            reset = "Сбросить",
+            apply = "Применить",
+            selectedCount = { count -> "Выбрано: ${formatNumber(count)}" },
+        ),
+        navigation = NavigationTexts(breadcrumbs = "Навигационная цепочка", sections = "Разделы"),
+        menu = MenuTexts(actions = "Действия"),
+        dateFields = DateFieldTexts(
+            date = "дата",
+            time = "время",
+            rangeFrom = { label -> "$label: с" },
+            rangeTo = { label -> "$label: до" },
+            rangeFromPrefix = "С",
+            rangeToPrefix = "До",
+            rangeRequired = "Укажите хотя бы одну границу периода",
+        ),
+        components = ComponentTexts(
+            selectAll = "Выбрать все",
+            previousMonth = "Показать предыдущий месяц",
+            nextMonth = "Показать следующий месяц",
+            calendar = "Открыть календарь",
+            upload = "Выбрать файлы",
+            drop = "Перетащите файлы сюда",
+            cancel = "Отменить",
+            cancelled = "Отменено",
+            removeFile = "Убрать файл",
+            stalled = "Передача приостановлена",
+            preparing = "Подготовка",
+            downloading = "Передача",
+            done = "Передано сервером",
+            failed = "Ошибка передачи",
+            retry = "Повторить",
+            downloadAgain = "Скачать снова",
+            uploadRejected = "Файл не соответствует ограничениям",
+            loading = "Загрузка",
+            openCalendar = { label -> "Открыть календарь: $label" },
+            uploadLimits = { count, bytes ->
+                val files = plural(count, one = "файла", few = "файлов", many = "файлов")
+                "До ${formatNumber(count)} $files, до ${formatBytes(bytes)} каждый"
+            },
+            downloadLabel = { label, state -> "$label: $state" },
+            percent = { value -> "${formatNumber(value)}%" },
+            byteUnits = listOf(
+                "Б",
+                "КБ",
+                "МБ",
+                "ГБ",
+            ),
+            timerUnits = listOf(
+                "дни",
+                "часы",
+                "минуты",
+                "секунды",
+            ),
+            more = { count -> "Ещё ${formatNumber(count)}" },
+            transferBytes = { count -> "Передано: ${formatNumber(count)} Б" },
+        ),
+        header = HeaderTexts(
+            search = "Поиск по разделам",
+            searchEmpty = "Ничего не найдено",
+            notifications = "Уведомления",
+            notificationsEmpty = "Нет уведомлений",
+            readAll = "Прочитать все",
+            unreadCount = { count -> "Уведомления: непрочитанных ${formatNumber(count)}" },
+            unreadItem = { label -> "$label — не прочитано" },
+            userMenu = { name -> "Меню пользователя: $name" },
+            arrivalOpen = "Открыть",
+            arrivalClose = "Закрыть уведомление",
+            arrivalCount = { count ->
+                val notifications =
+                    plural(count, one = "новое уведомление", few = "новых уведомления", many = "новых уведомлений")
+                "Получено ${formatNumber(count)} $notifications"
+            },
+            arrivalBatchHint = "Откройте список уведомлений, чтобы посмотреть новые сообщения.",
+        ),
+        notFound = NotFoundTexts(
+            title = "Страница не найдена",
+            description = "Проверьте адрес или вернитесь на предыдущую страницу.",
+            back = "Вернуться",
+            pageTitle = "Страница не найдена — TestSys",
+        ),
+        forbidden = ErrorPageTexts(
+            title = "Нет доступа",
+            description = "У вас нет доступа к этой странице или нет нужной для неё роли.",
+            pageTitle = "Нет доступа — TestSys",
+        ),
+        pageFailed = ErrorPageTexts(
+            title = "Не удалось открыть страницу",
+            description = "Обновите страницу или вернитесь на предыдущую.",
+            pageTitle = "Не удалось открыть страницу — TestSys",
+        ),
+        failures = FailureTexts(
+            notFound = "Объект не найден",
+            accessDenied = "Нет доступа",
+            missingRole = "Нет нужной роли",
+            resourceNotInTask = "Ресурс недоступен в этой задаче",
+            failed = "Действие не выполнено",
+        ),
+    )
+}
+
+private fun formatNumber(value: Number): String = NumberFormat.getNumberInstance(Locale.forLanguageTag("ru-RU")).format(value)
+
+private const val BYTES_PER_UNIT = 1024.0
+private val BYTE_UNITS = listOf("Б", "КБ", "МБ", "ГБ")
+
+/** Formats [bytes] in the largest binary unit that keeps at least one whole unit, with one fractional digit. */
+private fun formatBytes(bytes: Long): String {
+    var value = bytes.toDouble()
+    var unit = 0
+    while (value >= BYTES_PER_UNIT && unit < BYTE_UNITS.lastIndex) {
+        value /= BYTES_PER_UNIT
+        unit++
+    }
+
+    val format = NumberFormat.getNumberInstance(Locale.forLanguageTag("ru-RU")).apply { maximumFractionDigits = 1 }
+    return "${format.format(value)} ${BYTE_UNITS[unit]}"
+}
+
+@Suppress("MagicNumber")
+private fun plural(count: Int, one: String, few: String, many: String): String {
+    val absoluteCount = count.toLong().absoluteValue
+    return when {
+        absoluteCount % 100 in 11..14 -> many
+        absoluteCount % 10 == 1L -> one
+        absoluteCount % 10 in 2..4 -> few
+        else -> many
+    }
+}

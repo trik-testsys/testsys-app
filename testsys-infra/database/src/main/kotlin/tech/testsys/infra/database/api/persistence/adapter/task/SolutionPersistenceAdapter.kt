@@ -7,6 +7,7 @@ import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.infra.database.api.persistence.FileDataStorage
+import tech.testsys.infra.database.api.persistence.FileStoragePaths
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.SolutionJpaEntity
@@ -15,7 +16,8 @@ import tech.testsys.infra.database.internal.mapping.task.SolutionMapping
 
 /**
  * Persistence adapter of [Solution] entities backed by [SolutionJpaEntity].
- * The solution file is stored through [FileDataStorage]; a solution is fixed on creation, so [update] always fails.
+ * The solution file is stored through [FileDataStorage] in [FileStoragePaths.solution];
+ * a solution is fixed on creation, so [update] always fails.
  *
  * @since %CURRENT_VERSION%
  */
@@ -24,12 +26,13 @@ import tech.testsys.infra.database.internal.mapping.task.SolutionMapping
 class SolutionPersistenceAdapter(
     jpaEntityRepository: SolutionJpaEntityRepository,
     private val fileDataStorage: FileDataStorage,
+    private val paths: FileStoragePaths,
 ) : AbstractPersistenceAdapter<SolutionData, SolutionId, Solution, SolutionJpaEntity>(jpaEntityRepository),
     SolutionRepository {
 
     @Transactional
     override fun save(data: SolutionData): Solution {
-        val fileDataId = fileDataStorage.store(data.file)
+        val fileDataId = fileDataStorage.store(data.file, paths.solution)
         val savedJpaEntity = jpaEntityRepository.save(SolutionMapping.toJpaEntity(data, fileDataId))
 
         val domainEntity = SolutionMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)
@@ -41,7 +44,7 @@ class SolutionPersistenceAdapter(
     )
 
     override fun assemble(jpaEntity: SolutionJpaEntity): Solution {
-        val file = fileDataStorage.load(jpaEntity.fileDataId)
+        val file = fileDataStorage.load(jpaEntity.fileDataId, paths.solution)
         val domainEntity = SolutionMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)
         return domainEntity
     }

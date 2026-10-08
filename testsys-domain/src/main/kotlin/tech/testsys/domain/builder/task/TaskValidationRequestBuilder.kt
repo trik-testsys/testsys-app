@@ -29,14 +29,18 @@ class TaskValidationRequestDataBuilder : Builder<TaskValidationRequestData> {
      *
      * @since %CURRENT_VERSION%
      */
-    fun task(task: Long) { this.task = TaskId(task) }
+    fun task(task: Long) {
+        this.task = TaskId(task)
+    }
 
     /**
      * Sets [requestedBy] from a raw id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun requestedBy(requestedBy: Long) { this.requestedBy = MultipleRoleUserId(requestedBy) }
+    fun requestedBy(requestedBy: Long) {
+        this.requestedBy = MultipleRoleUserId(requestedBy)
+    }
 
     override fun build(): TaskValidationRequestData = TaskValidationRequestData(
         task = requireField(task) { ::task }.lazify(),

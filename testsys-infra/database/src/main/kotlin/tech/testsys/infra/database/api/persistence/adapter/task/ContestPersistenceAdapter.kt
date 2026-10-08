@@ -67,7 +67,7 @@ class ContestPersistenceAdapter(
             val access = if (communityIds.isEmpty()) {
                 owned
             } else {
-                val shared = requireNotNull(query).subquery(Long::class.java)
+                val shared = query.subquery(Long::class.java)
                 val association = shared.from(CommunityToContestJpaEntity::class.java)
                 shared.select(association.get<Any>("id").get<Long>("contestId")).where(
                     builder.equal(association.get<Any>("id").get<Long>("contestId"), entity.get<Long>("id")),
@@ -84,7 +84,7 @@ class ContestPersistenceAdapter(
             }
 
             filter.communityId?.let { community ->
-                val shared = requireNotNull(query).subquery(Long::class.java)
+                val shared = query.subquery(Long::class.java)
                 val association = shared.from(CommunityToContestJpaEntity::class.java)
                 shared.select(association.get<Any>("id").get<Long>("contestId")).where(
                     builder.equal(association.get<Any>("id").get<Long>("contestId"), entity.get<Long>("id")),

@@ -20,6 +20,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.DeveloperSolutionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.SolutionJpaEntityRepository
+import java.nio.file.Path
 import java.time.Instant
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -245,7 +246,7 @@ class DeveloperSolutionPersistenceAdapterTests :
         val fileId = solutionJpaEntityRepository.findById(row.solutionId).orElseThrow().fileDataId
         val file = fileDataJpaEntityRepository.findById(fileId).orElseThrow()
         val expected = StoredBlobRef(file.storedFileName)
-        fileBlobStorage.delete(expected)
+        fileBlobStorage.delete(expected, Path.of(SOLUTION_PATH))
 
         val reference = repository.findFileRef(old.data.versionBucket, old.id)
         val hasVersions = repository.existsByVersionBucket(old.data.versionBucket)

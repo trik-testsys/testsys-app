@@ -92,11 +92,10 @@ class UserPersistenceAdapter(
     private fun availableTo(administratorId: MultipleRoleUserId, filter: UserFilter): Specification<UserJpaEntity> =
         Specification<UserJpaEntity> { entity, query, builder ->
             val scope = AdministratorScope(administratorId = administratorId.value, filter = filter, builder = builder)
-            val criteriaQuery = requireNotNull(query)
             val grounds = listOfNotNull(
-                scope.multipleRoleMembership(entity, criteriaQuery.subquery(Long::class.java)),
-                scope.observerMembership(entity, criteriaQuery.subquery(Long::class.java)),
-                scope.administratorThemself(entity, criteriaQuery.subquery(Long::class.java)),
+                scope.multipleRoleMembership(entity, query.subquery(Long::class.java)),
+                scope.observerMembership(entity, query.subquery(Long::class.java)),
+                scope.administratorThemself(entity, query.subquery(Long::class.java)),
             )
             val predicates = mutableListOf(builder.or(*grounds.toTypedArray()))
             filter.name?.let { name ->

@@ -4,9 +4,10 @@ import io.mockk.every
 import io.mockk.mockk
 import org.hibernate.engine.config.spi.ConfigurationService
 import org.hibernate.engine.spi.SharedSessionContractImplementor
-import org.hibernate.id.factory.spi.CustomIdGeneratorCreationContext
+import org.hibernate.generator.EventType
+import org.hibernate.generator.EventTypeSets
+import org.hibernate.generator.GeneratorCreationContext
 import org.hibernate.service.ServiceRegistry
-import org.hibernate.type.Type
 import org.junit.jupiter.api.Test
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import java.util.Properties
@@ -20,14 +21,13 @@ class HibernateSnowflakeIdGeneratorTests {
     private val session = mockk<SharedSessionContractImplementor>()
     private val configurationService = mockk<ConfigurationService>()
     private val serviceRegistry = mockk<ServiceRegistry>()
-    private val creationContext = mockk<CustomIdGeneratorCreationContext>()
-    private val type = mockk<Type>()
+    private val creationContext = mockk<GeneratorCreationContext>()
 
     @Test
     fun `should read node id from hibernate settings`() {
         val generator = generator(mapOf(HibernateSnowflakeIdGenerator.NODE_ID_SETTING to "42"))
 
-        val id = generator.generate(session, Any()) as Long
+        val id = generator.generate(session, Any(), null, EventType.INSERT) as Long
 
         assertEquals(EXPECTED_NODE_ID, SnowflakeIdGenerator.nodeIdOf(id))
     }
@@ -36,7 +36,7 @@ class HibernateSnowflakeIdGeneratorTests {
     fun `should default node id to zero if the setting is absent`() {
         val generator = generator(emptyMap())
 
-        val id = generator.generate(session, Any()) as Long
+        val id = generator.generate(session, Any(), null, EventType.INSERT) as Long
 
         assertEquals(0, SnowflakeIdGenerator.nodeIdOf(id))
     }
@@ -45,7 +45,7 @@ class HibernateSnowflakeIdGeneratorTests {
     fun `should accept a numeric node id value`() {
         val generator = generator(mapOf(HibernateSnowflakeIdGenerator.NODE_ID_SETTING to EXPECTED_NODE_ID))
 
-        val id = generator.generate(session, Any()) as Long
+        val id = generator.generate(session, Any(), null, EventType.INSERT) as Long
 
         assertEquals(EXPECTED_NODE_ID, SnowflakeIdGenerator.nodeIdOf(id))
     }
@@ -54,9 +54,18 @@ class HibernateSnowflakeIdGeneratorTests {
     fun `should trim whitespace around the node id`() {
         val generator = generator(mapOf(HibernateSnowflakeIdGenerator.NODE_ID_SETTING to " 42 "))
 
-        val id = generator.generate(session, Any()) as Long
+        val id = generator.generate(session, Any(), null, EventType.INSERT) as Long
 
         assertEquals(EXPECTED_NODE_ID, SnowflakeIdGenerator.nodeIdOf(id))
+    }
+
+    @Test
+    fun `should generate ids on insert only`() {
+        val generator = generator(emptyMap())
+
+        val eventTypes = generator.eventTypes
+
+        assertEquals(EventTypeSets.INSERT_ONLY, eventTypes)
     }
 
     @Test
@@ -88,11 +97,12 @@ class HibernateSnowflakeIdGeneratorTests {
     private fun generator(settings: Map<String, Any>): HibernateSnowflakeIdGenerator {
         every { configurationService.settings } returns settings
         every { serviceRegistry.requireService(ConfigurationService::class.java) } returns configurationService
+        every { creationContext.serviceRegistry } returns serviceRegistry
 
         val idField = Holder::class.java.getDeclaredField("id")
         val annotation = idField.getAnnotation(SnowflakeId::class.java)
         val generator = HibernateSnowflakeIdGenerator(annotation, idField, creationContext)
-        generator.configure(type, Properties(), serviceRegistry)
+        generator.configure(creationContext, Properties())
         return generator
     }
 

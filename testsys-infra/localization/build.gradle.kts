@@ -107,6 +107,7 @@ val generateLocalization = generateLocalizationTask(
 
 kotlin.sourceSets["main"].kotlin.srcDir(generatedDir)
 tasks.named("compileKotlin") { dependsOn(generateLocalization) }
+tasks.named("detektMainSourceSet") { dependsOn(generateLocalization) }
 
 // The example set shows every supported function and construct; the tests render its API, which stays out of the
 // product API. It is not a resource root, so its regions file never reaches the test classpath.
@@ -123,3 +124,4 @@ val generateLocalizationExamples = generateLocalizationTask(
 
 kotlin.sourceSets["test"].kotlin.srcDir(generatedExamplesDir)
 tasks.named("compileTestKotlin") { dependsOn(generateLocalizationExamples) }
+tasks.named("detektTestSourceSet") { dependsOn(generateLocalizationExamples) }

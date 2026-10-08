@@ -17,7 +17,7 @@ import tech.testsys.infra.database.DatabaseIntegrationTests
  * fails with a descriptive error. The test body is intentionally empty: a successful
  * context load is the assertion.
  *
- * The dialect is overridden to [org.hibernate.dialect.H2Dialect] so Hibernate
+ * Hibernate detects [org.hibernate.dialect.H2Dialect] from the connection, so it
  * compares JDBC metadata against H2's type system rather than against
  * PostgreSQL's. PostgreSQL-only features (custom enum types, etc.) would not
  * be exercised here — that is the deliberate trade-off vs. Testcontainers.

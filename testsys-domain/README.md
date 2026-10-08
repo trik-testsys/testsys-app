@@ -33,7 +33,8 @@
 - Часть полей `XData` фиксируется при создании: `owner` у Задачи, Тура, Класса, Соревнования и Сообщества;
   `author`, `solution`, `task` и `kind` со всеми его полями у Посылки; `judge` и `submission`
   у Судейского вердикта (`JudgmentOrder`); `versionBucket` у Полигона, Условия, Упражнения и Авторского
-  Решения. `save` их записывает, а `update` игнорирует значение из переданной сущности и оставляет сохранённое.
+  Решения; `invite` у Класса; `managerInvite` и `developerInvite` у Сообщества. `save` их записывает,
+  а `update` игнорирует значение из переданной сущности и оставляет сохранённое.
   В KDoc такое поле помечено «fixed on creation and ignored on update».
 - Ещё часть полей фиксируется при создании так, что `update` с другим значением падает: `file` у Полигона,
   Условия и Упражнения, `language` у Упражнения, `solution` и `expectedScore` у Авторского Решения.
@@ -51,7 +52,8 @@
   внутри только идентификаторы, разрешаются они через `EntityLoader.load(...)`. Создаются через `id.lazify()`
   и `ids.lazify()`.
 - Варианты состояния моделируются sealed-иерархиями: `TaskContent` (`New` / `Uncommitted` / `Committed`),
-  `SubmissionStatus`, `SubmissionKind`, `GradingResult`, `TrikSupportedLanguage`.
+  `SubmissionStatus`, `SubmissionKind`, `GradingResult`, `TrikSupportedLanguage`. Сущность Кода-приглашения
+  в Сообщество — sealed-класс `CommunityInvite` с вариантами `Manager` и `Developer`.
 
 ### Запросы валидации Задач
 
@@ -109,8 +111,7 @@
 `@RawAccessTokenDependency` с объяснением зависимости в обязательном параметре `reason`
 ([RawAccessTokenDependency.kt](src/main/kotlin/tech/testsys/domain/model/user/RawAccessTokenDependency.kt)).
 При замене `Identity` все отмеченные объявления должны быть проверены и исправлены до включения нового алгоритма.
-Простое копирование значения между объектами такой зависимости не создаёт. При реализации фич
-`testsys.user.multi.admin.viewUser` и `testsys.user.multi.manager.competition.viewCompetition` методы,
+Простое копирование значения между объектами такой зависимости не создаёт. Методы,
 показывающие исходный КД, должны получить эту аннотацию.
 
 Все четыре билдера данных Пользователей наследуют `UserDataBuilder`
@@ -124,6 +125,44 @@
 
 `withData` переносит сохранённый `AccessTokenHash`. Для замены КД вызывается `accessToken(newToken, algorithm)` внутри блока `withData`.
 Конструкторы классов данных и их `copy` принимают готовый `AccessTokenHash`.
+
+### Коды-приглашения
+
+[`ClassInvite`](src/main/kotlin/tech/testsys/domain/model/group/ClassInvite.kt) хранит Код-приглашение
+в Класс. [`CommunityInvite`](src/main/kotlin/tech/testsys/domain/model/group/CommunityInvite.kt) хранит
+Код-приглашение в Сообщество; вариант `CommunityInvite.Manager` или `CommunityInvite.Developer` задаёт Роль.
+Операции и порты получают Роль селектором `CommunityInvite.Kind` и выбирают вариант через `when` без `else`.
+Поле `expiresAt` хранит момент окончания срока. Правила срока, замены и продления определены
+в `testsys.entity.invite` в [features.md](../docs/domain/features.md).
+
+Ссылку хранит только группа: `ClassData.invite`, `CommunityData.managerInvite` и `CommunityData.developerInvite`
+— обязательные `LazyEntity`, а данные Кода-приглашения не ссылаются на Класс или Сообщество.
+Группу по Коду-приглашению находят `ClassRepository.findByInvite` и `CommunityRepository.findByInvite`.
+`ClassRepository.saveWithInvite` и `CommunityRepository.saveWithInvites` в одной транзакции сохраняют
+Коды-приглашения и группу, данные которой строятся по их идентификаторам. Обычный `save` группы принимает данные
+со ссылками на уже сохранённые Коды-приглашения.
+
+Каждый вариант `CommunityInvite` хранится через свой порт: `ManagerCommunityInviteRepository`
+и `DeveloperCommunityInviteRepository` наследуют `CommunityInviteRepository<Invite>`, и Коды-приглашения
+другого варианта в них отсутствуют. Заменяется и продлевается Код-приглашение через `update` его порта.
+
+Поле `codeHash` хранит представление Кода-приглашения и алгоритм в одном объекте `InviteCodeHash`
+([InviteCodeHash.kt](src/main/kotlin/tech/testsys/domain/model/group/InviteCodeHash.kt)).
+Функция `InviteCodeHash.hashInviteCode` применяет переданный алгоритм без нормализации ввода.
+Как и для КД, сейчас доступен только `HashAlgorithm.Identity`: сохранённое значение совпадает с исходным кодом.
+
+`ClassInviteDataBuilder` и `CommunityInviteDataBuilder` наследуют `InviteCodeDataBuilder`
+([InviteCodeDataBuilder.kt](src/main/kotlin/tech/testsys/domain/builder/group/InviteCodeDataBuilder.kt)).
+Метод `code(rawInviteCode, algorithm)` хэширует исходный код, `storedCode(hash)` принимает готовый `InviteCodeHash`.
+Варианты `CommunityInvite` строятся через `managerCommunityInvite { … }` и `developerCommunityInvite { … }`,
+у каждого варианта свой `withData`, сохраняющий вариант. `withData` переносит сохранённый `InviteCodeHash`;
+для замены кода внутри блока `withData` вызывается `code(newCode, algorithm)`.
+
+Объявления, поведение которых зависит от совпадения сохранённого значения с исходным Кодом-приглашением,
+помечаются `@RawInviteCodeDependency` с обязательным параметром `reason`
+([RawInviteCodeDependency.kt](src/main/kotlin/tech/testsys/domain/model/group/RawInviteCodeDependency.kt)).
+Аннотацию получают методы, которые возвращают выданный код, и методы, которые ищут запись по введённому коду.
+При замене `Identity` все отмеченные объявления должны быть проверены и исправлены до включения нового алгоритма.
 
 ## Порты
 

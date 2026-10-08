@@ -1,25 +1,32 @@
 package tech.testsys.operation.user
 
 import tech.testsys.domain.builder.api.studentContestEntryData
+import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
 import tech.testsys.domain.model.entry.StudentContestEntry
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.InviteCodeHash
+import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Student
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.error.ClassAccessDeniedError
+import tech.testsys.operation.error.ClassInviteCodeExpiredError
+import tech.testsys.operation.error.ClassInviteCodeNotValidError
 import tech.testsys.operation.error.ClassNotExistsError
 import tech.testsys.operation.error.ContestAccessDeniedError
 import tech.testsys.operation.error.ContestEndedError
 import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.ContestNotStartedError
 import tech.testsys.operation.error.EnterStudentContestError
+import tech.testsys.operation.error.JoinClassError
 import tech.testsys.operation.error.MissedStudentRoleError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ViewStudentClassesError
@@ -28,6 +35,7 @@ import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.hasRole
+import tech.testsys.operation.util.normalizeInviteCode
 import java.time.Clock
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -43,7 +51,29 @@ class StudentOperations(
     private val contestRepository: ContestRepository,
     private val contestEntryRepository: StudentContestEntryRepository,
     private val clock: Clock,
+    private val classInviteRepository: ClassInviteRepository,
 ) {
+
+    /**
+     * Enrolls [user] in the class whose valid invite code matches [inviteCode] case-insensitively and returns the class.
+     * An already enrolled student gets the class unchanged; missing role, unmatched and expired codes are expected failures.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.student.joinClass")
+    @RawInviteCodeDependency(reason = "Finds the invite by hashing the normalized input with the current deterministic algorithm.")
+    fun joinClass(user: MultipleRoleUser, inviteCode: String): OperationResult<Class, JoinClassError> = operation<Class, JoinClassError> {
+        ensure(user.hasRole<Student>(), MissedStudentRoleError)
+        val codeHash = InviteCodeHash.hashInviteCode(normalizeInviteCode(inviteCode), HashAlgorithm.Identity)
+        val invite = classInviteRepository.findByCode(codeHash)
+        ensure(invite != null) { ClassInviteCodeNotValidError(inviteCode) }
+        ensure(clock.instant() < invite.data.expiresAt) { ClassInviteCodeExpiredError(inviteCode) }
+        val studyClass = checkNotNull(classRepository.findByInvite(invite.id)) {
+            "No class references class invite id=${invite.id.value}"
+        }
+        if (user.id in studyClass.data.students.ids) return studyClass.asSuccess()
+        return classRepository.addStudent(classId = studyClass.id, studentId = user.id).asSuccess()
+    }
 
     /**
      * Returns pairs of first entry time and contest for [user] in [classId], including future and completed contests.

@@ -141,6 +141,8 @@ fun testCommunity(communityId: Long): Community = community {
     data = communityData {
         owner = MultipleRoleUserId(0)
         name = "name"
+        managerInvite(51)
+        developerInvite(52)
         description = "description"
     }
 }
@@ -185,6 +187,7 @@ fun testStudyClass(builder: ClassDataBuilder.() -> Unit = {}): Class = `class` {
     data = classData {
         owner(1)
         name = "Class"
+        invite(31)
         description = ""
         builder()
     }

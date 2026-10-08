@@ -29,6 +29,8 @@ object CommunityMapping : EntityMapping<Community, CommunityJpaEntity> {
             owner(jpaEntity.ownerId)
             name = jpaEntity.name
             description = jpaEntity.description
+            managerInvite(jpaEntity.managerInviteId)
+            developerInvite(jpaEntity.developerInviteId)
         }
     }
 
@@ -41,10 +43,13 @@ object CommunityMapping : EntityMapping<Community, CommunityJpaEntity> {
         name = data.name,
         description = data.description,
         ownerId = data.owner.id.value,
+        managerInviteId = data.managerInvite.id.value,
+        developerInviteId = data.developerInvite.id.value,
     )
 
     /**
-     * Creates the [CommunityJpaEntity] row replacing [current] from [entity], keeping `ownerId`, `createdAt` and `version`.
+     * Creates the [CommunityJpaEntity] row replacing [current] from [entity], keeping `ownerId`, the invite ids,
+     * `createdAt` and `version`.
      *
      * @since %CURRENT_VERSION%
      */
@@ -52,6 +57,8 @@ object CommunityMapping : EntityMapping<Community, CommunityJpaEntity> {
         name = entity.data.name,
         description = entity.data.description,
         ownerId = current.ownerId,
+        managerInviteId = current.managerInviteId,
+        developerInviteId = current.developerInviteId,
         id = entity.id.value,
     ).also {
         it.createdAt = current.createdAt

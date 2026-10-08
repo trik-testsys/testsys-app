@@ -2,6 +2,7 @@ package tech.testsys.domain.contract.persistence.repository
 
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.ContestFilter
+import tech.testsys.domain.contract.persistence.ContestTaskResult
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.TaskFilter
@@ -294,6 +295,19 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @since %CURRENT_VERSION%
      */
     fun findGradingByContext(authorId: UserId, taskId: TaskId, contestId: ContestId): List<Submission>
+
+    /**
+     * Synchronously summarizes grading submissions of [contestId] per author and task, without changing stored state
+     * or loading file contents. Repeated calls reflect current data; technical exceptions propagate to the caller.
+     *
+     * @param contestId the contest the submissions were made in.
+     * @param authorIds the authors to include; an empty set yields an empty list.
+     * @param taskIds the tasks to include; an empty set yields an empty list.
+     * @return results of author and task pairs having submissions, ordered by author id and then task id; a submission
+     * result is the score of its latest judgment order, otherwise the total of its verdict.
+     * @since %CURRENT_VERSION%
+     */
+    fun findContestResults(contestId: ContestId, authorIds: Set<UserId>, taskIds: Set<TaskId>): List<ContestTaskResult>
 }
 
 /**

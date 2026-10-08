@@ -113,4 +113,11 @@ interface ClassJpaEntityRepository : SnowflakeJpaEntityRepository<ClassJpaEntity
      * @since %CURRENT_VERSION%
      */
     fun findAllByOwnerId(ownerId: Long): List<ClassJpaEntity>
+
+    /**
+     * Finds the class referencing the invite [inviteId].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findByInviteId(inviteId: Long): ClassJpaEntity?
 }

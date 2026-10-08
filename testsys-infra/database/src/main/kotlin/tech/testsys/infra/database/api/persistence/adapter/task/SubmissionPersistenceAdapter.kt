@@ -2,9 +2,11 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import tech.testsys.domain.contract.persistence.ContestTaskResult
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.JudgmentOrderId
+import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionId
@@ -16,11 +18,15 @@ import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.task.GradingResultJpaEnum
+import tech.testsys.infra.database.internal.jpa.entity.task.JudgmentOrderJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionKindJpaEnum
+import tech.testsys.infra.database.internal.jpa.entity.task.SubmissionStatusJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.task.JudgmentOrderJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.SubmissionJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.TestVerdictJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.SubmissionMapping
@@ -39,6 +45,7 @@ import tech.testsys.infra.database.internal.utils.requireId
 class SubmissionPersistenceAdapter(
     jpaEntityRepository: SubmissionJpaEntityRepository,
     private val judgmentOrderJpaEntityRepository: JudgmentOrderJpaEntityRepository,
+    private val testVerdictJpaEntityRepository: TestVerdictJpaEntityRepository,
     private val userJpaEntityRepository: UserJpaEntityRepository,
     private val trikStudioVersionJpaEntityRepository: TrikStudioVersionJpaEntityRepository,
 ) : AbstractPersistenceAdapter<SubmissionData, SubmissionId, Submission, SubmissionJpaEntity>(jpaEntityRepository),
@@ -90,6 +97,34 @@ class SubmissionPersistenceAdapter(
             gradingContestId = contestId.value,
         ).map { assemble(it) }
 
+    @Transactional(readOnly = true)
+    override fun findContestResults(contestId: ContestId, authorIds: Set<UserId>, taskIds: Set<TaskId>): List<ContestTaskResult> {
+        if (authorIds.isEmpty() || taskIds.isEmpty()) return emptyList()
+
+        val authorsByRawId = authorIds.associateBy { authorId -> authorId.value }
+        val submissions = submissionJpaEntityRepository.findAllByKindAndGradingContestIdAndAuthorIdInAndTaskIdIn(
+            kind = SubmissionKindJpaEnum.GRADING,
+            gradingContestId = contestId.value,
+            authorIds = authorsByRawId.keys,
+            taskIds = taskIds.map { taskId -> taskId.value },
+        )
+        if (submissions.isEmpty()) return emptyList()
+
+        val successfulSubmissions = submissions.filter { submission -> submission.isSuccessfullyGraded() }
+        val scores = findSuccessfulSubmissionScores(successfulSubmissions)
+        return submissions
+            .sortedWith(compareBy<SubmissionJpaEntity> { submission -> submission.authorId }.thenBy { submission -> submission.taskId })
+            .groupBy { submission -> submission.authorId to submission.taskId }
+            .map { (key, group) ->
+                ContestTaskResult(
+                    authorId = authorsByRawId.getValue(key.first),
+                    taskId = TaskId(key.second),
+                    bestScore = group.mapNotNull { submission -> scores[submission.requireId()] }.maxOrNull()?.let(::Score),
+                    submissionCount = group.size,
+                )
+            }
+    }
+
     override fun assemble(jpaEntity: SubmissionJpaEntity): Submission {
         val submissionId = jpaEntity.requireId()
         val judgmentOrderIds = judgmentOrderJpaEntityRepository.findAllBySubmissionId(submissionId)
@@ -112,6 +147,40 @@ class SubmissionPersistenceAdapter(
         )
         return domainEntity
     }
+
+    /**
+     * Maps each successfully graded submission id to its result: the latest judgment order score, otherwise the verdict
+     * total. Judgment orders and the polygon outcomes of the remaining verdicts are each read in one query.
+     */
+    private fun findSuccessfulSubmissionScores(submissions: List<SubmissionJpaEntity>): Map<Long, Int> {
+        if (submissions.isEmpty()) return emptyMap()
+
+        val issueOrder = compareBy<JudgmentOrderJpaEntity> { order -> order.createdAt }.thenBy { order -> order.requireId() }
+        val judgmentScores = judgmentOrderJpaEntityRepository.findAllBySubmissionIdIn(submissions.map { it.requireId() })
+            .groupBy { order -> order.submissionId }
+            .mapValues { (_, orders) -> orders.maxWith(issueOrder).score }
+        val verdictIdsBySubmission = submissions
+            .filter { submission -> submission.requireId() !in judgmentScores }
+            .associate { submission ->
+                submission.requireId() to checkNotNull(submission.gradingVerdictId) {
+                    "Submission ${submission.requireId()} is graded successfully but has no verdict id"
+                }
+            }
+        val verdictTotals = if (verdictIdsBySubmission.isEmpty()) {
+            emptyMap()
+        } else {
+            testVerdictJpaEntityRepository.findAllByVerdictIdInOrderByVerdictIdAscTestIdAsc(verdictIdsBySubmission.values.toList())
+                .groupBy { outcome -> outcome.verdictId }
+                .mapValues { (_, outcomes) -> outcomes.sumOf { outcome -> outcome.score } }
+        }
+        val verdictScores = verdictIdsBySubmission.mapValues { (submissionId, verdictId) ->
+            checkNotNull(verdictTotals[verdictId]) { "Verdict $verdictId of submission $submissionId has no test outcomes" }
+        }
+        return judgmentScores + verdictScores
+    }
+
+    private fun SubmissionJpaEntity.isSuccessfullyGraded(): Boolean =
+        status == SubmissionStatusJpaEnum.GRADED && gradingResult == GradingResultJpaEnum.SUCCESS
 
     private fun resolveAuthorId(authorId: Long): UserId {
         val userJpaEntity = userJpaEntityRepository.findByIdOrError(authorId)

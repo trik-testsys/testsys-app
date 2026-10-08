@@ -6,6 +6,7 @@ import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.UserId
+import java.time.Instant
 
 /**
  * Optional task selection criteria, combined with AND after access is checked.
@@ -64,3 +65,81 @@ data class VerdictFilter(
     val classId: ClassId? = null,
     val competitionId: CompetitionId? = null,
 )
+
+/**
+ * Optional user selection criteria, combined with AND before paging and counting users available to an administrator.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property roles roles of which the user must hold any in an administrator's community, or null for any role.
+ * @property communityId the only administrator's community whose membership counts, or null for all; never expands access.
+ * @throws IllegalArgumentException if [roles] is empty.
+ * @since %CURRENT_VERSION%
+ */
+data class UserFilter(
+    val name: String? = null,
+    val roles: Set<Role>? = null,
+    val communityId: CommunityId? = null,
+) {
+
+    init {
+        require(roles == null || roles.isNotEmpty()) { "User role filter must be null or non-empty, but was $roles" }
+    }
+
+    /**
+     * Community role to select.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    enum class Role {
+        ADMINISTRATOR,
+        DEVELOPER,
+        JUDGE,
+        MANAGER,
+        STUDENT,
+        OBSERVER,
+    }
+}
+
+/**
+ * Optional class selection criteria, combined with AND before paging and counting owned classes.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property createdFrom the inclusive lower creation-time bound, or null for no lower bound.
+ * @property createdTo the inclusive upper creation-time bound, or null for no upper bound.
+ * @throws IllegalArgumentException if [createdFrom] is later than [createdTo].
+ * @since %CURRENT_VERSION%
+ */
+data class ClassFilter(
+    val name: String? = null,
+    val createdFrom: Instant? = null,
+    val createdTo: Instant? = null,
+) {
+
+    init {
+        require(createdFrom == null || createdTo == null || createdFrom <= createdTo) {
+            "Class creation lower bound $createdFrom must not be later than upper bound $createdTo"
+        }
+    }
+}
+
+/**
+ * Optional competition selection criteria, combined with AND before paging and counting owned competitions.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property createdFrom the inclusive lower creation-time bound, or null for no lower bound.
+ * @property createdTo the inclusive upper creation-time bound, or null for no upper bound.
+ * @throws IllegalArgumentException if [createdFrom] is later than [createdTo].
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionFilter(
+    val name: String? = null,
+    val createdFrom: Instant? = null,
+    val createdTo: Instant? = null,
+) {
+
+    init {
+        require(createdFrom == null || createdTo == null || createdFrom <= createdTo) {
+            "Competition creation lower bound $createdFrom must not be later than upper bound $createdTo"
+        }
+    }
+}

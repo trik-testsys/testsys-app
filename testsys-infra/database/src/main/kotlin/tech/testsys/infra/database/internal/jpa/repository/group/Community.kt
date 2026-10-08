@@ -12,4 +12,12 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
  */
 @Repository
 @InternalDatabaseApi
-interface CommunityJpaEntityRepository : SnowflakeJpaEntityRepository<CommunityJpaEntity>
+interface CommunityJpaEntityRepository : SnowflakeJpaEntityRepository<CommunityJpaEntity> {
+
+    /**
+     * Finds the community referencing [managerInviteId] as its manager invite or [developerInviteId] as its developer invite.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findByManagerInviteIdOrDeveloperInviteId(managerInviteId: Long, developerInviteId: Long): CommunityJpaEntity?
+}

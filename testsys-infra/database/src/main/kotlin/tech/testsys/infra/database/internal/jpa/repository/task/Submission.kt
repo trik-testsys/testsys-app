@@ -160,4 +160,16 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
         kind: SubmissionKindJpaEnum,
         gradingContestId: Long,
     ): List<SubmissionJpaEntity>
+
+    /**
+     * Finds the submissions of [kind] made in the contest [gradingContestId] by any of [authorIds] for any of [taskIds].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByKindAndGradingContestIdAndAuthorIdInAndTaskIdIn(
+        kind: SubmissionKindJpaEnum,
+        gradingContestId: Long,
+        authorIds: Collection<Long>,
+        taskIds: Collection<Long>,
+    ): List<SubmissionJpaEntity>
 }

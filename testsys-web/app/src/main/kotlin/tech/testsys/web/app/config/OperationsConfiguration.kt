@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import tech.testsys.domain.contract.PolygonDiagnostics
+import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
@@ -184,7 +185,8 @@ class OperationsConfiguration {
         contests: ContestRepository,
         entries: StudentContestEntryRepository,
         clock: Clock,
-    ): StudentOperations = StudentOperations(classes, contests, entries, clock)
+        invites: ClassInviteRepository,
+    ): StudentOperations = StudentOperations(classes, contests, entries, clock, invites)
 
     /**
      * Operations of Participants and Students in a Contest.

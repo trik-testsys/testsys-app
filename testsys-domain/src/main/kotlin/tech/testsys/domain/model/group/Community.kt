@@ -23,12 +23,16 @@ value class CommunityId(
  * @property owner the administrator who owns the community; fixed on creation and ignored on update.
  * @property name the name of the community.
  * @property description the description of the community.
+ * @property managerInvite the invite code for the manager role; fixed on creation and ignored on update.
+ * @property developerInvite the invite code for the developer role; fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%
  */
 data class CommunityData(
     val owner: LazyEntity<MultipleRoleUserId, MultipleRoleUser>,
     val name: String,
     val description: String,
+    val managerInvite: LazyEntity<CommunityInviteId, CommunityInvite.Manager>,
+    val developerInvite: LazyEntity<CommunityInviteId, CommunityInvite.Developer>,
 )
 
 /**

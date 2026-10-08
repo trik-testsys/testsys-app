@@ -28,6 +28,7 @@ value class ClassId(
  * @property description the description of the class.
  * @property students the students enrolled in the class.
  * @property contests the contests assigned to the class.
+ * @property invite the invite code of the class; fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%
  */
 data class ClassData(
@@ -36,6 +37,7 @@ data class ClassData(
     val description: String,
     val students: LazyEntityList<MultipleRoleUserId, MultipleRoleUser>,
     val contests: LazyEntityList<ContestId, Contest>,
+    val invite: LazyEntity<ClassInviteId, ClassInvite>,
 )
 
 /**

@@ -37,6 +37,7 @@ testsys-app/
 | `testsys-infra:diagnostics`          | Синхронный анализ XML одного Полигона через порт `PolygonDiagnostics`.                           | Реализован        |
 | `testsys-infra:grpc`                 | Связь с Проверяющими узлами и балансировка проверок (реализация порта `Grader`).                    | Реализован        |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
+| `testsys-infra:mail`                 | Отправка писем Пользователям по SMTP (реализация порта `UserMailSender`).                            | Реализован        |
 | `testsys-web`                        | Веб-приложение (Кабинеты): точка входа, собирающая все модули; вызывает операции.                    | Заготовка (пусто) |
 
 ### Зависимости между модулями
@@ -49,7 +50,8 @@ testsys-app/
 - `testsys-domain` ни от чего не зависит. Любой новый код, которому нужен Spring, JPA или сеть, живёт вне домена.
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
 - Сейчас в Gradle прописаны только связи `operation → domain`, `database → domain`, `database → codegen-api`,
-  `database → codegen` (через `ksp`), `grpc → domain` и `diagnostics → domain`. Остальные связи — целевая архитектура.
+  `database → codegen` (через `ksp`), `codegen → codegen-api`, `grpc → domain`, `diagnostics → domain`,
+  `mail → domain` и `mail → localization`. Остальные связи — целевая архитектура.
 
 ## Сборка
 

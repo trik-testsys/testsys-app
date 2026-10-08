@@ -9,6 +9,7 @@ import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.developerSolutionData
+import tech.testsys.domain.builder.api.emailChangeRequestData
 import tech.testsys.domain.builder.api.exerciseData
 import tech.testsys.domain.builder.api.judgeData
 import tech.testsys.domain.builder.api.judgmentOrderData
@@ -19,6 +20,7 @@ import tech.testsys.domain.builder.api.observerData
 import tech.testsys.domain.builder.api.participantContestEntryData
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.recordingData
+import tech.testsys.domain.builder.api.registrationRequestData
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.studentContestEntryData
@@ -38,6 +40,7 @@ import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
+import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
 import tech.testsys.domain.contract.persistence.repository.LogsRepository
@@ -47,6 +50,7 @@ import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantContestEntryRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
+import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
@@ -80,10 +84,12 @@ import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.EmailChangeRequest
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -128,6 +134,8 @@ class DatabaseFixtures(
     private val logs: LogsRepository,
     private val recordings: RecordingRepository,
     private val trikStudioVersionJpaEntityRepository: TrikStudioVersionJpaEntityRepository,
+    private val registrationRequests: RegistrationRequestRepository,
+    private val emailChangeRequests: EmailChangeRequestRepository,
 ) {
 
     fun participantContestEntry(
@@ -180,31 +188,51 @@ class DatabaseFixtures(
 
     fun administrator(): MultipleRoleUser = multipleRoleUser { roles { administrator {} } }
 
-    fun participant(competition: Competition = competition()): Participant {
+    fun participant(competition: Competition = competition(), rawAccessToken: String = unique("token")): Participant {
         val competitionId = competition.id.value
         return participants.save(
             participantData {
                 competition(competitionId)
-                accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
+                accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
                 name = unique("Participant")
             },
         )
     }
 
-    fun observer(community: Community = community()): Observer {
+    fun observer(community: Community = community(), rawAccessToken: String = unique("token")): Observer {
         val communityId = community.id.value
         return observers.save(
             observerData {
                 community(communityId)
-                accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
+                accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
                 name = unique("Observer")
             },
         )
     }
 
-    fun supervisor(): Supervisor = supervisors.save(
+    fun emailChangeRequest(user: MultipleRoleUser = student(), email: String = email("change")): EmailChangeRequest =
+        emailChangeRequests.save(
+            emailChangeRequestData {
+                this.user = user.id
+                this.email = email
+                confirmationCode = "12345678"
+                expiresAt = Instant.EPOCH
+                attemptsLeft = 5
+            },
+        )
+
+    fun registrationRequest(email: String = email("registration")): RegistrationRequest = registrationRequests.save(
+        registrationRequestData {
+            this.email = email
+            confirmationCode = "123456"
+            expiresAt = Instant.EPOCH
+            attemptsLeft = 5
+        },
+    )
+
+    fun supervisor(rawAccessToken: String = unique("token")): Supervisor = supervisors.save(
         supervisorData {
-            accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
+            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
             name = unique("Supervisor")
         },
     )

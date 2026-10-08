@@ -7,6 +7,9 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.EmailChangeRequest
+import tech.testsys.domain.model.user.EmailChangeRequestData
+import tech.testsys.domain.model.user.EmailChangeRequestId
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -14,6 +17,9 @@ import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
+import tech.testsys.domain.model.user.RegistrationRequest
+import tech.testsys.domain.model.user.RegistrationRequestData
+import tech.testsys.domain.model.user.RegistrationRequestId
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
@@ -66,11 +72,33 @@ interface UserRepository {
 }
 
 /**
+ * Finds users of one kind by their access code.
+ *
+ * @param Id the identifier type of the user kind.
+ * @param Entity the user kind.
+ * @since %CURRENT_VERSION%
+ */
+interface UserAccessTokenFinder<Id : UserId, Entity : User<Id>> {
+
+    /**
+     * Finds the user of this kind whose current access code equals [rawAccessToken] exactly, without normalization.
+     * Technical exceptions of the adapter are propagated.
+     *
+     * @param rawAccessToken the access code entered by the user.
+     * @return the user, or `null` if no user of this kind has this access code.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByAccessToken(rawAccessToken: String): Entity?
+}
+
+/**
  * Persistence port for [MultipleRoleUser] entities.
  *
  * @since %CURRENT_VERSION%
  */
-interface MultipleRoleUserRepository : EntityRepository<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser> {
+interface MultipleRoleUserRepository :
+    EntityRepository<MultipleRoleUserData, MultipleRoleUserId, MultipleRoleUser>,
+    UserAccessTokenFinder<MultipleRoleUserId, MultipleRoleUser> {
 
     /**
      * Synchronously and atomically grants [kind] to [userId] if it is not held yet and makes the user a member of
@@ -85,6 +113,16 @@ interface MultipleRoleUserRepository : EntityRepository<MultipleRoleUserData, Mu
      * @since %CURRENT_VERSION%
      */
     fun addCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, kind: CommunityInvite.Kind): MultipleRoleUser
+
+    /**
+     * Finds the user whose e-mail address equals [email] exactly, without normalization.
+     * Technical exceptions of the adapter are propagated.
+     *
+     * @param email the e-mail address to look for.
+     * @return the user, or `null` if no user has this e-mail address.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByEmail(email: String): MultipleRoleUser?
 }
 
 /**
@@ -92,14 +130,18 @@ interface MultipleRoleUserRepository : EntityRepository<MultipleRoleUserData, Mu
  *
  * @since %CURRENT_VERSION%
  */
-interface ObserverRepository : EntityRepository<ObserverData, SingleRoleUserId, Observer>
+interface ObserverRepository :
+    EntityRepository<ObserverData, SingleRoleUserId, Observer>,
+    UserAccessTokenFinder<SingleRoleUserId, Observer>
 
 /**
  * Persistence port for [Participant] entities.
  *
  * @since %CURRENT_VERSION%
  */
-interface ParticipantRepository : EntityRepository<ParticipantData, SingleRoleUserId, Participant> {
+interface ParticipantRepository :
+    EntityRepository<ParticipantData, SingleRoleUserId, Participant>,
+    UserAccessTokenFinder<SingleRoleUserId, Participant> {
 
     /**
      * Synchronously saves one new participant of [competitionId] per access-code hash, all of them or none.
@@ -123,4 +165,42 @@ interface ParticipantRepository : EntityRepository<ParticipantData, SingleRoleUs
  *
  * @since %CURRENT_VERSION%
  */
-interface SupervisorRepository : EntityRepository<SupervisorData, SingleRoleUserId, Supervisor>
+interface SupervisorRepository :
+    EntityRepository<SupervisorData, SingleRoleUserId, Supervisor>,
+    UserAccessTokenFinder<SingleRoleUserId, Supervisor>
+
+/**
+ * Persistence port for [RegistrationRequest] entities; at most one request is stored per e-mail address.
+ *
+ * @since %CURRENT_VERSION%
+ */
+interface RegistrationRequestRepository : EntityRepository<RegistrationRequestData, RegistrationRequestId, RegistrationRequest> {
+
+    /**
+     * Finds the request whose e-mail address equals [email] exactly, without normalization.
+     * Technical exceptions of the adapter are propagated.
+     *
+     * @param email the e-mail address to look for.
+     * @return the request, or `null` if there is no request for this e-mail address.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByEmail(email: String): RegistrationRequest?
+}
+
+/**
+ * Persistence port for [EmailChangeRequest] entities; at most one request is stored per user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+interface EmailChangeRequestRepository : EntityRepository<EmailChangeRequestData, EmailChangeRequestId, EmailChangeRequest> {
+
+    /**
+     * Finds the e-mail change request of the user [user].
+     * Technical exceptions of the adapter are propagated.
+     *
+     * @param user the user changing the e-mail address.
+     * @return the request, or `null` if the user has no e-mail change request.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByUser(user: MultipleRoleUserId): EmailChangeRequest?
+}

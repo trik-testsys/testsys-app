@@ -58,10 +58,12 @@ class MultipleRoleUserPersistenceAdapterTests :
     @Autowired
     private lateinit var studentDataJpaEntityRepository: StudentDataJpaEntityRepository
 
-    override fun newData(): MultipleRoleUserData {
+    override fun newData() = newData(fixtures.unique("token"))
+
+    private fun newData(rawAccessToken: String): MultipleRoleUserData {
         val communityId = fixtures.community().id.value
         return multipleRoleUserData {
-            accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
             name = fixtures.unique("User")
             email = fixtures.email("user")
             roles {
@@ -352,5 +354,107 @@ class MultipleRoleUserPersistenceAdapterTests :
         assertFailsWith<IllegalArgumentException> {
             repository.addCommunityMembership(MultipleRoleUserId(UNKNOWN_ID), community.id, CommunityInvite.Kind.Manager)
         }
+    }
+
+    @Test
+    fun `should find user by its access code`() {
+        val token = fixtures.unique("token")
+        val saved = repository.save(newData(token))
+
+        val found = repository.findByAccessToken(token)
+
+        assertNotNull(found)
+        assertEquals(saved.id, found.id)
+        assertSameData(saved, found)
+    }
+
+    @Test
+    fun `should not find user of another kind by its access code`() {
+        val token = fixtures.unique("token")
+        fixtures.supervisor(rawAccessToken = token)
+
+        val found = repository.findByAccessToken(token)
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should not find user by unknown access code`() {
+        repository.save(newData())
+
+        val found = repository.findByAccessToken(fixtures.unique("unknown"))
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should not find user by access code with different letter case`() {
+        val token = fixtures.unique("token")
+        repository.save(newData(token))
+
+        val found = repository.findByAccessToken(token.uppercase())
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should not find user by access code with surrounding whitespace`() {
+        val token = fixtures.unique("token")
+        repository.save(newData(token))
+
+        val found = repository.findByAccessToken(" $token ")
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should not find user by previous access code after it is replaced`() {
+        val previous = fixtures.unique("token")
+        val saved = repository.save(newData(previous))
+        repository.update(saved.withData { accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity) })
+
+        val found = repository.findByAccessToken(previous)
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should find user by new access code after it is replaced`() {
+        val saved = repository.save(newData())
+        val replacement = fixtures.unique("token")
+        val updated = repository.update(saved.withData { accessToken(replacement, algorithm = HashAlgorithm.Identity) })
+
+        val found = repository.findByAccessToken(replacement)
+
+        assertEquals(updated.id, assertNotNull(found).id)
+    }
+
+    @Test
+    fun `should find user by its email`() {
+        val saved = repository.save(newData())
+
+        val found = repository.findByEmail(saved.data.email)
+
+        assertNotNull(found)
+        assertEquals(saved.id, found.id)
+        assertSameData(saved, found)
+    }
+
+    @Test
+    fun `should not find user by unknown email`() {
+        repository.save(newData())
+
+        val found = repository.findByEmail(fixtures.email("unknown"))
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should not find user by email with different letter case`() {
+        val saved = repository.save(newData())
+
+        val found = repository.findByEmail(saved.data.email.uppercase())
+
+        assertNull(found)
     }
 }

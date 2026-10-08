@@ -152,6 +152,9 @@ class MultipleRoleUserPersistenceAdapter(
     @Transactional
     override fun removeByIds(ids: List<MultipleRoleUserId>) = ids.forEach(::removeById)
 
+    @Transactional(readOnly = true)
+    override fun findByEmail(email: String): MultipleRoleUser? = users.findByEmail(email)?.takeIf { supports(it) }?.let { assemble(it) }
+
     override fun supports(jpaEntity: UserJpaEntity) = jpaEntity.type == UserTypeJpaEnum.MULTIPLE_ROLE
 
     override fun assemble(jpaEntity: UserJpaEntity): MultipleRoleUser {

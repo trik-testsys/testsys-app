@@ -33,8 +33,9 @@
 - Часть полей `XData` фиксируется при создании: `owner` у Задачи, Тура, Класса, Соревнования и Сообщества;
   `author`, `solution`, `task` и `kind` со всеми его полями у Посылки; `judge` и `submission`
   у Судейского вердикта (`JudgmentOrder`); `versionBucket` у Полигона, Условия, Упражнения и Авторского
-  Решения; `invite` у Класса; `managerInvite` и `developerInvite` у Сообщества. `save` их записывает,
-  а `update` игнорирует значение из переданной сущности и оставляет сохранённое.
+  Решения; `invite` у Класса; `managerInvite` и `developerInvite` у Сообщества; `email` у запроса регистрации
+  (`RegistrationRequest`); `user` у запроса смены почты (`EmailChangeRequest`).
+  `save` их записывает, а `update` игнорирует значение из переданной сущности и оставляет сохранённое.
   В KDoc такое поле помечено «fixed on creation and ignored on update».
 - Ещё часть полей фиксируется при создании так, что `update` с другим значением падает: `file` у Полигона,
   Условия и Упражнения, `language` у Упражнения, `solution` и `expectedScore` у Авторского Решения.
@@ -125,6 +126,31 @@
 
 `withData` переносит сохранённый `AccessTokenHash`. Для замены КД вызывается `accessToken(newToken, algorithm)` внутри блока `withData`.
 Конструкторы классов данных и их `copy` принимают готовый `AccessTokenHash`.
+
+Порты хранения Пользователей `MultipleRoleUserRepository`, `ParticipantRepository`, `ObserverRepository`
+и `SupervisorRepository` расширяют `UserAccessTokenFinder`
+([UserRepositories.kt](src/main/kotlin/tech/testsys/domain/contract/persistence/repository/UserRepositories.kt)).
+Его метод `findByAccessToken` принимает исходный КД и возвращает Пользователя своего вида, которому этот КД
+присвоен сейчас, или `null`. КД сравнивается без нормализации. Хэширование и сравнение выполняет адаптер хранения.
+
+`MultipleRoleUserRepository.findByEmail` и `RegistrationRequestRepository.findByEmail` сравнивают почту точно,
+без нормализации; нормализует почту операция.
+
+### Запросы регистрации
+
+[`RegistrationRequest`](src/main/kotlin/tech/testsys/domain/model/user/RegistrationRequest.kt) хранит
+незавершённую регистрацию: почту, код подтверждения, момент окончания его срока и число оставшихся попыток.
+Для одной почты хранится не более одного запроса. Роль, которую Пользователь выбирает при подтверждении
+регистрации, задаётся перечислением
+[`RegistrationRole`](src/main/kotlin/tech/testsys/domain/model/user/RegistrationRole.kt).
+
+### Запросы смены почты
+
+[`EmailChangeRequest`](src/main/kotlin/tech/testsys/domain/model/user/EmailChangeRequest.kt) хранит
+незавершённую смену почты Пользователя без Фиксированной Роли: Пользователя, новую почту, код подтверждения,
+момент окончания его срока и число оставшихся попыток. У одного Пользователя хранится не более одного запроса;
+`EmailChangeRequestRepository.findByUser` находит запрос по Пользователю. Запрос не резервирует новую почту:
+одну и ту же почту могут указать запросы разных Пользователей.
 
 ### Коды-приглашения
 

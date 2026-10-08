@@ -7,6 +7,9 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.EmailChangeRequest
+import tech.testsys.domain.model.user.EmailChangeRequestData
+import tech.testsys.domain.model.user.EmailChangeRequestId
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -182,4 +185,22 @@ interface RegistrationRequestRepository : EntityRepository<RegistrationRequestDa
      * @since %CURRENT_VERSION%
      */
     fun findByEmail(email: String): RegistrationRequest?
+}
+
+/**
+ * Persistence port for [EmailChangeRequest] entities; at most one request is stored per user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+interface EmailChangeRequestRepository : EntityRepository<EmailChangeRequestData, EmailChangeRequestId, EmailChangeRequest> {
+
+    /**
+     * Finds the e-mail change request of the user [user].
+     * Technical exceptions of the adapter are propagated.
+     *
+     * @param user the user changing the e-mail address.
+     * @return the request, or `null` if the user has no e-mail change request.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByUser(user: MultipleRoleUserId): EmailChangeRequest?
 }

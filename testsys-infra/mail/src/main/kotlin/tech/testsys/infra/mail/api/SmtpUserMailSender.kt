@@ -7,25 +7,25 @@ import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Component
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
-import tech.testsys.domain.contract.RegistrationMailSender
+import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.infra.localization.Localization
 import tech.testsys.infra.mail.internal.InternalMailApi
 import tech.testsys.infra.mail.internal.MailSettings
 
 /**
- * Sends registration letters as plain-text e-mails through [JavaMailSender], rendered in the configured region;
+ * Sends letters to users as plain-text e-mails through [JavaMailSender], rendered in the configured region;
  * within active transaction synchronization a letter is sent after the commit and a failure is only logged.
  *
  * @since %CURRENT_VERSION%
  */
 @Component
 @OptIn(InternalMailApi::class)
-class SmtpRegistrationMailSender(
+class SmtpUserMailSender(
     private val mailSender: JavaMailSender,
     private val settings: MailSettings,
-) : RegistrationMailSender {
+) : UserMailSender {
 
-    override fun sendConfirmationCode(email: String, confirmationCode: String) {
+    override fun sendRegistrationConfirmationCode(email: String, confirmationCode: String) {
         val messages = Localization.forRegion(settings.region, settings.timeZone).user
         send(
             to = email,
@@ -40,6 +40,24 @@ class SmtpRegistrationMailSender(
             to = email,
             subject = messages.registrationAccessCodeSubject(),
             text = messages.registrationAccessCodeBody(name = name, accessCode = accessToken),
+        )
+    }
+
+    override fun sendEmailChangeConfirmationCode(email: String, confirmationCode: String) {
+        val messages = Localization.forRegion(settings.region, settings.timeZone).user
+        send(
+            to = email,
+            subject = messages.emailChangeConfirmationCodeSubject(),
+            text = messages.emailChangeConfirmationCodeBody(confirmationCode = confirmationCode),
+        )
+    }
+
+    override fun sendEmailChangedNotice(email: String, name: String) {
+        val messages = Localization.forRegion(settings.region, settings.timeZone).user
+        send(
+            to = email,
+            subject = messages.emailChangeNoticeSubject(),
+            text = messages.emailChangeNoticeBody(name = name),
         )
     }
 
@@ -62,18 +80,18 @@ class SmtpRegistrationMailSender(
     }
 
     /**
-     * Sends [message] after the commit. The registration is already committed, so a failure is logged instead of
+     * Sends [message] after the commit. The changes are already committed, so a failure is logged instead of
      * reaching the committing caller.
      */
     private fun sendCommitted(message: SimpleMailMessage, to: String) {
         try {
             mailSender.send(message)
         } catch (exception: MailException) {
-            log.error("Failed to send registration letter to $to after transaction commit", exception)
+            log.error("Failed to send letter to $to after transaction commit", exception)
         }
     }
 
     private companion object {
-        private val log = LogFactory.getLog(SmtpRegistrationMailSender::class.java)
+        private val log = LogFactory.getLog(SmtpUserMailSender::class.java)
     }
 }

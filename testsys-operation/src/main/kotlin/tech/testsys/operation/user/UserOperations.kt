@@ -5,7 +5,7 @@ import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.registrationRequestData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.api.withData
-import tech.testsys.domain.contract.RegistrationMailSender
+import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
@@ -13,14 +13,13 @@ import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRe
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
-import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.RegistrationRequestId
 import tech.testsys.domain.model.user.RegistrationRole
 import tech.testsys.domain.model.user.User
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.config.CommunityConfig
-import tech.testsys.operation.config.RegistrationConfig
+import tech.testsys.operation.config.EmailConfirmationConfig
 import tech.testsys.operation.error.AuthenticateError
 import tech.testsys.operation.error.ConfirmRegistrationError
 import tech.testsys.operation.error.ConfirmationAttemptsExhaustedError
@@ -36,15 +35,16 @@ import tech.testsys.operation.error.RequestRegistrationError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
+import tech.testsys.operation.util.confirmationCodeExpiresAt
+import tech.testsys.operation.util.isConfirmationActive
+import tech.testsys.operation.util.isValidEmail
 import tech.testsys.operation.util.nextAccessToken
 import tech.testsys.operation.util.nextConfirmationCode
+import tech.testsys.operation.util.normalizeEmail
 import java.time.Clock
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import java.util.random.RandomGenerator
 
 private const val MAX_USER_NAME_LENGTH = 512
-private const val MAX_EMAIL_LENGTH = 255
 
 /**
  * Operations available to any user of the system, whatever their roles, including registration of new users.
@@ -58,9 +58,9 @@ class UserOperations(
     private val observerRepository: ObserverRepository,
     private val supervisorRepository: SupervisorRepository,
     private val registrationRequestRepository: RegistrationRequestRepository,
-    private val registrationMailSender: RegistrationMailSender,
+    private val mailSender: UserMailSender,
     private val communityConfig: CommunityConfig,
-    private val registrationConfig: RegistrationConfig,
+    private val emailConfirmationConfig: EmailConfirmationConfig,
     private val clock: Clock,
     private val randomGenerator: RandomGenerator,
 ) {
@@ -90,7 +90,7 @@ class UserOperations(
     @Feature("testsys.user.registration")
     fun requestRegistration(email: String): OperationResult<RegistrationRequestId, RequestRegistrationError> =
         operation<RegistrationRequestId, RequestRegistrationError> {
-            val normalizedEmail = email.trim().lowercase()
+            val normalizedEmail = normalizeEmail(email)
             ensure(isValidEmail(normalizedEmail), InvalidEmailError)
             ensure(multipleRoleUserRepository.findByEmail(normalizedEmail) == null, EmailAlreadyBoundError)
             val now = clock.instant()
@@ -100,20 +100,20 @@ class UserOperations(
                     registrationRequestData {
                         this.email = normalizedEmail
                         confirmationCode = randomGenerator.nextConfirmationCode()
-                        expiresAt = expiresAt(now)
-                        attemptsLeft = registrationConfig.maxConfirmationAttempts
+                        expiresAt = emailConfirmationConfig.confirmationCodeExpiresAt(now)
+                        attemptsLeft = emailConfirmationConfig.maxConfirmationAttempts
                     },
                 )
-                existing.isActive(now) -> existing
+                isConfirmationActive(expiresAt = existing.data.expiresAt, attemptsLeft = existing.data.attemptsLeft, now = now) -> existing
                 else -> registrationRequestRepository.update(
                     existing.withData {
                         confirmationCode = randomGenerator.nextConfirmationCode()
-                        expiresAt = expiresAt(now)
-                        attemptsLeft = registrationConfig.maxConfirmationAttempts
+                        expiresAt = emailConfirmationConfig.confirmationCodeExpiresAt(now)
+                        attemptsLeft = emailConfirmationConfig.maxConfirmationAttempts
                     },
                 )
             }
-            registrationMailSender.sendConfirmationCode(email = request.data.email, confirmationCode = request.data.confirmationCode)
+            mailSender.sendRegistrationConfirmationCode(email = request.data.email, confirmationCode = request.data.confirmationCode)
             return request.id.asSuccess()
         }
 
@@ -167,18 +167,9 @@ class UserOperations(
                 },
             )
             registrationRequestRepository.remove(spentRequest)
-            registrationMailSender.sendAccessToken(email = user.data.email, name = user.data.name, accessToken = rawAccessToken)
+            mailSender.sendAccessToken(email = user.data.email, name = user.data.name, accessToken = rawAccessToken)
             return (user to rawAccessToken).asSuccess()
         }
-
-    private fun RegistrationRequest.isActive(now: Instant): Boolean = now.isBefore(data.expiresAt) && data.attemptsLeft > 0
-
-    private fun expiresAt(now: Instant): Instant = now.plus(registrationConfig.confirmationCodeLifetime).truncatedTo(ChronoUnit.MICROS)
-
-    private fun isValidEmail(email: String): Boolean {
-        val parts = email.split('@')
-        return email.codePointLength() <= MAX_EMAIL_LENGTH && parts.size == 2 && parts.all { it.isNotEmpty() }
-    }
 
     private fun String.codePointLength(): Int = codePointCount(0, length)
 }

@@ -1,9 +1,9 @@
 # Модуль `testsys-infra:mail`
 
-Модуль отправляет письма регистрации по SMTP: реализует порт
-[`RegistrationMailSender`](../../testsys-domain/src/main/kotlin/tech/testsys/domain/contract/Mail.kt).
+Модуль отправляет письма Пользователям по SMTP: реализует порт
+[`UserMailSender`](../../testsys-domain/src/main/kotlin/tech/testsys/domain/contract/Mail.kt).
 Документ описывает адаптер и его настройки для разработчиков и тех, кто собирает приложение.
-Когда и какие письма отправляются, описано в фиче `testsys.user.registration`
+Когда и какие письма отправляются, описано в фичах `testsys.user.registration` и `testsys.user.multi.changeMail`
 в [features.md](../../docs/domain/features.md). Тексты писем — в бандле `user`
 ([user.properties](../localization/src/main/resources/localization/ru-RU/user.properties)), правила сообщений —
 в [localization/README.md](../localization/README.md) и [add-localization.md](../../docs/guides/add-localization.md).
@@ -12,16 +12,17 @@
 
 | Компонент | Назначение |
 |-----------|------------|
-| `api/SmtpRegistrationMailSender` | Реализация порта: собирает письмо и передаёт его в `JavaMailSender` |
+| `api/SmtpUserMailSender` | Реализация порта: собирает письмо и передаёт его в `JavaMailSender` |
 | `api/MailConfiguration` | Бины модуля и настройки по умолчанию |
 | `internal/MailSettings` | Адрес отправителя, регион и часовой пояс писем |
 
 Внутренний API помечен `InternalMailApi`.
 
-`SmtpRegistrationMailSender` отправляет письмо одному получателю простым текстом в UTF-8.
+`SmtpUserMailSender` отправляет письмо одному получателю простым текстом в UTF-8.
 Тему и текст письма адаптер берёт из бандла `user` модуля локализации в регионе из настроек;
 своего текста он не добавляет. Каждый вызов создаёт свой экземпляр `Localization`.
-Письмо с кодом подтверждения не содержит Псевдоним, письмо с Кодом-доступа — содержит.
+Письма с кодом подтверждения при регистрации и при смене почты не содержат Псевдоним. Письмо с Кодом-доступа
+и уведомление о смене почты содержат Псевдоним; уведомление не содержит новую почту.
 
 Письмо собирается при вызове, а момент отправки зависит от синхронизации транзакций Spring
 (`TransactionSynchronizationManager`):

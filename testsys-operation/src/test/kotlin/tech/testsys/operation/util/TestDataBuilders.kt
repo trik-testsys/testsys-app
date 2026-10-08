@@ -8,6 +8,7 @@ import tech.testsys.domain.builder.task.ContestDataBuilder
 import tech.testsys.domain.builder.task.TaskValidationRequestDataBuilder
 import tech.testsys.domain.builder.user.AdministratorBuilder
 import tech.testsys.domain.builder.user.DeveloperBuilder
+import tech.testsys.domain.builder.user.EmailChangeRequestDataBuilder
 import tech.testsys.domain.builder.user.JudgeBuilder
 import tech.testsys.domain.builder.user.ManagerBuilder
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
@@ -29,6 +30,7 @@ import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.EmailChangeRequest
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -203,6 +205,20 @@ fun testRegistrationRequest(builder: RegistrationRequestDataBuilder.() -> Unit =
     version = EntityVersion(0)
     data = registrationRequestData {
         email = "user@example.com"
+        confirmationCode = "12345678"
+        expiresAt = Instant.parse("2026-01-01T00:15:00Z")
+        attemptsLeft = 3
+        builder()
+    }
+}
+
+fun testEmailChangeRequest(builder: EmailChangeRequestDataBuilder.() -> Unit = {}): EmailChangeRequest = emailChangeRequest {
+    id = 37
+    createdAt = Instant.EPOCH
+    version = EntityVersion(0)
+    data = emailChangeRequestData {
+        user(0)
+        email = "new@example.com"
         confirmationCode = "12345678"
         expiresAt = Instant.parse("2026-01-01T00:15:00Z")
         attemptsLeft = 3

@@ -1,6 +1,8 @@
 package tech.testsys.domain.builder.api
 
 import tech.testsys.domain.builder.user.DeveloperDataBuilder
+import tech.testsys.domain.builder.user.EmailChangeRequestBuilder
+import tech.testsys.domain.builder.user.EmailChangeRequestDataBuilder
 import tech.testsys.domain.builder.user.JudgeDataBuilder
 import tech.testsys.domain.builder.user.ManagerDataBuilder
 import tech.testsys.domain.builder.user.MultipleRoleUserBuilder
@@ -16,6 +18,8 @@ import tech.testsys.domain.builder.user.SupervisorBuilder
 import tech.testsys.domain.builder.user.SupervisorDataBuilder
 import tech.testsys.domain.builder.util.applyVersion
 import tech.testsys.domain.model.user.DeveloperData
+import tech.testsys.domain.model.user.EmailChangeRequest
+import tech.testsys.domain.model.user.EmailChangeRequestData
 import tech.testsys.domain.model.user.JudgeData
 import tech.testsys.domain.model.user.ManagerData
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -100,6 +104,21 @@ inline fun registrationRequestData(builder: RegistrationRequestDataBuilder.() ->
  * @since %CURRENT_VERSION%
  */
 inline fun registrationRequest(builder: RegistrationRequestBuilder.() -> Unit) = RegistrationRequestBuilder().apply(builder).build()
+
+/**
+ * Builds [EmailChangeRequestData] with an [EmailChangeRequestDataBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun emailChangeRequestData(builder: EmailChangeRequestDataBuilder.() -> Unit) =
+    EmailChangeRequestDataBuilder().apply(builder).build()
+
+/**
+ * Builds an [EmailChangeRequest] with an [EmailChangeRequestBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun emailChangeRequest(builder: EmailChangeRequestBuilder.() -> Unit) = EmailChangeRequestBuilder().apply(builder).build()
 
 /**
  * Builds [DeveloperData] with a [DeveloperDataBuilder] block.
@@ -235,6 +254,30 @@ private fun RegistrationRequestData.toBuilder(): RegistrationRequestDataBuilder 
  */
 fun RegistrationRequest.withData(builder: RegistrationRequestDataBuilder.() -> Unit): RegistrationRequest {
     return RegistrationRequest(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
+}
+
+private fun EmailChangeRequestData.toBuilder(): EmailChangeRequestDataBuilder {
+    val thisData = this
+    return EmailChangeRequestDataBuilder().apply {
+        user = thisData.user.id
+        email = thisData.email
+        confirmationCode = thisData.confirmationCode
+        expiresAt = thisData.expiresAt
+        attemptsLeft = thisData.attemptsLeft
+    }
+}
+
+/**
+ * Returns a copy of this e-mail change request with its data modified by [builder].
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun EmailChangeRequest.withData(builder: EmailChangeRequestDataBuilder.() -> Unit): EmailChangeRequest {
+    return EmailChangeRequest(
         id = this.id,
         createdAt = this.createdAt,
         data = this.data.toBuilder().apply(builder).build(),

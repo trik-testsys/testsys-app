@@ -13,7 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.multipleRoleUser
 import tech.testsys.domain.builder.api.registrationRequest
-import tech.testsys.domain.contract.RegistrationMailSender
+import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
@@ -33,7 +33,7 @@ import tech.testsys.domain.model.user.RegistrationRole
 import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.operation.config.CommunityConfig
-import tech.testsys.operation.config.RegistrationConfig
+import tech.testsys.operation.config.EmailConfirmationConfig
 import tech.testsys.operation.error.ConfirmationAttemptsExhaustedError
 import tech.testsys.operation.error.ConfirmationCodeExpiredError
 import tech.testsys.operation.error.EmailAlreadyBoundError
@@ -65,13 +65,13 @@ class UserOperationsTests {
     private val observers = mockk<ObserverRepository>()
     private val supervisors = mockk<SupervisorRepository>()
     private val registrationRequests = mockk<RegistrationRequestRepository>()
-    private val mailSender = mockk<RegistrationMailSender>()
+    private val mailSender = mockk<UserMailSender>()
     private val clock = mockk<Clock>()
     private val random = mockk<RandomGenerator>()
     private val communityConfig = object : CommunityConfig {
         override val publicCommunityId = CommunityId(77)
     }
-    private val registrationConfig = object : RegistrationConfig {
+    private val emailConfirmationConfig = object : EmailConfirmationConfig {
         override val confirmationCodeLifetime: Duration = Duration.ofMinutes(15)
         override val maxConfirmationAttempts = 3
     }
@@ -81,9 +81,9 @@ class UserOperationsTests {
         observerRepository = observers,
         supervisorRepository = supervisors,
         registrationRequestRepository = registrationRequests,
-        registrationMailSender = mailSender,
+        mailSender = mailSender,
         communityConfig = communityConfig,
-        registrationConfig = registrationConfig,
+        emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,
         randomGenerator = random,
     )
@@ -101,7 +101,7 @@ class UserOperationsTests {
         every { registrationRequests.update(any<RegistrationRequest>()) } answers { firstArg() }
         every { registrationRequests.remove(any<RegistrationRequest>()) } just runs
         every { multipleRoleUsers.save(any<MultipleRoleUserData>()) } answers { savedUser(firstArg()) }
-        every { mailSender.sendConfirmationCode(any(), any()) } just runs
+        every { mailSender.sendRegistrationConfirmationCode(any(), any()) } just runs
         every { mailSender.sendAccessToken(any(), any(), any()) } just runs
         every { clock.instant() } returns now
         every { random.nextInt(10) } returnsMany listOf(8, 7, 6, 5, 4, 3, 2, 1)
@@ -222,7 +222,7 @@ class UserOperationsTests {
             operations.requestRegistration(email = "user@example.com")
 
             verify(exactly = 1) {
-                mailSender.sendConfirmationCode(email = "user@example.com", confirmationCode = "87654321")
+                mailSender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "87654321")
             }
         }
 
@@ -287,7 +287,7 @@ class UserOperationsTests {
             assertRaises(EmailAlreadyBoundError) {
                 operations.requestRegistration(email = "user@example.com")
             }
-            verify(exactly = 0) { mailSender.sendConfirmationCode(any(), any()) }
+            verify(exactly = 0) { mailSender.sendRegistrationConfirmationCode(any(), any()) }
         }
 
         @Test
@@ -313,7 +313,7 @@ class UserOperationsTests {
 
             assertEquals(RegistrationRequestId(31), result.getOrThrow())
             verify(exactly = 1) {
-                mailSender.sendConfirmationCode(email = "user@example.com", confirmationCode = "12345678")
+                mailSender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "12345678")
             }
         }
 
@@ -325,7 +325,7 @@ class UserOperationsTests {
             operations.requestRegistration(email = "user@example.com")
 
             verify(exactly = 2) {
-                mailSender.sendConfirmationCode(email = "user@example.com", confirmationCode = "12345678")
+                mailSender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "12345678")
             }
         }
 
@@ -369,7 +369,7 @@ class UserOperationsTests {
             assertEquals("87654321", updated.captured.data.confirmationCode)
             assertEquals(3, updated.captured.data.attemptsLeft)
             verify(exactly = 1) {
-                mailSender.sendConfirmationCode(email = "user@example.com", confirmationCode = "87654321")
+                mailSender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "87654321")
             }
         }
 
@@ -380,7 +380,7 @@ class UserOperationsTests {
             assertFailsWith<IllegalStateException> {
                 operations.requestRegistration(email = "user@example.com")
             }
-            verify(exactly = 0) { mailSender.sendConfirmationCode(any(), any()) }
+            verify(exactly = 0) { mailSender.sendRegistrationConfirmationCode(any(), any()) }
         }
 
         @Test
@@ -391,12 +391,12 @@ class UserOperationsTests {
             assertFailsWith<IllegalStateException> {
                 operations.requestRegistration(email = "user@example.com")
             }
-            verify(exactly = 0) { mailSender.sendConfirmationCode(any(), any()) }
+            verify(exactly = 0) { mailSender.sendRegistrationConfirmationCode(any(), any()) }
         }
 
         @Test
         fun `should propagate mail sender exceptions`() {
-            every { mailSender.sendConfirmationCode(any(), any()) } throws IllegalStateException("smtp is down")
+            every { mailSender.sendRegistrationConfirmationCode(any(), any()) } throws IllegalStateException("smtp is down")
 
             assertFailsWith<IllegalStateException> {
                 operations.requestRegistration(email = "user@example.com")

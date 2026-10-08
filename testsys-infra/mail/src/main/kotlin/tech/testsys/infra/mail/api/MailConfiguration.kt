@@ -14,7 +14,7 @@ import java.time.Duration
 import java.time.ZoneId
 
 /**
- * Registers the SMTP adapter of the registration mail port with its defaults; the application overrides the
+ * Registers the SMTP adapter of the user mail port with its defaults; the application overrides the
  * `testsys.mail.*` properties through the Spring Environment.
  *
  * @since %CURRENT_VERSION%

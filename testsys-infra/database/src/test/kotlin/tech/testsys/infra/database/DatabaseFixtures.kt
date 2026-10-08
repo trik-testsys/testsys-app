@@ -9,6 +9,7 @@ import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.developerSolutionData
+import tech.testsys.domain.builder.api.emailChangeRequestData
 import tech.testsys.domain.builder.api.exerciseData
 import tech.testsys.domain.builder.api.judgeData
 import tech.testsys.domain.builder.api.judgmentOrderData
@@ -39,6 +40,7 @@ import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
+import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
 import tech.testsys.domain.contract.persistence.repository.LogsRepository
@@ -82,6 +84,7 @@ import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.EmailChangeRequest
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
@@ -132,6 +135,7 @@ class DatabaseFixtures(
     private val recordings: RecordingRepository,
     private val trikStudioVersionJpaEntityRepository: TrikStudioVersionJpaEntityRepository,
     private val registrationRequests: RegistrationRequestRepository,
+    private val emailChangeRequests: EmailChangeRequestRepository,
 ) {
 
     fun participantContestEntry(
@@ -205,6 +209,17 @@ class DatabaseFixtures(
             },
         )
     }
+
+    fun emailChangeRequest(user: MultipleRoleUser = student(), email: String = email("change")): EmailChangeRequest =
+        emailChangeRequests.save(
+            emailChangeRequestData {
+                this.user = user.id
+                this.email = email
+                confirmationCode = "12345678"
+                expiresAt = Instant.EPOCH
+                attemptsLeft = 5
+            },
+        )
 
     fun registrationRequest(email: String = email("registration")): RegistrationRequest = registrationRequests.save(
         registrationRequestData {

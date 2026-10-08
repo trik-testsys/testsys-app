@@ -74,7 +74,7 @@
 | [localization/README.md](../testsys-infra/localization/README.md)     | Справочник | Модуль локализации: зачем, как устроен, наш код и ICU4J       |
 | [grpc/README.md](../testsys-infra/grpc/README.md)                     | Справочник | gRPC-грейдер: компоненты, балансировка и настройки             |
 | [diagnostics/README.md](../testsys-infra/diagnostics/README.md)       | Справочник | Анализ XML Полигонов и конфигурация диагностик                  |
-| [mail/README.md](../testsys-infra/mail/README.md)                     | Справочник | Отправка писем регистрации по SMTP и настройки                  |
+| [mail/README.md](../testsys-infra/mail/README.md)                     | Справочник | Отправка писем Пользователям по SMTP и настройки                |
 | [implement-entity.md](guides/implement-entity.md)                      | Гайд       | Добавление доменной сущности и её хранения в БД                |
 | [implement-port.md](guides/implement-port.md)                          | Гайд       | Объявление порта в домене и его реализация                     |
 | [implement-feature.md](guides/implement-feature.md)                    | Гайд       | Реализация пользовательской фичи: спецификация, операция, тесты |

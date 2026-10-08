@@ -1602,14 +1602,18 @@ data object InvalidUserNameError : ConfirmRegistrationError
  *
  * @since %CURRENT_VERSION%
  */
-data object InvalidEmailError : RequestRegistrationError
+data object InvalidEmailError : RequestRegistrationError, RequestEmailChangeError
 
 /**
  * The e-mail address is already bound to a user.
  *
  * @since %CURRENT_VERSION%
  */
-data object EmailAlreadyBoundError : RequestRegistrationError, ConfirmRegistrationError
+data object EmailAlreadyBoundError :
+    RequestRegistrationError,
+    ConfirmRegistrationError,
+    RequestEmailChangeError,
+    ConfirmEmailChangeError
 
 /**
  * The registration request does not exist.
@@ -1622,24 +1626,56 @@ data class RegistrationRequestNotExistsError(val registrationRequestId: Registra
     EntityNotExistsError
 
 /**
- * The confirmation code of the registration request has expired.
+ * The confirmation code has expired.
  *
  * @since %CURRENT_VERSION%
  */
-data object ConfirmationCodeExpiredError : ConfirmRegistrationError
+data object ConfirmationCodeExpiredError : ConfirmRegistrationError, ConfirmEmailChangeError
 
 /**
- * No attempts to enter the confirmation code of the registration request are left.
+ * No attempts to enter the confirmation code are left.
  *
  * @since %CURRENT_VERSION%
  */
-data object ConfirmationAttemptsExhaustedError : ConfirmRegistrationError
+data object ConfirmationAttemptsExhaustedError : ConfirmRegistrationError, ConfirmEmailChangeError
 
 /**
  * The entered confirmation code differs from the sent one.
  *
  * @since %CURRENT_VERSION%
  */
-data object InvalidConfirmationCodeError : ConfirmRegistrationError
+data object InvalidConfirmationCodeError : ConfirmRegistrationError, ConfirmEmailChangeError
+
+// endregion
+
+// region MultipleRoleUserOperations
+
+/**
+ * Failure of requesting a change of the user's e-mail address.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RequestEmailChangeError : OperationError
+
+/**
+ * Failure of confirming the new e-mail address of the user by the code sent to it.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ConfirmEmailChangeError : OperationError
+
+/**
+ * The new e-mail address equals the current e-mail address of the user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object EmailUnchangedError : RequestEmailChangeError
+
+/**
+ * The user has no e-mail change request.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object EmailChangeRequestNotExistsError : ConfirmEmailChangeError, EntityNotExistsError
 
 // endregion

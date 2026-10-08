@@ -206,7 +206,7 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 строку Пользователя через `lockById` и в той же транзакции добавляет недостающие строки данных Роли и членства
 в Сообществе.
 
-## Регистрация и поиск по почте
+## Регистрация, смена почты и поиск по почте
 
 `RegistrationRequestPersistenceAdapter` хранит запросы регистрации в `ts_registration_request`
 ([changelog.16-init-registration-request.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.16-init-registration-request.xml)).
@@ -215,6 +215,14 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 `RegistrationRequestMapping.toJpaEntity(entity, current)`
 ([RegistrationRequestMapping.kt](src/main/kotlin/tech/testsys/infra/database/internal/mapping/user/RegistrationRequestMapping.kt)).
 `findByEmail` ищет запрос по точному совпадению почты. Код подтверждения хранится в исходном виде.
+
+`EmailChangeRequestPersistenceAdapter` хранит запросы смены почты в `ts_email_change_request`
+([changelog.17-init-email-change-request.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.17-init-email-change-request.xml)).
+Ограничение `uk_ts_email_change_request_user_id` не даёт сохранить второй запрос того же Пользователя, а почта
+запроса не уникальна. Внешний ключ `fk_ts_email_change_request_user_id` удаляет запрос вместе с Пользователем.
+`update` берёт `user_id` из сохранённой строки (KDoc `EmailChangeRequestMapping.toJpaEntity(entity, current)`
+в [EmailChangeRequestMapping.kt](src/main/kotlin/tech/testsys/infra/database/internal/mapping/user/EmailChangeRequestMapping.kt)).
+`findByUser` ищет запрос по идентификатору Пользователя. Код подтверждения хранится в исходном виде.
 
 `MultipleRoleUserPersistenceAdapter.findByEmail` ищет строку `ts_user` по точному совпадению почты
 и отбрасывает строку Пользователя другого вида через `supports`.

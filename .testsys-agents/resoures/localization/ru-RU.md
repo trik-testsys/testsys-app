@@ -86,3 +86,52 @@ glossary and owner documents stay authoritative.
   reintroduce attempt wording.
 - Source: https://kartaslov.ru/значение-слова/действовать (Ушаков and МАС as reproduced there, read 2026-10-08).
   No usage example of the exact phrase was found.
+- Applicability to e-mail change (2026-10-08): the confirmation-code letter for an e-mail change reuses «Если код
+  больше не действует…» with the same meaning; the change request also becomes inactive on expiry or exhausted
+  attempts (features.md, testsys.user.multi.changeMail).
+
+## «Адрес электронной почты» instead of bare «почта»
+
+- In the dictionaries reproduced on kartaslov.ru, the main sense of «почта» is the postal service: «Учреждение
+  связи, ведающее пересылкой писем, периодических изданий, посылок, денег и т. п.» (МАС, sense 1); Ушаков has no
+  e-mail sense. Викисловарь sense 4 (comp.) defines e-mail as a means of communication («средства электронной
+  коммуникации, позволяющие получать и отправлять цифровые послания»), not as an address. No dictionary on that
+  page defines «почта» as an e-mail address; that use is colloquial metonymy.
+- Applicability: the project documents say «почта» for the address, but user-facing e-mails use the full «адрес
+  электронной почты», as the registration confirmation letter already does. The e-mail change letters follow it;
+  a repeated mention in the same paragraph may shorten to «адрес» when the referent is unambiguous («запросите
+  смену адреса заново»).
+- Source: https://kartaslov.ru/значение-слова/почта (МАС, Ушаков, Викисловарь as reproduced there, read
+  2026-10-08). A web search for a Russian UX style guide on «почта» versus «адрес электронной почты» found no
+  normative source; Yandex Forms help uses the full form, but that is one product's usage
+  (https://yandex.ru/support/forms/ru/blocks-ref/email, search result only, not opened).
+
+## Accusative of «Код-доступа»
+
+- «Код» is an inanimate masculine noun, so its accusative singular equals the nominative: «знает Ваш
+  Код-доступа». The glossary term has an explicit `acc sg` variant with the same text as `nom sg` because the
+  codegen requires every referenced case explicitly.
+- Source: https://ru.wiktionary.org/wiki/код (read 2026-10-08 by the independent reviewer): «код» is
+  «неодушевлённое, мужской род, 2-е склонение (тип 1a по Зализняку)», Им. ед. = Вин. ед. «код».
+
+## «Смена адреса … на этот адрес»
+
+- МАС, as reproduced on kartaslov.ru, defines «смена» as «действие по значению гл. менять; изменение или
+  замещение», which supports «смена X на Y» for one address replacing another. «Смена»/«сменить» in the
+  confirmation-code letter and «изменён»/«изменить» in the notice are both standard and not a terminology conflict.
+- Source: https://kartaslov.ru/значение-слова/смена (read 2026-10-08 by the independent reviewer).
+- Applicability: in the e-mail change, the code also stops working when a later request to another address
+  overwrites the request; «запросите смену адреса заново» stays correct (features.md, testsys.user.multi.changeMail,
+  step 4 of the request). This is an inference from the feature, not a language source. A search for the exact
+  wording «Вы запросили смену адреса электронной почты … Если вы не запрашивали» found no usage evidence either way.
+
+## E-mail change letters: content limits
+
+- Project constraints (from the coordinator, 2026-10-08): the notice to the previous address must not show the
+  new address and must not suggest actions TestSys does not offer (contacting support, restoring access,
+  cancelling the change). It states the fact, that further letters go to the new address, and that only someone
+  who knows the Код-доступа can change the address. This is a project decision, not a language finding.
+- The confirmation-code letter to the new address uses «Вы запросили … Если Вы не запрашивали …», mirroring the
+  registration letter's «Вы начали … Если Вы не начинали …»: the recipient may not be the account owner, and the
+  closing paragraph covers that case. It names no page («введите в TestSys этот код»), because the page that
+  accepts the code is not implemented yet.

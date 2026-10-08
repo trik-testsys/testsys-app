@@ -43,7 +43,7 @@
 | `EntityRepository` и `XRepository`     | `contract/persistence/repository/`   | Реализованы адаптерами в `testsys-infra:database`                          |
 | `FileBlobStorage`                      | `contract/File.kt`                   | Потребитель — `FileDataStorage`; продакшен-реализации нет, в тестах `InMemoryFileBlobStorage` |
 | `Grader`                               | `contract/Grading.kt`                | Реализован в [grpc/README.md](../../testsys-infra/grpc/README.md)          |
-| `RegistrationMailSender`               | `contract/Mail.kt`                   | Реализован в [mail/README.md](../../testsys-infra/mail/README.md)          |
+| `UserMailSender`                       | `contract/Mail.kt`                   | Реализован в [mail/README.md](../../testsys-infra/mail/README.md)          |
 | `Pagination` / `Sort` / `Page`         | `contract/persistence/Pagination.kt` | Используются в портах и адаптерах `Task`, `Contest`, `Verdict`, `Class`, `Competition` и `User` |
 
 Порт без реализации — нормальное состояние: интерфейс фиксирует потребность домена раньше, чем появляется

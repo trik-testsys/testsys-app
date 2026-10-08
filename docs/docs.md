@@ -74,6 +74,7 @@
 | [components/README.md](../testsys-web/components/README.md)                            | Справочник | Kotlin-DSL дизайн-системы: страница, сетка, скоупы, компоненты  |
 | [app/README.md](../testsys-web/app/README.md) | Справочник | Основное веб-приложение: запуск и границы ответственности |
 | [dev-app/README.md](../testsys-web/dev-app/README.md) | Справочник | Самостоятельная витрина компонентов: запуск и демонстрации |
+| [mail/README.md](../testsys-infra/mail/README.md)                     | Справочник | Отправка писем Пользователям по SMTP и настройки                |
 | [implement-entity.md](guides/implement-entity.md)                      | Гайд       | Добавление доменной сущности и её хранения в БД                |
 | [implement-port.md](guides/implement-port.md)                          | Гайд       | Объявление порта в домене и его реализация                     |
 | [implement-feature.md](guides/implement-feature.md)                    | Гайд       | Реализация пользовательской фичи: спецификация, операция, тесты |

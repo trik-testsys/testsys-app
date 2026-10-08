@@ -43,11 +43,13 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
     @Autowired
     private lateinit var competitionRepository: CompetitionRepository
 
-    override fun newData(): ParticipantData {
+    override fun newData() = newData(fixtures.unique("token"))
+
+    private fun newData(rawAccessToken: String): ParticipantData {
         val competitionId = fixtures.competition().id.value
         return participantData {
             competition(competitionId)
-            accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
             name = fixtures.unique("Participant")
         }
     }
@@ -159,6 +161,37 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
 
         assertEquals(emptyList(), saved)
         assertEquals(emptyList(), participantDataJpaEntityRepository.findAllByCompetitionId(competition.id.value))
+    }
+
+    @Test
+    fun `should find user by its access code`() {
+        val token = fixtures.unique("token")
+        val saved = repository.save(newData(token))
+
+        val found = repository.findByAccessToken(token)
+
+        assertNotNull(found)
+        assertEquals(saved.id, found.id)
+        assertSameData(saved, found)
+    }
+
+    @Test
+    fun `should not find user of another kind by its access code`() {
+        val token = fixtures.unique("token")
+        fixtures.observer(rawAccessToken = token)
+
+        val found = repository.findByAccessToken(token)
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should not find user by unknown access code`() {
+        repository.save(newData())
+
+        val found = repository.findByAccessToken(fixtures.unique("unknown"))
+
+        assertNull(found)
     }
 
     private fun identityHash(value: String) = AccessTokenHash(value = value, algorithm = HashAlgorithm.Identity)

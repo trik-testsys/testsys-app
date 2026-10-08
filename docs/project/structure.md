@@ -41,6 +41,7 @@ testsys-app/
 | `testsys-infra:diagnostics`          | Синхронный анализ XML одного Полигона через порт `PolygonDiagnostics`.                           | Реализован        |
 | `testsys-infra:grpc`                 | Связь с Проверяющими узлами и балансировка проверок (реализация порта `Grader`).                    | Реализован        |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
+| `testsys-infra:mail` | Отправка писем Пользователям по SMTP (реализация порта `UserMailSender`). | Реализован |
 | `testsys-web:app` | Основное приложение Vaadin Flow: точка входа, конфигурация, маршрутизация ошибок и подключение операций через прокси-сервисы, см. [app/README.md](../../testsys-web/app/README.md). | Каркас; предметных страниц Кабинетов и безопасности нет |
 | `testsys-web:components` | Kotlin-DSL, общая фабрика текстов и визуальная часть страниц ошибок, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
 | `testsys-web:dev-app` | Самостоятельная витрина компонентов и демонстраций, см. [dev-app/README.md](../../testsys-web/dev-app/README.md). | Реализован |
@@ -59,7 +60,8 @@ testsys-app/
 - `testsys-domain` ни от чего не зависит. Любой новый код, которому нужен Spring, JPA или сеть, живёт вне домена.
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
 - Сейчас в Gradle прописаны связи `operation → domain`, `database → domain`, `database → codegen-api`,
-  `database → codegen` (через `ksp`), `grpc → domain`, `diagnostics → domain`, `app → components`, `app → domain`,
+  `database → codegen` (через `ksp`), `codegen → codegen-api`, `mail → domain`, `mail → localization`,
+  `grpc → domain`, `diagnostics → domain`, `app → components`, `app → domain`,
   `app → operation`, `app → grpc`, `app → database`, `app → diagnostics` и `dev-app → components`.
   Остальные связи — целевая архитектура.
 - Приложение подключает конфигурации инфраструктурных модулей через `@Import` в `InfraConfiguration`;

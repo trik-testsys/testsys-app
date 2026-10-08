@@ -15,6 +15,7 @@ import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.RegistrationRequestId
 import tech.testsys.domain.model.user.UserId
 import java.time.Duration
 import java.time.Instant
@@ -1556,5 +1557,125 @@ data class ResourceNotInCommittedTaskError(val taskId: TaskId, val resourceId: D
     ResourceAccessError,
     DownloadParticipantTaskResourceError,
     DownloadStudentTaskResourceError
+
+// endregion
+
+// region UserOperations
+
+/**
+ * Failure of signing in to the system by an access code.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AuthenticateError : OperationError
+
+/**
+ * The entered access code is not assigned to any user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object InvalidAccessTokenError : AuthenticateError
+
+/**
+ * Failure of requesting self-registration with an e-mail address.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RequestRegistrationError : OperationError
+
+/**
+ * Failure of confirming self-registration by the code sent to the e-mail address with a nickname and a role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ConfirmRegistrationError : OperationError
+
+/**
+ * The nickname is empty after trimming or longer than 512 Unicode code points.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object InvalidUserNameError : ConfirmRegistrationError
+
+/**
+ * The e-mail address is longer than 255 Unicode code points or lacks exactly one `@` with non-empty parts around it.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object InvalidEmailError : RequestRegistrationError, RequestEmailChangeError
+
+/**
+ * The e-mail address is already bound to a user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object EmailAlreadyBoundError :
+    RequestRegistrationError,
+    ConfirmRegistrationError,
+    RequestEmailChangeError,
+    ConfirmEmailChangeError
+
+/**
+ * The registration request does not exist.
+ *
+ * @property registrationRequestId the id of the missing request.
+ * @since %CURRENT_VERSION%
+ */
+data class RegistrationRequestNotExistsError(val registrationRequestId: RegistrationRequestId) :
+    ConfirmRegistrationError,
+    EntityNotExistsError
+
+/**
+ * The confirmation code has expired.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object ConfirmationCodeExpiredError : ConfirmRegistrationError, ConfirmEmailChangeError
+
+/**
+ * No attempts to enter the confirmation code are left.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object ConfirmationAttemptsExhaustedError : ConfirmRegistrationError, ConfirmEmailChangeError
+
+/**
+ * The entered confirmation code differs from the sent one.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object InvalidConfirmationCodeError : ConfirmRegistrationError, ConfirmEmailChangeError
+
+// endregion
+
+// region MultipleRoleUserOperations
+
+/**
+ * Failure of requesting a change of the user's e-mail address.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RequestEmailChangeError : OperationError
+
+/**
+ * Failure of confirming the new e-mail address of the user by the code sent to it.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ConfirmEmailChangeError : OperationError
+
+/**
+ * The new e-mail address equals the current e-mail address of the user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object EmailUnchangedError : RequestEmailChangeError
+
+/**
+ * The user has no e-mail change request.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object EmailChangeRequestNotExistsError : ConfirmEmailChangeError, EntityNotExistsError
 
 // endregion

@@ -170,6 +170,13 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 это ограничение нужно пересмотреть. Семантика сохранённого КД и правило аннотации — в разделе
 [«Пользователи»](../../testsys-domain/README.md#пользователи).
 
+`AbstractUserPersistenceAdapter.findByAccessToken` хэширует исходный КД алгоритмом `Identity` и ищет строку
+`ts_user` по сохранённому значению и алгоритму
+([AbstractUserPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/AbstractUserPersistenceAdapter.kt)).
+Строку Пользователя другого вида адаптер отбрасывает через `supports`. Поиск находит Пользователя, только пока
+сохранённое значение совпадает с исходным КД, поэтому метод помечен `@RawAccessTokenDependency`.
+При переходе к хэшированию с солью этот поиск нужно пересмотреть.
+
 ## Коды-приглашения
 
 Коды-приглашения хранятся в таблицах `ts_class_invite` и `ts_community_invite`, созданных в
@@ -213,6 +220,27 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 и не меняет остальные данные Класса. `MultipleRoleUserPersistenceAdapter.addCommunityMembership` блокирует
 строку Пользователя через `lockById` и в той же транзакции добавляет недостающие строки данных Роли и членства
 в Сообществе.
+
+## Регистрация, смена почты и поиск по почте
+
+`RegistrationRequestPersistenceAdapter` хранит запросы регистрации в `ts_registration_request`
+([changelog.16-init-registration-request.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.16-init-registration-request.xml)).
+Ограничение `uk_ts_registration_request_email` не даёт сохранить второй запрос для той же почты.
+Поля, которые `update` берёт из сохранённой строки, перечислены в KDoc
+`RegistrationRequestMapping.toJpaEntity(entity, current)`
+([RegistrationRequestMapping.kt](src/main/kotlin/tech/testsys/infra/database/internal/mapping/user/RegistrationRequestMapping.kt)).
+`findByEmail` ищет запрос по точному совпадению почты. Код подтверждения хранится в исходном виде.
+
+`EmailChangeRequestPersistenceAdapter` хранит запросы смены почты в `ts_email_change_request`
+([changelog.17-init-email-change-request.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.17-init-email-change-request.xml)).
+Ограничение `uk_ts_email_change_request_user_id` не даёт сохранить второй запрос того же Пользователя, а почта
+запроса не уникальна. Внешний ключ `fk_ts_email_change_request_user_id` удаляет запрос вместе с Пользователем.
+`update` берёт `user_id` из сохранённой строки (KDoc `EmailChangeRequestMapping.toJpaEntity(entity, current)`
+в [EmailChangeRequestMapping.kt](src/main/kotlin/tech/testsys/infra/database/internal/mapping/user/EmailChangeRequestMapping.kt)).
+`findByUser` ищет запрос по идентификатору Пользователя. Код подтверждения хранится в исходном виде.
+
+`MultipleRoleUserPersistenceAdapter.findByEmail` ищет строку `ts_user` по точному совпадению почты
+и отбрасывает строку Пользователя другого вида через `supports`.
 
 ## Схема БД
 

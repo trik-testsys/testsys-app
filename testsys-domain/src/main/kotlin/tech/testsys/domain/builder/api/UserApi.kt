@@ -9,6 +9,8 @@ import tech.testsys.domain.builder.user.ObserverBuilder
 import tech.testsys.domain.builder.user.ObserverDataBuilder
 import tech.testsys.domain.builder.user.ParticipantBuilder
 import tech.testsys.domain.builder.user.ParticipantDataBuilder
+import tech.testsys.domain.builder.user.RegistrationRequestBuilder
+import tech.testsys.domain.builder.user.RegistrationRequestDataBuilder
 import tech.testsys.domain.builder.user.StudentDataBuilder
 import tech.testsys.domain.builder.user.SupervisorBuilder
 import tech.testsys.domain.builder.user.SupervisorDataBuilder
@@ -22,6 +24,8 @@ import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
+import tech.testsys.domain.model.user.RegistrationRequest
+import tech.testsys.domain.model.user.RegistrationRequestData
 import tech.testsys.domain.model.user.StudentData
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
@@ -81,6 +85,21 @@ inline fun supervisorData(builder: SupervisorDataBuilder.() -> Unit) = Superviso
  * @since %CURRENT_VERSION%
  */
 inline fun supervisor(builder: SupervisorBuilder.() -> Unit) = SupervisorBuilder().apply(builder).build()
+
+/**
+ * Builds [RegistrationRequestData] with a [RegistrationRequestDataBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun registrationRequestData(builder: RegistrationRequestDataBuilder.() -> Unit) =
+    RegistrationRequestDataBuilder().apply(builder).build()
+
+/**
+ * Builds a [RegistrationRequest] with a [RegistrationRequestBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun registrationRequest(builder: RegistrationRequestBuilder.() -> Unit) = RegistrationRequestBuilder().apply(builder).build()
 
 /**
  * Builds [DeveloperData] with a [DeveloperDataBuilder] block.
@@ -193,6 +212,29 @@ private fun SupervisorData.toBuilder(): SupervisorDataBuilder {
  */
 fun Supervisor.withData(builder: SupervisorDataBuilder.() -> Unit): Supervisor {
     return Supervisor(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
+}
+
+private fun RegistrationRequestData.toBuilder(): RegistrationRequestDataBuilder {
+    val thisData = this
+    return RegistrationRequestDataBuilder().apply {
+        email = thisData.email
+        confirmationCode = thisData.confirmationCode
+        expiresAt = thisData.expiresAt
+        attemptsLeft = thisData.attemptsLeft
+    }
+}
+
+/**
+ * Returns a copy of this registration request with its data modified by [builder].
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun RegistrationRequest.withData(builder: RegistrationRequestDataBuilder.() -> Unit): RegistrationRequest {
+    return RegistrationRequest(
         id = this.id,
         createdAt = this.createdAt,
         data = this.data.toBuilder().apply(builder).build(),

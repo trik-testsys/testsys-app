@@ -13,6 +13,7 @@ import tech.testsys.domain.builder.user.ManagerBuilder
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
 import tech.testsys.domain.builder.user.ObserverDataBuilder
 import tech.testsys.domain.builder.user.ParticipantDataBuilder
+import tech.testsys.domain.builder.user.RegistrationRequestDataBuilder
 import tech.testsys.domain.builder.user.StudentBuilder
 import tech.testsys.domain.builder.user.SupervisorDataBuilder
 import tech.testsys.domain.builder.util.chooser.TaskContentChooser
@@ -33,6 +34,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.Supervisor
 import java.time.Instant
 import java.util.UUID
@@ -191,6 +193,19 @@ fun testSupervisor(builder: SupervisorDataBuilder.() -> Unit = {}): Supervisor =
     data = supervisorData {
         accessToken("supervisor", algorithm = HashAlgorithm.Identity)
         name = "Supervisor"
+        builder()
+    }
+}
+
+fun testRegistrationRequest(builder: RegistrationRequestDataBuilder.() -> Unit = {}): RegistrationRequest = registrationRequest {
+    id = 31
+    createdAt = Instant.EPOCH
+    version = EntityVersion(0)
+    data = registrationRequestData {
+        email = "user@example.com"
+        confirmationCode = "12345678"
+        expiresAt = Instant.parse("2026-01-01T00:15:00Z")
+        attemptsLeft = 3
         builder()
     }
 }

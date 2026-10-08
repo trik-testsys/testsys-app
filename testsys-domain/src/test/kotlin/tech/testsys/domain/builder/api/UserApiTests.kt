@@ -161,4 +161,45 @@ class UserApiTests {
             Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
         }
     }
+
+    @Nested
+    inner class RegistrationRequestTests {
+
+        private val origin = registrationRequest {
+            id = 1
+            createdAt = Instant.ofEpochSecond(1)
+            version = EntityVersion(7)
+            data = registrationRequestData {
+                email = "user@example.com"
+                confirmationCode = "123456"
+                expiresAt = Instant.ofEpochSecond(100)
+                attemptsLeft = 5
+            }
+        }
+
+        @Test
+        fun `should keep all fields if withData changes nothing`() {
+            val copy = origin.withData { }
+
+            Assertions.assertEquals(origin.id, copy.id)
+            Assertions.assertEquals(origin.createdAt, copy.createdAt)
+            Assertions.assertEquals(origin.version, copy.version)
+            Assertions.assertEquals(origin.data, copy.data)
+        }
+
+        @Test
+        fun `should change every field if withData sets them`() {
+            val copy = origin.withData {
+                email = "other@example.com"
+                confirmationCode = "654321"
+                expiresAt = Instant.ofEpochSecond(200)
+                attemptsLeft = 4
+            }
+
+            Assertions.assertEquals("other@example.com", copy.data.email)
+            Assertions.assertEquals("654321", copy.data.confirmationCode)
+            Assertions.assertEquals(Instant.ofEpochSecond(200), copy.data.expiresAt)
+            Assertions.assertEquals(4, copy.data.attemptsLeft)
+        }
+    }
 }

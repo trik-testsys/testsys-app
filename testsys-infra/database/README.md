@@ -206,6 +206,19 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 строку Пользователя через `lockById` и в той же транзакции добавляет недостающие строки данных Роли и членства
 в Сообществе.
 
+## Регистрация и поиск по почте
+
+`RegistrationRequestPersistenceAdapter` хранит запросы регистрации в `ts_registration_request`
+([changelog.16-init-registration-request.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.16-init-registration-request.xml)).
+Ограничение `uk_ts_registration_request_email` не даёт сохранить второй запрос для той же почты.
+Поля, которые `update` берёт из сохранённой строки, перечислены в KDoc
+`RegistrationRequestMapping.toJpaEntity(entity, current)`
+([RegistrationRequestMapping.kt](src/main/kotlin/tech/testsys/infra/database/internal/mapping/user/RegistrationRequestMapping.kt)).
+`findByEmail` ищет запрос по точному совпадению почты. Код подтверждения хранится в исходном виде.
+
+`MultipleRoleUserPersistenceAdapter.findByEmail` ищет строку `ts_user` по точному совпадению почты
+и отбрасывает строку Пользователя другого вида через `supports`.
+
 ## Схема БД
 
 - Схемой управляет Liquibase: changelog'и лежат в `src/main/resources/db/changelog/changes/<версия>/`.

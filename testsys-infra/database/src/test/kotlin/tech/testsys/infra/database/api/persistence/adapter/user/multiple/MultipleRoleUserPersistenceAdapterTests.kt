@@ -428,4 +428,33 @@ class MultipleRoleUserPersistenceAdapterTests :
 
         assertEquals(updated.id, assertNotNull(found).id)
     }
+
+    @Test
+    fun `should find user by its email`() {
+        val saved = repository.save(newData())
+
+        val found = repository.findByEmail(saved.data.email)
+
+        assertNotNull(found)
+        assertEquals(saved.id, found.id)
+        assertSameData(saved, found)
+    }
+
+    @Test
+    fun `should not find user by unknown email`() {
+        repository.save(newData())
+
+        val found = repository.findByEmail(fixtures.email("unknown"))
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should not find user by email with different letter case`() {
+        val saved = repository.save(newData())
+
+        val found = repository.findByEmail(saved.data.email.uppercase())
+
+        assertNull(found)
+    }
 }

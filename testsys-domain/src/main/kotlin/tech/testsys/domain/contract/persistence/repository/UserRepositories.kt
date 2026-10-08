@@ -14,6 +14,9 @@ import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.ParticipantData
+import tech.testsys.domain.model.user.RegistrationRequest
+import tech.testsys.domain.model.user.RegistrationRequestData
+import tech.testsys.domain.model.user.RegistrationRequestId
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
@@ -107,6 +110,16 @@ interface MultipleRoleUserRepository :
      * @since %CURRENT_VERSION%
      */
     fun addCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, kind: CommunityInvite.Kind): MultipleRoleUser
+
+    /**
+     * Finds the user whose e-mail address equals [email] exactly, without normalization.
+     * Technical exceptions of the adapter are propagated.
+     *
+     * @param email the e-mail address to look for.
+     * @return the user, or `null` if no user has this e-mail address.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByEmail(email: String): MultipleRoleUser?
 }
 
 /**
@@ -152,3 +165,21 @@ interface ParticipantRepository :
 interface SupervisorRepository :
     EntityRepository<SupervisorData, SingleRoleUserId, Supervisor>,
     UserAccessTokenFinder<SingleRoleUserId, Supervisor>
+
+/**
+ * Persistence port for [RegistrationRequest] entities; at most one request is stored per e-mail address.
+ *
+ * @since %CURRENT_VERSION%
+ */
+interface RegistrationRequestRepository : EntityRepository<RegistrationRequestData, RegistrationRequestId, RegistrationRequest> {
+
+    /**
+     * Finds the request whose e-mail address equals [email] exactly, without normalization.
+     * Technical exceptions of the adapter are propagated.
+     *
+     * @param email the e-mail address to look for.
+     * @return the request, or `null` if there is no request for this e-mail address.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByEmail(email: String): RegistrationRequest?
+}

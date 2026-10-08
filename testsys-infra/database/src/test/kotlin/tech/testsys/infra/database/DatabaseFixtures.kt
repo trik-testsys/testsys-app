@@ -19,6 +19,7 @@ import tech.testsys.domain.builder.api.observerData
 import tech.testsys.domain.builder.api.participantContestEntryData
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.recordingData
+import tech.testsys.domain.builder.api.registrationRequestData
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.studentContestEntryData
@@ -47,6 +48,7 @@ import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantContestEntryRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
+import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
@@ -84,6 +86,7 @@ import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -128,6 +131,7 @@ class DatabaseFixtures(
     private val logs: LogsRepository,
     private val recordings: RecordingRepository,
     private val trikStudioVersionJpaEntityRepository: TrikStudioVersionJpaEntityRepository,
+    private val registrationRequests: RegistrationRequestRepository,
 ) {
 
     fun participantContestEntry(
@@ -201,6 +205,15 @@ class DatabaseFixtures(
             },
         )
     }
+
+    fun registrationRequest(email: String = email("registration")): RegistrationRequest = registrationRequests.save(
+        registrationRequestData {
+            this.email = email
+            confirmationCode = "123456"
+            expiresAt = Instant.EPOCH
+            attemptsLeft = 5
+        },
+    )
 
     fun supervisor(rawAccessToken: String = unique("token")): Supervisor = supervisors.save(
         supervisorData {

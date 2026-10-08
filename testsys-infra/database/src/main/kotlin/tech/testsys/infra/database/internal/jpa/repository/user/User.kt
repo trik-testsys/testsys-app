@@ -34,4 +34,11 @@ interface UserJpaEntityRepository : SnowflakeJpaEntityRepository<UserJpaEntity> 
      * @since %CURRENT_VERSION%
      */
     fun findByAccessTokenAndAccessTokenHashAlgorithm(accessToken: String, accessTokenHashAlgorithm: HashAlgorithmJpaEnum): UserJpaEntity?
+
+    /**
+     * Finds the user row whose e-mail address equals [email].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findByEmail(email: String): UserJpaEntity?
 }

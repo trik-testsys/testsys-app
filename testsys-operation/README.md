@@ -40,8 +40,9 @@
 - Зависимости операций — порты из `tech.testsys.domain.contract` и интерфейсы конфигурации из
   `tech.testsys.operation.config` (см. раздел «Конфигурация») — передаются через конструктор класса.
 - Первый параметр операции — Пользователь, который её выполняет; остальные — входные данные фичи.
-  Исключение — `UserOperations.authenticate`: до входа Пользователь неизвестен, поэтому операция принимает только
-  Код-доступа (см. раздел «Вход в Систему»).
+  Исключения — `UserOperations.authenticate`, `UserOperations.requestRegistration` и
+  `UserOperations.confirmRegistration`: до входа Пользователь неизвестен, поэтому операции принимают только
+  входные данные фичи (см. разделы «Вход в Систему» и «Регистрация»).
 - Операция возвращает `OperationResult<T, <Operation>Error>`.
 
 | Префикс кодификатора                | Класс                        |
@@ -298,3 +299,30 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 Операция ищет Пользователя по Коду-доступа в портах хранения всех четырёх видов Пользователей и возвращает
 найденного Пользователя как `User<*>`. Если КД не присвоен ни одному Пользователю, операция возвращает
 `InvalidAccessTokenError`. Операция не изменяет Пользователей.
+
+## Регистрация
+
+[UserOperations](src/main/kotlin/tech/testsys/operation/user/UserOperations.kt) предоставляет
+`requestRegistration(email)` и `confirmRegistration(registrationRequestId, confirmationCode, name, role)`.
+Обе операции помечены кодификатором `testsys.user.registration`; требования определены в этой фиче
+в [features.md](../docs/domain/features.md).
+
+- `requestRegistration` ищет запрос через `RegistrationRequestRepository.findByEmail` и возвращает идентификатор
+  `RegistrationRequest`. Действующий запрос операция не сохраняет заново, а недействующий перезаписывает через
+  `update`, поэтому идентификатор не меняется.
+- `confirmRegistration` принимает Роль как `RegistrationRole` и возвращает `Pair<MultipleRoleUser, String>`:
+  сохранённого Пользователя и исходный Код-доступа. До сравнения кода операция сохраняет запрос с уменьшенным
+  `attemptsLeft` через `update` с токеном `version`. Если версия устарела, `update` бросает исключение и код
+  не сравнивается. Неверный код возвращает `InvalidConfirmationCodeError`. Вызывающий код должен зафиксировать
+  транзакцию и при этой ошибке, иначе попытка не будет потрачена. В `testsys-web` это пока не реализовано.
+  После сохранения Пользователя операция удаляет запрос.
+- Письма отправляет порт `RegistrationMailSender`; обе операции вызывают его последним шагом. Исключения порта,
+  как и исключения хранения, выходят из операций; уже сохранённые изменения операция не откатывает.
+- Момент отправки письма и обработка сбоев после фиксации транзакции — в
+  [mail/README.md](../testsys-infra/mail/README.md).
+
+`UserOperations` получает через конструктор `CommunityConfig` с Публичным Сообществом, `RegistrationConfig`
+со сроком действия кода и числом попыток, `Clock` и `RandomGenerator`. Вызов читает время не более одного раза;
+момент окончания срока нормализуется до микросекунд. Код подтверждения и КД генерируют функции из
+[Credentials.kt](src/main/kotlin/tech/testsys/operation/util/Credentials.kt) с этим `RandomGenerator`. Приложение
+должно передать криптостойкий генератор, например `SecureRandom`.

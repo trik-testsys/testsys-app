@@ -97,4 +97,24 @@ class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         assertEquals(saved.data.owner.id, updated.data.owner.id)
         assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
     }
+
+    @Test
+    fun `should find competitions by ids with the same statement count for one and twenty ids`() {
+        val data = newData()
+        val saved = List(20) { repository.save(data) }
+        val participantIds = saved.map { competition -> fixtures.participant(competition).id }
+        val ids = saved.map { competition -> competition.id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { competition -> competition.id })
+        assertEquals(ids.toSet(), twenty.map { competition -> competition.id }.toSet())
+        assertEquals(
+            ids.zip(participantIds).toMap(),
+            twenty.associate { competition -> competition.id to competition.data.participants.ids.single() },
+        )
+        assertEquals(List(20) { data.contests.ids.toSet() }, twenty.map { competition -> competition.data.contests.ids.toSet() })
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
 }

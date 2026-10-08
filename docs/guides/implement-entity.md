@@ -138,6 +138,8 @@
 `CompositeJpaEntityRepository<Entity, Id>` для join-таблиц; оба включают `JpaSpecificationExecutor`.
 Для join-таблиц добавляются выборки по каждой стороне ключа — через `@Query`, потому что поля лежат
 внутри `id` (`where e.id.contestId = :contestId`), плюс перегрузка с `Pageable`, если нужна постраничность.
+Для сборки списка (шаг 9) добавьте выборку по набору идентификаторов. Если нужны только идентификаторы связей,
+такая выборка возвращает пары `LinkedIdRow` вместо строк (`findLinkedIdsByContestIdIn` в образце).
 
 ## 7. Liquibase changeset
 
@@ -193,21 +195,22 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   файл Ресурса — через `requireSameFile` из
   [FixedFieldGuards.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/FixedFieldGuards.kt).
 - `assembleAll(rows)` — собрать доменные объекты из строк в порядке `rows`. Идентификаторы связей и справочники
-  дочитайте для всего списка одним запросом на таблицу: для join-таблиц — через `findLinkedIds`, для остальных
-  выборок по набору идентификаторов — через `findAllInChunks` из
+  дочитайте для всего списка одним запросом на таблицу: для join-таблиц — через `findLinkedIds`, обязательные
+  строки справочников и других сущностей по набору идентификаторов — через `findAllByIdOrError`, остальные
+  выборки — через `findAllInChunks` из
   [BatchLoadUtils.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/utils/BatchLoadUtils.kt).
   `assemble` не переопределяйте: базовый класс собирает одну строку через `assembleAll`. Образец без связей —
   `CommunityPersistenceAdapter`. Как адаптеры используют сборку — в разделе «Сборка доменных сущностей»
   в [database/README.md](../../testsys-infra/database/README.md).
 
-`ContestPersistenceAdapter` и другие адаптеры со связями пока переопределяют `assemble` и собирают строки по одной —
-это переходное состояние, в новом адаптере его не повторяйте.
+Адаптеры сущностей с файлами (Условия, Упражнения, Полигоны, Решения, логи и видеозаписи) пока переопределяют
+`assemble` и собирают строки по одной — это переходное состояние, в новом адаптере его не повторяйте.
 
 Если у сущности есть join-таблицы, может дополнительно потребоваться переопределить `removeById`/`removeByIds`, если строки связей
 нужно удалить до самой сущности. Для сущностей-пользователей базовый класс другой —
 [AbstractUserPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/AbstractUserPersistenceAdapter.kt),
-который дополнительно требует `supports(jpaEntity)`: все виды пользователей лежат в одной таблице `ts_user`,
-и фильтр не даёт собрать чужую строку.
+который вместо `assembleAll` требует `assembleSupported(rows)`: все виды пользователей лежат в одной таблице `ts_user`,
+и метод собирает только строки своего вида, пропуская остальные.
 
 ## 10. Тесты
 

@@ -46,3 +46,15 @@ fun <T : JpaEntity, ID : Any> CrudRepository<T, ID>.findByIdOrError(id: ID) = fi
 @InternalDatabaseApi
 internal fun TrikStudioVersionJpaEntityRepository.findIdByTagOrError(tag: String): Long =
     requireNotNull(findByTag(tag)) { "TRIK Studio version with tag=$tag is not registered" }.requireId()
+
+/**
+ * Maps each of [tags] to the id of its [TrikStudioVersionJpaEntity], reading them through [findAllInChunks];
+ * throws [IllegalArgumentException] for the first tag that is not registered.
+ */
+@InternalDatabaseApi
+internal fun TrikStudioVersionJpaEntityRepository.findIdsByTagOrError(tags: Collection<String>): Map<String, Long> {
+    val idsByTag = findAllInChunks(ids = tags, find = ::findAllByTagIn).associate { row -> row.tag to row.requireId() }
+    val unknownTag = tags.firstOrNull { tag -> tag !in idsByTag }
+    require(unknownTag == null) { "TRIK Studio version with tag=$unknownTag is not registered" }
+    return idsByTag
+}

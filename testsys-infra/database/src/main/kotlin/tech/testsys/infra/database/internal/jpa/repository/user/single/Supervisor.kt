@@ -20,4 +20,11 @@ interface SupervisorDataJpaEntityRepository : SnowflakeJpaEntityRepository<Super
      * @since %CURRENT_VERSION%
      */
     fun findByUserId(userId: Long): SupervisorDataJpaEntity?
+
+    /**
+     * Finds the supervisor data rows of any of the users [userIds] in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByUserIdIn(userIds: Collection<Long>): List<SupervisorDataJpaEntity>
 }

@@ -25,4 +25,11 @@ interface MultipleRoleToUserJpaEntityRepository :
      */
     @Query("select e from MultipleRoleToUserJpaEntity e where e.id.userId = :userId")
     fun findAllByUserId(@Param("userId") userId: Long): List<MultipleRoleToUserJpaEntity>
+
+    /**
+     * Finds the (role, community) membership rows of any of the users [userIds] in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByIdUserIdIn(userIds: Collection<Long>): List<MultipleRoleToUserJpaEntity>
 }

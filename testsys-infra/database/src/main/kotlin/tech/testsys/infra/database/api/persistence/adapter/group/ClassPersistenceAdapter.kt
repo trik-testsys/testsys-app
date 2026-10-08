@@ -19,6 +19,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.group.ClassJpaEntity
+import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.group.ClassInviteJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.ClassJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.ContestToClassJpaEntityRepository
@@ -26,6 +27,7 @@ import tech.testsys.infra.database.internal.jpa.repository.group.StudentToClassJ
 import tech.testsys.infra.database.internal.mapping.group.ClassInviteMapping
 import tech.testsys.infra.database.internal.mapping.group.ClassMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
+import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 import java.time.Instant
@@ -145,17 +147,25 @@ class ClassPersistenceAdapter(
     @Transactional
     override fun removeByIds(ids: List<ClassId>) = ids.forEach(::removeById)
 
-    override fun assembleAll(rows: List<ClassJpaEntity>): List<Class> = rows.map(::assemble)
+    override fun assembleAll(rows: List<ClassJpaEntity>): List<Class> {
+        val classIds = rows.map { row -> row.requireId() }
+        val studentIds = findLinkedIds(
+            ownerIds = classIds,
+            find = studentToClassJpaEntityRepository::findLinkedIdsByClassIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> MultipleRoleUserId(link.linkedId) },
+        )
+        val contestIds = findLinkedIds(
+            ownerIds = classIds,
+            find = contestToClassJpaEntityRepository::findLinkedIdsByClassIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> ContestId(link.linkedId) },
+        )
 
-    override fun assemble(jpaEntity: ClassJpaEntity): Class {
-        val classId = jpaEntity.requireId()
-        val studentIds = studentToClassJpaEntityRepository.findAllByClassId(classId)
-            .map { MultipleRoleUserId(it.id.studentId) }
-        val contestIds = contestToClassJpaEntityRepository.findAllByClassId(classId)
-            .map { ContestId(it.id.contestId) }
-
-        val domainEntity = ClassMapping.toDomain(jpaEntity, studentIds, contestIds)
-        return domainEntity
+        return rows.map { row ->
+            val classId = row.requireId()
+            ClassMapping.toDomain(jpaEntity = row, studentIds = studentIds.getValue(classId), contestIds = contestIds.getValue(classId))
+        }
     }
 
     private fun syncStudents(classId: Long, target: List<MultipleRoleUserId>) = syncJoinTable(

@@ -317,6 +317,48 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     }
 
     @Test
+    fun `should find submissions by ids with the same statement count for one and twenty ids`() {
+        val version = fixtures.trikStudioVersion()
+        val judge = fixtures.judge()
+        val saved = List(20) { repository.save(developerSolutionTestData(version)) }
+        val orderIds = saved.map { submission -> fixtures.judgmentOrder(judge = judge, submission = submission).id }
+        val ids = saved.map { submission -> submission.id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { submission -> submission.id })
+        assertEquals(ids.toSet(), twenty.map { submission -> submission.id }.toSet())
+        assertEquals(
+            ids.zip(orderIds).toMap(),
+            twenty.associate { submission -> submission.id to submission.data.judgmentOrders.ids.single() },
+        )
+        assertEquals(
+            List(20) { version },
+            twenty.map { submission -> assertIs<SubmissionKind.DeveloperSolutionTest>(submission.data.kind).trikStudioVersion },
+        )
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    @Test
+    fun `should find contest submissions of a task with the same statement count for one and twenty submissions`() {
+        val contestId = fixtures.contest().id.value
+        val oneSubmissionTask = fixtures.task()
+        val twentySubmissionsTask = fixtures.task()
+        val single = repository.save(gradingSubmissionData(contestId, oneSubmissionTask.id.value))
+        val twentyIds = List(20) {
+            repository.save(gradingSubmissionData(contestId, twentySubmissionsTask.id.value)).id
+        }
+
+        val (one, oneSubmissionStatements) = withStatementCount { repository.findGradingByTaskId(oneSubmissionTask.id) }
+        val (twenty, twentySubmissionsStatements) = withStatementCount { repository.findGradingByTaskId(twentySubmissionsTask.id) }
+
+        assertEquals(listOf(single.id), one.map { submission -> submission.id })
+        assertEquals(twentyIds, twenty.map { submission -> submission.id })
+        assertEquals(oneSubmissionStatements, twentySubmissionsStatements)
+    }
+
+    @Test
     fun `should find no contest submissions of a task with only author solution tests`() {
         val task = fixtures.task()
         repository.save(developerSolutionTestData(fixtures.trikStudioVersion(), task.id.value))

@@ -198,4 +198,31 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
 
         assertNull(found)
     }
+
+    @Test
+    fun `should find observers by ids with the same statement count for one and twenty ids`() {
+        val communityId = fixtures.community().id.value
+        val contestIds = listOf(fixtures.contest().id.value, fixtures.contest().id.value)
+        val ids = List(20) {
+            repository.save(
+                observerData {
+                    community(communityId)
+                    accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+                    name = fixtures.unique("Observer")
+                    contests(contestIds)
+                },
+            ).id
+        }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { observer -> observer.id })
+        assertEquals(ids.toSet(), twenty.map { observer -> observer.id }.toSet())
+        assertEquals(
+            List(20) { contestIds.toSet() },
+            twenty.map { observer -> observer.data.contests.ids.map { contest -> contest.value }.toSet() },
+        )
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
 }

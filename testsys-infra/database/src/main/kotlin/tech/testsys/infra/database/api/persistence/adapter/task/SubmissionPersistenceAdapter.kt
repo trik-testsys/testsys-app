@@ -30,8 +30,10 @@ import tech.testsys.infra.database.internal.jpa.repository.task.TestVerdictJpaEn
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.SubmissionMapping
+import tech.testsys.infra.database.internal.utils.findAllByIdOrError
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.findIdByTagOrError
+import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 
 /**
@@ -67,7 +69,7 @@ class SubmissionPersistenceAdapter(
 
         val domainEntity = SubmissionMapping.toDomain(
             jpaEntity = savedJpaEntity,
-            authorId = resolveAuthorId(savedJpaEntity.authorId),
+            authorId = loadAuthorIds(listOf(savedJpaEntity.authorId)).getValue(savedJpaEntity.authorId),
             trikStudioVersion = trikStudioVersion,
             judgmentOrderIds = emptyList(),
         )
@@ -127,29 +129,24 @@ class SubmissionPersistenceAdapter(
             }
     }
 
-    override fun assembleAll(rows: List<SubmissionJpaEntity>): List<Submission> = rows.map(::assemble)
-
-    override fun assemble(jpaEntity: SubmissionJpaEntity): Submission {
-        val submissionId = jpaEntity.requireId()
-        val judgmentOrderIds = judgmentOrderJpaEntityRepository.findAllBySubmissionId(submissionId)
-            .map { JudgmentOrderId(it.requireId()) }
-
-        val trikStudioVersion = when (jpaEntity.kind) {
-            SubmissionKindJpaEnum.DEVELOPER_SOLUTION_TEST -> {
-                val versionId = requireNotNull(jpaEntity.trikStudioVersionId) {
-                    "Submission $submissionId has kind=DEVELOPER_SOLUTION_TEST but trikStudioVersionId is null"
-                }
-                TrikStudioVersion(version = trikStudioVersionJpaEntityRepository.findByIdOrError(versionId).tag)
-            }
-            SubmissionKindJpaEnum.GRADING -> null
-        }
-        val domainEntity = SubmissionMapping.toDomain(
-            jpaEntity = jpaEntity,
-            authorId = resolveAuthorId(jpaEntity.authorId),
-            trikStudioVersion = trikStudioVersion,
-            judgmentOrderIds = judgmentOrderIds,
+    override fun assembleAll(rows: List<SubmissionJpaEntity>): List<Submission> {
+        val judgmentOrderIds = findLinkedIds(
+            ownerIds = rows.map { row -> row.requireId() },
+            find = judgmentOrderJpaEntityRepository::findAllBySubmissionIdIn,
+            ownerIdOf = { order -> order.submissionId },
+            linkedIdOf = { order -> JudgmentOrderId(order.requireId()) },
         )
-        return domainEntity
+        val authorIds = loadAuthorIds(rows.map { row -> row.authorId })
+        val versions = trikStudioVersionJpaEntityRepository.findAllByIdOrError(rows.mapNotNull(::trikStudioVersionIdOf))
+
+        return rows.map { row ->
+            SubmissionMapping.toDomain(
+                jpaEntity = row,
+                authorId = authorIds.getValue(row.authorId),
+                trikStudioVersion = trikStudioVersionIdOf(row)?.let { versionId -> TrikStudioVersion(versions.getValue(versionId).tag) },
+                judgmentOrderIds = judgmentOrderIds.getValue(row.requireId()),
+            )
+        }
     }
 
     /**
@@ -186,11 +183,21 @@ class SubmissionPersistenceAdapter(
     private fun SubmissionJpaEntity.isSuccessfullyGraded(): Boolean =
         status == SubmissionStatusJpaEnum.GRADED && gradingResult == GradingResultJpaEnum.SUCCESS
 
-    private fun resolveAuthorId(authorId: Long): UserId {
-        val userJpaEntity = userJpaEntityRepository.findByIdOrError(authorId)
-        return when (userJpaEntity.type) {
-            UserTypeJpaEnum.MULTIPLE_ROLE -> MultipleRoleUserId(authorId)
-            UserTypeJpaEnum.SINGLE_ROLE -> SingleRoleUserId(authorId)
+    private fun trikStudioVersionIdOf(jpaEntity: SubmissionJpaEntity): Long? = when (jpaEntity.kind) {
+        SubmissionKindJpaEnum.DEVELOPER_SOLUTION_TEST -> requireNotNull(jpaEntity.trikStudioVersionId) {
+            "Submission ${jpaEntity.requireId()} has kind=DEVELOPER_SOLUTION_TEST but trikStudioVersionId is null"
         }
+        SubmissionKindJpaEnum.GRADING -> null
     }
+
+    /**
+     * Maps each of the raw [authorIds] to the user id of its kind, reading the user rows in one query.
+     */
+    private fun loadAuthorIds(authorIds: List<Long>): Map<Long, UserId> =
+        userJpaEntityRepository.findAllByIdOrError(authorIds).mapValues { (authorId, userJpaEntity) ->
+            when (userJpaEntity.type) {
+                UserTypeJpaEnum.MULTIPLE_ROLE -> MultipleRoleUserId(authorId)
+                UserTypeJpaEnum.SINGLE_ROLE -> SingleRoleUserId(authorId)
+            }
+        }
 }

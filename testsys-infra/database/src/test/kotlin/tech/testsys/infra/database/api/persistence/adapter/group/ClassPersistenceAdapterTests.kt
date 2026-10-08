@@ -257,4 +257,36 @@ class ClassPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Cl
 
         assertFailsWith<IllegalArgumentException> { repository.addStudent(ClassId(UNKNOWN_ID), student) }
     }
+
+    @Test
+    fun `should find classes by ids with the same statement count for one and twenty ids`() {
+        val ownerId = fixtures.manager().id.value
+        val studentIds = listOf(fixtures.student().id.value, fixtures.student().id.value)
+        val contestIds = listOf(fixtures.contest().id.value)
+        val ids = List(20) {
+            val inviteId = fixtures.classInvite().id
+            repository.save(
+                classData {
+                    owner(ownerId)
+                    name = fixtures.unique("Class")
+                    description = "Class description"
+                    students(studentIds)
+                    contests(contestIds)
+                    invite = inviteId
+                },
+            ).id
+        }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { studyClass -> studyClass.id })
+        assertEquals(ids.toSet(), twenty.map { studyClass -> studyClass.id }.toSet())
+        assertEquals(
+            List(20) { studentIds.toSet() },
+            twenty.map { studyClass -> studyClass.data.students.ids.map { student -> student.value }.toSet() },
+        )
+        assertEquals(List(20) { contestIds }, twenty.map { studyClass -> studyClass.data.contests.ids.map { contest -> contest.value } })
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
 }

@@ -1,6 +1,8 @@
 package tech.testsys.infra.database.internal.utils
 
+import org.springframework.data.jpa.repository.JpaRepository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
 // A power of two, matching `in_clause_parameter_padding`, so every full chunk reuses one cached statement.
 private const val IN_CLAUSE_CHUNK_SIZE = 1024
@@ -34,4 +36,16 @@ internal fun <Key, Row, LinkedId> findLinkedIds(
     val linkedIdsByOwner = findAllInChunks(ids = ownerIds, chunkSize = chunkSize, find = find)
         .groupBy(keySelector = ownerIdOf, valueTransform = linkedIdOf)
     return ownerIds.distinct().associateWith { ownerId -> linkedIdsByOwner[ownerId].orEmpty() }
+}
+
+/**
+ * Reads the rows with [ids] through [findAllInChunks] and maps them by id; throws [IllegalArgumentException] if a row
+ * is missing, the batch counterpart of [findByIdOrError].
+ */
+@InternalDatabaseApi
+internal fun <Row : SnowflakeJpaEntity> JpaRepository<Row, Long>.findAllByIdOrError(ids: Collection<Long>): Map<Long, Row> {
+    val rowsById = findAllInChunks(ids = ids) { chunk -> findAllById(chunk) }.associateBy { row -> row.requireId() }
+    val missingIds = ids.distinct().filter { id -> id !in rowsById }
+    require(missingIds.isEmpty()) { "Entities not found by ids=$missingIds" }
+    return rowsById
 }

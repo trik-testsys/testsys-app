@@ -600,4 +600,73 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
         assertEquals(statement.data.versionBucket, retained.data.versionBucket)
         assertEquals(statement.data.file.content.toList(), retained.data.file.content.toList())
     }
+
+    @Test
+    fun `should fail to save a task and keep no content if one of several TRIK Studio versions is unregistered`() {
+        val ownerId = fixtures.developer().id.value
+        val registered = fixtures.trikStudioVersion()
+        val data = taskData {
+            owner(ownerId)
+            name = fixtures.unique("Task")
+            description = "Task description"
+            content.new { supportedTrikStudioVersions = mutableListOf(registered, TrikStudioVersion(fixtures.unique("unregistered"))) }
+        }
+
+        assertFailsWith<IllegalArgumentException> { repository.save(data) }
+
+        assertEquals(0, taskContentJpaEntityRepository.count())
+    }
+
+    @Test
+    fun `should find tasks by ids with the same statement count for one and twenty ids`() {
+        val ownerId = fixtures.developer().id.value
+        val communityId = fixtures.community().id.value
+        val exerciseId = fixtures.exercise().id.value
+        val statementId = fixtures.statement().id.value
+        val polygonId = fixtures.polygon().id.value
+        val developerSolutionId = fixtures.developerSolution().id.value
+        val version = fixtures.trikStudioVersion()
+        val ids = List(20) {
+            val uploadedBucket = fixtures.statement().data.versionBucket
+            repository.save(
+                taskData {
+                    owner(ownerId)
+                    name = fixtures.unique("Task")
+                    description = "Task description"
+                    sharedTo(listOf(communityId))
+                    uploadedResources = mutableSetOf(uploadedBucket)
+                    content.uncommitted(
+                        wipBuilder = {
+                            exercises(listOf(exerciseId))
+                            tests(listOf(polygonId))
+                            developerSolutions(listOf(developerSolutionId))
+                            supportedTrikStudioVersions = mutableListOf(version)
+                        },
+                        lastCommittedBuilder = {
+                            exercises(listOf(exerciseId))
+                            statement(statementId)
+                            tests(listOf(polygonId))
+                            developerSolutions(listOf(developerSolutionId))
+                            supportedTrikStudioVersions = mutableListOf(version)
+                        },
+                    )
+                },
+            ).id
+        }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { task -> task.id })
+        assertEquals(ids.toSet(), twenty.map { task -> task.id }.toSet())
+        assertEquals(
+            List(20) { listOf(version) to listOf(version) },
+            twenty.map { task ->
+                val content = assertIs<TaskContent.Uncommitted>(task.data.content)
+                content.wip.supportedTrikStudioVersions to content.lastCommitted.supportedTrikStudioVersions
+            },
+        )
+        assertEquals(List(20) { listOf(CommunityId(communityId)) }, twenty.map { task -> task.data.sharedTo.ids })
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
 }

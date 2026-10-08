@@ -33,6 +33,7 @@ import tech.testsys.infra.database.internal.jpa.entity.user.multiple.MultipleRol
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.MultipleRoleToUserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.StudentDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.UserMultipleRoleJpaEnum
+import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.group.ClassJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.CompetitionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.StudentToClassJpaEntityRepository
@@ -49,7 +50,9 @@ import tech.testsys.infra.database.internal.jpa.repository.user.multiple.Multipl
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.StudentDataJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.multiple.MultipleRoleUserMapping
 import tech.testsys.infra.database.internal.mapping.user.multiple.MultipleRoleUserRoles
+import tech.testsys.infra.database.internal.utils.findAllInChunks
 import tech.testsys.infra.database.internal.utils.findByIdOrError
+import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 
@@ -86,7 +89,7 @@ class MultipleRoleUserPersistenceAdapter(
         val savedUserJpaEntity = jpaEntityRepository.save(MultipleRoleUserMapping.toUserJpaEntity(data))
         val userId = savedUserJpaEntity.requireId()
         syncRoles(userId, data.roles)
-        val domainEntity = MultipleRoleUserMapping.toDomain(savedUserJpaEntity, assembleRoles(userId))
+        val domainEntity = MultipleRoleUserMapping.toDomain(savedUserJpaEntity, assembleRoles(listOf(userId)).getValue(userId))
         return domainEntity
     }
 
@@ -100,7 +103,7 @@ class MultipleRoleUserPersistenceAdapter(
 
         syncRoles(userId, entity.data.roles)
 
-        val domainEntity = MultipleRoleUserMapping.toDomain(updatedUserJpaEntity, assembleRoles(userId))
+        val domainEntity = MultipleRoleUserMapping.toDomain(updatedUserJpaEntity, assembleRoles(listOf(userId)).getValue(userId))
         return domainEntity
     }
 
@@ -110,7 +113,7 @@ class MultipleRoleUserPersistenceAdapter(
         communityId: CommunityId,
         kind: CommunityInvite.Kind,
     ): MultipleRoleUser {
-        val userJpaEntity = requireNotNull(users.lockById(userId.value)?.takeIf { supports(it) }) {
+        val userJpaEntity = requireNotNull(users.lockById(userId.value)?.takeIf(::isMultipleRole)) {
             "Multiple-role user ${userId.value} does not exist for community membership"
         }
         val roleEnum = when (kind) {
@@ -136,7 +139,7 @@ class MultipleRoleUserPersistenceAdapter(
 
     @Transactional
     override fun removeById(id: MultipleRoleUserId) {
-        val userJpaEntity = jpaEntityRepository.findByIdOrNull(id.value)?.takeIf { supports(it) } ?: return
+        val userJpaEntity = jpaEntityRepository.findByIdOrNull(id.value)?.takeIf(::isMultipleRole) ?: return
         val userId = userJpaEntity.requireId()
 
         multipleRoleToUserJpaEntityRepository.deleteAll(multipleRoleToUserJpaEntityRepository.findAllByUserId(userId))
@@ -153,71 +156,104 @@ class MultipleRoleUserPersistenceAdapter(
     override fun removeByIds(ids: List<MultipleRoleUserId>) = ids.forEach(::removeById)
 
     @Transactional(readOnly = true)
-    override fun findByEmail(email: String): MultipleRoleUser? = users.findByEmail(email)?.takeIf { supports(it) }?.let { assemble(it) }
+    override fun findByEmail(email: String): MultipleRoleUser? = users.findByEmail(email)?.takeIf(::isMultipleRole)?.let { assemble(it) }
 
-    override fun supports(jpaEntity: UserJpaEntity) = jpaEntity.type == UserTypeJpaEnum.MULTIPLE_ROLE
-
-    override fun assembleAll(rows: List<UserJpaEntity>): List<MultipleRoleUser> = rows.map(::assemble)
-
-    override fun assemble(jpaEntity: UserJpaEntity): MultipleRoleUser {
-        val userId = jpaEntity.requireId()
-        val roles = assembleRoles(userId)
-        return MultipleRoleUserMapping.toDomain(jpaEntity, roles)
+    override fun assembleSupported(rows: List<UserJpaEntity>): List<MultipleRoleUser> {
+        val supported = rows.filter(::isMultipleRole)
+        val roles = assembleRoles(supported.map { row -> row.requireId() })
+        return supported.map { row -> MultipleRoleUserMapping.toDomain(row, roles.getValue(row.requireId())) }
     }
 
-    private fun assembleRoles(userId: Long): MultipleRoleUserRoles {
-        val memberships = multipleRoleToUserJpaEntityRepository.findAllByUserId(userId)
-        val communitiesByRole: Map<UserMultipleRoleJpaEnum, List<CommunityId>> =
-            memberships.groupBy({ it.id.multipleRole }, { CommunityId(it.id.communityId) })
+    private fun isMultipleRole(jpaEntity: UserJpaEntity) = jpaEntity.type == UserTypeJpaEnum.MULTIPLE_ROLE
 
-        fun memberOf(role: UserMultipleRoleJpaEnum) = communitiesByRole[role].orEmpty()
-
-        return MultipleRoleUserRoles(
-            administrator = administratorDataJpaEntityRepository.findByUserId(userId)
-                ?.let { MultipleRoleUserRoles.AdministratorRoleInfo(memberOf = memberOf(UserMultipleRoleJpaEnum.ADMINISTRATOR)) },
-            developer = developerDataJpaEntityRepository.findByUserId(userId)
-                ?.let { buildDeveloperInfo(userId, memberOf(UserMultipleRoleJpaEnum.DEVELOPER)) },
-            student = studentDataJpaEntityRepository.findByUserId(userId)
-                ?.let { buildStudentInfo(userId, memberOf(UserMultipleRoleJpaEnum.STUDENT)) },
-            judge = judgeDataJpaEntityRepository.findByUserId(userId)
-                ?.let { buildJudgeInfo(userId, memberOf(UserMultipleRoleJpaEnum.JUDGE)) },
-            manager = managerDataJpaEntityRepository.findByUserId(userId)
-                ?.let { buildManagerInfo(userId, memberOf(UserMultipleRoleJpaEnum.MANAGER)) },
+    /**
+     * Assembles the roles of [userIds]: memberships and the held roles in one query per table, then the id lists of
+     * every role only for the users holding it.
+     */
+    private fun assembleRoles(userIds: List<Long>): Map<Long, MultipleRoleUserRoles> {
+        val memberships =
+            Memberships(findAllInChunks(ids = userIds, find = multipleRoleToUserJpaEntityRepository::findAllByIdUserIdIn))
+        val administrators = findAllInChunks(ids = userIds, find = administratorDataJpaEntityRepository::findUserIdsByUserIdIn).toSet()
+        val developers = buildDeveloperInfos(
+            userIds = findAllInChunks(ids = userIds, find = developerDataJpaEntityRepository::findUserIdsByUserIdIn),
+            memberships = memberships,
         )
+        val students = buildStudentInfos(
+            userIds = findAllInChunks(ids = userIds, find = studentDataJpaEntityRepository::findUserIdsByUserIdIn),
+            memberships = memberships,
+        )
+        val judges = buildJudgeInfos(
+            userIds = findAllInChunks(ids = userIds, find = judgeDataJpaEntityRepository::findUserIdsByUserIdIn),
+            memberships = memberships,
+        )
+        val managers = buildManagerInfos(
+            userIds = findAllInChunks(ids = userIds, find = managerDataJpaEntityRepository::findUserIdsByUserIdIn),
+            memberships = memberships,
+        )
+
+        return userIds.associateWith { userId ->
+            MultipleRoleUserRoles(
+                administrator = if (userId in administrators) {
+                    MultipleRoleUserRoles.AdministratorRoleInfo(memberOf = memberships.of(userId, UserMultipleRoleJpaEnum.ADMINISTRATOR))
+                } else {
+                    null
+                },
+                developer = developers[userId],
+                student = students[userId],
+                judge = judges[userId],
+                manager = managers[userId],
+            )
+        }
     }
 
-    private fun buildDeveloperInfo(userId: Long, memberOf: List<CommunityId>): MultipleRoleUserRoles.DeveloperRoleInfo {
-        return MultipleRoleUserRoles.DeveloperRoleInfo(
-            memberOf = memberOf,
-            tasks = taskJpaEntityRepository.findAllByOwnerId(userId).map { TaskId(it.requireId()) },
-            contests = contestJpaEntityRepository.findAllByOwnerId(userId).map { ContestId(it.requireId()) },
-        )
+    private fun buildDeveloperInfos(userIds: List<Long>, memberships: Memberships): Map<Long, MultipleRoleUserRoles.DeveloperRoleInfo> {
+        val tasks = findOwnedIds(userIds, taskJpaEntityRepository::findLinkedIdsByOwnerIdIn)
+        val contests = findOwnedIds(userIds, contestJpaEntityRepository::findLinkedIdsByOwnerIdIn)
+        return userIds.associateWith { userId ->
+            MultipleRoleUserRoles.DeveloperRoleInfo(
+                memberOf = memberships.of(userId, UserMultipleRoleJpaEnum.DEVELOPER),
+                tasks = tasks.getValue(userId).map(::TaskId),
+                contests = contests.getValue(userId).map(::ContestId),
+            )
+        }
     }
 
-    private fun buildStudentInfo(userId: Long, memberOf: List<CommunityId>): MultipleRoleUserRoles.StudentRoleInfo {
-        return MultipleRoleUserRoles.StudentRoleInfo(
-            memberOf = memberOf,
-            classes = studentToClassJpaEntityRepository.findAllByStudentId(userId).map { ClassId(it.id.classId) },
-            submissions = submissionJpaEntityRepository.findAllByAuthorId(userId).map { SubmissionId(it.requireId()) },
-        )
+    private fun buildStudentInfos(userIds: List<Long>, memberships: Memberships): Map<Long, MultipleRoleUserRoles.StudentRoleInfo> {
+        val classes = findOwnedIds(userIds, studentToClassJpaEntityRepository::findLinkedIdsByStudentIdIn)
+        val submissions = findOwnedIds(userIds, submissionJpaEntityRepository::findLinkedIdsByAuthorIdIn)
+        return userIds.associateWith { userId ->
+            MultipleRoleUserRoles.StudentRoleInfo(
+                memberOf = memberships.of(userId, UserMultipleRoleJpaEnum.STUDENT),
+                classes = classes.getValue(userId).map(::ClassId),
+                submissions = submissions.getValue(userId).map(::SubmissionId),
+            )
+        }
     }
 
-    private fun buildJudgeInfo(userId: Long, memberOf: List<CommunityId>): MultipleRoleUserRoles.JudgeRoleInfo {
-        return MultipleRoleUserRoles.JudgeRoleInfo(
-            memberOf = memberOf,
-            judgmentOrders = judgmentOrderJpaEntityRepository.findAllByJudgeId(userId)
-                .map { JudgmentOrderId(it.requireId()) },
-        )
+    private fun buildJudgeInfos(userIds: List<Long>, memberships: Memberships): Map<Long, MultipleRoleUserRoles.JudgeRoleInfo> {
+        val judgmentOrders = findOwnedIds(userIds, judgmentOrderJpaEntityRepository::findLinkedIdsByJudgeIdIn)
+        return userIds.associateWith { userId ->
+            MultipleRoleUserRoles.JudgeRoleInfo(
+                memberOf = memberships.of(userId, UserMultipleRoleJpaEnum.JUDGE),
+                judgmentOrders = judgmentOrders.getValue(userId).map(::JudgmentOrderId),
+            )
+        }
     }
 
-    private fun buildManagerInfo(userId: Long, memberOf: List<CommunityId>): MultipleRoleUserRoles.ManagerRoleInfo {
-        return MultipleRoleUserRoles.ManagerRoleInfo(
-            memberOf = memberOf,
-            classes = classJpaEntityRepository.findAllByOwnerId(userId).map { ClassId(it.requireId()) },
-            competitions = competitionJpaEntityRepository.findAllByOwnerId(userId)
-                .map { CompetitionId(it.requireId()) },
-        )
+    private fun buildManagerInfos(userIds: List<Long>, memberships: Memberships): Map<Long, MultipleRoleUserRoles.ManagerRoleInfo> {
+        val classes = findOwnedIds(userIds, classJpaEntityRepository::findLinkedIdsByOwnerIdIn)
+        val competitions = findOwnedIds(userIds, competitionJpaEntityRepository::findLinkedIdsByOwnerIdIn)
+        return userIds.associateWith { userId ->
+            MultipleRoleUserRoles.ManagerRoleInfo(
+                memberOf = memberships.of(userId, UserMultipleRoleJpaEnum.MANAGER),
+                classes = classes.getValue(userId).map(::ClassId),
+                competitions = competitions.getValue(userId).map(::CompetitionId),
+            )
+        }
     }
+
+    private fun findOwnedIds(userIds: List<Long>, find: (List<Long>) -> List<LinkedIdRow>): Map<Long, List<Long>> =
+        findLinkedIds(ownerIds = userIds, find = find, ownerIdOf = LinkedIdRow::ownerId, linkedIdOf = LinkedIdRow::linkedId)
 
     /**
      * Reconciles the role-data rows and `(role, community)` memberships of [userId] with [roles]: kept roles and
@@ -303,5 +339,18 @@ class MultipleRoleUserPersistenceAdapter(
         is Student -> UserMultipleRoleJpaEnum.STUDENT
         is Judge -> UserMultipleRoleJpaEnum.JUDGE
         is Manager -> UserMultipleRoleJpaEnum.MANAGER
+    }
+
+    /**
+     * Communities of the loaded membership [rows] grouped by user and role.
+     */
+    private class Memberships(rows: List<MultipleRoleToUserJpaEntity>) {
+
+        private val communities = rows.groupBy(
+            keySelector = { row -> row.id.userId to row.id.multipleRole },
+            valueTransform = { row -> CommunityId(row.id.communityId) },
+        )
+
+        fun of(userId: Long, role: UserMultipleRoleJpaEnum): List<CommunityId> = communities[userId to role].orEmpty()
     }
 }

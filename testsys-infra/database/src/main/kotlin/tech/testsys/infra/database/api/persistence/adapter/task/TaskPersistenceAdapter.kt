@@ -25,6 +25,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToTaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskStatusJpaEnum
+import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.task.CommunityToTaskJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.DeveloperSolutionToTaskContentJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.ExerciseToTaskContentJpaEntityRepository
@@ -37,8 +38,9 @@ import tech.testsys.infra.database.internal.jpa.repository.task.VersionBucketToT
 import tech.testsys.infra.database.internal.mapping.task.TaskContentMapping
 import tech.testsys.infra.database.internal.mapping.task.TaskContentRevision
 import tech.testsys.infra.database.internal.mapping.task.TaskMapping
-import tech.testsys.infra.database.internal.utils.findByIdOrError
-import tech.testsys.infra.database.internal.utils.findIdByTagOrError
+import tech.testsys.infra.database.internal.utils.findAllByIdOrError
+import tech.testsys.infra.database.internal.utils.findIdsByTagOrError
+import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 import org.springframework.data.domain.Sort as JpaSort
@@ -183,68 +185,101 @@ class TaskPersistenceAdapter(
     @Transactional
     override fun removeByIds(ids: List<TaskId>) = ids.forEach(::removeById)
 
-    override fun assembleAll(rows: List<TaskJpaEntity>): List<Task> = rows.map(::assemble)
-
-    override fun assemble(jpaEntity: TaskJpaEntity): Task {
-        val taskId = jpaEntity.requireId()
-        val sharedToIds = communityToTaskJpaEntityRepository.findAllByTaskId(taskId).map { CommunityId(it.id.communityId) }
-        val domainEntity = TaskMapping.toDomain(
-            jpaEntity = jpaEntity,
-            wip = loadWipRevision(jpaEntity),
-            committed = loadCommittedRevision(jpaEntity),
-            sharedToIds = sharedToIds,
-            uploadedResourceBuckets = versionBucketToTaskJpaEntityRepository.findAllByTaskId(taskId)
-                .map { VersionBucket(it.id.versionBucket) }.toSet(),
+    override fun assembleAll(rows: List<TaskJpaEntity>): List<Task> {
+        val taskIds = rows.map { row -> row.requireId() }
+        val sharedToIds = findLinkedIds(
+            ownerIds = taskIds,
+            find = communityToTaskJpaEntityRepository::findLinkedIdsByTaskIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> CommunityId(link.linkedId) },
         )
-        return domainEntity
-    }
+        val uploadedResourceBuckets = findLinkedIds(
+            ownerIds = taskIds,
+            find = versionBucketToTaskJpaEntityRepository::findAllByIdTaskIdIn,
+            ownerIdOf = { association -> association.id.taskId },
+            linkedIdOf = { association -> VersionBucket(association.id.versionBucket) },
+        )
+        val revisions = loadRevisions(rows.flatMap(::revisionIdsOf))
 
-    private fun loadWipRevision(jpaEntity: TaskJpaEntity): TaskContentRevision? = when (jpaEntity.status) {
-        TaskStatusJpaEnum.NEW, TaskStatusJpaEnum.UNCOMMITTED -> loadRevision(jpaEntity.wipContentId)
-        // A committed task has no wip: its wipContentId points at the committed row.
-        TaskStatusJpaEnum.COMMITTED -> null
-    }
-
-    private fun loadCommittedRevision(jpaEntity: TaskJpaEntity): TaskContentRevision? = when (jpaEntity.status) {
-        TaskStatusJpaEnum.NEW -> null
-        TaskStatusJpaEnum.UNCOMMITTED, TaskStatusJpaEnum.COMMITTED -> {
-            val committedId = requireNotNull(jpaEntity.committedContentId) {
-                "Task ${jpaEntity.requireId()} has status=${jpaEntity.status} but committedContentId is null"
-            }
-            loadRevision(committedId)
+        return rows.map { row ->
+            val taskId = row.requireId()
+            TaskMapping.toDomain(
+                jpaEntity = row,
+                wip = loadWipRevision(row, revisions),
+                committed = loadCommittedRevision(row, revisions),
+                sharedToIds = sharedToIds.getValue(taskId),
+                uploadedResourceBuckets = uploadedResourceBuckets.getValue(taskId).toSet(),
+            )
         }
     }
 
-    private fun loadRevision(taskContentId: Long): TaskContentRevision {
-        val row = taskContentJpaEntityRepository.findByIdOrError(taskContentId)
-        val rowId = row.requireId()
-        return TaskContentRevision(
-            jpaEntity = row,
-            exerciseIds = loadExerciseIds(rowId),
-            testIds = loadTestIds(rowId),
-            developerSolutionIds = loadDeveloperSolutionIds(rowId),
-            supportedVersions = loadSupportedVersions(rowId),
-        )
+    /**
+     * Returns the ids of the content rows [jpaEntity] references for its status; a missing committed id is reported
+     * by [loadCommittedRevision].
+     */
+    private fun revisionIdsOf(jpaEntity: TaskJpaEntity): List<Long> = when (jpaEntity.status) {
+        TaskStatusJpaEnum.NEW -> listOf(jpaEntity.wipContentId)
+        TaskStatusJpaEnum.UNCOMMITTED -> listOfNotNull(jpaEntity.wipContentId, jpaEntity.committedContentId)
+        TaskStatusJpaEnum.COMMITTED -> listOfNotNull(jpaEntity.committedContentId)
     }
 
-    private fun loadExerciseIds(taskContentId: Long): List<ExerciseId> =
-        exerciseToTaskContentJpaEntityRepository.findAllByTaskContentId(taskContentId).map { ExerciseId(it.id.exerciseId) }
+    private fun loadWipRevision(jpaEntity: TaskJpaEntity, revisions: Map<Long, TaskContentRevision>): TaskContentRevision? =
+        when (jpaEntity.status) {
+            TaskStatusJpaEnum.NEW, TaskStatusJpaEnum.UNCOMMITTED -> revisions.getValue(jpaEntity.wipContentId)
+            // A committed task has no wip: its wipContentId points at the committed row.
+            TaskStatusJpaEnum.COMMITTED -> null
+        }
 
-    private fun loadTestIds(taskContentId: Long): List<TestId> =
-        testToTaskContentJpaEntityRepository.findAllByTaskContentId(taskContentId).map { TestId(it.id.testId) }
+    private fun loadCommittedRevision(jpaEntity: TaskJpaEntity, revisions: Map<Long, TaskContentRevision>): TaskContentRevision? =
+        when (jpaEntity.status) {
+            TaskStatusJpaEnum.NEW -> null
+            TaskStatusJpaEnum.UNCOMMITTED, TaskStatusJpaEnum.COMMITTED -> {
+                val committedId = requireNotNull(jpaEntity.committedContentId) {
+                    "Task ${jpaEntity.requireId()} has status=${jpaEntity.status} but committedContentId is null"
+                }
+                revisions.getValue(committedId)
+            }
+        }
 
-    private fun loadDeveloperSolutionIds(taskContentId: Long): List<DeveloperSolutionId> =
-        developerSolutionToTaskContentJpaEntityRepository.findAllByTaskContentId(taskContentId)
-            .map { DeveloperSolutionId(it.id.developerSolutionId) }
+    /**
+     * Loads the content rows [taskContentIds] with their associations, one query per table, mapped by content row id.
+     */
+    private fun loadRevisions(taskContentIds: List<Long>): Map<Long, TaskContentRevision> {
+        val contents = taskContentJpaEntityRepository.findAllByIdOrError(taskContentIds)
+        val exerciseIds = findLinkedIds(
+            ownerIds = contents.keys,
+            find = exerciseToTaskContentJpaEntityRepository::findLinkedIdsByTaskContentIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> ExerciseId(link.linkedId) },
+        )
+        val testIds = findLinkedIds(
+            ownerIds = contents.keys,
+            find = testToTaskContentJpaEntityRepository::findLinkedIdsByTaskContentIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> TestId(link.linkedId) },
+        )
+        val developerSolutionIds = findLinkedIds(
+            ownerIds = contents.keys,
+            find = developerSolutionToTaskContentJpaEntityRepository::findLinkedIdsByTaskContentIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> DeveloperSolutionId(link.linkedId) },
+        )
+        val versionIds = findLinkedIds(
+            ownerIds = contents.keys,
+            find = trikStudioVersionToTaskContentJpaEntityRepository::findLinkedIdsByTaskContentIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = LinkedIdRow::linkedId,
+        )
+        val versions = trikStudioVersionJpaEntityRepository.findAllByIdOrError(versionIds.values.flatten())
 
-    private fun loadSupportedVersions(taskContentId: Long): List<TrikStudioVersion> {
-        val versionIds = trikStudioVersionToTaskContentJpaEntityRepository
-            .findAllByTaskContentId(taskContentId)
-            .map { it.id.trikStudioVersionId }
-        if (versionIds.isEmpty()) return emptyList()
-        return versionIds.map {
-            val row = trikStudioVersionJpaEntityRepository.findByIdOrError(it)
-            TrikStudioVersion(row.tag)
+        return contents.mapValues { (contentId, content) ->
+            TaskContentRevision(
+                jpaEntity = content,
+                exerciseIds = exerciseIds.getValue(contentId),
+                testIds = testIds.getValue(contentId),
+                developerSolutionIds = developerSolutionIds.getValue(contentId),
+                supportedVersions = versionIds.getValue(contentId).map { versionId -> TrikStudioVersion(versions.getValue(versionId).tag) },
+            )
         }
     }
 
@@ -313,7 +348,8 @@ class TaskPersistenceAdapter(
         developerSolutionToTaskContentJpaEntityRepository.saveAll(
             TaskContentMapping.toDeveloperSolutionAssociations(contentId, developerSolutionIds),
         )
-        val versionIds = versions.map { trikStudioVersionJpaEntityRepository.findIdByTagOrError(it.version) }
+        val idsByTag = trikStudioVersionJpaEntityRepository.findIdsByTagOrError(versions.map { version -> version.version })
+        val versionIds = versions.map { version -> idsByTag.getValue(version.version) }
         trikStudioVersionToTaskContentJpaEntityRepository.saveAll(
             TaskContentMapping.toTrikStudioVersionAssociations(contentId, versionIds),
         )

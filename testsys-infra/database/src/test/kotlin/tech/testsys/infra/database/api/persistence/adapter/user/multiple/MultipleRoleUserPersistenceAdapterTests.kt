@@ -457,4 +457,39 @@ class MultipleRoleUserPersistenceAdapterTests :
 
         assertNull(found)
     }
+
+    @Test
+    fun `should find users holding every role by ids with the same statement count for one and twenty ids`() {
+        val communityId = fixtures.community().id.value
+        val saved = List(20) {
+            repository.save(
+                multipleRoleUserData {
+                    accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+                    name = fixtures.unique("User")
+                    email = fixtures.email("user")
+                    roles {
+                        administrator { memberOf(listOf(communityId)) }
+                        developer {
+                            memberOf(listOf(communityId))
+                            data = developerData {}
+                        }
+                        student { data = studentData {} }
+                        judge { data = judgeData {} }
+                        manager { data = managerData {} }
+                    }
+                },
+            )
+        }
+        val taskIds = saved.map { user -> fixtures.workingTask(user).id }
+        val ids = saved.map { user -> user.id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { user -> user.id })
+        assertEquals(ids.toSet(), twenty.map { user -> user.id }.toSet())
+        assertEquals(List(20) { 5 }, twenty.map { user -> user.data.roles.size })
+        assertEquals(ids.zip(taskIds).toMap(), twenty.associate { user -> user.id to user.role<Developer>().data.tasks.ids.single() })
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
 }

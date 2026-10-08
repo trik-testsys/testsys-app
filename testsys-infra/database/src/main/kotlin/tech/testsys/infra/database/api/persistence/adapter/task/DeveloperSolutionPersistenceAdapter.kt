@@ -71,9 +71,8 @@ class DeveloperSolutionPersistenceAdapter(
         return resourceVersionRepository.findFirstByVersionBucketOrderByCreatedAtDescIdDesc(versionBucket.value)?.let { assemble(it) }
     }
 
-    override fun assembleAll(rows: List<DeveloperSolutionJpaEntity>): List<DeveloperSolution> = rows.map(::assemble)
-
-    override fun assemble(jpaEntity: DeveloperSolutionJpaEntity) = DeveloperSolutionMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<DeveloperSolutionJpaEntity>): List<DeveloperSolution> =
+        rows.map { row -> DeveloperSolutionMapping.toDomain(row) }
 
     @Transactional(readOnly = true)
     override fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<DeveloperSolution> =

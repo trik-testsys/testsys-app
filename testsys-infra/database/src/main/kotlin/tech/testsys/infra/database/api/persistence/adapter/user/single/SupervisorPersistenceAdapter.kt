@@ -15,6 +15,7 @@ import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRep
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SupervisorDataJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.single.SupervisorMapping
+import tech.testsys.infra.database.internal.utils.findAllInChunks
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
@@ -71,14 +72,11 @@ class SupervisorPersistenceAdapter(
     @Transactional
     override fun removeByIds(ids: List<SingleRoleUserId>) = ids.forEach(::removeById)
 
-    override fun supports(jpaEntity: UserJpaEntity) = supervisorDataJpaEntityRepository.findByUserId(jpaEntity.requireId()) != null
-
-    override fun assembleAll(rows: List<UserJpaEntity>): List<Supervisor> = rows.map(::assemble)
-
-    override fun assemble(jpaEntity: UserJpaEntity): Supervisor {
-        val userId = jpaEntity.requireId()
-        val dataJpaEntity = supervisorDataJpaEntityRepository.findByUserId(userId).requireById(userId)
-        val domainEntity = SupervisorMapping.toDomain(jpaEntity, dataJpaEntity)
-        return domainEntity
+    override fun assembleSupported(rows: List<UserJpaEntity>): List<Supervisor> {
+        val dataByUserId = findAllInChunks(
+            ids = rows.map { row -> row.requireId() },
+            find = supervisorDataJpaEntityRepository::findAllByUserIdIn,
+        ).associateBy { data -> data.userId }
+        return rows.mapNotNull { row -> dataByUserId[row.requireId()]?.let { data -> SupervisorMapping.toDomain(row, data) } }
     }
 }

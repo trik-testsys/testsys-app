@@ -21,13 +21,16 @@ import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAd
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToContestJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.ContestJpaEntity
+import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.task.CommunityToContestJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.ContestJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TaskToContestJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.ContestMapping
+import tech.testsys.infra.database.internal.utils.findAllByIdOrError
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.findIdByTagOrError
+import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 import org.springframework.data.domain.Sort as JpaSort
@@ -84,9 +87,14 @@ class ContestPersistenceAdapter(
     }
 
     @Transactional(readOnly = true)
-    override fun findByTaskId(taskId: TaskId): List<Contest> =
-        taskToContestJpaEntityRepository.findAllByTaskId(taskId.value).map { it.id.contestId }
-            .distinct().sorted().map { assemble(contestJpaEntityRepository.findByIdOrError(it)) }
+    override fun findByTaskId(taskId: TaskId): List<Contest> {
+        val contestIds = taskToContestJpaEntityRepository.findAllByTaskId(taskId.value)
+            .map { association -> association.id.contestId }
+            .distinct()
+            .sorted()
+        val rows = contestJpaEntityRepository.findAllByIdOrError(contestIds)
+        return assembleAll(contestIds.map { contestId -> rows.getValue(contestId) })
+    }
 
     @Transactional(readOnly = true)
     override fun findAvailableToDeveloper(
@@ -190,17 +198,31 @@ class ContestPersistenceAdapter(
     @Transactional
     override fun removeByIds(ids: List<ContestId>) = ids.forEach(::removeById)
 
-    override fun assembleAll(rows: List<ContestJpaEntity>): List<Contest> = rows.map(::assemble)
+    override fun assembleAll(rows: List<ContestJpaEntity>): List<Contest> {
+        val contestIds = rows.map { row -> row.requireId() }
+        val versions = trikStudioVersionJpaEntityRepository.findAllByIdOrError(rows.map { row -> row.trikStudioVersionId })
+        val taskIds = findLinkedIds(
+            ownerIds = contestIds,
+            find = taskToContestJpaEntityRepository::findLinkedIdsByContestIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> TaskId(link.linkedId) },
+        )
+        val sharedToIds = findLinkedIds(
+            ownerIds = contestIds,
+            find = communityToContestJpaEntityRepository::findLinkedIdsByContestIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> CommunityId(link.linkedId) },
+        )
 
-    override fun assemble(jpaEntity: ContestJpaEntity): Contest {
-        val contestId = jpaEntity.requireId()
-        val tag = trikStudioVersionJpaEntityRepository.findByIdOrError(jpaEntity.trikStudioVersionId).tag
-
-        val taskIds = taskToContestJpaEntityRepository.findAllByContestId(contestId).map { TaskId(it.id.taskId) }
-        val sharedToIds = communityToContestJpaEntityRepository.findAllByContestId(contestId).map { CommunityId(it.id.communityId) }
-
-        val domainEntity = ContestMapping.toDomain(jpaEntity, TrikStudioVersion(tag), taskIds, sharedToIds)
-        return domainEntity
+        return rows.map { row ->
+            val contestId = row.requireId()
+            ContestMapping.toDomain(
+                jpaEntity = row,
+                trikStudioVersion = TrikStudioVersion(versions.getValue(row.trikStudioVersionId).tag),
+                taskIds = taskIds.getValue(contestId),
+                sharedToIds = sharedToIds.getValue(contestId),
+            )
+        }
     }
 
     private fun syncTasks(contestId: Long, target: List<TaskId>) = syncJoinTable(

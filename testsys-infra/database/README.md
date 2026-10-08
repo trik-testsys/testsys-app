@@ -19,7 +19,7 @@
 | `api/persistence/adapter`     | Адаптеры портов хранения `XPersistenceAdapter`                                             | 9         |
 | `api/persistence`             | `FileDataStorage` — хранение файлов, `FileSystemBlobStorage` — содержимое файлов на диске  | —         |
 | `internal/jpa/id`             | Генератор идентификаторов                                                                  | —         |
-| `internal/utils`              | Общие помощники: `syncJoinTable`, `findLinkedIds`, `findAllInChunks`, `requireId`, `requireVersion`, `findByIdOrError`, `populateFields` | —         |
+| `internal/utils`              | Общие помощники: `syncJoinTable`, `findLinkedIds`, `findAllInChunks`, `findAllByIdOrError`, `requireId`, `requireVersion`, `findByIdOrError`, `populateFields` | —         |
 
 Всё в `internal` помечено `@InternalDatabaseApi` (`@RequiresOptIn`): снаружи модуля используется только `api`.
 Бины регистрирует [DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/api/DatabaseConfiguration.kt),
@@ -34,13 +34,18 @@
 передают ему все найденные строки одним вызовом. `assemble` собирает одну строку: вызывает `assembleAll`
 со списком из этой строки.
 
-Вспомогательные функции `findLinkedIds` и `findAllInChunks` из
+Вспомогательные функции `findLinkedIds`, `findAllInChunks` и `findAllByIdOrError` из
 [BatchLoadUtils.kt](src/main/kotlin/tech/testsys/infra/database/internal/utils/BatchLoadUtils.kt) читают строки
 для всего списка одним запросом на таблицу. Условие `IN` они делят на порции по 1024 идентификатора, а при пустом
-наборе идентификаторов не обращаются к БД.
+наборе идентификаторов не обращаются к БД. `findAllByIdOrError` падает с `IllegalArgumentException`, если строки
+с каким-либо из идентификаторов нет.
 
-Часть адаптеров пока переопределяет `assemble` и собирает строки по одной: их `assembleAll` вызывает `assemble`
-для каждой строки. Это переходное состояние.
+Пары идентификаторов `Long` из связанной таблицы репозиторий может возвращать проекцией
+[LinkedIdRow](src/main/kotlin/tech/testsys/infra/database/internal/jpa/repository/LinkedIdRow.kt) вместо целых строк,
+если адаптеру нужны только они.
+
+Адаптеры Условий, Упражнений, Полигонов, Решений, логов и видеозаписей пока переопределяют `assemble` и собирают
+строки по одной: их `assembleAll` вызывает `assemble` для каждой строки. Это переходное состояние.
 
 ## Постраничный поиск Задач и Туров
 
@@ -78,10 +83,11 @@
 
 Метод `findAvailableToJudge` в
 [VerdictPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/VerdictPersistenceAdapter.kt)
-передаёт идентификаторы автора, Посылки, Класса и Соревнования из `VerdictFilter` и `Pageable`
-в `VerdictJpaEntityRepository`. Членство автора и принадлежность Тура проверяются через `EXISTS`;
+строит `Specification` по `VerdictFilter` и передаёт её с `Pageable` в `JpaSpecificationExecutor`.
+Условия автора, Посылки, Класса и Соревнования добавляются только для заданных в фильтре значений.
+Посылка Вердикта, членство автора и принадлежность Тура проверяются через `EXISTS`;
 правила фильтрации определены в [features.md](../../docs/domain/features.md).
-БД фильтрует и сортирует Вердикты, затем выбирает страницу. Для подсчёта общего числа задан отдельный `countQuery` с теми же условиями.
+БД фильтрует и сортирует Вердикты, затем выбирает страницу. Подсчёт общего числа использует ту же спецификацию.
 Адаптер одним запросом загружает результаты Полигонов для всех Вердиктов выбранной страницы,
 группирует их по идентификатору Вердикта и собирает страницу через `VerdictMapping`.
 Для пустой страницы запрос результатов Полигонов не выполняется.
@@ -190,8 +196,9 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 `AbstractUserPersistenceAdapter.findByAccessToken` хэширует исходный КД алгоритмом `Identity` и ищет строку
 `ts_user` по сохранённому значению и алгоритму
 ([AbstractUserPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/AbstractUserPersistenceAdapter.kt)).
-Строку Пользователя другого вида адаптер отбрасывает через `supports`. Поиск находит Пользователя, только пока
-сохранённое значение совпадает с исходным КД, поэтому метод помечен `@RawAccessTokenDependency`.
+Строку Пользователя другого вида метод не возвращает: `assembleSupported` адаптера собирает только строки своего вида.
+Поиск находит Пользователя, только пока сохранённое значение совпадает с исходным КД, поэтому метод помечен
+`@RawAccessTokenDependency`.
 При переходе к хэшированию с солью этот поиск нужно пересмотреть.
 
 ## Коды-приглашения
@@ -257,7 +264,7 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 `findByUser` ищет запрос по идентификатору Пользователя. Код подтверждения хранится в исходном виде.
 
 `MultipleRoleUserPersistenceAdapter.findByEmail` ищет строку `ts_user` по точному совпадению почты
-и отбрасывает строку Пользователя другого вида через `supports`.
+и не возвращает строку Пользователя другого вида.
 
 ## Схема БД
 

@@ -30,4 +30,11 @@ interface TrikStudioVersionJpaEntityRepository : SnowflakeJpaEntityRepository<Tr
      * @since %CURRENT_VERSION%
      */
     fun findByTag(tag: String): TrikStudioVersionJpaEntity?
+
+    /**
+     * Finds the stored versions with any of [tags] in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByTagIn(tags: Collection<String>): List<TrikStudioVersionJpaEntity>
 }

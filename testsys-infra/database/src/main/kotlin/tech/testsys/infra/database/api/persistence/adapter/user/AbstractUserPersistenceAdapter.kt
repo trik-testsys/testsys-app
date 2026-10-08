@@ -12,11 +12,12 @@ import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAd
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
+import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.toJpaEnum
 
 /**
  * Base of adapters storing several user kinds in the shared [UserJpaEntity] table: [findById], [findByIds] and
- * [findByAccessToken] skip rows rejected by [supports], so a row of another kind is reported as absent rather than assembled.
+ * [findByAccessToken] keep only rows assembled by [assembleSupported], so a row of another kind is reported as absent.
  *
  * @param Data the data type a new entity is created from.
  * @param Id the id type of the entity.
@@ -32,10 +33,11 @@ abstract class AbstractUserPersistenceAdapter<Data, Id : UserId, Entity : User<I
     private val userJpaEntityRepository: UserJpaEntityRepository = jpaEntityRepository
 
     @Transactional(readOnly = true)
-    override fun findById(id: Id) = jpaEntityRepository.findByIdOrNull(id.value)?.takeIf { supports(it) }?.let { assemble(it) }
+    override fun findById(id: Id) =
+        jpaEntityRepository.findByIdOrNull(id.value)?.let { row -> assembleSupported(listOf(row)).singleOrNull() }
 
     @Transactional(readOnly = true)
-    override fun findByIds(ids: List<Id>) = assembleAll(jpaEntityRepository.findAllById(ids.map { it.value }).filter { supports(it) })
+    override fun findByIds(ids: List<Id>) = assembleSupported(jpaEntityRepository.findAllById(ids.map { it.value }))
 
     @Transactional(readOnly = true)
     @RawAccessTokenDependency(
@@ -48,12 +50,21 @@ abstract class AbstractUserPersistenceAdapter<Data, Id : UserId, Entity : User<I
                 accessToken = accessTokenHash.value,
                 accessTokenHashAlgorithm = accessTokenHash.algorithm.toJpaEnum(),
             )
-            ?.takeIf { supports(it) }
-            ?.let { assemble(it) }
+            ?.let { row -> assembleSupported(listOf(row)).singleOrNull() }
+    }
+
+    final override fun assembleAll(rows: List<UserJpaEntity>): List<Entity> {
+        val entities = assembleSupported(rows)
+        check(entities.size == rows.size) {
+            val assembledIds = entities.map { entity -> entity.id.value }.toSet()
+            "User rows ids=${rows.map { row -> row.requireId() }.filter { id -> id !in assembledIds }} do not hold users of this kind"
+        }
+        return entities
     }
 
     /**
-     * Whether [jpaEntity] holds a user of this adapter's kind.
+     * Assembles the [rows] holding users of this adapter's kind in the order of [rows] and skips the other rows,
+     * reading the role data of the whole list at once.
      */
-    protected abstract fun supports(jpaEntity: UserJpaEntity): Boolean
+    protected abstract fun assembleSupported(rows: List<UserJpaEntity>): List<Entity>
 }

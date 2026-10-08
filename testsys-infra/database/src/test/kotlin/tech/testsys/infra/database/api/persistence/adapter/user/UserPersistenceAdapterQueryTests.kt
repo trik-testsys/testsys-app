@@ -15,6 +15,8 @@ import tech.testsys.domain.builder.api.judgeData
 import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.user.Developer
@@ -186,6 +188,45 @@ class UserPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
             )
 
             assertNull(actual)
+        }
+    }
+
+    @Nested
+    inner class FindAvailableToAdministratorTests {
+
+        @Test
+        fun `should find a page with the same statement count for one and twenty members of each kind`() {
+            val oneOfEachAdministrator = newAdministrator()
+            val oneOfEachCommunity = fixtures.community(owner = oneOfEachAdministrator)
+            val oneOfEach = listOf(
+                fixtures.multipleRoleUser { developerIn(listOf(oneOfEachCommunity)) }.id,
+                fixtures.observer(oneOfEachCommunity).id,
+            )
+            val twentyOfEachAdministrator = newAdministrator()
+            val twentyOfEachCommunity = fixtures.community(owner = twentyOfEachAdministrator)
+            val twentyOfEach = List(20) { fixtures.multipleRoleUser { developerIn(listOf(twentyOfEachCommunity)) }.id } +
+                List(20) { fixtures.observer(twentyOfEachCommunity).id }
+            val pagination = Pagination(page = 0, size = 50)
+            val filter = UserFilter(roles = setOf(UserFilter.Role.DEVELOPER, UserFilter.Role.OBSERVER))
+
+            val (one, oneOfEachStatements) = withStatementCount {
+                repository.findAvailableToAdministrator(
+                    administratorId = oneOfEachAdministrator.id,
+                    pagination = pagination,
+                    filter = filter,
+                )
+            }
+            val (twenty, twentyOfEachStatements) = withStatementCount {
+                repository.findAvailableToAdministrator(
+                    administratorId = twentyOfEachAdministrator.id,
+                    pagination = pagination,
+                    filter = filter,
+                )
+            }
+
+            assertEquals(oneOfEach.toSet(), one.content.map { user -> user.id }.toSet())
+            assertEquals(twentyOfEach.toSet(), twenty.content.map { user -> user.id }.toSet())
+            assertEquals(oneOfEachStatements, twentyOfEachStatements)
         }
     }
 

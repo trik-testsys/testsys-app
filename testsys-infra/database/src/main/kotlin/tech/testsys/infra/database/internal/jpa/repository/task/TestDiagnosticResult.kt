@@ -1,5 +1,8 @@
 package tech.testsys.infra.database.internal.jpa.repository.task
 
+import org.springframework.data.jpa.repository.Modifying
+import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.DiagnosticReportJpaEntity
@@ -23,6 +26,22 @@ interface TestDiagnosticResultJpaEntityRepository :
      * @since %CURRENT_VERSION%
      */
     fun findAllByIdRequestId(requestId: Long): List<TestDiagnosticResultJpaEntity>
+
+    /**
+     * Finds the saved progress of any of the requests [requestIds] in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByIdRequestIdIn(requestIds: Collection<Long>): List<TestDiagnosticResultJpaEntity>
+
+    /**
+     * Deletes the saved progress of the request [requestId] in one statement.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from TestDiagnosticResultJpaEntity e where e.id.requestId = :requestId")
+    fun deleteAllByRequestId(@Param("requestId") requestId: Long)
 }
 
 /**
@@ -39,4 +58,21 @@ interface DiagnosticReportJpaEntityRepository : SnowflakeJpaEntityRepository<Dia
      * @since %CURRENT_VERSION%
      */
     fun findAllByRequestIdAndTestIdOrderByPositionAsc(requestId: Long, testId: Long): List<DiagnosticReportJpaEntity>
+
+    /**
+     * Finds the messages of every polygon of any of the requests [requestIds] in one query, ordered by request, polygon
+     * and original position.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByRequestIdInOrderByRequestIdAscTestIdAscPositionAsc(requestIds: Collection<Long>): List<DiagnosticReportJpaEntity>
+
+    /**
+     * Deletes the messages of every polygon of the request [requestId] in one statement.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("delete from DiagnosticReportJpaEntity e where e.requestId = :requestId")
+    fun deleteAllByRequestId(@Param("requestId") requestId: Long)
 }

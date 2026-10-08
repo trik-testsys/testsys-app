@@ -18,11 +18,13 @@ import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.group.CompetitionJpaEntity
+import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.group.CompetitionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.ContestToCompetitionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.ParticipantDataJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.group.CompetitionMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
+import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 import java.time.Instant
@@ -84,7 +86,11 @@ class CompetitionPersistenceAdapter(
         val competitionId = savedJpaEntity.requireId()
         val contestsAssociations = CompetitionMapping.toContestAssociations(competitionId, data.contests.ids)
         contestToCompetitionJpaEntityRepository.saveAll(contestsAssociations)
-        val domainEntity = CompetitionMapping.toDomain(savedJpaEntity, loadParticipantIds(competitionId), data.contests.ids)
+        val domainEntity = CompetitionMapping.toDomain(
+            jpaEntity = savedJpaEntity,
+            participantIds = loadParticipantIds(listOf(competitionId)).getValue(competitionId),
+            contestIds = data.contests.ids,
+        )
         return domainEntity
     }
 
@@ -95,7 +101,11 @@ class CompetitionPersistenceAdapter(
         val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
         val competitionId = savedJpaEntity.requireId()
         syncContests(competitionId, entity.data.contests.ids)
-        val domainEntity = CompetitionMapping.toDomain(savedJpaEntity, loadParticipantIds(competitionId), entity.data.contests.ids)
+        val domainEntity = CompetitionMapping.toDomain(
+            jpaEntity = savedJpaEntity,
+            participantIds = loadParticipantIds(listOf(competitionId)).getValue(competitionId),
+            contestIds = entity.data.contests.ids,
+        )
         return domainEntity
     }
 
@@ -110,18 +120,32 @@ class CompetitionPersistenceAdapter(
     @Transactional
     override fun removeByIds(ids: List<CompetitionId>) = ids.forEach(::removeById)
 
-    override fun assembleAll(rows: List<CompetitionJpaEntity>): List<Competition> = rows.map(::assemble)
+    override fun assembleAll(rows: List<CompetitionJpaEntity>): List<Competition> {
+        val competitionIds = rows.map { row -> row.requireId() }
+        val participantIds = loadParticipantIds(competitionIds)
+        val contestIds = findLinkedIds(
+            ownerIds = competitionIds,
+            find = contestToCompetitionJpaEntityRepository::findLinkedIdsByCompetitionIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> ContestId(link.linkedId) },
+        )
 
-    override fun assemble(jpaEntity: CompetitionJpaEntity): Competition {
-        val competitionId = jpaEntity.requireId()
-        val contestIds = contestToCompetitionJpaEntityRepository.findAllByCompetitionId(competitionId)
-            .map { ContestId(it.id.contestId) }
-        val domainEntity = CompetitionMapping.toDomain(jpaEntity, loadParticipantIds(competitionId), contestIds)
-        return domainEntity
+        return rows.map { row ->
+            val competitionId = row.requireId()
+            CompetitionMapping.toDomain(
+                jpaEntity = row,
+                participantIds = participantIds.getValue(competitionId),
+                contestIds = contestIds.getValue(competitionId),
+            )
+        }
     }
 
-    private fun loadParticipantIds(competitionId: Long): List<SingleRoleUserId> =
-        participantDataJpaEntityRepository.findAllByCompetitionId(competitionId).map { SingleRoleUserId(it.userId) }
+    private fun loadParticipantIds(competitionIds: List<Long>): Map<Long, List<SingleRoleUserId>> = findLinkedIds(
+        ownerIds = competitionIds,
+        find = participantDataJpaEntityRepository::findLinkedIdsByCompetitionIdIn,
+        ownerIdOf = LinkedIdRow::ownerId,
+        linkedIdOf = { link -> SingleRoleUserId(link.linkedId) },
+    )
 
     private fun syncContests(competitionId: Long, target: List<ContestId>) = syncJoinTable(
         existing = contestToCompetitionJpaEntityRepository.findAllByCompetitionId(competitionId),

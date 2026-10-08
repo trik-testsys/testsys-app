@@ -15,7 +15,10 @@ import tech.testsys.domain.contract.persistence.repository.TaskValidationRequest
 import tech.testsys.domain.model.task.*
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.repository.task.DiagnosticReportJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.SubmissionJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.SubmissionToTaskValidationRequestJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.TestDiagnosticResultJpaEntityRepository
 import java.time.Instant
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
@@ -42,6 +45,15 @@ class TaskValidationRequestPersistenceAdapterTests :
 
     @Autowired
     private lateinit var contestRepository: ContestRepository
+
+    @Autowired
+    private lateinit var results: TestDiagnosticResultJpaEntityRepository
+
+    @Autowired
+    private lateinit var reports: DiagnosticReportJpaEntityRepository
+
+    @Autowired
+    private lateinit var submissionLinks: SubmissionToTaskValidationRequestJpaEntityRepository
 
     @Test
     fun `should preserve shared programs distinct expectations and deterministic submission order on creation and repeat`() {
@@ -674,6 +686,124 @@ class TaskValidationRequestPersistenceAdapterTests :
         assertNull(repository.startDiagnostics(request.id))
         assertNotEquals(request.id, repository.findOrCreateActive(editable.id, editable.data.owner.id).id)
         assertEquals(2, repository.findHistory(task.id).size)
+    }
+
+    @Test
+    fun `should find requests by ids with the same statement count for one and twenty ids`() {
+        val data = newData()
+        val testId = data.snapshot.tests.ids.single()
+        val submissionId = fixtures.submission().id
+        val created = taskValidationRequestData {
+            task = data.task.id
+            requestedBy = data.requestedBy.id
+            snapshot = data.snapshot
+            execution.submissionsCreated {
+                diagnostics = mutableListOf(reportedResult(testId))
+                submissions = mutableListOf(submissionId)
+            }
+        }
+        val ids = List(20) { repository.save(created).id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { request -> request.id })
+        assertEquals(ids.toSet(), twenty.map { request -> request.id }.toSet())
+        assertEquals(
+            List(20) { listOf(reportedResult(testId)) to listOf(submissionId) },
+            twenty.map { request ->
+                val state =
+                    assertInstanceOf(TaskValidationExecution.SubmissionsCreated::class.java, request.data.execution)
+                state.diagnostics to state.submissions.ids
+            },
+        )
+        assertEquals(
+            List(20) { data.snapshot.supportedTrikStudioVersions },
+            twenty.map { request -> request.data.snapshot.supportedTrikStudioVersions },
+        )
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    @Test
+    fun `should delete diagnostic results reports and submission links together with the removed request`() {
+        val data = newData()
+        val testId = data.snapshot.tests.ids.single()
+        val submissionId = fixtures.submission().id
+        val saved = repository.save(
+            taskValidationRequestData {
+                task = data.task.id
+                requestedBy = data.requestedBy.id
+                snapshot = data.snapshot
+                execution.submissionsCreated {
+                    diagnostics = mutableListOf(reportedResult(testId))
+                    submissions = mutableListOf(submissionId)
+                }
+            },
+        )
+
+        repository.removeById(saved.id)
+
+        val requestId = saved.id.value
+        assertNull(repository.findById(saved.id))
+        assertEquals(emptyList<Long>(), results.findAllByIdRequestId(requestId).map { result -> result.id.testId })
+        assertEquals(
+            emptyList<Int>(),
+            reports.findAllByRequestIdAndTestIdOrderByPositionAsc(requestId, testId.value).map { report -> report.position },
+        )
+        assertEquals(
+            emptyList<Long>(),
+            submissionLinks.findAllByIdRequestIdOrderByPositionAsc(requestId).map { link -> link.id.submissionId },
+        )
+        assertEquals(submissionId, savedSubmissions.findById(submissionId)?.id)
+    }
+
+    @Test
+    fun `should find the history with the same statement count for one and twenty requests`() {
+        val oneRequestData = newData()
+        val twentyRequestsData = newData()
+        val single = repository.save(oneRequestData).id
+        val twentyIds = List(20) { repository.save(twentyRequestsData).id }
+
+        val (one, oneRequestStatements) = withStatementCount { repository.findHistory(oneRequestData.task.id) }
+        val (twenty, twentyRequestsStatements) = withStatementCount { repository.findHistory(twentyRequestsData.task.id) }
+
+        assertEquals(listOf(single), one.map { request -> request.id })
+        assertEquals(twentyIds, twenty.map { request -> request.id })
+        assertEquals(oneRequestStatements, twentyRequestsStatements)
+    }
+
+    @Test
+    fun `should find diagnostic progress with the same statement count for one and twenty polygons`() {
+        val onePolygonRequest = requestWithDiagnostics(polygonCount = 1)
+        val twentyPolygonsRequest = requestWithDiagnostics(polygonCount = 20)
+
+        val (one, onePolygonStatements) = withStatementCount { repository.findDiagnosticProgress(onePolygonRequest.id) }
+        val (twenty, twentyPolygonsStatements) = withStatementCount { repository.findDiagnosticProgress(twentyPolygonsRequest.id) }
+
+        assertEquals(onePolygonRequest.data.snapshot.tests.ids.map(::reportedResult), one)
+        assertEquals(twentyPolygonsRequest.data.snapshot.tests.ids.map(::reportedResult), twenty)
+        assertEquals(onePolygonStatements, twentyPolygonsStatements)
+    }
+
+    private fun requestWithDiagnostics(polygonCount: Int): TaskValidationRequest {
+        val task = fixtures.task()
+        val testIds = List(polygonCount) { fixtures.polygon().id }.sortedBy { id -> id.value }
+        return repository.save(
+            taskValidationRequestData {
+                this.task = task.id
+                requestedBy = task.data.owner.id
+                snapshot = taskValidationSnapshot { tests = testIds.toMutableList() }
+                execution.awaitingSubmissions { diagnostics = testIds.map(::reportedResult).toMutableList() }
+            },
+        )
+    }
+
+    private fun reportedResult(testId: TestId): TestDiagnosticResult = testDiagnosticResult {
+        this.testId = testId
+        reports += diagnosticReport {
+            severity = DiagnosticSeverity.Warning
+            data.missingScoreOutput()
+        }
     }
 
     private fun readyRequest(): TaskValidationRequest {

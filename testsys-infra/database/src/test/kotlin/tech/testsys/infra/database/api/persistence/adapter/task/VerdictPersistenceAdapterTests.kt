@@ -125,4 +125,21 @@ class VerdictPersistenceAdapterTests : PersistenceAdapterContractTests<VerdictDa
 
         assertSameData(saved, assertNotNull(repository.findById(saved.id)))
     }
+
+    @Test
+    fun `should find verdicts by ids with the same statement count for one and twenty ids`() {
+        val saved = List(20) { repository.save(newData()) }
+        val ids = saved.map { verdict -> verdict.id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { verdict -> verdict.id })
+        assertEquals(ids.toSet(), twenty.map { verdict -> verdict.id }.toSet())
+        assertEquals(
+            saved.associate { verdict -> verdict.id to verdict.data.testVerdicts.map { testVerdict -> testVerdict.test.id } },
+            twenty.associate { verdict -> verdict.id to verdict.data.testVerdicts.map { testVerdict -> testVerdict.test.id } },
+        )
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
 }

@@ -14,6 +14,7 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
@@ -227,6 +228,41 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
         assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
     }
 
+    @Test
+    fun `should find contests by ids with the same statement count for one and twenty ids`() {
+        val data = newData()
+        val ids = List(20) { repository.save(data).id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { contest -> contest.id })
+        assertEquals(ids.toSet(), twenty.map { contest -> contest.id }.toSet())
+        assertEquals(List(20) { data.tasks.ids.toSet() }, twenty.map { contest -> contest.data.tasks.ids.toSet() })
+        assertEquals(List(20) { data.trikStudioVersion }, twenty.map { contest -> contest.data.trikStudioVersion })
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    @Test
+    fun `should find contests of a task with the same statement count for one and twenty contests`() {
+        val oneContestTask = fixtures.task()
+        val twentyContestsTask = fixtures.task()
+        val community = fixtures.community().id
+        val owner = fixtures.developer().id
+        val single = saveContest(ownerId = owner, communityIds = listOf(community), taskIds = listOf(oneContestTask.id))
+        val twentyIds = List(20) {
+            saveContest(ownerId = owner, communityIds = listOf(community), taskIds = listOf(twentyContestsTask.id)).id
+        }
+
+        val (one, oneContestStatements) = withStatementCount { repository.findByTaskId(oneContestTask.id) }
+        val (twenty, twentyContestsStatements) = withStatementCount { repository.findByTaskId(twentyContestsTask.id) }
+
+        assertEquals(listOf(single.id), one.map { contest -> contest.id })
+        assertEquals(twentyIds.sortedBy { id -> id.value }, twenty.map { contest -> contest.id })
+        assertEquals(List(20) { listOf(community) }, twenty.map { contest -> contest.data.sharedTo.ids })
+        assertEquals(oneContestStatements, twentyContestsStatements)
+    }
+
     private fun newDataWithLimits(total: Duration?, attempt: Duration?): ContestData {
         val ownerId = fixtures.developer().id.value
         val taskIds = listOf(fixtures.task().id, fixtures.task().id)
@@ -245,13 +281,17 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
         }
     }
 
-    private fun saveContest(ownerId: MultipleRoleUserId, communityIds: List<CommunityId>): Contest = repository.save(
+    private fun saveContest(
+        ownerId: MultipleRoleUserId,
+        communityIds: List<CommunityId>,
+        taskIds: List<TaskId> = listOf(fixtures.task().id),
+    ): Contest = repository.save(
         contestData {
             owner = ownerId
             name = fixtures.unique("Available contest")
             description = "Available contest description"
             trikStudioVersion = fixtures.trikStudioVersion()
-            tasks = mutableListOf(fixtures.task().id)
+            tasks = taskIds.toMutableList()
             sharedTo = communityIds.toMutableList()
         },
     )

@@ -19,6 +19,7 @@ import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRep
 import tech.testsys.infra.database.internal.jpa.repository.user.single.ParticipantDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.single.ParticipantMapping
+import tech.testsys.infra.database.internal.utils.findAllInChunks
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
@@ -96,14 +97,11 @@ class ParticipantPersistenceAdapter(
     @Transactional
     override fun removeByIds(ids: List<SingleRoleUserId>) = ids.forEach(::removeById)
 
-    override fun supports(jpaEntity: UserJpaEntity) = participantDataJpaEntityRepository.findByUserId(jpaEntity.requireId()) != null
-
-    override fun assembleAll(rows: List<UserJpaEntity>): List<Participant> = rows.map(::assemble)
-
-    override fun assemble(jpaEntity: UserJpaEntity): Participant {
-        val userId = jpaEntity.requireId()
-        val dataJpaEntity = participantDataJpaEntityRepository.findByUserId(userId).requireById(userId)
-        val domainEntity = ParticipantMapping.toDomain(jpaEntity, dataJpaEntity)
-        return domainEntity
+    override fun assembleSupported(rows: List<UserJpaEntity>): List<Participant> {
+        val dataByUserId = findAllInChunks(
+            ids = rows.map { row -> row.requireId() },
+            find = participantDataJpaEntityRepository::findAllByUserIdIn,
+        ).associateBy { data -> data.userId }
+        return rows.mapNotNull { row -> dataByUserId[row.requireId()]?.let { data -> ParticipantMapping.toDomain(row, data) } }
     }
 }

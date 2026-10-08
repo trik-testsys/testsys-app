@@ -1,10 +1,15 @@
 package tech.testsys.infra.database.internal.utils
 
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.data.jpa.repository.JpaRepository
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.task.FileDataJpaEntity
 
 @OptIn(InternalDatabaseApi::class)
 class BatchLoadUtilsTests {
@@ -120,6 +125,49 @@ class BatchLoadUtilsTests {
 
             assertEquals(mapOf(1L to listOf(10L), 2L to emptyList(), 3L to listOf(30L)), linkedIds)
             assertEquals(listOf(listOf(1L, 2L), listOf(3L)), requestedChunks)
+        }
+    }
+
+    @Nested
+    inner class FindAllByIdOrErrorTests {
+
+        private val repository = mockk<JpaRepository<FileDataJpaEntity, Long>>()
+
+        private fun fileData(id: Long) = FileDataJpaEntity(
+            uploadedFileName = "file-$id.txt",
+            storedFileName = "blob-$id",
+            contentHash = "hash-$id",
+            id = id,
+        )
+
+        @Test
+        fun `should map the found rows by id regardless of their order`() {
+            val first = fileData(1)
+            val second = fileData(2)
+            every { repository.findAllById(listOf(1L, 2L)) } returns listOf(second, first)
+
+            val rows = repository.findAllByIdOrError(listOf(1L, 2L))
+
+            assertEquals(mapOf(1L to first, 2L to second), rows)
+        }
+
+        @Test
+        fun `should reject ids without a row`() {
+            every { repository.findAllById(listOf(1L, 2L, 3L)) } returns listOf(fileData(2))
+
+            val failure = assertThrows(IllegalArgumentException::class.java) {
+                repository.findAllByIdOrError(listOf(1L, 2L, 3L))
+            }
+
+            assertEquals("Entities not found by ids=[1, 3]", failure.message)
+        }
+
+        @Test
+        fun `should return an empty map without calling the repository if ids are empty`() {
+            val rows = repository.findAllByIdOrError(emptyList())
+
+            assertEquals(emptyMap<Long, FileDataJpaEntity>(), rows)
+            verify(exactly = 0) { repository.findAllById(any()) }
         }
     }
 }

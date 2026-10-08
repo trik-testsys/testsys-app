@@ -194,5 +194,19 @@ class ParticipantPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         assertNull(found)
     }
 
+    @Test
+    fun `should find participants by ids with the same statement count for one and twenty ids`() {
+        val competition = fixtures.competition()
+        val ids = List(20) { fixtures.participant(competition).id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { participant -> participant.id })
+        assertEquals(ids.toSet(), twenty.map { participant -> participant.id }.toSet())
+        assertEquals(List(20) { competition.id }, twenty.map { participant -> participant.data.competition.id })
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
     private fun identityHash(value: String) = AccessTokenHash(value = value, algorithm = HashAlgorithm.Identity)
 }

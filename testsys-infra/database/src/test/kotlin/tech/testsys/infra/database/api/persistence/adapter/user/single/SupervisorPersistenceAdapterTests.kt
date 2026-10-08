@@ -133,4 +133,16 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
 
         assertNull(found)
     }
+
+    @Test
+    fun `should find supervisors by ids with the same statement count for one and twenty ids`() {
+        val ids = List(20) { fixtures.supervisor().id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { supervisor -> supervisor.id })
+        assertEquals(ids.toSet(), twenty.map { supervisor -> supervisor.id }.toSet())
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
 }

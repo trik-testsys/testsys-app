@@ -12,12 +12,15 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.SingleRoleToUserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.UserSingleRoleJpaEnum
+import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.ContestToObserverJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.ObserverDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.single.ObserverMapping
+import tech.testsys.infra.database.internal.utils.findAllInChunks
 import tech.testsys.infra.database.internal.utils.findByIdOrError
+import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.syncJoinTable
@@ -88,17 +91,22 @@ class ObserverPersistenceAdapter(
     @Transactional
     override fun removeByIds(ids: List<SingleRoleUserId>) = ids.forEach(::removeById)
 
-    override fun supports(jpaEntity: UserJpaEntity) = observerDataJpaEntityRepository.findByUserId(jpaEntity.requireId()) != null
+    override fun assembleSupported(rows: List<UserJpaEntity>): List<Observer> {
+        val dataByUserId = findAllInChunks(
+            ids = rows.map { row -> row.requireId() },
+            find = observerDataJpaEntityRepository::findAllByUserIdIn,
+        ).associateBy { data -> data.userId }
+        val contestIds = findLinkedIds(
+            ownerIds = dataByUserId.keys,
+            find = contestToObserverJpaEntityRepository::findLinkedIdsByObserverIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> ContestId(link.linkedId) },
+        )
 
-    override fun assembleAll(rows: List<UserJpaEntity>): List<Observer> = rows.map(::assemble)
-
-    override fun assemble(jpaEntity: UserJpaEntity): Observer {
-        val userId = jpaEntity.requireId()
-        val dataJpaEntity = observerDataJpaEntityRepository.findByUserId(userId).requireById(userId)
-        val contestIds = contestToObserverJpaEntityRepository.findAllByObserverId(userId)
-            .map { ContestId(it.id.contestId) }
-        val domainEntity = ObserverMapping.toDomain(jpaEntity, dataJpaEntity, contestIds)
-        return domainEntity
+        return rows.mapNotNull { row ->
+            val userId = row.requireId()
+            dataByUserId[userId]?.let { data -> ObserverMapping.toDomain(row, data, contestIds.getValue(userId)) }
+        }
     }
 
     private fun syncContests(observerId: Long, target: List<ContestId>) = syncJoinTable(

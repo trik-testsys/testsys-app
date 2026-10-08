@@ -208,7 +208,7 @@ internal fun PageScope.menuSection() {
                 codeColumn("ID", size = 6) { row -> row.id.toString() }
                 textColumn("Автор", size = 10) { row -> row.author }
                 column("Выбор", size = 6) { select("Статус", listOf("Новый", "Принят"), { label -> label }) }
-                onRowClick { row -> toast(FeedbackKind.Info, "Строка ${row.id}") }
+                onRowClick(isNavigation = true) { row -> toast(FeedbackKind.Info, "Строка ${row.id}") }
                 menuColumn(size = 2, ariaLabel = { row -> "Действия с посылкой №${row.id}" }) { row ->
                     item("Открыть") { toast(FeedbackKind.Info, "Открыть ${row.id}") }
                     item("Перепроверить") { toast(FeedbackKind.Info, "Перепроверить ${row.id}") }

@@ -422,6 +422,27 @@ class TableTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should mark the last ordinary cell before the menu if the row click navigates`() {
+        buildTable(Source(size = 12)) {
+            menuColumn { item("Открыть") {} }
+            onRowClick(isNavigation = true) {}
+        }
+
+        val cells = rows()[0].children.toList()
+
+        assertEquals(listOf(false, false, true, false), cells.map { cell -> "ts-navigation-cell" in cell.classes() })
+    }
+
+    @Test
+    fun `should not mark a cell if the row click does not navigate`() {
+        buildTable(Source(size = 12)) { onRowClick {} }
+
+        val cells = rows()[0].children.toList()
+
+        assertTrue(cells.none { cell -> "ts-navigation-cell" in cell.classes() })
+    }
+
+    @Test
     fun `should reject rows and a table in one block`() {
         val source = Source(size = 3)
 

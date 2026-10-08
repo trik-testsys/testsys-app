@@ -42,11 +42,12 @@ internal class TableColumn<T>(
     val fill: (T, HasComponents) -> Unit,
 )
 
-/** Columns and settings collected by a [TableScope]. */
+/** Columns and settings collected by a [TableScope]; [isRowNavigation] marks a [rowClick] that opens another page. */
 internal class TableSpec<T>(
     val columns: List<TableColumn<T>>,
     val empty: EmptyContent,
     val layout: TableLayout,
+    val isRowNavigation: Boolean = false,
     val rowClick: ((T) -> Unit)?,
 )
 
@@ -66,6 +67,7 @@ class TableScope<T> internal constructor(
     private val columns = mutableListOf<TableColumn<T>>()
     private var emptyContent: EmptyContent = EmptyContent(texts.table.empty)
     private var rowClick: ((T) -> Unit)? = null
+    private var isRowNavigation: Boolean = false
 
     /** Whether [empty] set the empty state, so that a table which sets its own can tell. */
     internal var hasOwnEmpty: Boolean = false
@@ -195,12 +197,14 @@ class TableScope<T> internal constructor(
     }
 
     /**
-     * Runs [listener] with the row a user clicks, except clicks on its checkbox and actions.
+     * Runs [listener] with the row a user clicks, except clicks on its checkbox and actions. [isNavigation] marks a
+     * click that opens another page; such a row shows the navigation arrow.
      *
      * @since %CURRENT_VERSION%
      */
-    fun onRowClick(listener: (T) -> Unit) {
+    fun onRowClick(isNavigation: Boolean = false, listener: (T) -> Unit) {
         rowClick = listener
+        isRowNavigation = isNavigation
     }
 
     internal fun spec(): TableSpec<T> {
@@ -213,7 +217,13 @@ class TableScope<T> internal constructor(
             menuSize = menuSize,
         )
 
-        return TableSpec(columns.toList(), emptyContent, layout, rowClick)
+        return TableSpec(
+            columns = columns.toList(),
+            empty = emptyContent,
+            layout = layout,
+            isRowNavigation = isRowNavigation,
+            rowClick = rowClick,
+        )
     }
 
     private fun add(title: String, sortKey: String?, size: Int?, kind: CellKind, text: (T) -> String) {

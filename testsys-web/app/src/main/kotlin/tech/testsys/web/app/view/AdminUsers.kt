@@ -109,7 +109,7 @@ internal fun BlockScope.adminUsersTable(service: AdministratorService, communiti
         textColumn("Псевдоним", sortKey = "name", size = 10) { (user, _) -> user.name }
         dateTimeColumn("Последний вход", sortKey = "lastLoginAt") { (_, lastLogin) -> lastLogin?.toServerDateTime() }
         empty("Пользователей нет", "Пользователи появятся, когда присоединятся к сообществу.")
-        onRowClick { (user, _) -> openAdminUser(user) }
+        onRowClick(isNavigation = true) { (user, _) -> openAdminUser(user) }
     }
 
     lateinit var name: ValueInput<String>

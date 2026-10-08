@@ -165,6 +165,7 @@ internal enum class CssClass(internal val value: String) {
     Nav("ts-nav"),
     NavItem("ts-nav__item"),
     NavItemActive("ts-nav__item--active"),
+    NavigationCell("ts-navigation-cell"),
     Num("ts-num"),
     ObscuredValue("ts-obscured-value"),
     Option("ts-option"),

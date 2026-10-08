@@ -113,7 +113,7 @@ class AdminUserView(texts: UiTexts, private val headers: CabinetHeaders, private
                     textColumn("Сообщество", size = 12) { (community, _) -> community.name }
                     textColumn("Роли") { (_, labels) -> labels.joinToString(", ") }
                     empty("Ролей в ваших сообществах нет")
-                    onRowClick { (community, _) -> openAdminCommunity(community.id) }
+                    onRowClick(isNavigation = true) { (community, _) -> openAdminCommunity(community.id) }
                 }
                 if (user is MultipleRoleUserVo) {
                     val granting = grantDialog(user, communities)

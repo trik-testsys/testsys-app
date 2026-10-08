@@ -172,12 +172,15 @@ internal fun PageScope.demoStudy(context: DemoContext, actor: DemoUser, objects:
     )
 }
 
-/** Existing history and statuses; filtering cannot broaden the supplied role-scoped rows. */
+/**
+ * Existing history and statuses; filtering cannot broaden the supplied role-scoped rows. [onSelect] opens a solution
+ * on another screen.
+ */
 internal fun PageScope.demoSolutionTable(
     context: DemoContext,
     actor: DemoUser,
     solutions: List<DemoSolution>,
-    onSelect: (DemoRow) -> Unit = {},
+    onSelect: ((DemoRow) -> Unit)? = null,
 ) {
     row {
         block(
@@ -199,6 +202,7 @@ internal fun PageScope.demoSolutionTable(
                     )
                 },
                 onSelect = onSelect,
+                isNavigation = true,
             )
         }
     }

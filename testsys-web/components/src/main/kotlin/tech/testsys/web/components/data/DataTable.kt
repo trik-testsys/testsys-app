@@ -277,9 +277,12 @@ internal class DataTable<T>(
         if (isSelectable) add(TableDataCell(shownRow.checkbox))
         shownRow.update()
 
+        val navigationColumn = spec.columns.lastOrNull { column -> column.kind != CellKind.Menu }
+            .takeIf { spec.rowClick != null && spec.isRowNavigation }
         spec.columns.forEach { column ->
             val cell = TableDataCell()
             column.kind.cssClasses.forEach { cssClass -> cell.addClassName(cssClass) }
+            if (column === navigationColumn) cell.addClassName(CssClass.NavigationCell)
             column.fill(row, cell)
             add(cell)
         }

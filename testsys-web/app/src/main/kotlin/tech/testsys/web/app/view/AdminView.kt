@@ -72,7 +72,7 @@ class AdminView(texts: UiTexts, private val headers: CabinetHeaders, private val
                     textColumn("Описание", size = 9) { (community, _) -> community.description }
                     numberColumn("Пользователей") { (_, users) -> users }
                     empty("Сообществ пока нет", "Создайте сообщество и пригласите в него Пользователей.")
-                    onRowClick { (community, _) -> openAdminCommunity(community.id) }
+                    onRowClick(isNavigation = true) { (community, _) -> openAdminCommunity(community.id) }
                 }
 
                 val draft = Binder<CommunityDraft>()

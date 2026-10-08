@@ -36,7 +36,7 @@ internal fun PageScope.tableSection() {
                 fetch = { request -> submissionPage(SUBMISSIONS.filter { row -> row.matches(verdict, isErrorsOnly) }, request) },
             ) {
                 submissionColumns()
-                onRowClick { row -> toast(FeedbackKind.Info, "Посылка #${row.id}") }
+                onRowClick(isNavigation = true) { row -> toast(FeedbackKind.Info, "Открыть посылку #${row.id}") }
             }
             actions {
                 select("Вердикт", items = ShowcaseVerdict.entries, itemLabel = ShowcaseVerdict::label, emptyLabel = "Все вердикты") {

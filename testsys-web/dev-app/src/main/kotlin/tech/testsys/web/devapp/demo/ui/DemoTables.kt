@@ -23,7 +23,8 @@ internal fun BlockScope.demoTable(
     rows: List<DemoRow>,
     gridColumns: Int? = null,
     columns: TableScope<DemoRow>.() -> Unit = { demoDefaultColumns() },
-    onSelect: (DemoRow) -> Unit = {},
+    isNavigation: Boolean = false,
+    onSelect: ((DemoRow) -> Unit)? = null,
 ) {
     val binder = Binder<DemoCriteria>()
     lateinit var handle: TableHandle<DemoRow>
@@ -53,7 +54,7 @@ internal fun BlockScope.demoTable(
         } else {
             empty("Нет доступных объектов", description = "В этом демонстрационном контексте список пуст.")
         }
-        onRowClick(onSelect)
+        onSelect?.let { listener -> onRowClick(isNavigation, listener) }
     }
 
     filters(

@@ -64,7 +64,7 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
                         textColumn("Роль", size = 14) { (role, _) -> labelOf(role) }
                         numberColumn("Сообществ") { (_, communities) -> communities.size }
                         empty("Ролей пока нет", "Присоединитесь к сообществу по Коду-приглашению.")
-                        onRowClick { (role, _) -> UI.getCurrent().navigate(rolePageOf(role)) }
+                        onRowClick(isNavigation = true) { (role, _) -> UI.getCurrent().navigate(rolePageOf(role)) }
                     }
                 }
                 block(title = "Присоединиться к сообществу") {

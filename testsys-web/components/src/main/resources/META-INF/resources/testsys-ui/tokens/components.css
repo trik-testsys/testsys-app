@@ -388,11 +388,19 @@ a.ts-tab { text-decoration:none; }
 .ts-table th.ts-sorted { color:var(--text-primary); }
 .ts-table td { padding:8px var(--space-3); border-bottom:1px solid var(--line-subtle); vertical-align:middle; }
 :where(.ts-table) > tbody > tr:where(:not(.ts-row-empty):nth-child(even)) { background:var(--canvas); }
-:where(.ts-table) > tbody > tr:where(:not(.ts-row-empty):hover) { background:var(--canvas-deep); }
+:where(.ts-table) > tbody > tr:where(.ts-row-clickable:hover) { background:var(--canvas-deep); }
 .ts-table tr.ts-row-selected, .ts-table tr.ts-row-selected:hover { background:var(--accent-softer); }
 .ts-table--compact td { padding-top:4px; padding-bottom:4px; }
 .ts-table tr.ts-row-clickable { cursor:pointer; }
-.ts-table tbody tr.ts-row-empty:hover { background:transparent; }
+/* The arrow of a navigating row is drawn in its last ordinary cell, before the menu, so it takes no column of the grid. */
+.ts-table td.ts-navigation-cell { position:relative; padding-right:calc(var(--space-3) + 16px); }
+.ts-table td.ts-navigation-cell::after {
+  content:""; position:absolute; top:50%; right:calc(var(--space-3) + 2px); width:6px; height:6px;
+  border-top:1.5px solid currentColor; border-right:1.5px solid currentColor; color:var(--text-tertiary);
+  transform:translateY(-50%) rotate(45deg); pointer-events:none;
+  transition:transform var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.ts-table tr.ts-row-clickable:hover > td.ts-navigation-cell::after { color:var(--text-primary); transform:translateY(-50%) translateX(2px) rotate(45deg); }
 .ts-table-pager { display:flex; align-items:center; gap:var(--space-2); flex:1; min-width:0; }
 .ts-table-pager > .ts-muted { flex:1; font-size:var(--fs-xs); }
 .ts-num { font-family:var(--font-mono); font-weight:var(--fw-medium); }

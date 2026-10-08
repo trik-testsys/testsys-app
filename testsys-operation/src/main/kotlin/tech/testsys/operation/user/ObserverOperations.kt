@@ -11,6 +11,7 @@ import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.Contest
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.SingleRoleUser
@@ -27,7 +28,7 @@ import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
 
 /**
- * Operations performed by observers in their assigned competitions.
+ * Operations performed by observers for their assigned contests and competitions containing them.
  *
  * @since %CURRENT_VERSION%
  */
@@ -51,14 +52,14 @@ class ObserverOperations(
     ): OperationResult<Page<Contest>, ViewObserverContestsError> = operation<Page<Contest>, ViewObserverContestsError> {
         ensure(user is Observer, MissedObserverRoleError)
         return contestRepository.findAvailableToObserver(
-            competitionIds = user.data.competitions.ids.toSet(),
+            contestIds = user.data.contests.ids.toSet(),
             pagination = pagination,
             filter = filter,
         ).asSuccess()
     }
 
     /**
-     * Returns a CSV file for [competitionId] assigned to [user] without changing stored data.
+     * Returns a CSV file for [competitionId] limited to its contests assigned to [user], without changing stored data.
      * The file is currently empty; technical storage exceptions propagate.
      *
      * @since %CURRENT_VERSION%
@@ -69,11 +70,17 @@ class ObserverOperations(
             ensure(user is Observer, MissedObserverRoleError)
             val competition = competitionRepository.findById(competitionId)
             ensure(competition != null) { CompetitionNotExistsError(competitionId) }
-            ensure(competitionId in user.data.competitions.ids) { CompetitionAccessDeniedError(competitionId) }
-            return generateResultCsv(competition).asSuccess()
+            val assigned = user.data.contests.ids.toSet()
+            val observedContests = competition.data.contests.ids.filter { contestId -> contestId in assigned }.toSet()
+            ensure(observedContests.isNotEmpty()) { CompetitionAccessDeniedError(competitionId) }
+            return generateResultCsv(competition, observedContests).asSuccess()
         }
 
-    private fun generateResultCsv(competition: Competition): FileData = FileData(
+    /**
+     * Builds the results file of [competition] restricted to [observedContests]; content generation is not defined yet.
+     */
+    @Suppress("UnusedParameter")
+    private fun generateResultCsv(competition: Competition, observedContests: Set<ContestId>): FileData = FileData(
         uploadedFilename = "competition-${competition.id.value}-results.csv",
         content = ByteArray(0),
     )

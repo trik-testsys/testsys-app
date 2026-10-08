@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EmptySource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.community
 import tech.testsys.domain.builder.api.communityData
@@ -31,8 +32,10 @@ import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
 import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
+import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
+import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
@@ -41,29 +44,40 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.group.CommunityInviteId
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Observer
+import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.operation.config.CommunityInviteConfig
 import tech.testsys.operation.error.CommunityAccessDeniedError
 import tech.testsys.operation.error.CommunityNotExistsError
+import tech.testsys.operation.error.ContestAccessDeniedError
+import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.MissedAdministratorRoleError
+import tech.testsys.operation.error.ObserverContestsEmptyError
+import tech.testsys.operation.error.ObserverNameBlankError
+import tech.testsys.operation.error.ObserverNameTooLongError
 import tech.testsys.operation.error.UserAccessDeniedError
 import tech.testsys.operation.error.UserNotExistsError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.testAdministrator
+import tech.testsys.operation.util.testContest
 import tech.testsys.operation.util.testManager
 import tech.testsys.operation.util.testMultipleRoleUser
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 
 class AdministratorOperationsTests {
 
+    private val contests = mockk<ContestRepository>()
+    private val observers = mockk<ObserverRepository>()
     private val communities = mockk<CommunityRepository>()
     private val managerInvites = mockk<ManagerCommunityInviteRepository>()
     private val developerInvites = mockk<DeveloperCommunityInviteRepository>()
@@ -77,10 +91,244 @@ class AdministratorOperationsTests {
         communityInviteConfig = config,
         clock = clock,
         userRepository = userRepository,
+        contestRepository = contests,
+        observerRepository = observers,
     )
     private val administrator = testAdministrator {}
     private val communityId = CommunityId(41)
     private val now = Instant.parse("2026-01-01T10:00:00Z")
+
+    @Nested
+    inner class CreateObserverTests {
+
+        private val contestId = ContestId(19)
+
+        @Test
+        fun `should reject a user without administrator role without reading or saving`() {
+            assertRaises(MissedAdministratorRoleError) { create(user = testMultipleRoleUser {}) }
+
+            verify { listOf(communities, contests, observers) wasNot Called }
+        }
+
+        @Test
+        fun `should reject a nonexistent community without saving`() {
+            every { communities.findById(communityId) } returns null
+
+            assertRaises(CommunityNotExistsError(communityId)) { create() }
+
+            verify { listOf(contests, observers) wasNot Called }
+        }
+
+        @Test
+        fun `should reject any nonexistent requested contest before checking ownership`() {
+            prepareCreation(ownerId = 99)
+            every { contests.findById(ContestId(20)) } returns null
+
+            assertRaises(ContestNotExistsError(ContestId(20))) { create(ids = setOf(contestId, ContestId(20))) }
+
+            verify { observers wasNot Called }
+        }
+
+        @Test
+        fun `should reject a community created by another user`() {
+            prepareCreation(ownerId = 99)
+
+            assertRaises(CommunityAccessDeniedError(communityId)) { create() }
+
+            verify { observers wasNot Called }
+        }
+
+        @Test
+        fun `should reject a contest shared only to another community`() {
+            prepareCreation(shared = listOf(CommunityId(99)))
+
+            assertRaises(ContestAccessDeniedError(contestId)) { create() }
+
+            verify { observers wasNot Called }
+        }
+
+        @Test
+        fun `should reject an unshared contest even when the administrator owns it`() {
+            prepareCreation(shared = emptyList())
+
+            assertRaises(ContestAccessDeniedError(contestId)) { create() }
+
+            verify { observers wasNot Called }
+        }
+
+        @ParameterizedTest
+        @EmptySource
+        @ValueSource(strings = [" ", "\t\r\n", "\u2003"])
+        fun `should reject empty and blank names without saving`(name: String) {
+            prepareCreation()
+
+            assertRaises(ObserverNameBlankError) { create(name = name) }
+
+            verify { observers wasNot Called }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should reject names with 256 Unicode code points`(character: String) {
+            prepareCreation()
+            val name = character.repeat(256)
+
+            assertRaises(ObserverNameTooLongError(name)) { create(name = name) }
+
+            verify { observers wasNot Called }
+        }
+
+        @Test
+        fun `should reject an empty contest set without saving`() {
+            every { communities.findById(communityId) } returns testCommunity()
+
+            assertRaises(ObserverContestsEmptyError) { create(ids = emptySet()) }
+
+            verify { listOf(contests, observers) wasNot Called }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should accept exactly 255 Unicode code points`(character: String) {
+            prepareCreation()
+            val saved = captureSave()
+            val name = character.repeat(255)
+
+            val result = create(name = name).getOrThrow()
+
+            assertEquals(name, result.data.name)
+            assertEquals(name, saved.captured.name)
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["x", "  Mixed Case  "])
+        fun `should save one observer with the exact name community contests and fresh UUID code`(name: String) {
+            prepareCreation()
+            val second = tech.testsys.domain.builder.api.contest {
+                id = 20
+                createdAt = Instant.EPOCH
+                data = testContest { sharedTo = mutableListOf(communityId, CommunityId(99)) }.data
+            }
+            every { contests.findById(second.id) } returns second
+            val saved = captureSave()
+
+            val result = create(name = name, ids = setOf(contestId, second.id)).getOrThrow()
+
+            assertEquals(name, result.data.name)
+            assertEquals(communityId, result.data.community.id)
+            assertEquals(setOf(contestId, second.id), result.data.contests.ids.toSet())
+            assertEquals(2, result.data.contests.ids.size)
+            assertEquals(HashAlgorithm.Identity, result.data.accessTokenHash.algorithm)
+            assertEquals(result.data.accessTokenHash.value, UUID.fromString(result.data.accessTokenHash.value).toString())
+            assertSame(saved.captured, result.data)
+            assertEquals(SingleRoleUserId(73), result.id)
+            assertEquals(EntityVersion(1), result.version)
+            verify(exactly = 1) { observers.save(any<ObserverData>()) }
+            verify(exactly = 0) { communities.update(any<Community>()) }
+            verify(exactly = 0) { contests.update(any<tech.testsys.domain.model.task.Contest>()) }
+        }
+
+        @Test
+        fun `should return the persisted observer instance`() {
+            prepareCreation()
+            val persisted = observer {
+                id = 73
+                createdAt = Instant.EPOCH
+                data = observerData {
+                    community(communityId.value)
+                    name = "Persisted"
+                    contests(listOf(contestId.value))
+                    accessToken("stored", HashAlgorithm.Identity)
+                }
+            }
+            every { observers.save(any<ObserverData>()) } returns persisted
+
+            val result = create().getOrThrow()
+
+            assertSame(persisted, result)
+        }
+
+        @Test
+        fun `should create separate observers with distinct codes for repeated identical input`() {
+            prepareCreation()
+            val saved = mutableListOf<ObserverData>()
+            every { observers.save(capture(saved)) } answers {
+                observer {
+                    id = 70L + saved.size
+                    createdAt = Instant.EPOCH
+                    data = firstArg()
+                }
+            }
+
+            val first = create().getOrThrow()
+            val second = create().getOrThrow()
+
+            assertNotEquals(first.id, second.id)
+            assertNotEquals(first.data.accessTokenHash, second.data.accessTokenHash)
+            assertEquals(first.data.name, second.data.name)
+            assertEquals(first.data.contests.ids, second.data.contests.ids)
+            verify(exactly = 2) { observers.save(any<ObserverData>()) }
+        }
+
+        @Test
+        fun `should propagate technical community repository exceptions`() {
+            val failure = IllegalStateException("Community storage unavailable")
+            every { communities.findById(communityId) } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) { create() }
+
+            assertSame(failure, actual)
+            verify { observers wasNot Called }
+        }
+
+        @Test
+        fun `should propagate technical contest repository exceptions`() {
+            prepareCreation()
+            val failure = IllegalStateException("Contest storage unavailable")
+            every { contests.findById(contestId) } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) { create() }
+
+            assertSame(failure, actual)
+            verify { observers wasNot Called }
+        }
+
+        @Test
+        fun `should propagate technical save exceptions without retrying`() {
+            prepareCreation()
+            val failure = IllegalStateException("Code collision")
+            every { observers.save(any<ObserverData>()) } throws failure
+
+            val actual = assertThrows(IllegalStateException::class.java) { create() }
+
+            assertSame(failure, actual)
+            verify(exactly = 1) { observers.save(any<ObserverData>()) }
+        }
+
+        private fun create(user: MultipleRoleUser = administrator, name: String = "Observer", ids: Set<ContestId> = setOf(contestId)) =
+            operations.createObserver(user = user, communityId = communityId, observerName = name, contestIds = ids)
+
+        private fun prepareCreation(ownerId: Long = administrator.id.value, shared: List<CommunityId> = listOf(communityId)) {
+            every { communities.findById(communityId) } returns testCommunity(ownerId)
+            every { contests.findById(contestId) } returns testContest {
+                owner(administrator.id.value)
+                sharedTo = shared.toMutableList()
+            }
+        }
+
+        private fun captureSave(): io.mockk.CapturingSlot<ObserverData> {
+            val saved = slot<ObserverData>()
+            every { observers.save(capture(saved)) } answers {
+                observer {
+                    id = 73
+                    createdAt = Instant.EPOCH
+                    version = EntityVersion(1)
+                    data = firstArg()
+                }
+            }
+            return saved
+        }
+    }
 
     @Nested
     inner class ViewUsersTests {

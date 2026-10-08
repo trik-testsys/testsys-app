@@ -2,14 +2,14 @@ package tech.testsys.infra.database.internal.mapping.user.single
 
 import tech.testsys.domain.builder.api.observer
 import tech.testsys.domain.builder.data
-import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
-import tech.testsys.infra.database.internal.jpa.entity.user.single.CompetitionToObserverJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.user.single.ContestToObserverJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ObserverDataJpaEntity
 import tech.testsys.infra.database.internal.utils.populateFields
 import tech.testsys.infra.database.internal.utils.requireVersion
@@ -25,11 +25,11 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 object ObserverMapping {
 
     /**
-     * Assembles an [Observer] from [userJpaEntity], [dataJpaEntity] and [competitionIds]; fails when the rows are not bound.
+     * Assembles an [Observer] from [userJpaEntity], [dataJpaEntity] and [contestIds]; fails when the rows are not bound.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDomain(userJpaEntity: UserJpaEntity, dataJpaEntity: ObserverDataJpaEntity, competitionIds: List<CompetitionId>) = observer {
+    fun toDomain(userJpaEntity: UserJpaEntity, dataJpaEntity: ObserverDataJpaEntity, contestIds: List<ContestId>) = observer {
         populateFields(userJpaEntity)
         check(dataJpaEntity.userId == userJpaEntity.id) {
             "ObserverData ${dataJpaEntity.id} bound to user ${dataJpaEntity.userId} != ${userJpaEntity.id}"
@@ -43,7 +43,7 @@ object ObserverMapping {
             )
             name = userJpaEntity.name
             community(dataJpaEntity.communityId)
-            competitions(competitionIds.map { it.value })
+            contests(contestIds.map { it.value })
         }
     }
 
@@ -103,11 +103,11 @@ object ObserverMapping {
     }
 
     /**
-     * Creates the [CompetitionToObserverJpaEntity] rows linking the observer [observerId] with [competitionIds].
+     * Creates the [ContestToObserverJpaEntity] rows linking the observer [observerId] with [contestIds].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toCompetitionAssociations(observerId: Long, competitionIds: List<Long>) = competitionIds.map {
-        CompetitionToObserverJpaEntity(competitionId = it, observerId = observerId)
+    fun toContestAssociations(observerId: Long, contestIds: List<Long>) = contestIds.map {
+        ContestToObserverJpaEntity(contestId = it, observerId = observerId)
     }
 }

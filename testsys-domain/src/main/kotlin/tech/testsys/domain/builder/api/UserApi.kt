@@ -175,7 +175,7 @@ private fun ObserverData.toBuilder(): ObserverDataBuilder {
     return ObserverDataBuilder().apply {
         community = thisData.community.id
         storedAccessToken(thisData.accessTokenHash)
-        competitions = thisData.competitions.ids.toMutableList()
+        contests = thisData.contests.ids.toMutableList()
         name = thisData.name
     }
 }

@@ -9,7 +9,6 @@ import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.AuthorSubmissionFailure
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
@@ -66,17 +65,17 @@ import tech.testsys.domain.model.user.UserId
 interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> {
 
     /**
-     * Synchronously finds contests currently belonging to any of [competitionIds], without changing stored state.
+     * Synchronously finds the assigned [contestIds], without changing stored state.
      * Repeated calls reflect current relations and preserve all time limits; technical storage exceptions propagate.
      *
-     * @param competitionIds competitions assigned to the observer; an empty set matches nothing.
+     * @param contestIds contests assigned to the observer; an empty set matches nothing.
      * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
      * @param filter conditions combined with AND before paging and counting; missing or inaccessible ids match nothing.
      * @return unique contests, original pagination and exact filtered total; missing pages are empty but retain the total.
      * @since %CURRENT_VERSION%
      */
     fun findAvailableToObserver(
-        competitionIds: Set<CompetitionId>,
+        contestIds: Set<ContestId>,
         pagination: Pagination,
         filter: ObserverContestFilter = ObserverContestFilter(),
     ): Page<Contest>

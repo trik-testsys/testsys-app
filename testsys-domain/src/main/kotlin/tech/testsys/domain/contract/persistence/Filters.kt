@@ -52,7 +52,7 @@ data class ContestFilter(
 )
 
 /**
- * Optional observer contest criteria, combined with AND within the assigned competitions before paging and counting.
+ * Optional observer contest criteria, combined with AND within the assigned contests before paging and counting.
  *
  * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
  * @property contestId the exact contest identifier, or `null` for every accessible contest; never expands access.

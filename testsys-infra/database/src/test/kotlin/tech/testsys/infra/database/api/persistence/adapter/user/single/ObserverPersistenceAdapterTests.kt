@@ -14,9 +14,10 @@ import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceA
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
-import tech.testsys.infra.database.internal.jpa.repository.user.single.CompetitionToObserverJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.user.single.ContestToObserverJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.ObserverDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
+import tech.testsys.infra.database.internal.mapping.user.single.ObserverMapping
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -38,30 +39,30 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
     private lateinit var singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository
 
     @Autowired
-    private lateinit var competitionToObserverJpaEntityRepository: CompetitionToObserverJpaEntityRepository
+    private lateinit var contestToObserverJpaEntityRepository: ContestToObserverJpaEntityRepository
 
     override fun newData() = newData(fixtures.unique("token"))
 
     private fun newData(rawAccessToken: String): ObserverData {
         val communityId = fixtures.community().id.value
-        val competitionIds = listOf(fixtures.competition().id.value, fixtures.competition().id.value)
+        val contestIds = listOf(fixtures.contest().id.value, fixtures.contest().id.value)
         return observerData {
             community(communityId)
             accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
             name = fixtures.unique("Observer")
-            competitions(competitionIds)
+            contests(contestIds)
         }
     }
 
     override fun modified(entity: Observer): Observer {
         val newCommunityId = fixtures.community().id.value
-        val keptCompetition = entity.data.competitions.ids.first()
-        val newCompetition = fixtures.competition().id
+        val keptContest = entity.data.contests.ids.first()
+        val newContest = fixtures.contest().id
         return entity.withData {
             community(newCommunityId)
             accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
             name = fixtures.unique("Renamed observer")
-            competitions = mutableListOf(keptCompetition, newCompetition)
+            contests = mutableListOf(keptContest, newContest)
         }
     }
 
@@ -77,26 +78,51 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         assertEquals(expected.data.accessTokenHash, actual.data.accessTokenHash)
         assertEquals(expected.data.name, actual.data.name)
         assertEquals(expected.data.community.id, actual.data.community.id)
-        assertEquals(expected.data.competitions.ids.toSet(), actual.data.competitions.ids.toSet())
+        assertEquals(expected.data.contests.ids.toSet(), actual.data.contests.ids.toSet())
     }
 
     @Test
-    fun `should collapse duplicate competitions into one join row`() {
+    fun `should collapse duplicate contests into one join row`() {
         val communityId = fixtures.community().id.value
-        val competitionId = fixtures.competition().id.value
+        val contestId = fixtures.contest().id.value
 
         val saved = repository.save(
             observerData {
                 community(communityId)
                 accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
                 name = fixtures.unique("Observer")
-                competitions(listOf(competitionId, competitionId))
+                contests(listOf(contestId, contestId))
             },
         )
 
-        assertEquals(listOf(competitionId), saved.data.competitions.ids.map { it.value })
-        assertEquals(listOf(competitionId), assertNotNull(repository.findById(saved.id)).data.competitions.ids.map { it.value })
-        assertEquals(1, competitionToObserverJpaEntityRepository.findAllByObserverId(saved.id.value).size)
+        assertEquals(listOf(contestId), saved.data.contests.ids.map { it.value })
+        assertEquals(listOf(contestId), assertNotNull(repository.findById(saved.id)).data.contests.ids.map { it.value })
+        assertEquals(1, contestToObserverJpaEntityRepository.findAllByObserverId(saved.id.value).size)
+    }
+
+    @Test
+    fun `should map assigned contests and preserve the stored user fields and version`() {
+        val saved = fixtures.observer(contests = listOf(fixtures.contest(), fixtures.contest()))
+        val row = userJpaEntityRepository.findById(saved.id.value).orElseThrow()
+        val data = requireNotNull(observerDataJpaEntityRepository.findByUserId(saved.id.value))
+
+        val mapped = ObserverMapping.toDomain(row, data, saved.data.contests.ids)
+
+        assertSameData(saved, mapped)
+        assertEquals(saved.id, mapped.id)
+        assertEquals(saved.createdAt, mapped.createdAt)
+        assertEquals(saved.version, mapped.version)
+    }
+
+    @Test
+    fun `should remove all contest associations when an update clears assignments`() {
+        val saved = repository.save(newData())
+
+        val updated = repository.update(saved.withData { contests.clear() })
+
+        assertTrue(updated.data.contests.ids.isEmpty())
+        assertTrue(requireNotNull(repository.findById(saved.id)).data.contests.ids.isEmpty())
+        assertTrue(contestToObserverJpaEntityRepository.findAllByObserverId(saved.id.value).isEmpty())
     }
 
     @Test
@@ -124,7 +150,7 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         repository.removeById(saved.id)
 
         assertNull(observerDataJpaEntityRepository.findByUserId(saved.id.value))
-        assertTrue(competitionToObserverJpaEntityRepository.findAllByObserverId(saved.id.value).isEmpty())
+        assertTrue(contestToObserverJpaEntityRepository.findAllByObserverId(saved.id.value).isEmpty())
         assertTrue(singleRoleToUserJpaEntityRepository.findAllByUserId(saved.id.value).isEmpty())
         assertTrue(userJpaEntityRepository.findById(saved.id.value).isEmpty)
     }

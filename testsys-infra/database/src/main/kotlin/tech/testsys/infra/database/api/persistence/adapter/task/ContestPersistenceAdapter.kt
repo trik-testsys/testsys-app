@@ -11,7 +11,6 @@ import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
@@ -20,7 +19,6 @@ import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
-import tech.testsys.infra.database.internal.jpa.entity.group.ContestToCompetitionJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToContestJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.ContestJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.CommunityToContestJpaEntityRepository
@@ -55,19 +53,15 @@ class ContestPersistenceAdapter(
 
     @Transactional(readOnly = true)
     override fun findAvailableToObserver(
-        competitionIds: Set<CompetitionId>,
+        contestIds: Set<ContestId>,
         pagination: Pagination,
         filter: ObserverContestFilter,
     ): Page<Contest> {
-        if (competitionIds.isEmpty()) return Page(content = emptyList(), pagination = pagination, totalElements = 0)
-        val specification = Specification<ContestJpaEntity> { entity, query, builder ->
-            val assigned = requireNotNull(query).subquery(Long::class.java)
-            val association = assigned.from(ContestToCompetitionJpaEntity::class.java)
-            assigned.select(association.get<Any>("id").get<Long>("contestId")).where(
-                builder.equal(association.get<Any>("id").get<Long>("contestId"), entity.get<Long>("id")),
-                association.get<Any>("id").get<Long>("competitionId").`in`(competitionIds.map { competition -> competition.value }),
+        if (contestIds.isEmpty()) return Page(content = emptyList(), pagination = pagination, totalElements = 0)
+        val specification = Specification<ContestJpaEntity> { entity, _, builder ->
+            val predicates = mutableListOf(
+                entity.get<Long>("id").`in`(contestIds.map { contest -> contest.value }),
             )
-            val predicates = mutableListOf(builder.exists(assigned))
             filter.name?.let { name ->
                 predicates.add(builder.gt(builder.locate(builder.lower(entity.get("name")), name.lowercase()), 0))
             }

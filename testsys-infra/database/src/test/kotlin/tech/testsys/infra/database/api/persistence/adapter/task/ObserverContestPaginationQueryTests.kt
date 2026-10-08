@@ -18,7 +18,6 @@ import tech.testsys.domain.contract.persistence.Sort
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.model.group.Competition
-import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.infra.database.DatabaseIntegrationTests
@@ -41,7 +40,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         val assigned = saveCompetition(expected, other)
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(assigned.id),
+            contestIds = assigned.data.contests.ids.toSet(),
             pagination = Pagination(page = 0, size = 1),
             filter = ObserverContestFilter(name = substring),
         )
@@ -66,7 +65,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         val request = Pagination(page = index, size = 2)
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(assigned.id, anotherAssigned.id),
+            contestIds = (assigned.data.contests.ids + anotherAssigned.data.contests.ids).toSet(),
             pagination = request,
             filter = ObserverContestFilter(name = "Alpha"),
         )
@@ -79,11 +78,39 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
     }
 
     @Test
-    fun `should return no contests when no competitions are assigned`() {
+    fun `should exclude an unassigned neighbor in the same competition`() {
+        val assigned = saveContest("Assigned")
+        val neighbor = saveContest("Neighbor")
+        saveCompetition(assigned, neighbor)
+
+        val page = repository.findAvailableToObserver(
+            contestIds = setOf(assigned.id),
+            pagination = Pagination(page = 0, size = 10),
+        )
+
+        assertEquals(listOf(assigned.id), page.content.map { contest -> contest.id })
+        assertEquals(1L, page.totalElements)
+    }
+
+    @Test
+    fun `should return an assigned contest without any competition`() {
+        val assigned = saveContest("Assigned")
+
+        val page = repository.findAvailableToObserver(
+            contestIds = setOf(assigned.id),
+            pagination = Pagination(page = 0, size = 10),
+        )
+
+        assertEquals(listOf(assigned.id), page.content.map { contest -> contest.id })
+        assertEquals(1L, page.totalElements)
+    }
+
+    @Test
+    fun `should return no contests when no contests are assigned`() {
         saveCompetition(saveContest("Alpha"))
         val request = Pagination(page = 0, size = 10)
 
-        val page = repository.findAvailableToObserver(competitionIds = emptySet(), pagination = request)
+        val page = repository.findAvailableToObserver(contestIds = emptySet(), pagination = request)
 
         assertEquals(emptyList<Contest>(), page.content)
         assertEquals(0L, page.totalElements)
@@ -92,11 +119,11 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
     }
 
     @Test
-    fun `should return no contests for a nonexistent assigned competition`() {
+    fun `should return no contests for a nonexistent assigned contest`() {
         saveCompetition(saveContest("Alpha"))
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(CompetitionId(-1)),
+            contestIds = setOf(ContestId(-1)),
             pagination = Pagination(page = 0, size = 10),
         )
 
@@ -113,7 +140,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         val assigned = saveCompetition(first, selected)
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(assigned.id),
+            contestIds = assigned.data.contests.ids.toSet(),
             pagination = Pagination(page = 0, size = 1),
             filter = ObserverContestFilter(name = name, contestId = selected.id),
         )
@@ -129,7 +156,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         val assigned = saveCompetition(selected, saveContest("Beta"))
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(assigned.id),
+            contestIds = assigned.data.contests.ids.toSet(),
             pagination = Pagination(page = 0, size = 1),
             filter = ObserverContestFilter(name = "Beta", contestId = selected.id),
         )
@@ -145,7 +172,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         saveCompetition(inaccessible)
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(assigned.id),
+            contestIds = assigned.data.contests.ids.toSet(),
             pagination = Pagination(page = 0, size = 1),
             filter = ObserverContestFilter(name = "alpha", contestId = inaccessible.id),
         )
@@ -159,7 +186,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         val assigned = saveCompetition(saveContest("Alpha"))
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(assigned.id),
+            contestIds = assigned.data.contests.ids.toSet(),
             pagination = Pagination(page = 0, size = 1),
             filter = ObserverContestFilter(contestId = ContestId(-1)),
         )
@@ -175,7 +202,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         val assigned = saveCompetition(first, second)
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(assigned.id),
+            contestIds = assigned.data.contests.ids.toSet(),
             pagination = Pagination(page = 0, size = 10),
             filter = ObserverContestFilter(name = ""),
         )
@@ -189,7 +216,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         val assigned = saveCompetition(saveContest("Alpha"))
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(assigned.id),
+            contestIds = assigned.data.contests.ids.toSet(),
             pagination = Pagination(page = 0, size = 1),
             filter = ObserverContestFilter(name = "missing"),
         )
@@ -208,7 +235,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         val saved = mapOf("first" to first.id, "second" to second.id, "last" to last.id)
         val request = Pagination(page = index, size = 1, sort = Sort(listOf(Sort.Order("name", Sort.Direction.DESC))))
 
-        val page = repository.findAvailableToObserver(competitionIds = setOf(assigned.id), pagination = request)
+        val page = repository.findAvailableToObserver(contestIds = assigned.data.contests.ids.toSet(), pagination = request)
 
         assertEquals(listOf(saved.getValue(expected)), page.content.map { contest -> contest.id })
         assertEquals(3L, page.totalElements)
@@ -222,7 +249,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         val assigned = saveCompetition(first, last)
         val request = Pagination(page = 0, size = 1, sort = Sort(listOf(Sort.Order("id", Sort.Direction.DESC))))
 
-        val page = repository.findAvailableToObserver(competitionIds = setOf(assigned.id), pagination = request)
+        val page = repository.findAvailableToObserver(contestIds = assigned.data.contests.ids.toSet(), pagination = request)
 
         assertEquals(listOf(last.id), page.content.map { contest -> contest.id })
         assertEquals(2L, page.totalElements)
@@ -230,18 +257,18 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
     }
 
     @Test
-    fun `should use current competition membership after it changes`() {
+    fun `should preserve assigned contests when competition membership changes`() {
         val removed = saveContest("Removed")
         val added = saveContest("Added")
         val assigned = saveCompetition(removed)
         competitions.update(assigned.withData { contests = mutableListOf(added.id) })
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(assigned.id),
+            contestIds = assigned.data.contests.ids.toSet(),
             pagination = Pagination(page = 0, size = 10),
         )
 
-        assertEquals(listOf(added.id), page.content.map { contest -> contest.id })
+        assertEquals(listOf(removed.id), page.content.map { contest -> contest.id })
         assertEquals(1L, page.totalElements)
     }
 
@@ -260,7 +287,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         val assigned = saveCompetition(contest)
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(assigned.id),
+            contestIds = assigned.data.contests.ids.toSet(),
             pagination = Pagination(page = 0, size = 1),
         )
 
@@ -280,7 +307,7 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
         val assigned = saveCompetition(contest)
 
         val page = repository.findAvailableToObserver(
-            competitionIds = setOf(assigned.id),
+            contestIds = assigned.data.contests.ids.toSet(),
             pagination = Pagination(page = 0, size = 1),
         )
 

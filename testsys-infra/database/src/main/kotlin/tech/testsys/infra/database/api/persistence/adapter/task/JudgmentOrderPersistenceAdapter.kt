@@ -39,5 +39,5 @@ class JudgmentOrderPersistenceAdapter(
         return domainEntity
     }
 
-    override fun assemble(jpaEntity: JudgmentOrderJpaEntity) = JudgmentOrderMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<JudgmentOrderJpaEntity>) = rows.map { row -> JudgmentOrderMapping.toDomain(row) }
 }

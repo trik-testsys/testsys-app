@@ -115,7 +115,7 @@ class TaskPersistenceAdapter(
         val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
         val page = taskJpaEntityRepository.findAll(specification, pageable)
         return Page(
-            content = page.content.map { entity -> assemble(entity) },
+            content = assembleAll(page.content),
             pagination = pagination,
             totalElements = page.totalElements,
         )
@@ -182,6 +182,8 @@ class TaskPersistenceAdapter(
 
     @Transactional
     override fun removeByIds(ids: List<TaskId>) = ids.forEach(::removeById)
+
+    override fun assembleAll(rows: List<TaskJpaEntity>): List<Task> = rows.map(::assemble)
 
     override fun assemble(jpaEntity: TaskJpaEntity): Task {
         val taskId = jpaEntity.requireId()

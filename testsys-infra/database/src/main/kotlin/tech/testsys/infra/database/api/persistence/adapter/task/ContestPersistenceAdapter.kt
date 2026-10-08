@@ -77,7 +77,7 @@ class ContestPersistenceAdapter(
         val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
         val page = contestJpaEntityRepository.findAll(specification, pageable)
         return Page(
-            content = page.content.map { entity -> assemble(entity) },
+            content = assembleAll(page.content),
             pagination = pagination,
             totalElements = page.totalElements,
         )
@@ -134,7 +134,7 @@ class ContestPersistenceAdapter(
         val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
         val page = contestJpaEntityRepository.findAll(specification, pageable)
         return Page(
-            content = page.content.map { entity -> assemble(entity) },
+            content = assembleAll(page.content),
             pagination = pagination,
             totalElements = page.totalElements,
         )
@@ -189,6 +189,8 @@ class ContestPersistenceAdapter(
 
     @Transactional
     override fun removeByIds(ids: List<ContestId>) = ids.forEach(::removeById)
+
+    override fun assembleAll(rows: List<ContestJpaEntity>): List<Contest> = rows.map(::assemble)
 
     override fun assemble(jpaEntity: ContestJpaEntity): Contest {
         val contestId = jpaEntity.requireId()

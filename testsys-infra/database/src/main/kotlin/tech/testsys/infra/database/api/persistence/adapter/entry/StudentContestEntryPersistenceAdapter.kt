@@ -59,11 +59,12 @@ class StudentContestEntryPersistenceAdapter(
         contestIds: List<ContestId>,
     ): List<StudentContestEntry> {
         if (contestIds.isEmpty()) return emptyList()
-        return entries.findAllByUserIdAndClassIdAndContestIdIn(
+        val rows = entries.findAllByUserIdAndClassIdAndContestIdIn(
             userId = userId.value,
             classId = studyClassId.value,
             contestIds = contestIds.map { it.value },
-        ).map { assemble(it) }
+        )
+        return assembleAll(rows)
     }
 
     @Transactional
@@ -79,5 +80,6 @@ class StudentContestEntryPersistenceAdapter(
         return existing ?: save(data)
     }
 
-    override fun assemble(jpaEntity: StudentContestEntryJpaEntity): StudentContestEntry = StudentContestEntryMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<StudentContestEntryJpaEntity>): List<StudentContestEntry> =
+        rows.map { row -> StudentContestEntryMapping.toDomain(row) }
 }

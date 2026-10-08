@@ -98,6 +98,8 @@ class ParticipantPersistenceAdapter(
 
     override fun supports(jpaEntity: UserJpaEntity) = participantDataJpaEntityRepository.findByUserId(jpaEntity.requireId()) != null
 
+    override fun assembleAll(rows: List<UserJpaEntity>): List<Participant> = rows.map(::assemble)
+
     override fun assemble(jpaEntity: UserJpaEntity): Participant {
         val userId = jpaEntity.requireId()
         val dataJpaEntity = participantDataJpaEntityRepository.findByUserId(userId).requireById(userId)

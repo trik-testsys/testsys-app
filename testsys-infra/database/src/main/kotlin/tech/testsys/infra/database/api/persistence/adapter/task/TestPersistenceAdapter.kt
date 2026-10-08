@@ -68,7 +68,7 @@ class TestPersistenceAdapter(
 
     @Transactional(readOnly = true)
     override fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<Test> =
-        resourceVersionRepository.findAllByVersionBucket(versionBucket.value).map { assemble(it) }
+        assembleAll(resourceVersionRepository.findAllByVersionBucket(versionBucket.value))
 
     @Transactional(readOnly = true)
     override fun existsByVersionBucket(versionBucket: VersionBucket): Boolean =
@@ -79,6 +79,8 @@ class TestPersistenceAdapter(
         val row = jpaEntityRepository.findByIdOrNull(id.value)?.takeIf { it.versionBucket == versionBucket.value } ?: return null
         return StoredBlobRef(fileDataJpaEntityRepository.findByIdOrError(row.fileDataId).storedFileName)
     }
+
+    override fun assembleAll(rows: List<TestJpaEntity>): List<Test> = rows.map(::assemble)
 
     override fun assemble(jpaEntity: TestJpaEntity): Test {
         val file = fileDataStorage.load(jpaEntity.fileDataId, paths.test)

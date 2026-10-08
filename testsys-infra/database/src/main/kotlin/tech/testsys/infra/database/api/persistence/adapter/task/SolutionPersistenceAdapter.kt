@@ -43,6 +43,8 @@ class SolutionPersistenceAdapter(
         "solution ${entity.id.value} cannot be updated: every field of a solution is fixed on creation",
     )
 
+    override fun assembleAll(rows: List<SolutionJpaEntity>): List<Solution> = rows.map(::assemble)
+
     override fun assemble(jpaEntity: SolutionJpaEntity): Solution {
         val file = fileDataStorage.load(jpaEntity.fileDataId, paths.solution)
         val domainEntity = SolutionMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)

@@ -62,11 +62,12 @@ class ParticipantContestEntryPersistenceAdapter(
         contestIds: List<ContestId>,
     ): List<ParticipantContestEntry> {
         if (contestIds.isEmpty()) return emptyList()
-        return entries.findAllByParticipantIdAndCompetitionIdAndContestIdIn(
+        val rows = entries.findAllByParticipantIdAndCompetitionIdAndContestIdIn(
             participantId = participantId.value,
             competitionId = competitionId.value,
             contestIds = contestIds.map { it.value },
-        ).map { assemble(it) }
+        )
+        return assembleAll(rows)
     }
 
     @Transactional
@@ -82,6 +83,6 @@ class ParticipantContestEntryPersistenceAdapter(
         return existing ?: save(data)
     }
 
-    override fun assemble(jpaEntity: ParticipantContestEntryJpaEntity): ParticipantContestEntry =
-        ParticipantContestEntryMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<ParticipantContestEntryJpaEntity>): List<ParticipantContestEntry> =
+        rows.map { row -> ParticipantContestEntryMapping.toDomain(row) }
 }

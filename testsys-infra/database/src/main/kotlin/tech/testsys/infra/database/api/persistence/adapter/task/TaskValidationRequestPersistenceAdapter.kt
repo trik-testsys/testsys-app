@@ -71,7 +71,7 @@ class TaskValidationRequestPersistenceAdapter(
 
     @Transactional(readOnly = true)
     override fun findHistory(taskId: TaskId): List<TaskValidationRequest> =
-        requests.findAllByTaskIdOrderByCreatedAtAscIdAsc(taskId.value).map { assemble(it) }
+        assembleAll(requests.findAllByTaskIdOrderByCreatedAtAscIdAsc(taskId.value))
 
     @Transactional(readOnly = true)
     override fun startDiagnostics(requestId: TaskValidationRequestId): TaskValidationRequest? {
@@ -214,8 +214,7 @@ class TaskValidationRequestPersistenceAdapter(
     }
 
     @Transactional(readOnly = true)
-    override fun findActive(): List<TaskValidationRequest> =
-        requests.findAllByExecutionInOrderByIdAsc(ACTIVE_EXECUTIONS).map { assemble(it) }
+    override fun findActive(): List<TaskValidationRequest> = assembleAll(requests.findAllByExecutionInOrderByIdAsc(ACTIVE_EXECUTIONS))
 
     @Transactional(readOnly = true)
     override fun findBySubmissionId(submissionId: SubmissionId): TaskValidationRequest? {
@@ -275,6 +274,8 @@ class TaskValidationRequestPersistenceAdapter(
 
     @Transactional
     override fun removeByIds(ids: List<TaskValidationRequestId>) = ids.sortedBy { it.value }.forEach(::removeById)
+
+    override fun assembleAll(rows: List<TaskValidationRequestJpaEntity>): List<TaskValidationRequest> = rows.map(::assemble)
 
     override fun assemble(jpaEntity: TaskValidationRequestJpaEntity): TaskValidationRequest {
         val requestId = jpaEntity.requireId()

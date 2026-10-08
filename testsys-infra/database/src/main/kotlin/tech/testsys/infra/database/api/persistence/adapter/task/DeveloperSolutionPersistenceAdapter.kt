@@ -71,11 +71,13 @@ class DeveloperSolutionPersistenceAdapter(
         return resourceVersionRepository.findFirstByVersionBucketOrderByCreatedAtDescIdDesc(versionBucket.value)?.let { assemble(it) }
     }
 
+    override fun assembleAll(rows: List<DeveloperSolutionJpaEntity>): List<DeveloperSolution> = rows.map(::assemble)
+
     override fun assemble(jpaEntity: DeveloperSolutionJpaEntity) = DeveloperSolutionMapping.toDomain(jpaEntity)
 
     @Transactional(readOnly = true)
     override fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<DeveloperSolution> =
-        resourceVersionRepository.findAllByVersionBucket(versionBucket.value).map { assemble(it) }
+        assembleAll(resourceVersionRepository.findAllByVersionBucket(versionBucket.value))
 
     @Transactional(readOnly = true)
     override fun existsByVersionBucket(versionBucket: VersionBucket): Boolean =

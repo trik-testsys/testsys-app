@@ -95,6 +95,8 @@ class VerdictPersistenceAdapter(
         )
     }
 
+    override fun assembleAll(rows: List<VerdictJpaEntity>): List<Verdict> = rows.map(::assemble)
+
     override fun assemble(jpaEntity: VerdictJpaEntity): Verdict {
         val verdictId = jpaEntity.requireId()
         val testVerdictJpaEntities = testVerdictJpaEntityRepository.findAllByVerdictIdOrderByTestIdAsc(verdictId)

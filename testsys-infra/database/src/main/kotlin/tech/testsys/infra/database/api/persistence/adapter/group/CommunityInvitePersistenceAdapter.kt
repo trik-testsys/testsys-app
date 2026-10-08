@@ -43,7 +43,7 @@ abstract class AbstractCommunityInvitePersistenceAdapter<Invite : CommunityInvit
 
     @Transactional(readOnly = true)
     override fun findByIds(ids: List<CommunityInviteId>) =
-        jpaEntityRepository.findAllById(ids.map { it.value }).filter { supports(it) }.map { assemble(it) }
+        assembleAll(jpaEntityRepository.findAllById(ids.map { it.value }).filter { supports(it) })
 
     @Transactional
     override fun save(data: CommunityInviteData): Invite =
@@ -95,7 +95,7 @@ class ManagerCommunityInvitePersistenceAdapter(
 ) : AbstractCommunityInvitePersistenceAdapter<CommunityInvite.Manager>(jpaEntityRepository, CommunityInvite.Kind.Manager),
     ManagerCommunityInviteRepository {
 
-    override fun assemble(jpaEntity: CommunityInviteJpaEntity) = CommunityInviteMapping.toManager(jpaEntity)
+    override fun assembleAll(rows: List<CommunityInviteJpaEntity>) = rows.map { row -> CommunityInviteMapping.toManager(row) }
 }
 
 /**
@@ -110,5 +110,5 @@ class DeveloperCommunityInvitePersistenceAdapter(
 ) : AbstractCommunityInvitePersistenceAdapter<CommunityInvite.Developer>(jpaEntityRepository, CommunityInvite.Kind.Developer),
     DeveloperCommunityInviteRepository {
 
-    override fun assemble(jpaEntity: CommunityInviteJpaEntity) = CommunityInviteMapping.toDeveloper(jpaEntity)
+    override fun assembleAll(rows: List<CommunityInviteJpaEntity>) = rows.map { row -> CommunityInviteMapping.toDeveloper(row) }
 }

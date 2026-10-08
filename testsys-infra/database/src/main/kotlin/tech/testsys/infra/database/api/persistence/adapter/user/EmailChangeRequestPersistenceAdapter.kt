@@ -50,5 +50,5 @@ class EmailChangeRequestPersistenceAdapter(
     @Transactional(readOnly = true)
     override fun findByUser(user: MultipleRoleUserId): EmailChangeRequest? = requests.findByUserId(user.value)?.let { assemble(it) }
 
-    override fun assemble(jpaEntity: EmailChangeRequestJpaEntity) = EmailChangeRequestMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<EmailChangeRequestJpaEntity>) = rows.map { row -> EmailChangeRequestMapping.toDomain(row) }
 }

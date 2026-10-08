@@ -192,7 +192,16 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   [testsys-domain/README.md](../../testsys-domain/README.md)), проверяется до сохранения через `requireUnchanged`,
   файл Ресурса — через `requireSameFile` из
   [FixedFieldGuards.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/FixedFieldGuards.kt).
-- `assemble(jpaEntity)` — собрать доменный объект из строки, дочитав идентификаторы связей и справочники.
+- `assembleAll(rows)` — собрать доменные объекты из строк в порядке `rows`. Идентификаторы связей и справочники
+  дочитайте для всего списка одним запросом на таблицу: для join-таблиц — через `findLinkedIds`, для остальных
+  выборок по набору идентификаторов — через `findAllInChunks` из
+  [BatchLoadUtils.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/utils/BatchLoadUtils.kt).
+  `assemble` не переопределяйте: базовый класс собирает одну строку через `assembleAll`. Образец без связей —
+  `CommunityPersistenceAdapter`. Как адаптеры используют сборку — в разделе «Сборка доменных сущностей»
+  в [database/README.md](../../testsys-infra/database/README.md).
+
+`ContestPersistenceAdapter` и другие адаптеры со связями пока переопределяют `assemble` и собирают строки по одной —
+это переходное состояние, в новом адаптере его не повторяйте.
 
 Если у сущности есть join-таблицы, может дополнительно потребоваться переопределить `removeById`/`removeByIds`, если строки связей
 нужно удалить до самой сущности. Для сущностей-пользователей базовый класс другой —

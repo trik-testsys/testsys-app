@@ -1,7 +1,5 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
-import jakarta.persistence.EntityManagerFactory
-import org.hibernate.SessionFactory
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
@@ -60,9 +58,6 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
 
     @Autowired
     private lateinit var blobStorage: FileBlobStorage
-
-    @Autowired
-    private lateinit var entityManagerFactory: EntityManagerFactory
 
     @Test
     fun `should return student and participant grading verdicts without community restrictions`() {
@@ -584,19 +579,6 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         )
         submissions.update(submission.withData { status.graded { status.success { this.verdict = verdict.id } } })
         return verdict
-    }
-
-    private fun <T> withStatementCount(block: () -> T): Pair<T, Long> {
-        val statistics = entityManagerFactory.unwrap(SessionFactory::class.java).statistics
-        val wasEnabled = statistics.isStatisticsEnabled
-        statistics.isStatisticsEnabled = true
-        statistics.clear()
-        return try {
-            val result = block()
-            result to statistics.prepareStatementCount
-        } finally {
-            statistics.isStatisticsEnabled = wasEnabled
-        }
     }
 
     private fun setCreatedAt(verdict: Verdict, value: String) {

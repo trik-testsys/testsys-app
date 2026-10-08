@@ -157,6 +157,8 @@ class MultipleRoleUserPersistenceAdapter(
 
     override fun supports(jpaEntity: UserJpaEntity) = jpaEntity.type == UserTypeJpaEnum.MULTIPLE_ROLE
 
+    override fun assembleAll(rows: List<UserJpaEntity>): List<MultipleRoleUser> = rows.map(::assemble)
+
     override fun assemble(jpaEntity: UserJpaEntity): MultipleRoleUser {
         val userId = jpaEntity.requireId()
         val roles = assembleRoles(userId)

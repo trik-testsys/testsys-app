@@ -84,18 +84,20 @@ class SubmissionPersistenceAdapter(
     }
 
     @Transactional(readOnly = true)
-    override fun findGradingByTaskId(taskId: TaskId): List<Submission> = submissionJpaEntityRepository
-        .findAllByTaskIdAndKindOrderByIdAsc(taskId = taskId.value, kind = SubmissionKindJpaEnum.GRADING)
-        .map { jpaEntity -> assemble(jpaEntity) }
+    override fun findGradingByTaskId(taskId: TaskId): List<Submission> = assembleAll(
+        submissionJpaEntityRepository.findAllByTaskIdAndKindOrderByIdAsc(taskId = taskId.value, kind = SubmissionKindJpaEnum.GRADING),
+    )
 
     @Transactional(readOnly = true)
-    override fun findGradingByContext(authorId: UserId, taskId: TaskId, contestId: ContestId): List<Submission> =
-        submissionJpaEntityRepository.findAllByAuthorIdAndTaskIdAndKindAndGradingContestIdOrderByCreatedAtAscIdAsc(
+    override fun findGradingByContext(authorId: UserId, taskId: TaskId, contestId: ContestId): List<Submission> {
+        val rows = submissionJpaEntityRepository.findAllByAuthorIdAndTaskIdAndKindAndGradingContestIdOrderByCreatedAtAscIdAsc(
             authorId = authorId.value,
             taskId = taskId.value,
             kind = SubmissionKindJpaEnum.GRADING,
             gradingContestId = contestId.value,
-        ).map { assemble(it) }
+        )
+        return assembleAll(rows)
+    }
 
     @Transactional(readOnly = true)
     override fun findContestResults(contestId: ContestId, authorIds: Set<UserId>, taskIds: Set<TaskId>): List<ContestTaskResult> {
@@ -124,6 +126,8 @@ class SubmissionPersistenceAdapter(
                 )
             }
     }
+
+    override fun assembleAll(rows: List<SubmissionJpaEntity>): List<Submission> = rows.map(::assemble)
 
     override fun assemble(jpaEntity: SubmissionJpaEntity): Submission {
         val submissionId = jpaEntity.requireId()

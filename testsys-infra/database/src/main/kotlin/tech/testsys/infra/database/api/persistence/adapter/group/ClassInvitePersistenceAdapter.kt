@@ -55,5 +55,5 @@ class ClassInvitePersistenceAdapter(
     override fun findExpired(now: Instant): List<ClassInviteId> =
         invites.findAllByExpiresAtLessThanEqualOrderByIdAsc(now).map { ClassInviteId(it.requireId()) }
 
-    override fun assemble(jpaEntity: ClassInviteJpaEntity) = ClassInviteMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<ClassInviteJpaEntity>) = rows.map { row -> ClassInviteMapping.toDomain(row) }
 }

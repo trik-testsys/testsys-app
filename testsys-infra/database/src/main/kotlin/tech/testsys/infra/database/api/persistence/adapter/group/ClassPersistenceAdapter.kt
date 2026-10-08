@@ -72,7 +72,7 @@ class ClassPersistenceAdapter(
         val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
         val page = classJpaEntityRepository.findAll(specification, pageable)
         return Page(
-            content = page.content.map { entity -> assemble(entity) },
+            content = assembleAll(page.content),
             pagination = pagination,
             totalElements = page.totalElements,
         )
@@ -144,6 +144,8 @@ class ClassPersistenceAdapter(
 
     @Transactional
     override fun removeByIds(ids: List<ClassId>) = ids.forEach(::removeById)
+
+    override fun assembleAll(rows: List<ClassJpaEntity>): List<Class> = rows.map(::assemble)
 
     override fun assemble(jpaEntity: ClassJpaEntity): Class {
         val classId = jpaEntity.requireId()

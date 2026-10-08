@@ -43,6 +43,8 @@ class LogsPersistenceAdapter(
         "logs ${entity.id.value} cannot be updated: every field of logs is fixed on creation",
     )
 
+    override fun assembleAll(rows: List<LogsJpaEntity>): List<Logs> = rows.map(::assemble)
+
     override fun assemble(jpaEntity: LogsJpaEntity): Logs {
         val file = fileDataStorage.load(jpaEntity.fileDataId, paths.logs)
         val domainEntity = LogsMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)

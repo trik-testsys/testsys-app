@@ -71,7 +71,7 @@ class CompetitionPersistenceAdapter(
         val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
         val page = competitionJpaEntityRepository.findAll(specification, pageable)
         return Page(
-            content = page.content.map { entity -> assemble(entity) },
+            content = assembleAll(page.content),
             pagination = pagination,
             totalElements = page.totalElements,
         )
@@ -109,6 +109,8 @@ class CompetitionPersistenceAdapter(
 
     @Transactional
     override fun removeByIds(ids: List<CompetitionId>) = ids.forEach(::removeById)
+
+    override fun assembleAll(rows: List<CompetitionJpaEntity>): List<Competition> = rows.map(::assemble)
 
     override fun assemble(jpaEntity: CompetitionJpaEntity): Competition {
         val competitionId = jpaEntity.requireId()

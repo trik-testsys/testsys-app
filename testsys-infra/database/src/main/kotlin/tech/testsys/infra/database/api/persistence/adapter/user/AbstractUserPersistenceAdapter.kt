@@ -35,8 +35,7 @@ abstract class AbstractUserPersistenceAdapter<Data, Id : UserId, Entity : User<I
     override fun findById(id: Id) = jpaEntityRepository.findByIdOrNull(id.value)?.takeIf { supports(it) }?.let { assemble(it) }
 
     @Transactional(readOnly = true)
-    override fun findByIds(ids: List<Id>) =
-        jpaEntityRepository.findAllById(ids.map { it.value }).filter { supports(it) }.map { assemble(it) }
+    override fun findByIds(ids: List<Id>) = assembleAll(jpaEntityRepository.findAllById(ids.map { it.value }).filter { supports(it) })
 
     @Transactional(readOnly = true)
     @RawAccessTokenDependency(

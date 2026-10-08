@@ -73,6 +73,8 @@ class SupervisorPersistenceAdapter(
 
     override fun supports(jpaEntity: UserJpaEntity) = supervisorDataJpaEntityRepository.findByUserId(jpaEntity.requireId()) != null
 
+    override fun assembleAll(rows: List<UserJpaEntity>): List<Supervisor> = rows.map(::assemble)
+
     override fun assemble(jpaEntity: UserJpaEntity): Supervisor {
         val userId = jpaEntity.requireId()
         val dataJpaEntity = supervisorDataJpaEntityRepository.findByUserId(userId).requireById(userId)

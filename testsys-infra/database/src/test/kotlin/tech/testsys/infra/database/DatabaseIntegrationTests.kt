@@ -1,5 +1,7 @@
 package tech.testsys.infra.database
 
+import jakarta.persistence.EntityManagerFactory
+import org.hibernate.SessionFactory
 import org.junit.jupiter.api.AfterEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -13,6 +15,7 @@ import org.springframework.test.context.TestPropertySource
  * Every test class shares one cached Spring context; adapter calls run in their own transactions exactly as in
  * production, so all `ts_*` tables are truncated after each test to keep tests independent.
  * Hibernate detects [org.hibernate.dialect.H2Dialect] from the connection, so PostgreSQL-only features are not exercised.
+ * Hibernate statistics are enabled, so [withStatementCount] can count the statements prepared by a block.
  */
 @SpringBootTest(classes = [DatabaseTestApp::class, DatabaseFixtures::class])
 @TestPropertySource(
@@ -21,6 +24,7 @@ import org.springframework.test.context.TestPropertySource
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
+        "spring.jpa.properties.hibernate.generate_statistics=true",
         "testsys.file-storage.paths.statement=${DatabaseIntegrationTests.STATEMENT_PATH}",
         "testsys.file-storage.paths.exercise=${DatabaseIntegrationTests.EXERCISE_PATH}",
         "testsys.file-storage.paths.test=${DatabaseIntegrationTests.TEST_PATH}",
@@ -37,6 +41,9 @@ abstract class DatabaseIntegrationTests {
     @Autowired
     private lateinit var jdbcTemplate: JdbcTemplate
 
+    @Autowired
+    private lateinit var entityManagerFactory: EntityManagerFactory
+
     @AfterEach
     fun truncateTables() {
         val tables = jdbcTemplate.queryForList(
@@ -49,6 +56,19 @@ abstract class DatabaseIntegrationTests {
         } finally {
             jdbcTemplate.execute("set referential_integrity true")
         }
+    }
+
+    /**
+     * Runs [block] and returns its result with the number of statements Hibernate prepared while it ran.
+     * Compare counts of calls with different input sizes rather than asserting absolute values.
+     */
+    protected fun <T> withStatementCount(block: () -> T): Pair<T, Long> {
+        val statistics = entityManagerFactory.unwrap(SessionFactory::class.java).statistics
+        check(statistics.isStatisticsEnabled) { "Hibernate statistics are disabled: set hibernate.generate_statistics=true" }
+        statistics.clear()
+
+        val result = block()
+        return result to statistics.prepareStatementCount
     }
 
     companion object {

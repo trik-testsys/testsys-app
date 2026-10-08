@@ -49,5 +49,5 @@ class RegistrationRequestPersistenceAdapter(
     @Transactional(readOnly = true)
     override fun findByEmail(email: String): RegistrationRequest? = requests.findByEmail(email)?.let { assemble(it) }
 
-    override fun assemble(jpaEntity: RegistrationRequestJpaEntity) = RegistrationRequestMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<RegistrationRequestJpaEntity>) = rows.map { row -> RegistrationRequestMapping.toDomain(row) }
 }

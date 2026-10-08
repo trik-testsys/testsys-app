@@ -19,12 +19,28 @@
 | `api/persistence/adapter`     | Адаптеры портов хранения `XPersistenceAdapter`                                             | 9         |
 | `api/persistence`             | `FileDataStorage` — хранение файлов, `FileSystemBlobStorage` — содержимое файлов на диске  | —         |
 | `internal/jpa/id`             | Генератор идентификаторов                                                                  | —         |
-| `internal/utils`              | Общие помощники: `syncJoinTable`, `requireId`, `requireVersion`, `findByIdOrError`, `populateFields` | —         |
+| `internal/utils`              | Общие помощники: `syncJoinTable`, `findLinkedIds`, `findAllInChunks`, `requireId`, `requireVersion`, `findByIdOrError`, `populateFields` | —         |
 
 Всё в `internal` помечено `@InternalDatabaseApi` (`@RequiresOptIn`): снаружи модуля используется только `api`.
 Бины регистрирует [DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/api/DatabaseConfiguration.kt),
 настройки Hibernate по умолчанию — в [hibernate-defaults.properties](src/main/resources/hibernate-defaults.properties).
 Приложение подключает `DatabaseConfiguration` через `@Import`.
+
+## Сборка доменных сущностей
+
+Адаптер собирает доменные сущности из строк методом `assembleAll` базового класса
+[AbstractPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/AbstractPersistenceAdapter.kt).
+Метод возвращает сущности в порядке переданных строк. `findByIds`, `load` списка, страницы и списочные выборки
+передают ему все найденные строки одним вызовом. `assemble` собирает одну строку: вызывает `assembleAll`
+со списком из этой строки.
+
+Вспомогательные функции `findLinkedIds` и `findAllInChunks` из
+[BatchLoadUtils.kt](src/main/kotlin/tech/testsys/infra/database/internal/utils/BatchLoadUtils.kt) читают строки
+для всего списка одним запросом на таблицу. Условие `IN` они делят на порции по 1024 идентификатора, а при пустом
+наборе идентификаторов не обращаются к БД.
+
+Часть адаптеров пока переопределяет `assemble` и собирает строки по одной: их `assembleAll` вызывает `assemble`
+для каждой строки. Это переходное состояние.
 
 ## Постраничный поиск Задач и Туров
 
@@ -42,7 +58,8 @@
 Без параметров сортировки сущности упорядочиваются по идентификатору по возрастанию.
 Этот порядок дополняет указанную сортировку, если в ней нет идентификатора.
 
-Адаптеры собирают доменные сущности только выбранной страницы и возвращают исходные параметры пагинации.
+Адаптеры собирают доменные сущности только выбранной страницы (раздел
+[«Сборка доменных сущностей»](#сборка-доменных-сущностей)) и возвращают исходные параметры пагинации.
 Все чтения выполняются в транзакции с `readOnly = true`; исключения хранилища выходят к вызывающему коду.
 
 ## Постраничный поиск Классов и Соревнований
@@ -249,6 +266,8 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 - Диалект SQL не задаётся: Hibernate определяет его по соединению (PostgreSQL в продакшене, H2 в тестах).
 - Имена таблиц и колонок вычисляет `TestsysPhysicalNamingStrategy`.
 - `SchemaValidationTests` (H2 в режиме PostgreSQL) применяет changelog'и и выполняет ту же валидацию.
+- H2 не поддерживает частичные индексы. Поэтому частичный индекс очереди судьи `ix_ts_submission_judge_queue`
+  создаётся только на PostgreSQL (`dbms="postgresql"`), и `SchemaValidationTests` его не проверяет.
 
 Правила написания changeset — в шаге 7 [implement-entity.md](../../docs/guides/implement-entity.md).
 

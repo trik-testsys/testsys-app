@@ -90,6 +90,8 @@ class ObserverPersistenceAdapter(
 
     override fun supports(jpaEntity: UserJpaEntity) = observerDataJpaEntityRepository.findByUserId(jpaEntity.requireId()) != null
 
+    override fun assembleAll(rows: List<UserJpaEntity>): List<Observer> = rows.map(::assemble)
+
     override fun assemble(jpaEntity: UserJpaEntity): Observer {
         val userId = jpaEntity.requireId()
         val dataJpaEntity = observerDataJpaEntityRepository.findByUserId(userId).requireById(userId)

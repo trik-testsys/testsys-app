@@ -43,6 +43,8 @@ class RecordingPersistenceAdapter(
         "recording ${entity.id.value} cannot be updated: every field of a recording is fixed on creation",
     )
 
+    override fun assembleAll(rows: List<RecordingJpaEntity>): List<Recording> = rows.map(::assemble)
+
     override fun assemble(jpaEntity: RecordingJpaEntity): Recording {
         val file = fileDataStorage.load(jpaEntity.fileDataId, paths.recording)
         val domainEntity = RecordingMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)

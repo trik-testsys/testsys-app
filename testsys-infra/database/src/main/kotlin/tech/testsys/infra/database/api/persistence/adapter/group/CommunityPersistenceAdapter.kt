@@ -81,7 +81,7 @@ class CommunityPersistenceAdapter(
     @Transactional
     override fun removeByIds(ids: List<CommunityId>) = ids.forEach(::removeById)
 
-    override fun assemble(jpaEntity: CommunityJpaEntity) = CommunityMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<CommunityJpaEntity>) = rows.map { row -> CommunityMapping.toDomain(row) }
 
     private fun saveInvite(data: CommunityInviteData, kind: CommunityInvite.Kind): CommunityInviteId {
         val saved = communityInviteJpaEntityRepository.save(CommunityInviteMapping.toJpaEntity(data = data, kind = kind))

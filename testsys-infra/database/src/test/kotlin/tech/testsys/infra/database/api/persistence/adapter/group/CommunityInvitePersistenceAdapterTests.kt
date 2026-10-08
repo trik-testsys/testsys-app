@@ -79,6 +79,18 @@ class ManagerCommunityInvitePersistenceAdapterTests :
     }
 
     @Test
+    fun `should find manager invites by ids with the same statement count for one and twenty ids`() {
+        val ids = List(20) { fixtures.managerCommunityInvite().id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { invite -> invite.id })
+        assertEquals(ids.toSet(), twenty.map { invite -> invite.id }.toSet())
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    @Test
     fun `should find only expired manager invites at or before the moment in ascending id order`() {
         val boundary = Instant.parse("2030-01-01T00:00:00Z")
         // Snowflake ids grow with saving order, so the invite expiring at the boundary is saved first to get the

@@ -15,7 +15,7 @@ import tech.testsys.infra.database.internal.utils.requireById
 
 /**
  * Base of persistence adapters: implements finding, loading, removing and the list overloads of [EntityRepository];
- * subclasses provide [save], [update] and [assemble]. Overloads that need non-default [Transactional] settings
+ * subclasses provide [save], [update] and [assembleAll]. Overloads that need non-default [Transactional] settings
  * (e.g. [Propagation.REQUIRES_NEW]) must be overridden together (Spring AOP self-invocation).
  *
  * @param Data the data type a new entity is created from.
@@ -35,7 +35,7 @@ abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEn
     override fun findById(id: Id) = jpaEntityRepository.findByIdOrNull(id.value)?.let { assemble(it) }
 
     @Transactional(readOnly = true)
-    override fun findByIds(ids: List<Id>) = jpaEntityRepository.findAllById(ids.map { it.value }).map { assemble(it) }
+    override fun findByIds(ids: List<Id>) = assembleAll(jpaEntityRepository.findAllById(ids.map { it.value }))
 
     @Transactional(readOnly = true)
     override fun load(field: LazyEntity<Id, Entity>) = findById(field.id).requireById(field.id)
@@ -68,7 +68,13 @@ abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEn
     override fun remove(entityList: List<Entity>) = removeByIds(entityList.map { it.id })
 
     /**
-     * Assembles an [Entity] from its [jpaEntity] row.
+     * Assembles [Entity] objects from [rows] in the order of [rows], reading related rows for the whole list at once.
+     * An override that delegates to [assemble] must also override [assemble], otherwise the two calls recurse.
      */
-    protected abstract fun assemble(jpaEntity: JpaEntity): Entity
+    protected abstract fun assembleAll(rows: List<JpaEntity>): List<Entity>
+
+    /**
+     * Assembles an [Entity] from its [jpaEntity] row through [assembleAll].
+     */
+    protected open fun assemble(jpaEntity: JpaEntity): Entity = assembleAll(listOf(jpaEntity)).single()
 }

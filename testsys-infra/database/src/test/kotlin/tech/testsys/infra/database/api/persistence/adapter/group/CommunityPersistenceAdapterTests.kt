@@ -134,6 +134,27 @@ class CommunityPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
     }
 
     @Test
+    fun `should find only the communities of the owner in ascending id order`() {
+        val owner = fixtures.administrator()
+        val first = fixtures.community(owner)
+        fixtures.community(fixtures.administrator())
+        val second = fixtures.community(owner)
+
+        val found = repository.findByOwner(owner.id)
+
+        assertEquals(listOf(first.id, second.id), found.map { community -> community.id })
+    }
+
+    @Test
+    fun `should find no communities of an owner who created none`() {
+        fixtures.community(fixtures.administrator())
+
+        val found = repository.findByOwner(fixtures.administrator().id)
+
+        assertEquals(emptyList(), found)
+    }
+
+    @Test
     fun `should return null if no community references the invite`() {
         val invite = fixtures.managerCommunityInvite()
 

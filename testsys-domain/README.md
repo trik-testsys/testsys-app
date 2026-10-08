@@ -154,7 +154,12 @@
 без нормализации; нормализует почту операция.
 
 `UserRepository.recordLogin` записывает момент последнего входа Пользователя любого вида. Этот момент не входит
-в данные Пользователя: запись не меняет их и токен `version`.
+в данные Пользователя, но его запись повышает токен `version` корня агрегата. `UserRepository.findLastLogins` читает эти моменты
+сразу для нескольких Пользователей.
+
+`MultipleRoleUserRepository.addCommunityMembership` включает Пользователя в Сообщество в Роли из перечисления
+[`CommunityRole`](src/main/kotlin/tech/testsys/domain/model/user/CommunityRole.kt): Организатора, Разработчика
+или Ученика. Роль выбирает операция: по Коду-приглашению или по решению Администратора.
 
 ### Запросы регистрации
 
@@ -177,7 +182,7 @@
 [`ClassInvite`](src/main/kotlin/tech/testsys/domain/model/group/ClassInvite.kt) хранит Код-приглашение
 в Класс. [`CommunityInvite`](src/main/kotlin/tech/testsys/domain/model/group/CommunityInvite.kt) хранит
 Код-приглашение в Сообщество; вариант `CommunityInvite.Manager` или `CommunityInvite.Developer` задаёт Роль.
-Операции и порты получают Роль селектором `CommunityInvite.Kind` и выбирают вариант через `when` без `else`.
+Операции получают Роль селектором `CommunityInvite.Kind` и выбирают вариант через `when` без `else`.
 Поле `expiresAt` хранит момент окончания срока. Правила срока, замены и продления определены
 в `testsys.entity.invite` в [features.md](../docs/domain/features.md).
 

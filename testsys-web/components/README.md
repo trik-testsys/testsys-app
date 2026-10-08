@@ -481,7 +481,7 @@ block(title = "Посылки") {
 | Функция | Значение | Вид |
 |---------|----------|-----|
 | `textColumn` | `String?` | Обычный текст |
-| `codeColumn` | `String?` | Моноширинный (`.ts-num`): идентификаторы, коды |
+| `codeColumn` | `String?` | Моноширинный (`.ts-num`): идентификаторы, коды; `isObscured = true` размывает значения, как у [скрытых полей](#скрытые-значения) |
 | `numberColumn` | `Number?` | Вправо, моноширинный, разряды по `UiTexts.locale` |
 | `dateColumn` | `LocalDate?` | Формат `UiTexts.calendar.dateFormat` |
 | `dateTimeColumn` | `LocalDateTime?` | Дата по тому же формату и время `HH:mm` |
@@ -830,7 +830,7 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | `ElementHandle` | `isVisible`, `bindVisible(signal)` (в том числе у `emptyState` и `menu`) |
 | `FieldHandle` | всё из `ElementHandle` и `isObscured`, `bindObscured(signal)`, см. [Скрытые значения](#скрытые-значения) |
 | `TextHandle` | `isVisible`, `bindVisible`, `text`, `bindText(signal)` (значение `counter`, `text`) |
-| `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick` |
+| `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick`, `clickOnEnter()` — нажатие Enter на странице нажимает действие |
 | `BlockHandle` | `isVisible`, `bindVisible`, `isEditable`, `bindEditable(signal)` (возвращают `block` и `highlightBlock`) |
 | `ChoiceHandle<V>` | `isVisible`, `bindVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает; новый слушатель заменяет прежний) — возвращает `pills` |
 | `TabsHandle<V>` | всё из `ChoiceHandle<V>` и `setCount(value, count)`, `bindCount(value, signal)` (`null` и `0` скрывают счётчик) — возвращает `tabs` блока |

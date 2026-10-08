@@ -427,6 +427,41 @@ sealed interface ViewCommunityInvitesError : OperationError
 sealed interface RefreshCommunityInviteError : OperationError
 
 /**
+ * Failure of listing the communities created by the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewCommunitiesError : OperationError
+
+/**
+ * Failure of creating a community owned by the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateCommunityError : OperationError
+
+/**
+ * Failure of changing the name and description of a community owned by the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EditCommunityError : OperationError
+
+/**
+ * Failure of making a user available to the administrator a member of their community in a role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface GrantRoleError : OperationError
+
+/**
+ * Failure of listing the contests shared to a community owned by the administrator, from which an observer is assigned.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewCommunityContestsError : OperationError
+
+/**
  * The user does not hold the administrator role.
  *
  * @since %CURRENT_VERSION%
@@ -439,7 +474,35 @@ data object MissedAdministratorRoleError :
     ExtendCommunityInviteError,
     RefreshCommunityInviteError,
     ViewCommunityInvitesError,
+    ViewCommunitiesError,
+    CreateCommunityError,
+    EditCommunityError,
+    GrantRoleError,
+    ViewCommunityContestsError,
     MissedRequiredRoleError
+
+/**
+ * The community name is empty or contains only whitespace.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object CommunityNameBlankError : CreateCommunityError, EditCommunityError
+
+/**
+ * The community name exceeds 255 Unicode code points.
+ *
+ * @property communityName the rejected name.
+ * @since %CURRENT_VERSION%
+ */
+data class CommunityNameTooLongError(val communityName: String) : CreateCommunityError, EditCommunityError
+
+/**
+ * The user holds a fixed role, so no role can be granted to them in a community.
+ *
+ * @property userId the id of the user with the fixed role.
+ * @since %CURRENT_VERSION%
+ */
+data class UserHasFixedRoleError(val userId: UserId) : GrantRoleError
 
 /**
  * The user does not exist.
@@ -447,7 +510,7 @@ data object MissedAdministratorRoleError :
  * @property userId the id of the missing user.
  * @since %CURRENT_VERSION%
  */
-data class UserNotExistsError(val userId: UserId) : ViewUserError, EntityNotExistsError
+data class UserNotExistsError(val userId: UserId) : ViewUserError, GrantRoleError, EntityNotExistsError
 
 /**
  * The user exists but is not available to the administrator.
@@ -455,7 +518,7 @@ data class UserNotExistsError(val userId: UserId) : ViewUserError, EntityNotExis
  * @property userId the id of the inaccessible user.
  * @since %CURRENT_VERSION%
  */
-data class UserAccessDeniedError(val userId: UserId) : ViewUserError, AccessDeniedError
+data class UserAccessDeniedError(val userId: UserId) : ViewUserError, GrantRoleError, AccessDeniedError
 
 // endregion
 
@@ -1151,7 +1214,10 @@ data class CommunityNotExistsError(val communityId: CommunityId) :
     CreateCommunityInviteError,
     ExtendCommunityInviteError,
     ViewCommunityInvitesError,
-    RefreshCommunityInviteError
+    RefreshCommunityInviteError,
+    GrantRoleError,
+    ViewCommunityContestsError,
+    EditCommunityError
 
 /**
  * The user lacks the access to the task required by the operation.
@@ -1208,7 +1274,10 @@ data class CommunityAccessDeniedError(val communityId: CommunityId) :
     CreateCommunityInviteError,
     ExtendCommunityInviteError,
     ViewCommunityInvitesError,
-    RefreshCommunityInviteError
+    RefreshCommunityInviteError,
+    GrantRoleError,
+    ViewCommunityContestsError,
+    EditCommunityError
 
 /**
  * The task has no committed version.

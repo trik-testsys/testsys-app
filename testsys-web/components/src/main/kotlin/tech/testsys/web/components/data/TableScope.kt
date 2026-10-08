@@ -4,10 +4,15 @@ package tech.testsys.web.components.data
 
 import com.vaadin.flow.component.HasComponents
 import com.vaadin.flow.component.Text
+import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setObscured
 import tech.testsys.web.components.feedback.EmptyContent
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.GRID_COLUMNS
@@ -82,13 +87,28 @@ class TableScope<T> internal constructor(
     }
 
     /**
-     * Adds a column of identifiers and codes in a monospace font. [sortKey] and [size] are as in [textColumn].
+     * Adds a column of identifiers and codes in a monospace font. [sortKey] and [size] are as in [textColumn]. An
+     * [isObscured] column blurs each value until it is hovered or focused, like an obscured field.
      *
      * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun codeColumn(title: String, sortKey: String? = null, size: Int? = null, value: (T) -> String?) {
-        add(title, sortKey, size, CellKind.Code) { row -> value(row) ?: EMPTY_CELL }
+    fun codeColumn(title: String, sortKey: String? = null, size: Int? = null, isObscured: Boolean = false, value: (T) -> String?) {
+        if (!isObscured) {
+            add(title, sortKey, size, CellKind.Code) { row -> value(row) ?: EMPTY_CELL }
+            return
+        }
+
+        checkBeforeMenuColumn()
+        columns += TableColumn(title, sortKey, size, CellKind.Code) { row, cell ->
+            cell.add(
+                Span(value(row) ?: EMPTY_CELL).apply {
+                    addClassName(CssClass.ObscuredValue)
+                    element.setObscured(true)
+                    element.setAttribute(HtmlAttribute.TabIndex, "0")
+                },
+            )
+        }
     }
 
     /**

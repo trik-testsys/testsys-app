@@ -244,6 +244,93 @@ class UserPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
     }
 
     @Nested
+    inner class CountAvailableToAdministratorTests {
+
+        @Test
+        fun `should count members observers and the administrator of created communities once`() {
+            val administrator = newAdministrator()
+            val first = fixtures.community(owner = administrator)
+            val second = fixtures.community(owner = administrator)
+            fixtures.multipleRoleUser {
+                developerIn(listOf(first, second))
+                studentIn(listOf(first))
+            }
+            fixtures.observer(second)
+            fixtures.multipleRoleUser { developerIn(listOf(fixtures.community(owner = newAdministrator()))) }
+
+            val count = repository.countAvailableToAdministrator(administratorId = administrator.id)
+
+            assertEquals(3L, count)
+        }
+
+        @Test
+        fun `should count users of the filtered community including the administrator`() {
+            val administrator = newAdministrator()
+            val community = fixtures.community(owner = administrator)
+            val other = fixtures.community(owner = administrator)
+            fixtures.multipleRoleUser { developerIn(listOf(community)) }
+            fixtures.multipleRoleUser { developerIn(listOf(other)) }
+
+            val count = repository.countAvailableToAdministrator(
+                administratorId = administrator.id,
+                filter = UserFilter(communityId = community.id),
+            )
+
+            assertEquals(2L, count)
+        }
+
+        @Test
+        fun `should count nobody in a foreign community`() {
+            val administrator = newAdministrator()
+            fixtures.community(owner = administrator)
+            val foreign = fixtures.community(owner = newAdministrator())
+            fixtures.multipleRoleUser { developerIn(listOf(foreign)) }
+
+            val count = repository.countAvailableToAdministrator(
+                administratorId = administrator.id,
+                filter = UserFilter(communityId = foreign.id),
+            )
+
+            assertEquals(0L, count)
+        }
+    }
+
+    @Nested
+    inner class FindLastLoginsTests {
+
+        @Test
+        fun `should return the last logins of users of every kind`() {
+            val user = fixtures.developer()
+            val observer = fixtures.observer()
+            repository.recordLogin(user.id, LOGGED_IN_AT)
+            repository.recordLogin(observer.id, LOGGED_IN_AT.plusSeconds(60))
+
+            val logins = repository.findLastLogins(listOf(user.id, observer.id))
+
+            assertEquals(mapOf(user.id to LOGGED_IN_AT, observer.id to LOGGED_IN_AT.plusSeconds(60)), logins)
+        }
+
+        @Test
+        fun `should omit users without a login and missing users`() {
+            val user = fixtures.developer()
+
+            val logins = repository.findLastLogins(listOf(user.id, MultipleRoleUserId(Long.MAX_VALUE)))
+
+            assertEquals(emptyMap<UserId, Instant>(), logins)
+        }
+
+        @Test
+        fun `should omit a user requested by an id of another kind`() {
+            val user = fixtures.developer()
+            repository.recordLogin(user.id, LOGGED_IN_AT)
+
+            val logins = repository.findLastLogins(listOf(SingleRoleUserId(user.id.value)))
+
+            assertEquals(emptyMap<UserId, Instant>(), logins)
+        }
+    }
+
+    @Nested
     inner class ExistsByIdTests {
 
         private val newUserOf: Map<String, () -> UserId> = mapOf(

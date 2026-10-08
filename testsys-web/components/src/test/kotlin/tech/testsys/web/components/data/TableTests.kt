@@ -51,6 +51,24 @@ class TableTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should blur the values of an obscured code column until focused`() {
+        buildTestPage {
+            row {
+                block {
+                    table(key = { row: Row -> row.id }, fetch = Source(size = 1)::fetch) {
+                        codeColumn("Код", size = 1, isObscured = true) { row -> row.name }
+                    }
+                }
+            }
+        }
+
+        val value = rows()[0].child(0).child(0)
+        assertTrue(value.element.hasAttribute("data-ts-obscured"))
+        assertTrue("ts-obscured-value" in value.classes())
+        assertEquals("0", value.element.getAttribute("tabindex"))
+    }
+
+    @Test
     fun `should make the body flush and not a grid`() {
         buildTable(Source(size = 12))
 

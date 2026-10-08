@@ -134,6 +134,16 @@ interface CommunityRepository : EntityRepository<CommunityData, CommunityId, Com
      * @since %CURRENT_VERSION%
      */
     fun findByInvite(inviteId: CommunityInviteId): Community?
+
+    /**
+     * Synchronously finds communities created by [ownerId], without changing stored state.
+     * Storage exceptions propagate to the caller.
+     *
+     * @param ownerId the creator of the communities.
+     * @return the communities of the owner in ascending id order; empty if there are none.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByOwner(ownerId: MultipleRoleUserId): List<Community>
 }
 
 /**

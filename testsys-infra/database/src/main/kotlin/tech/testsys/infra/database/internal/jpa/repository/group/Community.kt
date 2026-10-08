@@ -20,4 +20,11 @@ interface CommunityJpaEntityRepository : SnowflakeJpaEntityRepository<CommunityJ
      * @since %CURRENT_VERSION%
      */
     fun findByManagerInviteIdOrDeveloperInviteId(managerInviteId: Long, developerInviteId: Long): CommunityJpaEntity?
+
+    /**
+     * Finds the communities owned by [ownerId] in ascending id order.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun findAllByOwnerIdOrderByIdAsc(ownerId: Long): List<CommunityJpaEntity>
 }

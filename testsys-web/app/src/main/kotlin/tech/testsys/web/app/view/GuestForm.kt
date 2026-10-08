@@ -32,13 +32,18 @@ enum class GuestTab(val label: String, val view: Class<out Component>) {
  * access with the [active] one selected, and the [content] of the active tab. Choosing another tab opens its page.
  */
 internal fun PageScope.guestForm(active: GuestTab, content: BlockScope.() -> Unit) {
+    guestBlock {
+        tabs(initial = active) { GuestTab.entries.forEach { tab -> tab(tab, tab.label) } }
+            .onChange { tab -> UI.getCurrent().navigate(tab.view) }
+        content()
+    }
+}
+
+/** Adds a row with the narrow guest block titled [title] centered on the page, which holds the [content]. */
+internal fun PageScope.guestBlock(title: String? = null, content: BlockScope.() -> Unit) {
     row {
         space(size = SIDE_COLUMNS)
-        block(size = FORM_COLUMNS) {
-            tabs(initial = active) { GuestTab.entries.forEach { tab -> tab(tab, tab.label) } }
-                .onChange { tab -> UI.getCurrent().navigate(tab.view) }
-            content()
-        }
+        block(size = FORM_COLUMNS, title = title, content = content)
         space(size = SIDE_COLUMNS)
     }
 }

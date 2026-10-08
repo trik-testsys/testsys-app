@@ -193,6 +193,7 @@ class UserOperationsTests {
 
         @Nested
         inner class InvariantTests {
+
             @Test
             fun `should record the current moment as the last login of the found user`() {
                 val user = testParticipant()
@@ -220,7 +221,6 @@ class UserOperationsTests {
 
                 verify(exactly = 0) { users.recordLogin(any(), any()) }
             }
-
 
             @Test
             fun `should not update any user when authenticating`() {

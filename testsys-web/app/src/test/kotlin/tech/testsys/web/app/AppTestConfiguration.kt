@@ -23,6 +23,7 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.User
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.security.UserKind
@@ -99,16 +100,7 @@ class AppFixtures(
                 },
             )
         }
-        UserKind.OBSERVER -> {
-            val communityId = community().id.value
-            observers.save(
-                observerData {
-                    community(communityId)
-                    accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
-                    this.name = name
-                },
-            )
-        }
+        UserKind.OBSERVER -> observer(of = community(), name = name, rawAccessToken = rawAccessToken)
         UserKind.SUPERVISOR -> supervisors.save(
             supervisorData {
                 accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
@@ -117,12 +109,23 @@ class AppFixtures(
         )
     }
 
-    fun community(): Community {
-        val ownerId = multipleRoleUser().id.value
+    /** Returns a new user holding only the administrator role. */
+    fun administrator(): MultipleRoleUser = multipleRoleUser { roles { administrator {} } }
+
+    fun observer(of: Community, name: String = unique("Observer"), rawAccessToken: String = unique("token")): Observer = observers.save(
+        observerData {
+            community(of.id.value)
+            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+            this.name = name
+        },
+    )
+
+    fun community(owner: MultipleRoleUser = multipleRoleUser(), name: String = unique("Community")): Community {
+        val ownerId = owner.id.value
         return communities.saveWithInvites(managerInvite = invite(), developerInvite = invite()) { managerInviteId, developerInviteId ->
             communityData {
                 owner(ownerId)
-                name = unique("Community")
+                this.name = name
                 description = "Community"
                 managerInvite = managerInviteId
                 developerInvite = developerInviteId

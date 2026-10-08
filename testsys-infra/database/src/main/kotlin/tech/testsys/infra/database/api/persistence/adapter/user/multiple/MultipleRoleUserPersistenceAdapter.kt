@@ -6,13 +6,13 @@ import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.Administrator
+import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.CompatibleUserRole
 import tech.testsys.domain.model.user.Developer
 import tech.testsys.domain.model.user.Judge
@@ -111,20 +111,24 @@ class MultipleRoleUserPersistenceAdapter(
     override fun addCommunityMembership(
         userId: MultipleRoleUserId,
         communityId: CommunityId,
-        kind: CommunityInvite.Kind,
+        role: CommunityRole,
     ): MultipleRoleUser {
         requireNotNull(users.findByIdOrNull(userId.value)?.takeIf(::isMultipleRole)) {
             "Multiple-role user ${userId.value} does not exist for community membership"
         }
         val userJpaEntity = touchRoot(users, userId.value, changesRootData = true)
-        val roleEnum = when (kind) {
-            CommunityInvite.Kind.Manager -> {
+        val roleEnum = when (role) {
+            CommunityRole.Manager -> {
                 syncManagerPresence(userId.value, isTarget = true)
                 UserMultipleRoleJpaEnum.MANAGER
             }
-            CommunityInvite.Kind.Developer -> {
+            CommunityRole.Developer -> {
                 syncDeveloperPresence(userId.value, isTarget = true)
                 UserMultipleRoleJpaEnum.DEVELOPER
+            }
+            CommunityRole.Student -> {
+                syncStudentPresence(userId.value, isTarget = true)
+                UserMultipleRoleJpaEnum.STUDENT
             }
         }
         val membershipId = MultipleRoleToUserId(

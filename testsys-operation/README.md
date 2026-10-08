@@ -217,8 +217,9 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 
 Образец — [CompetitionConfig.kt](src/main/kotlin/tech/testsys/operation/config/CompetitionConfig.kt).
 
-Реализации `CommunityConfig` и `EmailConfirmationConfig` создаёт `testsys-web:app` из обязательных свойств
-с этими ключами, см. раздел «Запуск и проверка» в [app/README.md](../testsys-web/app/README.md#запуск-и-проверка).
+Реализации `CommunityConfig`, `EmailConfirmationConfig` и `CommunityInviteConfig` создаёт `testsys-web:app`
+из обязательных свойств с этими ключами, см. раздел «Запуск и проверка»
+в [app/README.md](../testsys-web/app/README.md#запуск-и-проверка).
 
 > План: реализации остальных интерфейсов конфигурации появятся в `testsys-web`.
 
@@ -412,3 +413,18 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 `MultipleRoleUserOperations` получает через конструктор `MultipleRoleUserRepository`, `CommunityRepository`,
 `ManagerCommunityInviteRepository`, `DeveloperCommunityInviteRepository`, `EmailChangeRequestRepository`, `UserMailSender`, `EmailConfirmationConfig`, `Clock` и `RandomGenerator`.
 Код подтверждения, срок его действия и чтение времени — те же, что в регистрации.
+
+## Кабинет Администратора
+
+[AdministratorOperations](src/main/kotlin/tech/testsys/operation/user/AdministratorOperations.kt) реализует фичи
+`testsys.user.multi.admin.*`; требования определены в [features.md](../docs/domain/features.md).
+
+- `viewUsers` возвращает страницу пар `Pair<User<*>, Instant?>`, а `viewUser` — одну такую пару: Пользователя
+  и момент его последнего входа либо `null`. Моменты читает `UserRepository.findLastLogins` одним вызовом на страницу.
+- `viewCommunities` возвращает пары из Сообщества и числа доступных через него Пользователей.
+  Число считает `UserRepository.countAvailableToAdministrator` отдельно для каждого Сообщества.
+- `grantRole` принимает Роль как `CommunityRole`, поэтому другую Роль передать нельзя. Операция вызывает
+  `MultipleRoleUserRepository.addCommunityMembership` и для Пользователя, который уже состоит в Сообществе
+  в этой Роли: порт такое членство не меняет.
+- `viewCommunityContests` помечена кодификатором `createObserver`. Она возвращает страницу Туров, открытых
+  Сообществу Администратора, из которых выбираются Туры Наблюдателя.

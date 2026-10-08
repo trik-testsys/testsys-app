@@ -78,17 +78,6 @@ class ManagerView(texts: UiTexts, headers: CabinetHeaders) :
     PendingCabinetView(texts, headers, title = "Кабинет Организатора", active = CabinetHeaders.MENU_SECTION)
 
 /**
- * Cabinet of an Administrator (testsys.web.page.admin), not implemented yet.
- *
- * @since %CURRENT_VERSION%
- */
-@Route("admin/:section?(communities|users)")
-@PageTitle("Кабинет Администратора")
-@RolesAllowed("MULTIPLE_ROLE")
-class AdminView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Кабинет Администратора", active = CabinetHeaders.MENU_SECTION)
-
-/**
  * Cabinet of a Judge (testsys.web.page.judge), not implemented yet.
  *
  * @since %CURRENT_VERSION%

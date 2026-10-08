@@ -35,6 +35,7 @@ import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.group.CommunityInviteId
 import tech.testsys.domain.model.group.InviteCodeHash
+import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.EmailChangeRequest
 import tech.testsys.domain.model.user.EmailChangeRequestData
 import tech.testsys.domain.model.user.EmailChangeRequestId
@@ -150,12 +151,12 @@ class MultipleRoleUserOperationsTests {
                 }
                 every { managerInvites.findByCode(any()) } returns managerInvite()
                 prepareCommunity(51)
-                every { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityInvite.Kind.Manager) } returns joined
+                every { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityRole.Manager) } returns joined
 
                 val actual = operations.joinCommunity(user = user, inviteCode = "abcdefghjkmn").getOrThrow()
 
                 assertSame(joined, actual)
-                verify(exactly = 1) { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityInvite.Kind.Manager) }
+                verify(exactly = 1) { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityRole.Manager) }
             }
 
             @Test
@@ -167,7 +168,7 @@ class MultipleRoleUserOperationsTests {
                 }
                 every { managerInvites.findByCode(any()) } returns managerInvite()
                 prepareCommunity(51)
-                every { multipleRoleUsers.addCommunityMembership(noRoles.id, communityId, CommunityInvite.Kind.Manager) } returns joined
+                every { multipleRoleUsers.addCommunityMembership(noRoles.id, communityId, CommunityRole.Manager) } returns joined
 
                 val actual = operations.joinCommunity(user = noRoles, inviteCode = "abcdefghjkmn").getOrThrow()
 
@@ -179,7 +180,7 @@ class MultipleRoleUserOperationsTests {
                 val joined = testMultipleRoleUser {}
                 every { managerInvites.findByCode(any()) } returns managerInvite(expiresAt = now.plusNanos(1))
                 prepareCommunity(51)
-                every { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityInvite.Kind.Manager) } returns joined
+                every { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityRole.Manager) } returns joined
 
                 val actual = operations.joinCommunity(user = user, inviteCode = "abcdefghjkmn").getOrThrow()
 
@@ -191,7 +192,7 @@ class MultipleRoleUserOperationsTests {
                 val joined = testMultipleRoleUser {}
                 every { managerInvites.findByCode(InviteCodeHash("abcdefghjkmn", HashAlgorithm.Identity)) } returns managerInvite()
                 prepareCommunity(51)
-                every { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityInvite.Kind.Manager) } returns joined
+                every { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityRole.Manager) } returns joined
 
                 val actual = operations.joinCommunity(user = user, inviteCode = "AbCdEfGhJkMn").getOrThrow()
 
@@ -207,7 +208,7 @@ class MultipleRoleUserOperationsTests {
                 val joined = testMultipleRoleUser {}
                 prepareDeveloperInvite()
                 prepareCommunity(52)
-                every { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityInvite.Kind.Developer) } returns joined
+                every { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityRole.Developer) } returns joined
 
                 val actual = operations.joinCommunity(user = user, inviteCode = "abcdefghjkmn").getOrThrow()
 
@@ -223,7 +224,7 @@ class MultipleRoleUserOperationsTests {
                 val joined = testMultipleRoleUser {}
                 prepareDeveloperInvite()
                 prepareCommunity(52)
-                every { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityInvite.Kind.Developer) } returns joined
+                every { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityRole.Developer) } returns joined
 
                 val actual = operations.joinCommunity(user = user, inviteCode = "abcdefghjkmn").getOrThrow()
 
@@ -242,7 +243,7 @@ class MultipleRoleUserOperationsTests {
                 }
                 prepareDeveloperInvite()
                 prepareCommunity(52)
-                every { multipleRoleUsers.addCommunityMembership(member.id, communityId, CommunityInvite.Kind.Developer) } returns stored
+                every { multipleRoleUsers.addCommunityMembership(member.id, communityId, CommunityRole.Developer) } returns stored
 
                 val actual = operations.joinCommunity(user = member, inviteCode = "abcdefghjkmn").getOrThrow()
 
@@ -261,7 +262,7 @@ class MultipleRoleUserOperationsTests {
                 }
                 every { managerInvites.findByCode(any()) } returns managerInvite()
                 prepareCommunity(51)
-                every { multipleRoleUsers.addCommunityMembership(member.id, communityId, CommunityInvite.Kind.Manager) } returns stored
+                every { multipleRoleUsers.addCommunityMembership(member.id, communityId, CommunityRole.Manager) } returns stored
 
                 val actual = operations.joinCommunity(user = member, inviteCode = "abcdefghjkmn").getOrThrow()
 
@@ -283,14 +284,14 @@ class MultipleRoleUserOperationsTests {
                 prepareDeveloperInvite()
                 prepareCommunity(52)
                 every {
-                    multipleRoleUsers.addCommunityMembership(staleMember.id, communityId, CommunityInvite.Kind.Developer)
+                    multipleRoleUsers.addCommunityMembership(staleMember.id, communityId, CommunityRole.Developer)
                 } returns stored
 
                 val actual = operations.joinCommunity(user = staleMember, inviteCode = "abcdefghjkmn").getOrThrow()
 
                 assertSame(stored, actual)
                 verify(exactly = 1) {
-                    multipleRoleUsers.addCommunityMembership(staleMember.id, communityId, CommunityInvite.Kind.Developer)
+                    multipleRoleUsers.addCommunityMembership(staleMember.id, communityId, CommunityRole.Developer)
                 }
             }
         }

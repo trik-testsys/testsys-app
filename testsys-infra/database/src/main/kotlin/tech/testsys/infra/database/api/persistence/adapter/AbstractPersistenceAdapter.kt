@@ -19,8 +19,8 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 import tech.testsys.infra.database.internal.utils.findAllInChunks
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
-import tech.testsys.infra.database.internal.utils.touchAggregateRoot
 import tech.testsys.infra.database.internal.utils.requireVersion
+import tech.testsys.infra.database.internal.utils.touchAggregateRoot
 
 /**
  * Base of [EntityRepository] adapters whose writes use [touchRoot] and removals use [removeRoot].

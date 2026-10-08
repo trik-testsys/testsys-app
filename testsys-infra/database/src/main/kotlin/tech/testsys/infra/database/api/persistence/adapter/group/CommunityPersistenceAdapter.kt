@@ -10,6 +10,7 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.group.CommunityInviteId
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.group.CommunityJpaEntity
@@ -70,6 +71,10 @@ class CommunityPersistenceAdapter(
     @Transactional(readOnly = true)
     override fun findByInvite(inviteId: CommunityInviteId): Community? =
         communities.findByManagerInviteIdOrDeveloperInviteId(inviteId.value, inviteId.value)?.let { assemble(it) }
+
+    @Transactional(readOnly = true)
+    override fun findByOwner(ownerId: MultipleRoleUserId): List<Community> =
+        assembleAll(communities.findAllByOwnerIdOrderByIdAsc(ownerId.value))
 
     override fun removeRoot(id: CommunityId, expectedVersion: Long?) {
         jpaEntityRepository.findByIdOrNull(id.value) ?: return

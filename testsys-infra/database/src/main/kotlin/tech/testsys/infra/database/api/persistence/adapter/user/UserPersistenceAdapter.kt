@@ -7,9 +7,9 @@ import jakarta.persistence.criteria.Path
 import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
 import jakarta.persistence.criteria.Subquery
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.Page
@@ -85,6 +85,19 @@ class UserPersistenceAdapter(
         )
         val jpaEntity = userJpaEntityRepository.findOne(specification).orElse(null) ?: return null
         return assemble(administratorId, listOf(jpaEntity)).single()
+    }
+
+    @Transactional(readOnly = true)
+    override fun countAvailableToAdministrator(administratorId: MultipleRoleUserId, filter: UserFilter): Long =
+        userJpaEntityRepository.count(availableTo(administratorId = administratorId, filter = filter))
+
+    @Transactional(readOnly = true)
+    override fun findLastLogins(userIds: List<UserId>): Map<UserId, Instant> {
+        val typesById = userIds.mapNotNull { userId -> typeOf(userId)?.let { type -> userId.value to (userId to type) } }.toMap()
+        return userJpaEntityRepository.findAllById(typesById.keys).mapNotNull { jpaEntity ->
+            val (userId, type) = typesById.getValue(jpaEntity.requireId())
+            jpaEntity.lastLoginAt?.takeIf { jpaEntity.type == type }?.let { lastLoginAt -> userId to lastLoginAt }
+        }.toMap()
     }
 
     @Transactional(readOnly = true)

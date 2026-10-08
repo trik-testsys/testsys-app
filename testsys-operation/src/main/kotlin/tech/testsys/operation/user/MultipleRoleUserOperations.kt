@@ -8,8 +8,10 @@ import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInv
 import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
+import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.InviteCodeHash
 import tech.testsys.domain.model.group.RawInviteCodeDependency
+import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.operation.annotation.Feature
@@ -77,7 +79,11 @@ class MultipleRoleUserOperations(
                 "No community references community invite id=${invite.id.value}"
             }
             // The port is idempotent and reads the stored memberships, so a stale [user] cannot skip joining.
-            return multipleRoleUserRepository.addCommunityMembership(userId = user.id, communityId = community.id, kind = invite.kind)
+            val role = when (invite.kind) {
+                CommunityInvite.Kind.Manager -> CommunityRole.Manager
+                CommunityInvite.Kind.Developer -> CommunityRole.Developer
+            }
+            return multipleRoleUserRepository.addCommunityMembership(userId = user.id, communityId = community.id, role = role)
                 .asSuccess()
         }
 

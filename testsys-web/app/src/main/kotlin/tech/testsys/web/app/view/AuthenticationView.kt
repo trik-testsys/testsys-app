@@ -30,7 +30,12 @@ class AuthenticationView(texts: UiTexts, headers: CabinetHeaders, private val us
             guestForm(active = GuestTab.SignIn) {
                 lateinit var accessToken: ValueInput<String>
                 row { accessToken = passwordInput("Код-доступа", labelSize = 6, size = 18) }
-                footer { mainAction("Войти") { onClick { signIn(accessToken.value) } } }
+                footer {
+                    mainAction("Войти") {
+                        clickOnEnter()
+                        onClick { signIn(accessToken.value) }
+                    }
+                }
             }
         }
     }

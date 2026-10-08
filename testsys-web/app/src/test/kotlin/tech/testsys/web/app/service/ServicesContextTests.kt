@@ -18,6 +18,7 @@ import tech.testsys.domain.contract.FileBlobStorage
 import tech.testsys.infra.database.api.persistence.FileSystemBlobStorage
 import tech.testsys.infra.database.api.transaction.RetryingTransactionInterceptor
 import tech.testsys.web.app.PostgresTestConfiguration
+import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.app.service.developer.DeveloperService
 import tech.testsys.web.app.service.judge.JudgeService
 import tech.testsys.web.app.service.participant.ParticipantService
@@ -34,6 +35,7 @@ class ServicesContextTests {
     @ParameterizedTest
     @ValueSource(
         classes = [
+            AdministratorService::class,
             DeveloperService::class,
             JudgeService::class,
             ParticipantService::class,

@@ -16,18 +16,35 @@ import org.junit.jupiter.params.provider.Arguments.argumentSet
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
+import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.User
 import tech.testsys.web.app.security.UserKind
+import tech.testsys.web.app.view.ADMIN_SECTION_PARAMETER
+import tech.testsys.web.app.view.AdminCommunityView
+import tech.testsys.web.app.view.AdminUserView
+import tech.testsys.web.app.view.AdminView
+import tech.testsys.web.app.view.COMMUNITY_ID_PARAMETER
+import tech.testsys.web.app.view.OBSERVER_ID_PARAMETER
+import tech.testsys.web.app.view.USER_ID_PARAMETER
 
-/** Opens every page of the application, signed in as a user of the kind the page requires, so that a page build error fails the build. */
+/** Route parameters of a page built from the fixtures and the signed-in user. */
+private typealias ParametersOf = (AppFixtures, User<*>?) -> RouteParameters
+
+/**
+ * Opens every page of the application, signed in as a user of the kind the page requires, so that a page build error fails the build.
+ * A user with non-fixed roles holds the administrator role, which the Cabinet of an Administrator requires.
+ */
 @Import(PostgresTestConfiguration::class)
 @SpringBootTest
 class PagesTests : MockSpringVaadinTests() {
     @ParameterizedTest(name = "{argumentSetName}", allowZeroInvocations = true)
     @MethodSource("pages")
-    fun `should open the page without a build error`(page: Class<out Component>, parameters: RouteParameters) {
-        page.getAnnotation(RolesAllowed::class.java)?.let { access -> signIn(fixtures.userOf(UserKind.valueOf(access.value.single()))) }
+    fun `should open the page without a build error`(page: Class<out Component>, parameters: ParametersOf) {
+        val user = page.getAnnotation(RolesAllowed::class.java)?.let { access ->
+            signedInUsers.getValue(UserKind.valueOf(access.value.single()))(fixtures).also { user -> signIn(user) }
+        }
 
-        UI.getCurrent().navigate(page, parameters)
+        UI.getCurrent().navigate(page, parameters(fixtures, user))
 
         assertEquals(page, currentView) {
             UI.getCurrent().internals.activeRouterTargetsChain
@@ -37,10 +54,46 @@ class PagesTests : MockSpringVaadinTests() {
     }
 
     companion object {
+        private val signedInUsers: Map<UserKind, (AppFixtures) -> User<*>> =
+            UserKind.entries.associateWith { kind -> { fixtures: AppFixtures -> fixtures.userOf(kind) } } +
+                (UserKind.MULTIPLE_ROLE to AppFixtures::administrator)
+
+        private val parameterSets: Map<Class<out Component>, Map<String, ParametersOf>> = mapOf(
+            AdminView::class.java to mapOf(
+                "" to parametersOf { _, _ -> RouteParameters.empty() },
+                "communities" to parametersOf { _, _ -> RouteParameters(ADMIN_SECTION_PARAMETER, "communities") },
+                "users" to parametersOf { _, _ -> RouteParameters(ADMIN_SECTION_PARAMETER, "users") },
+            ),
+            AdminCommunityView::class.java to mapOf(
+                "community" to parametersOf { fixtures, user ->
+                    RouteParameters(COMMUNITY_ID_PARAMETER, fixtures.community(owner = administrator(user)).id.value.toString())
+                },
+            ),
+            AdminUserView::class.java to mapOf(
+                "user" to parametersOf { fixtures, user ->
+                    val administrator = administrator(user)
+                    fixtures.community(owner = administrator)
+                    RouteParameters(USER_ID_PARAMETER, administrator.id.value.toString())
+                },
+                "observer" to parametersOf { fixtures, user ->
+                    val observer = fixtures.observer(fixtures.community(owner = administrator(user)))
+                    RouteParameters(OBSERVER_ID_PARAMETER, observer.id.value.toString())
+                },
+            ),
+        )
+
         @JvmStatic
         fun pages(): List<Arguments> = Routes().autoDiscoverViews(MockSpringVaadinTests::class.java.packageName).routes
             .filter { page -> page.isAnnotationPresent(Route::class.java) }
             .sortedBy { page -> page.name }
-            .map { page -> argumentSet(page.simpleName, page, RouteParameters.empty()) }
+            .flatMap { page ->
+                parameterSets.getOrDefault(page, mapOf("" to parametersOf { _, _ -> RouteParameters.empty() }))
+                    .map { (name, parameters) -> argumentSet("${page.simpleName} $name".trim(), page, parameters) }
+            }
+
+        private fun parametersOf(parameters: ParametersOf): ParametersOf = parameters
+
+        private fun administrator(user: User<*>?): MultipleRoleUser =
+            checkNotNull(user as? MultipleRoleUser) { "The page of an administrator needs a signed-in user with non-fixed roles" }
     }
 }

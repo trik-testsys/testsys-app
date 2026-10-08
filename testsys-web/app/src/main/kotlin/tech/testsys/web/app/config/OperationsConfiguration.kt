@@ -12,9 +12,11 @@ import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
+import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantContestEntryRepository
@@ -35,7 +37,9 @@ import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.operation.TaskValidationDispatcher
 import tech.testsys.operation.TaskValidationOperations
 import tech.testsys.operation.config.CommunityConfig
+import tech.testsys.operation.config.CommunityInviteConfig
 import tech.testsys.operation.config.EmailConfirmationConfig
+import tech.testsys.operation.user.AdministratorOperations
 import tech.testsys.operation.user.DeveloperOperations
 import tech.testsys.operation.user.JudgeOperations
 import tech.testsys.operation.user.ParticipantOperations
@@ -100,6 +104,49 @@ class OperationsConfiguration {
             override val maxConfirmationAttempts = attempts
         }
     }
+
+    /**
+     * Community invite validity and refresh period from the required properties under `testsys.operation.community-invite`.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun communityInviteConfig(environment: Environment): CommunityInviteConfig {
+        val ttl = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.community-invite.ttl"))
+        val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.community-invite.refresh-period"))
+        return object : CommunityInviteConfig {
+            override val ttl = ttl
+            override val refreshPeriod = refreshPeriod
+        }
+    }
+
+    /**
+     * Operations of Administrators.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun administratorOperations(
+        communities: CommunityRepository,
+        managerInvites: ManagerCommunityInviteRepository,
+        developerInvites: DeveloperCommunityInviteRepository,
+        communityInviteConfig: CommunityInviteConfig,
+        clock: Clock,
+        users: UserRepository,
+        contests: ContestRepository,
+        observers: ObserverRepository,
+        multipleRoleUsers: MultipleRoleUserRepository,
+    ): AdministratorOperations = AdministratorOperations(
+        communityRepository = communities,
+        managerInviteRepository = managerInvites,
+        developerInviteRepository = developerInvites,
+        communityInviteConfig = communityInviteConfig,
+        clock = clock,
+        userRepository = users,
+        contestRepository = contests,
+        observerRepository = observers,
+        multipleRoleUserRepository = multipleRoleUsers,
+    )
 
     /**
      * Operations of any user, including login and registration.

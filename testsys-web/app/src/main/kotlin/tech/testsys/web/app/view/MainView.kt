@@ -22,13 +22,11 @@ import tech.testsys.web.components.texts.UiTexts
 class MainView(texts: UiTexts, headers: CabinetHeaders) : TestSysView(texts), BeforeEnterObserver {
     init {
         page(headers.guest()) {
-            row {
-                block(title = "TestSys") {
-                    row { text("Войдите по Коду-доступа или зарегистрируйтесь как Ученик или Организатор.") }
-                    footer {
-                        mainAction("Войти") { onClick { UI.getCurrent().navigate(AuthenticationView::class.java) } }
-                        action("Зарегистрироваться") { onClick { UI.getCurrent().navigate(RegistrationView::class.java) } }
-                    }
+            guestBlock(title = "TestSys") {
+                row { text("Войдите по Коду-доступа или зарегистрируйтесь как Ученик или Организатор.") }
+                footer {
+                    mainAction("Войти") { onClick { UI.getCurrent().navigate(AuthenticationView::class.java) } }
+                    action("Зарегистрироваться") { onClick { UI.getCurrent().navigate(RegistrationView::class.java) } }
                 }
             }
         }

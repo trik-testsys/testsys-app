@@ -69,12 +69,20 @@
 | `RegistrationView` | `registration` | Без входа |
 | `RestoreAccessView` | `restore-access` | Без входа |
 | `MultiMainView` | `home` | `MULTIPLE_ROLE` |
-| `ProfileView`, `DeveloperView`, `ManagerView`, `AdminView`, `JudgeView`, `StudentView` | `profile`, `developer`, `manager`, `admin`, `judge`, `student` | `MULTIPLE_ROLE` |
+| `ProfileView`, `DeveloperView`, `ManagerView`, `JudgeView`, `StudentView` | `profile`, `developer`, `manager`, `judge`, `student` | `MULTIPLE_ROLE` |
+| `AdminView` | `admin`, `admin/communities`, `admin/users` | `MULTIPLE_ROLE` с Ролью Администратора |
+| `AdminCommunityView` | `admin/communities/:communityId` | `MULTIPLE_ROLE`, создатель Сообщества |
+| `AdminUserView` | `admin/users/:userId`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
 | `ParticipantView`, `ObserverView`, `SupervisorView` | `participant`, `observer`, `supervisor` | Соответствующий вид |
 
-Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей
-и профиль пока показывают только шапку и пустое состояние: их маршруты и доступ окончательные, поэтому шапка
-уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
+Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
+кроме Кабинета Администратора, и профиль пока показывают только шапку и пустое состояние: их маршруты и доступ
+окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
+
+Страницы Кабинета Администратора вызывают прокси-сервис в `beforeEnter`, до построения таблиц. Поэтому отсутствие
+Роли, Сообщества или доступа открывает экран ошибки из раздела [Ошибки операций](#ошибки-операций), а не ошибку
+загрузки таблицы. `AdminView` без раздела переадресует на `admin/communities`. Наблюдатель открывается по своему
+адресу `admin/observers/:observerId`: операция просмотра принимает идентификатор вместе с видом Пользователя.
 
 Страницы Ролей принимают необязательный параметр маршрута `section` с разделом страницы, например
 `developer/tasks`. Заголовок раздела Роли в «Меню» ведёт на страницу без параметра, а ссылки разделов — с ним,
@@ -94,13 +102,15 @@
 
 ## Прокси-сервисы
 
-Страницы вызывают операции только через прокси-сервисы. Для каждого класса операций с методами есть
-`<Actor>Service` в пакете `service/<actor>`: `DeveloperService`, `JudgeService`, `ParticipantService`,
-`StudentService`, `StudyService` и `UserService`. Методы сервиса соответствуют операциям один к одному
-и принимают те же входные данные без Пользователя. Сервиса для `TaskValidationOperations` нет: её вызывает только диспетчер.
+Страницы вызывают операции только через прокси-сервисы `<Actor>Service` в пакете `service/<actor>`:
+`AdministratorService`, `DeveloperService`, `JudgeService`, `ParticipantService`, `StudentService`, `StudyService`
+и `UserService`. Методы сервиса соответствуют операциям один к одному и принимают те же входные данные без
+Пользователя. Сервиса для `TaskValidationOperations` нет: её вызывает только диспетчер. У `ManagerOperations`,
+`MultipleRoleUserOperations` и `ObserverOperations` сервисов пока нет: страницы их не вызывают.
+`AdministratorService` не выставляет служебную `refreshCommunityInvite`.
 
-Классы операций, `TaskValidationOperations` и `TaskValidationDispatcher` создаются `@Bean`-методами
-в `OperationsConfiguration`; модуль операций не сканируется.
+Классы операций, у которых есть сервис, `TaskValidationOperations` и `TaskValidationDispatcher` создаются
+`@Bean`-методами в `OperationsConfiguration`; модуль операций не сканируется.
 
 - Сервис помечен `@Service` и `@Transactional`: каждый вызов выполняется в одной транзакции. Методы `view*`
   и `download*` выполняются с `readOnly = true`. Страницы вызывают операции только через сервисы; правило — в разделе
@@ -184,6 +194,8 @@
 | `testsys.operation.community.public-community-id` | Идентификатор Публичного Сообщества; Сообщество должно существовать |
 | `testsys.operation.email-confirmation.confirmation-code-lifetime` | Срок действия кода подтверждения в формате ISO-8601 `Duration` |
 | `testsys.operation.email-confirmation.max-confirmation-attempts` | Число попыток ввода кода подтверждения |
+| `testsys.operation.community-invite.ttl` | Срок действия Кода-приглашения в Сообщество в формате ISO-8601 `Duration` |
+| `testsys.operation.community-invite.refresh-period` | Период замены Кодов-приглашений в Сообщество с истёкшим сроком в формате ISO-8601 `Duration`; пока не используется |
 
 Настройки SMTP-сервера — в разделе «Настройки» в [mail/README.md](../../testsys-infra/mail/README.md#настройки).
 Тесты страниц и `UserService` подключают `AppTestConfiguration`: она сохраняет Пользователей через порты хранения, подменяет

@@ -425,6 +425,7 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 `MultipleRoleUserPersistenceAdapter.addCommunityMembership` в одной транзакции повышает версию Пользователя
 и добавляет недостающие строки данных Роли и членства в Сообществе. Поэтому `update` со снимком, прочитанным
 до этих методов, падает с конфликтом версий и не удаляет добавленные строки.
+Роль выбирается по `CommunityRole`.
 
 ## Регистрация, смена почты и поиск по почте
 
@@ -456,6 +457,16 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 раздела «Транзакции и согласованность». Для отсутствующего Пользователя или Пользователя другого вида
 он ничего не обновляет. Свойство `UserJpaEntity.lastLoginAt` помечено
 `insertable = false, updatable = false`, поэтому `save` и `update` адаптеров Пользователей колонку не перезаписывают.
+`UserPersistenceAdapter.findLastLogins` загружает строки переданных идентификаторов одним `findAllById` и пропускает
+строки другого вида и строки без входа.
+
+## Сообщества и Пользователи Администратора
+
+`CommunityPersistenceAdapter.findByOwner` выбирает Сообщества владельца по `owner_id` в порядке идентификаторов.
+`UserPersistenceAdapter.countAvailableToAdministrator` считает Пользователей по той же спецификации, по которой
+`findAvailableToAdministrator` выбирает страницу, поэтому при тех же фильтрах число совпадает с общим числом
+страницы. Правила доступа определены в `testsys.user.multi.admin.authorization`
+в [features.md](../../docs/domain/features.md).
 
 ## Схема БД
 

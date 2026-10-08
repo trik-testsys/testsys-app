@@ -2472,7 +2472,7 @@ TODO: Согласовать переход на скрытые коды дос�
 
 Членство Администратора в Сообществах, созданных другими Пользователями, не расширяет доступ.
 
-### testsys.user.multi.admin.createObserver (Partially implemented)
+### testsys.user.multi.admin.createObserver (Implemented)
 
 Page: **testsys.web.page.admin.community**
 
@@ -2515,10 +2515,7 @@ Page: **testsys.web.page.admin.community**
 - При отказе Наблюдатель не создаётся.
 - Повторный успешный вызов создаёт отдельного Наблюдателя.
 
-Реализована операция создания Наблюдателя.
-Веб-страница **testsys.web.page.admin** не реализована.
-
-### testsys.user.multi.admin.inviteUser (Partially implemented)
+### testsys.user.multi.admin.inviteUser (Implemented)
 
 Page: **testsys.web.page.admin.community**
 
@@ -2558,10 +2555,7 @@ Page: **testsys.web.page.admin.community**
 - Создание Кода-приглашения не изменяет Код-приглашение и срок для другой Роли.
 - При отказе Коды-приглашения не изменяются.
 
-Реализована операция создания Кода-приглашения в Сообщество.
-Страница **testsys.web.page.admin** не реализована.
-
-### testsys.user.multi.admin.extendInvite (Partially implemented)
+### testsys.user.multi.admin.extendInvite (Implemented)
 
 Page: **testsys.web.page.admin.community**
 
@@ -2597,10 +2591,7 @@ Page: **testsys.web.page.admin.community**
 - Сообщество и членство Пользователей в нём не изменяются.
 - При отказе Коды-приглашения и их сроки не изменяются.
 
-Реализована операция продления срока Кода-приглашения в Сообщество.
-Страница **testsys.web.page.admin** не реализована.
-
-### testsys.user.multi.admin.viewInvites (Partially implemented)
+### testsys.user.multi.admin.viewInvites (Implemented)
 
 Page: **testsys.web.page.admin.community**
 
@@ -2633,10 +2624,7 @@ Page: **testsys.web.page.admin.community**
 - Просмотр не изменяет Сообщество и его Коды-приглашения.
 - Просмотр не заменяет Коды-приглашения с истёкшим сроком.
 
-Реализована операция просмотра Кодов-приглашений.
-Страница **testsys.web.page.admin** не реализована.
-
-### testsys.user.multi.admin.viewUsers (Partially implemented)
+### testsys.user.multi.admin.viewUsers (Implemented)
 
 Page: **testsys.web.page.admin**, **testsys.web.page.admin.community**
 
@@ -2693,10 +2681,6 @@ Page: **testsys.web.page.admin**, **testsys.web.page.admin.community**
 - Фильтры не предоставляют доступ к Пользователям других Сообществ.
 - Участники и Супервайзеры в выборку не входят.
 - Просмотр не изменяет Пользователей и их членство в Сообществах.
-
-Реализована операция просмотра страницы Пользователей с фильтрами по Псевдониму, Роли и Сообществу.
-Дата и время последнего входа в Систему хранятся, но операция их не возвращает.
-Страница **testsys.web.page.admin** и переход на страницу **testsys.web.page.admin.user** не реализованы.
 
 ### testsys.user.multi.admin.viewUser (Partially implemented)
 
@@ -2767,13 +2751,12 @@ Page: **testsys.web.page.admin.user**
   **testsys.user.multi.admin.authorization**.
 - Просмотр не изменяет Пользователя и его членство в Сообществах.
 
-Реализована операция, которая возвращает доступного Администратору Пользователя с его Ролями и идентификаторами
-связанных с ними сущностей. Названия, статусы проверки, количества и предыдущие результаты операция
-не загружает и не вычисляет. Дата и время последнего входа в Систему хранятся, но операция их не возвращает.
-Ограничение показа Кода-доступа созданными Администратором Наблюдателями и раздел Наблюдателя не реализованы.
-Страница **testsys.web.page.admin.user** не реализована.
+Реализована операция, которая возвращает доступного Администратору Пользователя с его Ролями, идентификаторами
+связанных с ними сущностей и датой и временем последнего входа в Систему. Названия, статусы проверки, количества
+и предыдущие результаты операция не загружает и не вычисляет. Страница **testsys.web.page.admin.user** показывает
+общие данные; разделы Ролей не реализованы.
 
-### testsys.user.multi.admin.viewCommunities (Not implemented)
+### testsys.user.multi.admin.viewCommunities (Implemented)
 
 Page: **testsys.web.page.admin**
 
@@ -2800,7 +2783,7 @@ Page: **testsys.web.page.admin**
 
 - Просмотр не изменяет Сообщества и членство в них.
 
-### testsys.user.multi.admin.createCommunity (Not implemented)
+### testsys.user.multi.admin.createCommunity (Implemented)
 
 Page: **testsys.web.page.admin**
 
@@ -2836,7 +2819,45 @@ Page: **testsys.web.page.admin**
 - Другие Сообщества и Пользователи не изменяются.
 - При отказе Сообщество не создаётся.
 
-### testsys.user.multi.admin.grantRole (Not implemented)
+### testsys.user.multi.admin.editCommunity (Implemented)
+
+Page: **testsys.web.page.admin.community**
+
+*Описание*:\
+Администратор может изменить название и описание созданного им Сообщества.
+
+*Вход*:
+
+- Пользователь, выполняющий операцию.
+- Идентификатор Сообщества.
+- Новое название Сообщества.
+- Новое описание Сообщества; пустая строка очищает описание.
+
+Название и описание передаются при каждом вызове: чтобы сохранить прежнее значение, его передают повторно.
+Название должно содержать хотя бы один непробельный символ. Длина названия — не более 255 символов Unicode;
+один символ соответствует одной кодовой точке Unicode.
+
+*Отказы*:
+
+- У Пользователя нет Роли Администратора.
+- Сообщество с указанным идентификатором не существует.
+- Сообщество создано другим Пользователем.
+- Название пустое или состоит только из пробельных символов.
+- Название содержит более 255 символов Unicode.
+
+*Операция*:
+
+1. Выбирается Сообщество по указанному идентификатору. Доступно только Сообщество, созданное Пользователем.
+2. Название и описание Сообщества заменяются переданными значениями.
+3. Возвращается изменённое Сообщество.
+
+*Инварианты*:
+
+- Создатель Сообщества, его Коды-приглашения с их сроками и членство Пользователей в нём не изменяются.
+- Другие Сообщества не изменяются.
+- При отказе Сообщество не изменяется.
+
+### testsys.user.multi.admin.grantRole (Implemented)
 
 Page: **testsys.web.page.admin.user**
 
@@ -3752,6 +3773,8 @@ flowchart TD;
 
 *Содержимое*:
 
+Узкий блок по центру страницы, как на **testsys.web.page.authentication**:
+
 - Действия «Войти», «Зарегистрироваться».
 
 *Переходы*:
@@ -3999,7 +4022,7 @@ flowchart TD;
 
 - **testsys.web.page.judge**.
 
-### testsys.web.page.admin (Not implemented)
+### testsys.web.page.admin (Implemented)
 
 *Назначение*:\
 Кабинет Администратора: его Сообщества и их Пользователи.
@@ -4019,16 +4042,18 @@ flowchart TD;
 - **testsys.web.page.admin.community** — для любого Сообщества.
 - **testsys.web.page.admin.user** — для любого Пользователя.
 
-### testsys.web.page.admin.community (Not implemented)
+### testsys.web.page.admin.community (Implemented)
 
 *Назначение*:\
-Управление Сообществом Администратора: Коды-приглашения, Пользователи и Наблюдатели.
+Управление Сообществом Администратора: сведения о Сообществе, Коды-приглашения, Пользователи и Наблюдатели.
 
 *Доступ*:\
 Администратор — создатель Сообщества. Страница получает идентификатор Сообщества.
 
 *Содержимое*:
 
+- Сведения — название и описание Сообщества. Изменение — **testsys.user.multi.admin.editCommunity**: блок
+  открывается в режиме просмотра, действие «Изменить» включает редактирование.
 - Коды-приглашения — **testsys.user.multi.admin.viewInvites**: Роль, Код-приглашение и момент окончания срока.
   Для каждого — замена (**testsys.user.multi.admin.inviteUser**) с предупреждением, что прежний Код-приглашение
   перестанет действовать, и продление (**testsys.user.multi.admin.extendInvite**).
@@ -4041,7 +4066,7 @@ flowchart TD;
 - **testsys.web.page.admin.user** — для любого Пользователя Сообщества.
 - **testsys.web.page.admin**.
 
-### testsys.web.page.admin.user (Not implemented)
+### testsys.web.page.admin.user (Partially implemented)
 
 *Назначение*:\
 Сведения о Пользователе и управление его Ролями в Сообществах.
@@ -4061,6 +4086,10 @@ flowchart TD;
 *Переходы*:
 
 - **testsys.web.page.admin** или **testsys.web.page.admin.community**, в том числе после удаления Наблюдателя.
+
+Реализованы общие данные **testsys.user.multi.admin.viewUser**, Роли Пользователя в Сообществах Администратора
+и **testsys.user.multi.admin.grantRole**. Разделы Ролей, **testsys.user.multi.admin.removeFromCommunity**
+и **testsys.user.multi.admin.deleteObserver** не реализованы.
 
 *Не согласовано*:
 

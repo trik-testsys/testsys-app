@@ -14,6 +14,7 @@ import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
+import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
@@ -42,6 +43,7 @@ import tech.testsys.operation.config.EmailConfirmationConfig
 import tech.testsys.operation.user.AdministratorOperations
 import tech.testsys.operation.user.DeveloperOperations
 import tech.testsys.operation.user.JudgeOperations
+import tech.testsys.operation.user.MultipleRoleUserOperations
 import tech.testsys.operation.user.ParticipantOperations
 import tech.testsys.operation.user.StudentOperations
 import tech.testsys.operation.user.StudyOperations
@@ -146,6 +148,34 @@ class OperationsConfiguration {
         contestRepository = contests,
         observerRepository = observers,
         multipleRoleUserRepository = multipleRoleUsers,
+    )
+
+    /**
+     * Operations of any user without a fixed role.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun multipleRoleUserOperations(
+        multipleRoleUsers: MultipleRoleUserRepository,
+        communities: CommunityRepository,
+        managerInvites: ManagerCommunityInviteRepository,
+        developerInvites: DeveloperCommunityInviteRepository,
+        emailChangeRequests: EmailChangeRequestRepository,
+        mailSender: UserMailSender,
+        emailConfirmationConfig: EmailConfirmationConfig,
+        clock: Clock,
+        randomGenerator: RandomGenerator,
+    ): MultipleRoleUserOperations = MultipleRoleUserOperations(
+        multipleRoleUserRepository = multipleRoleUsers,
+        communityRepository = communities,
+        managerInviteRepository = managerInvites,
+        developerInviteRepository = developerInvites,
+        emailChangeRequestRepository = emailChangeRequests,
+        mailSender = mailSender,
+        emailConfirmationConfig = emailConfirmationConfig,
+        clock = clock,
+        randomGenerator = randomGenerator,
     )
 
     /**

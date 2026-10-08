@@ -7,8 +7,8 @@ import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
+import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.administrator.AdministratorService
-import tech.testsys.web.app.service.administrator.CommunityVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
@@ -46,6 +46,7 @@ class AdminView(texts: UiTexts, private val headers: CabinetHeaders, private val
         val communities = administratorService.viewCommunities().map { (community, _) -> community }
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head("Кабинет Администратора") {
+                crumb("Главная", MultiMainView::class.java)
                 tabs(matchRouteParameters = true) {
                     tab("Сообщества", AdminView::class.java, sectionParameters(COMMUNITIES_SECTION))
                     tab("Пользователи", AdminView::class.java, sectionParameters(USERS_SECTION))

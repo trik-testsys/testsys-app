@@ -1,10 +1,8 @@
-package tech.testsys.web.app.service.administrator
+package tech.testsys.web.app.service
 
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CommunityInviteId
-import tech.testsys.domain.model.group.InviteCodeHash
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Instant
 
@@ -30,24 +28,6 @@ data class CommunityVo(
     val developerInvite: CommunityInviteId,
 )
 
-/**
- * Community invite code data for pages.
- *
- * @property id the identifier of the invite.
- * @property createdAt the moment the invite was created.
- * @property kind the role granted by the invite.
- * @property codeHash the stored invite code with its hashing algorithm.
- * @property expiresAt the moment the invite stops being valid.
- * @since %CURRENT_VERSION%
- */
-data class CommunityInviteVo(
-    val id: CommunityInviteId,
-    val createdAt: Instant,
-    val kind: CommunityInvite.Kind,
-    val codeHash: InviteCodeHash,
-    val expiresAt: Instant,
-)
-
 internal fun Community.toVo(): CommunityVo = CommunityVo(
     id = id,
     createdAt = createdAt,
@@ -56,12 +36,4 @@ internal fun Community.toVo(): CommunityVo = CommunityVo(
     description = data.description,
     managerInvite = data.managerInvite.id,
     developerInvite = data.developerInvite.id,
-)
-
-internal fun CommunityInvite.toVo(): CommunityInviteVo = CommunityInviteVo(
-    id = id,
-    createdAt = createdAt,
-    kind = kind,
-    codeHash = data.codeHash,
-    expiresAt = data.expiresAt,
 )

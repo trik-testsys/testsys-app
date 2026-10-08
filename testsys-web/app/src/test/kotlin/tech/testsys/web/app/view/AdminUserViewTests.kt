@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.domain.builder.api.developerData
+import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.group.Community
@@ -28,7 +29,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Student
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
-import tech.testsys.web.app.service.administrator.CommunityVo
+import tech.testsys.web.app.service.CommunityVo
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -51,6 +52,27 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         assertEquals(member.id.value.toString(), textField("ID").value)
         assertEquals("Разработчик Иван", textField("Псевдоним").value)
         assertTrue("КружокРазработчик" in rolesText(), rolesText())
+    }
+
+    @Test
+    fun `should show all roles of a member in one community in one row`() {
+        val community = fixtures.community(owner = signInAdministrator(), name = "Кружок")
+        val member = fixtures.multipleRoleUser {
+            roles {
+                developer {
+                    memberOf(listOf(community.id.value))
+                    data = developerData {}
+                }
+                student {
+                    memberOf(listOf(community.id.value))
+                    data = studentData {}
+                }
+            }
+        }
+
+        openUser(member)
+
+        assertTrue("КружокРазработчик, Ученик" in rolesText(), rolesText())
     }
 
     @Test

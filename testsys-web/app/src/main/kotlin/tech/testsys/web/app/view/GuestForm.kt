@@ -28,10 +28,12 @@ enum class GuestTab(val label: String, val view: Class<out Component>) {
 }
 
 /**
- * Adds a row with the narrow guest form block centered on the page: the tabs of signing in, registration and restoring
- * access with the [active] one selected, and the [content] of the active tab. Choosing another tab opens its page.
+ * Adds the head titled by the [active] tab and a row with the narrow guest form block centered on the page: the tabs of
+ * signing in, registration and restoring access with the [active] one selected, and the [content] of the active tab.
+ * Choosing another tab opens its page. It must be the first call of the page body, since it adds the head.
  */
 internal fun PageScope.guestForm(active: GuestTab, content: BlockScope.() -> Unit) {
+    head(active.label)
     guestBlock {
         tabs(initial = active) { GuestTab.entries.forEach { tab -> tab(tab, tab.label) } }
             .onChange { tab -> UI.getCurrent().navigate(tab.view) }

@@ -21,6 +21,7 @@ import tech.testsys.web.app.PostgresTestConfiguration
 import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.app.service.developer.DeveloperService
 import tech.testsys.web.app.service.judge.JudgeService
+import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.app.service.participant.ParticipantService
 import tech.testsys.web.app.service.student.StudentService
 import tech.testsys.web.app.service.study.StudyService
@@ -38,6 +39,7 @@ class ServicesContextTests {
             AdministratorService::class,
             DeveloperService::class,
             JudgeService::class,
+            MultipleRoleUserService::class,
             ParticipantService::class,
             StudentService::class,
             StudyService::class,

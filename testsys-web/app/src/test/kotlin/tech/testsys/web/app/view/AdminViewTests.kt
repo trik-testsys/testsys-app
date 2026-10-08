@@ -28,7 +28,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.security.UserKind
-import tech.testsys.web.app.service.administrator.CommunityVo
+import tech.testsys.web.app.service.CommunityVo
 import java.time.LocalDateTime
 import java.time.ZoneId
 

@@ -410,6 +410,12 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   на прежнюю почту через `UserMailSender`. Исключения порта и хранения выходят из операций так же, как
   в регистрации.
 
+`viewProfile(user)` из того же класса возвращает Роли Пользователя в порядке его Ролей, каждую со списком
+её Сообществ по возрастанию идентификатора. Сообщества всех Ролей загружаются одним вызовом
+`CommunityRepository.findByIds`. Псевдоним и почту вызывающий код берёт у переданного Пользователя.
+Отказов у операции нет: Пользователя с Фиксированной Ролью исключает тип параметра, поэтому `ViewProfileError`
+не содержит ни одной ошибки.
+
 `MultipleRoleUserOperations` получает через конструктор `MultipleRoleUserRepository`, `CommunityRepository`,
 `ManagerCommunityInviteRepository`, `DeveloperCommunityInviteRepository`, `EmailChangeRequestRepository`, `UserMailSender`, `EmailConfirmationConfig`, `Clock` и `RandomGenerator`.
 Код подтверждения, срок его действия и чтение времени — те же, что в регистрации.

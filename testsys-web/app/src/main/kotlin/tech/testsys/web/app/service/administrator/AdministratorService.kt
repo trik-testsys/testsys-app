@@ -12,9 +12,14 @@ import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.user.AdministratorOperations
+import tech.testsys.web.app.service.AdminUserVo
+import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.CurrentUser
+import tech.testsys.web.app.service.MultipleRoleUserVo
+import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.map
+import tech.testsys.web.app.service.toAdminVo
 import tech.testsys.web.app.service.toVo
 import java.time.Instant
 

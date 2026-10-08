@@ -576,7 +576,7 @@ Page: **testsys.web.page.authentication**
 - Повторный запрос при действующем коде не меняет код, срок его действия и число оставшихся попыток;
   недействующий запрос перезаписывается новым кодом.
 
-### testsys.user.multi.joinCommunity (Partially implemented)
+### testsys.user.multi.joinCommunity (Implemented)
 
 Page: **testsys.web.page.multi.main**
 
@@ -616,10 +616,9 @@ Page: **testsys.web.page.multi.main**
 - Повторное присоединение не изменяет Пользователя.
 - При отказе Пользователь не изменяется.
 
-Реализована операция присоединения к Сообществу.
-Страница **testsys.web.page.multi.main** не реализована.
+Реализованы операция присоединения к Сообществу и форма на странице **testsys.web.page.multi.main**.
 
-### testsys.user.multi.viewProfile (Not implemented)
+### testsys.user.multi.viewProfile (Partially implemented)
 
 Page: **testsys.web.page.multi.main**, **testsys.web.page.multi.profile**
 
@@ -633,17 +632,21 @@ Page: **testsys.web.page.multi.main**, **testsys.web.page.multi.profile**
 
 *Отказы*:
 
-- Пользователь не обладает Нефиксированными Ролями.
+- Нет: Пользователь с Фиксированной Ролью операцию не выполняет.
 
 *Операция*:
 
-1. Возвращаются Псевдоним и почта Пользователя.
+1. Псевдоним и почта берутся из данных Пользователя, выполняющего операцию.
 2. Для каждой Роли Пользователя возвращаются Сообщества, в которых он состоит в этой Роли: идентификатор
-   и название.
+   и название. Пользователю без Ролей возвращается пустой список.
 
 *Инварианты*:
 
 - Просмотр не изменяет Пользователя, его Роли и членство в Сообществах.
+
+Реализованы операция, которая возвращает Роли с Сообществами, и списки Ролей и Сообществ на странице
+**testsys.web.page.multi.main**. Псевдоним и почту покажет страница **testsys.web.page.multi.profile**,
+она не реализована.
 
 <!-- testsys.user.single.participant -->
 
@@ -3743,6 +3746,11 @@ flowchart TD;
     end
 ```
 
+Навигационная цепочка страницы повторяет путь к ней по графу от стартовой страницы Пользователя. Для Пользователя
+с Нефиксированными Ролями цепочка начинается с «Главная» — **testsys.web.page.multi.main**: её получают страницы Ролей,
+вложенные в них страницы и **testsys.web.page.multi.profile**. Стартовые страницы цепочки не имеют, в том числе
+страницы Фиксированных Ролей.
+
 ### testsys.web.component.header (Implemented)
 
 Шапка Кабинета, общая для всех страниц, открытых после входа в Систему.
@@ -3837,7 +3845,7 @@ flowchart TD;
 - После регистрации — **testsys.web.page.multi.main** с Кодом-доступа.
 - **testsys.web.page.authentication** — по вкладкам «Вход» и «Восстановление доступа».
 
-### testsys.web.page.multi.main (Partially implemented)
+### testsys.web.page.multi.main (Implemented)
 
 *Назначение*:\
 Главная страница Кабинета Пользователя с Нефиксированными Ролями: Роли и Сообщества.
@@ -3858,9 +3866,6 @@ flowchart TD;
 
 - Страницы Ролей — из списка Ролей и из **testsys.web.component.header**.
 - **testsys.web.page.multi.profile** — из **testsys.web.component.header**.
-
-Реализованы показ Кода-доступа сразу после регистрации и переходы из **testsys.web.component.header**.
-Роли, Сообщества и присоединение к Сообществу не реализованы.
 
 ### testsys.web.page.multi.profile (Not implemented)
 

@@ -128,7 +128,10 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
         .filter { link -> link.element.getAttribute("aria-current") == "page" }
         .map { link -> link.text.ifEmpty { link._get<Span>().text } }
 
-    private fun linkHref(label: String): String = UI.getCurrent()._get<RouterLink> { text = label }.href
+    /** Returns the route of the header link named [label]; the breadcrumbs of the page may hold a link of the same name. */
+    private fun linkHref(label: String): String = UI.getCurrent()._find<RouterLink> { text = label }
+        .single { link -> link.parent.map { parent -> parent.element.getAttribute("class") }.orElse(null) != "ts-crumbs" }
+        .href
 
     /** Headings of the menu columns with the routes of their links, excluding the start page link «Главная». */
     private fun menuSections(): Map<String, String> = UI.getCurrent()._find<RouterLink>()

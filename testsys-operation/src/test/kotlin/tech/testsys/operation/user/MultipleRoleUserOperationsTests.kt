@@ -1,6 +1,7 @@
 package tech.testsys.operation.user
 
 import io.mockk.Called
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -133,6 +134,85 @@ class MultipleRoleUserOperationsTests {
         id = 52
         createdAt = now
         data = testMultipleRoleUser { this.email = email }.data
+    }
+
+    @Nested
+    inner class ViewProfileTests {
+
+        @Test
+        fun `should return each role with its communities in ascending id order loaded at once`() {
+            val user = testMultipleRoleUser {
+                roles {
+                    student {
+                        memberOf = mutableListOf(CommunityId(7), CommunityId(5))
+                        data = studentData {}
+                    }
+                    developer {
+                        memberOf = mutableListOf(CommunityId(5))
+                        data = developerData {}
+                    }
+                }
+            }
+            every { communities.findByIds(listOf(CommunityId(7), CommunityId(5))) } returns listOf(testCommunity(5), testCommunity(7))
+
+            val actual = operations.viewProfile(user).getOrThrow()
+
+            assertEquals(user.data.roles, actual.map { (role, _) -> role })
+            assertEquals(
+                listOf(listOf(5L, 7L), listOf(5L)),
+                actual.map { (_, joined) -> joined.map { community -> community.id.value } },
+            )
+            verify(exactly = 1) { communities.findByIds(any()) }
+        }
+
+        @Test
+        fun `should not change the user or communities when viewing the profile`() {
+            val user = testStudent {
+                memberOf = mutableListOf(CommunityId(5))
+                data = studentData {}
+            }
+            every { communities.findByIds(listOf(CommunityId(5))) } returns listOf(testCommunity(5))
+
+            operations.viewProfile(user).getOrThrow()
+
+            verify { multipleRoleUsers wasNot Called }
+            verify(exactly = 1) { communities.findByIds(any()) }
+            confirmVerified(communities)
+        }
+
+        @Test
+        fun `should return no roles if the user has no roles`() {
+            val user = testMultipleRoleUser {}
+            every { communities.findByIds(emptyList()) } returns emptyList()
+
+            val actual = operations.viewProfile(user).getOrThrow()
+
+            assertEquals(emptyList(), actual)
+        }
+
+        @Test
+        fun `should return a role without communities with an empty list`() {
+            val user = testStudent {
+                memberOf = mutableListOf()
+                data = studentData {}
+            }
+            every { communities.findByIds(emptyList()) } returns emptyList()
+
+            val actual = operations.viewProfile(user).getOrThrow()
+
+            assertEquals(listOf(user.data.roles.single() to emptyList()), actual)
+        }
+
+        @Test
+        fun `should throw if a community of the user does not exist`() {
+            val user = testStudent {
+                memberOf = mutableListOf(CommunityId(5))
+                data = studentData {}
+            }
+            every { communities.findByIds(listOf(CommunityId(5))) } returns emptyList()
+
+            assertFailsWith<IllegalStateException> { operations.viewProfile(user) }
+        }
     }
 
     @Nested

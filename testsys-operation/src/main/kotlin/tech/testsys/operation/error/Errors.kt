@@ -547,6 +547,13 @@ data class CommunityInviteCodeNotValidError(val inviteCode: String) : JoinCommun
  */
 data class CommunityInviteCodeExpiredError(val inviteCode: String) : JoinCommunityError
 
+/**
+ * Failure of viewing the profile. It has no cases: a user with a fixed role is excluded by the parameter type.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewProfileError : OperationError
+
 // endregion
 
 // region JudgeOperations

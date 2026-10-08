@@ -6,11 +6,11 @@ import com.vaadin.flow.router.RouteParameters
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.web.app.service.administrator.AdminUserVo
+import tech.testsys.web.app.service.AdminUserVo
+import tech.testsys.web.app.service.CommunityVo
+import tech.testsys.web.app.service.MultipleRoleUserVo
+import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.administrator.AdministratorService
-import tech.testsys.web.app.service.administrator.CommunityVo
-import tech.testsys.web.app.service.administrator.MultipleRoleUserVo
-import tech.testsys.web.app.service.administrator.ObserverVo
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.filters

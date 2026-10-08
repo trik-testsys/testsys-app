@@ -17,7 +17,13 @@ import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.UserKind
+import tech.testsys.web.app.service.AdministratorRoleVo
 import tech.testsys.web.app.service.CurrentUser
+import tech.testsys.web.app.service.DeveloperRoleVo
+import tech.testsys.web.app.service.JudgeRoleVo
+import tech.testsys.web.app.service.ManagerRoleVo
+import tech.testsys.web.app.service.RoleVo
+import tech.testsys.web.app.service.StudentRoleVo
 import tech.testsys.web.components.navigation.header.CabinetHeader
 import tech.testsys.web.components.navigation.header.HeaderDestination
 import tech.testsys.web.components.navigation.header.HeaderMegaColumn
@@ -40,6 +46,32 @@ fun startPageOf(kind: UserKind): Class<out Component> = when (kind) {
     UserKind.PARTICIPANT -> ParticipantView::class.java
     UserKind.OBSERVER -> ObserverView::class.java
     UserKind.SUPERVISOR -> SupervisorView::class.java
+}
+
+/**
+ * Returns the label of [role] for pages.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun labelOf(role: RoleVo): String = when (role) {
+    is AdministratorRoleVo -> "Администратор"
+    is DeveloperRoleVo -> "Разработчик"
+    is ManagerRoleVo -> "Организатор"
+    is JudgeRoleVo -> "Судья"
+    is StudentRoleVo -> "Ученик"
+}
+
+/**
+ * Returns the page of [role].
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun rolePageOf(role: RoleVo): Class<out Component> = when (role) {
+    is AdministratorRoleVo -> AdminView::class.java
+    is DeveloperRoleVo -> DeveloperView::class.java
+    is ManagerRoleVo -> ManagerView::class.java
+    is JudgeRoleVo -> JudgeView::class.java
+    is StudentRoleVo -> StudentView::class.java
 }
 
 /**

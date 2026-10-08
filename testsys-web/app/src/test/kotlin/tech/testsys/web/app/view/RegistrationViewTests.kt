@@ -53,7 +53,7 @@ class RegistrationViewTests : MockSpringVaadinTests() {
         confirm(code = mail.confirmationCodes.getValue(email), name = "Новый Пользователь")
 
         assertEquals(MultiMainView::class.java, currentView)
-        assertEquals(mail.accessTokens.getValue(email), UI.getCurrent()._get<TextField>().value)
+        assertEquals(mail.accessTokens.getValue(email), accessTokenFields().single().value)
         assertEquals(UserKind.MULTIPLE_ROLE, CabinetSignIn.principal()?.kind)
     }
 
@@ -75,8 +75,11 @@ class RegistrationViewTests : MockSpringVaadinTests() {
 
         UI.getCurrent().navigate(MultiMainView::class.java)
 
-        assertTrue(UI.getCurrent()._find<TextField>().isEmpty())
+        assertTrue(accessTokenFields().isEmpty())
     }
+
+    private fun accessTokenFields(): List<TextField> =
+        UI.getCurrent()._find<TextField>().filter { field -> field.ariaLabel.orElse(null) == "Код-доступа" }
 
     @Test
     fun `should show the reason and stay on the email step if the email is invalid`() {

@@ -8,16 +8,19 @@ import tech.testsys.web.components.feedback.emptyState
 import tech.testsys.web.components.texts.UiTexts
 
 /**
- * Cabinet page whose content is not implemented yet: the Cabinet header with the [active] section and an empty state
- * under [title]. The routes and access of the pages are final, so the header can lead to them; the optional route
- * parameter `section` selects the section of a role page that the menu leads to.
+ * Cabinet page whose content is not implemented yet: the Cabinet header with the [active] section, the head [title] and
+ * an empty state. A page opened from the main page of a user with non-fixed roles has [hasHomeCrumb] set, so that its
+ * breadcrumbs start with «Главная». The routes and access of the pages are final, so the header can lead to them; the
+ * optional route parameter `section` selects the section of a role page that the menu leads to.
  *
  * @since %CURRENT_VERSION%
  */
-abstract class PendingCabinetView(texts: UiTexts, headers: CabinetHeaders, title: String, active: String?) : TestSysView(texts) {
+abstract class PendingCabinetView(texts: UiTexts, headers: CabinetHeaders, title: String, active: String?, hasHomeCrumb: Boolean) :
+    TestSysView(texts) {
     init {
         page(headers.cabinet(active)) {
-            row { block(title = title) { emptyState("Раздел пока не реализован") } }
+            head(title) { if (hasHomeCrumb) crumb("Главная", MultiMainView::class.java) }
+            row { block { emptyState("Раздел пока не реализован") } }
         }
     }
 }
@@ -31,7 +34,7 @@ abstract class PendingCabinetView(texts: UiTexts, headers: CabinetHeaders, title
 @PageTitle("Кабинет Участника")
 @RolesAllowed("PARTICIPANT")
 class ParticipantView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Кабинет Участника", active = CabinetHeaders.MAIN_SECTION)
+    PendingCabinetView(texts, headers, title = "Кабинет Участника", active = CabinetHeaders.MAIN_SECTION, hasHomeCrumb = false)
 
 /**
  * Cabinet of an Observer (testsys.web.page.observer), not implemented yet.
@@ -42,7 +45,7 @@ class ParticipantView(texts: UiTexts, headers: CabinetHeaders) :
 @PageTitle("Кабинет Наблюдателя")
 @RolesAllowed("OBSERVER")
 class ObserverView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Кабинет Наблюдателя", active = CabinetHeaders.MAIN_SECTION)
+    PendingCabinetView(texts, headers, title = "Кабинет Наблюдателя", active = CabinetHeaders.MAIN_SECTION, hasHomeCrumb = false)
 
 /**
  * Cabinet of a Supervisor (testsys.web.page.supervisor), not implemented yet.
@@ -53,7 +56,7 @@ class ObserverView(texts: UiTexts, headers: CabinetHeaders) :
 @PageTitle("Кабинет Супервайзера")
 @RolesAllowed("SUPERVISOR")
 class SupervisorView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Кабинет Супервайзера", active = CabinetHeaders.MAIN_SECTION)
+    PendingCabinetView(texts, headers, title = "Кабинет Супервайзера", active = CabinetHeaders.MAIN_SECTION, hasHomeCrumb = false)
 
 /**
  * Cabinet of a Developer (testsys.web.page.developer), not implemented yet.
@@ -64,7 +67,7 @@ class SupervisorView(texts: UiTexts, headers: CabinetHeaders) :
 @PageTitle("Кабинет Разработчика")
 @RolesAllowed("MULTIPLE_ROLE")
 class DeveloperView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Кабинет Разработчика", active = CabinetHeaders.MENU_SECTION)
+    PendingCabinetView(texts, headers, title = "Кабинет Разработчика", active = CabinetHeaders.MENU_SECTION, hasHomeCrumb = true)
 
 /**
  * Cabinet of a Manager (testsys.web.page.manager), not implemented yet.
@@ -75,7 +78,7 @@ class DeveloperView(texts: UiTexts, headers: CabinetHeaders) :
 @PageTitle("Кабинет Организатора")
 @RolesAllowed("MULTIPLE_ROLE")
 class ManagerView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Кабинет Организатора", active = CabinetHeaders.MENU_SECTION)
+    PendingCabinetView(texts, headers, title = "Кабинет Организатора", active = CabinetHeaders.MENU_SECTION, hasHomeCrumb = true)
 
 /**
  * Cabinet of a Judge (testsys.web.page.judge), not implemented yet.
@@ -86,7 +89,7 @@ class ManagerView(texts: UiTexts, headers: CabinetHeaders) :
 @PageTitle("Кабинет Судьи")
 @RolesAllowed("MULTIPLE_ROLE")
 class JudgeView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Кабинет Судьи", active = CabinetHeaders.MENU_SECTION)
+    PendingCabinetView(texts, headers, title = "Кабинет Судьи", active = CabinetHeaders.MENU_SECTION, hasHomeCrumb = true)
 
 /**
  * Cabinet of a Student (testsys.web.page.student), not implemented yet.
@@ -97,7 +100,7 @@ class JudgeView(texts: UiTexts, headers: CabinetHeaders) :
 @PageTitle("Кабинет Ученика")
 @RolesAllowed("MULTIPLE_ROLE")
 class StudentView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Кабинет Ученика", active = CabinetHeaders.MENU_SECTION)
+    PendingCabinetView(texts, headers, title = "Кабинет Ученика", active = CabinetHeaders.MENU_SECTION, hasHomeCrumb = true)
 
 /**
  * Profile of a user with non-fixed roles (testsys.web.page.multi.profile), not implemented yet.
@@ -107,4 +110,5 @@ class StudentView(texts: UiTexts, headers: CabinetHeaders) :
 @Route("profile")
 @PageTitle("Профиль")
 @RolesAllowed("MULTIPLE_ROLE")
-class ProfileView(texts: UiTexts, headers: CabinetHeaders) : PendingCabinetView(texts, headers, title = "Профиль", active = null)
+class ProfileView(texts: UiTexts, headers: CabinetHeaders) :
+    PendingCabinetView(texts, headers, title = "Профиль", active = null, hasHomeCrumb = true)

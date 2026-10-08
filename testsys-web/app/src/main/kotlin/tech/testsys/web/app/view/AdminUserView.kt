@@ -13,17 +13,11 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.UserId
-import tech.testsys.web.app.service.administrator.AdminUserVo
-import tech.testsys.web.app.service.administrator.AdministratorRoleVo
+import tech.testsys.web.app.service.AdminUserVo
+import tech.testsys.web.app.service.CommunityVo
+import tech.testsys.web.app.service.MultipleRoleUserVo
+import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.administrator.AdministratorService
-import tech.testsys.web.app.service.administrator.CommunityVo
-import tech.testsys.web.app.service.administrator.DeveloperRoleVo
-import tech.testsys.web.app.service.administrator.JudgeRoleVo
-import tech.testsys.web.app.service.administrator.ManagerRoleVo
-import tech.testsys.web.app.service.administrator.MultipleRoleUserVo
-import tech.testsys.web.app.service.administrator.ObserverVo
-import tech.testsys.web.app.service.administrator.RoleVo
-import tech.testsys.web.app.service.administrator.StudentRoleVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
@@ -69,6 +63,7 @@ class AdminUserView(texts: UiTexts, private val headers: CabinetHeaders, private
         val communities = administratorService.viewCommunities().map { (community, _) -> community }
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(user.name) {
+                crumb("Главная", MultiMainView::class.java)
                 crumb("Кабинет Администратора", AdminView::class.java)
                 crumb("Пользователи", AdminView::class.java, RouteParameters(ADMIN_SECTION_PARAMETER, "users"))
             }
@@ -99,21 +94,24 @@ class AdminUserView(texts: UiTexts, private val headers: CabinetHeaders, private
     }
 
     private fun PageScope.rolesBlock(user: AdminUserVo, communities: List<CommunityVo>) {
-        val communitiesById = communities.associateBy { community -> community.id }
-        val memberships = when (user) {
-            is MultipleRoleUserVo -> user.roles.flatMap { role ->
-                role.memberOf.mapNotNull { communityId -> communitiesById[communityId]?.let { community -> community to labelOf(role) } }
-            }
-            is ObserverVo -> listOfNotNull(communitiesById[user.community]?.let { community -> community to "Наблюдатель" })
+        val roles = when (user) {
+            is MultipleRoleUserVo -> user.roles.flatMap { role -> role.memberOf.map { communityId -> communityId to labelOf(role) } }
+            is ObserverVo -> listOf(user.community to "Наблюдатель")
+        }
+        val memberships = communities.mapNotNull { community ->
+            roles.filter { (communityId, _) -> communityId == community.id }
+                .map { (_, role) -> role }
+                .takeIf { labels -> labels.isNotEmpty() }
+                ?.let { labels -> community to labels }
         }
         row {
             block(title = "Роли в сообществах") {
                 table(
-                    key = { (community, role): Pair<CommunityVo, String> -> community.id to role },
+                    key = { (community, _): Pair<CommunityVo, List<String>> -> community.id },
                     fetch = { request -> pageOf(memberships, request) },
                 ) {
                     textColumn("Сообщество", size = 12) { (community, _) -> community.name }
-                    textColumn("Роль") { (_, role) -> role }
+                    textColumn("Роли") { (_, labels) -> labels.joinToString(", ") }
                     empty("Ролей в ваших сообществах нет")
                     onRowClick { (community, _) -> openAdminCommunity(community.id) }
                 }
@@ -162,14 +160,6 @@ class AdminUserView(texts: UiTexts, private val headers: CabinetHeaders, private
             draft.readBean(GrantDraft())
             granting.open()
         }
-    }
-
-    private fun labelOf(role: RoleVo): String = when (role) {
-        is AdministratorRoleVo -> "Администратор"
-        is DeveloperRoleVo -> "Разработчик"
-        is ManagerRoleVo -> "Организатор"
-        is JudgeRoleVo -> "Судья"
-        is StudentRoleVo -> "Ученик"
     }
 
     /** Values of the role granting form. */

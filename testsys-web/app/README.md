@@ -98,15 +98,17 @@
 После регистрации `RegistrationView` выполняет вход по выданному Коду-доступа и показывает его на `MultiMainView`
 вызовом `showAccessToken` у открытой страницы. Код-доступа не попадает ни в адрес, ни в сессию, поэтому повторное
 открытие страницы его не показывает. Ошибки входа и регистрации страницы показывают тостом с причиной сами,
-без `OperationErrorHandler`.
+без `OperationErrorHandler`. Так же `MultiMainView` показывает отказы присоединения к Сообществу; после
+присоединения страница перестраивается вместе с шапкой, чтобы новая Роль появилась и в «Меню».
 
 ## Прокси-сервисы
 
 Страницы вызывают операции только через прокси-сервисы `<Actor>Service` в пакете `service/<actor>`:
-`AdministratorService`, `DeveloperService`, `JudgeService`, `ParticipantService`, `StudentService`, `StudyService`
-и `UserService`. Методы сервиса соответствуют операциям один к одному и принимают те же входные данные без
-Пользователя. Сервиса для `TaskValidationOperations` нет: её вызывает только диспетчер. У `ManagerOperations`,
-`MultipleRoleUserOperations` и `ObserverOperations` сервисов пока нет: страницы их не вызывают.
+`AdministratorService`, `DeveloperService`, `JudgeService`, `MultipleRoleUserService`, `ParticipantService`,
+`StudentService`, `StudyService` и `UserService`. Методы сервиса соответствуют операциям один к одному и принимают те же входные данные без
+Пользователя. Сервиса для `TaskValidationOperations` нет: её вызывает только диспетчер. У `ManagerOperations`
+и `ObserverOperations` сервисов пока нет: страницы их не вызывают. `MultipleRoleUserService` пока выставляет только
+`viewProfile` и `joinCommunity`.
 `AdministratorService` не выставляет служебную `refreshCommunityInvite`.
 
 Классы операций, у которых есть сервис, `TaskValidationOperations` и `TaskValidationDispatcher` создаются

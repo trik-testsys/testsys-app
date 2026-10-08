@@ -13,9 +13,11 @@ import com.vaadin.flow.component.contextmenu.ContextMenu
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.dialog.Dialog
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Nav
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
@@ -82,6 +84,16 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
 
         assertEquals(OperationErrorView::class.java, currentView)
         assertEquals("Нет доступа", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should lead the breadcrumbs to the cabinet and its communities`() {
+        val community = fixtures.community(owner = signInAdministrator())
+
+        open(community.id)
+
+        val crumbs = UI.getCurrent()._get<Nav> { classes = "ts-crumbs" }._find<RouterLink>().associate { link -> link.text to link.href }
+        assertEquals(mapOf("Главная" to "home", "Кабинет Администратора" to "admin", "Сообщества" to "admin/communities"), crumbs)
     }
 
     @Test

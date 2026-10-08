@@ -5,16 +5,17 @@ import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
+import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.ContestVo
+import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.app.service.administrator.CommunityInviteVo
-import tech.testsys.web.app.service.administrator.CommunityVo
-import tech.testsys.web.app.service.administrator.ObserverVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.linkAction
@@ -59,7 +60,11 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
 
     private fun show(community: CommunityVo, communities: List<CommunityVo>, observer: ObserverVo?) {
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head(community.name) { crumb("Кабинет Администратора", AdminView::class.java) }
+            head(community.name) {
+                crumb("Главная", MultiMainView::class.java)
+                crumb("Кабинет Администратора", AdminView::class.java)
+                crumb("Сообщества", AdminView::class.java, RouteParameters(ADMIN_SECTION_PARAMETER, "communities"))
+            }
             row {
                 detailsBlock(community) { edited -> show(edited, communities, observer) }
                 invitesBlock(community.id)

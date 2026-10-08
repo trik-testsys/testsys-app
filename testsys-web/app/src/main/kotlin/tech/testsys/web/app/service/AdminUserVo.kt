@@ -1,4 +1,4 @@
-package tech.testsys.web.app.service.administrator
+package tech.testsys.web.app.service
 
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
@@ -41,7 +41,7 @@ sealed interface AdminUserVo {
 }
 
 /**
- * Data of a user with non-fixed roles for an administrator.
+ * Data of a user with non-fixed roles.
  *
  * @property email the e-mail address of the user.
  * @property roles the roles of the user, including memberships in communities of other administrators.
@@ -149,7 +149,7 @@ internal fun MultipleRoleUser.toVo(): MultipleRoleUserVo = MultipleRoleUserVo(
     roles = data.roles.map { role -> role.toVo() },
 )
 
-private fun CompatibleUserRole.toVo(): RoleVo = when (this) {
+internal fun CompatibleUserRole.toVo(): RoleVo = when (this) {
     is Administrator -> AdministratorRoleVo(memberOf = memberOf.ids)
     is Developer -> DeveloperRoleVo(memberOf = memberOf.ids, tasks = data.tasks.ids, contests = data.contests.ids)
     is Manager -> ManagerRoleVo(memberOf = memberOf.ids, classes = data.classes.ids, competitions = data.competitions.ids)

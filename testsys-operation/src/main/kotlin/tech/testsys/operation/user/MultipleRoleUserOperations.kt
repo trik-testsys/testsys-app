@@ -8,10 +8,13 @@ import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInv
 import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
+import tech.testsys.domain.model.group.Community
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.InviteCodeHash
 import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.user.CommunityRole
+import tech.testsys.domain.model.user.CompatibleUserRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.operation.annotation.Feature
@@ -30,6 +33,7 @@ import tech.testsys.operation.error.InvalidEmailError
 import tech.testsys.operation.error.JoinCommunityError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.RequestEmailChangeError
+import tech.testsys.operation.error.ViewProfileError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
@@ -85,6 +89,26 @@ class MultipleRoleUserOperations(
             }
             return multipleRoleUserRepository.addCommunityMembership(userId = user.id, communityId = community.id, role = role)
                 .asSuccess()
+        }
+
+    /**
+     * Returns each role of [user] in the order of its roles, with the communities the user is a member of in that role in
+     * ascending id order. The nickname and the e-mail address are the data of [user]; nothing is written.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.viewProfile")
+    fun viewProfile(user: MultipleRoleUser): OperationResult<List<Pair<CompatibleUserRole, List<Community>>>, ViewProfileError> =
+        operation<List<Pair<CompatibleUserRole, List<Community>>>, ViewProfileError> {
+            val roles = user.data.roles
+            // One query loads the communities of all roles.
+            val communities = communityRepository.findByIds(roles.flatMap { role -> role.memberOf.ids }.distinct())
+                .associateBy { community -> community.id }
+            return roles.map { role ->
+                role to role.memberOf.ids.sortedBy { id -> id.value }.map { id ->
+                    checkNotNull(communities[id]) { "Community id=${id.value} of user id=${user.id.value} does not exist" }
+                }
+            }.asSuccess()
         }
 
     /**

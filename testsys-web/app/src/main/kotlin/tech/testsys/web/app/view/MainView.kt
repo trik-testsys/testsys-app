@@ -22,7 +22,8 @@ import tech.testsys.web.components.texts.UiTexts
 class MainView(texts: UiTexts, headers: CabinetHeaders) : TestSysView(texts), BeforeEnterObserver {
     init {
         page(headers.guest()) {
-            guestBlock(title = "TestSys") {
+            head("TestSys")
+            guestBlock {
                 row { text("Войдите по Коду-доступа или зарегистрируйтесь как Ученик или Организатор.") }
                 footer {
                     mainAction("Войти") { onClick { UI.getCurrent().navigate(AuthenticationView::class.java) } }

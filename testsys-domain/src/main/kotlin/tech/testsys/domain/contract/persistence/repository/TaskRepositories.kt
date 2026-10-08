@@ -3,11 +3,13 @@ package tech.testsys.domain.contract.persistence.repository
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.ContestTaskResult
+import tech.testsys.domain.contract.persistence.ObserverContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.AuthorSubmissionFailure
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
@@ -62,6 +64,22 @@ import tech.testsys.domain.model.user.UserId
  * @since %CURRENT_VERSION%
  */
 interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> {
+
+    /**
+     * Synchronously finds contests currently belonging to any of [competitionIds], without changing stored state.
+     * Repeated calls reflect current relations and preserve all time limits; technical storage exceptions propagate.
+     *
+     * @param competitionIds competitions assigned to the observer; an empty set matches nothing.
+     * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
+     * @param filter conditions combined with AND before paging and counting; missing or inaccessible ids match nothing.
+     * @return unique contests, original pagination and exact filtered total; missing pages are empty but retain the total.
+     * @since %CURRENT_VERSION%
+     */
+    fun findAvailableToObserver(
+        competitionIds: Set<CompetitionId>,
+        pagination: Pagination,
+        filter: ObserverContestFilter = ObserverContestFilter(),
+    ): Page<Contest>
 
     /**
      * Synchronously finds all contests currently containing [taskId], ordered by identifier.

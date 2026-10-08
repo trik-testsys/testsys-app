@@ -6,10 +6,12 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.ContestFilter
+import tech.testsys.domain.contract.persistence.ObserverContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
@@ -18,6 +20,7 @@ import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.group.ContestToCompetitionJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.CommunityToContestJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.ContestJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.CommunityToContestJpaEntityRepository
@@ -49,6 +52,42 @@ class ContestPersistenceAdapter(
     ContestRepository {
 
     private val contestJpaEntityRepository: ContestJpaEntityRepository = jpaEntityRepository
+
+    @Transactional(readOnly = true)
+    override fun findAvailableToObserver(
+        competitionIds: Set<CompetitionId>,
+        pagination: Pagination,
+        filter: ObserverContestFilter,
+    ): Page<Contest> {
+        if (competitionIds.isEmpty()) return Page(content = emptyList(), pagination = pagination, totalElements = 0)
+        val specification = Specification<ContestJpaEntity> { entity, query, builder ->
+            val assigned = requireNotNull(query).subquery(Long::class.java)
+            val association = assigned.from(ContestToCompetitionJpaEntity::class.java)
+            assigned.select(association.get<Any>("id").get<Long>("contestId")).where(
+                builder.equal(association.get<Any>("id").get<Long>("contestId"), entity.get<Long>("id")),
+                association.get<Any>("id").get<Long>("competitionId").`in`(competitionIds.map { competition -> competition.value }),
+            )
+            val predicates = mutableListOf(builder.exists(assigned))
+            filter.name?.let { name ->
+                predicates.add(builder.gt(builder.locate(builder.lower(entity.get("name")), name.lowercase()), 0))
+            }
+            filter.contestId?.let { contest ->
+                predicates.add(builder.equal(entity.get<Long>("id"), contest.value))
+            }
+            builder.and(*predicates.toTypedArray())
+        }
+        val orders = pagination.sort.orders.map { order ->
+            JpaSort.Order(JpaSort.Direction.valueOf(order.direction.name), order.field)
+        }
+        val stableOrders = if (orders.any { order -> order.property == "id" }) orders else orders + JpaSort.Order.asc("id")
+        val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
+        val page = contestJpaEntityRepository.findAll(specification, pageable)
+        return Page(
+            content = page.content.map { entity -> assemble(entity) },
+            pagination = pagination,
+            totalElements = page.totalElements,
+        )
+    }
 
     @Transactional(readOnly = true)
     override fun findByTaskId(taskId: TaskId): List<Contest> =

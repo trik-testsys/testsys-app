@@ -1341,6 +1341,24 @@ data class ResourceVersionNotExistsError(val versionBucket: VersionBucket, val v
     EntityNotExistsError,
     DownloadResourceVersionError
 
+// region ObserverOperations
+
+/**
+ * Failure of listing contests of the observer's assigned competitions.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewObserverContestsError : OperationError
+
+/**
+ * The user is not an observer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object MissedObserverRoleError : MissedRequiredRoleError, ViewObserverContestsError
+
+// endregion
+
 // region StudyOperations
 
 /**

@@ -3,6 +3,7 @@ package tech.testsys.domain.contract.persistence
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.UserId
@@ -48,6 +49,18 @@ data class ContestFilter(
     val name: String? = null,
     val ownerId: MultipleRoleUserId? = null,
     val communityId: CommunityId? = null,
+)
+
+/**
+ * Optional observer contest criteria, combined with AND within the assigned competitions before paging and counting.
+ *
+ * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
+ * @property contestId the exact contest identifier, or `null` for every accessible contest; never expands access.
+ * @since %CURRENT_VERSION%
+ */
+data class ObserverContestFilter(
+    val name: String? = null,
+    val contestId: ContestId? = null,
 )
 
 /**

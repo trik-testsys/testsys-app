@@ -107,12 +107,13 @@ class DialogScope internal constructor(
 
 /**
  * Builds a form dialog of [title] and an optional [subtitle] with rows and a footer; open it with the returned handle.
+ * [size] gives the width when the default one does not fit the fields or a table.
  *
  * @since %CURRENT_VERSION%
  */
-fun dialog(title: String, subtitle: String? = null, content: DialogScope.() -> Unit): DialogHandle {
+fun dialog(title: String, subtitle: String? = null, size: DialogSize = DialogSize.M, content: DialogScope.() -> Unit): DialogHandle {
     val texts = currentTexts()
-    val shell = DialogShell(texts, title = title, subtitle = subtitle, isWide = true, isAlert = false)
+    val shell = DialogShell(texts, title = title, subtitle = subtitle, size = size, isAlert = false)
     shell.content.addClassName(CssClass.DialogGrid)
 
     val editState = BlockEditState(shell.dialog.element)

@@ -31,7 +31,7 @@ fun confirm(
     onConfirm: () -> Unit,
 ) {
     val texts = currentTexts()
-    val shell = DialogShell(texts, title, subtitle = null, isWide = false, isAlert = isDanger)
+    val shell = DialogShell(texts, title, subtitle = null, size = DialogSize.S, isAlert = isDanger)
     text?.let { description -> shell.content.add(Div(description)) }
 
     val confirmName = typeToConfirm?.let { name ->

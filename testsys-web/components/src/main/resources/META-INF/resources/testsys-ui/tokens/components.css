@@ -362,6 +362,8 @@ a.ts-tab { text-decoration:none; }
 .ts-overlay--contained { position:absolute; }
 .ts-dialog { background:var(--surface-card); border-radius:var(--radius-2xl); box-shadow:var(--shadow-dialog); width:440px; max-width:calc(100% - 32px); }
 .ts-dialog--md { width:520px; }
+.ts-dialog--lg { width:720px; }
+.ts-dialog--xl { width:960px; }
 .ts-dialog__head { display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); padding:18px var(--space-6); border-bottom:1px solid var(--border-default); }
 .ts-dialog__title { font:var(--fw-bold) var(--fs-h3)/var(--lh-h3) var(--font-sans); margin:0; }
 .ts-dialog__body { padding:var(--space-5) var(--space-6); display:flex; flex-direction:column; gap:14px; font:var(--fw-regular) var(--fs-sm)/22px var(--font-sans); color:var(--text-secondary); }

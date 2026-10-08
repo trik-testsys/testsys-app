@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.buildTestPage
@@ -113,6 +115,17 @@ class FormDialogTests : MockVaadinTests() {
         assertTrue("ts-dialog--md" in card.classes())
         assertEquals("Новый тур", card.find("ts-dialog__title").element.text)
         assertTrue(handle.isOpen)
+    }
+
+    @ParameterizedTest
+    @CsvSource("S,", "M,ts-dialog--md", "L,ts-dialog--lg", "XL,ts-dialog--xl")
+    fun `should give the card the width of the chosen size`(size: DialogSize, sizeClass: String?) {
+        val handle = dialog(title = "Тур", size = size) { row { textInput("Название", labelSize = 8, size = 16) } }
+
+        handle.open()
+
+        val classes = openDialogs().single().find("ts-dialog").classes().filter { name -> name.startsWith("ts-dialog--") }
+        assertEquals(listOfNotNull(sizeClass), classes)
     }
 
     @Test

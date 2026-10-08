@@ -26,10 +26,29 @@ import tech.testsys.web.components.texts.UiTexts
 private const val GLYPH_SIZE = 20
 
 /**
- * Modal `vaadin-dialog` drawing the `.ts-dialog` markup: a head with the title and a close button, or an alert body
- * with a warning glyph; [content] and [foot] take the content. [isWide] gives the form width.
+ * Width of a dialog card; on a narrow screen every card fits the screen.
+ *
+ * @since %CURRENT_VERSION%
  */
-internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, isWide: Boolean, isAlert: Boolean) {
+enum class DialogSize(internal val cssClass: CssClass?) {
+    /** 440 px: a confirmation or a short message. */
+    S(null),
+
+    /** 520 px: a form of a few fields; the default of a form dialog. */
+    M(CssClass.DialogMd),
+
+    /** 720 px: a form with long values or a table. */
+    L(CssClass.DialogLg),
+
+    /** 960 px: a wide table or a form of two columns. */
+    XL(CssClass.DialogXl),
+}
+
+/**
+ * Modal `vaadin-dialog` drawing the `.ts-dialog` markup: a head with the title and a close button, or an alert body
+ * with a warning glyph; [content] and [foot] take the content. [size] gives the width of the card.
+ */
+internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, size: DialogSize, isAlert: Boolean) {
     val dialog = Dialog().apply {
         addThemeName(CssTheme.Dialog)
         // Vaadin defaults, set explicitly to state how every dialog closes.
@@ -47,7 +66,7 @@ internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, isW
     init {
         val card = Div().apply {
             addClassName(CssClass.Dialog)
-            if (isWide) addClassName(CssClass.DialogMd)
+            size.cssClass?.let { sizeClass -> addClassName(sizeClass) }
             if (isAlert) addClassName(CssClass.DialogAlert)
         }
 

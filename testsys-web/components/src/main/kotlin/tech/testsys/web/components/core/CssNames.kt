@@ -73,6 +73,8 @@ internal enum class CssClass(internal val value: String) {
     Dialog("ts-dialog"),
     DialogAlert("ts-dialog--alert"),
     DialogMd("ts-dialog--md"),
+    DialogLg("ts-dialog--lg"),
+    DialogXl("ts-dialog--xl"),
     DialogBody("ts-dialog__body"),
     DialogFoot("ts-dialog__foot"),
     DialogGlyph("ts-dialog__glyph"),

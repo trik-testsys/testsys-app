@@ -45,6 +45,7 @@ import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.overlay.DialogShell
+import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.texts.UiTexts
 
 /** Default number of rows on a page of the lookup dialog. */
@@ -220,7 +221,7 @@ internal class LookupDialog<T : Any>(
     highlighted: (T) -> Boolean,
     onRowClick: LookupDialog<T>.(T) -> Unit,
 ) {
-    val shell: DialogShell = DialogShell(texts, title, subtitle = null, isWide = true, isAlert = false)
+    val shell: DialogShell = DialogShell(texts, title, subtitle = null, size = DialogSize.M, isAlert = false)
     val table: DataTable<T>
     private val search: TextField
 

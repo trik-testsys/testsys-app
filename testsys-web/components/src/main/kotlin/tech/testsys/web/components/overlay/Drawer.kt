@@ -115,7 +115,7 @@ fun drawer(
     content: DrawerScope.() -> Unit,
 ): DrawerHandle {
     val texts = currentTexts()
-    val shell = DialogShell(texts, title = title, subtitle = subtitle, isWide = true, isAlert = false)
+    val shell = DialogShell(texts, title = title, subtitle = subtitle, size = DialogSize.M, isAlert = false)
     shell.dialog.addThemeName(CssTheme.Drawer)
     shell.content.addClassName(CssClass.DialogGrid)
 

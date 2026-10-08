@@ -35,6 +35,7 @@ import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.findAllButtons
 import tech.testsys.web.components.openDialogs
+import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.testTexts
 import tools.jackson.databind.ObjectMapper
 
@@ -135,6 +136,33 @@ class LookupTests : MockVaadinTests() {
         assertTrue(dialog._find<TextField>().single().isAutofocus)
         assertEquals(10, rows().size)
         assertEquals("" to PageRequest(offset = 0, limit = 10, sort = null), source.requests.single())
+    }
+
+    @Test
+    fun `should open a dialog of size M by default`() {
+        buildTestRow {
+            lookup(
+                "Тур",
+                labelSize = 4,
+                size = 8,
+                fetch = source::fetch,
+                display = { contest -> contest.name },
+                columns = { textColumn("Название") { contest -> contest.name } },
+            )
+        }
+
+        lookupButton(testTexts.lookup.open)._click()
+
+        assertTrue("ts-dialog--md" in openDialogs().single().find("ts-dialog").classes())
+    }
+
+    @Test
+    fun `should open the dialog of the given size`() {
+        buildLookup(dialogSize = DialogSize.XL)
+
+        lookupButton(testTexts.lookup.open)._click()
+
+        assertTrue("ts-dialog--xl" in openDialogs().single().find("ts-dialog").classes())
     }
 
     @Test
@@ -502,6 +530,7 @@ class LookupTests : MockVaadinTests() {
 
     private fun buildLookup(
         pageSize: Int = LOOKUP_PAGE_SIZE,
+        dialogSize: DialogSize = DialogSize.M,
         columns: TableScope<Contest>.() -> Unit = { textColumn("Название") { contest -> contest.name } },
     ): ValueInput<Contest?> {
         lateinit var input: ValueInput<Contest?>
@@ -514,6 +543,7 @@ class LookupTests : MockVaadinTests() {
                 display = { contest -> contest.name },
                 columns = columns,
                 pageSize = pageSize,
+                dialogSize = dialogSize,
             )
         }
         return input

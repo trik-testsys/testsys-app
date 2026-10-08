@@ -560,7 +560,9 @@ block(title = "Посылки") {
 Диалог — `vaadin-dialog` (модальность, затемнение, ловушка фокуса, закрытие по Esc и клику по фону) с разметкой
 `.ts-dialog` внутри; части оверлея Vaadin обнуляются в `testsys-ui/styles/vaadin.css`, как у тоста. Роль диалога —
 `dialog` (у опасного подтверждения — `alertdialog`), доступное имя — заголовок. Крестик закрытия в шапке — `iconAction`
-с подписью `UiTexts.dialog.close`; у опасного подтверждения шапки нет.
+с подписью `UiTexts.dialog.close`; у опасного подтверждения шапки нет. Открытый диалог прикреплён к `UI`, а не
+к странице, и сам при смене страницы не закрылся бы. Поэтому компоненты закрывают его после любого перехода, включая
+«Назад» браузера. Так же закрываются `confirm`, `drawer` и диалоги лукапов.
 
 `confirm` и `dialog` — функции верхнего уровня пакета `overlay`. Они берут `UiTexts` из текущего `UI`, к которому
 их привязывает `page(...)` страницы; вызов без построенной на этом `UI` страницы — `IllegalStateException`.
@@ -621,9 +623,9 @@ val newTour = dialog(title = "Новый тур", subtitle = "Название �
 
 ## Лукап
 
-`lookup(label, labelSize, size, fetch, display, columns, hint = null, pageSize = 10) { }` в `BlockRowScope` — поле
-одной сущности, выбранной в диалоге с поиском и таблицей; возвращает `ValueInput<T?>`. Работает везде, где есть
-строка: в блоке и в диалоге с формой. Поле нескольких сущностей — `lookupMany`, см.
+`lookup(label, labelSize, size, fetch, display, columns, hint = null, pageSize = 10, dialogSize = DialogSize.M) { }`
+в `BlockRowScope` — поле одной сущности, выбранной в диалоге с поиском и таблицей; возвращает `ValueInput<T?>`.
+Работает везде, где есть строка: в блоке и в диалоге с формой. Поле нескольких сущностей — `lookupMany`, см.
 [Несколько значений](#несколько-значений). Образец — `contestLookup` в `ShowcaseLookupSection.kt` витрины.
 
 ```kotlin
@@ -647,7 +649,8 @@ lookup(
   помечена `aria-disabled`, без `aria-haspopup`, а у пустого значения её имя — подпись поля; у нередактируемого поля
   она остаётся в порядке табуляции, и значение можно прочитать. Вид — как у остальных полей в этих состояниях.
   `Binder`, звёздочка, ошибки и `isVisible` — как у всех полей.
-- Диалог выбора — диалог шириной 520 px с заголовком — подписью поля; пока он открыт, второй не открывается:
+- Диалог выбора озаглавлен подписью поля. Его ширину задаёт `dialogSize` так же, как `size` у `dialog`, по умолчанию
+  `M`; больший размер берётся, когда таблице `columns` тесно. Пока диалог открыт, второй не открывается. В диалоге:
   - строка поиска (плейсхолдер и имя `UiTexts.lookup.search`) с фокусом после открытия; запрос без пробелов
     по краям уходит в `fetch` через 300 мс после последнего ввода, таблица возвращается на первую страницу;
   - таблица из `columns` — тот же `TableScope`; пагинация — в подвале диалога, по умолчанию 10 строк
@@ -665,9 +668,9 @@ lookup(
 
 ### Несколько значений
 
-`lookupMany(label, labelSize, size, fetch, display, columns, hint = null, pageSize = 10) { }` в `BlockRowScope` —
-поле нескольких сущностей, отмеченных в диалоге лукапа; возвращает `ValueInput<Set<T>>`, пустое значение — пустой
-набор. Параметры, их проверки, поиск и таблица диалога — как у `lookup`. Образец — `taskLookup` в
+`lookupMany(label, labelSize, size, fetch, display, columns, hint = null, pageSize = 10, dialogSize = DialogSize.M) { }`
+в `BlockRowScope` — поле нескольких сущностей, отмеченных в диалоге лукапа; возвращает `ValueInput<Set<T>>`,
+пустое значение — пустой набор. Параметры, их проверки, поиск и таблица диалога — как у `lookup`. Образец — `taskLookup` в
 `ShowcaseLookupSection.kt` витрины.
 
 - В рамке — чипы `.ts-chip` первых трёх значений с текстом `display(value)`, остальные значения — один чип «+N»
@@ -810,7 +813,7 @@ block(title = "Туры") {
 | Блок | `block` — обычный, `highlightBlock` — тёмный. Тело без отступов включает содержимое, которому они мешают: `table` и скелетон `load`. Вкладки и пилюли в тёмном блоке светлые |
 | Вкладки, пилюли, пустое состояние, меню | Вкладки страницы и блока — всегда `.ts-tabs--bare.ts-tabs--lg`, место вкладок блока — по наличию заголовка; пустое состояние — `.ts-empty`, ошибка загрузки таблицы и `load` — `.ts-empty--error`; разрушительный пункт меню — `destructiveItem` |
 | Бейдж, тег, счётчик, алерт, тост (`toast(kind, title)` — функция верхнего уровня, вызывается из обработчиков) | Перечисления смысла: `Tone`, `TagKind`, `CounterKind`, `FeedbackKind`; текст бейджа передаёт страница |
-| Таблица, диалог | Вид ячейки — по функции колонки, ширина колонки — по долям сетки (см. [Колонки](#колонки)); ширина диалога — по функции: `confirm` — `S`, диалоги лукапов — `M`, `dialog` — по `size` (по умолчанию `M`); `isDanger` — вид `.ts-dialog--alert` |
+| Таблица, диалог | Вид ячейки — по функции колонки, ширина колонки — по долям сетки (см. [Колонки](#колонки)); ширина диалога — по функции: `confirm` — `S`, `dialog` — по `size`, лукапы — по `dialogSize`, у обоих по умолчанию `M`; `isDanger` — вид `.ts-dialog--alert` |
 | Раскладка в блоке | Строки `row { }`; в строке — группы `horizontal(size) { }` и `vertical(size) { }` на своих колонках, в шапке, подвале и группах — `horizontal { }` и `vertical { }` без размера |
 
 ## Ручки и служебные свойства
@@ -841,7 +844,7 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | `FilterChipHandle` | `isVisible`, `bindVisible`, `isSelected` (запись из кода не вызывает `onChange`), `bindSelected(signal)`, `onChange { isOn -> }` — возвращает `filterChip`, см. [Кнопка-фильтр](#кнопка-фильтр) |
 | `PaginationHandle` | `isVisible`, `bindVisible`, `page` (запись из кода не вызывает `onChange`), `pageCount`, `bindPage(signal)`, `onChange { page -> }` — возвращает `pagination`, см. [Пагинация](#пагинация) |
 | `LoadHandle` | `isVisible`, `bindVisible` (скрывает тело блока с пагинацией загруженной таблицы; шапка и собственный подвал блока остаются), `reload()` (из любого потока) — возвращает `load`, см. [Живые обновления](#живые-обновления) |
-| `DialogHandle` | `open()`, `close()`, `isOpen`, `isEditable`, `bindEditable(signal)`, `onClose { }` (при любом закрытии: кнопкой, крестиком, Esc, кликом по фону) |
+| `DialogHandle` | `open()`, `close()`, `isOpen`, `isEditable`, `bindEditable(signal)`, `onClose { }` (при любом закрытии: кнопкой, крестиком, Esc, кликом по фону, переходом) |
 | `ValueInput<T>` | всё из `FieldHandle`, `isEnabled`, `bindEnabled(signal)`, `isEditable`, `bindEditable(signal)` и всё из `HasValue`, `HasValidation`, `HasValidator`, включая `bindValue(signal, writeCallback)`, `bindReadOnly(signal)`, `bindRequiredIndicatorVisible(signal)` |
 
 `ValueInput` привязывается к `Binder` как обычное поле: `binder.forField(input)`. Ручка не является компонентом

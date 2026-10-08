@@ -5,11 +5,13 @@ import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.TableScope
 import tech.testsys.web.components.data.TableSpec
 import tech.testsys.web.components.layout.BlockRowScope
+import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Adds a field of one entity chosen in a dialog that searches with [fetch] and lists rows in [columns], [pageSize]
- * rows a page; [display] gives the text of the chosen value. The label takes [labelSize] and the control [size] columns of the row.
+ * rows a page; [display] gives the text of the chosen value. The label takes [labelSize] and the control [size] columns of the row;
+ * [dialogSize] gives the width of the dialog when the default one does not fit [columns].
  *
  * @param T the type of the entities; they are matched with the fetched rows by `equals` and `hashCode`, so [T] must identify
  * an entity by them, as domain entities do by id.
@@ -26,10 +28,11 @@ fun <T : Any> BlockRowScope.lookup(
     columns: TableScope<T>.() -> Unit,
     hint: String? = null,
     pageSize: Int = LOOKUP_PAGE_SIZE,
+    dialogSize: DialogSize = DialogSize.M,
     configure: ValueInput<T?>.() -> Unit = {},
 ): ValueInput<T?> {
     val tableColumns = lookupColumns(label, pageSize, columns)
-    val control = LookupField(texts, label, display, fetch, pageSize, tableColumns)
+    val control = LookupField(texts, label, display, fetch, pageSize, tableColumns, dialogSize)
     return addInput(label, labelSize, size, control, hint, configure)
 }
 
@@ -45,6 +48,7 @@ internal class LookupField<T : Any>(
     private val fetch: (String, PageRequest) -> Page<T>,
     private val pageSize: Int,
     private val columns: TableSpec<T>,
+    private val dialogSize: DialogSize,
 ) : LookupFrame<T?>(texts, title, emptyValue = null) {
     init {
         updateView(value)
@@ -58,6 +62,7 @@ internal class LookupField<T : Any>(
         val dialog = LookupDialog(
             texts,
             title,
+            dialogSize,
             fetch,
             pageSize,
             columns,

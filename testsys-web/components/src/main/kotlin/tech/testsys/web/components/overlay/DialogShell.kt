@@ -3,10 +3,12 @@
 package tech.testsys.web.components.overlay
 
 import com.vaadin.flow.component.ModalityMode
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.dialog.Dialog
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H2
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.shared.Registration
 import tech.testsys.web.components.actions.iconAction
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
@@ -46,7 +48,8 @@ enum class DialogSize(internal val cssClass: CssClass?) {
 
 /**
  * Modal `vaadin-dialog` drawing the `.ts-dialog` markup: a head with the title and a close button, or an alert body
- * with a warning glyph; [content] and [foot] take the content. [size] gives the width of the card.
+ * with a warning glyph; [content] and [foot] take the content. [size] gives the width of the card. An open dialog
+ * closes on navigation: opening attaches it to the UI, not to the page, so leaving the page would keep it shown.
  */
 internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, size: DialogSize, isAlert: Boolean) {
     val dialog = Dialog().apply {
@@ -62,8 +65,14 @@ internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, siz
     val body = Div().apply { addClassName(CssClass.DialogBody) }
     val content = Div()
     val foot = Div().apply { addClassName(CssClass.DialogFoot) }
+    private var navigation: Registration? = null
 
     init {
+        dialog.addOpenedChangeListener { event ->
+            navigation?.remove()
+            navigation = if (event.isOpened) UI.getCurrent().addAfterNavigationListener { close() } else null
+        }
+
         val card = Div().apply {
             addClassName(CssClass.Dialog)
             size.cssClass?.let { sizeClass -> addClassName(sizeClass) }

@@ -3,6 +3,7 @@ package tech.testsys.web.components.overlay
 import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._setValue
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.signals.BindingActiveException
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.web.components.MockVaadinTests
+import tech.testsys.web.components.SecondTestView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.button
@@ -126,6 +128,17 @@ class FormDialogTests : MockVaadinTests() {
 
         val classes = openDialogs().single().find("ts-dialog").classes().filter { name -> name.startsWith("ts-dialog--") }
         assertEquals(listOfNotNull(sizeClass), classes)
+    }
+
+    @Test
+    fun `should close the dialog on navigation`() {
+        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 8, size = 16) } }
+        handle.open()
+
+        UI.getCurrent().navigate(SecondTestView::class.java)
+
+        assertFalse(handle.isOpen)
+        assertTrue(openDialogs().isEmpty())
     }
 
     @Test

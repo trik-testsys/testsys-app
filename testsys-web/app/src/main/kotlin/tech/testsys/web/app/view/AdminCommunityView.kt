@@ -31,6 +31,7 @@ import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageRowScope
 import tech.testsys.web.components.layout.PageScope
+import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
 import tech.testsys.web.components.texts.UiTexts
@@ -172,7 +173,10 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
     /** Builds the observer creation dialog of [communityId] and returns its opening, which starts with an empty form. */
     private fun observerDialog(communityId: CommunityId, onCreated: (ObserverVo) -> Unit): () -> Unit {
         val draft = Binder<ObserverDraft>()
-        val creation = dialog(title = "Новый наблюдатель", subtitle = "Наблюдатель видит результаты выбранных туров") {
+        val creation = dialog(
+            title = "Новый наблюдатель",
+            subtitle = "Наблюдатель видит результаты выбранных туров",
+        ) {
             row {
                 textInput("Имя", labelSize = 6, size = 18) {
                     draft.forField(this)
@@ -196,6 +200,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
                         textColumn("Название", size = 16) { contest -> contest.name }
                     },
                     hint = "Туры, открытые сообществу",
+                    dialogSize = DialogSize.L,
                 ) {
                     draft.forField(this)
                         .asRequired("Выберите туры")

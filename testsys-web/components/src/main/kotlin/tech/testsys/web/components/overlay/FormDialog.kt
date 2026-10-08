@@ -63,7 +63,7 @@ class DialogHandle internal constructor(private val shell: DialogShell, private 
     }
 
     /**
-     * Runs [listener] whenever the dialog closes, by an action, the close button, Esc or a click outside.
+     * Runs [listener] whenever the dialog closes, by an action, the close button, Esc, a click outside or navigation.
      *
      * @since %CURRENT_VERSION%
      */

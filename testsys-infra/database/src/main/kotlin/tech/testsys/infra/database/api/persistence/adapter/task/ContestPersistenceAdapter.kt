@@ -6,6 +6,7 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.ContestFilter
+import tech.testsys.domain.contract.persistence.ObserverContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
@@ -49,6 +50,38 @@ class ContestPersistenceAdapter(
     ContestRepository {
 
     private val contestJpaEntityRepository: ContestJpaEntityRepository = jpaEntityRepository
+
+    @Transactional(readOnly = true)
+    override fun findAvailableToObserver(
+        contestIds: Set<ContestId>,
+        pagination: Pagination,
+        filter: ObserverContestFilter,
+    ): Page<Contest> {
+        if (contestIds.isEmpty()) return Page(content = emptyList(), pagination = pagination, totalElements = 0)
+        val specification = Specification<ContestJpaEntity> { entity, _, builder ->
+            val predicates = mutableListOf(
+                entity.get<Long>("id").`in`(contestIds.map { contest -> contest.value }),
+            )
+            filter.name?.let { name ->
+                predicates.add(builder.gt(builder.locate(builder.lower(entity.get("name")), name.lowercase()), 0))
+            }
+            filter.contestId?.let { contest ->
+                predicates.add(builder.equal(entity.get<Long>("id"), contest.value))
+            }
+            builder.and(*predicates.toTypedArray())
+        }
+        val orders = pagination.sort.orders.map { order ->
+            JpaSort.Order(JpaSort.Direction.valueOf(order.direction.name), order.field)
+        }
+        val stableOrders = if (orders.any { order -> order.property == "id" }) orders else orders + JpaSort.Order.asc("id")
+        val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
+        val page = contestJpaEntityRepository.findAll(specification, pageable)
+        return Page(
+            content = page.content.map { entity -> assemble(entity) },
+            pagination = pagination,
+            totalElements = page.totalElements,
+        )
+    }
 
     @Transactional(readOnly = true)
     override fun findByTaskId(taskId: TaskId): List<Contest> =

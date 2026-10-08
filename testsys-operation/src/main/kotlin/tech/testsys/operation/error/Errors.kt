@@ -272,10 +272,11 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
     ViewParticipantTaskError,
     DownloadParticipantTaskResourceError,
     SendParticipantSolutionError,
+    DownloadObserverResultError,
     EntityNotExistsError
 
 /**
- * The competition belongs to another user.
+ * The competition is not accessible to the user.
  *
  * @property competitionId the id of the inaccessible competition.
  * @since %CURRENT_VERSION%
@@ -285,6 +286,7 @@ data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
     ViewCompetitionContestError,
     AddCompetitionContestError,
     CreateParticipantsError,
+    DownloadObserverResultError,
     AccessDeniedError
 
 /**
@@ -354,6 +356,35 @@ data class CompetitionParticipantLimitExceededError(
 // region AdministratorOperations
 
 /**
+ * Failure of creating an observer in a community owned by the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateObserverError : OperationError
+
+/**
+ * The observer name is empty or contains only whitespace.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object ObserverNameBlankError : CreateObserverError
+
+/**
+ * The observer name exceeds 255 Unicode code points.
+ *
+ * @property observerName the rejected name.
+ * @since %CURRENT_VERSION%
+ */
+data class ObserverNameTooLongError(val observerName: String) : CreateObserverError
+
+/**
+ * No contests were selected for the observer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object ObserverContestsEmptyError : CreateObserverError
+
+/**
  * Failure of listing users available to the administrator.
  *
  * @since %CURRENT_VERSION%
@@ -401,6 +432,7 @@ sealed interface RefreshCommunityInviteError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object MissedAdministratorRoleError :
+    CreateObserverError,
     ViewUsersError,
     ViewUserError,
     CreateCommunityInviteError,
@@ -913,7 +945,8 @@ data class AttemptDurationExceedsContestDurationError(
  */
 data class ContestNotExistsError(
     val contestId: ContestId,
-) : EntityNotExistsError,
+) : CreateObserverError,
+    EntityNotExistsError,
     EditContestError,
     ShareContestError,
     AttachTaskError,
@@ -943,7 +976,8 @@ data class ContestNotExistsError(
  */
 data class ContestAccessDeniedError(
     val contestId: ContestId,
-) : AccessDeniedError,
+) : CreateObserverError,
+    AccessDeniedError,
     EditContestError,
     ShareContestError,
     AttachTaskError,
@@ -1052,6 +1086,7 @@ data object TaskAlreadyHasStatementError : AttachStatementError
  * @since %CURRENT_VERSION%
  */
 data class CommunityNotExistsError(val communityId: CommunityId) :
+    CreateObserverError,
     EntityNotExistsError,
     ShareTaskError,
     ShareContestError,
@@ -1108,6 +1143,7 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
  * @since %CURRENT_VERSION%
  */
 data class CommunityAccessDeniedError(val communityId: CommunityId) :
+    CreateObserverError,
     AccessDeniedError,
     ShareTaskError,
     ShareContestError,
@@ -1340,6 +1376,31 @@ data class ResourceNotUploadedToTaskError(val taskId: TaskId, val versionBucket:
 data class ResourceVersionNotExistsError(val versionBucket: VersionBucket, val versionId: DomainId) :
     EntityNotExistsError,
     DownloadResourceVersionError
+
+// region ObserverOperations
+
+/**
+ * Failure of listing the observer's assigned contests.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewObserverContestsError : OperationError
+
+/**
+ * Failure of downloading results of a competition containing an observer's assigned contest.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadObserverResultError : OperationError
+
+/**
+ * The user is not an observer.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object MissedObserverRoleError : MissedRequiredRoleError, ViewObserverContestsError, DownloadObserverResultError
+
+// endregion
 
 // region StudyOperations
 

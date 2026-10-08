@@ -54,7 +54,7 @@ class UserApiTests {
             version = EntityVersion(7)
             data = observerData {
                 community(7)
-                competitions(listOf(10L, 20L))
+                contests(listOf(10L, 20L))
                 accessToken("observer-token", algorithm = HashAlgorithm.Identity)
                 name = "Observer"
             }
@@ -71,7 +71,19 @@ class UserApiTests {
             Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
             Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
             Assertions.assertEquals(origin.data.name, copy.data.name)
-            Assertions.assertEquals(origin.data.competitions.ids, copy.data.competitions.ids)
+            Assertions.assertEquals(origin.data.contests.ids, copy.data.contests.ids)
+        }
+
+        @Test
+        fun `should change assigned contests without losing other fields or version`() {
+            val copy = origin.withData { contests(listOf(30L)) }
+
+            Assertions.assertEquals(listOf(30L), copy.data.contests.ids.map { it.value })
+            Assertions.assertEquals(listOf(10L, 20L), origin.data.contests.ids.map { it.value })
+            Assertions.assertEquals(origin.data.community.id, copy.data.community.id)
+            Assertions.assertEquals(origin.data.name, copy.data.name)
+            Assertions.assertEquals(origin.data.accessTokenHash, copy.data.accessTokenHash)
+            Assertions.assertEquals(origin.version, copy.version)
         }
 
         @Test

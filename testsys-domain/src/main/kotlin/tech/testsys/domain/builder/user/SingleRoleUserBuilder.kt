@@ -6,6 +6,7 @@ import tech.testsys.domain.builder.util.lazify
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.domain.model.user.Participant
@@ -91,7 +92,7 @@ class ParticipantBuilder : SingleRoleUserBuilder<Participant, ParticipantData, P
  * Builder of [ObserverData]. Required: [community], [accessToken] or [storedAccessToken], [name].
  *
  * @property community the id of the community the observer is a member of, or `null` if not set yet.
- * @property competitions the ids of the competitions the observer may view.
+ * @property contests the ids of the contests assigned to the observer.
  * @property name the name of the observer, or `null` if not set yet.
  * @since %CURRENT_VERSION%
  */
@@ -99,7 +100,7 @@ class ObserverDataBuilder : UserDataBuilder<ObserverData>() {
 
     var community: CommunityId? = null
 
-    var competitions = mutableListOf<CompetitionId>()
+    var contests = mutableListOf<ContestId>()
 
     var name: String? = null
 
@@ -113,12 +114,12 @@ class ObserverDataBuilder : UserDataBuilder<ObserverData>() {
     }
 
     /**
-     * Sets [competitions] from raw ids.
+     * Sets [contests] from raw ids.
      *
      * @since %CURRENT_VERSION%
      */
-    fun competitions(competitions: Iterable<Long>) {
-        this.competitions = competitions.map { CompetitionId(it) }.toMutableList()
+    fun contests(contests: Iterable<Long>) {
+        this.contests = contests.map { ContestId(it) }.toMutableList()
     }
 
     override fun build(): ObserverData {
@@ -126,7 +127,7 @@ class ObserverDataBuilder : UserDataBuilder<ObserverData>() {
 
         return ObserverData(
             community = community.lazify(),
-            competitions = competitions.lazify(),
+            contests = contests.lazify(),
             accessTokenHash = requireAccessTokenHash(),
             name = requireField(name) { ::name },
         )

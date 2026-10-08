@@ -9,28 +9,28 @@ import tech.testsys.infra.database.internal.jpa.entity.CompositeJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 
 /**
- * Composite key of [CompetitionToObserverJpaEntity].
+ * Composite key of [ContestToObserverJpaEntity].
  *
- * @property competitionId id of the competition.
+ * @property contestId id of the contest.
  * @property observerId id of the observer.
  * @since %CURRENT_VERSION%
  */
 @Embeddable
 @InternalDatabaseApi
-data class CompetitionToObserverId(
-    val competitionId: Long,
+data class ContestToObserverId(
+    val contestId: Long,
     val observerId: Long,
 ) : CompositeId
 
 /**
- * Join row: an observer may watch a competition.
+ * Join row: an observer may watch a contest.
  *
  * @since %CURRENT_VERSION%
  */
 @Entity
 @CompositeKeyConstructor
 @InternalDatabaseApi
-class CompetitionToObserverJpaEntity(id: CompetitionToObserverId) : CompositeJpaEntity<CompetitionToObserverId>(id)
+class ContestToObserverJpaEntity(id: ContestToObserverId) : CompositeJpaEntity<ContestToObserverId>(id)
 
 /**
  * JPA entity of [tech.testsys.domain.model.user.ObserverData].

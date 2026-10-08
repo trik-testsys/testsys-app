@@ -6,6 +6,8 @@ import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.Contest
+import tech.testsys.domain.model.task.ContestId
 import java.time.Instant
 
 /**
@@ -57,18 +59,18 @@ class Participant(
  * Data of an [Observer].
  *
  * @property community the community the observer is a member of.
- * @property competitions the competitions whose results the observer may view.
+ * @property contests the contests assigned to the observer.
  * @since %CURRENT_VERSION%
  */
 data class ObserverData(
     override val accessTokenHash: AccessTokenHash,
     override val name: String,
     val community: LazyEntity<CommunityId, Community>,
-    val competitions: LazyEntityList<CompetitionId, Competition>,
+    val contests: LazyEntityList<ContestId, Contest>,
 ) : UserData
 
 /**
- * A fixed-role user who may view the results of the competitions assigned to them.
+ * A fixed-role user who may view competitions containing any contest assigned to them, limited to those contests.
  *
  * @property data the data of the observer.
  * @since %CURRENT_VERSION%

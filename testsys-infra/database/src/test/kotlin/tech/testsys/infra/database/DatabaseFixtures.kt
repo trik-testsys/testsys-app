@@ -199,13 +199,18 @@ class DatabaseFixtures(
         )
     }
 
-    fun observer(community: Community = community(), rawAccessToken: String = unique("token")): Observer {
+    fun observer(
+        community: Community = community(),
+        contests: List<Contest> = emptyList(),
+        rawAccessToken: String = unique("token"),
+    ): Observer {
         val communityId = community.id.value
         return observers.save(
             observerData {
                 community(communityId)
                 accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
                 name = unique("Observer")
+                this.contests = contests.map { contest -> contest.id }.toMutableList()
             },
         )
     }

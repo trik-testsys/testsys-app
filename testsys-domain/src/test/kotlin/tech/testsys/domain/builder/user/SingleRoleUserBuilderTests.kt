@@ -42,7 +42,7 @@ class ObserverBuilderTests : DomainEntityBuilderTests<Observer, ObserverData, Ob
             community(7)
             accessToken("token", algorithm = HashAlgorithm.Identity)
             name = "Observer"
-            competitions(listOf(1L, 2L))
+            contests(listOf(1L, 2L))
         },
     )
 }

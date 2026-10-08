@@ -3,7 +3,7 @@ package tech.testsys.infra.database.api.persistence.adapter.user.single
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
-import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.domain.model.user.SingleRoleUserId
@@ -13,7 +13,7 @@ import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.SingleRoleToUserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.UserSingleRoleJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
-import tech.testsys.infra.database.internal.jpa.repository.user.single.CompetitionToObserverJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.user.single.ContestToObserverJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.ObserverDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.single.ObserverMapping
@@ -24,7 +24,7 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
  * Persistence adapter of [Observer] entities backed by [UserJpaEntity] rows having an observer data row.
- * Watched competitions are synced through the join table.
+ * Watched contests are synced through the join table.
  *
  * @since %CURRENT_VERSION%
  */
@@ -33,7 +33,7 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 class ObserverPersistenceAdapter(
     jpaEntityRepository: UserJpaEntityRepository,
     private val observerDataJpaEntityRepository: ObserverDataJpaEntityRepository,
-    private val competitionToObserverJpaEntityRepository: CompetitionToObserverJpaEntityRepository,
+    private val contestToObserverJpaEntityRepository: ContestToObserverJpaEntityRepository,
     private val singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository,
 ) : AbstractUserPersistenceAdapter<ObserverData, SingleRoleUserId, Observer>(jpaEntityRepository),
     ObserverRepository {
@@ -47,12 +47,12 @@ class ObserverPersistenceAdapter(
             SingleRoleToUserJpaEntity(singleRole = UserSingleRoleJpaEnum.OBSERVER, userId = userId),
         )
         val savedDataJpaEntity = observerDataJpaEntityRepository.save(ObserverMapping.toDataJpaEntity(userId, data))
-        val competitionIds = data.competitions.ids.distinct()
-        competitionToObserverJpaEntityRepository.saveAll(
-            ObserverMapping.toCompetitionAssociations(userId, competitionIds.map { it.value }),
+        val contestIds = data.contests.ids.distinct()
+        contestToObserverJpaEntityRepository.saveAll(
+            ObserverMapping.toContestAssociations(userId, contestIds.map { it.value }),
         )
 
-        val domainEntity = ObserverMapping.toDomain(savedUserJpaEntity, savedDataJpaEntity, competitionIds)
+        val domainEntity = ObserverMapping.toDomain(savedUserJpaEntity, savedDataJpaEntity, contestIds)
         return domainEntity
     }
 
@@ -67,18 +67,18 @@ class ObserverPersistenceAdapter(
         val updatedDataJpaEntity = observerDataJpaEntityRepository.save(
             ObserverMapping.toDataJpaEntity(updatedUserJpaEntity.requireId(), entity, currentDataJpaEntity),
         )
-        val competitionIds = entity.data.competitions.ids.distinct()
-        syncCompetitions(updatedUserJpaEntity.requireId(), competitionIds)
+        val contestIds = entity.data.contests.ids.distinct()
+        syncContests(updatedUserJpaEntity.requireId(), contestIds)
 
-        val domainEntity = ObserverMapping.toDomain(updatedUserJpaEntity, updatedDataJpaEntity, competitionIds)
+        val domainEntity = ObserverMapping.toDomain(updatedUserJpaEntity, updatedDataJpaEntity, contestIds)
         return domainEntity
     }
 
     @Transactional
     override fun removeById(id: SingleRoleUserId) {
         val dataJpaEntity = observerDataJpaEntityRepository.findByUserId(id.value) ?: return
-        competitionToObserverJpaEntityRepository.deleteAll(
-            competitionToObserverJpaEntityRepository.findAllByObserverId(id.value),
+        contestToObserverJpaEntityRepository.deleteAll(
+            contestToObserverJpaEntityRepository.findAllByObserverId(id.value),
         )
         observerDataJpaEntityRepository.delete(dataJpaEntity)
         singleRoleToUserJpaEntityRepository.deleteAll(singleRoleToUserJpaEntityRepository.findAllByUserId(id.value))
@@ -93,20 +93,20 @@ class ObserverPersistenceAdapter(
     override fun assemble(jpaEntity: UserJpaEntity): Observer {
         val userId = jpaEntity.requireId()
         val dataJpaEntity = observerDataJpaEntityRepository.findByUserId(userId).requireById(userId)
-        val competitionIds = competitionToObserverJpaEntityRepository.findAllByObserverId(userId)
-            .map { CompetitionId(it.id.competitionId) }
-        val domainEntity = ObserverMapping.toDomain(jpaEntity, dataJpaEntity, competitionIds)
+        val contestIds = contestToObserverJpaEntityRepository.findAllByObserverId(userId)
+            .map { ContestId(it.id.contestId) }
+        val domainEntity = ObserverMapping.toDomain(jpaEntity, dataJpaEntity, contestIds)
         return domainEntity
     }
 
-    private fun syncCompetitions(observerId: Long, target: List<CompetitionId>) = syncJoinTable(
-        existing = competitionToObserverJpaEntityRepository.findAllByObserverId(observerId),
+    private fun syncContests(observerId: Long, target: List<ContestId>) = syncJoinTable(
+        existing = contestToObserverJpaEntityRepository.findAllByObserverId(observerId),
         targetKeys = target,
-        keyOf = { CompetitionId(it.id.competitionId) },
+        keyOf = { ContestId(it.id.contestId) },
         buildAssociation = {
-            ObserverMapping.toCompetitionAssociations(observerId, listOf(it.value)).single()
+            ObserverMapping.toContestAssociations(observerId, listOf(it.value)).single()
         },
-        deleteAll = { competitionToObserverJpaEntityRepository.deleteAll(it) },
-        saveAll = { competitionToObserverJpaEntityRepository.saveAll(it) },
+        deleteAll = { contestToObserverJpaEntityRepository.deleteAll(it) },
+        saveAll = { contestToObserverJpaEntityRepository.saveAll(it) },
     )
 }

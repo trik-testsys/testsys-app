@@ -123,73 +123,85 @@ class UserOperationsTests {
     @Nested
     inner class AuthenticateTests {
 
-        @Test
-        fun `should return multiple-role user whose access code matches`() {
-            val user = testMultipleRoleUser {}
-            every { multipleRoleUsers.findByAccessToken("token") } returns user
+        @Nested
+        inner class HappyPathTests {
 
-            val result = operations.authenticate(accessToken = "token").getOrThrow()
+            @Test
+            fun `should return multiple-role user whose access code matches`() {
+                val user = testMultipleRoleUser {}
+                every { multipleRoleUsers.findByAccessToken("token") } returns user
 
-            assertSame(user, result)
-        }
+                val result = operations.authenticate(accessToken = "token").getOrThrow()
 
-        @Test
-        fun `should return participant whose access code matches`() {
-            val user = testParticipant()
-            every { participants.findByAccessToken("participant") } returns user
+                assertSame(user, result)
+            }
 
-            val result = operations.authenticate(accessToken = "participant").getOrThrow()
+            @Test
+            fun `should return participant whose access code matches`() {
+                val user = testParticipant()
+                every { participants.findByAccessToken("participant") } returns user
 
-            assertSame(user, result)
-        }
+                val result = operations.authenticate(accessToken = "participant").getOrThrow()
 
-        @Test
-        fun `should return observer whose access code matches`() {
-            val user = testObserver()
-            every { observers.findByAccessToken("observer") } returns user
+                assertSame(user, result)
+            }
 
-            val result = operations.authenticate(accessToken = "observer").getOrThrow()
+            @Test
+            fun `should return observer whose access code matches`() {
+                val user = testObserver()
+                every { observers.findByAccessToken("observer") } returns user
 
-            assertSame(user, result)
-        }
+                val result = operations.authenticate(accessToken = "observer").getOrThrow()
 
-        @Test
-        fun `should return supervisor whose access code matches`() {
-            val user = testSupervisor()
-            every { supervisors.findByAccessToken("supervisor") } returns user
+                assertSame(user, result)
+            }
 
-            val result = operations.authenticate(accessToken = "supervisor").getOrThrow()
+            @Test
+            fun `should return supervisor whose access code matches`() {
+                val user = testSupervisor()
+                every { supervisors.findByAccessToken("supervisor") } returns user
 
-            assertSame(user, result)
-        }
+                val result = operations.authenticate(accessToken = "supervisor").getOrThrow()
 
-        @Test
-        fun `should raise InvalidAccessTokenError if no user has the access code`() {
-            assertRaises(InvalidAccessTokenError) {
-                operations.authenticate(accessToken = "unknown")
+                assertSame(user, result)
             }
         }
 
-        @Test
-        fun `should raise InvalidAccessTokenError if access code differs only by surrounding whitespace`() {
-            every { multipleRoleUsers.findByAccessToken("token") } returns testMultipleRoleUser {}
+        @Nested
+        inner class RefusalTests {
 
-            assertRaises(InvalidAccessTokenError) {
-                operations.authenticate(accessToken = " token ")
+            @Test
+            fun `should raise InvalidAccessTokenError if no user has the access code`() {
+                assertRaises(InvalidAccessTokenError) {
+                    operations.authenticate(accessToken = "unknown")
+                }
+            }
+
+            @Test
+            fun `should raise InvalidAccessTokenError if access code differs only by surrounding whitespace`() {
+                every { multipleRoleUsers.findByAccessToken("token") } returns testMultipleRoleUser {}
+
+                assertRaises(InvalidAccessTokenError) {
+                    operations.authenticate(accessToken = " token ")
+                }
             }
         }
 
-        @Test
-        fun `should not update any user when authenticating`() {
-            every { multipleRoleUsers.findByAccessToken("token") } returns testMultipleRoleUser {}
+        @Nested
+        inner class InvariantTests {
 
-            operations.authenticate(accessToken = "token")
+            @Test
+            fun `should not update any user when authenticating`() {
+                every { multipleRoleUsers.findByAccessToken("token") } returns testMultipleRoleUser {}
 
-            verify(exactly = 0) {
-                multipleRoleUsers.update(any<MultipleRoleUser>())
-                participants.update(any<Participant>())
-                observers.update(any<Observer>())
-                supervisors.update(any<Supervisor>())
+                operations.authenticate(accessToken = "token")
+
+                verify(exactly = 0) {
+                    multipleRoleUsers.update(any<MultipleRoleUser>())
+                    participants.update(any<Participant>())
+                    observers.update(any<Observer>())
+                    supervisors.update(any<Supervisor>())
+                }
             }
         }
     }
@@ -197,179 +209,230 @@ class UserOperationsTests {
     @Nested
     inner class RequestRegistrationTests {
 
-        @Test
-        fun `should save new request with generated code, expiry and attempts if email has no request`() {
-            val data = slot<RegistrationRequestData>()
-            every { registrationRequests.save(capture(data)) } answers { savedRequest(firstArg()) }
+        @Nested
+        inner class HappyPathTests {
 
-            operations.requestRegistration(email = "user@example.com")
+            @Test
+            fun `should save new request with generated code, expiry and attempts if email has no request`() {
+                val data = slot<RegistrationRequestData>()
+                every { registrationRequests.save(capture(data)) } answers { savedRequest(firstArg()) }
 
-            assertEquals("user@example.com", data.captured.email)
-            assertEquals("87654321", data.captured.confirmationCode)
-            assertEquals(Instant.parse("2026-01-01T00:15:00Z"), data.captured.expiresAt)
-            assertEquals(3, data.captured.attemptsLeft)
-        }
-
-        @Test
-        fun `should return id of the saved request`() {
-            val result = operations.requestRegistration(email = "user@example.com")
-
-            assertEquals(RegistrationRequestId(41), result.getOrThrow())
-        }
-
-        @Test
-        fun `should send confirmation code of the new request to the email`() {
-            operations.requestRegistration(email = "user@example.com")
-
-            verify(exactly = 1) {
-                mailSender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "87654321")
-            }
-        }
-
-        @Test
-        fun `should trim and lowercase email`() {
-            val data = slot<RegistrationRequestData>()
-            every { registrationRequests.save(capture(data)) } answers { savedRequest(firstArg()) }
-
-            operations.requestRegistration(email = "  User@Example.COM ")
-
-            assertEquals("user@example.com", data.captured.email)
-        }
-
-        @Test
-        fun `should check binding of the normalized email`() {
-            every { multipleRoleUsers.findByEmail("user@example.com") } returns testMultipleRoleUser {}
-
-            assertRaises(EmailAlreadyBoundError) {
-                operations.requestRegistration(email = " User@Example.com")
-            }
-        }
-
-        @ParameterizedTest
-        @ValueSource(strings = ["userexample.com", "user@@example.com", "a@b@example.com", "@example.com", "user@", "  "])
-        fun `should raise InvalidEmailError if email lacks exactly one at sign with non-empty parts`(email: String) {
-            assertRaises(InvalidEmailError) {
-                operations.requestRegistration(email = email)
-            }
-        }
-
-        @Test
-        fun `should accept email of 255 characters`() {
-            val email = "u".repeat(243) + "@example.com"
-
-            val result = operations.requestRegistration(email = email)
-
-            assertEquals(RegistrationRequestId(41), result.getOrThrow())
-        }
-
-        @Test
-        fun `should accept email of 255 code points outside the basic plane`() {
-            val email = "😀".repeat(243) + "@example.com"
-
-            val result = operations.requestRegistration(email = email)
-
-            assertEquals(RegistrationRequestId(41), result.getOrThrow())
-        }
-
-        @Test
-        fun `should raise InvalidEmailError if email is longer than 255 characters`() {
-            val email = "u".repeat(244) + "@example.com"
-
-            assertRaises(InvalidEmailError) {
-                operations.requestRegistration(email = email)
-            }
-        }
-
-        @Test
-        fun `should raise EmailAlreadyBoundError and send nothing if email is bound to a user`() {
-            every { multipleRoleUsers.findByEmail("user@example.com") } returns testMultipleRoleUser {}
-
-            assertRaises(EmailAlreadyBoundError) {
                 operations.requestRegistration(email = "user@example.com")
-            }
-            verify(exactly = 0) { mailSender.sendRegistrationConfirmationCode(any(), any()) }
-        }
 
-        @Test
-        fun `should not change an active request`() {
-            every { registrationRequests.findByEmail("user@example.com") } returns testRegistrationRequest {
-                expiresAt = Instant.parse("2026-01-01T00:05:00Z")
-                attemptsLeft = 2
+                assertEquals("user@example.com", data.captured.email)
+                assertEquals("87654321", data.captured.confirmationCode)
+                assertEquals(Instant.parse("2026-01-01T00:15:00Z"), data.captured.expiresAt)
+                assertEquals(3, data.captured.attemptsLeft)
             }
 
-            operations.requestRegistration(email = "user@example.com")
+            @Test
+            fun `should return id of the saved request if email has no request`() {
+                val result = operations.requestRegistration(email = "user@example.com")
 
-            verify(exactly = 0) {
-                registrationRequests.save(any<RegistrationRequestData>())
-                registrationRequests.update(any<RegistrationRequest>())
+                assertEquals(RegistrationRequestId(41), result.getOrThrow())
+            }
+
+            @Test
+            fun `should send confirmation code of the new request to the email if email has no request`() {
+                operations.requestRegistration(email = "user@example.com")
+
+                verify(exactly = 1) {
+                    mailSender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "87654321")
+                }
+            }
+
+            @Test
+            fun `should save trimmed lower-case email if email has surrounding whitespace and capital letters`() {
+                val data = slot<RegistrationRequestData>()
+                every { registrationRequests.save(capture(data)) } answers { savedRequest(firstArg()) }
+
+                operations.requestRegistration(email = "  User@Example.COM ")
+
+                assertEquals("user@example.com", data.captured.email)
+            }
+
+            @Test
+            fun `should accept email of 255 characters`() {
+                val email = "u".repeat(243) + "@example.com"
+
+                val result = operations.requestRegistration(email = email)
+
+                assertEquals(RegistrationRequestId(41), result.getOrThrow())
+            }
+
+            @Test
+            fun `should accept email of 255 code points outside the basic plane`() {
+                val email = "😀".repeat(243) + "@example.com"
+
+                val result = operations.requestRegistration(email = email)
+
+                assertEquals(RegistrationRequestId(41), result.getOrThrow())
+            }
+
+            @Test
+            fun `should accept email of 255 characters if surrounding whitespace makes it longer`() {
+                val email = "  " + "u".repeat(243) + "@example.com  "
+
+                val result = operations.requestRegistration(email = email)
+
+                assertEquals(RegistrationRequestId(41), result.getOrThrow())
+            }
+
+            @Test
+            fun `should overwrite an expired request with a new code, expiry and attempts under the same id`() {
+                val existing = testRegistrationRequest {
+                    expiresAt = Instant.parse("2025-12-31T23:59:59Z")
+                    attemptsLeft = 2
+                }
+                every { registrationRequests.findByEmail("user@example.com") } returns existing
+                val updated = slot<RegistrationRequest>()
+                every { registrationRequests.update(capture(updated)) } answers { firstArg() }
+
+                operations.requestRegistration(email = "user@example.com")
+
+                assertEquals(existing.id, updated.captured.id)
+                assertEquals("87654321", updated.captured.data.confirmationCode)
+                assertEquals(Instant.parse("2026-01-01T00:15:00Z"), updated.captured.data.expiresAt)
+                assertEquals(3, updated.captured.data.attemptsLeft)
+            }
+
+            @Test
+            fun `should overwrite a request expiring exactly now with a new code`() {
+                every { registrationRequests.findByEmail("user@example.com") } returns testRegistrationRequest { expiresAt = now }
+                val updated = slot<RegistrationRequest>()
+                every { registrationRequests.update(capture(updated)) } answers { firstArg() }
+
+                operations.requestRegistration(email = "user@example.com")
+
+                assertEquals("87654321", updated.captured.data.confirmationCode)
+            }
+
+            @Test
+            fun `should overwrite a request without attempts left with a new code`() {
+                every { registrationRequests.findByEmail("user@example.com") } returns testRegistrationRequest { attemptsLeft = 0 }
+                val updated = slot<RegistrationRequest>()
+                every { registrationRequests.update(capture(updated)) } answers { firstArg() }
+
+                operations.requestRegistration(email = "user@example.com")
+
+                assertEquals("87654321", updated.captured.data.confirmationCode)
+                assertEquals(3, updated.captured.data.attemptsLeft)
+                verify(exactly = 1) {
+                    mailSender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "87654321")
+                }
             }
         }
 
-        @Test
-        fun `should resend the same code and return the same id if the request is active`() {
-            every { registrationRequests.findByEmail("user@example.com") } returns testRegistrationRequest()
+        @Nested
+        inner class RefusalTests {
 
-            val result = operations.requestRegistration(email = "user@example.com")
+            @ParameterizedTest
+            @ValueSource(strings = ["userexample.com", "user@@example.com", "a@b@example.com", "@example.com", "user@", "  "])
+            fun `should raise InvalidEmailError and store and send nothing if email lacks exactly one at sign with non-empty parts`(
+                email: String,
+            ) {
+                assertRaises(InvalidEmailError) {
+                    operations.requestRegistration(email = email)
+                }
+                verify(exactly = 0) {
+                    registrationRequests.save(any<RegistrationRequestData>())
+                    registrationRequests.update(any<RegistrationRequest>())
+                    mailSender.sendRegistrationConfirmationCode(any(), any())
+                }
+            }
 
-            assertEquals(RegistrationRequestId(31), result.getOrThrow())
-            verify(exactly = 1) {
-                mailSender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "12345678")
+            @Test
+            fun `should raise InvalidEmailError if email is longer than 255 characters`() {
+                val email = "u".repeat(244) + "@example.com"
+
+                assertRaises(InvalidEmailError) {
+                    operations.requestRegistration(email = email)
+                }
+            }
+
+            @Test
+            fun `should raise InvalidEmailError if email is longer than 255 code points outside the basic plane`() {
+                val email = "😀".repeat(244) + "@example.com"
+
+                assertRaises(InvalidEmailError) {
+                    operations.requestRegistration(email = email)
+                }
+            }
+
+            @Test
+            fun `should raise InvalidEmailError if flag emojis make email longer than 255 code points`() {
+                val email = "🇷🇺".repeat(122) + "@example.com"
+
+                assertRaises(InvalidEmailError) {
+                    operations.requestRegistration(email = email)
+                }
+            }
+
+            @Test
+            fun `should raise EmailAlreadyBoundError and store and send nothing if email is bound to a user`() {
+                every { multipleRoleUsers.findByEmail("user@example.com") } returns testMultipleRoleUser {}
+
+                assertRaises(EmailAlreadyBoundError) {
+                    operations.requestRegistration(email = "user@example.com")
+                }
+                verify(exactly = 0) {
+                    registrationRequests.save(any<RegistrationRequestData>())
+                    registrationRequests.update(any<RegistrationRequest>())
+                    mailSender.sendRegistrationConfirmationCode(any(), any())
+                }
+            }
+
+            @Test
+            fun `should raise EmailAlreadyBoundError if bound email differs only by case and surrounding whitespace`() {
+                every { multipleRoleUsers.findByEmail("user@example.com") } returns testMultipleRoleUser {}
+
+                assertRaises(EmailAlreadyBoundError) {
+                    operations.requestRegistration(email = " User@Example.com")
+                }
             }
         }
 
-        @Test
-        fun `should send identical codes on repeated requests while the request is active`() {
-            every { registrationRequests.findByEmail("user@example.com") } returns testRegistrationRequest()
+        @Nested
+        inner class InvariantTests {
 
-            operations.requestRegistration(email = "user@example.com")
-            operations.requestRegistration(email = "user@example.com")
+            @Test
+            fun `should not save or update the request if it is active`() {
+                every { registrationRequests.findByEmail("user@example.com") } returns testRegistrationRequest {
+                    expiresAt = Instant.parse("2026-01-01T00:05:00Z")
+                    attemptsLeft = 2
+                }
 
-            verify(exactly = 2) {
-                mailSender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "12345678")
+                operations.requestRegistration(email = "user@example.com")
+
+                verify(exactly = 0) {
+                    registrationRequests.save(any<RegistrationRequestData>())
+                    registrationRequests.update(any<RegistrationRequest>())
+                }
             }
-        }
 
-        @Test
-        fun `should overwrite an expired request with a new code, expiry and attempts under the same id`() {
-            val existing = testRegistrationRequest {
-                expiresAt = Instant.parse("2025-12-31T23:59:59Z")
-                attemptsLeft = 2
+            @Test
+            fun `should not save or update the request if it expires one nanosecond after now`() {
+                every { registrationRequests.findByEmail("user@example.com") } returns
+                    testRegistrationRequest { expiresAt = now.plusNanos(1) }
+
+                operations.requestRegistration(email = "user@example.com")
+
+                verify(exactly = 0) {
+                    registrationRequests.save(any<RegistrationRequestData>())
+                    registrationRequests.update(any<RegistrationRequest>())
+                }
             }
-            every { registrationRequests.findByEmail("user@example.com") } returns existing
-            val updated = slot<RegistrationRequest>()
-            every { registrationRequests.update(capture(updated)) } answers { firstArg() }
 
-            operations.requestRegistration(email = "user@example.com")
+            @Test
+            fun `should resend the same code and return the same id if the request is active`() {
+                every { registrationRequests.findByEmail("user@example.com") } returns testRegistrationRequest()
 
-            assertEquals(existing.id, updated.captured.id)
-            assertEquals("87654321", updated.captured.data.confirmationCode)
-            assertEquals(Instant.parse("2026-01-01T00:15:00Z"), updated.captured.data.expiresAt)
-            assertEquals(3, updated.captured.data.attemptsLeft)
-        }
+                val result = operations.requestRegistration(email = "user@example.com")
 
-        @Test
-        fun `should overwrite a request expiring exactly now`() {
-            every { registrationRequests.findByEmail("user@example.com") } returns testRegistrationRequest { expiresAt = now }
-            val updated = slot<RegistrationRequest>()
-            every { registrationRequests.update(capture(updated)) } answers { firstArg() }
-
-            operations.requestRegistration(email = "user@example.com")
-
-            assertEquals("87654321", updated.captured.data.confirmationCode)
-        }
-
-        @Test
-        fun `should overwrite a request without attempts left with a new code`() {
-            every { registrationRequests.findByEmail("user@example.com") } returns testRegistrationRequest { attemptsLeft = 0 }
-            val updated = slot<RegistrationRequest>()
-            every { registrationRequests.update(capture(updated)) } answers { firstArg() }
-
-            operations.requestRegistration(email = "user@example.com")
-
-            assertEquals("87654321", updated.captured.data.confirmationCode)
-            assertEquals(3, updated.captured.data.attemptsLeft)
-            verify(exactly = 1) {
-                mailSender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "87654321")
+                assertEquals(RegistrationRequestId(31), result.getOrThrow())
+                verify(exactly = 1) {
+                    mailSender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "12345678")
+                }
             }
         }
 
@@ -395,7 +458,7 @@ class UserOperationsTests {
         }
 
         @Test
-        fun `should propagate mail sender exceptions`() {
+        fun `should propagate the exception if sending the confirmation code fails`() {
             every { mailSender.sendRegistrationConfirmationCode(any(), any()) } throws IllegalStateException("smtp is down")
 
             assertFailsWith<IllegalStateException> {
@@ -418,287 +481,334 @@ class UserOperationsTests {
             role = role,
         )
 
-        @Test
-        fun `should create student in the public community with nickname, email and generated access code`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-            val data = slot<MultipleRoleUserData>()
-            every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
+        @Nested
+        inner class HappyPathTests {
 
-            confirm(name = "Nickname", role = RegistrationRole.Student)
+            @Test
+            fun `should create student in the public community with nickname, email and generated access code`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                val data = slot<MultipleRoleUserData>()
+                every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
 
-            assertEquals("Nickname", data.captured.name)
-            assertEquals("user@example.com", data.captured.email)
-            assertEquals("ABCD-EFGH-IJKL-MNOP", data.captured.accessTokenHash.value)
-            assertEquals(HashAlgorithm.Identity, data.captured.accessTokenHash.algorithm)
-            val role = assertIs<Student>(data.captured.roles.single())
-            assertEquals(listOf(CommunityId(77)), role.memberOf.ids)
-        }
+                confirm(name = "Nickname", role = RegistrationRole.Student)
 
-        @Test
-        fun `should create manager in the public community if manager role is chosen`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-            val data = slot<MultipleRoleUserData>()
-            every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
-
-            confirm(role = RegistrationRole.Manager)
-
-            val role = assertIs<Manager>(data.captured.roles.single())
-            assertEquals(listOf(CommunityId(77)), role.memberOf.ids)
-        }
-
-        @Test
-        fun `should trim the nickname`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-            val data = slot<MultipleRoleUserData>()
-            every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
-
-            confirm(name = "  Nickname  ")
-
-            assertEquals("Nickname", data.captured.name)
-        }
-
-        @Test
-        fun `should return the created user with its access code`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-
-            val (user, accessToken) = confirm().getOrThrow()
-
-            assertEquals(51L, user.id.value)
-            assertEquals("ABCD-EFGH-IJKL-MNOP", accessToken)
-        }
-
-        @Test
-        fun `should remove the request after registration`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-
-            confirm()
-
-            verify(exactly = 1) { registrationRequests.remove(match<RegistrationRequest> { it.id == RegistrationRequestId(31) }) }
-        }
-
-        @Test
-        fun `should send the access code to the email after registration`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-
-            confirm(name = "Nickname")
-
-            verify(exactly = 1) {
-                mailSender.sendAccessToken(email = "user@example.com", name = "Nickname", accessToken = "ABCD-EFGH-IJKL-MNOP")
+                assertEquals("Nickname", data.captured.name)
+                assertEquals("user@example.com", data.captured.email)
+                assertEquals("ABCD-EFGH-IJKL-MNOP", data.captured.accessTokenHash.value)
+                assertEquals(HashAlgorithm.Identity, data.captured.accessTokenHash.algorithm)
+                val role = assertIs<Student>(data.captured.roles.single())
+                assertEquals(listOf(CommunityId(77)), role.memberOf.ids)
             }
-        }
 
-        @Test
-        fun `should raise RegistrationRequestNotExistsError if the request does not exist`() {
-            every { registrationRequests.findById(RegistrationRequestId(99)) } returns null
+            @Test
+            fun `should create manager in the public community if manager role is chosen`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                val data = slot<MultipleRoleUserData>()
+                every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
 
-            assertRaises(RegistrationRequestNotExistsError(RegistrationRequestId(99))) {
-                operations.confirmRegistration(
-                    registrationRequestId = RegistrationRequestId(99),
-                    confirmationCode = "12345678",
-                    name = "Nickname",
-                    role = RegistrationRole.Student,
-                )
+                confirm(role = RegistrationRole.Manager)
+
+                val role = assertIs<Manager>(data.captured.roles.single())
+                assertEquals(listOf(CommunityId(77)), role.memberOf.ids)
             }
-        }
 
-        @ParameterizedTest
-        @ValueSource(strings = ["", "   "])
-        fun `should raise InvalidUserNameError if nickname is blank`(name: String) {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+            @Test
+            fun `should save trimmed nickname if nickname has surrounding whitespace`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                val data = slot<MultipleRoleUserData>()
+                every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
 
-            assertRaises(InvalidUserNameError) {
-                confirm(name = name)
+                confirm(name = "  Nickname  ")
+
+                assertEquals("Nickname", data.captured.name)
             }
-        }
 
-        @Test
-        fun `should accept nickname of 512 characters`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-            val name = "n".repeat(512)
+            @Test
+            fun `should return the created user with its access code if the code matches`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
-            val (user, _) = confirm(name = name).getOrThrow()
+                val (user, accessToken) = confirm().getOrThrow()
 
-            assertEquals(name, user.data.name)
-        }
-
-        @Test
-        fun `should accept nickname of 512 code points outside the basic plane`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-            val name = "😀".repeat(512)
-
-            val (user, _) = confirm(name = name).getOrThrow()
-
-            assertEquals(name, user.data.name)
-        }
-
-        @Test
-        fun `should raise InvalidUserNameError if nickname is longer than 512 characters`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-
-            assertRaises(InvalidUserNameError) {
-                confirm(name = "n".repeat(513))
+                assertEquals(51L, user.id.value)
+                assertEquals("ABCD-EFGH-IJKL-MNOP", accessToken)
             }
-        }
 
-        @Test
-        fun `should not spend an attempt if the nickname is invalid`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+            @Test
+            fun `should remove the request if the code matches`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
-            confirm(name = "   ")
-
-            verify(exactly = 0) { registrationRequests.update(any<RegistrationRequest>()) }
-        }
-
-        @Test
-        fun `should raise ConfirmationCodeExpiredError if the code expires exactly now`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { expiresAt = now }
-
-            assertRaises(ConfirmationCodeExpiredError) {
                 confirm()
+
+                verify(exactly = 1) { registrationRequests.remove(match<RegistrationRequest> { it.id == RegistrationRequestId(31) }) }
             }
-        }
 
-        @Test
-        fun `should not spend an attempt if the code expired`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { expiresAt = now }
+            @Test
+            fun `should send the access code to the email if the code matches`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
-            confirm()
+                confirm(name = "Nickname")
 
-            verify(exactly = 0) { registrationRequests.update(any<RegistrationRequest>()) }
-        }
+                verify(exactly = 1) {
+                    mailSender.sendAccessToken(email = "user@example.com", name = "Nickname", accessToken = "ABCD-EFGH-IJKL-MNOP")
+                }
+            }
 
-        @Test
-        fun `should accept the code one moment before it expires`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns
-                testRegistrationRequest { expiresAt = now.plusNanos(1) }
+            @Test
+            fun `should accept nickname of 512 characters`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                val name = "n".repeat(512)
 
-            val (_, accessToken) = confirm().getOrThrow()
+                val (user, _) = confirm(name = name).getOrThrow()
 
-            assertEquals("ABCD-EFGH-IJKL-MNOP", accessToken)
-        }
+                assertEquals(name, user.data.name)
+            }
 
-        @Test
-        fun `should raise ConfirmationAttemptsExhaustedError if no attempts are left`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { attemptsLeft = 0 }
+            @Test
+            fun `should accept nickname of 512 code points outside the basic plane`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                val name = "😀".repeat(512)
 
-            assertRaises(ConfirmationAttemptsExhaustedError) {
+                val (user, _) = confirm(name = name).getOrThrow()
+
+                assertEquals(name, user.data.name)
+            }
+
+            @Test
+            fun `should accept nickname of 512 characters if surrounding whitespace makes it longer`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+
+                val (user, _) = confirm(name = "  " + "n".repeat(512) + "  ").getOrThrow()
+
+                assertEquals("n".repeat(512), user.data.name)
+            }
+
+            @Test
+            fun `should accept the code one moment before it expires`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns
+                    testRegistrationRequest { expiresAt = now.plusNanos(1) }
+
+                val (_, accessToken) = confirm().getOrThrow()
+
+                assertEquals("ABCD-EFGH-IJKL-MNOP", accessToken)
+            }
+
+            @Test
+            fun `should accept the matching code on the last attempt`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { attemptsLeft = 1 }
+
+                val (_, accessToken) = confirm().getOrThrow()
+
+                assertEquals("ABCD-EFGH-IJKL-MNOP", accessToken)
+            }
+
+            @Test
+            fun `should store one attempt less if the code matches`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                val updated = slot<RegistrationRequest>()
+                every { registrationRequests.update(capture(updated)) } answers { firstArg() }
+
                 confirm()
+
+                assertEquals(RegistrationRequestId(31), updated.captured.id)
+                assertEquals(2, updated.captured.data.attemptsLeft)
+            }
+
+            @Test
+            fun `should accept a code with surrounding whitespace`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+
+                val (user, _) = confirm(confirmationCode = " \t12345678 \n").getOrThrow()
+
+                assertEquals("user@example.com", user.data.email)
             }
         }
 
-        @Test
-        fun `should not spend an attempt if no attempts are left`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { attemptsLeft = 0 }
+        @Nested
+        inner class RefusalTests {
 
-            confirm()
+            @ParameterizedTest
+            @ValueSource(strings = ["", "   "])
+            fun `should raise InvalidUserNameError if nickname is blank`(name: String) {
+                assertRaises(InvalidUserNameError) {
+                    confirm(name = name)
+                }
+            }
 
-            verify(exactly = 0) { registrationRequests.update(any<RegistrationRequest>()) }
+            @Test
+            fun `should raise InvalidUserNameError if nickname is longer than 512 characters`() {
+                assertRaises(InvalidUserNameError) {
+                    confirm(name = "n".repeat(513))
+                }
+            }
+
+            @Test
+            fun `should raise InvalidUserNameError if nickname is longer than 512 code points outside the basic plane`() {
+                assertRaises(InvalidUserNameError) {
+                    confirm(name = "😀".repeat(513))
+                }
+            }
+
+            @Test
+            fun `should raise InvalidUserNameError without looking up the request if nickname is blank and the request does not exist`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns null
+
+                assertRaises(InvalidUserNameError) {
+                    confirm(name = "   ")
+                }
+                verify(exactly = 0) { registrationRequests.findById(any()) }
+            }
+
+            @Test
+            fun `should raise RegistrationRequestNotExistsError if the request does not exist`() {
+                every { registrationRequests.findById(RegistrationRequestId(99)) } returns null
+
+                assertRaises(RegistrationRequestNotExistsError(RegistrationRequestId(99))) {
+                    operations.confirmRegistration(
+                        registrationRequestId = RegistrationRequestId(99),
+                        confirmationCode = "12345678",
+                        name = "Nickname",
+                        role = RegistrationRole.Student,
+                    )
+                }
+            }
+
+            @Test
+            fun `should raise ConfirmationCodeExpiredError if the code expires exactly now`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { expiresAt = now }
+
+                assertRaises(ConfirmationCodeExpiredError) {
+                    confirm()
+                }
+            }
+
+            @Test
+            fun `should raise ConfirmationAttemptsExhaustedError if no attempts are left`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { attemptsLeft = 0 }
+
+                assertRaises(ConfirmationAttemptsExhaustedError) {
+                    confirm()
+                }
+            }
+
+            @Test
+            fun `should raise InvalidConfirmationCodeError if the code differs`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+
+                assertRaises(InvalidConfirmationCodeError) {
+                    confirm(confirmationCode = "00000000")
+                }
+            }
+
+            @Test
+            fun `should raise InvalidConfirmationCodeError if the code of the last attempt differs`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { attemptsLeft = 1 }
+
+                assertRaises(InvalidConfirmationCodeError) {
+                    confirm(confirmationCode = "00000000")
+                }
+            }
+
+            @Test
+            fun `should raise InvalidConfirmationCodeError if the code has whitespace inside`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+
+                assertRaises(InvalidConfirmationCodeError) {
+                    confirm(confirmationCode = "1234 5678")
+                }
+            }
+
+            @Test
+            fun `should raise EmailAlreadyBoundError, spend the attempt and keep the request if the email was bound after the request`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                every { multipleRoleUsers.findByEmail("user@example.com") } returns testMultipleRoleUser {}
+                val updated = slot<RegistrationRequest>()
+                every { registrationRequests.update(capture(updated)) } answers { firstArg() }
+
+                assertRaises(EmailAlreadyBoundError) {
+                    confirm()
+                }
+                assertEquals(2, updated.captured.data.attemptsLeft)
+                verify(exactly = 0) {
+                    multipleRoleUsers.save(any<MultipleRoleUserData>())
+                    registrationRequests.remove(any<RegistrationRequest>())
+                    mailSender.sendAccessToken(any(), any(), any())
+                }
+            }
         }
 
-        @Test
-        fun `should raise InvalidConfirmationCodeError if the code differs`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+        @Nested
+        inner class InvariantTests {
 
-            assertRaises(InvalidConfirmationCodeError) {
+            @Test
+            fun `should not spend an attempt if the nickname is invalid`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+
+                confirm(name = "   ")
+
+                verify(exactly = 0) { registrationRequests.update(any<RegistrationRequest>()) }
+            }
+
+            @Test
+            fun `should not spend an attempt if the code expired`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { expiresAt = now }
+
+                confirm()
+
+                verify(exactly = 0) { registrationRequests.update(any<RegistrationRequest>()) }
+            }
+
+            @Test
+            fun `should not spend an attempt if no attempts are left`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { attemptsLeft = 0 }
+
+                confirm()
+
+                verify(exactly = 0) { registrationRequests.update(any<RegistrationRequest>()) }
+            }
+
+            @Test
+            fun `should store one attempt less if the code differs`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                val updated = slot<RegistrationRequest>()
+                every { registrationRequests.update(capture(updated)) } answers { firstArg() }
+
                 confirm(confirmationCode = "00000000")
+
+                assertEquals(2, updated.captured.data.attemptsLeft)
+                assertEquals("12345678", updated.captured.data.confirmationCode)
             }
-        }
 
-        @Test
-        fun `should store one attempt less if the code differs`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-            val updated = slot<RegistrationRequest>()
-            every { registrationRequests.update(capture(updated)) } answers { firstArg() }
+            @ParameterizedTest
+            @ValueSource(strings = ["12345678", "00000000"])
+            fun `should propagate the storage exception and create no user if spending the attempt fails`(confirmationCode: String) {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                every { registrationRequests.update(any<RegistrationRequest>()) } throws IllegalStateException("stale version")
 
-            confirm(confirmationCode = "00000000")
-
-            assertEquals(2, updated.captured.data.attemptsLeft)
-            assertEquals("12345678", updated.captured.data.confirmationCode)
-        }
-
-        @Test
-        fun `should store one attempt less if the code matches`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-            val updated = slot<RegistrationRequest>()
-            every { registrationRequests.update(capture(updated)) } answers { firstArg() }
-
-            confirm()
-
-            assertEquals(RegistrationRequestId(31), updated.captured.id)
-            assertEquals(2, updated.captured.data.attemptsLeft)
-        }
-
-        @ParameterizedTest
-        @ValueSource(strings = ["12345678", "00000000"])
-        fun `should propagate the storage exception and create no user if spending the attempt fails`(confirmationCode: String) {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-            every { registrationRequests.update(any<RegistrationRequest>()) } throws IllegalStateException("stale version")
-
-            assertFailsWith<IllegalStateException> {
-                confirm(confirmationCode = confirmationCode)
+                assertFailsWith<IllegalStateException> {
+                    confirm(confirmationCode = confirmationCode)
+                }
+                verify(exactly = 0) { multipleRoleUsers.save(any<MultipleRoleUserData>()) }
             }
-            verify(exactly = 0) { multipleRoleUsers.save(any<MultipleRoleUserData>()) }
-        }
 
-        @Test
-        fun `should raise InvalidConfirmationCodeError if the code of the last attempt differs`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { attemptsLeft = 1 }
+            @Test
+            fun `should not create a user if the code differs`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
-            assertRaises(InvalidConfirmationCodeError) {
                 confirm(confirmationCode = "00000000")
+
+                verify(exactly = 0) { multipleRoleUsers.save(any<MultipleRoleUserData>()) }
             }
-        }
 
-        @Test
-        fun `should not create a user if the code differs`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+            @Test
+            fun `should keep the request and send no access code if the code differs`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
-            confirm(confirmationCode = "00000000")
+                confirm(confirmationCode = "00000000")
 
-            verify(exactly = 0) { multipleRoleUsers.save(any<MultipleRoleUserData>()) }
-        }
-
-        @Test
-        fun `should keep the request and send no access code if the code differs`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-
-            confirm(confirmationCode = "00000000")
-
-            verify(exactly = 0) {
-                registrationRequests.remove(any<RegistrationRequest>())
-                mailSender.sendAccessToken(any(), any(), any())
-            }
-        }
-
-        @Test
-        fun `should accept a code with surrounding whitespace`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-
-            val (user, _) = confirm(confirmationCode = " \t12345678 \n").getOrThrow()
-
-            assertEquals("user@example.com", user.data.email)
-        }
-
-        @Test
-        fun `should not accept a code with whitespace inside`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-
-            assertRaises(InvalidConfirmationCodeError) {
-                confirm(confirmationCode = "1234 5678")
-            }
-        }
-
-        @Test
-        fun `should raise EmailAlreadyBoundError and create no user if the email was bound after the request`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-            every { multipleRoleUsers.findByEmail("user@example.com") } returns testMultipleRoleUser {}
-
-            assertRaises(EmailAlreadyBoundError) {
-                confirm()
-            }
-            verify(exactly = 0) {
-                multipleRoleUsers.save(any<MultipleRoleUserData>())
-                mailSender.sendAccessToken(any(), any(), any())
+                verify(exactly = 0) {
+                    registrationRequests.remove(any<RegistrationRequest>())
+                    mailSender.sendAccessToken(any(), any(), any())
+                }
             }
         }
 

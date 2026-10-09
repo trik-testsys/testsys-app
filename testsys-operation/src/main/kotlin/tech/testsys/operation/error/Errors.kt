@@ -518,12 +518,20 @@ data object MissedJudgeRoleError : ViewResultsError, ChangeVerdictError, MissedR
 data class SubmissionNotExistsError(val submissionId: SubmissionId) : ChangeVerdictError, EntityNotExistsError
 
 /**
- * The submission is outside the judge's access or is a developer solution test.
+ * The submission is outside the judge's access: its author currently holds neither the student nor the participant role.
  *
  * @property submissionId the id of the inaccessible submission.
  * @since %CURRENT_VERSION%
  */
 data class SubmissionAccessDeniedError(val submissionId: SubmissionId) : ChangeVerdictError, AccessDeniedError
+
+/**
+ * The submission was created to test a developer solution, so it cannot receive a judgment order.
+ *
+ * @property submissionId the id of the developer solution test submission.
+ * @since %CURRENT_VERSION%
+ */
+data class SubmissionIsDeveloperSolutionTestError(val submissionId: SubmissionId) : ChangeVerdictError
 
 /**
  * The submission has no successful automatic grading result.
@@ -1161,7 +1169,8 @@ data class CommunityAccessDeniedError(val communityId: CommunityId) :
 data class TaskNotCommittedError(val taskId: TaskId) : ShareTaskError, AttachTaskError, RevertTaskError
 
 /**
- * The task's last committed revision does not support the contest's TRIK Studio version.
+ * The checked revision of the task does not support the contest's TRIK Studio version: the last committed revision
+ * when the task is attached to the contest, the working revision when the task is tested or committed.
  *
  * @property taskId the id of the incompatible task.
  * @property trikStudioVersion the version required by the contest.
@@ -1191,7 +1200,7 @@ data class TaskAlreadyAttachedToContestError(val contestId: ContestId, val taskI
 data class TaskNotAttachedToContestError(val contestId: ContestId, val taskId: TaskId) : DetachTaskError
 
 /**
- * The task has no uncommitted changes to revert.
+ * The task has no uncommitted changes to test, commit or revert.
  *
  * @property taskId the id of the committed task.
  * @since %CURRENT_VERSION%

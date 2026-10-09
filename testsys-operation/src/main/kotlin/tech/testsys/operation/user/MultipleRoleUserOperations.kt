@@ -1,6 +1,3 @@
-// Placeholder for the operations class listed in testsys-operation/README.md, kept until its first feature.
-@file:Suppress("EmptyKotlinFile")
-
 package tech.testsys.operation.user
 
 import tech.testsys.domain.builder.api.emailChangeRequestData
@@ -11,13 +8,9 @@ import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInv
 import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
-import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.InviteCodeHash
 import tech.testsys.domain.model.group.RawInviteCodeDependency
-import tech.testsys.domain.model.user.Developer
 import tech.testsys.domain.model.user.HashAlgorithm
-import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
@@ -67,7 +60,8 @@ class MultipleRoleUserOperations(
 
     /**
      * Makes [user] a member, in the invite role, of the community whose valid invite code matches [inviteCode]
-     * case-insensitively, granting the role if needed. A member in that role is returned unchanged.
+     * case-insensitively, granting the role if needed. Membership is decided by the stored user, not by [user]:
+     * a stored member in that role is returned unchanged.
      *
      * @since %CURRENT_VERSION%
      */
@@ -82,7 +76,7 @@ class MultipleRoleUserOperations(
             val community = checkNotNull(communityRepository.findByInvite(invite.id)) {
                 "No community references community invite id=${invite.id.value}"
             }
-            if (community.id in memberOf(user = user, kind = invite.kind)) return user.asSuccess()
+            // The port is idempotent and reads the stored memberships, so a stale [user] cannot skip joining.
             return multipleRoleUserRepository.addCommunityMembership(userId = user.id, communityId = community.id, kind = invite.kind)
                 .asSuccess()
         }
@@ -153,7 +147,8 @@ class MultipleRoleUserOperations(
             // version fail without comparing their codes.
             val spentRequest = emailChangeRequestRepository.update(request.withData { this.attemptsLeft = attemptsLeft })
             ensure(confirmationCode.trim() == request.data.confirmationCode, InvalidConfirmationCodeError)
-            ensure(multipleRoleUserRepository.findByEmail(request.data.email) == null, EmailAlreadyBoundError)
+            val boundUser = multipleRoleUserRepository.findByEmail(request.data.email)
+            ensure(boundUser == null || boundUser.id == user.id, EmailAlreadyBoundError)
             // The stored user is reread, so the change keeps the current access code, nickname and roles.
             val currentUser = checkNotNull(multipleRoleUserRepository.findById(user.id)) {
                 "User ${user.id.value} of e-mail change request ${request.id.value} does not exist"
@@ -164,12 +159,4 @@ class MultipleRoleUserOperations(
             mailSender.sendEmailChangedNotice(email = previousEmail, name = updatedUser.data.name)
             return updatedUser.asSuccess()
         }
-
-    private fun memberOf(user: MultipleRoleUser, kind: CommunityInvite.Kind): List<CommunityId> {
-        val heldRole = when (kind) {
-            CommunityInvite.Kind.Manager -> user.data.roles.filterIsInstance<Manager>().singleOrNull()
-            CommunityInvite.Kind.Developer -> user.data.roles.filterIsInstance<Developer>().singleOrNull()
-        }
-        return heldRole?.memberOf?.ids.orEmpty()
-    }
 }

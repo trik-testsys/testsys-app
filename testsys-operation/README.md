@@ -486,3 +486,19 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   Вердикта или `null` без успешного Вердикта.
 - `viewCommunityContests` помечена кодификатором `createObserver`. Она возвращает страницу Туров, открытых
   Сообществу Администратора, из которых выбираются Туры Наблюдателя.
+
+## Кабинет Судьи
+
+[JudgeOperations](src/main/kotlin/tech/testsys/operation/user/JudgeOperations.kt) реализует фичи
+`testsys.user.multi.judge.*`; требования определены в [features.md](../docs/domain/features.md).
+
+- `viewResults` возвращает страницу пар `Pair<Verdict, User<*>>`: Вердикт и автора его Посылки. Посылку операция
+  читает через `SubmissionRepository.load`, автора — через `MultipleRoleUserRepository` или `ParticipantRepository`
+  по виду идентификатора. Файлы при этом не загружаются.
+- `viewSolution` возвращает `SubmissionDetails`: Посылку с автором, Задачей, Туром и Решением, текущий успешный
+  Вердикт с Полигонами в порядке его результатов, итоговый балл и Судейские вердикты. Судейские вердикты упорядочены
+  по времени выставления, затем по идентификатору, и каждый идёт вместе со своим Судьёй. Решение и Полигоны
+  загружаются вместе с файлами. Итоговый балл операция вычисляет в `Long`; без успешного Вердикта он `null`.
+- Файлы возвращают отдельные операции с кодификатором `viewSolution`: `downloadSolution`, `downloadLogs`
+  и `downloadRecording`. Каждая возвращает `FileData`. Полигон вне успешного Вердикта операции отклоняют ошибкой
+  `TestNotInVerdictError`, Полигон без видеозаписи — ошибкой `RecordingNotExistsError`.

@@ -69,7 +69,7 @@
 | `RegistrationView` | `registration` | Без входа |
 | `RestoreAccessView` | `restore-access` | Без входа |
 | `MultiMainView` | `home` | `MULTIPLE_ROLE` |
-| `ProfileView`, `DeveloperView`, `JudgeView` | `profile`, `developer`, `judge` | `MULTIPLE_ROLE` |
+| `ProfileView`, `DeveloperView` | `profile`, `developer` | `MULTIPLE_ROLE` |
 | `AdminView` | `admin`, `admin/communities`, `admin/users` | `MULTIPLE_ROLE` с Ролью Администратора |
 | `AdminCommunityView` | `admin/communities/:communityId` | `MULTIPLE_ROLE`, создатель Сообщества |
 | `AdminUserView` | `admin/users/:userId`, `admin/users/:userId/developer`, `admin/users/:userId/manager`, `admin/users/:userId/judge`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
@@ -82,15 +82,17 @@
 | `StudentContestView`, `StudentTaskView` | `student/classes/:classId/contests/:contestId`, `student/classes/:classId/contests/:contestId/tasks/:taskId` | `MULTIPLE_ROLE`, Ученик Класса |
 | `ParticipantView`, `ObserverView`, `SupervisorView` | `participant`, `observer`, `supervisor` | Соответствующий вид |
 | `ParticipantContestView`, `ParticipantTaskView` | `participant/contests/:contestId`, `participant/contests/:contestId/tasks/:taskId` | `PARTICIPANT` |
+| `JudgeView` | `judge`, `judge/submissions` | `MULTIPLE_ROLE` с Ролью Судьи |
+| `JudgeSolutionView` | `judge/submissions/:submissionId` | `MULTIPLE_ROLE` с Ролью Судьи |
 
 Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
-кроме Кабинетов Администратора, Организатора и Ученика, пока показывают только шапку и пустое состояние: их
-маршруты и доступ окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
+кроме Кабинетов Администратора, Организатора, Ученика и Судьи, пока показывают только шапку и пустое состояние:
+их маршруты и доступ окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
 
-Страницы Кабинетов Администратора и Организатора вызывают прокси-сервис в `beforeEnter`, до построения таблиц.
-Поэтому отсутствие Роли, Сообщества, Класса, Соревнования или доступа открывает экран ошибки из раздела
+Страницы Кабинетов Администратора, Организатора и Судьи вызывают прокси-сервис в `beforeEnter`, до построения
+таблиц. Поэтому отсутствие Роли, сущности или доступа открывает экран ошибки из раздела
 [Ошибки операций](#ошибки-операций), а не ошибку загрузки таблицы. `AdminView` без раздела переадресует
-на `admin/communities`, `ManagerView` — на `manager/classes`. Наблюдатель открывается по своему
+на `admin/communities`, `ManagerView` — на `manager/classes`, `JudgeView` — на `judge/submissions`. Наблюдатель открывается по своему
 адресу `admin/observers/:observerId`: операция просмотра принимает идентификатор вместе с видом Пользователя.
 
 `ManagerContestView` скачивает сводную таблицу файлом CSV в UTF-8 с меткой порядка байтов. Столбцы разделены `;`,

@@ -2347,7 +2347,7 @@ Page: **testsys.web.page.student**
 1) Учениками
 2) Участниками
 
-### testsys.user.multi.judge.viewResults (Partially implemented)
+### testsys.user.multi.judge.viewResults (Implemented)
 
 Page: **testsys.web.page.judge**
 
@@ -2369,7 +2369,7 @@ Page: **testsys.web.page.judge**
 
 *Операция*:\
 1) Система возвращает страницу текущих успешных Вердиктов и общее число
-Вердиктов, соответствующих фильтру.
+Вердиктов, соответствующих фильтру. Для каждого Вердикта возвращается автор его Посылки: идентификатор и Псевдоним.
 
 Правила фильтрации:
 
@@ -2388,9 +2388,7 @@ Page: **testsys.web.page.judge**
 - Просмотр не изменяет данные.
 - Получение страницы не загружает содержимое файлов.
 
-Реализована операция. Веб-страница пока не реализована.
-
-### testsys.user.multi.judge.changeVerdict (Partially implemented)
+### testsys.user.multi.judge.changeVerdict (Implemented)
 
 Page: **testsys.web.page.judge.solution**
 
@@ -2425,9 +2423,7 @@ Page: **testsys.web.page.judge.solution**
 - Судейский вердикт относится только к указанной Посылке.
 - Содержание файлов не загружается.
 
-Реализована операция. Веб-страница пока не реализована.
-
-### testsys.user.multi.judge.viewSolution (Not implemented)
+### testsys.user.multi.judge.viewSolution (Implemented)
 
 Page: **testsys.web.page.judge.solution**
 
@@ -2447,7 +2443,7 @@ Page: **testsys.web.page.judge.solution**
 - Посылка не существует.
 - Автор Посылки сейчас не имеет Роли Ученика или Участника.
 - Посылка создана для тестирования Авторского Решения.
-- При скачивании логов или видеозаписи у Посылки нет успешного Вердикта либо у Полигона нет видеозаписи.
+- При скачивании логов или видеозаписи у Посылки нет успешного Вердикта, Полигон не входит в этот Вердикт либо у Полигона нет видеозаписи.
 
 *Операция*:
 
@@ -3960,7 +3956,7 @@ flowchart TD;
 Предупреждение о заполненной очереди проверки не реализовано: ограничение длины очереди не реализовано,
 см. **testsys.entity.submissionQueue**.
 
-### testsys.web.page.judge (Not implemented)
+### testsys.web.page.judge (Implemented)
 
 *Назначение*:\
 Поиск Посылок Учеников и Участников и их Вердиктов.
@@ -3977,7 +3973,7 @@ flowchart TD;
 
 - **testsys.web.page.judge.solution** — для любой Посылки.
 
-### testsys.web.page.judge.solution (Not implemented)
+### testsys.web.page.judge.solution (Implemented)
 
 *Назначение*:\
 Подробный просмотр Посылки и выставление Судейского вердикта.

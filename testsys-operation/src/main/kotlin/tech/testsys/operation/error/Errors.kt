@@ -732,11 +732,46 @@ sealed interface ViewResultsError : OperationError
 sealed interface ChangeVerdictError : OperationError
 
 /**
+ * Failure of viewing a submission available to the judge.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSolutionError : OperationError
+
+/**
+ * Failure of downloading the solution file of a submission available to the judge.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadSolutionError : OperationError
+
+/**
+ * Failure of downloading the grading logs of a test of a submission available to the judge.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadLogsError : OperationError
+
+/**
+ * Failure of downloading the recording of a test of a submission available to the judge.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadRecordingError : OperationError
+
+/**
  * The user does not hold the judge role.
  *
  * @since %CURRENT_VERSION%
  */
-data object MissedJudgeRoleError : ViewResultsError, ChangeVerdictError, MissedRequiredRoleError
+data object MissedJudgeRoleError :
+    ViewResultsError,
+    ChangeVerdictError,
+    ViewSolutionError,
+    DownloadSolutionError,
+    DownloadLogsError,
+    DownloadRecordingError,
+    MissedRequiredRoleError
 
 /**
  * The submission does not exist.
@@ -744,7 +779,13 @@ data object MissedJudgeRoleError : ViewResultsError, ChangeVerdictError, MissedR
  * @property submissionId the id of the missing submission.
  * @since %CURRENT_VERSION%
  */
-data class SubmissionNotExistsError(val submissionId: SubmissionId) : ChangeVerdictError, EntityNotExistsError
+data class SubmissionNotExistsError(val submissionId: SubmissionId) :
+    ChangeVerdictError,
+    ViewSolutionError,
+    DownloadSolutionError,
+    DownloadLogsError,
+    DownloadRecordingError,
+    EntityNotExistsError
 
 /**
  * The submission is outside the judge's access: its author currently holds neither the student nor the participant role.
@@ -752,7 +793,13 @@ data class SubmissionNotExistsError(val submissionId: SubmissionId) : ChangeVerd
  * @property submissionId the id of the inaccessible submission.
  * @since %CURRENT_VERSION%
  */
-data class SubmissionAccessDeniedError(val submissionId: SubmissionId) : ChangeVerdictError, AccessDeniedError
+data class SubmissionAccessDeniedError(val submissionId: SubmissionId) :
+    ChangeVerdictError,
+    ViewSolutionError,
+    DownloadSolutionError,
+    DownloadLogsError,
+    DownloadRecordingError,
+    AccessDeniedError
 
 /**
  * The submission was created to test a developer solution, so it cannot receive a judgment order.
@@ -768,7 +815,10 @@ data class SubmissionIsDeveloperSolutionTestError(val submissionId: SubmissionId
  * @property submissionId the id of the submission.
  * @since %CURRENT_VERSION%
  */
-data class SubmissionNotSuccessfullyGradedError(val submissionId: SubmissionId) : ChangeVerdictError
+data class SubmissionNotSuccessfullyGradedError(val submissionId: SubmissionId) :
+    ChangeVerdictError,
+    DownloadLogsError,
+    DownloadRecordingError
 
 /**
  * The requested judgment score is negative.
@@ -784,6 +834,26 @@ data class NegativeJudgmentScoreError(val score: Score) : ChangeVerdictError
  * @since %CURRENT_VERSION%
  */
 data object BlankJudgmentReasonError : ChangeVerdictError
+
+/**
+ * The test is not part of the successful verdict of the submission.
+ *
+ * @property submissionId the id of the submission.
+ * @property testId the id of the test.
+ * @since %CURRENT_VERSION%
+ */
+data class TestNotInVerdictError(val submissionId: SubmissionId, val testId: TestId) : DownloadLogsError, DownloadRecordingError
+
+/**
+ * The run of the submission on the test produced no recording.
+ *
+ * @property submissionId the id of the submission.
+ * @property testId the id of the test.
+ * @since %CURRENT_VERSION%
+ */
+data class RecordingNotExistsError(val submissionId: SubmissionId, val testId: TestId) :
+    DownloadRecordingError,
+    EntityNotExistsError
 
 // endregion
 

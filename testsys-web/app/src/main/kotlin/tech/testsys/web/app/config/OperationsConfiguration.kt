@@ -17,11 +17,13 @@ import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepo
 import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
+import tech.testsys.domain.contract.persistence.repository.LogsRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantContestEntryRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
+import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
@@ -338,7 +340,25 @@ class OperationsConfiguration {
         judgmentOrders: JudgmentOrderRepository,
         multipleRoleUsers: MultipleRoleUserRepository,
         participants: ParticipantRepository,
-    ): JudgeOperations = JudgeOperations(verdicts, submissions, judgmentOrders, multipleRoleUsers, participants)
+        tasks: TaskRepository,
+        contests: ContestRepository,
+        solutions: SolutionRepository,
+        tests: TestRepository,
+        logs: LogsRepository,
+        recordings: RecordingRepository,
+    ): JudgeOperations = JudgeOperations(
+        verdicts,
+        submissions,
+        judgmentOrders,
+        multipleRoleUsers,
+        participants,
+        tasks,
+        contests,
+        solutions,
+        tests,
+        logs,
+        recordings,
+    )
 
     /**
      * Operations of Participants.

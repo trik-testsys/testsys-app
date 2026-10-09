@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Import
 import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.judgeData
 import tech.testsys.domain.builder.api.managerData
+import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.User
@@ -34,6 +35,8 @@ import tech.testsys.web.app.view.AdminView
 import tech.testsys.web.app.view.CLASSES_SECTION
 import tech.testsys.web.app.view.COMMUNITY_ID_PARAMETER
 import tech.testsys.web.app.view.COMPETITIONS_SECTION
+import tech.testsys.web.app.view.JudgeSolutionView
+import tech.testsys.web.app.view.JudgeView
 import tech.testsys.web.app.view.ManagerClassView
 import tech.testsys.web.app.view.ManagerCompetitionView
 import tech.testsys.web.app.view.ManagerContestView
@@ -44,6 +47,7 @@ import tech.testsys.web.app.view.ParticipantTaskView
 import tech.testsys.web.app.view.STUDY_CLASS_ID_PARAMETER
 import tech.testsys.web.app.view.STUDY_CONTEST_ID_PARAMETER
 import tech.testsys.web.app.view.STUDY_TASK_ID_PARAMETER
+import tech.testsys.web.app.view.SUBMISSION_ID_PARAMETER
 import tech.testsys.web.app.view.StudentClassView
 import tech.testsys.web.app.view.StudentContestView
 import tech.testsys.web.app.view.StudentTaskView
@@ -53,6 +57,7 @@ import tech.testsys.web.app.view.classContestParameters
 import tech.testsys.web.app.view.classParameters
 import tech.testsys.web.app.view.competitionContestParameters
 import tech.testsys.web.app.view.competitionParameters
+import tech.testsys.web.app.view.judgeSubmissionsParameters
 import tech.testsys.web.app.view.managerSection
 import tech.testsys.web.app.view.studentClassParameters
 import tech.testsys.web.app.view.studentContestParameters
@@ -171,6 +176,17 @@ class PagesTests : MockSpringVaadinTests() {
                 "entered" to parametersOf { _, _ -> participantTaskParameters(isEntered = true).first },
             ),
             ParticipantTaskView::class.java to mapOf("task" to parametersOf { _, _ -> participantTaskParameters(isEntered = true).second }),
+            JudgeView::class.java to mapOf(
+                "" to parametersOf { fixtures, _ -> RouteParameters.empty().also { signInJudge(fixtures) } },
+                "submissions" to parametersOf { fixtures, _ -> judgeSubmissionsParameters().also { signInJudge(fixtures) } },
+            ),
+            JudgeSolutionView::class.java to mapOf(
+                "submission" to parametersOf { fixtures, _ ->
+                    signInJudge(fixtures)
+                    val author = fixtures.multipleRoleUser { roles { student { data = studentData {} } } }
+                    RouteParameters(SUBMISSION_ID_PARAMETER, fixtures.gradingSubmission(author).id.value.toString())
+                },
+            ),
         )
 
         /** Grants the manager role to the signed-in administrator [user], which the Cabinet of a Manager requires. */
@@ -212,6 +228,11 @@ class PagesTests : MockSpringVaadinTests() {
                 mapOf(STUDY_CONTEST_ID_PARAMETER to contest.id.value.toString(), STUDY_TASK_ID_PARAMETER to task.id.value.toString()),
             )
             return contestParameters to taskParameters
+        }
+
+        /** Signs a new judge in instead of the signed-in user: the pages of a judge require the judge role. */
+        private fun signInJudge(fixtures: AppFixtures) {
+            CabinetSignIn.signIn(CabinetPrincipal.of(fixtures.judge()))
         }
 
         /** Returns a member of a community of the signed-in administrator [user] with the roles of all user page tabs. */

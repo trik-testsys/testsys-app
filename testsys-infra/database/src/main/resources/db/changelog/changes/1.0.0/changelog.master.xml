@@ -22,5 +22,4 @@
     <include file="db/changelog/changes/1.0.0/changelog.16-init-registration-request.xml"/>
     <include file="db/changelog/changes/1.0.0/changelog.17-init-email-change-request.xml"/>
     <include file="db/changelog/changes/1.0.0/changelog.18-add-indexes.xml"/>
-    <include file="db/changelog/changes/1.0.0/changelog.18-add-user-last-login.xml"/>
 </databaseChangeLog>

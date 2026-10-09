@@ -467,7 +467,7 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 ## Последний вход
 
 Момент последнего входа хранится в колонке `ts_user.last_login_at`, которая допускает `NULL`
-([changelog.18-add-user-last-login.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.18-add-user-last-login.xml)).
+([changelog.03-init-user.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.03-init-user.xml)).
 `UserPersistenceAdapter.recordLogin` записывает её запросом `update` по идентификатору и виду строки
 (`UserJpaEntityRepository.updateLastLoginAt`). Перед записью адаптер защищает корень агрегата и повышает `version` по правилам
 раздела «Транзакции и согласованность». Для отсутствующего Пользователя или Пользователя другого вида

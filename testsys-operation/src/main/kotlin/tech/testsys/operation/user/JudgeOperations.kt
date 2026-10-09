@@ -29,6 +29,7 @@ import tech.testsys.operation.error.MissedJudgeRoleError
 import tech.testsys.operation.error.NegativeJudgmentScoreError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.SubmissionAccessDeniedError
+import tech.testsys.operation.error.SubmissionIsDeveloperSolutionTestError
 import tech.testsys.operation.error.SubmissionNotExistsError
 import tech.testsys.operation.error.SubmissionNotSuccessfullyGradedError
 import tech.testsys.operation.error.ViewResultsError
@@ -69,7 +70,8 @@ class JudgeOperations(
 
     /**
      * Creates a judgment order for [submissionId] on behalf of [user], awarding [score] with [reason].
-     * Requires successful automatic grading, a current student or participant author, a nonnegative score and a nonblank reason.
+     * Requires a current student or participant author, a grading submission rather than a developer solution test,
+     * successful automatic grading, a nonnegative score and a nonblank reason.
      *
      * @since %CURRENT_VERSION%
      */
@@ -83,13 +85,13 @@ class JudgeOperations(
         ensure(user.hasRole<Judge>(), MissedJudgeRoleError)
         val submission = submissionRepository.findById(submissionId)
         ensure(submission != null) { SubmissionNotExistsError(submissionId) }
-        ensure(submission.data.kind is SubmissionKind.Grading) { SubmissionAccessDeniedError(submissionId) }
         val hasAccessibleAuthor = when (val authorId = submission.data.author.id) {
             is MultipleRoleUserId -> multipleRoleUserRepository.findById(authorId)?.hasRole<Student>() == true
             is SingleRoleUserId -> participantRepository.findById(authorId) != null
             else -> false
         }
         ensure(hasAccessibleAuthor) { SubmissionAccessDeniedError(submissionId) }
+        ensure(submission.data.kind is SubmissionKind.Grading) { SubmissionIsDeveloperSolutionTestError(submissionId) }
         val status = submission.data.status
         ensure(status is SubmissionStatus.Graded && status.grade is GradingResult.Success) {
             SubmissionNotSuccessfullyGradedError(submissionId)

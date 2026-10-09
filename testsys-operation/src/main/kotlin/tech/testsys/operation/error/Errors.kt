@@ -17,6 +17,7 @@ import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.RegistrationRequestId
+import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.UserId
 import java.time.Duration
 import java.time.Instant
@@ -162,11 +163,27 @@ sealed interface ExtendClassInviteError : OperationError
 sealed interface RefreshClassInviteError : OperationError
 
 /**
+ * Failure of deleting a participant of a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DeleteParticipantError : OperationError
+
+/**
+ * Failure of listing the contests the manager can add to classes and competitions.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewAvailableContestsError : OperationError
+
+/**
  * The user does not hold the manager role.
  *
  * @since %CURRENT_VERSION%
  */
 data object MissedManagerRoleError :
+    DeleteParticipantError,
+    ViewAvailableContestsError,
     CreateClassError,
     CreateCompetitionError,
     ViewClassesError,
@@ -263,6 +280,7 @@ data class ClassAccessDeniedError(val classId: ClassId) :
  * @since %CURRENT_VERSION%
  */
 data class CompetitionNotExistsError(val competitionId: CompetitionId) :
+    DeleteParticipantError,
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,
@@ -283,6 +301,7 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
  * @since %CURRENT_VERSION%
  */
 data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
+    DeleteParticipantError,
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,
@@ -351,6 +370,25 @@ data class CompetitionParticipantLimitExceededError(
     val participantCount: Int,
     val maxParticipants: Int,
 ) : CreateParticipantsError
+
+/**
+ * The participant does not exist or does not belong to the competition.
+ *
+ * @property competitionId the id of the competition.
+ * @property participantId the id of the missing participant.
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionParticipantNotExistsError(val competitionId: CompetitionId, val participantId: SingleRoleUserId) :
+    DeleteParticipantError,
+    EntityNotExistsError
+
+/**
+ * The participant has submissions, so it cannot be deleted.
+ *
+ * @property participantId the id of the participant.
+ * @since %CURRENT_VERSION%
+ */
+data class ParticipantHasSubmissionsError(val participantId: SingleRoleUserId) : DeleteParticipantError
 
 // endregion
 

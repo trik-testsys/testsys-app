@@ -37,12 +37,15 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.operation.TaskValidationDispatcher
 import tech.testsys.operation.TaskValidationOperations
+import tech.testsys.operation.config.ClassInviteConfig
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.operation.config.CommunityInviteConfig
+import tech.testsys.operation.config.CompetitionConfig
 import tech.testsys.operation.config.EmailConfirmationConfig
 import tech.testsys.operation.user.AdministratorOperations
 import tech.testsys.operation.user.DeveloperOperations
 import tech.testsys.operation.user.JudgeOperations
+import tech.testsys.operation.user.ManagerOperations
 import tech.testsys.operation.user.MultipleRoleUserOperations
 import tech.testsys.operation.user.ParticipantOperations
 import tech.testsys.operation.user.StudentOperations
@@ -402,6 +405,68 @@ class OperationsConfiguration {
         solutions,
         developerSolutions,
         clock,
+    )
+
+    /**
+     * Participant limit of competitions from the required property `testsys.operation.competition.max-participants`.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun competitionConfig(environment: Environment): CompetitionConfig {
+        val maxParticipants = environment.getRequiredProperty("$CONFIG_PREFIX.competition.max-participants", Int::class.java)
+        return object : CompetitionConfig {
+            override val maxParticipants = maxParticipants
+        }
+    }
+
+    /**
+     * Class invite validity and refresh period from the required properties under `testsys.operation.class-invite`.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun classInviteConfig(environment: Environment): ClassInviteConfig {
+        val ttl = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.class-invite.ttl"))
+        val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.class-invite.refresh-period"))
+        return object : ClassInviteConfig {
+            override val ttl = ttl
+            override val refreshPeriod = refreshPeriod
+        }
+    }
+
+    /**
+     * Operations of Managers.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun managerOperations(
+        classes: ClassRepository,
+        competitions: CompetitionRepository,
+        contests: ContestRepository,
+        submissions: SubmissionRepository,
+        participants: ParticipantRepository,
+        competitionConfig: CompetitionConfig,
+        invites: ClassInviteRepository,
+        classInviteConfig: ClassInviteConfig,
+        clock: Clock,
+        multipleRoleUsers: MultipleRoleUserRepository,
+        users: UserRepository,
+        tasks: TaskRepository,
+    ): ManagerOperations = ManagerOperations(
+        classRepository = classes,
+        competitionRepository = competitions,
+        contestRepository = contests,
+        submissionRepository = submissions,
+        participantRepository = participants,
+        competitionConfig = competitionConfig,
+        classInviteRepository = invites,
+        classInviteConfig = classInviteConfig,
+        clock = clock,
+        multipleRoleUserRepository = multipleRoleUsers,
+        userRepository = users,
+        taskRepository = tasks,
     )
 }
 

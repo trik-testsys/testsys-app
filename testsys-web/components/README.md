@@ -228,6 +228,10 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 `fileDrop` объявлен в обоих скоупах и всегда выводит свою подпись. Действия, `menu`, `filterChip` и `pagination`
 объявлены для `ContentScope`; `downloadAction` есть также в `BlockRowScope`. `tabs` и `emptyState` — только для `BlockScope`.
 
+`copyAction(label, value) { }` в `ContentScope` добавляет обычное действие `action` и возвращает его `ActionHandle`.
+По нажатию действие копирует в буфер обмена браузера текст, который `value` возвращает в момент нажатия.
+Результат копирования сервер не получает.
+
 ## Поля
 
 Поле — разметка `.ts-field` из двух ячеек: подпись слева на `labelSize` колонок и значение справа на `size`

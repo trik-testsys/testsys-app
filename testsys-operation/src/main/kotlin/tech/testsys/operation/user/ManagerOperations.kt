@@ -6,6 +6,7 @@ import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.ClassFilter
 import tech.testsys.domain.contract.persistence.CompetitionFilter
+import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.ContestTaskResult
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
@@ -13,8 +14,13 @@ import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
+import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.contract.persistence.repository.UserRepository
+import tech.testsys.domain.model.DomainEntity
+import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.ClassInvite
@@ -23,12 +29,15 @@ import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Participant
-import tech.testsys.domain.model.user.UserId
+import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.SingleRoleUserId
+import tech.testsys.domain.model.user.User
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.config.ClassInviteConfig
@@ -44,6 +53,7 @@ import tech.testsys.operation.error.CompetitionNameBlankError
 import tech.testsys.operation.error.CompetitionNameTooLongError
 import tech.testsys.operation.error.CompetitionNotExistsError
 import tech.testsys.operation.error.CompetitionParticipantLimitExceededError
+import tech.testsys.operation.error.CompetitionParticipantNotExistsError
 import tech.testsys.operation.error.ContestAccessDeniedError
 import tech.testsys.operation.error.ContestAlreadyAddedToClassError
 import tech.testsys.operation.error.ContestAlreadyAddedToCompetitionError
@@ -54,11 +64,14 @@ import tech.testsys.operation.error.CreateClassError
 import tech.testsys.operation.error.CreateClassInviteError
 import tech.testsys.operation.error.CreateCompetitionError
 import tech.testsys.operation.error.CreateParticipantsError
+import tech.testsys.operation.error.DeleteParticipantError
 import tech.testsys.operation.error.ExtendClassInviteError
 import tech.testsys.operation.error.MissedManagerRoleError
 import tech.testsys.operation.error.NonPositiveParticipantCountError
 import tech.testsys.operation.error.OperationResult
+import tech.testsys.operation.error.ParticipantHasSubmissionsError
 import tech.testsys.operation.error.RefreshClassInviteError
+import tech.testsys.operation.error.ViewAvailableContestsError
 import tech.testsys.operation.error.ViewClassContestError
 import tech.testsys.operation.error.ViewClassError
 import tech.testsys.operation.error.ViewClassesError
@@ -95,6 +108,9 @@ class ManagerOperations(
     private val classInviteRepository: ClassInviteRepository,
     private val classInviteConfig: ClassInviteConfig,
     private val clock: Clock,
+    private val multipleRoleUserRepository: MultipleRoleUserRepository,
+    private val userRepository: UserRepository,
+    private val taskRepository: TaskRepository,
 ) {
 
     private val random = SecureRandom()
@@ -171,20 +187,30 @@ class ManagerOperations(
     }
 
     /**
-     * Returns [classId] owned by [user], preserving its data, including the stored student and contest ids and the invite reference.
-     * Missing role, class and access are expected failures; storage exceptions propagate to the caller.
+     * Returns [classId] owned by [user] with its invite, its students with their last logins and its contests, both in
+     * stored order. Missing role, class and access are expected failures; storage exceptions propagate to the caller.
      *
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.manager.class.viewClass")
-    @RawInviteCodeDependency(reason = "Returns the reference to the class invite whose stored value is shown as the issued code.")
-    fun viewClass(user: MultipleRoleUser, classId: ClassId): OperationResult<Class, ViewClassError> = operation<Class, ViewClassError> {
-        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
-        val studyClass = classRepository.findById(classId)
-        ensure(studyClass != null) { ClassNotExistsError(classId) }
-        ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
-        return studyClass.asSuccess()
-    }
+    @RawInviteCodeDependency(reason = "Returns the class invite whose stored value is shown as the issued code.")
+    fun viewClass(user: MultipleRoleUser, classId: ClassId): OperationResult<ClassDetails, ViewClassError> =
+        operation<ClassDetails, ViewClassError> {
+            ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+            val studyClass = classRepository.findById(classId)
+            ensure(studyClass != null) { ClassNotExistsError(classId) }
+            ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
+
+            val studentIds = studyClass.data.students.ids
+            val students = multipleRoleUserRepository.findByIds(studentIds).inOrderOf(studentIds)
+            val lastLogins = userRepository.findLastLogins(studentIds)
+            return ClassDetails(
+                studyClass = studyClass,
+                invite = studyClass.data.invite.load(classInviteRepository),
+                students = students.map { student -> student to lastLogins[student.id] },
+                contests = contestRepository.findByIds(studyClass.data.contests.ids).inOrderOf(studyClass.data.contests.ids),
+            ).asSuccess()
+        }
 
     /**
      * Replaces the invite code of [classId] owned by [user] with a new code and a fresh expiration moment.
@@ -262,23 +288,80 @@ class ManagerOperations(
     }
 
     /**
-     * Returns [competitionId] owned by [user], preserving its data, including the stored participant and contest ids.
-     * Missing role, competition and access are expected failures; storage exceptions propagate to the caller.
+     * Returns [competitionId] owned by [user] with its participants and their last logins and its contests, both in stored
+     * order. Missing role, competition and access are expected failures; storage exceptions propagate to the caller.
      *
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.manager.competition.viewCompetition")
-    fun viewCompetition(user: MultipleRoleUser, competitionId: CompetitionId): OperationResult<Competition, ViewCompetitionError> =
-        operation<Competition, ViewCompetitionError> {
+    @RawAccessTokenDependency(reason = "Returns participants whose stored access codes are shown as the issued ones.")
+    fun viewCompetition(user: MultipleRoleUser, competitionId: CompetitionId): OperationResult<CompetitionDetails, ViewCompetitionError> =
+        operation<CompetitionDetails, ViewCompetitionError> {
             ensure(user.hasRole<Manager>(), MissedManagerRoleError)
             val competition = competitionRepository.findById(competitionId)
             ensure(competition != null) { CompetitionNotExistsError(competitionId) }
             ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
-            return competition.asSuccess()
+
+            val participantIds = competition.data.participants.ids
+            val participants = participantRepository.findByIds(participantIds).inOrderOf(participantIds)
+            val lastLogins = userRepository.findLastLogins(participantIds)
+            return CompetitionDetails(
+                competition = competition,
+                participants = participants.map { participant -> participant to lastLogins[participant.id] },
+                contests = contestRepository.findByIds(competition.data.contests.ids).inOrderOf(competition.data.contests.ids),
+            ).asSuccess()
         }
 
     /**
-     * Returns [contestId] added to [classId] owned by [user] with the stored student ids and their results by contest task.
+     * Deletes [participantId] of [competitionId] owned by [user] together with its contest entries and returns it as it was.
+     * Missing role, competition, access, participant and existing submissions are expected failures; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.competition.deleteParticipant")
+    fun deleteParticipant(
+        user: MultipleRoleUser,
+        competitionId: CompetitionId,
+        participantId: SingleRoleUserId,
+    ): OperationResult<Participant, DeleteParticipantError> = operation<Participant, DeleteParticipantError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val competition = competitionRepository.findById(competitionId)
+        ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+        ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
+        val participant = participantRepository.findById(participantId)?.takeIf { found -> found.data.competition.id == competitionId }
+        ensure(participant != null) {
+            CompetitionParticipantNotExistsError(competitionId = competitionId, participantId = participantId)
+        }
+        val submissions = submissionRepository.countGrading(
+            authorIds = setOf(participantId),
+            contestIds = competition.data.contests.ids.toSet(),
+        )
+        ensure(submissions.submissions == 0L) { ParticipantHasSubmissionsError(participantId) }
+
+        participantRepository.removeById(participantId)
+        return participant.asSuccess()
+    }
+
+    /**
+     * Returns a [pagination] page of contests shared to the communities of the [Manager] role of [user] whose name contains
+     * [name] ignoring case, or all of them without one. Missing manager role is an expected failure.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.addContest")
+    fun viewAvailableContests(
+        user: MultipleRoleUser,
+        pagination: Pagination,
+        name: String? = null,
+    ): OperationResult<Page<Contest>, ViewAvailableContestsError> = operation<Page<Contest>, ViewAvailableContestsError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val communityIds = user.data.roles.filterIsInstance<Manager>().single().memberOf.ids.toSet()
+        val filter = ContestFilter(name = name)
+        return contestRepository.findSharedTo(communityIds = communityIds, pagination = pagination, filter = filter).asSuccess()
+    }
+
+    /**
+     * Returns [contestId] added to [classId] owned by [user] with its tasks, the class students and their results by contest task.
      * Missing role, class, contest, access and contest assignment are expected failures; storage exceptions propagate.
      *
      * @since %CURRENT_VERSION%
@@ -296,11 +379,13 @@ class ManagerOperations(
         ensure(contest != null) { ContestNotExistsError(contestId) }
         ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
         ensure(contestId in studyClass.data.contests.ids) { ContestNotAddedToClassError(classId = classId, contestId = contestId) }
-        return findContestResults(contest = contest, memberIds = studyClass.data.students.ids).asSuccess()
+        val studentIds = studyClass.data.students.ids
+        val students = multipleRoleUserRepository.findByIds(studentIds).inOrderOf(studentIds)
+        return findContestResults(contest = contest, members = students).asSuccess()
     }
 
     /**
-     * Returns [contestId] added to [competitionId] owned by [user] with the stored participant ids and their results by contest task.
+     * Returns [contestId] added to [competitionId] owned by [user] with its tasks, the participants and their results by task.
      * Missing role, competition, contest, access and contest assignment are expected failures; storage exceptions propagate.
      *
      * @since %CURRENT_VERSION%
@@ -320,7 +405,9 @@ class ManagerOperations(
         ensure(contestId in competition.data.contests.ids) {
             ContestNotAddedToCompetitionError(competitionId = competitionId, contestId = contestId)
         }
-        return findContestResults(contest = contest, memberIds = competition.data.participants.ids).asSuccess()
+        val participantIds = competition.data.participants.ids
+        val participants = participantRepository.findByIds(participantIds).inOrderOf(participantIds)
+        return findContestResults(contest = contest, members = participants).asSuccess()
     }
 
     /**
@@ -435,26 +522,66 @@ class ManagerOperations(
         return contest.data.sharedTo.ids.any { communityId -> communityId in managerCommunityIds }
     }
 
-    private fun findContestResults(contest: Contest, memberIds: List<UserId>): ContestResults {
+    private fun findContestResults(contest: Contest, members: List<User<*>>): ContestResults {
+        val taskIds = contest.data.tasks.ids
         val results = submissionRepository.findContestResults(
             contestId = contest.id,
-            authorIds = memberIds.toSet(),
-            taskIds = contest.data.tasks.ids.toSet(),
+            authorIds = members.map { member -> member.id }.toSet(),
+            taskIds = taskIds.toSet(),
         )
-        return ContestResults(contest = contest, memberIds = memberIds, results = results)
+
+        val tasks = taskRepository.findByIds(taskIds).inOrderOf(taskIds)
+        return ContestResults(contest = contest, tasks = tasks, members = members, results = results)
     }
+
+    private fun <Id : DomainId, Entity : DomainEntity<Id>> List<Entity>.inOrderOf(ids: List<Id>): List<Entity> {
+        val byId = associateBy { entity -> entity.id }
+        return ids.mapNotNull(byId::get)
+    }
+
+    /**
+     * Class owned by the manager with the data shown on its page.
+     *
+     * @property studyClass the viewed class.
+     * @property invite the invite code of the class.
+     * @property students the students in stored order, each with its last login, or `null` if never logged in.
+     * @property contests the added contests in stored order.
+     * @since %CURRENT_VERSION%
+     */
+    data class ClassDetails(
+        val studyClass: Class,
+        val invite: ClassInvite,
+        val students: List<Pair<MultipleRoleUser, Instant?>>,
+        val contests: List<Contest>,
+    )
+
+    /**
+     * Competition owned by the manager with the data shown on its page.
+     *
+     * @property competition the viewed competition.
+     * @property participants the participants in stored order, each with its last login, or `null` if never logged in.
+     * @property contests the added contests in stored order.
+     * @since %CURRENT_VERSION%
+     */
+    data class CompetitionDetails(
+        val competition: Competition,
+        val participants: List<Pair<Participant, Instant?>>,
+        val contests: List<Contest>,
+    )
 
     /**
      * Results of a contest within a class or competition owned by the manager.
      *
      * @property contest the viewed contest.
-     * @property memberIds the ids of the class students or competition participants in stored order.
+     * @property tasks the tasks of the contest in stored order.
+     * @property members the class students or competition participants in stored order.
      * @property results the results of member and task pairs having submissions, ordered by member id and then task id.
      * @since %CURRENT_VERSION%
      */
     data class ContestResults(
         val contest: Contest,
-        val memberIds: List<UserId>,
+        val tasks: List<Task>,
+        val members: List<User<*>>,
         val results: List<ContestTaskResult>,
     )
 }

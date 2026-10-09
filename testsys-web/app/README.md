@@ -69,20 +69,29 @@
 | `RegistrationView` | `registration` | Без входа |
 | `RestoreAccessView` | `restore-access` | Без входа |
 | `MultiMainView` | `home` | `MULTIPLE_ROLE` |
-| `ProfileView`, `DeveloperView`, `ManagerView`, `JudgeView`, `StudentView` | `profile`, `developer`, `manager`, `judge`, `student` | `MULTIPLE_ROLE` |
+| `ProfileView`, `DeveloperView`, `JudgeView`, `StudentView` | `profile`, `developer`, `judge`, `student` | `MULTIPLE_ROLE` |
 | `AdminView` | `admin`, `admin/communities`, `admin/users` | `MULTIPLE_ROLE` с Ролью Администратора |
 | `AdminCommunityView` | `admin/communities/:communityId` | `MULTIPLE_ROLE`, создатель Сообщества |
 | `AdminUserView` | `admin/users/:userId`, `admin/users/:userId/developer`, `admin/users/:userId/manager`, `admin/users/:userId/judge`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
+| `ManagerView` | `manager`, `manager/classes`, `manager/competitions` | `MULTIPLE_ROLE` с Ролью Организатора |
+| `ManagerClassView` | `manager/classes/:classId` | `MULTIPLE_ROLE`, создатель Класса |
+| `ManagerCompetitionView` | `manager/competitions/:competitionId` | `MULTIPLE_ROLE`, создатель Соревнования |
+| `ManagerContestView` | `manager/classes/:classId/contests/:contestId`, `manager/competitions/:competitionId/contests/:contestId` | `MULTIPLE_ROLE`, создатель Класса или Соревнования, в которое добавлен Тур |
 | `ParticipantView`, `ObserverView`, `SupervisorView` | `participant`, `observer`, `supervisor` | Соответствующий вид |
 
 Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
-кроме Кабинета Администратора, пока показывают только шапку и пустое состояние: их маршруты и доступ окончательные,
-поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
+кроме Кабинетов Администратора и Организатора, пока показывают только шапку и пустое состояние: их маршруты и доступ
+окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
 
-Страницы Кабинета Администратора вызывают прокси-сервис в `beforeEnter`, до построения таблиц. Поэтому отсутствие
-Роли, Сообщества или доступа открывает экран ошибки из раздела [Ошибки операций](#ошибки-операций), а не ошибку
-загрузки таблицы. `AdminView` без раздела переадресует на `admin/communities`. Наблюдатель открывается по своему
+Страницы Кабинетов Администратора и Организатора вызывают прокси-сервис в `beforeEnter`, до построения таблиц.
+Поэтому отсутствие Роли, Сообщества, Класса, Соревнования или доступа открывает экран ошибки из раздела
+[Ошибки операций](#ошибки-операций), а не ошибку загрузки таблицы. `AdminView` без раздела переадресует
+на `admin/communities`, `ManagerView` — на `manager/classes`. Наблюдатель открывается по своему
 адресу `admin/observers/:observerId`: операция просмотра принимает идентификатор вместе с видом Пользователя.
+
+`ManagerContestView` скачивает сводную таблицу файлом CSV в UTF-8 с меткой порядка байтов. Столбцы разделены `;`,
+значения заключаются в кавычки по RFC 4180, на каждую Задачу приходится два столбца: лучший результат и количество
+Посылок. Данные файла страница запрашивает заново при скачивании.
 
 Страницы Ролей принимают необязательный параметр маршрута `section` с разделом страницы, например
 `developer/tasks`. Заголовок раздела Роли в «Меню» ведёт на страницу без параметра, а ссылки разделов — с ним,
@@ -104,13 +113,14 @@
 ## Прокси-сервисы
 
 Страницы вызывают операции только через прокси-сервисы `<Actor>Service` в пакете `service/<actor>`:
-`AdministratorService`, `DeveloperService`, `JudgeService`, `MultipleRoleUserService`, `ParticipantService`,
-`StudentService`, `StudyService` и `UserService`. Методы сервиса соответствуют операциям один к одному
-и принимают те же входные данные без Пользователя. Сервиса для `TaskValidationOperations` нет: её вызывает только
-диспетчер. У `ManagerOperations` и `ObserverOperations` сервисов пока нет: страницы их не вызывают.
+`AdministratorService`, `DeveloperService`, `JudgeService`, `ManagerService`, `MultipleRoleUserService`,
+`ParticipantService`, `StudentService`, `StudyService` и `UserService`. Методы сервиса соответствуют операциям один
+к одному и принимают те же входные данные без Пользователя. Сервиса для `TaskValidationOperations` нет: её вызывает
+только диспетчер. У `ObserverOperations` сервиса пока нет: страницы её не вызывают.
 `MultipleRoleUserService.viewProfile` добавляет к Ролям Псевдоним и почту текущего Пользователя и возвращает их
 в `ProfileVo`.
-`AdministratorService` не выставляет служебную `refreshCommunityInvite`.
+`AdministratorService` не выставляет служебную `refreshCommunityInvite`, `ManagerService` — служебную
+`refreshClassInvite`.
 
 Классы операций, у которых есть сервис, `TaskValidationOperations` и `TaskValidationDispatcher` создаются
 `@Bean`-методами в `OperationsConfiguration`; модуль операций не сканируется.
@@ -199,11 +209,15 @@
 | `testsys.operation.email-confirmation.max-confirmation-attempts` | Число попыток ввода кода подтверждения |
 | `testsys.operation.community-invite.ttl` | Срок действия Кода-приглашения в Сообщество в формате ISO-8601 `Duration` |
 | `testsys.operation.community-invite.refresh-period` | Период замены Кодов-приглашений в Сообщество с истёкшим сроком в формате ISO-8601 `Duration`; пока не используется |
+| `testsys.operation.competition.max-participants` | Предельное общее количество Участников в Соревновании |
+| `testsys.operation.class-invite.ttl` | Срок действия Кода-приглашения в Класс в формате ISO-8601 `Duration` |
+| `testsys.operation.class-invite.refresh-period` | Период замены Кодов-приглашений в Класс с истёкшим сроком в формате ISO-8601 `Duration`; пока не используется |
 
 Настройки SMTP-сервера — в разделе «Настройки» в [mail/README.md](../../testsys-infra/mail/README.md#настройки).
-Тесты страниц и `UserService` подключают `AppTestConfiguration`: она сохраняет Пользователей через порты хранения, подменяет
-Публичное Сообщество Сообществом из этих данных и записывает письма вместо отправки. Тестовые Spring-контексты
-не приостанавливаются (`src/test/resources/spring.properties`): `TaskValidationDispatcherLifecycle` останавливает
-исполнитель диспетчера окончательно, и приостановленный контекст не запустился бы снова.
+Тесты страниц и `UserService` подключают `AppTestConfiguration`: она сохраняет Пользователей, Сообщества, Классы,
+Соревнования и Туры через порты хранения, подменяет Публичное Сообщество Сообществом из этих данных и записывает
+письма вместо отправки. Тестовые Spring-контексты не приостанавливаются (`src/test/resources/spring.properties`):
+`TaskValidationDispatcherLifecycle` останавливает исполнитель диспетчера окончательно, и приостановленный контекст
+не запустился бы снова.
 
 Cookie сессии называется `TESTSYS_APP_SESSION`.

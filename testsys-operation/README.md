@@ -217,11 +217,9 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 
 Образец — [CompetitionConfig.kt](src/main/kotlin/tech/testsys/operation/config/CompetitionConfig.kt).
 
-Реализации `CommunityConfig`, `EmailConfirmationConfig` и `CommunityInviteConfig` создаёт `testsys-web:app`
-из обязательных свойств с этими ключами, см. раздел «Запуск и проверка»
-в [app/README.md](../testsys-web/app/README.md#запуск-и-проверка).
-
-> План: реализации остальных интерфейсов конфигурации появятся в `testsys-web`.
+Реализации `CommunityConfig`, `EmailConfirmationConfig`, `CommunityInviteConfig`, `CompetitionConfig`
+и `ClassInviteConfig` создаёт `testsys-web:app` из обязательных свойств с этими ключами, см. раздел
+«Запуск и проверка» в [app/README.md](../testsys-web/app/README.md#запуск-и-проверка).
 
 ## Ошибки
 
@@ -429,6 +427,23 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 в `testsys.entity.multi.role` в [features.md](../docs/domain/features.md). Функцию вызывают
 `MultipleRoleUserOperations.joinCommunity` и `AdministratorOperations.grantRole`. Вызывающий код выполняет оба
 включения в одной транзакции, чтобы исключение откатило их вместе; в `testsys-web:app` её открывает прокси-сервис.
+
+## Кабинет Организатора
+
+[ManagerOperations](src/main/kotlin/tech/testsys/operation/user/ManagerOperations.kt) реализует фичи
+`testsys.user.multi.manager.*`; требования определены в [features.md](../docs/domain/features.md).
+
+- `viewClass` возвращает `ManagerOperations.ClassDetails`: Класс, его Код-приглашение, Учеников с моментами
+  последнего входа и добавленные Туры. `viewCompetition` так же возвращает `CompetitionDetails` с Участниками.
+  Учеников, Участников и Туры операции читают через `findByIds` и упорядочивают по составу группы, моменты входа —
+  через `UserRepository.findLastLogins` одним вызовом.
+- `viewClassContest` и `viewCompetitionContest` возвращают `ContestResults`: Тур, его Задачи в порядке Тура,
+  Учеников или Участников и результаты пар автора и Задачи с Посылками.
+- `deleteParticipant` проверяет Посылки Участника в Турах Соревнования через `SubmissionRepository.countGrading`
+  и отклоняет удаление ошибкой `ParticipantHasSubmissionsError`, если они есть. Иначе операция удаляет Участника
+  через `ParticipantRepository.removeById` и возвращает его загруженное состояние.
+- `viewAvailableContests` помечена кодификатором `addContest`. Она возвращает страницу Туров, открытых Сообществам
+  Пользователя в Роли Организатора, через `ContestRepository.findSharedTo`; из них выбирается добавляемый Тур.
 
 ## Кабинет Администратора
 

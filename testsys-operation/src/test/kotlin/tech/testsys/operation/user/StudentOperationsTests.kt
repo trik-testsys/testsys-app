@@ -280,16 +280,20 @@ class StudentOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exceptions`() {
-            val failure = IllegalStateException("storage failed")
-            every { groups.findById(group.id) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = assertThrows(IllegalStateException::class.java) {
-                operations.viewContests(user = user, classId = group.id)
+            @Test
+            fun `should propagate storage exceptions`() {
+                val failure = IllegalStateException("storage failed")
+                every { groups.findById(group.id) } throws failure
+
+                val thrown = assertThrows(IllegalStateException::class.java) {
+                    operations.viewContests(user = user, classId = group.id)
+                }
+
+                assertSame(failure, thrown)
             }
-
-            assertSame(failure, thrown)
         }
     }
 
@@ -577,51 +581,55 @@ class StudentOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate an exception while persisting an entry`() {
-            val failure = IllegalStateException("entry storage failed")
-            every { groups.findById(group.id) } returns group
-            every { contests.findById(contest.id) } returns contest
-            every { entries.findByContext(userId = user.id, studyClassId = group.id, contestId = contest.id) } returns null
-            every { clock.instant() } returns Instant.EPOCH
-            every { entries.findOrCreate(any()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = assertThrows(IllegalStateException::class.java) {
-                operations.enterContest(user = user, classId = group.id, contestId = contest.id)
+            @Test
+            fun `should propagate an exception while persisting an entry`() {
+                val failure = IllegalStateException("entry storage failed")
+                every { groups.findById(group.id) } returns group
+                every { contests.findById(contest.id) } returns contest
+                every { entries.findByContext(userId = user.id, studyClassId = group.id, contestId = contest.id) } returns null
+                every { clock.instant() } returns Instant.EPOCH
+                every { entries.findOrCreate(any()) } throws failure
+
+                val thrown = assertThrows(IllegalStateException::class.java) {
+                    operations.enterContest(user = user, classId = group.id, contestId = contest.id)
+                }
+
+                assertSame(failure, thrown)
             }
 
-            assertSame(failure, thrown)
-        }
+            @Test
+            fun `should truncate the saved entry time to microseconds`() {
+                val data = slot<StudentContestEntryData>()
+                every { groups.findById(group.id) } returns group
+                every { contests.findById(contest.id) } returns contest
+                every { entries.findByContext(userId = user.id, studyClassId = group.id, contestId = contest.id) } returns null
+                every { clock.instant() } returns Instant.parse("2026-01-01T00:00:00.123456789Z")
+                every { entries.findOrCreate(capture(data)) } returns savedEntry()
 
-        @Test
-        fun `should truncate the saved entry time to microseconds`() {
-            val data = slot<StudentContestEntryData>()
-            every { groups.findById(group.id) } returns group
-            every { contests.findById(contest.id) } returns contest
-            every { entries.findByContext(userId = user.id, studyClassId = group.id, contestId = contest.id) } returns null
-            every { clock.instant() } returns Instant.parse("2026-01-01T00:00:00.123456789Z")
-            every { entries.findOrCreate(capture(data)) } returns savedEntry()
+                operations.enterContest(user = user, classId = group.id, contestId = contest.id).getOrThrow()
 
-            operations.enterContest(user = user, classId = group.id, contestId = contest.id).getOrThrow()
-
-            assertEquals(Instant.parse("2026-01-01T00:00:00.123456Z"), data.captured.enteredAt)
-        }
-
-        @Test
-        fun `should read the current time once when saving the first entry`() {
-            val scheduled = contest.withData {
-                startsAt = Instant.ofEpochSecond(100)
-                contestDuration = Duration.ofSeconds(60)
+                assertEquals(Instant.parse("2026-01-01T00:00:00.123456Z"), data.captured.enteredAt)
             }
-            every { groups.findById(group.id) } returns group
-            every { contests.findById(contest.id) } returns scheduled
-            every { entries.findByContext(userId = user.id, studyClassId = group.id, contestId = contest.id) } returns null
-            every { clock.instant() } returns Instant.ofEpochSecond(120)
-            every { entries.findOrCreate(any()) } returns savedEntry()
 
-            operations.enterContest(user = user, classId = group.id, contestId = contest.id).getOrThrow()
+            @Test
+            fun `should read the current time once when saving the first entry`() {
+                val scheduled = contest.withData {
+                    startsAt = Instant.ofEpochSecond(100)
+                    contestDuration = Duration.ofSeconds(60)
+                }
+                every { groups.findById(group.id) } returns group
+                every { contests.findById(contest.id) } returns scheduled
+                every { entries.findByContext(userId = user.id, studyClassId = group.id, contestId = contest.id) } returns null
+                every { clock.instant() } returns Instant.ofEpochSecond(120)
+                every { entries.findOrCreate(any()) } returns savedEntry()
 
-            verify(exactly = 1) { clock.instant() }
+                operations.enterContest(user = user, classId = group.id, contestId = contest.id).getOrThrow()
+
+                verify(exactly = 1) { clock.instant() }
+            }
         }
     }
 
@@ -718,17 +726,21 @@ class StudentOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exceptions`() {
-            val student = testStudent { data = studentData { classes(listOf(23)) } }
-            val failure = IllegalStateException("storage failed")
-            every { groups.findByIds(listOf(ClassId(23))) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = assertThrows(IllegalStateException::class.java) {
-                operations.viewClasses(user = student)
+            @Test
+            fun `should propagate storage exceptions`() {
+                val student = testStudent { data = studentData { classes(listOf(23)) } }
+                val failure = IllegalStateException("storage failed")
+                every { groups.findByIds(listOf(ClassId(23))) } throws failure
+
+                val thrown = assertThrows(IllegalStateException::class.java) {
+                    operations.viewClasses(user = student)
+                }
+
+                assertSame(failure, thrown)
             }
-
-            assertSame(failure, thrown)
         }
     }
 
@@ -850,31 +862,35 @@ class StudentOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exceptions when enrolling`() {
-            val failure = IllegalStateException("storage failed")
-            every { invites.findByCode(any()) } returns testInvite()
-            every { clock.instant() } returns now
-            every { groups.findByInvite(ClassInviteId(31)) } returns foreignGroup
-            every { groups.addStudent(foreignGroup.id, user.id) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = assertThrows(IllegalStateException::class.java) {
-                operations.joinClass(user = user, inviteCode = "abcdefghjkmn")
+            @Test
+            fun `should propagate storage exceptions when enrolling`() {
+                val failure = IllegalStateException("storage failed")
+                every { invites.findByCode(any()) } returns testInvite()
+                every { clock.instant() } returns now
+                every { groups.findByInvite(ClassInviteId(31)) } returns foreignGroup
+                every { groups.addStudent(foreignGroup.id, user.id) } throws failure
+
+                val thrown = assertThrows(IllegalStateException::class.java) {
+                    operations.joinClass(user = user, inviteCode = "abcdefghjkmn")
+                }
+
+                assertSame(failure, thrown)
             }
 
-            assertSame(failure, thrown)
-        }
+            @Test
+            fun `should read the current time once when joining a class`() {
+                every { invites.findByCode(any()) } returns testInvite()
+                every { clock.instant() } returns now
+                every { groups.findByInvite(ClassInviteId(31)) } returns foreignGroup
+                every { groups.addStudent(foreignGroup.id, user.id) } returns foreignGroup.withData { students.add(user.id) }
 
-        @Test
-        fun `should read the current time once when joining a class`() {
-            every { invites.findByCode(any()) } returns testInvite()
-            every { clock.instant() } returns now
-            every { groups.findByInvite(ClassInviteId(31)) } returns foreignGroup
-            every { groups.addStudent(foreignGroup.id, user.id) } returns foreignGroup.withData { students.add(user.id) }
+                operations.joinClass(user = user, inviteCode = "abcdefghjkmn").getOrThrow()
 
-            operations.joinClass(user = user, inviteCode = "abcdefghjkmn").getOrThrow()
-
-            verify(exactly = 1) { clock.instant() }
+                verify(exactly = 1) { clock.instant() }
+            }
         }
 
         private fun testInvite(expiresAt: Instant = Instant.parse("2030-01-01T00:00:00Z")) = classInvite {

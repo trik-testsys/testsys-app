@@ -323,39 +323,43 @@ class AdministratorOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate technical community repository exceptions`() {
-            val failure = IllegalStateException("Community storage unavailable")
-            every { communities.findById(communityId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) { create() }
+            @Test
+            fun `should propagate technical community repository exceptions`() {
+                val failure = IllegalStateException("Community storage unavailable")
+                every { communities.findById(communityId) } throws failure
 
-            assertSame(failure, actual)
-            verify { observers wasNot Called }
-        }
+                val actual = assertThrows(IllegalStateException::class.java) { create() }
 
-        @Test
-        fun `should propagate technical contest repository exceptions`() {
-            prepareCreation()
-            val failure = IllegalStateException("Contest storage unavailable")
-            every { contests.findById(contestId) } throws failure
+                assertSame(failure, actual)
+                verify { observers wasNot Called }
+            }
 
-            val actual = assertThrows(IllegalStateException::class.java) { create() }
+            @Test
+            fun `should propagate technical contest repository exceptions`() {
+                prepareCreation()
+                val failure = IllegalStateException("Contest storage unavailable")
+                every { contests.findById(contestId) } throws failure
 
-            assertSame(failure, actual)
-            verify { observers wasNot Called }
-        }
+                val actual = assertThrows(IllegalStateException::class.java) { create() }
 
-        @Test
-        fun `should propagate technical save exceptions without retrying`() {
-            prepareCreation()
-            val failure = IllegalStateException("Code collision")
-            every { observers.save(any<ObserverData>()) } throws failure
+                assertSame(failure, actual)
+                verify { observers wasNot Called }
+            }
 
-            val actual = assertThrows(IllegalStateException::class.java) { create() }
+            @Test
+            fun `should propagate technical save exceptions without retrying`() {
+                prepareCreation()
+                val failure = IllegalStateException("Code collision")
+                every { observers.save(any<ObserverData>()) } throws failure
 
-            assertSame(failure, actual)
-            verify(exactly = 1) { observers.save(any<ObserverData>()) }
+                val actual = assertThrows(IllegalStateException::class.java) { create() }
+
+                assertSame(failure, actual)
+                verify(exactly = 1) { observers.save(any<ObserverData>()) }
+            }
         }
 
         private fun create(user: MultipleRoleUser = administrator, name: String = "Observer", ids: Set<ContestId> = setOf(contestId)) =
@@ -464,18 +468,22 @@ class AdministratorOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a technical storage exception when listing users`() {
-            val failure = IllegalStateException("User storage unavailable")
-            every {
-                userRepository.findAvailableToAdministrator(administratorId = administrator.id, pagination = pagination)
-            } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.viewUsers(user = administrator, pagination = pagination)
+            @Test
+            fun `should propagate a technical storage exception when listing users`() {
+                val failure = IllegalStateException("User storage unavailable")
+                every {
+                    userRepository.findAvailableToAdministrator(administratorId = administrator.id, pagination = pagination)
+                } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.viewUsers(user = administrator, pagination = pagination)
+                }
+
+                assertSame(failure, actual)
             }
-
-            assertSame(failure, actual)
         }
     }
 
@@ -598,16 +606,22 @@ class AdministratorOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a technical storage exception when viewing a user`() {
-            val failure = IllegalStateException("User storage unavailable")
-            every { userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = userId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.viewUser(user = administrator, userId = userId)
+            @Test
+            fun `should propagate a technical storage exception when viewing a user`() {
+                val failure = IllegalStateException("User storage unavailable")
+                every {
+                    userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = userId)
+                } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.viewUser(user = administrator, userId = userId)
+                }
+
+                assertSame(failure, actual)
             }
-
-            assertSame(failure, actual)
         }
     }
 
@@ -735,40 +749,46 @@ class AdministratorOperationsTests {
             }
         }
 
-        @Test
-        fun `should read the current time and the ttl once`() {
-            prepare()
-            every { managerInvites.load(any<LazyEntity<CommunityInviteId, CommunityInvite.Manager>>()) } returns testManagerInvite()
-            every { managerInvites.update(any<CommunityInvite.Manager>()) } answers { firstArg() }
+        @Nested
+        inner class ModuleRuleTests {
 
-            create(kind = CommunityInvite.Kind.Manager).getOrThrow()
+            @Test
+            fun `should read the current time and the ttl once`() {
+                prepare()
+                every { managerInvites.load(any<LazyEntity<CommunityInviteId, CommunityInvite.Manager>>()) } returns testManagerInvite()
+                every { managerInvites.update(any<CommunityInvite.Manager>()) } answers { firstArg() }
 
-            verify(exactly = 1) { clock.instant() }
-            verify(exactly = 1) { config.ttl }
-        }
+                create(kind = CommunityInvite.Kind.Manager).getOrThrow()
 
-        @ParameterizedTest
-        @ValueSource(longs = [0, -1])
-        fun `should fail without writing if the configured ttl is not positive`(ttlSeconds: Long) {
-            every { communities.findById(communityId) } returns testCommunity()
-            every { clock.instant() } returns now
-            every { config.ttl } returns Duration.ofSeconds(ttlSeconds)
+                verify(exactly = 1) { clock.instant() }
+                verify(exactly = 1) { config.ttl }
+            }
 
-            assertThrows(IllegalStateException::class.java) { create() }
+            @ParameterizedTest
+            @ValueSource(longs = [0, -1])
+            fun `should fail without writing if the configured ttl is not positive`(ttlSeconds: Long) {
+                every { communities.findById(communityId) } returns testCommunity()
+                every { clock.instant() } returns now
+                every { config.ttl } returns Duration.ofSeconds(ttlSeconds)
 
-            verify { listOf(managerInvites, developerInvites) wasNot Called }
-        }
+                assertThrows(IllegalStateException::class.java) { create() }
 
-        @Test
-        fun `should propagate a storage exception of the update including a code collision`() {
-            val failure = IllegalStateException("Invite code collision")
-            prepare()
-            every { managerInvites.load(any<LazyEntity<CommunityInviteId, CommunityInvite.Manager>>()) } returns testManagerInvite()
-            every { managerInvites.update(any<CommunityInvite.Manager>()) } throws failure
+                verify { listOf(managerInvites, developerInvites) wasNot Called }
+            }
 
-            val actual = assertThrows(IllegalStateException::class.java) { create(kind = CommunityInvite.Kind.Manager) }
+            @Test
+            fun `should propagate a storage exception of the update including a code collision`() {
+                val failure = IllegalStateException("Invite code collision")
+                prepare()
+                every { managerInvites.load(any<LazyEntity<CommunityInviteId, CommunityInvite.Manager>>()) } returns testManagerInvite()
+                every { managerInvites.update(any<CommunityInvite.Manager>()) } throws failure
 
-            assertSame(failure, actual)
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    create(kind = CommunityInvite.Kind.Manager)
+                }
+
+                assertSame(failure, actual)
+            }
         }
 
         private fun create(user: MultipleRoleUser = administrator, kind: CommunityInvite.Kind = CommunityInvite.Kind.Manager) =
@@ -919,28 +939,36 @@ class AdministratorOperationsTests {
             }
         }
 
-        @Test
-        fun `should read the current time and the ttl once`() {
-            prepare()
-            every { developerInvites.load(any<LazyEntity<CommunityInviteId, CommunityInvite.Developer>>()) } returns testDeveloperInvite()
-            every { developerInvites.update(any<CommunityInvite.Developer>()) } answers { firstArg() }
+        @Nested
+        inner class ModuleRuleTests {
 
-            extend().getOrThrow()
+            @Test
+            fun `should read the current time and the ttl once`() {
+                prepare()
+                every {
+                    developerInvites.load(any<LazyEntity<CommunityInviteId, CommunityInvite.Developer>>())
+                } returns testDeveloperInvite()
+                every { developerInvites.update(any<CommunityInvite.Developer>()) } answers { firstArg() }
 
-            verify(exactly = 1) { clock.instant() }
-            verify(exactly = 1) { config.ttl }
-        }
+                extend().getOrThrow()
 
-        @Test
-        fun `should propagate a storage exception of the update`() {
-            val failure = IllegalStateException("Stale invite version")
-            prepare()
-            every { developerInvites.load(any<LazyEntity<CommunityInviteId, CommunityInvite.Developer>>()) } returns testDeveloperInvite()
-            every { developerInvites.update(any<CommunityInvite.Developer>()) } throws failure
+                verify(exactly = 1) { clock.instant() }
+                verify(exactly = 1) { config.ttl }
+            }
 
-            val actual = assertThrows(IllegalStateException::class.java) { extend() }
+            @Test
+            fun `should propagate a storage exception of the update`() {
+                val failure = IllegalStateException("Stale invite version")
+                prepare()
+                every {
+                    developerInvites.load(any<LazyEntity<CommunityInviteId, CommunityInvite.Developer>>())
+                } returns testDeveloperInvite()
+                every { developerInvites.update(any<CommunityInvite.Developer>()) } throws failure
 
-            assertSame(failure, actual)
+                val actual = assertThrows(IllegalStateException::class.java) { extend() }
+
+                assertSame(failure, actual)
+            }
         }
 
         private fun extend(user: MultipleRoleUser = administrator, kind: CommunityInvite.Kind = CommunityInvite.Kind.Developer) =
@@ -1134,28 +1162,32 @@ class AdministratorOperationsTests {
             }
         }
 
-        @Test
-        fun `should read the current time and the ttl once when replacing an expired invite`() {
-            prepareRefresh(testDeveloperInvite(expiresAt = now.minusSeconds(1)))
-            every { config.ttl } returns Duration.ofHours(1)
-            every { developerInvites.update(any<CommunityInvite.Developer>()) } answers { firstArg() }
+        @Nested
+        inner class ModuleRuleTests {
 
-            refresh().getOrThrow()
+            @Test
+            fun `should read the current time and the ttl once when replacing an expired invite`() {
+                prepareRefresh(testDeveloperInvite(expiresAt = now.minusSeconds(1)))
+                every { config.ttl } returns Duration.ofHours(1)
+                every { developerInvites.update(any<CommunityInvite.Developer>()) } answers { firstArg() }
 
-            verify(exactly = 1) { clock.instant() }
-            verify(exactly = 1) { config.ttl }
-        }
+                refresh().getOrThrow()
 
-        @Test
-        fun `should propagate a storage exception of the update`() {
-            val failure = IllegalStateException("Stale invite version")
-            prepareRefresh(testDeveloperInvite(expiresAt = Instant.EPOCH))
-            every { config.ttl } returns Duration.ofHours(1)
-            every { developerInvites.update(any<CommunityInvite.Developer>()) } throws failure
+                verify(exactly = 1) { clock.instant() }
+                verify(exactly = 1) { config.ttl }
+            }
 
-            val actual = assertThrows(IllegalStateException::class.java) { refresh() }
+            @Test
+            fun `should propagate a storage exception of the update`() {
+                val failure = IllegalStateException("Stale invite version")
+                prepareRefresh(testDeveloperInvite(expiresAt = Instant.EPOCH))
+                every { config.ttl } returns Duration.ofHours(1)
+                every { developerInvites.update(any<CommunityInvite.Developer>()) } throws failure
 
-            assertSame(failure, actual)
+                val actual = assertThrows(IllegalStateException::class.java) { refresh() }
+
+                assertSame(failure, actual)
+            }
         }
 
         private fun refresh(user: MultipleRoleUser = administrator, kind: CommunityInvite.Kind = CommunityInvite.Kind.Developer) =

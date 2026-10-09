@@ -212,16 +212,20 @@ class ParticipantOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exceptions`() {
-            val failure = IllegalStateException("storage failed")
-            every { groups.findById(group.id) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = assertThrows(IllegalStateException::class.java) {
-                operations.viewContests(user = user)
+            @Test
+            fun `should propagate storage exceptions`() {
+                val failure = IllegalStateException("storage failed")
+                every { groups.findById(group.id) } throws failure
+
+                val thrown = assertThrows(IllegalStateException::class.java) {
+                    operations.viewContests(user = user)
+                }
+
+                assertSame(failure, thrown)
             }
-
-            assertSame(failure, thrown)
         }
     }
 
@@ -479,51 +483,55 @@ class ParticipantOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate an exception while persisting an entry`() {
-            val failure = IllegalStateException("entry storage failed")
-            every { groups.findById(group.id) } returns group
-            every { contests.findById(contest.id) } returns contest
-            every { entries.findByContext(participantId = user.id, competitionId = group.id, contestId = contest.id) } returns null
-            every { clock.instant() } returns Instant.EPOCH
-            every { entries.findOrCreate(any()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = assertThrows(IllegalStateException::class.java) {
-                operations.enterContest(user = user, contestId = contest.id)
+            @Test
+            fun `should propagate an exception while persisting an entry`() {
+                val failure = IllegalStateException("entry storage failed")
+                every { groups.findById(group.id) } returns group
+                every { contests.findById(contest.id) } returns contest
+                every { entries.findByContext(participantId = user.id, competitionId = group.id, contestId = contest.id) } returns null
+                every { clock.instant() } returns Instant.EPOCH
+                every { entries.findOrCreate(any()) } throws failure
+
+                val thrown = assertThrows(IllegalStateException::class.java) {
+                    operations.enterContest(user = user, contestId = contest.id)
+                }
+
+                assertSame(failure, thrown)
             }
 
-            assertSame(failure, thrown)
-        }
+            @Test
+            fun `should truncate the saved entry time to microseconds`() {
+                val data = slot<ParticipantContestEntryData>()
+                every { groups.findById(group.id) } returns group
+                every { contests.findById(contest.id) } returns contest
+                every { entries.findByContext(participantId = user.id, competitionId = group.id, contestId = contest.id) } returns null
+                every { clock.instant() } returns Instant.parse("2026-01-01T00:00:00.123456789Z")
+                every { entries.findOrCreate(capture(data)) } returns savedEntry()
 
-        @Test
-        fun `should truncate the saved entry time to microseconds`() {
-            val data = slot<ParticipantContestEntryData>()
-            every { groups.findById(group.id) } returns group
-            every { contests.findById(contest.id) } returns contest
-            every { entries.findByContext(participantId = user.id, competitionId = group.id, contestId = contest.id) } returns null
-            every { clock.instant() } returns Instant.parse("2026-01-01T00:00:00.123456789Z")
-            every { entries.findOrCreate(capture(data)) } returns savedEntry()
+                operations.enterContest(user = user, contestId = contest.id).getOrThrow()
 
-            operations.enterContest(user = user, contestId = contest.id).getOrThrow()
-
-            assertEquals(Instant.parse("2026-01-01T00:00:00.123456Z"), data.captured.enteredAt)
-        }
-
-        @Test
-        fun `should read the current time once when saving the first entry`() {
-            val scheduled = contest.withData {
-                startsAt = Instant.ofEpochSecond(100)
-                contestDuration = Duration.ofSeconds(60)
+                assertEquals(Instant.parse("2026-01-01T00:00:00.123456Z"), data.captured.enteredAt)
             }
-            every { groups.findById(group.id) } returns group
-            every { contests.findById(contest.id) } returns scheduled
-            every { entries.findByContext(participantId = user.id, competitionId = group.id, contestId = contest.id) } returns null
-            every { clock.instant() } returns Instant.ofEpochSecond(120)
-            every { entries.findOrCreate(any()) } returns savedEntry()
 
-            operations.enterContest(user = user, contestId = contest.id).getOrThrow()
+            @Test
+            fun `should read the current time once when saving the first entry`() {
+                val scheduled = contest.withData {
+                    startsAt = Instant.ofEpochSecond(100)
+                    contestDuration = Duration.ofSeconds(60)
+                }
+                every { groups.findById(group.id) } returns group
+                every { contests.findById(contest.id) } returns scheduled
+                every { entries.findByContext(participantId = user.id, competitionId = group.id, contestId = contest.id) } returns null
+                every { clock.instant() } returns Instant.ofEpochSecond(120)
+                every { entries.findOrCreate(any()) } returns savedEntry()
 
-            verify(exactly = 1) { clock.instant() }
+                operations.enterContest(user = user, contestId = contest.id).getOrThrow()
+
+                verify(exactly = 1) { clock.instant() }
+            }
         }
     }
 }

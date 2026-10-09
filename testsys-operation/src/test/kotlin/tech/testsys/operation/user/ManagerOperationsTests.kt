@@ -272,26 +272,30 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should read the time and the ttl once`() {
-            prepareSaving()
+        @Nested
+        inner class ModuleRuleTests {
 
-            operations.createClass(user = manager, className = "New class").getOrThrow()
+            @Test
+            fun `should read the time and the ttl once`() {
+                prepareSaving()
 
-            verify(exactly = 1) { clock.instant() }
-            verify(exactly = 1) { classInviteConfig.ttl }
-        }
+                operations.createClass(user = manager, className = "New class").getOrThrow()
 
-        @Test
-        fun `should propagate a technical storage exception when saving the class`() {
-            val failure = IllegalStateException("Class storage unavailable")
-            every { repository.saveWithInvite(any(), any()) } throws failure
-
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.createClass(user = manager, className = "New class")
+                verify(exactly = 1) { clock.instant() }
+                verify(exactly = 1) { classInviteConfig.ttl }
             }
 
-            assertSame(failure, actual)
+            @Test
+            fun `should propagate a technical storage exception when saving the class`() {
+                val failure = IllegalStateException("Class storage unavailable")
+                every { repository.saveWithInvite(any(), any()) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.createClass(user = manager, className = "New class")
+                }
+
+                assertSame(failure, actual)
+            }
         }
 
         private fun prepareSaving(invite: CapturingSlot<ClassInviteData> = slot()) {
@@ -453,16 +457,20 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a technical storage exception when saving the competition`() {
-            val failure = IllegalStateException("Competition storage unavailable")
-            every { competitionRepository.save(any<CompetitionData>()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.createCompetition(user = manager, competitionName = "New competition")
+            @Test
+            fun `should propagate a technical storage exception when saving the competition`() {
+                val failure = IllegalStateException("Competition storage unavailable")
+                every { competitionRepository.save(any<CompetitionData>()) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.createCompetition(user = manager, competitionName = "New competition")
+                }
+
+                assertSame(failure, actual)
             }
-
-            assertSame(failure, actual)
         }
 
         private fun prepareSaving() {
@@ -580,16 +588,20 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a technical storage exception when listing classes`() {
-            val failure = IllegalStateException("Class storage unavailable")
-            every { repository.findAvailableToManager(ownerId = manager.id, pagination = pagination) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.viewClasses(user = manager, pagination = pagination)
+            @Test
+            fun `should propagate a technical storage exception when listing classes`() {
+                val failure = IllegalStateException("Class storage unavailable")
+                every { repository.findAvailableToManager(ownerId = manager.id, pagination = pagination) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.viewClasses(user = manager, pagination = pagination)
+                }
+
+                assertSame(failure, actual)
             }
-
-            assertSame(failure, actual)
         }
     }
 
@@ -708,16 +720,20 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a technical exception when reading the class`() {
-            val failure = IllegalStateException("Class storage unavailable")
-            every { repository.findById(classId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.viewClass(user = manager, classId = classId)
+            @Test
+            fun `should propagate a technical exception when reading the class`() {
+                val failure = IllegalStateException("Class storage unavailable")
+                every { repository.findById(classId) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.viewClass(user = manager, classId = classId)
+                }
+
+                assertSame(failure, actual)
             }
-
-            assertSame(failure, actual)
         }
     }
 
@@ -825,28 +841,32 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should read the time and the ttl once`() {
-            prepareCreation(existing = testClassInvite())
-            every { classInviteRepository.update(any<ClassInvite>()) } answers { firstArg() }
+        @Nested
+        inner class ModuleRuleTests {
 
-            operations.createClassInvite(user = manager, classId = classId).getOrThrow()
+            @Test
+            fun `should read the time and the ttl once`() {
+                prepareCreation(existing = testClassInvite())
+                every { classInviteRepository.update(any<ClassInvite>()) } answers { firstArg() }
 
-            verify(exactly = 1) { clock.instant() }
-            verify(exactly = 1) { classInviteConfig.ttl }
-        }
+                operations.createClassInvite(user = manager, classId = classId).getOrThrow()
 
-        @Test
-        fun `should propagate a storage exception such as a code collision`() {
-            prepareCreation(existing = testClassInvite())
-            val failure = IllegalStateException("Duplicate invite code")
-            every { classInviteRepository.update(any<ClassInvite>()) } throws failure
-
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.createClassInvite(user = manager, classId = classId)
+                verify(exactly = 1) { clock.instant() }
+                verify(exactly = 1) { classInviteConfig.ttl }
             }
 
-            assertSame(failure, actual)
+            @Test
+            fun `should propagate a storage exception such as a code collision`() {
+                prepareCreation(existing = testClassInvite())
+                val failure = IllegalStateException("Duplicate invite code")
+                every { classInviteRepository.update(any<ClassInvite>()) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.createClassInvite(user = manager, classId = classId)
+                }
+
+                assertSame(failure, actual)
+            }
         }
 
         private fun prepareCreation(existing: ClassInvite, now: Instant = this.now) {
@@ -963,27 +983,31 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should read the time and the ttl once`() {
-            prepareExtension(existing = testClassInvite(), ttl = Duration.ofDays(7))
+        @Nested
+        inner class ModuleRuleTests {
 
-            operations.extendClassInvite(user = manager, classId = classId).getOrThrow()
+            @Test
+            fun `should read the time and the ttl once`() {
+                prepareExtension(existing = testClassInvite(), ttl = Duration.ofDays(7))
 
-            verify(exactly = 1) { clock.instant() }
-            verify(exactly = 1) { classInviteConfig.ttl }
-        }
+                operations.extendClassInvite(user = manager, classId = classId).getOrThrow()
 
-        @Test
-        fun `should propagate a storage exception of the update`() {
-            val failure = IllegalStateException("Stale invite version")
-            prepareExtension(existing = testClassInvite(), ttl = Duration.ofDays(7))
-            every { classInviteRepository.update(any<ClassInvite>()) } throws failure
-
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.extendClassInvite(user = manager, classId = classId)
+                verify(exactly = 1) { clock.instant() }
+                verify(exactly = 1) { classInviteConfig.ttl }
             }
 
-            assertSame(failure, actual)
+            @Test
+            fun `should propagate a storage exception of the update`() {
+                val failure = IllegalStateException("Stale invite version")
+                prepareExtension(existing = testClassInvite(), ttl = Duration.ofDays(7))
+                every { classInviteRepository.update(any<ClassInvite>()) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.extendClassInvite(user = manager, classId = classId)
+                }
+
+                assertSame(failure, actual)
+            }
         }
 
         private fun prepareExtension(existing: ClassInvite, ttl: Duration) {
@@ -1083,41 +1107,45 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should read the time and the ttl once when replacing an expired invite code`() {
-            prepareRefresh(testClassInvite(expiresAt = Instant.EPOCH))
-            every { classInviteConfig.ttl } returns Duration.ofDays(7)
-            every { classInviteRepository.update(any<ClassInvite>()) } answers { firstArg() }
+        @Nested
+        inner class ModuleRuleTests {
 
-            operations.refreshClassInvite(user = manager, classId = classId).getOrThrow()
+            @Test
+            fun `should read the time and the ttl once when replacing an expired invite code`() {
+                prepareRefresh(testClassInvite(expiresAt = Instant.EPOCH))
+                every { classInviteConfig.ttl } returns Duration.ofDays(7)
+                every { classInviteRepository.update(any<ClassInvite>()) } answers { firstArg() }
 
-            verify(exactly = 1) { clock.instant() }
-            verify(exactly = 1) { classInviteConfig.ttl }
-        }
+                operations.refreshClassInvite(user = manager, classId = classId).getOrThrow()
 
-        @ParameterizedTest
-        @ValueSource(longs = [0, -1])
-        fun `should fail without writing if the configured ttl is not positive`(ttlSeconds: Long) {
-            prepareRefresh(testClassInvite(expiresAt = Instant.EPOCH))
-            every { classInviteConfig.ttl } returns Duration.ofSeconds(ttlSeconds)
-
-            assertThrows(IllegalStateException::class.java) { operations.refreshClassInvite(user = manager, classId = classId) }
-
-            verify(exactly = 0) { classInviteRepository.update(any<ClassInvite>()) }
-        }
-
-        @Test
-        fun `should propagate a storage exception of the update`() {
-            val failure = IllegalStateException("Stale invite version")
-            prepareRefresh(testClassInvite(expiresAt = Instant.EPOCH))
-            every { classInviteConfig.ttl } returns Duration.ofDays(7)
-            every { classInviteRepository.update(any<ClassInvite>()) } throws failure
-
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.refreshClassInvite(user = manager, classId = classId)
+                verify(exactly = 1) { clock.instant() }
+                verify(exactly = 1) { classInviteConfig.ttl }
             }
 
-            assertSame(failure, actual)
+            @ParameterizedTest
+            @ValueSource(longs = [0, -1])
+            fun `should fail without writing if the configured ttl is not positive`(ttlSeconds: Long) {
+                prepareRefresh(testClassInvite(expiresAt = Instant.EPOCH))
+                every { classInviteConfig.ttl } returns Duration.ofSeconds(ttlSeconds)
+
+                assertThrows(IllegalStateException::class.java) { operations.refreshClassInvite(user = manager, classId = classId) }
+
+                verify(exactly = 0) { classInviteRepository.update(any<ClassInvite>()) }
+            }
+
+            @Test
+            fun `should propagate a storage exception of the update`() {
+                val failure = IllegalStateException("Stale invite version")
+                prepareRefresh(testClassInvite(expiresAt = Instant.EPOCH))
+                every { classInviteConfig.ttl } returns Duration.ofDays(7)
+                every { classInviteRepository.update(any<ClassInvite>()) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.refreshClassInvite(user = manager, classId = classId)
+                }
+
+                assertSame(failure, actual)
+            }
         }
 
         private fun prepareRefresh(invite: ClassInvite) {
@@ -1233,16 +1261,20 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a technical storage exception when listing competitions`() {
-            val failure = IllegalStateException("Competition storage unavailable")
-            every { competitionRepository.findAvailableToManager(ownerId = manager.id, pagination = pagination) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.viewCompetitions(user = manager, pagination = pagination)
+            @Test
+            fun `should propagate a technical storage exception when listing competitions`() {
+                val failure = IllegalStateException("Competition storage unavailable")
+                every { competitionRepository.findAvailableToManager(ownerId = manager.id, pagination = pagination) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.viewCompetitions(user = manager, pagination = pagination)
+                }
+
+                assertSame(failure, actual)
             }
-
-            assertSame(failure, actual)
         }
     }
 
@@ -1370,16 +1402,20 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a technical exception when reading the competition`() {
-            val failure = IllegalStateException("Competition storage unavailable")
-            every { competitionRepository.findById(competitionId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.viewCompetition(user = manager, competitionId = competitionId)
+            @Test
+            fun `should propagate a technical exception when reading the competition`() {
+                val failure = IllegalStateException("Competition storage unavailable")
+                every { competitionRepository.findById(competitionId) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.viewCompetition(user = manager, competitionId = competitionId)
+                }
+
+                assertSame(failure, actual)
             }
-
-            assertSame(failure, actual)
         }
     }
 
@@ -1595,18 +1631,22 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a technical exception when reading contest results`() {
-            val failure = IllegalStateException("Submission storage unavailable")
-            every { repository.findById(classId) } returns testClass { contests(listOf(19)) }
-            every { contestRepository.findById(contestId) } returns testContest()
-            every { submissionRepository.findContestResults(any(), any(), any()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.viewClassContest(user = manager, classId = classId, contestId = contestId)
+            @Test
+            fun `should propagate a technical exception when reading contest results`() {
+                val failure = IllegalStateException("Submission storage unavailable")
+                every { repository.findById(classId) } returns testClass { contests(listOf(19)) }
+                every { contestRepository.findById(contestId) } returns testContest()
+                every { submissionRepository.findContestResults(any(), any(), any()) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.viewClassContest(user = manager, classId = classId, contestId = contestId)
+                }
+
+                assertSame(failure, actual)
             }
-
-            assertSame(failure, actual)
         }
     }
 
@@ -1831,17 +1871,21 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a technical exception when reading the contest`() {
-            val failure = IllegalStateException("Contest storage unavailable")
-            every { competitionRepository.findById(competitionId) } returns testCompetition { contests(listOf(19)) }
-            every { contestRepository.findById(contestId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.viewCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+            @Test
+            fun `should propagate a technical exception when reading the contest`() {
+                val failure = IllegalStateException("Contest storage unavailable")
+                every { competitionRepository.findById(competitionId) } returns testCompetition { contests(listOf(19)) }
+                every { contestRepository.findById(contestId) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.viewCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+                }
+
+                assertSame(failure, actual)
             }
-
-            assertSame(failure, actual)
         }
     }
 
@@ -2154,18 +2198,22 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a technical exception when saving the class`() {
-            val failure = IllegalStateException("Class storage unavailable")
-            every { repository.findById(classId) } returns testClass()
-            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
-            every { repository.update(any<Class>()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.addClassContest(user = manager, classId = classId, contestId = contestId)
+            @Test
+            fun `should propagate a technical exception when saving the class`() {
+                val failure = IllegalStateException("Class storage unavailable")
+                every { repository.findById(classId) } returns testClass()
+                every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+                every { repository.update(any<Class>()) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.addClassContest(user = manager, classId = classId, contestId = contestId)
+                }
+
+                assertSame(failure, actual)
             }
-
-            assertSame(failure, actual)
         }
     }
 
@@ -2492,18 +2540,22 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a technical exception when saving the competition`() {
-            val failure = IllegalStateException("Competition storage unavailable")
-            every { competitionRepository.findById(competitionId) } returns testCompetition()
-            every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
-            every { competitionRepository.update(any<Competition>()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+            @Test
+            fun `should propagate a technical exception when saving the competition`() {
+                val failure = IllegalStateException("Competition storage unavailable")
+                every { competitionRepository.findById(competitionId) } returns testCompetition()
+                every { contestRepository.findById(contestId) } returns testContest { sharedTo(listOf(4)) }
+                every { competitionRepository.update(any<Competition>()) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.addCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
+                }
+
+                assertSame(failure, actual)
             }
-
-            assertSame(failure, actual)
         }
     }
 
@@ -2725,29 +2777,33 @@ class ManagerOperationsTests {
             }
         }
 
-        @Test
-        fun `should read the maximum number of participants exactly once`() {
-            every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
-            every { competitionConfig.maxParticipants } returns 10
-            every { participantRepository.saveToCompetition(competitionId, any(), any()) } returns emptyList()
+        @Nested
+        inner class ModuleRuleTests {
 
-            operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 2).getOrThrow()
+            @Test
+            fun `should read the maximum number of participants exactly once`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
+                every { competitionConfig.maxParticipants } returns 10
+                every { participantRepository.saveToCompetition(competitionId, any(), any()) } returns emptyList()
 
-            verify(exactly = 1) { competitionConfig.maxParticipants }
-        }
+                operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 2).getOrThrow()
 
-        @Test
-        fun `should propagate a technical exception when saving the participants`() {
-            val failure = IllegalStateException("Duplicate access code")
-            every { competitionRepository.findById(competitionId) } returns testCompetition()
-            every { competitionConfig.maxParticipants } returns 10
-            every { participantRepository.saveToCompetition(competitionId, any(), any()) } throws failure
-
-            val actual = assertThrows(IllegalStateException::class.java) {
-                operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 1)
+                verify(exactly = 1) { competitionConfig.maxParticipants }
             }
 
-            assertSame(failure, actual)
+            @Test
+            fun `should propagate a technical exception when saving the participants`() {
+                val failure = IllegalStateException("Duplicate access code")
+                every { competitionRepository.findById(competitionId) } returns testCompetition()
+                every { competitionConfig.maxParticipants } returns 10
+                every { participantRepository.saveToCompetition(competitionId, any(), any()) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 1)
+                }
+
+                assertSame(failure, actual)
+            }
         }
 
         private fun assertCanonicalIdentityUuid(hash: AccessTokenHash) {

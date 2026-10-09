@@ -253,19 +253,27 @@ class StudyOperationsTests {
                 }
             }
 
-            @Test
-            fun `should propagate a technical exception while reading participant entry`() {
-                val failure = IllegalStateException("Participant entry storage failed")
-                prepareParticipantView()
-                every {
-                    participantEntries.findByContext(participantId = participant.id, competitionId = competition.id, contestId = contest.id)
-                } throws failure
+            @Nested
+            inner class ModuleRuleTests {
 
-                val thrown = assertThrows(IllegalStateException::class.java) {
-                    operations.viewContest(user = participant, contestId = contest.id)
+                @Test
+                fun `should propagate a technical exception while reading participant entry`() {
+                    val failure = IllegalStateException("Participant entry storage failed")
+                    prepareParticipantView()
+                    every {
+                        participantEntries.findByContext(
+                            participantId = participant.id,
+                            competitionId = competition.id,
+                            contestId = contest.id,
+                        )
+                    } throws failure
+
+                    val thrown = assertThrows(IllegalStateException::class.java) {
+                        operations.viewContest(user = participant, contestId = contest.id)
+                    }
+
+                    assertSame(failure, thrown)
                 }
-
-                assertSame(failure, thrown)
             }
         }
 
@@ -416,19 +424,23 @@ class StudyOperationsTests {
                 }
             }
 
-            @Test
-            fun `should propagate a technical exception while reading student entry`() {
-                val failure = IllegalStateException("Student entry storage failed")
-                prepareStudentView()
-                every {
-                    studentEntries.findByContext(userId = student.id, studyClassId = studyClass.id, contestId = contest.id)
-                } throws failure
+            @Nested
+            inner class ModuleRuleTests {
 
-                val thrown = assertThrows(IllegalStateException::class.java) {
-                    operations.viewContest(user = student, classId = studyClass.id, contestId = contest.id)
+                @Test
+                fun `should propagate a technical exception while reading student entry`() {
+                    val failure = IllegalStateException("Student entry storage failed")
+                    prepareStudentView()
+                    every {
+                        studentEntries.findByContext(userId = student.id, studyClassId = studyClass.id, contestId = contest.id)
+                    } throws failure
+
+                    val thrown = assertThrows(IllegalStateException::class.java) {
+                        operations.viewContest(user = student, classId = studyClass.id, contestId = contest.id)
+                    }
+
+                    assertSame(failure, thrown)
                 }
-
-                assertSame(failure, thrown)
             }
         }
     }
@@ -711,17 +723,21 @@ class StudyOperationsTests {
                 }
             }
 
-            @Test
-            fun `should propagate a technical exception while reading submissions`() {
-                val failure = IllegalStateException("Submission storage failed")
-                prepareParticipantTask()
-                every {
-                    submissionRepository.findGradingByContext(authorId = participant.id, taskId = task.id, contestId = taskContest.id)
-                } throws failure
+            @Nested
+            inner class ModuleRuleTests {
 
-                val thrown = assertThrows(IllegalStateException::class.java) { view() }
+                @Test
+                fun `should propagate a technical exception while reading submissions`() {
+                    val failure = IllegalStateException("Submission storage failed")
+                    prepareParticipantTask()
+                    every {
+                        submissionRepository.findGradingByContext(authorId = participant.id, taskId = task.id, contestId = taskContest.id)
+                    } throws failure
 
-                assertSame(failure, thrown)
+                    val thrown = assertThrows(IllegalStateException::class.java) { view() }
+
+                    assertSame(failure, thrown)
+                }
             }
 
             private fun stubSubmissions(vararg submissions: Submission, contestId: ContestId = taskContest.id) {
@@ -900,17 +916,21 @@ class StudyOperationsTests {
                 }
             }
 
-            @Test
-            fun `should propagate a technical exception while reading submissions`() {
-                val failure = IllegalStateException("Submission storage failed")
-                prepareStudentTask()
-                every {
-                    submissionRepository.findGradingByContext(authorId = student.id, taskId = task.id, contestId = taskContest.id)
-                } throws failure
+            @Nested
+            inner class ModuleRuleTests {
 
-                val thrown = assertThrows(IllegalStateException::class.java) { view() }
+                @Test
+                fun `should propagate a technical exception while reading submissions`() {
+                    val failure = IllegalStateException("Submission storage failed")
+                    prepareStudentTask()
+                    every {
+                        submissionRepository.findGradingByContext(authorId = student.id, taskId = task.id, contestId = taskContest.id)
+                    } throws failure
 
-                assertSame(failure, thrown)
+                    val thrown = assertThrows(IllegalStateException::class.java) { view() }
+
+                    assertSame(failure, thrown)
+                }
             }
 
             private fun stubSubmissions(vararg submissions: Submission, contestId: ContestId = taskContest.id) {
@@ -1666,15 +1686,19 @@ class StudyOperationsTests {
                 }
             }
 
-            @Test
-            fun `should propagate a technical exception while saving the submission`() {
-                val failure = IllegalStateException("Submission storage failed")
-                prepareParticipantSend()
-                every { submissionRepository.save(any<SubmissionData>()) } throws failure
+            @Nested
+            inner class ModuleRuleTests {
 
-                val thrown = assertThrows(IllegalStateException::class.java) { send() }
+                @Test
+                fun `should propagate a technical exception while saving the submission`() {
+                    val failure = IllegalStateException("Submission storage failed")
+                    prepareParticipantSend()
+                    every { submissionRepository.save(any<SubmissionData>()) } throws failure
 
-                assertSame(failure, thrown)
+                    val thrown = assertThrows(IllegalStateException::class.java) { send() }
+
+                    assertSame(failure, thrown)
+                }
             }
 
             private fun send(
@@ -1948,16 +1972,20 @@ class StudyOperationsTests {
                 }
             }
 
-            @Test
-            fun `should propagate a technical exception while saving the solution`() {
-                val failure = IllegalStateException("Solution storage failed")
-                prepareStudentSend()
-                every { solutionRepository.save(any<SolutionData>()) } throws failure
+            @Nested
+            inner class ModuleRuleTests {
 
-                val thrown = assertThrows(IllegalStateException::class.java) { send() }
+                @Test
+                fun `should propagate a technical exception while saving the solution`() {
+                    val failure = IllegalStateException("Solution storage failed")
+                    prepareStudentSend()
+                    every { solutionRepository.save(any<SolutionData>()) } throws failure
 
-                assertSame(failure, thrown)
-                verify { submissionRepository wasNot Called }
+                    val thrown = assertThrows(IllegalStateException::class.java) { send() }
+
+                    assertSame(failure, thrown)
+                    verify { submissionRepository wasNot Called }
+                }
             }
 
             private fun send(

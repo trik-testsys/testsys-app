@@ -212,17 +212,21 @@ class JudgeOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate the original technical exception`() {
-            val pagination = Pagination(page = 0, size = 10)
-            val failure = IllegalStateException("Storage unavailable")
-            every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = assertThrows(IllegalStateException::class.java) {
-                operations.viewResults(user = judge, pagination = pagination)
+            @Test
+            fun `should propagate the original technical exception`() {
+                val pagination = Pagination(page = 0, size = 10)
+                val failure = IllegalStateException("Storage unavailable")
+                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } throws failure
+
+                val thrown = assertThrows(IllegalStateException::class.java) {
+                    operations.viewResults(user = judge, pagination = pagination)
+                }
+
+                assertSame(failure, thrown)
             }
-
-            assertSame(failure, thrown)
         }
     }
 
@@ -481,59 +485,63 @@ class JudgeOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate the original submission lookup exception`() {
-            val failure = IllegalStateException("Submission storage unavailable")
-            every { submissionRepository.findById(submissionId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = assertThrows(IllegalStateException::class.java) {
-                operations.changeVerdict(user = judge, submissionId = submissionId, score = score, reason = reason)
+            @Test
+            fun `should propagate the original submission lookup exception`() {
+                val failure = IllegalStateException("Submission storage unavailable")
+                every { submissionRepository.findById(submissionId) } throws failure
+
+                val thrown = assertThrows(IllegalStateException::class.java) {
+                    operations.changeVerdict(user = judge, submissionId = submissionId, score = score, reason = reason)
+                }
+
+                assertSame(failure, thrown)
+                verify { judgmentOrderRepository wasNot Called }
             }
 
-            assertSame(failure, thrown)
-            verify { judgmentOrderRepository wasNot Called }
-        }
+            @Test
+            fun `should propagate the original author lookup exception`() {
+                arrangeStudentSubmission()
+                val failure = IllegalStateException("User storage unavailable")
+                every { userRepository.findById(student.id) } throws failure
 
-        @Test
-        fun `should propagate the original author lookup exception`() {
-            arrangeStudentSubmission()
-            val failure = IllegalStateException("User storage unavailable")
-            every { userRepository.findById(student.id) } throws failure
+                val thrown = assertThrows(IllegalStateException::class.java) {
+                    operations.changeVerdict(user = judge, submissionId = submissionId, score = score, reason = reason)
+                }
 
-            val thrown = assertThrows(IllegalStateException::class.java) {
-                operations.changeVerdict(user = judge, submissionId = submissionId, score = score, reason = reason)
+                assertSame(failure, thrown)
+                verify { judgmentOrderRepository wasNot Called }
             }
 
-            assertSame(failure, thrown)
-            verify { judgmentOrderRepository wasNot Called }
-        }
+            @Test
+            fun `should propagate the original judgment save exception`() {
+                arrangeStudentSubmission()
+                val failure = IllegalStateException("Judgment storage unavailable")
+                every { judgmentOrderRepository.save(any<JudgmentOrderData>()) } throws failure
 
-        @Test
-        fun `should propagate the original judgment save exception`() {
-            arrangeStudentSubmission()
-            val failure = IllegalStateException("Judgment storage unavailable")
-            every { judgmentOrderRepository.save(any<JudgmentOrderData>()) } throws failure
+                val thrown = assertThrows(IllegalStateException::class.java) {
+                    operations.changeVerdict(user = judge, submissionId = submissionId, score = score, reason = reason)
+                }
 
-            val thrown = assertThrows(IllegalStateException::class.java) {
-                operations.changeVerdict(user = judge, submissionId = submissionId, score = score, reason = reason)
+                assertSame(failure, thrown)
             }
 
-            assertSame(failure, thrown)
-        }
+            @Test
+            fun `should propagate the original participant lookup exception`() {
+                val authorId = SingleRoleUserId(9)
+                every { submissionRepository.findById(submissionId) } returns testSubmission { author = authorId }
+                val failure = IllegalStateException("Participant storage unavailable")
+                every { participantRepository.findById(authorId) } throws failure
 
-        @Test
-        fun `should propagate the original participant lookup exception`() {
-            val authorId = SingleRoleUserId(9)
-            every { submissionRepository.findById(submissionId) } returns testSubmission { author = authorId }
-            val failure = IllegalStateException("Participant storage unavailable")
-            every { participantRepository.findById(authorId) } throws failure
+                val thrown = assertThrows(IllegalStateException::class.java) {
+                    operations.changeVerdict(user = judge, submissionId = submissionId, score = score, reason = reason)
+                }
 
-            val thrown = assertThrows(IllegalStateException::class.java) {
-                operations.changeVerdict(user = judge, submissionId = submissionId, score = score, reason = reason)
+                assertSame(failure, thrown)
+                verify { judgmentOrderRepository wasNot Called }
             }
-
-            assertSame(failure, thrown)
-            verify { judgmentOrderRepository wasNot Called }
         }
 
         private fun arrangeStudentSubmission(value: Submission = testSubmission()) {

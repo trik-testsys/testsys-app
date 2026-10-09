@@ -410,19 +410,23 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate technical persistence exceptions to the external caller`() {
-            val task = validTask()
-            prepareContent(task)
-            every { taskRepository.findById(TaskId(0)) } returns task
-            val failure = IllegalStateException("Database unavailable")
-            every { taskValidationRequestRepository.findOrCreateActive(TaskId(0), developer.id) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.testTask(developer, TaskId(0))
+            @Test
+            fun `should propagate technical persistence exceptions to the external caller`() {
+                val task = validTask()
+                prepareContent(task)
+                every { taskRepository.findById(TaskId(0)) } returns task
+                val failure = IllegalStateException("Database unavailable")
+                every { taskValidationRequestRepository.findOrCreateActive(TaskId(0), developer.id) } throws failure
+
+                val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.testTask(developer, TaskId(0))
+                }
+
+                Assertions.assertSame(failure, actual)
             }
-
-            Assertions.assertSame(failure, actual)
         }
 
         private fun validTask(state: String = "new"): Task {
@@ -857,18 +861,22 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a storage exception without sending submissions to grading`() {
-            val failure = IllegalStateException("Task was changed concurrently")
-            every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
-            every { taskRepository.update(any<Task>()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
+            @Test
+            fun `should propagate a storage exception without sending submissions to grading`() {
+                val failure = IllegalStateException("Task was changed concurrently")
+                every { taskRepository.findById(taskId) } returns uncommittedTask(committedPolygonIds = listOf(3))
+                every { taskRepository.update(any<Task>()) } throws failure
+
+                val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
+                }
+
+                Assertions.assertSame(failure, actual)
+                verify(exactly = 0) { grader.sendToGrade(any()) }
             }
-
-            Assertions.assertSame(failure, actual)
-            verify(exactly = 0) { grader.sendToGrade(any()) }
         }
 
         private fun committableTask(state: String): Task = when (state) {
@@ -1171,18 +1179,22 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a storage exception when listing contests`() {
-            val failure = IllegalStateException("Contest storage unavailable")
-            every {
-                contestRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet(), pagination = pagination)
-            } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.viewContests(developer, pagination = pagination)
+            @Test
+            fun `should propagate a storage exception when listing contests`() {
+                val failure = IllegalStateException("Contest storage unavailable")
+                every {
+                    contestRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet(), pagination = pagination)
+                } throws failure
+
+                val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.viewContests(developer, pagination = pagination)
+                }
+
+                Assertions.assertSame(failure, actual)
             }
-
-            Assertions.assertSame(failure, actual)
         }
     }
 
@@ -1316,16 +1328,20 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a storage exception when viewing a contest`() {
-            val failure = IllegalStateException("Contest storage unavailable")
-            every { contestRepository.findById(contestId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.viewContest(developer, contestId)
+            @Test
+            fun `should propagate a storage exception when viewing a contest`() {
+                val failure = IllegalStateException("Contest storage unavailable")
+                every { contestRepository.findById(contestId) } throws failure
+
+                val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.viewContest(developer, contestId)
+                }
+
+                Assertions.assertSame(failure, actual)
             }
-
-            Assertions.assertSame(failure, actual)
         }
     }
 
@@ -1910,16 +1926,20 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a storage exception when saving the contest fails`() {
-            val failure = IllegalStateException("Storage failure")
-            every { contestRepository.save(any<ContestData>()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.createContest(developer, "Contest", version)
+            @Test
+            fun `should propagate a storage exception when saving the contest fails`() {
+                val failure = IllegalStateException("Storage failure")
+                every { contestRepository.save(any<ContestData>()) } throws failure
+
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.createContest(developer, "Contest", version)
+                }
+
+                Assertions.assertSame(failure, thrown)
             }
-
-            Assertions.assertSame(failure, thrown)
         }
     }
 
@@ -2384,30 +2404,34 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a storage exception without updating when loading the contest fails`() {
-            val failure = IllegalStateException("Storage read failure")
-            every { contestRepository.findById(contestId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.editContest(developer, contestId, "Updated", startsAt = start, endsAt = end)
+            @Test
+            fun `should propagate a storage exception without updating when loading the contest fails`() {
+                val failure = IllegalStateException("Storage read failure")
+                every { contestRepository.findById(contestId) } throws failure
+
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.editContest(developer, contestId, "Updated", startsAt = start, endsAt = end)
+                }
+
+                Assertions.assertSame(failure, thrown)
+                verify(exactly = 0) { contestRepository.update(any<Contest>()) }
             }
 
-            Assertions.assertSame(failure, thrown)
-            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
-        }
+            @Test
+            fun `should propagate a storage exception when updating the contest fails`() {
+                prepare(scheduledContest())
+                val failure = IllegalStateException("Storage update failure")
+                every { contestRepository.update(any<Contest>()) } throws failure
 
-        @Test
-        fun `should propagate a storage exception when updating the contest fails`() {
-            prepare(scheduledContest())
-            val failure = IllegalStateException("Storage update failure")
-            every { contestRepository.update(any<Contest>()) } throws failure
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.editContest(developer, contestId, "Updated", startsAt = start, endsAt = end)
+                }
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.editContest(developer, contestId, "Updated", startsAt = start, endsAt = end)
+                Assertions.assertSame(failure, thrown)
             }
-
-            Assertions.assertSame(failure, thrown)
         }
 
         private fun scheduledContest(): Contest = testContest {
@@ -2719,44 +2743,48 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a storage exception without saving when loading the contest fails`() {
-            val failure = IllegalStateException("Storage read failure")
-            every { contestRepository.findById(contestId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId))
+            @Test
+            fun `should propagate a storage exception without saving when loading the contest fails`() {
+                val failure = IllegalStateException("Storage read failure")
+                every { contestRepository.findById(contestId) } throws failure
+
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId))
+                }
+
+                Assertions.assertSame(failure, thrown)
+                verify(exactly = 0) { contestRepository.update(any<Contest>()) }
             }
 
-            Assertions.assertSame(failure, thrown)
-            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
-        }
+            @Test
+            fun `should propagate a storage exception without saving when loading a selected community fails`() {
+                prepare()
+                val failure = IllegalStateException("Community storage read failure")
+                every { communityRepository.findById(firstCommunityId) } throws failure
 
-        @Test
-        fun `should propagate a storage exception without saving when loading a selected community fails`() {
-            prepare()
-            val failure = IllegalStateException("Community storage read failure")
-            every { communityRepository.findById(firstCommunityId) } throws failure
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId))
+                }
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId))
+                Assertions.assertSame(failure, thrown)
+                verify(exactly = 0) { contestRepository.update(any<Contest>()) }
             }
 
-            Assertions.assertSame(failure, thrown)
-            verify(exactly = 0) { contestRepository.update(any<Contest>()) }
-        }
+            @Test
+            fun `should propagate a storage exception when updating the contest fails`() {
+                prepare()
+                val failure = IllegalStateException("Storage update failure")
+                every { contestRepository.update(any<Contest>()) } throws failure
 
-        @Test
-        fun `should propagate a storage exception when updating the contest fails`() {
-            prepare()
-            val failure = IllegalStateException("Storage update failure")
-            every { contestRepository.update(any<Contest>()) } throws failure
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId))
+                }
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.shareContest(sharingDeveloper, contestId, setOf(firstCommunityId))
+                Assertions.assertSame(failure, thrown)
             }
-
-            Assertions.assertSame(failure, thrown)
         }
 
         private fun prepare(original: Contest = testContest()) {
@@ -3138,46 +3166,50 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exceptions when loading the contest`() {
-            val failure = IllegalStateException("Contest storage read failure")
-            every { contestRepository.findById(contestId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.attachTask(developer, contestId, taskId)
+            @Test
+            fun `should propagate storage exceptions when loading the contest`() {
+                val failure = IllegalStateException("Contest storage read failure")
+                every { contestRepository.findById(contestId) } throws failure
+
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.attachTask(developer, contestId, taskId)
+                }
+
+                Assertions.assertSame(failure, thrown)
+                assertNoContestUpdate()
             }
 
-            Assertions.assertSame(failure, thrown)
-            assertNoContestUpdate()
-        }
+            @Test
+            fun `should propagate storage exceptions when loading the task`() {
+                prepare()
+                val failure = IllegalStateException("Task storage read failure")
+                every { taskRepository.findById(taskId) } throws failure
 
-        @Test
-        fun `should propagate storage exceptions when loading the task`() {
-            prepare()
-            val failure = IllegalStateException("Task storage read failure")
-            every { taskRepository.findById(taskId) } throws failure
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.attachTask(developer, contestId, taskId)
+                }
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.attachTask(developer, contestId, taskId)
+                Assertions.assertSame(failure, thrown)
+                assertNoContestUpdate()
             }
 
-            Assertions.assertSame(failure, thrown)
-            assertNoContestUpdate()
-        }
+            @ParameterizedTest
+            @ValueSource(strings = ["Storage update failure", "Optimistic lock conflict"])
+            fun `should propagate update exceptions including optimistic lock conflicts`(message: String) {
+                prepare()
+                val failure = IllegalStateException(message)
+                every { contestRepository.update(any<Contest>()) } throws failure
 
-        @ParameterizedTest
-        @ValueSource(strings = ["Storage update failure", "Optimistic lock conflict"])
-        fun `should propagate update exceptions including optimistic lock conflicts`(message: String) {
-            prepare()
-            val failure = IllegalStateException(message)
-            every { contestRepository.update(any<Contest>()) } throws failure
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.attachTask(developer, contestId, taskId)
+                }
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.attachTask(developer, contestId, taskId)
+                Assertions.assertSame(failure, thrown)
+                verify(exactly = 1) { contestRepository.update(any<Contest>()) }
             }
-
-            Assertions.assertSame(failure, thrown)
-            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
         }
 
         private fun prepare(originalContest: Contest = testContest(), originalTask: Task = committedTask()) {
@@ -3449,46 +3481,50 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exceptions when loading the contest`() {
-            val failure = IllegalStateException("Contest storage read failure")
-            every { contestRepository.findById(contestId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.detachTask(developer, contestId, taskId)
+            @Test
+            fun `should propagate storage exceptions when loading the contest`() {
+                val failure = IllegalStateException("Contest storage read failure")
+                every { contestRepository.findById(contestId) } throws failure
+
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.detachTask(developer, contestId, taskId)
+                }
+
+                Assertions.assertSame(failure, thrown)
+                assertNoContestUpdate()
             }
 
-            Assertions.assertSame(failure, thrown)
-            assertNoContestUpdate()
-        }
+            @Test
+            fun `should propagate storage exceptions when loading the task`() {
+                prepare(originalContest = testContest { tasks(listOf(0)) })
+                val failure = IllegalStateException("Task storage read failure")
+                every { taskRepository.findById(taskId) } throws failure
 
-        @Test
-        fun `should propagate storage exceptions when loading the task`() {
-            prepare(originalContest = testContest { tasks(listOf(0)) })
-            val failure = IllegalStateException("Task storage read failure")
-            every { taskRepository.findById(taskId) } throws failure
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.detachTask(developer, contestId, taskId)
+                }
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.detachTask(developer, contestId, taskId)
+                Assertions.assertSame(failure, thrown)
+                assertNoContestUpdate()
             }
 
-            Assertions.assertSame(failure, thrown)
-            assertNoContestUpdate()
-        }
+            @ParameterizedTest
+            @ValueSource(strings = ["Storage update failure", "Optimistic lock conflict"])
+            fun `should propagate update exceptions including optimistic lock conflicts`(message: String) {
+                prepare(originalContest = testContest { tasks(listOf(0)) })
+                val failure = IllegalStateException(message)
+                every { contestRepository.update(any<Contest>()) } throws failure
 
-        @ParameterizedTest
-        @ValueSource(strings = ["Storage update failure", "Optimistic lock conflict"])
-        fun `should propagate update exceptions including optimistic lock conflicts`(message: String) {
-            prepare(originalContest = testContest { tasks(listOf(0)) })
-            val failure = IllegalStateException(message)
-            every { contestRepository.update(any<Contest>()) } throws failure
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.detachTask(developer, contestId, taskId)
+                }
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.detachTask(developer, contestId, taskId)
+                Assertions.assertSame(failure, thrown)
+                verify(exactly = 1) { contestRepository.update(any<Contest>()) }
             }
-
-            Assertions.assertSame(failure, thrown)
-            verify(exactly = 1) { contestRepository.update(any<Contest>()) }
         }
 
         private fun prepare(originalContest: Contest = testContest(), originalTask: Task = testCommitedTask()) {
@@ -3679,31 +3715,35 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exceptions when loading the contest`() {
-            val failure = IllegalStateException("Contest storage read failure")
-            every { contestRepository.findById(contestId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.deleteContest(developer, contestId)
+            @Test
+            fun `should propagate storage exceptions when loading the contest`() {
+                val failure = IllegalStateException("Contest storage read failure")
+                every { contestRepository.findById(contestId) } throws failure
+
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.deleteContest(developer, contestId)
+                }
+
+                Assertions.assertSame(failure, thrown)
+                assertNoContestRemoval()
             }
 
-            Assertions.assertSame(failure, thrown)
-            assertNoContestRemoval()
-        }
+            @Test
+            fun `should propagate storage exceptions when removing the contest`() {
+                prepare(originalContest = testContest())
+                val failure = IllegalStateException("Contest storage remove failure")
+                every { contestRepository.removeById(contestId) } throws failure
 
-        @Test
-        fun `should propagate storage exceptions when removing the contest`() {
-            prepare(originalContest = testContest())
-            val failure = IllegalStateException("Contest storage remove failure")
-            every { contestRepository.removeById(contestId) } throws failure
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.deleteContest(developer, contestId)
+                }
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.deleteContest(developer, contestId)
+                Assertions.assertSame(failure, thrown)
+                verify(exactly = 1) { contestRepository.removeById(contestId) }
             }
-
-            Assertions.assertSame(failure, thrown)
-            verify(exactly = 1) { contestRepository.removeById(contestId) }
         }
 
         private fun prepare(originalContest: Contest) {
@@ -3870,18 +3910,22 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a storage exception when listing tasks`() {
-            val failure = IllegalStateException("Task storage unavailable")
-            every {
-                taskRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet(), pagination = pagination)
-            } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.viewTasks(developer, pagination = pagination)
+            @Test
+            fun `should propagate a storage exception when listing tasks`() {
+                val failure = IllegalStateException("Task storage unavailable")
+                every {
+                    taskRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet(), pagination = pagination)
+                } throws failure
+
+                val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.viewTasks(developer, pagination = pagination)
+                }
+
+                Assertions.assertSame(failure, actual)
             }
-
-            Assertions.assertSame(failure, actual)
         }
     }
 
@@ -4174,28 +4218,34 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exceptions when loading a task`() {
-            val failure = IllegalStateException("Task storage unavailable")
-            every { taskRepository.findById(taskId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = Assertions.assertThrows(IllegalStateException::class.java) { developerOperations.editTaskInfo(developer, taskId) }
+            @Test
+            fun `should propagate storage exceptions when loading a task`() {
+                val failure = IllegalStateException("Task storage unavailable")
+                every { taskRepository.findById(taskId) } throws failure
 
-            Assertions.assertSame(failure, actual)
-        }
+                val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.editTaskInfo(developer, taskId)
+                }
 
-        @Test
-        fun `should propagate storage exceptions when saving edited information`() {
-            val original = taskInState("Committed")
-            val failure = IllegalStateException("Task update failed")
-            every { taskRepository.findById(taskId) } returns original
-            every { taskRepository.update(any<Task>()) } throws failure
-
-            val actual = Assertions.assertThrows(IllegalStateException::class.java) {
-                developerOperations.editTaskInfo(developer, taskId, taskName = "Updated name")
+                Assertions.assertSame(failure, actual)
             }
 
-            Assertions.assertSame(failure, actual)
+            @Test
+            fun `should propagate storage exceptions when saving edited information`() {
+                val original = taskInState("Committed")
+                val failure = IllegalStateException("Task update failed")
+                every { taskRepository.findById(taskId) } returns original
+                every { taskRepository.update(any<Task>()) } throws failure
+
+                val actual = Assertions.assertThrows(IllegalStateException::class.java) {
+                    developerOperations.editTaskInfo(developer, taskId, taskName = "Updated name")
+                }
+
+                Assertions.assertSame(failure, actual)
+            }
         }
 
         private fun assertMetadataEditPreservesContent(original: Task, result: Task) {
@@ -4308,14 +4358,18 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate a storage exception when viewing a task`() {
-            val failure = IllegalStateException("Task storage unavailable")
-            every { taskRepository.findById(taskId) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = Assertions.assertThrows(IllegalStateException::class.java) { developerOperations.viewTask(developer, taskId) }
+            @Test
+            fun `should propagate a storage exception when viewing a task`() {
+                val failure = IllegalStateException("Task storage unavailable")
+                every { taskRepository.findById(taskId) } throws failure
 
-            Assertions.assertSame(failure, actual)
+                val actual = Assertions.assertThrows(IllegalStateException::class.java) { developerOperations.viewTask(developer, taskId) }
+
+                Assertions.assertSame(failure, actual)
+            }
         }
     }
 
@@ -5101,16 +5155,20 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exception if task registration fails`() {
-            prepareUpload()
-            val failure = IllegalStateException("Task registration failed")
-            every { taskRepository.update(any<Task>()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+            @Test
+            fun `should propagate storage exception if task registration fails`() {
+                prepareUpload()
+                val failure = IllegalStateException("Task registration failed")
+                every { taskRepository.update(any<Task>()) } throws failure
 
-            Assertions.assertSame(failure, thrown)
-            verify(exactly = 1) { statementRepository.save(any<StatementData>()) }
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+
+                Assertions.assertSame(failure, thrown)
+                verify(exactly = 1) { statementRepository.save(any<StatementData>()) }
+            }
         }
 
         private fun upload(user: MultipleRoleUser = developer, file: FileData = uploadFile) = developerOperations.addStatement(
@@ -5256,16 +5314,20 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exception if task registration fails`() {
-            prepareUpload()
-            val failure = IllegalStateException("Task registration failed")
-            every { taskRepository.update(any<Task>()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+            @Test
+            fun `should propagate storage exception if task registration fails`() {
+                prepareUpload()
+                val failure = IllegalStateException("Task registration failed")
+                every { taskRepository.update(any<Task>()) } throws failure
 
-            Assertions.assertSame(failure, thrown)
-            verify(exactly = 1) { exerciseRepository.save(any<ExerciseData>()) }
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+
+                Assertions.assertSame(failure, thrown)
+                verify(exactly = 1) { exerciseRepository.save(any<ExerciseData>()) }
+            }
         }
 
         private fun upload(
@@ -5404,16 +5466,20 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exception if task registration fails`() {
-            prepareUpload()
-            val failure = IllegalStateException("Task registration failed")
-            every { taskRepository.update(any<Task>()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+            @Test
+            fun `should propagate storage exception if task registration fails`() {
+                prepareUpload()
+                val failure = IllegalStateException("Task registration failed")
+                every { taskRepository.update(any<Task>()) } throws failure
 
-            Assertions.assertSame(failure, thrown)
-            verify(exactly = 1) { testRepository.save(any<TestData>()) }
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+
+                Assertions.assertSame(failure, thrown)
+                verify(exactly = 1) { testRepository.save(any<TestData>()) }
+            }
         }
 
         private fun upload(user: MultipleRoleUser = developer, file: FileData = uploadFile) = developerOperations.addTest(
@@ -5569,16 +5635,20 @@ class DeveloperOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate storage exception if task registration fails`() {
-            prepareUpload()
-            val failure = IllegalStateException("Task registration failed")
-            every { taskRepository.update(any<Task>()) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+            @Test
+            fun `should propagate storage exception if task registration fails`() {
+                prepareUpload()
+                val failure = IllegalStateException("Task registration failed")
+                every { taskRepository.update(any<Task>()) } throws failure
 
-            Assertions.assertSame(failure, thrown)
-            verify(exactly = 1) { developerSolutionRepository.save(any<DeveloperSolutionData>()) }
+                val thrown = Assertions.assertThrows(IllegalStateException::class.java) { upload() }
+
+                Assertions.assertSame(failure, thrown)
+                verify(exactly = 1) { developerSolutionRepository.save(any<DeveloperSolutionData>()) }
+            }
         }
 
         private fun upload(

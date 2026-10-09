@@ -249,43 +249,47 @@ class TaskValidationOperationsTests {
             }
         }
 
-        @Test
-        fun `should return null for a missing request`() {
-            every { requests.findById(requestId) } returns null
+        @Nested
+        inner class ModuleRuleTests {
 
-            assertNull(operations.proceed(requestId))
+            @Test
+            fun `should return null for a missing request`() {
+                every { requests.findById(requestId) } returns null
 
-            verify(exactly = 0) { grader.sendToGrade(any()) }
-        }
+                assertNull(operations.proceed(requestId))
 
-        @Test
-        fun `should propagate a send failure while keeping the saved submissions`() {
-            val saved = stored(awaitingRequest())
-            queuedRuns()
-            val failure = IllegalStateException("Grader unavailable")
-            every { grader.sendToGrade(any()) } throws failure
+                verify(exactly = 0) { grader.sendToGrade(any()) }
+            }
 
-            assertSame(failure, assertThrows(IllegalStateException::class.java) { operations.proceed(requestId) })
+            @Test
+            fun `should propagate a send failure while keeping the saved submissions`() {
+                val saved = stored(awaitingRequest())
+                queuedRuns()
+                val failure = IllegalStateException("Grader unavailable")
+                every { grader.sendToGrade(any()) } throws failure
 
-            assertInstanceOf(TaskValidationExecution.SubmissionsCreated::class.java, saved.current.data.execution)
-            verify(exactly = 0) { requests.recordTechnicalFailure(any(), any()) }
-        }
+                assertSame(failure, assertThrows(IllegalStateException::class.java) { operations.proceed(requestId) })
 
-        @Test
-        fun `should reject saved submissions that do not cover every author run`() {
-            stored(
-                request {
-                    execution.submissionsCreated {
-                        diagnostics = diagnosticResults()
-                        submissions(listOf(101))
-                    }
-                },
-            )
-            every { submissions.findById(SubmissionId(101)) } returns run(101, "v1") { status.graded { status.timeout() } }
+                assertInstanceOf(TaskValidationExecution.SubmissionsCreated::class.java, saved.current.data.execution)
+                verify(exactly = 0) { requests.recordTechnicalFailure(any(), any()) }
+            }
 
-            assertThrows(IllegalStateException::class.java) { operations.proceed(requestId) }
+            @Test
+            fun `should reject saved submissions that do not cover every author run`() {
+                stored(
+                    request {
+                        execution.submissionsCreated {
+                            diagnostics = diagnosticResults()
+                            submissions(listOf(101))
+                        }
+                    },
+                )
+                every { submissions.findById(SubmissionId(101)) } returns run(101, "v1") { status.graded { status.timeout() } }
 
-            verify(exactly = 0) { requests.completeTesting(any(), any()) }
+                assertThrows(IllegalStateException::class.java) { operations.proceed(requestId) }
+
+                verify(exactly = 0) { requests.completeTesting(any(), any()) }
+            }
         }
     }
 
@@ -332,11 +336,15 @@ class TaskValidationOperationsTests {
             }
         }
 
-        @Test
-        fun `should return null for a missing request`() {
-            every { requests.findById(requestId) } returns null
+        @Nested
+        inner class ModuleRuleTests {
 
-            assertNull(operations.resendUnfinishedSubmissions(requestId))
+            @Test
+            fun `should return null for a missing request`() {
+                every { requests.findById(requestId) } returns null
+
+                assertNull(operations.resendUnfinishedSubmissions(requestId))
+            }
         }
     }
 
@@ -453,34 +461,38 @@ class TaskValidationOperationsTests {
             }
         }
 
-        @Test
-        fun `should skip a terminal or missing caller-selected request`() {
-            every { requests.startDiagnostics(requestId) } returns null
+        @Nested
+        inner class ModuleRuleTests {
 
-            val result = operations.runDiagnostics(requestId)
+            @Test
+            fun `should skip a terminal or missing caller-selected request`() {
+                every { requests.startDiagnostics(requestId) } returns null
 
-            assertNull(result)
-            verify(exactly = 0) { diagnostics.diagnose(any()) }
-        }
+                val result = operations.runDiagnostics(requestId)
 
-        @Test
-        fun `should propagate adapter exceptions without completing diagnostics or converting the failure`() {
-            val request = testTaskValidationRequest {
-                snapshot = taskValidationSnapshot { tests(listOf(2)) }
-                execution.pendingDiagnostics()
+                assertNull(result)
+                verify(exactly = 0) { diagnostics.diagnose(any()) }
             }
-            val polygon = polygon(2)
-            val failure = IllegalStateException("Storage unavailable")
-            every { requests.startDiagnostics(requestId) } returns request
-            every { requests.findDiagnosticProgress(requestId) } returns emptyList()
-            every { tests.findById(TestId(2)) } returns polygon
-            every { diagnostics.diagnose(polygon) } throws failure
 
-            val actual = assertThrows(IllegalStateException::class.java) { operations.runDiagnostics(requestId) }
+            @Test
+            fun `should propagate adapter exceptions without completing diagnostics or converting the failure`() {
+                val request = testTaskValidationRequest {
+                    snapshot = taskValidationSnapshot { tests(listOf(2)) }
+                    execution.pendingDiagnostics()
+                }
+                val polygon = polygon(2)
+                val failure = IllegalStateException("Storage unavailable")
+                every { requests.startDiagnostics(requestId) } returns request
+                every { requests.findDiagnosticProgress(requestId) } returns emptyList()
+                every { tests.findById(TestId(2)) } returns polygon
+                every { diagnostics.diagnose(polygon) } throws failure
 
-            assertSame(failure, actual)
-            verify(exactly = 0) { requests.completeDiagnostics(any()) }
-            verify(exactly = 0) { requests.recordTechnicalFailure(any(), any()) }
+                val actual = assertThrows(IllegalStateException::class.java) { operations.runDiagnostics(requestId) }
+
+                assertSame(failure, actual)
+                verify(exactly = 0) { requests.completeDiagnostics(any()) }
+                verify(exactly = 0) { requests.recordTechnicalFailure(any(), any()) }
+            }
         }
     }
 

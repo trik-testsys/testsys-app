@@ -183,17 +183,21 @@ class ObserverOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate technical competition repository exceptions`() {
-            val user = testObserver { contests(listOf(23)) }
-            val failure = IllegalStateException("Storage unavailable")
-            every { competitions.findById(CompetitionId(23)) } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val result = assertThrows(IllegalStateException::class.java) {
-                operations.downloadResult(user = user, competitionId = CompetitionId(23))
+            @Test
+            fun `should propagate technical competition repository exceptions`() {
+                val user = testObserver { contests(listOf(23)) }
+                val failure = IllegalStateException("Storage unavailable")
+                every { competitions.findById(CompetitionId(23)) } throws failure
+
+                val result = assertThrows(IllegalStateException::class.java) {
+                    operations.downloadResult(user = user, competitionId = CompetitionId(23))
+                }
+
+                assertSame(failure, result)
             }
-
-            assertSame(failure, result)
         }
     }
 
@@ -320,20 +324,24 @@ class ObserverOperationsTests {
             }
         }
 
-        @Test
-        fun `should propagate technical repository exceptions`() {
-            val user = testObserver { contests(listOf(23)) }
-            val pagination = Pagination(page = 0, size = 10)
-            val failure = IllegalStateException("Storage unavailable")
-            every {
-                contests.findAvailableToObserver(setOf(ContestId(23)), pagination, ObserverContestFilter())
-            } throws failure
+        @Nested
+        inner class ModuleRuleTests {
 
-            val result = assertThrows(IllegalStateException::class.java) {
-                operations.viewContests(user = user, pagination = pagination)
+            @Test
+            fun `should propagate technical repository exceptions`() {
+                val user = testObserver { contests(listOf(23)) }
+                val pagination = Pagination(page = 0, size = 10)
+                val failure = IllegalStateException("Storage unavailable")
+                every {
+                    contests.findAvailableToObserver(setOf(ContestId(23)), pagination, ObserverContestFilter())
+                } throws failure
+
+                val result = assertThrows(IllegalStateException::class.java) {
+                    operations.viewContests(user = user, pagination = pagination)
+                }
+
+                assertSame(failure, result)
             }
-
-            assertSame(failure, result)
         }
     }
 }

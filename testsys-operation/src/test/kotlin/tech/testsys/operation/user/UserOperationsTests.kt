@@ -436,33 +436,37 @@ class UserOperationsTests {
             }
         }
 
-        @Test
-        fun `should not send the confirmation code if saving the new request fails`() {
-            every { registrationRequests.save(any<RegistrationRequestData>()) } throws IllegalStateException("database is down")
+        @Nested
+        inner class ModuleRuleTests {
 
-            assertFailsWith<IllegalStateException> {
-                operations.requestRegistration(email = "user@example.com")
+            @Test
+            fun `should not send the confirmation code if saving the new request fails`() {
+                every { registrationRequests.save(any<RegistrationRequestData>()) } throws IllegalStateException("database is down")
+
+                assertFailsWith<IllegalStateException> {
+                    operations.requestRegistration(email = "user@example.com")
+                }
+                verify(exactly = 0) { mailSender.sendRegistrationConfirmationCode(any(), any()) }
             }
-            verify(exactly = 0) { mailSender.sendRegistrationConfirmationCode(any(), any()) }
-        }
 
-        @Test
-        fun `should not send the confirmation code if overwriting the expired request fails`() {
-            every { registrationRequests.findByEmail("user@example.com") } returns testRegistrationRequest { expiresAt = now }
-            every { registrationRequests.update(any<RegistrationRequest>()) } throws IllegalStateException("stale version")
+            @Test
+            fun `should not send the confirmation code if overwriting the expired request fails`() {
+                every { registrationRequests.findByEmail("user@example.com") } returns testRegistrationRequest { expiresAt = now }
+                every { registrationRequests.update(any<RegistrationRequest>()) } throws IllegalStateException("stale version")
 
-            assertFailsWith<IllegalStateException> {
-                operations.requestRegistration(email = "user@example.com")
+                assertFailsWith<IllegalStateException> {
+                    operations.requestRegistration(email = "user@example.com")
+                }
+                verify(exactly = 0) { mailSender.sendRegistrationConfirmationCode(any(), any()) }
             }
-            verify(exactly = 0) { mailSender.sendRegistrationConfirmationCode(any(), any()) }
-        }
 
-        @Test
-        fun `should propagate the exception if sending the confirmation code fails`() {
-            every { mailSender.sendRegistrationConfirmationCode(any(), any()) } throws IllegalStateException("smtp is down")
+            @Test
+            fun `should propagate the exception if sending the confirmation code fails`() {
+                every { mailSender.sendRegistrationConfirmationCode(any(), any()) } throws IllegalStateException("smtp is down")
 
-            assertFailsWith<IllegalStateException> {
-                operations.requestRegistration(email = "user@example.com")
+                assertFailsWith<IllegalStateException> {
+                    operations.requestRegistration(email = "user@example.com")
+                }
             }
         }
     }
@@ -812,26 +816,30 @@ class UserOperationsTests {
             }
         }
 
-        @Test
-        fun `should not send the access code if saving the user fails`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-            every { multipleRoleUsers.save(any<MultipleRoleUserData>()) } throws IllegalStateException("database is down")
+        @Nested
+        inner class ModuleRuleTests {
 
-            assertFailsWith<IllegalStateException> {
-                confirm()
+            @Test
+            fun `should not send the access code if saving the user fails`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                every { multipleRoleUsers.save(any<MultipleRoleUserData>()) } throws IllegalStateException("database is down")
+
+                assertFailsWith<IllegalStateException> {
+                    confirm()
+                }
+                verify(exactly = 0) { mailSender.sendAccessToken(any(), any(), any()) }
             }
-            verify(exactly = 0) { mailSender.sendAccessToken(any(), any(), any()) }
-        }
 
-        @Test
-        fun `should not send the access code if removing the request fails`() {
-            every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-            every { registrationRequests.remove(any<RegistrationRequest>()) } throws IllegalStateException("stale version")
+            @Test
+            fun `should not send the access code if removing the request fails`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                every { registrationRequests.remove(any<RegistrationRequest>()) } throws IllegalStateException("stale version")
 
-            assertFailsWith<IllegalStateException> {
-                confirm()
+                assertFailsWith<IllegalStateException> {
+                    confirm()
+                }
+                verify(exactly = 0) { mailSender.sendAccessToken(any(), any(), any()) }
             }
-            verify(exactly = 0) { mailSender.sendAccessToken(any(), any(), any()) }
         }
     }
 }

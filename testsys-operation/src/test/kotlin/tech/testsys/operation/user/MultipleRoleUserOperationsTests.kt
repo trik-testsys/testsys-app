@@ -377,30 +377,34 @@ class MultipleRoleUserOperationsTests {
             }
         }
 
-        @Test
-        fun `should read the current time once when joining`() {
-            every { managerInvites.findByCode(any()) } returns managerInvite()
-            prepareCommunity(51)
-            every { multipleRoleUsers.addCommunityMembership(any(), any(), any()) } returns testMultipleRoleUser {}
+        @Nested
+        inner class ModuleRuleTests {
 
-            operations.joinCommunity(user = user, inviteCode = "abcdefghjkmn")
+            @Test
+            fun `should read the current time once when joining`() {
+                every { managerInvites.findByCode(any()) } returns managerInvite()
+                prepareCommunity(51)
+                every { multipleRoleUsers.addCommunityMembership(any(), any(), any()) } returns testMultipleRoleUser {}
 
-            verify(exactly = 1) { clock.instant() }
-        }
-
-        @Test
-        fun `should propagate storage exceptions when joining`() {
-            val user = testMultipleRoleUser {}
-            val failure = IllegalStateException("storage failed")
-            every { managerInvites.findByCode(any()) } returns managerInvite()
-            prepareCommunity(51)
-            every { multipleRoleUsers.addCommunityMembership(any(), any(), any()) } throws failure
-
-            val actual = assertThrows(IllegalStateException::class.java) {
                 operations.joinCommunity(user = user, inviteCode = "abcdefghjkmn")
+
+                verify(exactly = 1) { clock.instant() }
             }
 
-            assertSame(failure, actual)
+            @Test
+            fun `should propagate storage exceptions when joining`() {
+                val user = testMultipleRoleUser {}
+                val failure = IllegalStateException("storage failed")
+                every { managerInvites.findByCode(any()) } returns managerInvite()
+                prepareCommunity(51)
+                every { multipleRoleUsers.addCommunityMembership(any(), any(), any()) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.joinCommunity(user = user, inviteCode = "abcdefghjkmn")
+                }
+
+                assertSame(failure, actual)
+            }
         }
 
         private fun prepareDeveloperInvite(expiresAt: Instant = FAR_FUTURE) {
@@ -716,34 +720,38 @@ class MultipleRoleUserOperationsTests {
             }
         }
 
-        @Test
-        fun `should not send the confirmation code if saving the new request fails`() {
-            every { emailChangeRequests.save(any<EmailChangeRequestData>()) } throws IllegalStateException("database is down")
+        @Nested
+        inner class ModuleRuleTests {
 
-            assertFailsWith<IllegalStateException> {
-                operations.requestEmailChange(user = user, email = "new@example.com")
+            @Test
+            fun `should not send the confirmation code if saving the new request fails`() {
+                every { emailChangeRequests.save(any<EmailChangeRequestData>()) } throws IllegalStateException("database is down")
+
+                assertFailsWith<IllegalStateException> {
+                    operations.requestEmailChange(user = user, email = "new@example.com")
+                }
+                verify(exactly = 0) { mailSender.sendEmailChangeConfirmationCode(any(), any()) }
             }
-            verify(exactly = 0) { mailSender.sendEmailChangeConfirmationCode(any(), any()) }
-        }
 
-        @Test
-        fun `should not send the confirmation code if overwriting the request fails`() {
-            every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns
-                testEmailChangeRequest { email = "other@example.com" }
-            every { emailChangeRequests.update(any<EmailChangeRequest>()) } throws IllegalStateException("stale version")
+            @Test
+            fun `should not send the confirmation code if overwriting the request fails`() {
+                every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testEmailChangeRequest { email = "other@example.com" }
+                every { emailChangeRequests.update(any<EmailChangeRequest>()) } throws IllegalStateException("stale version")
 
-            assertFailsWith<IllegalStateException> {
-                operations.requestEmailChange(user = user, email = "new@example.com")
+                assertFailsWith<IllegalStateException> {
+                    operations.requestEmailChange(user = user, email = "new@example.com")
+                }
+                verify(exactly = 0) { mailSender.sendEmailChangeConfirmationCode(any(), any()) }
             }
-            verify(exactly = 0) { mailSender.sendEmailChangeConfirmationCode(any(), any()) }
-        }
 
-        @Test
-        fun `should propagate mail sender exceptions`() {
-            every { mailSender.sendEmailChangeConfirmationCode(any(), any()) } throws IllegalStateException("smtp is down")
+            @Test
+            fun `should propagate mail sender exceptions`() {
+                every { mailSender.sendEmailChangeConfirmationCode(any(), any()) } throws IllegalStateException("smtp is down")
 
-            assertFailsWith<IllegalStateException> {
-                operations.requestEmailChange(user = user, email = "new@example.com")
+                assertFailsWith<IllegalStateException> {
+                    operations.requestEmailChange(user = user, email = "new@example.com")
+                }
             }
         }
     }
@@ -1037,45 +1045,49 @@ class MultipleRoleUserOperationsTests {
             }
         }
 
-        @Test
-        fun `should throw IllegalStateException if the user of the request no longer exists in storage`() {
-            every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns testEmailChangeRequest()
-            every { multipleRoleUsers.findById(MultipleRoleUserId(0)) } returns null
+        @Nested
+        inner class ModuleRuleTests {
 
-            assertFailsWith<IllegalStateException> {
-                confirm()
+            @Test
+            fun `should throw IllegalStateException if the user of the request no longer exists in storage`() {
+                every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns testEmailChangeRequest()
+                every { multipleRoleUsers.findById(MultipleRoleUserId(0)) } returns null
+
+                assertFailsWith<IllegalStateException> {
+                    confirm()
+                }
             }
-        }
 
-        @Test
-        fun `should not send the notice if updating the user fails`() {
-            every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns testEmailChangeRequest()
-            every { multipleRoleUsers.update(any<MultipleRoleUser>()) } throws IllegalStateException("stale version")
+            @Test
+            fun `should not send the notice if updating the user fails`() {
+                every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns testEmailChangeRequest()
+                every { multipleRoleUsers.update(any<MultipleRoleUser>()) } throws IllegalStateException("stale version")
 
-            assertFailsWith<IllegalStateException> {
-                confirm()
+                assertFailsWith<IllegalStateException> {
+                    confirm()
+                }
+                verify(exactly = 0) { mailSender.sendEmailChangedNotice(any(), any()) }
             }
-            verify(exactly = 0) { mailSender.sendEmailChangedNotice(any(), any()) }
-        }
 
-        @Test
-        fun `should not send the notice if removing the request fails`() {
-            every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns testEmailChangeRequest()
-            every { emailChangeRequests.remove(any<EmailChangeRequest>()) } throws IllegalStateException("stale version")
+            @Test
+            fun `should not send the notice if removing the request fails`() {
+                every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns testEmailChangeRequest()
+                every { emailChangeRequests.remove(any<EmailChangeRequest>()) } throws IllegalStateException("stale version")
 
-            assertFailsWith<IllegalStateException> {
-                confirm()
+                assertFailsWith<IllegalStateException> {
+                    confirm()
+                }
+                verify(exactly = 0) { mailSender.sendEmailChangedNotice(any(), any()) }
             }
-            verify(exactly = 0) { mailSender.sendEmailChangedNotice(any(), any()) }
-        }
 
-        @Test
-        fun `should propagate mail sender exceptions`() {
-            every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns testEmailChangeRequest()
-            every { mailSender.sendEmailChangedNotice(any(), any()) } throws IllegalStateException("smtp is down")
+            @Test
+            fun `should propagate mail sender exceptions`() {
+                every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns testEmailChangeRequest()
+                every { mailSender.sendEmailChangedNotice(any(), any()) } throws IllegalStateException("smtp is down")
 
-            assertFailsWith<IllegalStateException> {
-                confirm()
+                assertFailsWith<IllegalStateException> {
+                    confirm()
+                }
             }
         }
     }

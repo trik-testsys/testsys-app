@@ -17,7 +17,7 @@ import tech.testsys.web.app.security.UserKind
 @SpringBootTest
 class PendingViewsTests : MockSpringVaadinTests() {
     @ParameterizedTest
-    @ValueSource(classes = [DeveloperView::class, ManagerView::class, JudgeView::class, StudentView::class])
+    @ValueSource(classes = [DeveloperView::class, ManagerView::class, StudentView::class])
     fun `should start the breadcrumbs of a page opened from the main page with it`(page: Class<out Component>) {
         signIn(fixtures.multipleRoleUser())
 

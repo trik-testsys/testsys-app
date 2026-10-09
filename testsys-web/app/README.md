@@ -69,20 +69,23 @@
 | `RegistrationView` | `registration` | Без входа |
 | `RestoreAccessView` | `restore-access` | Без входа |
 | `MultiMainView` | `home` | `MULTIPLE_ROLE` |
-| `ProfileView`, `DeveloperView`, `ManagerView`, `JudgeView`, `StudentView` | `profile`, `developer`, `manager`, `judge`, `student` | `MULTIPLE_ROLE` |
+| `ProfileView`, `DeveloperView`, `ManagerView`, `StudentView` | `profile`, `developer`, `manager`, `student` | `MULTIPLE_ROLE` |
 | `AdminView` | `admin`, `admin/communities`, `admin/users` | `MULTIPLE_ROLE` с Ролью Администратора |
 | `AdminCommunityView` | `admin/communities/:communityId` | `MULTIPLE_ROLE`, создатель Сообщества |
 | `AdminUserView` | `admin/users/:userId`, `admin/users/:userId/developer`, `admin/users/:userId/manager`, `admin/users/:userId/judge`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
 | `ParticipantView`, `ObserverView`, `SupervisorView` | `participant`, `observer`, `supervisor` | Соответствующий вид |
+| `JudgeView` | `judge`, `judge/submissions` | `MULTIPLE_ROLE` с Ролью Судьи |
+| `JudgeSolutionView` | `judge/submissions/:submissionId` | `MULTIPLE_ROLE` с Ролью Судьи |
 
 Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
-кроме Кабинета Администратора, пока показывают только шапку и пустое состояние: их маршруты и доступ окончательные,
+кроме Кабинетов Администратора и Судьи, пока показывают только шапку и пустое состояние: их маршруты и доступ окончательные,
 поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
 
-Страницы Кабинета Администратора вызывают прокси-сервис в `beforeEnter`, до построения таблиц. Поэтому отсутствие
-Роли, Сообщества или доступа открывает экран ошибки из раздела [Ошибки операций](#ошибки-операций), а не ошибку
-загрузки таблицы. `AdminView` без раздела переадресует на `admin/communities`. Наблюдатель открывается по своему
-адресу `admin/observers/:observerId`: операция просмотра принимает идентификатор вместе с видом Пользователя.
+Страницы Кабинетов Администратора и Судьи вызывают прокси-сервис в `beforeEnter`, до построения таблиц. Поэтому
+отсутствие Роли, сущности или доступа открывает экран ошибки из раздела [Ошибки операций](#ошибки-операций), а не
+ошибку загрузки таблицы. `AdminView` без раздела переадресует на `admin/communities`, `JudgeView` — на
+`judge/submissions`. Наблюдатель открывается по своему адресу `admin/observers/:observerId`: операция просмотра
+принимает идентификатор вместе с видом Пользователя.
 
 Страницы Ролей принимают необязательный параметр маршрута `section` с разделом страницы, например
 `developer/tasks`. Заголовок раздела Роли в «Меню» ведёт на страницу без параметра, а ссылки разделов — с ним,

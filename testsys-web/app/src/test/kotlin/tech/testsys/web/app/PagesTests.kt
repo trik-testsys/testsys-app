@@ -8,6 +8,7 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.InternalServerError
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
+import com.vaadin.flow.server.VaadinService
 import jakarta.annotation.security.RolesAllowed
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
@@ -28,8 +29,19 @@ import tech.testsys.web.app.view.AdminUserSection
 import tech.testsys.web.app.view.AdminUserView
 import tech.testsys.web.app.view.AdminView
 import tech.testsys.web.app.view.COMMUNITY_ID_PARAMETER
+import tech.testsys.web.app.view.CONTESTS_SECTION
+import tech.testsys.web.app.view.DeveloperContestView
+import tech.testsys.web.app.view.DeveloperFixtures
+import tech.testsys.web.app.view.DeveloperResourceView
+import tech.testsys.web.app.view.DeveloperTaskView
+import tech.testsys.web.app.view.DeveloperView
 import tech.testsys.web.app.view.OBSERVER_ID_PARAMETER
+import tech.testsys.web.app.view.TASKS_SECTION
 import tech.testsys.web.app.view.USER_ID_PARAMETER
+import tech.testsys.web.app.view.contestParameters
+import tech.testsys.web.app.view.developerSectionParameters
+import tech.testsys.web.app.view.resourceParameters
+import tech.testsys.web.app.view.taskParameters
 import tech.testsys.web.app.view.userParameters
 
 /** Route parameters of a page built from the fixtures and the signed-in user. */
@@ -87,7 +99,29 @@ class PagesTests : MockSpringVaadinTests() {
             ) + AdminUserSection.entries.associate { section ->
                 section.value to parametersOf { fixtures, user -> userParameters(memberWithAllSections(fixtures, user).id, section) }
             },
+            DeveloperView::class.java to mapOf(
+                "" to developerParameters { _ -> RouteParameters.empty() },
+                TASKS_SECTION to developerParameters { _ -> developerSectionParameters(TASKS_SECTION) },
+                CONTESTS_SECTION to developerParameters { _ -> developerSectionParameters(CONTESTS_SECTION) },
+            ),
+            DeveloperTaskView::class.java to mapOf("task" to developerParameters { developers -> taskParameters(developers.task().id) }),
+            DeveloperResourceView::class.java to mapOf(
+                "resource" to developerParameters { developers ->
+                    val task = developers.task()
+                    resourceParameters(task.id, developers.statement(task.id).versionBucket)
+                },
+            ),
+            DeveloperContestView::class.java to mapOf(
+                "contest" to developerParameters { developers -> contestParameters(developers.contest(developers.trikStudioVersion()).id) },
+            ),
         )
+
+        /** Signs in a new developer, whose pages need the role, and returns the route parameters [parameters] builds for it. */
+        private fun developerParameters(parameters: (DeveloperFixtures) -> RouteParameters): ParametersOf = { _, _ ->
+            val developers = VaadinService.getCurrent().instantiator.getOrCreate(DeveloperFixtures::class.java)
+            developers.signInDeveloper()
+            parameters(developers)
+        }
 
         /** Returns a member of a community of the signed-in administrator [user] with the roles of all user page tabs. */
         private fun memberWithAllSections(fixtures: AppFixtures, user: User<*>?): MultipleRoleUser {

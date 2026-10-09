@@ -9,7 +9,6 @@ import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.Grader
-import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
@@ -27,6 +26,7 @@ import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.TextLimits
+import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
@@ -36,6 +36,7 @@ import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
+import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Task
@@ -137,6 +138,7 @@ import tech.testsys.operation.error.ViewResourcesError
 import tech.testsys.operation.error.ViewTaskError
 import tech.testsys.operation.error.ViewTaskValidationRequestsError
 import tech.testsys.operation.error.ViewTasksError
+import tech.testsys.operation.error.ViewTrikStudioVersionsError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
@@ -286,8 +288,8 @@ class DeveloperOperations(
         }
 
     /**
-     * Returns a [pagination] page matching [filter] of contests owned by [user] or shared to their [Developer] communities.
-     * Viewing preserves stored state.
+     * Returns a [pagination] page matching [filter] of contests owned by [user] or shared to their [Developer] communities,
+     * each with the existing communities it is shared to. Viewing preserves stored state.
      * Missing developer role is an expected failure; storage exceptions propagate to the caller.
      *
      * @since %CURRENT_VERSION%
@@ -297,27 +299,35 @@ class DeveloperOperations(
         user: MultipleRoleUser,
         pagination: Pagination,
         filter: ContestFilter = ContestFilter(),
-    ): OperationResult<Page<Contest>, ViewContestsError> = operation<Page<Contest>, ViewContestsError> {
-        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
-        val developer = user.data.roles.filterIsInstance<Developer>().single()
-        val contests = contestRepository.findAvailableToDeveloper(
-            ownerId = user.id,
-            communityIds = developer.memberOf.ids.toSet(),
-            pagination = pagination,
-            filter = filter,
-        )
-        return contests.asSuccess()
-    }
+    ): OperationResult<Page<Pair<Contest, List<Community>>>, ViewContestsError> =
+        operation<Page<Pair<Contest, List<Community>>>, ViewContestsError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val developer = user.data.roles.filterIsInstance<Developer>().single()
+            val contests = contestRepository.findAvailableToDeveloper(
+                ownerId = user.id,
+                communityIds = developer.memberOf.ids.toSet(),
+                pagination = pagination,
+                filter = filter,
+            )
+
+            val communities = communitiesById(contests.content.flatMap { contest -> contest.data.sharedTo.ids })
+            val rows = contests.content.map { contest -> contest to contest.data.sharedTo.ids.mapNotNull(communities::get) }
+            return Page(content = rows, pagination = contests.pagination, totalElements = contests.totalElements).asSuccess()
+        }
 
     /**
-     * Returns [contestId] owned by [user] or shared to communities of their [Developer] role, preserving its data.
+     * Returns [contestId] owned by [user] or shared to communities of their [Developer] role with its existing tasks and the
+     * existing communities it is shared to, in the order of the contest, preserving its data.
      * Missing role, contest and access are expected failures; storage exceptions propagate to the caller.
      *
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.developer.contest.viewContest")
-    fun viewContest(user: MultipleRoleUser, contestId: ContestId): OperationResult<Contest, ViewContestError> =
-        operation<Contest, ViewContestError> {
+    fun viewContest(
+        user: MultipleRoleUser,
+        contestId: ContestId,
+    ): OperationResult<Triple<Contest, List<Task>, List<Community>>, ViewContestError> =
+        operation<Triple<Contest, List<Task>, List<Community>>, ViewContestError> {
             ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
             val contest = contestRepository.findById(contestId)
             ensure(contest != null) { ContestNotExistsError(contestId) }
@@ -325,7 +335,27 @@ class DeveloperOperations(
             ensure(contest.data.owner.id == user.id || contest.data.sharedTo.ids.any { it in developer.memberOf.ids }) {
                 ContestAccessDeniedError(contestId)
             }
-            return contest.asSuccess()
+
+            val tasks = taskRepository.findByIds(contest.data.tasks.ids).associateBy { task -> task.id }
+            val communities = communitiesById(contest.data.sharedTo.ids)
+            return Triple(
+                contest,
+                contest.data.tasks.ids.mapNotNull(tasks::get),
+                contest.data.sharedTo.ids.mapNotNull(communities::get),
+            ).asSuccess()
+        }
+
+    /**
+     * Returns every TRIK Studio version registered in the system, from which [user] chooses the version of a contest and
+     * the versions a task supports. Missing developer role is an expected failure; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.developer.contest.createContest")
+    fun viewTrikStudioVersions(user: MultipleRoleUser): OperationResult<List<TrikStudioVersion>, ViewTrikStudioVersionsError> =
+        operation<List<TrikStudioVersion>, ViewTrikStudioVersionsError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            return contestRepository.findTrikStudioVersions().asSuccess()
         }
 
     /**
@@ -561,19 +591,22 @@ class DeveloperOperations(
     }
 
     /**
-     * Returns the task with [taskId] owned by [user], preserving its state and both content revisions.
-     * Missing role, task and ownership are expected failures; storage exceptions propagate to the caller.
+     * Returns the task with [taskId] owned by [user] with the existing communities it is shared to, preserving its state
+     * and both content revisions. Missing role, task and ownership are expected failures; storage exceptions propagate.
      *
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.developer.task.viewTask")
-    fun viewTask(user: MultipleRoleUser, taskId: TaskId): OperationResult<Task, ViewTaskError> = operation<Task, ViewTaskError> {
-        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
-        val task = taskRepository.findById(taskId)
-        ensure(task != null) { TaskNotExistsError(taskId) }
-        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
-        return task.asSuccess()
-    }
+    fun viewTask(user: MultipleRoleUser, taskId: TaskId): OperationResult<Pair<Task, List<Community>>, ViewTaskError> =
+        operation<Pair<Task, List<Community>>, ViewTaskError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+
+            val communities = communitiesById(task.data.sharedTo.ids)
+            return (task to task.data.sharedTo.ids.mapNotNull(communities::get)).asSuccess()
+        }
 
     /**
      * Edits [taskName], [taskDescription] and [supportedTrikStudioVersions] of [taskId] owned by [user], retaining omitted values.
@@ -641,8 +674,9 @@ class DeveloperOperations(
         }
 
     /**
-     * Returns existing versions of [versionBucket] uploaded to [taskId] owned by [user].
-     * Entities retain their current metadata and files; viewing does not change task state.
+     * Returns existing versions of [versionBucket] uploaded to [taskId] owned by [user], each developer solution version
+     * with its solution and other versions with `null`. Entities retain their current metadata and files; viewing does not
+     * change task state.
      *
      * @since %CURRENT_VERSION%
      */
@@ -651,24 +685,33 @@ class DeveloperOperations(
         user: MultipleRoleUser,
         taskId: TaskId,
         versionBucket: VersionBucket,
-    ): OperationResult<List<DomainEntity<*>>, ViewResourceError> = operation<List<DomainEntity<*>>, ViewResourceError> {
-        ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
-        val task = taskRepository.findById(taskId)
-        ensure(task != null) { TaskNotExistsError(taskId) }
-        ensure(resourceExists(versionBucket)) { ResourceNotExistsError(versionBucket) }
-        ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
-        ensure(versionBucket in task.data.uploadedResources) { ResourceNotUploadedToTaskError(taskId, versionBucket) }
-        val versions = statementRepository.findVersionsByVersionBucket(versionBucket) +
-            exerciseRepository.findVersionsByVersionBucket(versionBucket) +
-            testRepository.findVersionsByVersionBucket(versionBucket) +
-            developerSolutionRepository.findVersionsByVersionBucket(versionBucket)
-        ensure(versions.isNotEmpty()) { ResourceNotExistsError(versionBucket) }
-        return versions.asSuccess()
-    }
+    ): OperationResult<List<Pair<DomainEntity<*>, Solution?>>, ViewResourceError> =
+        operation<List<Pair<DomainEntity<*>, Solution?>>, ViewResourceError> {
+            ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            val task = taskRepository.findById(taskId)
+            ensure(task != null) { TaskNotExistsError(taskId) }
+            ensure(resourceExists(versionBucket)) { ResourceNotExistsError(versionBucket) }
+            ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            ensure(versionBucket in task.data.uploadedResources) { ResourceNotUploadedToTaskError(taskId, versionBucket) }
+            val versions = statementRepository.findVersionsByVersionBucket(versionBucket) +
+                exerciseRepository.findVersionsByVersionBucket(versionBucket) +
+                testRepository.findVersionsByVersionBucket(versionBucket) +
+                developerSolutionRepository.findVersionsByVersionBucket(versionBucket)
+            ensure(versions.isNotEmpty()) { ResourceNotExistsError(versionBucket) }
+
+            val solutionIds = versions.filterIsInstance<DeveloperSolution>().map { version -> version.data.solution.id }
+            val solutions = solutionRepository.loadByIdsAsMap(solutionIds)
+            return versions.map { version ->
+                val solution = (version as? DeveloperSolution)?.let { developerSolution ->
+                    solutions.getValue(developerSolution.data.solution.id)
+                }
+                version to solution
+            }.asSuccess()
+        }
 
     /**
-     * Returns the existing file reference of [versionId] in [versionBucket] uploaded to [taskId] owned by [user].
-     * The operation accepts older versions and does not load file contents or change the task.
+     * Returns the file of [versionId] in [versionBucket] uploaded to [taskId] owned by [user]: the uploaded file of the
+     * version, or the file of its solution for a developer solution. Older versions are accepted; the task does not change.
      *
      * @since %CURRENT_VERSION%
      */
@@ -678,22 +721,26 @@ class DeveloperOperations(
         taskId: TaskId,
         versionBucket: VersionBucket,
         versionId: DomainId,
-    ): OperationResult<StoredBlobRef, DownloadResourceVersionError> = operation<StoredBlobRef, DownloadResourceVersionError> {
+    ): OperationResult<FileData, DownloadResourceVersionError> = operation<FileData, DownloadResourceVersionError> {
         ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
         val task = taskRepository.findById(taskId)
         ensure(task != null) { TaskNotExistsError(taskId) }
         ensure(resourceExists(versionBucket)) { ResourceNotExistsError(versionBucket) }
         ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
         ensure(versionBucket in task.data.uploadedResources) { ResourceNotUploadedToTaskError(taskId, versionBucket) }
-        val fileRef = when (versionId) {
-            is StatementId -> statementRepository.findFileRef(versionBucket, versionId)
-            is ExerciseId -> exerciseRepository.findFileRef(versionBucket, versionId)
-            is TestId -> testRepository.findFileRef(versionBucket, versionId)
-            is DeveloperSolutionId -> developerSolutionRepository.findFileRef(versionBucket, versionId)
+        val file = when (versionId) {
+            is StatementId -> statementRepository.findById(versionId)?.takeIf { version -> version.data.versionBucket == versionBucket }
+                ?.data?.file
+            is ExerciseId -> exerciseRepository.findById(versionId)?.takeIf { version -> version.data.versionBucket == versionBucket }
+                ?.data?.file
+            is TestId -> testRepository.findById(versionId)?.takeIf { version -> version.data.versionBucket == versionBucket }?.data?.file
+            is DeveloperSolutionId -> developerSolutionRepository.findById(versionId)
+                ?.takeIf { version -> version.data.versionBucket == versionBucket }
+                ?.let { developerSolution -> solutionRepository.load(developerSolution.data.solution).data.file }
             else -> null
         }
-        ensure(fileRef != null) { ResourceVersionNotExistsError(versionBucket, versionId) }
-        return fileRef.asSuccess()
+        ensure(file != null) { ResourceVersionNotExistsError(versionBucket, versionId) }
+        return file.asSuccess()
     }
 
     /**
@@ -1486,6 +1533,10 @@ class DeveloperOperations(
             snapshotDeveloperSolutionIds.toSet() == content.developerSolutions.ids.toSet() &&
             snapshot.supportedTrikStudioVersions.toSet() == content.supportedTrikStudioVersions.toSet()
     }
+
+    /** Returns the existing communities of [ids] by identifier; missing ones are skipped. */
+    private fun communitiesById(ids: List<CommunityId>): Map<CommunityId, Community> =
+        communityRepository.findByIds(ids.distinct()).associateBy { community -> community.id }
 
     private fun resourceExists(versionBucket: VersionBucket): Boolean = statementRepository.existsByVersionBucket(versionBucket) ||
         exerciseRepository.existsByVersionBucket(versionBucket) ||

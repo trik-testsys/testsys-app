@@ -51,6 +51,7 @@ import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestDiagnosticResult
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
@@ -107,6 +108,15 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> 
         pagination: Pagination,
         filter: ContestFilter = ContestFilter(),
     ): Page<Contest>
+
+    /**
+     * Synchronously finds every TRIK Studio version registered in the system, without changing stored state.
+     * Repeated calls reflect current registrations; storage exceptions propagate to the caller.
+     *
+     * @return the registered versions ordered by tag, or an empty list when none is registered.
+     * @since %CURRENT_VERSION%
+     */
+    fun findTrikStudioVersions(): List<TrikStudioVersion>
 }
 
 /**

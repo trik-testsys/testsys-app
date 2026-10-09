@@ -66,12 +66,12 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should mark only the heading of a role section on the page of the role`() {
+    fun `should mark only the section a role page opens without one`() {
         signIn(fixtures.multipleRoleUser { roles { developer { data = developerData {} } } })
 
         UI.getCurrent().navigate("developer")
 
-        assertEquals(listOf("Разработчик"), currentMenuLinks())
+        assertEquals(listOf("Задачи"), currentMenuLinks())
     }
 
     @Test
@@ -125,7 +125,7 @@ class CabinetHeadersTests : MockSpringVaadinTests() {
 
     /** Labels of the menu links marked as the current page. */
     private fun currentMenuLinks(): List<String> = UI.getCurrent()._find<RouterLink>()
-        .filter { link -> link.element.getAttribute("aria-current") == "page" }
+        .filter { link -> link.element.getAttribute("aria-current") == "page" && !link.hasClassName("ts-tab") }
         .map { link -> link.text.ifEmpty { link._get<Span>().text } }
 
     /** Returns the route of the header link named [label]; the breadcrumbs of the page may hold a link of the same name. */

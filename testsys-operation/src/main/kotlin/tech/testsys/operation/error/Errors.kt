@@ -935,6 +935,13 @@ sealed interface ViewResourceError : OperationError
 sealed interface DownloadResourceVersionError : OperationError
 
 /**
+ * Failure of listing the TRIK Studio versions registered in the system.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewTrikStudioVersionsError : OperationError
+
+/**
  * Failure of updating a statement uploaded to a task.
  *
  * @since %CURRENT_VERSION%
@@ -1147,7 +1154,8 @@ data object MissedDeveloperRoleError :
     ShareTaskError,
     AttachExerciseError,
     AttachTestError,
-    AttachDeveloperSolutionError
+    AttachDeveloperSolutionError,
+    ViewTrikStudioVersionsError
 
 /**
  * The contest end is specified without its start.

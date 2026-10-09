@@ -148,6 +148,11 @@ class ContestPersistenceAdapter(
         )
     }
 
+    @Transactional(readOnly = true)
+    override fun findTrikStudioVersions(): List<TrikStudioVersion> = trikStudioVersionJpaEntityRepository.findAll()
+        .map { entity -> TrikStudioVersion(entity.tag) }
+        .sortedBy { version -> version.version }
+
     @Transactional
     override fun save(data: ContestData): Contest {
         val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(data.trikStudioVersion.version)

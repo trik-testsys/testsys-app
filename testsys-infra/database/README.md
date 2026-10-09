@@ -248,6 +248,11 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 `CompetitionPersistenceAdapter.findByContestIds` находит идентификаторы Соревнований одним запросом к связям
 `ContestToCompetitionJpaEntity` и собирает Соревнования в порядке идентификаторов.
 
+## Версии TRIK Studio
+
+`ContestPersistenceAdapter.findTrikStudioVersions` читает все строки `ts_trik_studio_version` и возвращает версии,
+упорядоченные по тегу. Адаптеры Туров и Задач сохраняют только зарегистрированные в этой таблице версии.
+
 ## Создание Участников Соревнования
 
 Метод `saveToCompetition` в

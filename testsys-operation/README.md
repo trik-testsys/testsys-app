@@ -460,3 +460,19 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   Вердикта или `null` без успешного Вердикта.
 - `viewCommunityContests` помечена кодификатором `createObserver`. Она возвращает страницу Туров, открытых
   Сообществу Администратора, из которых выбираются Туры Наблюдателя.
+
+## Кабинет Разработчика
+
+[DeveloperOperations](src/main/kotlin/tech/testsys/operation/user/DeveloperOperations.kt) реализует фичи
+`testsys.user.multi.developer.*`; требования определены в [features.md](../docs/domain/features.md).
+
+- `viewContests` возвращает страницу пар `Pair<Contest, List<Community>>`, а `viewTask` — пару из Задачи
+  и её Сообществ доступа. `viewContest` возвращает тройку из Тура, его Задач и Сообществ доступа в порядке Тура.
+  Связанные сущности операции загружают через `findByIds`; отсутствующие пропускаются.
+- `viewResource` возвращает версии цепочки парами `Pair<DomainEntity<*>, Solution?>`: у версии Авторского Решения
+  второй элемент — её Решение, у остальных — `null`.
+- `downloadResourceVersion` возвращает файл версии как `FileData`, у Авторского Решения — файл его Решения.
+  Версия другой цепочки считается отсутствующей.
+- `viewTrikStudioVersions` помечена кодификатором `createContest`. Она возвращает версии TRIK Studio,
+  зарегистрированные в Системе, через `ContestRepository.findTrikStudioVersions`; из них выбираются версия Тура
+  и поддерживаемые версии Задачи.

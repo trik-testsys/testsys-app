@@ -19,6 +19,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.boot.test.context.SpringBootTest
+import tech.testsys.domain.builder.api.developerData
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.CabinetSignIn
@@ -71,7 +72,7 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     @Test
     fun `should open the page saved before signing in`() {
         val accessToken = fixtures.unique("token")
-        fixtures.userOf(UserKind.MULTIPLE_ROLE, rawAccessToken = accessToken)
+        fixtures.multipleRoleUser(rawAccessToken = accessToken) { roles { developer { data = developerData {} } } }
         UI.getCurrent().navigate(DeveloperView::class.java)
 
         signInWith(accessToken)

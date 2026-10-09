@@ -69,20 +69,25 @@
 | `RegistrationView` | `registration` | Без входа |
 | `RestoreAccessView` | `restore-access` | Без входа |
 | `MultiMainView` | `home` | `MULTIPLE_ROLE` |
-| `ProfileView`, `DeveloperView`, `ManagerView`, `JudgeView`, `StudentView` | `profile`, `developer`, `manager`, `judge`, `student` | `MULTIPLE_ROLE` |
+| `ProfileView`, `ManagerView`, `JudgeView`, `StudentView` | `profile`, `manager`, `judge`, `student` | `MULTIPLE_ROLE` |
 | `AdminView` | `admin`, `admin/communities`, `admin/users` | `MULTIPLE_ROLE` с Ролью Администратора |
 | `AdminCommunityView` | `admin/communities/:communityId` | `MULTIPLE_ROLE`, создатель Сообщества |
 | `AdminUserView` | `admin/users/:userId`, `admin/users/:userId/developer`, `admin/users/:userId/manager`, `admin/users/:userId/judge`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
+| `DeveloperView` | `developer`, `developer/tasks`, `developer/contests` | `MULTIPLE_ROLE` с Ролью Разработчика |
+| `DeveloperTaskView` | `developer/tasks/:taskId` | `MULTIPLE_ROLE`, владелец Задачи |
+| `DeveloperResourceView` | `developer/tasks/:taskId/resources/:resourceId` | `MULTIPLE_ROLE`, владелец Задачи |
+| `DeveloperContestView` | `developer/contests/:contestId` | `MULTIPLE_ROLE`, владелец Тура или Разработчик Сообщества с доступом к нему |
 | `ParticipantView`, `ObserverView`, `SupervisorView` | `participant`, `observer`, `supervisor` | Соответствующий вид |
 
 Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
-кроме Кабинета Администратора, пока показывают только шапку и пустое состояние: их маршруты и доступ окончательные,
-поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
+кроме Кабинетов Администратора и Разработчика, пока показывают только шапку и пустое состояние: их маршруты и доступ
+окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
 
-Страницы Кабинета Администратора вызывают прокси-сервис в `beforeEnter`, до построения таблиц. Поэтому отсутствие
-Роли, Сообщества или доступа открывает экран ошибки из раздела [Ошибки операций](#ошибки-операций), а не ошибку
-загрузки таблицы. `AdminView` без раздела переадресует на `admin/communities`. Наблюдатель открывается по своему
-адресу `admin/observers/:observerId`: операция просмотра принимает идентификатор вместе с видом Пользователя.
+Страницы Кабинетов Администратора и Разработчика вызывают прокси-сервис в `beforeEnter`, до построения таблиц.
+Поэтому отсутствие Роли, сущности или доступа открывает экран ошибки из раздела [Ошибки операций](#ошибки-операций),
+а не ошибку загрузки таблицы. `AdminView` без раздела переадресует на `admin/communities`, `DeveloperView` —
+на `developer/tasks`. Наблюдатель открывается по своему адресу `admin/observers/:observerId`: операция просмотра
+принимает идентификатор вместе с видом Пользователя.
 
 Страницы Ролей принимают необязательный параметр маршрута `section` с разделом страницы, например
 `developer/tasks`. Заголовок раздела Роли в «Меню» ведёт на страницу без параметра, а ссылки разделов — с ним,
@@ -136,6 +141,10 @@
 - VO не содержат сущностей и ленивых ссылок: связи заменены идентификаторами и списками идентификаторов,
   доменные value-типы сохраняются. VO содержит все поля данных сущности, её `id` и `createdAt`. Файлы Ресурсов
   представлены именем без содержимого.
+- Связанные сущности, которые возвращает операция, сервис отдаёт парами и тройками VO. Так `DeveloperService`
+  возвращает страницу Туров и Задачу с Сообществами доступа, Тур — с его Задачами и Сообществами доступа, а версии
+  Ресурса — с Решением Авторского Решения. `downloadResourceVersion` возвращает файл версии как `FileData`
+  с содержимым.
 
 `StudyService.sendSolution` передаёт сохранённую Посылку в `AfterCommitGrader`. `AfterCommitGrader` отдаёт
 Посылку `BalancingGrader` только после фиксации транзакции, а при откате не отдаёт. `DeveloperOperations`

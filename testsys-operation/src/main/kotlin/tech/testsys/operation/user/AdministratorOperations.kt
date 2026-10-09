@@ -8,33 +8,58 @@ import tech.testsys.domain.builder.group.CommunityInviteDataBuilder
 import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.SubmissionCount
 import tech.testsys.domain.contract.persistence.UserFilter
+import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
+import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
+import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
+import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
+import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
+import tech.testsys.domain.contract.persistence.repository.VerdictRepository
+import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CommunityInviteData
+import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.GradingResult
+import tech.testsys.domain.model.task.JudgmentOrder
+import tech.testsys.domain.model.task.SolutionId
+import tech.testsys.domain.model.task.Submission
+import tech.testsys.domain.model.task.SubmissionStatus
+import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CommunityRole
+import tech.testsys.domain.model.user.CompatibleUserRole
+import tech.testsys.domain.model.user.Developer
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.Judge
+import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
+import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.operation.config.CommunityInviteConfig
 import tech.testsys.operation.error.CommunityAccessDeniedError
+import tech.testsys.operation.error.CommunityIsPublicError
 import tech.testsys.operation.error.CommunityNameBlankError
 import tech.testsys.operation.error.CommunityNameTooLongError
 import tech.testsys.operation.error.CommunityNotExistsError
@@ -43,6 +68,7 @@ import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.CreateCommunityError
 import tech.testsys.operation.error.CreateCommunityInviteError
 import tech.testsys.operation.error.CreateObserverError
+import tech.testsys.operation.error.DeleteObserverError
 import tech.testsys.operation.error.EditCommunityError
 import tech.testsys.operation.error.ExtendCommunityInviteError
 import tech.testsys.operation.error.GrantRoleError
@@ -52,22 +78,35 @@ import tech.testsys.operation.error.ObserverNameBlankError
 import tech.testsys.operation.error.ObserverNameTooLongError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.RefreshCommunityInviteError
+import tech.testsys.operation.error.RemoveFromCommunityError
+import tech.testsys.operation.error.RoleNotGrantableError
+import tech.testsys.operation.error.RoleNotRemovableError
 import tech.testsys.operation.error.UserAccessDeniedError
 import tech.testsys.operation.error.UserHasFixedRoleError
+import tech.testsys.operation.error.UserNotCommunityMemberError
 import tech.testsys.operation.error.UserNotExistsError
 import tech.testsys.operation.error.ViewCommunitiesError
 import tech.testsys.operation.error.ViewCommunityContestsError
 import tech.testsys.operation.error.ViewCommunityInvitesError
+import tech.testsys.operation.error.ViewUserAssignedContestsError
+import tech.testsys.operation.error.ViewUserClassesError
+import tech.testsys.operation.error.ViewUserCompetitionsError
+import tech.testsys.operation.error.ViewUserContestsError
 import tech.testsys.operation.error.ViewUserError
+import tech.testsys.operation.error.ViewUserJudgmentsError
+import tech.testsys.operation.error.ViewUserTasksError
 import tech.testsys.operation.error.ViewUsersError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
+import tech.testsys.operation.error.getOrRaise
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.error.raise
 import tech.testsys.operation.util.findByIdsAsMap
 import tech.testsys.operation.util.generateInviteCode
 import tech.testsys.operation.util.hasRole
+import tech.testsys.operation.util.heldRole
 import tech.testsys.operation.util.inviteExpiresAt
+import tech.testsys.operation.util.joinCommunity
 import java.security.SecureRandom
 import java.time.Clock
 import java.time.Instant
@@ -93,6 +132,14 @@ class AdministratorOperations(
     private val contestRepository: ContestRepository,
     private val observerRepository: ObserverRepository,
     private val multipleRoleUserRepository: MultipleRoleUserRepository,
+    private val communityConfig: CommunityConfig,
+    private val taskRepository: TaskRepository,
+    private val taskValidationRequestRepository: TaskValidationRequestRepository,
+    private val classRepository: ClassRepository,
+    private val competitionRepository: CompetitionRepository,
+    private val submissionRepository: SubmissionRepository,
+    private val judgmentOrderRepository: JudgmentOrderRepository,
+    private val verdictRepository: VerdictRepository,
 ) {
 
     private val random = SecureRandom()
@@ -183,6 +230,179 @@ class AdministratorOperations(
         }
 
     /**
+     * Returns the tasks created by [userId] viewed as in [viewUser], each with its latest validation request, or `null`
+     * if never validated, and the communities it is shared to; empty if the viewed user is not a developer.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.viewUser")
+    fun viewUserTasks(
+        user: MultipleRoleUser,
+        userId: UserId,
+    ): OperationResult<List<Triple<Task, TaskValidationRequest?, List<Community>>>, ViewUserTasksError> =
+        operation<List<Triple<Task, TaskValidationRequest?, List<Community>>>, ViewUserTasksError> {
+            val developer = viewedRole<Developer>(user, userId).getOrRaise { error ->
+                when (error) {
+                    MissedAdministratorRoleError -> MissedAdministratorRoleError
+                    is UserNotExistsError -> error
+                    is UserAccessDeniedError -> error
+                }
+            } ?: return emptyList<Nothing>().asSuccess()
+            val tasks = taskRepository.findByIds(developer.data.tasks.ids)
+            val communities = communityRepository.findByIds(tasks.flatMap { task -> task.data.sharedTo.ids }.distinct())
+                .associateBy { community -> community.id }
+
+            // ponytail: one history query per task; a query of the latest requests if developers own many tasks.
+            return tasks.map { task ->
+                Triple(
+                    task,
+                    taskValidationRequestRepository.findHistory(task.id).lastOrNull(),
+                    task.data.sharedTo.ids.mapNotNull(communities::get),
+                )
+            }.asSuccess()
+        }
+
+    /**
+     * Returns the contests created by [userId] viewed as in [viewUser], each with its tasks and the number of grading
+     * submissions of every task in the contest; empty if the viewed user is not a developer.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.viewUser")
+    fun viewUserContests(
+        user: MultipleRoleUser,
+        userId: UserId,
+    ): OperationResult<List<Pair<Contest, List<Pair<Task, Long>>>>, ViewUserContestsError> =
+        operation<List<Pair<Contest, List<Pair<Task, Long>>>>, ViewUserContestsError> {
+            val developer = viewedRole<Developer>(user, userId).getOrRaise { error ->
+                when (error) {
+                    MissedAdministratorRoleError -> MissedAdministratorRoleError
+                    is UserNotExistsError -> error
+                    is UserAccessDeniedError -> error
+                }
+            } ?: return emptyList<Nothing>().asSuccess()
+            val contests = contestRepository.findByIds(developer.data.contests.ids)
+            val tasks = taskRepository.findByIds(contests.flatMap { contest -> contest.data.tasks.ids }.distinct())
+                .associateBy { task -> task.id }
+
+            // ponytail: one count query per contest; a grouped query over all contests if developers own many contests.
+            return contests.map { contest ->
+                val counts = submissionRepository.countGradingByTask(contest.id)
+                contest to contest.data.tasks.ids.map { taskId -> tasks.getValue(taskId) to (counts[taskId] ?: 0L) }
+            }.asSuccess()
+        }
+
+    /**
+     * Returns the classes created by [userId] viewed as in [viewUser], each with the grading submissions of its current
+     * students in its current contests; empty if the viewed user is not a manager.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.viewUser")
+    fun viewUserClasses(
+        user: MultipleRoleUser,
+        userId: UserId,
+    ): OperationResult<List<Pair<Class, SubmissionCount>>, ViewUserClassesError> =
+        operation<List<Pair<Class, SubmissionCount>>, ViewUserClassesError> {
+            val manager = viewedRole<Manager>(user, userId).getOrRaise { error ->
+                when (error) {
+                    MissedAdministratorRoleError -> MissedAdministratorRoleError
+                    is UserNotExistsError -> error
+                    is UserAccessDeniedError -> error
+                }
+            } ?: return emptyList<Nothing>().asSuccess()
+
+            // ponytail: one count query per class; a grouped query if managers own many classes.
+            return classRepository.findByIds(manager.data.classes.ids).map { group ->
+                group to submissionRepository.countGrading(group.data.students.ids.toSet(), group.data.contests.ids.toSet())
+            }.asSuccess()
+        }
+
+    /**
+     * Returns the competitions created by [userId] viewed as in [viewUser], each with the grading submissions of its
+     * current participants in its contests; empty if the viewed user is not a manager.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.viewUser")
+    fun viewUserCompetitions(
+        user: MultipleRoleUser,
+        userId: UserId,
+    ): OperationResult<List<Pair<Competition, SubmissionCount>>, ViewUserCompetitionsError> =
+        operation<List<Pair<Competition, SubmissionCount>>, ViewUserCompetitionsError> {
+            val manager = viewedRole<Manager>(user, userId).getOrRaise { error ->
+                when (error) {
+                    MissedAdministratorRoleError -> MissedAdministratorRoleError
+                    is UserNotExistsError -> error
+                    is UserAccessDeniedError -> error
+                }
+            } ?: return emptyList<Nothing>().asSuccess()
+
+            // ponytail: one count query per competition; a grouped query if managers own many competitions.
+            return competitionRepository.findByIds(manager.data.competitions.ids).map { competition ->
+                competition to submissionRepository.countGrading(
+                    competition.data.participants.ids.toSet(),
+                    competition.data.contests.ids.toSet(),
+                )
+            }.asSuccess()
+        }
+
+    /**
+     * Returns the judgment orders issued by [userId] viewed as in [viewUser], each with the solution of its submission and
+     * the previous result of the submission, or `null` without one; empty if the viewed user is not a judge.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.viewUser")
+    fun viewUserJudgments(
+        user: MultipleRoleUser,
+        userId: UserId,
+    ): OperationResult<List<Triple<JudgmentOrder, SolutionId, Long?>>, ViewUserJudgmentsError> =
+        operation<List<Triple<JudgmentOrder, SolutionId, Long?>>, ViewUserJudgmentsError> {
+            val judge = viewedRole<Judge>(user, userId).getOrRaise { error ->
+                when (error) {
+                    MissedAdministratorRoleError -> MissedAdministratorRoleError
+                    is UserNotExistsError -> error
+                    is UserAccessDeniedError -> error
+                }
+            } ?: return emptyList<Nothing>().asSuccess()
+
+            // ponytail: reads the submission and its judgment orders per order; batch them if judges issue many orders.
+            return judgmentOrderRepository.findByIds(judge.data.judgmentOrders.ids).map { order ->
+                val submission = submissionOf(order)
+                Triple(order, submission.data.solution.id, previousScore(order, submission))
+            }.asSuccess()
+        }
+
+    /**
+     * Returns the contests assigned to the observer [userId] viewed as in [viewUser], each with the competitions it is
+     * currently part of; empty if the viewed user is not an observer.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.viewUser")
+    fun viewUserAssignedContests(
+        user: MultipleRoleUser,
+        userId: UserId,
+    ): OperationResult<List<Pair<Contest, List<Competition>>>, ViewUserAssignedContestsError> =
+        operation<List<Pair<Contest, List<Competition>>>, ViewUserAssignedContestsError> {
+            val (viewed, _) = viewUser(user, userId).getOrRaise { error ->
+                when (error) {
+                    MissedAdministratorRoleError -> MissedAdministratorRoleError
+                    is UserNotExistsError -> error
+                    is UserAccessDeniedError -> error
+                }
+            }
+            val observer = viewed as? Observer ?: return emptyList<Nothing>().asSuccess()
+            val contests = contestRepository.findByIds(observer.data.contests.ids)
+            val competitions = competitionRepository.findByContestIds(contests.map { contest -> contest.id }.toSet())
+
+            return contests.map { contest ->
+                contest to competitions.filter { competition -> contest.id in competition.data.contests.ids }
+            }.asSuccess()
+        }
+
+    /**
      * Returns the communities created by [user] in ascending id order, each with the number of users available to [user]
      * through it, the administrator included. Missing role is an expected failure; nothing is written.
      *
@@ -203,9 +423,9 @@ class AdministratorOperations(
         }
 
     /**
-     * Creates a community owned by [user] with unchanged [communityName] and [description], no members and new manager and
-     * developer invite codes. The name must be nonblank and contain at most 255 Unicode code points; storage exceptions,
-     * including an invite code collision, propagate to the caller.
+     * Creates a community owned by [user] with unchanged [communityName] and [description], [user] as its only member in the
+     * administrator role and new manager and developer invite codes. The name must be nonblank and contain at most 255
+     * Unicode code points; storage exceptions, including an invite code collision, propagate to the caller.
      *
      * @since %CURRENT_VERSION%
      */
@@ -236,6 +456,11 @@ class AdministratorOperations(
                 developerInvite = developerInviteId
             }
         }
+        multipleRoleUserRepository.addCommunityMembership(
+            userId = user.id,
+            communityId = community.id,
+            role = CommunityRole.Administrator,
+        )
         return community.asSuccess()
     }
 
@@ -270,9 +495,9 @@ class AdministratorOperations(
     }
 
     /**
-     * Makes [userId], available to [user] and holding non-fixed roles, a member of [communityId] owned by [user] in [role];
-     * a member already in that role is returned unchanged. Roles in other communities are kept; missing role, user,
-     * community, access and a fixed role of the user are expected failures.
+     * Makes [userId], available to [user] and holding non-fixed roles, a member of [communityId] owned by [user] in [role],
+     * and of the public community if the role is new; a member already in that role is returned unchanged. Missing role,
+     * user, community, access, a fixed role of the user and the judge role are expected failures.
      *
      * @since %CURRENT_VERSION%
      */
@@ -291,11 +516,67 @@ class AdministratorOperations(
         ensure(granted != null) { UserAccessDeniedError(userId) }
         ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
         ensure(granted is MultipleRoleUser) { UserHasFixedRoleError(userId) }
+        ensure(role != CommunityRole.Judge && role != CommunityRole.Administrator) { RoleNotGrantableError(role) }
 
         // The port keeps an existing membership, so a user already in the role is returned unchanged.
-        val member = multipleRoleUserRepository.addCommunityMembership(userId = granted.id, communityId = communityId, role = role)
+        val member = multipleRoleUserRepository.joinCommunity(
+            user = granted,
+            communityId = communityId,
+            role = role,
+            publicCommunityId = communityConfig.publicCommunityId,
+        )
         return member.asSuccess()
     }
+
+    /**
+     * Removes the membership of [userId] in [communityId] owned by [user] in [role], keeping the role and its data.
+     * Missing role, user, community, access, the public community and a missing membership are expected failures.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.removeFromCommunity")
+    fun removeFromCommunity(
+        user: MultipleRoleUser,
+        userId: MultipleRoleUserId,
+        communityId: CommunityId,
+        role: CommunityRole,
+    ): OperationResult<MultipleRoleUser, RemoveFromCommunityError> = operation<MultipleRoleUser, RemoveFromCommunityError> {
+        ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
+        val member = multipleRoleUserRepository.findById(userId)
+        ensure(member != null) { UserNotExistsError(userId) }
+        val community = communityRepository.findById(communityId)
+        ensure(community != null) { CommunityNotExistsError(communityId) }
+        ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
+        ensure(communityId != communityConfig.publicCommunityId) { CommunityIsPublicError(communityId) }
+        ensure(role != CommunityRole.Administrator) { RoleNotRemovableError(role) }
+        ensure(communityId in member.heldRole(role)?.memberOf?.ids.orEmpty()) {
+            UserNotCommunityMemberError(userId = userId, communityId = communityId, role = role)
+        }
+
+        return multipleRoleUserRepository.removeCommunityMembership(userId = userId, communityId = communityId, role = role)
+            .asSuccess()
+    }
+
+    /**
+     * Deletes [observerId] of a community owned by [user], so that its access code stops working, and returns the observer
+     * as it was before the deletion. Missing role, observer and access are expected failures.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.admin.deleteObserver")
+    fun deleteObserver(user: MultipleRoleUser, observerId: SingleRoleUserId): OperationResult<Observer, DeleteObserverError> =
+        operation<Observer, DeleteObserverError> {
+            ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
+            val observer = observerRepository.findById(observerId)
+            ensure(observer != null) { UserNotExistsError(observerId) }
+            val community = checkNotNull(communityRepository.findById(observer.data.community.id)) {
+                "Community ${observer.data.community.id.value} of observer ${observerId.value} does not exist"
+            }
+            ensure(community.data.owner.id == user.id) { UserAccessDeniedError(observerId) }
+
+            observerRepository.removeById(observerId)
+            return observer.asSuccess()
+        }
 
     /**
      * Returns a [pagination] page of the contests shared to [communityId] owned by [user] whose names contain [name],
@@ -409,6 +690,46 @@ class AdministratorOperations(
         if (now < existing.data.expiresAt) return existing.asSuccess()
         val expiresAt = inviteExpiresAt(now = now, ttl = communityInviteConfig.ttl)
         return replaceCode(invite = existing, expiresAt = expiresAt).asSuccess()
+    }
+
+    /** Returns the role [R] of [userId] viewed by [user] as in [viewUser], or `null` if the viewed user does not hold it. */
+    private inline fun <reified R : CompatibleUserRole> viewedRole(
+        user: MultipleRoleUser,
+        userId: UserId,
+    ): OperationResult<R?, ViewUserError> = operation<R?, ViewUserError> {
+        val (viewed, _) = viewUser(user, userId).getOrRaise()
+        (viewed as? MultipleRoleUser)?.data?.roles?.filterIsInstance<R>()?.singleOrNull()
+    }
+
+    /**
+     * Returns the score of the judgment order of the same submission issued just before [order], otherwise the verdict
+     * total of the submission, or `null` without a successful verdict.
+     */
+    private fun submissionOf(order: JudgmentOrder): Submission {
+        val submissionId = order.data.submission.id
+        return checkNotNull(submissionRepository.findById(submissionId)) {
+            "Submission ${submissionId.value} of judgment order ${order.id.value} does not exist"
+        }
+    }
+
+    private fun previousScore(order: JudgmentOrder, submission: Submission): Long? {
+        val issueOrder = compareBy<JudgmentOrder> { other -> other.createdAt }.thenBy { other -> other.id.value }
+        val previous = judgmentOrderRepository.findByIds(submission.data.judgmentOrders.ids)
+            .filter { other -> issueOrder.compare(other, order) < 0 }
+            .maxWithOrNull(issueOrder)
+        if (previous != null) return previous.data.score.value.toLong()
+
+        val verdict = when (val status = submission.data.status) {
+            SubmissionStatus.Queued, SubmissionStatus.InProgress -> return null
+            is SubmissionStatus.Graded -> when (val grade = status.grade) {
+                is GradingResult.Success -> grade.verdict
+                is GradingResult.GradingError, GradingResult.Timeout -> return null
+            }
+        }
+        val testVerdicts = checkNotNull(verdictRepository.findById(verdict.id)) {
+            "Verdict ${verdict.id.value} of submission ${submission.id.value} does not exist"
+        }.data.testVerdicts
+        return testVerdicts.sumOf { testVerdict -> testVerdict.score.value.toLong() }
     }
 
     private fun newInvite(expiresAt: Instant): CommunityInviteData = communityInviteData {

@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.developerData
+import tech.testsys.domain.builder.api.judgeData
+import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
@@ -176,7 +178,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         val saved = checkNotNull(communities.findById(community.id)).data
         assertEquals("Робототехника", saved.name)
         assertEquals("", saved.description)
-        assertEquals("Робототехника", UI.getCurrent()._find<H1>().single().text)
+        assertEquals("Сообщество «Робототехника»", UI.getCurrent()._find<H1>().single().text)
     }
 
     @Test
@@ -204,6 +206,35 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         val text = UI.getCurrent()._find<Table>().single { table -> "Псевдоним" in table.element.textRecursively }.element.textRecursively
         assertTrue("Разработчик Иван" in text, text)
         assertTrue("Разработчик Олег" !in text, text)
+    }
+
+    @Test
+    fun `should show the roles of each user in this community only`() {
+        val administrator = signInAdministrator()
+        val community = fixtures.community(owner = administrator)
+        val other = fixtures.community(owner = administrator)
+        fixtures.multipleRoleUser(name = "Иван") {
+            roles {
+                developer {
+                    memberOf(listOf(community.id.value))
+                    data = developerData {}
+                }
+                judge {
+                    memberOf(listOf(community.id.value))
+                    data = judgeData {}
+                }
+                manager {
+                    memberOf(listOf(other.id.value))
+                    data = managerData {}
+                }
+            }
+        }
+
+        open(community.id)
+
+        val text = UI.getCurrent()._find<Table>().single { table -> "Псевдоним" in table.element.textRecursively }.element.textRecursively
+        assertTrue("ИванРазработчикСудья" in text, text)
+        assertTrue("Организатор" !in text, text)
     }
 
     private fun signInAdministrator(): MultipleRoleUser = fixtures.administrator().also { administrator -> signIn(administrator) }

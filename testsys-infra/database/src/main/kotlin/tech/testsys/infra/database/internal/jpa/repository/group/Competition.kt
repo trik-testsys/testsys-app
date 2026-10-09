@@ -65,6 +65,14 @@ interface ContestToCompetitionJpaEntityRepository :
      */
     @Query("select e from ContestToCompetitionJpaEntity e where e.id.competitionId = :competitionId")
     fun findAllByCompetitionId(@Param("competitionId") competitionId: Long, pageable: Pageable): Page<ContestToCompetitionJpaEntity>
+
+    /**
+     * Finds the ids of the competitions containing any of the contests [contestIds], without repetitions.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query("select distinct e.id.competitionId from ContestToCompetitionJpaEntity e where e.id.contestId in :contestIds")
+    fun findCompetitionIdsByContestIds(@Param("contestIds") contestIds: Collection<Long>): List<Long>
 }
 
 /**

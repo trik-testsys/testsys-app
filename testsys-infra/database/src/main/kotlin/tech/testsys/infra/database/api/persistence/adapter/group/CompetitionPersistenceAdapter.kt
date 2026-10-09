@@ -80,6 +80,16 @@ class CompetitionPersistenceAdapter(
         )
     }
 
+    @Transactional(readOnly = true)
+    override fun findByContestIds(contestIds: Set<ContestId>): List<Competition> {
+        if (contestIds.isEmpty()) return emptyList()
+
+        val competitionIds = contestToCompetitionJpaEntityRepository.findCompetitionIdsByContestIds(contestIds.map { id -> id.value })
+        return jpaEntityRepository.findAllById(competitionIds)
+            .sortedBy { entity -> entity.requireId() }
+            .map { entity -> assemble(entity) }
+    }
+
     @Transactional
     override fun save(data: CompetitionData): Competition {
         val jpaEntity = CompetitionMapping.toJpaEntity(data)

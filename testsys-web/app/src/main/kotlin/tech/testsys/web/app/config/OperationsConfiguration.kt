@@ -138,6 +138,14 @@ class OperationsConfiguration {
         contests: ContestRepository,
         observers: ObserverRepository,
         multipleRoleUsers: MultipleRoleUserRepository,
+        communityConfig: CommunityConfig,
+        tasks: TaskRepository,
+        requests: TaskValidationRequestRepository,
+        classes: ClassRepository,
+        competitions: CompetitionRepository,
+        submissions: SubmissionRepository,
+        judgmentOrders: JudgmentOrderRepository,
+        verdicts: VerdictRepository,
     ): AdministratorOperations = AdministratorOperations(
         communityRepository = communities,
         managerInviteRepository = managerInvites,
@@ -148,6 +156,14 @@ class OperationsConfiguration {
         contestRepository = contests,
         observerRepository = observers,
         multipleRoleUserRepository = multipleRoleUsers,
+        communityConfig = communityConfig,
+        taskRepository = tasks,
+        taskValidationRequestRepository = requests,
+        classRepository = classes,
+        competitionRepository = competitions,
+        submissionRepository = submissions,
+        judgmentOrderRepository = judgmentOrders,
+        verdictRepository = verdicts,
     )
 
     /**
@@ -166,6 +182,7 @@ class OperationsConfiguration {
         emailConfirmationConfig: EmailConfirmationConfig,
         clock: Clock,
         randomGenerator: RandomGenerator,
+        communityConfig: CommunityConfig,
     ): MultipleRoleUserOperations = MultipleRoleUserOperations(
         multipleRoleUserRepository = multipleRoleUsers,
         communityRepository = communities,
@@ -176,6 +193,7 @@ class OperationsConfiguration {
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,
         randomGenerator = randomGenerator,
+        communityConfig = communityConfig,
     )
 
     /**

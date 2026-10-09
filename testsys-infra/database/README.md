@@ -234,6 +234,20 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 а при равном времени — по идентификатору. Правила подсчёта определены в [features.md](../../docs/domain/features.md).
 Чтение выполняется в транзакции с `readOnly = true`.
 
+## Количество Посылок
+
+Методы `countGradingByTask` и `countGrading` в
+[SubmissionPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/SubmissionPersistenceAdapter.kt)
+считают Посылки вида `GRADING` в любом статусе одним агрегирующим запросом `SubmissionJpaEntityRepository`
+и не загружают сами Посылки. `countGradingByTask` группирует Посылки Тура по Задаче. `countGrading` считает Посылки
+переданных авторов в переданных Турах и число разных авторов через `count(distinct ...)`; если один из наборов пуст,
+адаптер возвращает нули и не обращается к БД. Чтение выполняется в транзакции с `readOnly = true`.
+
+## Соревнования Туров
+
+`CompetitionPersistenceAdapter.findByContestIds` находит идентификаторы Соревнований одним запросом к связям
+`ContestToCompetitionJpaEntity` и собирает Соревнования в порядке идентификаторов.
+
 ## Создание Участников Соревнования
 
 Метод `saveToCompetition` в
@@ -426,6 +440,8 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 и добавляет недостающие строки данных Роли и членства в Сообществе. Поэтому `update` со снимком, прочитанным
 до этих методов, падает с конфликтом версий и не удаляет добавленные строки.
 Роль выбирается по `CommunityRole`.
+`removeCommunityMembership` повышает версию корня Пользователя и удаляет одну строку членства,
+если она есть; строки данных Роли остаются.
 
 ## Регистрация, смена почты и поиск по почте
 

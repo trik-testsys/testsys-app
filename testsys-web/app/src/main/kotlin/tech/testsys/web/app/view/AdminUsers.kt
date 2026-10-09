@@ -6,6 +6,7 @@ import com.vaadin.flow.router.RouteParameters
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.user.UserId
 import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.MultipleRoleUserVo
@@ -15,6 +16,7 @@ import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.filters
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.multiSelect
 import tech.testsys.web.components.forms.select
@@ -35,6 +37,9 @@ internal const val COMMUNITY_ID_PARAMETER = "communityId"
 
 /** Route parameter of [AdminUserView] with the id of a user with non-fixed roles. */
 internal const val USER_ID_PARAMETER = "userId"
+
+/** Route parameter of [AdminUserView] with the open tab of the sections of a role. */
+internal const val ADMIN_USER_SECTION_PARAMETER = "section"
 
 /** Route parameter of the observer alias of [AdminUserView] with the observer id. */
 internal const val OBSERVER_ID_PARAMETER = "observerId"
@@ -58,6 +63,13 @@ internal fun openAdminCommunity(communityId: CommunityId) {
     UI.getCurrent().navigate(AdminCommunityView::class.java, communityParameters(communityId))
 }
 
+/** Returns the route parameters of the page of the user [userId] with non-fixed roles, on [section] if given. */
+internal fun userParameters(userId: UserId, section: AdminUserSection? = null): RouteParameters = if (section == null) {
+    RouteParameters(USER_ID_PARAMETER, userId.value.toString())
+} else {
+    RouteParameters(mapOf(USER_ID_PARAMETER to userId.value.toString(), ADMIN_USER_SECTION_PARAMETER to section.value))
+}
+
 /** Opens the page of [user]: observers have their own address. */
 internal fun openAdminUser(user: AdminUserVo) {
     val parameters = when (user) {
@@ -65,6 +77,12 @@ internal fun openAdminUser(user: AdminUserVo) {
         is ObserverVo -> RouteParameters(OBSERVER_ID_PARAMETER, user.id.value.toString())
     }
     UI.getCurrent().navigate(AdminUserView::class.java, parameters)
+}
+
+/** Returns the labels of the roles [user] holds in [communityId]. */
+private fun rolesIn(user: AdminUserVo, communityId: CommunityId): List<String> = when (user) {
+    is MultipleRoleUserVo -> user.roles.filter { role -> communityId in role.memberOf }.map(::labelOf)
+    is ObserverVo -> listOfNotNull("Наблюдатель".takeIf { user.community == communityId })
 }
 
 /** Converts a table page request into a pagination with the column sort keys as storage fields. */
@@ -105,8 +123,11 @@ internal fun BlockScope.adminUsersTable(service: AdministratorService, communiti
             Page(users.content, users.totalElements.toInt())
         },
     ) {
-        codeColumn("ID", sortKey = "id", size = 6) { (user, _) -> user.id.value.toString() }
-        textColumn("Псевдоним", sortKey = "name", size = 10) { (user, _) -> user.name }
+        codeColumn("ID", sortKey = "id", size = if (community == null) 6 else 4) { (user, _) -> user.id.value.toString() }
+        textColumn("Псевдоним", sortKey = "name", size = if (community == null) 10 else 7) { (user, _) -> user.name }
+        community?.let { communityId ->
+            column("Роли", size = 7) { (user, _) -> rolesIn(user, communityId).forEach { role -> tag(role) } }
+        }
         dateTimeColumn("Последний вход", sortKey = "lastLoginAt") { (_, lastLogin) -> lastLogin?.toServerDateTime() }
         empty("Пользователей нет", "Пользователи появятся, когда присоединятся к сообществу.")
         onRowClick(isNavigation = true) { (user, _) -> openAdminUser(user) }

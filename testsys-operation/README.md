@@ -417,8 +417,18 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 не содержит ни одной ошибки.
 
 `MultipleRoleUserOperations` получает через конструктор `MultipleRoleUserRepository`, `CommunityRepository`,
-`ManagerCommunityInviteRepository`, `DeveloperCommunityInviteRepository`, `EmailChangeRequestRepository`, `UserMailSender`, `EmailConfirmationConfig`, `Clock` и `RandomGenerator`.
+`ManagerCommunityInviteRepository`, `DeveloperCommunityInviteRepository`, `EmailChangeRequestRepository`, `UserMailSender`, `EmailConfirmationConfig`, `Clock`, `RandomGenerator`
+и `CommunityConfig` с Публичным Сообществом.
 Код подтверждения, срок его действия и чтение времени — те же, что в регистрации.
+
+## Первое получение Роли
+
+`joinCommunity` из [Role.kt](src/main/kotlin/tech/testsys/operation/util/Role.kt) включает Пользователя
+в Сообщество в Роли через `MultipleRoleUserRepository.addCommunityMembership`. Если у переданного Пользователя
+этой Роли ещё нет, функция сначала включает его в Публичное Сообщество в той же Роли. Правило определено
+в `testsys.entity.multi.role` в [features.md](../docs/domain/features.md). Функцию вызывают
+`MultipleRoleUserOperations.joinCommunity` и `AdministratorOperations.grantRole`. Вызывающий код выполняет оба
+включения в одной транзакции, чтобы исключение откатило их вместе; в `testsys-web:app` её открывает прокси-сервис.
 
 ## Кабинет Администратора
 
@@ -429,8 +439,24 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   и момент его последнего входа либо `null`. Моменты читает `UserRepository.findLastLogins` одним вызовом на страницу.
 - `viewCommunities` возвращает пары из Сообщества и числа доступных через него Пользователей.
   Число считает `UserRepository.countAvailableToAdministrator` отдельно для каждого Сообщества.
-- `grantRole` принимает Роль как `CommunityRole`, поэтому другую Роль передать нельзя. Операция вызывает
-  `MultipleRoleUserRepository.addCommunityMembership` и для Пользователя, который уже состоит в Сообществе
-  в этой Роли: порт такое членство не меняет.
+- `createCommunity` после сохранения Сообщества включает в него создателя в Роли Администратора через
+  `MultipleRoleUserRepository.addCommunityMembership`.
+- `grantRole` принимает Роль как `CommunityRole`; Роли Судьи и Администратора операция отклоняет ошибкой
+  `RoleNotGrantableError`.
+  Операция включает Пользователя через `joinCommunity` (см. раздел [Первое получение Роли](#первое-получение-роли))
+  и для Пользователя, который уже состоит в Сообществе в этой Роли: порт такое членство не меняет.
+- `removeFromCommunity` перечитывает Пользователя через `MultipleRoleUserRepository.findById` и вызывает
+  `removeCommunityMembership`. Публичное Сообщество из `CommunityConfig` операция отклоняет ошибкой
+  `CommunityIsPublicError`, Роль Администратора — ошибкой `RoleNotRemovableError`, отсутствующее членство — ошибкой
+  `UserNotCommunityMemberError`.
+- `deleteObserver` удаляет Наблюдателя через `ObserverRepository.removeById` и возвращает его загруженное
+  состояние. Наблюдателя чужого Сообщества операция отклоняет ошибкой `UserAccessDeniedError`.
+- Разделы Ролей страницы Пользователя возвращают отдельные операции с кодификатором `viewUser`: `viewUserTasks`,
+  `viewUserContests`, `viewUserClasses`, `viewUserCompetitions`, `viewUserJudgments` и `viewUserAssignedContests`.
+  Каждая сначала выполняет проверки `viewUser` и возвращает пустой список, если у Пользователя нет нужной Роли.
+  Количества Посылок считают `SubmissionRepository.countGradingByTask` и `countGrading`, Соревнования Туров
+  находит `CompetitionRepository.findByContestIds`. Предыдущий результат Судейского вердикта операция вычисляет
+  в `Long`: это балл предыдущего Судейского вердикта той же Посылки по времени и идентификатору, иначе сумма баллов
+  Вердикта или `null` без успешного Вердикта.
 - `viewCommunityContests` помечена кодификатором `createObserver`. Она возвращает страницу Туров, открытых
   Сообществу Администратора, из которых выбираются Туры Наблюдателя.

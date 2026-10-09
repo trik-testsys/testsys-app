@@ -15,6 +15,7 @@ import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.RegistrationRequestId
 import tech.testsys.domain.model.user.UserId
 import java.time.Duration
@@ -399,6 +400,48 @@ sealed interface ViewUsersError : OperationError
 sealed interface ViewUserError : OperationError
 
 /**
+ * Failure of listing the tasks created by a user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserTasksError : OperationError
+
+/**
+ * Failure of listing the contests created by a user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserContestsError : OperationError
+
+/**
+ * Failure of listing the classes created by a user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserClassesError : OperationError
+
+/**
+ * Failure of listing the competitions created by a user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserCompetitionsError : OperationError
+
+/**
+ * Failure of listing the judgment orders issued by a user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserJudgmentsError : OperationError
+
+/**
+ * Failure of listing the contests assigned to an observer available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserAssignedContestsError : OperationError
+
+/**
  * Failure of creating or replacing the invite code of a community owned by the administrator for a role.
  *
  * @since %CURRENT_VERSION%
@@ -455,6 +498,20 @@ sealed interface EditCommunityError : OperationError
 sealed interface GrantRoleError : OperationError
 
 /**
+ * Failure of removing a user from a community of the administrator in a role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RemoveFromCommunityError : OperationError
+
+/**
+ * Failure of deleting an observer of a community of the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DeleteObserverError : OperationError
+
+/**
  * Failure of listing the contests shared to a community owned by the administrator, from which an observer is assigned.
  *
  * @since %CURRENT_VERSION%
@@ -470,6 +527,12 @@ data object MissedAdministratorRoleError :
     CreateObserverError,
     ViewUsersError,
     ViewUserError,
+    ViewUserTasksError,
+    ViewUserContestsError,
+    ViewUserClassesError,
+    ViewUserCompetitionsError,
+    ViewUserJudgmentsError,
+    ViewUserAssignedContestsError,
     CreateCommunityInviteError,
     ExtendCommunityInviteError,
     RefreshCommunityInviteError,
@@ -478,6 +541,8 @@ data object MissedAdministratorRoleError :
     CreateCommunityError,
     EditCommunityError,
     GrantRoleError,
+    RemoveFromCommunityError,
+    DeleteObserverError,
     ViewCommunityContestsError,
     MissedRequiredRoleError
 
@@ -510,7 +575,18 @@ data class UserHasFixedRoleError(val userId: UserId) : GrantRoleError
  * @property userId the id of the missing user.
  * @since %CURRENT_VERSION%
  */
-data class UserNotExistsError(val userId: UserId) : ViewUserError, GrantRoleError, EntityNotExistsError
+data class UserNotExistsError(val userId: UserId) :
+    ViewUserError,
+    ViewUserTasksError,
+    ViewUserContestsError,
+    ViewUserClassesError,
+    ViewUserCompetitionsError,
+    ViewUserJudgmentsError,
+    ViewUserAssignedContestsError,
+    GrantRoleError,
+    RemoveFromCommunityError,
+    DeleteObserverError,
+    EntityNotExistsError
 
 /**
  * The user exists but is not available to the administrator.
@@ -518,7 +594,52 @@ data class UserNotExistsError(val userId: UserId) : ViewUserError, GrantRoleErro
  * @property userId the id of the inaccessible user.
  * @since %CURRENT_VERSION%
  */
-data class UserAccessDeniedError(val userId: UserId) : ViewUserError, GrantRoleError, AccessDeniedError
+data class UserAccessDeniedError(val userId: UserId) :
+    ViewUserError,
+    ViewUserTasksError,
+    ViewUserContestsError,
+    ViewUserClassesError,
+    ViewUserCompetitionsError,
+    ViewUserJudgmentsError,
+    ViewUserAssignedContestsError,
+    GrantRoleError,
+    DeleteObserverError,
+    AccessDeniedError
+
+/**
+ * The role cannot be granted by an administrator.
+ *
+ * @property role the rejected role.
+ * @since %CURRENT_VERSION%
+ */
+data class RoleNotGrantableError(val role: CommunityRole) : GrantRoleError
+
+/**
+ * The role cannot be removed by an administrator.
+ *
+ * @property role the rejected role.
+ * @since %CURRENT_VERSION%
+ */
+data class RoleNotRemovableError(val role: CommunityRole) : RemoveFromCommunityError
+
+/**
+ * The community is the public community, from which no user is removed.
+ *
+ * @property communityId the id of the public community.
+ * @since %CURRENT_VERSION%
+ */
+data class CommunityIsPublicError(val communityId: CommunityId) : RemoveFromCommunityError
+
+/**
+ * The user is not a member of the community in the role.
+ *
+ * @property userId the id of the user.
+ * @property communityId the id of the community.
+ * @property role the role the user is not a member in.
+ * @since %CURRENT_VERSION%
+ */
+data class UserNotCommunityMemberError(val userId: UserId, val communityId: CommunityId, val role: CommunityRole) :
+    RemoveFromCommunityError
 
 // endregion
 
@@ -1223,6 +1344,7 @@ data class CommunityNotExistsError(val communityId: CommunityId) :
     ViewCommunityInvitesError,
     RefreshCommunityInviteError,
     GrantRoleError,
+    RemoveFromCommunityError,
     ViewCommunityContestsError,
     EditCommunityError
 
@@ -1283,6 +1405,7 @@ data class CommunityAccessDeniedError(val communityId: CommunityId) :
     ViewCommunityInvitesError,
     RefreshCommunityInviteError,
     GrantRoleError,
+    RemoveFromCommunityError,
     ViewCommunityContestsError,
     EditCommunityError
 

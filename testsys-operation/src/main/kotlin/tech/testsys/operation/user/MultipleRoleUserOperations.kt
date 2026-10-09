@@ -19,6 +19,7 @@ import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
+import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.operation.config.EmailConfirmationConfig
 import tech.testsys.operation.error.CommunityInviteCodeExpiredError
 import tech.testsys.operation.error.CommunityInviteCodeNotValidError
@@ -40,6 +41,7 @@ import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.confirmationCodeExpiresAt
 import tech.testsys.operation.util.isConfirmationActive
 import tech.testsys.operation.util.isValidEmail
+import tech.testsys.operation.util.joinCommunity
 import tech.testsys.operation.util.nextConfirmationCode
 import tech.testsys.operation.util.normalizeEmail
 import tech.testsys.operation.util.normalizeInviteCode
@@ -62,12 +64,13 @@ class MultipleRoleUserOperations(
     private val emailConfirmationConfig: EmailConfirmationConfig,
     private val clock: Clock,
     private val randomGenerator: RandomGenerator,
+    private val communityConfig: CommunityConfig,
 ) {
 
     /**
      * Makes [user] a member, in the invite role, of the community whose valid invite code matches [inviteCode]
-     * case-insensitively, granting the role if needed. Membership is decided by the stored user, not by [user]:
-     * a stored member in that role is returned unchanged.
+     * case-insensitively, granting the role with a public community membership if needed. Membership is decided
+     * by the stored user, not by [user]: a stored member in that role is returned unchanged.
      *
      * @since %CURRENT_VERSION%
      */
@@ -87,8 +90,12 @@ class MultipleRoleUserOperations(
                 CommunityInvite.Kind.Manager -> CommunityRole.Manager
                 CommunityInvite.Kind.Developer -> CommunityRole.Developer
             }
-            return multipleRoleUserRepository.addCommunityMembership(userId = user.id, communityId = community.id, role = role)
-                .asSuccess()
+            return multipleRoleUserRepository.joinCommunity(
+                user = user,
+                communityId = community.id,
+                role = role,
+                publicCommunityId = communityConfig.publicCommunityId,
+            ).asSuccess()
         }
 
     /**

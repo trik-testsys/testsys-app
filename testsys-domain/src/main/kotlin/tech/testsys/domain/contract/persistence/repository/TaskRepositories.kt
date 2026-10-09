@@ -6,6 +6,7 @@ import tech.testsys.domain.contract.persistence.ContestTaskResult
 import tech.testsys.domain.contract.persistence.ObserverContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.SubmissionCount
 import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.model.group.CommunityId
@@ -325,6 +326,27 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @since %CURRENT_VERSION%
      */
     fun findContestResults(contestId: ContestId, authorIds: Set<UserId>, taskIds: Set<TaskId>): List<ContestTaskResult>
+
+    /**
+     * Synchronously counts grading submissions of [contestId] per task in any grading state, excluding author solution
+     * tests, without changing stored state or loading file contents. Storage exceptions propagate to the caller.
+     *
+     * @param contestId the contest the submissions were made in.
+     * @return the number of submissions of every task having submissions; tasks without submissions are absent.
+     * @since %CURRENT_VERSION%
+     */
+    fun countGradingByTask(contestId: ContestId): Map<TaskId, Long>
+
+    /**
+     * Synchronously counts grading submissions made by any of [authorIds] in any of [contestIds] in any grading state,
+     * and their distinct authors, without changing stored state or loading file contents. Storage exceptions propagate.
+     *
+     * @param authorIds the authors to include; an empty set counts nothing.
+     * @param contestIds the contests to include; an empty set counts nothing.
+     * @return the numbers of matching submissions and of their distinct authors, both zero if nothing matches.
+     * @since %CURRENT_VERSION%
+     */
+    fun countGrading(authorIds: Set<UserId>, contestIds: Set<ContestId>): SubmissionCount
 }
 
 /**

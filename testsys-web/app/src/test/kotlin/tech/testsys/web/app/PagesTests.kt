@@ -16,16 +16,21 @@ import org.junit.jupiter.params.provider.Arguments.argumentSet
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
+import tech.testsys.domain.builder.api.developerData
+import tech.testsys.domain.builder.api.judgeData
+import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.User
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.view.ADMIN_SECTION_PARAMETER
 import tech.testsys.web.app.view.AdminCommunityView
+import tech.testsys.web.app.view.AdminUserSection
 import tech.testsys.web.app.view.AdminUserView
 import tech.testsys.web.app.view.AdminView
 import tech.testsys.web.app.view.COMMUNITY_ID_PARAMETER
 import tech.testsys.web.app.view.OBSERVER_ID_PARAMETER
 import tech.testsys.web.app.view.USER_ID_PARAMETER
+import tech.testsys.web.app.view.userParameters
 
 /** Route parameters of a page built from the fixtures and the signed-in user. */
 private typealias ParametersOf = (AppFixtures, User<*>?) -> RouteParameters
@@ -79,8 +84,31 @@ class PagesTests : MockSpringVaadinTests() {
                     val observer = fixtures.observer(fixtures.community(owner = administrator(user)))
                     RouteParameters(OBSERVER_ID_PARAMETER, observer.id.value.toString())
                 },
-            ),
+            ) + AdminUserSection.entries.associate { section ->
+                section.value to parametersOf { fixtures, user -> userParameters(memberWithAllSections(fixtures, user).id, section) }
+            },
         )
+
+        /** Returns a member of a community of the signed-in administrator [user] with the roles of all user page tabs. */
+        private fun memberWithAllSections(fixtures: AppFixtures, user: User<*>?): MultipleRoleUser {
+            val communityId = listOf(fixtures.community(owner = administrator(user)).id.value)
+            return fixtures.multipleRoleUser {
+                roles {
+                    developer {
+                        memberOf(communityId)
+                        data = developerData {}
+                    }
+                    manager {
+                        memberOf(communityId)
+                        data = managerData {}
+                    }
+                    judge {
+                        memberOf(communityId)
+                        data = judgeData {}
+                    }
+                }
+            }
+        }
 
         @JvmStatic
         fun pages(): List<Arguments> = Routes().autoDiscoverViews(MockSpringVaadinTests::class.java.packageName).routes

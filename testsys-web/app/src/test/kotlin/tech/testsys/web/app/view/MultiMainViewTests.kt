@@ -26,6 +26,7 @@ import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.model.user.Manager
+import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.MockSpringVaadinTests
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.node.ObjectNode
@@ -38,6 +39,9 @@ class MultiMainViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var multipleRoleUsers: MultipleRoleUserRepository
+
+    @Autowired
+    private lateinit var communityConfig: CommunityConfig
 
     @Test
     fun `should list the roles of the user and the communities with the roles in each`() {
@@ -76,8 +80,8 @@ class MultiMainViewTests : MockSpringVaadinTests() {
         inviteCodeField()._value = checkNotNull(managerInvites.findById(community.data.managerInvite.id)).data.codeHash.value
         UI.getCurrent()._get<Button> { text = "Присоединиться" }._click()
 
-        val roles = checkNotNull(multipleRoleUsers.findById(user.id)).data.roles
-        assertEquals(listOf(community.id), roles.filterIsInstance<Manager>().single().memberOf.ids)
+        val manager = checkNotNull(multipleRoleUsers.findById(user.id)).data.roles.filterIsInstance<Manager>().single()
+        assertEquals(setOf(communityConfig.publicCommunityId, community.id), manager.memberOf.ids.toSet())
         assertEquals(MultiMainView::class.java, currentView)
         assertTrue("Организатор" in UI.getCurrent()._find<Table>().first().element.textRecursively)
         assertTrue("Новое сообщество" in UI.getCurrent()._find<Table>().last().element.textRecursively)

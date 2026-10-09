@@ -161,4 +161,25 @@ class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         assertEquals(List(20) { data.contests.ids.toSet() }, twenty.map { competition -> competition.data.contests.ids.toSet() })
         assertEquals(oneIdStatements, twentyIdsStatements)
     }
+
+    @Test
+    fun `should find each competition containing any of the contests once in id order`() {
+        val first = repository.save(newData())
+        val second = repository.save(newData())
+        repository.save(newData())
+        val shared = first.data.contests.ids.first()
+        repository.update(second.withData { contests = mutableListOf(shared) })
+
+        val found = repository.findByContestIds(setOf(shared, first.data.contests.ids.last()))
+
+        assertEquals(listOf(first.id, second.id).sortedBy { id -> id.value }, found.map { competition -> competition.id })
+        assertEquals(listOf(shared), found.single { competition -> competition.id == second.id }.data.contests.ids)
+    }
+
+    @Test
+    fun `should find no competitions for an empty set of contests`() {
+        repository.save(newData())
+
+        assertEquals(emptyList(), repository.findByContestIds(emptySet()))
+    }
 }

@@ -147,6 +147,20 @@ interface MultipleRoleUserRepository :
     fun addCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUser
 
     /**
+     * Synchronously and atomically removes the membership of [userId] in [communityId] in [role], keeping the role, its data
+     * and other memberships even if no membership in the role remains. A missing membership changes nothing; storage
+     * exceptions propagate to the caller.
+     *
+     * @param userId the user leaving the community.
+     * @param communityId the community the user leaves.
+     * @param role the role whose membership in [communityId] is removed.
+     * @return the stored user after the removal.
+     * @throws IllegalArgumentException if the user does not exist.
+     * @since %CURRENT_VERSION%
+     */
+    fun removeCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUser
+
+    /**
      * Finds the user whose e-mail address equals [email] exactly, without normalization.
      * Technical exceptions of the adapter are propagated.
      *

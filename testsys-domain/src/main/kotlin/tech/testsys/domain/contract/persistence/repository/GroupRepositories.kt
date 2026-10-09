@@ -21,6 +21,7 @@ import tech.testsys.domain.model.group.CompetitionData
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.group.InviteCodeHash
 import tech.testsys.domain.model.group.RawInviteCodeDependency
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Instant
 
@@ -210,4 +211,14 @@ interface CompetitionRepository : EntityRepository<CompetitionData, CompetitionI
         pagination: Pagination,
         filter: CompetitionFilter = CompetitionFilter(),
     ): Page<Competition>
+
+    /**
+     * Synchronously finds competitions currently containing any of [contestIds], without changing stored state.
+     * Storage exceptions propagate to the caller.
+     *
+     * @param contestIds the contests to look for; an empty set matches nothing.
+     * @return distinct matching competitions in ascending id order; empty if there are none.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByContestIds(contestIds: Set<ContestId>): List<Competition>
 }

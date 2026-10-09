@@ -8,6 +8,7 @@ import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verify
+import io.mockk.verifyOrder
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
@@ -56,6 +57,7 @@ import tech.testsys.operation.error.InvalidConfirmationCodeError
 import tech.testsys.operation.error.InvalidEmailError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
+import tech.testsys.operation.util.publicCommunityConfig
 import tech.testsys.operation.util.testCommunity
 import tech.testsys.operation.util.testDeveloper
 import tech.testsys.operation.util.testEmailChangeRequest
@@ -80,6 +82,7 @@ class MultipleRoleUserOperationsTests {
     private val mailSender = mockk<UserMailSender>()
     private val clock = mockk<Clock>()
     private val random = mockk<RandomGenerator>()
+    private val publicCommunityId = CommunityId(1)
     private val emailConfirmationConfig = object : EmailConfirmationConfig {
         override val confirmationCodeLifetime: Duration = Duration.ofMinutes(15)
         override val maxConfirmationAttempts = 3
@@ -94,6 +97,7 @@ class MultipleRoleUserOperationsTests {
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,
         randomGenerator = random,
+        communityConfig = publicCommunityConfig(publicCommunityId),
     )
     private val now = Instant.parse("2026-01-01T00:00:00Z")
     private val user = testUser()
@@ -103,6 +107,7 @@ class MultipleRoleUserOperationsTests {
         every { multipleRoleUsers.findByEmail(any()) } returns null
         every { multipleRoleUsers.findById(MultipleRoleUserId(0)) } returns user
         every { multipleRoleUsers.update(any<MultipleRoleUser>()) } answers { firstArg() }
+        every { multipleRoleUsers.addCommunityMembership(any(), publicCommunityId, any()) } returns user
         every { emailChangeRequests.findByUser(any()) } returns null
         every { emailChangeRequests.save(any<EmailChangeRequestData>()) } answers { savedRequest(firstArg()) }
         every { emailChangeRequests.update(any<EmailChangeRequest>()) } answers { firstArg() }
@@ -139,79 +144,91 @@ class MultipleRoleUserOperationsTests {
     @Nested
     inner class ViewProfileTests {
 
-        @Test
-        fun `should return each role with its communities in ascending id order loaded at once`() {
-            val user = testMultipleRoleUser {
-                roles {
-                    student {
-                        memberOf = mutableListOf(CommunityId(7), CommunityId(5))
-                        data = studentData {}
-                    }
-                    developer {
-                        memberOf = mutableListOf(CommunityId(5))
-                        data = developerData {}
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return each role with its communities in ascending id order loaded at once`() {
+                val user = testMultipleRoleUser {
+                    roles {
+                        student {
+                            memberOf = mutableListOf(CommunityId(7), CommunityId(5))
+                            data = studentData {}
+                        }
+                        developer {
+                            memberOf = mutableListOf(CommunityId(5))
+                            data = developerData {}
+                        }
                     }
                 }
+                every { communities.findByIds(listOf(CommunityId(7), CommunityId(5))) } returns listOf(testCommunity(5), testCommunity(7))
+
+                val actual = operations.viewProfile(user).getOrThrow()
+
+                assertEquals(user.data.roles, actual.map { (role, _) -> role })
+                assertEquals(
+                    listOf(listOf(5L, 7L), listOf(5L)),
+                    actual.map { (_, joined) -> joined.map { community -> community.id.value } },
+                )
+                verify(exactly = 1) { communities.findByIds(any()) }
             }
-            every { communities.findByIds(listOf(CommunityId(7), CommunityId(5))) } returns listOf(testCommunity(5), testCommunity(7))
 
-            val actual = operations.viewProfile(user).getOrThrow()
+            @Test
+            fun `should return no roles if the user has no roles`() {
+                val user = testMultipleRoleUser {}
+                every { communities.findByIds(emptyList()) } returns emptyList()
 
-            assertEquals(user.data.roles, actual.map { (role, _) -> role })
-            assertEquals(
-                listOf(listOf(5L, 7L), listOf(5L)),
-                actual.map { (_, joined) -> joined.map { community -> community.id.value } },
-            )
-            verify(exactly = 1) { communities.findByIds(any()) }
+                val actual = operations.viewProfile(user).getOrThrow()
+
+                assertEquals(emptyList(), actual)
+            }
+
+            @Test
+            fun `should return a role without communities with an empty list`() {
+                val user = testStudent {
+                    memberOf = mutableListOf()
+                    data = studentData {}
+                }
+                every { communities.findByIds(emptyList()) } returns emptyList()
+
+                val actual = operations.viewProfile(user).getOrThrow()
+
+                assertEquals(listOf(user.data.roles.single() to emptyList()), actual)
+            }
         }
 
-        @Test
-        fun `should not change the user or communities when viewing the profile`() {
-            val user = testStudent {
-                memberOf = mutableListOf(CommunityId(5))
-                data = studentData {}
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should not change the user or communities when viewing the profile`() {
+                val user = testStudent {
+                    memberOf = mutableListOf(CommunityId(5))
+                    data = studentData {}
+                }
+                every { communities.findByIds(listOf(CommunityId(5))) } returns listOf(testCommunity(5))
+
+                operations.viewProfile(user).getOrThrow()
+
+                verify { multipleRoleUsers wasNot Called }
+                verify(exactly = 1) { communities.findByIds(any()) }
+                confirmVerified(communities)
             }
-            every { communities.findByIds(listOf(CommunityId(5))) } returns listOf(testCommunity(5))
-
-            operations.viewProfile(user).getOrThrow()
-
-            verify { multipleRoleUsers wasNot Called }
-            verify(exactly = 1) { communities.findByIds(any()) }
-            confirmVerified(communities)
         }
 
-        @Test
-        fun `should return no roles if the user has no roles`() {
-            val user = testMultipleRoleUser {}
-            every { communities.findByIds(emptyList()) } returns emptyList()
+        @Nested
+        inner class ModuleRuleTests {
 
-            val actual = operations.viewProfile(user).getOrThrow()
+            @Test
+            fun `should throw if a community of the user does not exist`() {
+                val user = testStudent {
+                    memberOf = mutableListOf(CommunityId(5))
+                    data = studentData {}
+                }
+                every { communities.findByIds(listOf(CommunityId(5))) } returns emptyList()
 
-            assertEquals(emptyList(), actual)
-        }
-
-        @Test
-        fun `should return a role without communities with an empty list`() {
-            val user = testStudent {
-                memberOf = mutableListOf()
-                data = studentData {}
+                assertFailsWith<IllegalStateException> { operations.viewProfile(user) }
             }
-            every { communities.findByIds(emptyList()) } returns emptyList()
-
-            val actual = operations.viewProfile(user).getOrThrow()
-
-            assertEquals(listOf(user.data.roles.single() to emptyList()), actual)
-        }
-
-        @Test
-        fun `should throw if a community of the user does not exist`() {
-            val user = testStudent {
-                memberOf = mutableListOf(CommunityId(5))
-                data = studentData {}
-            }
-            every { communities.findByIds(listOf(CommunityId(5))) } returns emptyList()
-
-            assertFailsWith<IllegalStateException> { operations.viewProfile(user) }
         }
     }
 
@@ -374,6 +391,61 @@ class MultipleRoleUserOperationsTests {
                     multipleRoleUsers.addCommunityMembership(staleMember.id, communityId, CommunityRole.Developer)
                 }
             }
+
+            @Test
+            fun `should first make a user without the invite role a member of the public community in that role`() {
+                val user = testManager {
+                    memberOf(listOf(41))
+                    data = managerData {}
+                }
+                val joined = testMultipleRoleUser {}
+                prepareDeveloperInvite()
+                prepareCommunity(52)
+                every { clock.instant() } returns now
+                every { multipleRoleUsers.addCommunityMembership(user.id, any(), CommunityRole.Developer) } returns joined
+
+                val actual = operations.joinCommunity(user = user, inviteCode = "abcdefghjkmn").getOrThrow()
+
+                assertSame(joined, actual)
+                verifyOrder {
+                    multipleRoleUsers.addCommunityMembership(user.id, publicCommunityId, CommunityRole.Developer)
+                    multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityRole.Developer)
+                }
+            }
+
+            @Test
+            fun `should not add a public community membership if the user already holds the invite role elsewhere`() {
+                val user = testDeveloper {
+                    memberOf(listOf(7))
+                    data = developerData {}
+                }
+                val joined = testMultipleRoleUser {}
+                prepareDeveloperInvite()
+                prepareCommunity(52)
+                every { clock.instant() } returns now
+                every { multipleRoleUsers.addCommunityMembership(user.id, communityId, CommunityRole.Developer) } returns joined
+
+                val actual = operations.joinCommunity(user = user, inviteCode = "abcdefghjkmn").getOrThrow()
+
+                assertSame(joined, actual)
+                verify(exactly = 0) { multipleRoleUsers.addCommunityMembership(user.id, publicCommunityId, any()) }
+            }
+
+            @Test
+            fun `should join the public community by its invite code if the invite role is new`() {
+                val user = testMultipleRoleUser {}
+                val joined = testMultipleRoleUser {}
+                prepareDeveloperInvite()
+                every { communities.findByInvite(CommunityInviteId(52)) } returns testCommunity(publicCommunityId.value)
+                every { clock.instant() } returns now
+                every { multipleRoleUsers.addCommunityMembership(user.id, publicCommunityId, CommunityRole.Developer) } returns joined
+
+                val actual = operations.joinCommunity(user = user, inviteCode = "abcdefghjkmn").getOrThrow()
+
+                assertSame(joined, actual)
+                verify(exactly = 0) { multipleRoleUsers.addCommunityMembership(user.id, communityId, any()) }
+            }
+
         }
 
         @Nested

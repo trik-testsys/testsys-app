@@ -158,8 +158,11 @@
 сразу для нескольких Пользователей.
 
 `MultipleRoleUserRepository.addCommunityMembership` включает Пользователя в Сообщество в Роли из перечисления
-[`CommunityRole`](src/main/kotlin/tech/testsys/domain/model/user/CommunityRole.kt): Организатора, Разработчика
-или Ученика. Роль выбирает операция: по Коду-приглашению или по решению Администратора.
+[`CommunityRole`](src/main/kotlin/tech/testsys/domain/model/user/CommunityRole.kt): Администратора, Организатора,
+Разработчика, Ученика или Судьи. Роль выбирает операция: создание Сообщества, Код-приглашение или решение
+Администратора.
+`MultipleRoleUserRepository.removeCommunityMembership` исключает Пользователя из Сообщества в такой Роли; Роль и её
+данные остаются у Пользователя, даже если членств в этой Роли больше нет.
 
 ### Запросы регистрации
 

@@ -455,6 +455,94 @@ class MultipleRoleUserPersistenceAdapterTests :
     }
 
     @Test
+    fun `should grant the judge role with the community membership on addCommunityMembership`() {
+        val user = fixtures.student()
+        val community = fixtures.community(fixtures.administrator())
+
+        val updated = repository.addCommunityMembership(user.id, community.id, CommunityRole.Judge)
+
+        assertEquals(listOf(community.id), updated.data.roles.filterIsInstance<Judge>().single().memberOf.ids)
+        val stored = assertNotNull(repository.findById(user.id))
+        assertEquals(listOf(community.id), stored.data.roles.filterIsInstance<Judge>().single().memberOf.ids)
+    }
+
+    @Test
+    fun `should add the administrator membership on addCommunityMembership`() {
+        val administrator = fixtures.administrator()
+        val community = fixtures.community(administrator)
+
+        val updated = repository.addCommunityMembership(administrator.id, community.id, CommunityRole.Administrator)
+
+        assertTrue(community.id in updated.data.roles.filterIsInstance<Administrator>().single().memberOf.ids)
+        val stored = assertNotNull(repository.findById(administrator.id))
+        assertTrue(community.id in stored.data.roles.filterIsInstance<Administrator>().single().memberOf.ids)
+    }
+
+    @Test
+    fun `should remove only the membership in the role and keep the role data and other memberships`() {
+        val user = fixtures.student()
+        val removed = fixtures.community(fixtures.administrator())
+        val kept = fixtures.community(fixtures.administrator())
+        repository.addCommunityMembership(user.id, removed.id, CommunityRole.Developer)
+        repository.addCommunityMembership(user.id, kept.id, CommunityRole.Developer)
+        repository.addCommunityMembership(user.id, removed.id, CommunityRole.Manager)
+        val task = fixtures.task(owner = user)
+
+        val updated = repository.removeCommunityMembership(user.id, removed.id, CommunityRole.Developer)
+
+        val developer = updated.data.roles.filterIsInstance<Developer>().single()
+        assertEquals(listOf(kept.id), developer.memberOf.ids)
+        assertEquals(listOf(task.id), developer.data.tasks.ids)
+        assertEquals(listOf(removed.id), updated.data.roles.filterIsInstance<Manager>().single().memberOf.ids)
+        val stored = assertNotNull(repository.findById(user.id))
+        assertEquals(listOf(kept.id), stored.data.roles.filterIsInstance<Developer>().single().memberOf.ids)
+    }
+
+    @Test
+    fun `should increment the user version on removeCommunityMembership`() {
+        val user = fixtures.student()
+        val community = fixtures.community(fixtures.administrator())
+        val joined = repository.addCommunityMembership(user.id, community.id, CommunityRole.Judge)
+
+        val updated = repository.removeCommunityMembership(user.id, community.id, CommunityRole.Judge)
+
+        assertEquals(assertNotNull(joined.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(user.id)).version)
+    }
+
+    @Test
+    fun `should keep the role without memberships after removing its last membership`() {
+        val user = fixtures.student()
+        val community = fixtures.community(fixtures.administrator())
+        repository.addCommunityMembership(user.id, community.id, CommunityRole.Judge)
+
+        val updated = repository.removeCommunityMembership(user.id, community.id, CommunityRole.Judge)
+
+        assertEquals(emptyList(), updated.data.roles.filterIsInstance<Judge>().single().memberOf.ids)
+    }
+
+    @Test
+    fun `should change nothing if the user is not a member in the role on removeCommunityMembership`() {
+        val user = fixtures.developer()
+        val community = fixtures.community(fixtures.administrator())
+        repository.addCommunityMembership(user.id, community.id, CommunityRole.Developer)
+
+        val updated = repository.removeCommunityMembership(user.id, community.id, CommunityRole.Student)
+
+        assertEquals(listOf(community.id), updated.data.roles.filterIsInstance<Developer>().single().memberOf.ids)
+        assertEquals(1, multipleRoleToUserJpaEntityRepository.findAllByUserId(user.id.value).size)
+    }
+
+    @Test
+    fun `should fail to remove a community membership for a missing user`() {
+        val community = fixtures.community(fixtures.administrator())
+
+        assertFailsWith<IllegalArgumentException> {
+            repository.removeCommunityMembership(MultipleRoleUserId(UNKNOWN_ID), community.id, CommunityRole.Manager)
+        }
+    }
+
+    @Test
     fun `should find user by its access code`() {
         val token = fixtures.unique("token")
         val saved = repository.save(newData(token))

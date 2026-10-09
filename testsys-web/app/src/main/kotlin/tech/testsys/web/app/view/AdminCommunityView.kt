@@ -61,7 +61,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
 
     private fun show(community: CommunityVo, communities: List<CommunityVo>, observer: ObserverVo?) {
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head(community.name) {
+            head("Сообщество «${community.name}»") {
                 crumb("Главная", MultiMainView::class.java)
                 crumb("Кабинет Администратора", AdminView::class.java)
                 crumb("Сообщества", AdminView::class.java, RouteParameters(ADMIN_SECTION_PARAMETER, "communities"))
@@ -102,6 +102,12 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
                 },
                 onCancel = { draft.readBean(CommunityDraft(community.name, community.description)) },
             )
+            row {
+                codeInput("ID", labelSize = 6, size = 18) {
+                    value = community.id.value.toString()
+                    isEditable = false
+                }
+            }
             row {
                 textInput("Название", labelSize = 6, size = 18) {
                     draft.forField(this)

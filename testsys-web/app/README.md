@@ -69,10 +69,14 @@
 | `RegistrationView` | `registration` | Без входа |
 | `RestoreAccessView` | `restore-access` | Без входа |
 | `MultiMainView` | `home` | `MULTIPLE_ROLE` |
-| `ProfileView`, `DeveloperView` | `profile`, `developer` | `MULTIPLE_ROLE` |
+| `ProfileView` | `profile` | `MULTIPLE_ROLE` |
 | `AdminView` | `admin`, `admin/communities`, `admin/users` | `MULTIPLE_ROLE` с Ролью Администратора |
 | `AdminCommunityView` | `admin/communities/:communityId` | `MULTIPLE_ROLE`, создатель Сообщества |
 | `AdminUserView` | `admin/users/:userId`, `admin/users/:userId/developer`, `admin/users/:userId/manager`, `admin/users/:userId/judge`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
+| `DeveloperView` | `developer`, `developer/tasks`, `developer/contests` | `MULTIPLE_ROLE` с Ролью Разработчика |
+| `DeveloperTaskView` | `developer/tasks/:taskId` | `MULTIPLE_ROLE`, владелец Задачи |
+| `DeveloperResourceView` | `developer/tasks/:taskId/resources/:resourceId` | `MULTIPLE_ROLE`, владелец Задачи |
+| `DeveloperContestView` | `developer/contests/:contestId` | `MULTIPLE_ROLE`, владелец Тура или Разработчик Сообщества с доступом к нему |
 | `ManagerView` | `manager`, `manager/classes`, `manager/competitions` | `MULTIPLE_ROLE` с Ролью Организатора |
 | `ManagerClassView` | `manager/classes/:classId` | `MULTIPLE_ROLE`, создатель Класса |
 | `ManagerCompetitionView` | `manager/competitions/:competitionId` | `MULTIPLE_ROLE`, создатель Соревнования |
@@ -86,14 +90,15 @@
 | `JudgeSolutionView` | `judge/submissions/:submissionId` | `MULTIPLE_ROLE` с Ролью Судьи |
 
 Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
-кроме Кабинетов Администратора, Организатора, Ученика и Судьи, пока показывают только шапку и пустое состояние:
-их маршруты и доступ окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
+кроме стартовых страниц Участника, Наблюдателя и Супервайзера, реализованы; эти три пока показывают только шапку
+и пустое состояние: их маршруты и доступ окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида
+Пользователя возвращает `startPageOf`.
 
-Страницы Кабинетов Администратора, Организатора и Судьи вызывают прокси-сервис в `beforeEnter`, до построения
-таблиц. Поэтому отсутствие Роли, сущности или доступа открывает экран ошибки из раздела
-[Ошибки операций](#ошибки-операций), а не ошибку загрузки таблицы. `AdminView` без раздела переадресует
-на `admin/communities`, `ManagerView` — на `manager/classes`, `JudgeView` — на `judge/submissions`. Наблюдатель открывается по своему
-адресу `admin/observers/:observerId`: операция просмотра принимает идентификатор вместе с видом Пользователя.
+Страницы Кабинетов вызывают прокси-сервис в `beforeEnter`, до построения таблиц. Поэтому отсутствие Роли, сущности
+или доступа открывает экран ошибки из раздела [Ошибки операций](#ошибки-операций), а не ошибку загрузки таблицы.
+`AdminView` без раздела переадресует на `admin/communities`, `DeveloperView` — на `developer/tasks`, `ManagerView` —
+на `manager/classes`, `JudgeView` — на `judge/submissions`. Наблюдатель открывается по своему адресу
+`admin/observers/:observerId`: операция просмотра принимает идентификатор вместе с видом Пользователя.
 
 `ManagerContestView` скачивает сводную таблицу файлом CSV в UTF-8 с меткой порядка байтов. Столбцы разделены `;`,
 значения заключаются в кавычки по RFC 4180, на каждую Задачу приходится два столбца: лучший результат и количество
@@ -156,6 +161,10 @@
 - VO не содержат сущностей и ленивых ссылок: связи заменены идентификаторами и списками идентификаторов,
   доменные value-типы сохраняются. VO содержит все поля данных сущности, её `id` и `createdAt`. Файлы Ресурсов
   представлены именем без содержимого.
+- Связанные сущности, которые возвращает операция, сервис отдаёт парами и тройками VO. Так `DeveloperService`
+  возвращает страницу Туров и Задачу с Сообществами доступа, Тур — с его Задачами и Сообществами доступа, а версии
+  Ресурса — с Решением Авторского Решения. `downloadResourceVersion` возвращает файл версии как `FileData`
+  с содержимым.
 
 `StudyService.sendSolution` передаёт сохранённую Посылку в `AfterCommitGrader`. `AfterCommitGrader` отдаёт
 Посылку `BalancingGrader` только после фиксации транзакции, а при откате не отдаёт. `DeveloperOperations`

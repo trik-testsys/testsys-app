@@ -35,6 +35,12 @@ import tech.testsys.web.app.view.AdminView
 import tech.testsys.web.app.view.CLASSES_SECTION
 import tech.testsys.web.app.view.COMMUNITY_ID_PARAMETER
 import tech.testsys.web.app.view.COMPETITIONS_SECTION
+import tech.testsys.web.app.view.CONTESTS_SECTION
+import tech.testsys.web.app.view.DeveloperContestView
+import tech.testsys.web.app.view.DeveloperFixtures
+import tech.testsys.web.app.view.DeveloperResourceView
+import tech.testsys.web.app.view.DeveloperTaskView
+import tech.testsys.web.app.view.DeveloperView
 import tech.testsys.web.app.view.JudgeSolutionView
 import tech.testsys.web.app.view.JudgeView
 import tech.testsys.web.app.view.ManagerClassView
@@ -52,15 +58,20 @@ import tech.testsys.web.app.view.StudentClassView
 import tech.testsys.web.app.view.StudentContestView
 import tech.testsys.web.app.view.StudentTaskView
 import tech.testsys.web.app.view.StudentView
+import tech.testsys.web.app.view.TASKS_SECTION
 import tech.testsys.web.app.view.USER_ID_PARAMETER
 import tech.testsys.web.app.view.classContestParameters
 import tech.testsys.web.app.view.classParameters
 import tech.testsys.web.app.view.competitionContestParameters
 import tech.testsys.web.app.view.competitionParameters
+import tech.testsys.web.app.view.contestParameters
+import tech.testsys.web.app.view.developerSectionParameters
 import tech.testsys.web.app.view.judgeSubmissionsParameters
 import tech.testsys.web.app.view.managerSection
+import tech.testsys.web.app.view.resourceParameters
 import tech.testsys.web.app.view.studentClassParameters
 import tech.testsys.web.app.view.studentContestParameters
+import tech.testsys.web.app.view.taskParameters
 import tech.testsys.web.app.view.userParameters
 
 /** Route parameters of a page built from the fixtures and the signed-in user. */
@@ -187,6 +198,21 @@ class PagesTests : MockSpringVaadinTests() {
                     RouteParameters(SUBMISSION_ID_PARAMETER, fixtures.gradingSubmission(author).id.value.toString())
                 },
             ),
+            DeveloperView::class.java to mapOf(
+                "" to developerParameters { _ -> RouteParameters.empty() },
+                TASKS_SECTION to developerParameters { _ -> developerSectionParameters(TASKS_SECTION) },
+                CONTESTS_SECTION to developerParameters { _ -> developerSectionParameters(CONTESTS_SECTION) },
+            ),
+            DeveloperTaskView::class.java to mapOf("task" to developerParameters { developers -> taskParameters(developers.task().id) }),
+            DeveloperResourceView::class.java to mapOf(
+                "resource" to developerParameters { developers ->
+                    val task = developers.task()
+                    resourceParameters(task.id, developers.statement(task.id).versionBucket)
+                },
+            ),
+            DeveloperContestView::class.java to mapOf(
+                "contest" to developerParameters { developers -> contestParameters(developers.contest(developers.trikStudioVersion()).id) },
+            ),
         )
 
         /** Grants the manager role to the signed-in administrator [user], which the Cabinet of a Manager requires. */
@@ -233,6 +259,13 @@ class PagesTests : MockSpringVaadinTests() {
         /** Signs a new judge in instead of the signed-in user: the pages of a judge require the judge role. */
         private fun signInJudge(fixtures: AppFixtures) {
             CabinetSignIn.signIn(CabinetPrincipal.of(fixtures.judge()))
+        }
+
+        /** Signs in a new developer, whose pages need the role, and returns the route parameters [parameters] builds for it. */
+        private fun developerParameters(parameters: (DeveloperFixtures) -> RouteParameters): ParametersOf = { _, _ ->
+            val developers = VaadinService.getCurrent().instantiator.getOrCreate(DeveloperFixtures::class.java)
+            developers.signInDeveloper()
+            parameters(developers)
         }
 
         /** Returns a member of a community of the signed-in administrator [user] with the roles of all user page tabs. */

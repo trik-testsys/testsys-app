@@ -1050,7 +1050,7 @@ Page: **testsys.web.page.observer**
 а также Задачи и Туры, к которым был предоставлен доступ Сообществам,
 в которых он состоит в Роли Разработчика.
 
-### testsys.user.multi.developer.resource.addResource (Partially implemented)
+### testsys.user.multi.developer.resource.addResource (Implemented)
 
 Page: **testsys.web.page.developer.task**
 
@@ -1086,12 +1086,9 @@ Page: **testsys.web.page.developer.task**
 - Загрузка Ресурса не прикрепляет его к содержимому Задачи.
 - Состояние Задачи, её рабочая и последняя зафиксированная версии не изменяются.
 
-Реализованы операции загрузки Условия, Упражнения, Полигона и Авторского Решения.
-Страница **testsys.web.page.developer.task** не реализована.
 
 
-
-### testsys.user.multi.developer.resource.updateResource (Partially implemented)
+### testsys.user.multi.developer.resource.updateResource (Implemented)
 
 Page: **testsys.web.page.developer.resource**
 
@@ -1155,10 +1152,7 @@ Page: **testsys.web.page.developer.resource**
 - Обновление Ресурса не прикрепляет цепочку в рабочую версию Задачи, если её там нет.
 - Последняя зафиксированная версия Задачи не изменяется (см. **testsys.entity.task**).
 
-Реализованы операции обновления Условия, Упражнения, Полигона и Авторского Решения.
-Страница **testsys.web.page.developer.resource** и уведомление Пользователя не реализованы.
-
-### testsys.user.multi.developer.resource.viewResources (Partially implemented)
+### testsys.user.multi.developer.resource.viewResources (Implemented)
 
 Page: **testsys.web.page.developer.task**
 
@@ -1193,9 +1187,6 @@ Page: **testsys.web.page.developer.task**
 - В списке представлены только Ресурсы, загруженные в созданные Разработчиком Задачи.
 - Наличие Ресурса в списке не зависит от его прикрепления к рабочей или зафиксированной версии Задачи.
 - Просмотр не изменяет Ресурсы, состояние Задач и их рабочие или зафиксированные версии.
-
-Реализована операция получения списка Ресурсов.
-Страница **testsys.web.page.developer** не реализована.
 
 ### testsys.user.multi.developer.resource.viewResource (Partially implemented)
 
@@ -1240,11 +1231,10 @@ Page: **testsys.web.page.developer.resource**
 - Просмотр и скачивание доступны независимо от состояния Задачи: **New**, **Uncommitted** или **Committed**.
 - Просмотр и скачивание не изменяют Ресурсы, состояние Задачи и её рабочую или зафиксированную версию.
 
-Реализованы операции просмотра Ресурса и скачивания его версий.
+Реализованы операции просмотра Ресурса и скачивания его версий и страница **testsys.web.page.developer.resource**.
 Комментарий изменения не реализован.
-Страница **testsys.web.page.developer.resource** не реализована.
 
-### testsys.user.multi.developer.task.createTask (Partially implemented)
+### testsys.user.multi.developer.task.createTask (Implemented)
 
 Page: **testsys.web.page.developer**
 
@@ -1276,9 +1266,7 @@ Page: **testsys.web.page.developer**
 - Список поддерживаемых версий TRIK Studio пуст.
 - Доступ к новой Задаче не предоставлен ни одному Сообществу.
 
-Реализована операция; страница **testsys.web.page.developer** не реализована.
-
-### testsys.user.multi.developer.task.attachResource (Partially implemented)
+### testsys.user.multi.developer.task.attachResource (Implemented)
 
 Page: **testsys.web.page.developer.task**
 
@@ -1327,10 +1315,7 @@ Page: **testsys.web.page.developer.task**
 - Метаданные Задачи, доступ Сообществ и набор загруженных цепочек сохраняются.
 - Версии Ресурсов и их файлы не изменяются.
 
-Реализованы операции прикрепления Условия, Упражнения, Полигона и Авторского Решения.
-Страница **testsys.web.page.developer.task** не реализована.
-
-### testsys.user.multi.developer.task.detachResource (Partially implemented)
+### testsys.user.multi.developer.task.detachResource (Implemented)
 
 Page: **testsys.web.page.developer.task**
 
@@ -1378,10 +1363,7 @@ Page: **testsys.web.page.developer.task**
 - Цепочка откреплённого Ресурса остаётся в наборе загруженных Ресурсов Задачи.
 - Версии Ресурсов, их файлы и связанные Решения не изменяются и не удаляются.
 
-Реализованы операции открепления Условия, Упражнения, Полигона и Авторского Решения.
-Страница **testsys.web.page.developer.task** не реализована.
-
-### testsys.user.multi.developer.task.testTask (Partially implemented)
+### testsys.user.multi.developer.task.testTask (Implemented)
 
 Page: **testsys.web.page.developer.task**
 
@@ -1449,11 +1431,7 @@ Page: **testsys.web.page.developer.task**
 - Завершённый запрос остаётся завершённым, его итог не меняется.
 - Условие и нужные Упражнения проверяются перед созданием запроса.
 
-Реализованы операции запуска тестирования и просмотра истории, обработка запросов с диспетчером,
-хранение итога и использование Полигонов снимка грейдером.
-Страница не реализована.
-
-### testsys.user.multi.developer.task.runDiagnostics (Partially implemented)
+### testsys.user.multi.developer.task.runDiagnostics (Implemented)
 
 Page: **testsys.web.page.developer.task**
 
@@ -1489,9 +1467,6 @@ Page: **testsys.web.page.developer.task**
 - Результаты относятся к конкретным Полигонам снимка.
 - Ошибка одного Полигона не препятствует диагностике остальных.
 - Успешные Диагностики не означают успешную валидацию всей Задачи.
-
-Реализован диагностический этап сохранённого запроса.
-Страница **testsys.web.page.developer.task** не реализована.
 
 ### testsys.user.multi.developer.task.commitTask (Partially implemented)
 
@@ -1548,8 +1523,8 @@ Page: **testsys.web.page.developer.task**
 - Запросы валидации и их итоги не изменяются.
 - Туры, к которым прикреплена Задача, не изменяются.
 
-Реализована операция фиксации и отправка Посылок на повторную проверку. Повторная отправка не возобновляется
-после перезапуска приложения. Страница **testsys.web.page.developer.task** не реализована.
+Реализованы операция фиксации, отправка Посылок на повторную проверку и страница **testsys.web.page.developer.task**.
+Повторная отправка не возобновляется после перезапуска приложения.
 
 ### testsys.user.multi.developer.task.revertTask (Partially implemented)
 
@@ -1598,9 +1573,9 @@ Page: **testsys.web.page.developer.task**
 - Существующие версии Ресурсов, их названия, описания, файлы и связанные Решения не изменяются и не удаляются.
 - Новые версии Ресурсов сохраняются в прежних цепочках и используют названия и описания последних версий.
 
-Реализована операция. Комментарии отката и страница **testsys.web.page.developer.task** не реализованы.
+Реализованы операция и страница **testsys.web.page.developer.task**. Комментарии отката не реализованы.
 
-### testsys.user.multi.developer.task.viewTasks (Partially implemented)
+### testsys.user.multi.developer.task.viewTasks (Implemented)
 
 Page: **testsys.web.page.developer**
 
@@ -1657,10 +1632,7 @@ Page: **testsys.web.page.developer**
 - Одна Задача появляется в выборке один раз, даже если доступна по нескольким основаниям.
 - Просмотр не изменяет состояние Задач, их данные и рабочие или зафиксированные версии.
 
-Реализована операция получения страницы доступных Задач с фильтрацией. Страницы
-**testsys.web.page.developer**, **testsys.web.page.developer.task** и переход между ними не реализованы.
-
-### testsys.user.multi.developer.task.viewTask (Partially implemented)
+### testsys.user.multi.developer.task.viewTask (Implemented)
 
 Page: **testsys.web.page.developer.task**
 
@@ -1697,10 +1669,7 @@ Page: **testsys.web.page.developer.task**
 - Просмотр доступен в состояниях **New**, **Uncommitted** и **Committed**.
 - Просмотр не изменяет состояние Задачи, её данные и рабочую или зафиксированную версию.
 
-Реализована операция получения Задачи с её данными и ссылками на прикреплённые Ресурсы в обеих версиях.
-История тестирований и страница **testsys.web.page.developer.task** не реализованы.
-
-### testsys.user.multi.developer.task.editTaskInfo (Partially implemented)
+### testsys.user.multi.developer.task.editTaskInfo (Implemented)
 
 Page: **testsys.web.page.developer.task**
 
@@ -1716,6 +1685,9 @@ Page: **testsys.web.page.developer.task**
 - Новое описание — необязательно; пустая строка очищает описание.
 - Новый список поддерживаемых версий TRIK Studio — необязательно; пустой список удаляет все поддерживаемые
   версии из рабочей версии Задачи.
+
+Версии TRIK Studio выбираются из зарегистрированных в Системе. Незарегистрированная версия нарушает контракт
+входных данных и приводит к `IllegalArgumentException` без сохранения Задачи.
 
 *Отказы*:
 
@@ -1747,10 +1719,7 @@ Page: **testsys.web.page.developer.task**
 - Последняя зафиксированная версия содержимого и прикреплённые Ресурсы сохраняются.
 - Владелец, доступ Сообществ и набор загруженных цепочек не изменяются.
 
-Реализована операция редактирования информации о Задаче.
-Страница **testsys.web.page.developer.task** не реализована.
-
-### testsys.user.multi.developer.task.shareTask (Partially implemented)
+### testsys.user.multi.developer.task.shareTask (Implemented)
 
 Page: **testsys.web.page.developer.task**
 
@@ -1792,9 +1761,7 @@ Page: **testsys.web.page.developer.task**
 - Владелец, название, описание Задачи и набор загруженных цепочек не изменяются.
 - Ресурсы и их файлы не изменяются.
 
-Реализована операция; страница **testsys.web.page.developer.task** не реализована.
-
-### testsys.user.multi.developer.contest.createContest (Partially implemented)
+### testsys.user.multi.developer.contest.createContest (Implemented)
 
 Page: **testsys.web.page.developer**
 
@@ -1815,6 +1782,9 @@ Page: **testsys.web.page.developer**
 Общий интервал Тура и индивидуальный лимит должны точно представляться целым числом миллисекунд
 в диапазоне `Long`. Нарушение этого контракта входных данных приводит к `IllegalArgumentException`
 без сохранения Тура.
+
+Версия TRIK Studio выбирается из зарегистрированных в Системе. Незарегистрированная версия нарушает контракт
+входных данных и приводит к `IllegalArgumentException` без сохранения Тура.
 
 *Отказы*:
 
@@ -1843,9 +1813,7 @@ Page: **testsys.web.page.developer**
 - Доступ к новому Туру не предоставлен ни одному Сообществу.
 - Неуказанные даты и индивидуальный лимит остаются отсутствующими.
 
-Реализована операция; страница **testsys.web.page.developer** не реализована.
-
-### testsys.user.multi.developer.contest.editContest (Partially implemented)
+### testsys.user.multi.developer.contest.editContest (Implemented)
 
 Page: **testsys.web.page.developer.contest**
 
@@ -1898,10 +1866,7 @@ Page: **testsys.web.page.developer.contest**
 - Набор Сообществ, которым предоставлен доступ, остаётся пустым.
 - Редактирование Тура не изменяет входящие в него Задачи и их Ресурсы.
 
-Реализована операция редактирования Тура.
-Страница **testsys.web.page.developer.contest** не реализована.
-
-### testsys.user.multi.developer.contest.viewContests (Partially implemented)
+### testsys.user.multi.developer.contest.viewContests (Implemented)
 
 Page: **testsys.web.page.developer**
 
@@ -1956,10 +1921,7 @@ Page: **testsys.web.page.developer**
 - Один Тур появляется в выборке один раз, даже если доступен по нескольким основаниям.
 - Просмотр не изменяет Туры, входящие в них Задачи и предоставленный доступ.
 
-Реализована операция просмотра страницы доступных Разработчику Туров с фильтрацией.
-Страница **testsys.web.page.developer** не реализована.
-
-### testsys.user.multi.developer.contest.viewContest (Partially implemented)
+### testsys.user.multi.developer.contest.viewContest (Implemented)
 
 Page: **testsys.web.page.developer.contest**
 
@@ -1998,10 +1960,7 @@ Page: **testsys.web.page.developer.contest**
 - Просмотр не изменяет данные Тура, список прикреплённых Задач и предоставленный доступ.
 - Прикреплённые Задачи и их Ресурсы не изменяются.
 
-Реализована операция просмотра доступного Разработчику Тура.
-Страница **testsys.web.page.developer.contest** не реализована.
-
-### testsys.user.multi.developer.contest.attachTask (Partially implemented)
+### testsys.user.multi.developer.contest.attachTask (Implemented)
 
 Page: **testsys.web.page.developer.contest**
 
@@ -2050,10 +2009,7 @@ Page: **testsys.web.page.developer.contest**
 - Набор Сообществ, которым предоставлен доступ к Туру, остаётся пустым.
 - Ресурсы Задач и их файлы не изменяются.
 
-Реализована операция прикрепления Задачи к Туру.
-Страница **testsys.web.page.developer.contest** не реализована.
-
-### testsys.user.multi.developer.contest.detachTask (Partially implemented)
+### testsys.user.multi.developer.contest.detachTask (Implemented)
 
 Page: **testsys.web.page.developer.contest**
 
@@ -2091,10 +2047,7 @@ Page: **testsys.web.page.developer.contest**
 - Набор Сообществ, которым предоставлен доступ к Туру, остаётся пустым.
 - Состояние откреплённой Задачи, её данные, версии и Ресурсы не изменяются.
 
-Реализована операция открепления Задачи от Тура.
-Страница **testsys.web.page.developer.contest** не реализована.
-
-### testsys.user.multi.developer.contest.deleteContest (Partially implemented)
+### testsys.user.multi.developer.contest.deleteContest (Implemented)
 
 Page: **testsys.web.page.developer.contest**
 
@@ -2130,10 +2083,7 @@ TODO: фичи для удаления всего к чему не предос�
 - Прикреплённые Задачи, их состояние, данные, версии и Ресурсы не изменяются.
 - Удалённый Тур больше не входит в список Туров Разработчика.
 
-Реализована операция удаления Тура.
-Страница **testsys.web.page.developer.contest** не реализована.
-
-### testsys.user.multi.developer.contest.shareContest (Partially implemented)
+### testsys.user.multi.developer.contest.shareContest (Implemented)
 
 Page: **testsys.web.page.developer.contest**
 
@@ -2175,9 +2125,6 @@ Page: **testsys.web.page.developer.contest**
 - Ранее предоставленный доступ сохраняется; выбранный набор не заменяет прежний.
 - Владелец, название, описание, набор Задач, даты, индивидуальный лимит и версия TRIK Studio Тура не изменяются.
 - Задачи Тура и их Ресурсы не изменяются.
-
-Реализована операция предоставления доступа к Туру.
-Страница **testsys.web.page.developer.contest** не реализована.
 
 <!-- testsys.user.multi.student -->
 
@@ -4071,7 +4018,7 @@ flowchart TD;
 
 - Супервайзер открывает страницу для любого Пользователя и возвращается на **testsys.web.page.supervisor**.
 
-### testsys.web.page.developer (Not implemented)
+### testsys.web.page.developer (Implemented)
 
 *Назначение*:\
 Кабинет Разработчика: Задачи и Туры.
@@ -4094,7 +4041,7 @@ flowchart TD;
 - **testsys.web.page.developer.task** — для своей Задачи.
 - **testsys.web.page.developer.contest** — для любого Тура.
 
-### testsys.web.page.developer.task (Not implemented)
+### testsys.web.page.developer.task (Implemented)
 
 *Назначение*:\
 Разработка Задачи: Ресурсы, тестирование, фиксация и доступ Сообществ.
@@ -4129,7 +4076,7 @@ flowchart TD;
 - **testsys.web.page.developer.resource** — для любого Ресурса Задачи.
 - **testsys.web.page.developer**.
 
-### testsys.web.page.developer.resource (Not implemented)
+### testsys.web.page.developer.resource (Partially implemented)
 
 *Назначение*:\
 Просмотр и изменение Ресурса Задачи.
@@ -4149,7 +4096,9 @@ flowchart TD;
 
 - **testsys.web.page.developer.task**.
 
-### testsys.web.page.developer.contest (Not implemented)
+Реализована страница без комментария изменения в истории версий.
+
+### testsys.web.page.developer.contest (Implemented)
 
 *Назначение*:\
 Настройка Тура: Задачи, расписание и доступ Сообществ.

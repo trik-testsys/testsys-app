@@ -180,6 +180,28 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
         }
     }
 
+    @Nested
+    inner class FindTrikStudioVersionsTests {
+
+        @Test
+        fun `should return every registered version ordered by tag`() {
+            fixtures.trikStudioVersion("3.1.0")
+            fixtures.trikStudioVersion("2.9.0")
+            fixtures.trikStudioVersion("3.0.0")
+
+            val result = repository.findTrikStudioVersions()
+
+            assertEquals(listOf("2.9.0", "3.0.0", "3.1.0").map(::TrikStudioVersion), result)
+        }
+
+        @Test
+        fun `should return an empty list if no version is registered`() {
+            val result = repository.findTrikStudioVersions()
+
+            assertEquals(emptyList(), result)
+        }
+    }
+
     override fun newData(): ContestData = newDataWithLimits(total = Duration.ofHours(2), attempt = Duration.ofMinutes(30))
 
     override fun modified(entity: Contest): Contest {

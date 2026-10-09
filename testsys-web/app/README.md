@@ -69,7 +69,7 @@
 | `RegistrationView` | `registration` | Без входа |
 | `RestoreAccessView` | `restore-access` | Без входа |
 | `MultiMainView` | `home` | `MULTIPLE_ROLE` |
-| `ProfileView`, `DeveloperView`, `JudgeView`, `StudentView` | `profile`, `developer`, `judge`, `student` | `MULTIPLE_ROLE` |
+| `ProfileView`, `DeveloperView`, `JudgeView` | `profile`, `developer`, `judge` | `MULTIPLE_ROLE` |
 | `AdminView` | `admin`, `admin/communities`, `admin/users` | `MULTIPLE_ROLE` с Ролью Администратора |
 | `AdminCommunityView` | `admin/communities/:communityId` | `MULTIPLE_ROLE`, создатель Сообщества |
 | `AdminUserView` | `admin/users/:userId`, `admin/users/:userId/developer`, `admin/users/:userId/manager`, `admin/users/:userId/judge`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
@@ -77,11 +77,15 @@
 | `ManagerClassView` | `manager/classes/:classId` | `MULTIPLE_ROLE`, создатель Класса |
 | `ManagerCompetitionView` | `manager/competitions/:competitionId` | `MULTIPLE_ROLE`, создатель Соревнования |
 | `ManagerContestView` | `manager/classes/:classId/contests/:contestId`, `manager/competitions/:competitionId/contests/:contestId` | `MULTIPLE_ROLE`, создатель Класса или Соревнования, в которое добавлен Тур |
+| `StudentView` | `student`, `student/classes` | `MULTIPLE_ROLE` с Ролью Ученика |
+| `StudentClassView` | `student/classes/:classId` | `MULTIPLE_ROLE`, Ученик Класса |
+| `StudentContestView`, `StudentTaskView` | `student/classes/:classId/contests/:contestId`, `student/classes/:classId/contests/:contestId/tasks/:taskId` | `MULTIPLE_ROLE`, Ученик Класса |
 | `ParticipantView`, `ObserverView`, `SupervisorView` | `participant`, `observer`, `supervisor` | Соответствующий вид |
+| `ParticipantContestView`, `ParticipantTaskView` | `participant/contests/:contestId`, `participant/contests/:contestId/tasks/:taskId` | `PARTICIPANT` |
 
 Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
-кроме Кабинетов Администратора и Организатора, пока показывают только шапку и пустое состояние: их маршруты и доступ
-окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
+кроме Кабинетов Администратора, Организатора и Ученика, пока показывают только шапку и пустое состояние: их
+маршруты и доступ окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
 
 Страницы Кабинетов Администратора и Организатора вызывают прокси-сервис в `beforeEnter`, до построения таблиц.
 Поэтому отсутствие Роли, Сообщества, Класса, Соревнования или доступа открывает экран ошибки из раздела
@@ -92,6 +96,10 @@
 `ManagerContestView` скачивает сводную таблицу файлом CSV в UTF-8 с меткой порядка байтов. Столбцы разделены `;`,
 значения заключаются в кавычки по RFC 4180, на каждую Задачу приходится два столбца: лучший результат и количество
 Посылок. Данные файла страница запрашивает заново при скачивании.
+
+Страницы Ученика и страницы Тура и Задачи Участника тоже вызывают прокси-сервис в `beforeEnter`. Страницы Тура и Задачи
+общие для Участника и Ученика: у каждого вида Пользователя свой класс страницы со своим маршрутом, а общая часть —
+в абстрактных `StudyContestView` и `StudyTaskView`.
 
 Страницы Ролей принимают необязательный параметр маршрута `section` с разделом страницы, например
 `developer/tasks`. Заголовок раздела Роли в «Меню» ведёт на страницу без параметра, а ссылки разделов — с ним,
@@ -216,8 +224,9 @@
 Настройки SMTP-сервера — в разделе «Настройки» в [mail/README.md](../../testsys-infra/mail/README.md#настройки).
 Тесты страниц и `UserService` подключают `AppTestConfiguration`: она сохраняет Пользователей, Сообщества, Классы,
 Соревнования и Туры через порты хранения, подменяет Публичное Сообщество Сообществом из этих данных и записывает
-письма вместо отправки. Тестовые Spring-контексты не приостанавливаются (`src/test/resources/spring.properties`):
-`TaskValidationDispatcherLifecycle` останавливает исполнитель диспетчера окончательно, и приостановленный контекст
-не запустился бы снова.
+письма вместо отправки. Классы, Туры, Задачи, Посылки и записи входа для страниц Ученика и Участника сохраняет
+импортированный ею `StudyFixtures`. Тестовые Spring-контексты не приостанавливаются
+(`src/test/resources/spring.properties`): `TaskValidationDispatcherLifecycle` останавливает исполнитель диспетчера
+окончательно, и приостановленный контекст не запустился бы снова.
 
 Cookie сессии называется `TESTSYS_APP_SESSION`.

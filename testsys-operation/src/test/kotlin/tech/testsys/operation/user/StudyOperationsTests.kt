@@ -5,6 +5,11 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneOffset
+import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -38,6 +43,7 @@ import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.Class
+import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
@@ -69,16 +75,12 @@ import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.SingleRoleUser
 import tech.testsys.operation.error.*
 import tech.testsys.operation.error.UploadedFileNameTooLongError
 import tech.testsys.operation.util.*
-import java.time.Clock
-import java.time.Duration
-import java.time.Instant
-import java.time.ZoneOffset
-import java.util.UUID
 
 class StudyOperationsTests {
 
@@ -194,6 +196,27 @@ class StudyOperationsTests {
                     assertSame(current, result.second)
                     assertNull(result.first)
                 }
+
+                @Test
+                fun `should return the tasks of the contest in contest order if the port returns them in another order`() {
+                    val current = contest.withData { tasks(listOf(32, 31, 33)) }
+                    prepareParticipantView(current = current)
+                    every { taskRepository.load(current.data.tasks) } returns listOf(contestTask(31), contestTask(33), contestTask(32))
+
+                    val result = operations.viewContest(user = participant, contestId = current.id).getOrThrow()
+
+                    assertEquals(listOf(TaskId(32), TaskId(31), TaskId(33)), result.third.map { task -> task.id })
+                }
+
+                @Test
+                fun `should return no tasks for a contest without tasks`() {
+                    prepareParticipantView()
+
+                    val result = operations.viewContest(user = participant, contestId = contest.id).getOrThrow()
+
+                    assertEquals(emptyList<Task>(), result.third)
+                }
+
             }
 
             @Nested
@@ -330,6 +353,18 @@ class StudyOperationsTests {
                     assertSame(current, result.second)
                     assertNull(result.first)
                 }
+
+                @Test
+                fun `should return the tasks of the class contest in contest order if the port returns them in another order`() {
+                    val current = contest.withData { tasks(listOf(32, 31)) }
+                    prepareStudentView(current = current)
+                    every { taskRepository.load(current.data.tasks) } returns listOf(contestTask(31), contestTask(32))
+
+                    val result = operations.viewContest(user = student, classId = studyClass.id, contestId = current.id).getOrThrow()
+
+                    assertEquals(listOf(TaskId(32), TaskId(31)), result.third.map { task -> task.id })
+                }
+
             }
 
             @Nested
@@ -470,10 +505,14 @@ class StudyOperationsTests {
                 fun `should return the original task, submissions of the participant and the best submission`() {
                     val submission = testSubmission(submissionId = 51)
                     prepareParticipantTask()
+                    stubTaskResources()
                     stubSubmissions(submission)
                     stubVerdict(verdictId = 51, scores = listOf(40, 60))
 
-                    val (resultTask, submissions, best) = view().getOrThrow()
+                    val result = view().getOrThrow()
+                    val resultTask = result.task
+                    val submissions = result.submissions.map { studySubmission -> studySubmission.submission }
+                    val best = result.best?.submission
 
                     assertSame(task, resultTask)
                     assertEquals(listOf(submission), submissions)
@@ -487,10 +526,12 @@ class StudyOperationsTests {
                     val second = testSubmission(submissionId = 52, at = nextDay) { queued() }
                     val third = testSubmission(submissionId = 53, at = nextDay) { queued() }
                     prepareParticipantTask()
+                    stubTaskResources()
                     stubSubmissions(first, second, third)
                     stubVerdict(verdictId = 51, scores = listOf(10))
 
-                    val (_, submissions, _) = view().getOrThrow()
+                    val result = view().getOrThrow()
+                    val submissions = result.submissions.map { studySubmission -> studySubmission.submission }
 
                     assertEquals(listOf(first, second, third), submissions)
                 }
@@ -503,9 +544,13 @@ class StudyOperationsTests {
                         contestDuration = Duration.ofSeconds(10)
                     }
                     prepareParticipantTask(current = current)
+                    stubTaskResources()
                     stubSubmissions()
 
-                    val (resultTask, submissions, best) = view(contestId = current.id).getOrThrow()
+                    val result = view(contestId = current.id).getOrThrow()
+                    val resultTask = result.task
+                    val submissions = result.submissions.map { studySubmission -> studySubmission.submission }
+                    val best = result.best?.submission
 
                     assertSame(task, resultTask)
                     assertEquals(emptyList<Submission>(), submissions)
@@ -517,12 +562,13 @@ class StudyOperationsTests {
                     val judged = testSubmission(submissionId = 51, orders = listOf(61))
                     val graded = testSubmission(submissionId = 52)
                     prepareParticipantTask()
+                    stubTaskResources()
                     stubSubmissions(judged, graded)
                     stubVerdict(verdictId = 51, scores = listOf(100))
                     stubVerdict(verdictId = 52, scores = listOf(50))
                     stubJudgmentOrders(testJudgmentOrder(orderId = 61, score = 20))
 
-                    val best = view().getOrThrow().third
+                    val best = view().getOrThrow().best?.submission
 
                     assertSame(graded, best)
                 }
@@ -532,6 +578,7 @@ class StudyOperationsTests {
                     val judged = testSubmission(submissionId = 51, orders = listOf(61, 62))
                     val graded = testSubmission(submissionId = 52)
                     prepareParticipantTask()
+                    stubTaskResources()
                     stubSubmissions(judged, graded)
                     stubVerdict(verdictId = 52, scores = listOf(50))
                     stubJudgmentOrders(
@@ -539,7 +586,7 @@ class StudyOperationsTests {
                         testJudgmentOrder(orderId = 62, score = 10, at = Instant.parse("2026-01-01T00:00:00Z")),
                     )
 
-                    val best = view().getOrThrow().third
+                    val best = view().getOrThrow().best?.submission
 
                     assertSame(judged, best)
                 }
@@ -549,6 +596,7 @@ class StudyOperationsTests {
                     val judged = testSubmission(submissionId = 51, orders = listOf(62, 61))
                     val graded = testSubmission(submissionId = 52)
                     prepareParticipantTask()
+                    stubTaskResources()
                     stubSubmissions(judged, graded)
                     stubVerdict(verdictId = 52, scores = listOf(50))
                     stubJudgmentOrders(
@@ -556,7 +604,7 @@ class StudyOperationsTests {
                         testJudgmentOrder(orderId = 61, score = 10),
                     )
 
-                    val best = view().getOrThrow().third
+                    val best = view().getOrThrow().best?.submission
 
                     assertSame(judged, best)
                 }
@@ -566,11 +614,12 @@ class StudyOperationsTests {
                     val later = testSubmission(submissionId = 51, at = Instant.parse("2026-01-02T00:00:00Z"))
                     val earlier = testSubmission(submissionId = 52, at = Instant.parse("2026-01-01T00:00:00Z"))
                     prepareParticipantTask()
+                    stubTaskResources()
                     stubSubmissions(later, earlier)
                     stubVerdict(verdictId = 51, scores = listOf(30, 20))
                     stubVerdict(verdictId = 52, scores = listOf(50))
 
-                    val best = view().getOrThrow().third
+                    val best = view().getOrThrow().best?.submission
 
                     assertSame(earlier, best)
                 }
@@ -580,11 +629,12 @@ class StudyOperationsTests {
                     val greater = testSubmission(submissionId = 52)
                     val smaller = testSubmission(submissionId = 51)
                     prepareParticipantTask()
+                    stubTaskResources()
                     stubSubmissions(greater, smaller)
                     stubVerdict(verdictId = 51, scores = listOf(50))
                     stubVerdict(verdictId = 52, scores = listOf(50))
 
-                    val best = view().getOrThrow().third
+                    val best = view().getOrThrow().best?.submission
 
                     assertSame(smaller, best)
                 }
@@ -601,12 +651,13 @@ class StudyOperationsTests {
                         graded { status.timeout() }
                     }
                     prepareParticipantTask()
+                    stubTaskResources()
                     stubSubmissions(queued, inProgress, failed, timedOut, graded)
                     stubVerdict(verdictId = 51, scores = listOf(1))
                     stubJudgmentOrders(testJudgmentOrder(orderId = 64, score = 90))
                     stubJudgmentOrders(testJudgmentOrder(orderId = 65, score = 90))
 
-                    val best = view().getOrThrow().third
+                    val best = view().getOrThrow().best?.submission
 
                     assertSame(graded, best)
                 }
@@ -616,9 +667,12 @@ class StudyOperationsTests {
                     val queued = testSubmission(submissionId = 52) { queued() }
                     val failed = testSubmission(submissionId = 54) { graded { status.error { description = "Crash" } } }
                     prepareParticipantTask()
+                    stubTaskResources()
                     stubSubmissions(queued, failed)
 
-                    val (_, submissions, best) = view().getOrThrow()
+                    val result = view().getOrThrow()
+                    val submissions = result.submissions.map { studySubmission -> studySubmission.submission }
+                    val best = result.best?.submission
 
                     assertEquals(listOf(queued, failed), submissions)
                     assertNull(best)
@@ -631,14 +685,129 @@ class StudyOperationsTests {
                     val loader = mockk<EntityLoader<VerdictId, Verdict>>()
                     every { loader.load(submission.verdictReference()) } returns verdict
                     prepareParticipantTask()
+                    stubTaskResources()
                     stubSubmissions(submission)
                     stubVerdict(verdictId = 51, scores = listOf(10))
 
-                    val (_, submissions, _) = view().getOrThrow()
+                    val result = view().getOrThrow()
+                    val submissions = result.submissions.map { studySubmission -> studySubmission.submission }
 
                     assertSame(verdict, submissions.single().verdictReference().load(loader))
                     verify(exactly = 1) { loader.load(submission.verdictReference()) }
                 }
+
+                @Test
+                fun `should return the solution file name and the final score of each submission`() {
+                    prepareParticipantTask()
+                    stubTaskResources()
+                    val judged = testSubmission(submissionId = 51, solutionId = 81, orders = listOf(61))
+                    val graded = testSubmission(submissionId = 52, solutionId = 82)
+                    val queued = testSubmission(submissionId = 53, solutionId = 83) { queued() }
+                    stubVerdict(verdictId = 52, scores = listOf(30, 40))
+                    stubJudgmentOrders(testJudgmentOrder(orderId = 61, score = 20))
+
+                    stubSubmissions(judged, graded, queued)
+
+                    val result = view().getOrThrow()
+
+                    assertEquals(
+                        listOf(
+                            StudyOperations.StudySubmission(submission = judged, filename = "solution-81.py", score = 20),
+                            StudyOperations.StudySubmission(submission = graded, filename = "solution-82.py", score = 70),
+                            StudyOperations.StudySubmission(submission = queued, filename = "solution-83.py", score = null),
+                        ),
+                        result.submissions,
+                    )
+                }
+
+                @Test
+                fun `should return the best submission with its file name and final score`() {
+                    prepareParticipantTask()
+                    stubTaskResources()
+                    val graded = testSubmission(submissionId = 52, solutionId = 82)
+                    stubVerdict(verdictId = 52, scores = listOf(30, 40))
+
+                    stubSubmissions(graded)
+
+                    val best = view().getOrThrow().best
+
+                    assertEquals(StudyOperations.StudySubmission(submission = graded, filename = "solution-82.py", score = 70), best)
+                }
+
+                @Test
+                fun `should return the statement, exercises and languages of developer solutions of a Committed task`() {
+                    val current = testTask {
+                        committed {
+                            exercises(listOf(1))
+                            statement(1)
+                            developerSolutions(listOf(81, 82, 83))
+                        }
+                    }
+                    prepareParticipantTask(currentTask = current)
+                    stubTaskResources()
+                    stubDeveloperSolutionLanguages(
+                        81L to TrikSupportedLanguage.VisualLanguage,
+                        82L to TrikSupportedLanguage.Python,
+                        83L to TrikSupportedLanguage.VisualLanguage,
+                    )
+
+                    stubSubmissions()
+
+                    val result = view().getOrThrow()
+
+                    assertEquals(StatementId(1), result.statement?.id)
+                    assertEquals(listOf(ExerciseId(1)), result.exercises.map { exercise -> exercise.id })
+                    assertEquals(listOf(TrikSupportedLanguage.VisualLanguage, TrikSupportedLanguage.Python), result.languages)
+                }
+
+                @Test
+                fun `should return the resources and languages of the last committed revision of an Uncommitted task`() {
+                    val current = testTask {
+                        uncommitted(
+                            wipBuilder = {
+                                exercises(listOf(2))
+                                statement(2)
+                                developerSolutions(listOf(82))
+                            },
+                            lastCommittedBuilder = {
+                                exercises(listOf(1))
+                                statement(1)
+                                developerSolutions(listOf(81))
+                            },
+                        )
+                    }
+                    prepareParticipantTask(currentTask = current)
+                    stubTaskResources()
+                    stubDeveloperSolutionLanguages(81L to TrikSupportedLanguage.JavaScript)
+
+                    stubSubmissions()
+
+                    val result = view().getOrThrow()
+
+                    assertEquals(StatementId(1), result.statement?.id)
+                    assertEquals(listOf(ExerciseId(1)), result.exercises.map { exercise -> exercise.id })
+                    assertEquals(listOf(TrikSupportedLanguage.JavaScript), result.languages)
+                }
+
+                @Test
+                fun `should return no statement, exercises or languages for a New task`() {
+                    prepareParticipantTask(currentTask = testNewTask())
+
+                    stubTaskResources()
+                    stubSubmissions()
+
+                    val result = view().getOrThrow()
+
+                    assertNull(result.statement)
+                    assertEquals(emptyList<Exercise>(), result.exercises)
+                    assertEquals(emptyList<TrikSupportedLanguage>(), result.languages)
+                    verify {
+                        statementRepository wasNot Called
+                        exerciseRepository wasNot Called
+                        developerSolutionRepository wasNot Called
+                    }
+                }
+
             }
 
             @Nested
@@ -691,6 +860,7 @@ class StudyOperationsTests {
                 @Test
                 fun `should raise TaskAccessDeniedError if task is outside the contest`() {
                     prepareParticipantTask(current = contest)
+                    stubTaskResources()
 
                     assertRaises(TaskAccessDeniedError(task.id)) { view(contestId = contest.id) }
 
@@ -700,6 +870,7 @@ class StudyOperationsTests {
                 @Test
                 fun `should raise ContestNotEnteredError if participant has not entered the contest`() {
                     prepareParticipantTask(enteredAt = null)
+                    stubTaskResources()
 
                     assertRaises(ContestNotEnteredError(taskContest.id)) { view() }
 
@@ -720,6 +891,7 @@ class StudyOperationsTests {
                         contestDuration = Duration.ofSeconds(10)
                     }
                     prepareParticipantTask(current = current)
+                    stubTaskResources()
                     stubSubmissions(
                         testSubmission(submissionId = 51, orders = listOf(61)),
                         testSubmission(submissionId = 52),
@@ -742,6 +914,7 @@ class StudyOperationsTests {
                 fun `should propagate a technical exception while reading submissions`() {
                     val failure = IllegalStateException("Submission storage failed")
                     prepareParticipantTask()
+                    stubTaskResources()
                     every {
                         submissionRepository.findGradingByContext(authorId = participant.id, taskId = task.id, contestId = taskContest.id)
                     } throws failure
@@ -762,9 +935,10 @@ class StudyOperationsTests {
                     stubJudgmentOrders(testJudgmentOrder(orderId = 61, score = 10), testJudgmentOrder(orderId = 62, score = 50))
 
                     prepareParticipantTask()
+                    stubTaskResources()
                     stubSubmissions(lowJudged, highGraded, highJudged, lowGraded)
 
-                    val best = view().getOrThrow().third
+                    val best = view().getOrThrow().best?.submission
 
                     assertSame(highGraded, best)
                     verify(exactly = 1) {
@@ -802,10 +976,14 @@ class StudyOperationsTests {
                 fun `should return the original task, submissions of the student and the best submission`() {
                     val submission = testSubmission(submissionId = 51, author = student.id.value)
                     prepareStudentTask()
+                    stubTaskResources()
                     stubSubmissions(submission)
                     stubVerdict(verdictId = 51, scores = listOf(100))
 
-                    val (resultTask, submissions, best) = view().getOrThrow()
+                    val result = view().getOrThrow()
+                    val resultTask = result.task
+                    val submissions = result.submissions.map { studySubmission -> studySubmission.submission }
+                    val best = result.best?.submission
 
                     assertSame(task, resultTask)
                     assertEquals(listOf(submission), submissions)
@@ -821,10 +999,12 @@ class StudyOperationsTests {
                     val second = testSubmission(submissionId = 52, author = author, at = nextDay) { queued() }
                     val third = testSubmission(submissionId = 53, author = author, at = nextDay) { queued() }
                     prepareStudentTask()
+                    stubTaskResources()
                     stubSubmissions(first, second, third)
                     stubVerdict(verdictId = 51, scores = listOf(10))
 
-                    val (_, submissions, _) = view().getOrThrow()
+                    val result = view().getOrThrow()
+                    val submissions = result.submissions.map { studySubmission -> studySubmission.submission }
 
                     assertEquals(listOf(first, second, third), submissions)
                 }
@@ -837,9 +1017,12 @@ class StudyOperationsTests {
                         contestDuration = Duration.ofSeconds(10)
                     }
                     prepareStudentTask(current = current)
+                    stubTaskResources()
                     stubSubmissions(contestId = current.id)
 
-                    val (resultTask, _, best) = view(contestId = current.id).getOrThrow()
+                    val result = view(contestId = current.id).getOrThrow()
+                    val resultTask = result.task
+                    val best = result.best?.submission
 
                     assertSame(task, resultTask)
                     assertNull(best)
@@ -903,6 +1086,7 @@ class StudyOperationsTests {
                 @Test
                 fun `should raise TaskAccessDeniedError if task is outside the contest`() {
                     prepareStudentTask(current = contest)
+                    stubTaskResources()
 
                     assertRaises(TaskAccessDeniedError(task.id)) { view(contestId = contest.id) }
 
@@ -913,6 +1097,7 @@ class StudyOperationsTests {
                 fun `should raise ContestNotEnteredError if the contest was entered only in another class`() {
                     stubEntryInOtherClass(contestId = taskContest.id)
                     prepareStudentTask(enteredAt = null)
+                    stubTaskResources()
 
                     assertRaises(ContestNotEnteredError(taskContest.id)) { view() }
 
@@ -933,6 +1118,7 @@ class StudyOperationsTests {
                         contestDuration = Duration.ofSeconds(10)
                     }
                     prepareStudentTask(current = current)
+                    stubTaskResources()
                     stubSubmissions(
                         testSubmission(submissionId = 51, author = student.id.value, orders = listOf(61)),
                         testSubmission(submissionId = 52, author = student.id.value),
@@ -965,6 +1151,7 @@ class StudyOperationsTests {
                 fun `should propagate a technical exception while reading submissions`() {
                     val failure = IllegalStateException("Submission storage failed")
                     prepareStudentTask()
+                    stubTaskResources()
                     every {
                         submissionRepository.findGradingByContext(authorId = student.id, taskId = task.id, contestId = taskContest.id)
                     } throws failure
@@ -2298,13 +2485,14 @@ class StudyOperationsTests {
         author: Long = participant.id.value,
         at: Instant = Instant.parse("2026-01-01T00:00:00Z"),
         orders: List<Long> = emptyList(),
+        solutionId: Long = 3,
         chooseStatus: SubmissionStatusChooser.() -> Unit = { graded { status.success { verdict(submissionId) } } },
     ): Submission = submission {
         id = submissionId
         createdAt = at
         data = submissionData {
             author(author)
-            solution(3)
+            solution(solutionId)
             task(0)
             status.chooseStatus()
             kind.grading { contest(taskContest.id.value) }
@@ -2365,6 +2553,7 @@ class StudyOperationsTests {
     private fun prepareParticipantView(current: Contest = contest, enteredAt: Instant? = null) {
         every { competitions.findById(competition.id) } returns competition
         every { contests.findById(current.id) } returns current
+        stubContestTasks(current)
         val entry = enteredAt?.let { at ->
             participantContestEntry {
                 id = 71
@@ -2385,10 +2574,93 @@ class StudyOperationsTests {
     private fun prepareStudentView(current: Contest = contest, enteredAt: Instant? = null) {
         every { classes.findById(studyClass.id) } returns studyClass
         every { contests.findById(current.id) } returns current
+        stubContestTasks(current)
         val entry = enteredAt?.let { at -> studentEntry(enteredAt = at) }
         every {
             studentEntries.findByContext(userId = student.id, studyClassId = studyClass.id, contestId = current.id)
         } returns entry
+    }
+
+    private fun stubContestTasks(current: Contest) {
+        every { taskRepository.load(current.data.tasks) } returns current.data.tasks.ids.map { taskId -> contestTask(taskId.value) }
+    }
+
+    private fun contestTask(taskId: Long): Task = task {
+        id = taskId
+        createdAt = Instant.EPOCH
+        data = testNewTask().data
+    }
+
+    /** Stubs the committed statement 1 and exercise 1 of [task] without developer solutions and the solution files of submissions. */
+    private fun stubTaskResources() {
+        every {
+            statementRepository.load(match<LazyEntity<StatementId, Statement>> { field -> field.id == StatementId(1) })
+        } returns testStatement(statementId = 1)
+        every {
+            exerciseRepository.load(match<LazyEntityList<ExerciseId, Exercise>> { list -> list.ids == listOf(ExerciseId(1)) })
+        } returns listOf(studyExercise(exerciseId = 1))
+        every {
+            developerSolutionRepository.load(match<LazyEntityList<DeveloperSolutionId, DeveloperSolution>> { list -> list.ids.isEmpty() })
+        } returns emptyList()
+        every { solutionRepository.load(any<LazyEntityList<SolutionId, Solution>>()) } answers {
+            firstArg<LazyEntityList<SolutionId, Solution>>().ids.reversed().map { id ->
+                storedSolutions[id] ?: solution {
+                    this.id = id.value
+                    createdAt = Instant.EPOCH
+                    data = solutionData {
+                        file("solution-${id.value}.py", "print(1)".toByteArray())
+                        language.python()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun studyExercise(exerciseId: Long): Exercise = exercise {
+        id = exerciseId
+        createdAt = Instant.EPOCH
+        data = exerciseData {
+            name = "Exercise"
+            description = "Exercise description"
+            versionBucket = VersionBucket(UUID(0, exerciseId))
+            file("exercise.qrs", "exercise".toByteArray())
+            language.python()
+        }
+    }
+
+    private fun stubDeveloperSolutionLanguages(vararg languages: Pair<Long, TrikSupportedLanguage>) {
+        val developerSolutions = languages.map { (developerSolutionId, language) ->
+            val solutionId = developerSolutionId + 10
+            storedSolutions[SolutionId(solutionId)] = solution {
+                id = solutionId
+                createdAt = Instant.EPOCH
+                data = solutionData {
+                    file("reference.qrs", "reference".toByteArray())
+                    when (language) {
+                        TrikSupportedLanguage.Python -> this.language.python()
+                        TrikSupportedLanguage.JavaScript -> this.language.javaScript()
+                        TrikSupportedLanguage.VisualLanguage -> this.language.visualLanguage()
+                    }
+                }
+            }
+            developerSolution {
+                id = developerSolutionId
+                createdAt = Instant.EPOCH
+                data = developerSolutionData {
+                    name = "Reference"
+                    description = "Reference solution"
+                    solution(solutionId)
+                    expectedScore(100)
+                    versionBucket = VersionBucket(UUID(0, developerSolutionId))
+                }
+            }
+        }
+        val ids = developerSolutions.map { developerSolution -> developerSolution.id }
+        every {
+            developerSolutionRepository.load(
+                match<LazyEntityList<DeveloperSolutionId, DeveloperSolution>> { list -> list.ids == ids },
+            )
+        } returns developerSolutions
     }
 
     private fun studentEntry(selectedClass: Class = studyClass, enteredAt: Instant) = studentContestEntry {

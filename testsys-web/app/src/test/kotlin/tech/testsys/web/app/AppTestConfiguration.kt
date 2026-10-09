@@ -2,6 +2,7 @@ package tech.testsys.web.app
 
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.builder.api.classInviteData
@@ -43,6 +44,7 @@ import javax.sql.DataSource
 
 /** Test beans of the application: stored fixtures, the public community made of them and recorded letters. */
 @TestConfiguration
+@Import(StudyFixtures::class)
 class AppTestConfiguration {
     @Bean
     fun appFixtures(

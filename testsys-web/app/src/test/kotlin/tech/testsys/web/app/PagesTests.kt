@@ -8,6 +8,7 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.InternalServerError
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
+import com.vaadin.flow.server.VaadinService
 import jakarta.annotation.security.RolesAllowed
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
@@ -22,6 +23,8 @@ import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.User
+import tech.testsys.web.app.security.CabinetPrincipal
+import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.view.ADMIN_SECTION_PARAMETER
 import tech.testsys.web.app.view.AdminCommunityView
@@ -36,12 +39,23 @@ import tech.testsys.web.app.view.ManagerCompetitionView
 import tech.testsys.web.app.view.ManagerContestView
 import tech.testsys.web.app.view.ManagerView
 import tech.testsys.web.app.view.OBSERVER_ID_PARAMETER
+import tech.testsys.web.app.view.ParticipantContestView
+import tech.testsys.web.app.view.ParticipantTaskView
+import tech.testsys.web.app.view.STUDY_CLASS_ID_PARAMETER
+import tech.testsys.web.app.view.STUDY_CONTEST_ID_PARAMETER
+import tech.testsys.web.app.view.STUDY_TASK_ID_PARAMETER
+import tech.testsys.web.app.view.StudentClassView
+import tech.testsys.web.app.view.StudentContestView
+import tech.testsys.web.app.view.StudentTaskView
+import tech.testsys.web.app.view.StudentView
 import tech.testsys.web.app.view.USER_ID_PARAMETER
 import tech.testsys.web.app.view.classContestParameters
 import tech.testsys.web.app.view.classParameters
 import tech.testsys.web.app.view.competitionContestParameters
 import tech.testsys.web.app.view.competitionParameters
 import tech.testsys.web.app.view.managerSection
+import tech.testsys.web.app.view.studentClassParameters
+import tech.testsys.web.app.view.studentContestParameters
 import tech.testsys.web.app.view.userParameters
 
 /** Route parameters of a page built from the fixtures and the signed-in user. */
@@ -132,11 +146,73 @@ class PagesTests : MockSpringVaadinTests() {
                     competitionContestParameters(competition.id, contest.id)
                 },
             ),
+            StudentView::class.java to mapOf(
+                "" to parametersOf { _, _ ->
+                    signedIn(study().student())
+                    RouteParameters.empty()
+                },
+            ),
+            StudentClassView::class.java to mapOf(
+                "class" to parametersOf { _, _ ->
+                    val student = signedIn(study().student())
+                    val contest = study().runningContest()
+                    val studyClass = study().studentClass(listOf(student), listOf(contest))
+                    study().studentEntry(student, studyClass, contest)
+                    studentClassParameters(studyClass.id)
+                },
+            ),
+            StudentContestView::class.java to mapOf(
+                "not entered" to parametersOf { _, _ -> studentTaskParameters(isEntered = false).first },
+                "entered" to parametersOf { _, _ -> studentTaskParameters(isEntered = true).first },
+            ),
+            StudentTaskView::class.java to mapOf("task" to parametersOf { _, _ -> studentTaskParameters(isEntered = true).second }),
+            ParticipantContestView::class.java to mapOf(
+                "not entered" to parametersOf { _, _ -> participantTaskParameters(isEntered = false).first },
+                "entered" to parametersOf { _, _ -> participantTaskParameters(isEntered = true).first },
+            ),
+            ParticipantTaskView::class.java to mapOf("task" to parametersOf { _, _ -> participantTaskParameters(isEntered = true).second }),
         )
 
         /** Grants the manager role to the signed-in administrator [user], which the Cabinet of a Manager requires. */
         private fun manager(fixtures: AppFixtures, user: User<*>?): MultipleRoleUser =
             fixtures.grantRole(administrator(user), CommunityRole.Manager)
+
+        /** Returns the fixtures of the study pages from the Spring context of the running UI. */
+        private fun study(): StudyFixtures = VaadinService.getCurrent().instantiator.getOrCreate(StudyFixtures::class.java)
+
+        /** Signs [user] in instead of the user the page access requires by kind. */
+        private fun <T : User<*>> signedIn(user: T): T = user.also { CabinetSignIn.signIn(CabinetPrincipal.of(user)) }
+
+        /** Signs a new student in and returns the parameters of the contest page and the task page of a contest of its class. */
+        private fun studentTaskParameters(isEntered: Boolean): Pair<RouteParameters, RouteParameters> {
+            val student = signedIn(study().student())
+            val task = study().task()
+            val contest = study().runningContest(tasks = listOf(task))
+            val studyClass = study().studentClass(listOf(student), listOf(contest))
+            if (isEntered) study().studentEntry(student, studyClass, contest)
+            val contestParameters = studentContestParameters(studyClass.id, contest.id)
+            val taskParameters = RouteParameters(
+                mapOf(
+                    STUDY_CLASS_ID_PARAMETER to studyClass.id.value.toString(),
+                    STUDY_CONTEST_ID_PARAMETER to contest.id.value.toString(),
+                    STUDY_TASK_ID_PARAMETER to task.id.value.toString(),
+                ),
+            )
+            return contestParameters to taskParameters
+        }
+
+        /** Signs a new participant in and returns the parameters of the contest page and the task page of its contest. */
+        private fun participantTaskParameters(isEntered: Boolean): Pair<RouteParameters, RouteParameters> {
+            val task = study().task()
+            val contest = study().runningContest(tasks = listOf(task))
+            val participant = signedIn(study().participant(listOf(contest)))
+            if (isEntered) study().participantEntry(participant, contest)
+            val contestParameters = RouteParameters(STUDY_CONTEST_ID_PARAMETER, contest.id.value.toString())
+            val taskParameters = RouteParameters(
+                mapOf(STUDY_CONTEST_ID_PARAMETER to contest.id.value.toString(), STUDY_TASK_ID_PARAMETER to task.id.value.toString()),
+            )
+            return contestParameters to taskParameters
+        }
 
         /** Returns a member of a community of the signed-in administrator [user] with the roles of all user page tabs. */
         private fun memberWithAllSections(fixtures: AppFixtures, user: User<*>?): MultipleRoleUser {

@@ -714,7 +714,7 @@ Page: **testsys.web.page.participant**
 Реализована операция просмотра Туров с временем первого входа.
 Веб-страница, отображение оставшегося времени и переход на страницу Тура не реализованы.
 
-### testsys.user.single.participant.enterContest (Partially implemented)
+### testsys.user.single.participant.enterContest (Implemented)
 
 Page: **testsys.web.page.study.contest**
 
@@ -748,12 +748,9 @@ Page: **testsys.web.page.study.contest**
 - При сохранённом доступе повтор возвращает исходную запись после истечения времени.
 - Тур и его ограничения не изменяются.
 
-Реализована операция сохранения первого входа.
-Страница **testsys.web.page.study.contest** не реализована.
-
 <!-- testsys.user.study -->
 
-### testsys.user.study.viewContest (Partially implemented)
+### testsys.user.study.viewContest (Implemented)
 
 Page: **testsys.web.page.study.contest**
 
@@ -794,7 +791,7 @@ Page: **testsys.web.page.study.contest**
 
 1. Проверяются Роль, существование Соревнования или Класса и Тура, а также доступ к ним.
 2. Читается первый момент входа в выбранном контексте по **testsys.entity.studyEntry**.
-3. Возвращаются первый момент входа и сам Тур. Если записи входа нет, момент входа отсутствует.
+3. Возвращаются первый момент входа, сам Тур и его Задачи в порядке Тура. Если записи входа нет, момент входа отсутствует.
 
 Просмотр доступного Тура разрешён до его начала и после окончания.
 
@@ -805,11 +802,7 @@ Page: **testsys.web.page.study.contest**
 - Для Ученика используется запись входа только в выбранном Классе.
 - Другие Роли Пользователя и членство в Сообществах не расширяют доступ.
 
-Реализована операция просмотра Тура с первым моментом входа.
-Веб-страница, загрузка и отображение названий Задач, отображение оставшегося времени,
-а также переход на страницу Задачи не реализованы.
-
-### testsys.user.study.viewTask (Partially implemented)
+### testsys.user.study.viewTask (Implemented)
 
 Page: **testsys.web.page.study.task**
 
@@ -825,6 +818,7 @@ Page: **testsys.web.page.study.task**
 2) Описание
 3) Список отправленных им Решений
 4) Вердикт лучшего отправленного Решения
+5) Языки, на которых можно отправить Решение
 
 По каждому отправленному Решению Ученик или Участник может увидеть:
 
@@ -869,7 +863,11 @@ Page: **testsys.web.page.study.task**
    Последним считается Судейский вердикт с наибольшим временем создания, а при равенстве — с наибольшим идентификатором.
 5. Лучшая Посылка имеет наибольший итоговый балл; при равенстве выбирается более ранняя.
    Посылки без успешного Вердикта в выборе не участвуют. Если подходящих Посылок нет, лучшей Посылки нет.
-6. Возвращаются Задача, список Посылок и лучшая Посылка.
+6. Возвращаются Задача, Условие и Упражнения её последней зафиксированной версии, языки, разрешённые для отправки
+   Решения, список Посылок и лучшая Посылка. Язык разрешён, если в последней зафиксированной версии Задачи есть
+   Авторское Решение на этом языке. Для каждой Посылки возвращаются имя файла Решения и итоговый балл; у Посылки
+   без успешного Вердикта итогового балла нет. Если у Задачи нет зафиксированной версии, Условия, Упражнений
+   и разрешённых языков нет.
 7. При скачивании возвращается файл указанного Условия или Упражнения последней зафиксированной версии Задачи.
 
 Просмотр и скачивание доступны и после окончания Тура.
@@ -883,12 +881,6 @@ Page: **testsys.web.page.study.task**
 - Посылки для тестирования Авторских Решений не возвращаются.
 - Рабочая версия Задачи для скачивания не используется.
 - Другие Роли Пользователя и членство в Сообществах не расширяют доступ.
-
-Реализованы операции просмотра Задачи и скачивания Условия и Упражнения.
-Просмотр возвращает Задачу, Посылки и лучшую Посылку без загрузки связанных сущностей.
-Названия файлов Решений, Вердикты и итоговые баллы Посылок, в том числе лучшей, операция не возвращает.
-Статус проверки доступен только в данных Посылки.
-Веб-страница **testsys.web.page.study.task** не реализована.
 
 ### testsys.user.study.sendSolution (Partially implemented)
 
@@ -953,7 +945,6 @@ Page: **testsys.web.page.study.task**
 Реализована операция отправки Решения.
 Повторная передача ожидающих Посылок после перезапуска не реализована.
 Ограничение длины очереди и удаление ожидающих Посылок не реализованы.
-Веб-страница **testsys.web.page.study.task** не реализована.
 
 <!-- testsys.user.single.observer -->
 
@@ -2197,7 +2188,7 @@ Page: **testsys.web.page.developer.contest**
 2) Туры находящиеся в этих Классах
 3) Задачи находящиеся в этих Турах
 
-### testsys.user.multi.student.viewContests (Partially implemented)
+### testsys.user.multi.student.viewContests (Implemented)
 
 Page: **testsys.web.page.student.class**
 
@@ -2235,10 +2226,7 @@ Page: **testsys.web.page.student.class**
 - Время входа относится к Пользователю, выбранному Классу и Туру.
 - Время входа в тот же Тур другого Класса не используется.
 
-Реализована операция просмотра Туров с временем первого входа.
-Веб-страница, отображение оставшегося времени и переход на страницу Тура не реализованы.
-
-### testsys.user.multi.student.enterContest (Partially implemented)
+### testsys.user.multi.student.enterContest (Implemented)
 
 Page: **testsys.web.page.study.contest**
 
@@ -2276,10 +2264,7 @@ Page: **testsys.web.page.study.contest**
 - При сохранённом доступе повтор возвращает исходную запись после истечения времени.
 - Тур и его ограничения не изменяются.
 
-Реализована операция сохранения первого входа.
-Страница **testsys.web.page.study.contest** не реализована.
-
-### testsys.user.multi.student.joinClass (Partially implemented)
+### testsys.user.multi.student.joinClass (Implemented)
 
 Page: **testsys.web.page.student**
 
@@ -2318,10 +2303,7 @@ Page: **testsys.web.page.student**
 - Присоединение не изменяет другие Классы и Роли Пользователя.
 - При отказе Класс не изменяется.
 
-Реализована операция присоединения к Классу.
-Страница **testsys.web.page.student** не реализована.
-
-### testsys.user.multi.student.viewClasses (Partially implemented)
+### testsys.user.multi.student.viewClasses (Implemented)
 
 Page: **testsys.web.page.student**
 
@@ -2356,9 +2338,6 @@ Page: **testsys.web.page.student**
 
 - Просмотр не изменяет Классы, их Туры и состав Учеников.
 - Классы, созданные Пользователем в Роли Организатора, другие Роли и членство в Сообществах не расширяют список.
-
-Реализована операция просмотра Классов Ученика.
-Веб-страница **testsys.web.page.student** и переход на страницу **testsys.web.page.student.class** не реализованы.
 
 <!-- testsys.user.multi.judge -->
 
@@ -3931,7 +3910,7 @@ flowchart TD;
 
 - **testsys.web.page.study.contest** — для любого Тура.
 
-### testsys.web.page.study.contest (Not implemented)
+### testsys.web.page.study.contest (Implemented)
 
 *Назначение*:\
 Просмотр Тура и начало его прохождения Участником или Учеником.
@@ -3955,7 +3934,7 @@ flowchart TD;
 - **testsys.web.page.study.task** — для любой Задачи после первого входа.
 - **testsys.web.page.participant** или **testsys.web.page.student.class**.
 
-### testsys.web.page.study.task (Not implemented)
+### testsys.web.page.study.task (Partially implemented)
 
 *Назначение*:\
 Работа с Задачей Тура: Условие, отправка Решений и их статус.
@@ -3977,6 +3956,9 @@ flowchart TD;
 *Переходы*:
 
 - **testsys.web.page.study.contest**.
+
+Предупреждение о заполненной очереди проверки не реализовано: ограничение длины очереди не реализовано,
+см. **testsys.entity.submissionQueue**.
 
 ### testsys.web.page.judge (Not implemented)
 
@@ -4199,7 +4181,7 @@ flowchart TD;
 - **testsys.web.page.developer.task** — для своей Задачи.
 - **testsys.web.page.developer**, в том числе после удаления Тура.
 
-### testsys.web.page.student (Not implemented)
+### testsys.web.page.student (Implemented)
 
 *Назначение*:\
 Кабинет Ученика: его Классы и присоединение к новым.
@@ -4216,7 +4198,7 @@ flowchart TD;
 
 - **testsys.web.page.student.class** — для любого Класса.
 
-### testsys.web.page.student.class (Not implemented)
+### testsys.web.page.student.class (Implemented)
 
 *Назначение*:\
 Туры Класса Ученика.

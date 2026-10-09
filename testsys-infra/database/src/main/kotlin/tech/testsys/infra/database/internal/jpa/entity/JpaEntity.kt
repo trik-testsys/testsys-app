@@ -11,6 +11,7 @@ import jakarta.persistence.Version
 import org.hibernate.annotations.UpdateTimestamp
 import org.springframework.data.domain.Persistable
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.AggregateVersionTracker
 import tech.testsys.infra.database.internal.jpa.id.SnowflakeId
 import tech.testsys.infra.database.internal.jpa.id.SnowflakeIdGenerator
 import java.io.Serializable
@@ -86,14 +87,9 @@ abstract class CompositeJpaEntity<T : CompositeId>(
 
 /**
  * Base of JPA entities keyed by a Snowflake-style [Long] issued by [SnowflakeIdGenerator]: seconds since its epoch,
- * node id and a per-second counter. The transient [loadedVersion] and [hasDataChanges] let a persistence adapter
- * accept a version token read before its own guard write in the same transaction.
+ * node id and a per-second counter. Lifecycle callbacks register the root's initial version for this transaction.
  *
  * @property id the primary key, `null` until persisted.
- * @property loadedVersion the [version] the row had when this transaction loaded it, or `null` for a row created
- * in this transaction.
- * @property hasDataChanges whether this transaction has already changed the data of the aggregate the row is the
- * root of.
  * @since %CURRENT_VERSION%
  */
 @InternalDatabaseApi
@@ -104,15 +100,15 @@ abstract class SnowflakeJpaEntity(
     val id: Long? = null,
 ) : JpaEntity() {
 
-    @Transient
-    var loadedVersion: Long? = null
-
-    @Transient
-    var hasDataChanges: Boolean = false
-
-    /** Remembers the version the row was loaded with. */
+    /** Remembers the first loaded version even if the persistence context is later cleared. */
     @PostLoad
     protected fun rememberLoadedVersion() {
-        loadedVersion = version
+        AggregateVersionTracker.loaded(this)
+    }
+
+    /** Exempts roots created in this transaction from forced version increments. */
+    @PrePersist
+    protected fun rememberCreatedRoot() {
+        AggregateVersionTracker.created(this)
     }
 }

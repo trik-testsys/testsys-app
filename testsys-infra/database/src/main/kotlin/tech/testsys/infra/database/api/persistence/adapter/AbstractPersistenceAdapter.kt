@@ -14,18 +14,19 @@ import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.AggregateVersionTracker
 import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
+import tech.testsys.infra.database.internal.utils.findAllInChunks
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireById
+import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
- * Base of persistence adapters: implements finding, loading, removing and the list overloads of [EntityRepository];
- * subclasses provide [save], [update] and [assembleAll] and pass every write to an aggregate through [touchRoot].
- * Every removal goes through [removeRoot] row by row, and [remove] also checks the version token of the entity.
- * Overloads that need non-default [Transactional] settings (e.g. [Propagation.REQUIRES_NEW]) must be overridden
- * together (Spring AOP self-invocation).
+ * Base of [EntityRepository] adapters whose writes use [touchRoot] and removals use [removeRoot].
+ * Override all overloads together when changing [Transactional] settings (such as [Propagation.REQUIRES_NEW]),
+ * because Spring AOP does not intercept self-invocation.
  *
  * @param Data the data type a new entity is created from.
  * @param Id the id type of the entity.
@@ -119,44 +120,41 @@ abstract class AbstractPersistenceAdapter<Data, Id : DomainId, Entity : DomainEn
         writeRoot: (Root) -> Unit = {},
     ): Root {
         val root = rootRepository.findByIdOrError(id)
+        val state = AggregateVersionTracker.state(root)
         val isTokenAccepted = expectedVersion == null || expectedVersion == root.version ||
-            (expectedVersion == root.loadedVersion && !root.hasDataChanges)
+            (expectedVersion == state.loadedVersion && !state.hasDataChanges)
         if (!isTokenAccepted) throw ObjectOptimisticLockingFailureException(root.javaClass, id)
 
         writeRoot(root)
-        if (root.loadedVersion != null && root.version == root.loadedVersion) {
+        if (state.loadedVersion != null && root.version == state.loadedVersion) {
             entityManager.lock(root, LockModeType.PESSIMISTIC_FORCE_INCREMENT)
         }
-        if (changesRootData) root.hasDataChanges = true
+        if (changesRootData) state.hasDataChanges = true
         return root
     }
 
     /**
-     * Guard write to many roots of [rootClass] at once: increments the versions of the rows [ids] whose version this
-     * transaction has not incremented yet with one [incrementVersions] statement, and moves the version of each such
-     * row managed by the persistence context forward without changing its loaded version, as [touchRoot] does.
+     * Loads [ids] through [rootRepository] in batches and guard-writes roots not yet incremented in this transaction.
+     * [incrementVersions] updates their versions in one statement, then the managed rows receive those versions.
      */
     protected fun <Root : SnowflakeJpaEntity> touchRoots(
-        rootClass: Class<Root>,
+        rootRepository: SnowflakeJpaEntityRepository<Root>,
         ids: Collection<Long>,
         incrementVersions: (List<Long>) -> Int,
     ) {
         if (ids.isEmpty()) return
 
         entityManager.flush()
-        val session = entityManager.unwrap(SessionImplementor::class.java)
-        val persister = session.factory.mappingMetamodel.getEntityDescriptor(rootClass)
-        val persistenceContext = session.persistenceContextInternal
-        val rows = ids.distinct().sorted().associateWith { id ->
-            // Hibernate returns null for a row that the persistence context does not manage.
-            val managed: Any? = persistenceContext.getEntity(session.generateEntityKey(id, persister))
-            managed?.let(rootClass::cast)
+        val rows = findAllInChunks(ids = ids.sorted(), find = rootRepository::findAllById)
+        val pending = rows.filter { root ->
+            val state = AggregateVersionTracker.state(root)
+            state.loadedVersion != null && root.version == state.loadedVersion
         }
-        val pending = rows.filterValues { root -> root == null || (root.loadedVersion != null && root.version == root.loadedVersion) }
         if (pending.isEmpty()) return
 
-        incrementVersions(pending.keys.toList())
-        pending.values.filterNotNull().forEach { root -> persistenceContext.getEntry(root).forceLocked(root, root.version + 1) }
+        incrementVersions(pending.map { root -> root.requireId() })
+        val persistenceContext = entityManager.unwrap(SessionImplementor::class.java).persistenceContextInternal
+        pending.forEach { root -> persistenceContext.getEntry(root).forceLocked(root, root.version + 1) }
     }
 
     /**

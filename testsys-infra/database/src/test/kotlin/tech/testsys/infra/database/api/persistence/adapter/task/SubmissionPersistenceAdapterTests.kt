@@ -382,6 +382,38 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     inner class FindGradingByContextTests {
 
         @Test
+        fun `should assemble contexts of one and twenty submissions with the same statement count`() {
+            val author = fixtures.student()
+            val contest = fixtures.contest()
+            val oneTask = fixtures.task()
+            val twentyTask = fixtures.task()
+            val single = fixtures.gradingSubmission(authorId = author.id, contest = contest, task = oneTask)
+            val saved = List(20) { fixtures.gradingSubmission(authorId = author.id, contest = contest, task = twentyTask) }
+            val judge = fixtures.judge()
+            val singleOrder = fixtures.judgmentOrder(judge = judge, submission = single).id
+            val orders = saved.map { submission -> fixtures.judgmentOrder(judge = judge, submission = submission).id }
+
+            val (one, oneStatements) = withStatementCount {
+                repository.findGradingByContext(authorId = author.id, taskId = oneTask.id, contestId = contest.id)
+            }
+            val (twenty, twentyStatements) = withStatementCount {
+                repository.findGradingByContext(authorId = author.id, taskId = twentyTask.id, contestId = contest.id)
+            }
+
+            assertEquals(listOf(single.id), one.map { submission -> submission.id })
+            assertEquals(listOf(singleOrder), one.single().data.judgmentOrders.ids)
+            assertEquals(saved.map { submission -> submission.id }, twenty.map { submission -> submission.id })
+            assertEquals(orders, twenty.map { submission -> submission.data.judgmentOrders.ids.single() })
+            assertEquals(List(20) { author.id }, twenty.map { submission -> submission.data.author.id })
+            assertEquals(List(20) { twentyTask.id }, twenty.map { submission -> submission.data.task.id })
+            assertEquals(
+                List(20) { contest.id },
+                twenty.map { submission -> assertIs<SubmissionKind.Grading>(submission.data.kind).contest.id },
+            )
+            assertEquals(oneStatements, twentyStatements)
+        }
+
+        @Test
         fun `should find grading submissions of the author for the task in the contest ordered by creation time`() {
             val author = fixtures.student()
             val task = fixtures.task()

@@ -24,9 +24,8 @@ import java.util.UUID
 
 /**
  * Persistence adapter of [Test] entities backed by [TestJpaEntity].
- * The polygon file is stored through [FileDataStorage] in [FileStoragePaths.test]
- * and fixed on creation: [update] with another file throws [UnsupportedOperationException].
- * Writing or removing a version of a chain uploaded to a task increments the task version.
+ * [FileDataStorage] stores its file in [FileStoragePaths.test]; [update] rejects replacing it
+ * with [UnsupportedOperationException].
  *
  * @since %CURRENT_VERSION%
  */

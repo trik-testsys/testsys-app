@@ -58,10 +58,7 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
  * Persistence adapter of [MultipleRoleUser] entities backed by [UserJpaEntity] rows of the multiple-role type.
- * Writes cover the user scalars, the held roles and their community memberships ([MultipleRoleToUserJpaEntity])
- * and increment the user version first; removal also increments the versions of the student's classes.
  * [update] rejects removing the student role while the user is enrolled in a class.
- * The per-role id lists (tasks, classes, submissions, ...) are read-only projections of the owning side.
  *
  * @since %CURRENT_VERSION%
  */

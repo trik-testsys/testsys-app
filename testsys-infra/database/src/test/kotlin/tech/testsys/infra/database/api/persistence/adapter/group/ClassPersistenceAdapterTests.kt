@@ -1,5 +1,7 @@
 package tech.testsys.infra.database.api.persistence.adapter.group
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.dao.DataIntegrityViolationException
@@ -51,6 +53,9 @@ class ClassPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Cl
 
     @Autowired
     private lateinit var multipleRoleUsers: MultipleRoleUserRepository
+
+    @PersistenceContext
+    private lateinit var entityManager: EntityManager
 
     override fun newData(): ClassData {
         val ownerId = fixtures.manager().id.value
@@ -264,6 +269,46 @@ class ClassPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Cl
         assertEquals(renamed, stored.data.name)
         assertEquals(assertNotNull(student.version).value + 2, assertNotNull(stored.version).value)
         assertEquals(stored.version, updated.version)
+    }
+
+    @Test
+    fun `should accept a student token read outside the enrolment transaction`() {
+        val saved = repository.save(classDataOf())
+        val student = fixtures.student()
+
+        val updated = transactions.execute {
+            repository.update(saved.withData { students = mutableListOf(student.id) })
+            multipleRoleUsers.update(student.withData { name = "Renamed after enrolment" })
+        }
+
+        val stored = assertNotNull(multipleRoleUsers.findById(student.id))
+        assertEquals("Renamed after enrolment", stored.data.name)
+        assertEquals(assertNotNull(student.version).value + 2, assertNotNull(stored.version).value)
+        assertEquals(stored.version, updated.version)
+    }
+
+    @Test
+    fun `should increment each student once for repeated batch enrolments across a cleared context`() {
+        val first = fixtures.student()
+        val shared = fixtures.student()
+        val last = fixtures.student()
+        val firstClass = repository.save(classDataOf())
+        val sameClass = repository.save(classDataOf())
+        val overlappingClass = repository.save(classDataOf())
+
+        transactions.execute {
+            repository.update(firstClass.withData { students = mutableListOf(first.id, shared.id) })
+            repository.update(sameClass.withData { students = mutableListOf(first.id, shared.id) })
+            entityManager.flush()
+            entityManager.clear()
+            repository.update(overlappingClass.withData { students = mutableListOf(shared.id, last.id) })
+        }
+
+        assertEquals(assertNotNull(first.version).value + 1, assertNotNull(multipleRoleUsers.findById(first.id)?.version).value)
+        assertEquals(assertNotNull(shared.version).value + 1, assertNotNull(multipleRoleUsers.findById(shared.id)?.version).value)
+        assertEquals(assertNotNull(last.version).value + 1, assertNotNull(multipleRoleUsers.findById(last.id)?.version).value)
+        assertEquals(setOf(first.id, shared.id), assertNotNull(repository.findById(sameClass.id)).data.students.ids.toSet())
+        assertEquals(setOf(shared.id, last.id), assertNotNull(repository.findById(overlappingClass.id)).data.students.ids.toSet())
     }
 
     @Test

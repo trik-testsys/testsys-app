@@ -6,6 +6,7 @@ import org.mockito.ArgumentMatchers.argThat
 import org.mockito.Mockito.doThrow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
@@ -32,6 +33,9 @@ class TaskValidationRequestPersistenceAdapterTests :
 
     @Autowired
     private lateinit var taskRepository: TaskRepository
+
+    @Autowired
+    private lateinit var transactions: TransactionOperations
 
     @Autowired
     private lateinit var submissionRows: SubmissionJpaEntityRepository
@@ -760,6 +764,72 @@ class TaskValidationRequestPersistenceAdapterTests :
             twenty.map { request -> request.data.snapshot.supportedTrikStudioVersions },
         )
         assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    @Test
+    fun `should accept the task token after bulk deletion of its request in the same transaction`() {
+        val request = readyRequest()
+        val taskId = request.data.task.id
+        val initialVersion = requireNotNull(taskRepository.findById(taskId)?.version).value
+
+        val updated = transactions.execute {
+            val task = requireNotNull(taskRepository.findById(taskId))
+            repository.removeById(request.id)
+            taskRepository.update(task.withData { name = "Renamed after removing request" })
+        }
+
+        val stored = requireNotNull(taskRepository.findById(taskId))
+        assertEquals("Renamed after removing request", stored.data.name)
+        assertEquals(initialVersion + 2, requireNotNull(stored.version).value)
+        assertEquals(stored.version, updated.version)
+        assertNull(repository.findById(request.id))
+    }
+
+    @Test
+    fun `should find one and twenty active requests with the same statement count`() {
+        val data = newData()
+        val testId = data.snapshot.tests.ids.single()
+        val submissionId = fixtures.submission().id
+        val created = taskValidationRequestData {
+            task = data.task.id
+            requestedBy = data.requestedBy.id
+            snapshot = data.snapshot
+            execution.submissionsCreated {
+                diagnostics = mutableListOf(reportedResult(testId))
+                submissions = mutableListOf(submissionId)
+            }
+        }
+        val first = repository.save(created)
+        val (one, oneRequestStatements) = withStatementCount { repository.findActive() }
+        val ids = listOf(first.id) + List(19) { repository.save(created).id }
+
+        val (twenty, twentyRequestsStatements) = withStatementCount { repository.findActive() }
+
+        assertEquals(listOf(first.id), one.map { request -> request.id })
+        assertEquals(ids, twenty.map { request -> request.id })
+        assertEquals(List(20) { first.data.snapshot.tests.ids }, twenty.map { request -> request.data.snapshot.tests.ids })
+        assertEquals(
+            List(20) {
+                data.snapshot.developerSolutions.map { input -> Triple(input.developerSolution.id, input.solution.id, input.expectedScore) }
+            },
+            twenty.map { request ->
+                request.data.snapshot.developerSolutions.map { input ->
+                    Triple(input.developerSolution.id, input.solution.id, input.expectedScore)
+                }
+            },
+        )
+        assertEquals(
+            List(20) { first.data.snapshot.supportedTrikStudioVersions },
+            twenty.map { request -> request.data.snapshot.supportedTrikStudioVersions },
+        )
+        assertEquals(
+            List(20) { listOf(reportedResult(testId)) to listOf(submissionId) },
+            twenty.map { request ->
+                val state = assertInstanceOf(TaskValidationExecution.SubmissionsCreated::class.java, request.data.execution)
+                state.diagnostics to state.submissions.ids
+            },
+        )
+        assertEquals(oneRequestStatements, twentyRequestsStatements)
     }
 
     @Test

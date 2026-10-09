@@ -25,9 +25,7 @@ import java.util.UUID
 
 /**
  * Persistence adapter of [Exercise] entities backed by [ExerciseJpaEntity].
- * The exercise file is stored through [FileDataStorage] in [FileStoragePaths.exercise];
- * the file and the language are fixed on creation: [update] with another one throws [UnsupportedOperationException].
- * Writing or removing a version of a chain uploaded to a task increments the task version.
+ * [update] rejects changes to the file or language with [UnsupportedOperationException].
  *
  * @since %CURRENT_VERSION%
  */

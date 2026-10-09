@@ -26,8 +26,8 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 import java.time.Instant
 
 /**
- * Persistence adapter of [TaskValidationRequest] entities backed by [TaskValidationRequestJpaEntity]. Creating
- * a request increments the version of its task, so that one task gets at most one active request.
+ * Persistence adapter of [TaskValidationRequest] entities backed by [TaskValidationRequestJpaEntity].
+ * [findOrCreateActive] guards the task version to prevent concurrent creation of identical active snapshots.
  *
  * @since %CURRENT_VERSION%
  */

@@ -19,7 +19,6 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.group.ClassJpaEntity
-import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.group.ClassInviteJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.ClassJpaEntityRepository
@@ -37,12 +36,7 @@ import org.springframework.data.domain.Sort as JpaSort
 
 /**
  * Persistence adapter of [Class] entities backed by [ClassJpaEntity].
- * Student and contest membership is synced through the join tables on save and update and dropped on remove;
- * update, [addStudent] and remove increment the class version first. Every enrolment by save, update
- * or [addStudent] also increments the version of the student, whose student role cannot be removed while
- * the student is enrolled.
- * The invite reference is fixed on creation and its invite is removed together with the class after its version
- * is incremented.
+ * Enrolling students also guards their user versions against concurrent removal of the student role.
  *
  * @since %CURRENT_VERSION%
  */
@@ -189,11 +183,10 @@ class ClassPersistenceAdapter(
     )
 
     /**
-     * Guard write to the users [studentIds] being enrolled, in one statement: removing the student role checks
-     * the classes of the user after incrementing the user version, so a concurrent removal conflicts with it.
+     * Loads and guard-writes the users [studentIds] in batches so concurrent removal of their student role conflicts.
      */
     private fun touchStudents(studentIds: List<Long>) =
-        touchRoots(UserJpaEntity::class.java, studentIds, userJpaEntityRepository::incrementVersions)
+        touchRoots(userJpaEntityRepository, studentIds, userJpaEntityRepository::incrementVersions)
 
     private fun syncContests(classId: Long, target: List<ContestId>) = syncJoinTable(
         existing = contestToClassJpaEntityRepository.findAllByClassId(classId),

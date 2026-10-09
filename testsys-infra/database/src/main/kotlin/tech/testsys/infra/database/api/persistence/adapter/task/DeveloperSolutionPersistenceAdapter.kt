@@ -23,9 +23,7 @@ import java.util.UUID
 
 /**
  * Persistence adapter of [DeveloperSolution] entities backed by [DeveloperSolutionJpaEntity].
- * The solution and the expected score are fixed on creation: [update] with another one throws
- * [UnsupportedOperationException]. Writing or removing a version of a chain uploaded to a task increments the task
- * version.
+ * [update] rejects changes to the solution or expected score with [UnsupportedOperationException].
  *
  * @since %CURRENT_VERSION%
  */

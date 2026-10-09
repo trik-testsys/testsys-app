@@ -23,11 +23,8 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.TestsysPhysicalNamingStrategy
 
 /**
- * Spring configuration of the JPA layer, imported by the application: Hibernate defaults and the REPEATABLE READ
- * isolation from `classpath:hibernate-defaults.properties`, the [TestsysPhysicalNamingStrategy] bean, scanning of
- * the module's entities, Spring Data repositories, persistence adapters and file storage with its
- * [FileStoragePaths], and the repetition of conflicting transactions. The companion object registers
- * [TransactionRetry] and the advisor that repeats every `@Transactional` method outside its transaction interceptor.
+ * Configures JPA, persistence adapters, file storage and transaction retries for the application.
+ * The companion object registers [TransactionRetry] and an advisor outside the transaction interceptor.
  *
  * @since %CURRENT_VERSION%
  */

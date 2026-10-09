@@ -69,20 +69,28 @@
 | `RegistrationView` | `registration` | Без входа |
 | `RestoreAccessView` | `restore-access` | Без входа |
 | `MultiMainView` | `home` | `MULTIPLE_ROLE` |
-| `ProfileView`, `DeveloperView`, `ManagerView`, `JudgeView`, `StudentView` | `profile`, `developer`, `manager`, `judge`, `student` | `MULTIPLE_ROLE` |
+| `ProfileView`, `DeveloperView`, `ManagerView`, `JudgeView` | `profile`, `developer`, `manager`, `judge` | `MULTIPLE_ROLE` |
 | `AdminView` | `admin`, `admin/communities`, `admin/users` | `MULTIPLE_ROLE` с Ролью Администратора |
 | `AdminCommunityView` | `admin/communities/:communityId` | `MULTIPLE_ROLE`, создатель Сообщества |
 | `AdminUserView` | `admin/users/:userId`, `admin/users/:userId/developer`, `admin/users/:userId/manager`, `admin/users/:userId/judge`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
+| `StudentView` | `student`, `student/classes` | `MULTIPLE_ROLE` с Ролью Ученика |
+| `StudentClassView` | `student/classes/:classId` | `MULTIPLE_ROLE`, Ученик Класса |
+| `StudentContestView`, `StudentTaskView` | `student/classes/:classId/contests/:contestId`, `student/classes/:classId/contests/:contestId/tasks/:taskId` | `MULTIPLE_ROLE`, Ученик Класса |
 | `ParticipantView`, `ObserverView`, `SupervisorView` | `participant`, `observer`, `supervisor` | Соответствующий вид |
+| `ParticipantContestView`, `ParticipantTaskView` | `participant/contests/:contestId`, `participant/contests/:contestId/tasks/:taskId` | `PARTICIPANT` |
 
 Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
-кроме Кабинета Администратора, пока показывают только шапку и пустое состояние: их маршруты и доступ окончательные,
-поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
+кроме Кабинетов Администратора и Ученика, пока показывают только шапку и пустое состояние: их маршруты и доступ
+окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида Пользователя возвращает `startPageOf`.
 
 Страницы Кабинета Администратора вызывают прокси-сервис в `beforeEnter`, до построения таблиц. Поэтому отсутствие
 Роли, Сообщества или доступа открывает экран ошибки из раздела [Ошибки операций](#ошибки-операций), а не ошибку
 загрузки таблицы. `AdminView` без раздела переадресует на `admin/communities`. Наблюдатель открывается по своему
 адресу `admin/observers/:observerId`: операция просмотра принимает идентификатор вместе с видом Пользователя.
+
+Страницы Ученика и страницы Тура и Задачи Участника тоже вызывают прокси-сервис в `beforeEnter`. Страницы Тура и Задачи
+общие для Участника и Ученика: у каждого вида Пользователя свой класс страницы со своим маршрутом, а общая часть —
+в абстрактных `StudyContestView` и `StudyTaskView`.
 
 Страницы Ролей принимают необязательный параметр маршрута `section` с разделом страницы, например
 `developer/tasks`. Заголовок раздела Роли в «Меню» ведёт на страницу без параметра, а ссылки разделов — с ним,
@@ -202,7 +210,8 @@
 
 Настройки SMTP-сервера — в разделе «Настройки» в [mail/README.md](../../testsys-infra/mail/README.md#настройки).
 Тесты страниц и `UserService` подключают `AppTestConfiguration`: она сохраняет Пользователей через порты хранения, подменяет
-Публичное Сообщество Сообществом из этих данных и записывает письма вместо отправки. Тестовые Spring-контексты
+Публичное Сообщество Сообществом из этих данных и записывает письма вместо отправки. Классы, Туры, Задачи, Посылки
+и записи входа сохраняет импортированный ею `StudyFixtures`. Тестовые Spring-контексты
 не приостанавливаются (`src/test/resources/spring.properties`): `TaskValidationDispatcherLifecycle` останавливает
 исполнитель диспетчера окончательно, и приостановленный контекст не запустился бы снова.
 

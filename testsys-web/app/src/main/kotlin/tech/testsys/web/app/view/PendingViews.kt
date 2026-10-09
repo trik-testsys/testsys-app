@@ -90,14 +90,3 @@ class ManagerView(texts: UiTexts, headers: CabinetHeaders) :
 @RolesAllowed("MULTIPLE_ROLE")
 class JudgeView(texts: UiTexts, headers: CabinetHeaders) :
     PendingCabinetView(texts, headers, title = "Кабинет Судьи", active = CabinetHeaders.MENU_SECTION, hasHomeCrumb = true)
-
-/**
- * Cabinet of a Student (testsys.web.page.student), not implemented yet.
- *
- * @since %CURRENT_VERSION%
- */
-@Route("student/:section?(classes)")
-@PageTitle("Кабинет Ученика")
-@RolesAllowed("MULTIPLE_ROLE")
-class StudentView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Кабинет Ученика", active = CabinetHeaders.MENU_SECTION, hasHomeCrumb = true)

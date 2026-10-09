@@ -9,7 +9,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /** Protects an aggregate root and records its writes in the current transaction. */
-@OptIn(InternalDatabaseApi::class)
+@InternalDatabaseApi
 internal fun <Root : SnowflakeJpaEntity> EntityManager.touchAggregateRoot(
     rootRepository: SnowflakeJpaEntityRepository<Root>,
     id: Long,

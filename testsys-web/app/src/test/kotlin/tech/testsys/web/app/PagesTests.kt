@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Import
 import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.judgeData
 import tech.testsys.domain.builder.api.managerData
+import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.User
 import tech.testsys.web.app.security.UserKind
@@ -27,9 +28,20 @@ import tech.testsys.web.app.view.AdminCommunityView
 import tech.testsys.web.app.view.AdminUserSection
 import tech.testsys.web.app.view.AdminUserView
 import tech.testsys.web.app.view.AdminView
+import tech.testsys.web.app.view.CLASSES_SECTION
 import tech.testsys.web.app.view.COMMUNITY_ID_PARAMETER
+import tech.testsys.web.app.view.COMPETITIONS_SECTION
+import tech.testsys.web.app.view.ManagerClassView
+import tech.testsys.web.app.view.ManagerCompetitionView
+import tech.testsys.web.app.view.ManagerContestView
+import tech.testsys.web.app.view.ManagerView
 import tech.testsys.web.app.view.OBSERVER_ID_PARAMETER
 import tech.testsys.web.app.view.USER_ID_PARAMETER
+import tech.testsys.web.app.view.classContestParameters
+import tech.testsys.web.app.view.classParameters
+import tech.testsys.web.app.view.competitionContestParameters
+import tech.testsys.web.app.view.competitionParameters
+import tech.testsys.web.app.view.managerSection
 import tech.testsys.web.app.view.userParameters
 
 /** Route parameters of a page built from the fixtures and the signed-in user. */
@@ -87,7 +99,44 @@ class PagesTests : MockSpringVaadinTests() {
             ) + AdminUserSection.entries.associate { section ->
                 section.value to parametersOf { fixtures, user -> userParameters(memberWithAllSections(fixtures, user).id, section) }
             },
+            ManagerView::class.java to mapOf(
+                "" to parametersOf { fixtures, user ->
+                    manager(fixtures, user)
+                    RouteParameters.empty()
+                },
+                CLASSES_SECTION to parametersOf { fixtures, user ->
+                    manager(fixtures, user)
+                    managerSection(CLASSES_SECTION)
+                },
+                COMPETITIONS_SECTION to parametersOf { fixtures, user ->
+                    manager(fixtures, user)
+                    managerSection(COMPETITIONS_SECTION)
+                },
+            ),
+            ManagerClassView::class.java to mapOf(
+                "class" to parametersOf { fixtures, user -> classParameters(fixtures.studyClass(owner = manager(fixtures, user)).id) },
+            ),
+            ManagerCompetitionView::class.java to mapOf(
+                "competition" to parametersOf { fixtures, user ->
+                    competitionParameters(fixtures.competition(owner = manager(fixtures, user)).id)
+                },
+            ),
+            ManagerContestView::class.java to mapOf(
+                "class" to parametersOf { fixtures, user ->
+                    val contest = fixtures.contest()
+                    classContestParameters(fixtures.studyClass(owner = manager(fixtures, user), contests = listOf(contest)).id, contest.id)
+                },
+                "competition" to parametersOf { fixtures, user ->
+                    val contest = fixtures.contest()
+                    val competition = fixtures.competition(owner = manager(fixtures, user), contests = listOf(contest))
+                    competitionContestParameters(competition.id, contest.id)
+                },
+            ),
         )
+
+        /** Grants the manager role to the signed-in administrator [user], which the Cabinet of a Manager requires. */
+        private fun manager(fixtures: AppFixtures, user: User<*>?): MultipleRoleUser =
+            fixtures.grantRole(administrator(user), CommunityRole.Manager)
 
         /** Returns a member of a community of the signed-in administrator [user] with the roles of all user page tabs. */
         private fun memberWithAllSections(fixtures: AppFixtures, user: User<*>?): MultipleRoleUser {

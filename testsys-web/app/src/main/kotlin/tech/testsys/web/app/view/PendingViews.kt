@@ -70,17 +70,6 @@ class DeveloperView(texts: UiTexts, headers: CabinetHeaders) :
     PendingCabinetView(texts, headers, title = "Кабинет Разработчика", active = CabinetHeaders.MENU_SECTION, hasHomeCrumb = true)
 
 /**
- * Cabinet of a Manager (testsys.web.page.manager), not implemented yet.
- *
- * @since %CURRENT_VERSION%
- */
-@Route("manager/:section?(classes|competitions)")
-@PageTitle("Кабинет Организатора")
-@RolesAllowed("MULTIPLE_ROLE")
-class ManagerView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Кабинет Организатора", active = CabinetHeaders.MENU_SECTION, hasHomeCrumb = true)
-
-/**
  * Cabinet of a Judge (testsys.web.page.judge), not implemented yet.
  *
  * @since %CURRENT_VERSION%

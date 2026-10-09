@@ -10,3 +10,7 @@ internal fun Element.focusClient(): PendingJavaScriptResult = executeJs("this.fo
 
 @InternalComponentsApi
 internal fun Element.clickClient(): PendingJavaScriptResult = executeJs("this.click()")
+
+@InternalComponentsApi
+internal fun Element.copyToClipboardClient(text: String): PendingJavaScriptResult =
+    executeJs("return navigator.clipboard.writeText($0)", text)

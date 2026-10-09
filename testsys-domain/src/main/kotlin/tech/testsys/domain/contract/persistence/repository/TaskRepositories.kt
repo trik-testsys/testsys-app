@@ -107,6 +107,18 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> 
         pagination: Pagination,
         filter: ContestFilter = ContestFilter(),
     ): Page<Contest>
+
+    /**
+     * Synchronously finds contests shared to any of [communityIds], ignoring ownership, without changing stored state.
+     * Repeated calls reflect current data; storage exceptions propagate to the caller.
+     *
+     * @param communityIds the communities granting access; an empty set matches nothing.
+     * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
+     * @param filter conditions combined with AND before paging and counting, including shared community; unknown ids match nothing.
+     * @return distinct shared contests, the original pagination and exact filtered total; missing pages are empty.
+     * @since %CURRENT_VERSION%
+     */
+    fun findSharedTo(communityIds: Set<CommunityId>, pagination: Pagination, filter: ContestFilter = ContestFilter()): Page<Contest>
 }
 
 /**

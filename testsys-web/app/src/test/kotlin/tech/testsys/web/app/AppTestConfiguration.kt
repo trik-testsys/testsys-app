@@ -3,24 +3,34 @@ package tech.testsys.web.app
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
+import tech.testsys.domain.builder.api.classData
+import tech.testsys.domain.builder.api.classInviteData
 import tech.testsys.domain.builder.api.communityData
 import tech.testsys.domain.builder.api.communityInviteData
 import tech.testsys.domain.builder.api.competitionData
+import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.observerData
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
 import tech.testsys.domain.contract.UserMailSender
+import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
+import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
+import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInviteData
+import tech.testsys.domain.model.group.Competition
+import tech.testsys.domain.model.task.Contest
+import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
@@ -29,6 +39,7 @@ import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.security.UserKind
 import java.time.Instant
 import java.util.UUID
+import javax.sql.DataSource
 
 /** Test beans of the application: stored fixtures, the public community made of them and recorded letters. */
 @TestConfiguration
@@ -41,7 +52,11 @@ class AppTestConfiguration {
         supervisors: SupervisorRepository,
         communities: CommunityRepository,
         competitions: CompetitionRepository,
-    ): AppFixtures = AppFixtures(multipleRoleUsers, participants, observers, supervisors, communities, competitions)
+        classes: ClassRepository,
+        contests: ContestRepository,
+        dataSource: DataSource,
+    ): AppFixtures =
+        AppFixtures(multipleRoleUsers, participants, observers, supervisors, communities, competitions, classes, contests, dataSource)
 
     @Bean
     @Primary
@@ -62,6 +77,9 @@ class AppFixtures(
     private val supervisors: SupervisorRepository,
     private val communities: CommunityRepository,
     private val competitions: CompetitionRepository,
+    private val classes: ClassRepository,
+    private val contests: ContestRepository,
+    private val dataSource: DataSource,
 ) {
     fun unique(prefix: String): String = "$prefix-${UUID.randomUUID()}"
 
@@ -131,6 +149,66 @@ class AppFixtures(
                 developerInvite = developerInviteId
             }
         }
+    }
+
+    /** Makes [user] a member of [community] in [role], granting the role if the user did not hold it. */
+    fun grantRole(user: MultipleRoleUser, role: CommunityRole, community: Community = community()): MultipleRoleUser =
+        multipleRoleUsers.addCommunityMembership(userId = user.id, communityId = community.id, role = role)
+
+    fun studyClass(
+        owner: MultipleRoleUser,
+        name: String = unique("Class"),
+        students: List<MultipleRoleUser> = emptyList(),
+        contests: List<Contest> = emptyList(),
+    ): Class {
+        val inviteData = classInviteData {
+            code(unique("code"), HashAlgorithm.Identity)
+            expiresAt = Instant.parse("2100-01-01T00:00:00Z")
+        }
+        return classes.saveWithInvite(inviteData) { inviteId ->
+            classData {
+                owner(owner.id.value)
+                this.name = name
+                description = ""
+                invite = inviteId
+                students(students.map { student -> student.id.value })
+                contests(contests.map { contest -> contest.id.value })
+            }
+        }
+    }
+
+    fun competition(owner: MultipleRoleUser, name: String = unique("Competition"), contests: List<Contest> = emptyList()): Competition =
+        competitions.save(
+            competitionData {
+                owner(owner.id.value)
+                this.name = name
+                description = ""
+                contests(contests.map { contest -> contest.id.value })
+            },
+        )
+
+    /** Saves a contest of a new developer shared to [sharedTo], registering its TRIK Studio version first. */
+    fun contest(name: String = unique("Contest"), sharedTo: List<Community> = emptyList(), tasks: List<TaskId> = emptyList()): Contest {
+        // Versions come from the grader; no port stores them, so the fixture adds the row the contest refers to.
+        val tag = unique("tsv")
+        dataSource.connection.use { connection ->
+            val insert = "insert into ts_trik_studio_version (id, tag) select coalesce(max(id), 0) + 1, ? from ts_trik_studio_version"
+            connection.prepareStatement(insert).use { statement ->
+                statement.setString(1, tag)
+                statement.executeUpdate()
+            }
+        }
+        val ownerId = multipleRoleUser().id.value
+        return contests.save(
+            contestData {
+                owner(ownerId)
+                this.name = name
+                description = ""
+                trikStudioVersion(tag)
+                sharedTo(sharedTo.map { community -> community.id.value })
+                this.tasks = tasks.toMutableList()
+            },
+        )
     }
 
     private fun invite(): CommunityInviteData = communityInviteData {

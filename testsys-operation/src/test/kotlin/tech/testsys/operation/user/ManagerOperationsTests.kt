@@ -7,6 +7,9 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -23,25 +26,34 @@ import tech.testsys.domain.builder.api.classInvite
 import tech.testsys.domain.builder.api.classInviteData
 import tech.testsys.domain.builder.api.competition
 import tech.testsys.domain.builder.api.competitionData
+import tech.testsys.domain.builder.api.contest
 import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.managerData
+import tech.testsys.domain.builder.api.multipleRoleUser
+import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.participant
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.studentData
+import tech.testsys.domain.builder.api.task
 import tech.testsys.domain.builder.group.ClassDataBuilder
 import tech.testsys.domain.builder.group.CompetitionDataBuilder
 import tech.testsys.domain.contract.persistence.ClassFilter
 import tech.testsys.domain.contract.persistence.CompetitionFilter
+import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.ContestTaskResult
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
+import tech.testsys.domain.contract.persistence.SubmissionCount
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
+import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.group.Class
@@ -50,17 +62,23 @@ import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.ClassInvite
 import tech.testsys.domain.model.group.ClassInviteData
 import tech.testsys.domain.model.group.ClassInviteId
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionData
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.Score
+import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.Manager
+import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUserId
+import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.config.ClassInviteConfig
 import tech.testsys.operation.config.CompetitionConfig
@@ -73,6 +91,7 @@ import tech.testsys.operation.error.CompetitionNameBlankError
 import tech.testsys.operation.error.CompetitionNameTooLongError
 import tech.testsys.operation.error.CompetitionNotExistsError
 import tech.testsys.operation.error.CompetitionParticipantLimitExceededError
+import tech.testsys.operation.error.CompetitionParticipantNotExistsError
 import tech.testsys.operation.error.ContestAccessDeniedError
 import tech.testsys.operation.error.ContestAlreadyAddedToClassError
 import tech.testsys.operation.error.ContestAlreadyAddedToCompetitionError
@@ -81,6 +100,7 @@ import tech.testsys.operation.error.ContestNotAddedToCompetitionError
 import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.MissedManagerRoleError
 import tech.testsys.operation.error.NonPositiveParticipantCountError
+import tech.testsys.operation.error.ParticipantHasSubmissionsError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.testAdministrator
@@ -88,9 +108,7 @@ import tech.testsys.operation.util.testContest
 import tech.testsys.operation.util.testDeveloper
 import tech.testsys.operation.util.testManager
 import tech.testsys.operation.util.testMultipleRoleUser
-import java.time.Clock
-import java.time.Duration
-import java.time.Instant
+import tech.testsys.operation.util.testNewTask
 
 class ManagerOperationsTests {
 
@@ -103,6 +121,9 @@ class ManagerOperationsTests {
     private val classInviteRepository = mockk<ClassInviteRepository>()
     private val classInviteConfig = mockk<ClassInviteConfig>()
     private val clock = mockk<Clock>()
+    private val multipleRoleUserRepository = mockk<MultipleRoleUserRepository>()
+    private val userRepository = mockk<UserRepository>()
+    private val taskRepository = mockk<TaskRepository>()
     private val operations = ManagerOperations(
         classRepository = repository,
         competitionRepository = competitionRepository,
@@ -113,6 +134,9 @@ class ManagerOperationsTests {
         classInviteRepository = classInviteRepository,
         classInviteConfig = classInviteConfig,
         clock = clock,
+        multipleRoleUserRepository = multipleRoleUserRepository,
+        userRepository = userRepository,
+        taskRepository = taskRepository,
     )
 
     @Nested
@@ -611,6 +635,13 @@ class ManagerOperationsTests {
         private val classId = ClassId(11)
         private val manager = testManager { data = managerData {} }
 
+        init {
+            every { multipleRoleUserRepository.findByIds(any()) } returns emptyList()
+            every { userRepository.findLastLogins(any()) } returns emptyMap()
+            every { contestRepository.findByIds(any()) } returns emptyList()
+            every { classInviteRepository.load(any<LazyEntity<ClassInviteId, ClassInvite>>()) } returns testClassInvite()
+        }
+
         @Nested
         inner class HappyPathTests {
 
@@ -621,17 +652,22 @@ class ManagerOperationsTests {
 
                 val actual = operations.viewClass(user = manager, classId = classId).getOrThrow()
 
-                assertSame(original, actual)
+                assertSame(original, actual.studyClass)
             }
 
             @Test
-            fun `should return the stored invite reference without reading or writing invites`() {
-                every { repository.findById(classId) } returns testClass { invite(32) }
+            fun `should return the invite loaded by the reference of the class without writing it`() {
+                val invite = testClassInvite(expiresAt = Instant.EPOCH)
+                every { repository.findById(classId) } returns testClass { invite(31) }
+                val reference = slot<LazyEntity<ClassInviteId, ClassInvite>>()
+                every { classInviteRepository.load(capture(reference)) } returns invite
 
                 val actual = operations.viewClass(user = manager, classId = classId).getOrThrow()
 
-                assertEquals(ClassInviteId(32), actual.data.invite.id)
-                verify { listOf(classInviteRepository, clock) wasNot Called }
+                assertSame(invite, actual.invite)
+                assertEquals(ClassInviteId(31), reference.captured.id)
+                verify(exactly = 0) { classInviteRepository.update(any<ClassInvite>()) }
+                verify { clock wasNot Called }
             }
 
             @Test
@@ -648,7 +684,48 @@ class ManagerOperationsTests {
 
                 val actual = operations.viewClass(user = user, classId = classId).getOrThrow()
 
-                assertSame(original, actual)
+                assertSame(original, actual.studyClass)
+            }
+            @Test
+            fun `should return the owned class with its students and contests in stored order`() {
+                val original = testClass {
+                    students(listOf(2, 1))
+                    contests(listOf(20, 19))
+                }
+                every { repository.findById(classId) } returns original
+                every { multipleRoleUserRepository.findByIds(listOf(MultipleRoleUserId(2), MultipleRoleUserId(1))) } returns
+                    listOf(testStudentUser(1), testStudentUser(2))
+                every { contestRepository.findByIds(listOf(ContestId(20), ContestId(19))) } returns
+                    listOf(testContestOf(19), testContestOf(20))
+
+                val actual = operations.viewClass(user = manager, classId = classId).getOrThrow()
+
+                assertSame(original, actual.studyClass)
+                assertEquals(listOf(MultipleRoleUserId(2), MultipleRoleUserId(1)), actual.students.map { (student, _) -> student.id })
+                assertEquals(listOf(ContestId(20), ContestId(19)), actual.contests.map { contest -> contest.id })
+            }
+
+            @Test
+            fun `should return the last login of each student and null for a student who never logged in`() {
+                val lastLogin = Instant.parse("2026-03-14T09:30:00Z")
+                every { repository.findById(classId) } returns testClass()
+                every { multipleRoleUserRepository.findByIds(any()) } returns listOf(testStudentUser(1), testStudentUser(2))
+                every { userRepository.findLastLogins(listOf(MultipleRoleUserId(1), MultipleRoleUserId(2))) } returns
+                    mapOf(MultipleRoleUserId(2) to lastLogin)
+
+                val actual = operations.viewClass(user = manager, classId = classId).getOrThrow()
+
+                assertEquals(listOf(null, lastLogin), actual.students.map { (_, login) -> login })
+            }
+
+            @Test
+            fun `should return empty students and contests if the class has none`() {
+                every { repository.findById(classId) } returns testClass { students(emptyList()) }
+
+                val actual = operations.viewClass(user = manager, classId = classId).getOrThrow()
+
+                assertEquals(emptyList<Pair<MultipleRoleUser, Instant?>>(), actual.students)
+                assertEquals(emptyList<Contest>(), actual.contests)
             }
         }
 
@@ -706,17 +783,22 @@ class ManagerOperationsTests {
 
                 val actual = operations.viewClass(user = user, classId = classId).getOrThrow()
 
-                assertSame(original, actual)
+                assertSame(original, actual.studyClass)
             }
 
             @Test
-            fun `should only read the class without writing it or loading its students and contests`() {
-                every { repository.findById(classId) } returns testClass { contests(listOf(19)) }
+            fun `should preserve stored class data and version without writing any entities`() {
+                val original = testClass { contests(listOf(19)) }
+                every { repository.findById(classId) } returns original
 
-                operations.viewClass(user = manager, classId = classId).getOrThrow()
+                val actual = operations.viewClass(user = manager, classId = classId).getOrThrow().studyClass
 
-                verify { repository.findById(classId) }
-                confirmVerified(repository, competitionRepository, contestRepository, submissionRepository, classInviteRepository)
+                assertSame(original.data, actual.data)
+                assertEquals(0L, actual.version?.value)
+                verify(exactly = 0) { repository.update(any<Class>()) }
+                verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+                verify(exactly = 0) { classInviteRepository.update(any<ClassInvite>()) }
+                verify { listOf(competitionRepository, submissionRepository) wasNot Called }
             }
         }
 
@@ -1284,6 +1366,12 @@ class ManagerOperationsTests {
         private val competitionId = CompetitionId(21)
         private val manager = testManager { data = managerData {} }
 
+        init {
+            every { participantRepository.findByIds(any()) } returns emptyList()
+            every { userRepository.findLastLogins(any()) } returns emptyMap()
+            every { contestRepository.findByIds(any()) } returns emptyList()
+        }
+
         @Nested
         inner class HappyPathTests {
 
@@ -1297,7 +1385,7 @@ class ManagerOperationsTests {
 
                 val actual = operations.viewCompetition(user = manager, competitionId = competitionId).getOrThrow()
 
-                assertSame(original, actual)
+                assertSame(original, actual.competition)
             }
 
             @Test
@@ -1314,7 +1402,49 @@ class ManagerOperationsTests {
 
                 val actual = operations.viewCompetition(user = user, competitionId = competitionId).getOrThrow()
 
-                assertSame(original, actual)
+                assertSame(original, actual.competition)
+            }
+            @Test
+            fun `should return the owned competition with its participants and contests in stored order`() {
+                val original = testCompetition {
+                    participants(listOf(32, 31))
+                    contests(listOf(20, 19))
+                }
+                every { competitionRepository.findById(competitionId) } returns original
+                every { participantRepository.findByIds(listOf(SingleRoleUserId(32), SingleRoleUserId(31))) } returns
+                    listOf(testCompetitionParticipant(31), testCompetitionParticipant(32))
+                every { contestRepository.findByIds(listOf(ContestId(20), ContestId(19))) } returns listOf(testContestOf(19), testContestOf(20))
+
+                val actual = operations.viewCompetition(user = manager, competitionId = competitionId).getOrThrow()
+
+                assertSame(original, actual.competition)
+                assertEquals(listOf(SingleRoleUserId(32), SingleRoleUserId(31)), actual.participants.map { (participant, _) -> participant.id })
+                assertEquals(listOf(ContestId(20), ContestId(19)), actual.contests.map { contest -> contest.id })
+            }
+
+            @Test
+            fun `should return the issued access code and last login of each participant`() {
+                val lastLogin = Instant.parse("2026-03-14T09:30:00Z")
+                every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31, 32)) }
+                every { participantRepository.findByIds(any()) } returns listOf(testCompetitionParticipant(31), testCompetitionParticipant(32))
+                every { userRepository.findLastLogins(listOf(SingleRoleUserId(31), SingleRoleUserId(32))) } returns
+                    mapOf(SingleRoleUserId(31) to lastLogin)
+
+                val actual = operations.viewCompetition(user = manager, competitionId = competitionId).getOrThrow()
+
+                val codes = actual.participants.map { (participant, _) -> participant.data.accessTokenHash.value }
+                assertEquals(listOf("code-31", "code-32"), codes)
+                assertEquals(listOf(lastLogin, null), actual.participants.map { (_, login) -> login })
+            }
+
+            @Test
+            fun `should return empty participants and contests if the competition has none`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition()
+
+                val actual = operations.viewCompetition(user = manager, competitionId = competitionId).getOrThrow()
+
+                assertEquals(emptyList<Pair<Participant, Instant?>>(), actual.participants)
+                assertEquals(emptyList<Contest>(), actual.contests)
             }
         }
 
@@ -1385,20 +1515,25 @@ class ManagerOperationsTests {
 
                 val actual = operations.viewCompetition(user = user, competitionId = competitionId).getOrThrow()
 
-                assertSame(original, actual)
+                assertSame(original, actual.competition)
             }
 
             @Test
-            fun `should only read the competition without writing it or loading its participants and contests`() {
-                every { competitionRepository.findById(competitionId) } returns testCompetition {
+            fun `should preserve stored competition data and version without writing any entities`() {
+                val original = testCompetition {
                     participants(listOf(31, 32))
                     contests(listOf(19))
                 }
+                every { competitionRepository.findById(competitionId) } returns original
 
-                operations.viewCompetition(user = manager, competitionId = competitionId).getOrThrow()
+                val actual = operations.viewCompetition(user = manager, competitionId = competitionId).getOrThrow().competition
 
-                verify { competitionRepository.findById(competitionId) }
-                confirmVerified(repository, competitionRepository, contestRepository, submissionRepository, participantRepository)
+                assertSame(original.data, actual.data)
+                assertEquals(0L, actual.version?.value)
+                verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+                verify(exactly = 0) { participantRepository.update(any<Participant>()) }
+                verify(exactly = 0) { participantRepository.removeById(any()) }
+                verify { listOf(repository, submissionRepository) wasNot Called }
             }
         }
 
@@ -1426,11 +1561,16 @@ class ManagerOperationsTests {
         private val contestId = ContestId(19)
         private val manager = testManager { data = managerData {} }
 
+        init {
+            every { multipleRoleUserRepository.findByIds(any()) } returns emptyList()
+            every { taskRepository.findByIds(any()) } returns emptyList()
+        }
+
         @Nested
         inner class HappyPathTests {
 
             @Test
-            fun `should return the contest student ids in stored order and results for the contest tasks`() {
+            fun `should return the contest students in stored order and results for the contest tasks`() {
                 val contest = testContest { tasks(listOf(5, 6)) }
                 val results = listOf(
                     ContestTaskResult(authorId = MultipleRoleUserId(2), taskId = TaskId(5), bestScore = Score(70), submissionCount = 3),
@@ -1440,6 +1580,8 @@ class ManagerOperationsTests {
                     contests(listOf(19))
                 }
                 every { contestRepository.findById(contestId) } returns contest
+                every { multipleRoleUserRepository.findByIds(listOf(MultipleRoleUserId(2), MultipleRoleUserId(1))) } returns
+                    listOf(testStudentUser(1), testStudentUser(2))
                 every {
                     submissionRepository.findContestResults(
                         contestId = contestId,
@@ -1451,7 +1593,7 @@ class ManagerOperationsTests {
                 val actual = operations.viewClassContest(user = manager, classId = classId, contestId = contestId).getOrThrow()
 
                 assertSame(contest, actual.contest)
-                assertEquals(listOf(MultipleRoleUserId(2), MultipleRoleUserId(1)), actual.memberIds)
+                assertEquals(listOf(MultipleRoleUserId(2), MultipleRoleUserId(1)), actual.members.map { member -> member.id })
                 assertSame(results, actual.results)
             }
 
@@ -1459,6 +1601,7 @@ class ManagerOperationsTests {
             fun `should query empty task ids if the contest has no tasks`() {
                 every { repository.findById(classId) } returns testClass { contests(listOf(19)) }
                 every { contestRepository.findById(contestId) } returns testContest()
+                every { multipleRoleUserRepository.findByIds(any()) } returns listOf(testStudentUser(1), testStudentUser(2))
                 every {
                     submissionRepository.findContestResults(
                         contestId = contestId,
@@ -1469,12 +1612,13 @@ class ManagerOperationsTests {
 
                 val actual = operations.viewClassContest(user = manager, classId = classId, contestId = contestId).getOrThrow()
 
-                assertEquals(listOf(MultipleRoleUserId(1), MultipleRoleUserId(2)), actual.memberIds)
+                assertEquals(listOf(MultipleRoleUserId(1), MultipleRoleUserId(2)), actual.members.map { member -> member.id })
+                assertEquals(emptyList<Task>(), actual.tasks)
                 assertEquals(emptyList<ContestTaskResult>(), actual.results)
             }
 
             @Test
-            fun `should return no member ids if the class has no students`() {
+            fun `should return no members if the class has no students`() {
                 every { repository.findById(classId) } returns testClass {
                     students(emptyList())
                     contests(listOf(19))
@@ -1486,7 +1630,7 @@ class ManagerOperationsTests {
 
                 val actual = operations.viewClassContest(user = manager, classId = classId, contestId = contestId).getOrThrow()
 
-                assertEquals(emptyList<UserId>(), actual.memberIds)
+                assertEquals(emptyList<User<*>>(), actual.members)
                 assertEquals(emptyList<ContestTaskResult>(), actual.results)
             }
 
@@ -1522,6 +1666,37 @@ class ManagerOperationsTests {
                 val actual = operations.viewClassContest(user = user, classId = classId, contestId = contestId).getOrThrow()
 
                 assertSame(contest, actual.contest)
+            }
+            @Test
+            fun `should return the contest tasks with their names in contest order`() {
+                every { repository.findById(classId) } returns testClass { contests(listOf(19)) }
+                every { contestRepository.findById(contestId) } returns testContest { tasks(listOf(6, 5)) }
+                every { taskRepository.findByIds(listOf(TaskId(6), TaskId(5))) } returns listOf(testTaskOf(5), testTaskOf(6))
+                every { submissionRepository.findContestResults(any(), any(), any()) } returns emptyList()
+
+                val actual = operations.viewClassContest(user = manager, classId = classId, contestId = contestId).getOrThrow()
+
+                assertEquals(listOf(TaskId(6), TaskId(5)), actual.tasks.map { task -> task.id })
+                assertEquals(listOf("Task 6", "Task 5"), actual.tasks.map { task -> task.data.name })
+            }
+
+            @Test
+            fun `should return the contest schedule unchanged`() {
+                val contest = testContest {
+                    startsAt = Instant.parse("2026-01-01T10:00:00Z")
+                    contestDuration = Duration.ofHours(2)
+                    attemptDuration = Duration.ofMinutes(30)
+                }
+                every { repository.findById(classId) } returns testClass { contests(listOf(19)) }
+                every { contestRepository.findById(contestId) } returns contest
+                every { submissionRepository.findContestResults(any(), any(), any()) } returns emptyList()
+
+                val actual = operations.viewClassContest(user = manager, classId = classId, contestId = contestId).getOrThrow()
+
+                assertEquals("Contest", actual.contest.data.name)
+                assertEquals(Instant.parse("2026-01-01T10:00:00Z"), actual.contest.data.startsAt)
+                assertEquals(Instant.parse("2026-01-01T12:00:00Z"), actual.contest.data.endsAt)
+                assertEquals(Duration.ofMinutes(30), actual.contest.data.attemptDuration)
             }
         }
 
@@ -1627,7 +1802,8 @@ class ManagerOperationsTests {
                 verify { repository.findById(classId) }
                 verify { contestRepository.findById(contestId) }
                 verify { submissionRepository.findContestResults(any(), any(), any()) }
-                confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
+                verify { taskRepository.findByIds(any()) }
+                confirmVerified(repository, competitionRepository, contestRepository, submissionRepository, taskRepository)
             }
         }
 
@@ -1657,11 +1833,16 @@ class ManagerOperationsTests {
         private val contestId = ContestId(19)
         private val manager = testManager { data = managerData {} }
 
+        init {
+            every { participantRepository.findByIds(any()) } returns emptyList()
+            every { taskRepository.findByIds(any()) } returns emptyList()
+        }
+
         @Nested
         inner class HappyPathTests {
 
             @Test
-            fun `should return the contest participant ids in stored order and results for the contest tasks`() {
+            fun `should return the contest participants in stored order and results for the contest tasks`() {
                 val contest = testContest { tasks(listOf(5, 6)) }
                 val results = listOf(
                     ContestTaskResult(authorId = SingleRoleUserId(31), taskId = TaskId(6), bestScore = null, submissionCount = 2),
@@ -1671,6 +1852,8 @@ class ManagerOperationsTests {
                     contests(listOf(19))
                 }
                 every { contestRepository.findById(contestId) } returns contest
+                every { participantRepository.findByIds(listOf(SingleRoleUserId(32), SingleRoleUserId(31))) } returns
+                    listOf(testCompetitionParticipant(31), testCompetitionParticipant(32))
                 every {
                     submissionRepository.findContestResults(
                         contestId = contestId,
@@ -1683,7 +1866,7 @@ class ManagerOperationsTests {
                     .getOrThrow()
 
                 assertSame(contest, actual.contest)
-                assertEquals(listOf(SingleRoleUserId(32), SingleRoleUserId(31)), actual.memberIds)
+                assertEquals(listOf(SingleRoleUserId(32), SingleRoleUserId(31)), actual.members.map { member -> member.id })
                 assertSame(results, actual.results)
             }
 
@@ -1694,6 +1877,7 @@ class ManagerOperationsTests {
                     contests(listOf(19))
                 }
                 every { contestRepository.findById(contestId) } returns testContest()
+                every { participantRepository.findByIds(listOf(SingleRoleUserId(31))) } returns listOf(testCompetitionParticipant(31))
                 every {
                     submissionRepository.findContestResults(
                         contestId = contestId,
@@ -1705,12 +1889,12 @@ class ManagerOperationsTests {
                 val actual = operations.viewCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
                     .getOrThrow()
 
-                assertEquals(listOf(SingleRoleUserId(31)), actual.memberIds)
+                assertEquals(listOf(SingleRoleUserId(31)), actual.members.map { member -> member.id })
                 assertEquals(emptyList<ContestTaskResult>(), actual.results)
             }
 
             @Test
-            fun `should return no member ids if the competition has no participants`() {
+            fun `should return no members if the competition has no participants`() {
                 every { competitionRepository.findById(competitionId) } returns testCompetition { contests(listOf(19)) }
                 every { contestRepository.findById(contestId) } returns testContest { tasks(listOf(5)) }
                 every {
@@ -1720,7 +1904,7 @@ class ManagerOperationsTests {
                 val actual = operations.viewCompetitionContest(user = manager, competitionId = competitionId, contestId = contestId)
                     .getOrThrow()
 
-                assertEquals(emptyList<UserId>(), actual.memberIds)
+                assertEquals(emptyList<User<*>>(), actual.members)
                 assertEquals(emptyList<ContestTaskResult>(), actual.results)
             }
 
@@ -1754,8 +1938,7 @@ class ManagerOperationsTests {
                 every { contestRepository.findById(contestId) } returns contest
                 every { submissionRepository.findContestResults(any(), any(), any()) } returns emptyList()
 
-                val actual = operations.viewCompetitionContest(user = user, competitionId = competitionId, contestId = contestId)
-                    .getOrThrow()
+                val actual = operations.viewCompetitionContest(user = user, competitionId = competitionId, contestId = contestId).getOrThrow()
 
                 assertSame(contest, actual.contest)
             }
@@ -1867,7 +2050,8 @@ class ManagerOperationsTests {
                 verify { competitionRepository.findById(competitionId) }
                 verify { contestRepository.findById(contestId) }
                 verify { submissionRepository.findContestResults(any(), any(), any()) }
-                confirmVerified(repository, competitionRepository, contestRepository, submissionRepository)
+                verify { taskRepository.findByIds(any()) }
+                confirmVerified(repository, competitionRepository, contestRepository, submissionRepository, taskRepository)
             }
         }
 
@@ -2821,6 +3005,247 @@ class ManagerOperationsTests {
                 name = "st$participantId"
             }
         }
+    }
+
+    @Nested
+    inner class DeleteParticipantTests {
+
+        private val competitionId = CompetitionId(21)
+        private val participantId = SingleRoleUserId(31)
+        private val manager = testManager { data = managerData {} }
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should delete the participant once and return it as it was if it has no submissions in the competition contests`() {
+                val participant = testCompetitionParticipant(31)
+                every { competitionRepository.findById(competitionId) } returns testCompetition {
+                    participants(listOf(31, 32))
+                    contests(listOf(19, 20))
+                }
+                every { participantRepository.findById(participantId) } returns participant
+                every {
+                    submissionRepository.countGrading(authorIds = setOf(participantId), contestIds = setOf(ContestId(19), ContestId(20)))
+                } returns SubmissionCount(submissions = 0, authors = 0)
+                every { participantRepository.removeById(participantId) } returns Unit
+
+                val actual = operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                    .getOrThrow()
+
+                assertSame(participant, actual)
+                verify(exactly = 1) { participantRepository.removeById(participantId) }
+                verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedManagerRoleError before reading storage if user is not a Manager`() {
+                val user = testAdministrator {}
+
+                assertRaises(MissedManagerRoleError) {
+                    operations.deleteParticipant(user = user, competitionId = competitionId, participantId = participantId)
+                }
+
+                verify { listOf(competitionRepository, participantRepository, submissionRepository) wasNot Called }
+            }
+
+            @Test
+            fun `should raise CompetitionNotExistsError without deleting if competition does not exist`() {
+                every { competitionRepository.findById(competitionId) } returns null
+
+                assertRaises(CompetitionNotExistsError(competitionId)) {
+                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                }
+
+                verify { listOf(participantRepository, submissionRepository) wasNot Called }
+            }
+
+            @Test
+            fun `should raise CompetitionAccessDeniedError without deleting if competition belongs to another owner`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition {
+                    owner = MultipleRoleUserId(99)
+                    participants(listOf(31))
+                }
+
+                assertRaises(CompetitionAccessDeniedError(competitionId)) {
+                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                }
+
+                verify { listOf(participantRepository, submissionRepository) wasNot Called }
+            }
+
+            @Test
+            fun `should raise CompetitionParticipantNotExistsError without deleting if participant does not exist`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition()
+                every { participantRepository.findById(participantId) } returns null
+
+                assertRaises(CompetitionParticipantNotExistsError(competitionId = competitionId, participantId = participantId)) {
+                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                }
+
+                verify(exactly = 0) { participantRepository.removeById(any()) }
+                verify { submissionRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise CompetitionParticipantNotExistsError without deleting if participant belongs to another competition`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition()
+                every { participantRepository.findById(participantId) } returns testCompetitionParticipant(31, competitionId = 22)
+
+                assertRaises(CompetitionParticipantNotExistsError(competitionId = competitionId, participantId = participantId)) {
+                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                }
+
+                verify(exactly = 0) { participantRepository.removeById(any()) }
+            }
+
+            @Test
+            fun `should raise ParticipantHasSubmissionsError without deleting if participant has submissions`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition {
+                    participants(listOf(31))
+                    contests(listOf(19))
+                }
+                every { participantRepository.findById(participantId) } returns testCompetitionParticipant(31)
+                every { submissionRepository.countGrading(any(), any()) } returns SubmissionCount(submissions = 1, authors = 1)
+
+                assertRaises(ParticipantHasSubmissionsError(participantId)) {
+                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                }
+
+                verify(exactly = 0) { participantRepository.removeById(any()) }
+            }
+        }
+
+        @Nested
+        inner class ModuleRuleTests {
+
+            @Test
+            fun `should propagate a technical exception when deleting the participant`() {
+                val failure = IllegalStateException("Participant storage unavailable")
+                every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
+                every { participantRepository.findById(participantId) } returns testCompetitionParticipant(31)
+                every { submissionRepository.countGrading(any(), any()) } returns SubmissionCount(submissions = 0, authors = 0)
+                every { participantRepository.removeById(participantId) } throws failure
+
+                val actual = assertThrows(IllegalStateException::class.java) {
+                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                }
+
+                assertSame(failure, actual)
+            }
+        }
+
+    }
+
+    @Nested
+    inner class ViewAvailableContestsTests {
+
+        private val pagination = Pagination(page = 0, size = 10)
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the contests shared to the Manager communities whose name matches`() {
+                val user = testManager {
+                    memberOf(listOf(1, 2))
+                    data = managerData {}
+                }
+                val expected = Page(content = listOf(testContest()), pagination = pagination, totalElements = 1)
+                every {
+                    contestRepository.findSharedTo(
+                        communityIds = setOf(CommunityId(1), CommunityId(2)),
+                        pagination = pagination,
+                        filter = ContestFilter(name = "тур"),
+                    )
+                } returns expected
+
+                val actual = operations.viewAvailableContests(user = user, pagination = pagination, name = "тур").getOrThrow()
+
+                assertSame(expected, actual)
+            }
+
+            @Test
+            fun `should search only the communities of the Manager role if user also has other roles`() {
+                val user = testMultipleRoleUser {
+                    roles {
+                        developer {
+                            memberOf(listOf(3))
+                            data = developerData {}
+                        }
+                        manager {
+                            memberOf(listOf(1))
+                            data = managerData {}
+                        }
+                    }
+                }
+                val expected = Page<Contest>(content = emptyList(), pagination = pagination, totalElements = 0)
+                every {
+                    contestRepository.findSharedTo(communityIds = setOf(CommunityId(1)), pagination = pagination, filter = ContestFilter())
+                } returns expected
+
+                val actual = operations.viewAvailableContests(user = user, pagination = pagination).getOrThrow()
+
+                assertSame(expected, actual)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedManagerRoleError before reading storage if user is not a Manager`() {
+                val user = testDeveloper {
+                    memberOf(listOf(1))
+                    data = developerData {}
+                }
+
+                assertRaises(MissedManagerRoleError) { operations.viewAvailableContests(user = user, pagination = pagination) }
+
+                verify { contestRepository wasNot Called }
+            }
+        }
+
+    }
+
+    private fun testStudentUser(studentId: Long): MultipleRoleUser = multipleRoleUser {
+        id = studentId
+        createdAt = Instant.EPOCH
+        version = EntityVersion(0)
+        data = multipleRoleUserData {
+            name = "Student $studentId"
+            email = "student$studentId@example.com"
+            accessToken("student-$studentId", algorithm = HashAlgorithm.Identity)
+        }
+    }
+
+    private fun testCompetitionParticipant(participantId: Long, competitionId: Long = 21): Participant = participant {
+        id = participantId
+        createdAt = Instant.EPOCH
+        version = EntityVersion(0)
+        data = participantData {
+            accessToken("code-$participantId", algorithm = HashAlgorithm.Identity)
+            competition(competitionId)
+            name = "st$participantId"
+        }
+    }
+
+    private fun testContestOf(contestId: Long): Contest = contest {
+        id = contestId
+        createdAt = Instant.EPOCH
+        version = EntityVersion(0)
+        data = testContest().data
+    }
+
+    private fun testTaskOf(taskId: Long): Task = task {
+        id = taskId
+        createdAt = Instant.EPOCH
+        version = EntityVersion(0)
+        data = testNewTask().data.copy(name = "Task $taskId")
     }
 
     private fun testCompetition(builder: CompetitionDataBuilder.() -> Unit = {}): Competition = competition {

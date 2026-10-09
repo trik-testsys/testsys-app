@@ -148,6 +148,43 @@ class ContestPersistenceAdapter(
         )
     }
 
+    @Transactional(readOnly = true)
+    override fun findSharedTo(communityIds: Set<CommunityId>, pagination: Pagination, filter: ContestFilter): Page<Contest> {
+        if (communityIds.isEmpty()) return Page(content = emptyList(), pagination = pagination, totalElements = 0)
+        val specification = Specification<ContestJpaEntity> { entity, query, builder ->
+            fun sharedTo(communities: Collection<Long>) = builder.exists(
+                query.subquery(Long::class.java).apply {
+                    val association = from(CommunityToContestJpaEntity::class.java)
+                    select(association.get<Any>("id").get<Long>("contestId")).where(
+                        builder.equal(association.get<Any>("id").get<Long>("contestId"), entity.get<Long>("id")),
+                        association.get<Any>("id").get<Long>("communityId").`in`(communities),
+                    )
+                },
+            )
+
+            val predicates = mutableListOf(sharedTo(communityIds.map { community -> community.value }))
+            filter.name?.let { name ->
+                predicates.add(builder.gt(builder.locate(builder.lower(entity.get("name")), name.lowercase()), 0))
+            }
+            filter.ownerId?.let { owner ->
+                predicates.add(builder.equal(entity.get<Long>("ownerId"), owner.value))
+            }
+            filter.communityId?.let { community -> predicates.add(sharedTo(listOf(community.value))) }
+            builder.and(*predicates.toTypedArray())
+        }
+        val orders = pagination.sort.orders.map { order ->
+            JpaSort.Order(JpaSort.Direction.valueOf(order.direction.name), order.field)
+        }
+        val stableOrders = if (orders.any { order -> order.property == "id" }) orders else orders + JpaSort.Order.asc("id")
+        val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
+        val page = contestJpaEntityRepository.findAll(specification, pageable)
+        return Page(
+            content = assembleAll(page.content),
+            pagination = pagination,
+            totalElements = page.totalElements,
+        )
+    }
+
     @Transactional
     override fun save(data: ContestData): Contest {
         val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(data.trikStudioVersion.version)

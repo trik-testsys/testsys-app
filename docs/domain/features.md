@@ -2998,7 +2998,7 @@ Page: **testsys.web.page.admin.user**
 которых он создал. Организатору также доступны Туры, доступ к которым был предоставлен
 Сообществам, в которых он состоит в Роли Организатора.
 
-### testsys.user.multi.manager.class.viewClasses (Partially implemented)
+### testsys.user.multi.manager.class.viewClasses (Implemented)
 
 Page: **testsys.web.page.manager**
 
@@ -3051,10 +3051,7 @@ Page: **testsys.web.page.manager**
 - Фильтры не предоставляют доступ к чужим Классам.
 - Просмотр не изменяет Классы и их состав.
 
-Реализована операция просмотра страницы Классов с фильтрацией по названию и дате создания.
-Страница **testsys.web.page.manager** и переход на страницу **testsys.web.page.manager.class** не реализованы.
-
-### testsys.user.multi.manager.class.viewClass (Partially implemented)
+### testsys.user.multi.manager.class.viewClass (Implemented)
 
 Page: **testsys.web.page.manager.class**
 
@@ -3112,15 +3109,7 @@ Page: **testsys.web.page.manager.class**
 - Организатор может просматривать только созданный им Класс.
 - Просмотр не изменяет Класс, его состав, Учеников, Туры и Код-приглашение.
 
-Реализована операция просмотра Класса. Она возвращает Класс с идентификаторами его Учеников,
-добавленных Туров и Кода-приглашения.
-
-Операция не загружает Псевдонимы Учеников, сведения о Турах, Код-приглашение и момент окончания его срока.
-Дата и время последнего входа хранятся, но операция их не возвращает.
-Страница **testsys.web.page.manager.class** и переход на страницу
-**testsys.web.page.manager.contest** не реализованы.
-
-### testsys.user.multi.manager.class.createClass (Partially implemented)
+### testsys.user.multi.manager.class.createClass (Implemented)
 
 Page: **testsys.web.page.manager**
 
@@ -3160,10 +3149,7 @@ Page: **testsys.web.page.manager**
 - Создание Класса не изменяет другие Классы, Учеников и Туры.
 - При отказе Класс не создаётся.
 
-Реализована операция создания Класса.
-Страница **testsys.web.page.manager** не реализована.
-
-### testsys.user.multi.manager.class.createInvite (Partially implemented)
+### testsys.user.multi.manager.class.createInvite (Implemented)
 
 Page: **testsys.web.page.manager.class**
 
@@ -3200,10 +3186,7 @@ Page: **testsys.web.page.manager.class**
 - Ученики, присоединившиеся по прежнему Коду-приглашению, остаются в Классе.
 - При отказе Код-приглашение Класса не изменяется.
 
-Реализована операция создания Кода-приглашения.
-Страница **testsys.web.page.manager.class** не реализована.
-
-### testsys.user.multi.manager.class.extendInvite (Partially implemented)
+### testsys.user.multi.manager.class.extendInvite (Implemented)
 
 Page: **testsys.web.page.manager.class**
 
@@ -3238,10 +3221,7 @@ Page: **testsys.web.page.manager.class**
 - Класс, его Ученики и Туры не изменяются.
 - При отказе Код-приглашение и его срок не изменяются.
 
-Реализована операция продления срока Кода-приглашения.
-Страница **testsys.web.page.manager.class** не реализована.
-
-### testsys.user.multi.manager.viewContest (Partially implemented)
+### testsys.user.multi.manager.viewContest (Implemented)
 
 Page: **testsys.web.page.manager.contest**
 
@@ -3301,14 +3281,7 @@ Page: **testsys.web.page.manager.contest**
 - Просмотр не изменяет Тур, Класс, Соревнование, Посылки, Вердикты и Судейские вердикты.
 - Содержимое файлов не загружается.
 
-Реализована операция просмотра Тура Класса или Соревнования. Она возвращает Тур,
-идентификаторы Учеников или Участников и для каждой пары автора и Задачи с Посылками —
-лучший результат и количество Посылок.
-
-Операция не загружает названия Задач и Псевдонимы Учеников и Участников.
-Страница **testsys.web.page.manager.contest** и скачивание таблицы в формате CSV не реализованы.
-
-### testsys.user.multi.manager.addContest (Partially implemented)
+### testsys.user.multi.manager.addContest (Implemented)
 
 Page: **testsys.web.page.manager.class**, **testsys.web.page.manager.competition**
 
@@ -3341,6 +3314,8 @@ Page: **testsys.web.page.manager.class**, **testsys.web.page.manager.competition
 Членство в других Ролях и создание Тура Пользователем не дают доступа через эту операцию.
 Можно добавить Тур без Задач и без ограничений времени.
 Один Тур можно добавить в несколько Классов и Соревнований.
+Для выбора Организатор может постранично просматривать Туры, доступ к которым предоставлен его Сообществам
+в Роли Организатора, с поиском по части названия без учёта регистра.
 
 *Инварианты*:
 
@@ -3349,10 +3324,7 @@ Page: **testsys.web.page.manager.class**, **testsys.web.page.manager.competition
 - Тур, его Задачи и предоставленный к нему доступ не изменяются.
 - При отказе Класс или Соревнование не изменяются.
 
-Реализована операция добавления Тура в Класс или Соревнование.
-Страницы **testsys.web.page.manager.class** и **testsys.web.page.manager.competition** не реализованы.
-
-### testsys.user.multi.manager.competition.viewCompetitions (Partially implemented)
+### testsys.user.multi.manager.competition.viewCompetitions (Implemented)
 
 Page: **testsys.web.page.manager**
 
@@ -3407,10 +3379,7 @@ Page: **testsys.web.page.manager**
 - Фильтры не предоставляют доступ к чужим Соревнованиям.
 - Просмотр не изменяет Соревнования, их Участников и Туры.
 
-Реализована операция просмотра страницы Соревнований с фильтрацией по названию и дате создания.
-Страница **testsys.web.page.manager** и переход на страницу **testsys.web.page.manager.competition** не реализованы.
-
-### testsys.user.multi.manager.competition.viewCompetition (Partially implemented)
+### testsys.user.multi.manager.competition.viewCompetition (Implemented)
 
 Page: **testsys.web.page.manager.competition**
 
@@ -3466,15 +3435,7 @@ Page: **testsys.web.page.manager.competition**
 - Организатор может просматривать только созданное им Соревнование.
 - Просмотр не изменяет Соревнование, его Участников, их Коды-доступа и Туры.
 
-Реализована операция просмотра Соревнования. Она возвращает Соревнование
-с идентификаторами его Участников и добавленных Туров.
-
-Операция не загружает Псевдонимы и Коды-доступа Участников и сведения о Турах.
-Дата и время последнего входа хранятся, но операция их не возвращает.
-Страница **testsys.web.page.manager.competition** и переход на страницу
-**testsys.web.page.manager.contest** не реализованы.
-
-### testsys.user.multi.manager.competition.createCompetition (Partially implemented)
+### testsys.user.multi.manager.competition.createCompetition (Implemented)
 
 Page: **testsys.web.page.manager**
 
@@ -3513,10 +3474,7 @@ Page: **testsys.web.page.manager**
 - Создание Соревнования не изменяет другие Соревнования, Пользователей и Туры.
 - При отказе Соревнование не создаётся.
 
-Реализована операция создания Соревнования.
-Страница **testsys.web.page.manager** не реализована.
-
-### testsys.user.multi.manager.competition.createParticipants (Partially implemented)
+### testsys.user.multi.manager.competition.createParticipants (Implemented)
 
 Page: **testsys.web.page.manager.competition**
 
@@ -3570,10 +3528,7 @@ Page: **testsys.web.page.manager.competition**
 - Название, описание и добавленные Туры Соревнования не изменяются.
 - При отказе Участники не создаются.
 
-Реализована операция создания Участников.
-Страница **testsys.web.page.manager.competition** не реализована.
-
-### testsys.user.multi.manager.competition.deleteParticipant (Not implemented)
+### testsys.user.multi.manager.competition.deleteParticipant (Implemented)
 
 Page: **testsys.web.page.manager.competition**
 
@@ -3592,6 +3547,7 @@ Page: **testsys.web.page.manager.competition**
 - Соревнование с указанным идентификатором не существует.
 - Соревнование создано другим Пользователем.
 - Участник не существует или не состоит в Соревновании.
+- У Участника есть Посылки.
 
 *Операция*:
 
@@ -3599,18 +3555,13 @@ Page: **testsys.web.page.manager.competition**
    перестаёт действовать.
 2. Возвращается Участник в состоянии до удаления.
 
+Участника, у которого есть Посылки, удалить нельзя: его Посылки, Решения, Вердикты и Судейские вердикты не изменяются.
+
 *Инварианты*:
 
 - Остальные Участники, их Посылки и Коды-доступа не изменяются.
 - Название, описание и Туры Соревнования не изменяются.
 - При отказе ничего не удаляется.
-
-Реализация отложена.
-
-*Не согласовано*:
-
-- Вместе с Участником удаляются его Посылки с Решениями, Вердиктами и Судейскими вердиктами. Ожидающие Посылки
-  снимаются с очереди; результат проверяемой Посылки отбрасывается.
 
 <!-- testsys.user.single.supervisor -->
 
@@ -4284,7 +4235,7 @@ flowchart TD;
 - **testsys.web.page.study.contest** — для любого Тура.
 - **testsys.web.page.student**.
 
-### testsys.web.page.manager (Not implemented)
+### testsys.web.page.manager (Implemented)
 
 *Назначение*:\
 Кабинет Организатора: его Классы и Соревнования.
@@ -4306,7 +4257,7 @@ flowchart TD;
 - **testsys.web.page.manager.class** — для любого Класса.
 - **testsys.web.page.manager.competition** — для любого Соревнования.
 
-### testsys.web.page.manager.class (Not implemented)
+### testsys.web.page.manager.class (Implemented)
 
 *Назначение*:\
 Управление Классом: Ученики, Код-приглашение и Туры.
@@ -4329,7 +4280,7 @@ flowchart TD;
 - **testsys.web.page.manager.contest** — для любого Тура Класса.
 - **testsys.web.page.manager**.
 
-### testsys.web.page.manager.competition (Not implemented)
+### testsys.web.page.manager.competition (Implemented)
 
 *Назначение*:\
 Управление Соревнованием: Участники и Туры.
@@ -4352,7 +4303,7 @@ flowchart TD;
 - **testsys.web.page.manager.contest** — для любого Тура Соревнования.
 - **testsys.web.page.manager**.
 
-### testsys.web.page.manager.contest (Not implemented)
+### testsys.web.page.manager.contest (Implemented)
 
 *Назначение*:\
 Ход Тура в Классе или Соревновании: сведения и результаты.

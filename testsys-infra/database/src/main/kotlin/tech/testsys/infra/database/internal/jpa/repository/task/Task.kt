@@ -1,9 +1,7 @@
 package tech.testsys.infra.database.internal.jpa.repository.task
 
-import jakarta.persistence.LockModeType
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
-import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -25,6 +23,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.VersionBucketToTaskJ
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
+import java.util.UUID
 
 /**
  * Spring Data repository for [ExerciseToTaskContentJpaEntity].
@@ -338,15 +337,6 @@ interface TaskContentJpaEntityRepository : SnowflakeJpaEntityRepository<TaskCont
 interface TaskJpaEntityRepository : SnowflakeJpaEntityRepository<TaskJpaEntity> {
 
     /**
-     * Locks the task before reading its snapshot, replacing content or removing the task.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select e from TaskJpaEntity e where e.id = :id")
-    fun findLockedById(@Param("id") id: Long): TaskJpaEntity?
-
-    /**
      * Finds the ids of the users [ownerIds] paired with the ids of the tasks they own in one query.
      *
      * @since %CURRENT_VERSION%
@@ -382,4 +372,12 @@ interface VersionBucketToTaskJpaEntityRepository :
      * @since %CURRENT_VERSION%
      */
     fun findAllByIdTaskIdIn(taskIds: Collection<Long>): List<VersionBucketToTaskJpaEntity>
+
+    /**
+     * Finds the id of the task the resource chain [versionBucket] is uploaded to, or `null` if it is not uploaded.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query("select e.id.taskId from VersionBucketToTaskJpaEntity e where e.id.versionBucket = :versionBucket")
+    fun findTaskIdByVersionBucket(@Param("versionBucket") versionBucket: UUID): Long?
 }

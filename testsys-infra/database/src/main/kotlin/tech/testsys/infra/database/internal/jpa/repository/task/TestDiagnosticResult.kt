@@ -39,7 +39,7 @@ interface TestDiagnosticResultJpaEntityRepository :
      *
      * @since %CURRENT_VERSION%
      */
-    @Modifying(flushAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from TestDiagnosticResultJpaEntity e where e.id.requestId = :requestId")
     fun deleteAllByRequestId(@Param("requestId") requestId: Long)
 }
@@ -72,7 +72,7 @@ interface DiagnosticReportJpaEntityRepository : SnowflakeJpaEntityRepository<Dia
      *
      * @since %CURRENT_VERSION%
      */
-    @Modifying(flushAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from DiagnosticReportJpaEntity e where e.requestId = :requestId")
     fun deleteAllByRequestId(@Param("requestId") requestId: Long)
 }

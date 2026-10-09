@@ -65,7 +65,7 @@
 | [unit-tests.md](project/unit-tests.md)                                 | Справочник | Тесты: инструменты, имена, виды сценариев, AAA, рекомендации   |
 | [testsys-domain/README.md](../testsys-domain/README.md)                | Справочник | Доменная модель, порты, DSL билдеров                           |
 | [testsys-operation/README.md](../testsys-operation/README.md)          | Справочник | Модуль операций: классы операций, модель ошибок, хелперы       |
-| [database/README.md](../testsys-infra/database/README.md)              | Справочник | Слои модуля хранения, идентификаторы, файлы, схема БД          |
+| [database/README.md](../testsys-infra/database/README.md)              | Справочник | Слои модуля хранения, транзакции, идентификаторы, файлы, схема БД |
 | [codegen/README.md](../testsys-infra/database/codegen/README.md)       | Справочник | KSP-кодогенерация модуля `database`                            |
 | [localization/README.md](../testsys-infra/localization/README.md)     | Справочник | Модуль локализации: зачем, как устроен, наш код и ICU4J       |
 | [grpc/README.md](../testsys-infra/grpc/README.md)                     | Справочник | gRPC-грейдер: компоненты, балансировка и настройки             |

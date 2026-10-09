@@ -19,16 +19,18 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.group.ClassJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.group.ClassInviteJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.ClassJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.ContestToClassJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.StudentToClassJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.group.ClassInviteMapping
 import tech.testsys.infra.database.internal.mapping.group.ClassMapping
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 import java.time.Instant
 import org.springframework.data.domain.Sort as JpaSort
@@ -36,7 +38,11 @@ import org.springframework.data.domain.Sort as JpaSort
 /**
  * Persistence adapter of [Class] entities backed by [ClassJpaEntity].
  * Student and contest membership is synced through the join tables on save and update and dropped on remove;
- * the invite reference is fixed on creation and its invite is removed together with the class.
+ * update, [addStudent] and remove increment the class version first. Every enrolment by save, update
+ * or [addStudent] also increments the version of the student, whose student role cannot be removed while
+ * the student is enrolled.
+ * The invite reference is fixed on creation and its invite is removed together with the class after its version
+ * is incremented.
  *
  * @since %CURRENT_VERSION%
  */
@@ -47,6 +53,7 @@ class ClassPersistenceAdapter(
     private val studentToClassJpaEntityRepository: StudentToClassJpaEntityRepository,
     private val contestToClassJpaEntityRepository: ContestToClassJpaEntityRepository,
     private val classInviteJpaEntityRepository: ClassInviteJpaEntityRepository,
+    private val userJpaEntityRepository: UserJpaEntityRepository,
 ) : AbstractPersistenceAdapter<ClassData, ClassId, Class, ClassJpaEntity>(jpaEntityRepository),
     ClassRepository {
 
@@ -89,6 +96,7 @@ class ClassPersistenceAdapter(
         val studentAssociations = ClassMapping.toStudentAssociations(classId, data.students.ids)
         val contestAssociations = ClassMapping.toContestAssociations(classId, data.contests.ids)
 
+        touchStudents(studentAssociations.map { association -> association.id.studentId })
         studentToClassJpaEntityRepository.saveAll(studentAssociations)
         contestToClassJpaEntityRepository.saveAll(contestAssociations)
 
@@ -110,9 +118,9 @@ class ClassPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Class): Class {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val updatedJpaEntity = ClassMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            ClassMapping.toJpaEntity(entity, current)
+        }
 
         val classId = savedJpaEntity.requireId()
 
@@ -125,7 +133,10 @@ class ClassPersistenceAdapter(
 
     @Transactional
     override fun addStudent(classId: ClassId, studentId: MultipleRoleUserId): Class {
-        val jpaEntity = jpaEntityRepository.findByIdOrError(classId.value)
+        val jpaEntity = touchRoot(jpaEntityRepository, classId.value, changesRootData = true)
+        // Removing the student role checks the classes of the student after touching the user row, so a concurrent
+        // removal and this enrolment conflict on the user version.
+        touchRoot(userJpaEntityRepository, studentId.value)
         val association = ClassMapping.toStudentAssociations(classId.value, listOf(studentId)).single()
         if (!studentToClassJpaEntityRepository.existsById(association.id)) {
             studentToClassJpaEntityRepository.saveAndFlush(association)
@@ -133,19 +144,16 @@ class ClassPersistenceAdapter(
         return assemble(jpaEntity)
     }
 
-    @Transactional
-    override fun removeById(id: ClassId) {
-        val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+    override fun removeRoot(id: ClassId, expectedVersion: Long?) {
+        jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val jpaEntity = touchRoot(jpaEntityRepository, id.value, expectedVersion, changesRootData = true)
         val classId = jpaEntity.requireId()
         studentToClassJpaEntityRepository.deleteAll(studentToClassJpaEntityRepository.findAllByClassId(classId))
         contestToClassJpaEntityRepository.deleteAll(contestToClassJpaEntityRepository.findAllByClassId(classId))
         jpaEntityRepository.delete(jpaEntity)
         jpaEntityRepository.flush()
-        classInviteJpaEntityRepository.deleteById(jpaEntity.inviteId)
+        classInviteJpaEntityRepository.delete(touchRoot(classInviteJpaEntityRepository, jpaEntity.inviteId, changesRootData = true))
     }
-
-    @Transactional
-    override fun removeByIds(ids: List<ClassId>) = ids.forEach(::removeById)
 
     override fun assembleAll(rows: List<ClassJpaEntity>): List<Class> {
         val classIds = rows.map { row -> row.requireId() }
@@ -174,8 +182,18 @@ class ClassPersistenceAdapter(
         keyOf = { MultipleRoleUserId(it.id.studentId) },
         buildAssociation = { ClassMapping.toStudentAssociations(classId, listOf(it)).single() },
         deleteAll = { studentToClassJpaEntityRepository.deleteAll(it) },
-        saveAll = { studentToClassJpaEntityRepository.saveAll(it) },
+        saveAll = { associations ->
+            touchStudents(associations.map { association -> association.id.studentId })
+            studentToClassJpaEntityRepository.saveAll(associations)
+        },
     )
+
+    /**
+     * Guard write to the users [studentIds] being enrolled, in one statement: removing the student role checks
+     * the classes of the user after incrementing the user version, so a concurrent removal conflicts with it.
+     */
+    private fun touchStudents(studentIds: List<Long>) =
+        touchRoots(UserJpaEntity::class.java, studentIds, userJpaEntityRepository::incrementVersions)
 
     private fun syncContests(classId: Long, target: List<ContestId>) = syncJoinTable(
         existing = contestToClassJpaEntityRepository.findAllByClassId(classId),

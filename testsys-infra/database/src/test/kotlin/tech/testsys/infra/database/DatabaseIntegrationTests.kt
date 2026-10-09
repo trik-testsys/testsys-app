@@ -9,21 +9,16 @@ import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.TestPropertySource
 
 /**
- * Base of tests running against the database module booted by [DatabaseTestApp] on an in-memory H2 in
- * PostgreSQL-compatibility mode (Liquibase migrations applied, Hibernate `ddl-auto=validate`).
+ * Base of tests running against the database module booted by [DatabaseTestApp] on the PostgreSQL of
+ * [PostgresTestContainer] (Liquibase migrations applied, Hibernate `ddl-auto=validate`).
  *
  * Every test class shares one cached Spring context; adapter calls run in their own transactions exactly as in
  * production, so all `ts_*` tables are truncated after each test to keep tests independent.
- * Hibernate detects [org.hibernate.dialect.H2Dialect] from the connection, so PostgreSQL-only features are not exercised.
  * Hibernate statistics are enabled, so [withStatementCount] can count the statements prepared by a block.
  */
-@SpringBootTest(classes = [DatabaseTestApp::class, DatabaseFixtures::class])
+@SpringBootTest(classes = [DatabaseTestApp::class, DatabaseFixtures::class, PostgresTestConfiguration::class])
 @TestPropertySource(
     properties = [
-        "spring.datasource.url=jdbc:h2:mem:testsys_database;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.datasource.username=sa",
-        "spring.datasource.password=",
         "spring.jpa.properties.hibernate.generate_statistics=true",
         "testsys.file-storage.paths.statement=${DatabaseIntegrationTests.STATEMENT_PATH}",
         "testsys.file-storage.paths.exercise=${DatabaseIntegrationTests.EXERCISE_PATH}",
@@ -47,15 +42,11 @@ abstract class DatabaseIntegrationTests {
     @AfterEach
     fun truncateTables() {
         val tables = jdbcTemplate.queryForList(
-            "select table_name from information_schema.tables where table_type = 'BASE TABLE' and lower(table_name) like 'ts%'",
+            "select table_name from information_schema.tables " +
+                "where table_schema = current_schema() and table_type = 'BASE TABLE' and table_name like 'ts\\_%'",
             String::class.java,
         )
-        jdbcTemplate.execute("set referential_integrity false")
-        try {
-            tables.forEach { jdbcTemplate.execute("truncate table $it") }
-        } finally {
-            jdbcTemplate.execute("set referential_integrity true")
-        }
+        if (tables.isNotEmpty()) jdbcTemplate.execute("truncate table ${tables.joinToString()} cascade")
     }
 
     /**

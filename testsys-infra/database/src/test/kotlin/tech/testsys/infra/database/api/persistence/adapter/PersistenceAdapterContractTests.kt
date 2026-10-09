@@ -152,6 +152,16 @@ abstract class PersistenceAdapterContractTests<Data, Id : DomainId, Entity : Dom
     }
 
     @Test
+    fun `should skip an unknown id like removeById when deleting by ids`() {
+        val saved = repository.save(newData())
+
+        repository.removeById(idOf(UNKNOWN_ID))
+        repository.removeByIds(listOf(idOf(UNKNOWN_ID), saved.id))
+
+        assertNull(repository.findById(saved.id))
+    }
+
+    @Test
     fun `should delete the given entity`() {
         val saved = repository.save(newData())
 

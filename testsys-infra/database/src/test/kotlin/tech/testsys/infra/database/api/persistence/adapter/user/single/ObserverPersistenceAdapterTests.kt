@@ -126,6 +126,28 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
     }
 
     @Test
+    fun `should increment the user version on an update of the watched contests only`() {
+        val saved = fixtures.observer()
+        val contest = fixtures.contest().id
+
+        val updated = repository.update(saved.withData { contests = mutableListOf(contest) })
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(saved.id)).version)
+    }
+
+    @Test
+    fun `should increment the user version on an update of the role data only`() {
+        val saved = fixtures.observer()
+        val community = fixtures.community().id
+
+        val updated = repository.update(saved.withData { this.community = community })
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(community, assertNotNull(repository.findById(saved.id)).data.community.id)
+    }
+
+    @Test
     fun `should store the access code and its algorithm through save and update`() {
         val data = newData()
 

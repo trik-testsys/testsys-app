@@ -19,15 +19,15 @@ import tech.testsys.infra.database.internal.jpa.repository.user.single.ObserverD
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.single.ObserverMapping
 import tech.testsys.infra.database.internal.utils.findAllInChunks
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
  * Persistence adapter of [Observer] entities backed by [UserJpaEntity] rows having an observer data row.
- * Watched contests are synced through the join table.
+ * Watched contests are synced through the join table; update and remove increment the user version first.
  *
  * @since %CURRENT_VERSION%
  */
@@ -61,12 +61,11 @@ class ObserverPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Observer): Observer {
-        val currentUserJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val currentDataJpaEntity = observerDataJpaEntityRepository.findByUserId(entity.id.value).requireById(entity.id.value)
 
-        val updatedUserJpaEntity = jpaEntityRepository.saveAndFlush(
-            ObserverMapping.toUserJpaEntity(entity, currentUserJpaEntity),
-        )
+        val updatedUserJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            ObserverMapping.toUserJpaEntity(entity, current)
+        }
         val updatedDataJpaEntity = observerDataJpaEntityRepository.save(
             ObserverMapping.toDataJpaEntity(updatedUserJpaEntity.requireId(), entity, currentDataJpaEntity),
         )
@@ -77,9 +76,9 @@ class ObserverPersistenceAdapter(
         return domainEntity
     }
 
-    @Transactional
-    override fun removeById(id: SingleRoleUserId) {
+    override fun removeRoot(id: SingleRoleUserId, expectedVersion: Long?) {
         val dataJpaEntity = observerDataJpaEntityRepository.findByUserId(id.value) ?: return
+        touchRoot(jpaEntityRepository, id.value, expectedVersion, changesRootData = true)
         contestToObserverJpaEntityRepository.deleteAll(
             contestToObserverJpaEntityRepository.findAllByObserverId(id.value),
         )
@@ -87,9 +86,6 @@ class ObserverPersistenceAdapter(
         singleRoleToUserJpaEntityRepository.deleteAll(singleRoleToUserJpaEntityRepository.findAllByUserId(id.value))
         jpaEntityRepository.deleteById(id.value)
     }
-
-    @Transactional
-    override fun removeByIds(ids: List<SingleRoleUserId>) = ids.forEach(::removeById)
 
     override fun assembleSupported(rows: List<UserJpaEntity>): List<Observer> {
         val dataByUserId = findAllInChunks(

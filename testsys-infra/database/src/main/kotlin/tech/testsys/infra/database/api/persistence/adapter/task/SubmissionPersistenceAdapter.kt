@@ -31,10 +31,10 @@ import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersio
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.SubmissionMapping
 import tech.testsys.infra.database.internal.utils.findAllByIdOrError
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.findIdByTagOrError
 import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Persistence adapter of [Submission] entities backed by [SubmissionJpaEntity].
@@ -78,9 +78,9 @@ class SubmissionPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Submission): Submission {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val updatedJpaEntity = SubmissionMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            SubmissionMapping.toJpaEntity(entity, current)
+        }
 
         return assemble(savedJpaEntity)
     }

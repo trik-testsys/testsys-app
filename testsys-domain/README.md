@@ -34,7 +34,7 @@
   `author`, `solution`, `task` и `kind` со всеми его полями у Посылки; `judge` и `submission`
   у Судейского вердикта (`JudgmentOrder`); `versionBucket` у Полигона, Условия, Упражнения и Авторского
   Решения; `invite` у Класса; `managerInvite` и `developerInvite` у Сообщества; `email` у запроса регистрации
-  (`RegistrationRequest`); `user` у запроса смены почты (`EmailChangeRequest`).
+  (`RegistrationRequest`); `user` у запроса смены почты (`EmailChangeRequest`); `competition` у Участника.
   `save` их записывает, а `update` игнорирует значение из переданной сущности и оставляет сохранённое.
   В KDoc такое поле помечено «fixed on creation and ignored on update».
 - Ещё часть полей фиксируется при создании так, что `update` с другим значением падает: `file` у Полигона,

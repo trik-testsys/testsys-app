@@ -1,7 +1,6 @@
 package tech.testsys.infra.database.internal.jpa.repository.user
 
-import jakarta.persistence.LockModeType
-import org.springframework.data.jpa.repository.Lock
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
@@ -19,15 +18,6 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 @Repository
 @InternalDatabaseApi
 interface UserJpaEntityRepository : SnowflakeJpaEntityRepository<UserJpaEntity> {
-
-    /**
-     * Locks the user row of [id] for context entry creation.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select u from UserJpaEntity u where u.id = :id")
-    fun lockById(@Param("id") id: Long): UserJpaEntity?
 
     /**
      * Finds the user row whose stored access code equals [accessToken] and was produced by [accessTokenHashAlgorithm].
@@ -49,4 +39,14 @@ interface UserJpaEntityRepository : SnowflakeJpaEntityRepository<UserJpaEntity> 
      * @since %CURRENT_VERSION%
      */
     fun existsByIdAndType(id: Long, type: UserTypeJpaEnum): Boolean
+
+    /**
+     * Increments the versions of the user rows [ids] in one statement and returns the number of updated rows; the
+     * caller synchronizes the managed rows through `touchRoots`.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Modifying
+    @Query("update UserJpaEntity u set u.version = u.version + 1 where u.id in :ids")
+    fun incrementVersions(@Param("ids") ids: Collection<Long>): Int
 }

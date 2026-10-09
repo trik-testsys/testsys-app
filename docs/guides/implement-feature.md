@@ -104,6 +104,9 @@
 5. Новые доменные объекты создаются через DSL, изменённые — через `withData` или хелперы из `util`.
 6. Результат возвращается как `asSuccess()`.
 
+Операция не открывает транзакции и не повторяет их: её вызывает транзакционный сервис, а конфликты повторяет
+инфраструктура. Правило вызова — в разделе «Транзакции» в [testsys-operation/README.md](../../testsys-operation/README.md#транзакции).
+
 Образцы — `createTask` (создание) и `attachStatement` (изменение с проверками) в
 [DeveloperOperations.kt](../../testsys-operation/src/main/kotlin/tech/testsys/operation/user/DeveloperOperations.kt).
 

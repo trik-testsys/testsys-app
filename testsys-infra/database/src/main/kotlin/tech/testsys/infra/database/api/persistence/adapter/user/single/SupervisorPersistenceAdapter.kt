@@ -16,12 +16,13 @@ import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRol
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SupervisorDataJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.single.SupervisorMapping
 import tech.testsys.infra.database.internal.utils.findAllInChunks
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Persistence adapter of [Supervisor] entities backed by [UserJpaEntity] rows having a supervisor data row.
+ * Update and remove increment the user version first.
  *
  * @since %CURRENT_VERSION%
  */
@@ -50,27 +51,23 @@ class SupervisorPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Supervisor): Supervisor {
-        val currentUserJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val currentDataJpaEntity = supervisorDataJpaEntityRepository.findByUserId(entity.id.value).requireById(entity.id.value)
 
-        val updatedUserJpaEntity = jpaEntityRepository.saveAndFlush(
-            SupervisorMapping.toUserJpaEntity(entity, currentUserJpaEntity),
-        )
+        val updatedUserJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            SupervisorMapping.toUserJpaEntity(entity, current)
+        }
 
         val domainEntity = SupervisorMapping.toDomain(updatedUserJpaEntity, currentDataJpaEntity)
         return domainEntity
     }
 
-    @Transactional
-    override fun removeById(id: SingleRoleUserId) {
+    override fun removeRoot(id: SingleRoleUserId, expectedVersion: Long?) {
         val dataJpaEntity = supervisorDataJpaEntityRepository.findByUserId(id.value) ?: return
+        touchRoot(jpaEntityRepository, id.value, expectedVersion, changesRootData = true)
         supervisorDataJpaEntityRepository.delete(dataJpaEntity)
         singleRoleToUserJpaEntityRepository.deleteAll(singleRoleToUserJpaEntityRepository.findAllByUserId(id.value))
         jpaEntityRepository.deleteById(id.value)
     }
-
-    @Transactional
-    override fun removeByIds(ids: List<SingleRoleUserId>) = ids.forEach(::removeById)
 
     override fun assembleSupported(rows: List<UserJpaEntity>): List<Supervisor> {
         val dataByUserId = findAllInChunks(

@@ -103,7 +103,8 @@ class CompetitionPaginationQueryTests : DatabaseIntegrationTests() {
         assertEquals(participants.toSet(), actual.data.participants.ids.toSet())
         assertEquals(2, actual.data.participants.ids.size)
         assertEquals(listOf(contest), actual.data.contests.ids)
-        assertEquals(saved.version, actual.version)
+        // Each saved participant increments the competition version once.
+        assertEquals(requireNotNull(saved.version).value + 2, requireNotNull(actual.version).value)
         assertEquals(participants.toSet(), repository.findById(saved.id)?.data?.participants?.ids?.toSet())
     }
 

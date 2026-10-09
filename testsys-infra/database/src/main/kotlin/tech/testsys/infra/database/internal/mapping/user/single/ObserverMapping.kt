@@ -89,7 +89,7 @@ object ObserverMapping {
 
     /**
      * Creates the [ObserverDataJpaEntity] row of the user [userId] replacing [current] from [entity],
-     * keeping its id, `createdAt` and `version`.
+     * keeping its id, `createdAt` and `version`; the version token of [entity] is checked on the user row.
      *
      * @since %CURRENT_VERSION%
      */

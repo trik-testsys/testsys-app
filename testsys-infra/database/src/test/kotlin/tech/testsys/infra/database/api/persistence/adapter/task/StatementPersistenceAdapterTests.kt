@@ -11,6 +11,7 @@ import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.FileBlobStorage
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
+import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
@@ -32,6 +33,9 @@ class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
 
     @Autowired
     override lateinit var repository: StatementRepository
+
+    @Autowired
+    private lateinit var taskRepository: TaskRepository
 
     @Autowired
     private lateinit var fileDataJpaEntityRepository: FileDataJpaEntityRepository
@@ -68,6 +72,31 @@ class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
         assertEquals(expected.data.file.uploadedFilename, actual.data.file.uploadedFilename)
         assertContentEquals(expected.data.file.content, actual.data.file.content)
         assertEquals(expected.data.versionBucket, actual.data.versionBucket)
+    }
+
+    @Test
+    fun `should increment the version of the task the chain is uploaded to on removal of a version`() {
+        val saved = repository.save(newData())
+        val task = taskRepository.update(fixtures.task().withData { uploadedResources += saved.data.versionBucket })
+
+        repository.removeById(saved.id)
+
+        assertNull(repository.findById(saved.id))
+        assertEquals(assertNotNull(task.version).value + 1, assertNotNull(taskRepository.findById(task.id)?.version).value)
+    }
+
+    @Test
+    fun `should increment the version of the task the chain is uploaded to on a new version and a rename`() {
+        val saved = repository.save(newData())
+        val task = taskRepository.update(fixtures.task().withData { uploadedResources += saved.data.versionBucket })
+
+        repository.save(modified(saved).data)
+        val afterNewVersion = assertNotNull(taskRepository.findById(task.id))
+        repository.update(modified(saved))
+        val afterRename = assertNotNull(taskRepository.findById(task.id))
+
+        assertEquals(assertNotNull(task.version).value + 1, assertNotNull(afterNewVersion.version).value)
+        assertEquals(assertNotNull(task.version).value + 2, assertNotNull(afterRename.version).value)
     }
 
     @Test

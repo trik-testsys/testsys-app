@@ -5,8 +5,9 @@ package tech.testsys.infra.grpc.internal
 import com.google.protobuf.ByteString
 import io.mockk.every
 import io.mockk.mockk
-import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.support.SimpleTransactionStatus
+import org.springframework.transaction.support.TransactionCallback
+import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.builder.api.contest
 import tech.testsys.domain.builder.api.developerSolutionValidationInput
 import tech.testsys.domain.builder.api.logs
@@ -59,6 +60,7 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import trik.testsys.grading.GradingNodeOuterClass as Proto
 
@@ -134,8 +136,8 @@ internal class RepositoryFixture(val initial: Submission = testSubmission()) {
     val savedLogs = mutableListOf<LogsData>()
     val savedRecordings = mutableListOf<RecordingData>()
     val current = AtomicReference(initial)
-    val hasCommitted = AtomicBoolean(false)
-    private val transactions = mockk<PlatformTransactionManager>()
+    val transactions = FakeTransactions()
+    val hasCommitted = transactions.hasCommitted
     val persistence = GradingPersistenceService(
         submissions = submissions,
         solutions = solutions,
@@ -146,7 +148,7 @@ internal class RepositoryFixture(val initial: Submission = testSubmission()) {
         recordings = recordings,
         verdicts = verdicts,
         validationRequests = validationRequests,
-        transactionManager = transactions,
+        transactions = transactions,
     )
 
     init {
@@ -154,12 +156,6 @@ internal class RepositoryFixture(val initial: Submission = testSubmission()) {
             is SubmissionKind.DeveloperSolutionTest -> validationRequest(submitted = initial, version = kind.trikStudioVersion)
             is SubmissionKind.Grading -> null
         }
-        every { transactions.getTransaction(any()) } answers {
-            hasCommitted.set(false)
-            SimpleTransactionStatus()
-        }
-        every { transactions.commit(any()) } answers { hasCommitted.set(true) }
-        every { transactions.rollback(any()) } returns Unit
         every { submissions.findById(initial.id) } answers { current.get() }
         every { submissions.update(any<Submission>()) } answers { firstArg<Submission>().also(current::set) }
         every { contests.load(any<LazyEntity<ContestId, Contest>>()) } returns contest {
@@ -227,6 +223,27 @@ internal class RepositoryFixture(val initial: Submission = testSubmission()) {
                 createdAt = Instant.EPOCH
                 data = firstArg<VerdictData>()
             }.also(savedVerdictEntities::add)
+        }
+    }
+}
+
+/**
+ * [TransactionOperations] running each callback at once, counting the transactions and tracking whether one is open
+ * and whether the last one committed.
+ */
+internal class FakeTransactions : TransactionOperations {
+    val count = AtomicInteger(0)
+    val isActive = AtomicBoolean(false)
+    val hasCommitted = AtomicBoolean(false)
+
+    override fun <T> execute(action: TransactionCallback<T>): T {
+        count.incrementAndGet()
+        hasCommitted.set(false)
+        isActive.set(true)
+        try {
+            return action.doInTransaction(SimpleTransactionStatus()).also { hasCommitted.set(true) }
+        } finally {
+            isActive.set(false)
         }
     }
 }

@@ -177,8 +177,8 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   проставляет `id`, `createdAt` и `version` из строки.
 - `toJpaEntity` всегда две перегрузки: от `Data` — для новой строки (без `id`), и от сущности плюс текущей
   строки — для обновления. Вторая обязана перенести `createdAt` из текущей строки и `version` из доменной
-  сущности через `requireVersion()`: именно так до Hibernate доезжает токен оптимистической блокировки,
-  а сущность, не полученная из хранилища, приводит к `IllegalArgumentException`.
+  сущности через `requireVersion()`: сущность, не полученная из хранилища, приводит к `IllegalArgumentException`.
+  Токен сверяет адаптер через `updateRoot` (шаг 9), он же заменяет `version` строки текущей версией корня.
   Колонки полей, фиксируемых при создании (см. раздел «Модель» в
   [testsys-domain/README.md](../../testsys-domain/README.md)), вторая перегрузка тоже берёт из текущей строки,
   а не из сущности. У сущности без `update` второй перегрузки нет.
@@ -199,9 +199,9 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 
 - `save(data)` — собрать строку маппингом, сохранить, при наличии связей сохранить строки join-таблиц новыми
   экземплярами, вернуть доменный объект. Идентификатор сохранённой строки берётся через `requireId()`.
-- `update(entity)` — прочитать текущую строку (`findByIdOrError`), собрать новую перегрузкой `toJpaEntity`
-  с `current`, сохранить через `saveAndFlush` (иначе конфликт версий всплывёт не там, где ожидается),
-  затем синхронизировать join-таблицы через `syncJoinTable(...)` из
+- `update(entity)` — записать строку через `updateRoot(id, entity.requireVersion()) { current -> ... }`: лямбда
+  собирает новую строку перегрузкой `toJpaEntity` с `current`, а `updateRoot` сверяет токен, сохраняет строку
+  через `saveAndFlush` и повышает версию корня. Затем синхронизируйте join-таблицы через `syncJoinTable(...)` из
   [PersistenceUtils.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/utils/PersistenceUtils.kt).
   Поле, при изменении которого `update` должен падать (раздел «Модель» в
   [testsys-domain/README.md](../../testsys-domain/README.md)), проверяется до сохранения через `requireUnchanged`,
@@ -216,6 +216,18 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   `CommunityPersistenceAdapter`. Как адаптеры используют сборку — в разделе «Сборка доменных сущностей»
   в [database/README.md](../../testsys-infra/database/README.md).
 
+Любой метод, который пишет в часть агрегата, сначала вызывает `touchRoot` для корня, а метод, который пишет в чужой
+агрегат, — `touchRoot` для корня этого агрегата. Правило действует и для методов, которые пока никто не вызывает.
+Если создание сущности повышает версию чужого корня, её удаление тоже его повышает. Если метод пишет в пачку
+корней одного вида, повысьте их версии одним запросом через `touchRoots`; образец — `touchStudents`
+в [ClassPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/group/ClassPersistenceAdapter.kt).
+Правило, карта корней и записи в чужие агрегаты — в разделе
+[«Транзакции и согласованность»](../../testsys-infra/database/README.md#транзакции-и-согласованность)
+в database/README.md. Образцы — `addStudent` в
+[ClassPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/group/ClassPersistenceAdapter.kt)
+и `saveToCompetition` в
+[ParticipantPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/single/ParticipantPersistenceAdapter.kt).
+
 Несколько строк в одном методе сохраняйте без промежуточных `flush` и `saveAndFlush`. Hibernate отправляет INSERT
 и UPDATE пакетами, а каждый `flush` отправляет накопленное и начинает пакет заново. Образец —
 `saveToCompetition` в [ParticipantPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/single/ParticipantPersistenceAdapter.kt).
@@ -223,8 +235,12 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 Адаптеры сущностей с файлами (Условия, Упражнения, Полигоны, Решения, логи и видеозаписи) пока переопределяют
 `assemble` и собирают строки по одной — это переходное состояние, в новом адаптере его не повторяйте.
 
-Если у сущности есть join-таблицы, может дополнительно потребоваться переопределить `removeById`/`removeByIds`, если строки связей
-нужно удалить до самой сущности. Для сущностей-пользователей базовый класс другой —
+Удаление базовый класс выполняет через защищённый `removeRoot(id, expectedVersion)`: он вызывает `touchRoot`
+и удаляет корень без частей, а `removeById`, `removeByIds` и `remove` вызывают его для каждой строки. Если строки
+частей нужно удалить до сущности или удаление пишет в чужой агрегат, переопределите `removeRoot`, а не публичные
+методы удаления; образец — `removeRoot` в
+[ContestPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapter.kt).
+Для сущностей-пользователей базовый класс другой —
 [AbstractUserPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/AbstractUserPersistenceAdapter.kt),
 который вместо `assembleAll` требует `assembleSupported(rows)`: все виды пользователей лежат в одной таблице `ts_user`,
 и метод собирает только строки своего вида, пропуская остальные.
@@ -257,7 +273,12 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   абсолютное число не фиксируйте. Так же проверьте свои списочные методы адаптера. Образец —
   `should find contests by ids with the same statement count for one and twenty ids` в
   [ContestPersistenceAdapterTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapterTests.kt).
+- Если `update`, удаление или отдельный метод адаптера пишет в часть агрегата или в чужой агрегат, отдельный
+  `@Test` проверяет, что версия корня выросла на единицу и совпадает с версией в БД. Образец —
+  `should increment the class version on addStudent` в
+  [ClassPersistenceAdapterTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/group/ClassPersistenceAdapterTests.kt).
 - Прочие сущности для теста создаются только через `fixtures`, а не руками; всё уникальное — через
   `fixtures.unique(...)`. Фикстура новой сущности пишется так же: через её же адаптер.
-- Тесты БД поднимают H2 в режиме совместимости с PostgreSQL, применяют changelog'и и проверяют схему
+- Тесты БД работают с PostgreSQL в контейнере Testcontainers (раздел «Тесты» в
+  [database/README.md](../../testsys-infra/database/README.md#тесты)), применяют changelog'и и проверяют схему
   (`SchemaValidationTests`) — отдельный тест на changeset писать не нужно, достаточно не сломать этот.

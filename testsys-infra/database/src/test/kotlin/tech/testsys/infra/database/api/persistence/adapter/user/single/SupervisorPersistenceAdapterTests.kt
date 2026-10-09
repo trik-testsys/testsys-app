@@ -62,6 +62,16 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     }
 
     @Test
+    fun `should increment the user version on an update without changes`() {
+        val saved = fixtures.supervisor()
+
+        val updated = repository.update(saved)
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(saved.id)).version)
+    }
+
+    @Test
     fun `should store the access code and its algorithm through save and update`() {
         val data = newData()
 

@@ -38,8 +38,8 @@ import org.springframework.data.domain.Sort as JpaSort
 
 /**
  * Persistence adapter of [Verdict] entities backed by [VerdictJpaEntity].
- * The outcome of every test run is stored in its own row and dropped on remove;
- * a verdict is fixed on creation, so [update] always fails.
+ * The outcome of every test run is stored in its own row and dropped on remove after the verdict version is
+ * incremented; a verdict is fixed on creation, so [update] always fails.
  *
  * @since %CURRENT_VERSION%
  */
@@ -69,16 +69,13 @@ class VerdictPersistenceAdapter(
         "verdict ${entity.id.value} cannot be updated: every field of a verdict is fixed on creation",
     )
 
-    @Transactional
-    override fun removeById(id: VerdictId) {
-        val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+    override fun removeRoot(id: VerdictId, expectedVersion: Long?) {
+        jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val jpaEntity = touchRoot(jpaEntityRepository, id.value, expectedVersion, changesRootData = true)
         val verdictId = jpaEntity.requireId()
         testVerdictJpaEntityRepository.deleteAll(testVerdictJpaEntityRepository.findAllByVerdictIdOrderByTestIdAsc(verdictId))
         jpaEntityRepository.delete(jpaEntity)
     }
-
-    @Transactional
-    override fun removeByIds(ids: List<VerdictId>) = ids.forEach(::removeById)
 
     @Transactional(readOnly = true)
     override fun findAvailableToJudge(pagination: Pagination, filter: VerdictFilter): Page<Verdict> {

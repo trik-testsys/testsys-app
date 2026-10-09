@@ -28,17 +28,17 @@ import tech.testsys.infra.database.internal.jpa.repository.task.TaskToContestJpa
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.ContestMapping
 import tech.testsys.infra.database.internal.utils.findAllByIdOrError
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.findIdByTagOrError
 import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 import org.springframework.data.domain.Sort as JpaSort
 
 /**
  * Persistence adapter of [Contest] entities backed by [ContestJpaEntity].
  * Task and shared-community membership is synced through the join tables on save and update and dropped on remove;
- * the TRIK Studio version must already be registered by tag.
+ * update and remove increment the contest version first. The TRIK Studio version must already be registered by tag.
  *
  * @since %CURRENT_VERSION%
  */
@@ -167,10 +167,10 @@ class ContestPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Contest): Contest {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(entity.data.trikStudioVersion.version)
-        val updatedJpaEntity = ContestMapping.toJpaEntity(entity, currentJpaEntity, trikStudioVersionId)
-        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            ContestMapping.toJpaEntity(entity, current, trikStudioVersionId)
+        }
 
         val contestId = savedJpaEntity.requireId()
 
@@ -186,17 +186,14 @@ class ContestPersistenceAdapter(
         return domainEntity
     }
 
-    @Transactional
-    override fun removeById(id: ContestId) {
-        val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+    override fun removeRoot(id: ContestId, expectedVersion: Long?) {
+        jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val jpaEntity = touchRoot(jpaEntityRepository, id.value, expectedVersion, changesRootData = true)
         val contestId = jpaEntity.requireId()
         taskToContestJpaEntityRepository.deleteAll(taskToContestJpaEntityRepository.findAllByContestId(contestId))
         communityToContestJpaEntityRepository.deleteAll(communityToContestJpaEntityRepository.findAllByContestId(contestId))
         jpaEntityRepository.delete(jpaEntity)
     }
-
-    @Transactional
-    override fun removeByIds(ids: List<ContestId>) = ids.forEach(::removeById)
 
     override fun assembleAll(rows: List<ContestJpaEntity>): List<Contest> {
         val contestIds = rows.map { row -> row.requireId() }

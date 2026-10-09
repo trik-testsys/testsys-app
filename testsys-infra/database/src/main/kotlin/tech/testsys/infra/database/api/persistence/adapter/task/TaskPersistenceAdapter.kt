@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.Page
@@ -42,13 +43,14 @@ import tech.testsys.infra.database.internal.utils.findAllByIdOrError
 import tech.testsys.infra.database.internal.utils.findIdsByTagOrError
 import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 import org.springframework.data.domain.Sort as JpaSort
 
 /**
- * Persistence adapter of [Task] entities backed by [TaskJpaEntity].
+ * Persistence adapter of [Task] entities backed by [TaskJpaEntity], the root of the task aggregate.
  * Content revisions are replaced wholesale as task content rows on save and update and dropped together with the
- * shared-community and uploaded-resource join rows on remove.
+ * shared-community and uploaded-resource join rows on remove; update and remove increment the task version first.
  *
  * @since %CURRENT_VERSION%
  */
@@ -144,24 +146,19 @@ class TaskPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Task): Task {
-        val currentJpaEntity = requireNotNull(taskJpaEntityRepository.findLockedById(entity.id.value)) {
-            "Task id=${entity.id.value} does not exist"
-        }
-        val currentWipId = currentJpaEntity.wipContentId
-        val currentCommittedId = currentJpaEntity.committedContentId
-
         val wipContent = TaskMapping.extractWip(entity.data.content)
         val committedContent = TaskMapping.extractCommitted(entity.data.content)
 
-        val (wipContentId, committedContentId) = persistContents(
-            wipContent = wipContent,
-            committedContent = committedContent,
-        )
-
-        val updatedJpaEntity = TaskMapping.toJpaEntity(entity, currentJpaEntity, wipContentId, committedContentId)
-        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
-        deleteContentCascade(currentWipId)
-        currentCommittedId?.takeIf { it != currentWipId }?.let { deleteContentCascade(it) }
+        lateinit var replacedContentIds: List<Long>
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            replacedContentIds = listOfNotNull(current.wipContentId, current.committedContentId).distinct()
+            val (wipContentId, committedContentId) = persistContents(
+                wipContent = wipContent,
+                committedContent = committedContent,
+            )
+            TaskMapping.toJpaEntity(entity, current, wipContentId, committedContentId)
+        }
+        replacedContentIds.forEach(::deleteContentCascade)
         val taskId = savedJpaEntity.requireId()
         syncSharedTo(taskId, entity.data.sharedTo.ids)
         syncUploadedResources(taskId, entity.data.uploadedResources)
@@ -170,9 +167,9 @@ class TaskPersistenceAdapter(
         return domainEntity
     }
 
-    @Transactional
-    override fun removeById(id: TaskId) {
-        val jpaEntity = taskJpaEntityRepository.findLockedById(id.value) ?: return
+    override fun removeRoot(id: TaskId, expectedVersion: Long?) {
+        taskJpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val jpaEntity = touchRoot(taskJpaEntityRepository, id.value, expectedVersion, changesRootData = true)
         val taskId = jpaEntity.requireId()
         communityToTaskJpaEntityRepository.deleteAll(communityToTaskJpaEntityRepository.findAllByTaskId(taskId))
         versionBucketToTaskJpaEntityRepository.deleteAll(versionBucketToTaskJpaEntityRepository.findAllByTaskId(taskId))
@@ -181,9 +178,6 @@ class TaskPersistenceAdapter(
         deleteContentCascade(jpaEntity.wipContentId)
         jpaEntity.committedContentId?.takeIf { it != jpaEntity.wipContentId }?.let { deleteContentCascade(it) }
     }
-
-    @Transactional
-    override fun removeByIds(ids: List<TaskId>) = ids.forEach(::removeById)
 
     override fun assembleAll(rows: List<TaskJpaEntity>): List<Task> {
         val taskIds = rows.map { row -> row.requireId() }

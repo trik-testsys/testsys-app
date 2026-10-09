@@ -15,6 +15,7 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
@@ -25,7 +26,9 @@ import tech.testsys.operation.error.StatementNotUploadedToTaskError
 import tech.testsys.operation.error.SubmissionAccessDeniedError
 import tech.testsys.operation.error.TaskNotExistsError
 import tech.testsys.web.app.MockSpringVaadinTests
+import tech.testsys.web.app.PostgresTestConfiguration
 
+@Import(PostgresTestConfiguration::class)
 @SpringBootTest
 class OperationErrorHandlerTests : MockSpringVaadinTests() {
     @Autowired

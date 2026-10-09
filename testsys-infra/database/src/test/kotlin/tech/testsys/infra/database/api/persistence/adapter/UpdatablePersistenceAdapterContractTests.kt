@@ -68,6 +68,25 @@ abstract class UpdatablePersistenceAdapterContractTests<Data, Id : DomainId, Ent
     }
 
     @Test
+    fun `should fail to remove an entity with a stale version and keep it`() {
+        val saved = repository.save(newData())
+        val updated = repository.update(modified(saved))
+
+        assertFailsWith<OptimisticLockingFailureException> { repository.remove(saved) }
+
+        assertSameEntity(updated, assertNotNull(repository.findById(saved.id)))
+    }
+
+    @Test
+    fun `should fail to remove an entity that was not obtained from persistence`() {
+        val saved = repository.save(newData())
+
+        assertFailsWith<IllegalArgumentException> { repository.remove(detached(saved)) }
+
+        assertNotNull(repository.findById(saved.id))
+    }
+
+    @Test
     fun `should store every item of a list on update`() {
         val saved = repository.save(listOf(newData(), newData()))
 

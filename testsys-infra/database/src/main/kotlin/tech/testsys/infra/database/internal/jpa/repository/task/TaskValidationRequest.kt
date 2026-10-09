@@ -1,7 +1,5 @@
 package tech.testsys.infra.database.internal.jpa.repository.task
 
-import jakarta.persistence.LockModeType
-import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -19,15 +17,6 @@ import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRep
 @Repository
 @InternalDatabaseApi
 interface TaskValidationRequestJpaEntityRepository : SnowflakeJpaEntityRepository<TaskValidationRequestJpaEntity> {
-    /**
-     * Finds a request for a short atomic write.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select e from TaskValidationRequestJpaEntity e where e.id = :id")
-    fun findLockedById(@Param("id") id: Long): TaskValidationRequestJpaEntity?
-
     /**
      * Finds the saved history of a task.
      *
@@ -81,7 +70,7 @@ interface TestToTaskValidationRequestJpaEntityRepository :
      *
      * @since %CURRENT_VERSION%
      */
-    @Modifying(flushAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from TestToTaskValidationRequestJpaEntity e where e.id.requestId = :requestId")
     fun deleteAllByRequestId(@Param("requestId") requestId: Long)
 }
@@ -107,7 +96,7 @@ interface DeveloperSolutionToTaskValidationRequestJpaEntityRepository :
      *
      * @since %CURRENT_VERSION%
      */
-    @Modifying(flushAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from DeveloperSolutionToTaskValidationRequestJpaEntity e where e.id.requestId = :requestId")
     fun deleteAllByRequestId(@Param("requestId") requestId: Long)
 }
@@ -133,7 +122,7 @@ interface TrikStudioVersionToTaskValidationRequestJpaEntityRepository :
      *
      * @since %CURRENT_VERSION%
      */
-    @Modifying(flushAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from TrikStudioVersionToTaskValidationRequestJpaEntity e where e.id.requestId = :requestId")
     fun deleteAllByRequestId(@Param("requestId") requestId: Long)
 }
@@ -173,7 +162,7 @@ interface SubmissionToTaskValidationRequestJpaEntityRepository :
      *
      * @since %CURRENT_VERSION%
      */
-    @Modifying(flushAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("delete from SubmissionToTaskValidationRequestJpaEntity e where e.id.requestId = :requestId")
     fun deleteAllByRequestId(@Param("requestId") requestId: Long)
 }

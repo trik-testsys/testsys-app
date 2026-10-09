@@ -17,12 +17,13 @@ import tech.testsys.infra.database.internal.jpa.repository.group.CommunityInvite
 import tech.testsys.infra.database.internal.jpa.repository.group.CommunityJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.group.CommunityInviteMapping
 import tech.testsys.infra.database.internal.mapping.group.CommunityMapping
-import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Persistence adapter of [Community] entities backed by [CommunityJpaEntity].
  * The invite references are fixed on creation and both invites are removed together with the community.
+ * Update and remove increment the community version; remove also increments the versions of the removed invites.
  *
  * @since %CURRENT_VERSION%
  */
@@ -59,9 +60,9 @@ class CommunityPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Community): Community {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrNull(entity.id.value).requireById(entity.id.value)
-        val updatedJpaEntity = CommunityMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            CommunityMapping.toJpaEntity(entity, current)
+        }
 
         return assemble(savedJpaEntity)
     }
@@ -70,16 +71,15 @@ class CommunityPersistenceAdapter(
     override fun findByInvite(inviteId: CommunityInviteId): Community? =
         communities.findByManagerInviteIdOrDeveloperInviteId(inviteId.value, inviteId.value)?.let { assemble(it) }
 
-    @Transactional
-    override fun removeById(id: CommunityId) {
-        val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+    override fun removeRoot(id: CommunityId, expectedVersion: Long?) {
+        jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val jpaEntity = touchRoot(jpaEntityRepository, id.value, expectedVersion, changesRootData = true)
         jpaEntityRepository.delete(jpaEntity)
         jpaEntityRepository.flush()
-        communityInviteJpaEntityRepository.deleteAllById(listOf(jpaEntity.managerInviteId, jpaEntity.developerInviteId))
+        listOf(jpaEntity.managerInviteId, jpaEntity.developerInviteId).forEach { inviteId ->
+            communityInviteJpaEntityRepository.delete(touchRoot(communityInviteJpaEntityRepository, inviteId, changesRootData = true))
+        }
     }
-
-    @Transactional
-    override fun removeByIds(ids: List<CommunityId>) = ids.forEach(::removeById)
 
     override fun assembleAll(rows: List<CommunityJpaEntity>) = rows.map { row -> CommunityMapping.toDomain(row) }
 

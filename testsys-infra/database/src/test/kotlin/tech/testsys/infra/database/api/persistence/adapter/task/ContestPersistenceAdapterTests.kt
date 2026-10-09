@@ -229,6 +229,17 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
     }
 
     @Test
+    fun `should increment the contest version on an update of the tasks only`() {
+        val saved = repository.save(newData())
+        val task = fixtures.task().id
+
+        val updated = repository.update(saved.withData { tasks = mutableListOf(task) })
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(saved.id)).version)
+    }
+
+    @Test
     fun `should find contests by ids with the same statement count for one and twenty ids`() {
         val data = newData()
         val ids = List(20) { repository.save(data).id }

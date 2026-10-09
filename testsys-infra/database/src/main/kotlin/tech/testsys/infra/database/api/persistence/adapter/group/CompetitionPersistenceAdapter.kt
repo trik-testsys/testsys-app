@@ -23,16 +23,17 @@ import tech.testsys.infra.database.internal.jpa.repository.group.CompetitionJpaE
 import tech.testsys.infra.database.internal.jpa.repository.group.ContestToCompetitionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.ParticipantDataJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.group.CompetitionMapping
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 import java.time.Instant
 import org.springframework.data.domain.Sort as JpaSort
 
 /**
  * Persistence adapter of [Competition] entities backed by [CompetitionJpaEntity]. Participants are a read-only
- * projection of the participant data rows, so `CompetitionData.participants` is ignored on write.
+ * projection of the participant data rows, so `CompetitionData.participants` is ignored on write. Update and remove
+ * increment the competition version first.
  *
  * @since %CURRENT_VERSION%
  */
@@ -96,9 +97,9 @@ class CompetitionPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Competition): Competition {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val updatedJpaEntity = CompetitionMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            CompetitionMapping.toJpaEntity(entity, current)
+        }
         val competitionId = savedJpaEntity.requireId()
         syncContests(competitionId, entity.data.contests.ids)
         val domainEntity = CompetitionMapping.toDomain(
@@ -109,16 +110,13 @@ class CompetitionPersistenceAdapter(
         return domainEntity
     }
 
-    @Transactional
-    override fun removeById(id: CompetitionId) {
-        val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+    override fun removeRoot(id: CompetitionId, expectedVersion: Long?) {
+        jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val jpaEntity = touchRoot(jpaEntityRepository, id.value, expectedVersion, changesRootData = true)
         val competitionId = jpaEntity.requireId()
         contestToCompetitionJpaEntityRepository.deleteAll(contestToCompetitionJpaEntityRepository.findAllByCompetitionId(competitionId))
         jpaEntityRepository.delete(jpaEntity)
     }
-
-    @Transactional
-    override fun removeByIds(ids: List<CompetitionId>) = ids.forEach(::removeById)
 
     override fun assembleAll(rows: List<CompetitionJpaEntity>): List<Competition> {
         val competitionIds = rows.map { row -> row.requireId() }

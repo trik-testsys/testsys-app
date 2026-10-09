@@ -6,9 +6,12 @@ import tech.testsys.domain.builder.api.competition
 import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
+import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionData
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -17,6 +20,9 @@ class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
 
     @Autowired
     override lateinit var repository: CompetitionRepository
+
+    @Autowired
+    private lateinit var participants: ParticipantRepository
 
     override fun newData(): CompetitionData {
         val ownerId = fixtures.manager().id.value
@@ -102,6 +108,27 @@ class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
         )
 
         assertEquals(listOf(contestId), assertNotNull(repository.findById(saved.id)).data.contests.ids)
+    }
+
+    @Test
+    fun `should increment the competition version on an update of the contests only`() {
+        val saved = repository.save(newData())
+        val contest = fixtures.contest().id
+
+        val updated = repository.update(saved.withData { contests = mutableListOf(contest) })
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(saved.id)).version)
+    }
+
+    @Test
+    fun `should increment the competition version when participants are saved to it`() {
+        val saved = repository.save(newData())
+        val hash = AccessTokenHash(value = fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+
+        participants.saveToCompetition(saved.id, listOf(hash)) { participantId -> "named-${participantId.value}" }
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(assertNotNull(repository.findById(saved.id)).version).value)
     }
 
     @Test

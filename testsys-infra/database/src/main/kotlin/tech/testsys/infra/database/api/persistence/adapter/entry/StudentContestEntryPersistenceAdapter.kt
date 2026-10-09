@@ -18,6 +18,8 @@ import tech.testsys.infra.database.internal.mapping.entry.StudentContestEntryMap
 
 /**
  * Persistence adapter of [StudentContestEntry] entities backed by [StudentContestEntryJpaEntity].
+ * A concurrent second creation of one entry fails on the unique key of its context and is repeated by the caller's
+ * transaction retry, which then finds the entry.
  *
  * @since %CURRENT_VERSION%
  */
@@ -69,7 +71,7 @@ class StudentContestEntryPersistenceAdapter(
 
     @Transactional
     override fun findOrCreate(data: StudentContestEntryData): StudentContestEntry {
-        requireNotNull(users.lockById(data.user.id.value)) {
+        require(users.existsById(data.user.id.value)) {
             "user ${data.user.id.value} does not exist for studentContestEntry"
         }
         val existing = findByContext(

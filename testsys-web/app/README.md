@@ -47,7 +47,12 @@
 в `OperationsConfiguration`; модуль операций не сканируется.
 
 - Сервис помечен `@Service` и `@Transactional`: каждый вызов выполняется в одной транзакции. Методы `view*`
-  и `download*` выполняются с `readOnly = true`.
+  и `download*` выполняются с `readOnly = true`. Страницы вызывают операции только через сервисы; правило — в разделе
+  «Транзакции» в [testsys-operation/README.md](../../testsys-operation/README.md#транзакции).
+- Если транзакция сервиса столкнулась с параллельной транзакцией, advisor модуля `database` выполняет вызов сервиса
+  заново в новой транзакции, см. раздел
+  [«Транзакции и согласованность»](../../testsys-infra/database/README.md#транзакции-и-согласованность)
+  в database/README.md.
 - Пользователя, который выполняет операцию, сервис берёт из `CurrentUser`. Пока безопасности нет, единственная
   реализация `NoCurrentUser` бросает `IllegalStateException` при каждом вызове.
 - Сервис возвращает VO. При ошибке операции `getOrThrow()` бросает `OperationException`, и `@Transactional`
@@ -103,8 +108,9 @@
 Для запуска нужны база данных PostgreSQL, заданная стандартными свойствами `spring.datasource.*`, и абсолютные
 пути файлов в обязательных свойствах `testsys.file-storage.paths.<вид>` (виды перечислены в разделе
 «Хранение файлов» в [database/README.md](../../testsys-infra/database/README.md#хранение-файлов)). Тесты используют
-H2 в памяти и каталоги `build/test-file-storage/<вид>` модуля из `src/test/resources/config/application.properties`;
-каждый Spring-контекст тестов получает отдельную базу.
+каталоги `build/test-file-storage/<вид>` модуля из `src/test/resources/config/application.properties` и PostgreSQL
+в контейнере Testcontainers, поэтому для них нужен запущенный Docker. Каждый `@SpringBootTest` подключает
+`PostgresTestConfiguration`: все Spring-контексты тестов JVM работают с одним контейнером и одной базой.
 
 Cookie сессии называется `TESTSYS_APP_SESSION`. Отдельное имя позволяет открывать оба приложения
 на одном хосте одновременно без перезаписи сессии другого приложения.

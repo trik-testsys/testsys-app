@@ -26,6 +26,7 @@ import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepos
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.Verdict
@@ -478,8 +479,8 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         val author = fixtures.participant(selected)
         val outsider = fixtures.participant(neighbor)
         val contest = fixtures.contest()
-        competitions.update(selected.withData { contests = mutableListOf(contest.id) })
-        competitions.update(neighbor.withData { contests = mutableListOf(contest.id) })
+        competitions.update(reloaded(selected).withData { contests = mutableListOf(contest.id) })
+        competitions.update(reloaded(neighbor).withData { contests = mutableListOf(contest.id) })
         val matches = (0..2).map {
             fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = author.id, contest = contest))
         }
@@ -503,7 +504,7 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         val selected = fixtures.competition()
         val author = fixtures.participant(selected)
         val contest = fixtures.contest()
-        competitions.update(selected.withData { contests = mutableListOf(contest.id) })
+        competitions.update(reloaded(selected).withData { contests = mutableListOf(contest.id) })
         val match = fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = author.id, contest = contest))
         fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = author.id, contest = contest))
         val filter = VerdictFilter(
@@ -544,7 +545,7 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         val participant = fixtures.participant(selectedCompetition)
         val contest = fixtures.contest()
         classes.update(selectedClass.withData { contests = mutableListOf(contest.id) })
-        competitions.update(selectedCompetition.withData { contests = mutableListOf(contest.id) })
+        competitions.update(reloaded(selectedCompetition).withData { contests = mutableListOf(contest.id) })
         fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = author.id, contest = contest))
         fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId = participant.id, contest = contest))
         val filter = VerdictFilter(classId = selectedClass.id, competitionId = selectedCompetition.id)
@@ -554,6 +555,9 @@ class VerdictPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         assertTrue(page.content.isEmpty())
         assertEquals(0L, page.totalElements)
     }
+
+    /** Reads [competition] again: saving a participant increments the competition version. */
+    private fun reloaded(competition: Competition): Competition = requireNotNull(competitions.findById(competition.id))
 
     private fun successfulVerdict(authorId: UserId): Verdict = fixtures.successfulGradingVerdict(fixtures.gradingSubmission(authorId))
 

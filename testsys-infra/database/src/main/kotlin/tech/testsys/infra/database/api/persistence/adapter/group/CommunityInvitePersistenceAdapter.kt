@@ -17,6 +17,7 @@ import tech.testsys.infra.database.internal.jpa.repository.group.CommunityInvite
 import tech.testsys.infra.database.internal.mapping.group.CommunityInviteMapping
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.toJpaEnum
 import java.time.Instant
 
@@ -51,21 +52,15 @@ abstract class AbstractCommunityInvitePersistenceAdapter<Invite : CommunityInvit
 
     @Transactional
     override fun update(entity: Invite): Invite {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrNull(entity.id.value)?.takeIf { supports(it) }
-            .requireById(entity.id.value)
-        val updatedJpaEntity = CommunityInviteMapping.toJpaEntity(entity, currentJpaEntity)
-        return assemble(jpaEntityRepository.saveAndFlush(updatedJpaEntity))
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            CommunityInviteMapping.toJpaEntity(entity, current.takeIf { supports(it) }.requireById(entity.id.value))
+        }
+        return assemble(savedJpaEntity)
     }
 
-    @Transactional
-    override fun removeById(id: CommunityInviteId) {
-        jpaEntityRepository.findByIdOrNull(id.value)?.takeIf { supports(it) }?.let { jpaEntityRepository.delete(it) }
-    }
-
-    @Transactional
-    override fun removeByIds(ids: List<CommunityInviteId>) {
-        val supportedIds = jpaEntityRepository.findAllById(ids.map { it.value }).filter { supports(it) }.map { it.requireId() }
-        jpaEntityRepository.deleteAllByIdInBatch(supportedIds)
+    override fun removeRoot(id: CommunityInviteId, expectedVersion: Long?) {
+        jpaEntityRepository.findByIdOrNull(id.value)?.takeIf { supports(it) } ?: return
+        jpaEntityRepository.delete(touchRoot(jpaEntityRepository, id.value, expectedVersion, changesRootData = true))
     }
 
     @Transactional(readOnly = true)

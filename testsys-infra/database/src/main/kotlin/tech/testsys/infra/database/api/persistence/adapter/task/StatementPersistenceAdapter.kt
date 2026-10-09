@@ -16,13 +16,17 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.StatementJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.StatementJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.TaskJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.VersionBucketToTaskJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.StatementMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
+import java.util.UUID
 
 /**
  * Persistence adapter of [Statement] entities backed by [StatementJpaEntity].
  * The statement file is stored through [FileDataStorage] in [FileStoragePaths.statement]
  * and fixed on creation: [update] with another file throws [UnsupportedOperationException].
+ * Writing or removing a version of a chain uploaded to a task increments the task version.
  *
  * @since %CURRENT_VERSION%
  */
@@ -33,6 +37,8 @@ class StatementPersistenceAdapter(
     private val fileDataStorage: FileDataStorage,
     private val paths: FileStoragePaths,
     private val fileDataJpaEntityRepository: FileDataJpaEntityRepository,
+    private val taskJpaEntityRepository: TaskJpaEntityRepository,
+    private val versionBucketToTaskJpaEntityRepository: VersionBucketToTaskJpaEntityRepository,
 ) : AbstractPersistenceAdapter<StatementData, StatementId, Statement, StatementJpaEntity>(jpaEntityRepository),
     StatementRepository {
 
@@ -40,6 +46,7 @@ class StatementPersistenceAdapter(
 
     @Transactional
     override fun save(data: StatementData): Statement {
+        touchTaskOf(data.versionBucket.value)
         val fileDataId = fileDataStorage.store(data.file, paths.statement)
         val savedJpaEntity = jpaEntityRepository.save(StatementMapping.toJpaEntity(data, fileDataId))
 
@@ -50,6 +57,7 @@ class StatementPersistenceAdapter(
     @Transactional
     override fun update(entity: Statement): Statement {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
+        touchTaskOf(currentJpaEntity.versionBucket)
         fileDataStorage.requireSameFile(entity, entity.data.file, currentJpaEntity)
         val updatedJpaEntity = jpaEntityRepository.saveAndFlush(StatementMapping.toJpaEntity(entity, currentJpaEntity))
 
@@ -86,5 +94,18 @@ class StatementPersistenceAdapter(
         val file = fileDataStorage.load(jpaEntity.fileDataId, paths.statement)
         val domainEntity = StatementMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)
         return domainEntity
+    }
+
+    override fun removeRoot(id: StatementId, expectedVersion: Long?) {
+        val current = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        touchTaskOf(current.versionBucket)
+        super.removeRoot(id, expectedVersion)
+    }
+
+    /** Increments the version of the task the resource chain [versionBucket] is uploaded to, if there is one. */
+    private fun touchTaskOf(versionBucket: UUID) {
+        versionBucketToTaskJpaEntityRepository.findTaskIdByVersionBucket(versionBucket)?.let { taskId ->
+            touchRoot(taskJpaEntityRepository, taskId)
+        }
     }
 }

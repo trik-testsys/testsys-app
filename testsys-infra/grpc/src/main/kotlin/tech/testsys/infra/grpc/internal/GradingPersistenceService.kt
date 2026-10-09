@@ -3,8 +3,7 @@
 package tech.testsys.infra.grpc.internal
 
 import org.springframework.stereotype.Component
-import org.springframework.transaction.PlatformTransactionManager
-import org.springframework.transaction.support.TransactionTemplate
+import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.builder.api.logsData
 import tech.testsys.domain.builder.api.recordingData
 import tech.testsys.domain.builder.api.verdictData
@@ -43,11 +42,9 @@ internal class GradingPersistenceService(
     private val recordings: RecordingRepository,
     private val verdicts: VerdictRepository,
     private val validationRequests: TaskValidationRequestRepository,
-    transactionManager: PlatformTransactionManager,
+    private val transactions: TransactionOperations,
 ) {
-    private val transaction = TransactionTemplate(transactionManager)
-
-    fun prepare(submission: Submission, shouldRecordVideo: Boolean): PreparedSubmission {
+    fun prepare(submission: Submission, shouldRecordVideo: Boolean): PreparedSubmission = transactions.execute {
         val kind = submission.data.kind
         val trikStudioVersion = when (kind) {
             is SubmissionKind.DeveloperSolutionTest -> kind.trikStudioVersion
@@ -78,7 +75,7 @@ internal class GradingPersistenceService(
             "Missing polygons for submission ${submission.id.value}"
         }
         markQueued(submission.id)
-        return PreparedSubmission(
+        PreparedSubmission(
             submission = submission,
             message = encodeSubmission(submission.id, solution, loadedTests, trikStudioVersion, shouldRecordVideo),
             testIds = testReferences.ids.toList(),
@@ -86,14 +83,14 @@ internal class GradingPersistenceService(
     }
 
     fun markInProgress(id: SubmissionId) {
-        transaction.executeWithoutResult {
+        transactions.executeWithoutResult {
             val current = requireNotNull(submissions.findById(id)) { "Missing submission ${id.value}" }
             submissions.update(current.withData { status.inProgress() })
         }
     }
 
     fun saveResult(submission: Submission, result: CheckedResult) {
-        transaction.executeWithoutResult {
+        transactions.executeWithoutResult {
             val current = requireNotNull(submissions.findById(submission.id)) {
                 "Missing submission ${submission.id.value}"
             }
@@ -135,10 +132,8 @@ internal class GradingPersistenceService(
     }
 
     private fun markQueued(id: SubmissionId) {
-        transaction.executeWithoutResult {
-            val current = requireNotNull(submissions.findById(id)) { "Missing submission ${id.value}" }
-            submissions.update(current.withData { status.queued() })
-        }
+        val current = requireNotNull(submissions.findById(id)) { "Missing submission ${id.value}" }
+        submissions.update(current.withData { status.queued() })
     }
 
     private fun validateSnapshotSubmission(

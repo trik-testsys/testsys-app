@@ -51,15 +51,18 @@ import tech.testsys.infra.database.internal.jpa.repository.user.multiple.Student
 import tech.testsys.infra.database.internal.mapping.user.multiple.MultipleRoleUserMapping
 import tech.testsys.infra.database.internal.mapping.user.multiple.MultipleRoleUserRoles
 import tech.testsys.infra.database.internal.utils.findAllInChunks
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 
 /**
  * Persistence adapter of [MultipleRoleUser] entities backed by [UserJpaEntity] rows of the multiple-role type.
- * Writes cover the user scalars, the held roles and their community memberships ([MultipleRoleToUserJpaEntity]);
- * the per-role id lists (tasks, classes, submissions, ...) are read-only projections of the owning side. *
+ * Writes cover the user scalars, the held roles and their community memberships ([MultipleRoleToUserJpaEntity])
+ * and increment the user version first; removal also increments the versions of the student's classes.
+ * [update] rejects removing the student role while the user is enrolled in a class.
+ * The per-role id lists (tasks, classes, submissions, ...) are read-only projections of the owning side.
+ *
  * @since %CURRENT_VERSION%
  */
 @Component
@@ -95,10 +98,10 @@ class MultipleRoleUserPersistenceAdapter(
 
     @Transactional
     override fun update(entity: MultipleRoleUser): MultipleRoleUser {
-        val currentUserJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val updatedUserJpaEntity = jpaEntityRepository.saveAndFlush(
-            MultipleRoleUserMapping.toUserJpaEntity(entity, currentUserJpaEntity),
-        )
+        val updatedUserJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            require(isMultipleRole(current)) { "User ${entity.id.value} is not a multiple-role user: ${current.type}" }
+            MultipleRoleUserMapping.toUserJpaEntity(entity, current)
+        }
         val userId = updatedUserJpaEntity.requireId()
 
         syncRoles(userId, entity.data.roles)
@@ -113,9 +116,10 @@ class MultipleRoleUserPersistenceAdapter(
         communityId: CommunityId,
         kind: CommunityInvite.Kind,
     ): MultipleRoleUser {
-        val userJpaEntity = requireNotNull(users.lockById(userId.value)?.takeIf(::isMultipleRole)) {
+        requireNotNull(users.findByIdOrNull(userId.value)?.takeIf(::isMultipleRole)) {
             "Multiple-role user ${userId.value} does not exist for community membership"
         }
+        val userJpaEntity = touchRoot(users, userId.value, changesRootData = true)
         val roleEnum = when (kind) {
             CommunityInvite.Kind.Manager -> {
                 syncManagerPresence(userId.value, isTarget = true)
@@ -137,13 +141,16 @@ class MultipleRoleUserPersistenceAdapter(
         return assemble(userJpaEntity)
     }
 
-    @Transactional
-    override fun removeById(id: MultipleRoleUserId) {
-        val userJpaEntity = jpaEntityRepository.findByIdOrNull(id.value)?.takeIf(::isMultipleRole) ?: return
-        val userId = userJpaEntity.requireId()
+    override fun removeRoot(id: MultipleRoleUserId, expectedVersion: Long?) {
+        jpaEntityRepository.findByIdOrNull(id.value)?.takeIf(::isMultipleRole) ?: return
+        val userId = touchRoot(users, id.value, expectedVersion, changesRootData = true).requireId()
+        val studentRows = studentToClassJpaEntityRepository.findAllByStudentId(userId)
+        studentRows.map { row -> row.id.classId }.distinct().sorted().forEach { classId ->
+            touchRoot(classJpaEntityRepository, classId, changesRootData = true)
+        }
 
         multipleRoleToUserJpaEntityRepository.deleteAll(multipleRoleToUserJpaEntityRepository.findAllByUserId(userId))
-        studentToClassJpaEntityRepository.deleteAll(studentToClassJpaEntityRepository.findAllByStudentId(userId))
+        studentToClassJpaEntityRepository.deleteAll(studentRows)
         administratorDataJpaEntityRepository.findByUserId(userId)?.let(administratorDataJpaEntityRepository::delete)
         developerDataJpaEntityRepository.findByUserId(userId)?.let(developerDataJpaEntityRepository::delete)
         studentDataJpaEntityRepository.findByUserId(userId)?.let(studentDataJpaEntityRepository::delete)
@@ -151,9 +158,6 @@ class MultipleRoleUserPersistenceAdapter(
         managerDataJpaEntityRepository.findByUserId(userId)?.let(managerDataJpaEntityRepository::delete)
         jpaEntityRepository.deleteById(userId)
     }
-
-    @Transactional
-    override fun removeByIds(ids: List<MultipleRoleUserId>) = ids.forEach(::removeById)
 
     @Transactional(readOnly = true)
     override fun findByEmail(email: String): MultipleRoleUser? = users.findByEmail(email)?.takeIf(::isMultipleRole)?.let { assemble(it) }
@@ -294,7 +298,12 @@ class MultipleRoleUserPersistenceAdapter(
         when {
             isTarget && current == null ->
                 studentDataJpaEntityRepository.save(StudentDataJpaEntity(userId = userId))
-            !isTarget && current != null -> studentDataJpaEntityRepository.delete(current)
+            !isTarget && current != null -> {
+                // The user row is already touched, and addStudent touches it too, so a concurrent enrolment conflicts.
+                val classIds = studentToClassJpaEntityRepository.findAllByStudentId(userId).map { row -> row.id.classId }
+                require(classIds.isEmpty()) { "Student role of user $userId cannot be removed while enrolled in classes $classIds" }
+                studentDataJpaEntityRepository.delete(current)
+            }
         }
     }
 

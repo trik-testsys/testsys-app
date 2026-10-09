@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.argThat
 import org.mockito.Mockito.doThrow
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
@@ -26,9 +25,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 @OptIn(InternalDatabaseApi::class)
-@TestPropertySource(
-    properties = ["spring.datasource.url=jdbc:h2:mem:testsys_task_validation;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1"],
-)
 class TaskValidationRequestPersistenceAdapterTests :
     UpdatablePersistenceAdapterContractTests<TaskValidationRequestData, TaskValidationRequestId, TaskValidationRequest>() {
     @Autowired
@@ -266,6 +262,48 @@ class TaskValidationRequestPersistenceAdapterTests :
         assertSameData(stopped, repository.recordTechnicalFailure(request.id, failure))
     }
 
+    @Test
+    fun `should increment the task version when an active request is found or created`() {
+        val task = fixtures.workingTask()
+
+        repository.findOrCreateActive(task.id, task.data.owner.id)
+
+        assertEquals(requireNotNull(task.version).value + 1, requireNotNull(reloaded(task).version).value)
+    }
+
+    @Test
+    fun `should increment the task version when a request is saved`() {
+        val data = newData()
+        val task = taskRepository.load(data.task)
+
+        repository.save(data)
+
+        assertEquals(requireNotNull(task.version).value + 1, requireNotNull(reloaded(task).version).value)
+    }
+
+    @Test
+    fun `should increment the task version when a request is removed`() {
+        val request = repository.save(newData())
+        val task = taskRepository.load(request.data.task)
+
+        repository.removeById(request.id)
+
+        assertNull(repository.findById(request.id))
+        assertEquals(requireNotNull(task.version).value + 1, requireNotNull(reloaded(task).version).value)
+    }
+
+    @Test
+    fun `should keep the request version when a saved diagnostic result is written again`() {
+        val request = repository.save(newData())
+        val result = testDiagnosticResult { testId = request.data.snapshot.tests.ids.single() }
+        repository.saveDiagnosticProgress(request.id, result)
+        val written = requireNotNull(repository.findById(request.id))
+
+        repository.saveDiagnosticProgress(request.id, result)
+
+        assertEquals(written.version, requireNotNull(repository.findById(request.id)).version)
+    }
+
     override fun newData(): TaskValidationRequestData {
         val task = fixtures.task()
         val test = fixtures.polygon()
@@ -368,14 +406,14 @@ class TaskValidationRequestPersistenceAdapterTests :
         val committedTest = fixtures.polygon()
         val exercise = fixtures.exercise()
         val statement = fixtures.statement()
-        val editable = taskRepository.update(
+        taskRepository.update(
             task.withData {
                 content.new { tests = mutableListOf(workingTest.id) }
             },
         )
         val request = repository.findOrCreateActive(task.id, task.data.owner.id)
         taskRepository.update(
-            editable.withData {
+            reloaded(task).withData {
                 content.committed {
                     tests = mutableListOf(committedTest.id)
                     exercises = mutableListOf(exercise.id)
@@ -459,7 +497,7 @@ class TaskValidationRequestPersistenceAdapterTests :
         val author = fixtures.developerSolution()
         val version = fixtures.trikStudioVersion()
         val committedVersion = fixtures.trikStudioVersion()
-        val editable = taskRepository.update(
+        taskRepository.update(
             task.withData {
                 content.uncommitted(
                     wipBuilder = {
@@ -478,7 +516,7 @@ class TaskValidationRequestPersistenceAdapterTests :
         )
         val first = repository.findOrCreateActive(task.id, task.data.owner.id)
         taskRepository.update(
-            editable.withData {
+            reloaded(task).withData {
                 content.new { tests = mutableListOf(newTest.id) }
             },
         )
@@ -501,7 +539,7 @@ class TaskValidationRequestPersistenceAdapterTests :
         val first = repository.findOrCreateActive(task.id, task.data.owner.id)
         val unrelated = fixtures.polygon()
         taskRepository.update(
-            task.withData {
+            reloaded(task).withData {
                 name = fixtures.unique("Renamed")
                 description = "Updated"
                 uploadedResources += unrelated.data.versionBucket
@@ -519,9 +557,9 @@ class TaskValidationRequestPersistenceAdapterTests :
         val task = fixtures.workingTask()
         val first = fixtures.polygon()
         val second = fixtures.polygon()
-        val editable = taskRepository.update(task.withData { content.new { tests = mutableListOf(first.id, second.id) } })
+        taskRepository.update(task.withData { content.new { tests = mutableListOf(first.id, second.id) } })
         val request = repository.findOrCreateActive(task.id, task.data.owner.id)
-        taskRepository.update(editable.withData { content.new { tests = mutableListOf(second.id, first.id) } })
+        taskRepository.update(reloaded(task).withData { content.new { tests = mutableListOf(second.id, first.id) } })
 
         val repeated = repository.findOrCreateActive(task.id, task.data.owner.id)
 
@@ -600,7 +638,7 @@ class TaskValidationRequestPersistenceAdapterTests :
 
         val stored = requireNotNull(repository.findById(request.id))
         assertEquals(TaskValidationExecution.PendingDiagnostics, stored.data.execution)
-        assertEquals(request.version, stored.version)
+        assertEquals(requireNotNull(request.version).value + 1, requireNotNull(stored.version).value)
         assertEquals(listOf(result), repository.findDiagnosticProgress(request.id))
         assertEquals(TaskValidationExecution.PendingDiagnostics, repository.startDiagnostics(request.id)?.data?.execution)
     }
@@ -797,6 +835,9 @@ class TaskValidationRequestPersistenceAdapterTests :
             },
         )
     }
+
+    /** Reads [task] again: creating a validation request increments the task version. */
+    private fun reloaded(task: Task): Task = requireNotNull(taskRepository.findById(task.id))
 
     private fun reportedResult(testId: TestId): TestDiagnosticResult = testDiagnosticResult {
         this.testId = testId

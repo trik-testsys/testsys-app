@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -106,6 +107,34 @@ class GradingPersistenceServiceTests {
             verify(exactly = 0) { repository.tasks.load(any<LazyEntity<TaskId, Task>>()) }
             verify(exactly = 0) { repository.tests.load(any<LazyEntityList<TestId, Polygon>>()) }
             verify(exactly = 0) { repository.submissions.update(any<Submission>()) }
+        }
+
+        @Test
+        fun `should prepare a submission in one transaction`() {
+            val submitted = testSubmission().withData { kind.grading { contest(10) } }
+            val repository = RepositoryFixture(submitted)
+            every { repository.tasks.load(submitted.data.task) } returns editedTask()
+            val solution = repository.solutions.load(submitted.data.solution)
+            val polygons = repository.tests.load(LazyEntityList(listOf(TestId(4))))
+            val callsInTransaction = mutableListOf<Boolean>()
+            every { repository.solutions.load(submitted.data.solution) } answers {
+                callsInTransaction.add(repository.transactions.isActive.get())
+                solution
+            }
+            every { repository.tests.load(any<LazyEntityList<TestId, Polygon>>()) } answers {
+                callsInTransaction.add(repository.transactions.isActive.get())
+                polygons
+            }
+            every { repository.submissions.update(any<Submission>()) } answers {
+                callsInTransaction.add(repository.transactions.isActive.get())
+                firstArg<Submission>().also(repository.current::set)
+            }
+
+            repository.persistence.prepare(submitted, shouldRecordVideo = true)
+
+            assertEquals(1, repository.transactions.count.get())
+            assertEquals(listOf(true, true, true), callsInTransaction)
+            assertTrue(repository.hasCommitted.get())
         }
 
         @ParameterizedTest

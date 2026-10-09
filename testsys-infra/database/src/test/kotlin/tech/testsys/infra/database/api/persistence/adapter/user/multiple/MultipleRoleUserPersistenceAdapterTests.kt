@@ -9,6 +9,7 @@ import tech.testsys.domain.builder.api.multipleRoleUser
 import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.user.Administrator
@@ -24,6 +25,7 @@ import tech.testsys.domain.model.user.Student
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
+import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.AdministratorDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.DeveloperDataJpaEntityRepository
@@ -57,6 +59,9 @@ class MultipleRoleUserPersistenceAdapterTests :
 
     @Autowired
     private lateinit var studentDataJpaEntityRepository: StudentDataJpaEntityRepository
+
+    @Autowired
+    private lateinit var classes: ClassRepository
 
     override fun newData() = newData(fixtures.unique("token"))
 
@@ -348,6 +353,86 @@ class MultipleRoleUserPersistenceAdapterTests :
     }
 
     @Test
+    fun `should increment the user version on addCommunityMembership`() {
+        val user = fixtures.developer()
+        val community = fixtures.community(fixtures.administrator())
+
+        val updated = repository.addCommunityMembership(user.id, community.id, CommunityInvite.Kind.Developer)
+
+        assertEquals(assertNotNull(user.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(user.id)).version)
+    }
+
+    @Test
+    fun `should increment the user version on an update of the roles only`() {
+        val user = fixtures.developer()
+
+        val updated = repository.update(
+            user.withData {
+                roles {
+                    student { data = studentData {} }
+                }
+            },
+        )
+
+        assertEquals(assertNotNull(user.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(user.id)).version)
+    }
+
+    @Test
+    fun `should reject an update of a user row of another kind`() {
+        val supervisor = fixtures.supervisor()
+        val user = fixtures.developer()
+        val foreign = multipleRoleUser {
+            id = supervisor.id.value
+            createdAt = supervisor.createdAt
+            version = supervisor.version
+            data = user.data
+        }
+
+        assertFailsWith<IllegalArgumentException> { repository.update(foreign) }
+
+        val row = userJpaEntityRepository.findById(supervisor.id.value).orElseThrow()
+        assertEquals(UserTypeJpaEnum.SINGLE_ROLE, row.type)
+        assertEquals(supervisor.data.name, row.name)
+    }
+
+    @Test
+    fun `should increment the versions of the student's classes on removeById`() {
+        val student = fixtures.student()
+        val first = fixtures.studentClass(students = listOf(student))
+        val second = fixtures.studentClass(students = listOf(student))
+
+        repository.removeById(student.id)
+
+        assertEquals(assertNotNull(first.version).value + 1, assertNotNull(classes.findById(first.id)?.version).value)
+        assertEquals(assertNotNull(second.version).value + 1, assertNotNull(classes.findById(second.id)?.version).value)
+        assertEquals(emptyList(), assertNotNull(classes.findById(first.id)).data.students.ids)
+    }
+
+    @Test
+    fun `should reject removing the student role of a user enrolled in a class`() {
+        val studyClass = fixtures.studentClass(students = listOf(fixtures.student()))
+        // Enrolment increments the student version, so the student is read after it.
+        val student = assertNotNull(repository.findById(studyClass.data.students.ids.single()))
+
+        assertFailsWith<IllegalArgumentException> { repository.update(asDeveloperOnly(student)) }
+
+        assertNotNull(studentDataJpaEntityRepository.findByUserId(student.id.value))
+        assertEquals(listOf(studyClass.id), assertNotNull(repository.findById(student.id)).role<Student>().data.classes.ids)
+    }
+
+    @Test
+    fun `should remove the student role of a user enrolled in no class`() {
+        val student = fixtures.student()
+
+        val updated = repository.update(asDeveloperOnly(student))
+
+        assertEquals(listOf(Developer::class), updated.data.roles.map { role -> role::class })
+        assertNull(studentDataJpaEntityRepository.findByUserId(student.id.value))
+    }
+
+    @Test
     fun `should fail to add a community membership for a missing user`() {
         val community = fixtures.community(fixtures.administrator())
 
@@ -491,5 +576,13 @@ class MultipleRoleUserPersistenceAdapterTests :
         assertEquals(List(20) { 5 }, twenty.map { user -> user.data.roles.size })
         assertEquals(ids.zip(taskIds).toMap(), twenty.associate { user -> user.id to user.role<Developer>().data.tasks.ids.single() })
         assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    /** A copy of [user] holding only the Developer role, which drops every other role on update. */
+    private fun asDeveloperOnly(user: MultipleRoleUser): MultipleRoleUser = user.withData {
+        roles {
+            clear()
+            developer { data = developerData {} }
+        }
     }
 }

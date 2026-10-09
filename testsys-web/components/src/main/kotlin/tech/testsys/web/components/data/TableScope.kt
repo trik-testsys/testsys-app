@@ -198,7 +198,7 @@ class TableScope<T> internal constructor(
 
     /**
      * Runs [listener] with the row a user clicks, except clicks on its checkbox and actions. [isNavigation] marks a
-     * click that opens another page; such a row shows the navigation arrow.
+     * click that opens another page; its first text column then looks like a link.
      *
      * @since %CURRENT_VERSION%
      */

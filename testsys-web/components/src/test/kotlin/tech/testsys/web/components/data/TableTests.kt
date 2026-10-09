@@ -422,7 +422,7 @@ class TableTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should mark the last ordinary cell before the menu if the row click navigates`() {
+    fun `should mark the first text cell if the row click navigates`() {
         buildTable(Source(size = 12)) {
             menuColumn { item("Открыть") {} }
             onRowClick(isNavigation = true) {}
@@ -430,7 +430,7 @@ class TableTests : MockVaadinTests() {
 
         val cells = rows()[0].children.toList()
 
-        assertEquals(listOf(false, false, true, false), cells.map { cell -> "ts-navigation-cell" in cell.classes() })
+        assertEquals(listOf(false, true, false, false), cells.map { cell -> "ts-navigation-cell" in cell.classes() })
     }
 
     @Test

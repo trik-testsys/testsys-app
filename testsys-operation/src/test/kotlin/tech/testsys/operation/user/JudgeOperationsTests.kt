@@ -178,6 +178,27 @@ class JudgeOperationsTests {
         inner class HappyPathTests {
 
             @Test
+            fun `should batch judgments and select the last by time and id for the final score`() {
+                val pagination = Pagination(page = 0, size = 10)
+                val submission = gradedSubmission(studentAuthor.id) { judgmentOrders(listOf(20, 21)) }
+                val earlier = testOrder(20, judge.id.value, Instant.EPOCH, 90)
+                val latest = testOrder(21, judge.id.value, Instant.EPOCH, 95)
+                arrangeAuthor(studentAuthor)
+                every { submissionRepository.load(any<LazyEntityList<SubmissionId, Submission>>()) } returns listOf(submission)
+                every { repository.findAvailableToJudge(pagination, VerdictFilter()) } returns
+                    Page(content = listOf(gradedVerdict), pagination = pagination, totalElements = 1)
+                every { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) } returns
+                    listOf(latest, earlier)
+
+                val result = operations.viewResults(judge, pagination).getOrThrow().content.single()
+
+                assertSame(latest, result.lastJudgment)
+                assertSame(submission, result.submission)
+                assertEquals(95L, result.finalScore)
+                verify(exactly = 1) { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) }
+            }
+
+            @Test
             fun `should forward all supplied verdict filters unchanged`() {
                 val pagination = Pagination(page = 1, size = 2)
                 val filter = VerdictFilter(
@@ -192,8 +213,8 @@ class JudgeOperationsTests {
                 val result = operations.viewResults(user = judge, pagination = pagination, filter = filter).getOrThrow()
 
                 assertEquals(
-                    Page<Pair<Verdict, User<*>>>(
-                        content = page.content.map { it to studentAuthor },
+                    Page<JudgeOperations.JudgeResult>(
+                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
                         pagination = page.pagination,
                         totalElements = page.totalElements,
                     ),
@@ -216,8 +237,8 @@ class JudgeOperationsTests {
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
                 assertEquals(
-                    Page<Pair<Verdict, User<*>>>(
-                        content = page.content.map { it to studentAuthor },
+                    Page<JudgeOperations.JudgeResult>(
+                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
                         pagination = page.pagination,
                         totalElements = page.totalElements,
                     ),
@@ -239,8 +260,8 @@ class JudgeOperationsTests {
                 ).getOrThrow()
 
                 assertEquals(
-                    Page<Pair<Verdict, User<*>>>(
-                        content = page.content.map { it to studentAuthor },
+                    Page<JudgeOperations.JudgeResult>(
+                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
                         pagination = page.pagination,
                         totalElements = page.totalElements,
                     ),
@@ -258,8 +279,8 @@ class JudgeOperationsTests {
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
                 assertEquals(
-                    Page<Pair<Verdict, User<*>>>(
-                        content = page.content.map { it to studentAuthor },
+                    Page<JudgeOperations.JudgeResult>(
+                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
                         pagination = page.pagination,
                         totalElements = page.totalElements,
                     ),
@@ -276,8 +297,8 @@ class JudgeOperationsTests {
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
                 assertEquals(
-                    Page<Pair<Verdict, User<*>>>(
-                        content = page.content.map { it to studentAuthor },
+                    Page<JudgeOperations.JudgeResult>(
+                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
                         pagination = page.pagination,
                         totalElements = page.totalElements,
                     ),
@@ -294,7 +315,7 @@ class JudgeOperationsTests {
 
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
-                assertSame(studentAuthor, result.content.single().second)
+                assertSame(studentAuthor, result.content.single().author)
             }
 
             @Test
@@ -306,7 +327,7 @@ class JudgeOperationsTests {
 
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
-                assertSame(participantAuthor, result.content.single().second)
+                assertSame(participantAuthor, result.content.single().author)
             }
 
             @Test
@@ -322,11 +343,11 @@ class JudgeOperationsTests {
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
                 assertEquals(listOf(first, second), result.content.map { (verdict, _) -> verdict })
-                assertSame(first, result.content[0].first)
-                assertEquals(listOf(75, 0), result.content[0].first.data.testVerdicts.map { it.score.value })
-                assertEquals(listOf(30L, 31L), result.content[0].first.data.testVerdicts.map { it.logs.id.value })
-                assertEquals(40L, result.content[0].first.data.testVerdicts[0].recording?.id?.value)
-                assertEquals(null, result.content[0].first.data.testVerdicts[1].recording)
+                assertSame(first, result.content[0].verdict)
+                assertEquals(listOf(75, 0), result.content[0].verdict.data.testVerdicts.map { it.score.value })
+                assertEquals(listOf(30L, 31L), result.content[0].verdict.data.testVerdicts.map { it.logs.id.value })
+                assertEquals(40L, result.content[0].verdict.data.testVerdicts[0].recording?.id?.value)
+                assertEquals(null, result.content[0].verdict.data.testVerdicts[1].recording)
                 assertEquals(responsePagination, result.pagination)
                 assertEquals(3, result.totalPages)
                 assertEquals(true, result.hasNext)
@@ -348,7 +369,10 @@ class JudgeOperationsTests {
                     filter = VerdictFilter(authorId = authorId),
                 ).getOrThrow()
 
-                assertEquals(Page(content = listOf(verdict to participantAuthor), pagination = pagination, totalElements = 1), result)
+                assertEquals(
+                    Page(content = listOf(expectedResult(verdict, participantAuthor)), pagination = pagination, totalElements = 1),
+                    result,
+                )
                 verify(exactly = 1) { repository.findAvailableToJudge(pagination, VerdictFilter(authorId = authorId)) }
             }
         }
@@ -416,6 +440,14 @@ class JudgeOperationsTests {
                 assertSame(failure, thrown)
             }
         }
+
+        private fun expectedResult(verdict: Verdict, author: User<*>) = JudgeOperations.JudgeResult(
+            verdict = verdict,
+            author = author,
+            submission = gradedSubmission(author.id),
+            lastJudgment = null,
+            finalScore = verdict.data.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() },
+        )
 
         private fun arrangeAuthor(author: User<*>) {
             every { submissionRepository.load(any<LazyEntityList<SubmissionId, Submission>>()) } returns listOf(gradedSubmission(author.id))

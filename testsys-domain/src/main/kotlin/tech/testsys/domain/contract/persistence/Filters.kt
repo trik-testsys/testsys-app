@@ -16,6 +16,7 @@ import java.time.Instant
  * @property ownerId the required owner, or `null` for any authorized owner.
  * @property state the required lifecycle state, or `null` for any state.
  * @property communityId the community granted access to the task, or null for any sharing; never expands access.
+ * @property excludeOwnerId the owner whose tasks are excluded before pagination and counting, or `null` for no exclusion.
  * @since %CURRENT_VERSION%
  */
 data class TaskFilter(
@@ -23,6 +24,7 @@ data class TaskFilter(
     val ownerId: MultipleRoleUserId? = null,
     val state: State? = null,
     val communityId: CommunityId? = null,
+    val excludeOwnerId: MultipleRoleUserId? = null,
 ) {
 
     /**

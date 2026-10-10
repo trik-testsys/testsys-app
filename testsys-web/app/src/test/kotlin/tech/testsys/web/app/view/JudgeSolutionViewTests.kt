@@ -69,15 +69,17 @@ class JudgeSolutionViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should show the status in the head with the author and the task`() {
+    fun `should show the submission id in the heading and breadcrumb without author metadata`() {
         signIn(fixtures.judge())
         val submission = fixtures.gradingSubmission(student("Ученик Анна"))
 
         open(submission)
 
-        val taskName = checkNotNull(tasks.findById(submission.data.task.id)).data.name
         assertTrue("Проверена" in headText(), headText())
-        assertEquals("Ученик Анна · Задача «$taskName»", UI.getCurrent()._get<Span> { classes = "ts-page-head__meta" }.text)
+        assertEquals("Посылка №${submission.id.value}", UI.getCurrent()._get<H1>().text)
+        assertTrue(UI.getCurrent()._find<Span> { classes = "ts-page-head__meta" }.isEmpty())
+        val currentCrumb = UI.getCurrent()._find<Span>().single { span -> span.element.getAttribute("aria-current") == "page" }
+        assertEquals("Посылка №${submission.id.value}", currentCrumb.text)
     }
 
     @Test

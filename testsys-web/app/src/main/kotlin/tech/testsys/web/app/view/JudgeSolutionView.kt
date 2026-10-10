@@ -70,12 +70,11 @@ class JudgeSolutionView(
         val details = judgeService.viewSolution(submissionId)
         val (status, tone) = statusOf(details.submission.status)
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Посылка") {
+            head("Посылка №${details.submission.id.value}") {
                 crumb("Главная", MultiMainView::class.java)
                 crumb("Кабинет Судьи", JudgeView::class.java)
                 crumb("Посылки", JudgeView::class.java, judgeSubmissionsParameters())
                 badge(status, tone)
-                meta("${details.author.name} · Задача «${details.task.name}»")
             }
             detailsBlock(details)
             verdictBlock(details)

@@ -9,9 +9,9 @@ import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.web.app.service.ContestVo
-import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.participant.ParticipantService
 import tech.testsys.web.app.service.student.StudentService
+import tech.testsys.web.app.service.study.StudyContestTaskVo
 import tech.testsys.web.app.service.study.StudyService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.mainAction
@@ -78,12 +78,16 @@ abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHead
                 contestDetails(contest)
                 highlightBlock(title = "Осталось") { studyRemainingTime(contest, enteredAt, now) }
             }
-            row {
-                block(title = "Задачи", subtitle = "Задачи откроются после начала тура".takeIf { enteredAt == null }) {
-                    table(key = { task: TaskVo -> task.id }, fetch = { request -> pageOf(tasks, request) }) {
-                        textColumn("Название") { task -> task.name }
-                        empty("Задач пока нет")
-                        if (enteredAt != null) onRowClick(isNavigation = true) { task -> access.openTask(contestId, task.id) }
+            if (enteredAt != null && contest.startsAt?.let { start -> !now.isBefore(start) } != false) {
+                row {
+                    block(title = "Задачи") {
+                        table(key = { item: StudyContestTaskVo -> item.task.id }, fetch = { request -> pageOf(tasks, request) }) {
+                            textColumn("Название", size = 12) { item -> item.task.name }
+                            numberColumn("Балл", size = 4) { item -> item.bestScore }
+                            column("Последняя посылка") { item -> submissionStatus(item.lastSubmission?.status) }
+                            empty("Задач пока нет")
+                            onRowClick(isNavigation = true) { item -> access.openTask(contestId, item.task.id) }
+                        }
                     }
                 }
             }

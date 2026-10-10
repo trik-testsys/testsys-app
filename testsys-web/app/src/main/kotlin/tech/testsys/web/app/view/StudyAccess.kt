@@ -7,14 +7,17 @@ import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.web.app.service.ContestVo
-import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.participant.ParticipantService
 import tech.testsys.web.app.service.student.StudentService
+import tech.testsys.web.app.service.study.GradingResultVo
+import tech.testsys.web.app.service.study.StudyContestTaskVo
 import tech.testsys.web.app.service.study.StudyService
 import tech.testsys.web.app.service.study.StudyTaskVo
+import tech.testsys.web.app.service.study.SubmissionStatusVo
 import tech.testsys.web.components.display.TimerHandle
 import tech.testsys.web.components.display.TimerValue
 import tech.testsys.web.components.display.TimerVariant
@@ -52,7 +55,7 @@ internal sealed class StudyAccess {
     abstract val taskPage: Class<out Component>
 
     /** Returns the first entry time, the contest [contestId] and its tasks. */
-    abstract fun viewContest(contestId: ContestId): Triple<Instant?, ContestVo, List<TaskVo>>
+    abstract fun viewContest(contestId: ContestId): Triple<Instant?, ContestVo, List<StudyContestTaskVo>>
 
     /** Saves the first entry into [contestId]. */
     abstract fun enterContest(contestId: ContestId)
@@ -62,6 +65,9 @@ internal sealed class StudyAccess {
 
     /** Returns the file of the statement or exercise [resourceId] of [taskId]. */
     abstract fun downloadTaskResource(contestId: ContestId, taskId: TaskId, resourceId: DomainId): FileData
+
+    /** Returns the file of an owned submission in the selected study context. */
+    abstract fun downloadSolution(contestId: ContestId, taskId: TaskId, submissionId: SubmissionId): FileData
 
     /** Sends [file] in [language] as a solution of [taskId]. */
     abstract fun sendSolution(contestId: ContestId, taskId: TaskId, file: FileData, language: TrikSupportedLanguage)
@@ -101,6 +107,9 @@ internal sealed class StudyAccess {
         override fun downloadTaskResource(contestId: ContestId, taskId: TaskId, resourceId: DomainId) =
             studyService.downloadTaskResource(classId, contestId, taskId, resourceId)
 
+        override fun downloadSolution(contestId: ContestId, taskId: TaskId, submissionId: SubmissionId) =
+            studyService.downloadSolution(classId, contestId, taskId, submissionId)
+
         override fun sendSolution(contestId: ContestId, taskId: TaskId, file: FileData, language: TrikSupportedLanguage) {
             studyService.sendSolution(classId = classId, contestId = contestId, taskId = taskId, file = file, language = language)
         }
@@ -139,6 +148,9 @@ internal sealed class StudyAccess {
 
         override fun downloadTaskResource(contestId: ContestId, taskId: TaskId, resourceId: DomainId) =
             studyService.downloadTaskResource(contestId, taskId, resourceId)
+
+        override fun downloadSolution(contestId: ContestId, taskId: TaskId, submissionId: SubmissionId) =
+            studyService.downloadSolution(contestId, taskId, submissionId)
 
         override fun sendSolution(contestId: ContestId, taskId: TaskId, file: FileData, language: TrikSupportedLanguage) {
             studyService.sendSolution(contestId, taskId, file, language)
@@ -184,17 +196,14 @@ internal fun studyDurationText(duration: Duration?): String {
 
 /**
  * Adds the state of [contest] for a user who entered it at [enteredAt]: not started without an entry before its end, running
- * with the remaining time before the deadline, otherwise completed.
+ * before the deadline, otherwise completed.
  */
 internal fun ContentScope.studyState(contest: ContestVo, enteredAt: Instant?, now: Instant) {
     val deadline = studyDeadline(contest, enteredAt)
     when {
         deadline != null && !now.isBefore(deadline) -> badge("Завершён", Tone.Neutral)
         enteredAt == null -> badge("Не начат", Tone.Neutral)
-        else -> {
-            badge("Идёт", Tone.Info)
-            deadline?.let { end -> timer("Осталось", TimerValue.Until(end)) }
-        }
+        else -> badge("Идёт", Tone.Info)
     }
 }
 
@@ -216,4 +225,33 @@ internal fun BlockScope.studyRemainingTime(contest: ContestVo, enteredAt: Instan
         }
     }
     return liveTimer
+}
+
+/** Shows the remaining time separately from the contest state. */
+internal fun ContentScope.studyTimer(contest: ContestVo, enteredAt: Instant?, now: Instant) {
+    val deadline = studyDeadline(contest, enteredAt)
+    if (enteredAt != null && deadline != null && now.isBefore(deadline)) {
+        timer("Осталось", TimerValue.Until(deadline))
+    } else {
+        text("—")
+    }
+}
+
+/** Shows a submission status independently from its score. */
+internal fun ContentScope.submissionStatus(status: SubmissionStatusVo?) {
+    if (status == null) {
+        text("—")
+        return
+    }
+
+    val (label, tone) = when (status) {
+        SubmissionStatusVo.Queued -> "В очереди" to Tone.Neutral
+        SubmissionStatusVo.InProgress -> "Проверяется" to Tone.Info
+        is SubmissionStatusVo.Graded -> when (status.grade) {
+            is GradingResultVo.Success -> "Проверено" to Tone.Success
+            is GradingResultVo.GradingError -> "Ошибка проверки" to Tone.Danger
+            GradingResultVo.Timeout -> "Превышено время проверки" to Tone.Warning
+        }
+    }
+    badge(label, tone)
 }

@@ -9,6 +9,7 @@ import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
@@ -66,8 +67,34 @@ class MultiMainViewTests : MockSpringVaadinTests() {
 
         val (roles, communities) = UI.getCurrent()._find<Table>().map { table -> table.element.textRecursively }
         assertTrue("Разработчик" in roles && "Ученик" in roles)
-        assertTrue("Общее сообщество" in communities && "Разработчик, Ученик" in communities)
+        assertTrue("Общее сообщество" in communities)
+        val tags = UI.getCurrent()._find<Table>().last()._find<Span> { classes = "ts-tag" }.map { tag -> tag.text }
+        assertTrue("Разработчик" in tags && "Ученик" in tags, tags.toString())
         assertTrue("Сообщество учеников" in communities)
+    }
+
+    @Test
+    fun `should paginate communities independently from the role table`() {
+        val communities = List(21) { index -> fixtures.community(name = "Сообщество $index") }
+        signIn(
+            fixtures.multipleRoleUser {
+                roles {
+                    developer {
+                        memberOf(communities.map { community -> community.id.value })
+                        data = developerData {}
+                    }
+                }
+            },
+        )
+        UI.getCurrent().navigate(MultiMainView::class.java)
+        assertEquals(20, UI.getCurrent()._find<Table>().last()._get<TableBody>()._find<TableRow>().size)
+
+        UI.getCurrent()._find<NativeButton>().single { button ->
+            button.element.getAttribute("aria-label") == "Перейти на следующую страницу"
+        }._click()
+
+        assertEquals(1, UI.getCurrent()._find<Table>().last()._get<TableBody>()._find<TableRow>().size)
+        assertTrue("Разработчик" in UI.getCurrent()._find<Table>().first().element.textRecursively)
     }
 
     @Test

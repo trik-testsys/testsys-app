@@ -89,7 +89,7 @@ class JudgeOperations(
         user: MultipleRoleUser,
         pagination: Pagination,
         filter: VerdictFilter = VerdictFilter(),
-    ): OperationResult<Page<Pair<Verdict, User<*>>>, ViewResultsError> = operation<Page<Pair<Verdict, User<*>>>, ViewResultsError> {
+    ): OperationResult<Page<JudgeResult>, ViewResultsError> = operation<Page<JudgeResult>, ViewResultsError> {
         ensure(user.hasRole<Judge>(), MissedJudgeRoleError)
         val page = verdictRepository.findAvailableToJudge(pagination = pagination, filter = filter)
 
@@ -97,6 +97,7 @@ class JudgeOperations(
         val authorIds = submissions.values.map { submission -> submission.data.author.id }
         val students = multipleRoleUserRepository.findByIdsAsMap(authorIds.filterIsInstance<MultipleRoleUserId>())
         val participants = participantRepository.findByIdsAsMap(authorIds.filterIsInstance<SingleRoleUserId>())
+        val orders = judgmentOrderRepository.loadByIdsAsMap(submissions.values.flatMap { submission -> submission.data.judgmentOrders.ids })
         val content = page.content.map { verdict ->
             val submission = submissions.getValue(verdict.data.submission.id)
             val author = when (val id = submission.data.author.id) {
@@ -104,9 +105,18 @@ class JudgeOperations(
                 is SingleRoleUserId -> participants[id]
                 else -> null
             }.takeIf { submission.data.kind is SubmissionKind.Grading }
-            verdict to checkNotNull(author) {
-                "Author of submission ${submission.id.value} with verdict ${verdict.id.value} is not available to judges"
-            }
+            val lastOrder = submission.data.judgmentOrders.ids.map(orders::getValue)
+                .maxWithOrNull(compareBy<JudgmentOrder> { order -> order.createdAt }.thenBy { order -> order.id.value })
+            JudgeResult(
+                verdict = verdict,
+                author = checkNotNull(author) {
+                    "Author of submission ${submission.id.value} with verdict ${verdict.id.value} is not available to judges"
+                },
+                submission = submission,
+                lastJudgment = lastOrder,
+                finalScore = lastOrder?.data?.score?.value?.toLong()
+                    ?: verdict.data.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() },
+            )
         }
         return Page(content = content, pagination = page.pagination, totalElements = page.totalElements).asSuccess()
     }
@@ -283,4 +293,22 @@ class JudgeOperations(
         val status = submission.data.status as? SubmissionStatus.Graded
         return (status?.grade as? GradingResult.Success)?.verdict
     }
+
+    /**
+     * Current successful verdict with its submission, author and final result.
+     *
+     * @property verdict the automatic verdict.
+     * @property author the author available to the judge.
+     * @property submission the graded submission.
+     * @property lastJudgment the latest judgment by creation time and identifier, or `null` if absent.
+     * @property finalScore the latest judgment score or the automatic total.
+     * @since %CURRENT_VERSION%
+     */
+    data class JudgeResult(
+        val verdict: Verdict,
+        val author: User<*>,
+        val submission: Submission,
+        val lastJudgment: JudgmentOrder?,
+        val finalScore: Long,
+    )
 }

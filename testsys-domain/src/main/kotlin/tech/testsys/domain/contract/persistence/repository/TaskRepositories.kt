@@ -337,6 +337,18 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
     fun findGradingByContext(authorId: UserId, taskId: TaskId, contestId: ContestId): List<Submission>
 
     /**
+     * Synchronously finds grading submissions in a contest without changing state; technical exceptions propagate.
+     * Repeated calls reflect current data and exclude developer solution tests.
+     *
+     * @param authorId the exact author of the submissions.
+     * @param contestId the exact contest of the submissions.
+     * @param taskIds the tasks to include; an empty set yields an empty list.
+     * @return matching submissions ordered by creation time and then identifier, both ascending.
+     * @since %CURRENT_VERSION%
+     */
+    fun findGradingByContest(authorId: UserId, contestId: ContestId, taskIds: Set<TaskId>): List<Submission>
+
+    /**
      * Synchronously summarizes grading submissions of [contestId] per author and task, without changing stored state
      * or loading file contents. Repeated calls reflect current data; technical exceptions propagate to the caller.
      *

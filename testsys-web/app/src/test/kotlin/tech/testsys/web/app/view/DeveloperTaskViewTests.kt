@@ -100,6 +100,36 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should show committed resource versions after a newer resource version is uploaded`() {
+        developers.signInDeveloper()
+        val version = developers.trikStudioVersion()
+        val taskId = developers.committedTask(version)
+        val committed = checkNotNull(developerService.viewTask(taskId).first.lastCommitted)
+        val statementId = checkNotNull(committed.statement)
+        developerService.updateStatement(taskId, statementId, resourceName = "Новое условие", file = FileData("new.txt", byteArrayOf(2)))
+        open(taskId)
+
+        clickButton("Посмотреть зафиксированную версию")
+
+        val dialog = openDialog()
+        assertTrue("Условие" in dialog.element.textRecursively)
+        assertTrue("Новое условие" !in dialog.element.textRecursively)
+        assertTrue(dialog._find<TextField>().any { field -> field.value == statementId.value.toString() })
+        assertTrue(dialog._find<TextField>().any { field -> field.value == version.version })
+        assertTrue(dialog._find<TextField>().all { field -> field.isReadOnly })
+    }
+
+    @Test
+    fun `should disable committed viewing for a task without a committed revision`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+
+        open(task.id)
+
+        assertFalse(pageButton("Посмотреть зафиксированную версию").isEnabled)
+    }
+
+    @Test
     fun `should upload the described files as resources of the task`() {
         developers.signInDeveloper()
         val task = developers.task()
@@ -695,7 +725,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         }
         every { service.viewTrikStudioVersions() } returns developerService.viewTrikStudioVersions()
         every { service.viewTaskValidationRequests(task.id) } returns requests
-        val view = DeveloperTaskView(buildUiTexts(), headers, service, multipleRoleUserService)
+        val view = DeveloperTaskView(buildUiTexts(), headers, service, multipleRoleUserService, mockk())
         val event = mockk<BeforeEnterEvent>()
         every { event.routeParameters } returns taskParameters(task.id)
         UI.getCurrent().removeAll()

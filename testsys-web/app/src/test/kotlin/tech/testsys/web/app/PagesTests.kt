@@ -51,6 +51,7 @@ import tech.testsys.web.app.view.ManagerView
 import tech.testsys.web.app.view.OBSERVER_ID_PARAMETER
 import tech.testsys.web.app.view.ParticipantContestView
 import tech.testsys.web.app.view.ParticipantTaskView
+import tech.testsys.web.app.view.ParticipantView
 import tech.testsys.web.app.view.STUDY_CLASS_ID_PARAMETER
 import tech.testsys.web.app.view.STUDY_CONTEST_ID_PARAMETER
 import tech.testsys.web.app.view.STUDY_TASK_ID_PARAMETER
@@ -108,6 +109,10 @@ class PagesTests : MockSpringVaadinTests() {
                 (UserKind.MULTIPLE_ROLE to AppFixtures::administrator)
 
         private val parameterSets: Map<Class<out Component>, Map<String, ParametersOf>> = mapOf(
+            ParticipantView::class.java to mapOf(
+                "" to parametersOf { _, _ -> RouteParameters.empty() },
+                "contests" to parametersOf { _, _ -> RouteParameters("section", "contests") },
+            ),
             AdminView::class.java to mapOf(
                 "" to parametersOf { _, _ -> RouteParameters.empty() },
                 "communities" to parametersOf { _, _ -> RouteParameters(ADMIN_SECTION_PARAMETER, "communities") },

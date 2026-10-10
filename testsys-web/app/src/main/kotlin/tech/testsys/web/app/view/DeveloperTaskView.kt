@@ -6,6 +6,7 @@ import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.TaskId
@@ -25,7 +26,9 @@ import tech.testsys.web.app.service.developer.TaskValidationRequestVo
 import tech.testsys.web.app.service.developer.TestVo
 import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.components.TestSysView
+import tech.testsys.web.components.actions.DownloadContent
 import tech.testsys.web.components.actions.action
+import tech.testsys.web.components.actions.downloadAction
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.filters
 import tech.testsys.web.components.data.table
@@ -109,6 +112,7 @@ class DeveloperTaskView(
     private val headers: CabinetHeaders,
     private val developerService: DeveloperService,
     private val multipleRoleUserService: MultipleRoleUserService,
+    private val fileContentReader: FileContentReader,
 ) : TestSysView(texts),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
@@ -164,6 +168,12 @@ class DeveloperTaskView(
                 crumb("Кабинет Разработчика", DeveloperView::class.java)
                 crumb("Задачи", DeveloperView::class.java, developerSectionParameters(TASKS_SECTION))
                 badge(state.label, state.tone)
+                actions {
+                    action("Посмотреть зафиксированную версию") {
+                        isEnabled = task.lastCommitted != null
+                        onClick { committedDialog(task, chains) }
+                    }
+                }
             }
             row {
                 detailsBlock(task, versions)
@@ -172,6 +182,42 @@ class DeveloperTaskView(
             resourcesBlock(task, chains)
             testingBlock(task, requests)
         }
+    }
+
+    private fun committedDialog(task: TaskVo, chains: List<Chain>) {
+        val committed = checkNotNull(task.lastCommitted)
+        dialog(title = "Зафиксированная версия", size = DialogSize.L) {
+            row {
+                textInput("Версии TRIK Studio", labelSize = 6, size = 18) {
+                    value = committed.supportedTrikStudioVersions.joinToString(", ") { version -> version.version }
+                    isEditable = false
+                }
+            }
+            chains.mapNotNull { chain -> chain.attachedIn(committed) }.forEach { resource ->
+                section(typeOf(resource)) {
+                    row {
+                        textInput("Название", labelSize = 6, size = 18) {
+                            value = resource.name
+                            isEditable = false
+                        }
+                    }
+                    row {
+                        codeInput("ID версии", labelSize = 6, size = 18) {
+                            value = resource.id.value.toString()
+                            isEditable = false
+                        }
+                    }
+                    row {
+                        downloadAction("Скачать", produce = {
+                            val file = developerService.downloadResourceVersion(task.id, resource.versionBucket, resource.id)
+                            val bytes = fileContentReader.read(file)
+                            DownloadContent(file.uploadedFilename, "application/octet-stream", bytes.size.toLong()) { bytes.inputStream() }
+                        })
+                    }
+                }
+            }
+            footer { view -> action("Закрыть") { onClick { view.close() } } }
+        }.open()
     }
 
     /**

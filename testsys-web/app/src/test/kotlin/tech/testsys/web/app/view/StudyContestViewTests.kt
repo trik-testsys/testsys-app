@@ -7,6 +7,7 @@ import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -89,8 +90,7 @@ class StudyContestViewTests : MockSpringVaadinTests() {
             signIn(student)
             open(studyClass, contest)
 
-            StudyPages.clickRow("Название")
-
+            assertTrue(UI.getCurrent()._find<Table>().isEmpty())
             assertEquals(StudentContestView::class.java, currentView)
         }
 
@@ -106,6 +106,38 @@ class StudyContestViewTests : MockSpringVaadinTests() {
             StudyPages.clickRow("Название")
 
             assertEquals(StudentTaskView::class.java, currentView)
+        }
+
+        @Test
+        fun `should keep tasks hidden before start despite a saved entry`() {
+            val student = study.student()
+            val contest = study.contest(tasks = listOf(study.task()), startsAt = StudyFixtures.FAR_FUTURE)
+            val studyClass = study.studentClass(listOf(student), listOf(contest))
+            study.studentEntry(student, studyClass, contest)
+            signIn(student)
+
+            open(studyClass, contest)
+
+            assertTrue(UI.getCurrent()._find<Table>().isEmpty())
+        }
+
+        @Test
+        fun `should show task score and latest status and open tasks after individual deadline`() {
+            val student = study.student()
+            val task = study.task()
+            val contest = study.contest(tasks = listOf(task), startsAt = StudyFixtures.PAST, attemptDuration = Duration.ofMinutes(1))
+            val studyClass = study.studentClass(listOf(student), listOf(contest))
+            study.studentEntry(student, studyClass, contest)
+            study.submission(student.id, task, contest, "best.py", score = 90)
+            study.submission(student.id, task, contest, "latest.py")
+            signIn(student)
+            open(studyClass, contest)
+
+            assertTrue("90В очереди" in StudyPages.rowTexts("Последняя посылка").single())
+            StudyPages.clickRow("Последняя посылка")
+
+            assertEquals(StudentTaskView::class.java, currentView)
+            assertFalse(UI.getCurrent()._get<Button> { text = "Отправить" }.isEnabled)
         }
 
         private fun open(studyClass: Class, contest: Contest) {

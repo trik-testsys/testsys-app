@@ -14,9 +14,8 @@ import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.web.app.service.judge.JudgeResultVo
 import tech.testsys.web.app.service.judge.JudgeService
-import tech.testsys.web.app.service.judge.NamedUserVo
-import tech.testsys.web.app.service.judge.VerdictVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.filters
@@ -78,18 +77,23 @@ class JudgeView(texts: UiTexts, private val headers: CabinetHeaders, private val
     private fun BlockScope.submissionsTable() {
         var applied = VerdictFilter()
         val rows = table(
-            key = { (verdict, _): Pair<VerdictVo, NamedUserVo> -> verdict.id },
+            key = { result: JudgeResultVo -> result.verdict.id },
             fetch = { request ->
                 val pageNumber = request.offset / request.limit
                 val results = judgeService.viewResults(Pagination(page = pageNumber, size = request.limit, sort = LATEST_FIRST), applied)
                 Page(results.content, results.totalElements.toInt())
             },
         ) {
-            codeColumn("Посылка", size = 6) { (verdict, _) -> verdict.submission.value.toString() }
-            textColumn("Автор", size = 12) { (_, author) -> author.name }
-            numberColumn("Балл") { (verdict, _) -> verdict.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() } }
+            codeColumn("Посылка", size = 4) { result -> result.submission.id.value.toString() }
+            textColumn("Автор", size = 5) { result -> result.author.name }
+            dateTimeColumn("Отправлено", size = 4) { result -> result.submission.createdAt.toServerDateTime() }
+            numberColumn("Автоматический балл", size = 4) { result ->
+                result.verdict.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() }
+            }
+            numberColumn("Судейский балл", size = 3) { result -> result.lastJudgment?.score?.value }
+            numberColumn("Итоговый балл") { result -> result.finalScore }
             empty("Посылок нет", "Здесь появятся успешно проверенные Посылки Учеников и Участников.")
-            onRowClick(isNavigation = true) { (verdict, _) -> openJudgeSolution(verdict.submission) }
+            onRowClick(isNavigation = true) { result -> openJudgeSolution(result.submission.id) }
         }
 
         val draft = Binder<VerdictFilterDraft>()

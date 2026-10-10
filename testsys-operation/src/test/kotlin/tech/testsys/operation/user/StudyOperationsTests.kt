@@ -59,6 +59,7 @@ import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionData
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.Task
@@ -146,6 +147,55 @@ class StudyOperationsTests {
             inner class HappyPathTests {
 
                 @Test
+                fun `should hide tasks before first entry including a completed contest`() {
+                    val current = taskContest.withData {
+                        startsAt = Instant.EPOCH
+                        contestDuration = Duration.ofHours(1)
+                    }
+                    prepareParticipantView(current = current)
+
+                    val result = operations.viewContest(user = participant, contestId = current.id).getOrThrow()
+
+                    assertEquals(emptyList<Any>(), result.third)
+                    verify(exactly = 0) { taskRepository.load(any<LazyEntityList<TaskId, Task>>()) }
+                }
+
+                @Test
+                fun `should hide tasks before contest start even with a saved entry`() {
+                    val current = taskContest.withData { startsAt = now.plusSeconds(1) }
+                    prepareParticipantView(current = current, enteredAt = firstEntry)
+
+                    val result = operations.viewContest(user = participant, contestId = current.id).getOrThrow()
+
+                    assertEquals(emptyList<Any>(), result.third)
+                    verify(exactly = 0) { submissionRepository.findGradingByContest(any(), any(), any()) }
+                }
+
+                @Test
+                fun `should return best final score and latest submission independently after contest end`() {
+                    val current = taskContest.withData {
+                        startsAt = Instant.EPOCH
+                        contestDuration = Duration.ofHours(1)
+                    }
+                    prepareParticipantView(current = current, enteredAt = firstEntry)
+                    val best = testSubmission(51, orders = listOf(10, 11))
+                    val automatic = testSubmission(52)
+                    val latest = testSubmission(53, chooseStatus = { queued() })
+                    every { submissionRepository.findGradingByContest(any(), current.id, setOf(task.id)) } returns
+                        listOf(latest, best, automatic)
+                    stubJudgmentOrders(testJudgmentOrder(10, 90), testJudgmentOrder(11, 95))
+                    stubVerdict(52, listOf(80))
+
+                    val result = operations.viewContest(user = participant, contestId = current.id).getOrThrow().third.single()
+
+                    assertEquals(95, result.bestScore)
+                    assertSame(latest, result.lastSubmission)
+                    verify(exactly = 1) { submissionRepository.findGradingByContest(any(), current.id, setOf(task.id)) }
+                    verify(exactly = 1) { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) }
+                    verify(exactly = 1) { verdictRepository.load(any<LazyEntityList<VerdictId, Verdict>>()) }
+                }
+
+                @Test
                 fun `should return the original contest without an entry time if participant has not entered it`() {
                     prepareParticipantView()
 
@@ -198,12 +248,12 @@ class StudyOperationsTests {
                 @Test
                 fun `should return the tasks of the contest in contest order if the port returns them in another order`() {
                     val current = contest.withData { tasks(listOf(32, 31, 33)) }
-                    prepareParticipantView(current = current)
+                    prepareParticipantView(current = current, enteredAt = firstEntry)
                     every { taskRepository.load(current.data.tasks) } returns listOf(contestTask(31), contestTask(33), contestTask(32))
 
                     val result = operations.viewContest(user = participant, contestId = current.id).getOrThrow()
 
-                    assertEquals(listOf(TaskId(32), TaskId(31), TaskId(33)), result.third.map { task -> task.id })
+                    assertEquals(listOf(TaskId(32), TaskId(31), TaskId(33)), result.third.map { item -> item.task.id })
                 }
 
                 @Test
@@ -316,6 +366,59 @@ class StudyOperationsTests {
             inner class HappyPathTests {
 
                 @Test
+                fun `should hide tasks before first entry including a completed contest`() {
+                    val current = taskContest.withData {
+                        startsAt = Instant.EPOCH
+                        contestDuration = Duration.ofHours(1)
+                    }
+                    prepareStudentView(current = current)
+
+                    val result = operations.viewContest(user = student, classId = studyClass.id, contestId = current.id).getOrThrow()
+
+                    assertEquals(emptyList<Any>(), result.third)
+                    verify(exactly = 0) { taskRepository.load(any<LazyEntityList<TaskId, Task>>()) }
+                }
+
+                @Test
+                fun `should hide tasks before contest start even with a saved entry`() {
+                    val current = taskContest.withData { startsAt = now.plusSeconds(1) }
+                    prepareStudentView(current = current, enteredAt = firstEntry)
+
+                    val result = operations.viewContest(user = student, classId = studyClass.id, contestId = current.id).getOrThrow()
+
+                    assertEquals(emptyList<Any>(), result.third)
+                    verify(exactly = 0) { submissionRepository.findGradingByContest(any(), any(), any()) }
+                }
+
+                @Test
+                fun `should return best final score and latest submission independently after contest end`() {
+                    val current = taskContest.withData {
+                        startsAt = Instant.EPOCH
+                        contestDuration = Duration.ofHours(1)
+                    }
+                    prepareStudentView(current = current, enteredAt = firstEntry)
+                    val best = testSubmission(51, orders = listOf(10, 11))
+                    val automatic = testSubmission(52)
+                    val latest = testSubmission(53, chooseStatus = { queued() })
+                    every { submissionRepository.findGradingByContest(any(), current.id, setOf(task.id)) } returns
+                        listOf(latest, best, automatic)
+                    stubJudgmentOrders(testJudgmentOrder(10, 90), testJudgmentOrder(11, 95))
+                    stubVerdict(52, listOf(80))
+
+                    val result = operations.viewContest(
+                        user = student,
+                        classId = studyClass.id,
+                        contestId = current.id,
+                    ).getOrThrow().third.single()
+
+                    assertEquals(95, result.bestScore)
+                    assertSame(latest, result.lastSubmission)
+                    verify(exactly = 1) { submissionRepository.findGradingByContest(any(), current.id, setOf(task.id)) }
+                    verify(exactly = 1) { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) }
+                    verify(exactly = 1) { verdictRepository.load(any<LazyEntityList<VerdictId, Verdict>>()) }
+                }
+
+                @Test
                 fun `should return the original contest without an entry time if student has not entered it in selected class`() {
                     prepareStudentView()
 
@@ -354,12 +457,12 @@ class StudyOperationsTests {
                 @Test
                 fun `should return the tasks of the class contest in contest order if the port returns them in another order`() {
                     val current = contest.withData { tasks(listOf(32, 31)) }
-                    prepareStudentView(current = current)
+                    prepareStudentView(current = current, enteredAt = firstEntry)
                     every { taskRepository.load(current.data.tasks) } returns listOf(contestTask(31), contestTask(32))
 
                     val result = operations.viewContest(user = student, classId = studyClass.id, contestId = current.id).getOrThrow()
 
-                    assertEquals(listOf(TaskId(32), TaskId(31)), result.third.map { task -> task.id })
+                    assertEquals(listOf(TaskId(32), TaskId(31)), result.third.map { item -> item.task.id })
                 }
             }
 
@@ -1177,6 +1280,508 @@ class StudyOperationsTests {
                 verdictRepository.update(any<Verdict>())
                 judgmentOrderRepository.save(any<JudgmentOrderData>())
                 judgmentOrderRepository.update(any<JudgmentOrder>())
+            }
+        }
+    }
+
+    @Nested
+    inner class DownloadSolutionTests {
+
+        @Nested
+        inner class ParticipantTests {
+            @Nested
+            inner class HappyPathTests {
+                @Test
+                fun `should download an owned queued solution after contest end`() {
+                    val current = taskContest.withData {
+                        startsAt = Instant.EPOCH
+                        contestDuration = Duration.ofHours(1)
+                    }
+                    prepareParticipantTask(current = current)
+                    val submission = testSubmission(51, chooseStatus = { queued() }).withData { author = participant.id }
+                    every { submissionRepository.findById(submission.id) } returns submission
+                    val solution = solution {
+                        id = 3
+                        createdAt = Instant.EPOCH
+                        data = solutionData {
+                            file("own.py", byteArrayOf(1, 2))
+                            language.python()
+                        }
+                    }
+                    every { solutionRepository.load(submission.data.solution) } returns solution
+
+                    val file = operations.downloadSolution(
+                        user = participant,
+                        contestId = taskContest.id,
+                        taskId = task.id,
+                        submissionId = submission.id,
+                    ).getOrThrow()
+
+                    assertEquals("own.py", file.uploadedFilename)
+                    assertArrayEquals(byteArrayOf(1, 2), fileContentReader.read(file))
+                }
+            }
+
+            @Nested
+            inner class RefusalTests {
+
+                @Test
+                fun `should reject missing task`() {
+                    prepareParticipantTask()
+                    every { taskRepository.findById(task.id) } returns null
+
+                    assertRaises(TaskNotExistsError(task.id)) {
+                        operations.downloadSolution(
+                            user = participant,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject missing contest`() {
+                    prepareParticipantTask()
+                    every { contests.findById(taskContest.id) } returns null
+
+                    assertRaises(ContestNotExistsError(taskContest.id)) {
+                        operations.downloadSolution(
+                            user = participant,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject task outside contest`() {
+                    prepareParticipantTask(current = taskContest.withData { tasks = mutableListOf() })
+
+                    assertRaises(TaskAccessDeniedError(task.id)) {
+                        operations.downloadSolution(
+                            user = participant,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject missing participant role`() {
+                    assertRaises(MissedParticipantRoleError) {
+                        operations.downloadSolution(
+                            user = testSupervisor(),
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject missing competition`() {
+                    prepareParticipantTask()
+                    every { competitions.findById(competition.id) } returns null
+
+                    assertRaises(CompetitionNotExistsError(competition.id)) {
+                        operations.downloadSolution(
+                            user = participant,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject contest outside competition`() {
+                    prepareParticipantTask()
+                    every { competitions.findById(competition.id) } returns competition.withData { contests = mutableListOf() }
+
+                    assertRaises(ContestAccessDeniedError(taskContest.id)) {
+                        operations.downloadSolution(
+                            user = participant,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject missing submission`() {
+                    prepareParticipantTask()
+                    val id = SubmissionId(51)
+                    every { submissionRepository.findById(id) } returns null
+
+                    assertRaises(SubmissionNotExistsError(id)) {
+                        operations.downloadSolution(user = participant, contestId = taskContest.id, taskId = task.id, submissionId = id)
+                    }
+                }
+
+                @Test
+                fun `should reject a missing entry`() {
+                    prepareParticipantTask(enteredAt = null)
+
+                    assertRaises(ContestNotEnteredError(taskContest.id)) {
+                        operations.downloadSolution(
+                            user = participant,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                    verify { submissionRepository wasNot Called }
+                }
+
+                @Test
+                fun `should reject another author`() {
+                    prepareParticipantTask()
+                    val submission = testSubmission(51).withData {
+                        author = participant.id
+                        author(999)
+                    }
+                    every { submissionRepository.findById(submission.id) } returns submission
+
+                    assertRaises(SubmissionAccessDeniedError(submission.id)) {
+                        operations.downloadSolution(
+                            user = participant,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = submission.id,
+                        )
+                    }
+                    verify { solutionRepository wasNot Called }
+                }
+
+                @Test
+                fun `should reject another task`() {
+                    prepareParticipantTask()
+                    val submission = testSubmission(51).withData {
+                        author = participant.id
+                        task(999)
+                    }
+                    every { submissionRepository.findById(submission.id) } returns submission
+
+                    assertRaises(SubmissionAccessDeniedError(submission.id)) {
+                        operations.downloadSolution(
+                            user = participant,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = submission.id,
+                        )
+                    }
+                    verify { solutionRepository wasNot Called }
+                }
+
+                @Test
+                fun `should reject another contest`() {
+                    prepareParticipantTask()
+                    val submission = testSubmission(51).withData {
+                        author = participant.id
+                        kind.grading { contest(999) }
+                    }
+                    every { submissionRepository.findById(submission.id) } returns submission
+
+                    assertRaises(SubmissionAccessDeniedError(submission.id)) {
+                        operations.downloadSolution(
+                            user = participant,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = submission.id,
+                        )
+                    }
+                    verify { solutionRepository wasNot Called }
+                }
+
+                @Test
+                fun `should reject a developer solution test`() {
+                    prepareParticipantTask()
+                    val submission = testSubmission(51).withData {
+                        author = participant.id
+                        kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+                    }
+                    every { submissionRepository.findById(submission.id) } returns submission
+
+                    assertRaises(SubmissionAccessDeniedError(submission.id)) {
+                        operations.downloadSolution(
+                            user = participant,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = submission.id,
+                        )
+                    }
+                    verify { solutionRepository wasNot Called }
+                }
+            }
+        }
+
+        @Nested
+        inner class StudentTests {
+            @Nested
+            inner class HappyPathTests {
+                @Test
+                fun `should download an owned queued solution after contest end`() {
+                    val current = taskContest.withData {
+                        startsAt = Instant.EPOCH
+                        contestDuration = Duration.ofHours(1)
+                    }
+                    prepareStudentTask(current = current)
+                    val submission = testSubmission(51, chooseStatus = { queued() }).withData { author = student.id }
+                    every { submissionRepository.findById(submission.id) } returns submission
+                    val solution = solution {
+                        id = 3
+                        createdAt = Instant.EPOCH
+                        data = solutionData {
+                            file("own.py", byteArrayOf(1, 2))
+                            language.python()
+                        }
+                    }
+                    every { solutionRepository.load(submission.data.solution) } returns solution
+
+                    val file = operations.downloadSolution(
+                        user = student,
+                        classId = studyClass.id,
+                        contestId = taskContest.id,
+                        taskId = task.id,
+                        submissionId = submission.id,
+                    ).getOrThrow()
+
+                    assertEquals("own.py", file.uploadedFilename)
+                    assertArrayEquals(byteArrayOf(1, 2), fileContentReader.read(file))
+                }
+            }
+
+            @Nested
+            inner class RefusalTests {
+
+                @Test
+                fun `should reject missing task`() {
+                    prepareStudentTask()
+                    every { taskRepository.findById(task.id) } returns null
+
+                    assertRaises(TaskNotExistsError(task.id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject missing contest`() {
+                    prepareStudentTask()
+                    every { contests.findById(taskContest.id) } returns null
+
+                    assertRaises(ContestNotExistsError(taskContest.id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject task outside contest`() {
+                    prepareStudentTask(current = taskContest.withData { tasks = mutableListOf() })
+
+                    assertRaises(TaskAccessDeniedError(task.id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject missing student role`() {
+                    assertRaises(MissedStudentRoleError) {
+                        operations.downloadSolution(
+                            user = testMultipleRoleUser {},
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject missing class`() {
+                    prepareStudentTask()
+                    every { classes.findById(studyClass.id) } returns null
+
+                    assertRaises(ClassNotExistsError(studyClass.id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject missing class membership`() {
+                    prepareStudentTask()
+                    every { classes.findById(studyClass.id) } returns studyClass.withData { students = mutableListOf() }
+
+                    assertRaises(ClassAccessDeniedError(studyClass.id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject contest outside class`() {
+                    prepareStudentTask()
+                    every { classes.findById(studyClass.id) } returns studyClass.withData { contests = mutableListOf() }
+
+                    assertRaises(ContestAccessDeniedError(taskContest.id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject missing submission`() {
+                    prepareStudentTask()
+                    val id = SubmissionId(51)
+                    every { submissionRepository.findById(id) } returns null
+
+                    assertRaises(SubmissionNotExistsError(id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = id,
+                        )
+                    }
+                }
+
+                @Test
+                fun `should reject a missing entry`() {
+                    prepareStudentTask(enteredAt = null)
+
+                    assertRaises(ContestNotEnteredError(taskContest.id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = SubmissionId(51),
+                        )
+                    }
+                    verify { submissionRepository wasNot Called }
+                }
+
+                @Test
+                fun `should reject another author`() {
+                    prepareStudentTask()
+                    val submission = testSubmission(51).withData {
+                        author = student.id
+                        author(999)
+                    }
+                    every { submissionRepository.findById(submission.id) } returns submission
+
+                    assertRaises(SubmissionAccessDeniedError(submission.id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = submission.id,
+                        )
+                    }
+                    verify { solutionRepository wasNot Called }
+                }
+
+                @Test
+                fun `should reject another task`() {
+                    prepareStudentTask()
+                    val submission = testSubmission(51).withData {
+                        author = student.id
+                        task(999)
+                    }
+                    every { submissionRepository.findById(submission.id) } returns submission
+
+                    assertRaises(SubmissionAccessDeniedError(submission.id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = submission.id,
+                        )
+                    }
+                    verify { solutionRepository wasNot Called }
+                }
+
+                @Test
+                fun `should reject another contest`() {
+                    prepareStudentTask()
+                    val submission = testSubmission(51).withData {
+                        author = student.id
+                        kind.grading { contest(999) }
+                    }
+                    every { submissionRepository.findById(submission.id) } returns submission
+
+                    assertRaises(SubmissionAccessDeniedError(submission.id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = submission.id,
+                        )
+                    }
+                    verify { solutionRepository wasNot Called }
+                }
+
+                @Test
+                fun `should reject a developer solution test`() {
+                    prepareStudentTask()
+                    val submission = testSubmission(51).withData {
+                        author = student.id
+                        kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+                    }
+                    every { submissionRepository.findById(submission.id) } returns submission
+
+                    assertRaises(SubmissionAccessDeniedError(submission.id)) {
+                        operations.downloadSolution(
+                            user = student,
+                            classId = studyClass.id,
+                            contestId = taskContest.id,
+                            taskId = task.id,
+                            submissionId = submission.id,
+                        )
+                    }
+                    verify { solutionRepository wasNot Called }
+                }
             }
         }
     }
@@ -2577,6 +3182,7 @@ class StudyOperationsTests {
     }
 
     private fun stubContestTasks(current: Contest) {
+        every { submissionRepository.findGradingByContest(any(), current.id, current.data.tasks.ids.toSet()) } returns emptyList()
         every { taskRepository.load(current.data.tasks) } returns current.data.tasks.ids.map { taskId -> contestTask(taskId.value) }
     }
 

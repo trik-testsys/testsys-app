@@ -4041,6 +4041,7 @@ class DeveloperOperationsTests {
                     TaskFilter(
                         name = " %_ ",
                         ownerId = MultipleRoleUserId(99),
+                        excludeOwnerId = MultipleRoleUserId(101),
                         state = TaskFilter.State.UNCOMMITTED,
                         communityId = CommunityId(100),
                     )

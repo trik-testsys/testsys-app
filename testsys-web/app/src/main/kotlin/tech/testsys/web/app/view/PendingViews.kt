@@ -25,17 +25,6 @@ abstract class PendingCabinetView(texts: UiTexts, headers: CabinetHeaders, title
 }
 
 /**
- * Cabinet of a Participant (testsys.web.page.participant), not implemented yet.
- *
- * @since %CURRENT_VERSION%
- */
-@Route("participant/:section?(contests)")
-@PageTitle("Кабинет Участника")
-@RolesAllowed("PARTICIPANT")
-class ParticipantView(texts: UiTexts, headers: CabinetHeaders) :
-    PendingCabinetView(texts, headers, title = "Кабинет Участника", active = CabinetHeaders.MAIN_SECTION)
-
-/**
  * Cabinet of an Observer (testsys.web.page.observer), not implemented yet.
  *
  * @since %CURRENT_VERSION%

@@ -69,7 +69,9 @@ class JudgeViewTests : MockSpringVaadinTests() {
         openSubmissions()
 
         val text = tableText()
-        assertTrue("${submission.id.value}Ученик Иван42" in text, text)
+        assertTrue("${submission.id.value}Ученик Иван" in text, text)
+        assertTrue("Отправлено" in text && "Судейский балл" in text && "Итоговый балл" in text, text)
+        assertTrue("42—42" in text, text)
     }
 
     @Test

@@ -15,6 +15,8 @@ import com.vaadin.flow.component.dialog.Dialog
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
+import com.vaadin.flow.component.html.TableBody
+import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.router.RouteParameters
@@ -119,7 +121,9 @@ class AdminUserViewTests : MockSpringVaadinTests() {
 
         openUser(member)
 
-        assertTrue("КружокРазработчик, Ученик" in rolesText(), rolesText())
+        val row = UI.getCurrent()._get<Table>()._get<TableBody>()._get<TableRow>()
+        assertTrue("Кружок" in row.element.textRecursively)
+        assertEquals(listOf("Разработчик", "Ученик"), row._find<Span> { classes = "ts-tag" }.map { tag -> tag.text })
     }
 
     @Test

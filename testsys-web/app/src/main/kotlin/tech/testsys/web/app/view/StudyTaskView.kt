@@ -15,20 +15,17 @@ import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.web.app.service.participant.ParticipantService
 import tech.testsys.web.app.service.student.StudentService
-import tech.testsys.web.app.service.study.GradingResultVo
 import tech.testsys.web.app.service.study.StudyService
 import tech.testsys.web.app.service.study.StudySubmissionVo
 import tech.testsys.web.app.service.study.StudyTaskVo
-import tech.testsys.web.app.service.study.SubmissionStatusVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.DownloadContent
 import tech.testsys.web.components.actions.downloadAction
+import tech.testsys.web.components.actions.iconDownloadAction
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.TagKind
 import tech.testsys.web.components.display.TimerHandle
-import tech.testsys.web.components.display.Tone
-import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.field
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.display.text
@@ -111,7 +108,7 @@ abstract class StudyTaskView(
                 highlightBlock(title = "Осталось") { timer = studyRemainingTime(contest, enteredAt, now) }
             }
             solutionForm(access, contestId, task, isSendable, timer)
-            submissionsBlock(task)
+            submissionsBlock(access, contestId, task, isSendable)
         }
     }
 
@@ -164,10 +161,10 @@ abstract class StudyTaskView(
                         task.languages.singleOrNull()?.let { only -> value = only }
                         isEnabled = isSendable
                     }
-                }
-                row {
                     drop = fileDrop(
                         "Файл решения",
+                        labelSize = 4,
+                        size = 8,
                         limits = UploadLimits(
                             maxFiles = 1,
                             maxFileBytes = MAX_SOLUTION_BYTES,
@@ -208,20 +205,27 @@ abstract class StudyTaskView(
         }
     }
 
-    private fun PageScope.submissionsBlock(task: StudyTaskVo) {
+    private fun PageScope.submissionsBlock(access: StudyAccess, contestId: ContestId, task: StudyTaskVo, isSendable: Boolean) {
         row {
             block(title = "Решения") {
                 table(
                     key = { submission: StudySubmissionVo -> submission.submission.id },
                     fetch = { request -> pageOf(task.submissions, request) },
                 ) {
-                    dateTimeColumn("Отправлено", size = 6) { submission -> submission.submission.createdAt.toServerDateTime() }
-                    textColumn("Файл", size = 10) { submission -> submission.filename }
-                    column("Результат") { submission ->
+                    dateTimeColumn("Отправлено", size = 5) { submission -> submission.submission.createdAt.toServerDateTime() }
+                    textColumn("Файл", size = 9) { submission -> submission.filename }
+                    column("Результат", size = 8) { submission ->
                         result(submission)
                         if (submission == task.best) tag("Лучшее", TagKind.Rating)
                     }
-                    empty("Решений пока нет", "Отправьте решение в форме выше.")
+                    column("") { submission ->
+                        iconDownloadAction("Скачать", produce = {
+                            val file = access.downloadSolution(contestId, task.task.id, submission.submission.id)
+                            val content = fileContentReader.read(file)
+                            DownloadContent(file.uploadedFilename, RESOURCE_CONTENT_TYPE, content.size.toLong()) { content.inputStream() }
+                        })
+                    }
+                    empty("Решений пока нет", if (isSendable) "Отправьте решение в форме выше." else "Посылок в этом туре нет.")
                 }
             }
         }
@@ -235,16 +239,7 @@ abstract class StudyTaskView(
             return
         }
 
-        val (label, tone) = when (val status = submission.submission.status) {
-            SubmissionStatusVo.Queued -> "В очереди" to Tone.Neutral
-            SubmissionStatusVo.InProgress -> "Проверяется" to Tone.Info
-            is SubmissionStatusVo.Graded -> when (status.grade) {
-                is GradingResultVo.Success -> "Проверено" to Tone.Success
-                is GradingResultVo.GradingError -> "Ошибка проверки" to Tone.Danger
-                GradingResultVo.Timeout -> "Превышено время проверки" to Tone.Warning
-            }
-        }
-        badge(label, tone)
+        submissionStatus(submission.submission.status)
     }
 
     private fun languageLabel(language: TrikSupportedLanguage): String = when (language) {

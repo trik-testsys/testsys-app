@@ -180,7 +180,7 @@ class AdminUserView(
             block(title = "Роли в сообществах") {
                 table(key = { membership: Membership -> membership.community.id }, fetch = { request -> pageOf(memberships, request) }) {
                     textColumn("Сообщество", size = 12) { membership -> membership.community.name }
-                    textColumn("Роли") { membership -> membership.labels.joinToString(", ") }
+                    column("Роли") { membership -> membership.labels.forEach { label -> tag(label) } }
                     if (user is MultipleRoleUserVo) {
                         menuColumn(ariaLabel = { membership -> "Роли в сообществе «${membership.community.name}»" }) { membership ->
                             removalItems(user, membership, communities)

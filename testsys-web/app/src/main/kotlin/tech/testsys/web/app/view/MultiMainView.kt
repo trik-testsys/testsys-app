@@ -14,6 +14,7 @@ import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.alert
 import tech.testsys.web.components.feedback.toast
@@ -61,7 +62,7 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
                         key = { (role, _): Pair<RoleVo, List<CommunityVo>> -> labelOf(role) },
                         fetch = { request -> pageOf(profile, request) },
                     ) {
-                        textColumn("Роль", size = 14) { (role, _) -> labelOf(role) }
+                        column("Роль", size = 14) { (role, _) -> tag(labelOf(role)) }
                         numberColumn("Сообществ") { (_, communities) -> communities.size }
                         empty("Ролей пока нет", "Присоединитесь к сообществу по Коду-приглашению.")
                         onRowClick(isNavigation = true) { (role, _) -> UI.getCurrent().navigate(rolePageOf(role)) }
@@ -88,7 +89,7 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
                         codeColumn("ID", size = 4) { (community, _) -> community.id.value.toString() }
                         textColumn("Название", size = 8) { (community, _) -> community.name }
                         textColumn("Описание", size = 7) { (community, _) -> community.description }
-                        textColumn("Роли") { (_, roles) -> roles.joinToString(", ") { role -> labelOf(role) } }
+                        column("Роли") { (_, roles) -> roles.forEach { role -> tag(labelOf(role)) } }
                         empty("Сообществ пока нет", "Присоединитесь к сообществу по Коду-приглашению.")
                     }
                 }

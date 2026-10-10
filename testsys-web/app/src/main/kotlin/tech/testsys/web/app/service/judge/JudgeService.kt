@@ -29,9 +29,9 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewResults(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<Pair<VerdictVo, NamedUserVo>> =
+    fun viewResults(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<JudgeResultVo> =
         operations.viewResults(currentUser.multipleRoleUser(), pagination, filter)
-            .getOrThrow().map { (verdict, author) -> verdict.toVo() to author.toNamedVo() }
+            .getOrThrow().map { result -> result.toVo() }
 
     /**
      * Runs [JudgeOperations.changeVerdict].

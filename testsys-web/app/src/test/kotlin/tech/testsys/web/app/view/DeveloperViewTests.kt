@@ -1,17 +1,21 @@
 package tech.testsys.web.app.view
 
+import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10._value
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.select.Select
+import com.vaadin.flow.component.textfield.TextField
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -102,10 +106,11 @@ class DeveloperViewTests : MockSpringVaadinTests() {
 
         open(TASKS_SECTION)
 
-        val clickable = UI.getCurrent()._get<Table>()._find<TableRow> { classes = "ts-row-clickable" }
+        val clickable = UI.getCurrent()._find<Table>().flatMap { table -> table._find<TableRow> { classes = "ts-row-clickable" } }
         assertEquals(1, clickable.size)
         assertTrue("Своя задача" in clickable.single().element.textRecursively)
-        assertTrue("Чужая задача" in tableText("Состояние"), tableText("Состояние"))
+        assertTrue("Чужая задача" in tableText("Сообщества"), tableText("Сообщества"))
+        assertTrue("Чужая задача" !in tableText("Состояние"))
     }
 
     @Test
@@ -114,7 +119,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         val task = developers.task("Своя задача")
         open(TASKS_SECTION)
 
-        val row = UI.getCurrent()._get<Table>()._get<TableBody>()._get<TableRow>()
+        val row = UI.getCurrent()._find<Table>().last()._get<TableBody>()._get<TableRow>()
         row._fireDomEvent("click", acceptedClick(row))
 
         assertEquals("developer/tasks/${task.id.value}", currentPath())
@@ -173,11 +178,54 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.signInDeveloper()
         val contest = developers.contest(developers.trikStudioVersion())
         open(CONTESTS_SECTION)
-        val row = UI.getCurrent()._get<Table>()._get<TableBody>()._get<TableRow>()
+        val row = UI.getCurrent()._find<Table>().last()._get<TableBody>()._get<TableRow>()
 
         row._fireDomEvent("click", acceptedClick(row))
 
         assertEquals("developer/contests/${contest.id.value}", currentPath())
+    }
+
+    @Test
+    fun `should show only own contests with sharing and schedule columns`() {
+        val community = fixtures.community()
+        developers.signInDeveloper(community)
+        val version = developers.trikStudioVersion()
+        val shared = developers.contest(version, name = "Чужой тур")
+        developerService.shareContest(shared.id, setOf(community.id))
+        developers.signInDeveloper(community)
+        developers.contest(version, name = "Мой тур")
+
+        open(CONTESTS_SECTION)
+
+        val text = tableText("Время на прохождение")
+        assertTrue("Мой тур" in text && "Чужой тур" !in text, text)
+        assertTrue("Доступ предоставлен" in text && "Начало" in text && "Конец" in text, text)
+        assertTrue("Сообщества с доступом" !in text && "Только мои" !in UI.getCurrent().element.textRecursively)
+    }
+
+    @Test
+    fun `should paginate own tasks without changing the shared table`() {
+        val community = fixtures.community()
+        developers.signInDeveloper(community)
+        val shared = developers.committedTask(developers.trikStudioVersion(), name = "Общая задача")
+        developerService.shareTask(shared, setOf(community.id))
+        developers.signInDeveloper(community)
+        List(21) { index -> developers.task("Своя $index") }
+        open(TASKS_SECTION)
+        val sharedBefore = tableText("Сообщества")
+
+        UI.getCurrent()._find<NativeButton>().single { button ->
+            button.element.getAttribute("aria-label") == "Перейти на следующую страницу"
+        }._click()
+
+        assertEquals(1, UI.getCurrent()._find<Table>().last()._get<TableBody>()._find<TableRow>().size)
+        assertEquals(sharedBefore, tableText("Сообщества"))
+    }
+
+    private fun textField(label: String): TextField = inScope<TextField>().last { field -> field.ariaLabel.orElse(null) == label }
+
+    private fun clickButton(label: String) {
+        inScope<Button>().last { button -> button.text == label }._click()
     }
 
     private fun open(section: String) {

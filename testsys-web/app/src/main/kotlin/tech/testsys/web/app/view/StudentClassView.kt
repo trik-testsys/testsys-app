@@ -58,11 +58,12 @@ class StudentClassView(
                         key = { (_, contest): Pair<Instant?, ContestVo> -> contest.id },
                         fetch = { request -> pageOf(contests, request) },
                     ) {
-                        textColumn("Название", size = 6) { (_, contest) -> contest.name }
+                        textColumn("Название", size = 5) { (_, contest) -> contest.name }
                         dateTimeColumn("Начало", size = 4) { (_, contest) -> contest.startsAt?.toServerDateTime() }
                         dateTimeColumn("Конец", size = 4) { (_, contest) -> contest.endsAt?.toServerDateTime() }
-                        textColumn("Время на прохождение", size = 4) { (_, contest) -> studyDurationText(contest.attemptDuration) }
-                        column("Состояние") { (enteredAt, contest) -> studyState(contest, enteredAt, now) }
+                        textColumn("Время на прохождение", size = 3) { (_, contest) -> studyDurationText(contest.attemptDuration) }
+                        column("Состояние", size = 4) { (enteredAt, contest) -> studyState(contest, enteredAt, now) }
+                        column("Осталось") { (enteredAt, contest) -> studyTimer(contest, enteredAt, now) }
                         empty("Туров пока нет", "Туры появятся, когда Организатор добавит их в класс.")
                         onRowClick(isNavigation = true) { (_, contest) ->
                             UI.getCurrent().navigate(StudentContestView::class.java, studentContestParameters(classId, contest.id))

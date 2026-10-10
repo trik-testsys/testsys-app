@@ -103,6 +103,19 @@ class SubmissionPersistenceAdapter(
     }
 
     @Transactional(readOnly = true)
+    override fun findGradingByContest(authorId: UserId, contestId: ContestId, taskIds: Set<TaskId>): List<Submission> {
+        if (taskIds.isEmpty()) return emptyList()
+
+        val rows = submissionJpaEntityRepository.findAllByKindAndGradingContestIdAndAuthorIdInAndTaskIdIn(
+            kind = SubmissionKindJpaEnum.GRADING,
+            gradingContestId = contestId.value,
+            authorIds = setOf(authorId.value),
+            taskIds = taskIds.map { taskId -> taskId.value },
+        ).sortedWith(compareBy<SubmissionJpaEntity> { submission -> submission.createdAt }.thenBy { submission -> submission.requireId() })
+        return assembleAll(rows)
+    }
+
+    @Transactional(readOnly = true)
     override fun findContestResults(contestId: ContestId, authorIds: Set<UserId>, taskIds: Set<TaskId>): List<ContestTaskResult> {
         if (authorIds.isEmpty() || taskIds.isEmpty()) return emptyList()
 

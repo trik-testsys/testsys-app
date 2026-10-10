@@ -71,6 +71,20 @@ class StudyServiceTests {
         }
     }
 
+    @Nested
+    inner class DownloadSolutionTests {
+        @Test
+        fun `should forward the selected submission and return its file`() {
+            every { operations.downloadSolution(user, CONTEST_ID, TASK_ID, submission.id) } returns OperationResult.Success(file)
+
+            val downloaded = service.downloadSolution(CONTEST_ID, TASK_ID, submission.id)
+
+            assertEquals(file, downloaded)
+            verify(exactly = 1) { operations.downloadSolution(user, CONTEST_ID, TASK_ID, submission.id) }
+            verify(exactly = 0) { grader.sendToGrade(any()) }
+        }
+    }
+
     private companion object {
         val CONTEST_ID = ContestId(1)
         val TASK_ID = TaskId(1)

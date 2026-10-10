@@ -273,6 +273,7 @@ data class ClassNotExistsError(val classId: ClassId) :
     ViewStudentContestError,
     ViewStudentTaskError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendStudentSolutionError,
     EntityNotExistsError
 
@@ -296,6 +297,7 @@ data class ClassAccessDeniedError(val classId: ClassId) :
     ViewStudentContestError,
     ViewStudentTaskError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendStudentSolutionError,
     AccessDeniedError
 
@@ -318,6 +320,7 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
     ViewParticipantContestError,
     ViewParticipantTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     SendParticipantSolutionError,
     DownloadObserverResultError,
     EntityNotExistsError
@@ -810,6 +813,8 @@ data object MissedJudgeRoleError :
  * @since %CURRENT_VERSION%
  */
 data class SubmissionNotExistsError(val submissionId: SubmissionId) :
+    DownloadParticipantSolutionError,
+    DownloadStudentSolutionError,
     ChangeVerdictError,
     ViewSolutionError,
     DownloadSolutionError,
@@ -818,12 +823,14 @@ data class SubmissionNotExistsError(val submissionId: SubmissionId) :
     EntityNotExistsError
 
 /**
- * The submission is outside the judge's access: its author currently holds neither the student nor the participant role.
+ * The submission is outside the requested study context or the current judge cannot access its author.
  *
  * @property submissionId the id of the inaccessible submission.
  * @since %CURRENT_VERSION%
  */
 data class SubmissionAccessDeniedError(val submissionId: SubmissionId) :
+    DownloadParticipantSolutionError,
+    DownloadStudentSolutionError,
     ChangeVerdictError,
     ViewSolutionError,
     DownloadSolutionError,
@@ -1355,7 +1362,9 @@ data class ContestNotExistsError(
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendParticipantSolutionError,
     SendStudentSolutionError,
     ViewClassContestError,
@@ -1386,7 +1395,9 @@ data class ContestAccessDeniedError(
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendParticipantSolutionError,
     SendStudentSolutionError,
     AddClassContestError,
@@ -1438,7 +1449,9 @@ data class TaskNotExistsError(val taskId: TaskId) :
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendParticipantSolutionError,
     SendStudentSolutionError
 
@@ -1531,7 +1544,9 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendParticipantSolutionError,
     SendStudentSolutionError
 
@@ -1879,11 +1894,25 @@ sealed interface ViewStudentTaskError : OperationError
 sealed interface DownloadParticipantTaskResourceError : OperationError
 
 /**
+ * Failure of downloading an owned solution in the participant's study context.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadParticipantSolutionError : OperationError
+
+/**
  * Failure of downloading a statement or an exercise of a task in the selected class.
  *
  * @since %CURRENT_VERSION%
  */
 sealed interface DownloadStudentTaskResourceError : OperationError
+
+/**
+ * Failure of downloading an owned solution in the student's study context.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadStudentSolutionError : OperationError
 
 /**
  * Failure of sending a solution for a task of a contest in the participant's competition.
@@ -1918,6 +1947,7 @@ data object MissedParticipantRoleError :
     ViewParticipantContestError,
     ViewParticipantTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     SendParticipantSolutionError
 
 /**
@@ -1933,6 +1963,7 @@ data object MissedStudentRoleError :
     ViewStudentContestError,
     ViewStudentTaskError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendStudentSolutionError,
     JoinClassError
 
@@ -1985,7 +2016,9 @@ data class ContestNotEnteredError(val contestId: ContestId) :
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendParticipantSolutionError,
     SendStudentSolutionError
 

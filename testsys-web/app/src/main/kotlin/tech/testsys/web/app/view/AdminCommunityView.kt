@@ -23,6 +23,7 @@ import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.TableHandle
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.alert
 import tech.testsys.web.components.feedback.toast
@@ -154,7 +155,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
                 key = { invite: CommunityInviteVo -> invite.kind },
                 fetch = { request -> pageOf(administratorService.viewCommunityInvites(communityId), request) },
             ) {
-                textColumn("Роль", size = 6) { invite -> roleOf(invite.kind) }
+                column("Роль", size = 6) { invite -> tag(roleOf(invite.kind)) }
                 codeColumn("Код-приглашение", size = 7, isObscured = true) { invite -> invite.codeHash.value }
                 dateTimeColumn("Действует до") { invite -> invite.expiresAt.toServerDateTime() }
                 menuColumn(ariaLabel = { invite -> "Действия с кодом-приглашением для роли ${roleOf(invite.kind)}" }, size = 2) { invite ->

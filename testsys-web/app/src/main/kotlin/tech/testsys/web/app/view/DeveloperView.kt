@@ -24,10 +24,10 @@ import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.filters
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.badge
+import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
-import tech.testsys.web.components.forms.checkbox
 import tech.testsys.web.components.forms.dateTimeInput
 import tech.testsys.web.components.forms.integerInput
 import tech.testsys.web.components.forms.select
@@ -83,14 +83,20 @@ class DeveloperView(
                     tab("Туры", DeveloperView::class.java, developerSectionParameters(CONTESTS_SECTION))
                 }
             }
-            if (section == CONTESTS_SECTION) contestsBlock(me, communities, versions) else tasksBlock(me, communities)
+            if (section == CONTESTS_SECTION) {
+                contestsBlock(me, communities, versions)
+            } else {
+                tasksBlock(me, communities, owned = true)
+                tasksBlock(me, communities, owned = false)
+            }
         }
     }
 
-    private fun PageScope.tasksBlock(me: MultipleRoleUserId, communities: List<CommunityVo>) {
+    private fun PageScope.tasksBlock(me: MultipleRoleUserId, communities: List<CommunityVo>, owned: Boolean) {
         row {
-            block(title = "Задачи") {
-                var applied = TaskFilter()
+            block(title = if (owned) "Мои задачи" else "Доступные через сообщества") {
+                val initial = TaskFilter(ownerId = me.takeIf { owned }, excludeOwnerId = me.takeUnless { owned })
+                var applied = initial
                 val rows = table(
                     key = { task: TaskVo -> task.id },
                     fetch = { request ->
@@ -100,23 +106,29 @@ class DeveloperView(
                 ) {
                     codeColumn("ID", sortKey = "id", size = 5) { task -> task.id.value.toString() }
                     textColumn("Название", sortKey = "name", size = 13) { task -> task.name }
-                    onRowClick(isNavigation = true, isClickable = { task -> task.owner == me }) { task -> openDeveloperTask(task.id) }
-                    column("Состояние") { task ->
-                        val state = stateOf(task)
-                        badge(state.label, state.tone)
+                    if (owned) {
+                        onRowClick(isNavigation = true) { task -> openDeveloperTask(task.id) }
+                        column("Состояние") { task ->
+                            val state = stateOf(task)
+                            badge(state.label, state.tone)
+                        }
+                    } else {
+                        column("Сообщества") { task ->
+                            communities.filter { community -> community.id in task.sharedTo }.forEach { community -> tag(community.name) }
+                        }
                     }
-                    empty("Задач пока нет", "Создайте задачу или получите доступ к задачам через сообщества.")
+                    empty("Задач пока нет")
                 }
 
                 lateinit var name: ValueInput<String>
                 lateinit var state: ValueInput<TaskFilter.State?>
                 lateinit var community: ValueInput<CommunityVo?>
-                lateinit var ownFilter: ValueInput<Boolean>
                 filters(
                     onApply = {
                         applied = TaskFilter(
                             name = name.value.ifEmpty { null },
-                            ownerId = me.takeIf { ownFilter.value },
+                            ownerId = me.takeIf { owned },
+                            excludeOwnerId = me.takeUnless { owned },
                             state = state.value,
                             communityId = community.value?.id,
                         )
@@ -126,8 +138,7 @@ class DeveloperView(
                         name.value = ""
                         state.value = null
                         community.value = null
-                        ownFilter.value = false
-                        applied = TaskFilter()
+                        applied = initial
                     },
                     onRefresh = { rows.refresh(toFirstPage = true) },
                 ) {
@@ -143,12 +154,13 @@ class DeveloperView(
                     }
                     row {
                         community = select("Сообщество", labelSize = 4, size = 8, items = communities, itemLabel = CommunityVo::name)
-                        ownFilter = checkbox("Только мои", labelSize = 4, size = 8)
                     }
                 }
 
-                val creation = taskDialog { rows.refresh() }
-                actions { action("Создать задачу") { onClick { creation() } } }
+                if (owned) {
+                    val creation = taskDialog { rows.refresh() }
+                    actions { action("Создать задачу") { onClick { creation() } } }
+                }
             }
         }
     }
@@ -156,7 +168,7 @@ class DeveloperView(
     private fun PageScope.contestsBlock(me: MultipleRoleUserId, communities: List<CommunityVo>, versions: List<TrikStudioVersion>) {
         row {
             block(title = "Туры") {
-                var applied = ContestFilter()
+                var applied = ContestFilter(ownerId = me)
                 val rows = table(
                     key = { (contest, _): Pair<ContestVo, List<CommunityVo>> -> contest.id },
                     fetch = { request ->
@@ -164,22 +176,24 @@ class DeveloperView(
                         Page(contests.content, contests.totalElements.toInt())
                     },
                 ) {
-                    codeColumn("ID", sortKey = "id", size = 5) { (contest, _) -> contest.id.value.toString() }
-                    textColumn("Название", sortKey = "name", size = 9) { (contest, _) -> contest.name }
-                    numberColumn("Задачи", size = 3) { (contest, _) -> contest.tasks.size }
-                    textColumn("Сообщества с доступом") { (_, shared) -> shared.joinToString(", ") { community -> community.name } }
-                    empty("Туров пока нет", "Создайте тур или получите доступ к турам через сообщества.")
+                    codeColumn("ID", sortKey = "id", size = 3) { (contest, _) -> contest.id.value.toString() }
+                    textColumn("Название", sortKey = "name", size = 5) { (contest, _) -> contest.name }
+                    numberColumn("Задачи", size = 2) { (contest, _) -> contest.tasks.size }
+                    textColumn("Доступ предоставлен", size = 3) { (contest, _) -> if (contest.sharedTo.isEmpty()) "Нет" else "Да" }
+                    dateTimeColumn("Начало", size = 4) { (contest, _) -> contest.startsAt?.toServerDateTime() }
+                    dateTimeColumn("Конец", size = 4) { (contest, _) -> contest.endsAt?.toServerDateTime() }
+                    textColumn("Время на прохождение") { (contest, _) -> studyDurationText(contest.attemptDuration) }
+                    empty("Туров пока нет", "Создайте тур.")
                     onRowClick(isNavigation = true) { (contest, _) -> openDeveloperContest(contest.id) }
                 }
 
                 lateinit var name: ValueInput<String>
                 lateinit var community: ValueInput<CommunityVo?>
-                lateinit var ownFilter: ValueInput<Boolean>
                 filters(
                     onApply = {
                         applied = ContestFilter(
                             name = name.value.ifEmpty { null },
-                            ownerId = me.takeIf { ownFilter.value },
+                            ownerId = me,
                             communityId = community.value?.id,
                         )
                         true
@@ -187,8 +201,7 @@ class DeveloperView(
                     onReset = {
                         name.value = ""
                         community.value = null
-                        ownFilter.value = false
-                        applied = ContestFilter()
+                        applied = ContestFilter(ownerId = me)
                     },
                     onRefresh = { rows.refresh(toFirstPage = true) },
                 ) {
@@ -196,7 +209,6 @@ class DeveloperView(
                         name = textInput("Название", labelSize = 4, size = 8, hint = "Часть названия, без учёта регистра")
                         community = select("Сообщество", labelSize = 4, size = 8, items = communities, itemLabel = CommunityVo::name)
                     }
-                    row { ownFilter = checkbox("Только мои", labelSize = 4, size = 8) }
                 }
 
                 val creation = contestDialog(versions) { rows.refresh() }

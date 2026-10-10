@@ -8,7 +8,7 @@ import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Submission
-import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.operation.error.getOrThrow
@@ -16,7 +16,6 @@ import tech.testsys.operation.user.StudyOperations
 import tech.testsys.web.app.config.AfterCommitGrader
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.CurrentUser
-import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.toVo
 import java.time.Instant
 
@@ -40,7 +39,7 @@ class StudyService(
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewContest(contestId: ContestId): Triple<Instant?, ContestVo, List<TaskVo>> =
+    fun viewContest(contestId: ContestId): Triple<Instant?, ContestVo, List<StudyContestTaskVo>> =
         operations.viewContest(currentUser.singleRoleUser(), contestId).getOrThrow().toVo()
 
     /**
@@ -49,7 +48,7 @@ class StudyService(
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewContest(classId: ClassId, contestId: ContestId): Triple<Instant?, ContestVo, List<TaskVo>> =
+    fun viewContest(classId: ClassId, contestId: ContestId): Triple<Instant?, ContestVo, List<StudyContestTaskVo>> =
         operations.viewContest(currentUser.multipleRoleUser(), classId, contestId).getOrThrow().toVo()
 
     /**
@@ -89,6 +88,24 @@ class StudyService(
         operations.downloadTaskResource(currentUser.multipleRoleUser(), classId, contestId, taskId, resourceId).getOrThrow()
 
     /**
+     * Downloads an owned submission in the participant's contest.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun downloadSolution(contestId: ContestId, taskId: TaskId, submissionId: SubmissionId): FileData =
+        operations.downloadSolution(currentUser.singleRoleUser(), contestId, taskId, submissionId).getOrThrow()
+
+    /**
+     * Downloads an owned submission in the student's selected class and contest.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun downloadSolution(classId: ClassId, contestId: ContestId, taskId: TaskId, submissionId: SubmissionId): FileData =
+        operations.downloadSolution(currentUser.multipleRoleUser(), classId, contestId, taskId, submissionId).getOrThrow()
+
+    /**
      * Runs [StudyOperations.sendSolution] for a participant and grades the submission after commit.
      *
      * @since %CURRENT_VERSION%
@@ -124,5 +141,6 @@ class StudyService(
         return submission.toVo()
     }
 
-    private fun Triple<Instant?, Contest, List<Task>>.toVo() = Triple(first, second.toVo(), third.map { task -> task.toVo() })
+    private fun Triple<Instant?, Contest, List<StudyOperations.StudyContestTask>>.toVo() =
+        Triple(first, second.toVo(), third.map { task -> task.toVo() })
 }

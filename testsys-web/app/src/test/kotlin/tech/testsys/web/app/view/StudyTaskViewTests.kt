@@ -1,21 +1,26 @@
 package tech.testsys.web.app.view
 
 import com.github.mvysny.kaributesting.v10._click
+import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.upload.Upload
+import com.vaadin.flow.dom.Element
 import com.vaadin.flow.router.RouteParameters
+import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.task.Contest
@@ -25,6 +30,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.StudyFixtures
 import tech.testsys.web.app.error.OperationErrorView
+import tech.testsys.web.app.service.study.StudyService
 import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 
@@ -35,6 +41,49 @@ class StudyTaskViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var submissions: SubmissionRepository
+
+    @Autowired
+    private lateinit var studyService: StudyService
+
+    @Autowired
+    private lateinit var fileContentReader: FileContentReader
+
+    @Test
+    fun `should place language selection and file upload in the same form row`() {
+        val (student, studyClass, contest, task) = entered()
+        signIn(student)
+
+        open(studyClass, contest, task)
+
+        val uploadRow = formRow(UI.getCurrent()._get<Upload>().element)
+        val languageRow = formRow(languageSelect().element)
+        assertEquals(uploadRow.node, languageRow.node)
+    }
+
+    @Test
+    fun `should keep a download for each owned submission after contest end`() {
+        val (student, studyClass, contest, task) = entered(contestDuration = Duration.ofHours(1))
+        val first = study.submission(student.id, task, contest, filename = "first.py")
+        val second = study.submission(student.id, task, contest, filename = "second.py", score = 70)
+        signIn(student)
+        open(studyClass, contest, task)
+
+        val firstFile = studyService.downloadSolution(studyClass.id, contest.id, task.id, first.id)
+        val secondFile = studyService.downloadSolution(studyClass.id, contest.id, task.id, second.id)
+
+        assertEquals("first.py", firstFile.uploadedFilename)
+        assertEquals("second.py", secondFile.uploadedFilename)
+        assertArrayEquals("solution".toByteArray(), fileContentReader.read(firstFile))
+        assertArrayEquals("solution".toByteArray(), fileContentReader.read(secondFile))
+        val downloads = StudyPages.table("Результат")._find<NativeButton>().filter { button ->
+            button.element.getAttribute("aria-label")?.startsWith("Скачать:") == true
+        }
+        assertEquals(2, downloads.size)
+        assertFalse(UI.getCurrent()._get<Button> { text = "Отправить" }.isEnabled)
+    }
+
+    private fun formRow(element: Element): Element = generateSequence(element) { current -> current.parent }
+        .first { current -> current.classList.contains("ts-block__row") }
 
     @Test
     fun `should send only the latest file after repeated upload removal`() {

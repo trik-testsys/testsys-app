@@ -16,6 +16,8 @@ import tech.testsys.web.app.service.study.StudyService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
 import tech.testsys.web.components.forms.textArea
@@ -64,6 +66,7 @@ abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHead
                                     action = "Начать",
                                 ) {
                                     access.enterContest(contestId)
+                                    toast(FeedbackKind.Success, "Тур начат")
                                     show(access, contestId)
                                 }
                             }
@@ -95,7 +98,7 @@ abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHead
         block(size = CONTEST_DETAILS_COLUMNS, title = "Сведения") {
             row { codeInput("ID", labelSize = 6, size = 10) { value = contest.id.value.toString() } }
             row { textInput("Название", labelSize = 6, size = 18) { value = contest.name } }
-            row { textArea("Описание", labelSize = 6, size = 18) { value = contest.description } }
+            row { textArea("Описание", labelSize = 6, size = 18, maxLines = 4) { value = contest.description } }
             row {
                 dateTimeInput("Начало", labelSize = 6, size = 6) { value = contest.startsAt?.toServerDateTime() }
                 dateTimeInput("Конец", labelSize = 6, size = 6) { value = contest.endsAt?.toServerDateTime() }

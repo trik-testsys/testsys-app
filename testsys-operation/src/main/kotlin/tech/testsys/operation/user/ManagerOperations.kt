@@ -65,6 +65,9 @@ import tech.testsys.operation.error.CreateClassInviteError
 import tech.testsys.operation.error.CreateCompetitionError
 import tech.testsys.operation.error.CreateParticipantsError
 import tech.testsys.operation.error.DeleteParticipantError
+import tech.testsys.operation.error.DownloadParticipantsError
+import tech.testsys.operation.error.EditClassError
+import tech.testsys.operation.error.EditCompetitionError
 import tech.testsys.operation.error.ExtendClassInviteError
 import tech.testsys.operation.error.MissedManagerRoleError
 import tech.testsys.operation.error.NonPositiveParticipantCountError
@@ -213,6 +216,33 @@ class ManagerOperations(
         }
 
     /**
+     * Replaces the name and description of [classId] owned by [user] with unchanged [className] and [description]; other class
+     * data is kept. Missing role, class, access and a blank or longer than 255 code points name are expected failures.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.class.editClass")
+    fun editClass(
+        user: MultipleRoleUser,
+        classId: ClassId,
+        className: String,
+        description: String,
+    ): OperationResult<Class, EditClassError> = operation<Class, EditClassError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val studyClass = classRepository.findById(classId)
+        ensure(studyClass != null) { ClassNotExistsError(classId) }
+        ensure(studyClass.data.owner.id == user.id) { ClassAccessDeniedError(classId) }
+        ensure(className.isNotBlank(), ClassNameBlankError)
+        ensure(className.codePointCount(0, className.length) <= MAX_CLASS_NAME_CODE_POINTS) { ClassNameTooLongError(className) }
+
+        val edited = studyClass.withData {
+            name = className
+            this.description = description
+        }
+        return classRepository.update(edited).asSuccess()
+    }
+
+    /**
      * Replaces the invite code of [classId] owned by [user] with a new code and a fresh expiration moment.
      * Missing role, class and access are expected failures; storage exceptions, including a code collision, propagate.
      *
@@ -311,6 +341,56 @@ class ManagerOperations(
                 contests = contestRepository.findByIds(competition.data.contests.ids).inOrderOf(competition.data.contests.ids),
             ).asSuccess()
         }
+
+    /**
+     * Replaces the name and description of [competitionId] owned by [user] with unchanged [competitionName] and [description];
+     * other competition data is kept. Missing role, competition, access and a blank or too long name are expected failures.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.competition.editCompetition")
+    fun editCompetition(
+        user: MultipleRoleUser,
+        competitionId: CompetitionId,
+        competitionName: String,
+        description: String,
+    ): OperationResult<Competition, EditCompetitionError> = operation<Competition, EditCompetitionError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val competition = competitionRepository.findById(competitionId)
+        ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+        ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
+        ensure(competitionName.isNotBlank(), CompetitionNameBlankError)
+        ensure(competitionName.codePointCount(0, competitionName.length) <= MAX_COMPETITION_NAME_CODE_POINTS) {
+            CompetitionNameTooLongError(competitionName)
+        }
+
+        val edited = competition.withData {
+            name = competitionName
+            this.description = description
+        }
+        return competitionRepository.update(edited).asSuccess()
+    }
+
+    /**
+     * Returns the participants of [competitionId] owned by [user] in stored order, for the file that hands out their access
+     * codes. Missing role, competition and access are expected failures; storage exceptions propagate to the caller.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.manager.competition.downloadParticipants")
+    @RawAccessTokenDependency(reason = "Returns participants whose stored access codes are written as the issued ones.")
+    fun downloadParticipants(
+        user: MultipleRoleUser,
+        competitionId: CompetitionId,
+    ): OperationResult<List<Participant>, DownloadParticipantsError> = operation<List<Participant>, DownloadParticipantsError> {
+        ensure(user.hasRole<Manager>(), MissedManagerRoleError)
+        val competition = competitionRepository.findById(competitionId)
+        ensure(competition != null) { CompetitionNotExistsError(competitionId) }
+        ensure(competition.data.owner.id == user.id) { CompetitionAccessDeniedError(competitionId) }
+
+        val participantIds = competition.data.participants.ids
+        return participantRepository.findByIds(participantIds).inOrderOf(participantIds).asSuccess()
+    }
 
     /**
      * Deletes [participantId] of [competitionId] owned by [user] together with its contest entries and returns it as it was.

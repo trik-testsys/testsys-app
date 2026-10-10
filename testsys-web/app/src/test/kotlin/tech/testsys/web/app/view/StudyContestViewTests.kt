@@ -78,6 +78,7 @@ class StudyContestViewTests : MockSpringVaadinTests() {
 
             assertNotNull(studentEntries.findByContext(userId = student.id, studyClassId = studyClass.id, contestId = contest.id))
             assertTrue(UI.getCurrent()._find<Button> { text = "Начать тур" }.isEmpty())
+            assertEquals("Тур начат", lastToastTitle())
         }
 
         @Test
@@ -150,6 +151,7 @@ class StudyContestViewTests : MockSpringVaadinTests() {
                 contestId = contest.id,
             )
             assertNotNull(entry)
+            assertEquals("Тур начат", lastToastTitle())
         }
 
         @Test

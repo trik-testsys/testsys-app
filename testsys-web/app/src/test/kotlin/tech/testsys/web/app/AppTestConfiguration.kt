@@ -65,7 +65,7 @@ import javax.sql.DataSource
 
 /** Test beans of the application: stored fixtures, the public community made of them and recorded letters. */
 @TestConfiguration
-@Import(StudyFixtures::class)
+@Import(StudyFixtures::class, PostgresTestConfiguration::class)
 class AppTestConfiguration {
     @Bean
     fun appFixtures(

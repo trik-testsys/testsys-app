@@ -29,7 +29,9 @@ import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.field
+import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.emptyState
+import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
 import tech.testsys.web.components.forms.integerInput
@@ -176,7 +178,7 @@ class JudgeSolutionView(
                 }
             }
             row {
-                textArea("Обоснование", labelSize = 6, size = 18) {
+                textArea("Обоснование", labelSize = 6, size = 18, maxLines = 4) {
                     draft.forField(this)
                         .asRequired("Укажите обоснование")
                         .withValidator({ reason -> reason.isNotBlank() }, "Укажите обоснование")
@@ -190,6 +192,7 @@ class JudgeSolutionView(
                         val values = JudgmentDraft()
                         if (draft.writeBeanIfValid(values)) {
                             judgeService.changeVerdict(submissionId, Score(checkNotNull(values.score)), values.reason)
+                            toast(FeedbackKind.Success, "Судейский вердикт сохранён")
                             dialog.close()
                             show(submissionId)
                         }

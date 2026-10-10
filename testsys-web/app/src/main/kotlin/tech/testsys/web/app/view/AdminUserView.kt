@@ -38,6 +38,8 @@ import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.counter
 import tech.testsys.web.components.display.tag
+import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
 import tech.testsys.web.components.forms.select
@@ -210,7 +212,10 @@ class AdminUserView(
                     text = "Пользователь потеряет доступ к тому, что было доступно ему только через это сообщество в этой роли.",
                     action = "Исключить",
                     isDanger = true,
-                ) { removeFromCommunity(user, membership.community.id, role, communities) }
+                ) {
+                    removeFromCommunity(user, membership.community.id, role, communities)
+                    toast(FeedbackKind.Success, "Пользователь исключён из сообщества", "Роль: $label.")
+                }
             }
         }
     }
@@ -242,9 +247,11 @@ class AdminUserView(
             text = "Код-доступа наблюдателя перестанет действовать.",
             action = "Удалить",
             isDanger = true,
+            typeToConfirm = observer.name,
         ) {
             administratorService.deleteObserver(observer.id)
             openAdminCommunity(observer.community)
+            toast(FeedbackKind.Success, "Наблюдатель удалён")
         }
     }
 
@@ -384,6 +391,11 @@ class AdminUserView(
                         val values = GrantDraft()
                         if (draft.writeBeanIfValid(values)) {
                             administratorService.grantRole(user.id, checkNotNull(values.community).id, checkNotNull(values.role))
+                            toast(
+                                FeedbackKind.Success,
+                                "Пользователь включён в сообщество",
+                                "Роль: ${GRANTED_ROLE_LABELS.getValue(checkNotNull(values.role))}.",
+                            )
                             dialog.close()
                             show(user.id)
                         }

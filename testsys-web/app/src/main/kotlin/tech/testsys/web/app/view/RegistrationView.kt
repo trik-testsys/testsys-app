@@ -89,6 +89,7 @@ class RegistrationView(
 
     private fun requestCode(email: String) {
         val requestId = registrationStep { userService.requestRegistration(email) } ?: return
+        toast(FeedbackKind.Success, "Код отправлен")
         showConfirmationStep(email, requestId)
     }
 
@@ -106,6 +107,7 @@ class RegistrationView(
 
         CabinetSignIn.signIn(userService.authenticate(accessToken))
         UI.getCurrent().navigate(MultiMainView::class.java).ifPresent { view -> view.showAccessToken(accessToken) }
+        toast(FeedbackKind.Success, "Регистрация завершена")
     }
 
     /** Runs [step] and returns its result, or shows the reason of a refusal and returns `null`. */

@@ -177,6 +177,27 @@ sealed interface DeleteParticipantError : OperationError
 sealed interface ViewAvailableContestsError : OperationError
 
 /**
+ * Failure of editing the name and description of a class owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EditClassError : OperationError
+
+/**
+ * Failure of editing the name and description of a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EditCompetitionError : OperationError
+
+/**
+ * Failure of downloading the participants of a competition owned by the manager with their access codes.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadParticipantsError : OperationError
+
+/**
  * The user does not hold the manager role.
  *
  * @since %CURRENT_VERSION%
@@ -198,6 +219,9 @@ data object MissedManagerRoleError :
     CreateClassInviteError,
     ExtendClassInviteError,
     RefreshClassInviteError,
+    EditClassError,
+    EditCompetitionError,
+    DownloadParticipantsError,
     MissedRequiredRoleError
 
 /**
@@ -205,7 +229,7 @@ data object MissedManagerRoleError :
  *
  * @since %CURRENT_VERSION%
  */
-data object ClassNameBlankError : CreateClassError
+data object ClassNameBlankError : CreateClassError, EditClassError
 
 /**
  * The class name exceeds 255 Unicode code points.
@@ -213,14 +237,14 @@ data object ClassNameBlankError : CreateClassError
  * @property className the supplied class name.
  * @since %CURRENT_VERSION%
  */
-data class ClassNameTooLongError(val className: String) : CreateClassError
+data class ClassNameTooLongError(val className: String) : CreateClassError, EditClassError
 
 /**
  * The competition name is empty or contains only whitespace.
  *
  * @since %CURRENT_VERSION%
  */
-data object CompetitionNameBlankError : CreateCompetitionError
+data object CompetitionNameBlankError : CreateCompetitionError, EditCompetitionError
 
 /**
  * The competition name exceeds 255 Unicode code points.
@@ -228,7 +252,7 @@ data object CompetitionNameBlankError : CreateCompetitionError
  * @property competitionName the supplied competition name.
  * @since %CURRENT_VERSION%
  */
-data class CompetitionNameTooLongError(val competitionName: String) : CreateCompetitionError
+data class CompetitionNameTooLongError(val competitionName: String) : CreateCompetitionError, EditCompetitionError
 
 /**
  * The class does not exist.
@@ -238,6 +262,7 @@ data class CompetitionNameTooLongError(val competitionName: String) : CreateComp
  */
 data class ClassNotExistsError(val classId: ClassId) :
     ViewClassError,
+    EditClassError,
     ViewClassContestError,
     AddClassContestError,
     CreateClassInviteError,
@@ -260,6 +285,7 @@ data class ClassNotExistsError(val classId: ClassId) :
  */
 data class ClassAccessDeniedError(val classId: ClassId) :
     ViewClassError,
+    EditClassError,
     ViewClassContestError,
     AddClassContestError,
     CreateClassInviteError,
@@ -281,6 +307,8 @@ data class ClassAccessDeniedError(val classId: ClassId) :
  */
 data class CompetitionNotExistsError(val competitionId: CompetitionId) :
     DeleteParticipantError,
+    EditCompetitionError,
+    DownloadParticipantsError,
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,
@@ -302,6 +330,8 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
  */
 data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
     DeleteParticipantError,
+    EditCompetitionError,
+    DownloadParticipantsError,
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,

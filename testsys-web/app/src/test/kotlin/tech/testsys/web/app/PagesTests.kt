@@ -40,6 +40,7 @@ import tech.testsys.web.app.view.DeveloperContestView
 import tech.testsys.web.app.view.DeveloperFixtures
 import tech.testsys.web.app.view.DeveloperResourceView
 import tech.testsys.web.app.view.DeveloperTaskView
+import tech.testsys.web.app.view.DeveloperTestingView
 import tech.testsys.web.app.view.DeveloperView
 import tech.testsys.web.app.view.JudgeSolutionView
 import tech.testsys.web.app.view.JudgeView
@@ -72,6 +73,7 @@ import tech.testsys.web.app.view.resourceParameters
 import tech.testsys.web.app.view.studentClassParameters
 import tech.testsys.web.app.view.studentContestParameters
 import tech.testsys.web.app.view.taskParameters
+import tech.testsys.web.app.view.testingParameters
 import tech.testsys.web.app.view.userParameters
 
 /** Route parameters of a page built from the fixtures and the signed-in user. */
@@ -204,6 +206,12 @@ class PagesTests : MockSpringVaadinTests() {
                 CONTESTS_SECTION to developerParameters { _ -> developerSectionParameters(CONTESTS_SECTION) },
             ),
             DeveloperTaskView::class.java to mapOf("task" to developerParameters { developers -> taskParameters(developers.task().id) }),
+            DeveloperTestingView::class.java to mapOf(
+                "testing" to developerParameters { developers ->
+                    val task = developers.task()
+                    testingParameters(task.id, developers.testing(task).id)
+                },
+            ),
             DeveloperResourceView::class.java to mapOf(
                 "resource" to developerParameters { developers ->
                     val task = developers.task()

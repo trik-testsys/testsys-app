@@ -30,6 +30,37 @@ import tech.testsys.web.app.service.toVo
 @Transactional
 class ManagerService(private val operations: ManagerOperations, private val currentUser: CurrentUser) {
     /**
+     * Runs [ManagerOperations.editClass].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun editClass(classId: ClassId, className: String, description: String): ClassVo =
+        operations.editClass(currentUser.multipleRoleUser(), classId, className = className, description = description).getOrThrow().toVo()
+
+    /**
+     * Runs [ManagerOperations.editCompetition].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun editCompetition(competitionId: CompetitionId, competitionName: String, description: String): CompetitionVo =
+        operations.editCompetition(
+            currentUser.multipleRoleUser(),
+            competitionId,
+            competitionName = competitionName,
+            description = description,
+        ).getOrThrow().toVo()
+
+    /**
+     * Runs [ManagerOperations.downloadParticipants].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun downloadParticipants(competitionId: CompetitionId): List<ParticipantVo> =
+        operations.downloadParticipants(currentUser.multipleRoleUser(), competitionId).getOrThrow()
+            .map { participant -> participant.toVo() }
+
+    /**
      * Runs [ManagerOperations.createClass].
      *
      * @since %CURRENT_VERSION%

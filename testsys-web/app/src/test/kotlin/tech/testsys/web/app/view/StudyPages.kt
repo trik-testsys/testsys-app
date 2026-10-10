@@ -48,8 +48,16 @@ internal object StudyPages {
         row._fireDomEvent("click", click)
     }
 
+    /** Removes the completed transfer [identity] through the public upload event. */
+    fun removeUpload(identity: String) {
+        UI.getCurrent()._get<Upload>()._fireDomEvent(
+            "testsys-transfer-remove",
+            ObjectMapper().createObjectNode().put("event.detail.identity", identity),
+        )
+    }
+
     /** Uploads [content] as [filename] to the only file drop of the page with the transfer identity its client sends. */
-    fun upload(filename: String, content: ByteArray) {
+    fun upload(filename: String, content: ByteArray): String {
         val upload = UI.getCurrent()._get<Upload>()
         val identity = "${upload.element.getAttribute("data-ts-upload-generation")}:${UUID.randomUUID()}"
         val factory = MockVaadin.mockRequestFactory
@@ -59,5 +67,6 @@ internal object StudyPages {
         } finally {
             MockVaadin.mockRequestFactory = factory
         }
+        return identity
     }
 }

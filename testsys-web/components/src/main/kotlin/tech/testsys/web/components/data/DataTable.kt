@@ -277,8 +277,9 @@ internal class DataTable<T>(
         if (isSelectable) add(TableDataCell(shownRow.checkbox))
         shownRow.update()
 
+        val isClickable = spec.rowClick != null && spec.isRowClickable(row)
         val navigationColumn = spec.columns.firstOrNull { column -> column.kind == CellKind.Text }
-            .takeIf { spec.rowClick != null && spec.isRowNavigation }
+            .takeIf { isClickable && spec.isRowNavigation }
         spec.columns.forEach { column ->
             val cell = TableDataCell()
             column.kind.cssClasses.forEach { cssClass -> cell.addClassName(cssClass) }
@@ -287,7 +288,7 @@ internal class DataTable<T>(
             add(cell)
         }
 
-        spec.rowClick?.let { listener ->
+        spec.rowClick?.takeIf { isClickable }?.let { listener ->
             addClassName(CssClass.RowClickable)
             element.addEventListener(DomEvent.Click) { listener(row) }.setFilter(DomEventFilter.TableRowClick)
         }

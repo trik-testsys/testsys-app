@@ -12,11 +12,16 @@ import tech.testsys.web.app.service.manager.CompetitionDetailsVo
 import tech.testsys.web.app.service.manager.ManagerService
 import tech.testsys.web.app.service.manager.ParticipantVo
 import tech.testsys.web.components.TestSysView
+import tech.testsys.web.components.actions.DownloadContent
 import tech.testsys.web.components.actions.action
+import tech.testsys.web.components.actions.downloadAction
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.integerInput
+import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.confirm
@@ -52,6 +57,7 @@ class ManagerCompetitionView(texts: UiTexts, private val headers: CabinetHeaders
                 onOpen = { contest -> openCompetitionContest(competitionId, contest.id) },
                 onAdd = { contest ->
                     managerService.addCompetitionContest(competitionId, contest.id)
+                    toast(FeedbackKind.Success, "Тур добавлен в соревнование")
                     show(competitionId)
                 },
             )
@@ -59,18 +65,59 @@ class ManagerCompetitionView(texts: UiTexts, private val headers: CabinetHeaders
     }
 
     private fun PageScope.detailsBlock(details: CompetitionDetailsVo) {
+        val entity = details.competition
+        val draft = Binder<DetailsDraft>()
         row {
             block(title = "Сведения") {
+                editing(
+                    onSave = {
+                        val values = DetailsDraft()
+                        val isValid = draft.writeBeanIfValid(values)
+                        if (isValid) {
+                            managerService.editCompetition(
+                                competitionId = entity.id,
+                                competitionName = values.name,
+                                description = values.description,
+                            )
+                            toast(FeedbackKind.Success, "Соревнование изменено")
+                            show(entity.id)
+                        }
+                        isValid
+                    },
+                    onCancel = { draft.readBean(DetailsDraft(entity.name, entity.description)) },
+                )
                 row {
-                    codeInput("ID", labelSize = 3, size = 6) { value = details.competition.id.value.toString() }
-                    textInput("Название", labelSize = 3, size = 12) { value = details.competition.name }
+                    codeInput("ID", labelSize = 6, size = 18) {
+                        value = entity.id.value.toString()
+                        isEditable = false
+                    }
                 }
                 row {
-                    codeInput("Участников", labelSize = 3, size = 6) { value = details.participants.size.toString() }
-                    codeInput("Туров", labelSize = 3, size = 6) { value = details.contests.size.toString() }
+                    textInput("Название", labelSize = 6, size = 18) {
+                        draft.forField(this).nameRules("Укажите название")
+                            .bind({ values -> values.name }, { values, name -> values.name = name })
+                    }
                 }
-            }.isEditable = false
+                row {
+                    textArea("Описание", labelSize = 6, size = 18, maxLines = 4) {
+                        draft.forField(this)
+                            .bind({ values -> values.description }, { values, description -> values.description = description })
+                    }
+                }
+                row {
+                    codeInput("Участников", labelSize = 6, size = 6) {
+                        value = details.participants.size.toString()
+                        isEditable = false
+                    }
+                    codeInput("Туров", labelSize = 6, size = 6) {
+                        value = details.contests.size.toString()
+                        isEditable = false
+                    }
+                }
+            }
         }
+
+        draft.readBean(DetailsDraft(entity.name, entity.description))
     }
 
     @RawAccessTokenDependency(reason = "Shows the stored access codes of the participants as the issued ones.")
@@ -91,7 +138,18 @@ class ManagerCompetitionView(texts: UiTexts, private val headers: CabinetHeaders
                     empty("Участников пока нет", "Создайте участников, чтобы раздать им коды-доступа.")
                 }
                 val creation = participantsDialog(competitionId)
-                actions { action("Создать участников") { onClick { creation() } } }
+                actions {
+                    action("Создать участников") { onClick { creation() } }
+                    downloadAction("Скачать CSV", produce = { context ->
+                        val bytes = participantsCsv(managerService.downloadParticipants(competitionId)).toByteArray(Charsets.UTF_8)
+                        context.ensureActive()
+                        DownloadContent(
+                            filename = "competition-${competitionId.value}-participants.csv",
+                            contentType = "text/csv; charset=UTF-8",
+                            length = bytes.size.toLong(),
+                        ) { bytes.inputStream() }
+                    })
+                }
             }
         }
     }
@@ -104,6 +162,7 @@ class ManagerCompetitionView(texts: UiTexts, private val headers: CabinetHeaders
             isDanger = true,
         ) {
             managerService.deleteParticipant(competitionId, participant.id)
+            toast(FeedbackKind.Success, "Участник удалён")
             show(competitionId)
         }
     }
@@ -126,6 +185,7 @@ class ManagerCompetitionView(texts: UiTexts, private val headers: CabinetHeaders
                         val values = CountDraft()
                         if (draft.writeBeanIfValid(values)) {
                             managerService.createParticipants(competitionId, checkNotNull(values.count))
+                            toast(FeedbackKind.Success, "Участники созданы", "Всего: ${values.count}.")
                             dialog.close()
                             show(competitionId)
                         }
@@ -141,4 +201,6 @@ class ManagerCompetitionView(texts: UiTexts, private val headers: CabinetHeaders
 
     /** Values of the participant creation form. */
     private class CountDraft(var count: Int? = null)
+
+    private class DetailsDraft(var name: String = "", var description: String = "")
 }

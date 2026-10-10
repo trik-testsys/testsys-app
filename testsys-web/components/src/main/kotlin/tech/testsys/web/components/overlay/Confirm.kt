@@ -18,7 +18,7 @@ import tech.testsys.web.components.texts.currentTexts
 
 /**
  * Asks to confirm an action: opens a dialog with [title], [text] and the [action] that runs [onConfirm] and closes it.
- * [isDanger] marks an irreversible action; [typeToConfirm] also requires typing this name. Call it from event handlers.
+ * [isDanger] marks an irreversible action; [typeToConfirm] requires the name with surrounding whitespace ignored on both sides.
  *
  * @since %CURRENT_VERSION%
  */
@@ -56,7 +56,7 @@ fun confirm(
     val confirmAction = if (isDanger) foot.dangerAction(action, run) else foot.mainAction(action, configure = run)
     confirmName?.let { field ->
         confirmAction.isEnabled = false
-        field.addValueChangeListener { event -> confirmAction.isEnabled = event.value.trim() == typeToConfirm }
+        field.addValueChangeListener { event -> confirmAction.isEnabled = event.value.trim() == typeToConfirm.trim() }
     }
 
     shell.open()

@@ -445,7 +445,6 @@ class MultipleRoleUserOperationsTests {
                 assertSame(joined, actual)
                 verify(exactly = 0) { multipleRoleUsers.addCommunityMembership(user.id, communityId, any()) }
             }
-
         }
 
         @Nested

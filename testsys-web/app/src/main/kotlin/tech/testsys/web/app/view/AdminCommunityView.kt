@@ -25,6 +25,7 @@ import tech.testsys.web.components.data.TableHandle
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.alert
+import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.lookupMany
 import tech.testsys.web.components.forms.textArea
@@ -97,6 +98,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
                                 description = values.description,
                             ),
                         )
+                        toast(FeedbackKind.Success, "Сообщество изменено")
                     }
                     isValid
                 },
@@ -116,7 +118,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
                 }
             }
             row {
-                textArea("Описание", labelSize = 6, size = 18) {
+                textArea("Описание", labelSize = 6, size = 18, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
@@ -164,11 +166,13 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
                             isDanger = true,
                         ) {
                             administratorService.createCommunityInvite(communityId, invite.kind)
+                            toast(FeedbackKind.Success, "Код-приглашение заменён")
                             rows.refresh()
                         }
                     }
                     item("Продлить") {
                         administratorService.extendCommunityInvite(communityId, invite.kind)
+                        toast(FeedbackKind.Success, "Срок действия кода-приглашения продлён")
                         rows.refresh()
                     }
                 }
@@ -221,6 +225,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
                         if (draft.writeBeanIfValid(values)) {
                             val contestIds = values.contests.map { contest -> contest.id }.toSet()
                             val observer = administratorService.createObserver(communityId, values.name, contestIds)
+                            toast(FeedbackKind.Success, "Наблюдатель создан")
                             dialog.close()
                             onCreated(observer)
                         }

@@ -200,6 +200,10 @@
 .ts-block__row > :is(.ts-tag, .ts-status, .ts-counter, .ts-icon) { justify-self:start; }
 /* Form dialog body (Kotlin DSL): rows on its own 24-column grid; the dialog body text is secondary, field values stay primary. */
 .ts-dialog__grid { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); column-gap:var(--grid-gap); row-gap:var(--space-3); color:var(--text-primary); }
+.ts-dialog__section { grid-column:1 / -1; min-width:0; border:1px solid var(--border-default); border-radius:var(--radius-md); padding:var(--space-3); }
+.ts-dialog__section-title { margin:0 0 var(--space-3); font:var(--fw-semibold) var(--fs-sm)/1.4 var(--font-sans); overflow-wrap:anywhere; }
+.ts-dialog__section-body { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); column-gap:var(--grid-gap); row-gap:var(--space-3); }
+
 
 /* Grid field (React and Kotlin DSL): the label on the left and the value on the right, both on the block columns. */
 .ts-field--grid { display:grid; grid-template-columns:subgrid; column-gap:normal; row-gap:0; align-items:start; }

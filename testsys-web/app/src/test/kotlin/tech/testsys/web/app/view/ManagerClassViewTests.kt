@@ -4,6 +4,7 @@ import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._clickItemWithCaption
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
+import com.github.mvysny.kaributesting.v10._value
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.ComponentUtil
 import com.vaadin.flow.component.UI
@@ -16,6 +17,7 @@ import com.vaadin.flow.component.html.Nav
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
+import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -54,6 +56,23 @@ class ManagerClassViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var managerService: ManagerService
+
+    @Test
+    fun `should save the name and description through the details editor`() {
+        val entity = fixtures.studyClass(owner = signInManager())
+        open(entity.id)
+        clickButton("Изменить")
+        textField("Название")._value = "Новое название"
+        UI.getCurrent()._get<TextArea>()._value = "Описание группы"
+
+        clickButton("Сохранить")
+
+        val saved = checkNotNull(classes.findById(entity.id))
+        assertEquals("Новое название", saved.data.name)
+        assertEquals("Описание группы", saved.data.description)
+        assertTrue(textField("Название").isReadOnly)
+        assertEquals("Класс изменён", lastToastTitle())
+    }
 
     @Test
     fun `should show the not found screen for a missing class`() {
@@ -132,6 +151,7 @@ class ManagerClassViewTests : MockSpringVaadinTests() {
         val after = invite(studyClass).codeHash
         assertNotEquals(before, after)
         assertEquals(after.value, codeField().value)
+        assertEquals("Код-приглашение заменён", lastToastTitle())
     }
 
     @Test
@@ -146,6 +166,7 @@ class ManagerClassViewTests : MockSpringVaadinTests() {
         assertEquals(before.codeHash, after.codeHash)
         assertTrue(after.expiresAt < before.expiresAt)
         assertTrue(after.expiresAt > Instant.now())
+        assertEquals("Срок действия кода-приглашения продлён", lastToastTitle())
     }
 
     @Test
@@ -163,6 +184,7 @@ class ManagerClassViewTests : MockSpringVaadinTests() {
 
         assertEquals(listOf(contest.id), checkNotNull(classes.findById(studyClass.id)).data.contests.ids)
         assertTrue("Весенний тур" in tableText("Время на прохождение"))
+        assertEquals("Тур добавлен в класс", lastToastTitle())
     }
 
     @Test

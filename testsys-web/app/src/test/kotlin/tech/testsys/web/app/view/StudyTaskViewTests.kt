@@ -1,12 +1,14 @@
 package tech.testsys.web.app.view
 
 import com.github.mvysny.kaributesting.v10._click
+import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.select.Select
+import com.vaadin.flow.component.upload.Upload
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -23,6 +25,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.StudyFixtures
 import tech.testsys.web.app.error.OperationErrorView
+import tools.jackson.databind.ObjectMapper
 import java.time.Duration
 
 @SpringBootTest
@@ -32,6 +35,38 @@ class StudyTaskViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var submissions: SubmissionRepository
+
+    @Test
+    fun `should send only the latest file after repeated upload removal`() {
+        val (student, studyClass, contest, task) = entered()
+        signIn(student)
+        open(studyClass, contest, task)
+        StudyPages.removeUpload(StudyPages.upload("first.py", "first".toByteArray()))
+        StudyPages.removeUpload(StudyPages.upload("second.py", "second".toByteArray()))
+        StudyPages.upload("latest.py", "latest".toByteArray())
+
+        UI.getCurrent()._get<Button> { text = "Отправить" }._click()
+
+        assertEquals(1, submissions.findGradingByContext(authorId = student.id, taskId = task.id, contestId = contest.id).size)
+        assertTrue("latest.py" in StudyPages.rowTexts("Результат").single())
+    }
+
+    @Test
+    fun `should not send a solution removed from the upload list`() {
+        val (student, studyClass, contest, task) = entered()
+        signIn(student)
+        open(studyClass, contest, task)
+        val identity = StudyPages.upload("solution.py", "print(1)".toByteArray())
+        UI.getCurrent()._get<Upload>()._fireDomEvent(
+            "testsys-transfer-remove",
+            ObjectMapper().createObjectNode().put("event.detail.identity", identity),
+        )
+
+        UI.getCurrent()._get<Button> { text = "Отправить" }._click()
+
+        assertEquals("Выберите файл", StudyPages.lastToastTitle())
+        assertEquals(0, submissions.findGradingByContext(authorId = student.id, taskId = task.id, contestId = contest.id).size)
+    }
 
     @Test
     fun `should show the forbidden screen to a student who has not started the contest`() {

@@ -13,6 +13,8 @@ import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
@@ -85,7 +87,7 @@ class AdminView(texts: UiTexts, private val headers: CabinetHeaders, private val
                         }
                     }
                     row {
-                        textArea("Описание", labelSize = 6, size = 18) {
+                        textArea("Описание", labelSize = 6, size = 18, maxLines = 4) {
                             draft.forField(this)
                                 .bind({ values -> values.description }, { values, description -> values.description = description })
                         }
@@ -97,6 +99,7 @@ class AdminView(texts: UiTexts, private val headers: CabinetHeaders, private val
                                 val created = CommunityDraft()
                                 if (draft.writeBeanIfValid(created)) {
                                     administratorService.createCommunity(communityName = created.name, description = created.description)
+                                    toast(FeedbackKind.Success, "Сообщество создано")
                                     dialog.close()
                                     rows.refresh()
                                 }

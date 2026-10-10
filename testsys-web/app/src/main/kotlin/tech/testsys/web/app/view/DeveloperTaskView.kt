@@ -6,12 +6,9 @@ import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
-import tech.testsys.domain.model.DomainId
-import tech.testsys.domain.model.task.AuthorSubmissionFailure
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.TaskId
-import tech.testsys.domain.model.task.TestDiagnosticResult
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.operation.error.OperationException
@@ -30,9 +27,10 @@ import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
+import tech.testsys.web.components.data.filters
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.display.badge
-import tech.testsys.web.components.display.field
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
@@ -49,15 +47,15 @@ import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.skipWhenHidden
 import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.PageRowScope
 import tech.testsys.web.components.layout.PageScope
-import tech.testsys.web.components.overlay.DialogScope
+import tech.testsys.web.components.overlay.DialogSectionScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
 import tech.testsys.web.components.texts.UiTexts
-import java.time.format.DateTimeFormatter
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.ConcurrentHashMap
 
 /** Columns of the task details block; the access block takes the rest of the row beside it. */
 private const val DETAILS_COLUMNS = 14
@@ -65,9 +63,6 @@ private const val DETAILS_COLUMNS = 14
 /** Limits of one upload of resource files. */
 private val UPLOAD_LIMITS =
     UploadLimits(maxFiles = 20, maxFileBytes = MAX_RESOURCE_BYTES, maxMemoryBytes = 5L * MAX_RESOURCE_BYTES)
-
-/** Format of the moment of a testing request in the title of its dialog. */
-private val MOMENT_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
 
 /**
  * Type of an uploaded resource.
@@ -88,6 +83,15 @@ internal enum class ResourceKind(val label: String, val hasLanguage: Boolean, va
 
     /** Developer solution with its expected score. */
     DeveloperSolution("Авторское решение", hasLanguage = true, hasScore = true),
+}
+
+/** Revisions in which a resource chain is used. */
+internal enum class ResourceUsage(val label: String) {
+    All("Все"),
+    Working("В рабочей версии"),
+    Committed("В зафиксированной версии"),
+    AnyRevision("В любой версии"),
+    Unattached("Нигде не прикреплены"),
 }
 
 /**
@@ -122,7 +126,9 @@ class DeveloperTaskView(
             subtitle = "Ресурсы загрузятся в задачу без прикрепления",
             size = DialogSize.L,
         ) {
-            files.forEach { file -> uploads.add(file to uploadRows(file)) }
+            files.forEachIndexed { index, file ->
+                section("Ресурс ${index + 1} · ${file.uploadedFilename}") { uploads.add(file to uploadRows(file)) }
+            }
             footer { dialog ->
                 action("Отменить") { onClick { dialog.close() } }
                 mainAction("Загрузить") {
@@ -134,6 +140,7 @@ class DeveloperTaskView(
                             dialog.close()
                             try {
                                 drafts.forEach { (file, values) -> upload(taskId, file, checkNotNull(values)) }
+                                toast(FeedbackKind.Success, "Ресурсы загружены", "Всего: ${drafts.size}.")
                             } finally {
                                 show(taskId)
                             }
@@ -163,7 +170,7 @@ class DeveloperTaskView(
                 accessBlock(task, shared)
             }
             resourcesBlock(task, chains)
-            testingBlock(task, chains, requests)
+            testingBlock(task, requests)
         }
     }
 
@@ -213,7 +220,7 @@ class DeveloperTaskView(
                 }
             }
             row {
-                textArea("Описание", labelSize = 6, size = 18) {
+                textArea("Описание", labelSize = 6, size = 18, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
@@ -241,6 +248,7 @@ class DeveloperTaskView(
                 taskDescription = values.description,
                 supportedTrikStudioVersions = values.versions.toList().takeIf { hasVersionChanges },
             )
+            toast(FeedbackKind.Success, "Задача изменена")
             show(task.id)
         }
     }
@@ -265,23 +273,35 @@ class DeveloperTaskView(
         val editable = task.wip ?: task.lastCommitted
         row {
             block(title = "Ресурсы", subtitle = "Условие, упражнения, полигоны и авторские решения") {
-                table(key = { chain: Chain -> chain.latest.versionBucket }, fetch = { request -> pageOf(chains, request) }) {
-                    textColumn("Название", size = 8) { chain -> chain.latest.name }
-                    textColumn("Тип", size = 5) { chain -> typeOf(chain.latest) }
-                    textColumn("Рабочая версия", size = 5) { chain -> chain.labelIn(task.wip) }
-                    textColumn("Зафиксированная версия", size = 5) { chain -> chain.labelIn(task.lastCommitted) }
+                var resourceFilter = ResourceFilter()
+                val rows = table(
+                    key = { chain: Chain -> chain.latest.versionBucket },
+                    fetch = { request -> pageOf(chains.filter { chain -> resourceFilter.matches(chain, task) }, request) },
+                ) {
+                    textColumn("Название", size = 6) { chain -> chain.latest.name }
+                    textColumn("Тип", size = 3) { chain -> typeOf(chain.latest) }
+                    column("Прикреплено") { chain ->
+                        if (chain.attachedIn(task.lastCommitted) != null) badge("Прикреплено в зафиксированной", tone = Tone.Success)
+                        if (chain.attachedIn(task.wip) != null) badge("Прикреплено в рабочей", tone = Tone.Warning)
+                    }
                     menuColumn(ariaLabel = { chain -> "Действия с ресурсом «${chain.latest.name}»" }) { chain ->
                         val attached = chain.attachedIn(editable)
                         item("Открепить", isEnabled = attached != null) {
                             changeState(task, next = TaskState.Uncommitted) {
                                 detach(task.id, checkNotNull(attached))
+                                toast(FeedbackKind.Success, "Ресурс откреплён")
                                 show(task.id)
                             }
                         }
                     }
-                    empty("Ресурсов пока нет", "Загрузите условие, упражнения, полигоны и авторские решения.")
+                    if (chains.isEmpty()) {
+                        empty("Ресурсов пока нет", "Загрузите условие, упражнения, полигоны и авторские решения.")
+                    } else {
+                        empty("Ресурсы не найдены", "Измените или сбросьте фильтры.")
+                    }
                     onRowClick(isNavigation = true) { chain -> openDeveloperResource(task.id, chain.latest.versionBucket) }
                 }
+                resourceFilters(task, apply = { applied -> resourceFilter = applied }) { rows.refresh(toFirstPage = true) }
                 val uploading = uploadDialog(task.id)
                 val attaching = attachDialog(task, chains.filter { chain -> chain.attachedIn(editable) == null })
                 actions {
@@ -292,8 +312,52 @@ class DeveloperTaskView(
         }
     }
 
-    private fun PageScope.testingBlock(task: TaskVo, chains: List<Chain>, requests: List<TaskValidationRequestVo>) {
-        val names = chains.flatMap { chain -> chain.versions }.associate { version -> version.id to version.name }
+    private fun BlockScope.resourceFilters(task: TaskVo, apply: (ResourceFilter) -> Unit, refresh: () -> Unit) {
+        val isComparisonAvailable = task.wip != null && task.lastCommitted != null
+        val comparisonHint = if (isComparisonAvailable) {
+            "Различия версий: добавленные, откреплённые или заменённые ресурсы."
+        } else {
+            "Для сравнения нужны рабочая и зафиксированная версии задачи."
+        }
+        lateinit var name: ValueInput<String>
+        lateinit var kind: ValueInput<ResourceKind?>
+        lateinit var usage: ValueInput<ResourceUsage?>
+        lateinit var differences: ValueInput<Boolean>
+        filters(
+            onApply = {
+                apply(ResourceFilter(name.value, kind.value, usage.value ?: ResourceUsage.All, differences.value))
+                true
+            },
+            onReset = {
+                apply(ResourceFilter())
+                name.value = ""
+                kind.value = null
+                usage.value = ResourceUsage.All
+                differences.value = false
+            },
+            onRefresh = refresh,
+        ) {
+            row {
+                name = textInput("Название", labelSize = 4, size = 8, hint = "Часть названия, без учёта регистра")
+                kind = select("Тип", labelSize = 4, size = 8, items = ResourceKind.entries, itemLabel = ResourceKind::label)
+            }
+            row {
+                usage = select("Использование", labelSize = 4, size = 8, items = ResourceUsage.entries, itemLabel = ResourceUsage::label) {
+                    value = ResourceUsage.All
+                }
+                differences = checkbox(
+                    "Различия версий",
+                    labelSize = 4,
+                    size = 8,
+                ) {
+                    isEnabled = isComparisonAvailable
+                }
+            }
+            row { text(comparisonHint) }
+        }
+    }
+
+    private fun PageScope.testingBlock(task: TaskVo, requests: List<TaskValidationRequestVo>) {
         row {
             block(title = "Тестирование") {
                 table(key = { request: TaskValidationRequestVo -> request.id }, fetch = { request -> pageOf(requests, request) }) {
@@ -304,14 +368,21 @@ class DeveloperTaskView(
                     }
                     textColumn("Итог") { request -> summaryOf(request.execution) }
                     empty("Тестирований пока не было", "Протестируйте рабочую версию, чтобы её можно было зафиксировать.")
-                    onRowClick { request -> showRequest(request, names) }
+                    onRowClick(isNavigation = true) { request -> openDeveloperTesting(task.id, request.id) }
                 }
                 val committing = commitDialog(task)
                 actions {
                     action("Протестировать") {
                         isEnabled = task.wip != null
                         onClick {
-                            refusable("Не удалось запустить тестирование") { developerService.testTask(task.id) }
+                            refusable("Не удалось запустить тестирование") {
+                                val request = developerService.testTask(task.id)
+                                if (requests.any { existing -> existing.id == request.id }) {
+                                    toast(FeedbackKind.Info, "Тестирование уже идёт", "Дождитесь результата текущего запроса.")
+                                } else {
+                                    toast(FeedbackKind.Success, "Тестирование запущено", "Результат появится в истории тестирований.")
+                                }
+                            }
                             show(task.id)
                         }
                     }
@@ -330,70 +401,11 @@ class DeveloperTaskView(
                                 isDanger = true,
                             ) {
                                 developerService.revertTask(task.id)
+                                toast(FeedbackKind.Success, "Изменения задачи отменены")
                                 show(task.id)
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-
-    /** Opens the details of a testing [request]: its diagnostics by polygon, its submissions and its result. */
-    private fun showRequest(request: TaskValidationRequestVo, names: Map<DomainId, String>) {
-        val execution = request.execution
-        val title = "Тестирование от ${request.createdAt.toServerDateTime().format(MOMENT_FORMAT)}"
-        val details = dialog(title = title, size = DialogSize.L) {
-            row {
-                field("Статус", labelSize = 8, size = 16) {
-                    val (label, tone) = validationStatusOf(execution)
-                    badge(label, tone)
-                }
-            }
-            diagnosticsOf(execution).forEach { result ->
-                row {
-                    field("Полигон «${names[result.testId] ?: "#${result.testId.value}"}»", labelSize = 8, size = 16) {
-                        if (result.reports.isEmpty()) text("Без замечаний")
-                        result.reports.forEach { report -> text(diagnosticText(report)) }
-                    }
-                }
-            }
-            submissionRows(request, names)
-            row { field("Итог", labelSize = 8, size = 16) { text(summaryOf(execution)) } }
-            footer { dialog -> action("Закрыть") { onClick { dialog.close() } } }
-        }
-        details.open()
-    }
-
-    /** Adds a row for each submission of a developer solution in a TRIK Studio version, in the order they were created. */
-    private fun DialogScope.submissionRows(request: TaskValidationRequestVo, names: Map<DomainId, String>) {
-        val execution = request.execution
-        val (submissions, failures) = when (execution) {
-            is TaskValidationExecutionVo.SubmissionsCreated -> execution.submissions to null
-            is TaskValidationExecutionVo.Completed -> execution.submissions to execution.failures
-            is TaskValidationExecutionVo.CreatedSubmissions -> execution.submissions to null
-            TaskValidationExecutionVo.PendingDiagnostics,
-            is TaskValidationExecutionVo.AwaitingSubmissions,
-            is TaskValidationExecutionVo.StoppedByDiagnostics,
-            is TaskValidationExecutionVo.IncompleteDiagnostics,
-            is TaskValidationExecutionVo.CompletedDiagnostics,
-            -> return
-        }
-        // The same order as TaskValidationSnapshot.authorRuns: by developer solution, then by version.
-        val versions = request.snapshot.supportedTrikStudioVersions.sortedBy { version -> version.version }
-        val runs = request.snapshot.developerSolutions.sortedBy { input -> input.developerSolution.value }
-            .flatMap { input -> versions.map { version -> input to version } }
-        runs.zip(submissions).forEach { (run, submission) ->
-            val (input, version) = run
-            val name = names[input.developerSolution] ?: "#${input.developerSolution.value}"
-            val outcome = when (val failure = failures?.firstOrNull { failed -> failed.submission == submission }) {
-                is AuthorSubmissionFailure.ScoreMismatch -> "набрала ${failure.actualScore}, ожидается ${input.expectedScore.value}"
-                is AuthorSubmissionFailure.GradingFailed -> "ошибка проверки"
-                null -> if (failures == null) "проверяется" else "набрала ожидаемый балл ${input.expectedScore.value}"
-            }
-            row {
-                field("«$name» · TRIK Studio ${version.version}", labelSize = 8, size = 16) {
-                    text("Посылка #${submission.value}: $outcome")
                 }
             }
         }
@@ -419,7 +431,10 @@ class DeveloperTaskView(
                 mainAction("Зафиксировать") {
                     onClick {
                         dialog.close()
-                        refusable("Не удалось зафиксировать задачу") { developerService.commitTask(task.id, regrade.value) }
+                        refusable("Не удалось зафиксировать задачу") {
+                            developerService.commitTask(task.id, regrade.value)
+                            toast(FeedbackKind.Success, "Задача зафиксирована")
+                        }
                         show(task.id)
                     }
                 }
@@ -454,6 +469,7 @@ class DeveloperTaskView(
                                 isDanger = true,
                             ) {
                                 developerService.shareTask(task.id, communities.map { community -> community.id }.toSet())
+                                toast(FeedbackKind.Success, "Доступ к задаче предоставлен")
                                 show(task.id)
                             }
                         }
@@ -469,18 +485,17 @@ class DeveloperTaskView(
 
     /** Builds the file choice of an upload to [taskId] and returns its opening; the next step describes the files. */
     private fun uploadDialog(taskId: TaskId): () -> Unit {
-        // ponytail: a file removed from the list of the receiver stays chosen; follow the receiver state if it matters.
-        val files = CopyOnWriteArrayList<FileData>()
+        val files = ConcurrentHashMap<String, FileData>()
         lateinit var drop: FileDropHandle
         val choosing = dialog(title = "Загрузка ресурсов", subtitle = "До 20 файлов, каждый до 10 МиБ") {
             row {
-                drop = fileDrop("Файлы", UPLOAD_LIMITS, consume = { file -> files.add(file.toFileData()) })
+                drop = fileDrop("Файлы", UPLOAD_LIMITS, consume = { file -> files[file.id] = file.toFileData() })
             }
             footer { dialog ->
                 action("Отменить") { onClick { dialog.close() } }
                 mainAction("Далее") {
                     onClick {
-                        val chosen = files.toList()
+                        val chosen = drop.fileIds.mapNotNull(files::get)
                         if (chosen.isNotEmpty()) {
                             dialog.close()
                             describeUploads(taskId, chosen)
@@ -497,11 +512,10 @@ class DeveloperTaskView(
     }
 
     /** Adds the rows describing an uploaded [file] to the dialog and returns the binder of its values. */
-    private fun DialogScope.uploadRows(file: FileData): Binder<UploadDraft> {
+    private fun DialogSectionScope.uploadRows(file: FileData): Binder<UploadDraft> {
         val draft = Binder<UploadDraft>()
         lateinit var language: ValueInput<TrikSupportedLanguage?>
         lateinit var score: ValueInput<Int?>
-        row { field("Файл", labelSize = 6, size = 18) { text(file.uploadedFilename) } }
         row {
             select("Тип", labelSize = 6, size = 18, items = ResourceKind.entries, itemLabel = ResourceKind::label) {
                 draft.forField(this)
@@ -576,6 +590,7 @@ class DeveloperTaskView(
                             changeState(task, next = TaskState.Uncommitted) {
                                 try {
                                     selected.forEach { resource -> attach(task.id, resource) }
+                                    toast(FeedbackKind.Success, "Ресурсы прикреплены", "Всего: ${selected.size}.")
                                 } finally {
                                     show(task.id)
                                 }
@@ -664,13 +679,29 @@ class DeveloperTaskView(
             val ids = idsOf(revision)
             return versions.firstOrNull { version -> version.id in ids }
         }
+    }
 
-        /** Returns how the chain takes part in [revision]: its latest or an older version, with the score of a solution. */
-        fun labelIn(revision: TaskRevisionVo?): String {
-            val attached = attachedIn(revision) ?: return "—"
-            val version = if (attached.id == latest.id) "Последняя" else "Прежняя"
-            return if (attached is DeveloperSolutionVo) "$version · балл ${attached.expectedScore.value}" else version
+    /** Applied filters of the resource table. */
+    private data class ResourceFilter(
+        val name: String = "",
+        val kind: ResourceKind? = null,
+        val usage: ResourceUsage = ResourceUsage.All,
+        val isDifferencesOnly: Boolean = false,
+    )
+
+    private fun ResourceFilter.matches(chain: Chain, task: TaskVo): Boolean {
+        val working = chain.attachedIn(task.wip)?.id
+        val committed = chain.attachedIn(task.lastCommitted)?.id
+        val isUsageMatching = when (usage) {
+            ResourceUsage.All -> true
+            ResourceUsage.Working -> working != null
+            ResourceUsage.Committed -> committed != null
+            ResourceUsage.AnyRevision -> working != null || committed != null
+            ResourceUsage.Unattached -> working == null && committed == null
         }
+        val isDifferent = task.wip != null && task.lastCommitted != null && working != committed
+        return chain.latest.name.contains(name, ignoreCase = true) &&
+            (kind == null || typeOf(chain.latest) == kind.label) && isUsageMatching && (!isDifferencesOnly || isDifferent)
     }
 
     /** Values of the task details form. */
@@ -683,33 +714,6 @@ class DeveloperTaskView(
         var language: TrikSupportedLanguage? = null,
         var score: Int? = null,
     )
-}
-
-/** Returns the diagnostic results of [execution], none before diagnostics finish. */
-private fun diagnosticsOf(execution: TaskValidationExecutionVo): List<TestDiagnosticResult> = when (execution) {
-    TaskValidationExecutionVo.PendingDiagnostics, is TaskValidationExecutionVo.IncompleteDiagnostics -> emptyList()
-    is TaskValidationExecutionVo.AwaitingSubmissions -> execution.diagnostics
-    is TaskValidationExecutionVo.StoppedByDiagnostics -> execution.diagnostics
-    is TaskValidationExecutionVo.SubmissionsCreated -> execution.diagnostics
-    is TaskValidationExecutionVo.Completed -> execution.diagnostics
-    is TaskValidationExecutionVo.CompletedDiagnostics -> execution.diagnostics
-    is TaskValidationExecutionVo.CreatedSubmissions -> execution.diagnostics
-}
-
-/** Returns a short result of [execution]. */
-private fun summaryOf(execution: TaskValidationExecutionVo): String = when (execution) {
-    TaskValidationExecutionVo.PendingDiagnostics -> "Выполняются диагностики"
-    is TaskValidationExecutionVo.AwaitingSubmissions -> "Диагностики пройдены, создаются посылки"
-    is TaskValidationExecutionVo.StoppedByDiagnostics -> "Диагностики нашли ошибки в полигонах"
-    is TaskValidationExecutionVo.SubmissionsCreated -> "Проверяются посылки: ${execution.submissions.size}"
-    is TaskValidationExecutionVo.Completed -> if (execution.failures.isEmpty()) {
-        "Все посылки набрали ожидаемый балл"
-    } else {
-        "Провалено посылок: ${execution.failures.size} из ${execution.submissions.size}"
-    }
-    is TaskValidationExecutionVo.IncompleteDiagnostics -> "Техническая остановка: ${execution.failure.description}"
-    is TaskValidationExecutionVo.CompletedDiagnostics -> "Техническая остановка: ${execution.failure.description}"
-    is TaskValidationExecutionVo.CreatedSubmissions -> "Техническая остановка: ${execution.failure.description}"
 }
 
 /**

@@ -10,6 +10,12 @@ import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.operation.error.ContestAlreadySharedError
+import tech.testsys.operation.error.OperationError
+import tech.testsys.operation.error.OperationException
+import tech.testsys.operation.error.TaskAlreadyAttachedToContestError
+import tech.testsys.operation.error.TaskNotCommittedError
+import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.CurrentUser
@@ -19,7 +25,6 @@ import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.destructiveAction
-import tech.testsys.web.components.actions.linkAction
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.table
@@ -27,6 +32,7 @@ import tech.testsys.web.components.display.badge
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.alert
+import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
@@ -122,6 +128,7 @@ class DeveloperContestView(
                                 startsAt = values.startsAt?.toServerInstant(),
                                 endsAt = values.endsAt?.toServerInstant(),
                             )
+                            toast(FeedbackKind.Success, "Тур изменён")
                             show(contest.id)
                         }
                         isValid
@@ -149,7 +156,7 @@ class DeveloperContestView(
                 }
             }
             row {
-                textArea("Описание", labelSize = 7, size = 17) {
+                textArea("Описание", labelSize = 7, size = 17, maxLines = 4) {
                     value = contest.description
                     isEditable = false
                 }
@@ -203,9 +210,8 @@ class DeveloperContestView(
             block(title = "Задачи") {
                 table(key = { task: TaskVo -> task.id }, fetch = { request -> pageOf(tasks, request) }) {
                     codeColumn("ID", size = 5) { task -> task.id.value.toString() }
-                    column("Название", size = 12) { task ->
-                        if (task.owner == me) linkAction(task.name) { onClick { openDeveloperTask(task.id) } } else text(task.name)
-                    }
+                    textColumn("Название", size = 12) { task -> task.name }
+                    onRowClick(isNavigation = true, isClickable = { task -> task.owner == me }) { task -> openDeveloperTask(task.id) }
                     column("Состояние", size = 6) { task ->
                         val state = stateOf(task)
                         badge(state.label, state.tone)
@@ -213,6 +219,7 @@ class DeveloperContestView(
                     menuColumn(ariaLabel = { task -> "Действия с задачей «${task.name}»" }) { task ->
                         item("Открепить", isEnabled = isChangeable) {
                             developerService.detachTask(contest.id, task.id)
+                            toast(FeedbackKind.Success, "Задача откреплена от тура")
                             show(contest.id)
                         }
                     }
@@ -256,9 +263,18 @@ class DeveloperContestView(
                 mainAction("Прикрепить") {
                     onClick {
                         chosen.value?.let { task ->
-                            developerService.attachTask(contest.id, task.id)
-                            dialog.close()
-                            show(contest.id)
+                            try {
+                                developerService.attachTask(contest.id, task.id)
+                                toast(FeedbackKind.Success, "Задача прикреплена к туру")
+                                dialog.close()
+                                show(contest.id)
+                            } catch (exception: OperationException) {
+                                toast(
+                                    FeedbackKind.Error,
+                                    "Не удалось прикрепить задачу",
+                                    attachRefusalOf(exception.error) ?: throw exception,
+                                )
+                            }
                         }
                     }
                 }
@@ -293,6 +309,7 @@ class DeveloperContestView(
                                 isDanger = true,
                             ) {
                                 developerService.shareContest(contest.id, communities.map { community -> community.id }.toSet())
+                                toast(FeedbackKind.Success, "Доступ к туру предоставлен")
                                 show(contest.id)
                             }
                         }
@@ -312,8 +329,10 @@ class DeveloperContestView(
             text = "Тур удалится вместе со списком его задач. Сами задачи не изменятся.",
             action = "Удалить",
             isDanger = true,
+            typeToConfirm = contest.name,
         ) {
             developerService.deleteContest(contest.id)
+            toast(FeedbackKind.Success, "Тур удалён")
             UI.getCurrent().navigate(DeveloperView::class.java, developerSectionParameters(CONTESTS_SECTION))
         }
     }
@@ -325,3 +344,11 @@ class DeveloperContestView(
 /** Returns whether an [attempt] limit fits the contest from [start] to [end]; an open schedule fits any. */
 private fun fitsAttempt(attempt: Duration?, start: LocalDateTime?, end: LocalDateTime?): Boolean =
     attempt == null || start == null || end == null || attempt <= Duration.between(start, end)
+
+private fun attachRefusalOf(error: OperationError): String? = when (error) {
+    is TaskNotCommittedError -> "У задачи нет зафиксированной версии. Сначала протестируйте и зафиксируйте задачу."
+    is TaskTrikStudioVersionNotSupportedError -> "Задача не поддерживает версию TRIK Studio этого тура."
+    is TaskAlreadyAttachedToContestError -> "Эта задача уже прикреплена к туру."
+    is ContestAlreadySharedError -> "Доступ к туру уже предоставлен. Его задачи нельзя изменить."
+    else -> null
+}

@@ -9,6 +9,7 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
@@ -93,6 +94,7 @@ class AdminViewTests : MockSpringVaadinTests() {
 
         assertEquals(listOf("Новое сообщество"), communities.findByOwner(administrator.id).map { community -> community.data.name })
         assertTrue("Новое сообщество" in tableText())
+        assertEquals("Сообщество создано", lastToastTitle())
     }
 
     @Test
@@ -105,6 +107,7 @@ class AdminViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._get<Button> { text = "Создать" }._click()
 
         assertEquals(emptyList<Any>(), communities.findByOwner(administrator.id))
+        assertEquals(0, UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.size)
     }
 
     @Test

@@ -97,6 +97,7 @@ class ManagerViewTests : MockSpringVaadinTests() {
         val created = classes.findAvailableToManager(ownerId = manager.id, pagination = Pagination(page = 0, size = 10)).content
         assertEquals(listOf("Новый класс"), created.map { studyClass -> studyClass.data.name })
         assertTrue("Новый класс" in tableText())
+        assertEquals("Класс создан", lastToastTitle())
     }
 
     @Test
@@ -123,6 +124,7 @@ class ManagerViewTests : MockSpringVaadinTests() {
         val created = competitions.findAvailableToManager(ownerId = manager.id, pagination = Pagination(page = 0, size = 10)).content
         assertEquals(listOf("Олимпиада"), created.map { competition -> competition.data.name })
         assertTrue("Олимпиада" in tableText())
+        assertEquals("Соревнование создано", lastToastTitle())
     }
 
     @Test

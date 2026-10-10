@@ -49,7 +49,7 @@ class StudentClassView(
                 block(title = "Сведения") {
                     row { codeInput("ID", labelSize = 4, size = 8) { value = studyClass.id.value.toString() } }
                     row { textInput("Название", labelSize = 4, size = 20) { value = studyClass.name } }
-                    row { textArea("Описание", labelSize = 4, size = 20) { value = studyClass.description } }
+                    row { textArea("Описание", labelSize = 4, size = 20, maxLines = 4) { value = studyClass.description } }
                 }.isEditable = false
             }
             row {

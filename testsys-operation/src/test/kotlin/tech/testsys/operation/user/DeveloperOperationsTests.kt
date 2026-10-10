@@ -9,10 +9,6 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkStatic
 import io.mockk.verify
-import java.time.Duration
-import java.time.Instant
-import java.util.UUID
-import kotlin.test.Test
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -79,7 +75,6 @@ import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TaskValidationTechnicalFailure
-import tech.testsys.domain.model.task.Test as Polygon
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
@@ -152,6 +147,11 @@ import tech.testsys.operation.util.testSavedTask
 import tech.testsys.operation.util.testStatement
 import tech.testsys.operation.util.testTaskValidationRequest
 import tech.testsys.operation.util.testUncommittedTask
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
+import kotlin.test.Test
+import tech.testsys.domain.model.task.Test as Polygon
 
 @OptIn(InternalOperationsApi::class)
 class DeveloperOperationsTests {
@@ -1170,7 +1170,9 @@ class DeveloperOperationsTests {
                 every {
                     contestRepository.findAvailableToDeveloper(ownerId = developer.id, communityIds = emptySet(), pagination = pagination)
                 } returns Page(content = listOf(contest), pagination = pagination, totalElements = 1)
-                every { communityRepository.findByIds(listOf(CommunityId(4), CommunityId(3), CommunityId(5))) } returns listOf(third, fourth)
+                every {
+                    communityRepository.findByIds(listOf(CommunityId(4), CommunityId(3), CommunityId(5)))
+                } returns listOf(third, fourth)
 
                 val (_, communities) = developerOperations.viewContests(developer, pagination = pagination).getOrThrow().content.single()
 
@@ -1460,8 +1462,6 @@ class DeveloperOperationsTests {
             version = EntityVersion(0)
             data = testCommitedTask().withData { this.name = name }.data
         }
-
-
     }
 
     @Nested
@@ -4542,7 +4542,9 @@ class DeveloperOperationsTests {
                 val third = testCommunity(3)
                 val fourth = testCommunity(4)
                 every { taskRepository.findById(taskId) } returns testCommitedTask().withData { sharedTo(listOf(4, 3, 5)) }
-                every { communityRepository.findByIds(listOf(CommunityId(4), CommunityId(3), CommunityId(5))) } returns listOf(third, fourth)
+                every {
+                    communityRepository.findByIds(listOf(CommunityId(4), CommunityId(3), CommunityId(5)))
+                } returns listOf(third, fourth)
 
                 val (_, communities) = developerOperations.viewTask(developer, taskId).getOrThrow()
 
@@ -4856,12 +4858,15 @@ class DeveloperOperationsTests {
                 val version = viewDeveloperSolution()
                 val solutionBucket = version.data.versionBucket
                 val referenceSolution = viewSolution()
-                every { taskRepository.findById(taskId) } returns testNewTask().withData { uploadedResources = mutableSetOf(solutionBucket) }
+                every { taskRepository.findById(taskId) } returns testNewTask().withData {
+                    uploadedResources = mutableSetOf(solutionBucket)
+                }
                 every { developerSolutionRepository.existsByVersionBucket(solutionBucket) } returns true
                 every { developerSolutionRepository.findVersionsByVersionBucket(solutionBucket) } returns listOf(version)
                 every { solutionRepository.load(any<LazyEntityList<SolutionId, Solution>>()) } returns listOf(referenceSolution)
 
-                val (resultVersion, resultSolution) = developerOperations.viewResource(developer, taskId, solutionBucket).getOrThrow().single()
+                val (resultVersion, resultSolution) =
+                    developerOperations.viewResource(developer, taskId, solutionBucket).getOrThrow().single()
 
                 Assertions.assertSame(version, resultVersion)
                 Assertions.assertSame(referenceSolution, resultSolution)
@@ -4963,7 +4968,8 @@ class DeveloperOperationsTests {
                 every { taskRepository.findById(taskId) } returns testNewTask()
                 every { statementRepository.existsByVersionBucket(bucket) } returns true
                 every { statementRepository.findLatestByVersionBucket(bucket) } returns viewStatement(id = 2, createdAt = Instant.EPOCH)
-                val storedFile = FileData("file.pdf", FileContent.Stored(StoredBlobRef("old-version-file"), FileStorageKind.Statement))
+                val storedFile =
+                    FileData("file.pdf", FileContent.Stored(StoredBlobRef("old-version-file"), FileStorageKind.Statement))
                 val statement = viewStatement(id = 1, createdAt = Instant.ofEpochSecond(10)).withData { file(storedFile) }
                 every { statementRepository.findById(versionId) } returns statement
 
@@ -4976,7 +4982,9 @@ class DeveloperOperationsTests {
             fun `should return the existing exercise file reference`() {
                 val exercise = viewExercise()
                 val exerciseBucket = exercise.data.versionBucket
-                every { taskRepository.findById(taskId) } returns testNewTask().withData { uploadedResources = mutableSetOf(exerciseBucket) }
+                every { taskRepository.findById(taskId) } returns testNewTask().withData {
+                    uploadedResources = mutableSetOf(exerciseBucket)
+                }
                 every { exerciseRepository.existsByVersionBucket(exerciseBucket) } returns true
                 every { exerciseRepository.findById(exercise.id) } returns exercise
 
@@ -5010,7 +5018,9 @@ class DeveloperOperationsTests {
             fun `should return the existing developer solution file reference`() {
                 val developerSolution = viewDeveloperSolution()
                 val solutionBucket = developerSolution.data.versionBucket
-                every { taskRepository.findById(taskId) } returns testNewTask().withData { uploadedResources = mutableSetOf(solutionBucket) }
+                every { taskRepository.findById(taskId) } returns testNewTask().withData {
+                    uploadedResources = mutableSetOf(solutionBucket)
+                }
                 every { developerSolutionRepository.existsByVersionBucket(solutionBucket) } returns true
                 every { developerSolutionRepository.findById(developerSolution.id) } returns developerSolution
                 every { solutionRepository.load(developerSolution.data.solution) } returns viewSolution()
@@ -5119,7 +5129,8 @@ class DeveloperOperationsTests {
             fun `should return the file reference without updating the task in every state`(state: String) {
                 every { taskRepository.findById(taskId) } returns taskInState(state)
                 every { statementRepository.existsByVersionBucket(bucket) } returns true
-                val storedFile = FileData("file.pdf", FileContent.Stored(StoredBlobRef("old-version-file"), FileStorageKind.Statement))
+                val storedFile =
+                    FileData("file.pdf", FileContent.Stored(StoredBlobRef("old-version-file"), FileStorageKind.Statement))
                 val statement = viewStatement(id = 1, createdAt = Instant.ofEpochSecond(10)).withData { file(storedFile) }
                 every { statementRepository.findById(versionId) } returns statement
 

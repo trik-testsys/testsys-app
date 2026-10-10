@@ -6,10 +6,10 @@ import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
@@ -36,6 +36,7 @@ import tech.testsys.web.components.display.verdict
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.alert
 import tech.testsys.web.components.feedback.toast
+import tech.testsys.web.components.forms.FileDropHandle
 import tech.testsys.web.components.forms.UploadLimits
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
@@ -99,7 +100,7 @@ abstract class StudyTaskView(
                 block(size = TASK_DETAILS_COLUMNS, title = "Сведения") {
                     row { codeInput("ID", labelSize = 6, size = 10) { value = task.task.id.value.toString() } }
                     row { textInput("Название", labelSize = 6, size = 18) { value = task.task.name } }
-                    row { textArea("Описание", labelSize = 6, size = 18) { value = task.task.description } }
+                    row { textArea("Описание", labelSize = 6, size = 18, maxLines = 4) { value = task.task.description } }
                     row { field("Файлы", labelSize = 6, size = 18) { resourceDownloads(access, contestId, task) } }
                     row {
                         field("Лучший результат", labelSize = 6, size = 18) {
@@ -150,8 +151,8 @@ abstract class StudyTaskView(
         isSendable: Boolean,
         timer: TimerHandle?,
     ) {
-        // ponytail: keeps the last received file after its removal from the list; clear it on the drop state if that confuses.
-        val upload = AtomicReference<FileData?>()
+        val fileCopy = AtomicReference<Pair<String, FileData>?>()
+        lateinit var drop: FileDropHandle
         lateinit var language: ValueInput<TrikSupportedLanguage?>
         row {
             block(title = "Отправка решения") {
@@ -165,7 +166,7 @@ abstract class StudyTaskView(
                     }
                 }
                 row {
-                    fileDrop(
+                    drop = fileDrop(
                         "Файл решения",
                         limits = UploadLimits(
                             maxFiles = 1,
@@ -174,7 +175,7 @@ abstract class StudyTaskView(
                         ),
                         consume = { file ->
                             val content = file.openStream().use { stream -> stream.readBytes() }
-                            upload.set(FileData(uploadedFilename = file.filename, content = content))
+                            fileCopy.set(file.id to FileData(uploadedFilename = file.filename, content = content))
                         },
                     ) { isEnabled = isSendable }
                 }
@@ -185,7 +186,10 @@ abstract class StudyTaskView(
                         } else {
                             isEnabled = isSendable
                         }
-                        onClick { send(access, contestId, task.task.id, language.value, upload.get()) }
+                        onClick {
+                            val file = fileCopy.get()?.takeIf { (id, _) -> id in drop.fileIds }?.second
+                            send(access, contestId, task.task.id, language.value, file)
+                        }
                     }
                 }
             }

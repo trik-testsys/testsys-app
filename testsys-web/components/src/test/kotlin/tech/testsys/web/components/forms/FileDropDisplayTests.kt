@@ -36,6 +36,22 @@ class FileDropDisplayTests : MockVaadinTests() {
     }
 
     @Test
+    fun `should place the receiver as a labeled field and keep its accessible name`() {
+        lateinit var handle: FileDropHandle
+        val row = buildTestRow {
+            handle = fileDrop("New file", limits = limits, labelSize = 4, size = 8, consume = {})
+        }
+        val engine = display().engine
+        engine.receiveFile("done.txt")
+
+        assertEquals(listOf(identity(engine, "done.txt")), handle.fileIds)
+        assertEquals("New file", row.find("ts-field__text").element.text)
+        assertEquals("span 12", row.find("ts-field").element.style.get("grid-column"))
+        assertEquals("New file", _find<Upload>().single().element.getAttribute("aria-label"))
+        assertFalse(display().children.anyMatch { child -> child.element.tag == "span" && child.element.text == "New file" })
+    }
+
+    @Test
     fun `should retain native upload naming and server limits in the compact display`() {
         val row = buildTestRow { fileDrop("Files", limits = limits, consume = {}) }
         val upload = _find<Upload>().single()

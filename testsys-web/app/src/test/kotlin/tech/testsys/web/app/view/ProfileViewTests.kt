@@ -35,6 +35,16 @@ class ProfileViewTests : MockSpringVaadinTests() {
     private lateinit var emailChangeRequests: EmailChangeRequestRepository
 
     @Test
+    fun `should announce the first email confirmation code delivery`() {
+        open()
+        val newEmail = "${fixtures.unique("new")}@example.com".lowercase()
+
+        requestCode(newEmail)
+
+        assertEquals("Код отправлен", lastToastTitle())
+    }
+
+    @Test
     fun `should show the nickname and the e-mail address in read-only fields under the main page crumb`() {
         val user = open()
 

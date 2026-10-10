@@ -10,6 +10,7 @@ import tech.testsys.domain.model.task.DiagnosticReport
 import tech.testsys.domain.model.task.DiagnosticSeverity
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.operation.error.OperationError
@@ -27,6 +28,7 @@ import tech.testsys.web.app.service.developer.DeveloperSolutionVo
 import tech.testsys.web.app.service.developer.ExerciseVo
 import tech.testsys.web.app.service.developer.ResourceVo
 import tech.testsys.web.app.service.developer.StatementVo
+import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.app.service.developer.TestVo
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.forms.UploadedFile
@@ -182,4 +184,33 @@ internal fun testingRefusalOf(error: OperationError): String? = when (error) {
         "Задача прикреплена к туру с версией TRIK Studio ${error.trikStudioVersion.version}, которую она не поддерживает."
     is TaskNotTestedError -> "Рабочая версия задачи не прошла тестирование."
     else -> null
+}
+
+/** Route parameter of the selected testing request. */
+internal const val TESTING_ID_PARAMETER = "testingId"
+
+/** Returns the parameters of a testing request belonging to [taskId]. */
+internal fun testingParameters(taskId: TaskId, requestId: TaskValidationRequestId): RouteParameters = RouteParameters(
+    mapOf(TASK_ID_PARAMETER to taskId.value.toString(), TESTING_ID_PARAMETER to requestId.value.toString()),
+)
+
+/** Opens the results of [requestId] of [taskId]. */
+internal fun openDeveloperTesting(taskId: TaskId, requestId: TaskValidationRequestId) {
+    UI.getCurrent().navigate(DeveloperTestingView::class.java, testingParameters(taskId, requestId))
+}
+
+/** Returns a short result of [execution]. */
+internal fun summaryOf(execution: TaskValidationExecutionVo): String = when (execution) {
+    TaskValidationExecutionVo.PendingDiagnostics -> "Выполняются диагностики"
+    is TaskValidationExecutionVo.AwaitingSubmissions -> "Диагностики пройдены, создаются посылки"
+    is TaskValidationExecutionVo.StoppedByDiagnostics -> "Диагностики нашли ошибки в полигонах"
+    is TaskValidationExecutionVo.SubmissionsCreated -> "Проверяются посылки: ${execution.submissions.size}"
+    is TaskValidationExecutionVo.Completed -> if (execution.failures.isEmpty()) {
+        "Все посылки набрали ожидаемый балл"
+    } else {
+        "Провалено посылок: ${execution.failures.size} из ${execution.submissions.size}"
+    }
+    is TaskValidationExecutionVo.IncompleteDiagnostics -> "Техническая остановка: ${execution.failure.description}"
+    is TaskValidationExecutionVo.CompletedDiagnostics -> "Техническая остановка: ${execution.failure.description}"
+    is TaskValidationExecutionVo.CreatedSubmissions -> "Техническая остановка: ${execution.failure.description}"
 }

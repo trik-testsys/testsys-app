@@ -3,13 +3,18 @@
 package tech.testsys.web.components.overlay
 
 import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.html.H3
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.ElementRole
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
@@ -96,12 +101,53 @@ class DialogScope internal constructor(
     }
 
     /**
+     * Adds a full-width group of rows under [title], sharing the dialog edit mode.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun section(title: String, content: DialogSectionScope.() -> Unit) {
+        val heading = H3(title).apply { addClassName(CssClass.DialogSectionTitle) }
+        val body = Div().apply { addClassName(CssClass.DialogSectionBody) }
+        DialogSectionScope(body, texts, editState).content()
+        shell.content.add(
+            Div(heading, body).apply {
+                addClassName(CssClass.DialogSection)
+                element.setRole(ElementRole.Group)
+                element.setAttribute(HtmlAttribute.AriaLabel, title)
+            },
+        )
+    }
+
+    /**
      * Fills the footer of the dialog; [content] gets the dialog handle, for example to close it.
      *
      * @since %CURRENT_VERSION%
      */
     fun footer(content: ContentScope.(DialogHandle) -> Unit) {
         ContentScope(shell.foot, texts, Placement.Body).content(handle)
+    }
+}
+
+/**
+ * Rows of a named form group on its own 24-column grid, sharing its dialog edit mode.
+ *
+ * @since %CURRENT_VERSION%
+ */
+@TestSysDsl
+class DialogSectionScope internal constructor(
+    private val container: Div,
+    private val texts: UiTexts,
+    private val editState: BlockEditState,
+) {
+    /**
+     * Adds a row whose elements take at most 24 columns; an empty row is omitted.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun row(content: BlockRowScope.() -> Unit) {
+        val row = Div().apply { addClassName(CssClass.BlockRow) }
+        BlockRowScope(row, GRID_COLUMNS, texts, editState).content()
+        if (row.children.findAny().isPresent) container.add(row)
     }
 }
 

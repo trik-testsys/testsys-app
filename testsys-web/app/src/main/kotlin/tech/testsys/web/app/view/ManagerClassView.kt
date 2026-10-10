@@ -1,5 +1,6 @@
 package tech.testsys.web.app.view
 
+import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.PageTitle
@@ -13,8 +14,11 @@ import tech.testsys.web.app.service.manager.ManagerService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.copyAction
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
+import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageRowScope
 import tech.testsys.web.components.layout.PageScope
@@ -57,6 +61,7 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
                 onOpen = { contest -> openClassContest(classId, contest.id) },
                 onAdd = { contest ->
                     managerService.addClassContest(classId, contest.id)
+                    toast(FeedbackKind.Success, "Тур добавлен в класс")
                     show(classId)
                 },
             )
@@ -64,12 +69,52 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
     }
 
     private fun PageRowScope.detailsBlock(details: ClassDetailsVo) {
+        val entity = details.studyClass
+        val draft = Binder<DetailsDraft>()
         block(size = DETAILS_COLUMNS, title = "Сведения") {
-            row { codeInput("ID", labelSize = 8, size = 16) { value = details.studyClass.id.value.toString() } }
-            row { textInput("Название", labelSize = 8, size = 16) { value = details.studyClass.name } }
-            row { codeInput("Учеников", labelSize = 8, size = 16) { value = details.students.size.toString() } }
-            row { codeInput("Туров", labelSize = 8, size = 16) { value = details.contests.size.toString() } }
-        }.isEditable = false
+            editing(
+                onSave = {
+                    val values = DetailsDraft()
+                    val isValid = draft.writeBeanIfValid(values)
+                    if (isValid) {
+                        managerService.editClass(classId = entity.id, className = values.name, description = values.description)
+                        toast(FeedbackKind.Success, "Класс изменён")
+                        show(entity.id)
+                    }
+                    isValid
+                },
+                onCancel = { draft.readBean(DetailsDraft(entity.name, entity.description)) },
+            )
+            row {
+                codeInput("ID", labelSize = 6, size = 18) {
+                    value = entity.id.value.toString()
+                    isEditable = false
+                }
+            }
+            row {
+                textInput("Название", labelSize = 6, size = 18) {
+                    draft.forField(this).nameRules("Укажите название")
+                        .bind({ values -> values.name }, { values, name -> values.name = name })
+                }
+            }
+            row {
+                textArea("Описание", labelSize = 6, size = 18, maxLines = 4) {
+                    draft.forField(this).bind({ values -> values.description }, { values, description -> values.description = description })
+                }
+            }
+            row {
+                codeInput("Учеников", labelSize = 6, size = 6) {
+                    value = details.students.size.toString()
+                    isEditable = false
+                }
+                codeInput("Туров", labelSize = 6, size = 6) {
+                    value = details.contests.size.toString()
+                    isEditable = false
+                }
+            }
+        }
+
+        draft.readBean(DetailsDraft(entity.name, entity.description))
     }
 
     @RawInviteCodeDependency(reason = "Shows and copies the stored invite code of the class as the issued one.")
@@ -95,11 +140,13 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
                             isDanger = true,
                         ) {
                             managerService.createClassInvite(classId)
+                            toast(FeedbackKind.Success, "Код-приглашение заменён")
                             show(classId)
                         }
                     }
                     item("Продлить") {
                         managerService.extendClassInvite(classId)
+                        toast(FeedbackKind.Success, "Срок действия кода-приглашения продлён")
                         show(classId)
                     }
                 }
@@ -122,4 +169,6 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
             }
         }
     }
+
+    private class DetailsDraft(var name: String = "", var description: String = "")
 }

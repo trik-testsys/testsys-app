@@ -120,6 +120,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         val after = developerInvite(community)
         assertEquals(before.codeHash, after.codeHash)
         assertTrue(after.expiresAt < before.expiresAt)
+        assertEquals("Срок действия кода-приглашения продлён", lastToastTitle())
     }
 
     @Test
@@ -134,6 +135,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         val after = managerInvite(community).codeHash
         assertNotEquals(before, after)
         assertTrue(after.value in invitesText())
+        assertEquals("Код-приглашение заменён", lastToastTitle())
     }
 
     @Test
@@ -151,6 +153,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         val observer = observers.findByAccessToken(textField("Код-доступа").value)
         assertEquals("Наблюдатель Анна", observer?.data?.name)
         assertEquals(listOf(contest.id), observer?.data?.contests?.ids)
+        assertEquals("Наблюдатель создан", lastToastTitle())
     }
 
     @Test
@@ -179,6 +182,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         assertEquals("Робототехника", saved.name)
         assertEquals("", saved.description)
         assertEquals("Сообщество «Робототехника»", UI.getCurrent()._find<H1>().single().text)
+        assertEquals("Сообщество изменено", lastToastTitle())
     }
 
     @Test

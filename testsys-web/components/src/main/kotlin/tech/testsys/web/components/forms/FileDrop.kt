@@ -44,6 +44,7 @@ import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
+import tech.testsys.web.components.layout.placeField
 import tech.testsys.web.components.texts.UiTexts
 import java.io.ByteArrayInputStream
 import java.io.IOException
@@ -88,6 +89,7 @@ data class UploadLimits(
 /**
  * Temporary file content valid only during the application handler; the buffer is wiped afterwards.
  *
+ * @property id the transfer identity, preserved until removal from the receiver list.
  * @property filename the client-provided filename, never used as a server path.
  * @property contentType the client-provided MIME type checked against configured limits.
  * @property size the actual number of received bytes.
@@ -95,6 +97,7 @@ data class UploadLimits(
  * @since %CURRENT_VERSION%
  */
 class UploadedFile internal constructor(
+    val id: String,
     val filename: String,
     val contentType: String,
     val size: Int,
@@ -225,10 +228,15 @@ sealed interface FileUploadState {
  *
  * @property isEnabled whether transfers may start.
  * @property isEditable whether this action accepts files; row actions also follow their block mode.
+ * @property fileIds a snapshot of successfully completed transfers still present in the list, in reservation order.
  * @property state the read-only signal of the latest transfer lifecycle event.
  * @since %CURRENT_VERSION%
  */
-class FileDropHandle internal constructor(private val drop: FileDropDisplay) : FieldHandle(component = drop, valueArea = drop) {
+class FileDropHandle internal constructor(
+    private val drop: FileDropDisplay,
+    component: Div = drop,
+    valueArea: Div = drop,
+) : FieldHandle(component = component, valueArea = valueArea) {
     private var isBlockEditable = true
     private val enabled: Bindable<Boolean>
     private val editable: Bindable<Boolean>
@@ -249,6 +257,9 @@ class FileDropHandle internal constructor(private val drop: FileDropDisplay) : F
             editable.value = value
         }
     val state: Signal<FileUploadState> = drop.state.asReadonly()
+
+    val fileIds: List<String>
+        get() = drop.engine.fileIds()
 
     /**
      * Binds whether transfers can start to [signal].
@@ -310,6 +321,7 @@ fun ContentScope.fileDrop(
 
 /**
  * Adds a file receiver on [size] columns, or the remaining columns, following the block edit mode.
+ * With [labelSize], places its label to the left and requires an explicit value [size].
  *
  * @param consume the synchronous temporary-content handler.
  * @param configure the returned action configuration.
@@ -318,12 +330,21 @@ fun ContentScope.fileDrop(
 fun BlockRowScope.fileDrop(
     label: String,
     limits: UploadLimits,
+    labelSize: Int? = null,
     size: Int? = null,
     consume: (UploadedFile) -> Unit,
     configure: FileDropHandle.() -> Unit = {},
 ): FileDropHandle {
-    val drop = placeWithSize(size) { FileDropDisplay(texts, label, limits, consume) }
-    return FileDropHandle(drop).apply {
+    val drop = FileDropDisplay(texts, label, limits, consume, showLabel = labelSize == null)
+    val handle = if (labelSize == null) {
+        place(size, drop)
+        FileDropHandle(drop)
+    } else {
+        val valueSize = requireNotNull(size) { "File receiver '$label' needs a value size with labelSize" }
+        val field = placeField(label = label, labelSize = labelSize, size = valueSize, value = drop, labelAction = null)
+        FileDropHandle(drop, field.field, field.valueCell)
+    }
+    return handle.apply {
         followBlock(this@fileDrop.editState)
         configure()
     }
@@ -335,6 +356,7 @@ internal class FileDropDisplay(
     label: String,
     limits: UploadLimits,
     consume: (UploadedFile) -> Unit,
+    showLabel: Boolean = true,
 ) : Div() {
     val state = ValueSignal<FileUploadState>(FileUploadState.Idle)
     private var attachedUi: UI? = null
@@ -447,7 +469,8 @@ internal class FileDropDisplay(
             addClassName(CssClass.Hint)
         }
 
-        add(Span(label), upload, Div(limitsHint, status, actions).apply { addClassName(CssClass.FiledropMeta) })
+        if (showLabel) add(Span(label))
+        add(upload, Div(limitsHint, status, actions).apply { addClassName(CssClass.FiledropMeta) })
 
         ElementEffect.bind(element, state) { _, value ->
             cancelAction.isVisible = value is FileUploadState.Uploading || value is FileUploadState.Processing
@@ -539,6 +562,7 @@ internal class BoundedUploads(
     private val epoch = AtomicLong()
     private val active = ConcurrentHashMap<Long, Active>()
     private val slots = mutableMapOf<String, Long>()
+    private val completed = mutableSetOf<Long>()
     private val sequence = AtomicLong()
     private val lastEvent = AtomicLong()
     private var memory = 0L
@@ -643,12 +667,15 @@ internal class BoundedUploads(
             }
 
             ensureActive(current)
-            file = UploadedFile(filename, mime, count, bytes, current.cancelled)
+            file = UploadedFile(transferId, filename, mime, count, bytes, current.cancelled)
             emit(id, current, FileUploadState.Uploading(filename, bytes = count.toLong(), total = declared.takeIf { size -> size >= 0 }))
             emit(id, current, FileUploadState.Processing(filename))
             consume(file)
-            ensureActive(current)
-            isSuccessful = true
+            synchronized(lock) {
+                ensureActive(current)
+                if (slots[transferId] == id) completed.add(id)
+                isSuccessful = true
+            }
             file.release()
             emit(id, current, FileUploadState.Done(filename, count.toLong()))
         } catch (failure: Exception) {
@@ -669,7 +696,10 @@ internal class BoundedUploads(
             if (isReserved) {
                 synchronized(lock) {
                     memory -= limits.maxFileBytes
-                    if (!isSuccessful) slots.remove(transferId, id)
+                    if (!isSuccessful) {
+                        slots.remove(transferId, id)
+                        completed.remove(id)
+                    }
                 }
             }
         }
@@ -680,6 +710,7 @@ internal class BoundedUploads(
             epoch.incrementAndGet()
             active.entries.map { (id, token) ->
                 slots.remove(token.identity, id)
+                completed.remove(id)
                 token.cancelled.set(true)
                 token
             }
@@ -695,13 +726,19 @@ internal class BoundedUploads(
 
     fun clear() {
         cancel()
-        synchronized(lock) { slots.clear() }
+        synchronized(lock) {
+            slots.clear()
+            completed.clear()
+        }
     }
 
     /** Removes the transfer [transferId] and returns whether it was still running. */
     fun remove(transferId: String): Boolean {
         val token = synchronized(lock) {
-            slots.remove(transferId)?.let { id -> active[id] }?.also { current -> current.cancelled.set(true) }
+            slots.remove(transferId)?.let { id ->
+                completed.remove(id)
+                active[id]
+            }?.also { current -> current.cancelled.set(true) }
         }
 
         if (token != null) {
@@ -716,6 +753,8 @@ internal class BoundedUploads(
     }
 
     fun hasActive(): Boolean = active.isNotEmpty()
+
+    fun fileIds(): List<String> = synchronized(lock) { slots.filterValues { id -> id in completed }.keys.toList() }
 
     fun fileCount(): Int = synchronized(lock) { slots.size }
 

@@ -48,6 +48,7 @@ internal class TableSpec<T>(
     val empty: EmptyContent,
     val layout: TableLayout,
     val isRowNavigation: Boolean = false,
+    val isRowClickable: (T) -> Boolean = { true },
     val rowClick: ((T) -> Unit)?,
 )
 
@@ -68,6 +69,7 @@ class TableScope<T> internal constructor(
     private var emptyContent: EmptyContent = EmptyContent(texts.table.empty)
     private var rowClick: ((T) -> Unit)? = null
     private var isRowNavigation: Boolean = false
+    private var isRowClickable: (T) -> Boolean = { true }
 
     /** Whether [empty] set the empty state, so that a table which sets its own can tell. */
     internal var hasOwnEmpty: Boolean = false
@@ -197,12 +199,15 @@ class TableScope<T> internal constructor(
     }
 
     /**
-     * Runs [listener] with the row a user clicks, except clicks on its checkbox and actions. [isNavigation] marks a
-     * click that opens another page; its first text column then looks like a link.
+     * Runs [listener] for rows accepted by [isClickable], except clicks on their controls.
+     * [isNavigation] marks a click opening another page and styles its first text column as a link.
      *
+     * @param isClickable whether the row accepts clicks and receives interactive styling.
+     * @param listener the action performed for an accepted row click.
      * @since %CURRENT_VERSION%
      */
-    fun onRowClick(isNavigation: Boolean = false, listener: (T) -> Unit) {
+    fun onRowClick(isNavigation: Boolean = false, isClickable: (T) -> Boolean = { true }, listener: (T) -> Unit) {
+        isRowClickable = isClickable
         rowClick = listener
         isRowNavigation = isNavigation
     }
@@ -222,6 +227,7 @@ class TableScope<T> internal constructor(
             empty = emptyContent,
             layout = layout,
             isRowNavigation = isRowNavigation,
+            isRowClickable = isRowClickable,
             rowClick = rowClick,
         )
     }

@@ -7,9 +7,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import java.time.Clock
-import java.time.Duration
-import java.time.Instant
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertSame
@@ -73,13 +70,11 @@ import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
-import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
-import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.config.ClassInviteConfig
 import tech.testsys.operation.config.CompetitionConfig
 import tech.testsys.operation.error.ClassAccessDeniedError
@@ -109,6 +104,9 @@ import tech.testsys.operation.util.testDeveloper
 import tech.testsys.operation.util.testManager
 import tech.testsys.operation.util.testMultipleRoleUser
 import tech.testsys.operation.util.testNewTask
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
 
 class ManagerOperationsTests {
 
@@ -138,6 +136,262 @@ class ManagerOperationsTests {
         userRepository = userRepository,
         taskRepository = taskRepository,
     )
+
+    @Nested
+    inner class EditClassTests {
+
+        private val manager = testManager { data = managerData {} }
+        private val id = ClassId(11)
+
+        @Test
+        fun `should raise MissedManagerRoleError before loading the class`() {
+            assertRaises(MissedManagerRoleError) {
+                operations.editClass(user = testAdministrator {}, classId = id, className = "", description = "")
+            }
+
+            verify { repository wasNot Called }
+        }
+
+        @Test
+        fun `should raise ClassNotExistsError if the class does not exist`() {
+            every { repository.findById(id) } returns null
+
+            assertRaises(ClassNotExistsError(id)) {
+                operations.editClass(user = manager, classId = id, className = "", description = "")
+            }
+        }
+
+        @Test
+        fun `should raise ClassAccessDeniedError before validating the name of another owner's class`() {
+            every { repository.findById(id) } returns testClass { owner = MultipleRoleUserId(99) }
+
+            assertRaises(ClassAccessDeniedError(id)) {
+                operations.editClass(user = manager, classId = id, className = "", description = "")
+            }
+
+            verify(exactly = 0) { repository.update(any<Class>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["", " ", "\t\n", "\u00A0"])
+        fun `should raise ClassNameBlankError without changing the class`(name: String) {
+            every { repository.findById(id) } returns testClass()
+
+            assertRaises(ClassNameBlankError) {
+                operations.editClass(user = manager, classId = id, className = name, description = "")
+            }
+
+            verify(exactly = 0) { repository.update(any<Class>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should reject a name longer than 255 Unicode code points`(symbol: String) {
+            val name = symbol.repeat(256)
+            every { repository.findById(id) } returns testClass()
+
+            assertRaises(ClassNameTooLongError(name)) {
+                operations.editClass(user = manager, classId = id, className = name, description = "")
+            }
+
+            verify(exactly = 0) { repository.update(any<Class>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should save a name of exactly 255 Unicode code points`(symbol: String) {
+            val name = symbol.repeat(255)
+            every { repository.findById(id) } returns testClass()
+            every { repository.update(any<Class>()) } answers { firstArg() }
+
+            val actual = operations.editClass(user = manager, classId = id, className = name, description = "").getOrThrow()
+
+            assertEquals(name, actual.data.name)
+            verify(exactly = 1) { repository.update(actual) }
+        }
+
+        @Test
+        fun `should save the supplied name and clear description while preserving all relations`() {
+            val original = testClass {
+                contests(listOf(41, 42))
+                students(listOf(1, 2))
+                invite(31)
+            }
+            every { repository.findById(id) } returns original
+            every { repository.update(any<Class>()) } answers { firstArg() }
+
+            val actual = operations.editClass(user = manager, classId = id, className = "  New NAME  ", description = "").getOrThrow()
+
+            assertEquals("  New NAME  ", actual.data.name)
+            assertEquals("", actual.data.description)
+            assertEquals(original.data.owner.id, actual.data.owner.id)
+            assertEquals(original.data.contests.ids, actual.data.contests.ids)
+            assertEquals(original.data.students.ids, actual.data.students.ids)
+            assertEquals(original.data.invite.id, actual.data.invite.id)
+            assertEquals(original.id, actual.id)
+            assertEquals(original.createdAt, actual.createdAt)
+            verify(exactly = 1) { repository.update(actual) }
+        }
+    }
+
+    @Nested
+    inner class EditCompetitionTests {
+
+        private val manager = testManager { data = managerData {} }
+        private val id = CompetitionId(21)
+
+        @Test
+        fun `should raise MissedManagerRoleError before loading the competition`() {
+            assertRaises(MissedManagerRoleError) {
+                operations.editCompetition(user = testAdministrator {}, competitionId = id, competitionName = "", description = "")
+            }
+
+            verify { competitionRepository wasNot Called }
+        }
+
+        @Test
+        fun `should raise CompetitionNotExistsError if the competition does not exist`() {
+            every { competitionRepository.findById(id) } returns null
+
+            assertRaises(CompetitionNotExistsError(id)) {
+                operations.editCompetition(user = manager, competitionId = id, competitionName = "", description = "")
+            }
+        }
+
+        @Test
+        fun `should raise CompetitionAccessDeniedError before validating the name of another owner's competition`() {
+            every { competitionRepository.findById(id) } returns testCompetition { owner = MultipleRoleUserId(99) }
+
+            assertRaises(CompetitionAccessDeniedError(id)) {
+                operations.editCompetition(user = manager, competitionId = id, competitionName = "", description = "")
+            }
+
+            verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["", " ", "\t\n", "\u00A0"])
+        fun `should raise CompetitionNameBlankError without changing the competition`(name: String) {
+            every { competitionRepository.findById(id) } returns testCompetition()
+
+            assertRaises(CompetitionNameBlankError) {
+                operations.editCompetition(user = manager, competitionId = id, competitionName = name, description = "")
+            }
+
+            verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should reject a name longer than 255 Unicode code points`(symbol: String) {
+            val name = symbol.repeat(256)
+            every { competitionRepository.findById(id) } returns testCompetition()
+
+            assertRaises(CompetitionNameTooLongError(name)) {
+                operations.editCompetition(user = manager, competitionId = id, competitionName = name, description = "")
+            }
+
+            verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should save a name of exactly 255 Unicode code points`(symbol: String) {
+            val name = symbol.repeat(255)
+            every { competitionRepository.findById(id) } returns testCompetition()
+            every { competitionRepository.update(any<Competition>()) } answers { firstArg() }
+
+            val actual = operations.editCompetition(
+                user = manager,
+                competitionId = id,
+                competitionName = name,
+                description = "",
+            ).getOrThrow()
+
+            assertEquals(name, actual.data.name)
+            verify(exactly = 1) { competitionRepository.update(actual) }
+        }
+
+        @Test
+        fun `should save the supplied name and clear description while preserving all relations`() {
+            val original = testCompetition {
+                contests(listOf(41, 42))
+                participants(listOf(31, 32))
+            }
+            every { competitionRepository.findById(id) } returns original
+            every { competitionRepository.update(any<Competition>()) } answers { firstArg() }
+
+            val actual = operations.editCompetition(
+                user = manager,
+                competitionId = id,
+                competitionName = "  New NAME  ",
+                description = "",
+            ).getOrThrow()
+
+            assertEquals("  New NAME  ", actual.data.name)
+            assertEquals("", actual.data.description)
+            assertEquals(original.data.owner.id, actual.data.owner.id)
+            assertEquals(original.data.contests.ids, actual.data.contests.ids)
+            assertEquals(original.data.participants.ids, actual.data.participants.ids)
+            assertEquals(original.id, actual.id)
+            assertEquals(original.createdAt, actual.createdAt)
+            verify(exactly = 1) { competitionRepository.update(actual) }
+        }
+    }
+
+    @Nested
+    inner class DownloadParticipantsTests {
+
+        private val manager = testManager { data = managerData {} }
+        private val id = CompetitionId(21)
+
+        @Test
+        fun `should reject a user without Manager role before loading participants`() {
+            assertRaises(MissedManagerRoleError) { operations.downloadParticipants(testAdministrator {}, id) }
+
+            verify { listOf(competitionRepository, participantRepository) wasNot Called }
+        }
+
+        @Test
+        fun `should reject a missing competition`() {
+            every { competitionRepository.findById(id) } returns null
+
+            assertRaises(CompetitionNotExistsError(id)) { operations.downloadParticipants(manager, id) }
+        }
+
+        @Test
+        fun `should reject another owner's competition`() {
+            every { competitionRepository.findById(id) } returns testCompetition { owner = MultipleRoleUserId(99) }
+
+            assertRaises(CompetitionAccessDeniedError(id)) { operations.downloadParticipants(manager, id) }
+
+            verify { participantRepository wasNot Called }
+        }
+
+        @Test
+        fun `should return only the competition participants in stored order without changing their codes`() {
+            val first = testCompetitionParticipant(31)
+            val second = testCompetitionParticipant(32)
+            val ids = listOf(second.id, first.id)
+            every { competitionRepository.findById(id) } returns testCompetition { participants(listOf(32, 31)) }
+            every { participantRepository.findByIds(ids) } returns listOf(first, second)
+
+            val actual = operations.downloadParticipants(manager, id).getOrThrow()
+
+            assertEquals(listOf(second, first), actual)
+            verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+        }
+
+        @Test
+        fun `should return an empty list if the competition has no participants`() {
+            every { competitionRepository.findById(id) } returns testCompetition()
+            every { participantRepository.findByIds(emptyList()) } returns emptyList()
+
+            val actual = operations.downloadParticipants(manager, id).getOrThrow()
+
+            assertEquals(emptyList<Participant>(), actual)
+        }
+    }
 
     @Nested
     inner class CreateClassTests {
@@ -686,6 +940,7 @@ class ManagerOperationsTests {
 
                 assertSame(original, actual.studyClass)
             }
+
             @Test
             fun `should return the owned class with its students and contests in stored order`() {
                 val original = testClass {
@@ -1404,6 +1659,7 @@ class ManagerOperationsTests {
 
                 assertSame(original, actual.competition)
             }
+
             @Test
             fun `should return the owned competition with its participants and contests in stored order`() {
                 val original = testCompetition {
@@ -1413,12 +1669,16 @@ class ManagerOperationsTests {
                 every { competitionRepository.findById(competitionId) } returns original
                 every { participantRepository.findByIds(listOf(SingleRoleUserId(32), SingleRoleUserId(31))) } returns
                     listOf(testCompetitionParticipant(31), testCompetitionParticipant(32))
-                every { contestRepository.findByIds(listOf(ContestId(20), ContestId(19))) } returns listOf(testContestOf(19), testContestOf(20))
+                every { contestRepository.findByIds(listOf(ContestId(20), ContestId(19))) } returns
+                    listOf(testContestOf(19), testContestOf(20))
 
                 val actual = operations.viewCompetition(user = manager, competitionId = competitionId).getOrThrow()
 
                 assertSame(original, actual.competition)
-                assertEquals(listOf(SingleRoleUserId(32), SingleRoleUserId(31)), actual.participants.map { (participant, _) -> participant.id })
+                assertEquals(
+                    listOf(SingleRoleUserId(32), SingleRoleUserId(31)),
+                    actual.participants.map { (participant, _) -> participant.id },
+                )
                 assertEquals(listOf(ContestId(20), ContestId(19)), actual.contests.map { contest -> contest.id })
             }
 
@@ -1426,7 +1686,8 @@ class ManagerOperationsTests {
             fun `should return the issued access code and last login of each participant`() {
                 val lastLogin = Instant.parse("2026-03-14T09:30:00Z")
                 every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31, 32)) }
-                every { participantRepository.findByIds(any()) } returns listOf(testCompetitionParticipant(31), testCompetitionParticipant(32))
+                every { participantRepository.findByIds(any()) } returns
+                    listOf(testCompetitionParticipant(31), testCompetitionParticipant(32))
                 every { userRepository.findLastLogins(listOf(SingleRoleUserId(31), SingleRoleUserId(32))) } returns
                     mapOf(SingleRoleUserId(31) to lastLogin)
 
@@ -1667,6 +1928,7 @@ class ManagerOperationsTests {
 
                 assertSame(contest, actual.contest)
             }
+
             @Test
             fun `should return the contest tasks with their names in contest order`() {
                 every { repository.findById(classId) } returns testClass { contests(listOf(19)) }
@@ -1938,7 +2200,8 @@ class ManagerOperationsTests {
                 every { contestRepository.findById(contestId) } returns contest
                 every { submissionRepository.findContestResults(any(), any(), any()) } returns emptyList()
 
-                val actual = operations.viewCompetitionContest(user = user, competitionId = competitionId, contestId = contestId).getOrThrow()
+                val actual =
+                    operations.viewCompetitionContest(user = user, competitionId = competitionId, contestId = contestId).getOrThrow()
 
                 assertSame(contest, actual.contest)
             }
@@ -3138,7 +3401,6 @@ class ManagerOperationsTests {
                 assertSame(failure, actual)
             }
         }
-
     }
 
     @Nested
@@ -3209,7 +3471,6 @@ class ManagerOperationsTests {
                 verify { contestRepository wasNot Called }
             }
         }
-
     }
 
     private fun testStudentUser(studentId: Long): MultipleRoleUser = multipleRoleUser {

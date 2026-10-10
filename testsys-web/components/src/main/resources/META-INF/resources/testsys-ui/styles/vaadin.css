@@ -396,3 +396,18 @@ vaadin-notification-card[theme~="ts-header-arrival"]::part(overlay) { border-rad
 vaadin-popover[theme~="ts-header-menu-search"]::part(overlay) { width:min(calc(var(--ts-menu-columns,4) * var(--col-wide) + 2 * var(--space-3) + (var(--ts-menu-columns,4) - 1) * var(--space-3)),calc(100vw - 24px)); min-width:0; }
 
 @media (prefers-reduced-motion: reduce) { vaadin-dialog[theme~="ts-drawer"]::part(overlay) { animation:none; } }
+
+.ts-field__value > .ts-filedrop {
+    min-width: 0;
+    width: 100%;
+}
+
+.ts-drawer-table {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
+.ts-drawer-table > .ts-block__title {
+    display: block;
+    margin-bottom: 8px;
+}

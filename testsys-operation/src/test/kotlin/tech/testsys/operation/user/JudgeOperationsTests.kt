@@ -1,13 +1,10 @@
 package tech.testsys.operation.user
 
 import io.mockk.Called
-import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import java.time.Instant
-import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -34,7 +31,6 @@ import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.api.submission
 import tech.testsys.domain.builder.api.submissionData
-import tech.testsys.domain.builder.api.test as polygon
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.verdict
 import tech.testsys.domain.builder.api.verdictData
@@ -75,7 +71,6 @@ import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskId
-import tech.testsys.domain.model.task.Test as Polygon
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
@@ -107,6 +102,10 @@ import tech.testsys.operation.util.testMultipleRoleUser
 import tech.testsys.operation.util.testNewTask
 import tech.testsys.operation.util.testParticipant
 import tech.testsys.operation.util.testStudent
+import java.time.Instant
+import java.util.UUID
+import tech.testsys.domain.builder.api.test as polygon
+import tech.testsys.domain.model.task.Test as Polygon
 
 class JudgeOperationsTests {
 
@@ -871,14 +870,18 @@ class JudgeOperationsTests {
             fun `should raise SubmissionNotExistsError if submission is missing`() {
                 every { submissionRepository.findById(SUBMISSION_ID) } returns null
 
-                assertRaises(SubmissionNotExistsError(SUBMISSION_ID)) { operations.viewSolution(user = judge, submissionId = SUBMISSION_ID) }
+                assertRaises(SubmissionNotExistsError(SUBMISSION_ID)) {
+                    operations.viewSolution(user = judge, submissionId = SUBMISSION_ID)
+                }
             }
 
             @Test
             fun `should deny access to a developer solution test`() {
                 arrangeSubmission(gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion("3.0.0") } })
 
-                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) { operations.viewSolution(user = judge, submissionId = SUBMISSION_ID) }
+                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
+                    operations.viewSolution(user = judge, submissionId = SUBMISSION_ID)
+                }
             }
 
             @Test
@@ -886,7 +889,9 @@ class JudgeOperationsTests {
                 arrangeSubmission()
                 every { userRepository.findById(studentAuthor.id) } returns testMultipleRoleUser {}
 
-                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) { operations.viewSolution(user = judge, submissionId = SUBMISSION_ID) }
+                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
+                    operations.viewSolution(user = judge, submissionId = SUBMISSION_ID)
+                }
             }
         }
 
@@ -979,7 +984,6 @@ class JudgeOperationsTests {
                 }
             }
         }
-
     }
 
     @Nested
@@ -1050,7 +1054,6 @@ class JudgeOperationsTests {
                 verify { logsRepository wasNot Called }
             }
         }
-
     }
 
     @Nested
@@ -1131,7 +1134,6 @@ class JudgeOperationsTests {
                 verify { recordingRepository wasNot Called }
             }
         }
-
     }
 
     /** Makes [submission] by [studentAuthor] stored with [gradedVerdict] as its verdict. */

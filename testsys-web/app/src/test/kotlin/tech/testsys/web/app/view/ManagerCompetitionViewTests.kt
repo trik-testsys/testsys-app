@@ -13,8 +13,10 @@ import com.vaadin.flow.component.contextmenu.ContextMenu
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.dialog.Dialog
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.textfield.IntegerField
+import com.vaadin.flow.component.textfield.TextArea
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -45,6 +47,41 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var managerService: ManagerService
+
+    @Test
+    fun `should export only this competition participants with issued codes and escaped nicknames`() {
+        val manager = signInManager()
+        val competition = fixtures.competition(owner = manager)
+        val participant = participantOf(competition)
+        participantOf(fixtures.competition(owner = manager))
+        val exported = managerService.downloadParticipants(competition.id)
+        val renamed = exported.single().copy(name = "A;\"B\"\r\nC")
+
+        val csv = participantsCsv(listOf(renamed))
+
+        assertEquals(listOf(participant.id), exported.map { row -> row.id })
+        assertEquals(
+            "\uFEFFID;Псевдоним;Код-доступа\r\n${participant.id.value};\"A;\"\"B\"\"\r\nC\";${participant.data.accessTokenHash.value}\r\n",
+            csv,
+        )
+    }
+
+    @Test
+    fun `should save the name and description through the details editor`() {
+        val entity = fixtures.competition(owner = signInManager())
+        open(entity.id)
+        clickButton("Изменить")
+        textField("Название")._value = "Новое название"
+        UI.getCurrent()._get<TextArea>()._value = "Описание группы"
+
+        clickButton("Сохранить")
+
+        val saved = checkNotNull(competitions.findById(entity.id))
+        assertEquals("Новое название", saved.data.name)
+        assertEquals("Описание группы", saved.data.description)
+        assertTrue(textField("Название").isReadOnly)
+        assertEquals("Соревнование изменено", lastToastTitle())
+    }
 
     @Test
     fun `should show the not found screen for a missing competition`() {
@@ -91,6 +128,7 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
         val created = checkNotNull(competitions.findById(competition.id)).data.participants.ids
         assertEquals(3, created.size)
         assertTrue(created.all { id -> "st${id.value}" in participantsText() })
+        assertEquals("Участники созданы", lastToastTitle())
     }
 
     @Test
@@ -104,6 +142,7 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
 
         assertEquals(null, participants.findById(participant.id))
         assertTrue(participant.data.name !in participantsText())
+        assertEquals("Участник удалён", lastToastTitle())
     }
 
     @Test
@@ -116,6 +155,7 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._get<Button> { text = "Отменить" }._click()
 
         assertEquals(participant.id, participants.findById(participant.id)?.id)
+        assertEquals(0, UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.size)
     }
 
     @Test
@@ -133,6 +173,7 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
 
         assertEquals(listOf(contest.id), checkNotNull(competitions.findById(competition.id)).data.contests.ids)
         assertTrue("Финал" in UI.getCurrent()._find<Table>().last().element.textRecursively)
+        assertEquals("Тур добавлен в соревнование", lastToastTitle())
     }
 
     private fun signInManager(): MultipleRoleUser =

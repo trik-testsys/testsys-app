@@ -10,10 +10,6 @@ import io.mockk.runs
 import io.mockk.slot
 import io.mockk.verify
 import io.mockk.verifyOrder
-import java.time.Clock
-import java.time.Duration
-import java.time.Instant
-import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -131,6 +127,10 @@ import tech.testsys.operation.util.testObserver
 import tech.testsys.operation.util.testStudent
 import tech.testsys.operation.util.testStudyClass
 import tech.testsys.operation.util.testTaskValidationRequest
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
+import java.util.UUID
 
 class AdministratorOperationsTests {
 
@@ -1399,7 +1399,9 @@ class AdministratorOperationsTests {
                 val second = testCommunity(id = 42)
                 every { communities.findByOwner(administrator.id) } returns listOf(first, second)
                 every { userRepository.countAvailableToAdministrator(administrator.id, UserFilter(communityId = communityId)) } returns 3
-                every { userRepository.countAvailableToAdministrator(administrator.id, UserFilter(communityId = CommunityId(42))) } returns 1
+                every {
+                    userRepository.countAvailableToAdministrator(administrator.id, UserFilter(communityId = CommunityId(42)))
+                } returns 1
 
                 val actual = operations.viewCommunities(administrator).getOrThrow()
 
@@ -1427,7 +1429,6 @@ class AdministratorOperationsTests {
                 verify { listOf(communities, userRepository) wasNot Called }
             }
         }
-
     }
 
     @Nested
@@ -1688,13 +1689,18 @@ class AdministratorOperationsTests {
             fun `should first make a user without the role a member of the public community in that role`() {
                 val stored = member()
                 prepareGrant()
-                every { multipleRoleUsers.addCommunityMembership(userId = memberId, communityId = any(), role = CommunityRole.Manager) } returns
-                    stored
+                every {
+                    multipleRoleUsers.addCommunityMembership(userId = memberId, communityId = any(), role = CommunityRole.Manager)
+                } returns stored
 
                 grant(role = CommunityRole.Manager).getOrThrow()
 
                 verifyOrder {
-                    multipleRoleUsers.addCommunityMembership(userId = memberId, communityId = publicCommunityId, role = CommunityRole.Manager)
+                    multipleRoleUsers.addCommunityMembership(
+                        userId = memberId,
+                        communityId = publicCommunityId,
+                        role = CommunityRole.Manager,
+                    )
                     multipleRoleUsers.addCommunityMembership(userId = memberId, communityId = communityId, role = CommunityRole.Manager)
                 }
             }
@@ -1717,7 +1723,11 @@ class AdministratorOperationsTests {
                 val stored = member()
                 prepareGrant(community = testCommunity(id = publicCommunityId.value), grantedTo = publicCommunityId)
                 every {
-                    multipleRoleUsers.addCommunityMembership(userId = memberId, communityId = publicCommunityId, role = CommunityRole.Student)
+                    multipleRoleUsers.addCommunityMembership(
+                        userId = memberId,
+                        communityId = publicCommunityId,
+                        role = CommunityRole.Student,
+                    )
                 } returns stored
 
                 val actual = operations.grantRole(administrator, memberId, publicCommunityId, CommunityRole.Student).getOrThrow()
@@ -1818,7 +1828,9 @@ class AdministratorOperationsTests {
 
             @ParameterizedTest
             @EnumSource(value = CommunityRole::class, names = ["Judge", "Administrator"])
-            fun `should raise RoleNotGrantableError for a role an administrator does not grant without changing the user`(role: CommunityRole) {
+            fun `should raise RoleNotGrantableError for a role an administrator does not grant without changing the user`(
+                role: CommunityRole,
+            ) {
                 prepareGrant()
 
                 assertRaises(RoleNotGrantableError(role)) { grant(role = role) }
@@ -1942,7 +1954,9 @@ class AdministratorOperationsTests {
             fun `should raise UserNotCommunityMemberError if the user is a member of the community in another role only`() {
                 prepareRemoval()
 
-                assertRaises(UserNotCommunityMemberError(memberId, communityId, CommunityRole.Student)) { remove(role = CommunityRole.Student) }
+                assertRaises(UserNotCommunityMemberError(memberId, communityId, CommunityRole.Student)) {
+                    remove(role = CommunityRole.Student)
+                }
 
                 verify(exactly = 0) { multipleRoleUsers.removeCommunityMembership(any(), any(), any()) }
             }
@@ -2036,7 +2050,6 @@ class AdministratorOperationsTests {
                 verify(exactly = 0) { observers.removeById(any()) }
             }
         }
-
     }
 
     @Nested
@@ -2056,7 +2069,9 @@ class AdministratorOperationsTests {
             @ParameterizedTest
             @EnumSource(ViewUserSection::class)
             fun `should raise UserNotExistsError if the user is not available and does not exist`(section: ViewUserSection) {
-                every { userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = viewedId) } returns null
+                every {
+                    userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = viewedId)
+                } returns null
                 every { userRepository.existsById(viewedId) } returns false
 
                 assertRaises(UserNotExistsError(viewedId)) { section.view(operations, administrator, viewedId) }
@@ -2065,13 +2080,14 @@ class AdministratorOperationsTests {
             @ParameterizedTest
             @EnumSource(ViewUserSection::class)
             fun `should raise UserAccessDeniedError if the user exists but is not available`(section: ViewUserSection) {
-                every { userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = viewedId) } returns null
+                every {
+                    userRepository.findAvailableToAdministratorById(administratorId = administrator.id, userId = viewedId)
+                } returns null
                 every { userRepository.existsById(viewedId) } returns true
 
                 assertRaises(UserAccessDeniedError(viewedId)) { section.view(operations, administrator, viewedId) }
             }
         }
-
     }
 
     @Nested
@@ -2119,7 +2135,6 @@ class AdministratorOperationsTests {
                 assertNull(request)
             }
         }
-
     }
 
     @Nested
@@ -2147,7 +2162,6 @@ class AdministratorOperationsTests {
                 assertEquals(listOf(contest to listOf(first to 3L, second to 0L)), actual)
             }
         }
-
     }
 
     @Nested
@@ -2179,7 +2193,6 @@ class AdministratorOperationsTests {
                 assertEquals(listOf(group to count), actual)
             }
         }
-
     }
 
     @Nested
@@ -2211,7 +2224,6 @@ class AdministratorOperationsTests {
                 assertEquals(listOf(competition to count), actual)
             }
         }
-
     }
 
     @Nested
@@ -2352,7 +2364,6 @@ class AdministratorOperationsTests {
                 assertEquals(listOf(first to emptyList(), second to listOf(competition)), actual)
             }
         }
-
     }
 
     @Nested

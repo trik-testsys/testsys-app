@@ -122,6 +122,7 @@ class JudgeSolutionViewTests : MockSpringVaadinTests() {
         assertTrue("90Пересмотрено вручную${judge.data.name}" in tableText("Обоснование"), tableText("Обоснование"))
         assertEquals("90", textField("Итоговый балл").value)
         assertEquals(1, judgmentOrdersOf(submission))
+        assertEquals("Судейский вердикт сохранён", lastToastTitle())
     }
 
     @Test

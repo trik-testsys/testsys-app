@@ -47,6 +47,13 @@ class RegistrationViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should announce the first registration confirmation code delivery`() {
+        requestCode(email)
+
+        assertEquals("Код отправлен", lastToastTitle())
+    }
+
+    @Test
     fun `should sign the registered user in and show their access code on the main page`() {
         requestCode(email)
 
@@ -55,6 +62,7 @@ class RegistrationViewTests : MockSpringVaadinTests() {
         assertEquals(MultiMainView::class.java, currentView)
         assertEquals(mail.accessTokens.getValue(email), accessTokenFields().single().value)
         assertEquals(UserKind.MULTIPLE_ROLE, CabinetSignIn.principal()?.kind)
+        assertEquals("Регистрация завершена", lastToastTitle())
     }
 
     @Test

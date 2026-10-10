@@ -20,6 +20,8 @@ import tech.testsys.web.components.data.TableHandle
 import tech.testsys.web.components.data.TableScope
 import tech.testsys.web.components.data.filters
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.DateRange
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.dateRangeInput
@@ -77,7 +79,7 @@ class ManagerView(texts: UiTexts, private val headers: CabinetHeaders, private v
                                 }
                             },
                             key = { competition -> competition.id },
-                            creation = Creation("Создать соревнование", "Новое соревнование") { name ->
+                            creation = Creation("Создать соревнование", "Новое соревнование", "Соревнование создано") { name ->
                                 managerService.createCompetition(name)
                             },
                         )
@@ -100,7 +102,9 @@ class ManagerView(texts: UiTexts, private val headers: CabinetHeaders, private v
                                 }
                             },
                             key = { studyClass -> studyClass.id },
-                            creation = Creation("Создать класс", "Новый класс") { name -> managerService.createClass(name) },
+                            creation = Creation("Создать класс", "Новый класс", "Класс создан") { name ->
+                                managerService.createClass(name)
+                            },
                         )
                     }
                 }
@@ -166,6 +170,7 @@ class ManagerView(texts: UiTexts, private val headers: CabinetHeaders, private v
                         val values = NameDraft()
                         if (draft.writeBeanIfValid(values)) {
                             creation.create(values.name)
+                            toast(FeedbackKind.Success, creation.resultTitle)
                             dialog.close()
                             rows.refresh()
                         }
@@ -187,7 +192,7 @@ class ManagerView(texts: UiTexts, private val headers: CabinetHeaders, private v
     private data class GroupsFilter(val name: String? = null, val from: Instant? = null, val to: Instant? = null)
 
     /** Creation of a class or competition: the [label] of the action, the [title] of its dialog and the [create] call. */
-    private class Creation(val label: String, val title: String, val create: (String) -> Unit)
+    private class Creation(val label: String, val title: String, val resultTitle: String, val create: (String) -> Unit)
 
     /** Values of the creation form. */
     private class NameDraft(var name: String = "")

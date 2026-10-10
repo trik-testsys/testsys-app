@@ -1,13 +1,11 @@
 package tech.testsys.web.app.view
 
-import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10._value
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
-import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Table
@@ -62,7 +60,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should create a task from the dialog and open its page`() {
+    fun `should create a task from the dialog and refresh its list`() {
         developers.signInDeveloper()
         open(TASKS_SECTION)
 
@@ -70,12 +68,31 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         textField("Название")._value = "Движение по линии"
         clickButton("Создать")
 
-        assertEquals(DeveloperTaskView::class.java, currentView)
-        assertEquals("Задача «Движение по линии»", UI.getCurrent()._get<H1>().text)
+        assertEquals(DeveloperView::class.java, currentView)
+        assertTrue("Движение по линии" in tableText("Состояние"))
+        assertEquals("Задача создана", lastToastTitle())
     }
 
     @Test
-    fun `should link only the own tasks to their pages`() {
+    fun `should preserve applied filters after task creation`() {
+        developers.signInDeveloper()
+        developers.task("Линия")
+        open(TASKS_SECTION)
+        textField("Название")._value = "Линия"
+        clickButton("Применить")
+        clickButton("Создать задачу")
+        textField("Название")._value = "Кубики"
+
+        clickButton("Создать")
+
+        assertEquals(DeveloperView::class.java, currentView)
+        assertEquals("Линия", textField("Название").value)
+        assertTrue("Кубики" !in tableText("Состояние"))
+        assertEquals("Задача создана", lastToastTitle())
+    }
+
+    @Test
+    fun `should make only own task rows navigable`() {
         val community = fixtures.community()
         developers.signInDeveloper(community)
         val shared = developers.committedTask(developers.trikStudioVersion(), name = "Чужая задача")
@@ -85,17 +102,20 @@ class DeveloperViewTests : MockSpringVaadinTests() {
 
         open(TASKS_SECTION)
 
-        assertEquals(listOf("Своя задача"), UI.getCurrent()._get<Table>()._find<Button>().map { button -> button.text })
+        val clickable = UI.getCurrent()._get<Table>()._find<TableRow> { classes = "ts-row-clickable" }
+        assertEquals(1, clickable.size)
+        assertTrue("Своя задача" in clickable.single().element.textRecursively)
         assertTrue("Чужая задача" in tableText("Состояние"), tableText("Состояние"))
     }
 
     @Test
-    fun `should open the page of an own task from its link`() {
+    fun `should open the page of an own task from its row`() {
         developers.signInDeveloper()
         val task = developers.task("Своя задача")
         open(TASKS_SECTION)
 
-        UI.getCurrent()._get<Table>()._get<Button> { text = "Своя задача" }._click()
+        val row = UI.getCurrent()._get<Table>()._get<TableBody>()._get<TableRow>()
+        row._fireDomEvent("click", acceptedClick(row))
 
         assertEquals("developer/tasks/${task.id.value}", currentPath())
     }
@@ -129,6 +149,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         val contests = developerService.viewContests(Pagination(page = 0, size = 10)).content
         assertEquals(listOf("Весенний тур"), contests.map { (contest, _) -> contest.name })
         assertTrue("Весенний тур" in tableText("Задачи"), tableText("Задачи"))
+        assertEquals("Тур создан", lastToastTitle())
     }
 
     @Test

@@ -80,11 +80,12 @@ internal fun SubmissionDetails.toVo(): SubmissionDetailsVo = SubmissionDetailsVo
     author = author.toNamedVo(),
     task = task.toVo(),
     contest = contest.toVo(),
-    solution = solution.toVo(),
+    solution = solution.toJudgeSolutionVo(),
     verdict = verdict?.toVo(),
     tests = tests.map { test -> test.toVo() },
     finalScore = finalScore,
     judgmentOrders = judgmentOrders.map { (order, judge) -> order.toVo() to judge.toNamedVo() },
 )
 
-private fun Solution.toVo() = SolutionVo(id = id, createdAt = createdAt, fileName = data.file.uploadedFilename, language = data.language)
+private fun Solution.toJudgeSolutionVo() =
+    SolutionVo(id = id, createdAt = createdAt, fileName = data.file.uploadedFilename, language = data.language)

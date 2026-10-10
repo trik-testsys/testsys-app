@@ -11,6 +11,7 @@ import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.web.app.service.TaskRevisionVo
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
 import tech.testsys.web.app.service.developer.DeveloperSolutionVo
@@ -21,8 +22,12 @@ import tech.testsys.web.app.service.developer.StatementVo
 import tech.testsys.web.app.service.developer.TestVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.DownloadContent
-import tech.testsys.web.components.actions.downloadAction
+import tech.testsys.web.components.actions.iconDownloadAction
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.display.Tone
+import tech.testsys.web.components.display.badge
+import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.FileDropHandle
 import tech.testsys.web.components.forms.UploadLimits
 import tech.testsys.web.components.forms.codeInput
@@ -83,7 +88,7 @@ class DeveloperResourceView(
                 crumb("Задача «${task.name}»", DeveloperTaskView::class.java, taskParameters(taskId))
             }
             detailsBlock(task, history)
-            historyBlock(taskId, history)
+            historyBlock(task, history)
         }
     }
 
@@ -91,60 +96,77 @@ class DeveloperResourceView(
         val (latest, solution) = history.first()
         val draft = Binder<ResourceDraft>()
         val initial = ResourceDraft(latest.name, (latest as? DeveloperSolutionVo)?.expectedScore?.value)
-        val newFile = AtomicReference<FileData?>()
+        val fileCopy = AtomicReference<Pair<String, FileData>?>()
         lateinit var drop: FileDropHandle
         row {
             block(title = "Сведения") {
                 editing(
                     onSave = {
                         val values = ResourceDraft()
-                        draft.writeBeanIfValid(values) && save(task, history, values, newFile.get())
+                        val file = fileCopy.get()?.takeIf { (id, _) -> id in drop.fileIds }?.second
+                        draft.writeBeanIfValid(values) && save(task, history, values, file)
                     },
                     onCancel = {
                         draft.readBean(initial)
-                        newFile.set(null)
+                        fileCopy.set(null)
                         drop.clear()
                     },
                 )
                 row {
-                    codeInput("ID", labelSize = 6, size = 18) {
+                    codeInput("ID", labelSize = 4, size = 8) {
                         value = latest.versionBucket.value.toString()
                         isEditable = false
                     }
-                }
-                row {
-                    textInput("Тип", labelSize = 6, size = 18) {
+                    textInput("Тип", labelSize = 4, size = 8) {
                         value = typeOf(latest)
                         isEditable = false
                     }
                 }
                 row {
-                    textInput("Название", labelSize = 6, size = 18) {
+                    codeInput("ID последней версии", labelSize = 4, size = 8) {
+                        value = latest.id.value.toString()
+                        isEditable = false
+                    }
+                }
+                row {
+                    codeInput("ID в рабочей версии", labelSize = 4, size = 8) {
+                        value = attachedVersionId(history, task.wip, "Нет рабочей версии")
+                        isEditable = false
+                    }
+                    codeInput("ID в зафиксированной версии", labelSize = 4, size = 8) {
+                        value = attachedVersionId(history, task.lastCommitted, "Не зафиксирована")
+                        isEditable = false
+                    }
+                }
+                row {
+                    textInput("Название", labelSize = 4, size = 8) {
                         draft.forField(this)
                             .nameRules("Укажите название")
                             .bind({ values -> values.name }, { values, name -> values.name = name })
                     }
-                }
-                languageOf(latest, solution)?.let { language ->
-                    row {
-                        textInput("Язык", labelSize = 6, size = 18) {
+                    languageOf(latest, solution)?.let { language ->
+                        textInput("Язык", labelSize = 4, size = 8) {
                             value = language
                             isEditable = false
                         }
                     }
                 }
                 row {
-                    textInput("Файл", labelSize = 6, size = 18) {
+                    textInput("Файл", labelSize = 4, size = 8) {
                         value = fileNameOf(latest, solution)
                         isEditable = false
                     }
-                }
-                row {
-                    drop = fileDrop("Новый файл", FILE_LIMITS, consume = { file -> newFile.set(file.toFileData()) })
+                    drop = fileDrop(
+                        "Новый файл",
+                        FILE_LIMITS,
+                        labelSize = 4,
+                        size = 8,
+                        consume = { file -> fileCopy.set(file.id to file.toFileData()) },
+                    )
                 }
                 if (latest is DeveloperSolutionVo) {
                     row {
-                        integerInput("Ожидаемый балл", labelSize = 6, size = 18, min = 0) {
+                        integerInput("Ожидаемый балл", labelSize = 4, size = 8, min = 0) {
                             draft.forField(this)
                                 .asRequired("Укажите балл")
                                 .bind({ values -> values.score }, { values, score -> values.score = score })
@@ -157,7 +179,7 @@ class DeveloperResourceView(
         draft.readBean(initial)
     }
 
-    private fun PageScope.historyBlock(taskId: TaskId, history: List<Pair<ResourceVo, SolutionVo?>>) {
+    private fun PageScope.historyBlock(task: TaskVo, history: List<Pair<ResourceVo, SolutionVo?>>) {
         val isSolution = history.first().first is DeveloperSolutionVo
         row {
             block(title = "История версий") {
@@ -165,15 +187,20 @@ class DeveloperResourceView(
                     key = { (version, _): Pair<ResourceVo, SolutionVo?> -> version.id },
                     fetch = { request -> pageOf(history, request) },
                 ) {
-                    dateTimeColumn("Изменено", size = 5) { (version, _) -> version.createdAt.toServerDateTime() }
-                    textColumn("Название", size = if (isSolution) 6 else 8) { (version, _) -> version.name }
-                    textColumn("Файл", size = if (isSolution) 6 else 7) { (version, solution) -> fileNameOf(version, solution) }
+                    codeColumn("ID версии", size = 4) { (version, _) -> version.id.value.toString() }
+                    dateTimeColumn("Изменено", size = 3) { (version, _) -> version.createdAt.toServerDateTime() }
+                    textColumn("Название", size = if (isSolution) 4 else 5) { (version, _) -> version.name }
+                    textColumn("Файл", size = if (isSolution) 4 else 6) { (version, solution) -> fileNameOf(version, solution) }
                     if (isSolution) {
                         numberColumn("Балл", size = 3) { (version, _) -> (version as? DeveloperSolutionVo)?.expectedScore?.value }
                     }
-                    column("Скачать") { (version, _) ->
-                        downloadAction("Скачать", produce = { _ ->
-                            val file = developerService.downloadResourceVersion(taskId, version.versionBucket, version.id)
+                    column("Прикреплено", size = 5) { (version, _) ->
+                        if (version.id in idsOf(task.lastCommitted)) badge("Прикреплено в зафиксированной", tone = Tone.Success)
+                        if (version.id in idsOf(task.wip)) badge("Прикреплено в рабочей", tone = Tone.Warning)
+                    }
+                    column("") { (version, _) ->
+                        iconDownloadAction(label = "Скачать", produce = { _ ->
+                            val file = developerService.downloadResourceVersion(task.id, version.versionBucket, version.id)
                             val bytes = fileContentReader.read(file)
                             DownloadContent(
                                 filename = file.uploadedFilename,
@@ -199,6 +226,7 @@ class DeveloperResourceView(
         val isOnlyCommitted = task.wip == null && idsOf(task.lastCommitted).any { id -> id in ids }
         val saving = {
             update(task.id, latest, values, file)
+            toast(FeedbackKind.Success, "Ресурс изменён")
             show(task.id, latest.versionBucket)
         }
         if (!isNewVersion || !(isInWip || isOnlyCommitted)) {
@@ -233,6 +261,14 @@ class DeveloperResourceView(
 
     /** Values of the resource editing form. */
     private class ResourceDraft(var name: String = "", var score: Int? = null)
+}
+
+/** Returns the ID from [history] attached to [revision], distinguishing a missing revision by [absentLabel]. */
+private fun attachedVersionId(history: List<Pair<ResourceVo, SolutionVo?>>, revision: TaskRevisionVo?, absentLabel: String): String {
+    if (revision == null) return absentLabel
+
+    val ids = idsOf(revision)
+    return history.firstOrNull { (version, _) -> version.id in ids }?.first?.id?.value?.toString() ?: "Не прикреплён"
 }
 
 /** Returns the uploaded file name of [version], the file of its [solution] for a developer solution. */

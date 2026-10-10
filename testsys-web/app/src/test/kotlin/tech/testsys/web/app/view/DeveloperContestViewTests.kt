@@ -3,12 +3,14 @@ package tech.testsys.web.app.view
 import com.github.mvysny.kaributesting.v10._clickItemWithCaption
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
+import com.github.mvysny.kaributesting.v10._setValue
 import com.github.mvysny.kaributesting.v10._value
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.textfield.TextField
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -62,6 +64,7 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
 
         assertEquals("Летний тур", developerService.viewContest(contest.id).first.name)
         assertEquals("Тур «Летний тур»", UI.getCurrent()._get<H1>().text)
+        assertEquals("Тур изменён", lastToastTitle())
     }
 
     @Test
@@ -78,6 +81,7 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
 
         assertEquals(listOf(taskId), developerService.viewContest(contest.id).first.tasks)
         assertTrue("Движение по линии" in tableText("Состояние"), tableText("Состояние"))
+        assertEquals("Задача прикреплена к туру", lastToastTitle())
     }
 
     @Test
@@ -92,6 +96,7 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
         rowMenu("Действия с задачей «Движение по линии»")._clickItemWithCaption("Открепить")
 
         assertEquals(emptyList<Any>(), developerService.viewContest(contest.id).first.tasks)
+        assertEquals("Задача откреплена от тура", lastToastTitle())
     }
 
     @Test
@@ -109,6 +114,7 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
 
         assertTrue("нельзя будет изменить и удалить" in warning, warning)
         assertEquals(listOf(community.id), developerService.viewContest(contest.id).first.sharedTo)
+        assertEquals("Доступ к туру предоставлен", lastToastTitle())
     }
 
     @Test
@@ -147,10 +153,30 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
         open(contest.id)
 
         clickButton("Удалить тур")
+        assertFalse(openDialog()._get<Button> { text = "Удалить" }.isEnabled)
+        openDialog()._get<TextField>()._setValue(contest.name)
         clickButton("Удалить")
 
         assertEquals("developer/contests", currentPath())
         assertEquals(0L, developerService.viewContests(Pagination(page = 0, size = 10)).totalElements)
+        assertEquals("Тур удалён", lastToastTitle())
+    }
+
+    @Test
+    fun `should explain an uncommitted task refusal and keep the attachment dialog open`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val contest = developers.contest(developers.trikStudioVersion())
+        open(contest.id)
+        clickButton("Прикрепить задачу")
+        taskField().value = task
+
+        clickButton("Прикрепить")
+
+        assertTrue(openDialog().isOpened)
+        assertEquals("Не удалось прикрепить задачу", lastToastTitle())
+        assertEquals("У задачи нет зафиксированной версии. Сначала протестируйте и зафиксируйте задачу.", lastToastDescription())
+        assertEquals(emptyList<Any>(), developerService.viewContest(contest.id).first.tasks)
     }
 
     private fun open(contestId: ContestId) {

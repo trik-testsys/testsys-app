@@ -3,8 +3,8 @@ package tech.testsys.web.app.config
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import tech.testsys.domain.contract.FileContentReader
 import org.springframework.core.env.Environment
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository

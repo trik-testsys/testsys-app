@@ -35,9 +35,6 @@ private const val TASK_COLUMNS = 3
 /** Logical columns of the results table when its tasks fit the block. */
 private const val MIN_RESULT_COLUMNS = 24
 
-/** Byte order mark that lets spreadsheet applications read the CSV file as UTF-8. */
-private const val BYTE_ORDER_MARK = "﻿"
-
 /**
  * Contest in a class or competition of a Manager (testsys.web.page.manager.contest): the contest details and the table of
  * the best results and submission counts of the students or participants by task, with its download as a CSV file.
@@ -53,7 +50,7 @@ class ManagerContestView(texts: UiTexts, private val headers: CabinetHeaders, pr
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val parameters = event.routeParameters
-        val contestId = ContestId(parameters.getLong(CONTEST_ID_PARAMETER).orElseThrow())
+        val contestId = ContestId(parameters.getLong(MANAGER_CONTEST_ID_PARAMETER).orElseThrow())
         val classId = parameters.getLong(CLASS_ID_PARAMETER).map(::ClassId).orElse(null)
         val group = if (classId != null) {
             val results = { managerService.viewClassContest(classId, contestId) }
@@ -170,10 +167,5 @@ internal fun contestResultsCsv(results: ContestResultsVo): String {
             listOf(result?.bestScore?.value?.toString().orEmpty(), (result?.submissionCount ?: 0).toString())
         }
     }
-    return (listOf(header) + rows).joinToString(separator = "", prefix = BYTE_ORDER_MARK) { cells ->
-        cells.joinToString(separator = ";", postfix = "\r\n", transform = ::csvCell)
-    }
+    return csvOf(listOf(header) + rows)
 }
-
-private fun csvCell(value: String): String =
-    if (value.any { char -> char == ';' || char == '"' || char == '\r' || char == '\n' }) "\"${value.replace("\"", "\"\"")}\"" else value

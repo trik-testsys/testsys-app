@@ -424,7 +424,7 @@ class UserPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
             val user = fixtures.developer()
             repository.recordLogin(user.id, LOGGED_IN_AT)
 
-            val refreshed = multipleRoleUsers.findById(user.id)!!
+            val refreshed = requireNotNull(multipleRoleUsers.findById(user.id))
             multipleRoleUsers.update(refreshed.withData { name = "Renamed" })
 
             assertEquals(LOGGED_IN_AT, rowOf(user.id).lastLoginAt)

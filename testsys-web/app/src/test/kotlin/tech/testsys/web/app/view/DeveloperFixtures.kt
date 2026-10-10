@@ -13,9 +13,13 @@ import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.internal.nodefeature.ElementListenerMap
+import com.vaadin.flow.server.VaadinService
 import tech.testsys.domain.builder.api.developerData
+import tech.testsys.domain.builder.api.taskValidationRequestData
+import tech.testsys.domain.builder.api.taskValidationSnapshot
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.TaskId
@@ -29,8 +33,11 @@ import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
 import tech.testsys.web.app.service.developer.StatementVo
+import tech.testsys.web.app.service.developer.TaskValidationRequestVo
+import tech.testsys.web.app.service.developer.toVo
 import tools.jackson.databind.ObjectMapper
 import tools.jackson.databind.node.ObjectNode
+import java.time.Instant
 import javax.sql.DataSource
 
 /**
@@ -102,6 +109,19 @@ class DeveloperFixtures(
             },
         )
         return draft.id
+    }
+
+    /** Stores a completed request without grader work for the signed-in developer's [task]. */
+    fun testing(task: TaskVo): TaskValidationRequestVo {
+        val requests = VaadinService.getCurrent().instantiator.getOrCreate(TaskValidationRequestRepository::class.java)
+        return requests.save(
+            taskValidationRequestData {
+                this.task = task.id
+                requestedBy = task.owner
+                snapshot = taskValidationSnapshot {}
+                execution.completed { completedAt = Instant.EPOCH }
+            },
+        ).toVo()
     }
 
     /** Creates a new contest of the signed-in developer in [version]. */

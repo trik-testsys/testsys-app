@@ -26,6 +26,30 @@ import tools.jackson.databind.ObjectMapper
 
 class TableTests : MockVaadinTests() {
     @Test
+    fun `should style and invoke only rows allowed by the clickable predicate`() {
+        val clicked = mutableListOf<Int>()
+        buildTestPage {
+            row {
+                block {
+                    table(key = { value: Int -> value }, fetch = { Page(listOf(1, 2), 2) }) {
+                        textColumn("Name") { value -> "Row $value" }
+                        onRowClick(isNavigation = true, isClickable = { value -> value == 1 }) { value -> clicked.add(value) }
+                    }
+                }
+            }
+        }
+
+        rows()[1]._fireDomEvent("click", rowClick(isOnControl = false))
+        rows()[0]._fireDomEvent("click", rowClick(isOnControl = false))
+
+        assertEquals(listOf(1), clicked)
+        assertTrue("ts-row-clickable" in rows()[0].classes())
+        assertTrue("ts-navigation-cell" in rows()[0].child(0).classes())
+        assertFalse("ts-row-clickable" in rows()[1].classes())
+        assertFalse("ts-navigation-cell" in rows()[1].child(0).classes())
+    }
+
+    @Test
     fun `should request the first page without sort`() {
         val source = Source(size = 12)
 

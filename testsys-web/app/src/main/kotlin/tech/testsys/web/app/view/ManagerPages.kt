@@ -6,8 +6,10 @@ import com.vaadin.flow.router.RouteParameters
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.manager.ManagerService
+import tech.testsys.web.app.service.manager.ParticipantVo
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
@@ -32,7 +34,7 @@ internal const val CLASS_ID_PARAMETER = "classId"
 internal const val COMPETITION_ID_PARAMETER = "competitionId"
 
 /** Route parameter of [ManagerContestView] with the contest id. */
-internal const val CONTEST_ID_PARAMETER = "contestId"
+internal const val MANAGER_CONTEST_ID_PARAMETER = "contestId"
 
 /** Section of [ManagerView] with the classes. */
 internal const val CLASSES_SECTION = "classes"
@@ -52,11 +54,11 @@ internal fun competitionParameters(competitionId: CompetitionId): RouteParameter
 
 /** Returns the route parameters of the page of [contestId] in the class [classId]. */
 internal fun classContestParameters(classId: ClassId, contestId: ContestId): RouteParameters =
-    RouteParameters(mapOf(CLASS_ID_PARAMETER to classId.value.toString(), CONTEST_ID_PARAMETER to contestId.value.toString()))
+    RouteParameters(mapOf(CLASS_ID_PARAMETER to classId.value.toString(), MANAGER_CONTEST_ID_PARAMETER to contestId.value.toString()))
 
 /** Returns the route parameters of the page of [contestId] in the competition [competitionId]. */
 internal fun competitionContestParameters(competitionId: CompetitionId, contestId: ContestId): RouteParameters = RouteParameters(
-    mapOf(COMPETITION_ID_PARAMETER to competitionId.value.toString(), CONTEST_ID_PARAMETER to contestId.value.toString()),
+    mapOf(COMPETITION_ID_PARAMETER to competitionId.value.toString(), MANAGER_CONTEST_ID_PARAMETER to contestId.value.toString()),
 )
 
 /** Adds the breadcrumbs from «Главная» to the [section] of the Cabinet of a Manager. */
@@ -163,3 +165,19 @@ private class ContestDraft {
 }
 
 private const val NANOS_IN_MICROSECOND = 1_000L
+
+/** Serializes [rows] as semicolon-separated CSV with a UTF-8 byte order mark and RFC 4180 quoting. */
+internal fun csvOf(rows: List<List<String>>): String = rows.joinToString(separator = "", prefix = "\uFEFF") { cells ->
+    cells.joinToString(separator = ";", postfix = "\r\n", transform = ::csvCell)
+}
+
+/** Exports the identifiers, nicknames and issued access codes of [participants]. */
+@RawAccessTokenDependency(reason = "Exports stored participant access codes as the issued ones.")
+internal fun participantsCsv(participants: List<ParticipantVo>): String = csvOf(
+    listOf(listOf("ID", "Псевдоним", "Код-доступа")) + participants.map { participant ->
+        listOf(participant.id.value.toString(), participant.name, participant.accessTokenHash.value)
+    },
+)
+
+private fun csvCell(value: String): String =
+    if (value.any { char -> char == ';' || char == '"' || char == '\r' || char == '\n' }) "\"${value.replace("\"", "\"\"")}\"" else value

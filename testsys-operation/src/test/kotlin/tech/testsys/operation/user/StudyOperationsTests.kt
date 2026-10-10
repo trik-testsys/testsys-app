@@ -5,11 +5,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
-import java.time.Clock
-import java.time.Duration
-import java.time.Instant
-import java.time.ZoneOffset
-import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
@@ -43,7 +38,6 @@ import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.Class
-import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
@@ -75,12 +69,16 @@ import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.domain.model.task.VersionBucket
-import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.SingleRoleUser
 import tech.testsys.operation.error.*
 import tech.testsys.operation.error.UploadedFileNameTooLongError
 import tech.testsys.operation.util.*
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneOffset
+import java.util.UUID
 
 class StudyOperationsTests {
 
@@ -216,7 +214,6 @@ class StudyOperationsTests {
 
                     assertEquals(emptyList<Task>(), result.third)
                 }
-
             }
 
             @Nested
@@ -364,7 +361,6 @@ class StudyOperationsTests {
 
                     assertEquals(listOf(TaskId(32), TaskId(31)), result.third.map { task -> task.id })
                 }
-
             }
 
             @Nested
@@ -807,7 +803,6 @@ class StudyOperationsTests {
                         developerSolutionRepository wasNot Called
                     }
                 }
-
             }
 
             @Nested

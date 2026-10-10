@@ -75,6 +75,7 @@
 | `AdminUserView` | `admin/users/:userId`, `admin/users/:userId/developer`, `admin/users/:userId/manager`, `admin/users/:userId/judge`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
 | `DeveloperView` | `developer`, `developer/tasks`, `developer/contests` | `MULTIPLE_ROLE` с Ролью Разработчика |
 | `DeveloperTaskView` | `developer/tasks/:taskId` | `MULTIPLE_ROLE`, владелец Задачи |
+| `DeveloperTestingView` | `developer/tasks/:taskId/testing/:testingId` | `MULTIPLE_ROLE`, владелец Задачи; запрос принадлежит Задаче |
 | `DeveloperResourceView` | `developer/tasks/:taskId/resources/:resourceId` | `MULTIPLE_ROLE`, владелец Задачи |
 | `DeveloperContestView` | `developer/contests/:contestId` | `MULTIPLE_ROLE`, владелец Тура или Разработчик Сообщества с доступом к нему |
 | `ManagerView` | `manager`, `manager/classes`, `manager/competitions` | `MULTIPLE_ROLE` с Ролью Организатора |
@@ -94,15 +95,22 @@
 и пустое состояние: их маршруты и доступ окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида
 Пользователя возвращает `startPageOf`.
 
+История тестирований в `DeveloperTaskView` открывает выбранный запрос в `DeveloperTestingView`.
+При открытии страница загружает запрос через историю его Задачи и показывает названия версий Ресурсов из снимка
+запроса. Ссылка в хлебных крошках возвращает к исходной Задаче.
+
 Страницы Кабинетов вызывают прокси-сервис в `beforeEnter`, до построения таблиц. Поэтому отсутствие Роли, сущности
 или доступа открывает экран ошибки из раздела [Ошибки операций](#ошибки-операций), а не ошибку загрузки таблицы.
 `AdminView` без раздела переадресует на `admin/communities`, `DeveloperView` — на `developer/tasks`, `ManagerView` —
 на `manager/classes`, `JudgeView` — на `judge/submissions`. Наблюдатель открывается по своему адресу
 `admin/observers/:observerId`: операция просмотра принимает идентификатор вместе с видом Пользователя.
 
-`ManagerContestView` скачивает сводную таблицу файлом CSV в UTF-8 с меткой порядка байтов. Столбцы разделены `;`,
-значения заключаются в кавычки по RFC 4180, на каждую Задачу приходится два столбца: лучший результат и количество
-Посылок. Данные файла страница запрашивает заново при скачивании.
+`ManagerContestView` и `ManagerCompetitionView` скачивают CSV в UTF-8 с BOM. Столбцы разделены `;`, значения
+заключаются в кавычки по RFC 4180, строки завершаются `\r\n`. В сводной таблице Тура на каждую Задачу
+приходится два столбца: лучший результат и количество Посылок. Файл Участников содержит столбцы «ID»,
+«Псевдоним», «Код-доступа». Данные страницы запрашивают заново при скачивании.
+
+`DeveloperContestView` показывает отказы прикрепления Задачи тостом с причиной; диалог остаётся открытым.
 
 Страницы Ученика и страницы Тура и Задачи Участника тоже вызывают прокси-сервис в `beforeEnter`. Страницы Тура и Задачи
 общие для Участника и Ученика: у каждого вида Пользователя свой класс страницы со своим маршрутом, а общая часть —

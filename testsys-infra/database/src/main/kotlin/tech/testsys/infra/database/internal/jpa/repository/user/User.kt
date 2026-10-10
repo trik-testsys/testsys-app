@@ -9,7 +9,6 @@ import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
-
 import java.time.Instant
 
 /**
@@ -56,5 +55,4 @@ interface UserJpaEntityRepository : SnowflakeJpaEntityRepository<UserJpaEntity> 
     @Modifying
     @Query("update UserJpaEntity u set u.lastLoginAt = :lastLoginAt where u.id = :id and u.type = :type")
     fun updateLastLoginAt(@Param("id") id: Long, @Param("type") type: UserTypeJpaEnum, @Param("lastLoginAt") lastLoginAt: Instant): Int
-
 }

@@ -19,13 +19,13 @@ import tech.testsys.web.app.service.developer.DeveloperService
 import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
-import tech.testsys.web.components.actions.linkAction
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.filters
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.badge
-import tech.testsys.web.components.display.text
+import tech.testsys.web.components.feedback.FeedbackKind
+import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.checkbox
 import tech.testsys.web.components.forms.dateTimeInput
@@ -99,9 +99,8 @@ class DeveloperView(
                     },
                 ) {
                     codeColumn("ID", sortKey = "id", size = 5) { task -> task.id.value.toString() }
-                    column("Название", sortKey = "name", size = 13) { task ->
-                        if (task.owner == me) linkAction(task.name) { onClick { openDeveloperTask(task.id) } } else text(task.name)
-                    }
+                    textColumn("Название", sortKey = "name", size = 13) { task -> task.name }
+                    onRowClick(isNavigation = true, isClickable = { task -> task.owner == me }) { task -> openDeveloperTask(task.id) }
                     column("Состояние") { task ->
                         val state = stateOf(task)
                         badge(state.label, state.tone)
@@ -148,7 +147,7 @@ class DeveloperView(
                     }
                 }
 
-                val creation = taskDialog()
+                val creation = taskDialog { rows.refresh() }
                 actions { action("Создать задачу") { onClick { creation() } } }
             }
         }
@@ -206,8 +205,8 @@ class DeveloperView(
         }
     }
 
-    /** Builds the task creation dialog and returns its opening, which starts with an empty form; a created task opens. */
-    private fun taskDialog(): () -> Unit {
+    /** Builds the task creation dialog and returns its opening; [onCreated] refreshes the current list after creation. */
+    private fun taskDialog(onCreated: () -> Unit): () -> Unit {
         val draft = Binder<TaskDraft>()
         val creation = dialog(title = "Новая задача") {
             row {
@@ -218,7 +217,7 @@ class DeveloperView(
                 }
             }
             row {
-                textArea("Описание", labelSize = 6, size = 18) {
+                textArea("Описание", labelSize = 6, size = 18, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
@@ -229,9 +228,10 @@ class DeveloperView(
                     onClick {
                         val values = TaskDraft()
                         if (draft.writeBeanIfValid(values)) {
-                            val task = developerService.createTask(taskName = values.name, taskDescription = values.description)
+                            developerService.createTask(taskName = values.name, taskDescription = values.description)
                             dialog.close()
-                            openDeveloperTask(task.id)
+                            toast(FeedbackKind.Success, "Задача создана")
+                            onCreated()
                         }
                     }
                 }
@@ -264,7 +264,7 @@ class DeveloperView(
                 }
             }
             row {
-                textArea("Описание", labelSize = 7, size = 17) {
+                textArea("Описание", labelSize = 7, size = 17, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
@@ -306,6 +306,7 @@ class DeveloperView(
                                 contestDescription = values.description,
                             )
                             dialog.close()
+                            toast(FeedbackKind.Success, "Тур создан")
                             onCreated()
                         }
                     }

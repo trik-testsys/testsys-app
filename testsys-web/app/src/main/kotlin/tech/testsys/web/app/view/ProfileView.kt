@@ -87,6 +87,7 @@ class ProfileView(texts: UiTexts, private val headers: CabinetHeaders, private v
 
     private fun requestCode(email: String) {
         emailChangeStep { multipleRoleUserService.requestEmailChange(email) } ?: return
+        toast(FeedbackKind.Success, "Код отправлен")
         // The operation stores the address trimmed and in lower case, so the page shows it the same way.
         show(newEmail = email.trim().lowercase())
     }

@@ -96,6 +96,13 @@
 к принадлежности и прикреплению Ресурсов — в разделе `testsys.entity.task` в
 [features.md](../docs/domain/features.md).
 
+### Ограничения текста
+
+[`TextLimits`](src/main/kotlin/tech/testsys/domain/model/TextLimits.kt) проверяет длину названий и имён файлов
+в кодовых точках Unicode. Пределы определены в
+[testsys.entity.textLimits](../docs/domain/features.md#testsysentitytextlimits-implemented).
+Операции и инфраструктурные адаптеры вызывают эти проверки до сохранения.
+
 ### Содержимое файлов
 
 `FileData` в [Common.kt](src/main/kotlin/tech/testsys/domain/model/task/Common.kt) содержит имя файла и

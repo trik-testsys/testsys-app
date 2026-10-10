@@ -9,6 +9,7 @@ import com.google.protobuf.ByteString
 import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
+import tech.testsys.domain.model.TextLimits
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SubmissionId
@@ -100,6 +101,11 @@ private fun checkFields(fields: List<Proto.FieldResult>, expectedTests: List<Tes
     val results = fields.map { field ->
         if (!field.hasVerdict()) {
             return CheckedResult.Failure("Missing logs for polygon ${field.name}")
+        }
+        if (!TextLimits.isValidUploadedFilename(field.verdict.name) ||
+            (field.hasVideo() && !TextLimits.isValidUploadedFilename(field.video.name))
+        ) {
+            return CheckedResult.Failure("File name exceeds 512 Unicode code points for polygon ${field.name}")
         }
         val score = parser.parse(field.verdict.content.toByteArray())
             ?: return CheckedResult.Failure("Invalid logs for polygon ${field.name}")

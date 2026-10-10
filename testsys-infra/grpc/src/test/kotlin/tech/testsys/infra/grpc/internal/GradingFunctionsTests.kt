@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
@@ -75,6 +76,42 @@ class GradingFunctionsTests {
 
     @Nested
     inner class CheckResultTests {
+
+        @ParameterizedTest
+        @CsvSource("logs,a", "video,a", "logs,😀", "video,😀")
+        fun `should reject file names over 512 code points`(kind: String, character: String) {
+            val field = fieldWithFileName(kind, character.repeat(513))
+
+            val checked =
+                checkResult(result(fields = listOf(field)), SubmissionId(42), listOf(TestId(4)), JsonLogParser())
+
+            assertInstanceOf(CheckedResult.Failure::class.java, checked)
+        }
+
+        @ParameterizedTest
+        @CsvSource("logs,a", "video,a", "logs,😀", "video,😀")
+        fun `should preserve file names of 512 code points`(kind: String, character: String) {
+            val name = character.repeat(512)
+            val field = fieldWithFileName(kind, name)
+
+            val checked =
+                checkResult(result(fields = listOf(field)), SubmissionId(42), listOf(TestId(4)), JsonLogParser())
+
+            val success = assertInstanceOf(CheckedResult.Success::class.java, checked)
+            val savedName = when (kind) {
+                "logs" -> success.tests.single().logs.name
+                else -> success.tests.single().recording?.name
+            }
+            assertEquals(name, savedName)
+        }
+
+        private fun fieldWithFileName(kind: String, name: String) = field().toBuilder().apply {
+            when (kind) {
+                "logs" -> verdict = verdict.toBuilder().setName(name).build()
+                "video" -> video = verdict.toBuilder().setName(name).build()
+            }
+        }.build()
+
         @Test
         fun `should reject duplicate or missing polygons`() {
             val result = checkResult(

@@ -31,6 +31,7 @@ class TaskValidationOperationsTests {
     private val requests = mockk<TaskValidationRequestRepository>()
     private val tests = mockk<TestRepository>()
     private val diagnostics = mockk<PolygonDiagnostics>()
+
     // List loads answer through the stubbed findById in reverse request order.
     private val submissions = mockk<SubmissionRepository>().also { repository ->
         every { repository.load(any<LazyEntityList<SubmissionId, Submission>>()) } answers {
@@ -298,7 +299,9 @@ class TaskValidationOperationsTests {
             fun `should load submissions and verdicts with one call each and keep failures in submission order`() {
                 val saved = stored(createdRequest())
                 every { submissions.findById(SubmissionId(101)) } returns run(101, "v1") { status.graded { status.timeout() } }
-                every { submissions.findById(SubmissionId(102)) } returns run(102, "v2") { status.graded { status.success { verdict(202) } } }
+                every { submissions.findById(SubmissionId(102)) } returns run(102, "v2") {
+                    status.graded { status.success { verdict(202) } }
+                }
                 stubVerdicts(mapOf(VerdictId(202) to listOf(4, 2)))
 
                 operations.proceed(requestId)
@@ -312,7 +315,9 @@ class TaskValidationOperationsTests {
                 )
                 verify(exactly = 1) {
                     submissions.load(
-                        match<LazyEntityList<SubmissionId, Submission>> { list -> list.ids == listOf(SubmissionId(101), SubmissionId(102)) },
+                        match<LazyEntityList<SubmissionId, Submission>> { list ->
+                            list.ids == listOf(SubmissionId(101), SubmissionId(102))
+                        },
                     )
                     verdicts.load(match<LazyEntityList<VerdictId, Verdict>> { list -> list.ids == listOf(VerdictId(202)) })
                 }
@@ -593,6 +598,32 @@ class TaskValidationOperationsTests {
         }
     }
 
+    private fun stubVerdicts(scoresByVerdict: Map<VerdictId, List<Int>>) {
+        every { verdicts.load(any<LazyEntityList<VerdictId, Verdict>>()) } answers {
+            firstArg<LazyEntityList<VerdictId, Verdict>>().ids.reversed().map { verdictId ->
+                val scores = scoresByVerdict.getValue(verdictId)
+                verdict {
+                    id = verdictId.value
+                    createdAt = Instant.EPOCH
+                    data {
+                        task(0)
+                        submission(verdictId.value - 100)
+                        testVerdict {
+                            test(1)
+                            logs(1)
+                            score = scores[0]
+                        }
+                        testVerdict {
+                            test(2)
+                            logs(2)
+                            score = scores[1]
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     companion object {
         @JvmStatic
         fun failedRuns(): List<Submission> = listOf(
@@ -695,32 +726,6 @@ class TaskValidationOperationsTests {
                 kind.developerSolutionTest { trikStudioVersion(version) }
                 status.queued()
                 builder()
-            }
-        }
-    }
-
-    private fun stubVerdicts(scoresByVerdict: Map<VerdictId, List<Int>>) {
-        every { verdicts.load(any<LazyEntityList<VerdictId, Verdict>>()) } answers {
-            firstArg<LazyEntityList<VerdictId, Verdict>>().ids.reversed().map { verdictId ->
-                val scores = scoresByVerdict.getValue(verdictId)
-                verdict {
-                    id = verdictId.value
-                    createdAt = Instant.EPOCH
-                    data {
-                        task(0)
-                        submission(verdictId.value - 100)
-                        testVerdict {
-                            test(1)
-                            logs(1)
-                            score = scores[0]
-                        }
-                        testVerdict {
-                            test(2)
-                            logs(2)
-                            score = scores[1]
-                        }
-                    }
-                }
             }
         }
     }

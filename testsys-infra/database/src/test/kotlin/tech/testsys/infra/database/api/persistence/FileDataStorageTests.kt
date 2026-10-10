@@ -3,9 +3,12 @@ package tech.testsys.infra.database.api.persistence
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.logsData
 import tech.testsys.domain.contract.FileBlobStorage
 import tech.testsys.domain.contract.StoredBlobRef
@@ -69,6 +72,34 @@ class FileDataStorageTests {
 
         private val storedContents = mutableListOf<ByteArray>()
         private val savedRows = mutableListOf<FileDataJpaEntity>()
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should reject names over 512 code points before reading or writing blobs`(character: String) {
+            val file = FileData(
+                uploadedFilename = character.repeat(513),
+                content = FileContent.Stored(StoredBlobRef("source"), FileStorageKind.Logs),
+            )
+
+            assertThrows(IllegalArgumentException::class.java) { storage.store(file, FileStorageKind.Logs) }
+
+            verify(exactly = 0) {
+                fileBlobStorage.load(any(), any())
+                fileBlobStorage.store(any(), any())
+                fileDataJpaEntityRepository.save(any<FileDataJpaEntity>())
+            }
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["a", "😀"])
+        fun `should preserve names of 512 code points`(character: String) {
+            val name = character.repeat(512)
+            val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+            storage.store(file, FileStorageKind.Logs)
+
+            assertEquals(name, savedRows.single().uploadedFileName)
+        }
 
         @BeforeEach
         fun setUp() {

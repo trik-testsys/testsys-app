@@ -18,6 +18,7 @@ import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.LazyEntity
+import tech.testsys.domain.model.TextLimits
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
@@ -60,6 +61,7 @@ import tech.testsys.operation.error.SendStudentSolutionError
 import tech.testsys.operation.error.SolutionLanguageNotAllowedError
 import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskNotExistsError
+import tech.testsys.operation.error.UploadedFileNameTooLongError
 import tech.testsys.operation.error.ViewParticipantContestError
 import tech.testsys.operation.error.ViewParticipantTaskError
 import tech.testsys.operation.error.ViewStudentContestError
@@ -323,6 +325,7 @@ class StudyOperations(
         val expiresAt = contest.data.attemptDuration?.let { duration -> entry.data.enteredAt + duration }
         ensure(expiresAt == null || now.isBefore(expiresAt)) { ContestAttemptExpiredError(contestId, requireNotNull(expiresAt)) }
         ensure(isLanguageAllowed(task, language)) { SolutionLanguageNotAllowedError(taskId, language) }
+        ensure(TextLimits.isValidUploadedFilename(file.uploadedFilename)) { UploadedFileNameTooLongError(file.uploadedFilename) }
         return saveSubmission(author = user.id, contestId = contestId, taskId = taskId, file = file, language = language).asSuccess()
     }
 
@@ -363,6 +366,7 @@ class StudyOperations(
         val expiresAt = contest.data.attemptDuration?.let { duration -> entry.data.enteredAt + duration }
         ensure(expiresAt == null || now.isBefore(expiresAt)) { ContestAttemptExpiredError(contestId, requireNotNull(expiresAt)) }
         ensure(isLanguageAllowed(task, language)) { SolutionLanguageNotAllowedError(taskId, language) }
+        ensure(TextLimits.isValidUploadedFilename(file.uploadedFilename)) { UploadedFileNameTooLongError(file.uploadedFilename) }
         return saveSubmission(author = user.id, contestId = contestId, taskId = taskId, file = file, language = language).asSuccess()
     }
 

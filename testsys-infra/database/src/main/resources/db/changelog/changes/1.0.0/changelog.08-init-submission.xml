@@ -83,4 +83,27 @@
                                  referencedTableName="ts_verdict" referencedColumnNames="id"/>
     </changeSet>
 
+    <changeSet id="1.0.0-08-init-submission-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_submission ADD CONSTRAINT ck_ts_submission_status_result CHECK (
+                (status IN ('QUEUED', 'IN_PROGRESS') AND grading_result IS NULL
+                    AND grading_verdict_id IS NULL AND grading_error_description IS NULL)
+                OR (status = 'GRADED' AND grading_result IS NOT NULL AND (
+                    (grading_result = 'SUCCESS' AND grading_verdict_id IS NOT NULL AND grading_error_description IS NULL)
+                    OR (grading_result = 'GRADING_ERROR' AND grading_verdict_id IS NULL AND grading_error_description IS NOT NULL)
+                    OR (grading_result = 'TIMEOUT' AND grading_verdict_id IS NULL AND grading_error_description IS NULL)))
+            );
+            ALTER TABLE ts_submission ADD CONSTRAINT ck_ts_submission_kind_context CHECK (
+                (kind = 'GRADING' AND grading_contest_id IS NOT NULL AND trik_studio_version_id IS NULL)
+                OR (kind = 'DEVELOPER_SOLUTION_TEST' AND grading_contest_id IS NULL AND trik_studio_version_id IS NOT NULL)
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_submission DROP CONSTRAINT ck_ts_submission_kind_context;
+                ALTER TABLE ts_submission DROP CONSTRAINT ck_ts_submission_status_result;
+            </sql>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

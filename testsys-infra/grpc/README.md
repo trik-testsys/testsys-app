@@ -27,6 +27,9 @@
 
 При подготовке protobuf `encodeSubmission` читает файлы Решения и Полигонов через `FileContentReader`.
 
+`checkResult` проверяет имена файлов логов и видеозаписей через `TextLimits` до передачи результата на сохранение.
+Правило отказа определено в [testsys.dev.grading.balancing](../../docs/domain/features.md#testsysdevgradingbalancing-implemented).
+
 `GradingPersistenceService` открывает транзакции через `TransactionOperations`, который предоставляет приложение;
 модуль `database` поставляет реализацию, повторяющую транзакцию при конфликте. Подготовка Посылки — чтение Тура,
 Задачи или запроса проверки, Решения и Полигонов и перевод Посылки в очередь — выполняется в одной транзакции,

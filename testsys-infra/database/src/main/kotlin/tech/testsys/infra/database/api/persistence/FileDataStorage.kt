@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component
 import tech.testsys.domain.contract.FileBlobStorage
 import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.StoredBlobRef
+import tech.testsys.domain.model.TextLimits
 import tech.testsys.domain.model.task.FileContent
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.FileStorageKind
@@ -39,9 +40,14 @@ class FileDataStorage(
      * Copies [file] into a new metadata row and blob of [kind], reading its contents once.
      *
      * @return the id of the inserted metadata row.
+     * @throws IllegalArgumentException if the uploaded file name exceeds its limit, before any blob I/O.
      * @since %CURRENT_VERSION%
      */
     fun store(file: FileData, kind: FileStorageKind): Long {
+        require(TextLimits.isValidUploadedFilename(file.uploadedFilename)) {
+            "Uploaded file name exceeds 512 Unicode code points"
+        }
+
         val bytes = read(file)
         val blobRef = fileBlobStorage.store(bytes, path(kind))
         val saved = fileDataJpaEntityRepository.save(

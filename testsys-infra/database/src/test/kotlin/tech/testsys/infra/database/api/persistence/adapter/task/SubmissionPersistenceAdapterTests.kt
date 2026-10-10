@@ -3,6 +3,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.jdbc.core.JdbcTemplate
 import tech.testsys.domain.builder.api.submission
 import tech.testsys.domain.builder.api.submissionData
@@ -21,6 +22,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.SubmissionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 import tech.testsys.infra.database.internal.utils.findIdByTagOrError
+import java.sql.SQLException
 import java.sql.Timestamp
 import java.time.Instant
 import kotlin.test.assertEquals
@@ -259,17 +261,16 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     }
 
     @Test
-    fun `should ignore a legacy version column when reading grading`() {
+    fun `should reject a separate TRIK Studio version for grading`() {
         val contestId = fixtures.contest().id.value
         val saved = repository.save(gradingSubmissionData(contestId))
         val version = fixtures.trikStudioVersion()
         val versionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(version.version)
-        jdbcTemplate.update("update ts_submission set trik_studio_version_id = ? where id = ?", versionId, saved.id.value)
+        val failure = assertFailsWith<DataIntegrityViolationException> {
+            jdbcTemplate.update("update ts_submission set trik_studio_version_id = ? where id = ?", versionId, saved.id.value)
+        }
 
-        val found = assertNotNull(repository.findById(saved.id))
-
-        assertSameEntity(saved, found)
-        assertEquals(contestId, assertIs<SubmissionKind.Grading>(found.data.kind).contest.id.value)
+        assertEquals("23514", (failure.mostSpecificCause as? SQLException)?.sqlState)
     }
 
     @Test

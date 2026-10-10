@@ -173,4 +173,19 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="1.0.0-06-init-task-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_task ADD CONSTRAINT ck_ts_task_status_content CHECK (
+                (status = 'NEW' AND committed_content_id IS NULL)
+                OR (status = 'UNCOMMITTED' AND committed_content_id IS NOT NULL AND wip_content_id <> committed_content_id)
+                OR (status = 'COMMITTED' AND committed_content_id IS NOT NULL AND wip_content_id = committed_content_id)
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_task DROP CONSTRAINT ck_ts_task_status_content;
+            </sql>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

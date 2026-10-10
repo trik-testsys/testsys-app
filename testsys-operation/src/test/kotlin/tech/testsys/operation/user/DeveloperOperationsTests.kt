@@ -73,7 +73,6 @@ import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TaskValidationTechnicalFailure
-import tech.testsys.domain.model.task.Test as Polygon
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
@@ -91,6 +90,7 @@ import tech.testsys.operation.error.ContestAccessDeniedError
 import tech.testsys.operation.error.ContestAlreadySharedError
 import tech.testsys.operation.error.ContestEndNotAfterStartError
 import tech.testsys.operation.error.ContestEndWithoutStartError
+import tech.testsys.operation.error.ContestNameTooLongError
 import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotExistsError
 import tech.testsys.operation.error.DeveloperSolutionNotUploadedToTaskError
@@ -102,6 +102,7 @@ import tech.testsys.operation.error.ExerciseVersionNotLatestError
 import tech.testsys.operation.error.MissedDeveloperRoleError
 import tech.testsys.operation.error.NonPositiveAttemptDurationError
 import tech.testsys.operation.error.ResourceAlreadyAttachedError
+import tech.testsys.operation.error.ResourceNameTooLongError
 import tech.testsys.operation.error.ResourceNotExistsError
 import tech.testsys.operation.error.ResourceNotUploadedToTaskError
 import tech.testsys.operation.error.ResourceVersionNotAttachedError
@@ -113,6 +114,7 @@ import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskAlreadyAttachedToContestError
 import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
+import tech.testsys.operation.error.TaskNameTooLongError
 import tech.testsys.operation.error.TaskNotAttachedToContestError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
@@ -126,6 +128,7 @@ import tech.testsys.operation.error.TaskTrikStudioVersionNotSupportedError
 import tech.testsys.operation.error.TestNotExistsError
 import tech.testsys.operation.error.TestNotUploadedToTaskError
 import tech.testsys.operation.error.TestVersionNotLatestError
+import tech.testsys.operation.error.UploadedFileNameTooLongError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.getEditableContent
@@ -146,6 +149,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import kotlin.test.Test
+import tech.testsys.domain.model.task.Test as Polygon
 
 @OptIn(InternalOperationsApi::class)
 class DeveloperOperationsTests {
@@ -355,22 +359,10 @@ class DeveloperOperationsTests {
                 val pythonAuthor = viewDeveloperSolution()
                 every { developerSolutionRepository.load(task.getEditableContent().developerSolutions) } returns
                     listOf(pythonAuthor, javaScriptAuthor)
-                every { solutionRepository.load(pythonAuthor.data.solution) } returns solution {
-                    id = 5
-                    createdAt = Instant.EPOCH
-                    data = solutionData {
-                        file("solution.py", byteArrayOf(1))
-                        language.python()
-                    }
-                }
-                every { solutionRepository.load(javaScriptAuthor.data.solution) } returns solution {
-                    id = 6
-                    createdAt = Instant.EPOCH
-                    data = solutionData {
-                        file("solution.js", byteArrayOf(2))
-                        language.javaScript()
-                    }
-                }
+                stubStoredSolutions(
+                    storedSolution(pythonAuthor.data.solution.id.value, TrikSupportedLanguage.Python),
+                    storedSolution(javaScriptAuthor.data.solution.id.value, TrikSupportedLanguage.JavaScript),
+                )
                 every { taskRepository.findById(task.id) } returns task
 
                 assertRaises(TaskTestingNoExerciseForLanguageError(task.id, TrikSupportedLanguage.JavaScript)) {
@@ -1859,6 +1851,16 @@ class DeveloperOperationsTests {
 
                 Assertions.assertEquals(duration, result.data.attemptDuration)
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve a name of 255 Unicode code points`(character: String) {
+                val name = character.repeat(255)
+
+                val result = developerOperations.createContest(developer, name, version).getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
         }
 
         @Nested
@@ -1949,6 +1951,16 @@ class DeveloperOperationsTests {
                 Assertions.assertThrows(IllegalArgumentException::class.java) {
                     developerOperations.createContest(developer, "Contest", version, startsAt = start, endsAt = invalidEnd)
                 }
+
+                verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject a name of 256 Unicode code points without saving`(character: String) {
+                val name = character.repeat(256)
+
+                assertRaises(ContestNameTooLongError(name)) { developerOperations.createContest(developer, name, version) }
 
                 verify(exactly = 0) { contestRepository.save(any<ContestData>()) }
             }
@@ -2228,6 +2240,17 @@ class DeveloperOperationsTests {
                 Assertions.assertSame(original, result)
                 verify(exactly = 0) { contestRepository.update(any<Contest>()) }
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve a name of 255 Unicode code points`(character: String) {
+                val name = character.repeat(255)
+                prepare(testContest {})
+
+                val result = developerOperations.editContest(developer, contestId, name, startsAt = null, endsAt = null).getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
         }
 
         @Nested
@@ -2395,6 +2418,19 @@ class DeveloperOperationsTests {
                         startsAt = start,
                         endsAt = original.data.endsAt,
                     )
+                }
+
+                verify(exactly = 0) { contestRepository.update(any<Contest>()) }
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject a name of 256 Unicode code points without saving`(character: String) {
+                val name = character.repeat(256)
+                prepare(testContest {})
+
+                assertRaises(ContestNameTooLongError(name)) {
+                    developerOperations.editContest(developer, contestId, name, startsAt = null, endsAt = null)
                 }
 
                 verify(exactly = 0) { contestRepository.update(any<Contest>()) }
@@ -4179,6 +4215,18 @@ class DeveloperOperationsTests {
                 )
                 verify(exactly = 1) { taskRepository.update(any<Task>()) }
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve a name of 255 Unicode code points`(character: String) {
+                val name = character.repeat(255)
+                every { taskRepository.findById(taskId) } returns taskInState("New")
+                every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+
+                val result = developerOperations.editTaskInfo(developer, taskId, taskName = name).getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
         }
 
         @Nested
@@ -4210,6 +4258,18 @@ class DeveloperOperationsTests {
                 every { taskRepository.findById(taskId) } returns original
 
                 assertRaises(TaskAccessDeniedError(taskId)) { developerOperations.editTaskInfo(user, taskId, taskName = "New") }
+
+                verify(exactly = 0) { taskRepository.update(any<Task>()) }
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject a name of 256 Unicode code points without saving`(character: String) {
+                val name = character.repeat(256)
+                every { taskRepository.findById(taskId) } returns taskInState("New")
+                every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
+
+                assertRaises(TaskNameTooLongError(name)) { developerOperations.editTaskInfo(developer, taskId, taskName = name) }
 
                 verify(exactly = 0) { taskRepository.update(any<Task>()) }
             }
@@ -5162,7 +5222,7 @@ class DeveloperOperationsTests {
                         name = uploadName
                         description = ""
                         versionBucket = existingBucket
-                        file(uploadFile.uploadedFilename, uploadFile.content)
+                        file(uploadFile)
                     }
                 }
 
@@ -5180,6 +5240,29 @@ class DeveloperOperationsTests {
 
                 Assertions.assertEquals("notes.txt", result.data.file.uploadedFilename)
                 Assertions.assertArrayEquals(byteArrayOf(), fileBytes(result.data.file))
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve resource names at the Unicode limit`(character: String) {
+                prepareUpload()
+                val name = character.repeat(255)
+
+                val result = upload(resourceName = name).getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should accept uploaded names at the Unicode limit`(character: String) {
+                prepareUpload()
+                val name = character.repeat(512)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                upload(file = file).getOrThrow()
+
+                verify(exactly = 1) { statementRepository.save(match<StatementData> { it.file.uploadedFilename == name }) }
             }
         }
 
@@ -5220,6 +5303,29 @@ class DeveloperOperationsTests {
 
                 assertNoUploadWrites()
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long resource names without writes`(character: String) {
+                prepareUpload()
+                val name = character.repeat(256)
+
+                assertRaises(ResourceNameTooLongError(name)) { upload(resourceName = name) }
+
+                assertNoUploadWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long uploaded names without writes`(character: String) {
+                prepareUpload()
+                val name = character.repeat(513)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                assertRaises(UploadedFileNameTooLongError(name)) { upload(file = file) }
+
+                assertNoUploadWrites()
+            }
         }
 
         @Nested
@@ -5253,12 +5359,13 @@ class DeveloperOperationsTests {
             }
         }
 
-        private fun upload(user: MultipleRoleUser = developer, file: FileData = uploadFile) = developerOperations.addStatement(
-            user = user,
-            taskId = uploadTaskId,
-            resourceName = uploadName,
-            file = file,
-        )
+        private fun upload(user: MultipleRoleUser = developer, file: FileData = uploadFile, resourceName: String = uploadName) =
+            developerOperations.addStatement(
+                user = user,
+                taskId = uploadTaskId,
+                resourceName = resourceName,
+                file = file,
+            )
     }
 
     @Nested
@@ -5309,7 +5416,7 @@ class DeveloperOperationsTests {
                         name = uploadName
                         description = ""
                         versionBucket = existingBucket
-                        file(uploadFile.uploadedFilename, uploadFile.content)
+                        file(uploadFile)
                         language.python()
                     }
                 }
@@ -5339,6 +5446,29 @@ class DeveloperOperationsTests {
                 val result = upload(language = selected).getOrThrow()
 
                 Assertions.assertEquals(selected, result.data.language)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve resource names at the Unicode limit`(character: String) {
+                prepareUpload()
+                val name = character.repeat(255)
+
+                val result = upload(resourceName = name).getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should accept uploaded names at the Unicode limit`(character: String) {
+                prepareUpload()
+                val name = character.repeat(512)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                upload(file = file).getOrThrow()
+
+                verify(exactly = 1) { exerciseRepository.save(match<ExerciseData> { it.file.uploadedFilename == name }) }
             }
         }
 
@@ -5379,6 +5509,29 @@ class DeveloperOperationsTests {
 
                 assertNoUploadWrites()
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long resource names without writes`(character: String) {
+                prepareUpload()
+                val name = character.repeat(256)
+
+                assertRaises(ResourceNameTooLongError(name)) { upload(resourceName = name) }
+
+                assertNoUploadWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long uploaded names without writes`(character: String) {
+                prepareUpload()
+                val name = character.repeat(513)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                assertRaises(UploadedFileNameTooLongError(name)) { upload(file = file) }
+
+                assertNoUploadWrites()
+            }
         }
 
         @Nested
@@ -5416,10 +5569,11 @@ class DeveloperOperationsTests {
             user: MultipleRoleUser = developer,
             file: FileData = uploadFile,
             language: TrikSupportedLanguage = TrikSupportedLanguage.Python,
+            resourceName: String = uploadName,
         ) = developerOperations.addExercise(
             user = user,
             taskId = uploadTaskId,
-            resourceName = uploadName,
+            resourceName = resourceName,
             file = file,
             language = language,
         )
@@ -5473,7 +5627,7 @@ class DeveloperOperationsTests {
                         name = uploadName
                         description = ""
                         versionBucket = existingBucket
-                        file(uploadFile.uploadedFilename, uploadFile.content)
+                        file(uploadFile)
                     }
                 }
 
@@ -5491,6 +5645,29 @@ class DeveloperOperationsTests {
 
                 Assertions.assertEquals("notes.txt", result.data.file.uploadedFilename)
                 Assertions.assertArrayEquals(byteArrayOf(), fileBytes(result.data.file))
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve resource names at the Unicode limit`(character: String) {
+                prepareUpload()
+                val name = character.repeat(255)
+
+                val result = upload(resourceName = name).getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should accept uploaded names at the Unicode limit`(character: String) {
+                prepareUpload()
+                val name = character.repeat(512)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                upload(file = file).getOrThrow()
+
+                verify(exactly = 1) { testRepository.save(match<TestData> { it.file.uploadedFilename == name }) }
             }
         }
 
@@ -5531,6 +5708,29 @@ class DeveloperOperationsTests {
 
                 assertNoUploadWrites()
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long resource names without writes`(character: String) {
+                prepareUpload()
+                val name = character.repeat(256)
+
+                assertRaises(ResourceNameTooLongError(name)) { upload(resourceName = name) }
+
+                assertNoUploadWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long uploaded names without writes`(character: String) {
+                prepareUpload()
+                val name = character.repeat(513)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                assertRaises(UploadedFileNameTooLongError(name)) { upload(file = file) }
+
+                assertNoUploadWrites()
+            }
         }
 
         @Nested
@@ -5564,12 +5764,13 @@ class DeveloperOperationsTests {
             }
         }
 
-        private fun upload(user: MultipleRoleUser = developer, file: FileData = uploadFile) = developerOperations.addTest(
-            user = user,
-            taskId = uploadTaskId,
-            resourceName = uploadName,
-            file = file,
-        )
+        private fun upload(user: MultipleRoleUser = developer, file: FileData = uploadFile, resourceName: String = uploadName) =
+            developerOperations.addTest(
+                user = user,
+                taskId = uploadTaskId,
+                resourceName = resourceName,
+                file = file,
+            )
     }
 
     @Nested
@@ -5661,6 +5862,29 @@ class DeveloperOperationsTests {
                 verify(exactly = 1) { solutionRepository.save(capture(saved)) }
                 Assertions.assertEquals(selected, saved.captured.language)
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve resource names at the Unicode limit`(character: String) {
+                prepareUpload()
+                val name = character.repeat(255)
+
+                val result = upload(resourceName = name).getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should accept uploaded names at the Unicode limit`(character: String) {
+                prepareUpload()
+                val name = character.repeat(512)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                upload(file = file).getOrThrow()
+
+                verify(exactly = 1) { solutionRepository.save(match<SolutionData> { it.file.uploadedFilename == name }) }
+            }
         }
 
         @Nested
@@ -5697,6 +5921,29 @@ class DeveloperOperationsTests {
                 }
 
                 assertRaises(TaskAccessDeniedError(uploadTaskId)) { upload(member) }
+
+                assertNoUploadWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long resource names without writes`(character: String) {
+                prepareUpload()
+                val name = character.repeat(256)
+
+                assertRaises(ResourceNameTooLongError(name)) { upload(resourceName = name) }
+
+                assertNoUploadWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long uploaded names without writes`(character: String) {
+                prepareUpload()
+                val name = character.repeat(513)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                assertRaises(UploadedFileNameTooLongError(name)) { upload(file = file) }
 
                 assertNoUploadWrites()
             }
@@ -5737,10 +5984,11 @@ class DeveloperOperationsTests {
             user: MultipleRoleUser = developer,
             file: FileData = uploadFile,
             language: TrikSupportedLanguage = TrikSupportedLanguage.Python,
+            resourceName: String = uploadName,
         ) = developerOperations.addDeveloperSolution(
             user = user,
             taskId = uploadTaskId,
-            resourceName = uploadName,
+            resourceName = resourceName,
             file = file,
             language = language,
             expectedScore = uploadScore,
@@ -5793,6 +6041,16 @@ class DeveloperOperationsTests {
                 Assertions.assertEquals(TaskId(1), result.id)
                 verify(exactly = 1) { taskRepository.save(any<TaskData>()) }
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve a name of 255 Unicode code points`(character: String) {
+                val name = character.repeat(255)
+
+                val result = developerOperations.createTask(developer, name, "description").getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
         }
 
         @Nested
@@ -5804,6 +6062,16 @@ class DeveloperOperationsTests {
                 assertRaises(MissedDeveloperRoleError) {
                     developerOperations.createTask(nonDeveloper, taskName, taskDescription)
                 }
+
+                verify(exactly = 0) { taskRepository.save(any<TaskData>()) }
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject a name of 256 Unicode code points without saving`(character: String) {
+                val name = character.repeat(256)
+
+                assertRaises(TaskNameTooLongError(name)) { developerOperations.createTask(developer, name, "description") }
 
                 verify(exactly = 0) { taskRepository.save(any<TaskData>()) }
             }
@@ -6220,6 +6488,29 @@ class DeveloperOperationsTests {
                 verify(exactly = 0) { taskRepository.update(any<Task>()) }
                 verify(exactly = 0) { statementRepository.update(any<Statement>()) }
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve resource names at the Unicode limit`(character: String) {
+                prepare()
+                val name = character.repeat(255)
+
+                val result = request(resourceName = name).getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should accept uploaded names at the Unicode limit`(character: String) {
+                prepare()
+                val name = character.repeat(512)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                request(file = file).getOrThrow()
+
+                verify(exactly = 1) { statementRepository.save(match<StatementData> { it.file.uploadedFilename == name }) }
+            }
         }
 
         @Nested
@@ -6295,6 +6586,29 @@ class DeveloperOperationsTests {
                 every { statementRepository.findLatestByVersionBucket(bucket) } returns null
 
                 assertRaises(StatementVersionNotLatestError(resourceId)) { request(file = uploadFile) }
+
+                assertNoWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long resource names without writes`(character: String) {
+                prepare()
+                val name = character.repeat(256)
+
+                assertRaises(ResourceNameTooLongError(name)) { request(resourceName = name) }
+
+                assertNoWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long uploaded names without writes`(character: String) {
+                prepare()
+                val name = character.repeat(513)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                assertRaises(UploadedFileNameTooLongError(name)) { request(file = file) }
 
                 assertNoWrites()
             }
@@ -6561,6 +6875,29 @@ class DeveloperOperationsTests {
                 verify(exactly = 0) { taskRepository.update(any<Task>()) }
                 verify(exactly = 0) { exerciseRepository.update(any<Exercise>()) }
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve resource names at the Unicode limit`(character: String) {
+                prepare()
+                val name = character.repeat(255)
+
+                val result = request(resourceName = name).getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should accept uploaded names at the Unicode limit`(character: String) {
+                prepare()
+                val name = character.repeat(512)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                request(file = file).getOrThrow()
+
+                verify(exactly = 1) { exerciseRepository.save(match<ExerciseData> { it.file.uploadedFilename == name }) }
+            }
         }
 
         @Nested
@@ -6636,6 +6973,29 @@ class DeveloperOperationsTests {
                 every { exerciseRepository.findLatestByVersionBucket(bucket) } returns null
 
                 assertRaises(ExerciseVersionNotLatestError(resourceId)) { request(file = uploadFile) }
+
+                assertNoWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long resource names without writes`(character: String) {
+                prepare()
+                val name = character.repeat(256)
+
+                assertRaises(ResourceNameTooLongError(name)) { request(resourceName = name) }
+
+                assertNoWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long uploaded names without writes`(character: String) {
+                prepare()
+                val name = character.repeat(513)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                assertRaises(UploadedFileNameTooLongError(name)) { request(file = file) }
 
                 assertNoWrites()
             }
@@ -6927,6 +7287,29 @@ class DeveloperOperationsTests {
                 verify(exactly = 0) { taskRepository.update(any<Task>()) }
                 verify(exactly = 0) { testRepository.update(any<Polygon>()) }
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve resource names at the Unicode limit`(character: String) {
+                prepare()
+                val name = character.repeat(255)
+
+                val result = request(resourceName = name).getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should accept uploaded names at the Unicode limit`(character: String) {
+                prepare()
+                val name = character.repeat(512)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                request(file = file).getOrThrow()
+
+                verify(exactly = 1) { testRepository.save(match<TestData> { it.file.uploadedFilename == name }) }
+            }
         }
 
         @Nested
@@ -7002,6 +7385,29 @@ class DeveloperOperationsTests {
                 every { testRepository.findLatestByVersionBucket(bucket) } returns null
 
                 assertRaises(TestVersionNotLatestError(resourceId)) { request(file = uploadFile) }
+
+                assertNoWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long resource names without writes`(character: String) {
+                prepare()
+                val name = character.repeat(256)
+
+                assertRaises(ResourceNameTooLongError(name)) { request(resourceName = name) }
+
+                assertNoWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long uploaded names without writes`(character: String) {
+                prepare()
+                val name = character.repeat(513)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                assertRaises(UploadedFileNameTooLongError(name)) { request(file = file) }
 
                 assertNoWrites()
             }
@@ -7320,6 +7726,29 @@ class DeveloperOperationsTests {
                 verify(exactly = 0) { taskRepository.update(any<Task>()) }
                 verify(exactly = 0) { developerSolutionRepository.update(any<DeveloperSolution>()) }
             }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should preserve resource names at the Unicode limit`(character: String) {
+                prepare()
+                val name = character.repeat(255)
+
+                val result = request(resourceName = name).getOrThrow()
+
+                Assertions.assertEquals(name, result.data.name)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should accept uploaded names at the Unicode limit`(character: String) {
+                prepare()
+                val name = character.repeat(512)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                request(file = file).getOrThrow()
+
+                verify(exactly = 1) { solutionRepository.save(match<SolutionData> { it.file.uploadedFilename == name }) }
+            }
         }
 
         @Nested
@@ -7395,6 +7824,29 @@ class DeveloperOperationsTests {
                 every { developerSolutionRepository.findLatestByVersionBucket(bucket) } returns null
 
                 assertRaises(DeveloperSolutionVersionNotLatestError(resourceId)) { request(file = uploadFile) }
+
+                assertNoWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long resource names without writes`(character: String) {
+                prepare()
+                val name = character.repeat(256)
+
+                assertRaises(ResourceNameTooLongError(name)) { request(resourceName = name) }
+
+                assertNoWrites()
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["a", "😀"])
+            fun `should reject long uploaded names without writes`(character: String) {
+                prepare()
+                val name = character.repeat(513)
+                val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                assertRaises(UploadedFileNameTooLongError(name)) { request(file = file) }
 
                 assertNoWrites()
             }

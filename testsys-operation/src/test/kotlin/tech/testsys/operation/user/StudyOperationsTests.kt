@@ -72,6 +72,7 @@ import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.SingleRoleUser
 import tech.testsys.operation.error.*
+import tech.testsys.operation.error.UploadedFileNameTooLongError
 import tech.testsys.operation.util.*
 import java.time.Clock
 import java.time.Duration
@@ -1572,6 +1573,18 @@ class StudyOperationsTests {
 
                     assertSame(savedSubmission, result)
                 }
+
+                @ParameterizedTest
+                @ValueSource(strings = ["a", "😀"])
+                fun `should preserve file names at the Unicode limit`(character: String) {
+                    prepareParticipantSend()
+                    val name = character.repeat(512)
+                    val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                    send(file = file).getOrThrow()
+
+                    assertEquals(name, sentSolution.captured.file.uploadedFilename)
+                }
             }
 
             @Nested
@@ -1677,6 +1690,18 @@ class StudyOperationsTests {
                     assertRaises(SolutionLanguageNotAllowedError(task.id, TrikSupportedLanguage.VisualLanguage)) {
                         send(language = TrikSupportedLanguage.VisualLanguage)
                     }
+
+                    verifyNothingSaved()
+                }
+
+                @ParameterizedTest
+                @ValueSource(strings = ["a", "😀"])
+                fun `should reject long file names without saving`(character: String) {
+                    prepareParticipantSend()
+                    val name = character.repeat(513)
+                    val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                    assertRaises(UploadedFileNameTooLongError(name)) { send(file = file) }
 
                     verifyNothingSaved()
                 }
@@ -1792,6 +1817,7 @@ class StudyOperationsTests {
             }
 
             private fun send(
+                file: FileData = this@SendSolutionTests.file,
                 user: SingleRoleUser = participant,
                 contestId: ContestId = taskContest.id,
                 language: TrikSupportedLanguage = TrikSupportedLanguage.Python,
@@ -1867,6 +1893,18 @@ class StudyOperationsTests {
                     val result = send().getOrThrow()
 
                     assertSame(savedSubmission, result)
+                }
+
+                @ParameterizedTest
+                @ValueSource(strings = ["a", "😀"])
+                fun `should preserve file names at the Unicode limit`(character: String) {
+                    prepareStudentSend()
+                    val name = character.repeat(512)
+                    val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                    send(file = file).getOrThrow()
+
+                    assertEquals(name, sentSolution.captured.file.uploadedFilename)
                 }
             }
 
@@ -1988,6 +2026,18 @@ class StudyOperationsTests {
 
                     verifyNothingSaved()
                 }
+
+                @ParameterizedTest
+                @ValueSource(strings = ["a", "😀"])
+                fun `should reject long file names without saving`(character: String) {
+                    prepareStudentSend()
+                    val name = character.repeat(513)
+                    val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                    assertRaises(UploadedFileNameTooLongError(name)) { send(file = file) }
+
+                    verifyNothingSaved()
+                }
             }
 
             @Nested
@@ -2079,6 +2129,7 @@ class StudyOperationsTests {
             }
 
             private fun send(
+                file: FileData = this@SendSolutionTests.file,
                 user: MultipleRoleUser = student,
                 contestId: ContestId = taskContest.id,
                 language: TrikSupportedLanguage = TrikSupportedLanguage.JavaScript,

@@ -449,6 +449,18 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 
 ## Схема БД
 
+Именованные `CHECK` в init-changelog проверяют сочетания состояния и nullable-полей Посылки, Задачи,
+Пользователя и запроса валидации, результат Авторской Посылки, перечисления и виды диагностик.
+Число оставшихся попыток, позиции и Судейский балл неотрицательны.
+Матрицы допустимых и недопустимых `INSERT`/`UPDATE` проверяет
+[SchemaConstraintsTests](src/test/kotlin/tech/testsys/infra/database/internal/jpa/SchemaConstraintsTests.kt).
+Принадлежность ревизии одной Задаче и соответствие Роли Кода-приглашения ссылке Сообщества
+этими ограничениями не обеспечиваются.
+
+`FileDataStorage.store` проверяет имя файла через `TextLimits` до чтения и записи блоба.
+Превышение предела из [testsys.entity.textLimits](../../docs/domain/features.md#testsysentitytextlimits-implemented)
+приводит к `IllegalArgumentException` без файлового I/O и записи метаданных.
+
 - Схемой управляет Liquibase: changelog'и лежат в `src/main/resources/db/changelog/changes/<версия>/`.
 - Hibernate запускается с `ddl-auto=validate`, поэтому каждое изменение JPA-сущности требует changeset.
 - Диалект SQL не задаётся: Hibernate определяет его по соединению.

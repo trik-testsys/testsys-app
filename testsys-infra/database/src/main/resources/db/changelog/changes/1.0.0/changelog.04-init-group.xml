@@ -154,4 +154,17 @@
         </createIndex>
     </changeSet>
 
+    <changeSet id="1.0.0-04-init-group-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_multiple_role_to_user ADD CONSTRAINT ck_ts_multiple_role_to_user_multiple_role CHECK (
+                multiple_role IN ('DEVELOPER', 'STUDENT', 'ADMINISTRATOR', 'JUDGE', 'MANAGER')
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_multiple_role_to_user DROP CONSTRAINT ck_ts_multiple_role_to_user_multiple_role;
+            </sql>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

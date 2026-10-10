@@ -40,4 +40,17 @@
                                  constraintName="fk_ts_email_change_request_user_id" onDelete="CASCADE"/>
     </changeSet>
 
+    <changeSet id="1.0.0-17-init-email-change-request-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_email_change_request ADD CONSTRAINT ck_ts_email_change_request_attempts_left CHECK (
+                attempts_left >= 0
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_email_change_request DROP CONSTRAINT ck_ts_email_change_request_attempts_left;
+            </sql>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

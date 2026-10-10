@@ -61,6 +61,16 @@
 
 Образец — [DeveloperOperations.kt](src/main/kotlin/tech/testsys/operation/user/DeveloperOperations.kt).
 
+## Проверка длины текста
+
+`DeveloperOperations` проверяет названия при создании и редактировании Задач и Туров,
+а также названия и имена файлов при добавлении и обновлении всех видов Ресурсов.
+Оба варианта `StudyOperations.sendSolution` проверяют имя файла Решения.
+Проверки выполняются после доступа и существующих ограничений, до первого сохранения.
+Превышение пределов из [testsys.entity.textLimits](../docs/domain/features.md#testsysentitytextlimits-implemented)
+возвращает `TaskNameTooLongError`, `ContestNameTooLongError`, `ResourceNameTooLongError`
+или `UploadedFileNameTooLongError` из [Errors.kt](src/main/kotlin/tech/testsys/operation/error/Errors.kt).
+
 ## Транзакции
 
 Модуль операций транзакциями не управляет: транзакцию открывает вызывающий код.

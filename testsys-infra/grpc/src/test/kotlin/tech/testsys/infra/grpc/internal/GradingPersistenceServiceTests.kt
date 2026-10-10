@@ -169,6 +169,32 @@ class GradingPersistenceServiceTests {
 
     @Nested
     inner class SaveResultTests {
+        @ParameterizedTest
+        @ValueSource(strings = ["logs", "video"])
+        fun `should save a grading error without artifacts when an uploaded name exceeds the limit`(kind: String) {
+            val repository = RepositoryFixture()
+            val field = field().toBuilder().apply {
+                when (kind) {
+                    "logs" -> verdict = verdict.toBuilder().setName("😀".repeat(513)).build()
+                    "video" -> video = verdict.toBuilder().setName("😀".repeat(513)).build()
+                }
+            }.build()
+            val checked = checkResult(
+                result = result(fields = listOf(field)),
+                expectedId = repository.initial.id,
+                expectedTests = listOf(TestId(4)),
+                parser = JsonLogParser(),
+            )
+
+            repository.persistence.saveResult(repository.initial, checked)
+
+            val status = assertInstanceOf(SubmissionStatus.Graded::class.java, repository.current.get().data.status)
+            assertInstanceOf(GradingResult.GradingError::class.java, status.grade)
+            assertEquals(0, repository.savedVerdicts.size)
+            assertEquals(0, repository.savedLogs.size)
+            assertEquals(0, repository.savedRecordings.size)
+        }
+
         @Test
         @Tag("regression")
         fun `should save a grading error without artifacts when overflowing logs include an error`() {

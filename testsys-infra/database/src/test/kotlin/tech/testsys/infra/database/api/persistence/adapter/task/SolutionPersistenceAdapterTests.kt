@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.FileBlobStorage
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.model.task.Solution
@@ -25,6 +26,9 @@ import kotlin.test.assertNotNull
 class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<SolutionData, SolutionId, Solution>() {
 
     @Autowired
+    private lateinit var fileContentReader: FileContentReader
+
+    @Autowired
     override lateinit var repository: SolutionRepository
 
     @Autowired
@@ -42,7 +46,7 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
 
     override fun assertSameData(expected: Solution, actual: Solution) {
         assertEquals(expected.data.file.uploadedFilename, actual.data.file.uploadedFilename)
-        assertContentEquals(expected.data.file.content, actual.data.file.content)
+        assertContentEquals(fileContentReader.read(expected.data.file), fileContentReader.read(actual.data.file))
         assertEquals(expected.data.language, actual.data.language)
     }
 
@@ -82,6 +86,6 @@ class SolutionPersistenceAdapterTests : PersistenceAdapterContractTests<Solution
         val saved = repository.save(newData())
 
         val ref = StoredBlobRef(fileDataJpaEntityRepository.findAll().single().storedFileName)
-        assertContentEquals(saved.data.file.content, fileBlobStorage.load(ref, Path.of(SOLUTION_PATH)))
+        assertContentEquals(fileContentReader.read(saved.data.file), fileBlobStorage.load(ref, Path.of(SOLUTION_PATH)))
     }
 }

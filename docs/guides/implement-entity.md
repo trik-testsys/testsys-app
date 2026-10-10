@@ -232,8 +232,8 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 и UPDATE пакетами, а каждый `flush` отправляет накопленное и начинает пакет заново. Образец —
 `saveToCompetition` в [ParticipantPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/single/ParticipantPersistenceAdapter.kt).
 
-Адаптеры сущностей с файлами (Условия, Упражнения, Полигоны, Решения, логи и видеозаписи) пока переопределяют
-`assemble` и собирают строки по одной — это переходное состояние, в новом адаптере его не повторяйте.
+Для сущностей с файлами читайте метаданные файлов пакетами через `FileDataStorage.loadAll`;
+образец — `StatementPersistenceAdapter.assembleAll`. Сборка сущности возвращает ссылки без чтения содержимого файлов.
 
 Удаление базовый класс выполняет через защищённый `removeRoot(id, expectedVersion)`: он вызывает `touchRoot`
 и удаляет корень без частей, а `removeById`, `removeByIds` и `remove` вызывают его для каждой строки. Если строки

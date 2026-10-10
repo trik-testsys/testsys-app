@@ -5,12 +5,12 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.TestRepository
+import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.api.persistence.FileDataStorage
-import tech.testsys.infra.database.api.persistence.FileStoragePaths
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.TestJpaEntity
@@ -24,7 +24,7 @@ import java.util.UUID
 
 /**
  * Persistence adapter of [Test] entities backed by [TestJpaEntity].
- * [FileDataStorage] stores its file in [FileStoragePaths.test]; [update] rejects replacing it
+ * [FileDataStorage] stores its file in [FileStorageKind.Test]; [update] rejects replacing it
  * with [UnsupportedOperationException].
  *
  * @since %CURRENT_VERSION%
@@ -34,7 +34,6 @@ import java.util.UUID
 class TestPersistenceAdapter(
     jpaEntityRepository: TestJpaEntityRepository,
     private val fileDataStorage: FileDataStorage,
-    private val paths: FileStoragePaths,
     private val fileDataJpaEntityRepository: FileDataJpaEntityRepository,
     private val taskJpaEntityRepository: TaskJpaEntityRepository,
     private val versionBucketToTaskJpaEntityRepository: VersionBucketToTaskJpaEntityRepository,
@@ -46,26 +45,20 @@ class TestPersistenceAdapter(
     @Transactional
     override fun save(data: TestData): Test {
         touchTaskOf(data.versionBucket.value)
-        val fileDataId = fileDataStorage.store(data.file, paths.test)
+        val fileDataId = fileDataStorage.store(data.file, FileStorageKind.Test)
         val savedJpaEntity = jpaEntityRepository.save(TestMapping.toJpaEntity(data, fileDataId))
 
-        val domainEntity = TestMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)
-        return domainEntity
+        return assemble(savedJpaEntity)
     }
 
     @Transactional
     override fun update(entity: Test): Test {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         touchTaskOf(currentJpaEntity.versionBucket)
-        fileDataStorage.requireSameFile(entity, entity.data.file, currentJpaEntity)
+        fileDataStorage.requireSameFile(entity, entity.data.file, currentJpaEntity, FileStorageKind.Test)
         val updatedJpaEntity = jpaEntityRepository.saveAndFlush(TestMapping.toJpaEntity(entity, currentJpaEntity))
 
-        val domainEntity = TestMapping.toDomain(
-            updatedJpaEntity,
-            entity.data.file.uploadedFilename,
-            entity.data.file.content,
-        )
-        return domainEntity
+        return assemble(updatedJpaEntity)
     }
 
     @Transactional(readOnly = true)
@@ -87,12 +80,9 @@ class TestPersistenceAdapter(
         return StoredBlobRef(fileDataJpaEntityRepository.findByIdOrError(row.fileDataId).storedFileName)
     }
 
-    override fun assembleAll(rows: List<TestJpaEntity>): List<Test> = rows.map(::assemble)
-
-    override fun assemble(jpaEntity: TestJpaEntity): Test {
-        val file = fileDataStorage.load(jpaEntity.fileDataId, paths.test)
-        val domainEntity = TestMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)
-        return domainEntity
+    override fun assembleAll(rows: List<TestJpaEntity>): List<Test> {
+        val files = fileDataStorage.loadAll(rows.map { row -> row.fileDataId }, FileStorageKind.Test)
+        return rows.map { row -> TestMapping.toDomain(row, files.getValue(row.fileDataId)) }
     }
 
     override fun removeRoot(id: TestId, expectedVersion: Long?) {

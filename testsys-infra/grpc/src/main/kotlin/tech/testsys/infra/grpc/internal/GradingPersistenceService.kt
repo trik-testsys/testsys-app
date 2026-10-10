@@ -8,6 +8,7 @@ import tech.testsys.domain.builder.api.logsData
 import tech.testsys.domain.builder.api.recordingData
 import tech.testsys.domain.builder.api.verdictData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.LogsRepository
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
@@ -42,6 +43,7 @@ internal class GradingPersistenceService(
     private val recordings: RecordingRepository,
     private val verdicts: VerdictRepository,
     private val validationRequests: TaskValidationRequestRepository,
+    private val fileContentReader: FileContentReader,
     private val transactions: TransactionOperations,
 ) {
     fun prepare(submission: Submission, shouldRecordVideo: Boolean): PreparedSubmission = transactions.execute {
@@ -77,7 +79,7 @@ internal class GradingPersistenceService(
         markQueued(submission.id)
         PreparedSubmission(
             submission = submission,
-            message = encodeSubmission(submission.id, solution, loadedTests, trikStudioVersion, shouldRecordVideo),
+            message = encodeSubmission(submission.id, solution, loadedTests, trikStudioVersion, shouldRecordVideo, fileContentReader),
             testIds = testReferences.ids.toList(),
         )
     }

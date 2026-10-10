@@ -733,7 +733,7 @@ class DeveloperOperations(
                 name = resourceName
                 description = ""
                 versionBucket = VersionBucket(UUID.randomUUID())
-                file(file.uploadedFilename, file.content)
+                file(file)
             },
         )
         taskRepository.update(task.withData { uploadedResources.add(resource.data.versionBucket) })
@@ -759,7 +759,7 @@ class DeveloperOperations(
                     name = resourceName
                     description = ""
                     versionBucket = VersionBucket(UUID.randomUUID())
-                    file(file.uploadedFilename, file.content)
+                    file(file)
                 },
             )
             taskRepository.update(task.withData { uploadedResources.add(resource.data.versionBucket) })
@@ -790,7 +790,7 @@ class DeveloperOperations(
                 name = resourceName
                 description = ""
                 versionBucket = VersionBucket(UUID.randomUUID())
-                file(file.uploadedFilename, file.content)
+                file(file)
                 when (language) {
                     TrikSupportedLanguage.Python -> this.language.python()
                     TrikSupportedLanguage.JavaScript -> this.language.javaScript()
@@ -825,7 +825,7 @@ class DeveloperOperations(
 
         val solution = solutionRepository.save(
             solutionData {
-                file(file.uploadedFilename, file.content)
+                file(file)
                 when (language) {
                     TrikSupportedLanguage.Python -> this.language.python()
                     TrikSupportedLanguage.JavaScript -> this.language.javaScript()
@@ -884,7 +884,7 @@ class DeveloperOperations(
 
         val updated = resource.withData {
             name = resourceName ?: resource.data.name
-            file(file.uploadedFilename, file.content)
+            file(file)
         }
         val saved = statementRepository.save(updated.data)
         if (isChainAttached) {
@@ -934,7 +934,7 @@ class DeveloperOperations(
 
         val updated = resource.withData {
             name = resourceName ?: resource.data.name
-            file(file.uploadedFilename, file.content)
+            file(file)
         }
         val saved = exerciseRepository.save(updated.data)
         if (replacedIds.isNotEmpty()) {
@@ -988,7 +988,7 @@ class DeveloperOperations(
 
         val updated = resource.withData {
             name = resourceName ?: resource.data.name
-            file(file.uploadedFilename, file.content)
+            file(file)
         }
         val saved = testRepository.save(updated.data)
         if (replacedIds.isNotEmpty()) {
@@ -1044,7 +1044,7 @@ class DeveloperOperations(
         val solutionId = if (file != null) {
             val previousSolution = solutionRepository.load(resource.data.solution)
             solutionRepository.save(
-                previousSolution.withData { file(file.uploadedFilename, file.content) }.data,
+                previousSolution.withData { file(file) }.data,
             ).id
         } else {
             resource.data.solution.id

@@ -2,6 +2,7 @@ package tech.testsys.operation.user
 
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.submissionData
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
@@ -78,6 +79,7 @@ import java.time.Instant
  */
 @OptIn(InternalOperationsApi::class)
 class StudyOperations(
+    private val fileContentReader: FileContentReader,
     private val competitionRepository: CompetitionRepository,
     private val classRepository: ClassRepository,
     private val contestRepository: ContestRepository,
@@ -247,7 +249,7 @@ class StudyOperations(
         ensure(entry != null) { ContestNotEnteredError(contestId) }
         val file = committedResourceFile(task, resourceId)
         ensure(file != null) { ResourceNotInCommittedTaskError(taskId, resourceId) }
-        return file.asSuccess()
+        return FileData(uploadedFilename = file.uploadedFilename, content = fileContentReader.read(file)).asSuccess()
     }
 
     /**
@@ -282,7 +284,7 @@ class StudyOperations(
         ensure(entry != null) { ContestNotEnteredError(contestId) }
         val file = committedResourceFile(task, resourceId)
         ensure(file != null) { ResourceNotInCommittedTaskError(taskId, resourceId) }
-        return file.asSuccess()
+        return FileData(uploadedFilename = file.uploadedFilename, content = fileContentReader.read(file)).asSuccess()
     }
 
     /**
@@ -466,7 +468,7 @@ class StudyOperations(
     ): Submission {
         val solution = solutionRepository.save(
             solutionData {
-                file(file.uploadedFilename, file.content)
+                file(file)
                 when (language) {
                     TrikSupportedLanguage.Python -> this.language.python()
                     TrikSupportedLanguage.JavaScript -> this.language.javaScript()

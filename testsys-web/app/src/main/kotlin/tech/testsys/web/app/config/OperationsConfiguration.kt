@@ -3,6 +3,7 @@ package tech.testsys.web.app.config
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
@@ -195,6 +196,7 @@ class OperationsConfiguration {
      */
     @Bean
     fun studyOperations(
+        fileContentReader: FileContentReader,
         competitions: CompetitionRepository,
         classes: ClassRepository,
         contests: ContestRepository,
@@ -210,6 +212,7 @@ class OperationsConfiguration {
         developerSolutions: DeveloperSolutionRepository,
         clock: Clock,
     ): StudyOperations = StudyOperations(
+        fileContentReader,
         competitions,
         classes,
         contests,

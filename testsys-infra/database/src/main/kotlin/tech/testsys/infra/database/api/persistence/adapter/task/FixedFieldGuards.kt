@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.infra.database.api.persistence.FileDataStorage
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.ResourceJpaEntity
@@ -27,5 +28,5 @@ internal fun DomainEntity<*>.requireUnchanged(field: String, unchanged: Boolean,
  * or content.
  */
 @InternalDatabaseApi
-internal fun FileDataStorage.requireSameFile(entity: DomainEntity<*>, file: FileData, current: ResourceJpaEntity) =
-    entity.requireUnchanged("file", matches(current.fileDataId, file), current.versionBucket) { "to '${file.uploadedFilename}'" }
+internal fun FileDataStorage.requireSameFile(entity: DomainEntity<*>, file: FileData, current: ResourceJpaEntity, kind: FileStorageKind) =
+    entity.requireUnchanged("file", matches(current.fileDataId, file, kind), current.versionBucket) { "to '${file.uploadedFilename}'" }

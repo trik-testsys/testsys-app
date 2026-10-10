@@ -5,12 +5,12 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
+import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.StatementId
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.api.persistence.FileDataStorage
-import tech.testsys.infra.database.api.persistence.FileStoragePaths
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.StatementJpaEntity
@@ -24,7 +24,7 @@ import java.util.UUID
 
 /**
  * Persistence adapter of [Statement] entities backed by [StatementJpaEntity].
- * [FileDataStorage] stores its file in [FileStoragePaths.statement]; [update] rejects replacing it
+ * [FileDataStorage] stores its file in [FileStorageKind.Statement]; [update] rejects replacing it
  * with [UnsupportedOperationException].
  *
  * @since %CURRENT_VERSION%
@@ -34,7 +34,6 @@ import java.util.UUID
 class StatementPersistenceAdapter(
     jpaEntityRepository: StatementJpaEntityRepository,
     private val fileDataStorage: FileDataStorage,
-    private val paths: FileStoragePaths,
     private val fileDataJpaEntityRepository: FileDataJpaEntityRepository,
     private val taskJpaEntityRepository: TaskJpaEntityRepository,
     private val versionBucketToTaskJpaEntityRepository: VersionBucketToTaskJpaEntityRepository,
@@ -46,26 +45,20 @@ class StatementPersistenceAdapter(
     @Transactional
     override fun save(data: StatementData): Statement {
         touchTaskOf(data.versionBucket.value)
-        val fileDataId = fileDataStorage.store(data.file, paths.statement)
+        val fileDataId = fileDataStorage.store(data.file, FileStorageKind.Statement)
         val savedJpaEntity = jpaEntityRepository.save(StatementMapping.toJpaEntity(data, fileDataId))
 
-        val domainEntity = StatementMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)
-        return domainEntity
+        return assemble(savedJpaEntity)
     }
 
     @Transactional
     override fun update(entity: Statement): Statement {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
         touchTaskOf(currentJpaEntity.versionBucket)
-        fileDataStorage.requireSameFile(entity, entity.data.file, currentJpaEntity)
+        fileDataStorage.requireSameFile(entity, entity.data.file, currentJpaEntity, FileStorageKind.Statement)
         val updatedJpaEntity = jpaEntityRepository.saveAndFlush(StatementMapping.toJpaEntity(entity, currentJpaEntity))
 
-        val domainEntity = StatementMapping.toDomain(
-            updatedJpaEntity,
-            entity.data.file.uploadedFilename,
-            entity.data.file.content,
-        )
-        return domainEntity
+        return assemble(updatedJpaEntity)
     }
 
     @Transactional(readOnly = true)
@@ -87,12 +80,9 @@ class StatementPersistenceAdapter(
         return StoredBlobRef(fileDataJpaEntityRepository.findByIdOrError(row.fileDataId).storedFileName)
     }
 
-    override fun assembleAll(rows: List<StatementJpaEntity>): List<Statement> = rows.map(::assemble)
-
-    override fun assemble(jpaEntity: StatementJpaEntity): Statement {
-        val file = fileDataStorage.load(jpaEntity.fileDataId, paths.statement)
-        val domainEntity = StatementMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)
-        return domainEntity
+    override fun assembleAll(rows: List<StatementJpaEntity>): List<Statement> {
+        val files = fileDataStorage.loadAll(rows.map { row -> row.fileDataId }, FileStorageKind.Statement)
+        return rows.map { row -> StatementMapping.toDomain(row, files.getValue(row.fileDataId)) }
     }
 
     override fun removeRoot(id: StatementId, expectedVersion: Long?) {

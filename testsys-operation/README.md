@@ -280,6 +280,9 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 из словаря по исходным идентификаторам (образец — `loadSubmissions` в
 [TaskValidationOperations.kt](src/main/kotlin/tech/testsys/operation/TaskValidationOperations.kt)).
 
+`StudyOperations.downloadTaskResource` читает файл через `FileContentReader` после проверок доступа
+и возвращает `FileData` с байтами. При копировании версии операция передаёт исходный `FileData` в хранилище.
+
 ## Тесты
 
 - Тесты операций класса `<Actor>Operations` — в `<Actor>OperationsTests`; порты подменяются моками MockK.

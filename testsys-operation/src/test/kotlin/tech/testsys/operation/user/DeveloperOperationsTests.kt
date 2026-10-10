@@ -56,6 +56,7 @@ import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
+import tech.testsys.domain.model.task.FileContent
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Solution
@@ -1510,21 +1511,21 @@ class DeveloperOperationsTests {
                         match<StatementData> {
                             it.versionBucket == statement.data.versionBucket && it.name == "resource 21" &&
                                 it.description == "description 21" && it.file.uploadedFilename == "file-11" &&
-                                it.file.content.contentEquals(byteArrayOf(11))
+                                fileBytes(it.file).contentEquals(byteArrayOf(11))
                         },
                     )
                     exerciseRepository.save(
                         match<ExerciseData> {
                             it.versionBucket == exercise.data.versionBucket && it.name == "resource 22" &&
                                 it.description == "description 22" && it.file.uploadedFilename == "file-12" &&
-                                it.file.content.contentEquals(byteArrayOf(12)) && it.language == TrikSupportedLanguage.Python
+                                fileBytes(it.file).contentEquals(byteArrayOf(12)) && it.language == TrikSupportedLanguage.Python
                         },
                     )
                     testRepository.save(
                         match<TestData> {
                             it.versionBucket == polygon.data.versionBucket && it.name == "resource 23" &&
                                 it.description == "description 23" && it.file.uploadedFilename == "file-13" &&
-                                it.file.content.contentEquals(byteArrayOf(13))
+                                fileBytes(it.file).contentEquals(byteArrayOf(13))
                         },
                     )
                     developerSolutionRepository.save(
@@ -5099,9 +5100,11 @@ class DeveloperOperationsTests {
         Assertions.assertEquals(expected.supportedTrikStudioVersions, actual.supportedTrikStudioVersions)
     }
 
+    private fun fileBytes(file: FileData): ByteArray = Assertions.assertInstanceOf(FileContent.Inline::class.java, file.content).bytes
+
     private fun assertUploadedFile(actual: FileData) {
         Assertions.assertEquals(uploadFile.uploadedFilename, actual.uploadedFilename)
-        Assertions.assertArrayEquals(uploadFile.content, actual.content)
+        Assertions.assertSame(uploadFile, actual)
     }
 
     private fun uploadLanguage(language: String): TrikSupportedLanguage = when (language) {
@@ -5176,7 +5179,7 @@ class DeveloperOperationsTests {
                 val result = upload(file = arbitraryFile).getOrThrow()
 
                 Assertions.assertEquals("notes.txt", result.data.file.uploadedFilename)
-                Assertions.assertArrayEquals(byteArrayOf(), result.data.file.content)
+                Assertions.assertArrayEquals(byteArrayOf(), fileBytes(result.data.file))
             }
         }
 
@@ -5324,7 +5327,7 @@ class DeveloperOperationsTests {
                 val result = upload(file = arbitraryFile).getOrThrow()
 
                 Assertions.assertEquals("notes.txt", result.data.file.uploadedFilename)
-                Assertions.assertArrayEquals(byteArrayOf(), result.data.file.content)
+                Assertions.assertArrayEquals(byteArrayOf(), fileBytes(result.data.file))
             }
 
             @ParameterizedTest
@@ -5487,7 +5490,7 @@ class DeveloperOperationsTests {
                 val result = upload(file = arbitraryFile).getOrThrow()
 
                 Assertions.assertEquals("notes.txt", result.data.file.uploadedFilename)
-                Assertions.assertArrayEquals(byteArrayOf(), result.data.file.content)
+                Assertions.assertArrayEquals(byteArrayOf(), fileBytes(result.data.file))
             }
         }
 
@@ -5642,7 +5645,7 @@ class DeveloperOperationsTests {
                 val storedSolution = slot<SolutionData>()
                 verify(exactly = 1) { solutionRepository.save(capture(storedSolution)) }
                 Assertions.assertEquals("notes.txt", storedSolution.captured.file.uploadedFilename)
-                Assertions.assertArrayEquals(byteArrayOf(), storedSolution.captured.file.content)
+                Assertions.assertArrayEquals(byteArrayOf(), fileBytes(storedSolution.captured.file))
             }
 
             @ParameterizedTest
@@ -6419,7 +6422,7 @@ class DeveloperOperationsTests {
             Assertions.assertEquals("description", result.data.description)
             Assertions.assertEquals(bucket, result.data.versionBucket)
             Assertions.assertEquals("original.bin", result.data.file.uploadedFilename)
-            Assertions.assertArrayEquals(byteArrayOf(1, 2), result.data.file.content)
+            Assertions.assertArrayEquals(byteArrayOf(1, 2), fileBytes(result.data.file))
         }
 
         private fun assertTaskReplacement(original: Task) {
@@ -6784,7 +6787,7 @@ class DeveloperOperationsTests {
             Assertions.assertEquals("description", result.data.description)
             Assertions.assertEquals(bucket, result.data.versionBucket)
             Assertions.assertEquals("original.bin", result.data.file.uploadedFilename)
-            Assertions.assertArrayEquals(byteArrayOf(1, 2), result.data.file.content)
+            Assertions.assertArrayEquals(byteArrayOf(1, 2), fileBytes(result.data.file))
             Assertions.assertEquals(TrikSupportedLanguage.Python, result.data.language)
         }
 
@@ -7127,7 +7130,7 @@ class DeveloperOperationsTests {
             Assertions.assertEquals("description", result.data.description)
             Assertions.assertEquals(bucket, result.data.versionBucket)
             Assertions.assertEquals("original.bin", result.data.file.uploadedFilename)
-            Assertions.assertArrayEquals(byteArrayOf(1, 2), result.data.file.content)
+            Assertions.assertArrayEquals(byteArrayOf(1, 2), fileBytes(result.data.file))
         }
 
         private fun assertTaskReplacement(original: Task) {

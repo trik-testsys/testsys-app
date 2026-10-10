@@ -2,6 +2,7 @@ package tech.testsys.infra.database.internal.mapping.task
 
 import tech.testsys.domain.builder.api.test
 import tech.testsys.domain.builder.data
+import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.VersionBucket
@@ -20,14 +21,14 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 object TestMapping : EntityMapping<Test, TestJpaEntity> {
 
     /**
-     * Assembles a [Test] from [jpaEntity] and its loaded file [uploadedFilename] and [content].
+     * Assembles a [Test] from [jpaEntity] and its [file].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDomain(jpaEntity: TestJpaEntity, uploadedFilename: String, content: ByteArray) = test {
+    fun toDomain(jpaEntity: TestJpaEntity, file: FileData) = test {
         populateFields(jpaEntity)
         data {
-            file(uploadedFilename, content)
+            file(file)
 
             name = jpaEntity.name
             description = jpaEntity.description

@@ -29,6 +29,15 @@ class RecordingDataBuilder : Builder<RecordingData> {
         _file = FileData(uploadedFilename, content)
     }
 
+    /**
+     * Sets [file] without reading its contents.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun file(file: FileData) {
+        _file = file
+    }
+
     override fun build(): RecordingData {
         val file = requireField(_file) { ::_file }
 

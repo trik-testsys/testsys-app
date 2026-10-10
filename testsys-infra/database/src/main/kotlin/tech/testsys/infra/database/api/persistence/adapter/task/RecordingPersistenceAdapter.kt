@@ -3,11 +3,11 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
+import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.domain.model.task.Recording
 import tech.testsys.domain.model.task.RecordingData
 import tech.testsys.domain.model.task.RecordingId
 import tech.testsys.infra.database.api.persistence.FileDataStorage
-import tech.testsys.infra.database.api.persistence.FileStoragePaths
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.RecordingJpaEntity
@@ -16,7 +16,7 @@ import tech.testsys.infra.database.internal.mapping.task.RecordingMapping
 
 /**
  * Persistence adapter of [Recording] entities backed by [RecordingJpaEntity].
- * The recording file is stored through [FileDataStorage] in [FileStoragePaths.recording];
+ * The recording file is stored through [FileDataStorage] in [FileStorageKind.Recording];
  * a recording is fixed on creation, so [update] always fails.
  *
  * @since %CURRENT_VERSION%
@@ -26,28 +26,23 @@ import tech.testsys.infra.database.internal.mapping.task.RecordingMapping
 class RecordingPersistenceAdapter(
     jpaEntityRepository: RecordingJpaEntityRepository,
     private val fileDataStorage: FileDataStorage,
-    private val paths: FileStoragePaths,
 ) : AbstractPersistenceAdapter<RecordingData, RecordingId, Recording, RecordingJpaEntity>(jpaEntityRepository),
     RecordingRepository {
 
     @Transactional
     override fun save(data: RecordingData): Recording {
-        val fileDataId = fileDataStorage.store(data.file, paths.recording)
+        val fileDataId = fileDataStorage.store(data.file, FileStorageKind.Recording)
         val savedJpaEntity = jpaEntityRepository.save(RecordingMapping.toJpaEntity(data, fileDataId))
 
-        val domainEntity = RecordingMapping.toDomain(savedJpaEntity, data.file.uploadedFilename, data.file.content)
-        return domainEntity
+        return assemble(savedJpaEntity)
     }
 
     override fun update(entity: Recording): Recording = throw UnsupportedOperationException(
         "recording ${entity.id.value} cannot be updated: every field of a recording is fixed on creation",
     )
 
-    override fun assembleAll(rows: List<RecordingJpaEntity>): List<Recording> = rows.map(::assemble)
-
-    override fun assemble(jpaEntity: RecordingJpaEntity): Recording {
-        val file = fileDataStorage.load(jpaEntity.fileDataId, paths.recording)
-        val domainEntity = RecordingMapping.toDomain(jpaEntity, file.uploadedFilename, file.content)
-        return domainEntity
+    override fun assembleAll(rows: List<RecordingJpaEntity>): List<Recording> {
+        val files = fileDataStorage.loadAll(rows.map { row -> row.fileDataId }, FileStorageKind.Recording)
+        return rows.map { row -> RecordingMapping.toDomain(row, files.getValue(row.fileDataId)) }
     }
 }

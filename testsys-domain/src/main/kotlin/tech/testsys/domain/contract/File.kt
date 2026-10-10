@@ -1,5 +1,6 @@
 package tech.testsys.domain.contract
 
+import tech.testsys.domain.model.task.FileData
 import java.nio.file.Path
 
 /**
@@ -48,4 +49,20 @@ interface FileBlobStorage {
      * @since %CURRENT_VERSION%
      */
     fun delete(ref: StoredBlobRef, path: Path)
+}
+
+/**
+ * Synchronous reader of inline or stored file contents, usable outside a persistence transaction.
+ *
+ * @since %CURRENT_VERSION%
+ */
+interface FileContentReader {
+    /**
+     * Reads [file] on every call; missing blobs and other technical failures propagate to the caller.
+     *
+     * @param file the file whose bytes are needed.
+     * @return the file contents.
+     * @since %CURRENT_VERSION%
+     */
+    fun read(file: FileData): ByteArray
 }

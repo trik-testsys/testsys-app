@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException
 import tech.testsys.domain.builder.api.task
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
@@ -38,6 +39,9 @@ import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
 class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<TaskData, TaskId, Task>() {
+
+    @Autowired
+    private lateinit var fileContentReader: FileContentReader
 
     @Autowired
     override lateinit var repository: TaskRepository
@@ -395,8 +399,8 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
         assertEquals(1, exerciseToTaskContentJpaEntityRepository.count())
         assertEquals(originalIds.toSet(), exerciseRepository.findByIds(originalIds).map { it.id }.toSet())
         assertEquals(
-            originalResources.sortedBy { it.id.value }.map { it.data.file.content.toList() },
-            exerciseRepository.findByIds(originalIds).sortedBy { it.id.value }.map { it.data.file.content.toList() },
+            originalResources.sortedBy { it.id.value }.map { fileContentReader.read(it.data.file).toList() },
+            exerciseRepository.findByIds(originalIds).sortedBy { it.id.value }.map { fileContentReader.read(it.data.file).toList() },
         )
     }
 
@@ -413,8 +417,8 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
         val retained = exerciseRepository.findByIds(exerciseIds)
         assertEquals(exerciseIds.toSet(), retained.map { it.id }.toSet())
         assertEquals(
-            original.sortedBy { it.id.value }.map { it.data.file.content.toList() },
-            retained.sortedBy { it.id.value }.map { it.data.file.content.toList() },
+            original.sortedBy { it.id.value }.map { fileContentReader.read(it.data.file).toList() },
+            retained.sortedBy { it.id.value }.map { fileContentReader.read(it.data.file).toList() },
         )
     }
 
@@ -633,7 +637,7 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
         assertEquals(emptyList(), versionBucketToTaskJpaEntityRepository.findAllByTaskId(saved.id.value))
         val retained = assertNotNull(statementRepository.findById(statementId))
         assertEquals(statement.data.versionBucket, retained.data.versionBucket)
-        assertEquals(statement.data.file.content.toList(), retained.data.file.content.toList())
+        assertEquals(fileContentReader.read(statement.data.file).toList(), fileContentReader.read(retained.data.file).toList())
     }
 
     @Test

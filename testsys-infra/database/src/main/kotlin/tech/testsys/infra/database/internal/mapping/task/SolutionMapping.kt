@@ -2,6 +2,7 @@ package tech.testsys.infra.database.internal.mapping.task
 
 import tech.testsys.domain.builder.api.solution
 import tech.testsys.domain.builder.data
+import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -20,14 +21,14 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 object SolutionMapping : EntityMapping<Solution, SolutionJpaEntity> {
 
     /**
-     * Assembles a [Solution] from [jpaEntity] and its loaded file [uploadedFilename] and [content].
+     * Assembles a [Solution] from [jpaEntity] and its [file].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDomain(jpaEntity: SolutionJpaEntity, uploadedFilename: String, content: ByteArray) = solution {
+    fun toDomain(jpaEntity: SolutionJpaEntity, file: FileData) = solution {
         populateFields(jpaEntity)
         data {
-            file(uploadedFilename, content)
+            file(file)
 
             language.chose(jpaEntity.language)
         }

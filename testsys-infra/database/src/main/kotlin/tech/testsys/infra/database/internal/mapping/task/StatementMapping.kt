@@ -2,6 +2,7 @@ package tech.testsys.infra.database.internal.mapping.task
 
 import tech.testsys.domain.builder.api.statement
 import tech.testsys.domain.builder.data
+import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementData
 import tech.testsys.domain.model.task.VersionBucket
@@ -20,15 +21,15 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 object StatementMapping : EntityMapping<Statement, StatementJpaEntity> {
 
     /**
-     * Assembles a [Statement] from [jpaEntity] and its loaded file [uploadedFilename] and [content].
+     * Assembles a [Statement] from [jpaEntity] and its [file].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDomain(jpaEntity: StatementJpaEntity, uploadedFilename: String, content: ByteArray) = statement {
+    fun toDomain(jpaEntity: StatementJpaEntity, file: FileData) = statement {
         populateFields(jpaEntity)
 
         data {
-            file(uploadedFilename, content)
+            file(file)
 
             name = jpaEntity.name
             description = jpaEntity.description

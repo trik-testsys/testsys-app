@@ -2,6 +2,7 @@ package tech.testsys.infra.database.internal.mapping.task
 
 import tech.testsys.domain.builder.api.logs
 import tech.testsys.domain.builder.data
+import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Logs
 import tech.testsys.domain.model.task.LogsData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -18,15 +19,15 @@ import tech.testsys.infra.database.internal.utils.populateFields
 object LogsMapping : EntityMapping<Logs, LogsJpaEntity> {
 
     /**
-     * Assembles a [Logs] from [jpaEntity] and its loaded file [uploadedFilename] and [content].
+     * Assembles a [Logs] from [jpaEntity] and its [file].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDomain(jpaEntity: LogsJpaEntity, uploadedFilename: String, content: ByteArray) = logs {
+    fun toDomain(jpaEntity: LogsJpaEntity, file: FileData) = logs {
         populateFields(jpaEntity)
 
         data {
-            file(uploadedFilename, content)
+            file(file)
         }
     }
 

@@ -15,7 +15,7 @@
 |-----------|------------|
 | `api/BalancingGrader` | Реализация порта и приём запросов |
 | `api/GrpcConfiguration` | Бины адаптера и настройки по умолчанию |
-| `internal/GradingFunctions` | Чистые преобразования, выбор узла и проверка ответа |
+| `internal/GradingFunctions` | Подготовка protobuf с явным чтением файлов, выбор узла и проверка ответа |
 | `internal/JsonLogParser` | Разбор JSON-логов без IO; реализация расширяемого `LogParser` |
 | `internal/GradingCoordinator` | Очередь, попытки, синхронизация и уведомления |
 | `internal/GradingNodeManager` | Каналы узлов и фоновый кеш статусов |
@@ -24,6 +24,8 @@
 
 Источники версии TRIK Studio для подготовки Посылки описаны в
 [features.md](../../docs/domain/features.md#testsysdevgradingbalancing-implemented).
+
+При подготовке protobuf `encodeSubmission` читает файлы Решения и Полигонов через `FileContentReader`.
 
 `GradingPersistenceService` открывает транзакции через `TransactionOperations`, который предоставляет приложение;
 модуль `database` поставляет реализацию, повторяющую транзакцию при конфликте. Подготовка Посылки — чтение Тура,

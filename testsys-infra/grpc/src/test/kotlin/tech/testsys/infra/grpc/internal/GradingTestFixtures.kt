@@ -5,6 +5,7 @@ package tech.testsys.infra.grpc.internal
 import com.google.protobuf.ByteString
 import io.mockk.every
 import io.mockk.mockk
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.springframework.transaction.support.SimpleTransactionStatus
 import org.springframework.transaction.support.TransactionCallback
 import org.springframework.transaction.support.TransactionOperations
@@ -21,6 +22,7 @@ import tech.testsys.domain.builder.api.test
 import tech.testsys.domain.builder.api.testDiagnosticResult
 import tech.testsys.domain.builder.api.verdict
 import tech.testsys.domain.builder.data
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.GradingNodeStatus
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.LogsRepository
@@ -35,6 +37,8 @@ import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.FileContent
+import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.LogsData
 import tech.testsys.domain.model.task.RecordingData
 import tech.testsys.domain.model.task.Score
@@ -138,7 +142,11 @@ internal class RepositoryFixture(val initial: Submission = testSubmission()) {
     val current = AtomicReference(initial)
     val transactions = FakeTransactions()
     val hasCommitted = transactions.hasCommitted
+    val fileContentReader = mockk<FileContentReader> {
+        every { read(any()) } answers { assertInstanceOf(FileContent.Inline::class.java, firstArg<FileData>().content).bytes }
+    }
     val persistence = GradingPersistenceService(
+        fileContentReader = fileContentReader,
         submissions = submissions,
         solutions = solutions,
         tasks = tasks,

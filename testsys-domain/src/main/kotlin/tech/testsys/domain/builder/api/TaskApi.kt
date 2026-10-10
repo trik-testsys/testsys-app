@@ -394,7 +394,7 @@ private fun ExerciseData.toBuilder(): ExerciseDataBuilder {
     return ExerciseDataBuilder().apply {
         name = thisData.name
         description = thisData.description
-        file(thisData.file.uploadedFilename, thisData.file.content)
+        file(thisData.file)
         when (thisData.language) {
             TrikSupportedLanguage.Python -> language.python()
             TrikSupportedLanguage.JavaScript -> language.javaScript()
@@ -443,7 +443,7 @@ fun JudgmentOrder.withData(builder: JudgmentOrderDataBuilder.() -> Unit): Judgme
 private fun LogsData.toBuilder(): LogsDataBuilder {
     val thisData = this
     return LogsDataBuilder().apply {
-        file(thisData.file.uploadedFilename, thisData.file.content)
+        file(thisData.file)
     }
 }
 
@@ -463,7 +463,7 @@ fun Logs.withData(builder: LogsDataBuilder.() -> Unit): Logs {
 private fun RecordingData.toBuilder(): RecordingDataBuilder {
     val thisData = this
     return RecordingDataBuilder().apply {
-        file(thisData.file.uploadedFilename, thisData.file.content)
+        file(thisData.file)
     }
 }
 
@@ -483,7 +483,7 @@ fun Recording.withData(builder: RecordingDataBuilder.() -> Unit): Recording {
 private fun SolutionData.toBuilder(): SolutionDataBuilder {
     val thisData = this
     return SolutionDataBuilder().apply {
-        file(thisData.file.uploadedFilename, thisData.file.content)
+        file(thisData.file)
         when (thisData.language) {
             TrikSupportedLanguage.Python -> language.python()
             TrikSupportedLanguage.JavaScript -> language.javaScript()
@@ -510,7 +510,7 @@ private fun StatementData.toBuilder(): StatementDataBuilder {
     return StatementDataBuilder().apply {
         name = thisData.name
         description = thisData.description
-        file(thisData.file.uploadedFilename, thisData.file.content)
+        file(thisData.file)
         versionBucket = thisData.versionBucket
     }
 }
@@ -533,7 +533,7 @@ private fun TestData.toBuilder(): TestDataBuilder {
     return TestDataBuilder().apply {
         name = thisData.name
         description = thisData.description
-        file(thisData.file.uploadedFilename, thisData.file.content)
+        file(thisData.file)
         versionBucket = thisData.versionBucket
     }
 }

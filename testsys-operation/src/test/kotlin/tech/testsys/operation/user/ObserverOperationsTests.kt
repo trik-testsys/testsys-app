@@ -7,6 +7,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Nested
@@ -25,6 +26,7 @@ import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.task.FileContent
 import tech.testsys.operation.error.CompetitionAccessDeniedError
 import tech.testsys.operation.error.CompetitionNotExistsError
 import tech.testsys.operation.error.MissedObserverRoleError
@@ -61,7 +63,7 @@ class ObserverOperationsTests {
                 val result = operations.downloadResult(user = user, competitionId = CompetitionId(23)).getOrThrow()
 
                 assertEquals("competition-23-results.csv", result.uploadedFilename)
-                assertArrayEquals(byteArrayOf(), result.content)
+                assertArrayEquals(byteArrayOf(), assertInstanceOf(FileContent.Inline::class.java, result.content).bytes)
             }
 
             @Test
@@ -72,7 +74,7 @@ class ObserverOperationsTests {
                 val result = operations.downloadResult(user = user, competitionId = CompetitionId(23)).getOrThrow()
 
                 assertEquals("competition-23-results.csv", result.uploadedFilename)
-                assertArrayEquals(byteArrayOf(), result.content)
+                assertArrayEquals(byteArrayOf(), assertInstanceOf(FileContent.Inline::class.java, result.content).bytes)
             }
 
             @Test

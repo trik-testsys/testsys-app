@@ -18,6 +18,8 @@ import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
 import tech.testsys.domain.builder.util.chooser.SubmissionStatusChooser
+import tech.testsys.domain.contract.FileContentReader
+import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
@@ -43,7 +45,9 @@ import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseId
+import tech.testsys.domain.model.task.FileContent
 import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderData
@@ -94,7 +98,11 @@ class StudyOperationsTests {
     private val storedJudgmentOrders = mutableMapOf<JudgmentOrderId, JudgmentOrder>()
     private val storedSolutions = mutableMapOf<SolutionId, Solution>()
     private val now = Instant.parse("2026-01-01T12:00:00Z")
+    private val fileContentReader = mockk<FileContentReader> {
+        every { read(any()) } answers { assertInstanceOf(FileContent.Inline::class.java, firstArg<FileData>().content).bytes }
+    }
     private val operations = StudyOperations(
+        fileContentReader = fileContentReader,
         competitionRepository = competitions,
         classRepository = classes,
         contestRepository = contests,
@@ -1005,11 +1013,16 @@ class StudyOperationsTests {
                 @Test
                 fun `should return the file of the committed statement`() {
                     prepareParticipantTask()
-                    every { statementRepository.findById(statement.id) } returns statement
+                    val storedFile =
+                        FileData("statement.pdf", FileContent.Stored(StoredBlobRef("statement"), FileStorageKind.Statement))
+                    every { statementRepository.findById(statement.id) } returns statement.withData { file(storedFile) }
+                    every { fileContentReader.read(storedFile) } returns byteArrayOf(1, 2)
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals("statement.pdf", file.uploadedFilename)
+                    assertArrayEquals(byteArrayOf(1, 2), assertInstanceOf(FileContent.Inline::class.java, file.content).bytes)
+                    verify(exactly = 1) { fileContentReader.read(storedFile) }
                 }
 
                 @Test
@@ -1019,7 +1032,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = exercise.id).getOrThrow()
 
-                    assertSame(exercise.data.file, file)
+                    assertEquals(exercise.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(exercise.data.file), fileContentReader.read(file))
                 }
 
                 @Test
@@ -1029,7 +1043,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals(statement.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(statement.data.file), fileContentReader.read(file))
                 }
             }
 
@@ -1106,6 +1121,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1137,7 +1153,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals(statement.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(statement.data.file), fileContentReader.read(file))
                 }
 
                 @Test
@@ -1149,6 +1166,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1171,6 +1189,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1202,7 +1221,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals(statement.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(statement.data.file), fileContentReader.read(file))
                 }
 
                 @Test
@@ -1212,7 +1232,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = exercise.id).getOrThrow()
 
-                    assertSame(exercise.data.file, file)
+                    assertEquals(exercise.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(exercise.data.file), fileContentReader.read(file))
                 }
 
                 @Test
@@ -1222,7 +1243,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals(statement.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(statement.data.file), fileContentReader.read(file))
                 }
             }
 
@@ -1311,6 +1333,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1342,7 +1365,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals(statement.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(statement.data.file), fileContentReader.read(file))
                 }
 
                 @Test
@@ -1354,6 +1378,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1365,6 +1390,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1388,6 +1414,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
             }
 
@@ -1461,7 +1488,7 @@ class StudyOperationsTests {
             id = 101
             createdAt = now
             data = solutionData {
-                file(file.uploadedFilename, file.content)
+                file(file)
                 language.python()
             }
         }
@@ -1491,7 +1518,7 @@ class StudyOperationsTests {
 
                     assertSame(savedSubmission, result)
                     assertEquals(file.uploadedFilename, sentSolution.captured.file.uploadedFilename)
-                    assertArrayEquals(file.content, sentSolution.captured.file.content)
+                    assertSame(file, sentSolution.captured.file)
                     assertSame(TrikSupportedLanguage.Python, sentSolution.captured.language)
                     assertEquals(participant.id, sentSubmission.captured.author.id)
                     assertEquals(savedSolution.id, sentSubmission.captured.solution.id)
@@ -1796,7 +1823,7 @@ class StudyOperationsTests {
 
                     assertSame(savedSubmission, result)
                     assertEquals(file.uploadedFilename, sentSolution.captured.file.uploadedFilename)
-                    assertArrayEquals(file.content, sentSolution.captured.file.content)
+                    assertSame(file, sentSolution.captured.file)
                     assertSame(TrikSupportedLanguage.JavaScript, sentSolution.captured.language)
                     assertEquals(student.id, sentSubmission.captured.author.id)
                     assertEquals(savedSolution.id, sentSubmission.captured.solution.id)
@@ -2103,7 +2130,7 @@ class StudyOperationsTests {
                 id = 3
                 createdAt = firstEntry
                 data = solutionData {
-                    file(file.uploadedFilename, file.content)
+                    file(file)
                     language.python()
                 }
             }

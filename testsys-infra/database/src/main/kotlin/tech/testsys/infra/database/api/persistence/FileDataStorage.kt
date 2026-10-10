@@ -2,11 +2,15 @@ package tech.testsys.infra.database.api.persistence
 
 import org.springframework.stereotype.Component
 import tech.testsys.domain.contract.FileBlobStorage
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.StoredBlobRef
+import tech.testsys.domain.model.task.FileContent
 import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.FileDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
+import tech.testsys.infra.database.internal.utils.findAllByIdOrError
 import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireId
 import java.nio.file.Path
@@ -14,9 +18,7 @@ import java.security.MessageDigest
 import java.util.HexFormat
 
 /**
- * Append-only storage of [FileData]: metadata goes to a [FileDataJpaEntity] row, content to [FileBlobStorage]
- * in the path chosen by the caller.
- * A stored file never changes; [matches] compares a file with a stored one by uploaded name and content hash.
+ * Append-only storage of file metadata and blobs. Loading metadata never reads blob contents.
  *
  * @since %CURRENT_VERSION%
  */
@@ -25,78 +27,80 @@ import java.util.HexFormat
 class FileDataStorage(
     private val fileDataJpaEntityRepository: FileDataJpaEntityRepository,
     private val fileBlobStorage: FileBlobStorage,
-) {
+    private val paths: FileStoragePaths,
+) : FileContentReader {
+
+    override fun read(file: FileData): ByteArray = when (val content = file.content) {
+        is FileContent.Inline -> content.bytes
+        is FileContent.Stored -> fileBlobStorage.load(content.ref, path(content.kind))
+    }
 
     /**
-     * Stores [file] as a new row and a blob in [path].
+     * Copies [file] into a new metadata row and blob of [kind], reading its contents once.
      *
-     * @return the id of the inserted [FileDataJpaEntity].
+     * @return the id of the inserted metadata row.
      * @since %CURRENT_VERSION%
      */
-    fun store(file: FileData, path: Path): Long {
-        val blobRef = fileBlobStorage.store(file.content, path)
+    fun store(file: FileData, kind: FileStorageKind): Long {
+        val bytes = read(file)
+        val blobRef = fileBlobStorage.store(bytes, path(kind))
         val saved = fileDataJpaEntityRepository.save(
             FileDataJpaEntity(
                 uploadedFileName = file.uploadedFilename,
                 storedFileName = blobRef.key,
-                contentHash = file.contentHash(),
+                contentHash = bytes.contentHash(),
             ),
         )
         return saved.requireId()
     }
 
     /**
-     * Returns `true` if [file] has the same uploaded name and content hash as the stored file [fileDataId].
+     * Compares [file] with [fileDataId] by name and either stored reference or inline content hash, without blob I/O.
      *
      * @since %CURRENT_VERSION%
      */
-    fun matches(fileDataId: Long, file: FileData): Boolean {
+    fun matches(fileDataId: Long, file: FileData, kind: FileStorageKind): Boolean {
         val stored = fileDataJpaEntityRepository.findByIdOrError(fileDataId)
-        return stored.uploadedFileName == file.uploadedFilename && stored.contentHash == file.contentHash()
-    }
-
-    /**
-     * Loads the uploaded filename and content of the file referenced by [fileDataId] from [path].
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun load(fileDataId: Long, path: Path): LoadedFile {
-        val fileData = fileDataJpaEntityRepository.findByIdOrError(fileDataId)
-        val content = fileBlobStorage.load(StoredBlobRef(fileData.storedFileName), path)
-        return LoadedFile(uploadedFilename = fileData.uploadedFileName, content = content)
-    }
-
-    /**
-     * File loaded from [FileDataStorage].
-     *
-     * @property uploadedFilename the name the file was uploaded with.
-     * @property content the binary content of the file.
-     * @since %CURRENT_VERSION%
-     */
-    data class LoadedFile(val uploadedFilename: String, val content: ByteArray) {
-
-        override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
-
-            other as LoadedFile
-
-            if (uploadedFilename != other.uploadedFilename) return false
-            if (!content.contentEquals(other.content)) return false
-
-            return true
-        }
-
-        override fun hashCode(): Int {
-            var result = uploadedFilename.hashCode()
-            result = 31 * result + content.contentHashCode()
-            return result
+        return stored.uploadedFileName == file.uploadedFilename && when (val content = file.content) {
+            is FileContent.Inline -> stored.contentHash == content.bytes.contentHash()
+            is FileContent.Stored -> content.kind == kind && content.ref.key == stored.storedFileName
         }
     }
 
-    companion object {
+    /**
+     * Loads file metadata with a stored reference, without reading the blob.
+     *
+     * @param fileDataId the metadata row identifier.
+     * @param kind the directory kind containing the blob.
+     * @return the file with a reference usable outside a transaction.
+     * @since %CURRENT_VERSION%
+     */
+    fun load(fileDataId: Long, kind: FileStorageKind): FileData = fileDataJpaEntityRepository.findByIdOrError(fileDataId).toFile(kind)
 
-        @JvmStatic
-        private fun FileData.contentHash(): String = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(content))
+    /**
+     * Loads stored references in one batched metadata lookup, failing if a row is missing.
+     *
+     * @param fileDataIds metadata identifiers; duplicates are ignored and empty input performs no I/O.
+     * @param kind the directory kind containing the blobs.
+     * @return files indexed by metadata identifier.
+     * @since %CURRENT_VERSION%
+     */
+    fun loadAll(fileDataIds: Collection<Long>, kind: FileStorageKind): Map<Long, FileData> =
+        fileDataJpaEntityRepository.findAllByIdOrError(fileDataIds).mapValues { (_, row) -> row.toFile(kind) }
+
+    private fun FileDataJpaEntity.toFile(kind: FileStorageKind) = FileData(
+        uploadedFilename = uploadedFileName,
+        content = FileContent.Stored(ref = StoredBlobRef(storedFileName), kind = kind),
+    )
+
+    private fun path(kind: FileStorageKind): Path = when (kind) {
+        FileStorageKind.Statement -> paths.statement
+        FileStorageKind.Exercise -> paths.exercise
+        FileStorageKind.Test -> paths.test
+        FileStorageKind.Solution -> paths.solution
+        FileStorageKind.Recording -> paths.recording
+        FileStorageKind.Logs -> paths.logs
     }
+
+    private fun ByteArray.contentHash(): String = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(this))
 }

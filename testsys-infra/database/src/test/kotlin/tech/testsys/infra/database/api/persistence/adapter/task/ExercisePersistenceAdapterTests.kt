@@ -9,6 +9,7 @@ import tech.testsys.domain.builder.api.exercise
 import tech.testsys.domain.builder.api.exerciseData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.FileBlobStorage
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
@@ -32,6 +33,9 @@ import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
 class ExercisePersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<ExerciseData, ExerciseId, Exercise>() {
+
+    @Autowired
+    private lateinit var fileContentReader: FileContentReader
 
     @Autowired
     override lateinit var repository: ExerciseRepository
@@ -73,7 +77,7 @@ class ExercisePersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         assertEquals(expected.data.name, actual.data.name)
         assertEquals(expected.data.description, actual.data.description)
         assertEquals(expected.data.file.uploadedFilename, actual.data.file.uploadedFilename)
-        assertContentEquals(expected.data.file.content, actual.data.file.content)
+        assertContentEquals(fileContentReader.read(expected.data.file), fileContentReader.read(actual.data.file))
         assertEquals(expected.data.language, actual.data.language)
         assertEquals(expected.data.versionBucket, actual.data.versionBucket)
     }
@@ -140,7 +144,7 @@ class ExercisePersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val saved = repository.save(newData())
 
         assertFailsWith<UnsupportedOperationException> {
-            repository.update(saved.withData { file("renamed.qrs", saved.data.file.content) })
+            repository.update(saved.withData { file("renamed.qrs", fileContentReader.read(saved.data.file)) })
         }
 
         assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
@@ -325,7 +329,7 @@ class ExercisePersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val saved = repository.save(newData())
 
         val ref = StoredBlobRef(fileDataJpaEntityRepository.findAll().single().storedFileName)
-        assertContentEquals(saved.data.file.content, fileBlobStorage.load(ref, Path.of(EXERCISE_PATH)))
+        assertContentEquals(fileContentReader.read(saved.data.file), fileBlobStorage.load(ref, Path.of(EXERCISE_PATH)))
     }
 
     private fun setCreatedAt(id: ExerciseId, createdAt: Instant) {

@@ -4,6 +4,7 @@ import tech.testsys.domain.builder.api.exercise
 import tech.testsys.domain.builder.data
 import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseData
+import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.ExerciseJpaEntity
@@ -22,15 +23,15 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 object ExerciseMapping : EntityMapping<Exercise, ExerciseJpaEntity> {
 
     /**
-     * Assembles an [Exercise] from [jpaEntity] and its loaded file [uploadedFilename] and [content].
+     * Assembles an [Exercise] from [jpaEntity] and its [file].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDomain(jpaEntity: ExerciseJpaEntity, uploadedFilename: String, content: ByteArray) = exercise {
+    fun toDomain(jpaEntity: ExerciseJpaEntity, file: FileData) = exercise {
         populateFields(jpaEntity)
 
         data {
-            file(uploadedFilename, content)
+            file(file)
 
             name = jpaEntity.name
             description = jpaEntity.description

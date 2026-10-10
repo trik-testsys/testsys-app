@@ -1,5 +1,8 @@
 package tech.testsys.infra.diagnostics.api
 
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -9,7 +12,10 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.core.env.MapPropertySource
 import tech.testsys.domain.builder.api.test
 import tech.testsys.domain.builder.api.testData
+import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.PolygonDiagnostics
+import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.model.task.*
 import tech.testsys.infra.diagnostics.internal.DiagnosticsProperties
 import tech.testsys.infra.diagnostics.internal.InternalDiagnosticsApi
@@ -17,12 +23,30 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import java.util.function.Supplier
 
 @OptIn(InternalDiagnosticsApi::class)
 class PolygonDiagnosticsAdapterTests {
+    private val fileContentReader = mockk<FileContentReader> {
+        every { read(any()) } answers { assertInstanceOf(FileContent.Inline::class.java, firstArg<FileData>().content).bytes }
+    }
     private val adapter = PolygonDiagnosticsAdapter(
         DiagnosticsProperties(maxTimeLimitMillis = 600_000, scorePrefix = "Набрано баллов:"),
+        fileContentReader,
     )
+
+    @Test
+    fun `should read stored polygon contents through the reader`() {
+        val storedFile = FileData("world.xml", FileContent.Stored(StoredBlobRef("world"), FileStorageKind.Test))
+        val polygon = polygon("").withData { file(storedFile) }
+        every { fileContentReader.read(storedFile) } returns "<world/>".toByteArray()
+
+        val result = adapter.diagnose(polygon)
+
+        assertEquals(polygon.id, result.testId)
+        assertTrue(result.reports.isNotEmpty())
+        verify(exactly = 1) { fileContentReader.read(storedFile) }
+    }
 
     @ParameterizedTest
     @CsvSource("0,false", "600000,false", "600001,true", "-1,true")
@@ -185,7 +209,10 @@ class PolygonDiagnosticsAdapterTests {
 
     @Test
     fun `should use default configuration in the registered application context`() {
-        val context = AnnotationConfigApplicationContext(DiagnosticsConfiguration::class.java)
+        val context = AnnotationConfigApplicationContext()
+        context.registerBean(FileContentReader::class.java, Supplier { fileContentReader })
+        context.register(DiagnosticsConfiguration::class.java)
+        context.refresh()
 
         val result = context.use {
             it.getBean(PolygonDiagnostics::class.java).diagnose(
@@ -200,6 +227,7 @@ class PolygonDiagnosticsAdapterTests {
     fun `should override the time limit with application configuration`() {
         val context = AnnotationConfigApplicationContext()
         context.environment.propertySources.addFirst(MapPropertySource("test", mapOf("testsys.diagnostics.max-time-limit-millis" to 10)))
+        context.registerBean(FileContentReader::class.java, Supplier { fileContentReader })
         context.register(DiagnosticsConfiguration::class.java)
         context.refresh()
 
@@ -217,6 +245,7 @@ class PolygonDiagnosticsAdapterTests {
         context.environment.propertySources.addFirst(
             MapPropertySource("test", mapOf("testsys.diagnostics.score-prefix" to "Score:")),
         )
+        context.registerBean(FileContentReader::class.java, Supplier { fileContentReader })
         context.register(DiagnosticsConfiguration::class.java)
         context.refresh()
 

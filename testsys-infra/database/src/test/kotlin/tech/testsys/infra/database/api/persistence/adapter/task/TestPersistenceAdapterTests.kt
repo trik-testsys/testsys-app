@@ -9,6 +9,7 @@ import tech.testsys.domain.builder.api.test
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.FileBlobStorage
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
@@ -30,6 +31,9 @@ import tech.testsys.domain.model.task.Test as Polygon
 
 @OptIn(InternalDatabaseApi::class)
 class TestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<TestData, TestId, Polygon>() {
+
+    @Autowired
+    private lateinit var fileContentReader: FileContentReader
 
     @Autowired
     override lateinit var repository: TestRepository
@@ -70,7 +74,7 @@ class TestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tes
         assertEquals(expected.data.name, actual.data.name)
         assertEquals(expected.data.description, actual.data.description)
         assertEquals(expected.data.file.uploadedFilename, actual.data.file.uploadedFilename)
-        assertContentEquals(expected.data.file.content, actual.data.file.content)
+        assertContentEquals(fileContentReader.read(expected.data.file), fileContentReader.read(actual.data.file))
         assertEquals(expected.data.versionBucket, actual.data.versionBucket)
     }
 
@@ -116,7 +120,7 @@ class TestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tes
         val saved = repository.save(newData())
 
         assertFailsWith<UnsupportedOperationException> {
-            repository.update(saved.withData { file("renamed.xml", saved.data.file.content) })
+            repository.update(saved.withData { file("renamed.xml", fileContentReader.read(saved.data.file)) })
         }
 
         assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
@@ -292,7 +296,7 @@ class TestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tes
         val saved = repository.save(newData())
 
         val ref = StoredBlobRef(fileDataJpaEntityRepository.findAll().single().storedFileName)
-        assertContentEquals(saved.data.file.content, fileBlobStorage.load(ref, Path.of(TEST_PATH)))
+        assertContentEquals(fileContentReader.read(saved.data.file), fileBlobStorage.load(ref, Path.of(TEST_PATH)))
     }
 
     private fun setCreatedAt(id: TestId, createdAt: Instant) {

@@ -42,6 +42,7 @@
 |---------------------------------------|--------------------------------------|---------------------------------------------------------------------------|
 | `EntityRepository` и `XRepository`     | `contract/persistence/repository/`   | Реализованы адаптерами в `testsys-infra:database`                          |
 | `FileBlobStorage`                      | `contract/File.kt`                   | Путь (`Path`) передаётся в каждом вызове. Потребитель — `FileDataStorage`; реализован `FileSystemBlobStorage` в `testsys-infra:database`, в тестах `InMemoryFileBlobStorage` |
+| `FileContentReader` | `contract/File.kt` | Явное чтение байтов `FileData`; реализован `FileDataStorage` в `testsys-infra:database` |
 | `Grader`                               | `contract/Grading.kt`                | Реализован в [grpc/README.md](../../testsys-infra/grpc/README.md)          |
 | `UserMailSender`                       | `contract/Mail.kt`                   | Реализован в [mail/README.md](../../testsys-infra/mail/README.md)          |
 | `Pagination` / `Sort` / `Page`         | `contract/persistence/Pagination.kt` | Используются в портах и адаптерах `Task`, `Contest`, `Verdict`, `Class`, `Competition` и `User` |
@@ -93,7 +94,7 @@
   тип порта, а не через класс адаптера.
 - Адаптер **сам может зависеть от других портов**: `FileDataStorage` принимает `FileBlobStorage` и не знает,
   чем тот реализован.
-- Типы, которые есть только у адаптера, объявляются в самом адаптере (`FileDataStorage.LoadedFile`),
+- Типы, которые есть только у адаптера, объявляются в самом адаптере,
   а не тянутся в домен.
 - Внутренний API модуля прячется за opt-in-маркером с `@RequiresOptIn`. В `database` это `@InternalDatabaseApi`:
   всё в `internal` помечено им, а публичный адаптер объявляет `@OptIn(...)`. Если новый модуль так же делится

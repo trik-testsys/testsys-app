@@ -96,6 +96,16 @@
 к принадлежности и прикреплению Ресурсов — в разделе `testsys.entity.task` в
 [features.md](../docs/domain/features.md).
 
+### Содержимое файлов
+
+`FileData` в [Common.kt](src/main/kotlin/tech/testsys/domain/model/task/Common.kt) содержит имя файла и
+`FileContent`: байты `Inline` либо ссылку `Stored` с видом хранилища `FileStorageKind`.
+Конструктор с `ByteArray` создаёт `Inline`; равенство `FileData` остаётся ссылочным.
+Билдеры принимают готовый файл, а `withData` переносит его без чтения.
+
+Порт `FileContentReader` из [File.kt](src/main/kotlin/tech/testsys/domain/contract/File.kt) явно читает байты.
+Ссылка не зависит от транзакции; техническая ошибка отсутствующего блоба возникает при чтении.
+
 ### Пользователи
 
 - `MultipleRoleUser` владеет набором `CompatibleUserRole`: `Developer`, `Student`, `Administrator`, `Judge`, `Manager`.

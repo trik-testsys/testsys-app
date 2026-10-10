@@ -9,6 +9,7 @@ import tech.testsys.domain.builder.api.statement
 import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.FileBlobStorage
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
@@ -30,6 +31,9 @@ import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
 class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<StatementData, StatementId, Statement>() {
+
+    @Autowired
+    private lateinit var fileContentReader: FileContentReader
 
     @Autowired
     override lateinit var repository: StatementRepository
@@ -70,7 +74,7 @@ class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
         assertEquals(expected.data.name, actual.data.name)
         assertEquals(expected.data.description, actual.data.description)
         assertEquals(expected.data.file.uploadedFilename, actual.data.file.uploadedFilename)
-        assertContentEquals(expected.data.file.content, actual.data.file.content)
+        assertContentEquals(fileContentReader.read(expected.data.file), fileContentReader.read(actual.data.file))
         assertEquals(expected.data.versionBucket, actual.data.versionBucket)
     }
 
@@ -116,7 +120,7 @@ class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
         val saved = repository.save(newData())
 
         assertFailsWith<UnsupportedOperationException> {
-            repository.update(saved.withData { file("renamed.pdf", saved.data.file.content) })
+            repository.update(saved.withData { file("renamed.pdf", fileContentReader.read(saved.data.file)) })
         }
 
         assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
@@ -291,7 +295,7 @@ class StatementPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
         val saved = repository.save(newData())
 
         val ref = StoredBlobRef(fileDataJpaEntityRepository.findAll().single().storedFileName)
-        assertContentEquals(saved.data.file.content, fileBlobStorage.load(ref, Path.of(STATEMENT_PATH)))
+        assertContentEquals(fileContentReader.read(saved.data.file), fileBlobStorage.load(ref, Path.of(STATEMENT_PATH)))
     }
 
     private fun setCreatedAt(id: StatementId, createdAt: Instant) {

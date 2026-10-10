@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.protobuf.ByteString
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
 import tech.testsys.domain.model.task.Score
@@ -34,15 +35,16 @@ internal fun encodeSubmission(
     tests: List<Test>,
     trikStudioVersion: TrikStudioVersion,
     shouldRecordVideo: Boolean,
+    fileContentReader: FileContentReader,
 ): Proto.Submission {
     val file = Proto.File.newBuilder().setName(solution.data.file.uploadedFilename)
-        .setContent(ByteString.copyFrom(solution.data.file.content)).build()
+        .setContent(ByteString.copyFrom(fileContentReader.read(solution.data.file))).build()
     val builder = Proto.Submission.newBuilder().setId(id.value)
         .setTask(
             Proto.Task.newBuilder().addAllFields(
                 tests.map { test ->
                     Proto.File.newBuilder().setName(test.id.value.toString())
-                        .setContent(ByteString.copyFrom(test.data.file.content)).build()
+                        .setContent(ByteString.copyFrom(fileContentReader.read(test.data.file))).build()
                 },
             ),
         )

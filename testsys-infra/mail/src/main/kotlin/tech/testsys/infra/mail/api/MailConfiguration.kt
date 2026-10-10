@@ -42,6 +42,7 @@ class MailConfiguration {
             password = environment.getProperty("testsys.mail.password")?.takeIf { it.isNotBlank() }
             defaultEncoding = Charsets.UTF_8.name()
             javaMailProperties["mail.smtp.auth"] = environment.getRequiredProperty("testsys.mail.smtp-auth")
+            javaMailProperties["mail.smtp.ssl.enable"] = environment.getRequiredProperty("testsys.mail.ssl")
             javaMailProperties["mail.smtp.starttls.enable"] = environment.getRequiredProperty("testsys.mail.starttls")
             javaMailProperties["mail.smtp.connectiontimeout"] = timeoutMillis
             javaMailProperties["mail.smtp.timeout"] = timeoutMillis

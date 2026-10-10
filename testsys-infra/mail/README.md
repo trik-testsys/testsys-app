@@ -47,8 +47,12 @@
 | `testsys.mail.username` | пусто | Имя пользователя; пустое значение отключает передачу учётных данных |
 | `testsys.mail.password` | пусто | Пароль |
 | `testsys.mail.smtp-auth` | `false` | Значение `mail.smtp.auth` |
+| `testsys.mail.ssl` | `false` | TLS с момента подключения (implicit TLS), значение `mail.smtp.ssl.enable` |
 | `testsys.mail.starttls` | `false` | Значение `mail.smtp.starttls.enable` |
 | `testsys.mail.timeout` | `PT10S` | Предельный срок соединения, чтения и записи в формате ISO-8601 `Duration` |
 | `testsys.mail.from` | `testsys@localhost` | Адрес отправителя; пустое значение отклоняется при создании бина |
 | `testsys.mail.region` | `RU` | Регион сообщений, значение `SupportedRegion` |
 | `testsys.mail.time-zone` | `Europe/Moscow` | Часовой пояс контекста локализации |
+
+Для SMTP-сервера с implicit TLS на порту 1127 задайте `testsys.mail.ssl=true`,
+`testsys.mail.starttls=false` и `testsys.mail.port=1127`.

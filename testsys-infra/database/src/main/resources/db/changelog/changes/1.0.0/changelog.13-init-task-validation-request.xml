@@ -200,5 +200,54 @@
             <column name="created_at"/>
         </createIndex>
     </changeSet>
+    <changeSet id="1.0.0-13-init-task-validation-request-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_task_validation_request ADD CONSTRAINT ck_ts_task_validation_request_execution_state CHECK (
+                (failure_description IS NULL AND failure_occurred_at IS NULL AND (
+                    (execution = 'PENDING_DIAGNOSTICS' AND NOT are_diagnostics_complete
+                        AND NOT are_submissions_created AND completed_at IS NULL)
+                    OR (execution = 'AWAITING_SUBMISSIONS' AND are_diagnostics_complete
+                        AND NOT are_submissions_created AND completed_at IS NULL)
+                    OR (execution = 'STOPPED_BY_DIAGNOSTICS' AND are_diagnostics_complete
+                        AND NOT are_submissions_created AND completed_at IS NOT NULL)
+                    OR (execution = 'SUBMISSIONS_CREATED' AND are_diagnostics_complete
+                        AND are_submissions_created AND completed_at IS NULL)
+                    OR (execution = 'COMPLETED' AND are_diagnostics_complete
+                        AND are_submissions_created AND completed_at IS NOT NULL)))
+                OR (execution = 'TECHNICAL_FAILURE' AND failure_description IS NOT NULL
+                    AND failure_occurred_at IS NOT NULL AND completed_at IS NOT NULL
+                    AND completed_at = failure_occurred_at AND (are_diagnostics_complete OR NOT are_submissions_created))
+            );
+            ALTER TABLE ts_submission_to_task_validation_request ADD CONSTRAINT ck_ts_submission_to_task_validation_request_position CHECK (
+                position >= 0
+            );
+            ALTER TABLE ts_submission_to_task_validation_request ADD CONSTRAINT ck_ts_submission_to_task_validation_request_failure_score CHECK (
+                (failure IS NULL AND actual_score IS NULL)
+                OR (failure IS NOT NULL AND (
+                    (failure = 'SCORE_MISMATCH' AND actual_score IS NOT NULL)
+                    OR (failure = 'GRADING_FAILED' AND actual_score IS NULL)))
+            );
+            ALTER TABLE ts_diagnostic_report ADD CONSTRAINT ck_ts_diagnostic_report_position CHECK (
+                position >= 0
+            );
+            ALTER TABLE ts_diagnostic_report ADD CONSTRAINT ck_ts_diagnostic_report_severity CHECK (
+                severity IN ('INFO', 'WARNING', 'ERROR')
+            );
+            ALTER TABLE ts_diagnostic_report ADD CONSTRAINT ck_ts_diagnostic_report_reason CHECK (
+                reason IN ('UnknownElement', 'MalformedXml', 'MissingChild', 'MissingAttribute', 'InvalidAttributeValue', 'InvalidChildCount', 'MissingTimeLimit', 'MultipleTimeLimits', 'NegativeTimeLimit', 'ExcessiveTimeLimit', 'InvalidEventId', 'MissingScoreOutput')
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_diagnostic_report DROP CONSTRAINT ck_ts_diagnostic_report_reason;
+                ALTER TABLE ts_diagnostic_report DROP CONSTRAINT ck_ts_diagnostic_report_severity;
+                ALTER TABLE ts_diagnostic_report DROP CONSTRAINT ck_ts_diagnostic_report_position;
+                ALTER TABLE ts_submission_to_task_validation_request DROP CONSTRAINT ck_ts_submission_to_task_validation_request_failure_score;
+                ALTER TABLE ts_submission_to_task_validation_request DROP CONSTRAINT ck_ts_submission_to_task_validation_request_position;
+                ALTER TABLE ts_task_validation_request DROP CONSTRAINT ck_ts_task_validation_request_execution_state;
+            </sql>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>
 

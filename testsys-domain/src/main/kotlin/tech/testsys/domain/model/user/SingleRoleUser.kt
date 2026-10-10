@@ -34,7 +34,7 @@ sealed class SingleRoleUser(
 /**
  * Data of a [Participant].
  *
- * @property competition the competition the participant belongs to.
+ * @property competition the competition the participant belongs to; fixed on creation and ignored on update.
  * @since %CURRENT_VERSION%
  */
 data class ParticipantData(

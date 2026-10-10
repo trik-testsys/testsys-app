@@ -15,13 +15,15 @@ import tech.testsys.infra.database.internal.jpa.entity.task.DeveloperSolutionJpa
 import tech.testsys.infra.database.internal.jpa.repository.task.DeveloperSolutionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.SolutionJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.TaskJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.VersionBucketToTaskJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.DeveloperSolutionMapping
 import tech.testsys.infra.database.internal.utils.findByIdOrError
+import java.util.UUID
 
 /**
  * Persistence adapter of [DeveloperSolution] entities backed by [DeveloperSolutionJpaEntity].
- * The solution and the expected score are fixed on creation: [update] with another one throws
- * [UnsupportedOperationException].
+ * [update] rejects changes to the solution or expected score with [UnsupportedOperationException].
  *
  * @since %CURRENT_VERSION%
  */
@@ -31,6 +33,8 @@ class DeveloperSolutionPersistenceAdapter(
     jpaEntityRepository: DeveloperSolutionJpaEntityRepository,
     private val solutionJpaEntityRepository: SolutionJpaEntityRepository,
     private val fileDataJpaEntityRepository: FileDataJpaEntityRepository,
+    private val taskJpaEntityRepository: TaskJpaEntityRepository,
+    private val versionBucketToTaskJpaEntityRepository: VersionBucketToTaskJpaEntityRepository,
 ) : AbstractPersistenceAdapter<DeveloperSolutionData, DeveloperSolutionId, DeveloperSolution, DeveloperSolutionJpaEntity>(
     jpaEntityRepository,
 ),
@@ -40,6 +44,7 @@ class DeveloperSolutionPersistenceAdapter(
 
     @Transactional
     override fun save(data: DeveloperSolutionData): DeveloperSolution {
+        touchTaskOf(data.versionBucket.value)
         val jpaEntity = DeveloperSolutionMapping.toJpaEntity(data)
         val savedJpaEntity = jpaEntityRepository.save(jpaEntity)
 
@@ -50,6 +55,7 @@ class DeveloperSolutionPersistenceAdapter(
     @Transactional
     override fun update(entity: DeveloperSolution): DeveloperSolution {
         val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
+        touchTaskOf(currentJpaEntity.versionBucket)
         val solutionId = entity.data.solution.id.value
         entity.requireUnchanged("solution", solutionId == currentJpaEntity.solutionId, currentJpaEntity.versionBucket) {
             "from id=${currentJpaEntity.solutionId} to id=$solutionId"
@@ -71,11 +77,12 @@ class DeveloperSolutionPersistenceAdapter(
         return resourceVersionRepository.findFirstByVersionBucketOrderByCreatedAtDescIdDesc(versionBucket.value)?.let { assemble(it) }
     }
 
-    override fun assemble(jpaEntity: DeveloperSolutionJpaEntity) = DeveloperSolutionMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<DeveloperSolutionJpaEntity>): List<DeveloperSolution> =
+        rows.map { row -> DeveloperSolutionMapping.toDomain(row) }
 
     @Transactional(readOnly = true)
     override fun findVersionsByVersionBucket(versionBucket: VersionBucket): List<DeveloperSolution> =
-        resourceVersionRepository.findAllByVersionBucket(versionBucket.value).map { assemble(it) }
+        assembleAll(resourceVersionRepository.findAllByVersionBucket(versionBucket.value))
 
     @Transactional(readOnly = true)
     override fun existsByVersionBucket(versionBucket: VersionBucket): Boolean =
@@ -86,5 +93,18 @@ class DeveloperSolutionPersistenceAdapter(
         val row = jpaEntityRepository.findByIdOrNull(id.value)?.takeIf { it.versionBucket == versionBucket.value } ?: return null
         val solution = solutionJpaEntityRepository.findByIdOrError(row.solutionId)
         return StoredBlobRef(fileDataJpaEntityRepository.findByIdOrError(solution.fileDataId).storedFileName)
+    }
+
+    override fun removeRoot(id: DeveloperSolutionId, expectedVersion: Long?) {
+        val current = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        touchTaskOf(current.versionBucket)
+        super.removeRoot(id, expectedVersion)
+    }
+
+    /** Increments the version of the task the resource chain [versionBucket] is uploaded to, if there is one. */
+    private fun touchTaskOf(versionBucket: UUID) {
+        versionBucketToTaskJpaEntityRepository.findTaskIdByVersionBucket(versionBucket)?.let { taskId ->
+            touchRoot(taskJpaEntityRepository, taskId)
+        }
     }
 }

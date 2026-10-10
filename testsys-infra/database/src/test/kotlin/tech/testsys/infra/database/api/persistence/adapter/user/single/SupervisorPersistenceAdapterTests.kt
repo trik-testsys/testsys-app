@@ -62,6 +62,16 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     }
 
     @Test
+    fun `should increment the user version on an update without changes`() {
+        val saved = fixtures.supervisor()
+
+        val updated = repository.update(saved)
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(saved.id)).version)
+    }
+
+    @Test
     fun `should store the access code and its algorithm through save and update`() {
         val data = newData()
 
@@ -132,5 +142,17 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val found = repository.findByAccessToken(fixtures.unique("unknown"))
 
         assertNull(found)
+    }
+
+    @Test
+    fun `should find supervisors by ids with the same statement count for one and twenty ids`() {
+        val ids = List(20) { fixtures.supervisor().id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { supervisor -> supervisor.id })
+        assertEquals(ids.toSet(), twenty.map { supervisor -> supervisor.id }.toSet())
+        assertEquals(oneIdStatements, twentyIdsStatements)
     }
 }

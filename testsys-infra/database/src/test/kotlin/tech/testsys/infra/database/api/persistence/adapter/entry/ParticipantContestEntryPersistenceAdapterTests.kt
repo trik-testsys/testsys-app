@@ -256,8 +256,9 @@ class ParticipantContestEntryPersistenceAdapterTests :
 
     @Test
     fun `should retain entry when competition contest links are removed and restored`() {
-        val competition = fixtures.competition()
-        val participant = fixtures.participant(competition)
+        val participant = fixtures.participant(fixtures.competition())
+        // Saving the participant incremented the competition version, so the competition is read after it.
+        val competition = assertNotNull(competitionRepository.findById(participant.data.competition.id))
         val contest = fixtures.contest()
         val assigned = competitionRepository.update(competition.withData { contests(listOf(contest.id.value)) })
         val entry = fixtures.participantContestEntry(participant = participant, contest = contest)

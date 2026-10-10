@@ -19,22 +19,24 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.AbstractPersistenceAdapter
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.group.ClassJpaEntity
+import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.group.ClassInviteJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.ClassJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.ContestToClassJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.StudentToClassJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.group.ClassInviteMapping
 import tech.testsys.infra.database.internal.mapping.group.ClassMapping
-import tech.testsys.infra.database.internal.utils.findByIdOrError
+import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.syncJoinTable
 import java.time.Instant
 import org.springframework.data.domain.Sort as JpaSort
 
 /**
  * Persistence adapter of [Class] entities backed by [ClassJpaEntity].
- * Student and contest membership is synced through the join tables on save and update and dropped on remove;
- * the invite reference is fixed on creation and its invite is removed together with the class.
+ * Enrolling students also guards their user versions against concurrent removal of the student role.
  *
  * @since %CURRENT_VERSION%
  */
@@ -45,6 +47,7 @@ class ClassPersistenceAdapter(
     private val studentToClassJpaEntityRepository: StudentToClassJpaEntityRepository,
     private val contestToClassJpaEntityRepository: ContestToClassJpaEntityRepository,
     private val classInviteJpaEntityRepository: ClassInviteJpaEntityRepository,
+    private val userJpaEntityRepository: UserJpaEntityRepository,
 ) : AbstractPersistenceAdapter<ClassData, ClassId, Class, ClassJpaEntity>(jpaEntityRepository),
     ClassRepository {
 
@@ -72,7 +75,7 @@ class ClassPersistenceAdapter(
         val pageable = PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders))
         val page = classJpaEntityRepository.findAll(specification, pageable)
         return Page(
-            content = page.content.map { entity -> assemble(entity) },
+            content = assembleAll(page.content),
             pagination = pagination,
             totalElements = page.totalElements,
         )
@@ -87,6 +90,7 @@ class ClassPersistenceAdapter(
         val studentAssociations = ClassMapping.toStudentAssociations(classId, data.students.ids)
         val contestAssociations = ClassMapping.toContestAssociations(classId, data.contests.ids)
 
+        touchStudents(studentAssociations.map { association -> association.id.studentId })
         studentToClassJpaEntityRepository.saveAll(studentAssociations)
         contestToClassJpaEntityRepository.saveAll(contestAssociations)
 
@@ -108,9 +112,9 @@ class ClassPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Class): Class {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val updatedJpaEntity = ClassMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            ClassMapping.toJpaEntity(entity, current)
+        }
 
         val classId = savedJpaEntity.requireId()
 
@@ -123,7 +127,10 @@ class ClassPersistenceAdapter(
 
     @Transactional
     override fun addStudent(classId: ClassId, studentId: MultipleRoleUserId): Class {
-        val jpaEntity = jpaEntityRepository.findByIdOrError(classId.value)
+        val jpaEntity = touchRoot(jpaEntityRepository, classId.value, changesRootData = true)
+        // Removing the student role checks the classes of the student after touching the user row, so a concurrent
+        // removal and this enrolment conflict on the user version.
+        touchRoot(userJpaEntityRepository, studentId.value)
         val association = ClassMapping.toStudentAssociations(classId.value, listOf(studentId)).single()
         if (!studentToClassJpaEntityRepository.existsById(association.id)) {
             studentToClassJpaEntityRepository.saveAndFlush(association)
@@ -131,29 +138,36 @@ class ClassPersistenceAdapter(
         return assemble(jpaEntity)
     }
 
-    @Transactional
-    override fun removeById(id: ClassId) {
-        val jpaEntity = jpaEntityRepository.findByIdOrNull(id.value) ?: return
+    override fun removeRoot(id: ClassId, expectedVersion: Long?) {
+        jpaEntityRepository.findByIdOrNull(id.value) ?: return
+        val jpaEntity = touchRoot(jpaEntityRepository, id.value, expectedVersion, changesRootData = true)
         val classId = jpaEntity.requireId()
         studentToClassJpaEntityRepository.deleteAll(studentToClassJpaEntityRepository.findAllByClassId(classId))
         contestToClassJpaEntityRepository.deleteAll(contestToClassJpaEntityRepository.findAllByClassId(classId))
         jpaEntityRepository.delete(jpaEntity)
         jpaEntityRepository.flush()
-        classInviteJpaEntityRepository.deleteById(jpaEntity.inviteId)
+        classInviteJpaEntityRepository.delete(touchRoot(classInviteJpaEntityRepository, jpaEntity.inviteId, changesRootData = true))
     }
 
-    @Transactional
-    override fun removeByIds(ids: List<ClassId>) = ids.forEach(::removeById)
+    override fun assembleAll(rows: List<ClassJpaEntity>): List<Class> {
+        val classIds = rows.map { row -> row.requireId() }
+        val studentIds = findLinkedIds(
+            ownerIds = classIds,
+            find = studentToClassJpaEntityRepository::findLinkedIdsByClassIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> MultipleRoleUserId(link.linkedId) },
+        )
+        val contestIds = findLinkedIds(
+            ownerIds = classIds,
+            find = contestToClassJpaEntityRepository::findLinkedIdsByClassIdIn,
+            ownerIdOf = LinkedIdRow::ownerId,
+            linkedIdOf = { link -> ContestId(link.linkedId) },
+        )
 
-    override fun assemble(jpaEntity: ClassJpaEntity): Class {
-        val classId = jpaEntity.requireId()
-        val studentIds = studentToClassJpaEntityRepository.findAllByClassId(classId)
-            .map { MultipleRoleUserId(it.id.studentId) }
-        val contestIds = contestToClassJpaEntityRepository.findAllByClassId(classId)
-            .map { ContestId(it.id.contestId) }
-
-        val domainEntity = ClassMapping.toDomain(jpaEntity, studentIds, contestIds)
-        return domainEntity
+        return rows.map { row ->
+            val classId = row.requireId()
+            ClassMapping.toDomain(jpaEntity = row, studentIds = studentIds.getValue(classId), contestIds = contestIds.getValue(classId))
+        }
     }
 
     private fun syncStudents(classId: Long, target: List<MultipleRoleUserId>) = syncJoinTable(
@@ -162,8 +176,17 @@ class ClassPersistenceAdapter(
         keyOf = { MultipleRoleUserId(it.id.studentId) },
         buildAssociation = { ClassMapping.toStudentAssociations(classId, listOf(it)).single() },
         deleteAll = { studentToClassJpaEntityRepository.deleteAll(it) },
-        saveAll = { studentToClassJpaEntityRepository.saveAll(it) },
+        saveAll = { associations ->
+            touchStudents(associations.map { association -> association.id.studentId })
+            studentToClassJpaEntityRepository.saveAll(associations)
+        },
     )
+
+    /**
+     * Loads and guard-writes the users [studentIds] in batches so concurrent removal of their student role conflicts.
+     */
+    private fun touchStudents(studentIds: List<Long>) =
+        touchRoots(userJpaEntityRepository, studentIds, userJpaEntityRepository::incrementVersions)
 
     private fun syncContests(classId: Long, target: List<ContestId>) = syncJoinTable(
         existing = contestToClassJpaEntityRepository.findAllByClassId(classId),

@@ -12,7 +12,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.EmailChangeRequestJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.user.EmailChangeRequestJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.EmailChangeRequestMapping
-import tech.testsys.infra.database.internal.utils.findByIdOrError
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Persistence adapter of [EmailChangeRequest] entities backed by [EmailChangeRequestJpaEntity].
@@ -40,9 +40,9 @@ class EmailChangeRequestPersistenceAdapter(
 
     @Transactional
     override fun update(entity: EmailChangeRequest): EmailChangeRequest {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val updatedJpaEntity = EmailChangeRequestMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            EmailChangeRequestMapping.toJpaEntity(entity, current)
+        }
 
         return assemble(savedJpaEntity)
     }
@@ -50,5 +50,5 @@ class EmailChangeRequestPersistenceAdapter(
     @Transactional(readOnly = true)
     override fun findByUser(user: MultipleRoleUserId): EmailChangeRequest? = requests.findByUserId(user.value)?.let { assemble(it) }
 
-    override fun assemble(jpaEntity: EmailChangeRequestJpaEntity) = EmailChangeRequestMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<EmailChangeRequestJpaEntity>) = rows.map { row -> EmailChangeRequestMapping.toDomain(row) }
 }

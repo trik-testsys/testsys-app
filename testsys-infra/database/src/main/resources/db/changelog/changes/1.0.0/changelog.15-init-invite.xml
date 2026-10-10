@@ -65,4 +65,25 @@
                                  constraintName="fk_ts_community_developer_invite_id"/>
     </changeSet>
 
+    <changeSet id="1.0.0-15-init-invite-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_class_invite ADD CONSTRAINT ck_ts_class_invite_code_hash_algorithm CHECK (
+                code_hash_algorithm IN ('IDENTITY')
+            );
+            ALTER TABLE ts_community_invite ADD CONSTRAINT ck_ts_community_invite_code_hash_algorithm CHECK (
+                code_hash_algorithm IN ('IDENTITY')
+            );
+            ALTER TABLE ts_community_invite ADD CONSTRAINT ck_ts_community_invite_role CHECK (
+                role IN ('MANAGER', 'DEVELOPER')
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_community_invite DROP CONSTRAINT ck_ts_community_invite_role;
+                ALTER TABLE ts_community_invite DROP CONSTRAINT ck_ts_community_invite_code_hash_algorithm;
+                ALTER TABLE ts_class_invite DROP CONSTRAINT ck_ts_class_invite_code_hash_algorithm;
+            </sql>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

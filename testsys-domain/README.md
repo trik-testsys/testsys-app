@@ -34,7 +34,7 @@
   `author`, `solution`, `task` и `kind` со всеми его полями у Посылки; `judge` и `submission`
   у Судейского вердикта (`JudgmentOrder`); `versionBucket` у Полигона, Условия, Упражнения и Авторского
   Решения; `invite` у Класса; `managerInvite` и `developerInvite` у Сообщества; `email` у запроса регистрации
-  (`RegistrationRequest`); `user` у запроса смены почты (`EmailChangeRequest`).
+  (`RegistrationRequest`); `user` у запроса смены почты (`EmailChangeRequest`); `competition` у Участника.
   `save` их записывает, а `update` игнорирует значение из переданной сущности и оставляет сохранённое.
   В KDoc такое поле помечено «fixed on creation and ignored on update».
 - Ещё часть полей фиксируется при создании так, что `update` с другим значением падает: `file` у Полигона,
@@ -95,6 +95,23 @@
 прикрепления выполняют операции; `TaskRepository.update` допускает произвольное изменение набора. Требования
 к принадлежности и прикреплению Ресурсов — в разделе `testsys.entity.task` в
 [features.md](../docs/domain/features.md).
+
+### Ограничения текста
+
+[`TextLimits`](src/main/kotlin/tech/testsys/domain/model/TextLimits.kt) проверяет длину названий и имён файлов
+в кодовых точках Unicode. Пределы определены в
+[testsys.entity.textLimits](../docs/domain/features.md#testsysentitytextlimits-implemented).
+Операции и инфраструктурные адаптеры вызывают эти проверки до сохранения.
+
+### Содержимое файлов
+
+`FileData` в [Common.kt](src/main/kotlin/tech/testsys/domain/model/task/Common.kt) содержит имя файла и
+`FileContent`: байты `Inline` либо ссылку `Stored` с видом хранилища `FileStorageKind`.
+Конструктор с `ByteArray` создаёт `Inline`; равенство `FileData` остаётся ссылочным.
+Билдеры принимают готовый файл, а `withData` переносит его без чтения.
+
+Порт `FileContentReader` из [File.kt](src/main/kotlin/tech/testsys/domain/contract/File.kt) явно читает байты.
+Ссылка не зависит от транзакции; техническая ошибка отсутствующего блоба возникает при чтении.
 
 ### Пользователи
 

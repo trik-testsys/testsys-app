@@ -1,7 +1,5 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
-import jakarta.persistence.EntityManagerFactory
-import org.hibernate.SessionFactory
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -37,9 +35,6 @@ class SubmissionPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
 
     @Autowired
     private lateinit var jdbcTemplate: JdbcTemplate
-
-    @Autowired
-    private lateinit var entityManagerFactory: EntityManagerFactory
 
     @Test
     fun `should count submissions in every grading state and take the best polygon total`() {
@@ -281,18 +276,5 @@ class SubmissionPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
             Timestamp.from(Instant.parse(issuedAt)),
             order.id.value,
         )
-    }
-
-    private fun <T> withStatementCount(block: () -> T): Pair<T, Long> {
-        val statistics = entityManagerFactory.unwrap(SessionFactory::class.java).statistics
-        val wasEnabled = statistics.isStatisticsEnabled
-        statistics.isStatisticsEnabled = true
-        statistics.clear()
-        return try {
-            val result = block()
-            result to statistics.prepareStatementCount
-        } finally {
-            statistics.isStatisticsEnabled = wasEnabled
-        }
     }
 }

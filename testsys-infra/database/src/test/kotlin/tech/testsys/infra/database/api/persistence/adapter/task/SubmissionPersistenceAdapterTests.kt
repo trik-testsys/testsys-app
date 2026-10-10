@@ -3,6 +3,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.jdbc.core.JdbcTemplate
 import tech.testsys.domain.builder.api.submission
 import tech.testsys.domain.builder.api.submissionData
@@ -21,6 +22,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.SubmissionJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.TrikStudioVersionJpaEntityRepository
 import tech.testsys.infra.database.internal.utils.findIdByTagOrError
+import java.sql.SQLException
 import java.sql.Timestamp
 import java.time.Instant
 import kotlin.test.assertEquals
@@ -259,17 +261,16 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     }
 
     @Test
-    fun `should ignore a legacy version column when reading grading`() {
+    fun `should reject a separate TRIK Studio version for grading`() {
         val contestId = fixtures.contest().id.value
         val saved = repository.save(gradingSubmissionData(contestId))
         val version = fixtures.trikStudioVersion()
         val versionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(version.version)
-        jdbcTemplate.update("update ts_submission set trik_studio_version_id = ? where id = ?", versionId, saved.id.value)
+        val failure = assertFailsWith<DataIntegrityViolationException> {
+            jdbcTemplate.update("update ts_submission set trik_studio_version_id = ? where id = ?", versionId, saved.id.value)
+        }
 
-        val found = assertNotNull(repository.findById(saved.id))
-
-        assertSameEntity(saved, found)
-        assertEquals(contestId, assertIs<SubmissionKind.Grading>(found.data.kind).contest.id.value)
+        assertEquals("23514", (failure.mostSpecificCause as? SQLException)?.sqlState)
     }
 
     @Test
@@ -317,6 +318,48 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     }
 
     @Test
+    fun `should find submissions by ids with the same statement count for one and twenty ids`() {
+        val version = fixtures.trikStudioVersion()
+        val judge = fixtures.judge()
+        val saved = List(20) { repository.save(developerSolutionTestData(version)) }
+        val orderIds = saved.map { submission -> fixtures.judgmentOrder(judge = judge, submission = submission).id }
+        val ids = saved.map { submission -> submission.id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { submission -> submission.id })
+        assertEquals(ids.toSet(), twenty.map { submission -> submission.id }.toSet())
+        assertEquals(
+            ids.zip(orderIds).toMap(),
+            twenty.associate { submission -> submission.id to submission.data.judgmentOrders.ids.single() },
+        )
+        assertEquals(
+            List(20) { version },
+            twenty.map { submission -> assertIs<SubmissionKind.DeveloperSolutionTest>(submission.data.kind).trikStudioVersion },
+        )
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    @Test
+    fun `should find contest submissions of a task with the same statement count for one and twenty submissions`() {
+        val contestId = fixtures.contest().id.value
+        val oneSubmissionTask = fixtures.task()
+        val twentySubmissionsTask = fixtures.task()
+        val single = repository.save(gradingSubmissionData(contestId, oneSubmissionTask.id.value))
+        val twentyIds = List(20) {
+            repository.save(gradingSubmissionData(contestId, twentySubmissionsTask.id.value)).id
+        }
+
+        val (one, oneSubmissionStatements) = withStatementCount { repository.findGradingByTaskId(oneSubmissionTask.id) }
+        val (twenty, twentySubmissionsStatements) = withStatementCount { repository.findGradingByTaskId(twentySubmissionsTask.id) }
+
+        assertEquals(listOf(single.id), one.map { submission -> submission.id })
+        assertEquals(twentyIds, twenty.map { submission -> submission.id })
+        assertEquals(oneSubmissionStatements, twentySubmissionsStatements)
+    }
+
+    @Test
     fun `should find no contest submissions of a task with only author solution tests`() {
         val task = fixtures.task()
         repository.save(developerSolutionTestData(fixtures.trikStudioVersion(), task.id.value))
@@ -338,6 +381,39 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
 
     @Nested
     inner class FindGradingByContextTests {
+
+        @Test
+        fun `should assemble contexts of one and twenty submissions with the same statement count`() {
+            val author = fixtures.student()
+            val contest = fixtures.contest()
+            val oneTask = fixtures.task()
+            val twentyTask = fixtures.task()
+            val single = fixtures.gradingSubmission(authorId = author.id, contest = contest, task = oneTask)
+            val saved =
+                List(20) { fixtures.gradingSubmission(authorId = author.id, contest = contest, task = twentyTask) }
+            val judge = fixtures.judge()
+            val singleOrder = fixtures.judgmentOrder(judge = judge, submission = single).id
+            val orders = saved.map { submission -> fixtures.judgmentOrder(judge = judge, submission = submission).id }
+
+            val (one, oneStatements) = withStatementCount {
+                repository.findGradingByContext(authorId = author.id, taskId = oneTask.id, contestId = contest.id)
+            }
+            val (twenty, twentyStatements) = withStatementCount {
+                repository.findGradingByContext(authorId = author.id, taskId = twentyTask.id, contestId = contest.id)
+            }
+
+            assertEquals(listOf(single.id), one.map { submission -> submission.id })
+            assertEquals(listOf(singleOrder), one.single().data.judgmentOrders.ids)
+            assertEquals(saved.map { submission -> submission.id }, twenty.map { submission -> submission.id })
+            assertEquals(orders, twenty.map { submission -> submission.data.judgmentOrders.ids.single() })
+            assertEquals(List(20) { author.id }, twenty.map { submission -> submission.data.author.id })
+            assertEquals(List(20) { twentyTask.id }, twenty.map { submission -> submission.data.task.id })
+            assertEquals(
+                List(20) { contest.id },
+                twenty.map { submission -> assertIs<SubmissionKind.Grading>(submission.data.kind).contest.id },
+            )
+            assertEquals(oneStatements, twentyStatements)
+        }
 
         @Test
         fun `should find grading submissions of the author for the task in the contest ordered by creation time`() {

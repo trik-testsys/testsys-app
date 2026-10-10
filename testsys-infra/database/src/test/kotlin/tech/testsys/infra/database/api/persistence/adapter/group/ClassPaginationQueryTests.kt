@@ -31,6 +31,41 @@ class ClassPaginationQueryTests : DatabaseIntegrationTests() {
     @Autowired
     private lateinit var jpaEntityRepository: ClassJpaEntityRepository
 
+    @Test
+    fun `should assemble pages of one and twenty classes with the same statement count`() {
+        val owner = fixtures.manager().id
+        val students = listOf(fixtures.student().id, fixtures.student().id)
+        val contest = fixtures.contest().id
+        val ids = List(21) {
+            val inviteId = fixtures.classInvite().id
+            repository.save(
+                classData {
+                    this.owner = owner
+                    name = fixtures.unique("Class")
+                    description = "Pagination query test"
+                    this.students = students.toMutableList()
+                    contests = mutableListOf(contest)
+                    invite = inviteId
+                },
+            ).id
+        }
+
+        val (one, oneStatements) = withStatementCount {
+            repository.findAvailableToManager(ownerId = owner, pagination = Pagination(page = 0, size = 1))
+        }
+        val (twenty, twentyStatements) = withStatementCount {
+            repository.findAvailableToManager(ownerId = owner, pagination = Pagination(page = 0, size = 20))
+        }
+
+        assertEquals(ids.take(1), one.content.map { studyClass -> studyClass.id })
+        assertEquals(ids.take(20), twenty.content.map { studyClass -> studyClass.id })
+        assertEquals(21L, one.totalElements)
+        assertEquals(21L, twenty.totalElements)
+        assertEquals(List(20) { students.toSet() }, twenty.content.map { studyClass -> studyClass.data.students.ids.toSet() })
+        assertEquals(List(20) { listOf(contest) }, twenty.content.map { studyClass -> studyClass.data.contests.ids })
+        assertEquals(oneStatements, twentyStatements)
+    }
+
     @ParameterizedTest
     @ValueSource(strings = ["alpha", "ALPHA", "%", "_", "\\", "  "])
     fun `should match literal case insensitive substrings and preserve spaces`(substring: String) {

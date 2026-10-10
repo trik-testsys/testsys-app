@@ -1,12 +1,13 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.argThat
 import org.mockito.Mockito.doThrow
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean
+import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
@@ -15,7 +16,10 @@ import tech.testsys.domain.contract.persistence.repository.TaskValidationRequest
 import tech.testsys.domain.model.task.*
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.repository.task.DiagnosticReportJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.task.SubmissionJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.SubmissionToTaskValidationRequestJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.task.TestDiagnosticResultJpaEntityRepository
 import java.time.Instant
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
@@ -23,9 +27,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 @OptIn(InternalDatabaseApi::class)
-@TestPropertySource(
-    properties = ["spring.datasource.url=jdbc:h2:mem:testsys_task_validation;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1"],
-)
 class TaskValidationRequestPersistenceAdapterTests :
     UpdatablePersistenceAdapterContractTests<TaskValidationRequestData, TaskValidationRequestId, TaskValidationRequest>() {
     @Autowired
@@ -35,6 +36,9 @@ class TaskValidationRequestPersistenceAdapterTests :
     private lateinit var taskRepository: TaskRepository
 
     @Autowired
+    private lateinit var transactions: TransactionOperations
+
+    @Autowired
     private lateinit var submissionRows: SubmissionJpaEntityRepository
 
     @MockitoSpyBean
@@ -42,6 +46,15 @@ class TaskValidationRequestPersistenceAdapterTests :
 
     @Autowired
     private lateinit var contestRepository: ContestRepository
+
+    @Autowired
+    private lateinit var results: TestDiagnosticResultJpaEntityRepository
+
+    @Autowired
+    private lateinit var reports: DiagnosticReportJpaEntityRepository
+
+    @Autowired
+    private lateinit var submissionLinks: SubmissionToTaskValidationRequestJpaEntityRepository
 
     @Test
     fun `should preserve shared programs distinct expectations and deterministic submission order on creation and repeat`() {
@@ -254,6 +267,48 @@ class TaskValidationRequestPersistenceAdapterTests :
         assertSameData(stopped, repository.recordTechnicalFailure(request.id, failure))
     }
 
+    @Test
+    fun `should increment the task version when an active request is found or created`() {
+        val task = fixtures.workingTask()
+
+        repository.findOrCreateActive(task.id, task.data.owner.id)
+
+        assertEquals(requireNotNull(task.version).value + 1, requireNotNull(reloaded(task).version).value)
+    }
+
+    @Test
+    fun `should increment the task version when a request is saved`() {
+        val data = newData()
+        val task = taskRepository.load(data.task)
+
+        repository.save(data)
+
+        assertEquals(requireNotNull(task.version).value + 1, requireNotNull(reloaded(task).version).value)
+    }
+
+    @Test
+    fun `should increment the task version when a request is removed`() {
+        val request = repository.save(newData())
+        val task = taskRepository.load(request.data.task)
+
+        repository.removeById(request.id)
+
+        assertNull(repository.findById(request.id))
+        assertEquals(requireNotNull(task.version).value + 1, requireNotNull(reloaded(task).version).value)
+    }
+
+    @Test
+    fun `should keep the request version when a saved diagnostic result is written again`() {
+        val request = repository.save(newData())
+        val result = testDiagnosticResult { testId = request.data.snapshot.tests.ids.single() }
+        repository.saveDiagnosticProgress(request.id, result)
+        val written = requireNotNull(repository.findById(request.id))
+
+        repository.saveDiagnosticProgress(request.id, result)
+
+        assertEquals(written.version, requireNotNull(repository.findById(request.id)).version)
+    }
+
     override fun newData(): TaskValidationRequestData {
         val task = fixtures.task()
         val test = fixtures.polygon()
@@ -356,14 +411,14 @@ class TaskValidationRequestPersistenceAdapterTests :
         val committedTest = fixtures.polygon()
         val exercise = fixtures.exercise()
         val statement = fixtures.statement()
-        val editable = taskRepository.update(
+        taskRepository.update(
             task.withData {
                 content.new { tests = mutableListOf(workingTest.id) }
             },
         )
         val request = repository.findOrCreateActive(task.id, task.data.owner.id)
         taskRepository.update(
-            editable.withData {
+            reloaded(task).withData {
                 content.committed {
                     tests = mutableListOf(committedTest.id)
                     exercises = mutableListOf(exercise.id)
@@ -447,7 +502,7 @@ class TaskValidationRequestPersistenceAdapterTests :
         val author = fixtures.developerSolution()
         val version = fixtures.trikStudioVersion()
         val committedVersion = fixtures.trikStudioVersion()
-        val editable = taskRepository.update(
+        taskRepository.update(
             task.withData {
                 content.uncommitted(
                     wipBuilder = {
@@ -466,7 +521,7 @@ class TaskValidationRequestPersistenceAdapterTests :
         )
         val first = repository.findOrCreateActive(task.id, task.data.owner.id)
         taskRepository.update(
-            editable.withData {
+            reloaded(task).withData {
                 content.new { tests = mutableListOf(newTest.id) }
             },
         )
@@ -489,7 +544,7 @@ class TaskValidationRequestPersistenceAdapterTests :
         val first = repository.findOrCreateActive(task.id, task.data.owner.id)
         val unrelated = fixtures.polygon()
         taskRepository.update(
-            task.withData {
+            reloaded(task).withData {
                 name = fixtures.unique("Renamed")
                 description = "Updated"
                 uploadedResources += unrelated.data.versionBucket
@@ -507,9 +562,9 @@ class TaskValidationRequestPersistenceAdapterTests :
         val task = fixtures.workingTask()
         val first = fixtures.polygon()
         val second = fixtures.polygon()
-        val editable = taskRepository.update(task.withData { content.new { tests = mutableListOf(first.id, second.id) } })
+        taskRepository.update(task.withData { content.new { tests = mutableListOf(first.id, second.id) } })
         val request = repository.findOrCreateActive(task.id, task.data.owner.id)
-        taskRepository.update(editable.withData { content.new { tests = mutableListOf(second.id, first.id) } })
+        taskRepository.update(reloaded(task).withData { content.new { tests = mutableListOf(second.id, first.id) } })
 
         val repeated = repository.findOrCreateActive(task.id, task.data.owner.id)
 
@@ -543,15 +598,17 @@ class TaskValidationRequestPersistenceAdapterTests :
                 Callable {
                     gate.countDown()
                     check(gate.await(10, TimeUnit.SECONDS))
-                    taskRepository.update(
-                        editable.withData {
-                            content.new {
-                                tests = mutableListOf(newTest.id)
-                                developerSolutions = mutableListOf(newAuthor.id)
-                                supportedTrikStudioVersions = mutableListOf(newVersion)
-                            }
-                        },
-                    )
+                    transactions.execute {
+                        taskRepository.update(
+                            reloaded(editable).withData {
+                                content.new {
+                                    tests = mutableListOf(newTest.id)
+                                    developerSolutions = mutableListOf(newAuthor.id)
+                                    supportedTrikStudioVersions = mutableListOf(newVersion)
+                                }
+                            },
+                        )
+                    }
                 },
             )
             val create = pool.submit(
@@ -578,6 +635,45 @@ class TaskValidationRequestPersistenceAdapterTests :
         )
     }
 
+    // https://github.com/trik-testsys/testsys-app/pull/26
+    @Test
+    @Tag("regression")
+    fun `should retry task editing with a fresh version when request creation commits after its read`() {
+        val task = fixtures.workingTask()
+        val oldTest = fixtures.polygon()
+        val newTest = fixtures.polygon()
+        taskRepository.update(task.withData { content.new { tests = mutableListOf(oldTest.id) } })
+        val taskRead = CountDownLatch(1)
+        val requestCreated = CountDownLatch(1)
+        val attemptedVersions = mutableListOf<Long>()
+        val executor = Executors.newSingleThreadExecutor()
+
+        val request = executor.use { pool ->
+            val edit = pool.submit(
+                Callable {
+                    transactions.execute {
+                        val current = reloaded(task)
+                        attemptedVersions += requireNotNull(current.version).value
+                        taskRead.countDown()
+                        check(requestCreated.await(10, TimeUnit.SECONDS))
+                        taskRepository.update(current.withData { content.new { tests = mutableListOf(newTest.id) } })
+                    }
+                },
+            )
+            check(taskRead.await(10, TimeUnit.SECONDS))
+            val created = repository.findOrCreateActive(task.id, task.data.owner.id)
+            requestCreated.countDown()
+            edit.get()
+            created
+        }
+
+        assertEquals(2, attemptedVersions.size)
+        assertNotEquals(attemptedVersions[0], attemptedVersions[1])
+        assertEquals(listOf(oldTest.id), request.data.snapshot.tests.ids)
+        assertEquals(listOf(newTest.id), assertInstanceOf(TaskContent.New::class.java, reloaded(task).data.content).wip.tests.ids)
+        assertEquals(listOf(oldTest.id), repository.findById(request.id)?.data?.snapshot?.tests?.ids)
+    }
+
     @Test
     fun `should retain partial progress without exposing a completed diagnostic stage`() {
         val request = repository.save(newData())
@@ -588,7 +684,7 @@ class TaskValidationRequestPersistenceAdapterTests :
 
         val stored = requireNotNull(repository.findById(request.id))
         assertEquals(TaskValidationExecution.PendingDiagnostics, stored.data.execution)
-        assertEquals(request.version, stored.version)
+        assertEquals(requireNotNull(request.version).value + 1, requireNotNull(stored.version).value)
         assertEquals(listOf(result), repository.findDiagnosticProgress(request.id))
         assertEquals(TaskValidationExecution.PendingDiagnostics, repository.startDiagnostics(request.id)?.data?.execution)
     }
@@ -674,6 +770,194 @@ class TaskValidationRequestPersistenceAdapterTests :
         assertNull(repository.startDiagnostics(request.id))
         assertNotEquals(request.id, repository.findOrCreateActive(editable.id, editable.data.owner.id).id)
         assertEquals(2, repository.findHistory(task.id).size)
+    }
+
+    @Test
+    fun `should find requests by ids with the same statement count for one and twenty ids`() {
+        val data = newData()
+        val testId = data.snapshot.tests.ids.single()
+        val submissionId = fixtures.submission().id
+        val created = taskValidationRequestData {
+            task = data.task.id
+            requestedBy = data.requestedBy.id
+            snapshot = data.snapshot
+            execution.submissionsCreated {
+                diagnostics = mutableListOf(reportedResult(testId))
+                submissions = mutableListOf(submissionId)
+            }
+        }
+        val ids = List(20) { repository.save(created).id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { request -> request.id })
+        assertEquals(ids.toSet(), twenty.map { request -> request.id }.toSet())
+        assertEquals(
+            List(20) { listOf(reportedResult(testId)) to listOf(submissionId) },
+            twenty.map { request ->
+                val state =
+                    assertInstanceOf(TaskValidationExecution.SubmissionsCreated::class.java, request.data.execution)
+                state.diagnostics to state.submissions.ids
+            },
+        )
+        assertEquals(
+            List(20) { data.snapshot.supportedTrikStudioVersions },
+            twenty.map { request -> request.data.snapshot.supportedTrikStudioVersions },
+        )
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    @Test
+    fun `should accept the task token after bulk deletion of its request in the same transaction`() {
+        val request = readyRequest()
+        val taskId = request.data.task.id
+        val initialVersion = requireNotNull(taskRepository.findById(taskId)?.version).value
+
+        val updated = transactions.execute {
+            val task = requireNotNull(taskRepository.findById(taskId))
+            repository.removeById(request.id)
+            taskRepository.update(task.withData { name = "Renamed after removing request" })
+        }
+
+        val stored = requireNotNull(taskRepository.findById(taskId))
+        assertEquals("Renamed after removing request", stored.data.name)
+        assertEquals(initialVersion + 2, requireNotNull(stored.version).value)
+        assertEquals(stored.version, updated.version)
+        assertNull(repository.findById(request.id))
+    }
+
+    @Test
+    fun `should find one and twenty active requests with the same statement count`() {
+        val data = newData()
+        val testId = data.snapshot.tests.ids.single()
+        val submissionId = fixtures.submission().id
+        val created = taskValidationRequestData {
+            task = data.task.id
+            requestedBy = data.requestedBy.id
+            snapshot = data.snapshot
+            execution.submissionsCreated {
+                diagnostics = mutableListOf(reportedResult(testId))
+                submissions = mutableListOf(submissionId)
+            }
+        }
+        val first = repository.save(created)
+        val (one, oneRequestStatements) = withStatementCount { repository.findActive() }
+        val ids = listOf(first.id) + List(19) { repository.save(created).id }
+
+        val (twenty, twentyRequestsStatements) = withStatementCount { repository.findActive() }
+
+        assertEquals(listOf(first.id), one.map { request -> request.id })
+        assertEquals(ids, twenty.map { request -> request.id })
+        assertEquals(List(20) { first.data.snapshot.tests.ids }, twenty.map { request -> request.data.snapshot.tests.ids })
+        assertEquals(
+            List(20) {
+                data.snapshot.developerSolutions.map { input -> Triple(input.developerSolution.id, input.solution.id, input.expectedScore) }
+            },
+            twenty.map { request ->
+                request.data.snapshot.developerSolutions.map { input ->
+                    Triple(input.developerSolution.id, input.solution.id, input.expectedScore)
+                }
+            },
+        )
+        assertEquals(
+            List(20) { first.data.snapshot.supportedTrikStudioVersions },
+            twenty.map { request -> request.data.snapshot.supportedTrikStudioVersions },
+        )
+        assertEquals(
+            List(20) { listOf(reportedResult(testId)) to listOf(submissionId) },
+            twenty.map { request ->
+                val state =
+                    assertInstanceOf(TaskValidationExecution.SubmissionsCreated::class.java, request.data.execution)
+                state.diagnostics to state.submissions.ids
+            },
+        )
+        assertEquals(oneRequestStatements, twentyRequestsStatements)
+    }
+
+    @Test
+    fun `should delete diagnostic results reports and submission links together with the removed request`() {
+        val data = newData()
+        val testId = data.snapshot.tests.ids.single()
+        val submissionId = fixtures.submission().id
+        val saved = repository.save(
+            taskValidationRequestData {
+                task = data.task.id
+                requestedBy = data.requestedBy.id
+                snapshot = data.snapshot
+                execution.submissionsCreated {
+                    diagnostics = mutableListOf(reportedResult(testId))
+                    submissions = mutableListOf(submissionId)
+                }
+            },
+        )
+
+        repository.removeById(saved.id)
+
+        val requestId = saved.id.value
+        assertNull(repository.findById(saved.id))
+        assertEquals(emptyList<Long>(), results.findAllByIdRequestId(requestId).map { result -> result.id.testId })
+        assertEquals(
+            emptyList<Int>(),
+            reports.findAllByRequestIdAndTestIdOrderByPositionAsc(requestId, testId.value).map { report -> report.position },
+        )
+        assertEquals(
+            emptyList<Long>(),
+            submissionLinks.findAllByIdRequestIdOrderByPositionAsc(requestId).map { link -> link.id.submissionId },
+        )
+        assertEquals(submissionId, savedSubmissions.findById(submissionId)?.id)
+    }
+
+    @Test
+    fun `should find the history with the same statement count for one and twenty requests`() {
+        val oneRequestData = newData()
+        val twentyRequestsData = newData()
+        val single = repository.save(oneRequestData).id
+        val twentyIds = List(20) { repository.save(twentyRequestsData).id }
+
+        val (one, oneRequestStatements) = withStatementCount { repository.findHistory(oneRequestData.task.id) }
+        val (twenty, twentyRequestsStatements) = withStatementCount { repository.findHistory(twentyRequestsData.task.id) }
+
+        assertEquals(listOf(single), one.map { request -> request.id })
+        assertEquals(twentyIds, twenty.map { request -> request.id })
+        assertEquals(oneRequestStatements, twentyRequestsStatements)
+    }
+
+    @Test
+    fun `should find diagnostic progress with the same statement count for one and twenty polygons`() {
+        val onePolygonRequest = requestWithDiagnostics(polygonCount = 1)
+        val twentyPolygonsRequest = requestWithDiagnostics(polygonCount = 20)
+
+        val (one, onePolygonStatements) = withStatementCount { repository.findDiagnosticProgress(onePolygonRequest.id) }
+        val (twenty, twentyPolygonsStatements) = withStatementCount { repository.findDiagnosticProgress(twentyPolygonsRequest.id) }
+
+        assertEquals(onePolygonRequest.data.snapshot.tests.ids.map(::reportedResult), one)
+        assertEquals(twentyPolygonsRequest.data.snapshot.tests.ids.map(::reportedResult), twenty)
+        assertEquals(onePolygonStatements, twentyPolygonsStatements)
+    }
+
+    private fun requestWithDiagnostics(polygonCount: Int): TaskValidationRequest {
+        val task = fixtures.task()
+        val testIds = List(polygonCount) { fixtures.polygon().id }.sortedBy { id -> id.value }
+        return repository.save(
+            taskValidationRequestData {
+                this.task = task.id
+                requestedBy = task.data.owner.id
+                snapshot = taskValidationSnapshot { tests = testIds.toMutableList() }
+                execution.awaitingSubmissions { diagnostics = testIds.map(::reportedResult).toMutableList() }
+            },
+        )
+    }
+
+    /** Reads [task] again: creating a validation request increments the task version. */
+    private fun reloaded(task: Task): Task = requireNotNull(taskRepository.findById(task.id))
+
+    private fun reportedResult(testId: TestId): TestDiagnosticResult = testDiagnosticResult {
+        this.testId = testId
+        reports += diagnosticReport {
+            severity = DiagnosticSeverity.Warning
+            data.missingScoreOutput()
+        }
     }
 
     private fun readyRequest(): TaskValidationRequest {

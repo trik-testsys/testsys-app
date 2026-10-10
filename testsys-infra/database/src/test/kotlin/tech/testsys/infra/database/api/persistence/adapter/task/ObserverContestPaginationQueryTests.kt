@@ -32,6 +32,48 @@ class ObserverContestPaginationQueryTests : DatabaseIntegrationTests() {
     @Autowired
     private lateinit var competitions: CompetitionRepository
 
+    @Test
+    fun `should assemble pages of one and twenty contests with the same statement count`() {
+        val owner = fixtures.developer().id
+        val community = fixtures.community().id
+        val task = fixtures.task().id
+        val version = fixtures.trikStudioVersion()
+        val ids = List(21) {
+            repository.save(
+                contestData {
+                    this.owner = owner
+                    name = fixtures.unique("Contest")
+                    description = "Pagination query test"
+                    sharedTo = mutableListOf(community)
+                    tasks = mutableListOf(task)
+                    trikStudioVersion = version
+                },
+            ).id
+        }
+
+        val (one, oneStatements) = withStatementCount {
+            repository.findAvailableToObserver(
+                contestIds = ids.toSet(),
+                pagination = Pagination(page = 0, size = 1),
+            )
+        }
+        val (twenty, twentyStatements) = withStatementCount {
+            repository.findAvailableToObserver(
+                contestIds = ids.toSet(),
+                pagination = Pagination(page = 0, size = 20),
+            )
+        }
+
+        assertEquals(ids.take(1), one.content.map { contest -> contest.id })
+        assertEquals(ids.take(20), twenty.content.map { contest -> contest.id })
+        assertEquals(21L, one.totalElements)
+        assertEquals(21L, twenty.totalElements)
+        assertEquals(List(20) { listOf(community) }, twenty.content.map { contest -> contest.data.sharedTo.ids })
+        assertEquals(List(20) { listOf(task) }, twenty.content.map { contest -> contest.data.tasks.ids })
+        assertEquals(List(20) { version }, twenty.content.map { contest -> contest.data.trikStudioVersion })
+        assertEquals(oneStatements, twentyStatements)
+    }
+
     @ParameterizedTest
     @ValueSource(strings = ["alpha", "ALPHA", "%", "_", "\\", "  "])
     fun `should match literal case insensitive substrings and preserve spaces`(substring: String) {

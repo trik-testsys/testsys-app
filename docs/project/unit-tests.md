@@ -14,6 +14,9 @@
   объект — его конструктором с этими моками.
 - Проверки — через `org.junit.jupiter.api.Assertions`.
 - Тестовые данные создаются через DSL билдеров и тестовые хелперы, а не через конструкторы.
+- Интеграционные тесты модулей `testsys-infra:database` и `testsys-web:app` работают с PostgreSQL в контейнере
+  Testcontainers, поэтому для них нужен запущенный Docker. Устройство тестовой базы — в разделе «Тесты»
+  [database/README.md](../../testsys-infra/database/README.md#тесты).
 - UI-тесты `testsys-web` пишутся на **Karibu-Testing** (Vaadin без браузера, `MockVaadin`), страницы — вместе
   с `@SpringBootTest`. Тестовые хелперы — в [components/README.md](../../testsys-web/components/README.md).
 - Клиентский код компонентов проверяется встроенным `node:test` на Node 24. Тесты `*.test.mjs` лежат

@@ -83,19 +83,4 @@ object ParticipantMapping {
         userId = userId,
         competitionId = data.competition.id.value,
     )
-
-    /**
-     * Creates the [ParticipantDataJpaEntity] row of the user [userId] replacing [current] from [entity],
-     * keeping its id, `createdAt` and `version`.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun toDataJpaEntity(userId: Long, entity: Participant, current: ParticipantDataJpaEntity) = ParticipantDataJpaEntity(
-        userId = userId,
-        competitionId = entity.data.competition.id.value,
-        id = current.id,
-    ).also {
-        it.createdAt = current.createdAt
-        it.version = current.version
-    }
 }

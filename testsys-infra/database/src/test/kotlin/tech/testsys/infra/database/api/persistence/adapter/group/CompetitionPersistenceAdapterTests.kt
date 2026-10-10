@@ -6,9 +6,12 @@ import tech.testsys.domain.builder.api.competition
 import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
+import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionData
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -17,6 +20,9 @@ class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
 
     @Autowired
     override lateinit var repository: CompetitionRepository
+
+    @Autowired
+    private lateinit var participants: ParticipantRepository
 
     override fun newData(): CompetitionData {
         val ownerId = fixtures.manager().id.value
@@ -88,6 +94,44 @@ class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
     }
 
     @Test
+    fun `should save one contest link per id when ids repeat`() {
+        val ownerId = fixtures.manager().id.value
+        val contestId = fixtures.contest().id
+
+        val saved = repository.save(
+            competitionData {
+                owner(ownerId)
+                name = fixtures.unique("Competition")
+                description = "Competition description"
+                contests = mutableListOf(contestId, contestId)
+            },
+        )
+
+        assertEquals(listOf(contestId), assertNotNull(repository.findById(saved.id)).data.contests.ids)
+    }
+
+    @Test
+    fun `should increment the competition version on an update of the contests only`() {
+        val saved = repository.save(newData())
+        val contest = fixtures.contest().id
+
+        val updated = repository.update(saved.withData { contests = mutableListOf(contest) })
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(saved.id)).version)
+    }
+
+    @Test
+    fun `should increment the competition version when participants are saved to it`() {
+        val saved = repository.save(newData())
+        val hash = AccessTokenHash(value = fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+
+        participants.saveToCompetition(saved.id, listOf(hash)) { participantId -> "named-${participantId.value}" }
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(assertNotNull(repository.findById(saved.id)).version).value)
+    }
+
+    @Test
     fun `should keep the owner if another owner is passed on update`() {
         val saved = repository.save(newData())
         val otherOwner = fixtures.manager().id
@@ -96,5 +140,25 @@ class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
 
         assertEquals(saved.data.owner.id, updated.data.owner.id)
         assertEquals(saved.data.owner.id, assertNotNull(repository.findById(saved.id)).data.owner.id)
+    }
+
+    @Test
+    fun `should find competitions by ids with the same statement count for one and twenty ids`() {
+        val data = newData()
+        val saved = List(20) { repository.save(data) }
+        val participantIds = saved.map { competition -> fixtures.participant(competition).id }
+        val ids = saved.map { competition -> competition.id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { competition -> competition.id })
+        assertEquals(ids.toSet(), twenty.map { competition -> competition.id }.toSet())
+        assertEquals(
+            ids.zip(participantIds).toMap(),
+            twenty.associate { competition -> competition.id to competition.data.participants.ids.single() },
+        )
+        assertEquals(List(20) { data.contests.ids.toSet() }, twenty.map { competition -> competition.data.contests.ids.toSet() })
+        assertEquals(oneIdStatements, twentyIdsStatements)
     }
 }

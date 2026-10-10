@@ -40,9 +40,10 @@ spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies"
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
 spring-boot-starter-liquibase = { module = "org.springframework.boot:spring-boot-starter-liquibase" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-testcontainers" }
 
 postgresql = { module = "org.postgresql:postgresql" }
-h2 = { module = "com.h2database:h2" }
+testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }
 
 detekt-gradle-plugin = { module = "dev.detekt:detekt-gradle-plugin", version.ref = "detekt" }
 detekt-rules-ktlint-wrapper = { module = "dev.detekt:detekt-rules-ktlint-wrapper", version.ref = "detekt" }
@@ -92,7 +93,8 @@ database-implementation = [
 ]
 database-test-implementation = [
     "spring-boot-starter-test",
-    "h2",
+    "spring-boot-testcontainers",
+    "testcontainers-postgresql",
 ]
 detekt-implementation = [
     "detekt-gradle-plugin",

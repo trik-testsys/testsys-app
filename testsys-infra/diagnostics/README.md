@@ -9,7 +9,8 @@
 ## Анализ
 
 [`PolygonDiagnosticsAdapter`](src/main/kotlin/tech/testsys/infra/diagnostics/api/PolygonDiagnosticsAdapter.kt)
-читает отдельный XML мира из файла Полигона. Перед Ksoup строгий SAX-парсер проверяет корректность XML.
+читает отдельный XML мира из файла Полигона через `FileContentReader`.
+Перед Ksoup строгий SAX-парсер проверяет корректность XML.
 DTD и внешние сущности запрещены. Корень содержит соседние `world` и `constraints`:
 ограничения находятся по пути `/root/constraints`. Формат описан в
 [руководстве TRIK Studio](https://help.trikset.com/studio/2d-model/restrictions).

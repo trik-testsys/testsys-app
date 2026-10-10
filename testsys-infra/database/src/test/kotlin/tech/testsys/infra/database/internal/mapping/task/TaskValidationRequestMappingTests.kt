@@ -54,6 +54,33 @@ class TaskValidationRequestMappingTests : EntityMappingTests<TaskValidationReque
         assertTrue(row.areSubmissionsCreated)
     }
 
+    @Test
+    fun `should create one author input row per developer solution keeping its first position and last values`() {
+        val inputs = listOf(
+            developerSolutionValidationInput {
+                developerSolution(3)
+                solution(4)
+                expectedScore = Score(10)
+            },
+            developerSolutionValidationInput {
+                developerSolution(5)
+                solution(6)
+                expectedScore = Score(20)
+            },
+            developerSolutionValidationInput {
+                developerSolution(3)
+                solution(7)
+                expectedScore = Score(30)
+            },
+        )
+
+        val rows = mapping.toDeveloperSolutionAssociations(requestId = 1, inputs = inputs)
+
+        assertEquals(listOf(3L, 5L), rows.map { it.id.developerSolutionId })
+        assertEquals(listOf(7L, 6L), rows.map { it.solutionId })
+        assertEquals(listOf(30, 20), rows.map { it.expectedScore })
+    }
+
     @ParameterizedTest
     @MethodSource("states")
     fun `should restore every state with its required stage payload`(source: TaskValidationRequestData) {

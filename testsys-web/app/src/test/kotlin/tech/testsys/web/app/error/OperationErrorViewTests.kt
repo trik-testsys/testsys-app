@@ -17,6 +17,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
@@ -31,7 +32,9 @@ import tech.testsys.operation.error.ResourceNotInCommittedTaskError
 import tech.testsys.operation.error.SubmissionAccessDeniedError
 import tech.testsys.operation.error.TaskNotExistsError
 import tech.testsys.web.app.MockSpringVaadinTests
+import tech.testsys.web.app.PostgresTestConfiguration
 
+@Import(PostgresTestConfiguration::class)
 @SpringBootTest
 class OperationErrorViewTests : MockSpringVaadinTests() {
     @BeforeEach

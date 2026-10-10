@@ -156,6 +156,19 @@ class CommunityPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
     }
 
     @Test
+    fun `should find communities by ids with the same statement count for one and twenty ids`() {
+        val owner = fixtures.developer()
+        val ids = List(20) { fixtures.community(owner).id }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { community -> community.id })
+        assertEquals(ids.toSet(), twenty.map { community -> community.id }.toSet())
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    @Test
     fun `should remove both invites together with the community`() {
         val community = fixtures.community()
 

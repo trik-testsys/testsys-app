@@ -9,7 +9,9 @@ import tech.testsys.domain.builder.api.test
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.FileBlobStorage
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.StoredBlobRef
+import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestId
@@ -31,7 +33,13 @@ import tech.testsys.domain.model.task.Test as Polygon
 class TestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<TestData, TestId, Polygon>() {
 
     @Autowired
+    private lateinit var fileContentReader: FileContentReader
+
+    @Autowired
     override lateinit var repository: TestRepository
+
+    @Autowired
+    private lateinit var taskRepository: TaskRepository
 
     @Autowired
     private lateinit var fileDataJpaEntityRepository: FileDataJpaEntityRepository
@@ -66,8 +74,33 @@ class TestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tes
         assertEquals(expected.data.name, actual.data.name)
         assertEquals(expected.data.description, actual.data.description)
         assertEquals(expected.data.file.uploadedFilename, actual.data.file.uploadedFilename)
-        assertContentEquals(expected.data.file.content, actual.data.file.content)
+        assertContentEquals(fileContentReader.read(expected.data.file), fileContentReader.read(actual.data.file))
         assertEquals(expected.data.versionBucket, actual.data.versionBucket)
+    }
+
+    @Test
+    fun `should increment the version of the task the chain is uploaded to on removal of a version`() {
+        val saved = repository.save(newData())
+        val task = taskRepository.update(fixtures.task().withData { uploadedResources += saved.data.versionBucket })
+
+        repository.removeById(saved.id)
+
+        assertNull(repository.findById(saved.id))
+        assertEquals(assertNotNull(task.version).value + 1, assertNotNull(taskRepository.findById(task.id)?.version).value)
+    }
+
+    @Test
+    fun `should increment the version of the task the chain is uploaded to on a new version and a rename`() {
+        val saved = repository.save(newData())
+        val task = taskRepository.update(fixtures.task().withData { uploadedResources += saved.data.versionBucket })
+
+        repository.save(modified(saved).data)
+        val afterNewVersion = assertNotNull(taskRepository.findById(task.id))
+        repository.update(modified(saved))
+        val afterRename = assertNotNull(taskRepository.findById(task.id))
+
+        assertEquals(assertNotNull(task.version).value + 1, assertNotNull(afterNewVersion.version).value)
+        assertEquals(assertNotNull(task.version).value + 2, assertNotNull(afterRename.version).value)
     }
 
     @Test
@@ -87,7 +120,7 @@ class TestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tes
         val saved = repository.save(newData())
 
         assertFailsWith<UnsupportedOperationException> {
-            repository.update(saved.withData { file("renamed.xml", saved.data.file.content) })
+            repository.update(saved.withData { file("renamed.xml", fileContentReader.read(saved.data.file)) })
         }
 
         assertSameEntity(saved, assertNotNull(repository.findById(saved.id)))
@@ -263,7 +296,7 @@ class TestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tes
         val saved = repository.save(newData())
 
         val ref = StoredBlobRef(fileDataJpaEntityRepository.findAll().single().storedFileName)
-        assertContentEquals(saved.data.file.content, fileBlobStorage.load(ref, Path.of(TEST_PATH)))
+        assertContentEquals(fileContentReader.read(saved.data.file), fileBlobStorage.load(ref, Path.of(TEST_PATH)))
     }
 
     private fun setCreatedAt(id: TestId, createdAt: Instant) {

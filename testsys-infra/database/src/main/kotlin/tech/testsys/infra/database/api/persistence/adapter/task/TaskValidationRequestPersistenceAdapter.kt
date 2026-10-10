@@ -1,6 +1,6 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
-import org.springframework.dao.OptimisticLockingFailureException
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.builder.api.*
@@ -16,14 +16,18 @@ import tech.testsys.infra.database.internal.jpa.entity.task.*
 import tech.testsys.infra.database.internal.jpa.repository.task.*
 import tech.testsys.infra.database.internal.mapping.task.TaskValidationRequestMapping
 import tech.testsys.infra.database.internal.mapping.task.TestDiagnosticResultMapping
+import tech.testsys.infra.database.internal.utils.findAllByIdOrError
+import tech.testsys.infra.database.internal.utils.findAllInChunks
 import tech.testsys.infra.database.internal.utils.findByIdOrError
-import tech.testsys.infra.database.internal.utils.findIdByTagOrError
+import tech.testsys.infra.database.internal.utils.findIdsByTagOrError
+import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.requireVersion
 import java.time.Instant
 
 /**
  * Persistence adapter of [TaskValidationRequest] entities backed by [TaskValidationRequestJpaEntity].
+ * [findOrCreateActive] guards the task version to prevent concurrent creation of identical active snapshots.
  *
  * @since %CURRENT_VERSION%
  */
@@ -49,16 +53,18 @@ class TaskValidationRequestPersistenceAdapter(
 
     @Transactional
     override fun findOrCreateActive(taskId: TaskId, requestedBy: MultipleRoleUserId): TaskValidationRequest {
-        val taskRow = requireNotNull(tasks.findLockedById(taskId.value)) { "Task id=${taskId.value} does not exist" }
+        val taskRow = touchRoot(tasks, taskId.value)
         require(taskRow.ownerId == requestedBy.value) { "Task id=${taskId.value} is not owned by initiator=${requestedBy.value}" }
         check(taskRow.status != TaskStatusJpaEnum.COMMITTED) {
             "Task id=${taskId.value} has no working revision for diagnostics"
         }
         val task = requireNotNull(taskRepository.findById(taskId)) { "Task id=${taskId.value} does not exist" }
         val snapshot = snapshotOf(task)
-        val existing = findHistory(taskId).firstOrNull { request ->
-            request.data.isActive && sameSnapshot(request.data.snapshot, snapshot)
-        }
+        val active = requests.findAllByTaskIdAndExecutionInOrderByCreatedAtAscIdAsc(
+            taskId = taskId.value,
+            executions = ACTIVE_EXECUTIONS,
+        )
+        val existing = assembleAll(active).firstOrNull { request -> sameSnapshot(request.data.snapshot, snapshot) }
         return existing ?: save(
             taskValidationRequestData {
                 this.task = taskId
@@ -71,7 +77,7 @@ class TaskValidationRequestPersistenceAdapter(
 
     @Transactional(readOnly = true)
     override fun findHistory(taskId: TaskId): List<TaskValidationRequest> =
-        requests.findAllByTaskIdOrderByCreatedAtAscIdAsc(taskId.value).map { assemble(it) }
+        assembleAll(requests.findAllByTaskIdOrderByCreatedAtAscIdAsc(taskId.value))
 
     @Transactional(readOnly = true)
     override fun startDiagnostics(requestId: TaskValidationRequestId): TaskValidationRequest? {
@@ -89,18 +95,19 @@ class TaskValidationRequestPersistenceAdapter(
 
     @Transactional(readOnly = true)
     override fun findDiagnosticProgress(requestId: TaskValidationRequestId): List<TestDiagnosticResult> =
-        results.findAllByIdRequestId(requestId.value).sortedBy { it.id.testId }.map { row ->
-            resultOf(requestId = row.id.requestId, testId = row.id.testId)
-        }
+        diagnosticsOf(listOf(requestId.value)).getValue(requestId.value)
 
     @Transactional
     override fun saveDiagnosticProgress(requestId: TaskValidationRequestId, result: TestDiagnosticResult): TestDiagnosticResult {
-        val row = locked(requestId)
+        requests.findByIdOrError(requestId.value)
         require(tests.findAllByIdRequestId(requestId.value).any { it.id.testId == result.testId.value }) {
             "Polygon id=${result.testId.value} is absent from request id=${requestId.value}"
         }
         val key = TestDiagnosticResultId(requestId = requestId.value, testId = result.testId.value)
         if (results.existsById(key)) return resultOf(requestId = requestId.value, testId = result.testId.value)
+
+        // Only an actual write increments the version: a repeated write of a saved result returns above.
+        val row = touchRoot(requests, requestId.value, changesRootData = true)
         check(row.execution == TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS) {
             "Request id=${requestId.value} is not diagnosing: ${row.execution}"
         }
@@ -110,7 +117,7 @@ class TaskValidationRequestPersistenceAdapter(
 
     @Transactional
     override fun completeDiagnostics(requestId: TaskValidationRequestId): TaskValidationRequest {
-        val row = locked(requestId)
+        val row = touchRoot(requests, requestId.value)
         if (row.areDiagnosticsComplete) return assemble(row)
         check(row.execution == TaskValidationExecutionJpaEnum.PENDING_DIAGNOSTICS) {
             "Request id=${requestId.value} cannot complete diagnostics from ${row.execution}"
@@ -140,7 +147,7 @@ class TaskValidationRequestPersistenceAdapter(
         requestId: TaskValidationRequestId,
         failure: TaskValidationTechnicalFailure,
     ): TaskValidationRequest {
-        val request = assemble(locked(requestId))
+        val request = assemble(touchRoot(requests, requestId.value))
         if (!request.data.isActive) return request
         return update(
             request.withData {
@@ -166,7 +173,7 @@ class TaskValidationRequestPersistenceAdapter(
 
     @Transactional
     override fun createSubmissions(requestId: TaskValidationRequestId): TaskValidationRequest {
-        val request = assemble(locked(requestId))
+        val request = assemble(touchRoot(requests, requestId.value))
         val state = request.data.execution
         if (state is TaskValidationExecution.SubmissionsCreated || state is TaskValidationExecution.Completed) return request
         check(state is TaskValidationExecution.AwaitingSubmissions) {
@@ -195,7 +202,7 @@ class TaskValidationRequestPersistenceAdapter(
 
     @Transactional
     override fun completeTesting(requestId: TaskValidationRequestId, failures: List<AuthorSubmissionFailure>): TaskValidationRequest {
-        val request = assemble(locked(requestId))
+        val request = assemble(touchRoot(requests, requestId.value))
         val state = request.data.execution
         if (state is TaskValidationExecution.Completed) return request
         check(state is TaskValidationExecution.SubmissionsCreated) {
@@ -214,8 +221,7 @@ class TaskValidationRequestPersistenceAdapter(
     }
 
     @Transactional(readOnly = true)
-    override fun findActive(): List<TaskValidationRequest> =
-        requests.findAllByExecutionInOrderByIdAsc(ACTIVE_EXECUTIONS).map { assemble(it) }
+    override fun findActive(): List<TaskValidationRequest> = assembleAll(requests.findAllByExecutionInOrderByIdAsc(ACTIVE_EXECUTIONS))
 
     @Transactional(readOnly = true)
     override fun findBySubmissionId(submissionId: SubmissionId): TaskValidationRequest? {
@@ -227,6 +233,7 @@ class TaskValidationRequestPersistenceAdapter(
     @Transactional
     override fun save(data: TaskValidationRequestData): TaskValidationRequest {
         validateCompletedDiagnostics(data, data.snapshot.tests.ids.toSet())
+        touchRoot(tasks, data.task.id.value)
         val row = requests.saveAndFlush(TaskValidationRequestMapping.toJpaEntity(data))
         val requestId = row.requireId()
         persistSnapshot(requestId, data.snapshot)
@@ -237,82 +244,145 @@ class TaskValidationRequestPersistenceAdapter(
 
     @Transactional
     override fun update(entity: TaskValidationRequest): TaskValidationRequest {
-        val current = locked(entity.id)
-        if (current.version != entity.requireVersion()) {
-            throw OptimisticLockingFailureException("Stale task validation request id=${entity.id.value}")
+        val saved = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            check(current.execution in ACTIVE_EXECUTIONS) { "Request id=${entity.id.value} is terminal: ${current.execution}" }
+            val storedTests = tests.findAllByIdRequestId(entity.id.value).map { TestId(it.id.testId) }.toSet()
+            validateCompletedDiagnostics(entity.data, storedTests)
+            TaskValidationRequestMapping.toJpaEntity(entity, current)
         }
-        check(assemble(current).data.isActive) { "Request id=${entity.id.value} is terminal: ${current.execution}" }
-        val storedTests = tests.findAllByIdRequestId(entity.id.value).map { TestId(it.id.testId) }.toSet()
-        validateCompletedDiagnostics(entity.data, storedTests)
-        val saved = requests.saveAndFlush(TaskValidationRequestMapping.toJpaEntity(entity, current))
-        (entity.data.execution as? TaskValidationExecution.WithDiagnostics)?.diagnostics?.forEach { result ->
-            val key = TestDiagnosticResultId(requestId = entity.id.value, testId = result.testId.value)
-            if (!results.existsById(key)) persistResult(entity.id.value, result)
+        (entity.data.execution as? TaskValidationExecution.WithDiagnostics)?.diagnostics?.let { diagnostics ->
+            val storedResults = results.findAllByIdRequestId(entity.id.value).map { result -> result.id.testId }.toSet()
+            diagnostics
+                .filter { result -> result.testId.value !in storedResults }
+                .forEach { result -> persistResult(entity.id.value, result) }
         }
         syncSubmissions(entity.id.value, submissionIdsOf(entity.data.execution), failuresOf(entity.data.execution))
         return assemble(saved)
     }
 
-    @Transactional
-    override fun removeById(id: TaskValidationRequestId) {
-        val row = requests.findLockedById(id.value) ?: return
-        results.findAllByIdRequestId(id.value).forEach { result ->
-            reports.deleteAll(reports.findAllByRequestIdAndTestIdOrderByPositionAsc(requestId = id.value, testId = result.id.testId))
-        }
-        reports.flush()
-        results.deleteAll(results.findAllByIdRequestId(id.value))
-        tests.deleteAll(tests.findAllByIdRequestId(id.value))
-        solutions.deleteAll(solutions.findAllByIdRequestId(id.value))
-        versions.deleteAll(versions.findAllByIdRequestId(id.value))
-        submissions.deleteAll(submissions.findAllByIdRequestId(id.value))
-        results.flush()
-        tests.flush()
-        solutions.flush()
-        versions.flush()
-        submissions.flush()
-        requests.delete(row)
+    override fun removeRoot(id: TaskValidationRequestId, expectedVersion: Long?) {
+        val current = requests.findByIdOrNull(id.value) ?: return
+        // Removing a request changes the requests of its task, as creating one does.
+        touchRoot(tasks, current.taskId)
+        val requestId = touchRoot(requests, id.value, expectedVersion, changesRootData = true).requireId()
+        // The parts are deleted in bulk only after the root is touched; the bulk deletes clear the persistence context.
+        // Reports reference results, and every other row references the request, so they are deleted in this order.
+        reports.deleteAllByRequestId(requestId)
+        results.deleteAllByRequestId(requestId)
+        tests.deleteAllByRequestId(requestId)
+        solutions.deleteAllByRequestId(requestId)
+        versions.deleteAllByRequestId(requestId)
+        submissions.deleteAllByRequestId(requestId)
+        requests.deleteById(requestId)
     }
 
     @Transactional
     override fun removeByIds(ids: List<TaskValidationRequestId>) = ids.sortedBy { it.value }.forEach(::removeById)
 
-    override fun assemble(jpaEntity: TaskValidationRequestJpaEntity): TaskValidationRequest {
-        val requestId = jpaEntity.requireId()
-        val snapshot = taskValidationSnapshot {
-            tests = this@TaskValidationRequestPersistenceAdapter.tests.findAllByIdRequestId(requestId)
-                .map { TestId(it.id.testId) }.sortedBy { it.value }.toMutableList()
-            developerSolutions = solutions.findAllByIdRequestId(requestId).sortedBy { it.id.developerSolutionId }
-                .map { row ->
-                    developerSolutionValidationInput {
-                        developerSolution(row.id.developerSolutionId)
-                        solution(row.solutionId)
-                        expectedScore = Score(row.expectedScore)
-                    }
-                }.toMutableList()
-            supportedTrikStudioVersions = versions.findAllByIdRequestId(requestId).map { row ->
-                TrikStudioVersion(studioVersions.findByIdOrError(row.id.trikStudioVersionId).tag)
-            }.sortedBy { it.version }.toMutableList()
-        }
-        val data = taskValidationRequestData {
-            task(jpaEntity.taskId)
-            requestedBy(jpaEntity.requestedById)
-            this.snapshot = snapshot
-            val completedDiagnostics = if (jpaEntity.areDiagnosticsComplete) {
-                findDiagnosticProgress(TaskValidationRequestId(requestId))
-            } else {
-                emptyList()
+    override fun assembleAll(rows: List<TaskValidationRequestJpaEntity>): List<TaskValidationRequest> {
+        val requestIds = rows.map { row -> row.requireId() }
+        val snapshots = snapshotsOf(requestIds)
+        val links = findLinkedIds(
+            ownerIds = requestIds,
+            find = submissions::findAllByIdRequestIdInOrderByPositionAsc,
+            ownerIdOf = { link -> link.id.requestId },
+            linkedIdOf = { link -> link },
+        )
+        val diagnostics =
+            diagnosticsOf(rows.filter { row -> row.areDiagnosticsComplete }.map { row -> row.requireId() })
+
+        return rows.map { row ->
+            val requestId = row.requireId()
+            val snapshot = snapshots.getValue(requestId)
+            val orderedLinks = orderedSubmissionLinks(requestId, links.getValue(requestId))
+            val data = taskValidationRequestData {
+                task(row.taskId)
+                requestedBy(row.requestedById)
+                this.snapshot = snapshot
+                TaskValidationRequestMapping.decodeExecution(
+                    row = row,
+                    diagnostics = diagnostics[requestId].orEmpty(),
+                    submissionIds = orderedLinks.map { link -> SubmissionId(link.id.submissionId) },
+                    failures = orderedLinks.mapNotNull { link -> TaskValidationRequestMapping.toFailure(link) },
+                    builder = this,
+                )
             }
-            val links = orderedSubmissionLinks(requestId)
-            TaskValidationRequestMapping.decodeExecution(
-                row = jpaEntity,
-                diagnostics = completedDiagnostics,
-                submissionIds = links.map { SubmissionId(it.id.submissionId) },
-                failures = links.mapNotNull { TaskValidationRequestMapping.toFailure(it) },
-                builder = this,
-            )
+            validateCompletedDiagnostics(data, snapshot.tests.ids.toSet())
+            TaskValidationRequestMapping.toDomain(row, data)
         }
-        validateCompletedDiagnostics(data, snapshot.tests.ids.toSet())
-        return TaskValidationRequestMapping.toDomain(jpaEntity, data)
+    }
+
+    /**
+     * Reads the pinned snapshots of [requestIds], one query per table, mapped by request id.
+     */
+    private fun snapshotsOf(requestIds: List<Long>): Map<Long, TaskValidationSnapshot> {
+        val testIds = findLinkedIds(
+            ownerIds = requestIds,
+            find = tests::findAllByIdRequestIdIn,
+            ownerIdOf = { link -> link.id.requestId },
+            linkedIdOf = { link -> TestId(link.id.testId) },
+        )
+        val solutionLinks = findLinkedIds(
+            ownerIds = requestIds,
+            find = solutions::findAllByIdRequestIdIn,
+            ownerIdOf = { link -> link.id.requestId },
+            linkedIdOf = { link -> link },
+        )
+        val versionIds = findLinkedIds(
+            ownerIds = requestIds,
+            find = versions::findAllByIdRequestIdIn,
+            ownerIdOf = { link -> link.id.requestId },
+            linkedIdOf = { link -> link.id.trikStudioVersionId },
+        )
+        val studioVersionRows = studioVersions.findAllByIdOrError(versionIds.values.flatten())
+
+        return requestIds.associateWith { requestId ->
+            taskValidationSnapshot {
+                tests = testIds.getValue(requestId).sortedBy { testId -> testId.value }.toMutableList()
+                developerSolutions = solutionLinks.getValue(requestId).sortedBy { link -> link.id.developerSolutionId }
+                    .map { link ->
+                        developerSolutionValidationInput {
+                            developerSolution(link.id.developerSolutionId)
+                            solution(link.solutionId)
+                            expectedScore = Score(link.expectedScore)
+                        }
+                    }.toMutableList()
+                supportedTrikStudioVersions = versionIds.getValue(requestId)
+                    .map { versionId -> TrikStudioVersion(studioVersionRows.getValue(versionId).tag) }
+                    .sortedBy { version -> version.version }
+                    .toMutableList()
+            }
+        }
+    }
+
+    /**
+     * Reads the saved polygon results of [requestIds] with their reports in one query per table, mapped by request id
+     * and ordered by polygon id.
+     */
+    private fun diagnosticsOf(requestIds: List<Long>): Map<Long, List<TestDiagnosticResult>> {
+        val testIds = findLinkedIds(
+            ownerIds = requestIds,
+            find = results::findAllByIdRequestIdIn,
+            ownerIdOf = { result -> result.id.requestId },
+            linkedIdOf = { result -> result.id.testId },
+        )
+        val requestsWithResults = testIds.filterValues { ids -> ids.isNotEmpty() }.keys
+        val reportsByResult = findAllInChunks(
+            ids = requestsWithResults,
+            find = reports::findAllByRequestIdInOrderByRequestIdAscTestIdAscPositionAsc,
+        ).groupBy(
+            keySelector = { report -> report.requestId to report.testId },
+            valueTransform = { report -> TestDiagnosticResultMapping.toDomain(report) },
+        )
+
+        return testIds.mapValues { (requestId, ids) ->
+            ids.sorted().map { testId ->
+                testDiagnosticResult {
+                    this.testId = TestId(testId)
+                    reports = reportsByResult[requestId to testId].orEmpty().toMutableList()
+                }
+            }
+        }
     }
 
     private fun validateCompletedDiagnostics(data: TaskValidationRequestData, testIds: Set<TestId>) {
@@ -323,9 +393,6 @@ class TaskValidationRequestPersistenceAdapter(
             }
         }
     }
-
-    private fun locked(id: TaskValidationRequestId): TaskValidationRequestJpaEntity =
-        requireNotNull(requests.findLockedById(id.value)) { "TaskValidationRequest id=${id.value} does not exist" }
 
     private fun snapshotOf(task: Task): TaskValidationSnapshot {
         val content = when (val revisions = task.data.content) {
@@ -356,7 +423,8 @@ class TaskValidationRequestPersistenceAdapter(
     private fun persistSnapshot(requestId: Long, snapshot: TaskValidationSnapshot) {
         tests.saveAll(TaskValidationRequestMapping.toTestAssociations(requestId, snapshot.tests.ids))
         solutions.saveAll(TaskValidationRequestMapping.toDeveloperSolutionAssociations(requestId, snapshot.developerSolutions))
-        val versionIds = snapshot.supportedTrikStudioVersions.map { studioVersions.findIdByTagOrError(it.version) }
+        val idsByTag = studioVersions.findIdsByTagOrError(snapshot.supportedTrikStudioVersions.map { version -> version.version })
+        val versionIds = snapshot.supportedTrikStudioVersions.map { version -> idsByTag.getValue(version.version) }
         versions.saveAll(TaskValidationRequestMapping.toTrikStudioVersionAssociations(requestId, versionIds))
     }
 
@@ -384,8 +452,10 @@ class TaskValidationRequestPersistenceAdapter(
         submissions.flush()
     }
 
-    private fun orderedSubmissionLinks(requestId: Long): List<SubmissionToTaskValidationRequestJpaEntity> {
-        val links = submissions.findAllByIdRequestIdOrderByPositionAsc(requestId)
+    private fun orderedSubmissionLinks(
+        requestId: Long,
+        links: List<SubmissionToTaskValidationRequestJpaEntity>,
+    ): List<SubmissionToTaskValidationRequestJpaEntity> {
         check(links.withIndex().all { (index, link) -> link.position == index }) {
             "Request id=$requestId has inconsistent submission positions"
         }

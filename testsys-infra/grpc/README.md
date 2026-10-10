@@ -15,7 +15,7 @@
 |-----------|------------|
 | `api/BalancingGrader` | Реализация порта и приём запросов |
 | `api/GrpcConfiguration` | Бины адаптера и настройки по умолчанию |
-| `internal/GradingFunctions` | Чистые преобразования, выбор узла и проверка ответа |
+| `internal/GradingFunctions` | Подготовка protobuf с явным чтением файлов, выбор узла и проверка ответа |
 | `internal/JsonLogParser` | Разбор JSON-логов без IO; реализация расширяемого `LogParser` |
 | `internal/GradingCoordinator` | Очередь, попытки, синхронизация и уведомления |
 | `internal/GradingNodeManager` | Каналы узлов и фоновый кеш статусов |
@@ -24,6 +24,16 @@
 
 Источники версии TRIK Studio для подготовки Посылки описаны в
 [features.md](../../docs/domain/features.md#testsysdevgradingbalancing-implemented).
+
+При подготовке protobuf `encodeSubmission` читает файлы Решения и Полигонов через `FileContentReader`.
+
+`checkResult` проверяет имена файлов логов и видеозаписей через `TextLimits` до передачи результата на сохранение.
+Правило отказа определено в [testsys.dev.grading.balancing](../../docs/domain/features.md#testsysdevgradingbalancing-implemented).
+
+`GradingPersistenceService` открывает транзакции через `TransactionOperations`, который предоставляет приложение;
+модуль `database` поставляет реализацию, повторяющую транзакцию при конфликте. Подготовка Посылки — чтение Тура,
+Задачи или запроса проверки, Решения и Полигонов и перевод Посылки в очередь — выполняется в одной транзакции,
+поэтому сервис собирает согласованный снимок данных.
 
 `GradingPersistenceService` использует `TaskValidationRequestRepository.findBySubmissionId` для Авторских Посылок.
 Авторские Посылки проверяются на Полигонах снимка запроса. Перед отправкой сервис сверяет
@@ -56,7 +66,7 @@
 при отклонённом ответе, поэтому следующий опрос может обновить состояние. Политика исключения и восстановления
 узла описана в [features.md](../../docs/domain/features.md#testsysdevgradingbalancing-implemented).
 
-`GrpcConfiguration` подключается приложением. Приложение предоставляет `PlatformTransactionManager`
+`GrpcConfiguration` подключается приложением. Приложение предоставляет `TransactionOperations`
 и доменные репозитории, включая `ContestRepository` и `TaskValidationRequestRepository`.
 Узлы добавляются через `Grader.addNode`. Закрытие контекста
 прерывает поток отправки, останавливает `ExecutorService` и `ScheduledExecutorService`, отменяет RPC и закрывает

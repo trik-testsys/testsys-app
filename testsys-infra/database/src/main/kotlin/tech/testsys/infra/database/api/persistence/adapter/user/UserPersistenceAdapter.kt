@@ -7,7 +7,6 @@ import jakarta.persistence.criteria.Root
 import jakarta.persistence.criteria.Subquery
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
-import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.Page
@@ -83,7 +82,7 @@ class UserPersistenceAdapter(
     @Transactional(readOnly = true)
     override fun existsById(userId: UserId): Boolean {
         val type = typeOf(userId) ?: return false
-        return userJpaEntityRepository.findByIdOrNull(userId.value)?.type == type
+        return userJpaEntityRepository.existsByIdAndType(id = userId.value, type = type)
     }
 
     /**

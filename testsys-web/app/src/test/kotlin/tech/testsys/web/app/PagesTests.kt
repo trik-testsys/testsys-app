@@ -14,8 +14,10 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.Arguments.argumentSet
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.context.annotation.Import
 
 /** Opens every page of the application so that a page build error fails the build. */
+@Import(PostgresTestConfiguration::class)
 @SpringBootTest
 class PagesTests : MockSpringVaadinTests() {
     @ParameterizedTest(name = "{argumentSetName}", allowZeroInvocations = true)

@@ -88,11 +88,11 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
     }
 
     /**
-     * Creates the [TaskToContestJpaEntity] rows linking the contest [contestId] with [taskIds].
+     * Creates the [TaskToContestJpaEntity] rows linking the contest [contestId] with [taskIds], one row per distinct id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toTaskAssociations(contestId: Long, taskIds: List<TaskId>) = taskIds.map {
+    fun toTaskAssociations(contestId: Long, taskIds: List<TaskId>) = taskIds.distinct().map {
         TaskToContestJpaEntity(
             taskId = it.value,
             contestId = contestId,
@@ -100,11 +100,11 @@ object ContestMapping : EntityMapping<Contest, ContestJpaEntity> {
     }
 
     /**
-     * Creates the [CommunityToContestJpaEntity] rows linking the contest [contestId] with [communityIds].
+     * Creates the [CommunityToContestJpaEntity] rows linking the contest [contestId] with [communityIds], one row per distinct id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toCommunityAssociations(contestId: Long, communityIds: List<CommunityId>) = communityIds.map {
+    fun toCommunityAssociations(contestId: Long, communityIds: List<CommunityId>) = communityIds.distinct().map {
         CommunityToContestJpaEntity(
             communityId = it.value,
             contestId = contestId,

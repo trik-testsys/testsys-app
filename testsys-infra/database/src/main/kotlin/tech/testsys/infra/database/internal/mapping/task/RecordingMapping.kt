@@ -2,6 +2,7 @@ package tech.testsys.infra.database.internal.mapping.task
 
 import tech.testsys.domain.builder.api.recording
 import tech.testsys.domain.builder.data
+import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Recording
 import tech.testsys.domain.model.task.RecordingData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -18,15 +19,15 @@ import tech.testsys.infra.database.internal.utils.populateFields
 object RecordingMapping : EntityMapping<Recording, RecordingJpaEntity> {
 
     /**
-     * Assembles a [Recording] from [jpaEntity] and its loaded file [uploadedFilename] and [content].
+     * Assembles a [Recording] from [jpaEntity] and its [file].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDomain(jpaEntity: RecordingJpaEntity, uploadedFilename: String, content: ByteArray) = recording {
+    fun toDomain(jpaEntity: RecordingJpaEntity, file: FileData) = recording {
         populateFields(jpaEntity)
 
         data {
-            file(uploadedFilename, content)
+            file(file)
         }
     }
 

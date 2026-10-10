@@ -155,4 +155,21 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="1.0.0-05-init-resource-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_solution ADD CONSTRAINT ck_ts_solution_language CHECK (
+                language IN ('PYTHON', 'JAVA_SCRIPT', 'VISUAL_LANGUAGE')
+            );
+            ALTER TABLE ts_exercise ADD CONSTRAINT ck_ts_exercise_language CHECK (
+                language IN ('PYTHON', 'JAVA_SCRIPT', 'VISUAL_LANGUAGE')
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_exercise DROP CONSTRAINT ck_ts_exercise_language;
+                ALTER TABLE ts_solution DROP CONSTRAINT ck_ts_solution_language;
+            </sql>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

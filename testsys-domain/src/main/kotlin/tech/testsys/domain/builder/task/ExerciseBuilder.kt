@@ -43,6 +43,15 @@ class ExerciseDataBuilder : Builder<ExerciseData> {
         _file = FileData(uploadedFilename, content)
     }
 
+    /**
+     * Sets [file] without reading its contents.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun file(file: FileData) {
+        _file = file
+    }
+
     override fun build(): ExerciseData {
         val file = requireField(_file) { ::_file }
         val name = requireField(name) { ::name }

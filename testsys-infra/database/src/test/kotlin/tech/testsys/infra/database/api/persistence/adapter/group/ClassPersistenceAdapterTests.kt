@@ -1,22 +1,33 @@
 package tech.testsys.infra.database.api.persistence.adapter.group
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.dao.DataIntegrityViolationException
+import org.springframework.dao.OptimisticLockingFailureException
+import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.builder.api.`class`
 import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
+import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.ClassData
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.InviteCodeHash
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.group.ContestToClassJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.group.StudentToClassJpaEntityRepository
+import java.util.concurrent.Callable
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
@@ -36,6 +47,15 @@ class ClassPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Cl
 
     @Autowired
     private lateinit var classInvites: ClassInviteRepository
+
+    @Autowired
+    private lateinit var transactions: TransactionOperations
+
+    @Autowired
+    private lateinit var multipleRoleUsers: MultipleRoleUserRepository
+
+    @PersistenceContext
+    private lateinit var entityManager: EntityManager
 
     override fun newData(): ClassData {
         val ownerId = fixtures.manager().id.value
@@ -102,6 +122,37 @@ class ClassPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Cl
     }
 
     @Test
+    fun `should save one student and contest link per id when ids repeat`() {
+        val studentId = fixtures.student().id
+        val contestId = fixtures.contest().id
+
+        val saved = repository.save(
+            classDataOf(students = listOf(studentId, studentId), contests = listOf(contestId, contestId)),
+        )
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(listOf(studentId), found.data.students.ids)
+        assertEquals(listOf(contestId), found.data.contests.ids)
+    }
+
+    @Test
+    fun `should add one and twenty students on update with the same statement count`() {
+        val studentIds = List(20) { fixtures.student().id }
+        val oneStudentClass = repository.save(classDataOf())
+        val twentyStudentsClass = repository.save(classDataOf())
+
+        val (_, oneStudentStatements) = withStatementCount {
+            repository.update(oneStudentClass.withData { students = studentIds.take(1).toMutableList() })
+        }
+        val (_, twentyStudentsStatements) = withStatementCount {
+            repository.update(twentyStudentsClass.withData { students = studentIds.toMutableList() })
+        }
+
+        assertEquals(studentIds.toSet(), assertNotNull(repository.findById(twentyStudentsClass.id)).data.students.ids.toSet())
+        assertEquals(oneStudentStatements, twentyStudentsStatements)
+    }
+
+    @Test
     fun `should keep a class without members through a round trip`() {
         val ownerId = fixtures.manager().id.value
         val inviteId = fixtures.classInvite().id
@@ -154,6 +205,170 @@ class ClassPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Cl
 
         assertEquals(saved.data.students.ids.toSet(), updated.data.students.ids.toSet())
         assertEquals(1, studentToClassJpaEntityRepository.findAllByClassId(saved.id.value).count { it.id.studentId == enrolled.value })
+    }
+
+    @Test
+    fun `should increment the class version on addStudent`() {
+        val saved = repository.save(newData())
+
+        val updated = repository.addStudent(saved.id, fixtures.student().id)
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(saved.id)).version)
+    }
+
+    @Test
+    fun `should increment the student version on addStudent`() {
+        val saved = repository.save(classDataOf())
+        val student = fixtures.student()
+
+        repository.addStudent(saved.id, student.id)
+
+        val stored = assertNotNull(multipleRoleUsers.findById(student.id))
+        assertEquals(assertNotNull(student.version).value + 1, assertNotNull(stored.version).value)
+    }
+
+    @Test
+    fun `should increment the versions of the students enrolled on save`() {
+        val students = listOf(fixtures.student(), fixtures.student())
+
+        repository.save(classDataOf(students = students.map { student -> student.id }))
+
+        students.forEach { student ->
+            val stored = assertNotNull(multipleRoleUsers.findById(student.id))
+            assertEquals(assertNotNull(student.version).value + 1, assertNotNull(stored.version).value)
+        }
+    }
+
+    @Test
+    fun `should increment the versions of the added students only on update`() {
+        val kept = fixtures.student()
+        val saved = repository.save(classDataOf(students = listOf(kept.id)))
+        val keptVersion = assertNotNull(multipleRoleUsers.findById(kept.id)).version
+        val added = fixtures.student()
+
+        repository.update(saved.withData { students = mutableListOf(kept.id, added.id) })
+
+        assertEquals(keptVersion, assertNotNull(multipleRoleUsers.findById(kept.id)).version)
+        assertEquals(assertNotNull(added.version).value + 1, assertNotNull(multipleRoleUsers.findById(added.id)?.version).value)
+    }
+
+    @Test
+    fun `should accept a student token read before the enrolment in the same transaction`() {
+        val saved = repository.save(classDataOf())
+        val student = fixtures.student()
+        val renamed = fixtures.unique("Renamed student")
+
+        val updated = transactions.execute {
+            val current = assertNotNull(multipleRoleUsers.findById(student.id))
+            repository.update(saved.withData { students = mutableListOf(student.id) })
+            multipleRoleUsers.update(current.withData { name = renamed })
+        }
+
+        val stored = assertNotNull(multipleRoleUsers.findById(student.id))
+        assertEquals(renamed, stored.data.name)
+        assertEquals(assertNotNull(student.version).value + 2, assertNotNull(stored.version).value)
+        assertEquals(stored.version, updated.version)
+    }
+
+    @Test
+    fun `should accept a student token read outside the enrolment transaction`() {
+        val saved = repository.save(classDataOf())
+        val student = fixtures.student()
+
+        val updated = transactions.execute {
+            repository.update(saved.withData { students = mutableListOf(student.id) })
+            multipleRoleUsers.update(student.withData { name = "Renamed after enrolment" })
+        }
+
+        val stored = assertNotNull(multipleRoleUsers.findById(student.id))
+        assertEquals("Renamed after enrolment", stored.data.name)
+        assertEquals(assertNotNull(student.version).value + 2, assertNotNull(stored.version).value)
+        assertEquals(stored.version, updated.version)
+    }
+
+    @Test
+    fun `should increment each student once for repeated batch enrolments across a cleared context`() {
+        val first = fixtures.student()
+        val shared = fixtures.student()
+        val last = fixtures.student()
+        val firstClass = repository.save(classDataOf())
+        val sameClass = repository.save(classDataOf())
+        val overlappingClass = repository.save(classDataOf())
+
+        transactions.execute {
+            repository.update(firstClass.withData { students = mutableListOf(first.id, shared.id) })
+            repository.update(sameClass.withData { students = mutableListOf(first.id, shared.id) })
+            entityManager.flush()
+            entityManager.clear()
+            repository.update(overlappingClass.withData { students = mutableListOf(shared.id, last.id) })
+        }
+
+        assertEquals(assertNotNull(first.version).value + 1, assertNotNull(multipleRoleUsers.findById(first.id)?.version).value)
+        assertEquals(assertNotNull(shared.version).value + 1, assertNotNull(multipleRoleUsers.findById(shared.id)?.version).value)
+        assertEquals(assertNotNull(last.version).value + 1, assertNotNull(multipleRoleUsers.findById(last.id)?.version).value)
+        assertEquals(setOf(first.id, shared.id), assertNotNull(repository.findById(sameClass.id)).data.students.ids.toSet())
+        assertEquals(setOf(shared.id, last.id), assertNotNull(repository.findById(overlappingClass.id)).data.students.ids.toSet())
+    }
+
+    @Test
+    fun `should increment the class version on an update of the students only`() {
+        val saved = repository.save(classDataOf())
+
+        val updated = repository.update(saved.withData { students = mutableListOf(fixtures.student().id) })
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(saved.id)).version)
+    }
+
+    @Test
+    fun `should reject a stale class update after a student joined and keep the student`() {
+        val saved = repository.save(classDataOf())
+        val student = fixtures.student().id
+        val contest = fixtures.contest().id
+        repository.addStudent(saved.id, student)
+
+        assertFailsWith<OptimisticLockingFailureException> {
+            repository.update(saved.withData { contests = mutableListOf(contest) })
+        }
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(listOf(student), found.data.students.ids)
+        assertEquals(emptyList(), found.data.contests.ids)
+    }
+
+    @Test
+    fun `should keep a student who joins while an update of the class read before is in progress`() {
+        val saved = repository.save(classDataOf())
+        val student = fixtures.student().id
+        val contest = fixtures.contest().id
+        val classRead = CountDownLatch(1)
+        val studentJoined = CountDownLatch(1)
+
+        Executors.newFixedThreadPool(2).use { pool ->
+            val update = pool.submit(
+                Callable {
+                    transactions.execute {
+                        val current = assertNotNull(repository.findById(saved.id))
+                        classRead.countDown()
+                        check(studentJoined.await(10, TimeUnit.SECONDS))
+                        repository.update(current.withData { contests = mutableListOf(contest) })
+                    }
+                },
+            )
+            val join = pool.submit(
+                Callable {
+                    check(classRead.await(10, TimeUnit.SECONDS))
+                    repository.addStudent(saved.id, student).also { studentJoined.countDown() }
+                },
+            )
+            join.get()
+            update.get()
+        }
+
+        val found = assertNotNull(repository.findById(saved.id))
+        assertEquals(listOf(student), found.data.students.ids)
+        assertEquals(listOf(contest), found.data.contests.ids)
     }
 
     @Test
@@ -256,5 +471,50 @@ class ClassPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Cl
         val student = fixtures.student().id
 
         assertFailsWith<IllegalArgumentException> { repository.addStudent(ClassId(UNKNOWN_ID), student) }
+    }
+
+    @Test
+    fun `should find classes by ids with the same statement count for one and twenty ids`() {
+        val ownerId = fixtures.manager().id.value
+        val studentIds = listOf(fixtures.student().id.value, fixtures.student().id.value)
+        val contestIds = listOf(fixtures.contest().id.value)
+        val ids = List(20) {
+            val inviteId = fixtures.classInvite().id
+            repository.save(
+                classData {
+                    owner(ownerId)
+                    name = fixtures.unique("Class")
+                    description = "Class description"
+                    students(studentIds)
+                    contests(contestIds)
+                    invite = inviteId
+                },
+            ).id
+        }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { studyClass -> studyClass.id })
+        assertEquals(ids.toSet(), twenty.map { studyClass -> studyClass.id }.toSet())
+        assertEquals(
+            List(20) { studentIds.toSet() },
+            twenty.map { studyClass -> studyClass.data.students.ids.map { student -> student.value }.toSet() },
+        )
+        assertEquals(List(20) { contestIds }, twenty.map { studyClass -> studyClass.data.contests.ids.map { contest -> contest.value } })
+        assertEquals(oneIdStatements, twentyIdsStatements)
+    }
+
+    private fun classDataOf(students: List<MultipleRoleUserId> = emptyList(), contests: List<ContestId> = emptyList()): ClassData {
+        val ownerId = fixtures.manager().id.value
+        val inviteId = fixtures.classInvite().id
+        return classData {
+            owner(ownerId)
+            name = fixtures.unique("Class")
+            description = "Class description"
+            this.students = students.toMutableList()
+            this.contests = contests.toMutableList()
+            invite = inviteId
+        }
     }
 }

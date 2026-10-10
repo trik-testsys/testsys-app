@@ -3,6 +3,7 @@ package tech.testsys.domain.builder.api
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
@@ -13,7 +14,9 @@ import tech.testsys.domain.model.task.DeveloperSolutionData
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.ExerciseData
 import tech.testsys.domain.model.task.ExerciseId
+import tech.testsys.domain.model.task.FileContent
 import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.domain.model.task.JudgmentOrderData
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.LogsData
@@ -357,9 +360,21 @@ class TaskApiTests {
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
-            Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
+            Assertions.assertSame(origin.data.file, copy.data.file)
             Assertions.assertEquals(origin.data.language, copy.data.language)
             Assertions.assertEquals(origin.data.versionBucket, copy.data.versionBucket)
+        }
+
+        @Test
+        fun `should preserve a stored file when withData changes its name`() {
+            val storedFile =
+                FileData("exercise.qrs", FileContent.Stored(StoredBlobRef("exercise"), FileStorageKind.Exercise))
+            val stored = origin.withData { file(storedFile) }
+
+            val renamed = stored.withData { name = "Renamed" }
+
+            Assertions.assertSame(storedFile, renamed.data.file)
+            Assertions.assertEquals("Renamed", renamed.data.name)
         }
 
         @Test
@@ -434,7 +449,7 @@ class TaskApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
-            Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
+            Assertions.assertSame(origin.data.file, copy.data.file)
         }
 
         @Test
@@ -442,7 +457,8 @@ class TaskApiTests {
             val copy = origin.withData { file("updated.log", byteArrayOf(3, 4)) }
 
             Assertions.assertEquals("updated.log", copy.data.file.uploadedFilename)
-            Assertions.assertArrayEquals(byteArrayOf(3, 4), copy.data.file.content)
+            val bytes = Assertions.assertInstanceOf(FileContent.Inline::class.java, copy.data.file.content).bytes
+            Assertions.assertArrayEquals(byteArrayOf(3, 4), bytes)
         }
     }
 
@@ -466,7 +482,7 @@ class TaskApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
-            Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
+            Assertions.assertSame(origin.data.file, copy.data.file)
         }
 
         @Test
@@ -474,7 +490,8 @@ class TaskApiTests {
             val copy = origin.withData { file("updated.mp4", byteArrayOf(7, 8)) }
 
             Assertions.assertEquals("updated.mp4", copy.data.file.uploadedFilename)
-            Assertions.assertArrayEquals(byteArrayOf(7, 8), copy.data.file.content)
+            val bytes = Assertions.assertInstanceOf(FileContent.Inline::class.java, copy.data.file.content).bytes
+            Assertions.assertArrayEquals(byteArrayOf(7, 8), bytes)
         }
     }
 
@@ -499,7 +516,7 @@ class TaskApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
-            Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
+            Assertions.assertSame(origin.data.file, copy.data.file)
             Assertions.assertEquals(origin.data.language, copy.data.language)
         }
 
@@ -536,7 +553,7 @@ class TaskApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
-            Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
+            Assertions.assertSame(origin.data.file, copy.data.file)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
             Assertions.assertEquals(origin.data.versionBucket, copy.data.versionBucket)
@@ -574,7 +591,7 @@ class TaskApiTests {
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
             Assertions.assertEquals(origin.data.file.uploadedFilename, copy.data.file.uploadedFilename)
-            Assertions.assertArrayEquals(origin.data.file.content, copy.data.file.content)
+            Assertions.assertSame(origin.data.file, copy.data.file)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.description, copy.data.description)
             Assertions.assertEquals(origin.data.versionBucket, copy.data.versionBucket)

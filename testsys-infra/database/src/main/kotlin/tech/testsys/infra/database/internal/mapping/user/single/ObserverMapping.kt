@@ -89,7 +89,7 @@ object ObserverMapping {
 
     /**
      * Creates the [ObserverDataJpaEntity] row of the user [userId] replacing [current] from [entity],
-     * keeping its id, `createdAt` and `version`.
+     * keeping its id, `createdAt` and `version`; the version token of [entity] is checked on the user row.
      *
      * @since %CURRENT_VERSION%
      */
@@ -103,11 +103,11 @@ object ObserverMapping {
     }
 
     /**
-     * Creates the [ContestToObserverJpaEntity] rows linking the observer [observerId] with [contestIds].
+     * Creates the [ContestToObserverJpaEntity] rows linking the observer [observerId] with [contestIds], one row per distinct id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toContestAssociations(observerId: Long, contestIds: List<Long>) = contestIds.map {
+    fun toContestAssociations(observerId: Long, contestIds: List<Long>) = contestIds.distinct().map {
         ContestToObserverJpaEntity(contestId = it, observerId = observerId)
     }
 }

@@ -5,6 +5,7 @@ import org.springframework.beans.factory.BeanCreationException
 import org.springframework.boot.WebApplicationType
 import org.springframework.boot.builder.SpringApplicationBuilder
 import tech.testsys.infra.database.DatabaseTestApp
+import tech.testsys.infra.database.PostgresTestContainer
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.id.HibernateSnowflakeIdGenerator
 import kotlin.test.assertFailsWith
@@ -19,15 +20,16 @@ class SnowflakeNodeIdStartupTests {
 
     @Test
     fun `should fail context startup with a message naming the setting if node id is invalid`() {
+        val database = PostgresTestContainer.instance
+
         val failure = assertFailsWith<BeanCreationException> {
             // Command-line arguments outrank `hibernate-defaults.properties` (a `@PropertySource`), unlike `properties(...)`.
             SpringApplicationBuilder(DatabaseTestApp::class.java)
                 .web(WebApplicationType.NONE)
                 .run(
-                    "--spring.datasource.url=jdbc:h2:mem:testsys_node_id_startup;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
-                    "--spring.datasource.driver-class-name=org.h2.Driver",
-                    "--spring.datasource.username=sa",
-                    "--spring.datasource.password=",
+                    "--spring.datasource.url=${database.jdbcUrl}",
+                    "--spring.datasource.username=${database.username}",
+                    "--spring.datasource.password=${database.password}",
                     "--spring.jpa.properties.${HibernateSnowflakeIdGenerator.NODE_ID_SETTING}=node-1",
                 )
                 .close()

@@ -233,4 +233,25 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="1.0.0-03-init-user-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_user ADD CONSTRAINT ck_ts_user_access_token_hash_algorithm CHECK (
+                access_token_hash_algorithm IN ('IDENTITY')
+            );
+            ALTER TABLE ts_user ADD CONSTRAINT ck_ts_user_type_email CHECK (
+                (type = 'MULTIPLE_ROLE' AND email IS NOT NULL) OR (type = 'SINGLE_ROLE' AND email IS NULL)
+            );
+            ALTER TABLE ts_single_role_to_user ADD CONSTRAINT ck_ts_single_role_to_user_single_role CHECK (
+                single_role IN ('PARTICIPANT', 'OBSERVER', 'SUPERVISOR')
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_single_role_to_user DROP CONSTRAINT ck_ts_single_role_to_user_single_role;
+                ALTER TABLE ts_user DROP CONSTRAINT ck_ts_user_type_email;
+                ALTER TABLE ts_user DROP CONSTRAINT ck_ts_user_access_token_hash_algorithm;
+            </sql>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

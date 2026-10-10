@@ -34,4 +34,17 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="1.0.0-16-init-registration-request-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_registration_request ADD CONSTRAINT ck_ts_registration_request_attempts_left CHECK (
+                attempts_left >= 0
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_registration_request DROP CONSTRAINT ck_ts_registration_request_attempts_left;
+            </sql>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

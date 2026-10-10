@@ -18,6 +18,8 @@ import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.*
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
 import tech.testsys.domain.builder.util.chooser.SubmissionStatusChooser
+import tech.testsys.domain.contract.FileContentReader
+import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
@@ -43,7 +45,9 @@ import tech.testsys.domain.model.task.DeveloperSolution
 import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseId
+import tech.testsys.domain.model.task.FileContent
 import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderData
@@ -68,6 +72,7 @@ import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.SingleRoleUser
 import tech.testsys.operation.error.*
+import tech.testsys.operation.error.UploadedFileNameTooLongError
 import tech.testsys.operation.util.*
 import java.time.Clock
 import java.time.Duration
@@ -90,8 +95,15 @@ class StudyOperationsTests {
     private val exerciseRepository = mockk<ExerciseRepository>()
     private val solutionRepository = mockk<SolutionRepository>()
     private val developerSolutionRepository = mockk<DeveloperSolutionRepository>()
+    private val storedVerdicts = mutableMapOf<VerdictId, Verdict>()
+    private val storedJudgmentOrders = mutableMapOf<JudgmentOrderId, JudgmentOrder>()
+    private val storedSolutions = mutableMapOf<SolutionId, Solution>()
     private val now = Instant.parse("2026-01-01T12:00:00Z")
+    private val fileContentReader = mockk<FileContentReader> {
+        every { read(any()) } answers { assertInstanceOf(FileContent.Inline::class.java, firstArg<FileData>().content).bytes }
+    }
     private val operations = StudyOperations(
+        fileContentReader = fileContentReader,
         competitionRepository = competitions,
         classRepository = classes,
         contestRepository = contests,
@@ -738,6 +750,36 @@ class StudyOperationsTests {
 
                     assertSame(failure, thrown)
                 }
+
+                @Test
+                fun `should load judgment orders and verdicts with one call each and match answers given out of order`() {
+                    val lowJudged = testSubmission(submissionId = 51, orders = listOf(61))
+                    val highJudged = testSubmission(submissionId = 52, orders = listOf(62))
+                    val lowGraded = testSubmission(submissionId = 53)
+                    val highGraded = testSubmission(submissionId = 54)
+                    stubVerdict(verdictId = 53, scores = listOf(30))
+                    stubVerdict(verdictId = 54, scores = listOf(70))
+                    stubJudgmentOrders(testJudgmentOrder(orderId = 61, score = 10), testJudgmentOrder(orderId = 62, score = 50))
+
+                    prepareParticipantTask()
+                    stubSubmissions(lowJudged, highGraded, highJudged, lowGraded)
+
+                    val best = view().getOrThrow().third
+
+                    assertSame(highGraded, best)
+                    verify(exactly = 1) {
+                        judgmentOrderRepository.load(
+                            match<LazyEntityList<JudgmentOrderId, JudgmentOrder>> { list ->
+                                list.ids.toSet() == setOf(JudgmentOrderId(61), JudgmentOrderId(62))
+                            },
+                        )
+                        verdictRepository.load(
+                            match<LazyEntityList<VerdictId, Verdict>> { list -> list.ids.toSet() == setOf(VerdictId(53), VerdictId(54)) },
+                        )
+                    }
+                    verify(exactly = 1) { verdictRepository.load(any<LazyEntityList<VerdictId, Verdict>>()) }
+                    verify(exactly = 1) { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) }
+                }
             }
 
             private fun stubSubmissions(vararg submissions: Submission, contestId: ContestId = taskContest.id) {
@@ -972,11 +1014,16 @@ class StudyOperationsTests {
                 @Test
                 fun `should return the file of the committed statement`() {
                     prepareParticipantTask()
-                    every { statementRepository.findById(statement.id) } returns statement
+                    val storedFile =
+                        FileData("statement.pdf", FileContent.Stored(StoredBlobRef("statement"), FileStorageKind.Statement))
+                    every { statementRepository.findById(statement.id) } returns statement.withData { file(storedFile) }
+                    every { fileContentReader.read(storedFile) } returns byteArrayOf(1, 2)
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals("statement.pdf", file.uploadedFilename)
+                    assertArrayEquals(byteArrayOf(1, 2), assertInstanceOf(FileContent.Inline::class.java, file.content).bytes)
+                    verify(exactly = 1) { fileContentReader.read(storedFile) }
                 }
 
                 @Test
@@ -986,7 +1033,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = exercise.id).getOrThrow()
 
-                    assertSame(exercise.data.file, file)
+                    assertEquals(exercise.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(exercise.data.file), fileContentReader.read(file))
                 }
 
                 @Test
@@ -996,7 +1044,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals(statement.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(statement.data.file), fileContentReader.read(file))
                 }
             }
 
@@ -1073,6 +1122,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1104,7 +1154,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals(statement.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(statement.data.file), fileContentReader.read(file))
                 }
 
                 @Test
@@ -1116,6 +1167,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1138,6 +1190,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1169,7 +1222,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals(statement.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(statement.data.file), fileContentReader.read(file))
                 }
 
                 @Test
@@ -1179,7 +1233,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = exercise.id).getOrThrow()
 
-                    assertSame(exercise.data.file, file)
+                    assertEquals(exercise.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(exercise.data.file), fileContentReader.read(file))
                 }
 
                 @Test
@@ -1189,7 +1244,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals(statement.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(statement.data.file), fileContentReader.read(file))
                 }
             }
 
@@ -1278,6 +1334,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1309,7 +1366,8 @@ class StudyOperationsTests {
 
                     val file = download(resourceId = statement.id).getOrThrow()
 
-                    assertSame(statement.data.file, file)
+                    assertEquals(statement.data.file.uploadedFilename, file.uploadedFilename)
+                    assertArrayEquals(fileContentReader.read(statement.data.file), fileContentReader.read(file))
                 }
 
                 @Test
@@ -1321,6 +1379,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1332,6 +1391,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
 
                 @Test
@@ -1355,6 +1415,7 @@ class StudyOperationsTests {
                     }
 
                     verify { statementRepository wasNot Called }
+                    verify { fileContentReader wasNot Called }
                 }
             }
 
@@ -1428,7 +1489,7 @@ class StudyOperationsTests {
             id = 101
             createdAt = now
             data = solutionData {
-                file(file.uploadedFilename, file.content)
+                file(file)
                 language.python()
             }
         }
@@ -1458,7 +1519,7 @@ class StudyOperationsTests {
 
                     assertSame(savedSubmission, result)
                     assertEquals(file.uploadedFilename, sentSolution.captured.file.uploadedFilename)
-                    assertArrayEquals(file.content, sentSolution.captured.file.content)
+                    assertSame(file, sentSolution.captured.file)
                     assertSame(TrikSupportedLanguage.Python, sentSolution.captured.language)
                     assertEquals(participant.id, sentSubmission.captured.author.id)
                     assertEquals(savedSolution.id, sentSubmission.captured.solution.id)
@@ -1511,6 +1572,18 @@ class StudyOperationsTests {
                     val result = send().getOrThrow()
 
                     assertSame(savedSubmission, result)
+                }
+
+                @ParameterizedTest
+                @ValueSource(strings = ["a", "😀"])
+                fun `should preserve file names at the Unicode limit`(character: String) {
+                    prepareParticipantSend()
+                    val name = character.repeat(512)
+                    val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                    send(file = file).getOrThrow()
+
+                    assertEquals(name, sentSolution.captured.file.uploadedFilename)
                 }
             }
 
@@ -1620,6 +1693,18 @@ class StudyOperationsTests {
 
                     verifyNothingSaved()
                 }
+
+                @ParameterizedTest
+                @ValueSource(strings = ["a", "😀"])
+                fun `should reject long file names without saving`(character: String) {
+                    prepareParticipantSend()
+                    val name = character.repeat(513)
+                    val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                    assertRaises(UploadedFileNameTooLongError(name)) { send(file = file) }
+
+                    verifyNothingSaved()
+                }
             }
 
             @Nested
@@ -1699,9 +1784,40 @@ class StudyOperationsTests {
 
                     assertSame(failure, thrown)
                 }
+
+                @Test
+                fun `should load the solutions of all committed developer solutions with one call if they share a solution`() {
+                    prepareParticipantSend(
+                        currentTask = testTask {
+                            committed {
+                                exercises(listOf(1))
+                                statement(1)
+                                developerSolutions(listOf(81, 82))
+                            }
+                        },
+                    )
+                    val first = stubReferenceSolution(developerSolutionId = 81) { python() }
+                    stubDeveloperSolutions(
+                        first,
+                        developerSolution {
+                            id = 82
+                            createdAt = Instant.EPOCH
+                            data = first.data
+                        },
+                    )
+
+                    send().getOrThrow()
+
+                    verify(exactly = 1) {
+                        solutionRepository.load(
+                            match<LazyEntityList<SolutionId, Solution>> { list -> list.ids == listOf(first.data.solution.id) },
+                        )
+                    }
+                }
             }
 
             private fun send(
+                file: FileData = this@SendSolutionTests.file,
                 user: SingleRoleUser = participant,
                 contestId: ContestId = taskContest.id,
                 language: TrikSupportedLanguage = TrikSupportedLanguage.Python,
@@ -1733,7 +1849,7 @@ class StudyOperationsTests {
 
                     assertSame(savedSubmission, result)
                     assertEquals(file.uploadedFilename, sentSolution.captured.file.uploadedFilename)
-                    assertArrayEquals(file.content, sentSolution.captured.file.content)
+                    assertSame(file, sentSolution.captured.file)
                     assertSame(TrikSupportedLanguage.JavaScript, sentSolution.captured.language)
                     assertEquals(student.id, sentSubmission.captured.author.id)
                     assertEquals(savedSolution.id, sentSubmission.captured.solution.id)
@@ -1777,6 +1893,18 @@ class StudyOperationsTests {
                     val result = send().getOrThrow()
 
                     assertSame(savedSubmission, result)
+                }
+
+                @ParameterizedTest
+                @ValueSource(strings = ["a", "😀"])
+                fun `should preserve file names at the Unicode limit`(character: String) {
+                    prepareStudentSend()
+                    val name = character.repeat(512)
+                    val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                    send(file = file).getOrThrow()
+
+                    assertEquals(name, sentSolution.captured.file.uploadedFilename)
                 }
             }
 
@@ -1898,6 +2026,18 @@ class StudyOperationsTests {
 
                     verifyNothingSaved()
                 }
+
+                @ParameterizedTest
+                @ValueSource(strings = ["a", "😀"])
+                fun `should reject long file names without saving`(character: String) {
+                    prepareStudentSend()
+                    val name = character.repeat(513)
+                    val file = FileData(uploadedFilename = name, content = byteArrayOf(1))
+
+                    assertRaises(UploadedFileNameTooLongError(name)) { send(file = file) }
+
+                    verifyNothingSaved()
+                }
             }
 
             @Nested
@@ -1989,6 +2129,7 @@ class StudyOperationsTests {
             }
 
             private fun send(
+                file: FileData = this@SendSolutionTests.file,
                 user: MultipleRoleUser = student,
                 contestId: ContestId = taskContest.id,
                 language: TrikSupportedLanguage = TrikSupportedLanguage.JavaScript,
@@ -2040,7 +2181,7 @@ class StudyOperationsTests {
                 id = 3
                 createdAt = firstEntry
                 data = solutionData {
-                    file(file.uploadedFilename, file.content)
+                    file(file)
                     language.python()
                 }
             }
@@ -2078,9 +2219,10 @@ class StudyOperationsTests {
                     language.chooseLanguage()
                 }
             }
-            every {
-                solutionRepository.load(match<LazyEntity<SolutionId, Solution>> { field -> field.id == reference.id })
-            } returns reference
+            storedSolutions[reference.id] = reference
+            every { solutionRepository.load(any<LazyEntityList<SolutionId, Solution>>()) } answers {
+                firstArg<LazyEntityList<SolutionId, Solution>>().ids.reversed().map(storedSolutions::getValue)
+            }
             return developerSolution {
                 id = developerSolutionId
                 createdAt = Instant.EPOCH
@@ -2198,17 +2340,20 @@ class StudyOperationsTests {
             }
         }
 
+    /** Stores a verdict; list loads of verdicts answer with the requested stored ones in reverse request order. */
     private fun stubVerdict(verdictId: Long, scores: List<Int>) {
-        every {
-            verdictRepository.load(match<LazyEntity<VerdictId, Verdict>> { reference -> reference.id == VerdictId(verdictId) })
-        } returns testVerdict(verdictId = verdictId, scores = scores)
+        storedVerdicts[VerdictId(verdictId)] = testVerdict(verdictId = verdictId, scores = scores)
+        every { verdictRepository.load(any<LazyEntityList<VerdictId, Verdict>>()) } answers {
+            firstArg<LazyEntityList<VerdictId, Verdict>>().ids.reversed().map(storedVerdicts::getValue)
+        }
     }
 
+    /** Stores [orders]; list loads of judgment orders answer with the requested stored ones in reverse request order. */
     private fun stubJudgmentOrders(vararg orders: JudgmentOrder) {
-        val ids = orders.map { order -> order.id }.toSet()
-        every {
-            judgmentOrderRepository.load(match<LazyEntityList<JudgmentOrderId, JudgmentOrder>> { list -> list.ids.toSet() == ids })
-        } returns orders.toList()
+        storedJudgmentOrders.putAll(orders.associateBy { order -> order.id })
+        every { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) } answers {
+            firstArg<LazyEntityList<JudgmentOrderId, JudgmentOrder>>().ids.reversed().map(storedJudgmentOrders::getValue)
+        }
     }
 
     private fun Submission.verdictReference(): LazyEntity<VerdictId, Verdict> {

@@ -19,7 +19,8 @@ import java.time.Duration
 import java.util.concurrent.Executors
 
 /**
- * Registers the grading adapter and its defaults; repository ports and a transaction manager are supplied by the application.
+ * Registers the grading adapter and its defaults; repository ports and `TransactionOperations` are supplied by the
+ * application.
  *
  * @since %CURRENT_VERSION%
  */

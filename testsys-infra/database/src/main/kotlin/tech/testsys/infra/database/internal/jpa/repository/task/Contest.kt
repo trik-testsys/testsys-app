@@ -12,6 +12,7 @@ import tech.testsys.infra.database.internal.jpa.entity.task.ContestJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskToContestId
 import tech.testsys.infra.database.internal.jpa.entity.task.TaskToContestJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
@@ -46,6 +47,17 @@ interface TaskToContestJpaEntityRepository : CompositeJpaEntityRepository<TaskTo
      */
     @Query("select e from TaskToContestJpaEntity e where e.id.contestId = :contestId")
     fun findAllByContestId(@Param("contestId") contestId: Long): List<TaskToContestJpaEntity>
+
+    /**
+     * Finds the ids of the contests [contestIds] paired with the ids of their tasks in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query(
+        "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.contestId, e.id.taskId) " +
+            "from TaskToContestJpaEntity e where e.id.contestId in :contestIds",
+    )
+    fun findLinkedIdsByContestIdIn(@Param("contestIds") contestIds: Collection<Long>): List<LinkedIdRow>
 
     /**
      * Finds one [pageable] page of the association rows of the contest [contestId].
@@ -98,6 +110,17 @@ interface CommunityToContestJpaEntityRepository :
     fun findAllByContestId(@Param("contestId") contestId: Long): List<CommunityToContestJpaEntity>
 
     /**
+     * Finds the ids of the contests [contestIds] paired with the ids of the communities they are shared to in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query(
+        "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.contestId, e.id.communityId) " +
+            "from CommunityToContestJpaEntity e where e.id.contestId in :contestIds",
+    )
+    fun findLinkedIdsByContestIdIn(@Param("contestIds") contestIds: Collection<Long>): List<LinkedIdRow>
+
+    /**
      * Finds one [pageable] page of the association rows of the contest [contestId].
      *
      * @since %CURRENT_VERSION%
@@ -116,9 +139,13 @@ interface CommunityToContestJpaEntityRepository :
 interface ContestJpaEntityRepository : SnowflakeJpaEntityRepository<ContestJpaEntity> {
 
     /**
-     * Finds the contests owned by the user [ownerId].
+     * Finds the ids of the users [ownerIds] paired with the ids of the contests they own in one query.
      *
      * @since %CURRENT_VERSION%
      */
-    fun findAllByOwnerId(ownerId: Long): List<ContestJpaEntity>
+    @Query(
+        "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.ownerId, e.id) " +
+            "from ContestJpaEntity e where e.ownerId in :ownerIds",
+    )
+    fun findLinkedIdsByOwnerIdIn(@Param("ownerIds") ownerIds: Collection<Long>): List<LinkedIdRow>
 }

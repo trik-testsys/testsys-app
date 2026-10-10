@@ -79,7 +79,8 @@ testsys-app/
   `dev.detekt:detekt-rules-ktlint-wrapper` вместо устаревшего `detekt-formatting`.
 - `gradle/libs.versions.toml` — версии, библиотеки и bundles. Версии зависимостей указываются только здесь.
   Версия Spring Boot одна на весь проект. Модули со Spring подключают BOM `libs.spring.boot.bom` через
-  `platform(...)`; версии стартеров, Hibernate, Liquibase, H2 и драйвера PostgreSQL задаёт BOM, в каталоге их нет.
+  `platform(...)`; версии стартеров, Hibernate, Liquibase, Testcontainers и драйвера PostgreSQL задаёт BOM,
+  в каталоге их нет.
 - `gradle.properties` — память Gradle-демона (`org.gradle.jvmargs`): значений Gradle по умолчанию полной сборке
   с KSP, Vaadin и Detekt не хватает. Демон Kotlin наследует эти параметры.
 - В `build.gradle.kts` модуля, кроме плагинов сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`, у веб-приложений —
@@ -96,6 +97,9 @@ testsys-app/
 
 Агрегатор `testAll` лениво подключает все задачи типа `Test`, включая дополнительные наборы тестов модулей.
 Он запускает тесты без Detekt; `build` и `check` сохраняют полную проверку.
+
+Тесты модулей `testsys-infra:database` и `testsys-web:app` запускают PostgreSQL в Testcontainers, поэтому `build`,
+`testAll` и тесты этих модулей требуют запущенного Docker.
 
 Полная сборка — компиляция, тесты и Detekt:
 

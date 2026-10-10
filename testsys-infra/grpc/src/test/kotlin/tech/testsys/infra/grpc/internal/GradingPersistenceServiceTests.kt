@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
@@ -19,8 +20,12 @@ import tech.testsys.domain.builder.api.task
 import tech.testsys.domain.builder.api.taskValidationSnapshot
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.builder.data
+import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.model.LazyEntity
 import tech.testsys.domain.model.LazyEntityList
+import tech.testsys.domain.model.task.FileContent
+import tech.testsys.domain.model.task.FileData
+import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.RecordingId
 import tech.testsys.domain.model.task.Score
@@ -37,6 +42,21 @@ import trik.testsys.grading.GradingNodeOuterClass as Proto
 class GradingPersistenceServiceTests {
     @Nested
     inner class PrepareTests {
+        @Test
+        fun `should encode stored solution bytes through the reader`() {
+            val repository = RepositoryFixture()
+            val loaded = repository.solutions.load(repository.initial.data.solution)
+            val storedFile =
+                FileData("solution.py", FileContent.Stored(StoredBlobRef("solution"), FileStorageKind.Solution))
+            every { repository.solutions.load(repository.initial.data.solution) } returns loaded.withData { file(storedFile) }
+            every { repository.fileContentReader.read(storedFile) } returns "stored program".toByteArray()
+
+            val result = repository.persistence.prepare(repository.initial, shouldRecordVideo = false)
+
+            assertEquals("stored program", result.message.pythonSubmission.file.content.toStringUtf8())
+            verify(exactly = 1) { repository.fileContentReader.read(storedFile) }
+        }
+
         @ParameterizedTest
         @ValueSource(booleans = [true, false])
         fun `should select immutable snapshot polygons for linked author submissions after task edits or commit`(committed: Boolean) {
@@ -108,6 +128,34 @@ class GradingPersistenceServiceTests {
             verify(exactly = 0) { repository.submissions.update(any<Submission>()) }
         }
 
+        @Test
+        fun `should prepare a submission in one transaction`() {
+            val submitted = testSubmission().withData { kind.grading { contest(10) } }
+            val repository = RepositoryFixture(submitted)
+            every { repository.tasks.load(submitted.data.task) } returns editedTask()
+            val solution = repository.solutions.load(submitted.data.solution)
+            val polygons = repository.tests.load(LazyEntityList(listOf(TestId(4))))
+            val callsInTransaction = mutableListOf<Boolean>()
+            every { repository.solutions.load(submitted.data.solution) } answers {
+                callsInTransaction.add(repository.transactions.isActive.get())
+                solution
+            }
+            every { repository.tests.load(any<LazyEntityList<TestId, Polygon>>()) } answers {
+                callsInTransaction.add(repository.transactions.isActive.get())
+                polygons
+            }
+            every { repository.submissions.update(any<Submission>()) } answers {
+                callsInTransaction.add(repository.transactions.isActive.get())
+                firstArg<Submission>().also(repository.current::set)
+            }
+
+            repository.persistence.prepare(submitted, shouldRecordVideo = true)
+
+            assertEquals(1, repository.transactions.count.get())
+            assertEquals(listOf(true, true, true), callsInTransaction)
+            assertTrue(repository.hasCommitted.get())
+        }
+
         @ParameterizedTest
         @ValueSource(booleans = [true, false])
         fun `should encode the configured video recording flag`(shouldRecordVideo: Boolean) {
@@ -121,6 +169,32 @@ class GradingPersistenceServiceTests {
 
     @Nested
     inner class SaveResultTests {
+        @ParameterizedTest
+        @ValueSource(strings = ["logs", "video"])
+        fun `should save a grading error without artifacts when an uploaded name exceeds the limit`(kind: String) {
+            val repository = RepositoryFixture()
+            val field = field().toBuilder().apply {
+                when (kind) {
+                    "logs" -> verdict = verdict.toBuilder().setName("😀".repeat(513)).build()
+                    "video" -> video = verdict.toBuilder().setName("😀".repeat(513)).build()
+                }
+            }.build()
+            val checked = checkResult(
+                result = result(fields = listOf(field)),
+                expectedId = repository.initial.id,
+                expectedTests = listOf(TestId(4)),
+                parser = JsonLogParser(),
+            )
+
+            repository.persistence.saveResult(repository.initial, checked)
+
+            val status = assertInstanceOf(SubmissionStatus.Graded::class.java, repository.current.get().data.status)
+            assertInstanceOf(GradingResult.GradingError::class.java, status.grade)
+            assertEquals(0, repository.savedVerdicts.size)
+            assertEquals(0, repository.savedLogs.size)
+            assertEquals(0, repository.savedRecordings.size)
+        }
+
         @Test
         @Tag("regression")
         fun `should save a grading error without artifacts when overflowing logs include an error`() {
@@ -157,7 +231,8 @@ class GradingPersistenceServiceTests {
             repository.persistence.saveResult(repository.initial, checked)
 
             assertEquals(0, repository.savedVerdicts.single().testVerdicts.single().score.value)
-            assertArrayEquals(content.toByteArray(), repository.savedLogs.single().file.content)
+            val bytes = assertInstanceOf(FileContent.Inline::class.java, repository.savedLogs.single().file.content).bytes
+            assertArrayEquals(content.toByteArray(), bytes)
         }
 
         @Test
@@ -176,7 +251,7 @@ class GradingPersistenceServiceTests {
 
             val saved = repository.savedRecordings.single()
             assertEquals("run.webm", saved.file.uploadedFilename)
-            assertArrayEquals(byteArrayOf(0, 1, -1, 42), saved.file.content)
+            assertArrayEquals(byteArrayOf(0, 1, -1, 42), assertInstanceOf(FileContent.Inline::class.java, saved.file.content).bytes)
             val testVerdict = repository.savedVerdicts.single().testVerdicts.single()
             assertEquals(TestId(4), testVerdict.test.id)
             assertEquals(RecordingId(6), testVerdict.recording?.id)

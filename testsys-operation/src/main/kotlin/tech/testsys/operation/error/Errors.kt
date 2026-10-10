@@ -561,6 +561,56 @@ data object BlankJudgmentReasonError : ChangeVerdictError
 // region DeveloperOperations
 
 /**
+ * The task name exceeds the Unicode code point limit.
+ *
+ * @property taskName the rejected task name.
+ * @since %CURRENT_VERSION%
+ */
+data class TaskNameTooLongError(val taskName: String) : CreateTaskError, EditTaskInfoError
+
+/**
+ * The contest name exceeds the Unicode code point limit.
+ *
+ * @property contestName the rejected contest name.
+ * @since %CURRENT_VERSION%
+ */
+data class ContestNameTooLongError(val contestName: String) : CreateContestError, EditContestError
+
+/**
+ * The resource name exceeds the Unicode code point limit.
+ *
+ * @property resourceName the rejected resource name.
+ * @since %CURRENT_VERSION%
+ */
+data class ResourceNameTooLongError(val resourceName: String) :
+    AddStatementError,
+    AddExerciseError,
+    AddTestError,
+    AddDeveloperSolutionError,
+    UpdateStatementError,
+    UpdateExerciseError,
+    UpdateTestError,
+    UpdateDeveloperSolutionError
+
+/**
+ * The uploaded file name exceeds the Unicode code point limit.
+ *
+ * @property uploadedFilename the rejected uploaded file name.
+ * @since %CURRENT_VERSION%
+ */
+data class UploadedFileNameTooLongError(val uploadedFilename: String) :
+    AddStatementError,
+    AddExerciseError,
+    AddTestError,
+    AddDeveloperSolutionError,
+    UpdateStatementError,
+    UpdateExerciseError,
+    UpdateTestError,
+    UpdateDeveloperSolutionError,
+    SendParticipantSolutionError,
+    SendStudentSolutionError
+
+/**
  * Expected failure of requesting testing of an owned task.
  *
  * @since %CURRENT_VERSION%

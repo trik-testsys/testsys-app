@@ -34,8 +34,9 @@ dependencies {
     testImplementation(libs.spring.boot.starter.test)
     testImplementation(libs.karibu.testing)
     testImplementation(libs.karibu.testing.spring)
+    testImplementation(libs.spring.boot.testcontainers)
+    testImplementation(libs.testcontainers.postgresql)
     testRuntimeOnly(libs.bundles.test.runtime)
-    testRuntimeOnly(libs.h2)
 }
 
 configureWebFrontend()

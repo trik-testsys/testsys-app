@@ -26,6 +26,7 @@ import tech.testsys.domain.contract.persistence.repository.TaskValidationRequest
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
+import tech.testsys.domain.model.TextLimits
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
@@ -70,6 +71,7 @@ import tech.testsys.operation.error.ContestAccessDeniedError
 import tech.testsys.operation.error.ContestAlreadySharedError
 import tech.testsys.operation.error.ContestEndNotAfterStartError
 import tech.testsys.operation.error.ContestEndWithoutStartError
+import tech.testsys.operation.error.ContestNameTooLongError
 import tech.testsys.operation.error.ContestNotExistsError
 import tech.testsys.operation.error.CreateContestError
 import tech.testsys.operation.error.CreateTaskError
@@ -93,6 +95,7 @@ import tech.testsys.operation.error.MissedDeveloperRoleError
 import tech.testsys.operation.error.NonPositiveAttemptDurationError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.ResourceAlreadyAttachedError
+import tech.testsys.operation.error.ResourceNameTooLongError
 import tech.testsys.operation.error.ResourceNotExistsError
 import tech.testsys.operation.error.ResourceNotUploadedToTaskError
 import tech.testsys.operation.error.ResourceVersionNotAttachedError
@@ -107,6 +110,7 @@ import tech.testsys.operation.error.TaskAccessDeniedError
 import tech.testsys.operation.error.TaskAlreadyAttachedToContestError
 import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskAlreadyHasStatementError
+import tech.testsys.operation.error.TaskNameTooLongError
 import tech.testsys.operation.error.TaskNotAttachedToContestError
 import tech.testsys.operation.error.TaskNotCommittedError
 import tech.testsys.operation.error.TaskNotExistsError
@@ -125,6 +129,7 @@ import tech.testsys.operation.error.UpdateDeveloperSolutionError
 import tech.testsys.operation.error.UpdateExerciseError
 import tech.testsys.operation.error.UpdateStatementError
 import tech.testsys.operation.error.UpdateTestError
+import tech.testsys.operation.error.UploadedFileNameTooLongError
 import tech.testsys.operation.error.ViewContestError
 import tech.testsys.operation.error.ViewContestsError
 import tech.testsys.operation.error.ViewResourceError
@@ -136,8 +141,10 @@ import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.changeEditableContent
+import tech.testsys.operation.util.findByIdsAsMap
 import tech.testsys.operation.util.getEditableContent
 import tech.testsys.operation.util.hasRole
+import tech.testsys.operation.util.loadByIdsAsMap
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -184,8 +191,11 @@ class DeveloperOperations(
             ensure(content.developerSolutions.ids.isNotEmpty()) { TaskTestingNoDeveloperSolutionsError(taskId) }
             ensure(content.supportedTrikStudioVersions.isNotEmpty()) { TaskTestingNoTrikStudioVersionsError(taskId) }
             val exercises = exerciseRepository.load(content.exercises)
-            developerSolutionRepository.load(content.developerSolutions).forEach { developerSolution ->
-                val solution = solutionRepository.load(developerSolution.data.solution)
+            val authorSolutions = developerSolutionRepository.load(content.developerSolutions)
+            val solutionIds = authorSolutions.map { developerSolution -> developerSolution.data.solution.id }
+            val solutions = solutionRepository.loadByIdsAsMap(solutionIds)
+            authorSolutions.forEach { developerSolution ->
+                val solution = solutions.getValue(developerSolution.data.solution.id)
                 ensure(exercises.any { exercise -> exercise.data.language == solution.data.language }) {
                     TaskTestingNoExerciseForLanguageError(taskId = taskId, language = solution.data.language)
                 }
@@ -242,8 +252,11 @@ class DeveloperOperations(
             val statement = wip.statement
             ensure(statement != null) { TaskTestingNoStatementError(taskId) }
             val exercises = exerciseRepository.load(wip.exercises)
-            developerSolutionRepository.load(wip.developerSolutions).forEach { developerSolution ->
-                val solution = solutionRepository.load(developerSolution.data.solution)
+            val authorSolutions = developerSolutionRepository.load(wip.developerSolutions)
+            val solutionIds = authorSolutions.map { developerSolution -> developerSolution.data.solution.id }
+            val solutions = solutionRepository.loadByIdsAsMap(solutionIds)
+            authorSolutions.forEach { developerSolution ->
+                val solution = solutions.getValue(developerSolution.data.solution.id)
                 ensure(exercises.any { exercise -> exercise.data.language == solution.data.language }) {
                     TaskTestingNoExerciseForLanguageError(taskId = taskId, language = solution.data.language)
                 }
@@ -349,6 +362,7 @@ class DeveloperOperations(
         }
         contestDuration?.requireExactMillis("contestDuration")
         attemptDuration?.requireExactMillis("attemptDuration")
+        ensure(TextLimits.isValidName(contestName)) { ContestNameTooLongError(contestName) }
         val data = contestData {
             owner = user.id
             name = contestName
@@ -395,6 +409,7 @@ class DeveloperOperations(
             )
         }
         contestDuration?.requireExactMillis("contestDuration")
+        ensure(TextLimits.isValidName(contestName)) { ContestNameTooLongError(contestName) }
         if (contestName == contest.data.name && startsAt == contest.data.startsAt && endsAt == contest.data.endsAt) {
             return contest.asSuccess()
         }
@@ -422,8 +437,9 @@ class DeveloperOperations(
         ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
         val contest = contestRepository.findById(contestId)
         ensure(contest != null) { ContestNotExistsError(contestId) }
+        val communities = communityRepository.findByIdsAsMap(communityIds)
         communityIds.forEach { communityId ->
-            ensure(communityRepository.findById(communityId) != null) { CommunityNotExistsError(communityId) }
+            ensure(communityId in communities) { CommunityNotExistsError(communityId) }
         }
         ensure(contest.data.owner.id == user.id) { ContestAccessDeniedError(contestId) }
 
@@ -577,6 +593,7 @@ class DeveloperOperations(
         val task = taskRepository.findById(taskId)
         ensure(task != null) { TaskNotExistsError(taskId) }
         ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        ensure(taskName == null || TextLimits.isValidName(taskName)) { TaskNameTooLongError(requireNotNull(taskName)) }
 
         val versions = supportedTrikStudioVersions?.distinct()
         val hasVersionChanges = versions != null && versions.toSet() != task.getEditableContent().supportedTrikStudioVersions.toSet()
@@ -689,6 +706,7 @@ class DeveloperOperations(
     fun createTask(user: MultipleRoleUser, taskName: String, taskDescription: String): OperationResult<Task, CreateTaskError> =
         operation<Task, CreateTaskError> {
             ensure(user.hasRole<Developer>(), MissedDeveloperRoleError)
+            ensure(TextLimits.isValidName(taskName)) { TaskNameTooLongError(taskName) }
 
             val taskData = taskData {
                 owner = user.id
@@ -718,13 +736,17 @@ class DeveloperOperations(
         val task = taskRepository.findById(taskId)
         ensure(task != null) { TaskNotExistsError(taskId) }
         ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        ensure(TextLimits.isValidName(resourceName)) { ResourceNameTooLongError(resourceName) }
+        ensure(TextLimits.isValidUploadedFilename(file.uploadedFilename)) {
+            UploadedFileNameTooLongError(file.uploadedFilename)
+        }
 
         val resource = statementRepository.save(
             statementData {
                 name = resourceName
                 description = ""
                 versionBucket = VersionBucket(UUID.randomUUID())
-                file(file.uploadedFilename, file.content)
+                file(file)
             },
         )
         taskRepository.update(task.withData { uploadedResources.add(resource.data.versionBucket) })
@@ -744,13 +766,17 @@ class DeveloperOperations(
             val task = taskRepository.findById(taskId)
             ensure(task != null) { TaskNotExistsError(taskId) }
             ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+            ensure(TextLimits.isValidName(resourceName)) { ResourceNameTooLongError(resourceName) }
+            ensure(TextLimits.isValidUploadedFilename(file.uploadedFilename)) {
+                UploadedFileNameTooLongError(file.uploadedFilename)
+            }
 
             val resource = testRepository.save(
                 testData {
                     name = resourceName
                     description = ""
                     versionBucket = VersionBucket(UUID.randomUUID())
-                    file(file.uploadedFilename, file.content)
+                    file(file)
                 },
             )
             taskRepository.update(task.withData { uploadedResources.add(resource.data.versionBucket) })
@@ -775,13 +801,17 @@ class DeveloperOperations(
         val task = taskRepository.findById(taskId)
         ensure(task != null) { TaskNotExistsError(taskId) }
         ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        ensure(TextLimits.isValidName(resourceName)) { ResourceNameTooLongError(resourceName) }
+        ensure(TextLimits.isValidUploadedFilename(file.uploadedFilename)) {
+            UploadedFileNameTooLongError(file.uploadedFilename)
+        }
 
         val resource = exerciseRepository.save(
             exerciseData {
                 name = resourceName
                 description = ""
                 versionBucket = VersionBucket(UUID.randomUUID())
-                file(file.uploadedFilename, file.content)
+                file(file)
                 when (language) {
                     TrikSupportedLanguage.Python -> this.language.python()
                     TrikSupportedLanguage.JavaScript -> this.language.javaScript()
@@ -813,10 +843,14 @@ class DeveloperOperations(
         val task = taskRepository.findById(taskId)
         ensure(task != null) { TaskNotExistsError(taskId) }
         ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }
+        ensure(TextLimits.isValidName(resourceName)) { ResourceNameTooLongError(resourceName) }
+        ensure(TextLimits.isValidUploadedFilename(file.uploadedFilename)) {
+            UploadedFileNameTooLongError(file.uploadedFilename)
+        }
 
         val solution = solutionRepository.save(
             solutionData {
-                file(file.uploadedFilename, file.content)
+                file(file)
                 when (language) {
                     TrikSupportedLanguage.Python -> this.language.python()
                     TrikSupportedLanguage.JavaScript -> this.language.javaScript()
@@ -864,6 +898,10 @@ class DeveloperOperations(
         ensure(statementRepository.findLatestByVersionBucket(resource.data.versionBucket)?.id == statementId) {
             StatementVersionNotLatestError(statementId)
         }
+        ensure(resourceName == null || TextLimits.isValidName(resourceName)) { ResourceNameTooLongError(requireNotNull(resourceName)) }
+        ensure(file == null || TextLimits.isValidUploadedFilename(file.uploadedFilename)) {
+            UploadedFileNameTooLongError(requireNotNull(file).uploadedFilename)
+        }
 
         if (file == null) {
             return statementRepository.update(resource.withData { name = resourceName ?: resource.data.name }).asSuccess()
@@ -875,7 +913,7 @@ class DeveloperOperations(
 
         val updated = resource.withData {
             name = resourceName ?: resource.data.name
-            file(file.uploadedFilename, file.content)
+            file(file)
         }
         val saved = statementRepository.save(updated.data)
         if (isChainAttached) {
@@ -914,6 +952,10 @@ class DeveloperOperations(
         ensure(exerciseRepository.findLatestByVersionBucket(resource.data.versionBucket)?.id == exerciseId) {
             ExerciseVersionNotLatestError(exerciseId)
         }
+        ensure(resourceName == null || TextLimits.isValidName(resourceName)) { ResourceNameTooLongError(requireNotNull(resourceName)) }
+        ensure(file == null || TextLimits.isValidUploadedFilename(file.uploadedFilename)) {
+            UploadedFileNameTooLongError(requireNotNull(file).uploadedFilename)
+        }
 
         if (file == null) {
             return exerciseRepository.update(resource.withData { name = resourceName ?: resource.data.name }).asSuccess()
@@ -925,7 +967,7 @@ class DeveloperOperations(
 
         val updated = resource.withData {
             name = resourceName ?: resource.data.name
-            file(file.uploadedFilename, file.content)
+            file(file)
         }
         val saved = exerciseRepository.save(updated.data)
         if (replacedIds.isNotEmpty()) {
@@ -966,6 +1008,10 @@ class DeveloperOperations(
         ensure(testRepository.findLatestByVersionBucket(resource.data.versionBucket)?.id == testId) {
             TestVersionNotLatestError(testId)
         }
+        ensure(resourceName == null || TextLimits.isValidName(resourceName)) { ResourceNameTooLongError(requireNotNull(resourceName)) }
+        ensure(file == null || TextLimits.isValidUploadedFilename(file.uploadedFilename)) {
+            UploadedFileNameTooLongError(requireNotNull(file).uploadedFilename)
+        }
 
         if (file == null) {
             return testRepository.update(resource.withData { name = resourceName ?: resource.data.name }).asSuccess()
@@ -979,7 +1025,7 @@ class DeveloperOperations(
 
         val updated = resource.withData {
             name = resourceName ?: resource.data.name
-            file(file.uploadedFilename, file.content)
+            file(file)
         }
         val saved = testRepository.save(updated.data)
         if (replacedIds.isNotEmpty()) {
@@ -1021,6 +1067,10 @@ class DeveloperOperations(
         ensure(developerSolutionRepository.findLatestByVersionBucket(resource.data.versionBucket)?.id == developerSolutionId) {
             DeveloperSolutionVersionNotLatestError(developerSolutionId)
         }
+        ensure(resourceName == null || TextLimits.isValidName(resourceName)) { ResourceNameTooLongError(requireNotNull(resourceName)) }
+        ensure(file == null || TextLimits.isValidUploadedFilename(file.uploadedFilename)) {
+            UploadedFileNameTooLongError(requireNotNull(file).uploadedFilename)
+        }
 
         if (file == null && expectedScore == null) {
             return developerSolutionRepository.update(resource.withData { name = resourceName ?: resource.data.name }).asSuccess()
@@ -1035,7 +1085,7 @@ class DeveloperOperations(
         val solutionId = if (file != null) {
             val previousSolution = solutionRepository.load(resource.data.solution)
             solutionRepository.save(
-                previousSolution.withData { file(file.uploadedFilename, file.content) }.data,
+                previousSolution.withData { file(file) }.data,
             ).id
         } else {
             resource.data.solution.id
@@ -1316,8 +1366,9 @@ class DeveloperOperations(
             val task = taskRepository.findById(taskId)
             ensure(task != null) { TaskNotExistsError(taskId) }
 
+            val communities = communityRepository.findByIdsAsMap(communityIds)
             communityIds.forEach { communityId ->
-                ensure(communityRepository.findById(communityId) != null) { CommunityNotExistsError(communityId) }
+                ensure(communityId in communities) { CommunityNotExistsError(communityId) }
             }
 
             ensure(task.data.owner.id == user.id) { TaskAccessDeniedError(taskId) }

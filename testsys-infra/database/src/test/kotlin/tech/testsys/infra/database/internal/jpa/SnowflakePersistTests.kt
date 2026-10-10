@@ -14,7 +14,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * Saves entities through a Spring Data repository on H2 and checks that Hibernate assigned Snowflake-shaped ids
+ * Saves entities through a Spring Data repository on PostgreSQL and checks that Hibernate assigned Snowflake-shaped ids
  * with the default node id from `hibernate-defaults.properties`.
  */
 @OptIn(InternalDatabaseApi::class)

@@ -126,6 +126,28 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
     }
 
     @Test
+    fun `should increment the user version on an update of the watched contests only`() {
+        val saved = fixtures.observer()
+        val contest = fixtures.contest().id
+
+        val updated = repository.update(saved.withData { contests = mutableListOf(contest) })
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(updated.version, assertNotNull(repository.findById(saved.id)).version)
+    }
+
+    @Test
+    fun `should increment the user version on an update of the role data only`() {
+        val saved = fixtures.observer()
+        val community = fixtures.community().id
+
+        val updated = repository.update(saved.withData { this.community = community })
+
+        assertEquals(assertNotNull(saved.version).value + 1, assertNotNull(updated.version).value)
+        assertEquals(community, assertNotNull(repository.findById(saved.id)).data.community.id)
+    }
+
+    @Test
     fun `should store the access code and its algorithm through save and update`() {
         val data = newData()
 
@@ -197,5 +219,32 @@ class ObserverPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests
         val found = repository.findByAccessToken(fixtures.unique("unknown"))
 
         assertNull(found)
+    }
+
+    @Test
+    fun `should find observers by ids with the same statement count for one and twenty ids`() {
+        val communityId = fixtures.community().id.value
+        val contestIds = listOf(fixtures.contest().id.value, fixtures.contest().id.value)
+        val ids = List(20) {
+            repository.save(
+                observerData {
+                    community(communityId)
+                    accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+                    name = fixtures.unique("Observer")
+                    contests(contestIds)
+                },
+            ).id
+        }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { observer -> observer.id })
+        assertEquals(ids.toSet(), twenty.map { observer -> observer.id }.toSet())
+        assertEquals(
+            List(20) { contestIds.toSet() },
+            twenty.map { observer -> observer.data.contests.ids.map { contest -> contest.value }.toSet() },
+        )
+        assertEquals(oneIdStatements, twentyIdsStatements)
     }
 }

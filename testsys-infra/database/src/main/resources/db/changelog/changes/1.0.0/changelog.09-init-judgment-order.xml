@@ -36,4 +36,17 @@
         </createTable>
     </changeSet>
 
+    <changeSet id="1.0.0-09-init-judgment-order-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_judgment_order ADD CONSTRAINT ck_ts_judgment_order_score CHECK (
+                score >= 0
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_judgment_order DROP CONSTRAINT ck_ts_judgment_order_score;
+            </sql>
+        </rollback>
+    </changeSet>
+
 </databaseChangeLog>

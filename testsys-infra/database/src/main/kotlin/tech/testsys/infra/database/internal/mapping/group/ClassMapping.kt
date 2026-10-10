@@ -69,11 +69,11 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
     }
 
     /**
-     * Creates the [StudentToClassJpaEntity] rows linking the class [classId] with [studentIds].
+     * Creates the [StudentToClassJpaEntity] rows linking the class [classId] with [studentIds], one row per distinct id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toStudentAssociations(classId: Long, studentIds: List<MultipleRoleUserId>) = studentIds.map {
+    fun toStudentAssociations(classId: Long, studentIds: List<MultipleRoleUserId>) = studentIds.distinct().map {
         StudentToClassJpaEntity(
             studentId = it.value,
             classId = classId,
@@ -81,11 +81,11 @@ object ClassMapping : EntityMapping<Class, ClassJpaEntity> {
     }
 
     /**
-     * Creates the [ContestToClassJpaEntity] rows linking the class [classId] with [contestIds].
+     * Creates the [ContestToClassJpaEntity] rows linking the class [classId] with [contestIds], one row per distinct id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toContestAssociations(classId: Long, contestIds: List<ContestId>) = contestIds.map {
+    fun toContestAssociations(classId: Long, contestIds: List<ContestId>) = contestIds.distinct().map {
         ContestToClassJpaEntity(
             contestId = it.value,
             classId = classId,

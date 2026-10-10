@@ -72,38 +72,41 @@ object TaskContentMapping {
     )
 
     /**
-     * Creates the [ExerciseToTaskContentJpaEntity] rows linking the revision [taskContentId] with [exerciseIds].
+     * Creates the [ExerciseToTaskContentJpaEntity] rows linking the revision [taskContentId] with [exerciseIds], one row per distinct id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toExerciseAssociations(taskContentId: Long, exerciseIds: List<ExerciseId>) = exerciseIds.map {
+    fun toExerciseAssociations(taskContentId: Long, exerciseIds: List<ExerciseId>) = exerciseIds.distinct().map {
         ExerciseToTaskContentJpaEntity(exerciseId = it.value, taskContentId = taskContentId)
     }
 
     /**
-     * Creates the [TestToTaskContentJpaEntity] rows linking the revision [taskContentId] with [testIds].
+     * Creates the [TestToTaskContentJpaEntity] rows linking the revision [taskContentId] with [testIds], one row per distinct id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toTestAssociations(taskContentId: Long, testIds: List<TestId>) = testIds.map {
+    fun toTestAssociations(taskContentId: Long, testIds: List<TestId>) = testIds.distinct().map {
         TestToTaskContentJpaEntity(testId = it.value, taskContentId = taskContentId)
     }
 
     /**
-     * Creates the [DeveloperSolutionToTaskContentJpaEntity] rows linking the revision [taskContentId] with [developerSolutionIds].
+     * Creates the [DeveloperSolutionToTaskContentJpaEntity] rows linking the revision [taskContentId] with
+     * [developerSolutionIds], one row per distinct id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toDeveloperSolutionAssociations(taskContentId: Long, developerSolutionIds: List<DeveloperSolutionId>) = developerSolutionIds.map {
-        DeveloperSolutionToTaskContentJpaEntity(developerSolutionId = it.value, taskContentId = taskContentId)
-    }
+    fun toDeveloperSolutionAssociations(taskContentId: Long, developerSolutionIds: List<DeveloperSolutionId>) =
+        developerSolutionIds.distinct().map {
+            DeveloperSolutionToTaskContentJpaEntity(developerSolutionId = it.value, taskContentId = taskContentId)
+        }
 
     /**
-     * Creates the [TrikStudioVersionToTaskContentJpaEntity] rows linking the revision [taskContentId] with [trikStudioVersionIds].
+     * Creates the [TrikStudioVersionToTaskContentJpaEntity] rows linking the revision [taskContentId] with
+     * [trikStudioVersionIds], one row per distinct id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toTrikStudioVersionAssociations(taskContentId: Long, trikStudioVersionIds: List<Long>) = trikStudioVersionIds.map {
+    fun toTrikStudioVersionAssociations(taskContentId: Long, trikStudioVersionIds: List<Long>) = trikStudioVersionIds.distinct().map {
         TrikStudioVersionToTaskContentJpaEntity(trikStudioVersionId = it, taskContentId = taskContentId)
     }
 

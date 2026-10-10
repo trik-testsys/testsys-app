@@ -10,6 +10,7 @@ import tech.testsys.infra.database.internal.jpa.entity.group.CompetitionJpaEntit
 import tech.testsys.infra.database.internal.jpa.entity.group.ContestToCompetitionId
 import tech.testsys.infra.database.internal.jpa.entity.group.ContestToCompetitionJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
@@ -47,6 +48,17 @@ interface ContestToCompetitionJpaEntityRepository :
     fun findAllByCompetitionId(@Param("competitionId") competitionId: Long): List<ContestToCompetitionJpaEntity>
 
     /**
+     * Finds the ids of the competitions [competitionIds] paired with the ids of their contests in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query(
+        "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.competitionId, e.id.contestId) " +
+            "from ContestToCompetitionJpaEntity e where e.id.competitionId in :competitionIds",
+    )
+    fun findLinkedIdsByCompetitionIdIn(@Param("competitionIds") competitionIds: Collection<Long>): List<LinkedIdRow>
+
+    /**
      * Finds one [pageable] page of the association rows of the competition [competitionId].
      *
      * @since %CURRENT_VERSION%
@@ -65,9 +77,13 @@ interface ContestToCompetitionJpaEntityRepository :
 interface CompetitionJpaEntityRepository : SnowflakeJpaEntityRepository<CompetitionJpaEntity> {
 
     /**
-     * Finds the competitions owned by the user [ownerId].
+     * Finds the ids of the users [ownerIds] paired with the ids of the competitions they own in one query.
      *
      * @since %CURRENT_VERSION%
      */
-    fun findAllByOwnerId(ownerId: Long): List<CompetitionJpaEntity>
+    @Query(
+        "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.ownerId, e.id) " +
+            "from CompetitionJpaEntity e where e.ownerId in :ownerIds",
+    )
+    fun findLinkedIdsByOwnerIdIn(@Param("ownerIds") ownerIds: Collection<Long>): List<LinkedIdRow>
 }

@@ -98,11 +98,11 @@ object TaskMapping : EntityMapping<Task, TaskJpaEntity> {
     }
 
     /**
-     * Creates the [CommunityToTaskJpaEntity] rows linking the task [taskId] with [communityIds].
+     * Creates the [CommunityToTaskJpaEntity] rows linking the task [taskId] with [communityIds], one row per distinct id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toSharedToAssociations(taskId: Long, communityIds: List<CommunityId>) = communityIds.map {
+    fun toSharedToAssociations(taskId: Long, communityIds: List<CommunityId>) = communityIds.distinct().map {
         CommunityToTaskJpaEntity(communityId = it.value, taskId = taskId)
     }
 

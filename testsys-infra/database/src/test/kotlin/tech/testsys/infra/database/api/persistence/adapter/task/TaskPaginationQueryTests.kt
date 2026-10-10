@@ -2,6 +2,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -17,6 +18,7 @@ import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.DatabaseIntegrationTests
 
@@ -24,6 +26,77 @@ class TaskPaginationQueryTests : DatabaseIntegrationTests() {
 
     @Autowired
     private lateinit var repository: TaskRepository
+
+    @Test
+    fun `should assemble pages of one and twenty tasks with the same statement count`() {
+        val owner = fixtures.developer().id
+        val community = fixtures.community().id
+        val exercise = fixtures.exercise().id
+        val statement = fixtures.statement().id
+        val polygon = fixtures.polygon().id
+        val authorSolution = fixtures.developerSolution().id
+        val version = fixtures.trikStudioVersion()
+        val saved = List(21) {
+            val bucket = fixtures.statement().data.versionBucket
+            repository.save(
+                taskData {
+                    this.owner = owner
+                    name = fixtures.unique("Task")
+                    description = "Pagination query test"
+                    sharedTo = mutableListOf(community)
+                    uploadedResources = mutableSetOf(bucket)
+                    content.uncommitted(
+                        wipBuilder = {
+                            exercises = mutableListOf(exercise)
+                            tests = mutableListOf(polygon)
+                            developerSolutions = mutableListOf(authorSolution)
+                            supportedTrikStudioVersions = mutableListOf(version)
+                        },
+                        lastCommittedBuilder = {
+                            exercises = mutableListOf(exercise)
+                            this.statement = statement
+                            tests = mutableListOf(polygon)
+                            developerSolutions = mutableListOf(authorSolution)
+                            supportedTrikStudioVersions = mutableListOf(version)
+                        },
+                    )
+                },
+            )
+        }
+
+        val (one, oneStatements) = withStatementCount {
+            repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = setOf(community),
+                pagination = Pagination(page = 0, size = 1),
+            )
+        }
+        val (twenty, twentyStatements) = withStatementCount {
+            repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = setOf(community),
+                pagination = Pagination(page = 0, size = 20),
+            )
+        }
+
+        assertEquals(saved.take(1).map { task -> task.id }, one.content.map { task -> task.id })
+        assertEquals(saved.take(20).map { task -> task.id }, twenty.content.map { task -> task.id })
+        assertEquals(21L, one.totalElements)
+        assertEquals(21L, twenty.totalElements)
+        assertEquals(List(20) { listOf(community) }, twenty.content.map { task -> task.data.sharedTo.ids })
+        assertEquals(saved.take(20).map { task -> task.data.uploadedResources }, twenty.content.map { task -> task.data.uploadedResources })
+        val revisions = twenty.content.map { task -> assertInstanceOf(TaskContent.Uncommitted::class.java, task.data.content) }
+        assertEquals(List(20) { listOf(exercise) }, revisions.map { content -> content.wip.exercises.ids })
+        assertEquals(List(20) { listOf(polygon) }, revisions.map { content -> content.wip.tests.ids })
+        assertEquals(List(20) { listOf(authorSolution) }, revisions.map { content -> content.wip.developerSolutions.ids })
+        assertEquals(List(20) { listOf(version) }, revisions.map { content -> content.wip.supportedTrikStudioVersions })
+        assertEquals(List(20) { statement }, revisions.map { content -> content.lastCommitted.statement.id })
+        assertEquals(List(20) { listOf(exercise) }, revisions.map { content -> content.lastCommitted.exercises.ids })
+        assertEquals(List(20) { listOf(polygon) }, revisions.map { content -> content.lastCommitted.tests.ids })
+        assertEquals(List(20) { listOf(authorSolution) }, revisions.map { content -> content.lastCommitted.developerSolutions.ids })
+        assertEquals(List(20) { listOf(version) }, revisions.map { content -> content.lastCommitted.supportedTrikStudioVersions })
+        assertEquals(oneStatements, twentyStatements)
+    }
 
     @ParameterizedTest
     @ValueSource(strings = ["alpha", "ALPHA", "%", "_", "\\", "  "])

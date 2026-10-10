@@ -65,11 +65,11 @@ object CompetitionMapping : EntityMapping<Competition, CompetitionJpaEntity> {
     }
 
     /**
-     * Creates the [ContestToCompetitionJpaEntity] rows linking the competition [competitionId] with [contestIds].
+     * Creates the [ContestToCompetitionJpaEntity] rows linking the competition [competitionId] with [contestIds], one row per distinct id.
      *
      * @since %CURRENT_VERSION%
      */
-    fun toContestAssociations(competitionId: Long, contestIds: List<ContestId>) = contestIds.map {
+    fun toContestAssociations(competitionId: Long, contestIds: List<ContestId>) = contestIds.distinct().map {
         ContestToCompetitionJpaEntity(
             contestId = it.value,
             competitionId = competitionId,

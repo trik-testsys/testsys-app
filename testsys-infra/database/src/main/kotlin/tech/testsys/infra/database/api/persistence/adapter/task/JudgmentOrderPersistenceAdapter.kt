@@ -11,7 +11,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.task.JudgmentOrderJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.task.JudgmentOrderJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.task.JudgmentOrderMapping
-import tech.testsys.infra.database.internal.utils.findByIdOrError
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Persistence adapter of [JudgmentOrder] entities backed by [JudgmentOrderJpaEntity].
@@ -31,13 +31,13 @@ class JudgmentOrderPersistenceAdapter(
 
     @Transactional
     override fun update(entity: JudgmentOrder): JudgmentOrder {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val updatedJpaEntity = JudgmentOrderMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            JudgmentOrderMapping.toJpaEntity(entity, current)
+        }
 
         val domainEntity = JudgmentOrderMapping.toDomain(savedJpaEntity)
         return domainEntity
     }
 
-    override fun assemble(jpaEntity: JudgmentOrderJpaEntity) = JudgmentOrderMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<JudgmentOrderJpaEntity>) = rows.map { row -> JudgmentOrderMapping.toDomain(row) }
 }

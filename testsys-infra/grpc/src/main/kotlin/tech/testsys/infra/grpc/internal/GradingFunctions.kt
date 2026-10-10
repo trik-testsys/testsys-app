@@ -6,8 +6,10 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.protobuf.ByteString
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
+import tech.testsys.domain.model.TextLimits
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SubmissionId
@@ -34,15 +36,16 @@ internal fun encodeSubmission(
     tests: List<Test>,
     trikStudioVersion: TrikStudioVersion,
     shouldRecordVideo: Boolean,
+    fileContentReader: FileContentReader,
 ): Proto.Submission {
     val file = Proto.File.newBuilder().setName(solution.data.file.uploadedFilename)
-        .setContent(ByteString.copyFrom(solution.data.file.content)).build()
+        .setContent(ByteString.copyFrom(fileContentReader.read(solution.data.file))).build()
     val builder = Proto.Submission.newBuilder().setId(id.value)
         .setTask(
             Proto.Task.newBuilder().addAllFields(
                 tests.map { test ->
                     Proto.File.newBuilder().setName(test.id.value.toString())
-                        .setContent(ByteString.copyFrom(test.data.file.content)).build()
+                        .setContent(ByteString.copyFrom(fileContentReader.read(test.data.file))).build()
                 },
             ),
         )
@@ -98,6 +101,11 @@ private fun checkFields(fields: List<Proto.FieldResult>, expectedTests: List<Tes
     val results = fields.map { field ->
         if (!field.hasVerdict()) {
             return CheckedResult.Failure("Missing logs for polygon ${field.name}")
+        }
+        if (!TextLimits.isValidUploadedFilename(field.verdict.name) ||
+            (field.hasVideo() && !TextLimits.isValidUploadedFilename(field.video.name))
+        ) {
+            return CheckedResult.Failure("File name exceeds 512 Unicode code points for polygon ${field.name}")
         }
         val score = parser.parse(field.verdict.content.toByteArray())
             ?: return CheckedResult.Failure("Invalid logs for polygon ${field.name}")

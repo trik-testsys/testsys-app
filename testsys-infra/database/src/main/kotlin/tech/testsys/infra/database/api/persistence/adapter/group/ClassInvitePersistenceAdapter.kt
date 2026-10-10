@@ -12,8 +12,8 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.group.ClassInviteJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.group.ClassInviteJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.group.ClassInviteMapping
-import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.toJpaEnum
 import java.time.Instant
 
@@ -39,9 +39,9 @@ class ClassInvitePersistenceAdapter(
 
     @Transactional
     override fun update(entity: ClassInvite): ClassInvite {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val updatedJpaEntity = ClassInviteMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            ClassInviteMapping.toJpaEntity(entity, current)
+        }
         return assemble(savedJpaEntity)
     }
 
@@ -55,5 +55,5 @@ class ClassInvitePersistenceAdapter(
     override fun findExpired(now: Instant): List<ClassInviteId> =
         invites.findAllByExpiresAtLessThanEqualOrderByIdAsc(now).map { ClassInviteId(it.requireId()) }
 
-    override fun assemble(jpaEntity: ClassInviteJpaEntity) = ClassInviteMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<ClassInviteJpaEntity>) = rows.map { row -> ClassInviteMapping.toDomain(row) }
 }

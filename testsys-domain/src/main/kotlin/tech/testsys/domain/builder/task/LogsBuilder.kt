@@ -29,6 +29,15 @@ class LogsDataBuilder : Builder<LogsData> {
         _file = FileData(uploadedFilename, content)
     }
 
+    /**
+     * Sets [file] without reading its contents.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun file(file: FileData) {
+        _file = file
+    }
+
     override fun build(): LogsData {
         val file = requireField(_file) { ::_file }
 

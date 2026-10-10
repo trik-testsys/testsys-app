@@ -141,14 +141,15 @@ object TaskValidationRequestMapping : EntityMapping<TaskValidationRequest, TaskV
     }
 
     /**
-     * Creates the pinned author inputs of [requestId] from [inputs].
+     * Creates the pinned author inputs of [requestId] from [inputs], one row per distinct developer solution: a repeated
+     * one keeps the position of its first input and the values of its last.
      *
      * @since %CURRENT_VERSION%
      */
     fun toDeveloperSolutionAssociations(
         requestId: Long,
         inputs: List<DeveloperSolutionValidationInput>,
-    ): List<DeveloperSolutionToTaskValidationRequestJpaEntity> = inputs.map { input ->
+    ): List<DeveloperSolutionToTaskValidationRequestJpaEntity> = inputs.associateBy { it.developerSolution.id }.values.map { input ->
         DeveloperSolutionToTaskValidationRequestJpaEntity(
             id = DeveloperSolutionToTaskValidationRequestId(developerSolutionId = input.developerSolution.id.value, requestId = requestId),
             solutionId = input.solution.id.value,

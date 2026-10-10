@@ -11,7 +11,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.user.RegistrationRequestJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.user.RegistrationRequestJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.RegistrationRequestMapping
-import tech.testsys.infra.database.internal.utils.findByIdOrError
+import tech.testsys.infra.database.internal.utils.requireVersion
 
 /**
  * Persistence adapter of [RegistrationRequest] entities backed by [RegistrationRequestJpaEntity].
@@ -39,9 +39,9 @@ class RegistrationRequestPersistenceAdapter(
 
     @Transactional
     override fun update(entity: RegistrationRequest): RegistrationRequest {
-        val currentJpaEntity = jpaEntityRepository.findByIdOrError(entity.id.value)
-        val updatedJpaEntity = RegistrationRequestMapping.toJpaEntity(entity, currentJpaEntity)
-        val savedJpaEntity = jpaEntityRepository.saveAndFlush(updatedJpaEntity)
+        val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
+            RegistrationRequestMapping.toJpaEntity(entity, current)
+        }
 
         return assemble(savedJpaEntity)
     }
@@ -49,5 +49,5 @@ class RegistrationRequestPersistenceAdapter(
     @Transactional(readOnly = true)
     override fun findByEmail(email: String): RegistrationRequest? = requests.findByEmail(email)?.let { assemble(it) }
 
-    override fun assemble(jpaEntity: RegistrationRequestJpaEntity) = RegistrationRequestMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<RegistrationRequestJpaEntity>) = rows.map { row -> RegistrationRequestMapping.toDomain(row) }
 }

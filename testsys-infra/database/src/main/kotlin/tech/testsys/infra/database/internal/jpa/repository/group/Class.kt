@@ -12,6 +12,7 @@ import tech.testsys.infra.database.internal.jpa.entity.group.ContestToClassJpaEn
 import tech.testsys.infra.database.internal.jpa.entity.group.StudentToClassId
 import tech.testsys.infra.database.internal.jpa.entity.group.StudentToClassJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.CompositeJpaEntityRepository
+import tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
 
 /**
@@ -32,6 +33,17 @@ interface StudentToClassJpaEntityRepository : CompositeJpaEntityRepository<Stude
     fun findAllByStudentId(@Param("studentId") studentId: Long): List<StudentToClassJpaEntity>
 
     /**
+     * Finds the ids of the students [studentIds] paired with the ids of the classes they are enrolled in in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query(
+        "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.studentId, e.id.classId) " +
+            "from StudentToClassJpaEntity e where e.id.studentId in :studentIds",
+    )
+    fun findLinkedIdsByStudentIdIn(@Param("studentIds") studentIds: Collection<Long>): List<LinkedIdRow>
+
+    /**
      * Finds one [pageable] page of the association rows of the student [studentId].
      *
      * @since %CURRENT_VERSION%
@@ -46,6 +58,17 @@ interface StudentToClassJpaEntityRepository : CompositeJpaEntityRepository<Stude
      */
     @Query("select e from StudentToClassJpaEntity e where e.id.classId = :classId")
     fun findAllByClassId(@Param("classId") classId: Long): List<StudentToClassJpaEntity>
+
+    /**
+     * Finds the ids of the classes [classIds] paired with the ids of their students in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query(
+        "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.classId, e.id.studentId) " +
+            "from StudentToClassJpaEntity e where e.id.classId in :classIds",
+    )
+    fun findLinkedIdsByClassIdIn(@Param("classIds") classIds: Collection<Long>): List<LinkedIdRow>
 
     /**
      * Finds one [pageable] page of the association rows of the class [classId].
@@ -90,6 +113,17 @@ interface ContestToClassJpaEntityRepository : CompositeJpaEntityRepository<Conte
     fun findAllByClassId(@Param("classId") classId: Long): List<ContestToClassJpaEntity>
 
     /**
+     * Finds the ids of the classes [classIds] paired with the ids of their contests in one query.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query(
+        "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.id.classId, e.id.contestId) " +
+            "from ContestToClassJpaEntity e where e.id.classId in :classIds",
+    )
+    fun findLinkedIdsByClassIdIn(@Param("classIds") classIds: Collection<Long>): List<LinkedIdRow>
+
+    /**
      * Finds one [pageable] page of the association rows of the class [classId].
      *
      * @since %CURRENT_VERSION%
@@ -108,11 +142,15 @@ interface ContestToClassJpaEntityRepository : CompositeJpaEntityRepository<Conte
 interface ClassJpaEntityRepository : SnowflakeJpaEntityRepository<ClassJpaEntity> {
 
     /**
-     * Finds the classes owned by the user [ownerId].
+     * Finds the ids of the users [ownerIds] paired with the ids of the classes they own in one query.
      *
      * @since %CURRENT_VERSION%
      */
-    fun findAllByOwnerId(ownerId: Long): List<ClassJpaEntity>
+    @Query(
+        "select new tech.testsys.infra.database.internal.jpa.repository.LinkedIdRow(e.ownerId, e.id) " +
+            "from ClassJpaEntity e where e.ownerId in :ownerIds",
+    )
+    fun findLinkedIdsByOwnerIdIn(@Param("ownerIds") ownerIds: Collection<Long>): List<LinkedIdRow>
 
     /**
      * Finds the class referencing the invite [inviteId].

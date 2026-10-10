@@ -31,6 +31,39 @@ class CompetitionPaginationQueryTests : DatabaseIntegrationTests() {
     @Autowired
     private lateinit var jpaEntityRepository: CompetitionJpaEntityRepository
 
+    @Test
+    fun `should assemble pages of one and twenty competitions with the same statement count`() {
+        val owner = fixtures.manager().id
+        val contest = fixtures.contest().id
+        val saved = List(21) {
+            repository.save(
+                competitionData {
+                    this.owner = owner
+                    name = fixtures.unique("Competition")
+                    description = "Pagination query test"
+                    contests = mutableListOf(contest)
+                },
+            )
+        }
+        val participants = saved.map { competition -> fixtures.participant(competition).id }
+        val ids = saved.map { competition -> competition.id }
+
+        val (one, oneStatements) = withStatementCount {
+            repository.findAvailableToManager(ownerId = owner, pagination = Pagination(page = 0, size = 1))
+        }
+        val (twenty, twentyStatements) = withStatementCount {
+            repository.findAvailableToManager(ownerId = owner, pagination = Pagination(page = 0, size = 20))
+        }
+
+        assertEquals(ids.take(1), one.content.map { competition -> competition.id })
+        assertEquals(ids.take(20), twenty.content.map { competition -> competition.id })
+        assertEquals(21L, one.totalElements)
+        assertEquals(21L, twenty.totalElements)
+        assertEquals(participants.take(20), twenty.content.map { competition -> competition.data.participants.ids.single() })
+        assertEquals(List(20) { listOf(contest) }, twenty.content.map { competition -> competition.data.contests.ids })
+        assertEquals(oneStatements, twentyStatements)
+    }
+
     @ParameterizedTest
     @ValueSource(strings = ["alpha", "ALPHA", "%", "_", "\\", "  "])
     fun `should match literal case insensitive substrings and preserve spaces`(substring: String) {
@@ -103,7 +136,8 @@ class CompetitionPaginationQueryTests : DatabaseIntegrationTests() {
         assertEquals(participants.toSet(), actual.data.participants.ids.toSet())
         assertEquals(2, actual.data.participants.ids.size)
         assertEquals(listOf(contest), actual.data.contests.ids)
-        assertEquals(saved.version, actual.version)
+        // Each saved participant increments the competition version once.
+        assertEquals(requireNotNull(saved.version).value + 2, requireNotNull(actual.version).value)
         assertEquals(participants.toSet(), repository.findById(saved.id)?.data?.participants?.ids?.toSet())
     }
 

@@ -9,6 +9,7 @@ import org.springframework.dao.DataIntegrityViolationException
 import tech.testsys.domain.builder.api.task
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
@@ -38,6 +39,9 @@ import kotlin.test.assertNotNull
 
 @OptIn(InternalDatabaseApi::class)
 class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<TaskData, TaskId, Task>() {
+
+    @Autowired
+    private lateinit var fileContentReader: FileContentReader
 
     @Autowired
     override lateinit var repository: TaskRepository
@@ -251,6 +255,41 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
         }
     }
 
+    @Test
+    fun `should save one link per id of the shared communities and revision resources when ids repeat`() {
+        val ownerId = fixtures.developer().id.value
+        val communityId = fixtures.community().id.value
+        val exerciseId = fixtures.exercise().id.value
+        val statementId = fixtures.statement().id.value
+        val polygonId = fixtures.polygon().id.value
+        val developerSolutionId = fixtures.developerSolution().id.value
+        val version = fixtures.trikStudioVersion()
+
+        val saved = repository.save(
+            taskData {
+                owner(ownerId)
+                name = fixtures.unique("Task")
+                description = "Task description"
+                sharedTo(listOf(communityId, communityId))
+                content.committed {
+                    exercises(listOf(exerciseId, exerciseId))
+                    statement(statementId)
+                    tests(listOf(polygonId, polygonId))
+                    developerSolutions(listOf(developerSolutionId, developerSolutionId))
+                    supportedTrikStudioVersions = mutableListOf(version, version)
+                }
+            },
+        )
+
+        val found = assertNotNull(repository.findById(saved.id))
+        val committed = assertIs<TaskContent.Committed>(found.data.content).lastCommitted
+        assertEquals(listOf(communityId), found.data.sharedTo.ids.map { id -> id.value })
+        assertEquals(listOf(exerciseId), committed.exercises.ids.map { id -> id.value })
+        assertEquals(listOf(polygonId), committed.tests.ids.map { id -> id.value })
+        assertEquals(listOf(developerSolutionId), committed.developerSolutions.ids.map { id -> id.value })
+        assertEquals(listOf(version), committed.supportedTrikStudioVersions)
+    }
+
     private fun assertSameContent(expected: TaskContent, actual: TaskContent) {
         when (expected) {
             is TaskContent.New -> assertSameWip(expected.wip, assertIs<TaskContent.New>(actual).wip)
@@ -360,8 +399,8 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
         assertEquals(1, exerciseToTaskContentJpaEntityRepository.count())
         assertEquals(originalIds.toSet(), exerciseRepository.findByIds(originalIds).map { it.id }.toSet())
         assertEquals(
-            originalResources.sortedBy { it.id.value }.map { it.data.file.content.toList() },
-            exerciseRepository.findByIds(originalIds).sortedBy { it.id.value }.map { it.data.file.content.toList() },
+            originalResources.sortedBy { it.id.value }.map { fileContentReader.read(it.data.file).toList() },
+            exerciseRepository.findByIds(originalIds).sortedBy { it.id.value }.map { fileContentReader.read(it.data.file).toList() },
         )
     }
 
@@ -378,8 +417,8 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
         val retained = exerciseRepository.findByIds(exerciseIds)
         assertEquals(exerciseIds.toSet(), retained.map { it.id }.toSet())
         assertEquals(
-            original.sortedBy { it.id.value }.map { it.data.file.content.toList() },
-            retained.sortedBy { it.id.value }.map { it.data.file.content.toList() },
+            original.sortedBy { it.id.value }.map { fileContentReader.read(it.data.file).toList() },
+            retained.sortedBy { it.id.value }.map { fileContentReader.read(it.data.file).toList() },
         )
     }
 
@@ -598,6 +637,75 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
         assertEquals(emptyList(), versionBucketToTaskJpaEntityRepository.findAllByTaskId(saved.id.value))
         val retained = assertNotNull(statementRepository.findById(statementId))
         assertEquals(statement.data.versionBucket, retained.data.versionBucket)
-        assertEquals(statement.data.file.content.toList(), retained.data.file.content.toList())
+        assertEquals(fileContentReader.read(statement.data.file).toList(), fileContentReader.read(retained.data.file).toList())
+    }
+
+    @Test
+    fun `should fail to save a task and keep no content if one of several TRIK Studio versions is unregistered`() {
+        val ownerId = fixtures.developer().id.value
+        val registered = fixtures.trikStudioVersion()
+        val data = taskData {
+            owner(ownerId)
+            name = fixtures.unique("Task")
+            description = "Task description"
+            content.new { supportedTrikStudioVersions = mutableListOf(registered, TrikStudioVersion(fixtures.unique("unregistered"))) }
+        }
+
+        assertFailsWith<IllegalArgumentException> { repository.save(data) }
+
+        assertEquals(0, taskContentJpaEntityRepository.count())
+    }
+
+    @Test
+    fun `should find tasks by ids with the same statement count for one and twenty ids`() {
+        val ownerId = fixtures.developer().id.value
+        val communityId = fixtures.community().id.value
+        val exerciseId = fixtures.exercise().id.value
+        val statementId = fixtures.statement().id.value
+        val polygonId = fixtures.polygon().id.value
+        val developerSolutionId = fixtures.developerSolution().id.value
+        val version = fixtures.trikStudioVersion()
+        val ids = List(20) {
+            val uploadedBucket = fixtures.statement().data.versionBucket
+            repository.save(
+                taskData {
+                    owner(ownerId)
+                    name = fixtures.unique("Task")
+                    description = "Task description"
+                    sharedTo(listOf(communityId))
+                    uploadedResources = mutableSetOf(uploadedBucket)
+                    content.uncommitted(
+                        wipBuilder = {
+                            exercises(listOf(exerciseId))
+                            tests(listOf(polygonId))
+                            developerSolutions(listOf(developerSolutionId))
+                            supportedTrikStudioVersions = mutableListOf(version)
+                        },
+                        lastCommittedBuilder = {
+                            exercises(listOf(exerciseId))
+                            statement(statementId)
+                            tests(listOf(polygonId))
+                            developerSolutions(listOf(developerSolutionId))
+                            supportedTrikStudioVersions = mutableListOf(version)
+                        },
+                    )
+                },
+            ).id
+        }
+
+        val (one, oneIdStatements) = withStatementCount { repository.findByIds(ids.take(1)) }
+        val (twenty, twentyIdsStatements) = withStatementCount { repository.findByIds(ids) }
+
+        assertEquals(ids.take(1), one.map { task -> task.id })
+        assertEquals(ids.toSet(), twenty.map { task -> task.id }.toSet())
+        assertEquals(
+            List(20) { listOf(version) to listOf(version) },
+            twenty.map { task ->
+                val content = assertIs<TaskContent.Uncommitted>(task.data.content)
+                content.wip.supportedTrikStudioVersions to content.lastCommitted.supportedTrikStudioVersions
+            },
+        )
+        assertEquals(List(20) { listOf(CommunityId(communityId)) }, twenty.map { task -> task.data.sharedTo.ids })
+        assertEquals(oneIdStatements, twentyIdsStatements)
     }
 }

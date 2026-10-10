@@ -18,6 +18,8 @@ import tech.testsys.infra.database.internal.mapping.entry.StudentContestEntryMap
 
 /**
  * Persistence adapter of [StudentContestEntry] entities backed by [StudentContestEntryJpaEntity].
+ * A concurrent second creation of one entry fails on the unique key of its context and is repeated by the caller's
+ * transaction retry, which then finds the entry.
  *
  * @since %CURRENT_VERSION%
  */
@@ -59,16 +61,17 @@ class StudentContestEntryPersistenceAdapter(
         contestIds: List<ContestId>,
     ): List<StudentContestEntry> {
         if (contestIds.isEmpty()) return emptyList()
-        return entries.findAllByUserIdAndClassIdAndContestIdIn(
+        val rows = entries.findAllByUserIdAndClassIdAndContestIdIn(
             userId = userId.value,
             classId = studyClassId.value,
             contestIds = contestIds.map { it.value },
-        ).map { assemble(it) }
+        )
+        return assembleAll(rows)
     }
 
     @Transactional
     override fun findOrCreate(data: StudentContestEntryData): StudentContestEntry {
-        requireNotNull(users.lockById(data.user.id.value)) {
+        require(users.existsById(data.user.id.value)) {
             "user ${data.user.id.value} does not exist for studentContestEntry"
         }
         val existing = findByContext(
@@ -79,5 +82,6 @@ class StudentContestEntryPersistenceAdapter(
         return existing ?: save(data)
     }
 
-    override fun assemble(jpaEntity: StudentContestEntryJpaEntity): StudentContestEntry = StudentContestEntryMapping.toDomain(jpaEntity)
+    override fun assembleAll(rows: List<StudentContestEntryJpaEntity>): List<StudentContestEntry> =
+        rows.map { row -> StudentContestEntryMapping.toDomain(row) }
 }

@@ -127,7 +127,9 @@
 `@CompositeKeyConstructor class AToBJpaEntity : CompositeJpaEntity<AToBId>`. Образец — `TaskToContestId`
 и `TaskToContestJpaEntity` в том же [Contest.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/jpa/entity/task/Contest.kt).
 Что генерирует `@CompositeKeyConstructor` и какие требования он предъявляет к классу, — в
-[codegen/README.md](../../testsys-infra/database/codegen/README.md).
+[codegen/README.md](../../testsys-infra/database/codegen/README.md). Как `save` отличает новую строку связи
+от сохранённой, описано в разделе «Строки с составным ключом» в
+[database/README.md](../../testsys-infra/database/README.md).
 
 ## 6. Spring Data репозиторий
 
@@ -138,6 +140,13 @@
 `CompositeJpaEntityRepository<Entity, Id>` для join-таблиц; оба включают `JpaSpecificationExecutor`.
 Для join-таблиц добавляются выборки по каждой стороне ключа — через `@Query`, потому что поля лежат
 внутри `id` (`where e.id.contestId = :contestId`), плюс перегрузка с `Pageable`, если нужна постраничность.
+Для сборки списка (шаг 9) добавьте выборку по набору идентификаторов. Если нужны только идентификаторы связей,
+такая выборка возвращает пары `LinkedIdRow` вместо строк (`findLinkedIdsByContestIdIn` в образце).
+
+Выборку с необязательными фильтрами стройте через `Specification` и добавляйте условие только для заданного
+параметра. JPQL вида `(:p is null or e.field = :p)` не пишите: в общем плане подготовленного запроса PostgreSQL
+не может использовать для такого условия индекс. Образец — `availableToJudge` в
+[VerdictPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/VerdictPersistenceAdapter.kt).
 
 ## 7. Liquibase changeset
 
@@ -149,6 +158,11 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 - Nullability колонок — ровно как в JPA-сущности, иначе `validate` не пройдёт.
 - Внешние ключи именуются `fk_<таблица>_<поле>`, первичные — `pk_<таблица>`.
   У join-таблицы обе колонки входят в составной первичный ключ с одним `primaryKeyName`.
+- Для каждой колонки, по которой репозиторий ищет строки, создайте индекс (`createIndex`, имя
+  `ix_<таблица>_<колонки>`), если колонка не стоит первой в первичном ключе или уникальном ограничении.
+  Это внешние ключи, вторая колонка ключа join-таблицы и колонки фильтров. PostgreSQL не создаёт индексы для
+  внешних ключей сам, а составной ключ `(a, b)` ускоряет только поиск по `a`. Если выборка ещё и сортирует строки,
+  добавьте колонки сортировки в конец индекса. Образец — [changelog.18-add-indexes.xml](../../testsys-infra/database/src/main/resources/db/changelog/changes/1.0.0/changelog.18-add-indexes.xml).
 - [db.changelog-master.yaml](../../testsys-infra/database/src/main/resources/db/changelog/db.changelog-master.yaml)
   подключает каталог версии, а [changelog.master.xml](../../testsys-infra/database/src/main/resources/db/changelog/changes/1.0.0/changelog.master.xml)
   внутри версии перечисляет файлы в порядке применения — новый файл нужно в него добавить.
@@ -163,14 +177,15 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   проставляет `id`, `createdAt` и `version` из строки.
 - `toJpaEntity` всегда две перегрузки: от `Data` — для новой строки (без `id`), и от сущности плюс текущей
   строки — для обновления. Вторая обязана перенести `createdAt` из текущей строки и `version` из доменной
-  сущности через `requireVersion()`: именно так до Hibernate доезжает токен оптимистической блокировки,
-  а сущность, не полученная из хранилища, приводит к `IllegalArgumentException`.
+  сущности через `requireVersion()`: сущность, не полученная из хранилища, приводит к `IllegalArgumentException`.
+  Токен сверяет адаптер через `updateRoot` (шаг 9), он же заменяет `version` строки текущей версией корня.
   Колонки полей, фиксируемых при создании (см. раздел «Модель» в
   [testsys-domain/README.md](../../testsys-domain/README.md)), вторая перегрузка тоже берёт из текущей строки,
   а не из сущности. У сущности без `update` второй перегрузки нет.
 - Данные, которых нет в самой строке (идентификаторы из join-таблиц, значения справочников), приходят
   отдельными параметрами — маппинг ничего не читает из БД сам.
-- Для join-таблиц добавляются функции `toXAssociations(ownerId, ids)`, собирающие строки связи.
+- Для join-таблиц добавляются функции `toXAssociations(ownerId, ids)`, собирающие строки связи, по одной на каждый
+  различный ключ.
 - Имена `toDomain`/`toJpaEntity` и типы результата проверяются рефлексией в `EntityMappingTests` — не
   переименовывайте их и не возвращайте из перегрузок посторонние типы.
 
@@ -182,23 +197,53 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
 уже реализует `findById`, `findByIds`, `load`, удаление и списочные перегрузки `save`/`update`.
 Подкласс реализует три метода:
 
-- `save(data)` — собрать строку маппингом, сохранить, при наличии связей сохранить строки join-таблиц,
-  вернуть доменный объект. Идентификатор сохранённой строки берётся через `requireId()`.
-- `update(entity)` — прочитать текущую строку (`findByIdOrError`), собрать новую перегрузкой `toJpaEntity`
-  с `current`, сохранить через `saveAndFlush` (иначе конфликт версий всплывёт не там, где ожидается),
-  затем синхронизировать join-таблицы через `syncJoinTable(...)` из
+- `save(data)` — собрать строку маппингом, сохранить, при наличии связей сохранить строки join-таблиц новыми
+  экземплярами, вернуть доменный объект. Идентификатор сохранённой строки берётся через `requireId()`.
+- `update(entity)` — записать строку через `updateRoot(id, entity.requireVersion()) { current -> ... }`: лямбда
+  собирает новую строку перегрузкой `toJpaEntity` с `current`, а `updateRoot` сверяет токен, сохраняет строку
+  через `saveAndFlush` и повышает версию корня. Затем синхронизируйте join-таблицы через `syncJoinTable(...)` из
   [PersistenceUtils.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/utils/PersistenceUtils.kt).
   Поле, при изменении которого `update` должен падать (раздел «Модель» в
   [testsys-domain/README.md](../../testsys-domain/README.md)), проверяется до сохранения через `requireUnchanged`,
   файл Ресурса — через `requireSameFile` из
   [FixedFieldGuards.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/FixedFieldGuards.kt).
-- `assemble(jpaEntity)` — собрать доменный объект из строки, дочитав идентификаторы связей и справочники.
+- `assembleAll(rows)` — собрать доменные объекты из строк в порядке `rows`. Идентификаторы связей и справочники
+  дочитайте для всего списка одним запросом на таблицу: для join-таблиц — через `findLinkedIds`, обязательные
+  строки справочников и других сущностей по набору идентификаторов — через `findAllByIdOrError`, остальные
+  выборки — через `findAllInChunks` из
+  [BatchLoadUtils.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/internal/utils/BatchLoadUtils.kt).
+  `assemble` не переопределяйте: базовый класс собирает одну строку через `assembleAll`. Образец без связей —
+  `CommunityPersistenceAdapter`. Как адаптеры используют сборку — в разделе «Сборка доменных сущностей»
+  в [database/README.md](../../testsys-infra/database/README.md).
 
-Если у сущности есть join-таблицы, может дополнительно потребоваться переопределить `removeById`/`removeByIds`, если строки связей
-нужно удалить до самой сущности. Для сущностей-пользователей базовый класс другой —
+Любой метод, который пишет в часть агрегата, сначала вызывает `touchRoot` для корня, а метод, который пишет в чужой
+агрегат, — `touchRoot` для корня этого агрегата. Правило действует и для методов, которые пока никто не вызывает.
+Если создание сущности повышает версию чужого корня, её удаление тоже его повышает. Если метод пишет в пачку
+корней одного вида, повысьте их версии одним запросом через `touchRoots`; образец — `touchStudents`
+в [ClassPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/group/ClassPersistenceAdapter.kt).
+Правило, карта корней и записи в чужие агрегаты — в разделе
+[«Транзакции и согласованность»](../../testsys-infra/database/README.md#транзакции-и-согласованность)
+в database/README.md. Образцы — `addStudent` в
+[ClassPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/group/ClassPersistenceAdapter.kt)
+и `saveToCompetition` в
+[ParticipantPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/single/ParticipantPersistenceAdapter.kt).
+
+Несколько строк в одном методе сохраняйте без промежуточных `flush` и `saveAndFlush`. Hibernate отправляет INSERT
+и UPDATE пакетами, а каждый `flush` отправляет накопленное и начинает пакет заново. Образец —
+`saveToCompetition` в [ParticipantPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/single/ParticipantPersistenceAdapter.kt).
+
+Для сущностей с файлами читайте метаданные файлов пакетами через `FileDataStorage.loadAll`;
+образец — `StatementPersistenceAdapter.assembleAll`. Сборка сущности возвращает ссылки без чтения содержимого файлов.
+
+Удаление базовый класс выполняет через защищённый `removeRoot(id, expectedVersion)`: он вызывает `touchRoot`
+и удаляет корень без частей, а `removeById`, `removeByIds` и `remove` вызывают его для каждой строки. Если строки
+частей нужно удалить до сущности или удаление пишет в чужой агрегат, переопределите `removeRoot`, а не публичные
+методы удаления; образец — `removeRoot` в
+[ContestPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapter.kt).
+Для сущностей-пользователей базовый класс другой —
 [AbstractUserPersistenceAdapter.kt](../../testsys-infra/database/src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/AbstractUserPersistenceAdapter.kt),
-который дополнительно требует `supports(jpaEntity)`: все виды пользователей лежат в одной таблице `ts_user`,
-и фильтр не даёт собрать чужую строку.
+который вместо `assembleAll` требует `assembleSupported(rows)`: все виды пользователей лежат в одной таблице `ts_user`,
+и метод собирает только строки своего вида, пропуская остальные.
 
 ## 10. Тесты
 
@@ -223,7 +268,17 @@ Hibernate стартует с `ddl-auto=validate`, поэтому **любая �
   `PersistenceAdapterContractTests` — тот же контракт без `update` — и отдельным `@Test` проверяет отказ
   (образец — `SolutionPersistenceAdapterTests`). Специфика сущности
   оформляется отдельными `@Test` в том же классе.
+- Если `assembleAll` дочитывает связи или справочники, отдельный `@Test` сравнивает число запросов `findByIds`
+  для одной и двадцати сущностей со всеми связями. Запросы считает `withStatementCount` из `DatabaseIntegrationTests`;
+  абсолютное число не фиксируйте. Так же проверьте свои списочные методы адаптера. Образец —
+  `should find contests by ids with the same statement count for one and twenty ids` в
+  [ContestPersistenceAdapterTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/task/ContestPersistenceAdapterTests.kt).
+- Если `update`, удаление или отдельный метод адаптера пишет в часть агрегата или в чужой агрегат, отдельный
+  `@Test` проверяет, что версия корня выросла на единицу и совпадает с версией в БД. Образец —
+  `should increment the class version on addStudent` в
+  [ClassPersistenceAdapterTests.kt](../../testsys-infra/database/src/test/kotlin/tech/testsys/infra/database/api/persistence/adapter/group/ClassPersistenceAdapterTests.kt).
 - Прочие сущности для теста создаются только через `fixtures`, а не руками; всё уникальное — через
   `fixtures.unique(...)`. Фикстура новой сущности пишется так же: через её же адаптер.
-- Тесты БД поднимают H2 в режиме совместимости с PostgreSQL, применяют changelog'и и проверяют схему
+- Тесты БД работают с PostgreSQL в контейнере Testcontainers (раздел «Тесты» в
+  [database/README.md](../../testsys-infra/database/README.md#тесты)), применяют changelog'и и проверяют схему
   (`SchemaValidationTests`) — отдельный тест на changeset писать не нужно, достаточно не сломать этот.

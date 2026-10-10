@@ -389,7 +389,8 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
             val oneTask = fixtures.task()
             val twentyTask = fixtures.task()
             val single = fixtures.gradingSubmission(authorId = author.id, contest = contest, task = oneTask)
-            val saved = List(20) { fixtures.gradingSubmission(authorId = author.id, contest = contest, task = twentyTask) }
+            val saved =
+                List(20) { fixtures.gradingSubmission(authorId = author.id, contest = contest, task = twentyTask) }
             val judge = fixtures.judge()
             val singleOrder = fixtures.judgmentOrder(judge = judge, submission = single).id
             val orders = saved.map { submission -> fixtures.judgmentOrder(judge = judge, submission = submission).id }

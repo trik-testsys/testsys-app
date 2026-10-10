@@ -1,6 +1,7 @@
 package tech.testsys.infra.database.api.persistence.adapter.task
 
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.argThat
 import org.mockito.Mockito.doThrow
@@ -597,15 +598,17 @@ class TaskValidationRequestPersistenceAdapterTests :
                 Callable {
                     gate.countDown()
                     check(gate.await(10, TimeUnit.SECONDS))
-                    taskRepository.update(
-                        editable.withData {
-                            content.new {
-                                tests = mutableListOf(newTest.id)
-                                developerSolutions = mutableListOf(newAuthor.id)
-                                supportedTrikStudioVersions = mutableListOf(newVersion)
-                            }
-                        },
-                    )
+                    transactions.execute {
+                        taskRepository.update(
+                            reloaded(editable).withData {
+                                content.new {
+                                    tests = mutableListOf(newTest.id)
+                                    developerSolutions = mutableListOf(newAuthor.id)
+                                    supportedTrikStudioVersions = mutableListOf(newVersion)
+                                }
+                            },
+                        )
+                    }
                 },
             )
             val create = pool.submit(
@@ -630,6 +633,45 @@ class TaskValidationRequestPersistenceAdapterTests :
                 Triple(listOf(newTest.id), listOf(newAuthor.id), listOf(newVersion)),
             ),
         )
+    }
+
+    // https://github.com/trik-testsys/testsys-app/pull/26
+    @Test
+    @Tag("regression")
+    fun `should retry task editing with a fresh version when request creation commits after its read`() {
+        val task = fixtures.workingTask()
+        val oldTest = fixtures.polygon()
+        val newTest = fixtures.polygon()
+        taskRepository.update(task.withData { content.new { tests = mutableListOf(oldTest.id) } })
+        val taskRead = CountDownLatch(1)
+        val requestCreated = CountDownLatch(1)
+        val attemptedVersions = mutableListOf<Long>()
+        val executor = Executors.newSingleThreadExecutor()
+
+        val request = executor.use { pool ->
+            val edit = pool.submit(
+                Callable {
+                    transactions.execute {
+                        val current = reloaded(task)
+                        attemptedVersions += requireNotNull(current.version).value
+                        taskRead.countDown()
+                        check(requestCreated.await(10, TimeUnit.SECONDS))
+                        taskRepository.update(current.withData { content.new { tests = mutableListOf(newTest.id) } })
+                    }
+                },
+            )
+            check(taskRead.await(10, TimeUnit.SECONDS))
+            val created = repository.findOrCreateActive(task.id, task.data.owner.id)
+            requestCreated.countDown()
+            edit.get()
+            created
+        }
+
+        assertEquals(2, attemptedVersions.size)
+        assertNotEquals(attemptedVersions[0], attemptedVersions[1])
+        assertEquals(listOf(oldTest.id), request.data.snapshot.tests.ids)
+        assertEquals(listOf(newTest.id), assertInstanceOf(TaskContent.New::class.java, reloaded(task).data.content).wip.tests.ids)
+        assertEquals(listOf(oldTest.id), repository.findById(request.id)?.data?.snapshot?.tests?.ids)
     }
 
     @Test
@@ -825,7 +867,8 @@ class TaskValidationRequestPersistenceAdapterTests :
         assertEquals(
             List(20) { listOf(reportedResult(testId)) to listOf(submissionId) },
             twenty.map { request ->
-                val state = assertInstanceOf(TaskValidationExecution.SubmissionsCreated::class.java, request.data.execution)
+                val state =
+                    assertInstanceOf(TaskValidationExecution.SubmissionsCreated::class.java, request.data.execution)
                 state.diagnostics to state.submissions.ids
             },
         )

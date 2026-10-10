@@ -1,14 +1,30 @@
-# Основное веб-приложение
+# Веб-приложения
 
-Документ описывает модуль `testsys-web:app`: запуск основного приложения Vaadin Flow, безопасность, страницы,
+Документ описывает модуль `testsys-web:app`: запуск основного и служебного приложений Vaadin Flow, безопасность, страницы,
 подключение операций и границы его ответственности. Компоненты и визуальные правила описаны
 в [components/README.md](../components/README.md), общая структура и сборка —
 в [structure.md](../../docs/project/structure.md), операции — в [testsys-operation/README.md](../../testsys-operation/README.md).
 
-Приложение содержит точку запуска `TestSysApplication`, свою конфигурацию Spring, `AppShell`, настройку локали,
-безопасность, страницы, обработчики отсутствующих маршрутов, отказа в доступе и ошибок операций и прокси-сервисы
-операций.
-Корень пакетов — `tech.testsys.web.app`. Зависимости модулей перечислены в structure.md.
+Точка входа в `TestSysApplication.kt` запускает [TestSysRuntime](src/main/kotlin/tech/testsys/bootstrap/TestSysRuntime.kt).
+Один `bootJar` содержит общий невебовый Spring-контекст и два соседних servlet-контекста с отдельными Tomcat.
+Родитель создаёт datasource, JPA, Liquibase, операции, грейдер и диспетчер валидации один раз.
+Основной интерфейс и служебный интерфейс получают эти зависимости из родителя.
+
+`SharedInfrastructureConfiguration` явно подключает инфраструктурные автоконфигурации;
+`WebAutoConfiguration` подключает servlet, Vaadin и security отдельно в каждом дочернем контексте.
+Обе дочерние конфигурации помечены `@SpringBootApplication` для обнаружения приложений инструментами разработки.
+Стандартный поиск автоконфигураций отключён через `spring.boot.enableautoconfiguration=false`; явные импорты продолжают работать.
+Основной дочерний контекст включает транзакционные прокси сервисов через `@EnableTransactionManagement`.
+`MainWebConfiguration` создаёт локальный retry-advisor с политикой родителя:
+инфраструктурный auto-proxy creator Spring рассматривает только локальные определения advisor.
+Transaction manager остаётся общим.
+Каждый дочерний контекст создаёт свой `applicationTaskExecutor` с декоратором своего security context.
+
+Пакет `tech.testsys.bootstrap` владеет запуском и окружениями. `tech.testsys.web.service` содержит служебные страницы,
+security и proxy-конфигурацию. Общий `AppShell` находится в `tech.testsys.web.shell`: каждый Vaadin-контекст создаёт
+свою оболочку и свой реестр маршрутов. `@EnableVaadin` ограничивает сканирование пакетами своего интерфейса
+и оболочки. Основной интерфейс остаётся в `tech.testsys.web.app`; таблица ниже описывает его подпакеты.
+Зависимости модулей перечислены в structure.md.
 
 | Пакет | Что лежит |
 |-------|-----------|
@@ -226,8 +242,9 @@
 пути файлов в обязательных свойствах `testsys.file-storage.paths.<вид>` (виды перечислены в разделе
 «Хранение файлов» в [database/README.md](../../testsys-infra/database/README.md#хранение-файлов)). Тесты используют
 каталоги `build/test-file-storage/<вид>` модуля из `src/test/resources/config/application.properties` и PostgreSQL
-в контейнере Testcontainers, поэтому для них нужен запущенный Docker. Каждый `@SpringBootTest` подключает
-`PostgresTestConfiguration`: все Spring-контексты тестов JVM работают с одним контейнером и одной базой.
+в контейнере Testcontainers, поэтому для них нужен запущенный Docker. Тесты основного интерфейса с `@SpringBootTest`
+подключают `PostgresTestConfiguration`: все проверки с БД в одной JVM используют общий контейнер. Конфигурация явно подключает
+`ServiceConnectionAutoConfiguration` и общую инфраструктуру для существующих тестов основного интерфейса.
 
 Очистка файлов запускается явно в режиме обслуживания; условия и настройки описаны в разделе
 [«Очистка сирот»](../../testsys-infra/database/README.md#очистка-сирот).
@@ -256,4 +273,70 @@
 (`src/test/resources/spring.properties`): `TaskValidationDispatcherLifecycle` останавливает исполнитель диспетчера
 окончательно, и приостановленный контекст не запустился бы снова.
 
-Cookie сессии называется `TESTSYS_APP_SESSION`.
+Cookie основного интерфейса называется `TESTSYS_APP_SESSION`.
+
+## Служебный контекст
+
+[ServiceWebConfiguration](src/main/kotlin/tech/testsys/web/service/ServiceWebConfiguration.kt) подключает только
+служебные страницы: `ServiceLoginView` по адресу `login` и `ServiceHomeView` в корне своего сервера.
+Он не подключает `CurrentUser`, `CabinetHeaders` и прокси-сервисы доменных операций.
+`ServicePrincipal` хранит только техническую идентичность с полномочием `ROLE_SERVICE`.
+
+`ServiceSecurityConfiguration` сохраняет штатные правила Vaadin для ресурсов, init, UIDL, heartbeat, push и CSRF.
+Навигация проверяет аннотации страниц; остальные HTTP-точки закрыты через `denyAll`.
+Статические ресурсы компонентов доступны по `/testsys-ui/**`.
+После входа `ServiceSignIn` меняет ID HTTP-сессии и сохраняет security context в служебную сессию.
+Выход через `AuthenticationContext.logout()` закрывает эту сессию и возвращает `login`.
+Cookie `TESTSYS_SERVICE_SESSION` имеет `Secure`, `HttpOnly`, `SameSite=Lax`, путь `/` и не имеет `Domain`.
+Сессия передаётся только cookie. Cookies различаются именами: браузер может отправлять обе на оба порта.
+Vaadin использует штатный heartbeat и штатное закрытие сессии; отдельного таймера активности человека нет.
+
+`ServiceAuthenticator` сравнивает SHA-256 дайджесты через `MessageDigest.isEqual`.
+`ServiceLoginAttemptLimiter` атомарно учитывает неудачи по проверенному контейнером адресу клиента.
+История и блокировки живут в памяти; детали алгоритма и временных границ проверяет
+[ServiceLoginAttemptLimiterTests](src/test/kotlin/tech/testsys/web/service/security/ServiceLoginAttemptLimiterTests.kt).
+
+### Конфигурация запуска
+
+[ServiceWebSettings](src/main/kotlin/tech/testsys/bootstrap/ServiceWebSettings.kt) проверяется до создания инфраструктуры.
+
+| Свойство | Назначение |
+|----------|------------|
+| `testsys.service.secret` | Обязательный код длиной не меньше 64 символов; пустой код запрещён |
+| `testsys.service.address` | Обязательный адрес служебного HTTP-сервера |
+| `testsys.service.port` | Обязательный порт служебного HTTP-сервера; `0` выбирает свободный порт в тестах |
+| `testsys.service.trusted-proxies` | Регулярное выражение адресов доверенных proxy; без него forwarded-заголовки игнорируются |
+
+При развёртывании передавайте случайно сгенерированный код через `TESTSYS_SERVICE_SECRET` или защищённый файл
+конфигурации. Не добавляйте его в командную строку, исходники или журналы. Страницы не передают код через URL,
+а после обработки попытки очищают поле. Объект конфигурации хранит дайджест и не выводит секрет через `toString`.
+
+У трёх контекстов отдельные изменяемые `Environment`. Spring Boot загружает файлы, переменные окружения и аргументы
+командной строки обычным порядком. `server.*` задаёт основной HTTP-сервер. В служебном дочернем контексте
+[WebContextEnvironment](src/main/kotlin/tech/testsys/bootstrap/WebContextEnvironment.kt) после загрузки свойств задаёт
+служебные адрес, порт, корневой context path и параметры cookie. Настройки основного HTTP-сервера их не заменяют.
+После загрузки конфигурации `TestSysRuntime` закрепляет в обоих дочерних контекстах только внутренний инвариант
+`spring.boot.enableautoconfiguration=false`, в том числе при замене конфигурационного файла через `spring.config.location`.
+
+TLS завершается на reverse proxy. Внутренние порты закрывают от внешнего доступа средствами развёртывания;
+proxy должен передавать `X-Forwarded-For`, `X-Forwarded-Proto`, внешний порт в `X-Forwarded-Port` и пропускать WebSocket upgrade.
+`ServiceProxyConfiguration` устанавливает собственный `RemoteIpValve` только с явно указанными доверенными адресами.
+Стандартное доверие Tomcat к частным сетям отключено; цепочка адресов разбирается справа налево до первого
+недоверенного адреса. Proxy должен заменять входящие forwarded-заголовки клиента.
+
+При ошибке запуска любого дочернего контекста `TestSysRuntime` закрывает уже созданные контексты.
+Единственный shutdown hook закрывает служебный, затем основной интерфейс и последним общий родитель.
+
+### Проверки двух интерфейсов
+
+`ServicePagesTests` автоматически находит и строит служебные маршруты с собственным principal, без доменного
+Пользователя. Тесты основного интерфейса сохраняют свои fixtures и проверяют прежние страницы.
+`WebContextsTests` запускает настоящую иерархию на случайных портах и проверяет общую инфраструктуру,
+разные реестры маршрутов, исполнители и cookies. `TestSysRuntimeTests` проверяет отказ до запуска инфраструктуры
+и освобождение основного порта при ошибке второго HTTP-сервера. HTTP-тесты proxy проверяют поддельные заголовки
+и цепочку доверенных адресов.
+
+Оба интерфейса используют frontend одного артефакта и ресурсы jar компонентов.
+HTTP-тестовая оболочка не проверяет клиентский код: для его проверки запускают собранный `bootJar`
+и `bootRun`, открывают оба интерфейса в браузере и проверяют вход, выход, ресурсы и `/VAADIN/push`.
+Устройство сборки frontend — в [structure.md](../../docs/project/structure.md#сборка-веб-приложений).

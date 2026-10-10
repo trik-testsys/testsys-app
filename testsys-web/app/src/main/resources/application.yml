@@ -5,6 +5,9 @@ server:
       cookie:
         name: TESTSYS_APP_SESSION
 spring:
+  boot:
+    # Keep auto-configuration limited to explicit imports in each context.
+    enableautoconfiguration: false
   application:
     name: testsys-web-app
 vaadin:
@@ -15,3 +18,9 @@ vaadin:
   # Maven's target/.
   build:
     folder: build
+testsys:
+  service:
+    address: 127.0.0.1
+    port: 8081
+    trusted-proxies: '127[.]0[.]0[.]1'
+    secret: ${TESTSYS_SERVICE_SECRET}

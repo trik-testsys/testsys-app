@@ -26,6 +26,8 @@ dependencies {
     implementation(project(":testsys-infra:mail"))
     implementation(project(":testsys-web:components"))
     implementation(libs.spring.tx)
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.liquibase)
     implementation(libs.spring.boot.starter.security)
     implementation(libs.vaadin.spring.boot.starter)
     implementation(libs.kotlin.reflect)

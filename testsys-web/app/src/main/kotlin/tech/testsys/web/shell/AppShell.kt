@@ -1,4 +1,4 @@
-package tech.testsys.web.app
+package tech.testsys.web.shell
 
 import com.vaadin.flow.component.dependency.StyleSheet
 import com.vaadin.flow.component.page.AppShellConfigurator

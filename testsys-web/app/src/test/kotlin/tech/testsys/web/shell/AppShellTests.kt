@@ -1,4 +1,4 @@
-package tech.testsys.web.app
+package tech.testsys.web.shell
 
 import com.vaadin.flow.server.AppShellSettings
 import io.mockk.mockk

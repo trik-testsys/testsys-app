@@ -1,9 +1,11 @@
 package tech.testsys.infra.grpc.internal
 
+import tech.testsys.domain.contract.GradingNodeAddress
 import java.time.Duration
 
 @InternalGrpcApi
 internal data class GradingSettings(
+    val nodes: List<GradingNodeAddress>,
     val maxAttempts: Int,
     val totalTimeout: Duration,
     val rpcTimeout: Duration,

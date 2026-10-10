@@ -6,11 +6,14 @@ import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10._value
 import com.github.mvysny.kaributesting.v10.currentView
+import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.H3
 import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
@@ -82,15 +85,15 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.signInDeveloper()
         developers.task("Линия")
         open(TASKS_SECTION)
-        textField("Название")._value = "Линия"
-        clickButton("Применить")
+        textField("Название", ownTasksBlock())._value = "Линия"
+        clickButton("Применить", ownTasksBlock())
         clickButton("Создать задачу")
         textField("Название")._value = "Кубики"
 
         clickButton("Создать")
 
         assertEquals(DeveloperView::class.java, currentView)
-        assertEquals("Линия", textField("Название").value)
+        assertEquals("Линия", textField("Название", ownTasksBlock()).value)
         assertTrue("Кубики" !in tableText("Состояние"))
         assertEquals("Задача создана", lastToastTitle())
     }
@@ -119,7 +122,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         val task = developers.task("Своя задача")
         open(TASKS_SECTION)
 
-        val row = UI.getCurrent()._find<Table>().last()._get<TableBody>()._get<TableRow>()
+        val row = ownTasksBlock()._get<Table>()._get<TableBody>()._get<TableRow>()
         row._fireDomEvent("click", acceptedClick(row))
 
         assertEquals("developer/tasks/${task.id.value}", currentPath())
@@ -132,8 +135,8 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.task("Сортировка кубиков")
         open(TASKS_SECTION)
 
-        textField("Название")._value = "линии"
-        clickButton("Применить")
+        textField("Название", ownTasksBlock())._value = "линии"
+        clickButton("Применить", ownTasksBlock())
 
         val text = tableText("Состояние")
         assertTrue("Движение по линии" in text, text)
@@ -178,7 +181,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.signInDeveloper()
         val contest = developers.contest(developers.trikStudioVersion())
         open(CONTESTS_SECTION)
-        val row = UI.getCurrent()._find<Table>().last()._get<TableBody>()._get<TableRow>()
+        val row = UI.getCurrent()._get<Table>()._get<TableBody>()._get<TableRow>()
 
         row._fireDomEvent("click", acceptedClick(row))
 
@@ -214,18 +217,23 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         open(TASKS_SECTION)
         val sharedBefore = tableText("Сообщества")
 
-        UI.getCurrent()._find<NativeButton>().single { button ->
+        ownTasksBlock()._find<NativeButton>().single { button ->
             button.element.getAttribute("aria-label") == "Перейти на следующую страницу"
         }._click()
 
-        assertEquals(1, UI.getCurrent()._find<Table>().last()._get<TableBody>()._find<TableRow>().size)
+        assertEquals(1, ownTasksBlock()._get<Table>()._get<TableBody>()._find<TableRow>().size)
         assertEquals(sharedBefore, tableText("Сообщества"))
     }
 
-    private fun textField(label: String): TextField = inScope<TextField>().last { field -> field.ariaLabel.orElse(null) == label }
+    private fun ownTasksBlock(): Section = UI.getCurrent()._find<Section> { classes = "ts-block" }.single { block ->
+        block._find<H3>().singleOrNull()?.text == "Мои задачи"
+    }
 
-    private fun clickButton(label: String) {
-        inScope<Button>().last { button -> button.text == label }._click()
+    private fun textField(label: String, scope: Component? = null): TextField =
+        (scope?._find<TextField>() ?: inScope<TextField>()).single { field -> field.ariaLabel.orElse(null) == label }
+
+    private fun clickButton(label: String, scope: Component? = null) {
+        (scope?._find<Button>() ?: inScope<Button>()).single { button -> button.text == label }._click()
     }
 
     private fun open(section: String) {

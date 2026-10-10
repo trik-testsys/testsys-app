@@ -98,6 +98,9 @@ class TaskPersistenceAdapter(
             filter.ownerId?.let { owner ->
                 predicates.add(builder.equal(entity.get<Long>("ownerId"), owner.value))
             }
+            filter.excludeOwnerId?.let { owner ->
+                predicates.add(builder.notEqual(entity.get<Long>("ownerId"), owner.value))
+            }
             filter.state?.let { state ->
                 predicates.add(builder.equal(entity.get<TaskStatusJpaEnum>("status"), TaskStatusJpaEnum.valueOf(state.name)))
             }

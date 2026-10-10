@@ -36,6 +36,8 @@ class FileStorageCleanupTests {
 
     @BeforeEach
     fun prepare() {
+        directory = directory.toRealPath()
+
         every { repository.deleteFileData(2) } returns 0
         every { repository.findStoredKeys(any()) } returns emptySet()
     }

@@ -35,6 +35,60 @@ class FileDropTests {
     }
 
     @Test
+    fun `should retain a completed replacement when a removed consumer with the same identity finishes`() {
+        val engine = BoundedUploads(twoFiles, blockingHandler(blocked = "old"), { _, _ -> })
+        val old = startInBackground(engine, name = "old")
+        awaitHandler()
+        val transferId = identity(engine, "old")
+        engine.remove(transferId)
+        engine.receive(
+            transferId = transferId,
+            filename = "replacement",
+            mime = "text/plain",
+            declared = 1,
+            stream = ByteArrayInputStream(byteArrayOf(1)),
+        )
+
+        finish.countDown()
+        assertThrows(Exception::class.java) { old.get(5, TimeUnit.SECONDS) }
+
+        assertEquals(listOf(transferId), engine.fileIds())
+    }
+
+    @Test
+    fun `should expose the completed file identity until removed`() {
+        lateinit var receivedId: String
+        val engine = BoundedUploads(limits, { file -> receivedId = file.id }, { _, _ -> })
+        engine.receiveBytes(name = "file.txt")
+        assertEquals(listOf(receivedId), engine.fileIds())
+
+        engine.remove(receivedId)
+
+        assertEquals(emptyList<String>(), engine.fileIds())
+    }
+
+    @Test
+    fun `should not include a file removed during its consumer`() {
+        lateinit var engine: BoundedUploads
+        engine = BoundedUploads(limits, { file -> engine.remove(file.id) }, { _, _ -> })
+
+        assertThrows(IOException::class.java) { engine.receiveBytes(name = "file.txt") }
+
+        assertEquals(emptyList<String>(), engine.fileIds())
+    }
+
+    @Test
+    fun `should clear all completed file identities`() {
+        val engine = BoundedUploads(twoFiles, {}, { _, _ -> })
+        engine.receiveBytes(name = "first.txt")
+        engine.receiveBytes(name = "second.txt")
+
+        engine.clear()
+
+        assertEquals(emptyList<String>(), engine.fileIds())
+    }
+
+    @Test
     fun `should receive exact unknown length boundary`() {
         var content = ByteArray(0)
         val engine = BoundedUploads(limits, { file -> content = file.openStream().readAllBytes() }, { _, _ -> })

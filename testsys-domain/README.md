@@ -153,6 +153,17 @@
 `MultipleRoleUserRepository.findByEmail` и `RegistrationRequestRepository.findByEmail` сравнивают почту точно,
 без нормализации; нормализует почту операция.
 
+`UserRepository.recordLogin` записывает момент последнего входа Пользователя любого вида. Этот момент не входит
+в данные Пользователя, но его запись повышает токен `version` корня агрегата. `UserRepository.findLastLogins` читает эти моменты
+сразу для нескольких Пользователей.
+
+`MultipleRoleUserRepository.addCommunityMembership` включает Пользователя в Сообщество в Роли из перечисления
+[`CommunityRole`](src/main/kotlin/tech/testsys/domain/model/user/CommunityRole.kt): Администратора, Организатора,
+Разработчика, Ученика или Судьи. Роль выбирает операция: создание Сообщества, Код-приглашение или решение
+Администратора.
+`MultipleRoleUserRepository.removeCommunityMembership` исключает Пользователя из Сообщества в такой Роли; Роль и её
+данные остаются у Пользователя, даже если членств в этой Роли больше нет.
+
 ### Запросы регистрации
 
 [`RegistrationRequest`](src/main/kotlin/tech/testsys/domain/model/user/RegistrationRequest.kt) хранит
@@ -174,7 +185,7 @@
 [`ClassInvite`](src/main/kotlin/tech/testsys/domain/model/group/ClassInvite.kt) хранит Код-приглашение
 в Класс. [`CommunityInvite`](src/main/kotlin/tech/testsys/domain/model/group/CommunityInvite.kt) хранит
 Код-приглашение в Сообщество; вариант `CommunityInvite.Manager` или `CommunityInvite.Developer` задаёт Роль.
-Операции и порты получают Роль селектором `CommunityInvite.Kind` и выбирают вариант через `when` без `else`.
+Операции получают Роль селектором `CommunityInvite.Kind` и выбирают вариант через `when` без `else`.
 Поле `expiresAt` хранит момент окончания срока. Правила срока, замены и продления определены
 в `testsys.entity.invite` в [features.md](../docs/domain/features.md).
 

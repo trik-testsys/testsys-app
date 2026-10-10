@@ -11,6 +11,7 @@ import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
+import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.RegistrationRequestId
@@ -42,6 +43,7 @@ import tech.testsys.operation.util.nextAccessToken
 import tech.testsys.operation.util.nextConfirmationCode
 import tech.testsys.operation.util.normalizeEmail
 import java.time.Clock
+import java.time.temporal.ChronoUnit
 import java.util.random.RandomGenerator
 
 private const val MAX_USER_NAME_LENGTH = 512
@@ -57,6 +59,7 @@ class UserOperations(
     private val participantRepository: ParticipantRepository,
     private val observerRepository: ObserverRepository,
     private val supervisorRepository: SupervisorRepository,
+    private val userRepository: UserRepository,
     private val registrationRequestRepository: RegistrationRequestRepository,
     private val mailSender: UserMailSender,
     private val communityConfig: CommunityConfig,
@@ -66,7 +69,8 @@ class UserOperations(
 ) {
 
     /**
-     * Returns the user whose current access code equals [accessToken] exactly, without changing any user.
+     * Returns the user whose current access code equals [accessToken] exactly and records the current moment as their
+     * last login, without changing the user data.
      *
      * @since %CURRENT_VERSION%
      */
@@ -77,6 +81,8 @@ class UserOperations(
             ?: observerRepository.findByAccessToken(accessToken)
             ?: supervisorRepository.findByAccessToken(accessToken)
         ensure(user != null, InvalidAccessTokenError)
+
+        userRepository.recordLogin(user.id, clock.instant().truncatedTo(ChronoUnit.MICROS))
         return user.asSuccess()
     }
 

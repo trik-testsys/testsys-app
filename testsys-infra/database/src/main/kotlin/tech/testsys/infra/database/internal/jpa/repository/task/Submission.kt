@@ -114,4 +114,63 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
         authorIds: Collection<Long>,
         taskIds: Collection<Long>,
     ): List<SubmissionJpaEntity>
+
+    /**
+     * Counts the grading submissions of the contest [contestId] per task, omitting tasks without submissions.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query(
+        """
+            select s.taskId as taskId, count(s) as submissions from SubmissionJpaEntity s
+            where s.kind = tech.testsys.infra.database.internal.jpa.entity.task.SubmissionKindJpaEnum.GRADING
+              and s.gradingContestId = :contestId
+            group by s.taskId
+        """,
+    )
+    fun countGradingByTask(@Param("contestId") contestId: Long): List<TaskSubmissionCountJpaProjection>
+
+    /**
+     * Counts the grading submissions of any of [authorIds] in any of [contestIds] and their distinct authors.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query(
+        """
+            select count(s) as submissions, count(distinct s.authorId) as authors from SubmissionJpaEntity s
+            where s.kind = tech.testsys.infra.database.internal.jpa.entity.task.SubmissionKindJpaEnum.GRADING
+              and s.authorId in :authorIds
+              and s.gradingContestId in :contestIds
+        """,
+    )
+    fun countGrading(
+        @Param("authorIds") authorIds: Collection<Long>,
+        @Param("contestIds") contestIds: Collection<Long>,
+    ): SubmissionCountJpaProjection
+}
+
+/**
+ * Number of grading submissions of one task, read by [SubmissionJpaEntityRepository.countGradingByTask].
+ *
+ * @property taskId id of the task.
+ * @property submissions the number of submissions of the task.
+ * @since %CURRENT_VERSION%
+ */
+@InternalDatabaseApi
+interface TaskSubmissionCountJpaProjection {
+    val taskId: Long
+    val submissions: Long
+}
+
+/**
+ * Numbers of grading submissions and their distinct authors, read by [SubmissionJpaEntityRepository.countGrading].
+ *
+ * @property submissions the number of submissions.
+ * @property authors the number of distinct authors.
+ * @since %CURRENT_VERSION%
+ */
+@InternalDatabaseApi
+interface SubmissionCountJpaProjection {
+    val submissions: Long
+    val authors: Long
 }

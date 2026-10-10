@@ -28,3 +28,15 @@ data class ContestTaskResult(
         }
     }
 }
+
+/**
+ * Number of grading submissions of a set of authors and the number of distinct authors among them.
+ *
+ * @property submissions the number of submissions in any grading state.
+ * @property authors the number of distinct authors with at least one of these submissions.
+ * @since %CURRENT_VERSION%
+ */
+data class SubmissionCount(
+    val submissions: Long,
+    val authors: Long,
+)

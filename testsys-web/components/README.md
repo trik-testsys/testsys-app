@@ -101,8 +101,7 @@ class ProfileView(texts: UiTexts) : TestSysView(texts) {
 страница строится заново через `page(...)`. Общий набор можно переиспользовать функцией с receiver
 `PageFooterScope`, создавая новые ссылки для каждой страницы.
 
-Образцы реализации — [PageFooter.kt](src/main/kotlin/tech/testsys/web/components/layout/PageFooter.kt);
-настройки маршрута и URL на витрине — [ShowcaseView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseView.kt).
+Образец реализации — [PageFooter.kt](src/main/kotlin/tech/testsys/web/components/layout/PageFooter.kt).
 Год вычисляется при построении по серверным часам; таймер для смены года не создаётся.
 `UiTexts.footer.year` форматирует год, `UiTexts.footer.links` задаёт доступное имя навигации.
 Подписи ссылок передаёт страница. Футтер страницы отличается от `footer { }` блока
@@ -111,8 +110,7 @@ class ProfileView(texts: UiTexts) : TestSysView(texts) {
 ## Заголовок страницы
 
 `head(title) { … }` в `PageScope` — полоса `.ts-page-head` между шапкой Кабинета и `main`: крошки, строка `h1`
-с бейджами, метаданными и кнопками, вкладки разделов. Образец — общий заголовок страниц витрины `showcaseHead`
-в `testsys-web/dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseHead.kt`.
+с бейджами, метаданными и кнопками, вкладки разделов.
 
 | Вызов в `PageHeadScope` | Что делает |
 |-------------------------|------------|
@@ -181,7 +179,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | Уровень | Что внутри | Правило |
 |---------|------------|---------|
 | `page` | `row` | Ряды страницы стоят друг под другом |
-| `row` страницы | `block(size)`, `highlightBlock(size)` | `size` от 1 до 24; без `size` блок занимает остаток ряда, после него ряд закрыт; сумма — не больше 24 |
+| `row` страницы | `block(size)`, `highlightBlock(size)`, `space(size)` | `size` от 1 до 24; без `size` блок занимает остаток ряда, после него ряд закрыт; `space` оставляет колонки пустыми, например по бокам узкого блока; сумма — не больше 24 |
 | `row` блока, диалога и `drawer` | поля, `field`, `text`, `tag`, `badge`, `counter`, `icon`, `alert`, `pills`, `horizontal`, `vertical` | Поле занимает `labelSize + size`, остальные — `size`; без `size` элемент занимает остаток строки, после него строка закрыта; сумма — не больше 24 колонок контейнера |
 
 - Неверный размер — `IllegalArgumentException`, переполнение ряда и элемент после занявшего остаток строки —
@@ -209,14 +207,15 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `PageScope` | `head` (первым вызовом), `row` |
 | `PageHeadScope` | `crumb`, `badge`, `meta`, `actions { }`, `tabs { }` |
 | `PageTabsScope` | `tab` (вкладка-маршрут) |
-| `PageRowScope` | `block`, `highlightBlock` |
+| `PageRowScope` | `block`, `highlightBlock`, `space` |
 | `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
 | `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `segmentedControl`, `multiSelect`), `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
 | `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
 | `TableScope<T>` | колонки таблицы, `menuColumn`, `empty`, `onRowClick` |
 | `MenuScope` | `item`, `destructiveItem` |
-| `DialogScope` | `row` (строка на 24 колонках), `footer { dialog -> }` |
+| `DialogScope` | `row` (строка на 24 колонках), `section(title)`, `footer { dialog -> }` |
+| `DialogSectionScope` | `row` (строка на собственной сетке из 24 колонок) |
 
 Содержимое тела блока кладётся только в строки, в таблицу или в пустое состояние: элемент прямо в `BlockScope`
 не компилируется. `ContentScope` — поток без размеров: шапка, подвал, группы `horizontal`/`vertical` строки блока, значение `field`,
@@ -227,19 +226,27 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 Функции отображения (`text`, `icon`, `tag`, `badge`, `counter`, `alert`) и `pills` объявлены и для `ContentScope`,
 и для `BlockRowScope` (с необязательным `size`). Поля с подписью есть только в `BlockRowScope`; в `ContentScope`
 есть поля без подписи: `select` (см. [Фильтры в шапке](#фильтры-в-шапке)), `segmentedControl` и `multiSelect`.
-`fileDrop` объявлен в обоих скоупах и всегда выводит свою подпись. Действия, `menu`, `filterChip` и `pagination`
+`fileDrop` объявлен в обоих скоупах. В строке блока `labelSize` размещает подпись слева как у поля;
+при этом `size` обязателен и задаёт ширину приёма. Без `labelSize` подпись находится над приёмом. Действия, `menu`, `filterChip` и `pagination`
 объявлены для `ContentScope`; `downloadAction` есть также в `BlockRowScope`. `tabs` и `emptyState` — только для `BlockScope`.
+
+`copyAction(label, value) { }` в `ContentScope` добавляет обычное действие `action` и возвращает его `ActionHandle`.
+По нажатию действие копирует в буфер обмена браузера текст, который `value` возвращает в момент нажатия.
+Результат копирования сервер не получает.
 
 ## Поля
 
 Поле — разметка `.ts-field` из двух ячеек: подпись слева на `labelSize` колонок и значение справа на `size`
 колонок; всё поле занимает `labelSize + size` колонок строки блока. Функции полей — `textInput`, `codeInput`,
-`textArea`, `select`, `checkbox`, `dateInput`, `timeInput`, `dateTimeInput`, `dateRangeInput`, `integerInput`,
-`decimalInput`, `lookup` и `lookupMany` (см. [Лукап](#лукап)), а также
+`passwordInput`, `textArea`, `select`, `checkbox`, `dateInput`, `timeInput`, `dateTimeInput`, `dateRangeInput`,
+`integerInput`, `decimalInput`, `lookup` и `lookupMany` (см. [Лукап](#лукап)), а также
 [остальные поля](#остальные-поля-и-локальный-выбор) — объявлены на `BlockRowScope` и возвращают
 `ValueInput<T>`.
 
 - `labelSize` и `size` обязательны, каждый не меньше 1, иначе — `IllegalArgumentException`.
+- `codeInput` и `passwordInput` набирают значение моноширинным шрифтом. `passwordInput` — поле секрета, например
+  Кода-доступа: значение замаскировано, кнопка в поле показывает его. Визуальное скрытие значения любого поля —
+  `isObscured`, см. [Скрытые значения](#скрытые-значения).
 - Длинная подпись переносится, её первая строка стоит на уровне середины контрола. Подсказка (`hint`) и ошибка
   проверки — под контролом, в ячейке значения. У `checkbox` в ячейке значения только флажок, у `dateRangeInput` —
   два ввода дат и общая кнопка календаря.
@@ -279,7 +286,6 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 а наведение и фокус контейнера раскрывают даже отключённое значение. Видимость ручки скрывает эту композицию целиком.
 У загрузчика скрываются только имена файлов. Действия внутри информационного `field { }` также остаются читаемыми.
 Оформление и раскрытие принадлежат [ui-design.md](../../docs/project/ui-design.md), раздел «Визуальные основы».
-Пример всех семейств полей — [ShowcaseObscuredFields.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseObscuredFields.kt).
 
 ## Вкладки и пилюли
 
@@ -287,10 +293,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 `pills(initial) { pill(value, label) }` в `ContentScope` (например, в `actions { }` блока) и в `BlockRowScope`
 (с необязательным `size`) — группы кнопок, которые переключают значение: чаще всего фильтр того, что показывает блок.
 Адрес страницы не меняется. Таблица читает значение в `fetch`, а слушатель выбора её обновляет:
-`filter.onChange { rows.refresh(toFirstPage = true) }`. Образцы — `tabsSection` в
-[ShowcaseTableStates.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseTableStates.kt)
-и `pillsSection` в
-[ShowcaseNavigationSections.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseNavigationSections.kt).
+`filter.onChange { rows.refresh(toFirstPage = true) }`.
 
 - Вкладки блока без `title` и `subtitle` стоят на месте заголовка, справа от них — `actions { }`. С заголовком шапка
   становится двухэтажной (`.ts-block__head--tabs`): сверху заголовок и `actions { }`, снизу вкладки. В блоке одна
@@ -310,8 +313,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 Кроме вкладок и пилюль, фильтр того, что показывает блок, задают выпадающий список `select` и кнопка-фильтр
 `filterChip` в `actions { }` блока. Обе функции объявлены в `ContentScope`, поэтому работают и в других его местах:
 в подвале, в ячейке таблицы, в строке блока внутри `horizontal { }`. Таблица читает значения фильтров в `fetch`,
-а слушатели их изменений её обновляют. Образец — `tableSection` в
-`testsys-web/dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseTableSections.kt`.
+а слушатели их изменений её обновляют.
 
 ```kotlin
 var verdict: Verdict? = null
@@ -363,8 +365,7 @@ block(title = "Посылки") {
 
 `pagination(pageCount, page = 1) { }` в `ContentScope` — полный пейджер для списка, который страница листает
 сама: стрелки и кнопки страниц. Возвращает `PaginationHandle`. В строке блока пейджер ставится в `horizontal { }`.
-Таблица использует свой компактный пейджер, см. [Пагинация таблицы](#пагинация-таблицы). Образец — `paginationSection`
-в `ShowcaseNavigationSections.kt` витрины.
+Таблица использует свой компактный пейджер, см. [Пагинация таблицы](#пагинация-таблицы).
 
 - Разметка: `div.ts-pager` со стрелкой «‹», кнопками страниц `button.ts-pager__btn`, пропусками
   `span.ts-pager__gap` («…») и стрелкой «›». Текущая страница — `.ts-pager__btn--active` с `aria-current="page"`.
@@ -391,7 +392,7 @@ block(title = "Посылки") {
 
 `emptyState(title, description = null, icon = IconName.File) { … }` в `BlockScope` — разметка `.ts-empty`
 на всё тело блока: иконка, заголовок, описание и кнопки из завершающей лямбды (`ContentScope`). Возвращает
-`ElementHandle`. Образец — `emptySection` в `ShowcaseTableStates.kt` витрины.
+`ElementHandle`.
 
 - Пустое состояние занимает всё тело блока, как таблица: блок со строками не принимает `emptyState`, а блок
   с пустым состоянием — `row { }`, `table` и второй `emptyState` (`IllegalStateException`).
@@ -435,16 +436,13 @@ Signal-привязками. Отдельного семейства полей 
 `load.reload` сохраняет собственное существующее поведение замены тела.
 
 Реализация — [TableFilters.kt](src/main/kotlin/tech/testsys/web/components/data/TableFilters.kt).
-Работающий пример с отдельными defaults, Binder-кандидатом и applied-снимком — таблица «Посылки: фильтры полями»
-в [ShowcaseTableFilterSection.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseTableFilterSection.kt).
 Компактный `ContentScope.select` и `filterChip` из раздела «Фильтры в шапке» остаются отдельными средствами.
 
 ## Таблица
 
 `table(key, pageSize = 20, selectable = false, fetch) { … }` в `BlockScope` — таблица строк, которые `fetch` отдаёт
 постранично; `key` определяет строку для выбора. Завершающая лямбда (`TableScope<T>`) объявляет колонки и настройки
-таблицы. Образец — таблицы витрины в
-`testsys-web/dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseTableSections.kt`.
+таблицы.
 
 ```kotlin
 block(title = "Посылки") {
@@ -453,7 +451,7 @@ block(title = "Посылки") {
         numberColumn("Баллы", sortKey = "score", size = 3) { it.score }
         column("Вердикт") { row -> badge(row.verdict, row.tone) }
         empty("Посылок пока нет")
-        onRowClick { row -> openSubmission(row) }
+        onRowClick(isNavigation = true) { row -> openSubmission(row) }
     }
 }
 ```
@@ -478,7 +476,7 @@ block(title = "Посылки") {
 | Функция | Значение | Вид |
 |---------|----------|-----|
 | `textColumn` | `String?` | Обычный текст |
-| `codeColumn` | `String?` | Моноширинный (`.ts-num`): идентификаторы, коды |
+| `codeColumn` | `String?` | Моноширинный (`.ts-num`): идентификаторы, коды; `isObscured = true` размывает значения, как у [скрытых полей](#скрытые-значения) |
 | `numberColumn` | `Number?` | Вправо, моноширинный, разряды по `UiTexts.locale` |
 | `dateColumn` | `LocalDate?` | Формат `UiTexts.calendar.dateFormat` |
 | `dateTimeColumn` | `LocalDateTime?` | Дата по тому же формату и время `HH:mm` |
@@ -501,8 +499,13 @@ block(title = "Посылки") {
   колонке — по убыванию по ней; смена сортировки возвращает на первую страницу. Активный заголовок — `.ts-sorted`
   со стрелкой «↓» или «↑». Сортируемый заголовок получает фокус с клавиатуры, Enter и пробел сортируют как клик,
   направление сообщается атрибутом `aria-sort`.
-- `onRowClick { row -> }` — клик по строке, строка получает курсор-указатель. Клик по элементу управления в строке
-  (флажку, кнопке, ссылке, полю, «⋯» колонки меню) строку не «кликает».
+- `onRowClick(isNavigation = false, isClickable = { true }) { row -> }` — клик по строке. Строка получает курсор-указатель и фон при
+  наведении. Если `isClickable` возвращает `false`, строка не получает курсор, фон при наведении, оформление ссылки
+  и обработчик клика. У строк без `onRowClick` наведение фон не меняет. `isNavigation = true` означает, что клик открывает
+  другую страницу: первая колонка `textColumn` получает класс `ts-navigation-cell` и оформляется как ссылка; таблица
+  без текстовой колонки ссылки не показывает. Вид — в [ui-design.md](../../docs/project/ui-design.md), раздел
+  «Компоновка страницы». Клик по элементу управления в строке (флажку, кнопке, ссылке, полю, «⋯» колонки меню)
+  строку не «кликает». Лукап задаёт свой клик по строке без перехода, поэтому ссылки в его строках нет.
 
 ### Пустая таблица и ошибка загрузки
 
@@ -528,8 +531,7 @@ block(title = "Посылки") {
 `TableHandle.selection` — сигнал ключей выбранных строк только для чтения (`Signal<Set<Any>>`). Он меняется при каждом
 изменении выбора, вместе с `onSelectionChange`, в том числе при `clearSelection()`; у таблицы без `selectable` он
 всегда пустой. Действия над выбранными строками — обычные кнопки в `actions { }` блока, которые следуют сигналу;
-таблица объявляется до `actions { }`, чтобы её ручка была доступна в нём. Образец — `tableSection`
-в `ShowcaseTableSections.kt` витрины.
+таблица объявляется до `actions { }`, чтобы её ручка была доступна в нём.
 
 ```kotlin
 block(title = "Посылки") {
@@ -557,7 +559,9 @@ block(title = "Посылки") {
 Диалог — `vaadin-dialog` (модальность, затемнение, ловушка фокуса, закрытие по Esc и клику по фону) с разметкой
 `.ts-dialog` внутри; части оверлея Vaadin обнуляются в `testsys-ui/styles/vaadin.css`, как у тоста. Роль диалога —
 `dialog` (у опасного подтверждения — `alertdialog`), доступное имя — заголовок. Крестик закрытия в шапке — `iconAction`
-с подписью `UiTexts.dialog.close`; у опасного подтверждения шапки нет.
+с подписью `UiTexts.dialog.close`; у опасного подтверждения шапки нет. Открытый диалог прикреплён к `UI`, а не
+к странице, и сам при смене страницы не закрылся бы. Поэтому компоненты закрывают его после любого перехода, включая
+«Назад» браузера. Так же закрываются `confirm`, `drawer` и диалоги лукапов.
 
 `confirm` и `dialog` — функции верхнего уровня пакета `overlay`. Они берут `UiTexts` из текущего `UI`, к которому
 их привязывает `page(...)` страницы; вызов без построенной на этом `UI` страницы — `IllegalStateException`.
@@ -578,7 +582,7 @@ confirm(
   внутреннюю роль `danger` (см. [Оформление](#оформление)).
 - `typeToConfirm` ставит между текстом и подвалом поле с подписью `UiTexts.dialog.typeToConfirm(name)` и фокусом
   после открытия. Кнопка действия включена, только когда значение поля без пробелов по краям в точности, с учётом
-  регистра, совпадает с `typeToConfirm`.
+  регистра, совпадает с `typeToConfirm.trim()`.
 - Кнопка действия вызывает `onConfirm` и закрывает диалог; если `onConfirm` бросил исключение, диалог остаётся
   открытым. «Отменить», крестик, Esc и клик по фону закрывают диалог без вызова.
 
@@ -602,8 +606,15 @@ val newTour = dialog(title = "Новый тур", subtitle = "Название �
 }
 ```
 
-- `dialog(title, subtitle = null) { … }` строит диалог шириной 520 px (`.ts-dialog--md`) один раз и возвращает
-  `DialogHandle`; открывается он `open()` сколько угодно раз, значения полей между открытиями сохраняются.
+- `dialog(title, subtitle = null, size = DialogSize.M) { … }` строит диалог один раз и возвращает `DialogHandle`;
+  открывается он `open()` сколько угодно раз, значения полей между открытиями сохраняются.
+- `size` — ширина карточки: `S`, `M` (`.ts-dialog--md`, по умолчанию), `L` (`.ts-dialog--lg`), `XL` (`.ts-dialog--xl`).
+  Больший размер берётся, когда полям или таблице тесно в `M`. Ширины размеров и поведение на узком экране —
+  в [ui-design.md](../../docs/project/ui-design.md), раздел «Визуальные основы».
+- `section(title) { row { … } }` добавляет именованную группу на всю ширину диалога с собственной сеткой из 24 колонок.
+  Группа получает доступное имя из заголовка, нейтральную рамку и общий режим редактирования диалога.
+  В `DialogSectionScope` доступны только строки: вложенных секций, подвала и отдельного режима редактирования нет.
+  Реализация — `DialogScope.section` в [FormDialog.kt](src/main/kotlin/tech/testsys/web/components/overlay/FormDialog.kt).
 - `row { }` — `BlockRowScope` на 24 колонках (`.ts-dialog__grid`): все поля и элементы строки блока, пустые строки
   не выводятся.
 - `footer { dialog -> }` — `ContentScope` подвала. Лямбда получает ручку диалога параметром: маркер DSL не пускает
@@ -615,10 +626,10 @@ val newTour = dialog(title = "Новый тур", subtitle = "Название �
 
 ## Лукап
 
-`lookup(label, labelSize, size, fetch, display, columns, hint = null, pageSize = 10) { }` в `BlockRowScope` — поле
-одной сущности, выбранной в диалоге с поиском и таблицей; возвращает `ValueInput<T?>`. Работает везде, где есть
-строка: в блоке и в диалоге с формой. Поле нескольких сущностей — `lookupMany`, см.
-[Несколько значений](#несколько-значений). Образец — `contestLookup` в `ShowcaseLookupSection.kt` витрины.
+`lookup(label, labelSize, size, fetch, display, columns, hint = null, pageSize = 10, dialogSize = DialogSize.M) { }`
+в `BlockRowScope` — поле одной сущности, выбранной в диалоге с поиском и таблицей; возвращает `ValueInput<T?>`.
+Работает везде, где есть строка: в блоке и в диалоге с формой. Поле нескольких сущностей — `lookupMany`, см.
+[Несколько значений](#несколько-значений).
 
 ```kotlin
 lookup(
@@ -641,7 +652,8 @@ lookup(
   помечена `aria-disabled`, без `aria-haspopup`, а у пустого значения её имя — подпись поля; у нередактируемого поля
   она остаётся в порядке табуляции, и значение можно прочитать. Вид — как у остальных полей в этих состояниях.
   `Binder`, звёздочка, ошибки и `isVisible` — как у всех полей.
-- Диалог выбора — диалог шириной 520 px с заголовком — подписью поля; пока он открыт, второй не открывается:
+- Диалог выбора озаглавлен подписью поля. Его ширину задаёт `dialogSize` так же, как `size` у `dialog`, по умолчанию
+  `M`; больший размер берётся, когда таблице `columns` тесно. Пока диалог открыт, второй не открывается. В диалоге:
   - строка поиска (плейсхолдер и имя `UiTexts.lookup.search`) с фокусом после открытия; запрос без пробелов
     по краям уходит в `fetch` через 300 мс после последнего ввода, таблица возвращается на первую страницу;
   - таблица из `columns` — тот же `TableScope`; пагинация — в подвале диалога, по умолчанию 10 строк
@@ -659,10 +671,9 @@ lookup(
 
 ### Несколько значений
 
-`lookupMany(label, labelSize, size, fetch, display, columns, hint = null, pageSize = 10) { }` в `BlockRowScope` —
-поле нескольких сущностей, отмеченных в диалоге лукапа; возвращает `ValueInput<Set<T>>`, пустое значение — пустой
-набор. Параметры, их проверки, поиск и таблица диалога — как у `lookup`. Образец — `taskLookup` в
-`ShowcaseLookupSection.kt` витрины.
+`lookupMany(label, labelSize, size, fetch, display, columns, hint = null, pageSize = 10, dialogSize = DialogSize.M) { }`
+в `BlockRowScope` — поле нескольких сущностей, отмеченных в диалоге лукапа; возвращает `ValueInput<Set<T>>`,
+пустое значение — пустой набор. Параметры, их проверки, поиск и таблица диалога — как у `lookup`.
 
 - В рамке — чипы `.ts-chip` первых трёх значений с текстом `display(value)`, остальные значения — один чип «+N»
   (`.ts-chip--more`). У чипа крестик `.ts-chip__x` с именем `UiTexts.lookup.remove(display(value))`, который убирает
@@ -689,7 +700,7 @@ lookup(
 
 `menu(label = null) { … }` в `ContentScope` — кнопка, которая по клику открывает меню действий: без `label` — иконка
 «⋯» с доступным именем `UiTexts.menu.actions` (как `iconAction`), с `label` — кнопка `action` с этим текстом.
-Возвращает `ElementHandle`. Образец — `menuSection` в `ShowcaseTableStates.kt` витрины.
+Возвращает `ElementHandle`.
 
 - `item(label, isEnabled = true) { }` — пункт меню; выключенный пункт виден, но не выбирается.
   `destructiveItem(label) { }` — пункт, который удаляет или отменяет. Разрушительные пункты идут последними,
@@ -731,8 +742,7 @@ lookup(
 [Ручки и служебные свойства](#ручки-и-служебные-свойства).
 
 `text(signal)` в `ContentScope` и `text(signal, size)` в `BlockRowScope` — то же, что `text(String)`, но текст
-следует сигналу; ручной `TextHandle.text` после этого бросает `BindingActiveException`. Образец — блок «Часы»
-(`clockBlock`) из `liveSection` в `ShowcaseLiveSections.kt` витрины.
+следует сигналу; ручной `TextHandle.text` после этого бросает `BindingActiveException`.
 
 ### Фоновая загрузка блока
 
@@ -790,9 +800,9 @@ block(title = "Туры") {
 синхронно и `clientRoundtrip` не требуют.
 
 Подменить фоновый исполнитель можно только в тестах самого `testsys-web:components`: `Background.executorOverride`
-внутренний. Поэтому тесты страниц в `testsys-web` проверяют скелетон и структуру блока с `load`, как
-`ShowcaseViewTests`, а поведение DSL (загрузка, ошибка, повтор, `reload`, `refresh`, подсветка) покрыто тестами
-модуля. Образцы — `LoadTests` и `TableLiveTests` в `testsys-web/components/src/test/kotlin/tech/testsys/web/components/`.
+внутренний. Поэтому тесты страниц в `testsys-web` проверяют скелетон и структуру блока с `load`, а поведение DSL
+(загрузка, ошибка, повтор, `reload`, `refresh`, подсветка) покрыто тестами модуля.
+Образцы — `LoadTests` и `TableLiveTests` в `testsys-web/components/src/test/kotlin/tech/testsys/web/components/`.
 
 ## Оформление
 
@@ -804,7 +814,7 @@ block(title = "Туры") {
 | Блок | `block` — обычный, `highlightBlock` — тёмный. Тело без отступов включает содержимое, которому они мешают: `table` и скелетон `load`. Вкладки и пилюли в тёмном блоке светлые |
 | Вкладки, пилюли, пустое состояние, меню | Вкладки страницы и блока — всегда `.ts-tabs--bare.ts-tabs--lg`, место вкладок блока — по наличию заголовка; пустое состояние — `.ts-empty`, ошибка загрузки таблицы и `load` — `.ts-empty--error`; разрушительный пункт меню — `destructiveItem` |
 | Бейдж, тег, счётчик, алерт, тост (`toast(kind, title)` — функция верхнего уровня, вызывается из обработчиков) | Перечисления смысла: `Tone`, `TagKind`, `CounterKind`, `FeedbackKind`; текст бейджа передаёт страница |
-| Таблица, диалог | Вид ячейки — по функции колонки, ширина колонки — по долям сетки (см. [Колонки](#колонки)); ширина диалога — по функции: `confirm` — 440 px, `dialog` и диалоги лукапов — 520 px; `isDanger` — вид `.ts-dialog--alert` |
+| Таблица, диалог | Вид ячейки — по функции колонки, ширина колонки — по долям сетки (см. [Колонки](#колонки)); ширина диалога — по функции: `confirm` — `S`, `dialog` — по `size`, лукапы — по `dialogSize`, у обоих по умолчанию `M`; `isDanger` — вид `.ts-dialog--alert` |
 | Раскладка в блоке | Строки `row { }`; в строке — группы `horizontal(size) { }` и `vertical(size) { }` на своих колонках, в шапке, подвале и группах — `horizontal { }` и `vertical { }` без размера |
 
 ## Ручки и служебные свойства
@@ -827,7 +837,7 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | `ElementHandle` | `isVisible`, `bindVisible(signal)` (в том числе у `emptyState` и `menu`) |
 | `FieldHandle` | всё из `ElementHandle` и `isObscured`, `bindObscured(signal)`, см. [Скрытые значения](#скрытые-значения) |
 | `TextHandle` | `isVisible`, `bindVisible`, `text`, `bindText(signal)` (значение `counter`, `text`) |
-| `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick` |
+| `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick`, `clickOnEnter()` — нажатие Enter на странице нажимает действие |
 | `BlockHandle` | `isVisible`, `bindVisible`, `isEditable`, `bindEditable(signal)` (возвращают `block` и `highlightBlock`) |
 | `ChoiceHandle<V>` | `isVisible`, `bindVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает; новый слушатель заменяет прежний) — возвращает `pills` |
 | `TabsHandle<V>` | всё из `ChoiceHandle<V>` и `setCount(value, count)`, `bindCount(value, signal)` (`null` и `0` скрывают счётчик) — возвращает `tabs` блока |
@@ -835,7 +845,7 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | `FilterChipHandle` | `isVisible`, `bindVisible`, `isSelected` (запись из кода не вызывает `onChange`), `bindSelected(signal)`, `onChange { isOn -> }` — возвращает `filterChip`, см. [Кнопка-фильтр](#кнопка-фильтр) |
 | `PaginationHandle` | `isVisible`, `bindVisible`, `page` (запись из кода не вызывает `onChange`), `pageCount`, `bindPage(signal)`, `onChange { page -> }` — возвращает `pagination`, см. [Пагинация](#пагинация) |
 | `LoadHandle` | `isVisible`, `bindVisible` (скрывает тело блока с пагинацией загруженной таблицы; шапка и собственный подвал блока остаются), `reload()` (из любого потока) — возвращает `load`, см. [Живые обновления](#живые-обновления) |
-| `DialogHandle` | `open()`, `close()`, `isOpen`, `isEditable`, `bindEditable(signal)`, `onClose { }` (при любом закрытии: кнопкой, крестиком, Esc, кликом по фону) |
+| `DialogHandle` | `open()`, `close()`, `isOpen`, `isEditable`, `bindEditable(signal)`, `onClose { }` (при любом закрытии: кнопкой, крестиком, Esc, кликом по фону, переходом) |
 | `ValueInput<T>` | всё из `FieldHandle`, `isEnabled`, `bindEnabled(signal)`, `isEditable`, `bindEditable(signal)` и всё из `HasValue`, `HasValidation`, `HasValidator`, включая `bindValue(signal, writeCallback)`, `bindReadOnly(signal)`, `bindRequiredIndicatorVisible(signal)` |
 
 `ValueInput` привязывается к `Binder` как обычное поле: `binder.forField(input)`. Ручка не является компонентом
@@ -846,7 +856,7 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 иначе — `IllegalArgumentException`. Тип после converter может отличаться от типа значения поля.
 Скрытие только CSS не учитывается. `readBean` по-прежнему заполняет скрытые поля и выполняет штатную конвертацию;
 прямой `binding.validate`, обработка изменения поля и автоматическая запись через `setBean` остаются штатными
-и не входят в гарантии хелпера. Образец явного сохранения — `hiddenFieldExample` в `ShowcaseNestedView.kt`.
+и не входят в гарантии хелпера.
 Ограничения полей (`min`, `max`,
 `step`, диапазон дат) проверяет валидатор по умолчанию, сообщения об ошибках берутся из `UiTexts`. Поле
 поддерживает все привязки `HasValue`: `bindValue(signal, writeCallback)` — `writeCallback = null` даёт привязку
@@ -935,13 +945,12 @@ inline-стили — в [CssStyles.kt](src/main/kotlin/tech/testsys/web/compone
 
 Маршруты Vaadin, Binder, Signals, URL предметных ресурсов и Spring lifecycle остаются интеграциями приложения.
 Унаследованный API Vaadin у `TestSysView` технически существует, но поддерживаемая конфигурация страниц им
-не пользуется. Архитектурный тест `dev-app/src/test/kotlin/tech/testsys/web/devapp/PageConfigurationTests.kt`
-проверяет исходники обоих приложений на прямые обращения к разметке, DOM и стилям.
+не пользуется. Архитектурный тест `app/src/test/kotlin/tech/testsys/web/app/PageConfigurationTests.kt`
+проверяет исходники приложения на прямые обращения к разметке, DOM и стилям.
 `initializeUiLocale(ui, texts)` настраивает язык UI и документа внутри ядра; приложения подключают его
 через свой обычный lifecycle.
 
 `brandImage(asset, label)` использует `BrandAsset` с сохранёнными ресурсами, пропорциями и доступным именем.
-Примеры — [ShowcaseFoundationsView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseFoundationsView.kt).
 
 ## Добавление компонентов
 
@@ -972,7 +981,6 @@ node --test testsys-web/components/src/test/frontend/*.test.mjs
 см. [Проверка компонентов](#проверка-компонентов).
 
 `segmentedControl` и `multiSelect` из `ContentScope` служат компактными фильтрами и не зависят от режима блока.
-Образцы вызовов — в [ShowcaseFormsView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseFormsView.kt) модуля приложения.
 
 | Функция | Значение и особенности |
 |---------|------------------------|
@@ -996,11 +1004,12 @@ Escape и закрытие снаружи отменяют черновик. У�
 
 ## Оверлеи и отображение
 
-`drawer` строит повторно открываемую форму на 24 колонках с `row` и `footer`: `DrawerHandle` управляет открытием,
-закрытием и редактируемостью. Значения сохраняются. `popover` добавляется в `ContentScope` или строку блока,
+`drawer` строит повторно открываемую форму на 24 колонках с `row`, `table` и `footer`: `DrawerHandle` управляет открытием,
+закрытием и редактируемостью. Значения сохраняются. `DrawerScope.table(title, key, rows)` добавляет статичную
+таблицу на всю ширину сетки, с заголовком и горизонтальной прокруткой, без пагинации. Пустой список показывает
+`texts.table.empty`. `popover` добавляется в `ContentScope` или строку блока,
 создаёт собственный триггер и немодальное содержимое. `ElementHandle.tooltip` добавляет только текстовую подсказку
 с четырьмя направлениями и `bindText`. Escape, фокус и возврат к триггеру обеспечивает Vaadin.
-Образец вложенности — [ShowcaseOverlaysView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseOverlaysView.kt).
 
 | Функция | Данные и ручка |
 |---------|----------------|
@@ -1010,9 +1019,7 @@ Escape и закрытие снаружи отменяют черновик. У�
 | `skeleton`, `skeletonRows` | Геометрия в ядре; страница выбирает форму, число строк и `size`. Декоративные формы `Text`, `Circle`, `Badge`, `Rectangle` и строки внутри одного доступного статуса загрузки |
 
 `verdict` не зависит от домена и не вычисляет успешность: конечное число показывается с нейтральным цветом.
-Статусы очереди, проверки, ошибки и тайм-аута остаются отдельными бейджами. Образец числового API —
-[ShowcaseDisplayView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseDisplayView.kt).
-Другие демонстрационные сценарии описаны в [dev-app/README.md](../dev-app/README.md).
+Статусы очереди, проверки, ошибки и тайм-аута остаются отдельными бейджами.
 
 Отображение с изменяемыми данными возвращает `DataHandle<T>` (`data`, `bindData`).
 Таймер округляет остаток вниз и ограничивает нулём; статический вариант не планирует задач. Живой таймер запускается
@@ -1031,6 +1038,10 @@ Escape и закрытие снаружи отменяют черновик. У�
 одновременно работающих обработчиков. MIME и расширения при одновременном задании проверяются как AND;
 проверяются фактически полученные байты, включая XHR с неизвестной длиной. Размер буфера резервируется до чтения,
 квота памяти действует до завершения `consume`, после чего содержимое стирается и освобождается.
+
+`UploadedFile.id` определяет передачу независимо от имени файла. `FileDropHandle.fileIds` возвращает снимок
+успешно завершённых передач, оставшихся в списке, в порядке резервирования. При использовании скопированных
+данных страницы выбирают их по этому списку: удалённая, отменённая или неуспешная передача в него не попадает.
 
 `UploadedFile` действителен только во время синхронного `consume`: читать можно новым `openStream()` и проверять
 `ensureActive()`. Не сохраняйте временный файл или его поток после возврата обработчика. Приложение само отвечает
@@ -1054,9 +1065,6 @@ UI обновляется через access.
 в том числе при ошибке. Отмена подготовки и передачи кооперативная: приложение проверяет контекст, поток закрывается,
 устаревшие результаты прежней попытки игнорируются. Произвольный блокирующий код не обещает мгновенной отмены.
 `Done` означает завершение передачи сервером, а не подтверждение сохранения на диск пользователя.
-
-Образцы реальных файлов, отмены, ошибки и повтора — в [ShowcaseFormsView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseFormsView.kt). Все новые dev-страницы
-`/dev/showcase/forms`, `/dev/showcase/overlays`, `/dev/showcase/display` доступны только в профиле dev.
 
 ## Клиентская реализация компонентов
 
@@ -1106,7 +1114,6 @@ Escape закрывает панель и возвращает фокус в п�
 `MegaMenuItem` открывает `HeaderMegaMenu` без фиктивной цели. Меню содержит `HeaderMegaColumn` с
 `HeaderMegaLink`. `HeaderDestination.Route` сохраняет `RouteParameters`,
 `HeaderDestination.Action` вызывает обработчик приложения в UI-потоке.
-Образец конфигурации — [ShowcaseHeaderView.kt](../dev-app/src/main/kotlin/tech/testsys/web/devapp/showcase/ShowcaseHeaderView.kt).
 
 Мега-меню открывается наведением, кликом, Enter/Space и ArrowDown/ArrowUp на триггере. Escape, клик вне и уход
 указателя из области триггера и панели закрывают его. В шапке одновременно открыт один слой.
@@ -1120,10 +1127,6 @@ Escape закрывает панель и возвращает фокус в п�
 обновлении, закрытый попап не открывается; при удалении фокусируемой строки доступный элемент получает фокус.
 Колокольчик отображается только для вошедшего Пользователя. Подписи данных принадлежат приложению;
 встроенные названия и объявления предоставляет группа `UiTexts.header`.
-
-Маршрут `/dev/showcase/header` доступен только в `dev`: поиск фильтрует меню «Разделы»; изменение сигнала,
-в том числе отложенное, показывает живые уведомления.
-Результаты демонстрационных действий видны в блоке страницы.
 
 ### Поступление новых уведомлений
 
@@ -1144,7 +1147,7 @@ Escape закрывает панель и возвращает фокус в п�
 При открытом списке отдельная карточка не появляется: новые строки временно подсвечиваются, текущий фокус строки
 сохраняется. Оповещение не забирает фокус, не воспроизводит звук и учитывает `prefers-reduced-motion`.
 Detach закрывает карточку и освобождает её таймеры и обработчики. Обычные тосты результатов действий по-прежнему
-появляются справа снизу. Поведение показано на `/dev/showcase/header`; таймер покрыт
+появляются справа снизу. Таймер покрыт
 `src/test/frontend/arrival-timer.test.mjs`, см. [Проверка компонентов](#проверка-компонентов).
 
 ## Ресурсы бренда
@@ -1163,8 +1166,7 @@ URL содержит версию для обновления браузерно
 
 ## Приложения и общие страницы
 
-Основное и dev-приложение используют эту библиотеку независимо друг от друга; их запуск и маршруты описаны
-в [app/README.md](../app/README.md) и [dev-app/README.md](../dev-app/README.md).
+Библиотеку использует основное приложение; его запуск и маршруты описаны в [app/README.md](../app/README.md).
 `ErrorPage` содержит общую визуальную часть страниц ошибок и возврат по истории.
 `show(title, description, pageTitle)` задаёт заголовок, пояснение и заголовок вкладки. `NotFoundPage` построен
 на `ErrorPage` и показывает тексты `notFound`. Обработчик `HasErrorParameter` принадлежит каждому приложению

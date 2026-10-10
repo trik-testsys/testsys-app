@@ -3,6 +3,7 @@ package tech.testsys.web.components.overlay
 import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._setValue
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.signals.BindingActiveException
@@ -13,7 +14,10 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.web.components.MockVaadinTests
+import tech.testsys.web.components.SecondTestView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.button
@@ -27,6 +31,71 @@ import tech.testsys.web.components.openDialogs
 import tech.testsys.web.components.testTexts
 
 class FormDialogTests : MockVaadinTests() {
+    @Test
+    fun `should give each section its own accessible name and grid`() {
+        val handle = dialog(title = "Ресурсы") {
+            section("Ресурс 1 · first.xml") { row { textInput("Первое название", labelSize = 6, size = 18) } }
+            section("Ресурс 2 · second.xml") { row { textInput("Второе название", labelSize = 8, size = 16) } }
+        }
+
+        handle.open()
+
+        val sections = openDialogs().single().findAll("ts-dialog__section")
+        assertEquals(
+            listOf("Ресурс 1 · first.xml", "Ресурс 2 · second.xml"),
+            sections.map { group -> group.element.getAttribute("aria-label") },
+        )
+        assertEquals(listOf("group", "group"), sections.map { group -> group.element.getAttribute("role") })
+        assertEquals(2, openDialogs().single().findAll("ts-dialog__section-body").size)
+    }
+
+    @Test
+    fun `should reject a section row wider than 24 columns`() {
+        assertThrows(IllegalStateException::class.java) {
+            dialog(title = "Ресурсы") {
+                section("Ресурс 1") {
+                    row {
+                        textInput("Название", labelSize = 8, size = 8)
+                        textInput("Код", labelSize = 6, size = 4)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `should omit empty rows inside a section`() {
+        val handle = dialog(title = "Ресурсы") {
+            section("Ресурс 1") {
+                row {}
+                row { textInput("Название", labelSize = 6, size = 18) }
+            }
+        }
+
+        handle.open()
+
+        assertEquals(1, openDialogs().single().findAll("ts-block__row").size)
+    }
+
+    @Test
+    fun `should retain section values and inherit dialog edit mode on reopening`() {
+        val handle = dialog(title = "Ресурсы") {
+            section("Ресурс 1") { row { textInput("Название", labelSize = 6, size = 18) } }
+        }
+        handle.open()
+        openDialogs()
+        control<TextField>("Название")._setValue("Полигон")
+        handle.close()
+        openDialogs()
+        handle.isEditable = false
+
+        handle.open()
+
+        openDialogs()
+        assertEquals("Полигон", control<TextField>("Название").value)
+        assertTrue(control<TextField>("Название").isReadOnly)
+    }
+
     @Test
     fun `should open read-only fields if the edit mode is bound to a false signal before opening`() {
         val handle = dialog(title = "Тур") { row { textInput("Название", labelSize = 8, size = 16) } }
@@ -113,6 +182,28 @@ class FormDialogTests : MockVaadinTests() {
         assertTrue("ts-dialog--md" in card.classes())
         assertEquals("Новый тур", card.find("ts-dialog__title").element.text)
         assertTrue(handle.isOpen)
+    }
+
+    @ParameterizedTest
+    @CsvSource("S,", "M,ts-dialog--md", "L,ts-dialog--lg", "XL,ts-dialog--xl")
+    fun `should give the card the width of the chosen size`(size: DialogSize, sizeClass: String?) {
+        val handle = dialog(title = "Тур", size = size) { row { textInput("Название", labelSize = 8, size = 16) } }
+
+        handle.open()
+
+        val classes = openDialogs().single().find("ts-dialog").classes().filter { name -> name.startsWith("ts-dialog--") }
+        assertEquals(listOfNotNull(sizeClass), classes)
+    }
+
+    @Test
+    fun `should close the dialog on navigation`() {
+        val handle = dialog(title = "Новый тур") { row { textInput("Название", labelSize = 8, size = 16) } }
+        handle.open()
+
+        UI.getCurrent().navigate(SecondTestView::class.java)
+
+        assertFalse(handle.isOpen)
+        assertTrue(openDialogs().isEmpty())
     }
 
     @Test

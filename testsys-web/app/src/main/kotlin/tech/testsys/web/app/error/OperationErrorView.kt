@@ -4,6 +4,7 @@ import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.ErrorParameter
 import com.vaadin.flow.router.HasErrorParameter
 import com.vaadin.flow.server.HttpStatusCode
+import com.vaadin.flow.server.auth.AnonymousAllowed
 import tech.testsys.operation.error.AccessDeniedError
 import tech.testsys.operation.error.ContestNotAddedToClassError
 import tech.testsys.operation.error.ContestNotAddedToCompetitionError
@@ -23,6 +24,7 @@ import tech.testsys.web.components.texts.UiTexts
  *
  * @since %CURRENT_VERSION%
  */
+@AnonymousAllowed
 class OperationErrorView(private val texts: UiTexts) : ErrorPage(texts), HasErrorParameter<OperationException> {
     override fun setErrorParameter(event: BeforeEnterEvent, parameter: ErrorParameter<OperationException>): Int {
         refreshHistoryNavigation()

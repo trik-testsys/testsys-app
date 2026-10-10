@@ -23,6 +23,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.User
 import tech.testsys.infra.database.DatabaseIntegrationTests
+import java.time.Instant
 
 class UserPaginationQueryTests : DatabaseIntegrationTests() {
 
@@ -334,6 +335,22 @@ class UserPaginationQueryTests : DatabaseIntegrationTests() {
         assertEquals(2L, page.totalElements)
     }
 
+    @Test
+    fun `should order users by the last login`() {
+        val administrator = newAdministrator()
+        val community = fixtures.community(owner = administrator)
+        val first = member(community) { developerIn(it) }
+        val second = member(community) { studentIn(it) }
+        repository.recordLogin(second.id, LOGGED_IN_AT)
+        repository.recordLogin(administrator.id, LOGGED_IN_AT.plusSeconds(30))
+        repository.recordLogin(first.id, LOGGED_IN_AT.plusSeconds(60))
+        val request = Pagination(page = 0, size = 3, sort = Sort(listOf(Sort.Order(field = "lastLoginAt"))))
+
+        val page = repository.findAvailableToAdministrator(administratorId = administrator.id, pagination = request)
+
+        assertEquals(listOf(second.id, administrator.id, first.id), page.content.map { user -> user.id })
+    }
+
     private fun newAdministrator(): MultipleRoleUser = fixtures.multipleRoleUser { administratorIn(emptyList()) }
 
     private fun member(
@@ -375,5 +392,10 @@ class UserPaginationQueryTests : DatabaseIntegrationTests() {
 
     private fun MultipleRoleUserDataBuilder.administratorIn(communities: List<Community>) = roles {
         administrator { memberOf(communities.map { community -> community.id.value }) }
+    }
+
+    private companion object {
+
+        val LOGGED_IN_AT: Instant = Instant.parse("2026-01-01T10:00:00Z")
     }
 }

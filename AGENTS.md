@@ -24,7 +24,15 @@ under `.testsys-agents/` link to it. Instructions addressing agent behaviour bel
 - AI instructions, shared skills and roles, the tool reference, synchronization instructions and local client
   definitions are written in English.
 
+## Web browsing
+
+Before viewing web pages, follow the [Web browsing](.testsys-agents/tool-mapping.md#web-browsing) rules.
+
 ## Skills and roles
+
+All changes to `testsys-web:components` require prior user approval according to
+[component-changes.md](.testsys-agents/resoures/component-changes.md). Read this rule before any work that may edit
+the component module, including work delegated to another agent.
 
 Before running a skill or role, read the current client's section of
 [tool-mapping.md](.testsys-agents/tool-mapping.md). Load the shared role contract in every separate agent context;

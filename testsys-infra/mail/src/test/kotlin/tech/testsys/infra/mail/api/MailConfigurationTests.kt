@@ -1,5 +1,6 @@
 package tech.testsys.infra.mail.api
 
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.core.env.MapPropertySource
@@ -9,7 +10,6 @@ import org.springframework.mail.javamail.JavaMailSenderImpl
 import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.infra.mail.internal.InternalMailApi
 import java.time.ZoneId
-import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
@@ -34,6 +34,7 @@ class MailConfigurationTests {
             assertNull(sender.username)
             assertNull(sender.password)
             assertEquals("UTF-8", sender.defaultEncoding)
+            assertEquals("false", sender.javaMailProperties["mail.smtp.ssl.enable"])
         }
 
         @Test
@@ -68,7 +69,28 @@ class MailConfigurationTests {
             assertEquals("robot", sender.username)
             assertEquals("secret", sender.password)
             assertEquals("true", sender.javaMailProperties["mail.smtp.auth"])
+            assertEquals("false", sender.javaMailProperties["mail.smtp.ssl.enable"])
             assertEquals("true", sender.javaMailProperties["mail.smtp.starttls.enable"])
+        }
+
+        @Test
+        fun `should enable SSL on port 1127 without STARTTLS when configured`() {
+            environment.propertySources.addFirst(
+                MapPropertySource(
+                    "override",
+                    mapOf(
+                        "testsys.mail.port" to "1127",
+                        "testsys.mail.ssl" to "true",
+                        "testsys.mail.starttls" to "false",
+                    ),
+                ),
+            )
+
+            val sender = assertIs<JavaMailSenderImpl>(configuration.javaMailSender(environment))
+
+            assertEquals(1127, sender.port)
+            assertEquals("true", sender.javaMailProperties["mail.smtp.ssl.enable"])
+            assertEquals("false", sender.javaMailProperties["mail.smtp.starttls.enable"])
         }
     }
 

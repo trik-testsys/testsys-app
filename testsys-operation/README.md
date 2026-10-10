@@ -217,7 +217,9 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 
 Образец — [CompetitionConfig.kt](src/main/kotlin/tech/testsys/operation/config/CompetitionConfig.kt).
 
-> План: реализации интерфейсов конфигурации и разрешение ключей появятся в `testsys-web`.
+Реализации `CommunityConfig`, `EmailConfirmationConfig`, `CommunityInviteConfig`, `CompetitionConfig`
+и `ClassInviteConfig` создаёт `testsys-web:app` из обязательных свойств с этими ключами, см. раздел
+«Запуск и проверка» в [app/README.md](../testsys-web/app/README.md#запуск-и-проверка).
 
 ## Ошибки
 
@@ -310,9 +312,24 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 `viewContest`: для Участника и для Ученика с идентификатором выбранного Класса.
 Требования просмотра определены в `testsys.user.study.viewContest` в [features.md](../docs/domain/features.md).
 
-Обе перегрузки возвращают `Pair<Instant?, Contest>`: сохранённый момент первого входа
-в выбранном контексте либо `null` и исходный `Contest`.
-Просмотр не загружает Задачи, не записывает вход и не вычисляет оставшееся время.
+Обе перегрузки возвращают `Triple<Instant?, Contest, List<StudyContestTask>>`: сохранённый момент первого входа
+в выбранном контексте либо `null`, исходный `Contest` и результаты Задач. До входа или начала Тура список пуст.
+Порт возвращает Задачи в любом порядке, поэтому операция упорядочивает их по порядку Тура. Посылки, Вердикты
+и Судейские вердикты загружаются пакетно; `StudyContestTask` содержит Задачу, лучший балл и последнюю Посылку.
+Просмотр не записывает вход и не вычисляет оставшееся время.
+
+## Просмотр Задачи
+
+[StudyOperations](src/main/kotlin/tech/testsys/operation/user/StudyOperations.kt) предоставляет две перегрузки
+`viewTask`: для Участника и для Ученика с идентификатором выбранного Класса.
+Требования просмотра определены в `testsys.user.study.viewTask` в [features.md](../docs/domain/features.md).
+
+Обе перегрузки возвращают `StudyOperations.StudyTask`. Условие, Упражнения, Авторские Решения, Решения Посылок,
+Вердикты и Судейские вердикты операция загружает через порты, поэтому ленивые ссылки возвращённых сущностей
+остаются незагруженными. Имя файла Решения операция берёт из загруженного Решения вместе с его содержимым.
+
+Две перегрузки `downloadSolution` возвращают файл собственной Посылки после проверки учебного контекста.
+Правила доступа и скачивания принадлежат `testsys.user.study.viewTask` в [features.md](../docs/domain/features.md).
 
 ## Отправка Решения
 
@@ -322,8 +339,8 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 
 Обе перегрузки сохраняют `Solution` и `Submission` и возвращают сохранённую `Submission`.
 Операция не передаёт Посылку в `Grader`: это делает вызывающая сторона после фиксации транзакции.
-`StudyOperations` получает `Clock` через конструктор и использует его только для проверки времени отправки.
-Вызов читает время не более одного раза.
+`StudyOperations` получает `Clock` через конструктор и использует его для проверки наступления начала Тура
+при просмотре и временных ограничений отправки Решения. Вызов `sendSolution` читает время не более одного раза.
 
 ## Вход в Тур
 
@@ -349,7 +366,9 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 
 Операция ищет Пользователя по Коду-доступа в портах хранения всех четырёх видов Пользователей и возвращает
 найденного Пользователя как `User<*>`. Если КД не присвоен ни одному Пользователю, операция возвращает
-`InvalidAccessTokenError`. Операция не изменяет Пользователей.
+`InvalidAccessTokenError`. Данные Пользователей операция не изменяет: она только записывает момент входа через
+`UserRepository.recordLogin`. `UserOperations` получает `UserRepository` через конструктор; вызов читает время
+один раз и усекает его до микросекунд.
 
 ## Регистрация
 
@@ -365,8 +384,8 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   сохранённого Пользователя и исходный Код-доступа. До сравнения кода операция сохраняет запрос с уменьшенным
   `attemptsLeft` через `update` с токеном `version`. Если версия устарела, `update` бросает исключение и код
   не сравнивается. Неверный код возвращает `InvalidConfirmationCodeError`. Вызывающий код должен зафиксировать
-  транзакцию и при этой ошибке, иначе попытка не будет потрачена. В `testsys-web` это пока не реализовано.
-  После сохранения Пользователя операция удаляет запрос.
+  транзакцию и при этой ошибке, иначе попытка не будет потрачена; в `testsys-web:app` это делает
+  `UserService.confirmRegistration`. После сохранения Пользователя операция удаляет запрос.
 - Письма отправляет порт `UserMailSender`; обе операции вызывают его последним шагом. Исключения порта,
   как и исключения хранения, выходят из операций; уже сохранённые изменения операция не откатывает.
 - Момент отправки письма и обработка сбоев после фиксации транзакции — в
@@ -396,7 +415,7 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 - `confirmEmailChange` до сравнения кода сохраняет запрос с уменьшенным `attemptsLeft` через `update` с токеном
   `version`. Если версия устарела, `update` бросает исключение и код не сравнивается. Неверный код возвращает
   `InvalidConfirmationCodeError`. Вызывающий код должен зафиксировать транзакцию и при этой ошибке, иначе попытка
-  не будет потрачена. В `testsys-web` это пока не реализовано.
+  не будет потрачена. В `testsys-web` это делает `MultipleRoleUserService.confirmEmailChange`.
 - При совпадении кода операция перечитывает Пользователя через `findById` и меняет почту у сохранённой версии,
   поэтому Код-доступа, Псевдоним и Роли берутся из хранилища, а не из переданного Пользователя. Затем операция
   удаляет запрос и возвращает обновлённого Пользователя.
@@ -404,6 +423,101 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   на прежнюю почту через `UserMailSender`. Исключения порта и хранения выходят из операций так же, как
   в регистрации.
 
+`viewProfile(user)` из того же класса возвращает Роли Пользователя в порядке его Ролей, каждую со списком
+её Сообществ по возрастанию идентификатора. Сообщества всех Ролей загружаются одним вызовом
+`CommunityRepository.findByIds`. Псевдоним и почту вызывающий код берёт у переданного Пользователя.
+Отказов у операции нет: Пользователя с Фиксированной Ролью исключает тип параметра, поэтому `ViewProfileError`
+не содержит ни одной ошибки.
+
 `MultipleRoleUserOperations` получает через конструктор `MultipleRoleUserRepository`, `CommunityRepository`,
-`ManagerCommunityInviteRepository`, `DeveloperCommunityInviteRepository`, `EmailChangeRequestRepository`, `UserMailSender`, `EmailConfirmationConfig`, `Clock` и `RandomGenerator`.
+`ManagerCommunityInviteRepository`, `DeveloperCommunityInviteRepository`, `EmailChangeRequestRepository`, `UserMailSender`, `EmailConfirmationConfig`, `Clock`, `RandomGenerator`
+и `CommunityConfig` с Публичным Сообществом.
 Код подтверждения, срок его действия и чтение времени — те же, что в регистрации.
+
+## Первое получение Роли
+
+`joinCommunity` из [Role.kt](src/main/kotlin/tech/testsys/operation/util/Role.kt) включает Пользователя
+в Сообщество в Роли через `MultipleRoleUserRepository.addCommunityMembership`. Если у переданного Пользователя
+этой Роли ещё нет, функция сначала включает его в Публичное Сообщество в той же Роли. Правило определено
+в `testsys.entity.multi.role` в [features.md](../docs/domain/features.md). Функцию вызывают
+`MultipleRoleUserOperations.joinCommunity` и `AdministratorOperations.grantRole`. Вызывающий код выполняет оба
+включения в одной транзакции, чтобы исключение откатило их вместе; в `testsys-web:app` её открывает прокси-сервис.
+
+## Кабинет Организатора
+
+[ManagerOperations](src/main/kotlin/tech/testsys/operation/user/ManagerOperations.kt) реализует фичи
+`testsys.user.multi.manager.*`; требования определены в [features.md](../docs/domain/features.md).
+
+- `viewClass` возвращает `ManagerOperations.ClassDetails`: Класс, его Код-приглашение, Учеников с моментами
+  последнего входа и добавленные Туры. `viewCompetition` так же возвращает `CompetitionDetails` с Участниками.
+  Учеников, Участников и Туры операции читают через `findByIds` и упорядочивают по составу группы, моменты входа —
+  через `UserRepository.findLastLogins` одним вызовом.
+- `viewClassContest` и `viewCompetitionContest` возвращают `ContestResults`: Тур, его Задачи в порядке Тура,
+  Учеников или Участников и результаты пар автора и Задачи с Посылками.
+- `deleteParticipant` проверяет Посылки Участника в Турах Соревнования через `SubmissionRepository.countGrading`
+  и отклоняет удаление ошибкой `ParticipantHasSubmissionsError`, если они есть. Иначе операция удаляет Участника
+  через `ParticipantRepository.removeById` и возвращает его загруженное состояние.
+- `viewAvailableContests` помечена кодификатором `addContest`. Она возвращает страницу Туров, открытых Сообществам
+  Пользователя в Роли Организатора, через `ContestRepository.findSharedTo`; из них выбирается добавляемый Тур.
+
+## Кабинет Администратора
+
+[AdministratorOperations](src/main/kotlin/tech/testsys/operation/user/AdministratorOperations.kt) реализует фичи
+`testsys.user.multi.admin.*`; требования определены в [features.md](../docs/domain/features.md).
+
+- `viewUsers` возвращает страницу пар `Pair<User<*>, Instant?>`, а `viewUser` — одну такую пару: Пользователя
+  и момент его последнего входа либо `null`. Моменты читает `UserRepository.findLastLogins` одним вызовом на страницу.
+- `viewCommunities` возвращает пары из Сообщества и числа доступных через него Пользователей.
+  Число считает `UserRepository.countAvailableToAdministrator` отдельно для каждого Сообщества.
+- `createCommunity` после сохранения Сообщества включает в него создателя в Роли Администратора через
+  `MultipleRoleUserRepository.addCommunityMembership`.
+- `grantRole` принимает Роль как `CommunityRole`; Роли Судьи и Администратора операция отклоняет ошибкой
+  `RoleNotGrantableError`.
+  Операция включает Пользователя через `joinCommunity` (см. раздел [Первое получение Роли](#первое-получение-роли))
+  и для Пользователя, который уже состоит в Сообществе в этой Роли: порт такое членство не меняет.
+- `removeFromCommunity` перечитывает Пользователя через `MultipleRoleUserRepository.findById` и вызывает
+  `removeCommunityMembership`. Публичное Сообщество из `CommunityConfig` операция отклоняет ошибкой
+  `CommunityIsPublicError`, Роль Администратора — ошибкой `RoleNotRemovableError`, отсутствующее членство — ошибкой
+  `UserNotCommunityMemberError`.
+- `deleteObserver` удаляет Наблюдателя через `ObserverRepository.removeById` и возвращает его загруженное
+  состояние. Наблюдателя чужого Сообщества операция отклоняет ошибкой `UserAccessDeniedError`.
+- Разделы Ролей страницы Пользователя возвращают отдельные операции с кодификатором `viewUser`: `viewUserTasks`,
+  `viewUserContests`, `viewUserClasses`, `viewUserCompetitions`, `viewUserJudgments` и `viewUserAssignedContests`.
+  Каждая сначала выполняет проверки `viewUser` и возвращает пустой список, если у Пользователя нет нужной Роли.
+  Количества Посылок считают `SubmissionRepository.countGradingByTask` и `countGrading`, Соревнования Туров
+  находит `CompetitionRepository.findByContestIds`. Предыдущий результат Судейского вердикта операция вычисляет
+  в `Long`: это балл предыдущего Судейского вердикта той же Посылки по времени и идентификатору, иначе сумма баллов
+  Вердикта или `null` без успешного Вердикта.
+- `viewCommunityContests` помечена кодификатором `createObserver`. Она возвращает страницу Туров, открытых
+  Сообществу Администратора, из которых выбираются Туры Наблюдателя.
+
+## Кабинет Судьи
+
+[JudgeOperations](src/main/kotlin/tech/testsys/operation/user/JudgeOperations.kt) реализует фичи
+`testsys.user.multi.judge.*`; требования определены в [features.md](../docs/domain/features.md).
+
+- `viewResults` возвращает страницу `JudgeResult`: Вердикт, автора, Посылку, последний Судейский вердикт
+  и итоговый балл. Связанные сущности загружаются пакетно через порты хранения; файлы не читаются.
+- `viewSolution` возвращает `SubmissionDetails`: Посылку с автором, Задачей, Туром и Решением, текущий успешный
+  Вердикт с Полигонами в порядке его результатов, итоговый балл и Судейские вердикты. Судейские вердикты упорядочены
+  по времени выставления, затем по идентификатору, и каждый идёт вместе со своим Судьёй. Решение и Полигоны
+  загружаются вместе с файлами. Итоговый балл операция вычисляет в `Long`; без успешного Вердикта он `null`.
+- Файлы возвращают отдельные операции с кодификатором `viewSolution`: `downloadSolution`, `downloadLogs`
+  и `downloadRecording`. Каждая возвращает `FileData`. Полигон вне успешного Вердикта операции отклоняют ошибкой
+  `TestNotInVerdictError`, Полигон без видеозаписи — ошибкой `RecordingNotExistsError`.
+
+## Кабинет Разработчика
+
+[DeveloperOperations](src/main/kotlin/tech/testsys/operation/user/DeveloperOperations.kt) реализует фичи
+`testsys.user.multi.developer.*`; требования определены в [features.md](../docs/domain/features.md).
+
+- `viewContests` возвращает страницу пар `Pair<Contest, List<Community>>`, а `viewTask` — пару из Задачи
+  и её Сообществ доступа. `viewContest` возвращает тройку из Тура, его Задач и Сообществ доступа в порядке Тура.
+  Связанные сущности операции загружают через `findByIds`; отсутствующие пропускаются.
+- `viewResource` возвращает версии цепочки парами `Pair<DomainEntity<*>, Solution?>`: у версии Авторского Решения
+  второй элемент — её Решение, у остальных — `null`.
+- `downloadResourceVersion` возвращает файл версии как `FileData`, у Авторского Решения — файл его Решения.
+  Версия другой цепочки считается отсутствующей.
+- `viewTrikStudioVersions` помечена кодификатором `createContest`. Она возвращает версии TRIK Studio,
+  зарегистрированные в Системе, через `ContestRepository.findTrikStudioVersions`; из них выбираются версия Тура
+  и поддерживаемые версии Задачи.

@@ -3,6 +3,7 @@ package tech.testsys.infra.database.api.persistence
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.beans.factory.annotation.Autowired
@@ -48,6 +49,11 @@ class FileStorageCleanupIntegrationTests : DatabaseIntegrationTests() {
     private lateinit var transactionManager: PlatformTransactionManager
 
     private val now = Instant.parse("2040-01-01T12:00:00Z")
+
+    @BeforeEach
+    fun prepare() {
+        directory = directory.toRealPath()
+    }
 
     @Test
     fun `should remove orphan file metadata of any age through all batches and preserve fresh blobs`() {

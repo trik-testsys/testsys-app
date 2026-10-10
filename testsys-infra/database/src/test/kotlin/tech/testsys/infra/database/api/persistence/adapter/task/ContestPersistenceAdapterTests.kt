@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import tech.testsys.domain.builder.api.contest
 import tech.testsys.domain.builder.api.contestData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.model.group.CommunityId
@@ -87,6 +88,117 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
             ).content
 
             assertEquals(listOf(owned.id), result.map { it.id })
+        }
+    }
+
+    @Nested
+    inner class FindSharedToTests {
+
+        @Test
+        fun `should find contests shared to the communities and exclude unshared contests of their owner`() {
+            val owner = fixtures.developer().id
+            val community = fixtures.community().id
+            val shared = saveContest(ownerId = owner, communityIds = listOf(community))
+            saveContest(ownerId = owner, communityIds = emptyList())
+            saveContest(ownerId = owner, communityIds = listOf(fixtures.community().id))
+
+            val result = repository.findSharedTo(communityIds = setOf(community), pagination = Pagination(page = 0, size = 10)).content
+
+            assertEquals(listOf(shared.id), result.map { it.id })
+            assertSameData(shared, result.single())
+        }
+
+        @Test
+        fun `should return a contest once if it is shared to several of the communities`() {
+            val communities = listOf(fixtures.community().id, fixtures.community().id)
+            val shared = saveContest(ownerId = fixtures.developer().id, communityIds = communities)
+
+            val result = repository.findSharedTo(communityIds = communities.toSet(), pagination = Pagination(page = 0, size = 10))
+
+            assertEquals(listOf(shared.id), result.content.map { it.id })
+            assertEquals(1, result.totalElements)
+        }
+
+        @Test
+        fun `should keep only contests whose name contains the filter text ignoring case`() {
+            val community = fixtures.community().id
+            val owner = fixtures.developer().id
+            val matching = saveContest(ownerId = owner, communityIds = listOf(community), name = "Весенний ТУР")
+            saveContest(ownerId = owner, communityIds = listOf(community), name = "Осенний этап")
+
+            val result = repository.findSharedTo(
+                communityIds = setOf(community),
+                pagination = Pagination(page = 0, size = 10),
+                filter = ContestFilter(name = "тур"),
+            ).content
+
+            assertEquals(listOf(matching.id), result.map { it.id })
+        }
+
+        @Test
+        fun `should find shared contests with the same statement count for one and twenty contests`() {
+            val singleCommunity = fixtures.community().id
+            val manyCommunity = fixtures.community().id
+            val owner = fixtures.developer().id
+            val single = saveContest(ownerId = owner, communityIds = listOf(singleCommunity))
+            val many = List(20) { saveContest(ownerId = owner, communityIds = listOf(manyCommunity)) }
+            val pagination = Pagination(page = 0, size = 50)
+
+            val (one, oneContestStatements) = withStatementCount {
+                repository.findSharedTo(communityIds = setOf(singleCommunity), pagination = pagination)
+            }
+            val (twenty, twentyContestsStatements) = withStatementCount {
+                repository.findSharedTo(communityIds = setOf(manyCommunity), pagination = pagination)
+            }
+
+            assertEquals(listOf(single.id), one.content.map { contest -> contest.id })
+            assertEquals(many.map { contest -> contest.id }, twenty.content.map { contest -> contest.id })
+            assertEquals(oneContestStatements, twentyContestsStatements)
+        }
+
+        @Test
+        fun `should find nothing if no communities are given`() {
+            saveContest(ownerId = fixtures.developer().id, communityIds = listOf(fixtures.community().id))
+
+            val result = repository.findSharedTo(communityIds = emptySet(), pagination = Pagination(page = 0, size = 10))
+
+            assertEquals(emptyList(), result.content)
+            assertEquals(0, result.totalElements)
+        }
+
+        @Test
+        fun `should return the requested page in id order with the total of all matches`() {
+            val community = fixtures.community().id
+            val contests = List(3) { saveContest(ownerId = fixtures.developer().id, communityIds = listOf(community)) }
+            val pagination = Pagination(page = 1, size = 2)
+
+            val result = repository.findSharedTo(communityIds = setOf(community), pagination = pagination)
+
+            assertEquals(listOf(contests.maxBy { it.id.value }.id), result.content.map { it.id })
+            assertEquals(pagination, result.pagination)
+            assertEquals(3, result.totalElements)
+        }
+    }
+
+    @Nested
+    inner class FindTrikStudioVersionsTests {
+
+        @Test
+        fun `should return every registered version ordered by tag`() {
+            fixtures.trikStudioVersion("3.1.0")
+            fixtures.trikStudioVersion("2.9.0")
+            fixtures.trikStudioVersion("3.0.0")
+
+            val result = repository.findTrikStudioVersions()
+
+            assertEquals(listOf("2.9.0", "3.0.0", "3.1.0").map(::TrikStudioVersion), result)
+        }
+
+        @Test
+        fun `should return an empty list if no version is registered`() {
+            val result = repository.findTrikStudioVersions()
+
+            assertEquals(emptyList(), result)
         }
     }
 
@@ -312,10 +424,11 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
         ownerId: MultipleRoleUserId,
         communityIds: List<CommunityId>,
         taskIds: List<TaskId> = listOf(fixtures.task().id),
+        name: String = fixtures.unique("Available contest"),
     ): Contest = repository.save(
         contestData {
             owner = ownerId
-            name = fixtures.unique("Available contest")
+            this.name = name
             description = "Available contest description"
             trikStudioVersion = fixtures.trikStudioVersion()
             tasks = taskIds.toMutableList()

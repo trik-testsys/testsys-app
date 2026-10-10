@@ -69,6 +69,7 @@ import java.util.concurrent.atomic.AtomicReference
 import trik.testsys.grading.GradingNodeOuterClass as Proto
 
 internal val settings = GradingSettings(
+    nodes = emptyList(),
     maxAttempts = 3,
     totalTimeout = Duration.ofMinutes(30),
     rpcTimeout = Duration.ofMinutes(10),

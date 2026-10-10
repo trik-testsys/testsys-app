@@ -7,6 +7,7 @@ import tech.testsys.domain.model.task.DeveloperSolutionId
 import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.ExerciseId
 import tech.testsys.domain.model.task.Score
+import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.StatementId
@@ -97,6 +98,24 @@ data class DeveloperSolutionVo(
     val solution: SolutionId,
     val expectedScore: Score,
 ) : ResourceVo
+
+/**
+ * Solution of a developer solution version for pages; its file is represented by its name without content.
+ *
+ * @property id the identifier of the solution.
+ * @property createdAt the moment the solution was uploaded.
+ * @property fileName the uploaded name of the program file.
+ * @property language the programming language of the program.
+ * @since %CURRENT_VERSION%
+ */
+data class SolutionVo(val id: SolutionId, val createdAt: Instant, val fileName: String, val language: TrikSupportedLanguage)
+
+internal fun Solution.toVo() = SolutionVo(
+    id = id,
+    createdAt = createdAt,
+    fileName = data.file.uploadedFilename,
+    language = data.language,
+)
 
 internal fun Statement.toVo() = StatementVo(
     id = id,

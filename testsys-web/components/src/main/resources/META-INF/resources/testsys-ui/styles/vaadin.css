@@ -98,7 +98,7 @@ vaadin-button > .ts-spinner { display: inline-block; }
 .ts-vstack > vaadin-button { align-self: flex-start; }
 
 /* Fields: label, helper and error typography and the shared white bordered input appearance. */
-:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+:is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-date-time-picker, vaadin-integer-field, vaadin-number-field, vaadin-custom-field) {
   --vaadin-input-field-label-font-size: var(--fs-xs);
   --vaadin-input-field-label-font-weight: var(--fw-medium);
@@ -111,28 +111,28 @@ vaadin-button > .ts-spinner { display: inline-block; }
   /* The input-field part draws a 1px border outside this height; keep the whole control at --control-md. */
   --lumo-text-field-size: calc(var(--control-md) - 2px);
 }
-:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+:is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field)::part(input-field) {
   background: var(--surface-card);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
 }
-:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+:is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field)[focused]::part(input-field) {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px var(--accent-ring);
 }
-:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+:is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field)[invalid]::part(input-field) {
   border-color: var(--danger);
 }
-:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+:is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field)[disabled]::part(input-field) {
   background: var(--canvas);
   border-color: var(--border-default);
 }
 /* Read-only field: the value keeps its type and can be copied; the dashed border tells it apart from an input. */
-:is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+:is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field)[readonly]:not([disabled])::part(input-field) {
   background: transparent;
   border-style: dashed;
@@ -143,7 +143,7 @@ vaadin-button > .ts-spinner { display: inline-block; }
 }
 /* Inverse read-only controls stop at tables, which own a neutral surface and reuse normal field styling. */
 @scope (.ts-block--dark) to (.ts-table) {
-  :scope :is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+  :scope :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
       vaadin-integer-field, vaadin-number-field)[readonly]:not([disabled])::part(input-field) {
     color: var(--white);
     border-color: var(--ink-600);
@@ -152,7 +152,7 @@ vaadin-button > .ts-spinner { display: inline-block; }
   :scope .ts-progress { background:var(--ink-700); }
   :scope .ts-progress__bar { background:var(--white); }
 }
-.ts-field__value > :is(vaadin-text-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
+.ts-field__value > :is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-select, vaadin-date-picker, vaadin-time-picker,
     vaadin-date-time-picker, vaadin-integer-field, vaadin-number-field, vaadin-custom-field) {
   width: 100%;
   padding-block: 0;
@@ -170,13 +170,13 @@ vaadin-select[data-ts-size="sm"] {
 vaadin-select[data-ts-size="sm"]::part(error-message) { display: none; }
 .ts-field__value > vaadin-checkbox { display: flex; align-items: center; min-height: var(--control-md); }
 /* Native values remain separate from the shadow field frame, clear/toggle buttons, hints and errors. */
-:is(vaadin-text-field, vaadin-text-area, vaadin-date-picker, vaadin-time-picker,
+:is(vaadin-text-field, vaadin-password-field, vaadin-text-area, vaadin-date-picker, vaadin-time-picker,
     vaadin-integer-field, vaadin-number-field) > :is(input, textarea),
 vaadin-select > [slot="value"], .ts-code__area, vaadin-radio-button > label {
   filter:var(--ts-value-filter, none);
 }
 vaadin-checkbox::part(checkbox), vaadin-radio-button::part(radio), vaadin-switch::part(switch) { filter:var(--ts-value-filter, none); }
-vaadin-text-field[data-ts-mono] > input, vaadin-integer-field > input, vaadin-number-field > input {
+vaadin-text-field[data-ts-mono] > input, vaadin-password-field[data-ts-mono] > input, vaadin-integer-field > input, vaadin-number-field > input {
   font-family: var(--font-mono);
 }
 vaadin-checkbox {
@@ -396,3 +396,18 @@ vaadin-notification-card[theme~="ts-header-arrival"]::part(overlay) { border-rad
 vaadin-popover[theme~="ts-header-menu-search"]::part(overlay) { width:min(calc(var(--ts-menu-columns,4) * var(--col-wide) + 2 * var(--space-3) + (var(--ts-menu-columns,4) - 1) * var(--space-3)),calc(100vw - 24px)); min-width:0; }
 
 @media (prefers-reduced-motion: reduce) { vaadin-dialog[theme~="ts-drawer"]::part(overlay) { animation:none; } }
+
+.ts-field__value > .ts-filedrop {
+    min-width: 0;
+    width: 100%;
+}
+
+.ts-drawer-table {
+    grid-column: 1 / -1;
+    min-width: 0;
+}
+
+.ts-drawer-table > .ts-block__title {
+    display: block;
+    margin-bottom: 8px;
+}

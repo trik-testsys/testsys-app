@@ -200,6 +200,10 @@
 .ts-block__row > :is(.ts-tag, .ts-status, .ts-counter, .ts-icon) { justify-self:start; }
 /* Form dialog body (Kotlin DSL): rows on its own 24-column grid; the dialog body text is secondary, field values stay primary. */
 .ts-dialog__grid { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); column-gap:var(--grid-gap); row-gap:var(--space-3); color:var(--text-primary); }
+.ts-dialog__section { grid-column:1 / -1; min-width:0; border:1px solid var(--border-default); border-radius:var(--radius-md); padding:var(--space-3); }
+.ts-dialog__section-title { margin:0 0 var(--space-3); font:var(--fw-semibold) var(--fs-sm)/1.4 var(--font-sans); overflow-wrap:anywhere; }
+.ts-dialog__section-body { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); column-gap:var(--grid-gap); row-gap:var(--space-3); }
+
 
 /* Grid field (React and Kotlin DSL): the label on the left and the value on the right, both on the block columns. */
 .ts-field--grid { display:grid; grid-template-columns:subgrid; column-gap:normal; row-gap:0; align-items:start; }
@@ -362,6 +366,8 @@ a.ts-tab { text-decoration:none; }
 .ts-overlay--contained { position:absolute; }
 .ts-dialog { background:var(--surface-card); border-radius:var(--radius-2xl); box-shadow:var(--shadow-dialog); width:440px; max-width:calc(100% - 32px); }
 .ts-dialog--md { width:520px; }
+.ts-dialog--lg { width:720px; }
+.ts-dialog--xl { width:960px; }
 .ts-dialog__head { display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); padding:18px var(--space-6); border-bottom:1px solid var(--border-default); }
 .ts-dialog__title { font:var(--fw-bold) var(--fs-h3)/var(--lh-h3) var(--font-sans); margin:0; }
 .ts-dialog__body { padding:var(--space-5) var(--space-6); display:flex; flex-direction:column; gap:14px; font:var(--fw-regular) var(--fs-sm)/22px var(--font-sans); color:var(--text-secondary); }
@@ -386,11 +392,13 @@ a.ts-tab { text-decoration:none; }
 .ts-table th.ts-sorted { color:var(--text-primary); }
 .ts-table td { padding:8px var(--space-3); border-bottom:1px solid var(--line-subtle); vertical-align:middle; }
 :where(.ts-table) > tbody > tr:where(:not(.ts-row-empty):nth-child(even)) { background:var(--canvas); }
-:where(.ts-table) > tbody > tr:where(:not(.ts-row-empty):hover) { background:var(--canvas-deep); }
+:where(.ts-table) > tbody > tr:where(.ts-row-clickable:hover) { background:var(--canvas-deep); }
 .ts-table tr.ts-row-selected, .ts-table tr.ts-row-selected:hover { background:var(--accent-softer); }
 .ts-table--compact td { padding-top:4px; padding-bottom:4px; }
 .ts-table tr.ts-row-clickable { cursor:pointer; }
-.ts-table tbody tr.ts-row-empty:hover { background:transparent; }
+/* The first text cell of a navigating row looks like a link to the page the row opens. */
+.ts-table td.ts-navigation-cell { color:var(--text-link); }
+.ts-table tr.ts-row-clickable:hover > td.ts-navigation-cell { color:var(--accent-hover); text-decoration:underline; }
 .ts-table-pager { display:flex; align-items:center; gap:var(--space-2); flex:1; min-width:0; }
 .ts-table-pager > .ts-muted { flex:1; font-size:var(--fs-xs); }
 .ts-num { font-family:var(--font-mono); font-weight:var(--fw-medium); }

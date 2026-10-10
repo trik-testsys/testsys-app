@@ -124,6 +124,36 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
     inner class FindAvailableToDeveloperTests {
 
         @Test
+        fun `should exclude owned tasks before pagination and count shared tasks once`() {
+            val owner = fixtures.developer().id
+            val otherOwner = fixtures.developer().id
+            val communities = listOf(fixtures.community().id, fixtures.community().id)
+            saveTask(ownerId = owner, communityIds = communities)
+            val first = saveTask(ownerId = otherOwner, communityIds = communities)
+            val second = saveTask(ownerId = otherOwner, communityIds = communities)
+            val filter = TaskFilter(excludeOwnerId = owner)
+
+            val page = repository.findAvailableToDeveloper(
+                ownerId = owner,
+                communityIds = communities.toSet(),
+                pagination = Pagination(page = 1, size = 1),
+                filter = filter,
+            )
+
+            assertEquals(2L, page.totalElements)
+            assertEquals(listOf(second.id), page.content.map { task -> task.id })
+            assertEquals(
+                listOf(first.id),
+                repository.findAvailableToDeveloper(
+                    ownerId = owner,
+                    communityIds = communities.toSet(),
+                    pagination = Pagination(page = 0, size = 1),
+                    filter = filter,
+                ).content.map { task -> task.id },
+            )
+        }
+
+        @Test
         fun `should return owned and shared tasks while excluding inaccessible tasks`() {
             val owner = fixtures.developer().id
             val otherOwner = fixtures.developer().id

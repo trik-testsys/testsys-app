@@ -8,12 +8,17 @@ import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInv
 import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
+import tech.testsys.domain.model.group.Community
+import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.InviteCodeHash
 import tech.testsys.domain.model.group.RawInviteCodeDependency
+import tech.testsys.domain.model.user.CommunityRole
+import tech.testsys.domain.model.user.CompatibleUserRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
+import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.operation.config.EmailConfirmationConfig
 import tech.testsys.operation.error.CommunityInviteCodeExpiredError
 import tech.testsys.operation.error.CommunityInviteCodeNotValidError
@@ -28,12 +33,14 @@ import tech.testsys.operation.error.InvalidEmailError
 import tech.testsys.operation.error.JoinCommunityError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.RequestEmailChangeError
+import tech.testsys.operation.error.ViewProfileError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.confirmationCodeExpiresAt
 import tech.testsys.operation.util.isConfirmationActive
 import tech.testsys.operation.util.isValidEmail
+import tech.testsys.operation.util.joinCommunity
 import tech.testsys.operation.util.nextConfirmationCode
 import tech.testsys.operation.util.normalizeEmail
 import tech.testsys.operation.util.normalizeInviteCode
@@ -56,12 +63,13 @@ class MultipleRoleUserOperations(
     private val emailConfirmationConfig: EmailConfirmationConfig,
     private val clock: Clock,
     private val randomGenerator: RandomGenerator,
+    private val communityConfig: CommunityConfig,
 ) {
 
     /**
      * Makes [user] a member, in the invite role, of the community whose valid invite code matches [inviteCode]
-     * case-insensitively, granting the role if needed. Membership is decided by the stored user, not by [user]:
-     * a stored member in that role is returned unchanged.
+     * case-insensitively, granting the role with a public community membership if needed. Membership is decided
+     * by the stored user, not by [user]: a stored member in that role is returned unchanged.
      *
      * @since %CURRENT_VERSION%
      */
@@ -77,8 +85,36 @@ class MultipleRoleUserOperations(
                 "No community references community invite id=${invite.id.value}"
             }
             // The port is idempotent and reads the stored memberships, so a stale [user] cannot skip joining.
-            return multipleRoleUserRepository.addCommunityMembership(userId = user.id, communityId = community.id, kind = invite.kind)
-                .asSuccess()
+            val role = when (invite.kind) {
+                CommunityInvite.Kind.Manager -> CommunityRole.Manager
+                CommunityInvite.Kind.Developer -> CommunityRole.Developer
+            }
+            return multipleRoleUserRepository.joinCommunity(
+                user = user,
+                communityId = community.id,
+                role = role,
+                publicCommunityId = communityConfig.publicCommunityId,
+            ).asSuccess()
+        }
+
+    /**
+     * Returns each role of [user] in the order of its roles, with the communities the user is a member of in that role in
+     * ascending id order. The nickname and the e-mail address are the data of [user]; nothing is written.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.viewProfile")
+    fun viewProfile(user: MultipleRoleUser): OperationResult<List<Pair<CompatibleUserRole, List<Community>>>, ViewProfileError> =
+        operation<List<Pair<CompatibleUserRole, List<Community>>>, ViewProfileError> {
+            val roles = user.data.roles
+            // One query loads the communities of all roles.
+            val communities = communityRepository.findByIds(roles.flatMap { role -> role.memberOf.ids }.distinct())
+                .associateBy { community -> community.id }
+            return roles.map { role ->
+                role to role.memberOf.ids.sortedBy { id -> id.value }.map { id ->
+                    checkNotNull(communities[id]) { "Community id=${id.value} of user id=${user.id.value} does not exist" }
+                }
+            }.asSuccess()
         }
 
     /**

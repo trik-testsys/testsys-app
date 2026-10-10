@@ -73,13 +73,12 @@
 | [ui-design.md](project/ui-design.md) | Справочник | Общие правила оформления веб-интерфейса |
 | [components/README.md](../testsys-web/components/README.md)                            | Справочник | Kotlin-DSL дизайн-системы: страница, сетка, скоупы, компоненты  |
 | [app/README.md](../testsys-web/app/README.md) | Справочник | Основное веб-приложение: запуск и границы ответственности |
-| [dev-app/README.md](../testsys-web/dev-app/README.md) | Справочник | Самостоятельная витрина компонентов: запуск и демонстрации |
 | [mail/README.md](../testsys-infra/mail/README.md)                     | Справочник | Отправка писем Пользователям по SMTP и настройки                |
 | [implement-entity.md](guides/implement-entity.md)                      | Гайд       | Добавление доменной сущности и её хранения в БД                |
 | [implement-port.md](guides/implement-port.md)                          | Гайд       | Объявление порта в домене и его реализация                     |
 | [implement-feature.md](guides/implement-feature.md)                    | Гайд       | Реализация пользовательской фичи: спецификация, операция, тесты |
 | [add-localization.md](guides/add-localization.md)                      | Гайд       | Добавление сообщения или региона: формат MF2, типы, ограничения |
-| [add-web-component.md](guides/add-web-component.md) | Гайд | Добавление компонента Kotlin DSL и примера использования |
+| [add-web-component.md](guides/add-web-component.md) | Гайд | Добавление компонента Kotlin DSL |
 | [implement-web-page.md](guides/implement-web-page.md) | Гайд | Создание страницы на публичном Kotlin DSL |
 | [definitions.md](domain/definitions.md)                                | Реестр     | Термины предметной области (Роли, Задача, Тур, Соревнование …) |
 | [features.md](domain/features.md)                                      | Реестр     | Фичи системы с кодификаторами `testsys.*`                      |

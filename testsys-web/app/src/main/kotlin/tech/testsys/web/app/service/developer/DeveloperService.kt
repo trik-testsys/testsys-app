@@ -2,7 +2,6 @@ package tech.testsys.web.app.service.developer
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.contract.persistence.ContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
@@ -22,6 +21,7 @@ import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.user.DeveloperOperations
+import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.service.TaskVo
@@ -70,9 +70,9 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewContests(pagination: Pagination, filter: ContestFilter = ContestFilter()): Page<ContestVo> =
+    fun viewContests(pagination: Pagination, filter: ContestFilter = ContestFilter()): Page<Pair<ContestVo, List<CommunityVo>>> =
         operations.viewContests(currentUser.multipleRoleUser(), pagination, filter)
-            .getOrThrow().map { contest -> contest.toVo() }
+            .getOrThrow().map { (contest, communities) -> contest.toVo() to communities.map { community -> community.toVo() } }
 
     /**
      * Runs [DeveloperOperations.viewContest].
@@ -80,7 +80,18 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewContest(contestId: ContestId): ContestVo = operations.viewContest(currentUser.multipleRoleUser(), contestId).getOrThrow().toVo()
+    fun viewContest(contestId: ContestId): Triple<ContestVo, List<TaskVo>, List<CommunityVo>> {
+        val (contest, tasks, communities) = operations.viewContest(currentUser.multipleRoleUser(), contestId).getOrThrow()
+        return Triple(contest.toVo(), tasks.map { task -> task.toVo() }, communities.map { community -> community.toVo() })
+    }
+
+    /**
+     * Runs [DeveloperOperations.viewTrikStudioVersions].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun viewTrikStudioVersions(): List<TrikStudioVersion> = operations.viewTrikStudioVersions(currentUser.multipleRoleUser()).getOrThrow()
 
     /**
      * Runs [DeveloperOperations.createContest].
@@ -164,7 +175,10 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewTask(taskId: TaskId): TaskVo = operations.viewTask(currentUser.multipleRoleUser(), taskId).getOrThrow().toVo()
+    fun viewTask(taskId: TaskId): Pair<TaskVo, List<CommunityVo>> {
+        val (task, communities) = operations.viewTask(currentUser.multipleRoleUser(), taskId).getOrThrow()
+        return task.toVo() to communities.map { community -> community.toVo() }
+    }
 
     /**
      * Runs [DeveloperOperations.editTaskInfo].
@@ -199,9 +213,9 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewResource(taskId: TaskId, versionBucket: VersionBucket): List<ResourceVo> =
+    fun viewResource(taskId: TaskId, versionBucket: VersionBucket): List<Pair<ResourceVo, SolutionVo?>> =
         operations.viewResource(currentUser.multipleRoleUser(), taskId, versionBucket)
-            .getOrThrow().map { version -> version.toResourceVo() }
+            .getOrThrow().map { (version, solution) -> version.toResourceVo() to solution?.toVo() }
 
     /**
      * Runs [DeveloperOperations.downloadResourceVersion].
@@ -209,7 +223,7 @@ class DeveloperService(private val operations: DeveloperOperations, private val 
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun downloadResourceVersion(taskId: TaskId, versionBucket: VersionBucket, versionId: DomainId): StoredBlobRef =
+    fun downloadResourceVersion(taskId: TaskId, versionBucket: VersionBucket, versionId: DomainId): FileData =
         operations.downloadResourceVersion(currentUser.multipleRoleUser(), taskId, versionBucket, versionId).getOrThrow()
 
     /**

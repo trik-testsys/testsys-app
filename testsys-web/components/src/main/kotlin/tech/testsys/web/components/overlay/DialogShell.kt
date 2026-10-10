@@ -3,10 +3,12 @@
 package tech.testsys.web.components.overlay
 
 import com.vaadin.flow.component.ModalityMode
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.dialog.Dialog
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.H2
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.shared.Registration
 import tech.testsys.web.components.actions.iconAction
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
@@ -26,10 +28,30 @@ import tech.testsys.web.components.texts.UiTexts
 private const val GLYPH_SIZE = 20
 
 /**
- * Modal `vaadin-dialog` drawing the `.ts-dialog` markup: a head with the title and a close button, or an alert body
- * with a warning glyph; [content] and [foot] take the content. [isWide] gives the form width.
+ * Width of a dialog card; on a narrow screen every card fits the screen.
+ *
+ * @since %CURRENT_VERSION%
  */
-internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, isWide: Boolean, isAlert: Boolean) {
+enum class DialogSize(internal val cssClass: CssClass?) {
+    /** 440 px: a confirmation or a short message. */
+    S(null),
+
+    /** 520 px: a form of a few fields; the default of a form dialog. */
+    M(CssClass.DialogMd),
+
+    /** 720 px: a form with long values or a table. */
+    L(CssClass.DialogLg),
+
+    /** 960 px: a wide table or a form of two columns. */
+    XL(CssClass.DialogXl),
+}
+
+/**
+ * Modal `vaadin-dialog` drawing the `.ts-dialog` markup: a head with the title and a close button, or an alert body
+ * with a warning glyph; [content] and [foot] take the content. [size] gives the width of the card. An open dialog
+ * closes on navigation: opening attaches it to the UI, not to the page, so leaving the page would keep it shown.
+ */
+internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, size: DialogSize, isAlert: Boolean) {
     val dialog = Dialog().apply {
         addThemeName(CssTheme.Dialog)
         // Vaadin defaults, set explicitly to state how every dialog closes.
@@ -43,11 +65,17 @@ internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, isW
     val body = Div().apply { addClassName(CssClass.DialogBody) }
     val content = Div()
     val foot = Div().apply { addClassName(CssClass.DialogFoot) }
+    private var navigation: Registration? = null
 
     init {
+        dialog.addOpenedChangeListener { event ->
+            navigation?.remove()
+            navigation = if (event.isOpened) UI.getCurrent().addAfterNavigationListener { close() } else null
+        }
+
         val card = Div().apply {
             addClassName(CssClass.Dialog)
-            if (isWide) addClassName(CssClass.DialogMd)
+            size.cssClass?.let { sizeClass -> addClassName(sizeClass) }
             if (isAlert) addClassName(CssClass.DialogAlert)
         }
 

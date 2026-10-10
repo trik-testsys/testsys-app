@@ -1,5 +1,7 @@
 package tech.testsys.infra.database.api.persistence.adapter.user
 
+import jakarta.persistence.EntityManager
+import jakarta.persistence.PersistenceContext
 import jakarta.persistence.criteria.CriteriaBuilder
 import jakarta.persistence.criteria.Path
 import jakarta.persistence.criteria.Predicate
@@ -7,6 +9,7 @@ import jakarta.persistence.criteria.Root
 import jakarta.persistence.criteria.Subquery
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.domain.Specification
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.Page
@@ -28,10 +31,12 @@ import tech.testsys.infra.database.internal.jpa.entity.user.multiple.UserMultipl
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ObserverDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.utils.requireId
+import tech.testsys.infra.database.internal.utils.touchAggregateRoot
+import java.time.Instant
 import org.springframework.data.domain.Sort as JpaSort
 
 /**
- * Persistence adapter searching [User] entities of every kind backed by [UserJpaEntity] rows.
+ * Persistence adapter searching [User] entities of every kind and recording their logins in [UserJpaEntity] rows.
  * Found users are assembled by [MultipleRoleUserRepository] and [ObserverRepository].
  *
  * @since %CURRENT_VERSION%
@@ -43,6 +48,9 @@ class UserPersistenceAdapter(
     private val multipleRoleUserRepository: MultipleRoleUserRepository,
     private val observerRepository: ObserverRepository,
 ) : UserRepository {
+
+    @PersistenceContext
+    private lateinit var entityManager: EntityManager
 
     @Transactional(readOnly = true)
     override fun findAvailableToAdministrator(
@@ -80,9 +88,31 @@ class UserPersistenceAdapter(
     }
 
     @Transactional(readOnly = true)
+    override fun countAvailableToAdministrator(administratorId: MultipleRoleUserId, filter: UserFilter): Long =
+        userJpaEntityRepository.count(availableTo(administratorId = administratorId, filter = filter))
+
+    @Transactional(readOnly = true)
+    override fun findLastLogins(userIds: List<UserId>): Map<UserId, Instant> {
+        val typesById = userIds.mapNotNull { userId -> typeOf(userId)?.let { type -> userId.value to (userId to type) } }.toMap()
+        return userJpaEntityRepository.findAllById(typesById.keys).mapNotNull { jpaEntity ->
+            val (userId, type) = typesById.getValue(jpaEntity.requireId())
+            jpaEntity.lastLoginAt?.takeIf { jpaEntity.type == type }?.let { lastLoginAt -> userId to lastLoginAt }
+        }.toMap()
+    }
+
+    @Transactional(readOnly = true)
     override fun existsById(userId: UserId): Boolean {
         val type = typeOf(userId) ?: return false
         return userJpaEntityRepository.existsByIdAndType(id = userId.value, type = type)
+    }
+
+    @Transactional
+    override fun recordLogin(userId: UserId, loggedInAt: Instant) {
+        val type = typeOf(userId) ?: return
+        val row = userJpaEntityRepository.findByIdOrNull(userId.value) ?: return
+        if (row.type != type) return
+        entityManager.touchAggregateRoot(userJpaEntityRepository, userId.value, changesRootData = true)
+        userJpaEntityRepository.updateLastLoginAt(id = userId.value, type = type, lastLoginAt = loggedInAt)
     }
 
     /**

@@ -17,12 +17,21 @@ import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.judgeData
 import tech.testsys.domain.builder.api.judgmentOrder
 import tech.testsys.domain.builder.api.judgmentOrderData
+import tech.testsys.domain.builder.api.logs
+import tech.testsys.domain.builder.api.logsData
 import tech.testsys.domain.builder.api.managerData
+import tech.testsys.domain.builder.api.multipleRoleUser
+import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.participant
 import tech.testsys.domain.builder.api.participantData
+import tech.testsys.domain.builder.api.recording
+import tech.testsys.domain.builder.api.recordingData
+import tech.testsys.domain.builder.api.solution
+import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.api.submission
 import tech.testsys.domain.builder.api.submissionData
+import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.verdict
 import tech.testsys.domain.builder.api.verdictData
 import tech.testsys.domain.builder.task.SubmissionDataBuilder
@@ -30,41 +39,73 @@ import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
 import tech.testsys.domain.contract.persistence.VerdictFilter
+import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
+import tech.testsys.domain.contract.persistence.repository.LogsRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
+import tech.testsys.domain.contract.persistence.repository.RecordingRepository
+import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
+import tech.testsys.domain.contract.persistence.repository.TaskRepository
+import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.EntityVersion
+import tech.testsys.domain.model.LazyEntity
+import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.task.Contest
+import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.JudgmentOrderData
+import tech.testsys.domain.model.task.JudgmentOrderId
+import tech.testsys.domain.model.task.Logs
+import tech.testsys.domain.model.task.LogsId
+import tech.testsys.domain.model.task.Recording
+import tech.testsys.domain.model.task.RecordingId
 import tech.testsys.domain.model.task.Score
+import tech.testsys.domain.model.task.Solution
+import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionId
+import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
+import tech.testsys.domain.model.task.VerdictId
+import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.SingleRoleUserId
+import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.error.BlankJudgmentReasonError
 import tech.testsys.operation.error.ChangeVerdictError
 import tech.testsys.operation.error.MissedJudgeRoleError
 import tech.testsys.operation.error.NegativeJudgmentScoreError
+import tech.testsys.operation.error.RecordingNotExistsError
 import tech.testsys.operation.error.SubmissionAccessDeniedError
 import tech.testsys.operation.error.SubmissionIsDeveloperSolutionTestError
 import tech.testsys.operation.error.SubmissionNotExistsError
 import tech.testsys.operation.error.SubmissionNotSuccessfullyGradedError
+import tech.testsys.operation.error.TestNotInVerdictError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
+import tech.testsys.operation.util.testContest
 import tech.testsys.operation.util.testDeveloper
 import tech.testsys.operation.util.testJudge
 import tech.testsys.operation.util.testMultipleRoleUser
+import tech.testsys.operation.util.testNewTask
+import tech.testsys.operation.util.testParticipant
 import tech.testsys.operation.util.testStudent
 import java.time.Instant
+import java.util.UUID
+import tech.testsys.domain.builder.api.test as polygon
+import tech.testsys.domain.model.task.Test as Polygon
 
 class JudgeOperationsTests {
 
@@ -73,14 +114,52 @@ class JudgeOperationsTests {
     private val judgmentOrderRepository = mockk<JudgmentOrderRepository>()
     private val userRepository = mockk<MultipleRoleUserRepository>()
     private val participantRepository = mockk<ParticipantRepository>()
+    private val taskRepository = mockk<TaskRepository>()
+    private val contestRepository = mockk<ContestRepository>()
+    private val solutionRepository = mockk<SolutionRepository>()
+    private val testRepository = mockk<TestRepository>()
+    private val logsRepository = mockk<LogsRepository>()
+    private val recordingRepository = mockk<RecordingRepository>()
     private val operations = JudgeOperations(
         verdictRepository = repository,
         submissionRepository = submissionRepository,
         judgmentOrderRepository = judgmentOrderRepository,
         multipleRoleUserRepository = userRepository,
         participantRepository = participantRepository,
+        taskRepository = taskRepository,
+        contestRepository = contestRepository,
+        solutionRepository = solutionRepository,
+        testRepository = testRepository,
+        logsRepository = logsRepository,
+        recordingRepository = recordingRepository,
     )
     private val judge = testJudge { data = judgeData {} }
+    private val studentAuthor = testMultipleRoleUser {
+        name = "Student"
+        roles { student { data = studentData {} } }
+    }
+    private val participantAuthor = testParticipant { name = "Participant" }
+
+    /** Verdict 4 of submission 2: test 11 scored 75 with logs 31 and recording 41, then test 10 scored 25 with logs 30. */
+    private val gradedVerdict = verdict {
+        id = 4
+        createdAt = Instant.parse("2026-01-01T00:00:00Z")
+        data = verdictData {
+            task(1)
+            submission(SUBMISSION_ID.value)
+            testVerdict {
+                score = 75
+                test(11)
+                logs(31)
+                recording(41)
+            }
+            testVerdict {
+                score = 25
+                test(10)
+                logs(30)
+            }
+        }
+    }
 
     private fun userWithOtherRolesThanJudge(): MultipleRoleUser = testMultipleRoleUser {
         roles {
@@ -99,6 +178,27 @@ class JudgeOperationsTests {
         inner class HappyPathTests {
 
             @Test
+            fun `should batch judgments and select the last by time and id for the final score`() {
+                val pagination = Pagination(page = 0, size = 10)
+                val submission = gradedSubmission(studentAuthor.id) { judgmentOrders(listOf(20, 21)) }
+                val earlier = testOrder(20, judge.id.value, Instant.EPOCH, 90)
+                val latest = testOrder(21, judge.id.value, Instant.EPOCH, 95)
+                arrangeAuthor(studentAuthor)
+                every { submissionRepository.load(any<LazyEntityList<SubmissionId, Submission>>()) } returns listOf(submission)
+                every { repository.findAvailableToJudge(pagination, VerdictFilter()) } returns
+                    Page(content = listOf(gradedVerdict), pagination = pagination, totalElements = 1)
+                every { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) } returns
+                    listOf(latest, earlier)
+
+                val result = operations.viewResults(judge, pagination).getOrThrow().content.single()
+
+                assertSame(latest, result.lastJudgment)
+                assertSame(submission, result.submission)
+                assertEquals(95L, result.finalScore)
+                verify(exactly = 1) { judgmentOrderRepository.load(any<LazyEntityList<JudgmentOrderId, JudgmentOrder>>()) }
+            }
+
+            @Test
             fun `should forward all supplied verdict filters unchanged`() {
                 val pagination = Pagination(page = 1, size = 2)
                 val filter = VerdictFilter(
@@ -112,7 +212,14 @@ class JudgeOperationsTests {
 
                 val result = operations.viewResults(user = judge, pagination = pagination, filter = filter).getOrThrow()
 
-                assertSame(page, result)
+                assertEquals(
+                    Page<JudgeOperations.JudgeResult>(
+                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
+                        pagination = page.pagination,
+                        totalElements = page.totalElements,
+                    ),
+                    result,
+                )
             }
 
             @Test
@@ -124,11 +231,19 @@ class JudgeOperationsTests {
                     pagination = responsePagination,
                     totalElements = 5,
                 )
+                arrangeAuthor(studentAuthor)
                 every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns page
 
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
-                assertSame(page, result)
+                assertEquals(
+                    Page<JudgeOperations.JudgeResult>(
+                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
+                        pagination = page.pagination,
+                        totalElements = page.totalElements,
+                    ),
+                    result,
+                )
             }
 
             @ParameterizedTest
@@ -144,7 +259,14 @@ class JudgeOperationsTests {
                     filter = VerdictFilter(authorId = authorId),
                 ).getOrThrow()
 
-                assertSame(page, result)
+                assertEquals(
+                    Page<JudgeOperations.JudgeResult>(
+                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
+                        pagination = page.pagination,
+                        totalElements = page.totalElements,
+                    ),
+                    result,
+                )
             }
 
             @Test
@@ -156,7 +278,14 @@ class JudgeOperationsTests {
 
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
-                assertSame(page, result)
+                assertEquals(
+                    Page<JudgeOperations.JudgeResult>(
+                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
+                        pagination = page.pagination,
+                        totalElements = page.totalElements,
+                    ),
+                    result,
+                )
             }
 
             @Test
@@ -167,7 +296,84 @@ class JudgeOperationsTests {
 
                 val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
 
-                assertSame(page, result)
+                assertEquals(
+                    Page<JudgeOperations.JudgeResult>(
+                        content = page.content.map { verdict -> expectedResult(verdict, studentAuthor) },
+                        pagination = page.pagination,
+                        totalElements = page.totalElements,
+                    ),
+                    result,
+                )
+            }
+
+            @Test
+            fun `should return the student author of the submission of each verdict`() {
+                val pagination = Pagination(page = 0, size = 10)
+                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns
+                    Page(content = listOf(testVerdict(10)), pagination = pagination, totalElements = 1)
+                arrangeAuthor(studentAuthor)
+
+                val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
+
+                assertSame(studentAuthor, result.content.single().author)
+            }
+
+            @Test
+            fun `should return the participant author of the submission of each verdict`() {
+                val pagination = Pagination(page = 0, size = 10)
+                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns
+                    Page(content = listOf(testVerdict(10)), pagination = pagination, totalElements = 1)
+                arrangeAuthor(participantAuthor)
+
+                val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
+
+                assertSame(participantAuthor, result.content.single().author)
+            }
+
+            @Test
+            fun `should return the page with scores and lazy references unchanged`() {
+                val pagination = Pagination(page = 1, size = 2)
+                val responsePagination = pagination.copy(sort = Sort(listOf(Sort.Order("storageOrder"))))
+                val first = testVerdict(10)
+                val second = testVerdict(20)
+                val page = Page(content = listOf(first, second), pagination = responsePagination, totalElements = 5)
+                every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns page
+                arrangeAuthor(studentAuthor)
+
+                val result = operations.viewResults(user = judge, pagination = pagination).getOrThrow()
+
+                assertEquals(listOf(first, second), result.content.map { (verdict, _) -> verdict })
+                assertSame(first, result.content[0].verdict)
+                assertEquals(listOf(75, 0), result.content[0].verdict.data.testVerdicts.map { it.score.value })
+                assertEquals(listOf(30L, 31L), result.content[0].verdict.data.testVerdicts.map { it.logs.id.value })
+                assertEquals(40L, result.content[0].verdict.data.testVerdicts[0].recording?.id?.value)
+                assertEquals(null, result.content[0].verdict.data.testVerdicts[1].recording)
+                assertEquals(responsePagination, result.pagination)
+                assertEquals(3, result.totalPages)
+                assertEquals(true, result.hasNext)
+                verify(exactly = 1) { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) }
+            }
+
+            @Test
+            fun `should pass a participant user id and preserve the requested pagination`() {
+                val authorId = SingleRoleUserId(9)
+                val pagination = Pagination(page = 0, size = 1)
+                val verdict = testVerdict(1)
+                val page = Page(content = listOf(verdict), pagination = pagination, totalElements = 1)
+                every { repository.findAvailableToJudge(pagination, VerdictFilter(authorId = authorId)) } returns page
+                arrangeAuthor(participantAuthor)
+
+                val result = operations.viewResults(
+                    user = judge,
+                    pagination = pagination,
+                    filter = VerdictFilter(authorId = authorId),
+                ).getOrThrow()
+
+                assertEquals(
+                    Page(content = listOf(expectedResult(verdict, participantAuthor)), pagination = pagination, totalElements = 1),
+                    result,
+                )
+                verify(exactly = 1) { repository.findAvailableToJudge(pagination, VerdictFilter(authorId = authorId)) }
             }
         }
 
@@ -202,13 +408,19 @@ class JudgeOperationsTests {
                 every { repository.findAvailableToJudge(refEq(pagination), VerdictFilter()) } returns
                     Page(content = listOf(testVerdict(10)), pagination = pagination, totalElements = 1)
 
+                arrangeAuthor(studentAuthor)
+
                 operations.viewResults(user = judge, pagination = pagination)
 
                 verify(exactly = 0) {
                     repository.save(any<VerdictData>())
                     repository.update(any<Verdict>())
                 }
-                verify { listOf(submissionRepository, judgmentOrderRepository, userRepository, participantRepository) wasNot Called }
+                verify { judgmentOrderRepository wasNot Called }
+                verify(exactly = 0) {
+                    submissionRepository.update(any<Submission>())
+                    userRepository.update(any<MultipleRoleUser>())
+                }
             }
         }
 
@@ -227,6 +439,20 @@ class JudgeOperationsTests {
 
                 assertSame(failure, thrown)
             }
+        }
+
+        private fun expectedResult(verdict: Verdict, author: User<*>) = JudgeOperations.JudgeResult(
+            verdict = verdict,
+            author = author,
+            submission = gradedSubmission(author.id),
+            lastJudgment = null,
+            finalScore = verdict.data.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() },
+        )
+
+        private fun arrangeAuthor(author: User<*>) {
+            every { submissionRepository.load(any<LazyEntityList<SubmissionId, Submission>>()) } returns listOf(gradedSubmission(author.id))
+            every { userRepository.findByIds(any()) } returns listOfNotNull(author as? MultipleRoleUser)
+            every { participantRepository.findByIds(any()) } returns listOfNotNull(author as? Participant)
         }
     }
 
@@ -584,6 +810,440 @@ class JudgeOperationsTests {
         }
     }
 
+    @Nested
+    inner class ViewSolutionTests {
+
+        private val task = testNewTask()
+        private val contest = testContest()
+        private val solution = testSolution()
+        private val firstPolygon = testPolygon(10)
+        private val secondPolygon = testPolygon(11)
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return a queued submission without a verdict, tests and final score`() {
+                val queued = gradedSubmission(studentAuthor.id) { status.queued() }
+                arrangeDetails(queued)
+
+                val result = operations.viewSolution(user = judge, submissionId = SUBMISSION_ID).getOrThrow()
+
+                assertEquals(
+                    SubmissionDetails(
+                        submission = queued,
+                        author = studentAuthor,
+                        task = task,
+                        contest = contest,
+                        solution = solution,
+                        verdict = null,
+                        tests = emptyList(),
+                        finalScore = null,
+                        judgmentOrders = emptyList(),
+                    ),
+                    result,
+                )
+            }
+
+            @Test
+            fun `should return no verdict and no final score after a grading error`() {
+                arrangeDetails(gradedSubmission(studentAuthor.id) { status.graded { status.error { description = "Invalid solution" } } })
+
+                val result = operations.viewSolution(user = judge, submissionId = SUBMISSION_ID).getOrThrow()
+
+                assertEquals(null, result.verdict)
+                assertEquals(null, result.finalScore)
+            }
+
+            @Test
+            fun `should return the verdict with its tests in outcome order and the total score as the final score`() {
+                arrangeDetails(gradedSubmission(studentAuthor.id))
+
+                val result = operations.viewSolution(user = judge, submissionId = SUBMISSION_ID).getOrThrow()
+
+                assertSame(gradedVerdict, result.verdict)
+                assertEquals(listOf(secondPolygon, firstPolygon), result.tests)
+                assertEquals(100L, result.finalScore)
+            }
+
+            @Test
+            fun `should take the final score from the last judgment order deciding equal moments by id`() {
+                arrangeJudgmentOrders()
+
+                val result = operations.viewSolution(user = judge, submissionId = SUBMISSION_ID).getOrThrow()
+
+                assertEquals(90L, result.finalScore)
+            }
+
+            @Test
+            fun `should return judgment orders in the order of issue with their judges`() {
+                val (firstJudge, secondJudge) = arrangeJudgmentOrders()
+
+                val result = operations.viewSolution(user = judge, submissionId = SUBMISSION_ID).getOrThrow()
+
+                assertEquals(listOf(8L, 6L, 7L), result.judgmentOrders.map { (order, _) -> order.id.value })
+                assertEquals(listOf(firstJudge, secondJudge, firstJudge), result.judgmentOrders.map { (_, issuer) -> issuer })
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedJudgeRoleError before reading the submission if user is not a judge`() {
+                val user = testMultipleRoleUser {}
+
+                assertRaises(MissedJudgeRoleError) { operations.viewSolution(user = user, submissionId = SUBMISSION_ID) }
+
+                verify { submissionRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise SubmissionNotExistsError if submission is missing`() {
+                every { submissionRepository.findById(SUBMISSION_ID) } returns null
+
+                assertRaises(SubmissionNotExistsError(SUBMISSION_ID)) {
+                    operations.viewSolution(user = judge, submissionId = SUBMISSION_ID)
+                }
+            }
+
+            @Test
+            fun `should deny access to a developer solution test`() {
+                arrangeSubmission(gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion("3.0.0") } })
+
+                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
+                    operations.viewSolution(user = judge, submissionId = SUBMISSION_ID)
+                }
+            }
+
+            @Test
+            fun `should deny access when author no longer has the student role`() {
+                arrangeSubmission()
+                every { userRepository.findById(studentAuthor.id) } returns testMultipleRoleUser {}
+
+                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
+                    operations.viewSolution(user = judge, submissionId = SUBMISSION_ID)
+                }
+            }
+        }
+
+        /** Arranges three orders: 8 issued first, then 6 and 7 at the same moment; returns their two judges. */
+        private fun arrangeJudgmentOrders(): Pair<MultipleRoleUser, MultipleRoleUser> {
+            arrangeDetails(gradedSubmission(studentAuthor.id) { judgmentOrders(listOf(7, 6, 8)) })
+            val firstJudge = testJudgeWithId(21)
+            val secondJudge = testJudgeWithId(22)
+            val later = Instant.parse("2026-03-02T00:00:00Z")
+            every { judgmentOrderRepository.findByIds(listOf(JudgmentOrderId(7), JudgmentOrderId(6), JudgmentOrderId(8))) } returns listOf(
+                testOrder(orderId = 7, judgeId = 21, issuedAt = later, score = 90),
+                testOrder(orderId = 6, judgeId = 22, issuedAt = later, score = 30),
+                testOrder(orderId = 8, judgeId = 21, issuedAt = Instant.parse("2026-03-01T00:00:00Z"), score = 50),
+            )
+            every {
+                userRepository.findByIds(match<List<MultipleRoleUserId>> { ids -> ids.toSet() == setOf(firstJudge.id, secondJudge.id) })
+            } returns listOf(firstJudge, secondJudge)
+            return firstJudge to secondJudge
+        }
+
+        private fun arrangeDetails(submission: Submission) {
+            arrangeSubmission(submission)
+            every { taskRepository.load(any<LazyEntity<TaskId, Task>>()) } returns task
+            every { contestRepository.load(any<LazyEntity<ContestId, Contest>>()) } returns contest
+            every { solutionRepository.load(any<LazyEntity<SolutionId, Solution>>()) } returns solution
+            every { testRepository.load(any<LazyEntityList<TestId, Polygon>>()) } returns listOf(firstPolygon, secondPolygon)
+            every { judgmentOrderRepository.findByIds(emptyList()) } returns emptyList()
+            every { userRepository.findByIds(emptyList()) } returns emptyList()
+        }
+    }
+
+    @Nested
+    inner class DownloadSolutionTests {
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the file of the solution of the submission`() {
+                arrangeSubmission()
+                val solution = testSolution()
+                every {
+                    solutionRepository.load(match<LazyEntity<SolutionId, Solution>> { reference -> reference.id == SolutionId(3) })
+                } returns solution
+
+                val result = operations.downloadSolution(user = judge, submissionId = SUBMISSION_ID).getOrThrow()
+
+                assertSame(solution.data.file, result)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedJudgeRoleError if user is not a judge`() {
+                assertRaises(MissedJudgeRoleError) {
+                    operations.downloadSolution(user = testMultipleRoleUser {}, submissionId = SUBMISSION_ID)
+                }
+
+                verify { submissionRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise SubmissionNotExistsError if submission is missing`() {
+                every { submissionRepository.findById(SUBMISSION_ID) } returns null
+
+                assertRaises(SubmissionNotExistsError(SUBMISSION_ID)) {
+                    operations.downloadSolution(user = judge, submissionId = SUBMISSION_ID)
+                }
+            }
+
+            @Test
+            fun `should deny access to a developer solution test`() {
+                arrangeSubmission(gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion("3.0.0") } })
+
+                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
+                    operations.downloadSolution(user = judge, submissionId = SUBMISSION_ID)
+                }
+                verify { solutionRepository wasNot Called }
+            }
+
+            @Test
+            fun `should deny access when the participant author no longer exists`() {
+                arrangeSubmission(gradedSubmission(participantAuthor.id))
+                every { participantRepository.findById(participantAuthor.id) } returns null
+
+                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
+                    operations.downloadSolution(user = judge, submissionId = SUBMISSION_ID)
+                }
+            }
+        }
+    }
+
+    @Nested
+    inner class DownloadLogsTests {
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the logs of the run on the test`() {
+                arrangeSubmission()
+                val logs = testLogs(30)
+                every { logsRepository.load(match<LazyEntity<LogsId, Logs>> { reference -> reference.id == LogsId(30) }) } returns logs
+
+                val result = operations.downloadLogs(user = judge, submissionId = SUBMISSION_ID, testId = TestId(10)).getOrThrow()
+
+                assertSame(logs.data.file, result)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedJudgeRoleError if user is not a judge`() {
+                assertRaises(MissedJudgeRoleError) {
+                    operations.downloadLogs(user = testMultipleRoleUser {}, submissionId = SUBMISSION_ID, testId = TestId(10))
+                }
+
+                verify { submissionRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise SubmissionNotExistsError if submission is missing`() {
+                every { submissionRepository.findById(SUBMISSION_ID) } returns null
+
+                assertRaises(SubmissionNotExistsError(SUBMISSION_ID)) {
+                    operations.downloadLogs(user = judge, submissionId = SUBMISSION_ID, testId = TestId(10))
+                }
+            }
+
+            @Test
+            fun `should deny access when author no longer has the student role`() {
+                arrangeSubmission()
+                every { userRepository.findById(studentAuthor.id) } returns testMultipleRoleUser {}
+
+                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
+                    operations.downloadLogs(user = judge, submissionId = SUBMISSION_ID, testId = TestId(10))
+                }
+            }
+
+            @Test
+            fun `should reject a submission without a successful verdict`() {
+                arrangeSubmission(gradedSubmission(studentAuthor.id) { status.inProgress() })
+
+                assertRaises(SubmissionNotSuccessfullyGradedError(SUBMISSION_ID)) {
+                    operations.downloadLogs(user = judge, submissionId = SUBMISSION_ID, testId = TestId(10))
+                }
+            }
+
+            @Test
+            fun `should reject a test outside the verdict`() {
+                arrangeSubmission()
+
+                assertRaises(TestNotInVerdictError(SUBMISSION_ID, TestId(12))) {
+                    operations.downloadLogs(user = judge, submissionId = SUBMISSION_ID, testId = TestId(12))
+                }
+                verify { logsRepository wasNot Called }
+            }
+        }
+    }
+
+    @Nested
+    inner class DownloadRecordingTests {
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the recording of the run on the test`() {
+                arrangeSubmission()
+                val recording = testRecording(41)
+                every {
+                    recordingRepository.load(match<LazyEntity<RecordingId, Recording>> { reference -> reference.id == RecordingId(41) })
+                } returns recording
+
+                val result = operations.downloadRecording(user = judge, submissionId = SUBMISSION_ID, testId = TestId(11)).getOrThrow()
+
+                assertSame(recording.data.file, result)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise MissedJudgeRoleError if user is not a judge`() {
+                assertRaises(MissedJudgeRoleError) {
+                    operations.downloadRecording(user = testMultipleRoleUser {}, submissionId = SUBMISSION_ID, testId = TestId(11))
+                }
+
+                verify { submissionRepository wasNot Called }
+            }
+
+            @Test
+            fun `should raise SubmissionNotExistsError if submission is missing`() {
+                every { submissionRepository.findById(SUBMISSION_ID) } returns null
+
+                assertRaises(SubmissionNotExistsError(SUBMISSION_ID)) {
+                    operations.downloadRecording(user = judge, submissionId = SUBMISSION_ID, testId = TestId(11))
+                }
+            }
+
+            @Test
+            fun `should deny access to a developer solution test`() {
+                arrangeSubmission(gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion("3.0.0") } })
+
+                assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
+                    operations.downloadRecording(user = judge, submissionId = SUBMISSION_ID, testId = TestId(11))
+                }
+            }
+
+            @Test
+            fun `should reject a submission whose grading timed out`() {
+                arrangeSubmission(gradedSubmission(studentAuthor.id) { status.graded { status.timeout() } })
+
+                assertRaises(SubmissionNotSuccessfullyGradedError(SUBMISSION_ID)) {
+                    operations.downloadRecording(user = judge, submissionId = SUBMISSION_ID, testId = TestId(11))
+                }
+            }
+
+            @Test
+            fun `should reject a test outside the verdict`() {
+                arrangeSubmission()
+
+                assertRaises(TestNotInVerdictError(SUBMISSION_ID, TestId(12))) {
+                    operations.downloadRecording(user = judge, submissionId = SUBMISSION_ID, testId = TestId(12))
+                }
+            }
+
+            @Test
+            fun `should raise RecordingNotExistsError if the run on the test has no recording`() {
+                arrangeSubmission()
+
+                assertRaises(RecordingNotExistsError(SUBMISSION_ID, TestId(10))) {
+                    operations.downloadRecording(user = judge, submissionId = SUBMISSION_ID, testId = TestId(10))
+                }
+                verify { recordingRepository wasNot Called }
+            }
+        }
+    }
+
+    /** Makes [submission] by [studentAuthor] stored with [gradedVerdict] as its verdict. */
+    private fun arrangeSubmission(submission: Submission = gradedSubmission(studentAuthor.id)) {
+        every { submissionRepository.findById(SUBMISSION_ID) } returns submission
+        every { userRepository.findById(studentAuthor.id) } returns studentAuthor
+        every { participantRepository.findById(participantAuthor.id) } returns participantAuthor
+        every { repository.load(any<LazyEntity<VerdictId, Verdict>>()) } returns gradedVerdict
+    }
+
+    /** Returns submission 2 of [authorId] in a contest, successfully graded with verdict 4 unless [builder] changes it. */
+    private fun gradedSubmission(authorId: UserId, builder: SubmissionDataBuilder.() -> Unit = {}): Submission = submission {
+        id = SUBMISSION_ID.value
+        createdAt = Instant.MIN
+        data = submissionData {
+            author = authorId
+            solution(3)
+            task(1)
+            status.graded { status.success { verdict(4) } }
+            kind.grading { contest(19) }
+            builder()
+        }
+    }
+
+    private fun testSolution(): Solution = solution {
+        id = 3
+        createdAt = Instant.MIN
+        data = solutionData {
+            file("solution.py", "print(1)".toByteArray())
+            language.python()
+        }
+    }
+
+    private fun testPolygon(polygonId: Long): Polygon = polygon {
+        id = polygonId
+        createdAt = Instant.MIN
+        data = testData {
+            name = "Polygon $polygonId"
+            description = "Polygon"
+            file("polygon-$polygonId.xml", "<world/>".toByteArray())
+            versionBucket = VersionBucket(UUID(0, polygonId))
+        }
+    }
+
+    private fun testLogs(logsId: Long): Logs = logs {
+        id = logsId
+        createdAt = Instant.MIN
+        data = logsData { file("logs-$logsId.txt", "logs".toByteArray()) }
+    }
+
+    private fun testRecording(recordingId: Long): Recording = recording {
+        id = recordingId
+        createdAt = Instant.MIN
+        data = recordingData { file("recording-$recordingId.mp4", "video".toByteArray()) }
+    }
+
+    private fun testJudgeWithId(judgeId: Long): MultipleRoleUser = multipleRoleUser {
+        id = judgeId
+        createdAt = Instant.MIN
+        data = multipleRoleUserData {
+            name = "Judge $judgeId"
+            email = "judge-$judgeId"
+            accessToken("judge-$judgeId", algorithm = HashAlgorithm.Identity)
+            roles { judge { data = judgeData {} } }
+        }
+    }
+
+    private fun testOrder(orderId: Long, judgeId: Long, issuedAt: Instant, score: Int): JudgmentOrder = judgmentOrder {
+        id = orderId
+        createdAt = issuedAt
+        data = judgmentOrderData {
+            judge(judgeId)
+            submission(SUBMISSION_ID.value)
+            this.score = score
+            reason = "Order $orderId"
+        }
+    }
+
     private fun testVerdict(verdictId: Long): Verdict = verdict {
         id = verdictId
         createdAt = Instant.parse("2026-01-01T00:00:00Z")
@@ -605,6 +1265,8 @@ class JudgeOperationsTests {
     }
 
     companion object {
+        private val SUBMISSION_ID = SubmissionId(2)
+
         @JvmStatic
         fun authorIds(): List<UserId> = listOf(MultipleRoleUserId(7), SingleRoleUserId(9))
     }

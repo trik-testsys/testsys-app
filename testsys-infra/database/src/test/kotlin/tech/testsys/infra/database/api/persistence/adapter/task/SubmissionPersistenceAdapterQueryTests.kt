@@ -10,6 +10,7 @@ import tech.testsys.domain.builder.api.submissionData
 import tech.testsys.domain.builder.api.verdictData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.ContestTaskResult
+import tech.testsys.domain.contract.persistence.SubmissionCount
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
@@ -17,6 +18,7 @@ import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.DatabaseIntegrationTests
 import java.sql.Timestamp
@@ -215,6 +217,61 @@ class SubmissionPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
 
         assertEquals(listOf(70, 20, 35, 40), actual.map { result -> result.bestScore?.value })
         assertEquals(3, statementCount)
+    }
+
+    @Test
+    fun `should count grading submissions of the contest per task in every state without author tests or other contests`() {
+        val contest = fixtures.contest()
+        val task = fixtures.task()
+        val other = fixtures.task()
+        val author = fixtures.student()
+        gradingSubmission(author.id, task, contest)
+        graded(gradingSubmission(fixtures.participant().id, task, contest), 10)
+        withStatus(gradingSubmission(author.id, other, contest), "TIMEOUT")
+        gradingSubmission(author.id, task, fixtures.contest())
+        fixtures.submission(author = author, task = task)
+
+        val actual = repository.countGradingByTask(contest.id)
+
+        assertEquals(mapOf(task.id to 2L, other.id to 1L), actual)
+    }
+
+    @Test
+    fun `should count no tasks of a contest without submissions`() {
+        assertEquals(emptyMap<TaskId, Long>(), repository.countGradingByTask(fixtures.contest().id))
+    }
+
+    @Test
+    fun `should count grading submissions and distinct authors of the given authors in the given contests`() {
+        val contest = fixtures.contest()
+        val otherContest = fixtures.contest()
+        val task = fixtures.task()
+        val student = fixtures.student()
+        val participant = fixtures.participant()
+        gradingSubmission(student.id, task, contest)
+        withStatus(gradingSubmission(student.id, task, otherContest), "IN_PROGRESS")
+        graded(gradingSubmission(participant.id, task, contest), 10)
+        gradingSubmission(fixtures.student().id, task, contest)
+        gradingSubmission(student.id, task, fixtures.contest())
+        fixtures.submission(author = student, task = task)
+
+        val actual = repository.countGrading(setOf(student.id, participant.id), setOf(contest.id, otherContest.id))
+
+        assertEquals(SubmissionCount(submissions = 3, authors = 2), actual)
+    }
+
+    @Test
+    fun `should count nothing without querying storage if authors or contests are empty`() {
+        val contest = fixtures.contest()
+        val authorId = fixtures.student().id
+        gradingSubmission(authorId, fixtures.task(), contest)
+
+        val (actual, statementCount) = withStatementCount {
+            listOf(repository.countGrading(emptySet(), setOf(contest.id)), repository.countGrading(setOf(authorId), emptySet()))
+        }
+
+        assertEquals(listOf(SubmissionCount(submissions = 0, authors = 0), SubmissionCount(submissions = 0, authors = 0)), actual)
+        assertEquals(0, statementCount)
     }
 
     private fun gradingSubmission(authorId: UserId, task: Task, contest: Contest): Submission {

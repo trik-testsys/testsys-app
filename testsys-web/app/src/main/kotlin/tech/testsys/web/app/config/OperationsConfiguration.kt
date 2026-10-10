@@ -3,40 +3,63 @@ package tech.testsys.web.app.config
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.env.Environment
 import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.PolygonDiagnostics
+import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperSolutionRepository
+import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ExerciseRepository
 import tech.testsys.domain.contract.persistence.repository.JudgmentOrderRepository
+import tech.testsys.domain.contract.persistence.repository.LogsRepository
+import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
+import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantContestEntryRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
+import tech.testsys.domain.contract.persistence.repository.RecordingRepository
+import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
+import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.TestRepository
+import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.operation.TaskValidationDispatcher
 import tech.testsys.operation.TaskValidationOperations
+import tech.testsys.operation.config.ClassInviteConfig
+import tech.testsys.operation.config.CommunityConfig
+import tech.testsys.operation.config.CommunityInviteConfig
+import tech.testsys.operation.config.CompetitionConfig
+import tech.testsys.operation.config.EmailConfirmationConfig
+import tech.testsys.operation.user.AdministratorOperations
 import tech.testsys.operation.user.DeveloperOperations
 import tech.testsys.operation.user.JudgeOperations
+import tech.testsys.operation.user.ManagerOperations
+import tech.testsys.operation.user.MultipleRoleUserOperations
 import tech.testsys.operation.user.ParticipantOperations
 import tech.testsys.operation.user.StudentOperations
 import tech.testsys.operation.user.StudyOperations
+import tech.testsys.operation.user.UserOperations
+import java.security.SecureRandom
 import java.time.Clock
 import java.time.Duration
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.random.RandomGenerator
 
 /**
  * Assembles the operation classes from the ports supplied by the infrastructure modules.
@@ -52,6 +75,163 @@ class OperationsConfiguration {
      */
     @Bean
     fun clock(): Clock = Clock.systemUTC()
+
+    /**
+     * Cryptographically strong generator of confirmation and access codes.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun randomGenerator(): RandomGenerator = SecureRandom()
+
+    /**
+     * Public community from the required property `testsys.operation.community.public-community-id`.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun communityConfig(environment: Environment): CommunityConfig {
+        val id = environment.getRequiredProperty("$CONFIG_PREFIX.community.public-community-id", Long::class.java)
+        return object : CommunityConfig {
+            override val publicCommunityId = CommunityId(id)
+        }
+    }
+
+    /**
+     * Confirmation code lifetime and attempts from the required properties under `testsys.operation.email-confirmation`.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun emailConfirmationConfig(environment: Environment): EmailConfirmationConfig {
+        val lifetime = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.email-confirmation.confirmation-code-lifetime"))
+        val attempts = environment.getRequiredProperty("$CONFIG_PREFIX.email-confirmation.max-confirmation-attempts", Int::class.java)
+        return object : EmailConfirmationConfig {
+            override val confirmationCodeLifetime = lifetime
+            override val maxConfirmationAttempts = attempts
+        }
+    }
+
+    /**
+     * Community invite validity and refresh period from the required properties under `testsys.operation.community-invite`.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun communityInviteConfig(environment: Environment): CommunityInviteConfig {
+        val ttl = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.community-invite.ttl"))
+        val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.community-invite.refresh-period"))
+        return object : CommunityInviteConfig {
+            override val ttl = ttl
+            override val refreshPeriod = refreshPeriod
+        }
+    }
+
+    /**
+     * Operations of Administrators.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun administratorOperations(
+        communities: CommunityRepository,
+        managerInvites: ManagerCommunityInviteRepository,
+        developerInvites: DeveloperCommunityInviteRepository,
+        communityInviteConfig: CommunityInviteConfig,
+        clock: Clock,
+        users: UserRepository,
+        contests: ContestRepository,
+        observers: ObserverRepository,
+        multipleRoleUsers: MultipleRoleUserRepository,
+        communityConfig: CommunityConfig,
+        tasks: TaskRepository,
+        requests: TaskValidationRequestRepository,
+        classes: ClassRepository,
+        competitions: CompetitionRepository,
+        submissions: SubmissionRepository,
+        judgmentOrders: JudgmentOrderRepository,
+        verdicts: VerdictRepository,
+    ): AdministratorOperations = AdministratorOperations(
+        communityRepository = communities,
+        managerInviteRepository = managerInvites,
+        developerInviteRepository = developerInvites,
+        communityInviteConfig = communityInviteConfig,
+        clock = clock,
+        userRepository = users,
+        contestRepository = contests,
+        observerRepository = observers,
+        multipleRoleUserRepository = multipleRoleUsers,
+        communityConfig = communityConfig,
+        taskRepository = tasks,
+        taskValidationRequestRepository = requests,
+        classRepository = classes,
+        competitionRepository = competitions,
+        submissionRepository = submissions,
+        judgmentOrderRepository = judgmentOrders,
+        verdictRepository = verdicts,
+    )
+
+    /**
+     * Operations of any user without a fixed role.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun multipleRoleUserOperations(
+        multipleRoleUsers: MultipleRoleUserRepository,
+        communities: CommunityRepository,
+        managerInvites: ManagerCommunityInviteRepository,
+        developerInvites: DeveloperCommunityInviteRepository,
+        emailChangeRequests: EmailChangeRequestRepository,
+        mailSender: UserMailSender,
+        emailConfirmationConfig: EmailConfirmationConfig,
+        clock: Clock,
+        randomGenerator: RandomGenerator,
+        communityConfig: CommunityConfig,
+    ): MultipleRoleUserOperations = MultipleRoleUserOperations(
+        multipleRoleUserRepository = multipleRoleUsers,
+        communityRepository = communities,
+        managerInviteRepository = managerInvites,
+        developerInviteRepository = developerInvites,
+        emailChangeRequestRepository = emailChangeRequests,
+        mailSender = mailSender,
+        emailConfirmationConfig = emailConfirmationConfig,
+        clock = clock,
+        randomGenerator = randomGenerator,
+        communityConfig = communityConfig,
+    )
+
+    /**
+     * Operations of any user, including login and registration.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun userOperations(
+        multipleRoleUsers: MultipleRoleUserRepository,
+        participants: ParticipantRepository,
+        observers: ObserverRepository,
+        supervisors: SupervisorRepository,
+        users: UserRepository,
+        registrationRequests: RegistrationRequestRepository,
+        mailSender: UserMailSender,
+        communityConfig: CommunityConfig,
+        emailConfirmationConfig: EmailConfirmationConfig,
+        clock: Clock,
+        randomGenerator: RandomGenerator,
+    ): UserOperations = UserOperations(
+        multipleRoleUserRepository = multipleRoleUsers,
+        participantRepository = participants,
+        observerRepository = observers,
+        supervisorRepository = supervisors,
+        userRepository = users,
+        registrationRequestRepository = registrationRequests,
+        mailSender = mailSender,
+        communityConfig = communityConfig,
+        emailConfirmationConfig = emailConfirmationConfig,
+        clock = clock,
+        randomGenerator = randomGenerator,
+    )
 
     /**
      * Grader for operations running in a service transaction.
@@ -160,7 +340,25 @@ class OperationsConfiguration {
         judgmentOrders: JudgmentOrderRepository,
         multipleRoleUsers: MultipleRoleUserRepository,
         participants: ParticipantRepository,
-    ): JudgeOperations = JudgeOperations(verdicts, submissions, judgmentOrders, multipleRoleUsers, participants)
+        tasks: TaskRepository,
+        contests: ContestRepository,
+        solutions: SolutionRepository,
+        tests: TestRepository,
+        logs: LogsRepository,
+        recordings: RecordingRepository,
+    ): JudgeOperations = JudgeOperations(
+        verdicts,
+        submissions,
+        judgmentOrders,
+        multipleRoleUsers,
+        participants,
+        tasks,
+        contests,
+        solutions,
+        tests,
+        logs,
+        recordings,
+    )
 
     /**
      * Operations of Participants.
@@ -228,6 +426,70 @@ class OperationsConfiguration {
         developerSolutions,
         clock,
     )
+
+    /**
+     * Participant limit of competitions from the required property `testsys.operation.competition.max-participants`.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun competitionConfig(environment: Environment): CompetitionConfig {
+        val maxParticipants = environment.getRequiredProperty("$CONFIG_PREFIX.competition.max-participants", Int::class.java)
+        return object : CompetitionConfig {
+            override val maxParticipants = maxParticipants
+        }
+    }
+
+    /**
+     * Class invite validity and refresh period from the required properties under `testsys.operation.class-invite`.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun classInviteConfig(environment: Environment): ClassInviteConfig {
+        val ttl = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.class-invite.ttl"))
+        val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.class-invite.refresh-period"))
+        return object : ClassInviteConfig {
+            override val ttl = ttl
+            override val refreshPeriod = refreshPeriod
+        }
+    }
+
+    /**
+     * Operations of Managers.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun managerOperations(
+        classes: ClassRepository,
+        competitions: CompetitionRepository,
+        contests: ContestRepository,
+        submissions: SubmissionRepository,
+        participants: ParticipantRepository,
+        competitionConfig: CompetitionConfig,
+        invites: ClassInviteRepository,
+        classInviteConfig: ClassInviteConfig,
+        clock: Clock,
+        multipleRoleUsers: MultipleRoleUserRepository,
+        users: UserRepository,
+        tasks: TaskRepository,
+    ): ManagerOperations = ManagerOperations(
+        classRepository = classes,
+        competitionRepository = competitions,
+        contestRepository = contests,
+        submissionRepository = submissions,
+        participantRepository = participants,
+        competitionConfig = competitionConfig,
+        classInviteRepository = invites,
+        classInviteConfig = classInviteConfig,
+        clock = clock,
+        multipleRoleUserRepository = multipleRoleUsers,
+        userRepository = users,
+        taskRepository = tasks,
+    )
 }
 
 private val DISPATCHER_STOP_TIMEOUT: Duration = Duration.ofSeconds(30)
+
+private const val CONFIG_PREFIX = "testsys.operation"

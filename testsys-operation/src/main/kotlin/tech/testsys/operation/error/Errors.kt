@@ -15,7 +15,9 @@ import tech.testsys.domain.model.task.TestId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.RegistrationRequestId
+import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.UserId
 import java.time.Duration
 import java.time.Instant
@@ -161,11 +163,48 @@ sealed interface ExtendClassInviteError : OperationError
 sealed interface RefreshClassInviteError : OperationError
 
 /**
+ * Failure of deleting a participant of a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DeleteParticipantError : OperationError
+
+/**
+ * Failure of listing the contests the manager can add to classes and competitions.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewAvailableContestsError : OperationError
+
+/**
+ * Failure of editing the name and description of a class owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EditClassError : OperationError
+
+/**
+ * Failure of editing the name and description of a competition owned by the manager.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EditCompetitionError : OperationError
+
+/**
+ * Failure of downloading the participants of a competition owned by the manager with their access codes.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadParticipantsError : OperationError
+
+/**
  * The user does not hold the manager role.
  *
  * @since %CURRENT_VERSION%
  */
 data object MissedManagerRoleError :
+    DeleteParticipantError,
+    ViewAvailableContestsError,
     CreateClassError,
     CreateCompetitionError,
     ViewClassesError,
@@ -180,6 +219,9 @@ data object MissedManagerRoleError :
     CreateClassInviteError,
     ExtendClassInviteError,
     RefreshClassInviteError,
+    EditClassError,
+    EditCompetitionError,
+    DownloadParticipantsError,
     MissedRequiredRoleError
 
 /**
@@ -187,7 +229,7 @@ data object MissedManagerRoleError :
  *
  * @since %CURRENT_VERSION%
  */
-data object ClassNameBlankError : CreateClassError
+data object ClassNameBlankError : CreateClassError, EditClassError
 
 /**
  * The class name exceeds 255 Unicode code points.
@@ -195,14 +237,14 @@ data object ClassNameBlankError : CreateClassError
  * @property className the supplied class name.
  * @since %CURRENT_VERSION%
  */
-data class ClassNameTooLongError(val className: String) : CreateClassError
+data class ClassNameTooLongError(val className: String) : CreateClassError, EditClassError
 
 /**
  * The competition name is empty or contains only whitespace.
  *
  * @since %CURRENT_VERSION%
  */
-data object CompetitionNameBlankError : CreateCompetitionError
+data object CompetitionNameBlankError : CreateCompetitionError, EditCompetitionError
 
 /**
  * The competition name exceeds 255 Unicode code points.
@@ -210,7 +252,7 @@ data object CompetitionNameBlankError : CreateCompetitionError
  * @property competitionName the supplied competition name.
  * @since %CURRENT_VERSION%
  */
-data class CompetitionNameTooLongError(val competitionName: String) : CreateCompetitionError
+data class CompetitionNameTooLongError(val competitionName: String) : CreateCompetitionError, EditCompetitionError
 
 /**
  * The class does not exist.
@@ -220,6 +262,7 @@ data class CompetitionNameTooLongError(val competitionName: String) : CreateComp
  */
 data class ClassNotExistsError(val classId: ClassId) :
     ViewClassError,
+    EditClassError,
     ViewClassContestError,
     AddClassContestError,
     CreateClassInviteError,
@@ -230,6 +273,7 @@ data class ClassNotExistsError(val classId: ClassId) :
     ViewStudentContestError,
     ViewStudentTaskError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendStudentSolutionError,
     EntityNotExistsError
 
@@ -242,6 +286,7 @@ data class ClassNotExistsError(val classId: ClassId) :
  */
 data class ClassAccessDeniedError(val classId: ClassId) :
     ViewClassError,
+    EditClassError,
     ViewClassContestError,
     AddClassContestError,
     CreateClassInviteError,
@@ -252,6 +297,7 @@ data class ClassAccessDeniedError(val classId: ClassId) :
     ViewStudentContestError,
     ViewStudentTaskError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendStudentSolutionError,
     AccessDeniedError
 
@@ -262,6 +308,9 @@ data class ClassAccessDeniedError(val classId: ClassId) :
  * @since %CURRENT_VERSION%
  */
 data class CompetitionNotExistsError(val competitionId: CompetitionId) :
+    DeleteParticipantError,
+    EditCompetitionError,
+    DownloadParticipantsError,
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,
@@ -271,6 +320,7 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
     ViewParticipantContestError,
     ViewParticipantTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     SendParticipantSolutionError,
     DownloadObserverResultError,
     EntityNotExistsError
@@ -282,6 +332,9 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
  * @since %CURRENT_VERSION%
  */
 data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
+    DeleteParticipantError,
+    EditCompetitionError,
+    DownloadParticipantsError,
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,
@@ -351,6 +404,25 @@ data class CompetitionParticipantLimitExceededError(
     val maxParticipants: Int,
 ) : CreateParticipantsError
 
+/**
+ * The participant does not exist or does not belong to the competition.
+ *
+ * @property competitionId the id of the competition.
+ * @property participantId the id of the missing participant.
+ * @since %CURRENT_VERSION%
+ */
+data class CompetitionParticipantNotExistsError(val competitionId: CompetitionId, val participantId: SingleRoleUserId) :
+    DeleteParticipantError,
+    EntityNotExistsError
+
+/**
+ * The participant has submissions, so it cannot be deleted.
+ *
+ * @property participantId the id of the participant.
+ * @since %CURRENT_VERSION%
+ */
+data class ParticipantHasSubmissionsError(val participantId: SingleRoleUserId) : DeleteParticipantError
+
 // endregion
 
 // region AdministratorOperations
@@ -399,6 +471,48 @@ sealed interface ViewUsersError : OperationError
 sealed interface ViewUserError : OperationError
 
 /**
+ * Failure of listing the tasks created by a user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserTasksError : OperationError
+
+/**
+ * Failure of listing the contests created by a user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserContestsError : OperationError
+
+/**
+ * Failure of listing the classes created by a user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserClassesError : OperationError
+
+/**
+ * Failure of listing the competitions created by a user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserCompetitionsError : OperationError
+
+/**
+ * Failure of listing the judgment orders issued by a user available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserJudgmentsError : OperationError
+
+/**
+ * Failure of listing the contests assigned to an observer available to the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewUserAssignedContestsError : OperationError
+
+/**
  * Failure of creating or replacing the invite code of a community owned by the administrator for a role.
  *
  * @since %CURRENT_VERSION%
@@ -427,6 +541,55 @@ sealed interface ViewCommunityInvitesError : OperationError
 sealed interface RefreshCommunityInviteError : OperationError
 
 /**
+ * Failure of listing the communities created by the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewCommunitiesError : OperationError
+
+/**
+ * Failure of creating a community owned by the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateCommunityError : OperationError
+
+/**
+ * Failure of changing the name and description of a community owned by the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EditCommunityError : OperationError
+
+/**
+ * Failure of making a user available to the administrator a member of their community in a role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface GrantRoleError : OperationError
+
+/**
+ * Failure of removing a user from a community of the administrator in a role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RemoveFromCommunityError : OperationError
+
+/**
+ * Failure of deleting an observer of a community of the administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DeleteObserverError : OperationError
+
+/**
+ * Failure of listing the contests shared to a community owned by the administrator, from which an observer is assigned.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewCommunityContestsError : OperationError
+
+/**
  * The user does not hold the administrator role.
  *
  * @since %CURRENT_VERSION%
@@ -435,11 +598,47 @@ data object MissedAdministratorRoleError :
     CreateObserverError,
     ViewUsersError,
     ViewUserError,
+    ViewUserTasksError,
+    ViewUserContestsError,
+    ViewUserClassesError,
+    ViewUserCompetitionsError,
+    ViewUserJudgmentsError,
+    ViewUserAssignedContestsError,
     CreateCommunityInviteError,
     ExtendCommunityInviteError,
     RefreshCommunityInviteError,
     ViewCommunityInvitesError,
+    ViewCommunitiesError,
+    CreateCommunityError,
+    EditCommunityError,
+    GrantRoleError,
+    RemoveFromCommunityError,
+    DeleteObserverError,
+    ViewCommunityContestsError,
     MissedRequiredRoleError
+
+/**
+ * The community name is empty or contains only whitespace.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object CommunityNameBlankError : CreateCommunityError, EditCommunityError
+
+/**
+ * The community name exceeds 255 Unicode code points.
+ *
+ * @property communityName the rejected name.
+ * @since %CURRENT_VERSION%
+ */
+data class CommunityNameTooLongError(val communityName: String) : CreateCommunityError, EditCommunityError
+
+/**
+ * The user holds a fixed role, so no role can be granted to them in a community.
+ *
+ * @property userId the id of the user with the fixed role.
+ * @since %CURRENT_VERSION%
+ */
+data class UserHasFixedRoleError(val userId: UserId) : GrantRoleError
 
 /**
  * The user does not exist.
@@ -447,7 +646,18 @@ data object MissedAdministratorRoleError :
  * @property userId the id of the missing user.
  * @since %CURRENT_VERSION%
  */
-data class UserNotExistsError(val userId: UserId) : ViewUserError, EntityNotExistsError
+data class UserNotExistsError(val userId: UserId) :
+    ViewUserError,
+    ViewUserTasksError,
+    ViewUserContestsError,
+    ViewUserClassesError,
+    ViewUserCompetitionsError,
+    ViewUserJudgmentsError,
+    ViewUserAssignedContestsError,
+    GrantRoleError,
+    RemoveFromCommunityError,
+    DeleteObserverError,
+    EntityNotExistsError
 
 /**
  * The user exists but is not available to the administrator.
@@ -455,7 +665,52 @@ data class UserNotExistsError(val userId: UserId) : ViewUserError, EntityNotExis
  * @property userId the id of the inaccessible user.
  * @since %CURRENT_VERSION%
  */
-data class UserAccessDeniedError(val userId: UserId) : ViewUserError, AccessDeniedError
+data class UserAccessDeniedError(val userId: UserId) :
+    ViewUserError,
+    ViewUserTasksError,
+    ViewUserContestsError,
+    ViewUserClassesError,
+    ViewUserCompetitionsError,
+    ViewUserJudgmentsError,
+    ViewUserAssignedContestsError,
+    GrantRoleError,
+    DeleteObserverError,
+    AccessDeniedError
+
+/**
+ * The role cannot be granted by an administrator.
+ *
+ * @property role the rejected role.
+ * @since %CURRENT_VERSION%
+ */
+data class RoleNotGrantableError(val role: CommunityRole) : GrantRoleError
+
+/**
+ * The role cannot be removed by an administrator.
+ *
+ * @property role the rejected role.
+ * @since %CURRENT_VERSION%
+ */
+data class RoleNotRemovableError(val role: CommunityRole) : RemoveFromCommunityError
+
+/**
+ * The community is the public community, from which no user is removed.
+ *
+ * @property communityId the id of the public community.
+ * @since %CURRENT_VERSION%
+ */
+data class CommunityIsPublicError(val communityId: CommunityId) : RemoveFromCommunityError
+
+/**
+ * The user is not a member of the community in the role.
+ *
+ * @property userId the id of the user.
+ * @property communityId the id of the community.
+ * @property role the role the user is not a member in.
+ * @since %CURRENT_VERSION%
+ */
+data class UserNotCommunityMemberError(val userId: UserId, val communityId: CommunityId, val role: CommunityRole) :
+    RemoveFromCommunityError
 
 // endregion
 
@@ -484,6 +739,13 @@ data class CommunityInviteCodeNotValidError(val inviteCode: String) : JoinCommun
  */
 data class CommunityInviteCodeExpiredError(val inviteCode: String) : JoinCommunityError
 
+/**
+ * Failure of viewing the profile. It has no cases: a user with a fixed role is excluded by the parameter type.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewProfileError : OperationError
+
 // endregion
 
 // region JudgeOperations
@@ -503,11 +765,46 @@ sealed interface ViewResultsError : OperationError
 sealed interface ChangeVerdictError : OperationError
 
 /**
+ * Failure of viewing a submission available to the judge.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSolutionError : OperationError
+
+/**
+ * Failure of downloading the solution file of a submission available to the judge.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadSolutionError : OperationError
+
+/**
+ * Failure of downloading the grading logs of a test of a submission available to the judge.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadLogsError : OperationError
+
+/**
+ * Failure of downloading the recording of a test of a submission available to the judge.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadRecordingError : OperationError
+
+/**
  * The user does not hold the judge role.
  *
  * @since %CURRENT_VERSION%
  */
-data object MissedJudgeRoleError : ViewResultsError, ChangeVerdictError, MissedRequiredRoleError
+data object MissedJudgeRoleError :
+    ViewResultsError,
+    ChangeVerdictError,
+    ViewSolutionError,
+    DownloadSolutionError,
+    DownloadLogsError,
+    DownloadRecordingError,
+    MissedRequiredRoleError
 
 /**
  * The submission does not exist.
@@ -515,15 +812,31 @@ data object MissedJudgeRoleError : ViewResultsError, ChangeVerdictError, MissedR
  * @property submissionId the id of the missing submission.
  * @since %CURRENT_VERSION%
  */
-data class SubmissionNotExistsError(val submissionId: SubmissionId) : ChangeVerdictError, EntityNotExistsError
+data class SubmissionNotExistsError(val submissionId: SubmissionId) :
+    DownloadParticipantSolutionError,
+    DownloadStudentSolutionError,
+    ChangeVerdictError,
+    ViewSolutionError,
+    DownloadSolutionError,
+    DownloadLogsError,
+    DownloadRecordingError,
+    EntityNotExistsError
 
 /**
- * The submission is outside the judge's access: its author currently holds neither the student nor the participant role.
+ * The submission is outside the requested study context or the current judge cannot access its author.
  *
  * @property submissionId the id of the inaccessible submission.
  * @since %CURRENT_VERSION%
  */
-data class SubmissionAccessDeniedError(val submissionId: SubmissionId) : ChangeVerdictError, AccessDeniedError
+data class SubmissionAccessDeniedError(val submissionId: SubmissionId) :
+    DownloadParticipantSolutionError,
+    DownloadStudentSolutionError,
+    ChangeVerdictError,
+    ViewSolutionError,
+    DownloadSolutionError,
+    DownloadLogsError,
+    DownloadRecordingError,
+    AccessDeniedError
 
 /**
  * The submission was created to test a developer solution, so it cannot receive a judgment order.
@@ -539,7 +852,10 @@ data class SubmissionIsDeveloperSolutionTestError(val submissionId: SubmissionId
  * @property submissionId the id of the submission.
  * @since %CURRENT_VERSION%
  */
-data class SubmissionNotSuccessfullyGradedError(val submissionId: SubmissionId) : ChangeVerdictError
+data class SubmissionNotSuccessfullyGradedError(val submissionId: SubmissionId) :
+    ChangeVerdictError,
+    DownloadLogsError,
+    DownloadRecordingError
 
 /**
  * The requested judgment score is negative.
@@ -555,6 +871,26 @@ data class NegativeJudgmentScoreError(val score: Score) : ChangeVerdictError
  * @since %CURRENT_VERSION%
  */
 data object BlankJudgmentReasonError : ChangeVerdictError
+
+/**
+ * The test is not part of the successful verdict of the submission.
+ *
+ * @property submissionId the id of the submission.
+ * @property testId the id of the test.
+ * @since %CURRENT_VERSION%
+ */
+data class TestNotInVerdictError(val submissionId: SubmissionId, val testId: TestId) : DownloadLogsError, DownloadRecordingError
+
+/**
+ * The run of the submission on the test produced no recording.
+ *
+ * @property submissionId the id of the submission.
+ * @property testId the id of the test.
+ * @since %CURRENT_VERSION%
+ */
+data class RecordingNotExistsError(val submissionId: SubmissionId, val testId: TestId) :
+    DownloadRecordingError,
+    EntityNotExistsError
 
 // endregion
 
@@ -742,6 +1078,13 @@ sealed interface ViewResourceError : OperationError
  * @since %CURRENT_VERSION%
  */
 sealed interface DownloadResourceVersionError : OperationError
+
+/**
+ * Failure of listing the TRIK Studio versions registered in the system.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewTrikStudioVersionsError : OperationError
 
 /**
  * Failure of updating a statement uploaded to a task.
@@ -956,7 +1299,8 @@ data object MissedDeveloperRoleError :
     ShareTaskError,
     AttachExerciseError,
     AttachTestError,
-    AttachDeveloperSolutionError
+    AttachDeveloperSolutionError,
+    ViewTrikStudioVersionsError
 
 /**
  * The contest end is specified without its start.
@@ -1018,7 +1362,9 @@ data class ContestNotExistsError(
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendParticipantSolutionError,
     SendStudentSolutionError,
     ViewClassContestError,
@@ -1049,7 +1395,9 @@ data class ContestAccessDeniedError(
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendParticipantSolutionError,
     SendStudentSolutionError,
     AddClassContestError,
@@ -1101,7 +1449,9 @@ data class TaskNotExistsError(val taskId: TaskId) :
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendParticipantSolutionError,
     SendStudentSolutionError
 
@@ -1151,7 +1501,11 @@ data class CommunityNotExistsError(val communityId: CommunityId) :
     CreateCommunityInviteError,
     ExtendCommunityInviteError,
     ViewCommunityInvitesError,
-    RefreshCommunityInviteError
+    RefreshCommunityInviteError,
+    GrantRoleError,
+    RemoveFromCommunityError,
+    ViewCommunityContestsError,
+    EditCommunityError
 
 /**
  * The user lacks the access to the task required by the operation.
@@ -1190,7 +1544,9 @@ data class TaskAccessDeniedError(val taskId: TaskId) :
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendParticipantSolutionError,
     SendStudentSolutionError
 
@@ -1208,7 +1564,11 @@ data class CommunityAccessDeniedError(val communityId: CommunityId) :
     CreateCommunityInviteError,
     ExtendCommunityInviteError,
     ViewCommunityInvitesError,
-    RefreshCommunityInviteError
+    RefreshCommunityInviteError,
+    GrantRoleError,
+    RemoveFromCommunityError,
+    ViewCommunityContestsError,
+    EditCommunityError
 
 /**
  * The task has no committed version.
@@ -1534,11 +1894,25 @@ sealed interface ViewStudentTaskError : OperationError
 sealed interface DownloadParticipantTaskResourceError : OperationError
 
 /**
+ * Failure of downloading an owned solution in the participant's study context.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadParticipantSolutionError : OperationError
+
+/**
  * Failure of downloading a statement or an exercise of a task in the selected class.
  *
  * @since %CURRENT_VERSION%
  */
 sealed interface DownloadStudentTaskResourceError : OperationError
+
+/**
+ * Failure of downloading an owned solution in the student's study context.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface DownloadStudentSolutionError : OperationError
 
 /**
  * Failure of sending a solution for a task of a contest in the participant's competition.
@@ -1573,6 +1947,7 @@ data object MissedParticipantRoleError :
     ViewParticipantContestError,
     ViewParticipantTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     SendParticipantSolutionError
 
 /**
@@ -1588,6 +1963,7 @@ data object MissedStudentRoleError :
     ViewStudentContestError,
     ViewStudentTaskError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendStudentSolutionError,
     JoinClassError
 
@@ -1640,7 +2016,9 @@ data class ContestNotEnteredError(val contestId: ContestId) :
     ViewParticipantTaskError,
     ViewStudentTaskError,
     DownloadParticipantTaskResourceError,
+    DownloadParticipantSolutionError,
     DownloadStudentTaskResourceError,
+    DownloadStudentSolutionError,
     SendParticipantSolutionError,
     SendStudentSolutionError
 

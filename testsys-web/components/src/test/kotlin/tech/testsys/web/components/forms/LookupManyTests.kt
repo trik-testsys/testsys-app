@@ -38,6 +38,7 @@ import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.findAllButtons
 import tech.testsys.web.components.openDialogs
+import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.testTexts
 import tools.jackson.databind.ObjectMapper
 
@@ -243,6 +244,33 @@ class LookupManyTests : MockVaadinTests() {
             assertEquals("Туры", dialog.find("ts-dialog__title").element.text)
             assertEquals(10, rows().size)
             assertEquals("" to PageRequest(offset = 0, limit = 10, sort = null), source.requests.single())
+        }
+
+        @Test
+        fun `should open a dialog of size M by default`() {
+            buildTestRow {
+                lookupMany(
+                    "Туры",
+                    labelSize = 4,
+                    size = 8,
+                    fetch = source::fetch,
+                    display = { contest -> contest.name },
+                    columns = { textColumn("Название") { contest -> contest.name } },
+                )
+            }
+
+            openDialog()
+
+            assertTrue("ts-dialog--md" in openDialogs().single().find("ts-dialog").classes())
+        }
+
+        @Test
+        fun `should open the dialog of the given size`() {
+            buildLookupMany(dialogSize = DialogSize.L)
+
+            openDialog()
+
+            assertTrue("ts-dialog--lg" in openDialogs().single().find("ts-dialog").classes())
         }
 
         @Test
@@ -684,6 +712,7 @@ class LookupManyTests : MockVaadinTests() {
 
     private fun buildLookupMany(
         pageSize: Int = LOOKUP_PAGE_SIZE,
+        dialogSize: DialogSize = DialogSize.M,
         columns: TableScope<Contest>.() -> Unit = { textColumn("Название") { contest -> contest.name } },
     ): ValueInput<Set<Contest>> {
         lateinit var input: ValueInput<Set<Contest>>
@@ -696,6 +725,7 @@ class LookupManyTests : MockVaadinTests() {
                 display = { contest -> contest.name },
                 columns = columns,
                 pageSize = pageSize,
+                dialogSize = dialogSize,
             )
         }
         return input

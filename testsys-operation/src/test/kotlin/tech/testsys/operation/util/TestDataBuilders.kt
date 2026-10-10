@@ -21,6 +21,7 @@ import tech.testsys.domain.builder.util.chooser.TaskContentChooser
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.Community
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ExerciseId
@@ -38,6 +39,7 @@ import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.Supervisor
+import tech.testsys.operation.config.CommunityConfig
 import java.time.Instant
 import java.util.UUID
 
@@ -247,4 +249,8 @@ fun testStudyClass(builder: ClassDataBuilder.() -> Unit = {}): Class = `class` {
         description = ""
         builder()
     }
+}
+
+fun publicCommunityConfig(publicCommunityId: CommunityId): CommunityConfig = object : CommunityConfig {
+    override val publicCommunityId = publicCommunityId
 }

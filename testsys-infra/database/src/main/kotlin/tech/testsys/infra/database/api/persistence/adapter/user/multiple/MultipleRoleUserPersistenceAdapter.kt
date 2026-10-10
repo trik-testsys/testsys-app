@@ -6,13 +6,13 @@ import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.JudgmentOrderId
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.Administrator
+import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.CompatibleUserRole
 import tech.testsys.domain.model.user.Developer
 import tech.testsys.domain.model.user.Judge
@@ -108,32 +108,29 @@ class MultipleRoleUserPersistenceAdapter(
     }
 
     @Transactional
-    override fun addCommunityMembership(
-        userId: MultipleRoleUserId,
-        communityId: CommunityId,
-        kind: CommunityInvite.Kind,
-    ): MultipleRoleUser {
-        requireNotNull(users.findByIdOrNull(userId.value)?.takeIf(::isMultipleRole)) {
-            "Multiple-role user ${userId.value} does not exist for community membership"
+    override fun addCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUser {
+        val userJpaEntity = touchMembershipUser(userId)
+        when (role) {
+            CommunityRole.Administrator -> syncAdministratorPresence(userId.value, isTarget = true)
+            CommunityRole.Manager -> syncManagerPresence(userId.value, isTarget = true)
+            CommunityRole.Developer -> syncDeveloperPresence(userId.value, isTarget = true)
+            CommunityRole.Student -> syncStudentPresence(userId.value, isTarget = true)
+            CommunityRole.Judge -> syncJudgePresence(userId.value, isTarget = true)
         }
-        val userJpaEntity = touchRoot(users, userId.value, changesRootData = true)
-        val roleEnum = when (kind) {
-            CommunityInvite.Kind.Manager -> {
-                syncManagerPresence(userId.value, isTarget = true)
-                UserMultipleRoleJpaEnum.MANAGER
-            }
-            CommunityInvite.Kind.Developer -> {
-                syncDeveloperPresence(userId.value, isTarget = true)
-                UserMultipleRoleJpaEnum.DEVELOPER
-            }
-        }
-        val membershipId = MultipleRoleToUserId(
-            multipleRole = roleEnum,
-            userId = userId.value,
-            communityId = communityId.value,
-        )
+        val membershipId = membershipIdOf(userId, communityId, role)
         if (!multipleRoleToUserJpaEntityRepository.existsById(membershipId)) {
             multipleRoleToUserJpaEntityRepository.saveAndFlush(MultipleRoleToUserJpaEntity(membershipId))
+        }
+        return assemble(userJpaEntity)
+    }
+
+    @Transactional
+    override fun removeCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUser {
+        val userJpaEntity = touchMembershipUser(userId)
+        val membershipId = membershipIdOf(userId, communityId, role)
+        if (multipleRoleToUserJpaEntityRepository.existsById(membershipId)) {
+            multipleRoleToUserJpaEntityRepository.deleteById(membershipId)
+            multipleRoleToUserJpaEntityRepository.flush()
         }
         return assemble(userJpaEntity)
     }
@@ -166,6 +163,25 @@ class MultipleRoleUserPersistenceAdapter(
     }
 
     private fun isMultipleRole(jpaEntity: UserJpaEntity) = jpaEntity.type == UserTypeJpaEnum.MULTIPLE_ROLE
+
+    private fun membershipIdOf(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole) = MultipleRoleToUserId(
+        multipleRole = when (role) {
+            CommunityRole.Administrator -> UserMultipleRoleJpaEnum.ADMINISTRATOR
+            CommunityRole.Manager -> UserMultipleRoleJpaEnum.MANAGER
+            CommunityRole.Developer -> UserMultipleRoleJpaEnum.DEVELOPER
+            CommunityRole.Student -> UserMultipleRoleJpaEnum.STUDENT
+            CommunityRole.Judge -> UserMultipleRoleJpaEnum.JUDGE
+        },
+        userId = userId.value,
+        communityId = communityId.value,
+    )
+
+    private fun touchMembershipUser(userId: MultipleRoleUserId): UserJpaEntity {
+        requireNotNull(users.findByIdOrNull(userId.value)?.takeIf(::isMultipleRole)) {
+            "Multiple-role user ${userId.value} does not exist for community membership"
+        }
+        return touchRoot(users, userId.value, changesRootData = true)
+    }
 
     /**
      * Assembles the roles of [userIds]: memberships and the held roles in one query per table, then the id lists of

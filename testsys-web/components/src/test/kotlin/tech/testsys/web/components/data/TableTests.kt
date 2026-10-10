@@ -26,6 +26,30 @@ import tools.jackson.databind.ObjectMapper
 
 class TableTests : MockVaadinTests() {
     @Test
+    fun `should style and invoke only rows allowed by the clickable predicate`() {
+        val clicked = mutableListOf<Int>()
+        buildTestPage {
+            row {
+                block {
+                    table(key = { value: Int -> value }, fetch = { Page(listOf(1, 2), 2) }) {
+                        textColumn("Name") { value -> "Row $value" }
+                        onRowClick(isNavigation = true, isClickable = { value -> value == 1 }) { value -> clicked.add(value) }
+                    }
+                }
+            }
+        }
+
+        rows()[1]._fireDomEvent("click", rowClick(isOnControl = false))
+        rows()[0]._fireDomEvent("click", rowClick(isOnControl = false))
+
+        assertEquals(listOf(1), clicked)
+        assertTrue("ts-row-clickable" in rows()[0].classes())
+        assertTrue("ts-navigation-cell" in rows()[0].child(0).classes())
+        assertFalse("ts-row-clickable" in rows()[1].classes())
+        assertFalse("ts-navigation-cell" in rows()[1].child(0).classes())
+    }
+
+    @Test
     fun `should request the first page without sort`() {
         val source = Source(size = 12)
 
@@ -48,6 +72,24 @@ class TableTests : MockVaadinTests() {
 
         assertTrue("ts-num" in rows()[0].child(0).classes())
         assertEquals(setOf("ts-num", "ts-right"), rows()[0].child(2).classes())
+    }
+
+    @Test
+    fun `should blur the values of an obscured code column until focused`() {
+        buildTestPage {
+            row {
+                block {
+                    table(key = { row: Row -> row.id }, fetch = Source(size = 1)::fetch) {
+                        codeColumn("Код", size = 1, isObscured = true) { row -> row.name }
+                    }
+                }
+            }
+        }
+
+        val value = rows()[0].child(0).child(0)
+        assertTrue(value.element.hasAttribute("data-ts-obscured"))
+        assertTrue("ts-obscured-value" in value.classes())
+        assertEquals("0", value.element.getAttribute("tabindex"))
     }
 
     @Test
@@ -401,6 +443,27 @@ class TableTests : MockVaadinTests() {
         rows()[1]._fireDomEvent("click", rowClick(isOnControl = true))
 
         assertNull(clicked)
+    }
+
+    @Test
+    fun `should mark the first text cell if the row click navigates`() {
+        buildTable(Source(size = 12)) {
+            menuColumn { item("Открыть") {} }
+            onRowClick(isNavigation = true) {}
+        }
+
+        val cells = rows()[0].children.toList()
+
+        assertEquals(listOf(false, true, false, false), cells.map { cell -> "ts-navigation-cell" in cell.classes() })
+    }
+
+    @Test
+    fun `should not mark a cell if the row click does not navigate`() {
+        buildTable(Source(size = 12)) { onRowClick {} }
+
+        val cells = rows()[0].children.toList()
+
+        assertTrue(cells.none { cell -> "ts-navigation-cell" in cell.classes() })
     }
 
     @Test

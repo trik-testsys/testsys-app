@@ -6,6 +6,7 @@ import tech.testsys.domain.contract.persistence.ContestTaskResult
 import tech.testsys.domain.contract.persistence.ObserverContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.SubmissionCount
 import tech.testsys.domain.contract.persistence.TaskFilter
 import tech.testsys.domain.contract.persistence.VerdictFilter
 import tech.testsys.domain.model.group.CommunityId
@@ -50,6 +51,7 @@ import tech.testsys.domain.model.task.Test
 import tech.testsys.domain.model.task.TestData
 import tech.testsys.domain.model.task.TestDiagnosticResult
 import tech.testsys.domain.model.task.TestId
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VerdictId
@@ -106,6 +108,27 @@ interface ContestRepository : EntityRepository<ContestData, ContestId, Contest> 
         pagination: Pagination,
         filter: ContestFilter = ContestFilter(),
     ): Page<Contest>
+
+    /**
+     * Synchronously finds contests shared to any of [communityIds], ignoring ownership, without changing stored state.
+     * Repeated calls reflect current data; storage exceptions propagate to the caller.
+     *
+     * @param communityIds the communities granting access; an empty set matches nothing.
+     * @param pagination the requested page; id ascending is the default order and breaks ties unless explicitly sorted.
+     * @param filter conditions combined with AND before paging and counting, including shared community; unknown ids match nothing.
+     * @return distinct shared contests, the original pagination and exact filtered total; missing pages are empty.
+     * @since %CURRENT_VERSION%
+     */
+    fun findSharedTo(communityIds: Set<CommunityId>, pagination: Pagination, filter: ContestFilter = ContestFilter()): Page<Contest>
+
+    /**
+     * Synchronously finds every TRIK Studio version registered in the system, without changing stored state.
+     * Repeated calls reflect current registrations; storage exceptions propagate to the caller.
+     *
+     * @return the registered versions ordered by tag, or an empty list when none is registered.
+     * @since %CURRENT_VERSION%
+     */
+    fun findTrikStudioVersions(): List<TrikStudioVersion>
 }
 
 /**
@@ -314,6 +337,18 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
     fun findGradingByContext(authorId: UserId, taskId: TaskId, contestId: ContestId): List<Submission>
 
     /**
+     * Synchronously finds grading submissions in a contest without changing state; technical exceptions propagate.
+     * Repeated calls reflect current data and exclude developer solution tests.
+     *
+     * @param authorId the exact author of the submissions.
+     * @param contestId the exact contest of the submissions.
+     * @param taskIds the tasks to include; an empty set yields an empty list.
+     * @return matching submissions ordered by creation time and then identifier, both ascending.
+     * @since %CURRENT_VERSION%
+     */
+    fun findGradingByContest(authorId: UserId, contestId: ContestId, taskIds: Set<TaskId>): List<Submission>
+
+    /**
      * Synchronously summarizes grading submissions of [contestId] per author and task, without changing stored state
      * or loading file contents. Repeated calls reflect current data; technical exceptions propagate to the caller.
      *
@@ -325,6 +360,27 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @since %CURRENT_VERSION%
      */
     fun findContestResults(contestId: ContestId, authorIds: Set<UserId>, taskIds: Set<TaskId>): List<ContestTaskResult>
+
+    /**
+     * Synchronously counts grading submissions of [contestId] per task in any grading state, excluding author solution
+     * tests, without changing stored state or loading file contents. Storage exceptions propagate to the caller.
+     *
+     * @param contestId the contest the submissions were made in.
+     * @return the number of submissions of every task having submissions; tasks without submissions are absent.
+     * @since %CURRENT_VERSION%
+     */
+    fun countGradingByTask(contestId: ContestId): Map<TaskId, Long>
+
+    /**
+     * Synchronously counts grading submissions made by any of [authorIds] in any of [contestIds] in any grading state,
+     * and their distinct authors, without changing stored state or loading file contents. Storage exceptions propagate.
+     *
+     * @param authorIds the authors to include; an empty set counts nothing.
+     * @param contestIds the contests to include; an empty set counts nothing.
+     * @return the numbers of matching submissions and of their distinct authors, both zero if nothing matches.
+     * @since %CURRENT_VERSION%
+     */
+    fun countGrading(authorIds: Set<UserId>, contestIds: Set<ContestId>): SubmissionCount
 }
 
 /**

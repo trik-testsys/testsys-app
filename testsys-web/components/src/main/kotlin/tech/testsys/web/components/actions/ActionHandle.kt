@@ -3,6 +3,7 @@
 package tech.testsys.web.components.actions
 
 import com.vaadin.flow.component.Component
+import com.vaadin.flow.component.Key
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.dom.SignalBinding
@@ -70,5 +71,14 @@ class ActionHandle internal constructor(
      */
     fun onClick(listener: () -> Unit) {
         button.addClickListener { _ -> if (!loading.value) listener() }
+    }
+
+    /**
+     * Clicks the action when Enter is pressed anywhere on the page, so that a form submits from the keyboard.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun clickOnEnter() {
+        button.addClickShortcut(Key.ENTER)
     }
 }

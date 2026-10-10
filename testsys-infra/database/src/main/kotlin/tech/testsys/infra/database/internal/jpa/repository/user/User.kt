@@ -9,6 +9,7 @@ import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.SnowflakeJpaEntityRepository
+import java.time.Instant
 
 /**
  * Spring Data repository for [UserJpaEntity].
@@ -49,4 +50,9 @@ interface UserJpaEntityRepository : SnowflakeJpaEntityRepository<UserJpaEntity> 
     @Modifying
     @Query("update UserJpaEntity u set u.version = u.version + 1 where u.id in :ids")
     fun incrementVersions(@Param("ids") ids: Collection<Long>): Int
+
+    /** Sets the last login after the caller has protected the user aggregate root. */
+    @Modifying
+    @Query("update UserJpaEntity u set u.lastLoginAt = :lastLoginAt where u.id = :id and u.type = :type")
+    fun updateLastLoginAt(@Param("id") id: Long, @Param("type") type: UserTypeJpaEnum, @Param("lastLoginAt") lastLoginAt: Instant): Int
 }

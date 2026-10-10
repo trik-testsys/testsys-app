@@ -38,6 +38,13 @@ class StudentService(private val operations: StudentOperations, private val curr
         operations.enterContest(currentUser.multipleRoleUser(), classId, contestId).getOrThrow().toVo()
 
     /**
+     * Runs [StudentOperations.joinClass].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun joinClass(inviteCode: String): ClassVo = operations.joinClass(currentUser.multipleRoleUser(), inviteCode).getOrThrow().toVo()
+
+    /**
      * Runs [StudentOperations.viewClasses].
      *
      * @since %CURRENT_VERSION%

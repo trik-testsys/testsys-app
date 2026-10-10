@@ -26,6 +26,7 @@ import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
+import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.texts.UiTexts
 
 /** Number of values shown as chips; the rest is counted in one more chip. */
@@ -33,7 +34,8 @@ private const val MAX_CHIPS = 3
 
 /**
  * Adds a field of several entities checked in a dialog that searches with [fetch] and lists rows in [columns], [pageSize]
- * rows a page; [display] gives the text of a chosen value. The label takes [labelSize] and the control [size] columns of the row.
+ * rows a page; [display] gives the text of a chosen value. The label takes [labelSize] and the control [size] columns of the row;
+ * [dialogSize] gives the width of the dialog when the default one does not fit [columns].
  *
  * @param T the type of the entities; they are matched with the fetched rows by `equals` and `hashCode`, so [T] must identify
  * an entity by them, as domain entities do by id.
@@ -50,10 +52,11 @@ fun <T : Any> BlockRowScope.lookupMany(
     columns: TableScope<T>.() -> Unit,
     hint: String? = null,
     pageSize: Int = LOOKUP_PAGE_SIZE,
+    dialogSize: DialogSize = DialogSize.M,
     configure: ValueInput<Set<T>>.() -> Unit = {},
 ): ValueInput<Set<T>> {
     val tableColumns = lookupColumns(label, pageSize, columns, isSelectable = true)
-    val control = LookupManyField(texts, label, display, fetch, pageSize, tableColumns)
+    val control = LookupManyField(texts, label, display, fetch, pageSize, tableColumns, dialogSize)
     return addInput(label, labelSize, size, control, hint, configure)
 }
 
@@ -71,6 +74,7 @@ internal class LookupManyField<T : Any>(
     private val fetch: (String, PageRequest) -> Page<T>,
     private val pageSize: Int,
     private val columns: TableSpec<T>,
+    private val dialogSize: DialogSize,
 ) : LookupFrame<Set<T>>(texts, title, emptyValue = emptySet()) {
     private val chips = Div().apply { addClassName(CssClass.LookupChips) }
 
@@ -122,6 +126,7 @@ internal class LookupManyField<T : Any>(
         val dialog = LookupDialog(
             texts,
             title,
+            dialogSize,
             fetchKnown,
             pageSize,
             columns,

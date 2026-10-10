@@ -5,6 +5,7 @@ import com.vaadin.flow.router.ErrorParameter
 import com.vaadin.flow.router.HasErrorParameter
 import com.vaadin.flow.router.NotFoundException
 import com.vaadin.flow.server.HttpStatusCode
+import com.vaadin.flow.server.auth.AnonymousAllowed
 import tech.testsys.web.components.error.NotFoundPage
 import tech.testsys.web.components.texts.UiTexts
 
@@ -13,6 +14,7 @@ import tech.testsys.web.components.texts.UiTexts
  *
  * @since %CURRENT_VERSION%
  */
+@AnonymousAllowed
 class NotFoundView(texts: UiTexts) : NotFoundPage(texts), HasErrorParameter<NotFoundException> {
     override fun setErrorParameter(event: BeforeEnterEvent, parameter: ErrorParameter<NotFoundException>): Int {
         refreshHistoryNavigation()

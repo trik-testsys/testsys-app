@@ -3,6 +3,7 @@ package tech.testsys.infra.database.api.persistence.adapter.task
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.ContestTaskResult
+import tech.testsys.domain.contract.persistence.SubmissionCount
 import tech.testsys.domain.contract.persistence.repository.SubmissionRepository
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.JudgmentOrderId
@@ -102,6 +103,19 @@ class SubmissionPersistenceAdapter(
     }
 
     @Transactional(readOnly = true)
+    override fun findGradingByContest(authorId: UserId, contestId: ContestId, taskIds: Set<TaskId>): List<Submission> {
+        if (taskIds.isEmpty()) return emptyList()
+
+        val rows = submissionJpaEntityRepository.findAllByKindAndGradingContestIdAndAuthorIdInAndTaskIdIn(
+            kind = SubmissionKindJpaEnum.GRADING,
+            gradingContestId = contestId.value,
+            authorIds = setOf(authorId.value),
+            taskIds = taskIds.map { taskId -> taskId.value },
+        ).sortedWith(compareBy<SubmissionJpaEntity> { submission -> submission.createdAt }.thenBy { submission -> submission.requireId() })
+        return assembleAll(rows)
+    }
+
+    @Transactional(readOnly = true)
     override fun findContestResults(contestId: ContestId, authorIds: Set<UserId>, taskIds: Set<TaskId>): List<ContestTaskResult> {
         if (authorIds.isEmpty() || taskIds.isEmpty()) return emptyList()
 
@@ -127,6 +141,22 @@ class SubmissionPersistenceAdapter(
                     submissionCount = group.size,
                 )
             }
+    }
+
+    @Transactional(readOnly = true)
+    override fun countGradingByTask(contestId: ContestId): Map<TaskId, Long> = submissionJpaEntityRepository
+        .countGradingByTask(contestId.value)
+        .associate { count -> TaskId(count.taskId) to count.submissions }
+
+    @Transactional(readOnly = true)
+    override fun countGrading(authorIds: Set<UserId>, contestIds: Set<ContestId>): SubmissionCount {
+        if (authorIds.isEmpty() || contestIds.isEmpty()) return SubmissionCount(submissions = 0, authors = 0)
+
+        val count = submissionJpaEntityRepository.countGrading(
+            authorIds = authorIds.map { authorId -> authorId.value },
+            contestIds = contestIds.map { contestId -> contestId.value },
+        )
+        return SubmissionCount(submissions = count.submissions, authors = count.authors)
     }
 
     override fun assembleAll(rows: List<SubmissionJpaEntity>): List<Submission> {

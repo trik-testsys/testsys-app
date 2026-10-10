@@ -34,6 +34,19 @@ class ConfirmTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should accept a name stored with trailing whitespace`() {
+            var confirmations = 0
+            confirm(title = "Удалить тур?", action = "Удалить", typeToConfirm = "Весенний кубок ") { confirmations++ }
+            val dialog = openDialogs().single()
+            assertFalse(button("Удалить").isEnabled)
+
+            dialog._get<TextField>()._setValue("Весенний кубок")
+            button("Удалить")._click()
+
+            assertEquals(1, confirmations)
+        }
+
+        @Test
         fun `should open a narrow dialog with the title, text and actions`() {
             confirm(title = "Закрыть тур?", text = "Посылки больше не принимаются", action = "Закрыть тур") {}
 

@@ -4,10 +4,11 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.group.ClassId
+import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Submission
-import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.operation.error.getOrThrow
@@ -15,7 +16,6 @@ import tech.testsys.operation.user.StudyOperations
 import tech.testsys.web.app.config.AfterCommitGrader
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.CurrentUser
-import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.toVo
 import java.time.Instant
 
@@ -39,8 +39,8 @@ class StudyService(
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewContest(contestId: ContestId): Pair<Instant?, ContestVo> = operations.viewContest(currentUser.singleRoleUser(), contestId)
-        .getOrThrow().let { (enteredAt, contest) -> enteredAt to contest.toVo() }
+    fun viewContest(contestId: ContestId): Triple<Instant?, ContestVo, List<StudyContestTaskVo>> =
+        operations.viewContest(currentUser.singleRoleUser(), contestId).getOrThrow().toVo()
 
     /**
      * Runs [StudyOperations.viewContest] for a student of [classId].
@@ -48,9 +48,8 @@ class StudyService(
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewContest(classId: ClassId, contestId: ContestId): Pair<Instant?, ContestVo> =
-        operations.viewContest(currentUser.multipleRoleUser(), classId, contestId)
-            .getOrThrow().let { (enteredAt, contest) -> enteredAt to contest.toVo() }
+    fun viewContest(classId: ClassId, contestId: ContestId): Triple<Instant?, ContestVo, List<StudyContestTaskVo>> =
+        operations.viewContest(currentUser.multipleRoleUser(), classId, contestId).getOrThrow().toVo()
 
     /**
      * Runs [StudyOperations.viewTask] for a participant.
@@ -58,7 +57,7 @@ class StudyService(
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewTask(contestId: ContestId, taskId: TaskId): Triple<TaskVo, List<SubmissionVo>, SubmissionVo?> =
+    fun viewTask(contestId: ContestId, taskId: TaskId): StudyTaskVo =
         operations.viewTask(currentUser.singleRoleUser(), contestId, taskId).getOrThrow().toVo()
 
     /**
@@ -67,7 +66,7 @@ class StudyService(
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewTask(classId: ClassId, contestId: ContestId, taskId: TaskId): Triple<TaskVo, List<SubmissionVo>, SubmissionVo?> =
+    fun viewTask(classId: ClassId, contestId: ContestId, taskId: TaskId): StudyTaskVo =
         operations.viewTask(currentUser.multipleRoleUser(), classId, contestId, taskId).getOrThrow().toVo()
 
     /**
@@ -87,6 +86,24 @@ class StudyService(
     @Transactional(readOnly = true)
     fun downloadTaskResource(classId: ClassId, contestId: ContestId, taskId: TaskId, resourceId: DomainId): FileData =
         operations.downloadTaskResource(currentUser.multipleRoleUser(), classId, contestId, taskId, resourceId).getOrThrow()
+
+    /**
+     * Downloads an owned submission in the participant's contest.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun downloadSolution(contestId: ContestId, taskId: TaskId, submissionId: SubmissionId): FileData =
+        operations.downloadSolution(currentUser.singleRoleUser(), contestId, taskId, submissionId).getOrThrow()
+
+    /**
+     * Downloads an owned submission in the student's selected class and contest.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun downloadSolution(classId: ClassId, contestId: ContestId, taskId: TaskId, submissionId: SubmissionId): FileData =
+        operations.downloadSolution(currentUser.multipleRoleUser(), classId, contestId, taskId, submissionId).getOrThrow()
 
     /**
      * Runs [StudyOperations.sendSolution] for a participant and grades the submission after commit.
@@ -124,6 +141,6 @@ class StudyService(
         return submission.toVo()
     }
 
-    private fun Triple<Task, List<Submission>, Submission?>.toVo() =
-        Triple(first.toVo(), second.map { submission -> submission.toVo() }, third?.toVo())
+    private fun Triple<Instant?, Contest, List<StudyOperations.StudyContestTask>>.toVo() =
+        Triple(first, second.toVo(), third.map { task -> task.toVo() })
 }

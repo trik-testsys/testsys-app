@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Import
 import tech.testsys.infra.database.api.DatabaseConfiguration
 import tech.testsys.infra.diagnostics.api.DiagnosticsConfiguration
 import tech.testsys.infra.grpc.api.GrpcConfiguration
+import tech.testsys.infra.mail.api.MailConfiguration
 
 /**
  * Connects the configurations of the infrastructure modules that implement the ports of the operations.
@@ -12,5 +13,5 @@ import tech.testsys.infra.grpc.api.GrpcConfiguration
  * @since %CURRENT_VERSION%
  */
 @Configuration
-@Import(DatabaseConfiguration::class, GrpcConfiguration::class, DiagnosticsConfiguration::class)
+@Import(DatabaseConfiguration::class, GrpcConfiguration::class, DiagnosticsConfiguration::class, MailConfiguration::class)
 class InfraConfiguration

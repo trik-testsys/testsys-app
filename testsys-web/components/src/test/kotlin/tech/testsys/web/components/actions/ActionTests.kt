@@ -3,6 +3,8 @@ package tech.testsys.web.components.actions
 import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
+import com.github.mvysny.kaributesting.v10.fireShortcut
+import com.vaadin.flow.component.Key
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.local.ValueSignal
@@ -113,6 +115,21 @@ class ActionTests : MockVaadinTests() {
             buildTestContent { mainAction("Отправить") { onClick { clicks++ } } }
 
             _get<Button> { text = "Отправить" }._click()
+
+            assertEquals(1, clicks)
+        }
+
+        @Test
+        fun `should click the action on Enter`() {
+            var clicks = 0
+            buildTestContent {
+                mainAction("Войти") {
+                    clickOnEnter()
+                    onClick { clicks++ }
+                }
+            }
+
+            fireShortcut(Key.ENTER)
 
             assertEquals(1, clicks)
         }

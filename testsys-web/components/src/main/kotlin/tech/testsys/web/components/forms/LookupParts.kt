@@ -45,6 +45,7 @@ import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.overlay.DialogShell
+import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.texts.UiTexts
 
 /** Default number of rows on a page of the lookup dialog. */
@@ -205,13 +206,14 @@ private fun Element.setOrRemove(name: HtmlAttribute, value: String?) {
 }
 
 /**
- * Lookup dialog titled [title]: a search line and a table of [columns] whose rows [fetch] finds by the typed query,
+ * Lookup dialog titled [title] of [size]: a search line and a table of [columns] whose rows [fetch] finds by the typed query,
  * [pageSize] rows a page. A click on a row runs [onRowClick]; [isSelectable], [selected] and [highlighted] are those of
  * the table. The caller places the pager and fills the footer of [shell].
  */
 internal class LookupDialog<T : Any>(
     texts: UiTexts,
     title: String,
+    size: DialogSize,
     fetch: (String, PageRequest) -> Page<T>,
     pageSize: Int,
     columns: TableSpec<T>,
@@ -220,7 +222,7 @@ internal class LookupDialog<T : Any>(
     highlighted: (T) -> Boolean,
     onRowClick: LookupDialog<T>.(T) -> Unit,
 ) {
-    val shell: DialogShell = DialogShell(texts, title, subtitle = null, isWide = true, isAlert = false)
+    val shell: DialogShell = DialogShell(texts, title, subtitle = null, size = size, isAlert = false)
     val table: DataTable<T>
     private val search: TextField
 

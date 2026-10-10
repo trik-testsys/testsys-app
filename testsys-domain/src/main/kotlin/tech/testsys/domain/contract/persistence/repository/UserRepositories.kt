@@ -4,9 +4,9 @@ import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.EmailChangeRequest
 import tech.testsys.domain.model.user.EmailChangeRequestData
 import tech.testsys.domain.model.user.EmailChangeRequestId
@@ -25,9 +25,10 @@ import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
+import java.time.Instant
 
 /**
- * Search port for users of every kind available to an administrator.
+ * Port for users of every kind: search of those available to an administrator and records of their logins.
  *
  * @since %CURRENT_VERSION%
  */
@@ -61,6 +62,27 @@ interface UserRepository {
     fun findAvailableToAdministratorById(administratorId: MultipleRoleUserId, userId: UserId): User<*>?
 
     /**
+     * Synchronously counts distinct users of communities created by [administratorId] as [findAvailableToAdministrator]
+     * selects them, without changing stored state. Storage exceptions propagate to the caller.
+     *
+     * @param administratorId the creator of the communities whose multiple-role members, observers and creator are counted.
+     * @param filter conditions combined with AND; foreign or unknown communities match nothing.
+     * @return the exact number of matching available users.
+     * @since %CURRENT_VERSION%
+     */
+    fun countAvailableToAdministrator(administratorId: MultipleRoleUserId, filter: UserFilter = UserFilter()): Long
+
+    /**
+     * Synchronously reads the last recorded logins of [userIds], without changing stored state.
+     * Storage exceptions propagate to the caller.
+     *
+     * @param userIds the ids of users of any kind; an id of another kind than the stored user matches nothing.
+     * @return the last login of every found user that has logged in; users without a login or missing users are absent.
+     * @since %CURRENT_VERSION%
+     */
+    fun findLastLogins(userIds: List<UserId>): Map<UserId, Instant>
+
+    /**
      * Synchronously checks whether a user of any kind, including participants and supervisors, has [userId],
      * without changing stored state. Storage exceptions propagate to the caller.
      *
@@ -69,6 +91,16 @@ interface UserRepository {
      * @since %CURRENT_VERSION%
      */
     fun existsById(userId: UserId): Boolean
+
+    /**
+     * Synchronously records [loggedInAt] as the last login of [userId] protecting the user aggregate and increasing
+     * its version. Does nothing if no user of the kind matching [userId] exists; storage exceptions propagate to the caller.
+     *
+     * @param userId the id of the user who has logged in.
+     * @param loggedInAt the moment of the login.
+     * @since %CURRENT_VERSION%
+     */
+    fun recordLogin(userId: UserId, loggedInAt: Instant)
 }
 
 /**
@@ -101,18 +133,32 @@ interface MultipleRoleUserRepository :
     UserAccessTokenFinder<MultipleRoleUserId, MultipleRoleUser> {
 
     /**
-     * Synchronously and atomically grants [kind] to [userId] if it is not held yet and makes the user a member of
+     * Synchronously and atomically grants [role] to [userId] if it is not held yet and makes the user a member of
      * [communityId] in that role unless already a member. Other roles and memberships are unchanged;
      * storage exceptions propagate to the caller.
      *
      * @param userId the user joining the community.
      * @param communityId the community the user joins.
-     * @param kind the role held in [communityId]; a newly granted role has empty role data.
+     * @param role the role held in [communityId]; a newly granted role has empty role data.
      * @return the stored user after joining.
      * @throws IllegalArgumentException if the user does not exist.
      * @since %CURRENT_VERSION%
      */
-    fun addCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, kind: CommunityInvite.Kind): MultipleRoleUser
+    fun addCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUser
+
+    /**
+     * Synchronously and atomically removes the membership of [userId] in [communityId] in [role], keeping the role, its data
+     * and other memberships even if no membership in the role remains. A missing membership changes nothing; storage
+     * exceptions propagate to the caller.
+     *
+     * @param userId the user leaving the community.
+     * @param communityId the community the user leaves.
+     * @param role the role whose membership in [communityId] is removed.
+     * @return the stored user after the removal.
+     * @throws IllegalArgumentException if the user does not exist.
+     * @since %CURRENT_VERSION%
+     */
+    fun removeCommunityMembership(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUser
 
     /**
      * Finds the user whose e-mail address equals [email] exactly, without normalization.

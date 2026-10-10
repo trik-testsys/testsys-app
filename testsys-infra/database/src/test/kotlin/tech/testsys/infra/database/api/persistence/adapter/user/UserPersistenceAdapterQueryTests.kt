@@ -14,9 +14,11 @@ import tech.testsys.domain.builder.api.developerData
 import tech.testsys.domain.builder.api.judgeData
 import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.builder.api.studentData
+import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.UserFilter
+import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.user.Developer
@@ -27,11 +29,22 @@ import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.UserId
 import tech.testsys.infra.database.DatabaseIntegrationTests
+import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
+import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
+import java.time.Instant
 
+@OptIn(InternalDatabaseApi::class)
 class UserPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
 
     @Autowired
     private lateinit var repository: UserRepository
+
+    @Autowired
+    private lateinit var multipleRoleUsers: MultipleRoleUserRepository
+
+    @Autowired
+    private lateinit var userJpaEntityRepository: UserJpaEntityRepository
 
     @Nested
     inner class FindAvailableToAdministratorByIdTests {
@@ -231,6 +244,93 @@ class UserPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
     }
 
     @Nested
+    inner class CountAvailableToAdministratorTests {
+
+        @Test
+        fun `should count members observers and the administrator of created communities once`() {
+            val administrator = newAdministrator()
+            val first = fixtures.community(owner = administrator)
+            val second = fixtures.community(owner = administrator)
+            fixtures.multipleRoleUser {
+                developerIn(listOf(first, second))
+                studentIn(listOf(first))
+            }
+            fixtures.observer(second)
+            fixtures.multipleRoleUser { developerIn(listOf(fixtures.community(owner = newAdministrator()))) }
+
+            val count = repository.countAvailableToAdministrator(administratorId = administrator.id)
+
+            assertEquals(3L, count)
+        }
+
+        @Test
+        fun `should count users of the filtered community including the administrator`() {
+            val administrator = newAdministrator()
+            val community = fixtures.community(owner = administrator)
+            val other = fixtures.community(owner = administrator)
+            fixtures.multipleRoleUser { developerIn(listOf(community)) }
+            fixtures.multipleRoleUser { developerIn(listOf(other)) }
+
+            val count = repository.countAvailableToAdministrator(
+                administratorId = administrator.id,
+                filter = UserFilter(communityId = community.id),
+            )
+
+            assertEquals(2L, count)
+        }
+
+        @Test
+        fun `should count nobody in a foreign community`() {
+            val administrator = newAdministrator()
+            fixtures.community(owner = administrator)
+            val foreign = fixtures.community(owner = newAdministrator())
+            fixtures.multipleRoleUser { developerIn(listOf(foreign)) }
+
+            val count = repository.countAvailableToAdministrator(
+                administratorId = administrator.id,
+                filter = UserFilter(communityId = foreign.id),
+            )
+
+            assertEquals(0L, count)
+        }
+    }
+
+    @Nested
+    inner class FindLastLoginsTests {
+
+        @Test
+        fun `should return the last logins of users of every kind`() {
+            val user = fixtures.developer()
+            val observer = fixtures.observer()
+            repository.recordLogin(user.id, LOGGED_IN_AT)
+            repository.recordLogin(observer.id, LOGGED_IN_AT.plusSeconds(60))
+
+            val logins = repository.findLastLogins(listOf(user.id, observer.id))
+
+            assertEquals(mapOf(user.id to LOGGED_IN_AT, observer.id to LOGGED_IN_AT.plusSeconds(60)), logins)
+        }
+
+        @Test
+        fun `should omit users without a login and missing users`() {
+            val user = fixtures.developer()
+
+            val logins = repository.findLastLogins(listOf(user.id, MultipleRoleUserId(Long.MAX_VALUE)))
+
+            assertEquals(emptyMap<UserId, Instant>(), logins)
+        }
+
+        @Test
+        fun `should omit a user requested by an id of another kind`() {
+            val user = fixtures.developer()
+            repository.recordLogin(user.id, LOGGED_IN_AT)
+
+            val logins = repository.findLastLogins(listOf(SingleRoleUserId(user.id.value)))
+
+            assertEquals(emptyMap<UserId, Instant>(), logins)
+        }
+    }
+
+    @Nested
     inner class ExistsByIdTests {
 
         private val newUserOf: Map<String, () -> UserId> = mapOf(
@@ -278,6 +378,79 @@ class UserPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
         }
     }
 
+    @Nested
+    inner class RecordLoginTests {
+
+        private val newUserOf: Map<String, () -> UserId> = mapOf(
+            "multipleRoleUser" to { fixtures.developer().id },
+            "observer" to { fixtures.observer().id },
+            "participant" to { fixtures.participant().id },
+            "supervisor" to { fixtures.supervisor().id },
+        )
+
+        @ParameterizedTest
+        @ValueSource(strings = ["multipleRoleUser", "observer", "participant", "supervisor"])
+        fun `should record the moment of the last login of a user of every kind`(kind: String) {
+            val userId = newUserOf.getValue(kind)()
+
+            repository.recordLogin(userId, LOGGED_IN_AT)
+
+            assertEquals(LOGGED_IN_AT, rowOf(userId).lastLoginAt)
+        }
+
+        @Test
+        fun `should replace the previous last login`() {
+            val userId = fixtures.developer().id
+            repository.recordLogin(userId, LOGGED_IN_AT)
+
+            repository.recordLogin(userId, LOGGED_IN_AT.plusSeconds(60))
+
+            assertEquals(LOGGED_IN_AT.plusSeconds(60), rowOf(userId).lastLoginAt)
+        }
+
+        @Test
+        fun `should increment the user version when recording a login`() {
+            val userId = fixtures.developer().id
+            val beforeVersion = rowOf(userId).version
+
+            repository.recordLogin(userId, LOGGED_IN_AT)
+
+            val after = rowOf(userId)
+            assertEquals(beforeVersion + 1, after.version)
+        }
+
+        @Test
+        fun `should keep the last login when the user is updated`() {
+            val user = fixtures.developer()
+            repository.recordLogin(user.id, LOGGED_IN_AT)
+
+            val refreshed = requireNotNull(multipleRoleUsers.findById(user.id))
+            multipleRoleUsers.update(refreshed.withData { name = "Renamed" })
+
+            assertEquals(LOGGED_IN_AT, rowOf(user.id).lastLoginAt)
+        }
+
+        @Test
+        fun `should not record a login of a nonexistent user`() {
+            val user = fixtures.developer()
+
+            repository.recordLogin(MultipleRoleUserId(Long.MAX_VALUE), LOGGED_IN_AT)
+
+            assertNull(rowOf(user.id).lastLoginAt)
+        }
+
+        @Test
+        fun `should not record a login of a multiple role user requested by a single role id`() {
+            val user = fixtures.developer()
+
+            repository.recordLogin(SingleRoleUserId(user.id.value), LOGGED_IN_AT)
+
+            assertNull(rowOf(user.id).lastLoginAt)
+        }
+
+        private fun rowOf(userId: UserId): UserJpaEntity = userJpaEntityRepository.findById(userId.value).orElseThrow()
+    }
+
     private fun newAdministrator(): MultipleRoleUser = fixtures.multipleRoleUser { administratorIn(emptyList()) }
 
     private fun MultipleRoleUserDataBuilder.developerIn(communities: List<Community>) = roles {
@@ -310,5 +483,10 @@ class UserPersistenceAdapterQueryTests : DatabaseIntegrationTests() {
 
     private fun MultipleRoleUserDataBuilder.administratorIn(communities: List<Community>) = roles {
         administrator { memberOf(communities.map { community -> community.id.value }) }
+    }
+
+    private companion object {
+
+        val LOGGED_IN_AT: Instant = Instant.parse("2026-01-01T10:00:00.123456Z")
     }
 }

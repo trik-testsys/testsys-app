@@ -7,6 +7,15 @@ role contracts are in [roles/](roles/). Read only the section for the current cl
 when those tools are available. If the current client has no section, follow [Adding a client](#adding-a-client)
 before running the workflow. Recheck the actual session schemas after a client update or context loss.
 
+## Web browsing
+
+These rules apply to all clients and roles when viewing web pages:
+
+- Prefer text representations and the DOM.
+- Extract only the fragments needed for the task. Do not return the full page text or DOM.
+- Use screenshots when evaluating appearance or when the text representation is insufficient.
+- Stop browsing once the answer has been obtained.
+
 ## Claude Code
 
 | Action | Tool and inputs | Limits |

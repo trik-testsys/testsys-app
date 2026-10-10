@@ -5,8 +5,10 @@ import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.VerdictFilter
+import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SubmissionId
+import tech.testsys.domain.model.task.TestId
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.user.JudgeOperations
 import tech.testsys.web.app.service.CurrentUser
@@ -27,9 +29,9 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
      * @since %CURRENT_VERSION%
      */
     @Transactional(readOnly = true)
-    fun viewResults(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<VerdictVo> =
+    fun viewResults(pagination: Pagination, filter: VerdictFilter = VerdictFilter()): Page<JudgeResultVo> =
         operations.viewResults(currentUser.multipleRoleUser(), pagination, filter)
-            .getOrThrow().map { verdict -> verdict.toVo() }
+            .getOrThrow().map { result -> result.toVo() }
 
     /**
      * Runs [JudgeOperations.changeVerdict].
@@ -38,4 +40,40 @@ class JudgeService(private val operations: JudgeOperations, private val currentU
      */
     fun changeVerdict(submissionId: SubmissionId, score: Score, reason: String): JudgmentOrderVo =
         operations.changeVerdict(currentUser.multipleRoleUser(), submissionId, score, reason).getOrThrow().toVo()
+
+    /**
+     * Runs [JudgeOperations.viewSolution].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun viewSolution(submissionId: SubmissionId): SubmissionDetailsVo =
+        operations.viewSolution(currentUser.multipleRoleUser(), submissionId).getOrThrow().toVo()
+
+    /**
+     * Runs [JudgeOperations.downloadSolution].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun downloadSolution(submissionId: SubmissionId): FileData =
+        operations.downloadSolution(currentUser.multipleRoleUser(), submissionId).getOrThrow()
+
+    /**
+     * Runs [JudgeOperations.downloadLogs].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun downloadLogs(submissionId: SubmissionId, testId: TestId): FileData =
+        operations.downloadLogs(currentUser.multipleRoleUser(), submissionId, testId).getOrThrow()
+
+    /**
+     * Runs [JudgeOperations.downloadRecording].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun downloadRecording(submissionId: SubmissionId, testId: TestId): FileData =
+        operations.downloadRecording(currentUser.multipleRoleUser(), submissionId, testId).getOrThrow()
 }

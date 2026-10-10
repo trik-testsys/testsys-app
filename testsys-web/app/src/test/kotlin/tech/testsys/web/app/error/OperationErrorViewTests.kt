@@ -10,6 +10,7 @@ import com.vaadin.flow.router.HasUrlParameter
 import com.vaadin.flow.router.Location
 import com.vaadin.flow.router.NavigationTrigger
 import com.vaadin.flow.router.RouteConfiguration
+import com.vaadin.flow.server.auth.AnonymousAllowed
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -67,11 +68,13 @@ class OperationErrorViewTests : MockSpringVaadinTests() {
     }
 
     /** Fails with the operation error named by its parameter. */
+    @AnonymousAllowed
     class FailingView : Div(), HasUrlParameter<String> {
         override fun setParameter(event: BeforeEvent, kind: String): Unit = throw operationFailure(ERRORS.getValue(kind))
     }
 
     /** Fails while Spring creates it, so the failure reaches the router wrapped into a bean creation exception. */
+    @AnonymousAllowed
     class FailingConstructorView : Div() {
         init {
             throw operationFailure(TaskNotExistsError(TaskId(1)))

@@ -4,10 +4,15 @@ package tech.testsys.web.components.data
 
 import com.vaadin.flow.component.HasComponents
 import com.vaadin.flow.component.Text
+import com.vaadin.flow.component.html.Span
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.IconName
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.setAttribute
+import tech.testsys.web.components.core.setObscured
 import tech.testsys.web.components.feedback.EmptyContent
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.GRID_COLUMNS
@@ -37,11 +42,13 @@ internal class TableColumn<T>(
     val fill: (T, HasComponents) -> Unit,
 )
 
-/** Columns and settings collected by a [TableScope]. */
+/** Columns and settings collected by a [TableScope]; [isRowNavigation] marks a [rowClick] that opens another page. */
 internal class TableSpec<T>(
     val columns: List<TableColumn<T>>,
     val empty: EmptyContent,
     val layout: TableLayout,
+    val isRowNavigation: Boolean = false,
+    val isRowClickable: (T) -> Boolean = { true },
     val rowClick: ((T) -> Unit)?,
 )
 
@@ -61,6 +68,8 @@ class TableScope<T> internal constructor(
     private val columns = mutableListOf<TableColumn<T>>()
     private var emptyContent: EmptyContent = EmptyContent(texts.table.empty)
     private var rowClick: ((T) -> Unit)? = null
+    private var isRowNavigation: Boolean = false
+    private var isRowClickable: (T) -> Boolean = { true }
 
     /** Whether [empty] set the empty state, so that a table which sets its own can tell. */
     internal var hasOwnEmpty: Boolean = false
@@ -82,13 +91,28 @@ class TableScope<T> internal constructor(
     }
 
     /**
-     * Adds a column of identifiers and codes in a monospace font. [sortKey] and [size] are as in [textColumn].
+     * Adds a column of identifiers and codes in a monospace font. [sortKey] and [size] are as in [textColumn]. An
+     * [isObscured] column blurs each value until it is hovered or focused, like an obscured field.
      *
      * @throws IllegalStateException if the menu or a remaining ordinary column is already added.
      * @since %CURRENT_VERSION%
      */
-    fun codeColumn(title: String, sortKey: String? = null, size: Int? = null, value: (T) -> String?) {
-        add(title, sortKey, size, CellKind.Code) { row -> value(row) ?: EMPTY_CELL }
+    fun codeColumn(title: String, sortKey: String? = null, size: Int? = null, isObscured: Boolean = false, value: (T) -> String?) {
+        if (!isObscured) {
+            add(title, sortKey, size, CellKind.Code) { row -> value(row) ?: EMPTY_CELL }
+            return
+        }
+
+        checkBeforeMenuColumn()
+        columns += TableColumn(title, sortKey, size, CellKind.Code) { row, cell ->
+            cell.add(
+                Span(value(row) ?: EMPTY_CELL).apply {
+                    addClassName(CssClass.ObscuredValue)
+                    element.setObscured(true)
+                    element.setAttribute(HtmlAttribute.TabIndex, "0")
+                },
+            )
+        }
     }
 
     /**
@@ -175,12 +199,17 @@ class TableScope<T> internal constructor(
     }
 
     /**
-     * Runs [listener] with the row a user clicks, except clicks on its checkbox and actions.
+     * Runs [listener] for rows accepted by [isClickable], except clicks on their controls.
+     * [isNavigation] marks a click opening another page and styles its first text column as a link.
      *
+     * @param isClickable whether the row accepts clicks and receives interactive styling.
+     * @param listener the action performed for an accepted row click.
      * @since %CURRENT_VERSION%
      */
-    fun onRowClick(listener: (T) -> Unit) {
+    fun onRowClick(isNavigation: Boolean = false, isClickable: (T) -> Boolean = { true }, listener: (T) -> Unit) {
+        isRowClickable = isClickable
         rowClick = listener
+        isRowNavigation = isNavigation
     }
 
     internal fun spec(): TableSpec<T> {
@@ -193,7 +222,14 @@ class TableScope<T> internal constructor(
             menuSize = menuSize,
         )
 
-        return TableSpec(columns.toList(), emptyContent, layout, rowClick)
+        return TableSpec(
+            columns = columns.toList(),
+            empty = emptyContent,
+            layout = layout,
+            isRowNavigation = isRowNavigation,
+            isRowClickable = isRowClickable,
+            rowClick = rowClick,
+        )
     }
 
     private fun add(title: String, sortKey: String?, size: Int?, kind: CellKind, text: (T) -> String) {

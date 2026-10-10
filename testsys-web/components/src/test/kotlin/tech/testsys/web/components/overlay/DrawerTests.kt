@@ -14,9 +14,11 @@ import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.buildTestContent
 import tech.testsys.web.components.display.text
+import tech.testsys.web.components.findAll
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.openDialogs
+import tech.testsys.web.components.testTexts
 
 internal class DrawerTests : MockVaadinTests() {
     private lateinit var field: ValueInput<String>
@@ -24,6 +26,29 @@ internal class DrawerTests : MockVaadinTests() {
     @BeforeEach
     fun buildTextsOwner() {
         buildTestContent { text("Texts owner") }
+    }
+
+    @Test
+    fun `should render static tables including an empty table with shared text and no pagination`() {
+        val handle = drawer("Testing") {
+            table("Diagnostics", key = { value: Int -> value }, rows = listOf(1, 2)) {
+                textColumn("Name") { value -> "Polygon $value" }
+            }
+            table("Submissions", key = { value: Int -> value }, rows = emptyList()) {
+                textColumn("Status") { "Pending" }
+            }
+        }
+
+        handle.open()
+
+        val dialog = openDialogs().single()
+        assertEquals(2, dialog.findAll("ts-drawer-table").size)
+        assertEquals(2, dialog.findAll("ts-table-scroll").size)
+        assertTrue("Polygon 1" in dialog.element.textRecursively)
+        assertTrue("Polygon 2" in dialog.element.textRecursively)
+        assertTrue(testTexts.table.empty in dialog.element.textRecursively)
+        assertTrue(dialog.findAll("ts-table-pager").isEmpty())
+        assertEquals("Diagnostics", dialog.findAll("ts-block__title").first().element.text)
     }
 
     @Test

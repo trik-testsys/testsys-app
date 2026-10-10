@@ -1,11 +1,13 @@
 package tech.testsys.infra.database.internal.jpa.entity.user
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
 import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
+import java.time.Instant
 
 /**
  * Whether a [UserJpaEntity] holds many roles across communities ([MULTIPLE_ROLE]) or one fixed role ([SINGLE_ROLE]).
@@ -38,6 +40,8 @@ enum class HashAlgorithmJpaEnum {
  * @property accessTokenHashAlgorithm the algorithm used to produce the stored access-code representation.
  * @property email the e-mail of the user, or `null` for single-role users.
  * @property type whether the user holds multiple roles or a single one.
+ * @property lastLoginAt the moment of the last login, or `null` before the first one; only a bulk update writes it, so
+ * saving or updating the entity never overwrites it.
  * @since %CURRENT_VERSION%
  */
 @Entity
@@ -54,4 +58,6 @@ class UserJpaEntity(
     @Enumerated(EnumType.STRING)
     val type: UserTypeJpaEnum,
     id: Long? = null,
+    @field:Column(insertable = false, updatable = false)
+    val lastLoginAt: Instant? = null,
 ) : SnowflakeJpaEntity(id)

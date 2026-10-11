@@ -15,6 +15,10 @@ import org.springframework.dao.DataAccessResourceFailureException
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.persistence.FileStorageCleanupRepository
 import tech.testsys.infra.database.internal.persistence.FileSystemBlobInventory
+import tech.testsys.infra.settings.api.RuntimeSettings
+import tech.testsys.infra.settings.api.SettingKey
+import tech.testsys.infra.settings.api.SettingsSnapshot
+import tech.testsys.infra.settings.api.SettingsValues
 import java.nio.file.FileSystemException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -40,6 +44,32 @@ class FileStorageCleanupTests {
 
         every { repository.deleteFileData(2) } returns 0
         every { repository.findStoredKeys(any()) } returns emptySet()
+    }
+
+    @Test
+    fun `should capture cleanup settings once for all batches of one explicit pass`() {
+        val snapshot = SettingsSnapshot(
+            revision = 1,
+            values = SettingsValues(mapOf(SettingKey.CleanupMinimumAge to "PT24H", SettingKey.CleanupBatchSize to "3")),
+            activeMaxMessageBytes = 100,
+        )
+        val runtime = mockk<RuntimeSettings> { every { snapshot() } returns snapshot }
+        every { repository.deleteFileData(3) } returnsMany listOf(3, 0)
+        val paths = FileStoragePaths(directory, directory, directory, directory, directory, directory)
+        val dynamic = FileStorageCleanup(
+            repository = repository,
+            inventory = FileSystemBlobInventory(),
+            paths = paths,
+            settings = FileStorageCleanupSettings(Duration.ofDays(2), 2),
+            clock = Clock.fixed(now, ZoneOffset.UTC),
+            runtime = runtime,
+        )
+
+        dynamic.run()
+
+        verify(exactly = 1) { runtime.snapshot() }
+        verify(exactly = 2) { repository.deleteFileData(3) }
+        verify(exactly = 0) { repository.deleteFileData(2) }
     }
 
     @Test

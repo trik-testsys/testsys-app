@@ -35,8 +35,9 @@ import tech.testsys.domain.contract.persistence.repository.TaskValidationRequest
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
-import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.infra.grpc.api.BalancingGrader
+import tech.testsys.infra.settings.api.RuntimeSettings
+import tech.testsys.infra.settings.api.SettingKey
 import tech.testsys.operation.TaskValidationDispatcher
 import tech.testsys.operation.TaskValidationOperations
 import tech.testsys.operation.config.ClassInviteConfig
@@ -90,39 +91,36 @@ class OperationsConfiguration {
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun communityConfig(environment: Environment): CommunityConfig {
-        val id = environment.getRequiredProperty("$CONFIG_PREFIX.community.public-community-id", Long::class.java)
+    fun communityConfig(runtime: RuntimeSettings): CommunityConfig {
         return object : CommunityConfig {
-            override val publicCommunityId = CommunityId(id)
+            override val publicCommunityId = runtime.publicCommunityId
         }
     }
 
     /**
-     * Confirmation code lifetime and attempts from the required properties under `testsys.operation.email-confirmation`.
+     * Confirmation code lifetime and attempts from the runtime snapshot captured for the current transaction.
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun emailConfirmationConfig(environment: Environment): EmailConfirmationConfig {
-        val lifetime = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.email-confirmation.confirmation-code-lifetime"))
-        val attempts = environment.getRequiredProperty("$CONFIG_PREFIX.email-confirmation.max-confirmation-attempts", Int::class.java)
+    fun emailConfirmationConfig(runtime: RuntimeSettings): EmailConfirmationConfig {
+        val snapshots = OperationSettingsSnapshot(runtime)
         return object : EmailConfirmationConfig {
-            override val confirmationCodeLifetime = lifetime
-            override val maxConfirmationAttempts = attempts
+            override val confirmationCodeLifetime get() = snapshots.current().values.duration(SettingKey.ConfirmationCodeLifetime)
+            override val maxConfirmationAttempts get() = snapshots.current().values.int(SettingKey.MaxConfirmationAttempts)
         }
     }
 
     /**
-     * Community invite validity and refresh period from the required properties under `testsys.operation.community-invite`.
+     * Community invite validity from the runtime snapshot and a static refresh period from [environment].
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun communityInviteConfig(environment: Environment): CommunityInviteConfig {
-        val ttl = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.community-invite.ttl"))
+    fun communityInviteConfig(environment: Environment, runtime: RuntimeSettings): CommunityInviteConfig {
         val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.community-invite.refresh-period"))
         return object : CommunityInviteConfig {
-            override val ttl = ttl
+            override val ttl get() = runtime.snapshot().values.duration(SettingKey.CommunityInviteTtl)
             override val refreshPeriod = refreshPeriod
         }
     }
@@ -428,29 +426,27 @@ class OperationsConfiguration {
     )
 
     /**
-     * Participant limit of competitions from the required property `testsys.operation.competition.max-participants`.
+     * Participant limit of competitions from the current runtime snapshot.
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun competitionConfig(environment: Environment): CompetitionConfig {
-        val maxParticipants = environment.getRequiredProperty("$CONFIG_PREFIX.competition.max-participants", Int::class.java)
+    fun competitionConfig(runtime: RuntimeSettings): CompetitionConfig {
         return object : CompetitionConfig {
-            override val maxParticipants = maxParticipants
+            override val maxParticipants get() = runtime.snapshot().values.int(SettingKey.MaxParticipants)
         }
     }
 
     /**
-     * Class invite validity and refresh period from the required properties under `testsys.operation.class-invite`.
+     * Class invite validity from the runtime snapshot and a static refresh period from [environment].
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun classInviteConfig(environment: Environment): ClassInviteConfig {
-        val ttl = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.class-invite.ttl"))
+    fun classInviteConfig(environment: Environment, runtime: RuntimeSettings): ClassInviteConfig {
         val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.class-invite.refresh-period"))
         return object : ClassInviteConfig {
-            override val ttl = ttl
+            override val ttl get() = runtime.snapshot().values.duration(SettingKey.ClassInviteTtl)
             override val refreshPeriod = refreshPeriod
         }
     }

@@ -5,7 +5,11 @@ package tech.testsys.web.components.layout
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Footer
+import com.vaadin.flow.component.html.H3
+import com.vaadin.flow.component.html.Hr
+import tech.testsys.web.components.ElementHandle
 import tech.testsys.web.components.TestSysDsl
+import tech.testsys.web.components.TextHandle
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
@@ -15,7 +19,7 @@ import tech.testsys.web.components.texts.UiTexts
 private const val TABLE_OWNER = "a table"
 
 /**
- * Scope of a block: the rows of its body, the head actions and the footer.
+ * Scope of a block: body rows, section titles and separators, head actions and the footer.
  *
  * @since %CURRENT_VERSION%
  */
@@ -64,6 +68,32 @@ class BlockScope internal constructor(
         val row = Div().apply { addClassName(CssClass.BlockRow) }
         BlockRowScope(row, columns, texts, editState).content()
         if (row.children.findAny().isPresent) body.add(row)
+    }
+
+    /**
+     * Adds a full-width section heading with [title] to the body, independently of its edit mode.
+     *
+     * @throws IllegalStateException if the block holds a table, an empty state or a load.
+     * @since %CURRENT_VERSION%
+     */
+    fun sectionTitle(title: String): TextHandle {
+        check(wholeBody == null) { "Block holds $wholeBody; it takes the whole body" }
+        val heading = H3(title).apply { addClassName(CssClass.BlockSectionTitle) }
+        body.add(heading)
+        return TextHandle(heading)
+    }
+
+    /**
+     * Adds a full-width neutral horizontal separator to the body, independently of its edit mode.
+     *
+     * @throws IllegalStateException if the block holds a table, an empty state or a load.
+     * @since %CURRENT_VERSION%
+     */
+    fun separator(): ElementHandle {
+        check(wholeBody == null) { "Block holds $wholeBody; it takes the whole body" }
+        val line = Hr().apply { addClassName(CssClass.BlockSeparator) }
+        body.add(line)
+        return ElementHandle(line)
     }
 
     /**

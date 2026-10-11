@@ -19,10 +19,15 @@ import tech.testsys.domain.contract.StoredBlobRef
 import tech.testsys.domain.model.task.*
 import tech.testsys.infra.diagnostics.internal.DiagnosticsProperties
 import tech.testsys.infra.diagnostics.internal.InternalDiagnosticsApi
+import tech.testsys.infra.settings.api.RuntimeSettings
+import tech.testsys.infra.settings.api.SettingKey
+import tech.testsys.infra.settings.api.SettingsSnapshot
+import tech.testsys.infra.settings.api.SettingsValues
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 
 @OptIn(InternalDiagnosticsApi::class)
@@ -34,6 +39,40 @@ class PolygonDiagnosticsAdapterTests {
         DiagnosticsProperties(maxTimeLimitMillis = 600_000, scorePrefix = "Набрано баллов:"),
         fileContentReader,
     )
+
+    @Test
+    fun `should retain one diagnostic settings pair when settings change during file read`() {
+        val first = SettingsSnapshot(
+            revision = 0,
+            values = SettingsValues(mapOf(SettingKey.MaxTimeLimitMillis to "100", SettingKey.ScorePrefix to "old:")),
+            activeMaxMessageBytes = 100,
+        )
+        val second = SettingsSnapshot(
+            revision = 1,
+            values = SettingsValues(mapOf(SettingKey.MaxTimeLimitMillis to "0", SettingKey.ScorePrefix to "new:")),
+            activeMaxMessageBytes = 100,
+        )
+        val current = AtomicReference(first)
+        val runtime = mockk<RuntimeSettings> { every { snapshot() } answers { current.get() } }
+        val text = "<root><world/><constraints><timelimit value='1'/><init><message text='old: 42'/></init></constraints></root>"
+        every { fileContentReader.read(any()) } answers {
+            current.set(second)
+            text.toByteArray()
+        }
+        val dynamic = PolygonDiagnosticsAdapter(DiagnosticsProperties(0, "new:"), fileContentReader, runtime)
+
+        val initial = dynamic.diagnose(polygon(""))
+        val next = dynamic.diagnose(polygon(""))
+
+        assertFalse(initial.reports.any { report -> report.data is DiagnosticData.MissingScoreOutput })
+        assertFalse(initial.reports.any { report -> report.data is DiagnosticData.ExcessiveTimeLimit })
+        assertTrue(next.reports.any { report -> report.data is DiagnosticData.MissingScoreOutput })
+        assertEquals(
+            listOf(DiagnosticData.ExcessiveTimeLimit(value = 1, maximum = 0)),
+            next.reports.map { report -> report.data }.filterIsInstance<DiagnosticData.ExcessiveTimeLimit>(),
+        )
+        verify(exactly = 2) { runtime.snapshot() }
+    }
 
     @Test
     fun `should read stored polygon contents through the reader`() {

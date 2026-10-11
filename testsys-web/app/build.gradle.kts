@@ -19,6 +19,7 @@ dependencies {
     implementation(platform(libs.spring.boot.bom))
     implementation(platform(libs.vaadin.bom))
     implementation(project(":testsys-domain"))
+    implementation(project(":testsys-infra:settings"))
     implementation(project(":testsys-operation"))
     implementation(project(":testsys-infra:database"))
     implementation(project(":testsys-infra:diagnostics"))

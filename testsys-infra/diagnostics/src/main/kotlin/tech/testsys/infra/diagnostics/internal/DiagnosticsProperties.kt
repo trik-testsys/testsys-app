@@ -1,8 +1,5 @@
 package tech.testsys.infra.diagnostics.internal
 
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
-
 /**
  * Application configuration of polygon diagnostics.
  *
@@ -11,13 +8,8 @@ import org.springframework.stereotype.Component
  * @since %CURRENT_VERSION%
  */
 @InternalDiagnosticsApi
-@Component
 class DiagnosticsProperties(
-    @Suppress("UnnecessaryAnnotationUseSiteTarget")
-    @param:Value("\${testsys.diagnostics.max-time-limit-millis}")
     val maxTimeLimitMillis: Long,
-    @Suppress("UnnecessaryAnnotationUseSiteTarget")
-    @param:Value("\${testsys.diagnostics.score-prefix}")
     val scorePrefix: String,
 ) {
     init {

@@ -218,7 +218,9 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 Образец — [CompetitionConfig.kt](src/main/kotlin/tech/testsys/operation/config/CompetitionConfig.kt).
 
 Реализации `CommunityConfig`, `EmailConfirmationConfig`, `CommunityInviteConfig`, `CompetitionConfig`
-и `ClassInviteConfig` создаёт `testsys-web:app` из обязательных свойств с этими ключами, см. раздел
+и `ClassInviteConfig` предоставляет `testsys-web:app`. Динамические значения берутся из общего снимка;
+порядок источников описан в [settings/README.md](../testsys-infra/settings/README.md#значения-и-источники).
+Статические параметры разрешаются при запуске, см. раздел
 «Запуск и проверка» в [app/README.md](../testsys-web/app/README.md#запуск-и-проверка).
 
 ## Ошибки
@@ -521,3 +523,11 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 - `viewTrikStudioVersions` помечена кодификатором `createContest`. Она возвращает версии TRIK Studio,
   зарегистрированные в Системе, через `ContestRepository.findTrikStudioVersions`; из них выбираются версия Тура
   и поддерживаемые версии Задачи.
+
+## Динамическая конфигурация
+
+Приложение реализует существующие конфигурации через общий снимок
+[служебных настроек](../testsys-infra/settings/README.md). Оба параметра подтверждения почты динамические;
+приложение закрепляет их согласованную пару на текущую транзакцию. Повтор получает новый снимок,
+вложенная независимая транзакция — собственный. Существующие запросы и приглашения не переписываются
+при сохранении настроек. Новые значения получают их создание, перезапись и продление.

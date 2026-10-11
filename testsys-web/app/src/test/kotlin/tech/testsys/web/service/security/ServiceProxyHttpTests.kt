@@ -20,7 +20,12 @@ import java.net.http.HttpResponse
 @SpringBootTest(
     classes = [ServiceWebConfiguration::class, ServiceTestConfiguration::class, ProxyProbeConfiguration::class],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = ["vaadin.productionMode=true", "server.address=127.0.0.1", "server.forward-headers-strategy=none"],
+    properties = [
+        "vaadin.productionMode=true",
+        "server.address=127.0.0.1",
+        "server.forward-headers-strategy=none",
+        "testsys.service.trusted-proxies=",
+    ],
 )
 class ServiceProxyHttpTests : ProxyHttpFixture() {
     @Test

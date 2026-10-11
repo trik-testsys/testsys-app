@@ -1,5 +1,6 @@
 package tech.testsys.operation.config
 
+import tech.testsys.operation.annotation.ConfigProperty
 import tech.testsys.operation.annotation.OperationConfig
 import java.time.Duration
 
@@ -13,7 +14,9 @@ import java.time.Duration
 @OperationConfig("email-confirmation")
 interface EmailConfirmationConfig {
 
+    @ConfigProperty(isDynamic = true)
     val confirmationCodeLifetime: Duration
 
+    @ConfigProperty(isDynamic = true)
     val maxConfirmationAttempts: Int
 }

@@ -190,7 +190,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
   Правила компоновки — в [ui-design.md](../../docs/project/ui-design.md), раздел «Компоновка страницы».
 - `highlightBlock` — не больше одного на ряд страницы.
 - Блоки одного ряда всегда одной высоты, промежутки фиксированы.
-- Строка блока без элементов не выводится; блок без непустых строк выводится без тела.
+- Строка блока без элементов не выводится; блок без содержимого выводится без тела.
 - Скрытый элемент строки блока (`isVisible = false`) освобождает свои колонки: следующие элементы сдвигаются влево.
 - Размеры передаются именованным аргументом (`block(size = 16)`, `text(size = 8)`, `labelSize = 4`): Detekt
   `MagicNumber` не проверяет именованные аргументы.
@@ -208,7 +208,7 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `PageHeadScope` | `crumb`, `badge`, `meta`, `actions { }`, `tabs { }` |
 | `PageTabsScope` | `tab` (вкладка-маршрут) |
 | `PageRowScope` | `block`, `highlightBlock`, `space` |
-| `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
+| `BlockScope` | `row` (строка тела), `sectionTitle(title)`, `separator()`, `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
 | `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `segmentedControl`, `multiSelect`), `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
 | `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
@@ -217,8 +217,13 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 | `DialogScope` | `row` (строка на 24 колонках), `section(title)`, `footer { dialog -> }` |
 | `DialogSectionScope` | `row` (строка на собственной сетке из 24 колонок) |
 
-Содержимое тела блока кладётся только в строки, в таблицу или в пустое состояние: элемент прямо в `BlockScope`
-не компилируется. `ContentScope` — поток без размеров: шапка, подвал, группы `horizontal`/`vertical` строки блока, значение `field`,
+Содержимое тела блока кладётся в строки либо занимает всё тело через `table`, `emptyState` или `load`.
+`sectionTitle(title)` добавляет заметный заголовок группы на всю ширину тела и возвращает `TextHandle`.
+`separator()` добавляет тонкую нейтральную горизонтальную линию на всю ширину и возвращает `ElementHandle`.
+Оба элемента сохраняются при переключении режима редактирования. Они могут чередоваться со строками,
+в том числе в загруженном содержимом; сочетание с элементом, занимающим всё тело, в любом порядке
+вызывает `IllegalStateException`. Остальные элементы прямо в `BlockScope` не компилируются.
+`ContentScope` — поток без размеров: шапка, подвал, группы `horizontal`/`vertical` строки блока, значение `field`,
 ячейки `column` таблицы, подвал диалога, кнопки заголовка страницы и пустого состояния.
 
 Функции содержимого — расширения скоупов в пакетах `actions`, `forms`, `display`, `feedback`, `data`, `navigation`,

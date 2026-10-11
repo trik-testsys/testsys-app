@@ -317,6 +317,12 @@ internal class FakeNode : NodeClient {
     val isClosed = AtomicBoolean(false)
     val cancellations = AtomicReference(0)
     val polls = AtomicReference(0)
+    val statusTimeouts = mutableListOf<Duration>()
+
+    override fun poll(timeout: Duration, onStatus: (GradingNodeStatus) -> Unit) {
+        statusTimeouts.add(timeout)
+        poll(onStatus)
+    }
 
     override fun poll(onStatus: (GradingNodeStatus) -> Unit) {
         polls.updateAndGet { value -> value + 1 }

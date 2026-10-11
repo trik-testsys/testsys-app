@@ -36,6 +36,8 @@ internal enum class CssClass(internal val value: String) {
     BlockHead("ts-block__head"),
     BlockHeadTabs("ts-block__head--tabs"),
     BlockRow("ts-block__row"),
+    BlockSectionTitle("ts-block__section-title"),
+    BlockSeparator("ts-block__separator"),
     BlockSub("ts-block__sub"),
     BlockTitle("ts-block__title"),
     DrawerTable("ts-drawer-table"),

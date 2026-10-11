@@ -1,6 +1,8 @@
 package tech.testsys.infra.grpc.internal
 
 import tech.testsys.domain.contract.GradingNodeAddress
+import tech.testsys.infra.settings.api.SettingKey
+import tech.testsys.infra.settings.api.SettingsSnapshot
 import java.time.Duration
 
 @InternalGrpcApi
@@ -22,3 +24,14 @@ internal data class GradingSettings(
         require(maxMessageBytes > 0) { "Grading maxMessageBytes must be positive: $maxMessageBytes" }
     }
 }
+
+@InternalGrpcApi
+internal fun GradingSettings.resolved(snapshot: SettingsSnapshot): GradingSettings = copy(
+    maxAttempts = snapshot.values.int(SettingKey.GradingMaxAttempts),
+    totalTimeout = snapshot.values.duration(SettingKey.TotalTimeout),
+    rpcTimeout = snapshot.values.duration(SettingKey.RpcTimeout),
+    statusTimeout = snapshot.values.duration(SettingKey.StatusTimeout),
+    pollInterval = snapshot.values.duration(SettingKey.PollInterval),
+    maxMessageBytes = snapshot.activeMaxMessageBytes,
+    shouldRecordVideo = snapshot.values.boolean(SettingKey.ShouldRecordVideo),
+)

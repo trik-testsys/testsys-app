@@ -1,10 +1,12 @@
 package tech.testsys.web.service.view
 
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.spring.security.AuthenticationContext
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.web.components.TestSysView
+import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.texts.UiTexts
@@ -24,6 +26,7 @@ class ServiceHomeView(texts: UiTexts, authentication: AuthenticationContext) : T
             row {
                 block {
                     row { text("Вход выполнен") }
+                    actions { action("Настройки") { onClick { UI.getCurrent().navigate(ServiceSettingsView::class.java) } } }
                     footer { mainAction("Выйти") { onClick { authentication.logout() } } }
                 }
             }

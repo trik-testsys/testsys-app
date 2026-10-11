@@ -3,6 +3,7 @@ package tech.testsys.infra.database.api
 import org.hibernate.boot.model.naming.PhysicalNamingStrategy
 import org.springframework.beans.factory.config.BeanDefinition
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.convert.DurationStyle
 import org.springframework.boot.persistence.autoconfigure.EntityScan
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
@@ -10,6 +11,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.PropertySource
 import org.springframework.context.annotation.Role
 import org.springframework.core.Ordered
+import org.springframework.core.env.Environment
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor
@@ -25,6 +27,8 @@ import tech.testsys.infra.database.internal.jpa.TestsysPhysicalNamingStrategy
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import tech.testsys.infra.database.internal.persistence.FileStorageCleanupRepository
 import tech.testsys.infra.database.internal.persistence.FileSystemBlobInventory
+import tech.testsys.infra.settings.api.RuntimeSettings
+import tech.testsys.infra.settings.api.SettingKey
 import java.time.Clock
 
 /**
@@ -38,8 +42,24 @@ import java.time.Clock
 @EnableJpaRepositories(basePackages = ["tech.testsys.infra.database.internal.jpa.repository"])
 @ComponentScan(basePackages = ["tech.testsys.infra.database.api"])
 @PropertySource("classpath:hibernate-defaults.properties", "classpath:file-storage-defaults.properties")
-@EnableConfigurationProperties(FileStoragePaths::class, FileStorageCleanupSettings::class)
+@EnableConfigurationProperties(FileStoragePaths::class)
 class DatabaseConfiguration {
+
+    /**
+     * Resolves cleanup defaults independently, or uses the restored shared values in the full application.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun fileStorageCleanupSettings(environment: Environment, runtime: RuntimeSettings? = null): FileStorageCleanupSettings {
+        val values = runtime?.snapshot()?.values
+        return FileStorageCleanupSettings(
+            minimumAge = values?.duration(SettingKey.CleanupMinimumAge)
+                ?: DurationStyle.detectAndParse(environment.getRequiredProperty("testsys.file-storage.cleanup.minimum-age")),
+            batchSize = values?.int(SettingKey.CleanupBatchSize)
+                ?: environment.getRequiredProperty("testsys.file-storage.cleanup.batch-size", Int::class.java),
+        )
+    }
 
     /**
      * Dedicated UTC clock for file cleanup, selected explicitly so application clocks remain unambiguous.

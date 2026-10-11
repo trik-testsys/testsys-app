@@ -202,7 +202,9 @@ class EditingTests : MockVaadinTests() {
                         },
                         onCancel = { cancels++ },
                     )
+                    sectionTitle("Учётная запись")
                     row { textInput("Логин", labelSize = 4, size = 20) }
+                    separator()
                     row { textInput("Создан", labelSize = 4, size = 20) { isEditable = false } }
                 }
             }

@@ -193,6 +193,28 @@ class LoadTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should build section titles and separators in loaded grid content`() {
+            val loaded = buildTestPage {
+                row {
+                    block {
+                        load({ "Профиль" }) { title ->
+                            sectionTitle(title)
+                            row { text("Значение") }
+                            separator()
+                        }
+                    }
+                }
+            }
+
+            queue.runAll()
+
+            assertEquals("Профиль", loaded.find("ts-block__section-title").element.text)
+            assertEquals("hr", loaded.find("ts-block__separator").element.tag)
+            assertTrue("ts-block__body--grid" in loaded.find("ts-block__body").classes())
+            assertFalse("ts-block__body--flush" in loaded.find("ts-block__body").classes())
+        }
+
+        @Test
         fun `should build an empty state as a block without load does`() {
             val expected = buildTestPage { row { block { emptyState("Пусто") } } }.find("ts-block__body").element.outerHTML
             val loaded = buildTestPage { row { block { load({ "Пусто" }) { title -> emptyState(title) } } } }

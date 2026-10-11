@@ -18,6 +18,7 @@ import trik.testsys.grading.GradingNodeOuterClass as Proto
 @InternalGrpcApi
 internal interface NodeClient : AutoCloseable {
     fun poll(onStatus: (GradingNodeStatus) -> Unit)
+    fun poll(timeout: Duration, onStatus: (GradingNodeStatus) -> Unit) = poll(onStatus)
     fun grade(
         submission: Proto.Submission,
         timeout: Duration,
@@ -38,9 +39,11 @@ internal class GrpcNodeClient(private val channel: ManagedChannel, private val s
         settings.statusTimeout,
     )
 
-    override fun poll(onStatus: (GradingNodeStatus) -> Unit) {
+    override fun poll(onStatus: (GradingNodeStatus) -> Unit) = poll(statusTimeout, onStatus)
+
+    override fun poll(timeout: Duration, onStatus: (GradingNodeStatus) -> Unit) {
         val response = AtomicReference<Proto.Status?>()
-        GradingNodeGrpc.newStub(channel).withDeadlineAfter(statusTimeout.toNanos(), TimeUnit.NANOSECONDS)
+        GradingNodeGrpc.newStub(channel).withDeadlineAfter(timeout.toNanos(), TimeUnit.NANOSECONDS)
             .getStatus(
                 Empty.getDefaultInstance(),
                 object : StreamObserver<Proto.Status> {

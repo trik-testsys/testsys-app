@@ -36,6 +36,7 @@ testsys-app/
 |--------------------------------------|------------------------------------------------------------------------------------------------------|-------------------|
 | `testsys-domain`                     | Доменные модели, порты (`contract`), DSL билдеров. Без Spring, JPA и любых внешних зависимостей.     | Реализован        |
 | `testsys-operation`                  | Операции — реализация пользовательских фич из [features.md](../domain/features.md), по классу на Роль или группу Пользователей. | В разработке      |
+| `testsys-infra:settings` | Общий инфраструктурный API служебных настроек, снимки и протокол применения. | Реализован |
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
 | `testsys-infra:diagnostics`          | Синхронный анализ XML одного Полигона через порт `PolygonDiagnostics`.                           | Реализован        |
 | `testsys-infra:grpc`                 | Связь с Проверяющими узлами и балансировка проверок (реализация порта `Grader`).                    | Реализован        |
@@ -60,6 +61,8 @@ testsys-app/
   `database → codegen` (через `ksp`), `codegen → codegen-api`, `mail → domain`, `mail → localization`,
   `grpc → domain`, `diagnostics → domain`, `app → components`, `app → domain`,
   `app → operation`, `app → grpc`, `app → database`, `app → diagnostics` и `app → mail`.
+  Связи настроек: `settings → domain`, `database → settings`, `grpc → settings`, `diagnostics → settings`,
+  `app → settings`. Общий протокол принадлежит [settings/README.md](../../testsys-infra/settings/README.md).
   Остальные связи — целевая архитектура.
 - Приложение подключает конфигурации инфраструктурных модулей через `@Import` в `InfraConfiguration`;
   см. шаг «Регистрация бина» в [implement-port.md](../guides/implement-port.md#5-регистрация-бина).

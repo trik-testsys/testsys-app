@@ -9,6 +9,8 @@ import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionId
+import tech.testsys.infra.settings.api.RuntimeSettings
+import tech.testsys.infra.settings.api.SettingKey
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -35,30 +37,32 @@ internal class GradingCoordinator(
     private val pollingExecutor: ScheduledExecutorService,
     private val clock: Clock,
     private val parser: LogParser,
+    private val runtime: RuntimeSettings? = null,
 ) : AutoCloseable {
     private val pending = ConcurrentHashMap<SubmissionId, Pending>()
     private val submissions = LinkedBlockingQueue<Pending.Queued>()
     private val senderWakeup = Semaphore(0)
     private val subscribers = CopyOnWriteArrayList<(SubmissionId) -> Unit>()
     private val isClosed = AtomicBoolean(false)
+    private var pollingRegistration: AutoCloseable? = null
     private val log = LogFactory.getLog(javaClass)
 
     fun start() {
         senderExecutor.execute(::sendLoop)
-        pollingExecutor.scheduleWithFixedDelay(
-            {
-                nodes.poll()
-                senderWakeup.release()
-            },
-            0,
-            settings.pollInterval.toNanos(),
-            TimeUnit.NANOSECONDS,
-        )
+        pollingRegistration = if (runtime == null) {
+            schedulePolling(currentSettings().pollInterval) { true }
+        } else {
+            runtime.register { candidate ->
+                schedulePolling(candidate.values.duration(SettingKey.PollInterval)) {
+                    runtime.snapshot() === candidate
+                }
+            }
+        }
     }
 
     fun submit(submission: Submission): GradingAdmission = synchronized(isClosed) {
         check(!isClosed.get()) { "Grader is closed" }
-        val context = RunContext(submission = submission, acceptedAt = clock.instant())
+        val context = RunContext(submission = submission, acceptedAt = clock.instant(), settings = currentSettings())
         val newRun = Pending.Preparing(context)
         val existing = pending.putIfAbsent(submission.id, newRun)
         if (existing == null) {
@@ -112,11 +116,29 @@ internal class GradingCoordinator(
                     is Pending.Preparing, is Pending.Queued -> Unit
                 }
             }
+            pollingRegistration?.close()
             senderExecutor.shutdownNow()
             executor.shutdownNow()
             pollingExecutor.shutdownNow()
             nodes.close()
         }
+    }
+
+    private fun currentSettings(): GradingSettings = runtime?.snapshot()?.let(settings::resolved) ?: settings
+
+    private fun schedulePolling(interval: Duration, isCurrent: () -> Boolean): AutoCloseable {
+        val scheduled = pollingExecutor.scheduleWithFixedDelay(
+            {
+                if (isCurrent()) {
+                    nodes.poll { currentSettings().statusTimeout }
+                    senderWakeup.release()
+                }
+            },
+            0,
+            interval.toNanos(),
+            TimeUnit.NANOSECONDS,
+        )
+        return AutoCloseable { scheduled.cancel(false) }
     }
 
     private fun sendLoop() {
@@ -138,7 +160,7 @@ internal class GradingCoordinator(
                     completed.complete(send(run))
                 } catch (error: Exception) {
                     log.error("Failed to send submission ${run.context.submission.id.value}", error)
-                    completed.complete(minOf(settings.pollInterval, remaining(run.context)).coerceAtLeast(Duration.ZERO))
+                    completed.complete(minOf(currentSettings().pollInterval, remaining(run.context)).coerceAtLeast(Duration.ZERO))
                 }
             }
             val wait = completed.get() ?: return
@@ -158,7 +180,7 @@ internal class GradingCoordinator(
 
     private fun prepare(run: Pending.Preparing) {
         try {
-            val prepared = persistence.prepare(run.context.submission, settings.shouldRecordVideo)
+            val prepared = persistence.prepare(run.context.submission, run.context.settings.shouldRecordVideo)
             val waiting = Pending.Queued(context = run.context, prepared = prepared, attempts = 0)
             pending[run.context.submission.id] = waiting
             submissions.add(waiting)
@@ -181,8 +203,8 @@ internal class GradingCoordinator(
                 is Pending.Preparing, is Pending.Queued, is Pending.Saving -> null
             }
         }.groupingBy { address -> address }.eachCount()
-        val address = selectNode(nodes.statuses(), outstanding) ?: return minOf(settings.pollInterval, remaining(run.context))
-        val node = nodes.find(address) ?: return minOf(settings.pollInterval, remaining(run.context))
+        val address = selectNode(nodes.statuses(), outstanding) ?: return minOf(currentSettings().pollInterval, remaining(run.context))
+        val node = nodes.find(address) ?: return minOf(currentSettings().pollInterval, remaining(run.context))
         persistence.markInProgress(run.context.submission.id)
         val attempt = Attempt(address = address, node = node)
         val sending = Pending.InFlight(context = run.context, prepared = run.prepared, attempt = attempt, attempts = run.attempts + 1)
@@ -195,7 +217,7 @@ internal class GradingCoordinator(
         try {
             val cancellation = node.client.grade(
                 submission = run.prepared.message,
-                timeout = minOf(settings.rpcTimeout, remaining),
+                timeout = minOf(run.context.settings.rpcTimeout, remaining),
                 onResult = { result ->
                     dispatch {
                         if (isCurrent(sending)) {
@@ -248,7 +270,7 @@ internal class GradingCoordinator(
         run.attempt.cancel.get()?.close()
         if (remaining(run.context) <= Duration.ZERO) {
             finish(waiting, CheckedResult.Timeout)
-        } else if (run.attempts >= settings.maxAttempts) {
+        } else if (run.attempts >= run.context.settings.maxAttempts) {
             finish(waiting, exhaustedResult)
         } else {
             submissions.add(waiting)
@@ -276,7 +298,7 @@ internal class GradingCoordinator(
             persistence.saveResult(run.context.submission, run.result)
         } catch (error: RuntimeException) {
             log.error("Failed to save submission ${run.context.submission.id.value}", error)
-            run.saveRetry.set(executor.schedule({ save(run) }, settings.pollInterval.toNanos(), TimeUnit.NANOSECONDS))
+            run.saveRetry.set(executor.schedule({ save(run) }, currentSettings().pollInterval.toNanos(), TimeUnit.NANOSECONDS))
             return
         }
         run.saveRetry.get()?.cancel(false)
@@ -293,7 +315,7 @@ internal class GradingCoordinator(
     private fun isCurrent(run: Pending): Boolean = !isClosed.get() && pending[run.context.submission.id] === run
 
     private fun remaining(context: RunContext): Duration =
-        settings.totalTimeout.minus(Duration.between(context.acceptedAt, clock.instant()))
+        context.settings.totalTimeout.minus(Duration.between(context.acceptedAt, clock.instant()))
 
     private fun dispatch(action: () -> Unit) {
         if (!isClosed.get()) {
@@ -317,6 +339,7 @@ internal class GradingCoordinator(
     private class RunContext(
         val submission: Submission,
         val acceptedAt: Instant,
+        val settings: GradingSettings,
         val deadline: AtomicReference<ScheduledFuture<*>?> = AtomicReference(),
     )
 

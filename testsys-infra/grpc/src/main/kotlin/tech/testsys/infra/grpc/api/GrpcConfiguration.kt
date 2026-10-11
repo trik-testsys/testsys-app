@@ -15,6 +15,8 @@ import tech.testsys.infra.grpc.internal.InternalGrpcApi
 import tech.testsys.infra.grpc.internal.JsonLogParser
 import tech.testsys.infra.grpc.internal.LogParser
 import tech.testsys.infra.grpc.internal.NodeClientFactory
+import tech.testsys.infra.grpc.internal.resolved
+import tech.testsys.infra.settings.api.RuntimeSettings
 import java.time.Clock
 import java.time.Duration
 import java.util.concurrent.Executors
@@ -31,16 +33,31 @@ import java.util.concurrent.Executors
 @PropertySource("classpath:grading-defaults.properties")
 class GrpcConfiguration {
     @Bean
-    internal fun gradingSettings(environment: Environment): GradingSettings = GradingSettings(
-        nodes = environment.nodes(),
-        maxAttempts = environment.getRequiredProperty("testsys.grading.max-attempts", Int::class.java),
-        totalTimeout = environment.duration("total-timeout"),
-        rpcTimeout = environment.duration("rpc-timeout"),
-        statusTimeout = environment.duration("status-timeout"),
-        pollInterval = environment.duration("poll-interval"),
-        maxMessageBytes = environment.getRequiredProperty("testsys.grading.max-message-bytes", Int::class.java),
-        shouldRecordVideo = environment.getRequiredProperty("testsys.grading.should-record-video", Boolean::class.java),
-    )
+    internal fun gradingSettings(environment: Environment, runtime: RuntimeSettings? = null): GradingSettings {
+        if (runtime != null) {
+            val defaults = GradingSettings(
+                nodes = environment.nodes(),
+                maxAttempts = 1,
+                totalTimeout = Duration.ofSeconds(1),
+                rpcTimeout = Duration.ofSeconds(1),
+                statusTimeout = Duration.ofSeconds(1),
+                pollInterval = Duration.ofSeconds(1),
+                maxMessageBytes = 1,
+                shouldRecordVideo = false,
+            )
+            return defaults.resolved(runtime.snapshot())
+        }
+        return GradingSettings(
+            nodes = environment.nodes(),
+            maxAttempts = environment.getRequiredProperty("testsys.grading.max-attempts", Int::class.java),
+            totalTimeout = environment.duration("total-timeout"),
+            rpcTimeout = environment.duration("rpc-timeout"),
+            statusTimeout = environment.duration("status-timeout"),
+            pollInterval = environment.duration("poll-interval"),
+            maxMessageBytes = environment.getRequiredProperty("testsys.grading.max-message-bytes", Int::class.java),
+            shouldRecordVideo = environment.getRequiredProperty("testsys.grading.should-record-video", Boolean::class.java),
+        )
+    }
 
     @Bean
     internal fun nodeClientFactory(settings: GradingSettings): NodeClientFactory =
@@ -52,6 +69,7 @@ class GrpcConfiguration {
         settings: GradingSettings,
         parser: LogParser,
         nodeClientFactory: NodeClientFactory,
+        runtime: RuntimeSettings? = null,
     ): GradingCoordinator {
         val nodes = GradingNodeManager(nodeClientFactory)
         val coordinator = GradingCoordinator(
@@ -63,6 +81,7 @@ class GrpcConfiguration {
             pollingExecutor = Executors.newSingleThreadScheduledExecutor(),
             clock = Clock.systemUTC(),
             parser = parser,
+            runtime = runtime,
         )
 
         try {

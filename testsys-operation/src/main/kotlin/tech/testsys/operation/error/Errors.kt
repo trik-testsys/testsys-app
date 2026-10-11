@@ -322,7 +322,6 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
     DownloadParticipantTaskResourceError,
     DownloadParticipantSolutionError,
     SendParticipantSolutionError,
-    DownloadObserverResultError,
     EntityNotExistsError
 
 /**
@@ -339,7 +338,6 @@ data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
     ViewCompetitionContestError,
     AddCompetitionContestError,
     CreateParticipantsError,
-    DownloadObserverResultError,
     AccessDeniedError
 
 /**
@@ -1806,7 +1804,7 @@ data class ResourceVersionNotExistsError(val versionBucket: VersionBucket, val v
 sealed interface ViewObserverContestsError : OperationError
 
 /**
- * Failure of downloading results of a competition containing an observer's assigned contest.
+ * Failure of downloading results of all competitions containing an observer's assigned contests.
  *
  * @since %CURRENT_VERSION%
  */

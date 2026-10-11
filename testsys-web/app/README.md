@@ -208,9 +208,11 @@ Transaction manager остаётся общим.
 
 Страницы вызывают операции только через прокси-сервисы `<Actor>Service` в пакете `service/<actor>`:
 `AdministratorService`, `DeveloperService`, `JudgeService`, `ManagerService`, `MultipleRoleUserService`,
-`ParticipantService`, `StudentService`, `StudyService` и `UserService`. Методы сервиса соответствуют операциям один
-к одному и принимают те же входные данные без Пользователя. Сервиса для `TaskValidationOperations` нет: её вызывает
-только диспетчер. У `ObserverOperations` сервиса пока нет: страницы её не вызывают.
+`ObserverService`, `ParticipantService`, `StudentService`, `StudyService` и `UserService`. Методы сервиса соответствуют
+операциям один к одному и принимают те же входные данные без Пользователя. Сервиса для `TaskValidationOperations`
+нет: её вызывает только диспетчер. `ObserverService` возвращает странице пары Соревнование–назначенный Тур и
+результаты всех доступных Наблюдателю Соревнований. `ObserverView` формирует один CSV-файл независимо
+от фильтров, сортировки и текущей страницы таблицы.
 `MultipleRoleUserService.viewProfile` добавляет к Ролям Псевдоним и почту текущего Пользователя и возвращает их
 в `ProfileVo`.
 `AdministratorService` не выставляет служебную `refreshCommunityInvite`, `ManagerService` — служебную

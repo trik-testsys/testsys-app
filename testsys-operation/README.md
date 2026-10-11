@@ -88,7 +88,7 @@
 - Действия вне БД выполняются после фиксации транзакции: Посылку грейдеру передаёт `AfterCommitGrader`
   в `testsys-web`, письма отправляет адаптер почты (см. [mail/README.md](../testsys-infra/mail/README.md)).
 
-`ManagerOperations`, `AdministratorOperations`, `UserOperations`, `MultipleRoleUserOperations`, `ObserverOperations`
+`ManagerOperations`, `AdministratorOperations`, `UserOperations`, `MultipleRoleUserOperations`
 и `InviteRefresher` пока не подключены к приложению, и транзакционного сервиса у них нет.
 
 ## Обработка запросов валидации

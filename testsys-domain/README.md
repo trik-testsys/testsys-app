@@ -223,6 +223,8 @@
 - `EntityRepository<Data, Id, Entity>` объединяет `EntityFinder`, `EntityLoader`, `EntitySaver` и `EntityRemover`
   ([Common.kt](src/main/kotlin/tech/testsys/domain/contract/persistence/repository/Common.kt)). Порты хранения
   конкретных сущностей объявлены в `contract/persistence/repository/*Repositories.kt`.
+- `CompetitionRepository.findAvailableToObserver` возвращает страницу текущих пар Соревнование–назначенный Тур.
+  Фильтры и общее число относятся к парам; условия доступа задаются идентификаторами назначенных Туров.
 - `FileBlobStorage` получает путь (`java.nio.file.Path`) в каждом вызове `store`, `load` и `delete`.
   `StoredBlobRef` действителен только вместе с путём, по которому создан блоб.
 - Остальные порты и их состояние — в разделе «Убедиться, что порт нужен»

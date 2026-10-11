@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import tech.testsys.domain.builder.api.competition
 import tech.testsys.domain.builder.api.competitionData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.ObserverContestFilter
+import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.Sort
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.model.group.Competition
@@ -23,6 +26,25 @@ class CompetitionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTe
 
     @Autowired
     private lateinit var participants: ParticipantRepository
+
+    @Test
+    fun `should page competition contest pairs before counting and retain a shared contest twice`() {
+        val assigned = fixtures.contest()
+        val other = fixtures.contest()
+        val first = repository.update(fixtures.competition().withData { contests(listOf(assigned.id.value, other.id.value)) })
+        val second = repository.update(fixtures.competition().withData { contests(listOf(assigned.id.value)) })
+        val sorted = Sort(listOf(Sort.Order("competitionId", Sort.Direction.DESC)))
+        val filter = ObserverContestFilter(contestId = assigned.id)
+
+        val firstPage = repository.findAvailableToObserver(setOf(assigned.id), Pagination(0, 1, sorted), filter)
+        val secondPage = repository.findAvailableToObserver(setOf(assigned.id), Pagination(1, 1, sorted), filter)
+        val beyond = repository.findAvailableToObserver(setOf(assigned.id), Pagination(2, 1, sorted), filter)
+
+        assertEquals(listOf(second.id to assigned.id), firstPage.content.map { it.competition.id to it.contest.id })
+        assertEquals(listOf(first.id to assigned.id), secondPage.content.map { it.competition.id to it.contest.id })
+        assertEquals(emptyList<Any>(), beyond.content)
+        assertEquals(2L, beyond.totalElements)
+    }
 
     override fun newData(): CompetitionData {
         val ownerId = fixtures.manager().id.value

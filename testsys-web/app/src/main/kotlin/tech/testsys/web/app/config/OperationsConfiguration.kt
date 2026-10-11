@@ -52,6 +52,7 @@ import tech.testsys.operation.user.DeveloperOperations
 import tech.testsys.operation.user.JudgeOperations
 import tech.testsys.operation.user.ManagerOperations
 import tech.testsys.operation.user.MultipleRoleUserOperations
+import tech.testsys.operation.user.ObserverOperations
 import tech.testsys.operation.user.ParticipantOperations
 import tech.testsys.operation.user.StudentOperations
 import tech.testsys.operation.user.StudyOperations
@@ -400,6 +401,20 @@ class OperationsConfiguration {
         entries: ParticipantContestEntryRepository,
         clock: Clock,
     ): ParticipantOperations = ParticipantOperations(competitions, contests, entries, clock)
+
+    /**
+     * Operations of Observers.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun observerOperations(
+        contests: ContestRepository,
+        competitions: CompetitionRepository,
+        participants: ParticipantRepository,
+        tasks: TaskRepository,
+        submissions: SubmissionRepository,
+    ): ObserverOperations = ObserverOperations(contests, competitions, participants, tasks, submissions)
 
     /**
      * Operations of Students.

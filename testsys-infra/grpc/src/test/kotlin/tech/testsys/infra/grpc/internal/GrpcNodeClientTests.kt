@@ -3,6 +3,11 @@
 package tech.testsys.infra.grpc.internal
 
 import com.google.protobuf.Empty
+import io.grpc.Metadata
+import io.grpc.MethodDescriptor
+import io.grpc.ServerCall
+import io.grpc.ServerCallHandler
+import io.grpc.ServerServiceDefinition
 import io.grpc.Status
 import io.grpc.inprocess.InProcessChannelBuilder
 import io.grpc.inprocess.InProcessServerBuilder
@@ -13,6 +18,7 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import tech.testsys.domain.contract.GradingAdmission
 import tech.testsys.domain.contract.GradingNodeAddress
+import tech.testsys.domain.contract.GradingNodeStatus
 import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.infra.grpc.api.BalancingGrader
@@ -117,6 +123,72 @@ class GrpcNodeClientTests {
 
             assertTrue(completed.await(5, TimeUnit.SECONDS))
             assertEquals(Status.Code.DEADLINE_EXCEEDED, Status.fromThrowable(failure.get()).code)
+        } finally {
+            client.close()
+            server.shutdownNow()
+        }
+    }
+
+    @Test
+    fun `should report only the status code of a failed status poll`() {
+        val service = statusService { observer ->
+            observer.onError(Status.UNAVAILABLE.withDescription("Node is draining").asRuntimeException())
+        }
+
+        val status = pollNode("draining", service)
+
+        assertEquals(GradingNodeStatus.Unreachable("UNAVAILABLE"), status)
+    }
+
+    @Test
+    fun `should report a status poll without a response by the INTERNAL code`() {
+        // A unary server call rejects a completion without a response; a streaming one lets the node close with OK.
+        val service = ServerServiceDefinition.builder(GradingNodeGrpc.SERVICE_NAME)
+            .addMethod(
+                GradingNodeGrpc.getGetStatusMethod().toBuilder().setType(MethodDescriptor.MethodType.SERVER_STREAMING).build(),
+                ServerCallHandler<Empty, Proto.Status> { call, _ ->
+                    call.close(Status.OK, Metadata())
+                    object : ServerCall.Listener<Empty>() {}
+                },
+            )
+            .build()
+
+        val status = pollNode("no-status-response", service)
+
+        assertEquals(GradingNodeStatus.Unreachable("INTERNAL"), status)
+    }
+
+    @Test
+    fun `should report a timed-out status poll by its code`() {
+        val service = statusService { _ -> }
+
+        val status = pollNode("silent-status", service, statusTimeout = Duration.ofMillis(20))
+
+        assertEquals(GradingNodeStatus.Unreachable("DEADLINE_EXCEEDED"), status)
+    }
+
+    private fun statusService(respond: (StreamObserver<Proto.Status>) -> Unit): ServerServiceDefinition =
+        object : GradingNodeGrpc.GradingNodeImplBase() {
+            override fun getStatus(request: Empty, responseObserver: StreamObserver<Proto.Status>) = respond(responseObserver)
+        }.bindService()
+
+    private fun pollNode(
+        serverName: String,
+        service: ServerServiceDefinition,
+        statusTimeout: Duration = Duration.ofSeconds(1),
+    ): GradingNodeStatus? {
+        val server = InProcessServerBuilder.forName(serverName).directExecutor().addService(service).build().start()
+        val channel = InProcessChannelBuilder.forName(serverName).directExecutor().build()
+        val client = GrpcNodeClient(channel, statusTimeout)
+        val received = AtomicReference<GradingNodeStatus>()
+        val completed = CountDownLatch(1)
+        try {
+            client.poll { status ->
+                received.set(status)
+                completed.countDown()
+            }
+            assertTrue(completed.await(5, TimeUnit.SECONDS))
+            return received.get()
         } finally {
             client.close()
             server.shutdownNow()

@@ -8,6 +8,11 @@ import org.springframework.core.env.Environment
 import org.springframework.mock.env.MockEnvironment
 import tech.testsys.bootstrap.ServiceWebSettings
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.infra.grpc.api.GradingNodeImportPreview
+import tech.testsys.infra.grpc.api.GradingNodeRegistry
+import tech.testsys.infra.grpc.api.GradingNodeRegistryOverview
+import tech.testsys.infra.grpc.api.GradingQueueMonitor
+import tech.testsys.infra.grpc.api.GradingQueueSnapshot
 import tech.testsys.infra.settings.api.RuntimeSettings
 import tech.testsys.infra.settings.api.SettingKey
 import tech.testsys.infra.settings.api.SettingsOverview
@@ -36,6 +41,17 @@ class ServiceTestConfiguration {
     @Bean
     fun settingsService(runtime: RuntimeSettings): SettingsService = mockk {
         every { overview() } returns SettingsOverview(0, runtime.snapshot(), SettingsPersistence.Known)
+    }
+
+    @Bean
+    fun gradingNodeRegistry(): GradingNodeRegistry = mockk {
+        every { overview() } returns GradingNodeRegistryOverview(emptyList(), SettingsPersistence.Known)
+        every { importPreview() } returns GradingNodeImportPreview(emptyList())
+    }
+
+    @Bean
+    fun gradingQueueMonitor(): GradingQueueMonitor = mockk {
+        every { snapshot() } returns GradingQueueSnapshot(preparing = 0, waiting = 0, grading = 0, saving = 0)
     }
 
     @Bean

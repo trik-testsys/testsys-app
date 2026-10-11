@@ -15,6 +15,7 @@ internal data class GradingSettings(
     val pollInterval: Duration,
     val maxMessageBytes: Int,
     val shouldRecordVideo: Boolean,
+    val shouldImportNodes: Boolean,
 ) {
     init {
         require(maxAttempts > 0) { "Grading maxAttempts must be positive: $maxAttempts" }

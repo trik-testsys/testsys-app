@@ -17,6 +17,8 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean
 import org.springframework.web.context.WebApplicationContext
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.infra.grpc.api.BalancingGrader
+import tech.testsys.infra.grpc.api.GradingNodeRegistry
+import tech.testsys.infra.grpc.api.GradingQueueMonitor
 import tech.testsys.operation.TaskValidationDispatcher
 import tech.testsys.web.app.PostgresTestConfiguration
 import tech.testsys.web.app.PostgresTestContainer
@@ -79,6 +81,8 @@ class WebContextsTests {
             val sharedTypes = listOf(
                 DataSource::class.java,
                 BalancingGrader::class.java,
+                GradingNodeRegistry::class.java,
+                GradingQueueMonitor::class.java,
                 TaskValidationDispatcher::class.java,
                 UserRepository::class.java,
             )

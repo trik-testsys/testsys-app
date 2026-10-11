@@ -77,6 +77,7 @@ internal val settings = GradingSettings(
     pollInterval = Duration.ofSeconds(5),
     maxMessageBytes = 400_000_000,
     shouldRecordVideo = true,
+    shouldImportNodes = false,
 )
 
 internal fun testSubmission(id: Long = 42) = submission {

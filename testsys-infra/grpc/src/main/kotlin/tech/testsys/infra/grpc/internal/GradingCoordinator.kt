@@ -9,6 +9,7 @@ import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionId
+import tech.testsys.infra.grpc.api.GradingQueueSnapshot
 import tech.testsys.infra.settings.api.RuntimeSettings
 import tech.testsys.infra.settings.api.SettingKey
 import java.time.Clock
@@ -82,19 +83,29 @@ internal class GradingCoordinator(
         subscribers.add(onGraded)
     }
 
+    fun observe(address: GradingNodeAddress) = synchronized(isClosed) {
+        check(!isClosed.get()) { "Grader is closed" }
+        nodes.observe(address)
+    }
+
+    fun forget(address: GradingNodeAddress) = synchronized(isClosed) {
+        removeNode(address)
+        nodes.forget(address)
+    }
+
     fun addNode(address: GradingNodeAddress) = synchronized(isClosed) {
         check(!isClosed.get()) { "Grader is closed" }
-        nodes.add(address)
+        nodes.observe(address)
+        nodes.register(address)
         senderWakeup.release()
     }
 
     fun removeNode(address: GradingNodeAddress) = synchronized(isClosed) {
-        val removed = nodes.find(address)
-        nodes.remove(address)
+        val removed = nodes.unregister(address) ?: return@synchronized
         dispatch {
             pending.values.forEach { run ->
                 when (run) {
-                    is Pending.InFlight -> if (run.attempt.node === removed) {
+                    is Pending.InFlight -> if (run.attempt.registration === removed) {
                         retry(run, CheckedResult.Failure("Checking node was removed"))
                     }
                     is Pending.Preparing, is Pending.Queued, is Pending.Saving -> Unit
@@ -104,7 +115,25 @@ internal class GradingCoordinator(
         }
     }
 
-    fun statuses(): Map<GradingNodeAddress, GradingNodeStatus> = nodes.statuses()
+    fun statuses(): Map<GradingNodeAddress, GradingNodeStatus> = nodes.participantStatuses()
+
+    fun observedStatuses(): Map<GradingNodeAddress, GradingNodeStatus> = nodes.observedStatuses()
+
+    fun queue(): GradingQueueSnapshot {
+        var preparing = 0
+        var waiting = 0
+        var grading = 0
+        var saving = 0
+        pending.values.forEach { run ->
+            when (run) {
+                is Pending.Preparing -> preparing++
+                is Pending.Queued -> waiting++
+                is Pending.InFlight -> grading++
+                is Pending.Saving -> saving++
+            }
+        }
+        return GradingQueueSnapshot(preparing = preparing, waiting = waiting, grading = grading, saving = saving)
+    }
 
     override fun close() = synchronized(isClosed) {
         if (isClosed.compareAndSet(false, true)) {
@@ -203,10 +232,11 @@ internal class GradingCoordinator(
                 is Pending.Preparing, is Pending.Queued, is Pending.Saving -> null
             }
         }.groupingBy { address -> address }.eachCount()
-        val address = selectNode(nodes.statuses(), outstanding) ?: return minOf(currentSettings().pollInterval, remaining(run.context))
-        val node = nodes.find(address) ?: return minOf(currentSettings().pollInterval, remaining(run.context))
+        val address = selectNode(nodes.participantStatuses(), outstanding)
+            ?: return minOf(currentSettings().pollInterval, remaining(run.context))
+        val registration = nodes.registration(address) ?: return minOf(currentSettings().pollInterval, remaining(run.context))
         persistence.markInProgress(run.context.submission.id)
-        val attempt = Attempt(address = address, node = node)
+        val attempt = Attempt(address = address, registration = registration)
         val sending = Pending.InFlight(context = run.context, prepared = run.prepared, attempt = attempt, attempts = run.attempts + 1)
         pending[run.context.submission.id] = sending
         val remaining = remaining(run.context)
@@ -215,13 +245,13 @@ internal class GradingCoordinator(
             return null
         }
         try {
-            val cancellation = node.client.grade(
+            val cancellation = registration.client.grade(
                 submission = run.prepared.message,
                 timeout = minOf(run.context.settings.rpcTimeout, remaining),
                 onResult = { result ->
                     dispatch {
                         if (isCurrent(sending)) {
-                            if (nodes.find(address) !== node) {
+                            if (nodes.registration(address) !== registration) {
                                 retry(sending, CheckedResult.Failure("Checking node was removed"))
                             } else {
                                 val checked = checkResult(
@@ -251,12 +281,12 @@ internal class GradingCoordinator(
         when (Status.fromThrowable(error).code) {
             Status.Code.UNAVAILABLE -> {
                 val attempt = run.attempt
-                val description = "Checking node unavailable: ${error.message}"
-                nodes.markUnavailable(address = attempt.address, node = attempt.node, reason = description)
-                retry(run, CheckedResult.Failure(description))
+                log.warn("Checking node ${attempt.address.target} is unavailable for submission ${run.context.submission.id.value}", error)
+                nodes.markUnavailable(address = attempt.address, registration = attempt.registration, reason = unreachableReason(error))
+                retry(run, CheckedResult.Failure("Checking node unavailable: ${error.message}"))
             }
             Status.Code.DEADLINE_EXCEEDED -> retry(run, CheckedResult.Timeout)
-            else -> if (nodes.find(run.attempt.address) !== run.attempt.node) {
+            else -> if (nodes.registration(run.attempt.address) !== run.attempt.registration) {
                 retry(run, CheckedResult.Failure("Checking node was removed"))
             } else {
                 finish(run, CheckedResult.Failure("Grading RPC failed: ${error.message}"))
@@ -364,7 +394,7 @@ internal class GradingCoordinator(
         }
     }
 
-    private class Attempt(val address: GradingNodeAddress, val node: RegisteredNode) {
+    private class Attempt(val address: GradingNodeAddress, val registration: GradingRegistration) {
         val cancel = AtomicReference<AutoCloseable?>()
     }
 }

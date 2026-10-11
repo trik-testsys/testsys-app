@@ -26,7 +26,10 @@ class ServiceHomeView(texts: UiTexts, authentication: AuthenticationContext) : T
             row {
                 block {
                     row { text("Вход выполнен") }
-                    actions { action("Настройки") { onClick { UI.getCurrent().navigate(ServiceSettingsView::class.java) } } }
+                    actions {
+                        action("Настройки") { onClick { UI.getCurrent().navigate(ServiceSettingsView::class.java) } }
+                        action("Проверка") { onClick { UI.getCurrent().navigate(ServiceGradingView::class.java) } }
+                    }
                     footer { mainAction("Выйти") { onClick { authentication.logout() } } }
                 }
             }

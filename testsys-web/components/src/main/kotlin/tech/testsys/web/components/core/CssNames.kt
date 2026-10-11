@@ -40,6 +40,7 @@ internal enum class CssClass(internal val value: String) {
     BlockRow("ts-block__row"),
     BlockSub("ts-block__sub"),
     BlockTitle("ts-block__title"),
+    BlockTitleRow("ts-block__title-row"),
     DrawerTable("ts-drawer-table"),
     BlockTitles("ts-block__titles"),
     Brand("ts-brand"),

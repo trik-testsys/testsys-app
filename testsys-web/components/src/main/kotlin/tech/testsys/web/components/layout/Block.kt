@@ -16,7 +16,7 @@ import tech.testsys.web.components.core.setGridColumnSpan
 import tech.testsys.web.components.overlay.guideButton
 import tech.testsys.web.components.texts.UiTexts
 
-/** Title and subtitle of a block head; the head is omitted if there are neither, nor actions, nor tabs. */
+/** Title and subtitle of a block head; actions, tabs or a guide can also require a head. */
 internal class BlockHeading(val title: String?, val subtitle: String?)
 
 /**
@@ -35,12 +35,14 @@ internal fun buildBlock(
     val block = Section()
     val editState = BlockEditState(block.element)
     val scope = BlockScope(body, columns, texts, editState, heading.title).apply(content).apply { finish() }
+    val guideControl = scope.guide?.let { guideButton(texts.guide.block, isPage = false) }
     with(block) {
         addClassNames(CssClass.Block, CssClass.BlockGrid)
         if (scope.filtersBar != null) addClassName(CssClass.BlockFilters)
         if (highlight) addClassName(CssClass.BlockDark)
         style.setGridColumnSpan(span)
-        blockHead(heading = heading, actions = scope.actionsBar, tabs = scope.tabsBar)?.let { head -> add(head) }
+        blockHead(heading = heading, actions = scope.actionsBar, tabs = scope.tabsBar, guideControl = guideControl)
+            ?.let { head -> add(head) }
         scope.filtersBar?.let { filters -> add(filters) }
         if (body.children.findAny().isPresent) {
             if (scope.isFlushBody) body.addClassName(CssClass.BlockBodyFlush)
@@ -49,31 +51,34 @@ internal fun buildBlock(
         scope.footerBar?.let { footer -> add(footer) }
     }
 
-    scope.guide?.let { guide ->
-        guide.install(block)
-        val head = block.children.toList().filterIsInstance<Header>().firstOrNull() ?: Header().apply {
-            addClassName(CssClass.BlockHead)
-            block.addComponentAsFirst(this)
-        }
-        head.add(guideButton(texts.guide.block, isPage = false))
-    }
+    scope.guide?.install(block)
     scope.start()
     return BlockHandle(block, editState, hasEditingSwitch = scope.hasEditingSwitch)
 }
 
-private fun blockHead(heading: BlockHeading, actions: Div?, tabs: Component?): Header? {
+private fun blockHead(heading: BlockHeading, actions: Div?, tabs: Component?, guideControl: Component?): Header? {
     val hasTitles = heading.title != null || heading.subtitle != null
-    if (!hasTitles && actions == null && tabs == null) return null
+    if (!hasTitles && actions == null && tabs == null && guideControl == null) return null
 
     val titles = Div().apply { addClassName(CssClass.BlockTitles) }
-    heading.title?.let { title -> titles.add(H3(title).apply { addClassName(CssClass.BlockTitle) }) }
+    val title = heading.title?.let { value -> H3(value).apply { addClassName(CssClass.BlockTitle) } }
+    if (guideControl != null) {
+        val titleRow = Div().apply { addClassName(CssClass.BlockTitleRow) }
+        title?.let { component -> titleRow.add(component) }
+        if (title == null && tabs != null) titleRow.add(tabs)
+        titleRow.add(guideControl)
+        titles.add(titleRow)
+    } else {
+        title?.let { component -> titles.add(component) }
+        if (!hasTitles && tabs != null) titles.add(tabs)
+    }
+
     heading.subtitle?.let { subtitle -> titles.add(Span(subtitle).apply { addClassName(CssClass.BlockSub) }) }
-    if (!hasTitles && tabs != null) titles.add(tabs)
 
     return Header(titles).apply {
         addClassName(CssClass.BlockHead)
         actions?.let { bar -> add(bar) }
-        if (hasTitles && tabs != null) {
+        if (hasTitles && tabs != null && (heading.title != null || guideControl == null)) {
             addClassName(CssClass.BlockHeadTabs)
             add(tabs)
         }

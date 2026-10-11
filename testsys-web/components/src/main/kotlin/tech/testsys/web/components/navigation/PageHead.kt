@@ -203,5 +203,5 @@ internal fun placePageGuideButton(head: Div, button: Component) {
     val inner = head.children.findFirst().orElseThrow()
     val row = inner.children.filter { child -> child.element.classList.contains(CssClass.PageHeadTitleRow) }
         .findFirst().orElseThrow()
-    row.element.appendChild(button.element)
+    row.element.insertChild(1, button.element)
 }

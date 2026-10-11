@@ -1,0 +1,31 @@
+# Production environment over deploy/compose.yml: application and PostgreSQL with persistent volumes, external SMTP.
+# Start it with deploy/testsys.sh and the production variable file kept outside the Git checkout
+# (template: deploy/env/prod.env.example):
+#   sh deploy/testsys.sh prod up [--node] --env-file <path>
+# HTTP is published only on 127.0.0.1 for an external HTTPS proxy.
+# TESTSYS_GRADING_NODES points to external grading nodes. --node adds deploy/compose.grading-node.yml as the last
+# file to run a node on the same server, with TESTSYS_GRADING_NODES=grading-node:8080.
+name: testsys-prod
+
+services:
+  app:
+    image: ${TESTSYS_APP_IMAGE:-testsys-app:latest}
+    restart: unless-stopped
+    environment:
+      SPRING_DATASOURCE_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
+      TESTSYS_MAIL_PASSWORD: ${TESTSYS_MAIL_PASSWORD:?set TESTSYS_MAIL_PASSWORD}
+      TESTSYS_GRADING_NODES: ${TESTSYS_GRADING_NODES:?set TESTSYS_GRADING_NODES to grading node addresses}
+      SERVER_FORWARDHEADERSSTRATEGY: native
+    volumes:
+      # Server copy of deploy/config/application-prod.example.yml, kept outside the Git checkout.
+      - type: bind
+        source: ${TESTSYS_APP_CONFIG:?set TESTSYS_APP_CONFIG to the absolute path of the application configuration file}
+        target: /etc/testsys/application-environment.yml
+        read_only: true
+        bind:
+          create_host_path: false
+
+  postgres:
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}

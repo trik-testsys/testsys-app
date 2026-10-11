@@ -1,0 +1,18 @@
+# Application parameters of the dev environment, mounted by deploy/compose.dev.yml as application-environment.yml.
+# The Mailpit address is set in deploy/compose.dev.yml, the grading node addresses in TESTSYS_GRADING_NODES.
+testsys:
+  operation:
+    community:
+      public-community-id: 1
+      public-community-name: Публичное Сообщество
+    email-confirmation:
+      confirmation-code-lifetime: PT15M
+      max-confirmation-attempts: 3
+    community-invite:
+      ttl: P7D
+      refresh-period: PT1H
+    competition:
+      max-participants: 500
+    class-invite:
+      ttl: P7D
+      refresh-period: PT1H

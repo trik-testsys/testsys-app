@@ -12,8 +12,12 @@
 ```
 testsys-app/
 ├── .github/workflows/        # CI: build, test, lint (Detekt + SARIF), проверка ветки PR
+├── .dockerignore             # Исключения из контекста Docker-образа (см. deployment.md)
+├── .gitattributes            # Окончания строк LF для скриптов и файлов переменных deploy/ (см. deployment.md)
 ├── buildSrc/                 # Convention-плагин testsys.conventions
-├── deploy/monitoring/        # Локальные Prometheus и Grafana
+├── deploy/                   # Compose-файлы окружений и Проверяющего узла, файлы переменных окружений, конфигурация приложения, скрипт запуска и очистки (см. deploy/README.md и deployment.md)
+│   └── monitoring/           # Локальные Prometheus и Grafana (см. deploy/monitoring/README.md)
+├── Dockerfile                # Образ приложения testsys-web:app (см. deployment.md)
 ├── docs/                     # Документация проекта
 ├── gradle/
 │   ├── libs.versions.toml    # Каталог версий зависимостей (единственное место с версиями)

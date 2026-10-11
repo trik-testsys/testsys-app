@@ -294,6 +294,7 @@ Transaction manager остаётся общим.
 ## Запуск и проверка
 
 Команды запуска и сборки — в [structure.md](../../docs/project/structure.md#сборка-веб-приложений).
+Запуск в Docker Compose для разработки, e2e и production — в [deployment.md](../../docs/project/deployment.md).
 
 Для запуска нужны база данных PostgreSQL, заданная стандартными свойствами `spring.datasource.*`, и абсолютные
 пути файлов в обязательных свойствах `testsys.file-storage.paths.<вид>` (виды перечислены в разделе

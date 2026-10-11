@@ -1,0 +1,4 @@
+# Scripts mounted into Linux containers must keep LF line endings in every checkout.
+deploy/**/*.sh text eol=lf
+# Variable files and templates of deploy/env/ are also copied to and edited on Linux servers; they keep LF as well.
+deploy/env/* text eol=lf

@@ -1,0 +1,44 @@
+# Grading node that runs TRIK Studio checks in sibling containers through the Docker daemon of its host.
+# The file has no project name, so deploy/testsys.sh uses it in two ways.
+# In the project of an environment on the same Docker host, as the last file; the application then uses
+# TESTSYS_GRADING_NODES=grading-node:8080:
+#   sh deploy/testsys.sh <environment> up --node
+# As the separate project testsys-grading-node on any machine, reachable by the application through the published
+# gRPC port; the variable file is kept outside the Git checkout (template: deploy/env/grading-node.env.example):
+#   sh deploy/testsys.sh node up --env-file <path>
+# The workspace of the node is the subdirectory named after the Compose project; the script creates it.
+
+services:
+  grading-node:
+    image: testsystrik/grading-node:${TESTSYS_GRADING_NODE_TAG:?set TESTSYS_GRADING_NODE_TAG to a testsystrik/grading-node release tag}
+    restart: ${TESTSYS_GRADING_NODE_RESTART:-no}
+    # Checks the settings of the node before starting it, see deploy/grading-node/entrypoint.sh.
+    entrypoint: ["/bin/sh", "/opt/testsys/grading-node-entrypoint.sh"]
+    environment:
+      MOUNTED_DIRECTORY: /grading-node-workspace
+      # The same directory as seen by the Docker daemon: check containers mount its subdirectories.
+      HOST_DIRECTORY: ${TESTSYS_GRADING_NODE_WORKSPACE:?set TESTSYS_GRADING_NODE_WORKSPACE to an absolute directory path on the Docker daemon host}/${COMPOSE_PROJECT_NAME}
+      WORKERS_COUNT: ${TESTSYS_GRADING_NODE_WORKERS_COUNT:-8}
+      INNER_TIMEOUT_SECONDS: ${TESTSYS_GRADING_NODE_INNER_TIMEOUT_SECONDS:-300}
+      NODE_ID: ${TESTSYS_GRADING_NODE_ID:-0}
+      ASPNETCORE_HTTP_PORTS: ""
+    ports:
+      # gRPC without TLS or authentication: publish it only on a private interface. An empty port selects a
+      # random port of the host.
+      - target: 8080
+        host_ip: ${TESTSYS_GRADING_NODE_HOST_IP:-127.0.0.1}
+        published: "${TESTSYS_GRADING_NODE_PORT:-}"
+        protocol: tcp
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - type: bind
+        source: ${TESTSYS_GRADING_NODE_WORKSPACE:?set TESTSYS_GRADING_NODE_WORKSPACE to an absolute directory path on the Docker daemon host}/${COMPOSE_PROJECT_NAME}
+        target: /grading-node-workspace
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./grading-node/entrypoint.sh
+        target: /opt/testsys/grading-node-entrypoint.sh
+        read_only: true
+        bind:
+          create_host_path: false

@@ -80,6 +80,8 @@
 | [settings/README.md](../testsys-infra/settings/README.md) | Справочник | Общие служебные настройки, снимки, переключение и восстановление, контракт хранения реестра узлов |
 | [monitoring/README.md](../testsys-infra/monitoring/README.md) | Справочник | Учёт технических сбоев, имена и метки метрик TestSys |
 | [deploy/monitoring/README.md](../deploy/monitoring/README.md) | Справочник | Локальные Prometheus и Grafana: запуск, сбор метрик TestSys, дашборды |
+| [deployment.md](project/deployment.md) | Справочник | Запуск окружений dev, e2e и production и Проверяющего узла |
+| [deploy/README.md](../deploy/README.md) | Справочник | Устройство Docker-образа, Compose-файлов, файлов переменных и скрипта запуска |
 | [implement-entity.md](guides/implement-entity.md)                      | Гайд       | Добавление доменной сущности и её хранения в БД                |
 | [implement-port.md](guides/implement-port.md)                          | Гайд       | Объявление порта в домене и его реализация                     |
 | [implement-feature.md](guides/implement-feature.md)                    | Гайд       | Реализация пользовательской фичи: спецификация, операция, тесты |

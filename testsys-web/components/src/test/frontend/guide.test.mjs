@@ -627,10 +627,48 @@ test('collects page introduction, block and detailed steps in order', () => {
   assert.deepEqual(collectTargets(f.root, f.trigger), [f.intro, f.block, f.detail]);
 });
 
-test('a block launch contains only that block', () => {
+test('a block launch contains that block and its detailed steps', () => {
   const f = fixture();
   f.trigger.dataset.guideStart = 'block';
-  assert.deepEqual(collectTargets(f.root, f.trigger), [f.block]);
+  assert.deepEqual(collectTargets(f.root, f.trigger), [f.block, f.detail]);
+});
+
+test('should show progress and navigation buttons when a block guide has detailed steps', () => {
+  const f = fixture();
+  f.trigger.dataset.guideStart = 'block';
+  const cleanup = installGuide(f.root, f.labels, f.factory);
+
+  f.root.dispatchEvent(new Event('click'));
+
+  const config = f.instances[0].config;
+  assert.deepEqual(config.showButtons, ['previous', 'next', 'close']);
+  assert.equal(config.showProgress, true);
+  cleanup();
+});
+
+test('should move a block guide to its detailed step on ArrowRight', () => {
+  const f = fixture();
+  f.trigger.dataset.guideStart = 'block';
+  const cleanup = installGuide(f.root, f.labels, f.factory);
+  f.root.dispatchEvent(new Event('click'));
+
+  window.dispatchEvent(Object.assign(new Event('keyup'), {key: 'ArrowRight'}));
+
+  assert.equal(f.instances[0].getActiveIndex(), 1);
+  cleanup();
+});
+
+test('should return a block guide to its explanation on ArrowLeft', () => {
+  const f = fixture();
+  f.trigger.dataset.guideStart = 'block';
+  const cleanup = installGuide(f.root, f.labels, f.factory);
+  f.root.dispatchEvent(new Event('click'));
+  f.instances[0].drive(1);
+
+  window.dispatchEvent(Object.assign(new Event('keyup'), {key: 'ArrowLeft'}));
+
+  assert.equal(f.instances[0].getActiveIndex(), 0);
+  cleanup();
 });
 
 test('skips hidden and detached page targets', () => {
@@ -729,6 +767,7 @@ test('blocks page-wide Enter shortcut while retaining native button activation',
 test('block-guide arrows do not close its single explanation', () => {
   const f = fixture();
   f.trigger.dataset.guideStart = 'block';
+  f.block.querySelectorAll = () => [];
   const cleanup = installGuide(f.root, f.labels, f.factory);
   f.root.dispatchEvent(new Event('click'));
   let reachedLibrary = false;
@@ -736,6 +775,7 @@ test('block-guide arrows do not close its single explanation', () => {
   window.dispatchEvent(Object.assign(new Event('keyup'), {key: 'ArrowRight'}));
   assert.equal(reachedLibrary, false);
   assert.equal(f.instances[0].destroyed, false);
+  assert.deepEqual(f.instances[0].config.showButtons, ['close']);
   cleanup();
 });
 

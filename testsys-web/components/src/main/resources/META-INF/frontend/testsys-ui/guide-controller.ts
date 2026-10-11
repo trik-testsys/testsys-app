@@ -22,19 +22,22 @@ export function visibleTarget(element: HTMLElement, root: HTMLElement): boolean 
     !element.closest('[hidden]') && getComputedStyle(element).visibility !== 'hidden';
 }
 
+function blockTargets(block: HTMLElement): HTMLElement[] {
+  return [block, ...Array.from(block.querySelectorAll<HTMLElement>('[data-guide-order]'))
+    .sort((left, right) => Number(left.dataset.guideOrder) - Number(right.dataset.guideOrder))];
+}
+
 export function collectTargets(root: HTMLElement, trigger: HTMLElement): HTMLElement[] {
+  const targets: HTMLElement[] = [];
   if (trigger.dataset.guideStart === 'block') {
     const block = trigger.closest<HTMLElement>('.ts-block[data-guide-description]');
-    return block ? [block] : [];
+    if (block) targets.push(...blockTargets(block));
+  } else {
+    const introduction = root.querySelector<HTMLElement>('[data-guide-introduction][data-guide-description]');
+    if (introduction) targets.push(introduction);
+    root.querySelectorAll<HTMLElement>('.ts-block[data-guide-description]')
+      .forEach(block => targets.push(...blockTargets(block)));
   }
-  const targets: HTMLElement[] = [];
-  const introduction = root.querySelector<HTMLElement>('[data-guide-introduction][data-guide-description]');
-  if (introduction) targets.push(introduction);
-  root.querySelectorAll<HTMLElement>('.ts-block[data-guide-description]').forEach(block => {
-    targets.push(block);
-    targets.push(...Array.from(block.querySelectorAll<HTMLElement>('[data-guide-order]'))
-      .sort((left, right) => Number(left.dataset.guideOrder) - Number(right.dataset.guideOrder)));
-  });
   return targets.filter(target => visibleTarget(target, root));
 }
 
@@ -48,7 +51,7 @@ export function installGuide(root: HTMLElement, labels: Labels, createDriver: Dr
   let active: Driver | undefined;
   let stopSession: (() => void) | undefined;
   let move: ((direction: number) => void) | undefined;
-  let isPageGuide = false;
+  let isSequence = false;
 
   const stop = () => stopSession?.();
   const guardShortcut = (event: KeyboardEvent) => {
@@ -60,7 +63,7 @@ export function installGuide(root: HTMLElement, labels: Labels, createDriver: Dr
     }
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.stopImmediatePropagation();
-      if (isPageGuide && event.type === 'keyup') move?.(event.key === 'ArrowRight' ? 1 : -1);
+      if (isSequence && event.type === 'keyup') move?.(event.key === 'ArrowRight' ? 1 : -1);
       return;
     }
     // Native button activation still produces a click; page-wide Vaadin shortcuts must not receive it.
@@ -72,8 +75,8 @@ export function installGuide(root: HTMLElement, labels: Labels, createDriver: Dr
     stop();
     const targets = collectTargets(root, trigger);
     if (!targets.length) return;
-    const isPage = trigger.dataset.guideStart === 'page';
-    isPageGuide = isPage;
+    const isSequential = targets.length > 1;
+    isSequence = isSequential;
     const steps: DriveStep[] = targets.map(element => ({
       element,
       popover: {
@@ -237,8 +240,8 @@ export function installGuide(root: HTMLElement, labels: Labels, createDriver: Dr
     const driver = createDriver({
       steps, animate: !motion.matches, duration: 240, smoothScroll: !motion.matches, overlayOpacity: 0.55,
       disableActiveInteraction: true, allowKeyboardControl: true, overlayClickBehavior: () => {},
-      popoverClass: 'ts-guide-popover', showProgress: isPage, progressText: plainText(labels.progressLabel),
-      showButtons: isPage ? ['previous', 'next', 'close'] : ['close'],
+      popoverClass: 'ts-guide-popover', showProgress: isSequential, progressText: plainText(labels.progressLabel),
+      showButtons: isSequential ? ['previous', 'next', 'close'] : ['close'],
       onPopoverRender: popover => {
         if (closed) return;
         renderIcon(popover.previousButton, 'chevron-left');

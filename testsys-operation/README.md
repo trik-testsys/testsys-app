@@ -436,8 +436,9 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 в Сообщество в Роли через `MultipleRoleUserRepository.addCommunityMembership`. Если у переданного Пользователя
 этой Роли ещё нет, функция сначала включает его в Публичное Сообщество в той же Роли. Правило определено
 в `testsys.entity.multi.role` в [features.md](../docs/domain/features.md). Функцию вызывают
-`MultipleRoleUserOperations.joinCommunity` и `AdministratorOperations.grantRole`. Вызывающий код выполняет оба
-включения в одной транзакции, чтобы исключение откатило их вместе; в `testsys-web:app` её открывает прокси-сервис.
+`MultipleRoleUserOperations.joinCommunity`, `AdministratorOperations.grantRole` и `SupervisorOperations.addToCommunity`.
+Вызывающий код выполняет необходимые включения в одной транзакции, чтобы исключение откатило их вместе;
+в `testsys-web:app` её открывает прокси-сервис.
 
 ## Кабинет Организатора
 
@@ -486,6 +487,14 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   Вердикта или `null` без успешного Вердикта.
 - `viewCommunityContests` помечена кодификатором `createObserver`. Она возвращает страницу Туров, открытых
   Сообществу Администратора, из которых выбираются Туры Наблюдателя.
+
+## Кабинет Супервайзера
+
+[SupervisorOperations](src/main/kotlin/tech/testsys/operation/user/SupervisorOperations.kt) читает всех Пользователей,
+кроме Супервайзеров, и все Сообщества. `addToCommunity` выдаёт любую Нефиксированную Роль, кроме
+Администратора в Публичном Сообществе. При первой выдаче Администратора
+`AdministratorOperations.createFirstCommunity` создаёт ему Сообщество с Кодами-приглашениями.
+Операции изменения Сообществ используют общие действия `AdministratorOperations`.
 
 ## Кабинет Судьи
 

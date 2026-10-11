@@ -12,7 +12,8 @@ import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.MultipleRoleUserVo
 import tech.testsys.web.app.service.ObserverVo
-import tech.testsys.web.app.service.administrator.AdministratorService
+import tech.testsys.web.app.service.ParticipantVo
+import tech.testsys.web.app.service.UserListingService
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.filters
@@ -77,6 +78,7 @@ internal fun openAdminUser(user: AdminUserVo) {
     val parameters = when (user) {
         is MultipleRoleUserVo -> RouteParameters(USER_ID_PARAMETER, user.id.value.toString())
         is ObserverVo -> RouteParameters(OBSERVER_ID_PARAMETER, user.id.value.toString())
+        is ParticipantVo -> error("Participants have no administrator route")
     }
     UI.getCurrent().navigate(AdminUserView::class.java, parameters)
 }
@@ -87,6 +89,7 @@ private fun rolesIn(user: AdminUserVo, communityId: CommunityId): List<String> =
     is ObserverVo -> listOfNotNull(
         currentLocalization().pageCabinet.roleName(role = RoleNameRole.OBSERVER).takeIf { user.community == communityId },
     )
+    is ParticipantVo -> emptyList()
 }
 
 /** Converts a table page request into a pagination with the column sort keys as storage fields. */
@@ -117,10 +120,15 @@ internal fun <T> Binder.BindingBuilder<T, String>.nameRules(missing: String): Bi
 internal class CommunityDraft(var name: String = "", var description: String = "")
 
 /**
- * Fills the block with the users of the communities of the administrator (testsys.user.multi.admin.viewUsers), paged
- * and filtered by nickname, roles and, unless [community] fixes it, by one of [communities]; a row opens the user page.
+ * Fills a cabinet block with users selected by [service], paged and filtered by nickname, roles and, unless [community]
+ * fixes it, by one of [communities]. [openUser] opens the role-specific user page when a row is selected.
  */
-internal fun BlockScope.adminUsersTable(service: AdministratorService, communities: List<CommunityVo>, community: CommunityId?) {
+internal fun BlockScope.adminUsersTable(
+    service: UserListingService,
+    communities: List<CommunityVo>,
+    community: CommunityId?,
+    openUser: (AdminUserVo) -> Unit = ::openAdminUser,
+) {
     val localization = currentLocalization()
     val texts = localization.pageAdministrator
     val defaults = UserFilter(communityId = community)
@@ -139,7 +147,7 @@ internal fun BlockScope.adminUsersTable(service: AdministratorService, communiti
         }
         dateTimeColumn(texts.lastLogin(), sortKey = "lastLoginAt") { (_, lastLogin) -> lastLogin?.toUserDateTime() }
         empty(texts.usersEmpty(), texts.usersEmptyHint())
-        onRowClick(isNavigation = true) { (user, _) -> openAdminUser(user) }
+        onRowClick(isNavigation = true) { (user, _) -> openUser(user) }
     }
 
     lateinit var name: ValueInput<String>

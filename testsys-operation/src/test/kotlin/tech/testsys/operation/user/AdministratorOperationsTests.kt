@@ -1438,6 +1438,21 @@ class AdministratorOperationsTests {
         inner class HappyPathTests {
 
             @Test
+            fun `should name the first supervisor-granted community after the administrator and truncate Unicode code points`() {
+                val newAdministrator = testMultipleRoleUser {
+                    name = "😀".repeat(255)
+                    roles { administrator {} }
+                }
+                prepareSave()
+
+                val created = operations.createFirstCommunity(newAdministrator)
+
+                assertEquals(255, created.data.name.codePointCount(0, created.data.name.length))
+                assertTrue(created.data.name.startsWith("Сообщество "))
+                assertEquals("Сообщество " + "😀".repeat(244), created.data.name)
+            }
+
+            @Test
             fun `should accept a name of exactly 255 code points`() {
                 val name = "😀".repeat(255)
                 prepareSave()

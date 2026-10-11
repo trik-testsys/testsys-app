@@ -437,7 +437,7 @@ sealed interface CreateObserverError : OperationError
  *
  * @since %CURRENT_VERSION%
  */
-data object ObserverNameBlankError : CreateObserverError
+data object ObserverNameBlankError : CreateObserverError, CreateSupervisorObserverError
 
 /**
  * The observer name exceeds 255 Unicode code points.
@@ -445,14 +445,14 @@ data object ObserverNameBlankError : CreateObserverError
  * @property observerName the rejected name.
  * @since %CURRENT_VERSION%
  */
-data class ObserverNameTooLongError(val observerName: String) : CreateObserverError
+data class ObserverNameTooLongError(val observerName: String) : CreateObserverError, CreateSupervisorObserverError
 
 /**
  * No contests were selected for the observer.
  *
  * @since %CURRENT_VERSION%
  */
-data object ObserverContestsEmptyError : CreateObserverError
+data object ObserverContestsEmptyError : CreateObserverError, CreateSupervisorObserverError
 
 /**
  * Failure of listing users available to the administrator.
@@ -620,7 +620,7 @@ data object MissedAdministratorRoleError :
  *
  * @since %CURRENT_VERSION%
  */
-data object CommunityNameBlankError : CreateCommunityError, EditCommunityError
+data object CommunityNameBlankError : CreateCommunityError, EditCommunityError, EditSupervisorCommunityError
 
 /**
  * The community name exceeds 255 Unicode code points.
@@ -628,7 +628,7 @@ data object CommunityNameBlankError : CreateCommunityError, EditCommunityError
  * @property communityName the rejected name.
  * @since %CURRENT_VERSION%
  */
-data class CommunityNameTooLongError(val communityName: String) : CreateCommunityError, EditCommunityError
+data class CommunityNameTooLongError(val communityName: String) : CreateCommunityError, EditCommunityError, EditSupervisorCommunityError
 
 /**
  * The user holds a fixed role, so no role can be granted to them in a community.
@@ -636,7 +636,7 @@ data class CommunityNameTooLongError(val communityName: String) : CreateCommunit
  * @property userId the id of the user with the fixed role.
  * @since %CURRENT_VERSION%
  */
-data class UserHasFixedRoleError(val userId: UserId) : GrantRoleError
+data class UserHasFixedRoleError(val userId: UserId) : GrantRoleError, AddToCommunityError
 
 /**
  * The user does not exist.
@@ -655,6 +655,9 @@ data class UserNotExistsError(val userId: UserId) :
     GrantRoleError,
     RemoveFromCommunityError,
     DeleteObserverError,
+    AddToCommunityError,
+    ViewSupervisorUserError,
+    RemoveSupervisorMemberError,
     EntityNotExistsError
 
 /**
@@ -689,7 +692,7 @@ data class RoleNotGrantableError(val role: CommunityRole) : GrantRoleError
  * @property role the rejected role.
  * @since %CURRENT_VERSION%
  */
-data class RoleNotRemovableError(val role: CommunityRole) : RemoveFromCommunityError
+data class RoleNotRemovableError(val role: CommunityRole) : RemoveFromCommunityError, RemoveSupervisorMemberError
 
 /**
  * The community is the public community, from which no user is removed.
@@ -697,7 +700,7 @@ data class RoleNotRemovableError(val role: CommunityRole) : RemoveFromCommunityE
  * @property communityId the id of the public community.
  * @since %CURRENT_VERSION%
  */
-data class CommunityIsPublicError(val communityId: CommunityId) : RemoveFromCommunityError
+data class CommunityIsPublicError(val communityId: CommunityId) : RemoveFromCommunityError, RemoveSupervisorMemberError
 
 /**
  * The user is not a member of the community in the role.
@@ -708,7 +711,180 @@ data class CommunityIsPublicError(val communityId: CommunityId) : RemoveFromComm
  * @since %CURRENT_VERSION%
  */
 data class UserNotCommunityMemberError(val userId: UserId, val communityId: CommunityId, val role: CommunityRole) :
-    RemoveFromCommunityError
+    RemoveFromCommunityError,
+    RemoveSupervisorMemberError
+
+// endregion
+
+// region SupervisorOperations
+
+/**
+ * Failure of listing users available to a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorUsersError : OperationError
+
+/**
+ * Failure of reading developer tasks as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorUserTasksError : OperationError
+
+/**
+ * Failure of reading developer contests as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorUserContestsError : OperationError
+
+/**
+ * Failure of reading manager classes as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorUserClassesError : OperationError
+
+/**
+ * Failure of reading manager competitions as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorUserCompetitionsError : OperationError
+
+/**
+ * Failure of reading judge orders as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorUserJudgmentsError : OperationError
+
+/**
+ * Failure of reading observer assignments as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorUserAssignedContestsError : OperationError
+
+/**
+ * Failure of viewing one non-supervisor user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorUserError :
+    ViewSupervisorUserTasksError,
+    ViewSupervisorUserContestsError,
+    ViewSupervisorUserClassesError,
+    ViewSupervisorUserCompetitionsError,
+    ViewSupervisorUserJudgmentsError,
+    ViewSupervisorUserAssignedContestsError
+
+/**
+ * Failure of listing all communities for a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorCommunitiesError : OperationError
+
+/**
+ * Failure of viewing one community for a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorCommunityError : OperationError
+
+/**
+ * Failure of adding a multiple-role user to any community in a non-fixed role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AddToCommunityError : OperationError
+
+/**
+ * Failure of editing a community as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface EditSupervisorCommunityError : OperationError
+
+/**
+ * Failure of removing a membership as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RemoveSupervisorMemberError : OperationError
+
+/**
+ * Failure of creating an observer as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateSupervisorObserverError : OperationError
+
+/**
+ * Failure of finding contests for a new observer as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorCommunityContestsError : OperationError
+
+/**
+ * Failure of reading community invites as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewSupervisorCommunityInvitesError : OperationError
+
+/**
+ * Failure of replacing a community invite as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CreateSupervisorCommunityInviteError : OperationError
+
+/**
+ * Failure of extending a community invite as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ExtendSupervisorCommunityInviteError : OperationError
+
+/**
+ * Failure of refreshing a community invite as a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RefreshSupervisorCommunityInviteError : OperationError
+
+/**
+ * The actor is not a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object MissedSupervisorRoleError :
+    ViewSupervisorUsersError,
+    ViewSupervisorUserError,
+    ViewSupervisorCommunitiesError,
+    ViewSupervisorCommunityError,
+    AddToCommunityError,
+    EditSupervisorCommunityError,
+    RemoveSupervisorMemberError,
+    CreateSupervisorObserverError,
+    ViewSupervisorCommunityContestsError,
+    ViewSupervisorCommunityInvitesError,
+    CreateSupervisorCommunityInviteError,
+    ExtendSupervisorCommunityInviteError,
+    RefreshSupervisorCommunityInviteError,
+    MissedRequiredRoleError
+
+/**
+ * Administrator role cannot be assigned in the public community.
+ *
+ * @property communityId the public community where the role was requested.
+ * @since %CURRENT_VERSION%
+ */
+data class AdministratorInPublicCommunityError(val communityId: CommunityId) : AddToCommunityError
 
 // endregion
 
@@ -1346,6 +1522,7 @@ data class AttemptDurationExceedsContestDurationError(
 data class ContestNotExistsError(
     val contestId: ContestId,
 ) : CreateObserverError,
+    CreateSupervisorObserverError,
     EntityNotExistsError,
     EditContestError,
     ShareContestError,
@@ -1379,6 +1556,7 @@ data class ContestNotExistsError(
 data class ContestAccessDeniedError(
     val contestId: ContestId,
 ) : CreateObserverError,
+    CreateSupervisorObserverError,
     AccessDeniedError,
     EditContestError,
     ShareContestError,
@@ -1503,7 +1681,17 @@ data class CommunityNotExistsError(val communityId: CommunityId) :
     GrantRoleError,
     RemoveFromCommunityError,
     ViewCommunityContestsError,
-    EditCommunityError
+    EditCommunityError,
+    AddToCommunityError,
+    ViewSupervisorCommunityError,
+    EditSupervisorCommunityError,
+    RemoveSupervisorMemberError,
+    CreateSupervisorObserverError,
+    ViewSupervisorCommunityContestsError,
+    ViewSupervisorCommunityInvitesError,
+    CreateSupervisorCommunityInviteError,
+    ExtendSupervisorCommunityInviteError,
+    RefreshSupervisorCommunityInviteError
 
 /**
  * The user lacks the access to the task required by the operation.

@@ -103,6 +103,9 @@ Transaction manager остаётся общим.
 | `AdminView` | `admin`, `admin/communities`, `admin/users` | `MULTIPLE_ROLE` с Ролью Администратора |
 | `AdminCommunityView` | `admin/communities/:communityId` | `MULTIPLE_ROLE`, создатель Сообщества |
 | `AdminUserView` | `admin/users/:userId`, `admin/users/:userId/developer`, `admin/users/:userId/manager`, `admin/users/:userId/judge`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
+| `SupervisorView` | `supervisor`, `supervisor/users`, `supervisor/communities` | `SUPERVISOR` |
+| `SupervisorCommunityView` | `supervisor/communities/:communityId` | `SUPERVISOR` |
+| `SupervisorUserView` | `supervisor/users/:userId`, а также разделы `developer`, `manager`, `judge` | `SUPERVISOR`, любой Пользователь, кроме Супервайзеров |
 | `DeveloperView` | `developer`, `developer/tasks`, `developer/contests` | `MULTIPLE_ROLE` с Ролью Разработчика |
 | `DeveloperTaskView` | `developer/tasks/:taskId` | `MULTIPLE_ROLE`, владелец Задачи |
 | `DeveloperTestingView` | `developer/tasks/:taskId/testing/:testingId` | `MULTIPLE_ROLE`, владелец Задачи; запрос принадлежит Задаче |
@@ -115,14 +118,14 @@ Transaction manager остаётся общим.
 | `StudentView` | `student`, `student/classes` | `MULTIPLE_ROLE` с Ролью Ученика |
 | `StudentClassView` | `student/classes/:classId` | `MULTIPLE_ROLE`, Ученик Класса |
 | `StudentContestView`, `StudentTaskView` | `student/classes/:classId/contests/:contestId`, `student/classes/:classId/contests/:contestId/tasks/:taskId` | `MULTIPLE_ROLE`, Ученик Класса |
-| `ParticipantView`, `ObserverView`, `SupervisorView` | `participant`, `observer`, `supervisor` | Соответствующий вид |
+| `ParticipantView`, `ObserverView` | `participant`, `observer` | Соответствующий вид |
 | `ParticipantContestView`, `ParticipantTaskView` | `participant/contests/:contestId`, `participant/contests/:contestId/tasks/:taskId` | `PARTICIPANT` |
 | `JudgeView` | `judge`, `judge/submissions` | `MULTIPLE_ROLE` с Ролью Судьи |
 | `JudgeSolutionView` | `judge/submissions/:submissionId` | `MULTIPLE_ROLE` с Ролью Судьи |
 
 Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
-кроме стартовых страниц Наблюдателя и Супервайзера, реализованы; эти две пока показывают только шапку
-и пустое состояние: их маршруты и доступ окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида
+кроме стартовой страницы Наблюдателя, реализованы; она пока показывает только шапку
+и пустое состояние. Стартовую страницу вида
 Пользователя возвращает `startPageOf`.
 
 `ParticipantView` загружает Туры через `ParticipantService.viewContests` в `beforeEnter`.

@@ -511,6 +511,11 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 страницы. Правила доступа определены в `testsys.user.multi.admin.authorization`
 в [features.md](../../docs/domain/features.md).
 
+`UserPersistenceAdapter` реализует `SupervisorUserReadPort`: запрос выбирает всех Пользователей, кроме
+Супервайзеров, применяет фильтры до подсчёта и разбиения на страницы и собирает Пользователей по видам.
+Участники входят только в список без фильтра по Ролям и Сообществу. `CommunityPersistenceAdapter` реализует
+`SupervisorCommunityReadPort` и возвращает все Сообщества по идентификатору.
+
 ## Схема БД
 
 Именованные `CHECK` в init-changelog проверяют сочетания состояния и nullable-полей Посылки, Задачи,

@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException
 import tech.testsys.domain.builder.api.community
 import tech.testsys.domain.builder.api.communityData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.persistence.SupervisorCommunityReadPort
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
@@ -30,6 +31,20 @@ class CommunityPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
 
     @Autowired
     private lateinit var developerInvites: DeveloperCommunityInviteRepository
+
+    @Autowired
+    private lateinit var supervisorCommunities: SupervisorCommunityReadPort
+
+    @Test
+    fun `should read all communities for the supervisor in ascending id order`() {
+        val first = repository.save(newData())
+        val second = repository.save(newData())
+
+        val ids = supervisorCommunities.findAllCommunities().map { it.id }
+
+        assertEquals(ids.sortedBy { it.value }, ids)
+        assertEquals(listOf(first.id, second.id), ids.filter { it == first.id || it == second.id })
+    }
 
     override fun newData(): CommunityData {
         val ownerId = fixtures.developer().id.value

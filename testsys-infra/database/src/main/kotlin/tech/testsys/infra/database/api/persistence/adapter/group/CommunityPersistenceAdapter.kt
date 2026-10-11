@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManager
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import tech.testsys.domain.contract.persistence.SupervisorCommunityReadPort
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityData
@@ -21,6 +22,7 @@ import tech.testsys.infra.database.internal.mapping.group.CommunityInviteMapping
 import tech.testsys.infra.database.internal.mapping.group.CommunityMapping
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.requireVersion
+import org.springframework.data.domain.Sort as JpaSort
 
 /**
  * Persistence adapter of [Community] entities backed by [CommunityJpaEntity].
@@ -36,7 +38,8 @@ class CommunityPersistenceAdapter(
     private val communityInviteJpaEntityRepository: CommunityInviteJpaEntityRepository,
     private val entityManager: EntityManager,
 ) : AbstractPersistenceAdapter<CommunityData, CommunityId, Community, CommunityJpaEntity>(jpaEntityRepository),
-    CommunityRepository {
+    CommunityRepository,
+    SupervisorCommunityReadPort {
 
     private val communities: CommunityJpaEntityRepository = jpaEntityRepository
 
@@ -92,6 +95,9 @@ class CommunityPersistenceAdapter(
     @Transactional(readOnly = true)
     override fun findByOwner(ownerId: MultipleRoleUserId): List<Community> =
         assembleAll(communities.findAllByOwnerIdOrderByIdAsc(ownerId.value))
+
+    @Transactional(readOnly = true)
+    override fun findAllCommunities(): List<Community> = assembleAll(communities.findAll(JpaSort.by("id")).toList())
 
     override fun removeRoot(id: CommunityId, expectedVersion: Long?) {
         jpaEntityRepository.findByIdOrNull(id.value) ?: return

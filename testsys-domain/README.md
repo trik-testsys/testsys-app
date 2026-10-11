@@ -157,10 +157,15 @@
 в данные Пользователя, но его запись повышает токен `version` корня агрегата. `UserRepository.findLastLogins` читает эти моменты
 сразу для нескольких Пользователей.
 
+[`SupervisorUserReadPort`](src/main/kotlin/tech/testsys/domain/contract/persistence/SupervisorUserReadPort.kt)
+читает всех Пользователей, кроме Супервайзеров, с фильтрацией и постраничной выдачей. Он также читает
+одного Пользователя и считает Пользователей Сообщества. [`SupervisorCommunityReadPort`](src/main/kotlin/tech/testsys/domain/contract/persistence/SupervisorCommunityReadPort.kt)
+возвращает все Сообщества по идентификатору.
+
 `MultipleRoleUserRepository.addCommunityMembership` включает Пользователя в Сообщество в Роли из перечисления
 [`CommunityRole`](src/main/kotlin/tech/testsys/domain/model/user/CommunityRole.kt): Администратора, Организатора,
 Разработчика, Ученика или Судьи. Роль выбирает операция: создание Сообщества, Код-приглашение или решение
-Администратора.
+Администратора или Супервайзера.
 `MultipleRoleUserRepository.removeCommunityMembership` исключает Пользователя из Сообщества в такой Роли; Роль и её
 данные остаются у Пользователя, даже если членств в этой Роли больше нет.
 

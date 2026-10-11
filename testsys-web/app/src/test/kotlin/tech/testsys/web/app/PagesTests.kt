@@ -64,6 +64,9 @@ import tech.testsys.web.app.view.StudentClassView
 import tech.testsys.web.app.view.StudentContestView
 import tech.testsys.web.app.view.StudentTaskView
 import tech.testsys.web.app.view.StudentView
+import tech.testsys.web.app.view.SupervisorCommunityView
+import tech.testsys.web.app.view.SupervisorUserView
+import tech.testsys.web.app.view.SupervisorView
 import tech.testsys.web.app.view.TASKS_SECTION
 import tech.testsys.web.app.view.USER_ID_PARAMETER
 import tech.testsys.web.app.view.classContestParameters
@@ -146,6 +149,30 @@ class PagesTests : MockSpringVaadinTests() {
             ) + AdminUserSection.entries.associate { section ->
                 section.value to parametersOf { fixtures, user -> userParameters(memberWithAllSections(fixtures, user).id, section) }
             },
+            SupervisorView::class.java to mapOf(
+                "" to parametersOf { _, _ -> RouteParameters.empty() },
+                "users" to parametersOf { _, _ -> RouteParameters(ADMIN_SECTION_PARAMETER, "users") },
+                "communities" to parametersOf { _, _ -> RouteParameters(ADMIN_SECTION_PARAMETER, "communities") },
+            ),
+            SupervisorCommunityView::class.java to mapOf(
+                "community" to parametersOf { fixtures, _ ->
+                    RouteParameters(COMMUNITY_ID_PARAMETER, fixtures.community().id.value.toString())
+                },
+            ),
+            SupervisorUserView::class.java to mapOf(
+                "user" to parametersOf { fixtures, _ ->
+                    val community = fixtures.community()
+                    val member = fixtures.multipleRoleUser {
+                        roles {
+                            developer {
+                                memberOf(listOf(community.id.value))
+                                data = developerData {}
+                            }
+                        }
+                    }
+                    RouteParameters(USER_ID_PARAMETER, member.id.value.toString())
+                },
+            ),
             ManagerView::class.java to mapOf(
                 "" to parametersOf { fixtures, user ->
                     manager(fixtures, user)

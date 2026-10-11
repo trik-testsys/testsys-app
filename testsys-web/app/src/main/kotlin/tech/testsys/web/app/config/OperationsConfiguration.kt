@@ -8,6 +8,8 @@ import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.UserMailSender
+import tech.testsys.domain.contract.persistence.SupervisorCommunityReadPort
+import tech.testsys.domain.contract.persistence.SupervisorUserReadPort
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -57,6 +59,7 @@ import tech.testsys.operation.user.ObserverOperations
 import tech.testsys.operation.user.ParticipantOperations
 import tech.testsys.operation.user.StudentOperations
 import tech.testsys.operation.user.StudyOperations
+import tech.testsys.operation.user.SupervisorOperations
 import tech.testsys.operation.user.UserOperations
 import java.security.SecureRandom
 import java.time.Clock
@@ -73,6 +76,27 @@ import java.util.random.RandomGenerator
  */
 @Configuration
 class OperationsConfiguration {
+    /**
+     * Supervisor operations over all users and communities.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun supervisorOperations(
+        users: SupervisorUserReadPort,
+        communities: SupervisorCommunityReadPort,
+        communityRepository: CommunityRepository,
+        multipleRoleUsers: MultipleRoleUserRepository,
+        userRepository: UserRepository,
+        communityConfig: CommunityConfig,
+        administratorOperations: AdministratorOperations,
+        contests: ContestRepository,
+        observers: ObserverRepository,
+    ): SupervisorOperations = SupervisorOperations(
+        users, communities, communityRepository, multipleRoleUsers, userRepository, communityConfig, administratorOperations,
+        contests, observers,
+    )
+
     /**
      * Clock of the operations that check time.
      *

@@ -1,8 +1,6 @@
 package tech.testsys.web.app.view
 
 import com.vaadin.flow.router.HasDynamicTitle
-import com.vaadin.flow.router.Route
-import jakarta.annotation.security.RolesAllowed
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.feedback.emptyState
 import tech.testsys.web.components.texts.currentLocalization
@@ -32,13 +30,3 @@ abstract class PendingCabinetView(headers: CabinetHeaders, private val title: St
 
     override fun getPageTitle(): String = title
 }
-
-/**
- * Cabinet of a Supervisor (testsys.web.page.supervisor), not implemented yet.
- *
- * @since %CURRENT_VERSION%
- */
-@Route("supervisor/:section?(users|communities)")
-@RolesAllowed("SUPERVISOR")
-class SupervisorView(headers: CabinetHeaders) :
-    PendingCabinetView(headers, title = currentLocalization().pageSupervisor.title(), active = CabinetHeaders.MAIN_SECTION)

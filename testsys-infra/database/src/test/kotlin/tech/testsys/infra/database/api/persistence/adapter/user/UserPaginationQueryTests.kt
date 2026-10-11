@@ -15,12 +15,14 @@ import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
+import tech.testsys.domain.contract.persistence.SupervisorUserReadPort
 import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
+import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.User
 import tech.testsys.infra.database.DatabaseIntegrationTests
 import java.time.Instant
@@ -30,7 +32,70 @@ class UserPaginationQueryTests : DatabaseIntegrationTests() {
     @Autowired
     private lateinit var repository: UserRepository
 
+    @Autowired
+    private lateinit var supervisorUsers: SupervisorUserReadPort
+
     private val allUsers = Pagination(page = 0, size = 20)
+
+    @Test
+    fun `should list every concrete user kind except supervisors for the supervisor`() {
+        val administrator = newAdministrator()
+        val community = fixtures.community(owner = administrator)
+        val manager = member(community) { managerIn(it) }
+        val observer = fixtures.observer(community)
+        val participant = fixtures.participant(fixtures.competition(owner = manager))
+        val supervisor = fixtures.supervisor()
+
+        val page = supervisorUsers.findUsers(allUsers)
+
+        assertEquals(setOf(administrator.id, manager.id, observer.id, participant.id), page.content.map { it.id }.toSet())
+        assertEquals(4L, page.totalElements)
+        assertEquals(Participant::class, supervisorUsers.findUserById(participant.id)?.let { it::class })
+        assertEquals(null, supervisorUsers.findUserById(supervisor.id))
+    }
+
+    @Test
+    fun `should filter and count supervisor users before paging`() {
+        val administrator = newAdministrator()
+        val community = fixtures.community(owner = administrator)
+        val first = member(community, name = "Same") { developerIn(it) }
+        member(community, name = "Same") { developerIn(it) }
+        fixtures.observer(community)
+        val filter = UserFilter(name = "same", roles = setOf(UserFilter.Role.DEVELOPER), communityId = community.id)
+
+        val page = supervisorUsers.findUsers(Pagination(0, 1), filter)
+
+        assertEquals(listOf(first.id), page.content.map { it.id })
+        assertEquals(2L, page.totalElements)
+        assertEquals(4L, supervisorUsers.countUsersInCommunity(community.id))
+    }
+
+    @Test
+    fun `should break supervisor user name sort ties by ascending id`() {
+        val administrator = newAdministrator()
+        val community = fixtures.community(owner = administrator)
+        val first = member(community, name = "Equal") { developerIn(it) }
+        val second = member(community, name = "Equal") { studentIn(it) }
+        val sort = Sort(listOf(Sort.Order(field = "name", direction = Sort.Direction.DESC)))
+
+        val firstPage = supervisorUsers.findUsers(Pagination(0, 1, sort), UserFilter(name = "equal"))
+        val secondPage = supervisorUsers.findUsers(Pagination(1, 1, sort), UserFilter(name = "equal"))
+
+        assertEquals(listOf(first.id), firstPage.content.map { it.id })
+        assertEquals(listOf(second.id), secondPage.content.map { it.id })
+        assertEquals(2L, firstPage.totalElements)
+    }
+
+    @Test
+    fun `should return no supervisor users for an unknown community`() {
+        val missing = CommunityId(Long.MAX_VALUE)
+
+        val page = supervisorUsers.findUsers(allUsers, UserFilter(communityId = missing))
+
+        assertEquals(emptyList<User<*>>(), page.content)
+        assertEquals(0L, page.totalElements)
+        assertEquals(0L, supervisorUsers.countUsersInCommunity(missing))
+    }
 
     @Test
     fun `should return members of every role observers and the administrator of created communities`() {

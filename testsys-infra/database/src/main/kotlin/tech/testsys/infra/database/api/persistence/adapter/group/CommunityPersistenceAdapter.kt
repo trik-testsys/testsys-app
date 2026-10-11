@@ -1,5 +1,6 @@
 package tech.testsys.infra.database.api.persistence.adapter.group
 
+import jakarta.persistence.EntityManager
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -33,6 +34,7 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 class CommunityPersistenceAdapter(
     jpaEntityRepository: CommunityJpaEntityRepository,
     private val communityInviteJpaEntityRepository: CommunityInviteJpaEntityRepository,
+    private val entityManager: EntityManager,
 ) : AbstractPersistenceAdapter<CommunityData, CommunityId, Community, CommunityJpaEntity>(jpaEntityRepository),
     CommunityRepository {
 
@@ -57,6 +59,21 @@ class CommunityPersistenceAdapter(
         val managerInviteId = saveInvite(managerInvite, CommunityInvite.Kind.Manager)
         val developerInviteId = saveInvite(developerInvite, CommunityInvite.Kind.Developer)
         return save(data(managerInviteId, developerInviteId))
+    }
+
+    @Transactional
+    override fun saveWithIdAndInvites(
+        id: CommunityId,
+        managerInvite: CommunityInviteData,
+        developerInvite: CommunityInviteData,
+        data: (CommunityInviteId, CommunityInviteId) -> CommunityData,
+    ): Community {
+        val managerInviteId = saveInvite(managerInvite, CommunityInvite.Kind.Manager)
+        val developerInviteId = saveInvite(developerInvite, CommunityInvite.Kind.Developer)
+        val community = CommunityMapping.toJpaEntity(data(managerInviteId, developerInviteId), id.value)
+        entityManager.persist(community)
+        entityManager.flush()
+        return assemble(community)
     }
 
     @Transactional

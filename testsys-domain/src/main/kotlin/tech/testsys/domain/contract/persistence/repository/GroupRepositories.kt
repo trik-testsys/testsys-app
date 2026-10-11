@@ -130,6 +130,24 @@ interface CommunityRepository : EntityRepository<CommunityData, CommunityId, Com
     ): Community
 
     /**
+     * Synchronously inserts a new community with exactly [id] and its two new invites, all or none.
+     * An occupied id or invite code fails the transaction; this method never updates an existing community.
+     *
+     * @param id the required id of the new community.
+     * @param managerInvite the manager-role invite data.
+     * @param developerInvite the developer-role invite data.
+     * @param data community data computed from the saved invite ids.
+     * @return the inserted community with [id].
+     * @since %CURRENT_VERSION%
+     */
+    fun saveWithIdAndInvites(
+        id: CommunityId,
+        managerInvite: CommunityInviteData,
+        developerInvite: CommunityInviteData,
+        data: (CommunityInviteId, CommunityInviteId) -> CommunityData,
+    ): Community
+
+    /**
      * Synchronously finds the community referencing [inviteId] in either role, without changing stored state.
      *
      * @param inviteId the invite of the searched community.

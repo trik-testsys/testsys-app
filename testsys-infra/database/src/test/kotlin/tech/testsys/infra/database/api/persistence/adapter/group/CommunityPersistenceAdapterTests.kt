@@ -125,6 +125,58 @@ class CommunityPersistenceAdapterTests : UpdatablePersistenceAdapterContractTest
     }
 
     @Test
+    fun `should save the exact community id with both invites`() {
+        val id = CommunityId(8_000_000_000_000_000_000L + System.nanoTime() % 1_000_000_000L)
+        val ownerId = fixtures.administrator().id.value
+
+        val saved = repository.saveWithIdAndInvites(
+            id,
+            managerInvite = fixtures.communityInviteDataOf(code = fixtures.unique("manager")),
+            developerInvite = fixtures.communityInviteDataOf(code = fixtures.unique("developer")),
+        ) { managerId, developerId ->
+            communityData {
+                owner(ownerId)
+                name = fixtures.unique("Community")
+                description = ""
+                managerInvite = managerId
+                developerInvite = developerId
+            }
+        }
+
+        assertEquals(id, saved.id)
+        assertEquals(id, repository.findById(id)?.id)
+        assertNotNull(managerInvites.findById(saved.data.managerInvite.id))
+        assertNotNull(developerInvites.findById(saved.data.developerInvite.id))
+    }
+
+    @Test
+    fun `should roll back both invites on an occupied community id`() {
+        val existing = fixtures.community()
+        val managerCode = fixtures.unique("manager")
+        val developerCode = fixtures.unique("developer")
+
+        assertFailsWith<Exception> {
+            repository.saveWithIdAndInvites(
+                existing.id,
+                managerInvite = fixtures.communityInviteDataOf(code = managerCode),
+                developerInvite = fixtures.communityInviteDataOf(code = developerCode),
+            ) { managerId, developerId ->
+                communityData {
+                    owner = existing.data.owner.id
+                    name = fixtures.unique("Other")
+                    description = ""
+                    managerInvite = managerId
+                    developerInvite = developerId
+                }
+            }
+        }
+
+        assertEquals(existing.data.name, repository.findById(existing.id)?.data?.name)
+        assertNull(managerInvites.findByCode(InviteCodeHash(managerCode, HashAlgorithm.Identity)))
+        assertNull(developerInvites.findByCode(InviteCodeHash(developerCode, HashAlgorithm.Identity)))
+    }
+
+    @Test
     fun `should find the community by either of its invites`() {
         val community = fixtures.community()
         fixtures.community()

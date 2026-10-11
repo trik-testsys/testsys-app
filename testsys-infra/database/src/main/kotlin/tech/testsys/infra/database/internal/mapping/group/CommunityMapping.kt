@@ -35,16 +35,17 @@ object CommunityMapping : EntityMapping<Community, CommunityJpaEntity> {
     }
 
     /**
-     * Creates a new [CommunityJpaEntity] row from [data].
+     * Creates a new [CommunityJpaEntity] row from [data], optionally using the supplied [id].
      *
      * @since %CURRENT_VERSION%
      */
-    fun toJpaEntity(data: CommunityData) = CommunityJpaEntity(
+    fun toJpaEntity(data: CommunityData, id: Long? = null) = CommunityJpaEntity(
         name = data.name,
         description = data.description,
         ownerId = data.owner.id.value,
         managerInviteId = data.managerInvite.id.value,
         developerInviteId = data.developerInvite.id.value,
+        id = id,
     )
 
     /**

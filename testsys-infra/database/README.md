@@ -458,6 +458,9 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 их колонки берутся из текущей строки. Каскадного удаления в БД нет: `removeById` группы удаляет её строку,
 а затем строки её Кодов-приглашений.
 
+`CommunityPersistenceAdapter.saveWithIdAndInvites` вставляет новое Сообщество с заданным ID. Конфликт первичного
+ключа откатывает всю транзакцию, включая оба Кода-приглашения.
+
 `ClassPersistenceAdapter.addStudent` в одной транзакции повышает версии Класса и Ученика и добавляет строку
 `ts_student_to_class`, если её нет; остальные данные Класса не меняются.
 `MultipleRoleUserPersistenceAdapter.addCommunityMembership` в одной транзакции повышает версию Пользователя

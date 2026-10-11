@@ -20,8 +20,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.domain.builder.api.developerData
+import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
+import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.CabinetSignIn
@@ -29,6 +32,9 @@ import tech.testsys.web.app.security.UserKind
 
 @SpringBootTest
 class AuthenticationViewTests : MockSpringVaadinTests() {
+    @Autowired
+    private lateinit var multipleRoleUsers: MultipleRoleUserRepository
+
     @ParameterizedTest
     @MethodSource("startPages")
     fun `should sign the user in and open the start page of their kind`(kind: UserKind, startPage: Class<out Component>) {
@@ -47,6 +53,18 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
         UI.getCurrent().navigate(AuthenticationView::class.java)
 
         signInWith("unknown access code")
+
+        assertEquals(AuthenticationView::class.java, currentView)
+        assertEquals("Код-доступа недействителен", UI.getCurrent()._get<Span> { classes = "ts-toast__title" }.text)
+        assertNull(CabinetSignIn.principal())
+    }
+
+    @Test
+    fun `should show the existing invalid code message for the technical owner`() {
+        val owner = requireNotNull(multipleRoleUsers.findByEmail(PublicCommunityOwner.EMAIL))
+        UI.getCurrent().navigate(AuthenticationView::class.java)
+
+        signInWith(owner.data.accessTokenHash.value)
 
         assertEquals(AuthenticationView::class.java, currentView)
         assertEquals("Код-доступа недействителен", UI.getCurrent()._get<Span> { classes = "ts-toast__title" }.text)

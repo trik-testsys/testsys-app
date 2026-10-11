@@ -35,6 +35,7 @@ import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.operation.config.EmailConfirmationConfig
+import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.operation.error.ConfirmationAttemptsExhaustedError
 import tech.testsys.operation.error.ConfirmationCodeExpiredError
 import tech.testsys.operation.error.EmailAlreadyBoundError
@@ -188,6 +189,18 @@ class UserOperationsTests {
                 assertRaises(InvalidAccessTokenError) {
                     operations.authenticate(accessToken = " token ")
                 }
+            }
+
+            @Test
+            fun `should refuse the technical public community owner`() {
+                val owner = testMultipleRoleUser { email = PublicCommunityOwner.EMAIL }
+                every { multipleRoleUsers.findByAccessToken("technical-token") } returns owner
+
+                assertRaises(InvalidAccessTokenError) {
+                    operations.authenticate("technical-token")
+                }
+
+                verify(exactly = 1) { users.recordLogin(owner.id, now) }
             }
         }
 

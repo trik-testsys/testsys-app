@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
+import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.UserMailSender
@@ -89,14 +90,34 @@ class OperationsConfiguration {
     fun randomGenerator(): RandomGenerator = SecureRandom()
 
     /**
-     * Public community from the required property `testsys.operation.community.public-community-id`.
+     * Creates or verifies the public community with the required configured id before supplying it to operations.
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun communityConfig(runtime: RuntimeSettings): CommunityConfig {
+    fun communityConfig(
+        environment: Environment,
+        communities: CommunityRepository,
+        multipleRoleUsers: MultipleRoleUserRepository,
+        managerInvites: ManagerCommunityInviteRepository,
+        developerInvites: DeveloperCommunityInviteRepository,
+        transactions: TransactionOperations,
+        inviteConfig: CommunityInviteConfig,
+        clock: Clock,
+        randomGenerator: RandomGenerator,
+    ): CommunityConfig {
+        val id = PublicCommunityBootstrap(
+            communities,
+            multipleRoleUsers,
+            managerInvites,
+            developerInvites,
+            transactions,
+            inviteConfig,
+            clock,
+            randomGenerator,
+        ).ensure(environment)
         return object : CommunityConfig {
-            override val publicCommunityId = runtime.publicCommunityId
+            override val publicCommunityId = id
         }
     }
 

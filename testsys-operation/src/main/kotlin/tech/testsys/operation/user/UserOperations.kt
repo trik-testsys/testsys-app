@@ -21,6 +21,7 @@ import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.operation.config.EmailConfirmationConfig
+import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.operation.error.AuthenticateError
 import tech.testsys.operation.error.ConfirmRegistrationError
 import tech.testsys.operation.error.ConfirmationAttemptsExhaustedError
@@ -70,7 +71,8 @@ class UserOperations(
 
     /**
      * Returns the user whose current access code equals [accessToken] exactly and records the current moment as their
-     * last login, without changing the user data.
+     * last login, without changing the user data. The technical public-community owner is refused with the same error
+     * as an unknown code; the caller must roll back the attempted login record on that refusal.
      *
      * @since %CURRENT_VERSION%
      */
@@ -83,6 +85,7 @@ class UserOperations(
         ensure(user != null, InvalidAccessTokenError)
 
         userRepository.recordLogin(user.id, clock.instant().truncatedTo(ChronoUnit.MICROS))
+        ensure(user !is MultipleRoleUser || user.data.email != PublicCommunityOwner.EMAIL, InvalidAccessTokenError)
         return user.asSuccess()
     }
 

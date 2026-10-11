@@ -19,7 +19,14 @@ import tech.testsys.web.components.texts.UiTexts
 class RestoreAccessView(texts: UiTexts, headers: CabinetHeaders) : TestSysView(texts) {
     init {
         page(headers.guest(hasSignIn = false)) {
-            guestForm(active = GuestTab.RestoreAccess) { emptyState("Восстановление доступа пока не реализовано") }
+            guide("Восстановление доступа ещё не реализовано. Для входа используйте свой Код-доступа.")
+            guestForm(active = GuestTab.RestoreAccess) {
+                guide(
+                    "Восстановление доступа пока недоступно. Используйте вкладку входа, если у вас есть Код-доступа.",
+                    title = "Восстановление доступа",
+                )
+                emptyState("Восстановление доступа пока не реализовано")
+            }
         }
     }
 }

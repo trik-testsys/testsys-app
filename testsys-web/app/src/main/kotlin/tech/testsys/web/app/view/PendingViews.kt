@@ -19,7 +19,13 @@ abstract class PendingCabinetView(texts: UiTexts, headers: CabinetHeaders, title
     init {
         page(headers.cabinet(active)) {
             head(title)
-            row { block { emptyState("Раздел пока не реализован") } }
+            guide("Этот раздел пока не реализован. Доступные разделы можно открыть через шапку.")
+            row {
+                block {
+                    guide("Действия этого раздела ещё не реализованы.", title = "Состояние раздела")
+                    emptyState("Раздел пока не реализован")
+                }
+            }
         }
     }
 }

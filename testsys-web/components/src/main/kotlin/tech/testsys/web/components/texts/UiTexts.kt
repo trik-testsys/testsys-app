@@ -9,6 +9,7 @@ import java.util.Locale
  * @property locale the locale of dates, times and numbers.
  * @property brand the accessible product name in the header and footer.
  * @property footer the texts of the page footer.
+ * @property guide the texts of page and block guides.
  * @property tableFilters the texts of the table filter panel.
  * @property signIn the label of the header sign-in link.
  * @property header the texts of interactive header layers.
@@ -55,6 +56,7 @@ class UiTexts(
     val header: HeaderTexts,
     val footer: FooterTexts,
     val tableFilters: TableFiltersTexts,
+    val guide: GuideTexts,
 )
 
 /**
@@ -392,4 +394,26 @@ class HeaderTexts(
     val arrivalClose: String,
     val arrivalCount: (Int) -> String,
     val arrivalBatchHint: String,
+)
+
+/**
+ * Accessible labels of the guide controls.
+ *
+ * @property page the page-guide launch label.
+ * @property block the block-guide launch label.
+ * @property previous the previous-step label.
+ * @property next the next-step label.
+ * @property done the final-step label.
+ * @property close the close label.
+ * @property progress the counter template with `{{current}}` and `{{total}}` placeholders.
+ * @since %CURRENT_VERSION%
+ */
+class GuideTexts(
+    val page: String,
+    val block: String,
+    val previous: String,
+    val next: String,
+    val done: String,
+    val close: String,
+    val progress: String,
 )

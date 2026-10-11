@@ -19,6 +19,8 @@ internal enum class CssClass(internal val value: String) {
     AlertText("ts-alert__text"),
     AlertTitle("ts-alert__title"),
     App("ts-app"),
+    GuideButton("ts-guide-button"),
+    GuideController("ts-guide-controller"),
     Avatar("ts-avatar"),
     AvatarT0("ts-avatar--t0"),
     Bell("ts-bell"),

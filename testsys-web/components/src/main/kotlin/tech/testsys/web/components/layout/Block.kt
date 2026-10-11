@@ -13,6 +13,7 @@ import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setGridColumnSpan
+import tech.testsys.web.components.overlay.guideButton
 import tech.testsys.web.components.texts.UiTexts
 
 /** Title and subtitle of a block head; the head is omitted if there are neither, nor actions, nor tabs. */
@@ -48,6 +49,14 @@ internal fun buildBlock(
         scope.footerBar?.let { footer -> add(footer) }
     }
 
+    scope.guide?.let { guide ->
+        guide.install(block)
+        val head = block.children.toList().filterIsInstance<Header>().firstOrNull() ?: Header().apply {
+            addClassName(CssClass.BlockHead)
+            block.addComponentAsFirst(this)
+        }
+        head.add(guideButton(texts.guide.block, isPage = false))
+    }
     scope.start()
     return BlockHandle(block, editState, hasEditingSwitch = scope.hasEditingSwitch)
 }

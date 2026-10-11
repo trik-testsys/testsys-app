@@ -125,6 +125,7 @@ class AdminUserView(
                     }
                 }
             }
+            guide("Здесь показаны сведения о Пользователе, его Роли и доступная вам статистика.")
             when (section) {
                 null -> {
                     detailsBlock(user, lastLogin)
@@ -149,6 +150,7 @@ class AdminUserView(
     private fun PageScope.detailsBlock(user: AdminUserVo, lastLogin: Instant?) {
         row {
             block(title = "Сведения") {
+                guide("Идентификатор, Псевдоним и другие доступные Администратору сведения о Пользователе.")
                 row {
                     codeInput("ID", labelSize = 3, size = 6) { value = user.id.value.toString() }
                     textInput("Псевдоним", labelSize = 3, size = 8) { value = user.name }
@@ -178,6 +180,7 @@ class AdminUserView(
         }
         row {
             block(title = "Роли в сообществах") {
+                guide("Сообщества Пользователя и Роли, которые он выполняет в каждом из них.")
                 table(key = { membership: Membership -> membership.community.id }, fetch = { request -> pageOf(memberships, request) }) {
                     textColumn("Сообщество", size = 12) { membership -> membership.community.name }
                     column("Роли") { membership -> membership.labels.forEach { label -> tag(label) } }
@@ -275,6 +278,7 @@ class AdminUserView(
         val tasks = administratorService.viewUserTasks(userId)
         row {
             block(title = "Задачи") {
+                guide("Список Задач и их основные сведения.")
                 table(key = { (task, _, _) -> task.id }, fetch = { request -> pageOf(tasks, request) }) {
                     textColumn("Название", size = 10) { (task, _, _) -> task.name }
                     column("Статус проверки", size = 6) { (_, request, _) ->
@@ -292,6 +296,7 @@ class AdminUserView(
         val contests = administratorService.viewUserContests(userId)
         row {
             block(title = "Туры") {
+                guide("Туры Пользователя, число Задач и количество Решений по каждой Задаче.")
                 table(key = { (contest, _) -> contest.id }, fetch = { request -> pageOf(contests, request) }) {
                     textColumn("Название", size = 10) { (contest, _) -> contest.name }
                     numberColumn("Задачи", size = 3) { (_, tasks) -> tasks.size }
@@ -311,6 +316,7 @@ class AdminUserView(
         val classes = administratorService.viewUserClasses(userId)
         row {
             block(title = "Классы") {
+                guide("Список Классов и сведения о них.")
                 table(key = { (group, _) -> group.id }, fetch = { request -> pageOf(classes, request) }) {
                     textColumn("Название", size = 9) { (group, _) -> group.name }
                     numberColumn("Ученики", size = 5) { (group, _) -> group.students.size }
@@ -326,6 +332,7 @@ class AdminUserView(
         val competitions = administratorService.viewUserCompetitions(userId)
         row {
             block(title = "Соревнования") {
+                guide("Список Соревнований и сведения о них.")
                 table(key = { (competition, _) -> competition.id }, fetch = { request -> pageOf(competitions, request) }) {
                     textColumn("Название", size = 9) { (competition, _) -> competition.name }
                     numberColumn("Участники", size = 5) { (competition, _) -> competition.participants.size }
@@ -341,6 +348,7 @@ class AdminUserView(
         val judgments = administratorService.viewUserJudgments(userId)
         row {
             block(title = "Судейские вердикты") {
+                guide("История выставленных Судьями Вердиктов.")
                 table(key = { (order, _, _) -> order.id }, fetch = { request -> pageOf(judgments, request) }) {
                     codeColumn("Решение", size = 6) { (_, solution, _) -> solution.value.toString() }
                     dateTimeColumn("Выставлен", size = 6) { (order, _, _) -> order.createdAt.toServerDateTime() }
@@ -356,6 +364,7 @@ class AdminUserView(
         val contests = administratorService.viewUserAssignedContests(userId)
         row {
             block(title = "Назначенные туры") {
+                guide("Туры, назначенные Пользователю, и связанные Соревнования.")
                 table(key = { (contest, _) -> contest.id }, fetch = { request -> pageOf(contests, request) }) {
                     textColumn("Тур", size = 10) { (contest, _) -> contest.name }
                     textColumn("Соревнования") { (_, competitions) -> competitions.joinToString(", ") { competition -> competition.name } }

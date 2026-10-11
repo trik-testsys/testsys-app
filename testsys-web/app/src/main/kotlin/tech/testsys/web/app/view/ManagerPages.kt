@@ -129,6 +129,7 @@ internal fun PageScope.managerContestsBlock(
 
     row {
         block(title = "Туры") {
+            guide("Список Туров и их параметры. Выберите строку, чтобы открыть Тур.")
             table(key = { contest: ContestVo -> contest.id }, fetch = { request -> pageOf(contests, request) }) {
                 textColumn("Название", size = 9) { contest -> contest.name }
                 dateTimeColumn("Начало", size = 5) { contest -> contest.startsAt?.toServerDateTime() }

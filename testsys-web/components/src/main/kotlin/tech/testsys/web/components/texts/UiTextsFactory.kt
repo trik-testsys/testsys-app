@@ -20,6 +20,15 @@ fun buildUiTexts(): UiTexts {
         locale = locale,
         brand = "TestSys",
         signIn = "Войти",
+        guide = GuideTexts(
+            page = "Открыть гайд страницы",
+            block = "Показать пояснение блока",
+            previous = "Предыдущий шаг",
+            next = "Следующий шаг",
+            done = "Завершить гайд",
+            close = "Закрыть гайд",
+            progress = "{{current}} из {{total}}",
+        ),
         footer = FooterTexts(year = { year -> year.toString() }, links = "Ссылки футтера"),
         tableFilters = TableFiltersTexts(title = "Настроить фильтры", apply = "Применить", reset = "Сбросить"),
         calendar = CalendarTexts(

@@ -54,8 +54,14 @@ class AdminView(texts: UiTexts, private val headers: CabinetHeaders, private val
                     tab("Пользователи", AdminView::class.java, sectionParameters(USERS_SECTION))
                 }
             }
+            guide("Управляйте своими Сообществами и их Пользователями через вкладки Кабинета Администратора.")
             if (section == USERS_SECTION) {
-                row { block(title = "Пользователи") { adminUsersTable(administratorService, communities, community = null) } }
+                row {
+                    block(title = "Пользователи") {
+                        guide("Пользователи доступных вам Сообществ. Фильтры помогают найти нужную запись.")
+                        adminUsersTable(administratorService, communities, community = null)
+                    }
+                }
             } else {
                 communitiesBlock()
             }
@@ -65,6 +71,7 @@ class AdminView(texts: UiTexts, private val headers: CabinetHeaders, private val
     private fun PageScope.communitiesBlock() {
         row {
             block(title = "Сообщества") {
+                guide("Сообщества, доступные в этом Кабинете.")
                 val rows = table(
                     key = { (community, _): Pair<CommunityVo, Long> -> community.id },
                     fetch = { request -> pageOf(administratorService.viewCommunities(), request) },

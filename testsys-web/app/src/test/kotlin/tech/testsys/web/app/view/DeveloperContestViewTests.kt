@@ -10,6 +10,8 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.textfield.TextField
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -130,6 +132,7 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
         assertEquals(emptyList<Button>(), UI.getCurrent()._find<Button> { text = "Изменить" })
         assertFalse(pageButton("Удалить тур").isEnabled)
         assertFalse(pageButton("Прикрепить задачу").isEnabled)
+        assertRestrictedContestGuides()
     }
 
     @Test
@@ -144,6 +147,7 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
 
         assertEquals(listOf("Изменять тур может только его владелец."), alertDescriptions())
         assertFalse(pageButton("Предоставить доступ").isEnabled)
+        assertRestrictedContestGuides()
     }
 
     @Test
@@ -181,6 +185,21 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
 
     private fun open(contestId: ContestId) {
         UI.getCurrent().navigate(DeveloperContestView::class.java, contestParameters(contestId))
+    }
+
+    private fun assertRestrictedContestGuides() {
+        val blocks = UI.getCurrent()._find<Section> { classes = "ts-block" }
+        assertTrue(blocks.isNotEmpty())
+        assertTrue(blocks.all { block -> !block.element.getAttribute("data-guide-title").isNullOrBlank() })
+        assertTrue(blocks.all { block -> !block.element.getAttribute("data-guide-description").isNullOrBlank() })
+        assertTrue(
+            blocks.all { block ->
+                block._find<NativeButton> { classes = "ts-guide-button" }
+                    .count { button -> button.element.getAttribute("data-guide-start") == "block" } == 1
+            },
+        )
+        assertEquals("Тур нельзя изменить", blocks.first().element.getAttribute("data-guide-title"))
+        assertEquals(alertDescriptions().single(), blocks.first().element.getAttribute("data-guide-description"))
     }
 
     /** Returns the task field of the open dialog, the only custom field in it. */

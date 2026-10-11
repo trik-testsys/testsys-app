@@ -45,8 +45,10 @@ class StudentClassView(
                 crumb("Главная", MultiMainView::class.java)
                 crumb("Кабинет Ученика", StudentView::class.java)
             }
+            guide("На странице Класса показаны его сведения и доступные Туры.")
             row {
                 block(title = "Сведения") {
+                    guide("Идентификатор, название и описание Класса, к которому вы присоединились.")
                     row { codeInput("ID", labelSize = 4, size = 8) { value = studyClass.id.value.toString() } }
                     row { textInput("Название", labelSize = 4, size = 20) { value = studyClass.name } }
                     row { textArea("Описание", labelSize = 4, size = 20, maxLines = 4) { value = studyClass.description } }
@@ -54,6 +56,7 @@ class StudentClassView(
             }
             row {
                 block(title = "Туры") {
+                    guide("Список Туров и их параметры. Выберите строку, чтобы открыть Тур.")
                     table(
                         key = { (_, contest): Pair<Instant?, ContestVo> -> contest.id },
                         fetch = { request -> pageOf(contests, request) },

@@ -70,7 +70,13 @@ class JudgeView(texts: UiTexts, private val headers: CabinetHeaders, private val
         judgeService.viewResults(Pagination(page = 0, size = 1))
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head("Кабинет Судьи") { crumb("Главная", MultiMainView::class.java) }
-            row { block(title = "Посылки") { submissionsTable() } }
+            guide("Найдите Посылку в таблице и откройте её для просмотра Решения и Вердикта.")
+            row {
+                block(title = "Посылки") {
+                    guide("Посылки и результаты их проверки.")
+                    submissionsTable()
+                }
+            }
         }
     }
 

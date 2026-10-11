@@ -15,10 +15,15 @@ import tech.testsys.web.components.actions.setActionRole
 import tech.testsys.web.components.buildBrand
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.ElementSize
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setSize
 import tech.testsys.web.components.layout.buildPageFooter
+import tech.testsys.web.components.overlay.GuideClient
+import tech.testsys.web.components.overlay.GuideStep
+import tech.testsys.web.components.overlay.guideButton
 import tech.testsys.web.components.texts.UiTexts
 
 /**
@@ -39,6 +44,11 @@ open class ErrorPage(texts: UiTexts) : Div(), HasDynamicTitle {
     private val description = Div().apply { addClassName(CssClass.EmptyDesc) }
 
     private var pageTitle = ""
+    private val guideHeading = Div(heading, guideButton(texts.guide.page, isPage = true)).apply {
+        addClassName(CssClass.PageHeadTitleRow)
+        element.setAttribute(HtmlAttribute.DataGuideIntroduction, "")
+    }
+    private val block = Section()
 
     init {
         addClassName(CssClass.App)
@@ -48,9 +58,14 @@ open class ErrorPage(texts: UiTexts) : Div(), HasDynamicTitle {
         val header = Header(bar).apply { addClassName(CssClass.Header) }
 
         val actions = Div(back).apply { addClassName(CssClass.EmptyActions) }
-        val content = Div(heading, description, actions).apply { addClassName(CssClass.Empty) }
-        val block = Section(content).apply { addClassName(CssClass.Block) }
-        add(header, Main(block).apply { addClassName(CssClass.Page) }, buildPageFooter(texts))
+        val content = Div(guideHeading, description, actions).apply {
+            addClassName(CssClass.Empty)
+        }
+        val blockHead = Header(guideButton(texts.guide.block, isPage = false)).apply { addClassName(CssClass.BlockHead) }
+        block.add(blockHead, content)
+        block.addClassName(CssClass.Block)
+        val footer = buildPageFooter(texts).apply { add(GuideClient(texts.guide)) }
+        add(header, Main(block).apply { addClassName(CssClass.Page) }, footer)
     }
 
     /**
@@ -62,6 +77,8 @@ open class ErrorPage(texts: UiTexts) : Div(), HasDynamicTitle {
         heading.text = title
         this.description.text = description
         this.pageTitle = pageTitle
+        GuideStep(guideHeading, title = title, description = description).install()
+        GuideStep(block, title = title, description = description).install()
     }
 
     /**

@@ -49,6 +49,7 @@ class ManagerCompetitionView(texts: UiTexts, private val headers: CabinetHeaders
         val details = managerService.viewCompetition(competitionId)
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head("Соревнование «${details.competition.name}»") { managerCrumbs(COMPETITIONS_SECTION) }
+            guide("Управляйте Соревнованием, его Участниками и Турами.")
             detailsBlock(details)
             participantsBlock(competitionId, details.participants)
             managerContestsBlock(
@@ -69,6 +70,7 @@ class ManagerCompetitionView(texts: UiTexts, private val headers: CabinetHeaders
         val draft = Binder<DetailsDraft>()
         row {
             block(title = "Сведения") {
+                guide("Просмотрите параметры. Нажмите «Изменить», чтобы отредактировать их, затем сохраните изменения или отмените их.")
                 editing(
                     onSave = {
                         val values = DetailsDraft()
@@ -124,6 +126,7 @@ class ManagerCompetitionView(texts: UiTexts, private val headers: CabinetHeaders
     private fun PageScope.participantsBlock(competitionId: CompetitionId, participants: List<Pair<ParticipantVo, Instant?>>) {
         row {
             block(title = "Участники") {
+                guide("Участники Соревнования, их Коды-доступа и сведения о входе.")
                 table(
                     key = { (participant, _): Pair<ParticipantVo, Instant?> -> participant.id },
                     fetch = { request -> pageOf(participants, request) },

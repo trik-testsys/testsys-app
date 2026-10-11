@@ -44,8 +44,10 @@ class StudentView(texts: UiTexts, private val headers: CabinetHeaders, private v
         val classes = studentService.viewClasses()
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head("Кабинет Ученика") { crumb("Главная", MultiMainView::class.java) }
+            guide("Откройте свой Класс или присоединитесь к новому по Коду-приглашению.")
             row {
                 block(size = CLASSES_COLUMNS, title = "Классы") {
+                    guide("Список Классов и сведения о них.")
                     table(key = { studyClass: ClassVo -> studyClass.id }, fetch = { request -> pageOf(classes, request) }) {
                         textColumn("Название", size = 8) { studyClass -> studyClass.name }
                         textColumn("Описание") { studyClass -> studyClass.description }
@@ -56,6 +58,7 @@ class StudentView(texts: UiTexts, private val headers: CabinetHeaders, private v
                     }
                 }
                 block(title = "Присоединиться к классу") {
+                    guide("Введите Код-приглашение от Организатора и нажмите «Присоединиться».")
                     lateinit var inviteCode: ValueInput<String>
                     row { inviteCode = codeInput("Код-приглашение", labelSize = 10, size = 14) }
                     footer {

@@ -74,13 +74,18 @@ abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHead
                     }
                 }
             }
+            guide("Здесь показаны условия Тура, оставшееся время и доступные Задачи.")
             row {
                 contestDetails(contest)
-                highlightBlock(title = "Осталось") { studyRemainingTime(contest, enteredAt, now) }
+                highlightBlock(title = "Осталось") {
+                    guide("Время, оставшееся для работы в Туре. После его окончания отправка Решений недоступна.")
+                    studyRemainingTime(contest, enteredAt, now)
+                }
             }
             if (enteredAt != null && contest.startsAt?.let { start -> !now.isBefore(start) } != false) {
                 row {
                     block(title = "Задачи") {
+                        guide("Список Задач и их основные сведения.")
                         table(key = { item: StudyContestTaskVo -> item.task.id }, fetch = { request -> pageOf(tasks, request) }) {
                             textColumn("Название", size = 12) { item -> item.task.name }
                             numberColumn("Балл", size = 4) { item -> item.bestScore }
@@ -100,6 +105,7 @@ abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHead
 
     private fun PageRowScope.contestDetails(contest: ContestVo) {
         block(size = CONTEST_DETAILS_COLUMNS, title = "Сведения") {
+            guide("Название и описание Тура, время начала и окончания и ограничение времени на прохождение.")
             row { codeInput("ID", labelSize = 6, size = 10) { value = contest.id.value.toString() } }
             row { textInput("Название", labelSize = 6, size = 18) { value = contest.name } }
             row { textArea("Описание", labelSize = 6, size = 18, maxLines = 4) { value = contest.description } }

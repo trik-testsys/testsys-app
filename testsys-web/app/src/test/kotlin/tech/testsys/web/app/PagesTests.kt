@@ -2,15 +2,19 @@ package tech.testsys.web.app
 
 import com.github.mvysny.kaributesting.v10.Routes
 import com.github.mvysny.kaributesting.v10._errorMessage
+import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.router.InternalServerError
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.server.VaadinService
 import jakarta.annotation.security.RolesAllowed
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.Arguments.argumentSet
@@ -101,6 +105,12 @@ class PagesTests : MockSpringVaadinTests() {
                 .filterIsInstance<InternalServerError>()
                 .joinToString { error -> error._errorMessage }
         }
+        val buttons = _find<NativeButton> { classes = "ts-guide-button" }
+        assertEquals(1, buttons.count { button -> button.element.getAttribute("data-guide-start") == "page" })
+        val blocks = _find<Section> { classes = "ts-block" }
+        assertTrue(blocks.isNotEmpty())
+        assertTrue(blocks.all { block -> !block.element.getAttribute("data-guide-description").isNullOrBlank() })
+        assertEquals(blocks.size, buttons.count { button -> button.element.getAttribute("data-guide-start") == "block" })
     }
 
     companion object {

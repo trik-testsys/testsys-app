@@ -35,8 +35,10 @@ class ParticipantView(
         val now = clock.instant()
         page(headers.cabinet(active = CabinetHeaders.MAIN_SECTION)) {
             head("Кабинет Участника")
+            guide("Выберите назначенный Тур, чтобы перейти к его Задачам.")
             row {
                 block(title = "Туры") {
+                    guide("Список Туров и их параметры. Выберите строку, чтобы открыть Тур.")
                     table(
                         key = { (_, contest): Pair<Instant?, ContestVo> -> contest.id },
                         fetch = { request -> pageOf(contests, request) },

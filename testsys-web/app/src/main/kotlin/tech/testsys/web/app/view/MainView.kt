@@ -23,7 +23,9 @@ class MainView(texts: UiTexts, headers: CabinetHeaders) : TestSysView(texts), Be
     init {
         page(headers.guest()) {
             head("TestSys")
+            guide("Начните работу в TestSys: войдите по Коду-доступа или зарегистрируйтесь.")
             guestBlock {
+                guide("Выберите вход по Коду-доступа или регистрацию нового Пользователя.", title = "Начало работы")
                 row { text("Войдите по Коду-доступа или зарегистрируйтесь как Ученик или Организатор.") }
                 footer {
                     mainAction("Войти") { onClick { UI.getCurrent().navigate(AuthenticationView::class.java) } }

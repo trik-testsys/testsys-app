@@ -54,9 +54,13 @@ class RegistrationView(
 
     private fun showEmailStep(email: String) {
         page(headers.guest(hasSignIn = false)) {
+            guide("Регистрация Ученика или Организатора: подтвердите почту и укажите сведения о себе.")
             guestForm(active = GuestTab.Registration) {
                 lateinit var emailInput: ValueInput<String>
                 row { emailInput = textInput("Почта", labelSize = 6, size = 18) { value = email } }
+                guide("Укажите почту, на которую придёт код подтверждения.", title = "Подтверждение почты") {
+                    step(emailInput, title = "Почта", description = "Введите адрес почты, к которому у вас есть доступ.")
+                }
                 footer { mainAction("Получить код") { onClick { requestCode(emailInput.value) } } }
             }
         }
@@ -64,6 +68,7 @@ class RegistrationView(
 
     private fun showConfirmationStep(email: String, requestId: RegistrationRequestId) {
         page(headers.guest(hasSignIn = false)) {
+            guide("Регистрация Ученика или Организатора: подтвердите почту и укажите сведения о себе.")
             guestForm(active = GuestTab.Registration) {
                 lateinit var code: ValueInput<String>
                 lateinit var name: ValueInput<String>
@@ -75,6 +80,11 @@ class RegistrationView(
                     role = radio("Роль", labelSize = 6, size = 18, items = RegistrationRole.entries, itemLabel = ::roleLabel) {
                         value = RegistrationRole.Student
                     }
+                }
+                guide("Введите код из письма, выберите Псевдоним и Роль.", title = "Создание Пользователя") {
+                    step(code, title = "Код из письма", description = "Введите код из последнего письма с подтверждением.")
+                    step(name, title = "Псевдоним", description = "Это имя будет видно другим Пользователям.")
+                    step(role, title = "Роль", description = "Выберите Ученика для обучения или Организатора для проведения Туров.")
                 }
                 footer {
                     mainAction("Зарегистрироваться") {

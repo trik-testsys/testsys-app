@@ -60,9 +60,11 @@ class ManagerView(texts: UiTexts, private val headers: CabinetHeaders, private v
                     tab("Соревнования", ManagerView::class.java, managerSection(COMPETITIONS_SECTION))
                 }
             }
+            guide("Создавайте Классы и Соревнования и открывайте их через таблицы соответствующих вкладок.")
             row {
                 if (section == COMPETITIONS_SECTION) {
                     block(title = "Соревнования") {
+                        guide("Список Соревнований и сведения о них.")
                         groupsTable(
                             fetch = { request, (name, from, to) ->
                                 val filter = CompetitionFilter(name = name, createdFrom = from, createdTo = to)
@@ -86,6 +88,7 @@ class ManagerView(texts: UiTexts, private val headers: CabinetHeaders, private v
                     }
                 } else {
                     block(title = "Классы") {
+                        guide("Список Классов и сведения о них.")
                         groupsTable(
                             fetch = { request, (name, from, to) ->
                                 val filter = ClassFilter(name = name, createdFrom = from, createdTo = to)

@@ -120,7 +120,7 @@ class ProfileView(texts: UiTexts) : TestSysView(texts) {
 | `actions { }` | Кнопки справа в строке заголовка — `ContentScope`, кнопки обычного размера |
 | `tabs { }` | Вкладки разделов одного объекта — `PageTabsScope`, см. [Вкладки страницы](#вкладки-страницы) |
 
-- `head` — первый вызов тела страницы и не больше одного: после `row`, настройки `footer` или второго `head` —
+- `head` — до рядов и футтера и не больше одного: после `row`, настройки `footer` или второго `head` —
   `IllegalStateException`.
 - `actions` и `tabs` — не больше одного раза каждый (`IllegalStateException`), `badge` и `meta` — сколько угодно,
   в порядке вызова. В остальном порядок вызовов внутри `head` не важен.
@@ -174,6 +174,41 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 }
 ```
 
+## Гайды страницы и блока
+
+`PageScope.guide(description)` добавляет вводное пояснение и кнопку информации в заголовок страницы.
+Если `head` не задан, заголовком служит имя бренда. Настройка гайда не занимает место в теле:
+её можно вызвать до или после `head`; сам `head` по-прежнему должен предшествовать рядам и футтеру.
+
+`BlockScope.guide(description, title = this.title) { … }` добавляет кнопку информации в шапку блока.
+У блока без заголовка передайте `title` явно. Кнопка блока открывает только его пояснение.
+Оба вида блока поддерживаются; шапка для кнопки создаётся и у блока без других элементов заголовка.
+Без `guide` компонент не добавляет кнопку. Приложение отвечает за настройку всех своих страниц и блоков.
+
+Гайд страницы начинает с вводного пояснения, затем обходит блоки в порядке отображения.
+После каждого блока идут дополнительные шаги из `GuideStepsScope.step(target, title, description)`
+в порядке объявления. `target` — существующая ручка `ElementHandle`, например поле или действие.
+К моменту завершения построения блока цель должна находиться внутри него. Селекторы и компоненты Vaadin
+в конфигурацию не передаются. Образец с полями —
+[RegistrationView.kt](../app/src/main/kotlin/tech/testsys/web/app/view/RegistrationView.kt).
+
+Пустые заголовки и пояснения, повтор цели и цель чужого блока дают `IllegalArgumentException`.
+Повторная настройка гайда страницы или блока даёт `IllegalStateException`.
+Как и `actions` и `editing`, настройка гайда блока запрещена внутри `load`: пояснение принадлежит
+стабильному контейнеру блока. Дополнительные шаги по удалённым или скрытым целям пропускаются.
+
+Выделение, положение пояснений и управление шагами выполняет [Driver.js](https://driverjs.com/) по MIT-лицензии.
+Внутренний адаптер экранирует текст, связывает кнопки с текущими целями и завершает гайд при навигации,
+замене страницы или detach. Повторное подключение восстанавливает обработчики; повторный запуск начинается
+с первого шага. На странице действует один гайд, прогресс не сохраняется. Страница во время просмотра
+недоступна для действий; после закрытия фокус возвращается к кнопке запуска, если она ещё видима.
+
+Встроенные подписи задаёт `UiTexts.guide`; `progress` содержит шаблон счётчика с `{{current}}` и `{{total}}`.
+Клиентские файлы — `guide.ts` и `guide-controller.ts` в `META-INF/frontend/testsys-ui/`.
+Оба модуля объявлены через `@JsModule`, чтобы проверка готового frontend учитывала изменения адаптера.
+Общие экраны ошибок используют тот же адаптер. Оформление и управление описаны в
+[ui-design.md](../../docs/project/ui-design.md#гайды).
+
 ## Сетка
 
 | Уровень | Что внутри | Правило |
@@ -204,11 +239,12 @@ class ContestQuestionsView(texts: UiTexts, private val contests: <ContestSource>
 
 | Скоуп | Доступно |
 |-------|----------|
-| `PageScope` | `head` (первым вызовом), `row` |
+| `PageScope` | `head` (до рядов и футтера), `row`, `guide`, `footer` |
 | `PageHeadScope` | `crumb`, `badge`, `meta`, `actions { }`, `tabs { }` |
 | `PageTabsScope` | `tab` (вкладка-маршрут) |
+| `GuideStepsScope` | `step` (пояснение поля или действия блока) |
 | `PageRowScope` | `block`, `highlightBlock`, `space` |
-| `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)` |
+| `BlockScope` | `row` (строка тела), `table`, `emptyState` или `load` (всё тело), `filters`, `tabs`, `actions { }` (правая часть шапки), `footer { }`, `editing(onSave, onCancel)`, `guide` |
 | `BlockRowScope` | поля, `field`, элементы отображения с `size`, `pills(size)`, `horizontal(size)`, `vertical(size)` |
 | `ContentScope` | `text`, действия, `menu`, `pills`, `filterChip`, `pagination`, поля без подписи (`select`, `segmentedControl`, `multiSelect`), `fileDrop`, `icon`, `tag`, `badge`, `counter`, `alert`, `horizontal`, `vertical` |
 | `TabsScope<V>`, `PillsScope<V>` | `tab`, `pill` |
@@ -907,7 +943,7 @@ Vaadin, поэтому `Binder` не пропускает скрытое пол�
 
 В `UiTexts` входят бренд, календарь, ограничения полей и группы `table`, `pagination`, `load`, `dialog`,
 `lookup`, `navigation`, `menu`, `dateFields`, `notFound`, `forbidden`, `pageFailed`, `failures`, `footer`,
-`tableFilters`, `components` и `header`. Группы `forbidden` и `pageFailed` — тексты экранов ошибок,
+`tableFilters`, `components`, `header` и `guide`. Группы `forbidden` и `pageFailed` — тексты экранов ошибок,
 `failures` — заголовки тостов о неудачном действии по роду отказа.
 Группа `pagination` (`previous`, `next`, `page(n)`) общая для `pagination` и компактного пейджера таблицы.
 Строки со значением — функции: `pagination.page(n)`, `lookup.remove(value)`, `lookup.selectedCount(n)`,

@@ -26,6 +26,7 @@ import tech.testsys.web.components.texts.ErrorPageTexts
 import tech.testsys.web.components.texts.FailureTexts
 import tech.testsys.web.components.texts.FieldErrorTexts
 import tech.testsys.web.components.texts.FooterTexts
+import tech.testsys.web.components.texts.GuideTexts
 import tech.testsys.web.components.texts.HeaderTexts
 import tech.testsys.web.components.texts.LoadTexts
 import tech.testsys.web.components.texts.LookupTexts
@@ -44,6 +45,15 @@ internal val testTexts = UiTexts(
     locale = Locale.forLanguageTag("ru-RU"),
     brand = "TestSys",
     signIn = "Войти",
+    guide = GuideTexts(
+        page = "Гайд страницы",
+        block = "Гайд блока",
+        previous = "Назад",
+        next = "Вперёд",
+        done = "Готово",
+        close = "Закрыть",
+        progress = "{{current}} из {{total}}",
+    ),
     footer = FooterTexts(year = { year -> year.toString() }, links = "Ссылки подвала"),
     tableFilters = TableFiltersTexts(title = "Настроить фильтры", apply = "Применить", reset = "Сбросить"),
     calendar = CalendarTexts(

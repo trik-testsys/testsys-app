@@ -175,6 +175,7 @@ class DeveloperTaskView(
                     }
                 }
             }
+            guide("Настройте Задачу, её Ресурсы и доступ, затем проверьте результаты тестирования.")
             row {
                 detailsBlock(task, versions)
                 accessBlock(task, shared)
@@ -245,6 +246,7 @@ class DeveloperTaskView(
         val supported = (task.wip ?: task.lastCommitted)?.supportedTrikStudioVersions.orEmpty().toSet()
         val initial = TaskDraft(task.name, task.description, supported)
         block(size = DETAILS_COLUMNS, title = "Сведения") {
+            guide("Просмотрите параметры. Нажмите «Изменить», чтобы отредактировать их, затем сохраните изменения или отмените их.")
             editing(
                 onSave = {
                     val values = TaskDraft()
@@ -301,6 +303,7 @@ class DeveloperTaskView(
 
     private fun PageRowScope.accessBlock(task: TaskVo, shared: List<CommunityVo>) {
         block(title = "Доступ") {
+            guide("Сообщества, которым предоставлен доступ. Управляйте доступом действиями этого блока.")
             table(key = { community: CommunityVo -> community.id }, fetch = { request -> pageOf(shared, request) }) {
                 textColumn("Сообщество") { community -> community.name }
                 empty("Доступ не предоставлен", "Сообщества получат доступ к последней зафиксированной версии.")
@@ -319,6 +322,7 @@ class DeveloperTaskView(
         val editable = task.wip ?: task.lastCommitted
         row {
             block(title = "Ресурсы", subtitle = "Условие, упражнения, полигоны и авторские решения") {
+                guide("Файлы Задачи: условие, упражнения, Полигоны и авторские Решения. Откройте Ресурс для просмотра его версий.")
                 var resourceFilter = ResourceFilter()
                 val rows = table(
                     key = { chain: Chain -> chain.latest.versionBucket },
@@ -406,6 +410,7 @@ class DeveloperTaskView(
     private fun PageScope.testingBlock(task: TaskVo, requests: List<TaskValidationRequestVo>) {
         row {
             block(title = "Тестирование") {
+                guide("История проверок Задачи. Откройте запись, чтобы увидеть диагностики и результаты.")
                 table(key = { request: TaskValidationRequestVo -> request.id }, fetch = { request -> pageOf(requests, request) }) {
                     dateTimeColumn("Запущено", size = 6) { request -> request.createdAt.toServerDateTime() }
                     column("Статус", size = 5) { request ->

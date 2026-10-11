@@ -55,9 +55,11 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
         val profile = multipleRoleUserService.viewProfile().roles
         page(headers.cabinet(active = CabinetHeaders.MAIN_SECTION)) {
             head("Главная")
+            guide("Здесь показаны ваши Роли и Сообщества. По Коду-приглашению можно присоединиться к Сообществу.")
             accessToken?.let { issued -> accessTokenBlock(issued) }
             row {
                 block(size = ROLES_COLUMNS, title = "Роли") {
+                    guide("Ваши Роли определяют доступные разделы и действия в Сообществах.")
                     table(
                         key = { (role, _): Pair<RoleVo, List<CommunityVo>> -> labelOf(role) },
                         fetch = { request -> pageOf(profile, request) },
@@ -69,6 +71,7 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
                     }
                 }
                 block(title = "Присоединиться к сообществу") {
+                    guide("Введите Код-приглашение, полученный от Администратора, и нажмите «Присоединиться».")
                     lateinit var inviteCode: ValueInput<String>
                     row { inviteCode = codeInput("Код-приглашение", labelSize = 6, size = 6) }
                     footer {
@@ -81,6 +84,7 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
             }
             row {
                 block(title = "Сообщества") {
+                    guide("Сообщества, доступные в этом Кабинете.")
                     val communities = communitiesOf(profile)
                     table(
                         key = { (community, _): Pair<CommunityVo, List<RoleVo>> -> community.id },
@@ -100,6 +104,7 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
     private fun PageScope.accessTokenBlock(accessToken: String) {
         row {
             block(title = "Код-доступа") {
+                guide("Сохраните выданный Код-доступа: он нужен для входа. При повторном открытии страницы этот блок исчезнет.")
                 row {
                     alert(
                         kind = FeedbackKind.Warning,

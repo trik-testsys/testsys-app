@@ -68,6 +68,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
                 crumb("Кабинет Администратора", AdminView::class.java)
                 crumb("Сообщества", AdminView::class.java, RouteParameters(ADMIN_SECTION_PARAMETER, "communities"))
             }
+            guide("Сведения о Сообществе, приглашения и Пользователи собраны на этой странице.")
             row {
                 detailsBlock(community) { edited -> show(edited, communities, observer) }
                 invitesBlock(community.id)
@@ -75,6 +76,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
             observer?.let { created -> createdObserverBlock(created) }
             row {
                 block(title = "Пользователи сообщества") {
+                    guide("Пользователи этого Сообщества и их Роли.")
                     adminUsersTable(administratorService, communities, community.id)
                     val creation = observerDialog(community.id) { created -> show(community, communities, created) }
                     actions { action("Создать наблюдателя") { onClick { creation() } } }
@@ -87,6 +89,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
     private fun PageRowScope.detailsBlock(community: CommunityVo, onEdited: (CommunityVo) -> Unit) {
         val draft = Binder<CommunityDraft>()
         block(size = DETAILS_COLUMNS, title = "Сведения") {
+            guide("Просмотрите параметры. Нажмите «Изменить», чтобы отредактировать их, затем сохраните изменения или отмените их.")
             editing(
                 onSave = {
                     val values = CommunityDraft()
@@ -133,6 +136,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
     private fun PageScope.createdObserverBlock(observer: ObserverVo) {
         row {
             block(title = "Наблюдатель «${observer.name}» создан") {
+                guide("Сохраните Код-доступа созданного Наблюдателя и передайте его владельцу.")
                 row { alert(kind = FeedbackKind.Warning, title = "Сохраните Код-доступа", text = "Наблюдатель входит по нему в Систему.") }
                 row {
                     codeInput("Код-доступа", labelSize = 6, size = 18) {
@@ -149,6 +153,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
     @RawInviteCodeDependency(reason = "Shows the stored invite codes as the issued ones.")
     private fun PageRowScope.invitesBlock(communityId: CommunityId) {
         block(title = "Коды-приглашения") {
+            guide("Коды для присоединения к Сообществу с указанными Ролями и сроками действия.")
             // The menu of a row refreshes the table that contains it.
             lateinit var rows: TableHandle<CommunityInviteVo>
             rows = table(

@@ -50,6 +50,7 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
         val details = managerService.viewClass(classId)
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head("Класс «${details.studyClass.name}»") { managerCrumbs(CLASSES_SECTION) }
+            guide("Управляйте сведениями Класса, приглашением, Учениками и назначенными Турами.")
             row {
                 detailsBlock(details)
                 inviteBlock(details)
@@ -72,6 +73,7 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
         val entity = details.studyClass
         val draft = Binder<DetailsDraft>()
         block(size = DETAILS_COLUMNS, title = "Сведения") {
+            guide("Просмотрите параметры. Нажмите «Изменить», чтобы отредактировать их, затем сохраните изменения или отмените их.")
             editing(
                 onSave = {
                     val values = DetailsDraft()
@@ -122,6 +124,7 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
         val classId = details.studyClass.id
         val invite = details.invite
         block(title = "Код-приглашение") {
+            guide("Передайте этот код Ученикам для присоединения к Классу. Здесь же можно продлить срок его действия.")
             row {
                 codeInput("Код-приглашение", labelSize = 8, size = 16) {
                     value = invite.codeHash.value
@@ -157,6 +160,7 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
     private fun PageScope.studentsBlock(students: List<Pair<MultipleRoleUserVo, Instant?>>) {
         row {
             block(title = "Ученики") {
+                guide("Ученики, присоединившиеся к Классу, и время их входа.")
                 table(
                     key = { (student, _): Pair<MultipleRoleUserVo, Instant?> -> student.id },
                     fetch = { request -> pageOf(students, request) },

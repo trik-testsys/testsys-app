@@ -16,6 +16,7 @@ import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
+import tech.testsys.web.components.core.contains
 import tech.testsys.web.components.core.set
 import tech.testsys.web.components.core.setAriaCurrent
 import tech.testsys.web.components.core.setAriaHidden
@@ -197,3 +198,10 @@ class PageTabsScope internal constructor(
 
 /** Tab of the page head: its ready-made [link] and the route it opens, used to find the current tab. */
 private class PageTab(val link: RouterLink, val target: Class<out Component>, val activeOn: Set<Class<out Component>>)
+
+internal fun placePageGuideButton(head: Div, button: Component) {
+    val inner = head.children.findFirst().orElseThrow()
+    val row = inner.children.filter { child -> child.element.classList.contains(CssClass.PageHeadTitleRow) }
+        .findFirst().orElseThrow()
+    row.element.appendChild(button.element)
+}

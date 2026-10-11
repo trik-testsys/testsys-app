@@ -8,9 +8,14 @@ import com.vaadin.flow.component.html.Footer
 import com.vaadin.flow.component.html.Main
 import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.core.CssClass
+import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
+import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.navigation.PageHeadScope
+import tech.testsys.web.components.navigation.placePageGuideButton
+import tech.testsys.web.components.overlay.GuideStep
+import tech.testsys.web.components.overlay.guideButton
 import tech.testsys.web.components.texts.UiTexts
 
 /**
@@ -25,20 +30,46 @@ class PageScope internal constructor(
     private val view: Class<out Component>?,
     private val placeHead: (Component) -> Unit,
 ) {
-    private var isHeadAllowed = true
     private var footerLinks: PageFooterScope? = null
+    private var isHeadAllowed = true
+    private var guideDescription: String? = null
+    private var pageHead: Div? = null
+    private var pageTitle = texts.brand
+
+    /**
+     * Adds the page introduction before block explanations in display order, with an information button in its head.
+     *
+     * @throws IllegalArgumentException if [description] is blank.
+     * @throws IllegalStateException if the guide is already configured.
+     * @since %CURRENT_VERSION%
+     */
+    fun guide(description: String) {
+        check(guideDescription == null) { "Page guide is already configured; call guide() once" }
+        require(description.isNotBlank()) { "Page guide description must not be blank" }
+        guideDescription = description
+    }
+
+    internal fun finishGuide() {
+        guideDescription?.let { description ->
+            val head = pageHead ?: PageHeadScope(texts, view).build(pageTitle).also(placeHead)
+            GuideStep(head, title = pageTitle, description = description).install()
+            head.element.setAttribute(HtmlAttribute.DataGuideIntroduction, "")
+            placePageGuideButton(head, guideButton(texts.guide.page, isPage = true))
+        }
+    }
 
     /**
      * Adds the page head under the Cabinet header: breadcrumbs that end with [title], the title with badges, notes and
      * actions, and the tabs of the sections of one object.
      *
-     * @throws IllegalStateException if it is not the first call of the page body or is repeated.
+     * @throws IllegalStateException if called after a row or footer configuration, or repeated.
      * @since %CURRENT_VERSION%
      */
     fun head(title: String, content: PageHeadScope.() -> Unit = {}) {
         check(isHeadAllowed) { "head() must be the first call of the page body and made once" }
         isHeadAllowed = false
-        placeHead(PageHeadScope(texts, view).apply(content).build(title))
+        pageTitle = title
+        pageHead = PageHeadScope(texts, view).apply(content).build(title).also(placeHead)
     }
 
     /**

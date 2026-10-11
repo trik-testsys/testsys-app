@@ -87,6 +87,11 @@ class DeveloperResourceView(
                 crumb("Задачи", DeveloperView::class.java, developerSectionParameters(TASKS_SECTION))
                 crumb("Задача «${task.name}»", DeveloperTaskView::class.java, taskParameters(taskId))
             }
+            guide(
+                "Просматривайте сведения о Ресурсе и историю его версий. " +
+                    "Изменение только названия сохраняется в последней версии. " +
+                    "Новый файл или изменение ожидаемого балла Авторского Решения создаёт новую версию Ресурса.",
+            )
             detailsBlock(task, history)
             historyBlock(task, history)
         }
@@ -100,6 +105,7 @@ class DeveloperResourceView(
         lateinit var drop: FileDropHandle
         row {
             block(title = "Сведения") {
+                guide("Просмотрите параметры. Нажмите «Изменить», чтобы отредактировать их, затем сохраните изменения или отмените их.")
                 editing(
                     onSave = {
                         val values = ResourceDraft()
@@ -183,6 +189,7 @@ class DeveloperResourceView(
         val isSolution = history.first().first is DeveloperSolutionVo
         row {
             block(title = "История версий") {
+                guide("Сохранённые версии Ресурса. Для каждой версии можно скачать её файл.")
                 table(
                     key = { (version, _): Pair<ResourceVo, SolutionVo?> -> version.id },
                     fetch = { request -> pageOf(history, request) },

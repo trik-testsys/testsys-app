@@ -90,6 +90,7 @@ class DeveloperContestView(
                     }
                 }
             }
+            guide("Здесь показаны параметры Тура, состав Задач и доступ Сообществ.")
             if (!isChangeable) {
                 val reason = if (isOwner) {
                     "Доступ к туру предоставлен сообществам, поэтому тур нельзя изменить или удалить, " +
@@ -97,7 +98,12 @@ class DeveloperContestView(
                 } else {
                     "Изменять тур может только его владелец."
                 }
-                row { block { row { alert(kind = FeedbackKind.Info, title = "Тур нельзя изменить", text = reason) } } }
+                row {
+                    block {
+                        guide(description = reason, title = "Тур нельзя изменить")
+                        row { alert(kind = FeedbackKind.Info, title = "Тур нельзя изменить", text = reason) }
+                    }
+                }
             }
             row {
                 detailsBlock(contest, isChangeable)
@@ -116,6 +122,13 @@ class DeveloperContestView(
         )
         lateinit var startsAt: ValueInput<LocalDateTime?>
         val details = block(size = DETAILS_COLUMNS, title = "Сведения") {
+            guide(
+                if (isChangeable) {
+                    "Нажмите «Изменить», чтобы настроить параметры Тура, затем сохраните изменения или отмените их."
+                } else {
+                    "Параметры Тура доступны для просмотра. Причина ограничения изменений указана над блоками."
+                },
+            )
             if (isChangeable) {
                 editing(
                     onSave = {
@@ -191,6 +204,7 @@ class DeveloperContestView(
 
     private fun PageRowScope.accessBlock(contest: ContestVo, shared: List<CommunityVo>, isOwner: Boolean) {
         block(title = "Доступ") {
+            guide("Сообщества, которым предоставлен доступ к этому Туру.")
             table(key = { community: CommunityVo -> community.id }, fetch = { request -> pageOf(shared, request) }) {
                 textColumn("Сообщество") { community -> community.name }
                 empty("Доступ не предоставлен")
@@ -208,6 +222,7 @@ class DeveloperContestView(
     private fun PageScope.tasksBlock(contest: ContestVo, tasks: List<TaskVo>, me: MultipleRoleUserId, isChangeable: Boolean) {
         row {
             block(title = "Задачи") {
+                guide("Список Задач и их основные сведения.")
                 table(key = { task: TaskVo -> task.id }, fetch = { request -> pageOf(tasks, request) }) {
                     codeColumn("ID", size = 5) { task -> task.id.value.toString() }
                     textColumn("Название", size = 12) { task -> task.name }

@@ -27,9 +27,13 @@ import tech.testsys.web.components.texts.UiTexts
 class AuthenticationView(texts: UiTexts, headers: CabinetHeaders, private val userService: UserService) : TestSysView(texts) {
     init {
         page(headers.guest(hasSignIn = false)) {
+            guide("Войдите в TestSys по своему Коду-доступа.")
             guestForm(active = GuestTab.SignIn) {
                 lateinit var accessToken: ValueInput<String>
                 row { accessToken = passwordInput("Код-доступа", labelSize = 6, size = 18) }
+                guide("Введите свой Код-доступа и нажмите «Войти».", title = "Вход") {
+                    step(accessToken, title = "Код-доступа", description = "Используйте код, выданный при регистрации или Организатором.")
+                }
                 footer {
                     mainAction("Войти") {
                         clickOnEnter()

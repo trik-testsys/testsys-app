@@ -47,12 +47,15 @@ class ProfileView(texts: UiTexts, private val headers: CabinetHeaders, private v
         val profile = multipleRoleUserService.viewProfile()
         page(headers.cabinet(active = null)) {
             head("Профиль") { crumb("Главная", MultiMainView::class.java) }
+            guide("Здесь можно просмотреть свой Профиль и изменить привязанную почту.")
             row {
                 block(size = HALF_COLUMNS, title = "Профиль") {
+                    guide("Ваш Псевдоним и текущая привязанная почта.")
                     row { textInput("Псевдоним", labelSize = 6, size = 18) { value = profile.name } }
                     row { textInput("Почта", labelSize = 6, size = 18) { value = profile.email } }
                 }.isEditable = false
                 block(title = "Смена почты") {
+                    guide("Укажите новую почту, получите код и подтвердите изменение кодом из письма.")
                     if (newEmail == null) {
                         lateinit var email: ValueInput<String>
                         row { email = textInput("Новая почта", labelSize = 6, size = 18) }

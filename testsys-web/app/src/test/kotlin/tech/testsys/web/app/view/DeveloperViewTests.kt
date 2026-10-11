@@ -10,7 +10,9 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.H3
 import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
@@ -54,6 +56,18 @@ class DeveloperViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should show shared tasks before own tasks`() {
+        developers.signInDeveloper()
+
+        open(TASKS_SECTION)
+
+        assertEquals(
+            listOf("Доступные через сообщества", "Мои задачи"),
+            UI.getCurrent()._find<H3>().map { heading -> heading.text },
+        )
+    }
+
+    @Test
     fun `should show the forbidden screen to a user without the developer role`() {
         signIn(fixtures.multipleRoleUser())
 
@@ -82,15 +96,15 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.signInDeveloper()
         developers.task("Линия")
         open(TASKS_SECTION)
-        textField("Название")._value = "Линия"
-        clickButton("Применить")
+        ownTaskNameFilter()._value = "Линия"
+        ownTasksBlock()._get<Button> { text = "Применить" }._click()
         clickButton("Создать задачу")
         textField("Название")._value = "Кубики"
 
         clickButton("Создать")
 
         assertEquals(DeveloperView::class.java, currentView)
-        assertEquals("Линия", textField("Название").value)
+        assertEquals("Линия", ownTaskNameFilter().value)
         assertTrue("Кубики" !in tableText("Состояние"))
         assertEquals("Задача создана", lastToastTitle())
     }
@@ -119,7 +133,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         val task = developers.task("Своя задача")
         open(TASKS_SECTION)
 
-        val row = UI.getCurrent()._find<Table>().last()._get<TableBody>()._get<TableRow>()
+        val row = ownTasksBlock()._get<Table>()._get<TableBody>()._get<TableRow>()
         row._fireDomEvent("click", acceptedClick(row))
 
         assertEquals("developer/tasks/${task.id.value}", currentPath())
@@ -132,8 +146,8 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.task("Сортировка кубиков")
         open(TASKS_SECTION)
 
-        textField("Название")._value = "линии"
-        clickButton("Применить")
+        ownTaskNameFilter()._value = "линии"
+        ownTasksBlock()._get<Button> { text = "Применить" }._click()
 
         val text = tableText("Состояние")
         assertTrue("Движение по линии" in text, text)
@@ -214,19 +228,22 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         open(TASKS_SECTION)
         val sharedBefore = tableText("Сообщества")
 
-        UI.getCurrent()._find<NativeButton>().single { button ->
+        ownTasksBlock()._find<NativeButton>().single { button ->
             button.element.getAttribute("aria-label") == "Перейти на следующую страницу"
         }._click()
 
-        assertEquals(1, UI.getCurrent()._find<Table>().last()._get<TableBody>()._find<TableRow>().size)
+        val rows = ownTasksBlock()._get<Table>()._get<TableBody>()._find<TableRow>()
+        assertEquals(1, rows.size)
+        assertTrue("Своя " in rows.single().element.textRecursively)
         assertEquals(sharedBefore, tableText("Сообщества"))
     }
 
-    private fun textField(label: String): TextField = inScope<TextField>().last { field -> field.ariaLabel.orElse(null) == label }
-
-    private fun clickButton(label: String) {
-        inScope<Button>().last { button -> button.text == label }._click()
+    private fun ownTasksBlock(): Section = UI.getCurrent()._find<Section>().single { block ->
+        block._find<H3>().any { heading -> heading.text == "Мои задачи" }
     }
+
+    private fun ownTaskNameFilter(): TextField =
+        ownTasksBlock()._find<TextField>().single { field -> field.ariaLabel.orElse(null) == "Название" }
 
     private fun open(section: String) {
         UI.getCurrent().navigate(DeveloperView::class.java, developerSectionParameters(section))

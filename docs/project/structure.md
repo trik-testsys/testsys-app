@@ -156,6 +156,11 @@ sticky sessions: сессия Vaadin и состояние её UI живут в
 экземплярами не распространяются: фоновые `refresh`/`reload` и локальные сигналы действуют только на страницы
 своего экземпляра.
 
+Версия npm-пакета Driver.js хранится в `gradle/libs.versions.toml` как `driver-js`.
+Задача `generateGuideVersion` модуля components создаёт константу аннотации `@NpmPackage`
+в `build/generated/source/guide/main/kotlin`; компиляция Kotlin зависит от этой задачи.
+Vaadin устанавливает пакет и включает его вместе с CSS в сборку приложения.
+
 `bootJar` собирает приложение в production-режиме, включая собственные клиентские адаптеры из jar `components`.
 Node.js плагин устанавливает в `~/.vaadin`; упаковка клиентских компонентов описана в
 [components/README.md](../../testsys-web/components/README.md), раздел «Клиентская реализация компонентов».

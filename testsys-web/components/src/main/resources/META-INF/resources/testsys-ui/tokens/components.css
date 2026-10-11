@@ -537,3 +537,29 @@ button.ts-choice { background:transparent; border:0; padding:0; text-align:left;
   :scope .ts-pill { background:var(--ink-800); color:var(--white); }
   :scope .ts-pill--active { background:var(--white); color:var(--ink-900); }
 }
+
+/* Page and block guides use Driver.js for positioning and highlighting. */
+.ts-guide-controller { display: none; }
+.ts-guide-button { flex: 0 0 auto; }
+.ts-block__head > .ts-guide-button { margin-left: auto; }
+.ts-block--dark > .ts-block__head > .ts-guide-button { color: var(--white); }
+.ts-block--dark > .ts-block__head > .ts-guide-button:hover { background: var(--ink-800); }
+.ts-guide-popover.driver-popover {
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-popover);
+  font-family: var(--font-sans);
+  max-width: calc(100vw - 32px);
+}
+.ts-guide-popover .driver-popover-title { font-family: inherit; font-size: 16px; font-weight: 600; }
+.ts-guide-popover .driver-popover-description { font-family: inherit; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+.ts-guide-popover .driver-popover-progress-text { font-family: var(--font-mono); color: var(--text-secondary); }
+.ts-guide-popover .driver-popover-footer button {
+  background: var(--surface-card); color: var(--text-primary); border: 1px solid var(--line);
+  border-radius: var(--radius-md); min-width: 32px; min-height: 32px; text-shadow: none;
+}
+.ts-guide-popover .driver-popover-footer button:hover { background: var(--canvas); }
+.ts-guide-popover button:focus-visible { outline: 3px solid var(--accent-ring); outline-offset: 2px; }
+.ts-guide-popover .driver-popover-close-btn { color: var(--text-secondary); }

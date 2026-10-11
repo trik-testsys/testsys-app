@@ -60,6 +60,7 @@ class HeaderTests : MockVaadinTests() {
             header = testTexts.header,
             footer = testTexts.footer,
             tableFilters = testTexts.tableFilters,
+            guide = testTexts.guide,
         )
 
         val header = buildHeader(CabinetHeader(user = HeaderUser("istanbul izmir")), texts)

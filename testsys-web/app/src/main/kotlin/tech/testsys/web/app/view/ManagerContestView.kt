@@ -82,6 +82,7 @@ class ManagerContestView(texts: UiTexts, private val headers: CabinetHeaders, pr
                 managerCrumbs(group.section)
                 crumb(group.name, group.target, group.parameters)
             }
+            guide("Просмотрите параметры Тура и результаты его прохождения.")
             detailsBlock(group.results.contest)
             resultsBlock(group)
         }
@@ -90,6 +91,7 @@ class ManagerContestView(texts: UiTexts, private val headers: CabinetHeaders, pr
     private fun PageScope.detailsBlock(contest: ContestVo) {
         row {
             block(title = "Сведения") {
+                guide("Параметры Тура, назначенного выбранному Классу или Соревнованию.")
                 row {
                     codeInput("ID", labelSize = 4, size = 8) { value = contest.id.value.toString() }
                     textInput("Название", labelSize = 4, size = 8) { value = contest.name }
@@ -110,6 +112,7 @@ class ManagerContestView(texts: UiTexts, private val headers: CabinetHeaders, pr
         val byMemberAndTask = results.results.associateBy { result -> result.authorId to result.taskId }
         row {
             block(title = "Результаты") {
+                guide("Сводные результаты Тура по Задачам; их можно скачать в CSV.")
                 table(
                     key = { (memberId, _): Pair<UserId, String> -> memberId },
                     gridColumns = maxOf(MIN_RESULT_COLUMNS, MEMBER_COLUMNS + TASK_COLUMNS * results.tasks.size),

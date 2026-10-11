@@ -83,11 +83,12 @@ class DeveloperView(
                     tab("Туры", DeveloperView::class.java, developerSectionParameters(CONTESTS_SECTION))
                 }
             }
+            guide("Работайте с Задачами и Турами через вкладки Кабинета Разработчика.")
             if (section == CONTESTS_SECTION) {
                 contestsBlock(me, communities, versions)
             } else {
-                tasksBlock(me, communities, owned = true)
                 tasksBlock(me, communities, owned = false)
+                tasksBlock(me, communities, owned = true)
             }
         }
     }
@@ -95,6 +96,7 @@ class DeveloperView(
     private fun PageScope.tasksBlock(me: MultipleRoleUserId, communities: List<CommunityVo>, owned: Boolean) {
         row {
             block(title = if (owned) "Мои задачи" else "Доступные через сообщества") {
+                guide("Список ваших Задач или Задач, доступных через Сообщества. Фильтры помогают найти нужную запись.")
                 val initial = TaskFilter(ownerId = me.takeIf { owned }, excludeOwnerId = me.takeUnless { owned })
                 var applied = initial
                 val rows = table(
@@ -168,6 +170,7 @@ class DeveloperView(
     private fun PageScope.contestsBlock(me: MultipleRoleUserId, communities: List<CommunityVo>, versions: List<TrikStudioVersion>) {
         row {
             block(title = "Туры") {
+                guide("Список Туров и их параметры. Выберите строку, чтобы открыть Тур.")
                 var applied = ContestFilter(ownerId = me)
                 val rows = table(
                     key = { (contest, _): Pair<ContestVo, List<CommunityVo>> -> contest.id },

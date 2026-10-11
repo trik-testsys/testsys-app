@@ -76,6 +76,7 @@ class JudgeSolutionView(
                 crumb("Посылки", JudgeView::class.java, judgeSubmissionsParameters())
                 badge(status, tone)
             }
+            guide("Просмотрите сведения о Посылке, результаты проверки и историю судейских Вердиктов.")
             detailsBlock(details)
             verdictBlock(details)
             judgmentsBlock(details)
@@ -87,6 +88,7 @@ class JudgeSolutionView(
         val (status, tone) = statusOf(details.submission.status)
         row {
             block(title = "Сведения") {
+                guide("Сведения об отправленной Посылке, её авторе и состоянии проверки.")
                 row {
                     codeInput("ID", labelSize = 3, size = 9) { value = submissionId.value.toString() }
                     dateTimeInput("Отправлена", labelSize = 3, size = 9) { value = details.submission.createdAt.toServerDateTime() }
@@ -118,6 +120,7 @@ class JudgeSolutionView(
         val verdict = details.verdict
         row {
             block(title = "Вердикт") {
+                guide("Результаты автоматической проверки по Полигонам и итоговый балл.")
                 if (verdict == null) {
                     emptyState("Вердикта нет", "Баллы по полигонам появятся после успешной проверки.")
                 } else {
@@ -147,6 +150,7 @@ class JudgeSolutionView(
         val orders = details.judgmentOrders
         row {
             block(title = "Судейские вердикты") {
+                guide("История выставленных Судьями Вердиктов.")
                 table(
                     key = { (order, _): Pair<JudgmentOrderVo, NamedUserVo> -> order.id },
                     fetch = { request -> pageOf(orders, request) },

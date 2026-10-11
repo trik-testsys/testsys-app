@@ -92,9 +92,11 @@ abstract class StudyTaskView(
                 access.cabinetCrumbs(this)
                 crumb("Тур «${contest.name}»", access.contestPage, access.contestParameters(contestId))
             }
+            guide("Ознакомьтесь с Задачей, отправьте Решение и просмотрите результаты Посылок.")
             var timer: TimerHandle? = null
             row {
                 block(size = TASK_DETAILS_COLUMNS, title = "Сведения") {
+                    guide("Название и описание Задачи. В строке «Файлы» можно скачать доступные Ресурсы.")
                     row { codeInput("ID", labelSize = 6, size = 10) { value = task.task.id.value.toString() } }
                     row { textInput("Название", labelSize = 6, size = 18) { value = task.task.name } }
                     row { textArea("Описание", labelSize = 6, size = 18, maxLines = 4) { value = task.task.description } }
@@ -105,7 +107,10 @@ abstract class StudyTaskView(
                         }
                     }
                 }.isEditable = false
-                highlightBlock(title = "Осталось") { timer = studyRemainingTime(contest, enteredAt, now) }
+                highlightBlock(title = "Осталось") {
+                    guide("Время, оставшееся для работы в Туре. После его окончания отправка Решений недоступна.")
+                    timer = studyRemainingTime(contest, enteredAt, now)
+                }
             }
             solutionForm(access, contestId, task, isSendable, timer)
             submissionsBlock(access, contestId, task, isSendable)
@@ -176,6 +181,10 @@ abstract class StudyTaskView(
                         },
                     ) { isEnabled = isSendable }
                 }
+                guide("Выберите язык, добавьте файл Решения и отправьте его на проверку, пока Тур доступен.") {
+                    step(language, title = "Язык Решения", description = "Выберите язык, на котором написан отправляемый файл.")
+                    step(drop, title = "Файл Решения", description = "Прикрепите один файл с Решением выбранной Задачи.")
+                }
                 footer {
                     mainAction("Отправить") {
                         if (isSendable && timer != null) {
@@ -208,6 +217,7 @@ abstract class StudyTaskView(
     private fun PageScope.submissionsBlock(access: StudyAccess, contestId: ContestId, task: StudyTaskVo, isSendable: Boolean) {
         row {
             block(title = "Решения") {
+                guide("История ваших Посылок по этой Задаче, их состояние и результаты проверки.")
                 table(
                     key = { submission: StudySubmissionVo -> submission.submission.id },
                     fetch = { request -> pageOf(task.submissions, request) },

@@ -818,6 +818,18 @@ class LoadTests : MockVaadinTests() {
         }
 
         @Test
+        fun `should reject a guide in the loaded content`() {
+            var failure: IllegalStateException? = null
+            buildTestPage {
+                row { block { load({ 1 }) { _ -> failure = assertThrows { guide("Описание", title = "Блок") } } } }
+            }
+
+            queue.runAll()
+
+            assertEquals("Content of a load fills the block body only; call guide() on the block itself", failure?.message)
+        }
+
+        @Test
         fun `should reject an editing switch in the content`() {
             var failure: IllegalStateException? = null
             buildTestPage { row { block { load({ 1 }) { _ -> failure = assertThrows { editing(onSave = { true }, onCancel = {}) } } } } }

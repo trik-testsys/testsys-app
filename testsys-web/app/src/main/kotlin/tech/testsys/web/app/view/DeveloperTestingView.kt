@@ -63,8 +63,10 @@ class DeveloperTestingView(texts: UiTexts, private val headers: CabinetHeaders, 
                 crumb("Кабинет Разработчика", DeveloperView::class.java)
                 crumb("Задача «${task.name}»", DeveloperTaskView::class.java, taskParameters(taskId))
             }
+            guide("Здесь показаны состояние тестирования Задачи, диагностики и результаты Посылок.")
             row {
                 block(title = "Сведения") {
+                    guide("Параметры выбранного запроса тестирования и состояние его выполнения.")
                     row {
                         codeInput("Запущено", labelSize = 6, size = 18) {
                             value = request.createdAt.toServerDateTime().format(MOMENT_FORMAT)
@@ -85,6 +87,7 @@ class DeveloperTestingView(texts: UiTexts, private val headers: CabinetHeaders, 
             }
             row {
                 block(title = "Диагностики") {
+                    guide("Замечания проверки Полигонов из выбранного тестирования.")
                     val diagnostics = diagnosticsOf(execution)
                     table(key = { result: TestDiagnosticResult -> result.testId }, fetch = { query -> pageOf(diagnostics, query) }) {
                         textColumn("Полигон", size = 8) { result -> names[result.testId] ?: "#${result.testId.value}" }
@@ -98,7 +101,12 @@ class DeveloperTestingView(texts: UiTexts, private val headers: CabinetHeaders, 
                     }
                 }
             }
-            row { block(title = "Посылки") { submissionRows(request, names) } }
+            row {
+                block(title = "Посылки") {
+                    guide("Посылки и результаты их проверки.")
+                    submissionRows(request, names)
+                }
+            }
         }
     }
 

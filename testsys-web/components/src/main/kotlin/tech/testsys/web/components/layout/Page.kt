@@ -12,6 +12,7 @@ import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.navigation.header.CabinetHeader
 import tech.testsys.web.components.navigation.header.buildHeader
+import tech.testsys.web.components.overlay.GuideClient
 import tech.testsys.web.components.texts.UiTexts
 import tech.testsys.web.components.texts.bindTexts
 
@@ -29,5 +30,6 @@ internal fun renderPage(root: Div, header: CabinetHeader, texts: UiTexts, view: 
     root.add(buildHeader(header, texts), main)
 
     val scope = PageScope(main, texts, view) { head -> root.addComponentAtIndex(1, head) }.apply(body)
-    root.add(scope.buildFooter())
+    scope.finishGuide()
+    root.add(scope.buildFooter().apply { add(GuideClient(texts.guide)) })
 }

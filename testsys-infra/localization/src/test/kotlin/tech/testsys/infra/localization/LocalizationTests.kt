@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.infra.localization.UiTransfer.UploadLimitsUnit
 import tech.testsys.infra.localization.bundle.SupportedRegion
 import java.time.ZoneId
@@ -156,7 +157,7 @@ class LocalizationTests {
 
         @Test
         fun `should name the footer navigation in links`() {
-            assertEquals("Ссылки футтера", l.uiFooter.links())
+            assertEquals("Ссылки футера", l.uiFooter.links())
         }
     }
 
@@ -349,6 +350,16 @@ class LocalizationTests {
         fun `should group digits of a large number in page`() {
             assertEquals("Страница 1${NBSP}000", l.uiPagination.page(page = 1000))
         }
+
+        @Test
+        fun `should separate the page and the count with a spaced slash in counter`() {
+            assertEquals("3 / 71", l.uiPagination.counter(page = 3, count = 71))
+        }
+
+        @Test
+        fun `should group digits of a large count in counter`() {
+            assertEquals("1 / 1${NBSP}412", l.uiPagination.counter(page = 1, count = 1412))
+        }
     }
 
     @Nested
@@ -421,8 +432,8 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should name the removed value in remove`() {
-            assertEquals("Убрать Маша", l.uiLookup.remove(value = "Маша"))
+        fun `should quote the removed value in guillemets in remove`() {
+            assertEquals("Убрать «Маша»", l.uiLookup.remove(value = "Маша"))
         }
 
         @Test
@@ -448,6 +459,16 @@ class LocalizationTests {
         @Test
         fun `should group digits of the hidden count in more`() {
             assertEquals("Ещё 1${NBSP}200", l.uiLookup.more(count = 1200))
+        }
+
+        @Test
+        fun `should prefix the hidden count with a plus in more chip`() {
+            assertEquals("+2", l.uiLookup.moreChip(count = 2))
+        }
+
+        @Test
+        fun `should group digits of a large hidden count in more chip`() {
+            assertEquals("+1${NBSP}200", l.uiLookup.moreChip(count = 1200))
         }
     }
 
@@ -819,6 +840,644 @@ class LocalizationTests {
         @Test
         fun `should report any other failure in failure failed`() {
             assertEquals("Действие не выполнено", l.uiError.failureFailed())
+        }
+    }
+
+    @Nested
+    inner class PageGuestTests {
+
+        @Test
+        fun `should name the sign in tab in tab sign in`() {
+            assertEquals("Вход", l.pageGuest.tabSignIn())
+        }
+
+        @Test
+        fun `should name the registration tab in tab registration`() {
+            assertEquals("Регистрация", l.pageGuest.tabRegistration())
+        }
+
+        @Test
+        fun `should name the restore access tab in tab restore access`() {
+            assertEquals("Восстановление доступа", l.pageGuest.tabRestoreAccess())
+        }
+
+        @Test
+        fun `should render the access code term in dative in start guide`() {
+            assertEquals(
+                "Начните работу в TestSys: войдите по Коду-доступа или зарегистрируйтесь.",
+                l.pageGuest.startGuide(),
+            )
+        }
+
+        @Test
+        fun `should render the access code term in dative in start block guide`() {
+            assertEquals(
+                "Выберите вход по Коду-доступа или регистрацию нового Пользователя.",
+                l.pageGuest.startBlockGuide(),
+            )
+        }
+
+        @Test
+        fun `should head the start block guide in start block guide title`() {
+            assertEquals("Начало работы", l.pageGuest.startBlockGuideTitle())
+        }
+
+        @Test
+        fun `should render the access code term in dative in start text`() {
+            assertEquals(
+                "Войдите по Коду-доступа или зарегистрируйтесь как Ученик или Организатор.",
+                l.pageGuest.startText(),
+            )
+        }
+
+        @Test
+        fun `should label the registration button in register`() {
+            assertEquals("Зарегистрироваться", l.pageGuest.register())
+        }
+
+        @Test
+        fun `should label the sign in button in sign in button`() {
+            assertEquals("Войти", l.pageGuest.signInButton())
+        }
+
+        @Test
+        fun `should render the access code term in dative in sign in guide`() {
+            assertEquals("Войдите в TestSys по своему Коду-доступа.", l.pageGuest.signInGuide())
+        }
+
+        @Test
+        fun `should render the access code term in nominative in sign in access code`() {
+            assertEquals("Код-доступа", l.pageGuest.signInAccessCode())
+        }
+
+        @Test
+        fun `should explain where the code comes from in sign in access code guide`() {
+            assertEquals(
+                "Используйте код, выданный при регистрации или Организатором.",
+                l.pageGuest.signInAccessCodeGuide(),
+            )
+        }
+
+        @Test
+        fun `should render the access code term in accusative in sign in block guide`() {
+            assertEquals("Введите свой Код-доступа и нажмите «Войти».", l.pageGuest.signInBlockGuide())
+        }
+
+        @Test
+        fun `should render the access code term in nominative in sign in invalid`() {
+            assertEquals("Код-доступа недействителен", l.pageGuest.signInInvalid())
+        }
+
+        @Test
+        fun `should render the access code term in accusative in restore access guide`() {
+            assertEquals(
+                "Восстановление доступа ещё не реализовано. Для входа используйте свой Код-доступа.",
+                l.pageGuest.restoreAccessGuide(),
+            )
+        }
+
+        @Test
+        fun `should render the access code term in nominative in restore access block guide`() {
+            assertEquals(
+                "Восстановление доступа пока недоступно. Используйте вкладку входа, если у вас есть Код-доступа.",
+                l.pageGuest.restoreAccessBlockGuide(),
+            )
+        }
+
+        @Test
+        fun `should state the missing feature in restore access empty`() {
+            assertEquals("Восстановление доступа пока не реализовано", l.pageGuest.restoreAccessEmpty())
+        }
+    }
+
+    @Nested
+    inner class PageRegistrationTests {
+
+        @Test
+        fun `should describe the registration in guide`() {
+            assertEquals(
+                "Регистрация Ученика или Организатора: подтвердите почту и укажите сведения о себе.",
+                l.pageRegistration.guide(),
+            )
+        }
+
+        @Test
+        fun `should label the email field in email`() {
+            assertEquals("Почта", l.pageRegistration.email())
+        }
+
+        @Test
+        fun `should explain the email field in email guide`() {
+            assertEquals("Введите адрес почты, к которому у вас есть доступ.", l.pageRegistration.emailGuide())
+        }
+
+        @Test
+        fun `should explain the first step in email step block guide`() {
+            assertEquals(
+                "Укажите почту, на которую придёт код подтверждения.",
+                l.pageRegistration.emailStepBlockGuide(),
+            )
+        }
+
+        @Test
+        fun `should head the first step guide in email step block guide title`() {
+            assertEquals("Подтверждение почты", l.pageRegistration.emailStepBlockGuideTitle())
+        }
+
+        @Test
+        fun `should label the nickname field in nickname`() {
+            assertEquals("Псевдоним", l.pageRegistration.nickname())
+        }
+
+        @Test
+        fun `should explain the nickname field in nickname guide`() {
+            assertEquals("Это имя будет видно другим Пользователям.", l.pageRegistration.nicknameGuide())
+        }
+
+        @Test
+        fun `should label the role field in role`() {
+            assertEquals("Роль", l.pageRegistration.role())
+        }
+
+        @Test
+        fun `should explain the role choice in role guide`() {
+            assertEquals(
+                "Выберите Ученика для обучения или Организатора для проведения Туров.",
+                l.pageRegistration.roleGuide(),
+            )
+        }
+
+        @Test
+        fun `should point to the last letter in code guide`() {
+            assertEquals("Введите код из последнего письма с подтверждением.", l.pageRegistration.codeGuide())
+        }
+
+        @Test
+        fun `should explain the second step in details step block guide`() {
+            assertEquals(
+                "Введите код из письма, выберите Псевдоним и Роль.",
+                l.pageRegistration.detailsStepBlockGuide(),
+            )
+        }
+
+        @Test
+        fun `should head the second step guide in details step block guide title`() {
+            assertEquals("Создание Пользователя", l.pageRegistration.detailsStepBlockGuideTitle())
+        }
+
+        @Test
+        fun `should report the finished registration in completed`() {
+            assertEquals("Регистрация завершена", l.pageRegistration.completed())
+        }
+
+        @Test
+        fun `should report a wrong nickname in nickname invalid title`() {
+            assertEquals("Псевдоним указан неверно", l.pageRegistration.nicknameInvalidTitle())
+        }
+
+        @Test
+        fun `should state the nickname limits in nickname invalid description`() {
+            assertEquals(
+                "Псевдоним не может быть пустым или длиннее 512 символов.",
+                l.pageRegistration.nicknameInvalidDescription(),
+            )
+        }
+
+        @Test
+        fun `should report a missing request in request not found`() {
+            assertEquals("Запрос регистрации не найден", l.pageRegistration.requestNotFound())
+        }
+
+        @Test
+        fun `should report a bound email in email bound title`() {
+            assertEquals("Почта уже привязана к Пользователю", l.pageRegistration.emailBoundTitle())
+        }
+
+        @Test
+        fun `should render the access code term in dative in email bound description`() {
+            assertEquals("Войдите по Коду-доступа.", l.pageRegistration.emailBoundDescription())
+        }
+    }
+
+    @Nested
+    inner class PageProfileTests {
+
+        @Test
+        fun `should name the page in title`() {
+            assertEquals("Профиль", l.pageProfile.title())
+        }
+
+        @Test
+        fun `should describe the page in guide`() {
+            assertEquals(
+                "Здесь можно просмотреть свой Профиль и изменить привязанную почту.",
+                l.pageProfile.guide(),
+            )
+        }
+
+        @Test
+        fun `should describe the profile block in profile block guide`() {
+            assertEquals("Ваш Псевдоним и текущая привязанная почта.", l.pageProfile.profileBlockGuide())
+        }
+
+        @Test
+        fun `should label the nickname in nickname`() {
+            assertEquals("Псевдоним", l.pageProfile.nickname())
+        }
+
+        @Test
+        fun `should label the email in email`() {
+            assertEquals("Почта", l.pageProfile.email())
+        }
+
+        @Test
+        fun `should head the change block in change title`() {
+            assertEquals("Смена почты", l.pageProfile.changeTitle())
+        }
+
+        @Test
+        fun `should describe the change steps in change block guide`() {
+            assertEquals(
+                "Укажите новую почту, получите код и подтвердите изменение кодом из письма.",
+                l.pageProfile.changeBlockGuide(),
+            )
+        }
+
+        @Test
+        fun `should label the new email field in change new email`() {
+            assertEquals("Новая почта", l.pageProfile.changeNewEmail())
+        }
+
+        @Test
+        fun `should label the change button in change button`() {
+            assertEquals("Сменить почту", l.pageProfile.changeButton())
+        }
+
+        @Test
+        fun `should report the change in changed title`() {
+            assertEquals("Почта изменена", l.pageProfile.changedTitle())
+        }
+
+        @Test
+        fun `should show the new email after a dash in changed description`() {
+            assertEquals("Новая почта — masha@example.com.", l.pageProfile.changedDescription(email = "masha@example.com"))
+        }
+
+        @Test
+        fun `should report the current email in same email`() {
+            assertEquals("Это ваша текущая почта", l.pageProfile.sameEmail())
+        }
+
+        @Test
+        fun `should report an email bound to another user in email bound`() {
+            assertEquals("Почта уже привязана к другому Пользователю", l.pageProfile.emailBound())
+        }
+
+        @Test
+        fun `should ask for another email in another email`() {
+            assertEquals("Укажите другую почту.", l.pageProfile.anotherEmail())
+        }
+
+        @Test
+        fun `should report a missing request in request not found`() {
+            assertEquals("Запрос смены почты не найден", l.pageProfile.requestNotFound())
+        }
+    }
+
+    @Nested
+    inner class PageConfirmationTests {
+
+        @Test
+        fun `should label the code field in code`() {
+            assertEquals("Код из письма", l.pageConfirmation.code())
+        }
+
+        @Test
+        fun `should label the send button in send code`() {
+            assertEquals("Получить код", l.pageConfirmation.sendCode())
+        }
+
+        @Test
+        fun `should label the resend button in resend code`() {
+            assertEquals("Отправить код повторно", l.pageConfirmation.resendCode())
+        }
+
+        @Test
+        fun `should label the change email button in change email`() {
+            assertEquals("Изменить почту", l.pageConfirmation.changeEmail())
+        }
+
+        @Test
+        fun `should report the sent code in code sent`() {
+            assertEquals("Код отправлен", l.pageConfirmation.codeSent())
+        }
+
+        @Test
+        fun `should report the resent code in code resent title`() {
+            assertEquals("Код отправлен повторно", l.pageConfirmation.codeResentTitle())
+        }
+
+        @Test
+        fun `should name the address in code resent description`() {
+            assertEquals(
+                "Письмо с кодом отправлено на masha@example.com.",
+                l.pageConfirmation.codeResentDescription(email = "masha@example.com"),
+            )
+        }
+
+        @Test
+        fun `should report a wrong email in email invalid title`() {
+            assertEquals("Почта указана неверно", l.pageConfirmation.emailInvalidTitle())
+        }
+
+        @Test
+        fun `should state the email format in email invalid description`() {
+            assertEquals(
+                "Нужна почта до 255 символов с одним символом @ между непустыми частями.",
+                l.pageConfirmation.emailInvalidDescription(),
+            )
+        }
+
+        @Test
+        fun `should report the expired code in code expired`() {
+            assertEquals("Срок действия кода истёк", l.pageConfirmation.codeExpired())
+        }
+
+        @Test
+        fun `should report the exhausted attempts in attempts exhausted`() {
+            assertEquals("Попытки ввода кода исчерпаны", l.pageConfirmation.attemptsExhausted())
+        }
+
+        @Test
+        fun `should ask to resend the code in resend hint`() {
+            assertEquals("Отправьте код повторно.", l.pageConfirmation.resendHint())
+        }
+
+        @Test
+        fun `should report a wrong code in code mismatch`() {
+            assertEquals("Код не совпадает с отправленным", l.pageConfirmation.codeMismatch())
+        }
+
+        @Test
+        fun `should ask to start over in request not found hint`() {
+            assertEquals("Измените почту и получите код заново.", l.pageConfirmation.requestNotFoundHint())
+        }
+    }
+
+    @Nested
+    inner class PageHomeTests {
+
+        @Test
+        fun `should name the page in title`() {
+            assertEquals("Главная", l.pageHome.title())
+        }
+
+        @Test
+        fun `should render the invite code term in dative in guide`() {
+            assertEquals(
+                "Здесь показаны ваши Роли и Сообщества. По Коду-приглашению можно присоединиться к Сообществу.",
+                l.pageHome.guide(),
+            )
+        }
+
+        @Test
+        fun `should render the invite code term in dative in join hint`() {
+            assertEquals("Присоединитесь к сообществу по Коду-приглашению.", l.pageHome.joinHint())
+        }
+
+        @Test
+        fun `should head the roles block in roles title`() {
+            assertEquals("Роли", l.pageHome.rolesTitle())
+        }
+
+        @Test
+        fun `should describe the roles block in roles guide`() {
+            assertEquals(
+                "Ваши Роли определяют доступные разделы и действия в Сообществах.",
+                l.pageHome.rolesGuide(),
+            )
+        }
+
+        @Test
+        fun `should head the role column in roles role`() {
+            assertEquals("Роль", l.pageHome.rolesRole())
+        }
+
+        @Test
+        fun `should head the community count column in roles communities`() {
+            assertEquals("Сообществ", l.pageHome.rolesCommunities())
+        }
+
+        @Test
+        fun `should report no roles in roles empty`() {
+            assertEquals("Ролей пока нет", l.pageHome.rolesEmpty())
+        }
+
+        @Test
+        fun `should head the join block in join title`() {
+            assertEquals("Присоединиться к сообществу", l.pageHome.joinTitle())
+        }
+
+        @Test
+        fun `should render the invite code term in accusative in join guide`() {
+            assertEquals(
+                "Введите Код-приглашение, полученный от Администратора, и нажмите «Присоединиться».",
+                l.pageHome.joinGuide(),
+            )
+        }
+
+        @Test
+        fun `should render the invite code term in nominative in join invite code`() {
+            assertEquals("Код-приглашение", l.pageHome.joinInviteCode())
+        }
+
+        @Test
+        fun `should label the join button in join button`() {
+            assertEquals("Присоединиться", l.pageHome.joinButton())
+        }
+
+        @Test
+        fun `should head the communities block in communities title`() {
+            assertEquals("Сообщества", l.pageHome.communitiesTitle())
+        }
+
+        @Test
+        fun `should describe the communities block in communities guide`() {
+            assertEquals("Сообщества, доступные в этом Кабинете.", l.pageHome.communitiesGuide())
+        }
+
+        @Test
+        fun `should head the id column in communities id`() {
+            assertEquals("ID", l.pageHome.communitiesId())
+        }
+
+        @Test
+        fun `should head the name column in communities name`() {
+            assertEquals("Название", l.pageHome.communitiesName())
+        }
+
+        @Test
+        fun `should head the description column in communities description`() {
+            assertEquals("Описание", l.pageHome.communitiesDescription())
+        }
+
+        @Test
+        fun `should head the roles column in communities roles`() {
+            assertEquals("Роли", l.pageHome.communitiesRoles())
+        }
+
+        @Test
+        fun `should report no communities in communities empty`() {
+            assertEquals("Сообществ пока нет", l.pageHome.communitiesEmpty())
+        }
+
+        @Test
+        fun `should render the access code term in nominative in access code title`() {
+            assertEquals("Код-доступа", l.pageHome.accessCodeTitle())
+        }
+
+        @Test
+        fun `should render the access code term in accusative in access code guide`() {
+            assertEquals(
+                "Сохраните выданный Код-доступа: он нужен для входа. При повторном открытии страницы этот блок исчезнет.",
+                l.pageHome.accessCodeGuide(),
+            )
+        }
+
+        @Test
+        fun `should render the access code term in accusative in access code alert title`() {
+            assertEquals("Сохраните Код-доступа", l.pageHome.accessCodeAlertTitle())
+        }
+
+        @Test
+        fun `should explain the access code in access code alert text`() {
+            assertEquals(
+                "По нему вы входите в Систему. Код также отправлен на почту.",
+                l.pageHome.accessCodeAlertText(),
+            )
+        }
+
+        @Test
+        fun `should render the invite code term in nominative in invite code invalid`() {
+            assertEquals("Код-приглашение недействителен", l.pageHome.inviteCodeInvalid())
+        }
+
+        @Test
+        fun `should render the invite code term in genitive in invite code expired`() {
+            assertEquals("Срок Кода-приглашения истёк", l.pageHome.inviteCodeExpired())
+        }
+
+        @Test
+        fun `should report the join in joined`() {
+            assertEquals("Вы присоединились к сообществу", l.pageHome.joined())
+        }
+    }
+
+    @Nested
+    inner class PageCabinetTests {
+
+        @Test
+        fun `should name the home item in home`() {
+            assertEquals("Главная", l.pageCabinet.home())
+        }
+
+        @Test
+        fun `should name the menu item in menu`() {
+            assertEquals("Меню", l.pageCabinet.menu())
+        }
+
+        @Test
+        fun `should name the profile item in profile`() {
+            assertEquals("Профиль", l.pageCabinet.profile())
+        }
+
+        @Test
+        fun `should name the sign out item in sign out`() {
+            assertEquals("Выйти", l.pageCabinet.signOut())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "ADMINISTRATOR, Администратор",
+            "DEVELOPER,     Разработчик",
+            "MANAGER,       Организатор",
+            "JUDGE,         Судья",
+            "STUDENT,       Ученик",
+            "PARTICIPANT,   Участник",
+            "OBSERVER,      Наблюдатель",
+            "SUPERVISOR,    Супервайзер",
+            "OTHER,         Роль",
+        )
+        fun `should name the role in nominative in role name`(role: RoleNameRole, expected: String) {
+            assertEquals(expected, l.pageCabinet.roleName(role = role))
+        }
+
+        @Test
+        fun `should name the contests section in section contests`() {
+            assertEquals("Туры", l.pageCabinet.sectionContests())
+        }
+
+        @Test
+        fun `should name the users section in section users`() {
+            assertEquals("Пользователи", l.pageCabinet.sectionUsers())
+        }
+
+        @Test
+        fun `should name the communities section in section communities`() {
+            assertEquals("Сообщества", l.pageCabinet.sectionCommunities())
+        }
+
+        @Test
+        fun `should name the tasks section in section tasks`() {
+            assertEquals("Задачи", l.pageCabinet.sectionTasks())
+        }
+
+        @Test
+        fun `should name the classes section in section classes`() {
+            assertEquals("Классы", l.pageCabinet.sectionClasses())
+        }
+
+        @Test
+        fun `should name the competitions section in section competitions`() {
+            assertEquals("Соревнования", l.pageCabinet.sectionCompetitions())
+        }
+
+        @Test
+        fun `should name the submissions section in section submissions`() {
+            assertEquals("Посылки", l.pageCabinet.sectionSubmissions())
+        }
+
+        @Test
+        fun `should point to the header in pending guide`() {
+            assertEquals(
+                "Этот раздел пока не реализован. Доступные разделы можно открыть через шапку.",
+                l.pageCabinet.pendingGuide(),
+            )
+        }
+
+        @Test
+        fun `should state the missing actions in pending block guide`() {
+            assertEquals("Действия этого раздела ещё не реализованы.", l.pageCabinet.pendingBlockGuide())
+        }
+
+        @Test
+        fun `should head the pending block guide in pending block guide title`() {
+            assertEquals("Состояние раздела", l.pageCabinet.pendingBlockGuideTitle())
+        }
+
+        @Test
+        fun `should state the missing section in pending empty`() {
+            assertEquals("Раздел пока не реализован", l.pageCabinet.pendingEmpty())
+        }
+
+        @Test
+        fun `should name the observer cabinet in observer title`() {
+            assertEquals("Кабинет Наблюдателя", l.pageCabinet.observerTitle())
+        }
+
+        @Test
+        fun `should name the supervisor cabinet in supervisor title`() {
+            assertEquals("Кабинет Супервайзера", l.pageCabinet.supervisorTitle())
         }
     }
 

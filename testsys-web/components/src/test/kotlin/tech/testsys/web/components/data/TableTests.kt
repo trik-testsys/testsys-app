@@ -232,14 +232,14 @@ class TableTests : MockVaadinTests() {
         buildTable(Source(size = 12))
 
         assertEquals(testTexts.messages.uiTable.range(1, 5, 12), ui().find("ts-table-pager").child(0).element.textRecursively)
-        assertEquals("1 / 3", ui().find("ts-pager__label").element.textRecursively)
+        assertEquals(testTexts.messages.uiPagination.counter(page = 1, count = 3), ui().find("ts-pager__label").element.textRecursively)
     }
 
     @Test
-    fun `should group the digits of a large page count`() {
+    fun `should count the pages of a large table`() {
         buildTable(Source(size = 7_060))
 
-        assertEquals("1 / 1 412", ui().find("ts-pager__label").element.textRecursively)
+        assertEquals(testTexts.messages.uiPagination.counter(page = 1, count = 1_412), ui().find("ts-pager__label").element.textRecursively)
     }
 
     @Test
@@ -250,7 +250,7 @@ class TableTests : MockVaadinTests() {
         pagerButton(testTexts.messages.uiPagination.next())._click()
 
         assertEquals(5, source.requests.last().offset)
-        assertEquals("2 / 3", ui().find("ts-pager__label").element.textRecursively)
+        assertEquals(testTexts.messages.uiPagination.counter(page = 2, count = 3), ui().find("ts-pager__label").element.textRecursively)
     }
 
     @Test
@@ -392,7 +392,7 @@ class TableTests : MockVaadinTests() {
         handle.refresh()
 
         assertEquals(5, source.requests.last().offset)
-        assertEquals("2 / 2", ui().find("ts-pager__label").element.textRecursively)
+        assertEquals(testTexts.messages.uiPagination.counter(page = 2, count = 2), ui().find("ts-pager__label").element.textRecursively)
     }
 
     @Test

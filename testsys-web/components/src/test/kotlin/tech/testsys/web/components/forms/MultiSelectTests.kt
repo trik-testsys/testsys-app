@@ -138,7 +138,7 @@ internal class MultiSelectTests : MockVaadinTests() {
         input.value = setOf("Анна", "Аркадий", "Борис")
 
         val more = field().find("ts-chip--more")
-        assertEquals("+2", more.element.text)
+        assertEquals(testTexts.messages.uiLookup.moreChip(count = 2), more.element.text)
         assertEquals(testTexts.messages.uiLookup.more(count = 2), more.element.getAttribute("aria-label"))
     }
 

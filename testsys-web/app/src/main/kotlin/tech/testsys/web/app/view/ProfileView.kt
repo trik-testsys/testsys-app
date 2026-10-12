@@ -1,6 +1,6 @@
 package tech.testsys.web.app.view
 
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.operation.error.ConfirmEmailChangeError
@@ -23,8 +23,7 @@ import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.textInput
-
-private const val RESEND_HINT = "Отправьте код повторно."
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Profile of a user with non-fixed roles (testsys.web.page.multi.profile): the nickname and the e-mail address, and the
@@ -33,33 +32,37 @@ private const val RESEND_HINT = "Отправьте код повторно."
  * @since %CURRENT_VERSION%
  */
 @Route("profile")
-@PageTitle("Профиль")
 @RolesAllowed("MULTIPLE_ROLE")
 class ProfileView(private val headers: CabinetHeaders, private val multipleRoleUserService: MultipleRoleUserService) :
-    TestSysView() {
+    TestSysView(), HasDynamicTitle {
     init {
         show(newEmail = null)
     }
 
+    override fun getPageTitle(): String = currentLocalization().pageProfile.title()
+
     /** Rebuilds the page; with [newEmail] the e-mail change waits for the code sent to it. */
     private fun show(newEmail: String?) {
         val profile = multipleRoleUserService.viewProfile()
+        val localization = currentLocalization()
+        val texts = localization.pageProfile
+        val confirmation = localization.pageConfirmation
         page(headers.cabinet(active = null)) {
-            head("Профиль") { crumb("Главная", MultiMainView::class.java) }
-            guide("Здесь можно просмотреть свой Профиль и изменить привязанную почту.")
+            head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
+            guide(texts.guide())
             row {
-                block(size = HALF_COLUMNS, title = "Профиль") {
-                    guide("Ваш Псевдоним и текущая привязанная почта.")
-                    row { textInput("Псевдоним", labelSize = 6, size = 18) { value = profile.name } }
-                    row { textInput("Почта", labelSize = 6, size = 18) { value = profile.email } }
+                block(size = HALF_COLUMNS, title = texts.title()) {
+                    guide(texts.profileBlockGuide())
+                    row { textInput(texts.nickname(), labelSize = 6, size = 18) { value = profile.name } }
+                    row { textInput(texts.email(), labelSize = 6, size = 18) { value = profile.email } }
                 }.isEditable = false
-                block(title = "Смена почты") {
-                    guide("Укажите новую почту, получите код и подтвердите изменение кодом из письма.")
+                block(title = texts.changeTitle()) {
+                    guide(texts.changeBlockGuide())
                     if (newEmail == null) {
                         lateinit var email: ValueInput<String>
-                        row { email = textInput("Новая почта", labelSize = 6, size = 18) }
+                        row { email = textInput(texts.changeNewEmail(), labelSize = 6, size = 18) }
                         footer {
-                            mainAction("Получить код") {
+                            mainAction(confirmation.sendCode()) {
                                 clickOnEnter()
                                 onClick { requestCode(email.value) }
                             }
@@ -67,19 +70,19 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
                     } else {
                         lateinit var code: ValueInput<String>
                         row {
-                            textInput("Новая почта", labelSize = 6, size = 18) {
+                            textInput(texts.changeNewEmail(), labelSize = 6, size = 18) {
                                 value = newEmail
                                 isEditable = false
                             }
                         }
-                        row { code = codeInput("Код из письма", labelSize = 6, size = 18) }
+                        row { code = codeInput(confirmation.code(), labelSize = 6, size = 18) }
                         footer {
-                            mainAction("Сменить почту") {
+                            mainAction(texts.changeButton()) {
                                 clickOnEnter()
                                 onClick { confirm(code.value) }
                             }
-                            action("Отправить код повторно") { onClick { resendCode(newEmail) } }
-                            action("Изменить почту") { onClick { show(newEmail = null) } }
+                            action(confirmation.resendCode()) { onClick { resendCode(newEmail) } }
+                            action(confirmation.changeEmail()) { onClick { show(newEmail = null) } }
                         }
                     }
                 }
@@ -89,19 +92,21 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
 
     private fun requestCode(email: String) {
         emailChangeStep { multipleRoleUserService.requestEmailChange(email) } ?: return
-        toast(FeedbackKind.Success, "Код отправлен")
+        toast(FeedbackKind.Success, currentLocalization().pageConfirmation.codeSent())
         // The operation stores the address trimmed and in lower case, so the page shows it the same way.
         show(newEmail = email.trim().lowercase())
     }
 
     private fun resendCode(email: String) {
         emailChangeStep { multipleRoleUserService.requestEmailChange(email) } ?: return
-        toast(FeedbackKind.Success, title = "Код отправлен повторно", description = "Письмо с кодом отправлено на $email.")
+        val texts = currentLocalization().pageConfirmation
+        toast(FeedbackKind.Success, title = texts.codeResentTitle(), description = texts.codeResentDescription(email = email))
     }
 
     private fun confirm(code: String) {
         val user = emailChangeStep { multipleRoleUserService.confirmEmailChange(code) } ?: return
-        toast(FeedbackKind.Success, title = "Почта изменена", description = "Новая почта — ${user.email}.")
+        val texts = currentLocalization().pageProfile
+        toast(FeedbackKind.Success, title = texts.changedTitle(), description = texts.changedDescription(email = user.email))
         show(newEmail = null)
     }
 
@@ -114,23 +119,26 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
         null
     }
 
-    private fun refusalOf(error: OperationError): Pair<String, String?>? = when (error) {
-        is RequestEmailChangeError -> when (error) {
-            InvalidEmailError -> "Почта указана неверно" to "Нужна почта до 255 символов с одним символом @ между непустыми частями."
-            EmailUnchangedError -> "Это ваша текущая почта" to "Укажите другую почту."
-            EmailAlreadyBoundError -> emailAlreadyBound()
+    private fun refusalOf(error: OperationError): Pair<String, String?>? {
+        val localization = currentLocalization()
+        val texts = localization.pageProfile
+        val confirmation = localization.pageConfirmation
+        return when (error) {
+            is RequestEmailChangeError -> when (error) {
+                InvalidEmailError -> confirmation.emailInvalidTitle() to confirmation.emailInvalidDescription()
+                EmailUnchangedError -> texts.sameEmail() to texts.anotherEmail()
+                EmailAlreadyBoundError -> texts.emailBound() to texts.anotherEmail()
+            }
+            is ConfirmEmailChangeError -> when (error) {
+                EmailChangeRequestNotExistsError -> texts.requestNotFound() to confirmation.requestNotFoundHint()
+                ConfirmationCodeExpiredError -> confirmation.codeExpired() to confirmation.resendHint()
+                ConfirmationAttemptsExhaustedError -> confirmation.attemptsExhausted() to confirmation.resendHint()
+                InvalidConfirmationCodeError -> confirmation.codeMismatch() to null
+                EmailAlreadyBoundError -> texts.emailBound() to texts.anotherEmail()
+            }
+            else -> null
         }
-        is ConfirmEmailChangeError -> when (error) {
-            EmailChangeRequestNotExistsError -> "Запрос смены почты не найден" to "Измените почту и получите код заново."
-            ConfirmationCodeExpiredError -> "Срок действия кода истёк" to RESEND_HINT
-            ConfirmationAttemptsExhaustedError -> "Попытки ввода кода исчерпаны" to RESEND_HINT
-            InvalidConfirmationCodeError -> "Код не совпадает с отправленным" to null
-            EmailAlreadyBoundError -> emailAlreadyBound()
-        }
-        else -> null
     }
-
-    private fun emailAlreadyBound(): Pair<String, String?> = "Почта уже привязана к другому Пользователю" to "Укажите другую почту."
 
     private companion object {
         /** Columns of the profile block; the e-mail change takes the rest of the row beside it. */

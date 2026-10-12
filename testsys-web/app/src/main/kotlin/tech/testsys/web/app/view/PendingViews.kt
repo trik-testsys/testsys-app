@@ -1,32 +1,36 @@
 package tech.testsys.web.app.view
 
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.feedback.emptyState
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
- * Cabinet page whose content is not implemented yet: the Cabinet header with the [active] section, the head [title] and
- * an empty state. The routes and access of the pages are final, so the header can lead to them; the optional route
- * parameter `section` selects the section of a role page that the menu leads to.
+ * Cabinet page whose content is not implemented yet: the Cabinet header with the [active] section, the head and browser
+ * tab [title] and an empty state. The routes and access of the pages are final, so the header can lead to them; the
+ * optional route parameter `section` selects the section of a role page that the menu leads to.
  *
  * @since %CURRENT_VERSION%
  */
-abstract class PendingCabinetView(headers: CabinetHeaders, title: String, active: String?) :
-    TestSysView() {
+abstract class PendingCabinetView(headers: CabinetHeaders, private val title: String, active: String?) :
+    TestSysView(), HasDynamicTitle {
     init {
+        val texts = currentLocalization().pageCabinet
         page(headers.cabinet(active)) {
             head(title)
-            guide("Этот раздел пока не реализован. Доступные разделы можно открыть через шапку.")
+            guide(texts.pendingGuide())
             row {
                 block {
-                    guide("Действия этого раздела ещё не реализованы.", title = "Состояние раздела")
-                    emptyState("Раздел пока не реализован")
+                    guide(texts.pendingBlockGuide(), title = texts.pendingBlockGuideTitle())
+                    emptyState(texts.pendingEmpty())
                 }
             }
         }
     }
+
+    override fun getPageTitle(): String = title
 }
 
 /**
@@ -35,10 +39,9 @@ abstract class PendingCabinetView(headers: CabinetHeaders, title: String, active
  * @since %CURRENT_VERSION%
  */
 @Route("observer/:section?(contests)")
-@PageTitle("Кабинет Наблюдателя")
 @RolesAllowed("OBSERVER")
 class ObserverView(headers: CabinetHeaders) :
-    PendingCabinetView(headers, title = "Кабинет Наблюдателя", active = CabinetHeaders.MAIN_SECTION)
+    PendingCabinetView(headers, title = currentLocalization().pageCabinet.observerTitle(), active = CabinetHeaders.MAIN_SECTION)
 
 /**
  * Cabinet of a Supervisor (testsys.web.page.supervisor), not implemented yet.
@@ -46,7 +49,6 @@ class ObserverView(headers: CabinetHeaders) :
  * @since %CURRENT_VERSION%
  */
 @Route("supervisor/:section?(users|communities)")
-@PageTitle("Кабинет Супервайзера")
 @RolesAllowed("SUPERVISOR")
 class SupervisorView(headers: CabinetHeaders) :
-    PendingCabinetView(headers, title = "Кабинет Супервайзера", active = CabinetHeaders.MAIN_SECTION)
+    PendingCabinetView(headers, title = currentLocalization().pageCabinet.supervisorTitle(), active = CabinetHeaders.MAIN_SECTION)

@@ -153,6 +153,22 @@
 Экраны ошибок получают гайды из components. Контракт DSL — в разделе
 [Гайды страницы и блока](../components/README.md#гайды-страницы-и-блока).
 
+Тексты страниц из таблицы ниже — сообщения модуля локализации в бандлах `page_*`; страница получает их через
+`currentLocalization()` при каждом построении и в обработчиках. Как добавить сообщение — в
+[add-localization.md](../../docs/guides/add-localization.md).
+
+| Бандл | Тексты |
+|-------|--------|
+| `page_guest` | `MainView`, вкладки `guestForm`, `AuthenticationView`, `RestoreAccessView` |
+| `page_registration` | `RegistrationView` |
+| `page_profile` | `ProfileView` |
+| `page_confirmation` | Подтверждение почты кодом из письма, общее для `RegistrationView` и `ProfileView` |
+| `page_home` | `MultiMainView` |
+| `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню», `ObserverView` и `SupervisorView` |
+
+Страницы из таблицы, у которых есть свой заголовок вкладки, задают его через `HasDynamicTitle` из сообщения.
+Остальные страницы Ролей пока задают тексты строками, а заголовок вкладки — через `@PageTitle`.
+
 ## Прокси-сервисы
 
 Страницы вызывают операции только через прокси-сервисы `<Actor>Service` в пакете `service/<actor>`:

@@ -22,7 +22,6 @@ import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.TableScope
 import tech.testsys.web.components.data.TableSpec
-import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
@@ -104,7 +103,7 @@ internal class LookupManyField<T : Any>(
 
         if (current.size > MAX_CHIPS) {
             chips.add(
-                Span("+${formatNumber(current.size - MAX_CHIPS, texts)}").apply {
+                Span(texts.messages.uiLookup.moreChip(count = current.size - MAX_CHIPS)).apply {
                     addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue)
                 },
             )

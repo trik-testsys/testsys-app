@@ -33,7 +33,7 @@ internal class Pager(private val texts: UiLocalization, private val onPage: (Int
     fun show(page: Int, pageCount: Int, from: Int, to: Int, total: Int) {
         this.page = page
         range.text = texts.messages.uiTable.range(from = from, to = to, total = total)
-        counter.text = "${formatNumber(page + 1, texts)} / ${formatNumber(pageCount, texts)}"
+        counter.text = texts.messages.uiPagination.counter(page = page + 1, count = pageCount)
         previous.isEnabled = page > 0
         next.isEnabled = page < pageCount - 1
     }

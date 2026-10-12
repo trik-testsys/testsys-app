@@ -119,7 +119,7 @@ class LookupManyTests : MockVaadinTests() {
             input.value = source.contests.take(5).toSet()
 
             assertEquals(listOf("Кубок 1", "Турнир 2", "Кубок 3"), chips().map { chip -> chip.element.textRecursively })
-            assertEquals("+2", field().find("ts-chip--more").element.text)
+            assertEquals(testTexts.messages.uiLookup.moreChip(count = 2), field().find("ts-chip--more").element.text)
         }
 
         @Test

@@ -116,6 +116,15 @@ class MultiMainViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should title the browser tab of the main page`() {
+        signIn(fixtures.multipleRoleUser())
+
+        UI.getCurrent().navigate(MultiMainView::class.java)
+
+        assertEquals("Главная", UI.getCurrent()._get<MultiMainView>().pageTitle)
+    }
+
+    @Test
     fun `should tell that the invite code is not valid`() {
         signIn(fixtures.multipleRoleUser())
         UI.getCurrent().navigate(MultiMainView::class.java)

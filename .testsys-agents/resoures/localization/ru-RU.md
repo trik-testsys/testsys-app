@@ -151,6 +151,12 @@ glossary and owner documents stay authoritative.
   https://spark.ru/startup/522832472692b/blog/1835/novij-futer (search snippet only, 2026-10-11).
 - Independent review re-read the Викисловарь entry on 2026-10-11 with the same result. The project documentation
   (components README, ui-design.md) also writes «футтер», so a fix of the message may need the same docs change.
+- Project decision (2026-10-12): the user approved «Ссылки футера»; `ui_footer.links` now uses one «т». The same
+  change replaced «футтер» with «футер» in the project documentation (components README, ui-design.md), so the
+  note above about the docs is historical.
+- Independent review re-read the Викисловарь entry on 2026-10-12: «фу́тер», «Существительное, неодушевлённое,
+  мужской род, 2-е склонение», genitive singular «фу́тера»; sense 2 «комп. жарг.», «в вёрстке»: «нижний колонтитул;
+  подвал». No «футтер» on the page. This supports «Ссылки футера».
 
 ## Free text after a transitive verb: «Убрать {$value}»
 
@@ -163,6 +169,44 @@ glossary and owner documents stay authoritative.
 - Applicability: `ui_lookup.remove` keeps «Убрать {$value}» verbatim in the 2026-10-11 migration; a change such as
   «Убрать: {$value}» needs explicit approval.
 - Source: https://ru.wiktionary.org/wiki/убрать (read 2026-10-11).
+- Project decision (2026-10-12): the user approved guillemets, «Убрать «{$value}»» («Убрать «Маша»»).
+- Quoted names and declension: «Мел» (08.09.2022, a popular outlet citing no handbook) states «если рядом есть
+  родовое слово, то название в кавычках не склоняется»; without a generic word the name declines like an ordinary
+  noun («работать в «Газпроме»» / «в компании «Газпром»»). Independent review (2026-10-12) reads the guillemets in
+  `ui_lookup.remove` as a verbatim quote of arbitrary data, like «нажмите «Войти»», and does not call it a defect;
+  the strictly normative form would add a generic word («Убрать значение «{$value}»»). A `$value` that already
+  contains guillemets gives nested «». Rosental's own text was not found.
+- Source: https://mel.fm/gramotnost/kak-pisat/8935620-gramotnost-na-mele-ili-gramotnost-na-mel-nuzhno-li-sklonyat-slova-v-kavychkakh
+  (read 2026-10-12). The Microsoft Russian Localization Style Guide PDF returned no readable text on 2026-10-12.
+
+## «Код-приглашение»: both parts decline
+
+- The domain term (definitions.md, item 30) is a hyphenated compound of two independent nouns, the § 79 п. 1
+  pattern, unlike «Код-доступа» (noun plus fixed genitive, only the first part declines: «по Коду-доступа»).
+  Both parts of such compounds decline: Викисловарь gives «дом-музей», «дома-музея», «дому-музею», Вин. =
+  Им. «дом-музей», «неодушевлённое, мужской род». By analogy: «Кода-приглашения», «Коду-приглашению», accusative
+  equal to nominative; agreement follows the masculine first part («Код-приглашение недействителен»,
+  «Код-приглашение, полученный …»). The analogy is an inference; no dictionary entry for the term itself exists.
+- Applicability: `glossary.invite_code` holds nom/gen/dat/acc sg; page messages reference it.
+- Source: https://ru.wiktionary.org/wiki/дом-музей (read 2026-10-12);
+  https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/18 (§ 79, read 2026-10-08).
+  A search for Розенталь's declension rule returned no readable primary text on 2026-10-12.
+- Independent review (2026-10-12): Викисловарь «код» gives Им. «код», Р. «ко́да», Д. «ко́ду», В. «код»
+  (inanimate masculine, type 1a), supporting «Коду-доступа», «Кода-приглашения», «Коду-приглашению». A closer
+  analogue of a masculine plus neuter compound, «город-государство», declines both parts: Р. «го́рода-госуда́рства»,
+  Д. «го́роду-госуда́рству», В. = Им. «го́род-госуда́рство». «Диван-кровать» is listed as masculine (Р. «дивана-кровати»), which supports
+  masculine agreement after the first part; this remains an inference without a primary rule text.
+- Sources: https://ru.wiktionary.org/wiki/код, https://ru.wiktionary.org/wiki/город-государство,
+  https://ru.wiktionary.org/wiki/диван-кровать (all read 2026-10-12).
+- Lowercase «к сообществу» in `page_home.join_hint`, `page_home.join.title` and `page_home.joined` reproduces the
+  page literals verbatim; definitions.md capitalizes terms («Сообщество»). Changing it needs user approval.
+
+## Grouping separator of `:integer` in `ru`
+
+- ICU4J 78.1 `:integer` renders `ru` digit groups with U+00A0 NO-BREAK SPACE («1 412»), the same as JDK 21
+  `java.text.NumberFormat.getIntegerInstance(ru-RU)` (checked locally 2026-10-12 with Corretto 21.0.10). Golden tests
+  pin it with the `NBSP` constant. Not a language finding; recorded for UI counters (`ui_pagination.counter`,
+  `ui_lookup.more_chip`).
 
 ## Percent sign spacing: «45%» or «45 %»
 

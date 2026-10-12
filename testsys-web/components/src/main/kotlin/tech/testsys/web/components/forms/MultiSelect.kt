@@ -30,7 +30,6 @@ import tech.testsys.web.components.core.setClassName
 import tech.testsys.web.components.core.setReadOnly
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
-import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.texts.UiLocalization
@@ -247,7 +246,7 @@ internal class MultiSelectField<T : Any>(
         }
 
         if (display == MultiSelectDisplay.Chips && selected.size > maxChips) {
-            val more = Span("+${formatNumber(selected.size - maxChips, texts)}").apply {
+            val more = Span(texts.messages.uiLookup.moreChip(count = selected.size - maxChips)).apply {
                 addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue)
                 element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiLookup.more(count = selected.size - maxChips))
             }

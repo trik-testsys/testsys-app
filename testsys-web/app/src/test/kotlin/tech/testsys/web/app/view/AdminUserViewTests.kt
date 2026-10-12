@@ -19,10 +19,12 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -104,6 +106,26 @@ class AdminUserViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should title the browser tab of the user`() {
+        val member = developerOf(fixtures.community(owner = signInAdministrator()), name = "Разработчик Иван")
+
+        openUser(member)
+
+        assertEquals("Пользователь", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        assertEquals("Пользователь «Разработчик Иван»", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should head the page of an observer with its role`() {
+        val observer = fixtures.observer(fixtures.community(owner = signInAdministrator()), name = "Наблюдатель Пётр")
+
+        UI.getCurrent().navigate(AdminUserView::class.java, RouteParameters(OBSERVER_ID_PARAMETER, observer.id.value.toString()))
+
+        assertEquals("Пользователь", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        assertEquals("Наблюдатель «Наблюдатель Пётр»", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
     fun `should show all roles of a member in one community in one row`() {
         val community = fixtures.community(owner = signInAdministrator(), name = "Кружок")
         val member = fixtures.multipleRoleUser {
@@ -147,7 +169,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         val accessToken = textField("Код-доступа")
         assertEquals("observer-code", accessToken.value)
         assertTrue(accessToken.isReadOnly)
-        assertEquals(emptyList<Button>(), UI.getCurrent()._find<Button> { text = "Включить в сообщество" })
+        assertEquals(emptyList<Button>(), UI.getCurrent()._find<Button> { text = "Включить в Сообщество" })
     }
 
     @Test
@@ -178,7 +200,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         val other = fixtures.community(owner = administrator, name = "Второе сообщество")
         openUser(member)
 
-        UI.getCurrent()._get<Button> { text = "Включить в сообщество" }._click()
+        UI.getCurrent()._get<Button> { text = "Включить в Сообщество" }._click()
         choose("Сообщество", CommunityVo::id, other.id)
         choose("Роль", { role: CommunityRole -> role }, CommunityRole.Student)
         UI.getCurrent()._get<Button> { text = "Включить" }._click()
@@ -186,7 +208,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         val student = checkNotNull(multipleRoleUsers.findById(member.id)).data.roles.filterIsInstance<Student>().single()
         assertEquals(setOf(communityConfig.publicCommunityId, other.id), student.memberOf.ids.toSet())
         assertTrue("Второе сообществоУченик" in rolesText(), rolesText())
-        assertEquals("Пользователь включён в сообщество", lastToastTitle())
+        assertEquals("Пользователь включён в Сообщество", lastToastTitle())
     }
 
     @Test
@@ -255,7 +277,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         openUser(member, AdminUserSection.Developer)
 
         assertTrue("Движение по линииНе запускалась" in tableText("Статус проверки"), tableText("Статус проверки"))
-        assertTrue("Весенний тур1Движение по линии0" in tableText("Решения по задачам"), tableText("Решения по задачам"))
+        assertTrue("Весенний тур1Движение по линии0" in tableText("Решения по Задачам"), tableText("Решения по Задачам"))
     }
 
     @ParameterizedTest
@@ -297,14 +319,14 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         val member = developerOf(first = removed, second = kept)
         openUser(member)
 
-        rolesMenu("Первое")._clickItemWithCaption("Исключить в роли Разработчик")
+        rolesMenu("Первое")._clickItemWithCaption("Исключить в Роли Разработчик")
         openDialog()._get<Button> { text = "Исключить" }._click()
 
         val developer = checkNotNull(multipleRoleUsers.findById(member.id)).data.roles.filterIsInstance<Developer>().single()
         assertEquals(listOf(kept.id), developer.memberOf.ids)
         assertEquals(AdminUserView::class.java, currentView)
         assertFalse("Первое" in rolesText(), rolesText())
-        assertEquals("Пользователь исключён из сообщества", lastToastTitle())
+        assertEquals("Пользователь исключён из Сообщества", lastToastTitle())
     }
 
     @Test
@@ -313,13 +335,13 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         val member = developerOf(community)
         openUser(member)
 
-        rolesMenu("Единственное")._clickItemWithCaption("Исключить в роли Разработчик")
+        rolesMenu("Единственное")._clickItemWithCaption("Исключить в Роли Разработчик")
         openDialog()._get<Button> { text = "Исключить" }._click()
 
         val developer = checkNotNull(multipleRoleUsers.findById(member.id)).data.roles.filterIsInstance<Developer>().single()
         assertEquals(emptyList<CommunityId>(), developer.memberOf.ids)
         assertEquals(AdminView::class.java, currentView)
-        assertEquals("Пользователь исключён из сообщества", lastToastTitle())
+        assertEquals("Пользователь исключён из Сообщества", lastToastTitle())
     }
 
     @Test
@@ -334,12 +356,12 @@ class AdminUserViewTests : MockSpringVaadinTests() {
             }
         }
         openUser(member)
-        rolesMenu("Кружок")._clickItemWithCaption("Исключить в роли Судья")
+        rolesMenu("Кружок")._clickItemWithCaption("Исключить в Роли Судья")
 
         openDialog()._get<Button> { text = "Исключить" }._click()
 
         assertEquals(AdminView::class.java, currentView)
-        assertEquals("Пользователь исключён из сообщества", lastToastTitle())
+        assertEquals("Пользователь исключён из Сообщества", lastToastTitle())
         assertEquals("Роль: Судья.", lastToastDescription())
     }
 
@@ -349,7 +371,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         val member = developerOf(community)
         openUser(member)
 
-        rolesMenu("Кружок")._clickItemWithCaption("Исключить в роли Разработчик")
+        rolesMenu("Кружок")._clickItemWithCaption("Исключить в Роли Разработчик")
         openDialog()._get<Button> { text = "Отменить" }._click()
 
         val developer = checkNotNull(multipleRoleUsers.findById(member.id)).data.roles.filterIsInstance<Developer>().single()
@@ -368,7 +390,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
 
         val items = rolesMenu(publicName).items.map { item -> item.text to item.isEnabled }
 
-        assertEquals(listOf("Нет ролей для исключения" to false), items)
+        assertEquals(listOf("Нет Ролей для исключения" to false), items)
     }
 
     @Test
@@ -379,7 +401,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
 
         val items = rolesMenu("Кружок").items.map { item -> item.text to item.isEnabled }
 
-        assertEquals(listOf("Нет ролей для исключения" to false), items)
+        assertEquals(listOf("Нет Ролей для исключения" to false), items)
     }
 
     @Test
@@ -388,7 +410,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
         val observer = fixtures.observer(community)
         openObserver(observer.id.value)
 
-        UI.getCurrent()._get<Button> { text = "Удалить наблюдателя" }._click()
+        UI.getCurrent()._get<Button> { text = "Удалить Наблюдателя" }._click()
         assertFalse(openDialog()._get<Button> { text = "Удалить" }.isEnabled)
         openDialog()._get<TextField>()._setValue(observer.data.name)
         openDialog()._get<Button> { text = "Удалить" }._click()
@@ -404,7 +426,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
 
         openObserver(observer.id.value)
 
-        assertEquals(listOf("Назначенных туров нет"), sectionEmptyTitles())
+        assertEquals(listOf("Назначенных Туров нет"), sectionEmptyTitles())
     }
 
     @Test
@@ -493,7 +515,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
 
     private fun rolesMenu(community: String): ContextMenu {
         val trigger = UI.getCurrent()._find<Button>().single { button ->
-            button.element.getAttribute("aria-label") == "Роли в сообществе «$community»"
+            button.element.getAttribute("aria-label") == "Роли в Сообществе «$community»"
         }
         return checkNotNull(ComponentUtil.getData(trigger, ContextMenu::class.java))
     }
@@ -512,13 +534,14 @@ class AdminUserViewTests : MockSpringVaadinTests() {
     }
 
     private companion object {
+        /** Empty titles of the sections; a title containing another one goes first. */
         val SECTION_EMPTY_TITLES = listOf(
+            "Назначенных Туров нет",
             "Задач нет",
             "Туров нет",
             "Классов нет",
             "Соревнований нет",
             "Судейских вердиктов нет",
-            "Назначенных туров нет",
         )
 
         @JvmStatic

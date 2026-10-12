@@ -3,7 +3,7 @@ package tech.testsys.web.app.view
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
@@ -11,6 +11,7 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.ObserverVo
@@ -36,6 +37,7 @@ import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
+import tech.testsys.web.components.texts.currentLocalization
 
 /** Columns of the community details block; the invite codes take the rest of the row beside it. */
 private const val DETAILS_COLUMNS = 12
@@ -47,11 +49,13 @@ private const val DETAILS_COLUMNS = 12
  * @since %CURRENT_VERSION%
  */
 @Route("admin/communities/:communityId([0-9]+)")
-@PageTitle("Сообщество")
 @RolesAllowed("MULTIPLE_ROLE")
 class AdminCommunityView(private val headers: CabinetHeaders, private val administratorService: AdministratorService) :
     TestSysView(),
-    BeforeEnterObserver {
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageAdmin.communityTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         val communityId = CommunityId(event.routeParameters.getLong(COMMUNITY_ID_PARAMETER).orElseThrow())
         // Checks the role, the community and its owner before the tables load, so that a refusal opens its error screen.
@@ -61,24 +65,30 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
     }
 
     private fun show(community: CommunityVo, communities: List<CommunityVo>, observer: ObserverVo?) {
+        val localization = currentLocalization()
+        val texts = localization.pageAdmin
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Сообщество «${community.name}»") {
-                crumb("Главная", MultiMainView::class.java)
-                crumb("Кабинет Администратора", AdminView::class.java)
-                crumb("Сообщества", AdminView::class.java, RouteParameters(ADMIN_SECTION_PARAMETER, "communities"))
+            head(texts.communityHead(name = community.name)) {
+                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
+                crumb(texts.title(), AdminView::class.java)
+                crumb(
+                    localization.pageCabinet.sectionCommunities(),
+                    AdminView::class.java,
+                    RouteParameters(ADMIN_SECTION_PARAMETER, "communities"),
+                )
             }
-            guide("Сведения о Сообществе, приглашения и Пользователи собраны на этой странице.")
+            guide(texts.communityGuide())
             row {
                 detailsBlock(community) { edited -> show(edited, communities, observer) }
                 invitesBlock(community.id)
             }
             observer?.let { created -> createdObserverBlock(created) }
             row {
-                block(title = "Пользователи сообщества") {
-                    guide("Пользователи этого Сообщества и их Роли.")
+                block(title = texts.communityUsersTitle()) {
+                    guide(texts.communityUsersGuide())
                     adminUsersTable(administratorService, communities, community.id)
                     val creation = observerDialog(community.id) { created -> show(community, communities, created) }
-                    actions { action("Создать наблюдателя") { onClick { creation() } } }
+                    actions { action(texts.communityObserverCreate()) { onClick { creation() } } }
                 }
             }
         }
@@ -86,9 +96,10 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
 
     /** Shows the name and description of [community] for viewing; a saved change rebuilds the page through [onEdited]. */
     private fun PageRowScope.detailsBlock(community: CommunityVo, onEdited: (CommunityVo) -> Unit) {
+        val texts = currentLocalization().pageAdmin
         val draft = Binder<CommunityDraft>()
-        block(size = DETAILS_COLUMNS, title = "Сведения") {
-            guide("Просмотрите параметры. Нажмите «Изменить», чтобы отредактировать их, затем сохраните изменения или отмените их.")
+        block(size = DETAILS_COLUMNS, title = texts.details()) {
+            guide(texts.communityDetailsGuide())
             editing(
                 onSave = {
                     val values = CommunityDraft()
@@ -101,27 +112,27 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
                                 description = values.description,
                             ),
                         )
-                        toast(FeedbackKind.Success, "Сообщество изменено")
+                        toast(FeedbackKind.Success, currentLocalization().pageAdmin.communityEdited())
                     }
                     isValid
                 },
                 onCancel = { draft.readBean(CommunityDraft(community.name, community.description)) },
             )
             row {
-                codeInput("ID", labelSize = 6, size = 18) {
+                codeInput(texts.id(), labelSize = 6, size = 18) {
                     value = community.id.value.toString()
                     isEditable = false
                 }
             }
             row {
-                textInput("Название", labelSize = 6, size = 18) {
+                textInput(texts.name(), labelSize = 6, size = 18) {
                     draft.forField(this)
-                        .nameRules("Укажите название")
+                        .nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
-                textArea("Описание", labelSize = 6, size = 18, maxLines = 4) {
+                textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
@@ -133,51 +144,59 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
 
     @RawAccessTokenDependency(reason = "Shows the stored access code of the created observer as the issued one.")
     private fun PageScope.createdObserverBlock(observer: ObserverVo) {
+        val texts = currentLocalization().pageAdmin
         row {
-            block(title = "Наблюдатель «${observer.name}» создан") {
-                guide("Сохраните Код-доступа созданного Наблюдателя и передайте его владельцу.")
-                row { alert(kind = FeedbackKind.Warning, title = "Сохраните Код-доступа", text = "Наблюдатель входит по нему в Систему.") }
+            block(title = texts.communityObserverCreatedTitle(name = observer.name)) {
+                guide(texts.communityObserverCreatedGuide())
                 row {
-                    codeInput("Код-доступа", labelSize = 6, size = 18) {
+                    alert(
+                        kind = FeedbackKind.Warning,
+                        title = texts.communityObserverAlertTitle(),
+                        text = texts.communityObserverAlertText(),
+                    )
+                }
+                row {
+                    codeInput(texts.accessCode(), labelSize = 6, size = 18) {
                         value = observer.accessTokenHash.value
                         isEditable = false
                         isObscured = true
                     }
                 }
-                footer { linkAction("Открыть наблюдателя") { onClick { openAdminUser(observer) } } }
+                footer { linkAction(texts.communityObserverOpen()) { onClick { openAdminUser(observer) } } }
             }
         }
     }
 
     @RawInviteCodeDependency(reason = "Shows the stored invite codes as the issued ones.")
     private fun PageRowScope.invitesBlock(communityId: CommunityId) {
-        block(title = "Коды-приглашения") {
-            guide("Коды для присоединения к Сообществу с указанными Ролями и сроками действия.")
+        val texts = currentLocalization().pageAdmin
+        block(title = texts.communityInvitesTitle()) {
+            guide(texts.communityInvitesGuide())
             // The menu of a row refreshes the table that contains it.
             lateinit var rows: TableHandle<CommunityInviteVo>
             rows = table(
                 key = { invite: CommunityInviteVo -> invite.kind },
                 fetch = { request -> pageOf(administratorService.viewCommunityInvites(communityId), request) },
             ) {
-                column("Роль", size = 6) { invite -> tag(roleOf(invite.kind)) }
-                codeColumn("Код-приглашение", size = 7, isObscured = true) { invite -> invite.codeHash.value }
-                dateTimeColumn("Действует до") { invite -> invite.expiresAt.toUserDateTime() }
-                menuColumn(ariaLabel = { invite -> "Действия с кодом-приглашением для роли ${roleOf(invite.kind)}" }, size = 2) { invite ->
-                    item("Заменить") {
+                column(texts.communityInvitesRole(), size = 6) { invite -> tag(roleOf(invite.kind)) }
+                codeColumn(texts.communityInvitesCode(), size = 7, isObscured = true) { invite -> invite.codeHash.value }
+                dateTimeColumn(texts.communityInvitesExpires()) { invite -> invite.expiresAt.toUserDateTime() }
+                menuColumn(ariaLabel = { invite -> texts.communityInvitesActions(role = roleOf(invite.kind)) }, size = 2) { invite ->
+                    item(texts.communityInvitesReplace()) {
                         confirm(
-                            title = "Заменить код-приглашение?",
-                            text = "Прежний Код-приглашение перестанет действовать.",
-                            action = "Заменить",
+                            title = texts.communityInvitesReplaceTitle(),
+                            text = texts.communityInvitesReplaceText(),
+                            action = texts.communityInvitesReplace(),
                             isDanger = true,
                         ) {
                             administratorService.createCommunityInvite(communityId, invite.kind)
-                            toast(FeedbackKind.Success, "Код-приглашение заменён")
+                            toast(FeedbackKind.Success, currentLocalization().pageAdmin.communityInvitesReplaced())
                             rows.refresh()
                         }
                     }
-                    item("Продлить") {
+                    item(texts.communityInvitesExtend()) {
                         administratorService.extendCommunityInvite(communityId, invite.kind)
-                        toast(FeedbackKind.Success, "Срок действия кода-приглашения продлён")
+                        toast(FeedbackKind.Success, currentLocalization().pageAdmin.communityInvitesExtended())
                         rows.refresh()
                     }
                 }
@@ -187,21 +206,23 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
 
     /** Builds the observer creation dialog of [communityId] and returns its opening, which starts with an empty form. */
     private fun observerDialog(communityId: CommunityId, onCreated: (ObserverVo) -> Unit): () -> Unit {
+        val localization = currentLocalization()
+        val texts = localization.pageAdmin
         val draft = Binder<ObserverDraft>()
         val creation = dialog(
-            title = "Новый наблюдатель",
-            subtitle = "Наблюдатель видит результаты выбранных туров",
+            title = texts.communityObserverDialogTitle(),
+            subtitle = texts.communityObserverDialogSubtitle(),
         ) {
             row {
-                textInput("Имя", labelSize = 6, size = 18) {
+                textInput(texts.communityObserverName(), labelSize = 6, size = 18) {
                     draft.forField(this)
-                        .nameRules("Укажите имя")
+                        .nameRules(texts.communityObserverNameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
                 lookupMany(
-                    "Туры",
+                    texts.communityObserverContests(),
                     labelSize = 6,
                     size = 18,
                     fetch = { query, request ->
@@ -211,26 +232,26 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
                     },
                     display = ContestVo::name,
                     columns = {
-                        codeColumn("ID", size = 6) { contest -> contest.id.value.toString() }
-                        textColumn("Название", size = 16) { contest -> contest.name }
+                        codeColumn(texts.id(), size = 6) { contest -> contest.id.value.toString() }
+                        textColumn(texts.name(), size = 16) { contest -> contest.name }
                     },
-                    hint = "Туры, открытые сообществу",
+                    hint = texts.communityObserverContestsHint(),
                     dialogSize = DialogSize.L,
                 ) {
                     draft.forField(this)
-                        .asRequired("Выберите туры")
+                        .asRequired(texts.communityObserverContestsRequired())
                         .bind({ values -> values.contests }, { values, contests -> values.contests = contests })
                 }
             }
             footer { dialog ->
-                action("Отменить") { onClick { dialog.close() } }
-                mainAction("Создать") {
+                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                mainAction(texts.create()) {
                     onClick {
                         val values = ObserverDraft()
                         if (draft.writeBeanIfValid(values)) {
                             val contestIds = values.contests.map { contest -> contest.id }.toSet()
                             val observer = administratorService.createObserver(communityId, values.name, contestIds)
-                            toast(FeedbackKind.Success, "Наблюдатель создан")
+                            toast(FeedbackKind.Success, currentLocalization().pageAdmin.communityObserverCreated())
                             dialog.close()
                             onCreated(observer)
                         }
@@ -244,10 +265,12 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
         }
     }
 
-    private fun roleOf(kind: CommunityInvite.Kind): String = when (kind) {
-        CommunityInvite.Kind.Manager -> "Организатор"
-        CommunityInvite.Kind.Developer -> "Разработчик"
-    }
+    private fun roleOf(kind: CommunityInvite.Kind): String = currentLocalization().pageCabinet.roleName(
+        role = when (kind) {
+            CommunityInvite.Kind.Manager -> RoleNameRole.MANAGER
+            CommunityInvite.Kind.Developer -> RoleNameRole.DEVELOPER
+        },
+    )
 
     /** Values of the observer creation form. */
     private class ObserverDraft {

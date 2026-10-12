@@ -211,7 +211,7 @@ class SupervisorUserView(
         return true
     }
 
-    @RawAccessTokenDependency(reason = "Shows the original observer or participant access code while Identity hashing is in use.")
+    @RawAccessTokenDependency(reason = "Shows the original access code of any user while Identity hashing is in use.")
     private fun PageScope.detailsBlock(user: AdminUserVo, login: Instant?) {
         row {
             block(title = "Сведения") {
@@ -231,13 +231,11 @@ class SupervisorUserView(
                         isEditable = false
                     }
                 }
-                if (user is ObserverVo || user is ParticipantVo) {
-                    row {
-                        codeInput("Код-доступа", labelSize = 3, size = 6) {
-                            value = user.accessTokenHash.value
-                            isObscured = true
-                            isEditable = false
-                        }
+                row {
+                    codeInput("Код-доступа", labelSize = 3, size = 6) {
+                        value = user.accessTokenHash.value
+                        isObscured = true
+                        isEditable = false
                     }
                 }
             }

@@ -3680,6 +3680,9 @@ Page: **testsys.web.page.manager.competition**
 для созданного им Сообщества, кроме создания Сообщества и удаления Наблюдателя. Сообщества создают
 Администраторы.
 
+Супервайзер видит Код-доступа любого доступного ему Пользователя в исходном виде, в котором он был выдан.
+Ограничение показа Кода-доступа из **testsys.user.multi.admin.viewUser** действует только для Администратора.
+
 ### testsys.user.single.supervisor.addToCommunity (Implemented)
 
 Page: **testsys.web.page.supervisor**

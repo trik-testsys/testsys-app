@@ -25,6 +25,7 @@ import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.Student
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.MockSpringVaadinTests
+import tech.testsys.web.app.StudyFixtures
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.service.CommunityVo
@@ -40,6 +41,9 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var communityConfig: CommunityConfig
 
+    @Autowired
+    private lateinit var study: StudyFixtures
+
     @Test
     fun `should show an observer for viewing without modification actions`() {
         signIn(fixtures.userOf(UserKind.SUPERVISOR))
@@ -54,6 +58,36 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
         assertTrue(UI.getCurrent()._find<Button> { text = "Включить в сообщество" }.isEmpty())
         assertTrue(UI.getCurrent()._find<Button> { text = "Удалить наблюдателя" }.isEmpty())
         assertTrue(UI.getCurrent()._find<Button> { text = "Назначить администратором" }.isEmpty())
+    }
+
+    @Test
+    fun `should show the access code of a user with non-fixed roles in a read-only field`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        val accessToken = fixtures.unique("member-code")
+        val member = fixtures.multipleRoleUser(rawAccessToken = accessToken) {
+            roles {
+                developer {
+                    memberOf(listOf(communityConfig.publicCommunityId.value))
+                    data = developerData {}
+                }
+            }
+        }
+
+        open(member.id.value)
+
+        assertEquals(accessToken, field("Код-доступа").value)
+        assertTrue(field("Код-доступа").isReadOnly)
+    }
+
+    @Test
+    fun `should show the access code of a participant in a read-only field`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        val participant = study.participant(emptyList())
+
+        open(participant.id.value)
+
+        assertEquals(participant.data.accessTokenHash.value, field("Код-доступа").value)
+        assertTrue(field("Код-доступа").isReadOnly)
     }
 
     @Test

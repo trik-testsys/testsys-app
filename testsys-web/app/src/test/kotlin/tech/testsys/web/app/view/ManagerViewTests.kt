@@ -16,7 +16,9 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.internal.nodefeature.ElementListenerMap
+import com.vaadin.flow.router.HasDynamicTitle
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -49,6 +51,17 @@ class ManagerViewTests : MockSpringVaadinTests() {
 
         assertEquals(ManagerView::class.java, currentView)
         assertEquals("manager/classes", UI.getCurrent().internals.activeViewLocation.path)
+    }
+
+    @Test
+    fun `should title the browser tab of the manager cabinet`() {
+        signInManager()
+
+        UI.getCurrent().navigate(ManagerView::class.java, managerSection(COMPETITIONS_SECTION))
+
+        val view = assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView)
+        assertEquals("Кабинет Организатора", view.pageTitle)
+        assertEquals("Кабинет Организатора", UI.getCurrent()._get<H1>().text)
     }
 
     @Test
@@ -92,7 +105,7 @@ class ManagerViewTests : MockSpringVaadinTests() {
         val manager = signInManager()
         UI.getCurrent().navigate(ManagerView::class.java, managerSection(CLASSES_SECTION))
 
-        UI.getCurrent()._get<Button> { text = "Создать класс" }._click()
+        UI.getCurrent()._get<Button> { text = "Создать Класс" }._click()
         dialogField()._value = "Новый класс"
         UI.getCurrent()._get<Button> { text = "Создать" }._click()
 
@@ -107,7 +120,7 @@ class ManagerViewTests : MockSpringVaadinTests() {
         val manager = signInManager()
         UI.getCurrent().navigate(ManagerView::class.java, managerSection(CLASSES_SECTION))
 
-        UI.getCurrent()._get<Button> { text = "Создать класс" }._click()
+        UI.getCurrent()._get<Button> { text = "Создать Класс" }._click()
         dialogField()._value = "  "
         UI.getCurrent()._get<Button> { text = "Создать" }._click()
 
@@ -119,7 +132,7 @@ class ManagerViewTests : MockSpringVaadinTests() {
         val manager = signInManager()
         UI.getCurrent().navigate(ManagerView::class.java, managerSection(COMPETITIONS_SECTION))
 
-        UI.getCurrent()._get<Button> { text = "Создать соревнование" }._click()
+        UI.getCurrent()._get<Button> { text = "Создать Соревнование" }._click()
         dialogField()._value = "Олимпиада"
         UI.getCurrent()._get<Button> { text = "Создать" }._click()
 

@@ -4,12 +4,13 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.contract.persistence.ClassFilter
 import tech.testsys.domain.contract.persistence.CompetitionFilter
 import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.infra.localization.PageManager
 import tech.testsys.web.app.service.manager.ManagerService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
@@ -28,20 +29,23 @@ import tech.testsys.web.components.forms.dateRangeInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.overlay.dialog
+import tech.testsys.web.components.texts.currentLocalization
 import java.time.Instant
 
 /**
- * Cabinet of a Manager (testsys.web.page.manager): the tabs «Классы» and «Соревнования» are the sections of the route; without
- * a section the page opens «Классы».
+ * Cabinet of a Manager (testsys.web.page.manager): the tabs with the classes and the competitions are the sections of the
+ * route; without a section the page opens the classes.
  *
  * @since %CURRENT_VERSION%
  */
 @Route("manager/:section?(classes|competitions)")
-@PageTitle("Кабинет Организатора")
 @RolesAllowed("MULTIPLE_ROLE")
 class ManagerView(private val headers: CabinetHeaders, private val managerService: ManagerService) :
     TestSysView(),
-    BeforeEnterObserver {
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageManager.title()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         val section = event.routeParameters.get(MANAGER_SECTION_PARAMETER).orElse(null)
         if (section == null) {
@@ -51,19 +55,22 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
 
         // Checks the manager role before the tables load, so that its absence opens the forbidden screen.
         managerService.viewClasses(Pagination(page = 0, size = 1))
+        val localization = currentLocalization()
+        val cabinet = localization.pageCabinet
+        val texts = localization.pageManager
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Кабинет Организатора") {
-                crumb("Главная", MultiMainView::class.java)
+            head(texts.title()) {
+                crumb(cabinet.home(), MultiMainView::class.java)
                 tabs(matchRouteParameters = true) {
-                    tab("Классы", ManagerView::class.java, managerSection(CLASSES_SECTION))
-                    tab("Соревнования", ManagerView::class.java, managerSection(COMPETITIONS_SECTION))
+                    tab(cabinet.sectionClasses(), ManagerView::class.java, managerSection(CLASSES_SECTION))
+                    tab(cabinet.sectionCompetitions(), ManagerView::class.java, managerSection(COMPETITIONS_SECTION))
                 }
             }
-            guide("Создавайте Классы и Соревнования и открывайте их через таблицы соответствующих вкладок.")
+            guide(texts.guide())
             row {
                 if (section == COMPETITIONS_SECTION) {
-                    block(title = "Соревнования") {
-                        guide("Список Соревнований и сведения о них.")
+                    block(title = cabinet.sectionCompetitions()) {
+                        guide(texts.competitionsGuide())
                         groupsTable(
                             fetch = { request, (name, from, to) ->
                                 val filter = CompetitionFilter(name = name, createdFrom = from, createdTo = to)
@@ -71,23 +78,25 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
                                 Page(competitions.content, competitions.totalElements.toInt())
                             },
                             columns = {
-                                codeColumn("ID", sortKey = "id", size = 6) { competition -> competition.id.value.toString() }
-                                textColumn("Название", sortKey = "name", size = 12) { competition -> competition.name }
-                                numberColumn("Участников") { competition -> competition.participants.size }
-                                empty("Соревнований пока нет", "Создайте соревнование и добавьте в него участников.")
+                                codeColumn(texts.id(), sortKey = "id", size = 6) { competition -> competition.id.value.toString() }
+                                textColumn(texts.name(), sortKey = "name", size = 12) { competition -> competition.name }
+                                numberColumn(texts.participantCount()) { competition -> competition.participants.size }
+                                empty(texts.competitionsEmpty(), texts.competitionsEmptyHint())
                                 onRowClick(isNavigation = true) { competition ->
                                     UI.getCurrent().navigate(ManagerCompetitionView::class.java, competitionParameters(competition.id))
                                 }
                             },
                             key = { competition -> competition.id },
-                            creation = Creation("Создать соревнование", "Новое соревнование", "Соревнование создано") { name ->
-                                managerService.createCompetition(name)
-                            },
+                            creation = Creation(
+                                label = texts.competitionsCreate(),
+                                title = texts.competitionsDialogTitle(),
+                                created = PageManager::competitionsCreated,
+                            ) { name -> managerService.createCompetition(name) },
                         )
                     }
                 } else {
-                    block(title = "Классы") {
-                        guide("Список Классов и сведения о них.")
+                    block(title = cabinet.sectionClasses()) {
+                        guide(texts.classesGuide())
                         groupsTable(
                             fetch = { request, (name, from, to) ->
                                 val filter = ClassFilter(name = name, createdFrom = from, createdTo = to)
@@ -95,18 +104,20 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
                                 Page(classes.content, classes.totalElements.toInt())
                             },
                             columns = {
-                                codeColumn("ID", sortKey = "id", size = 6) { studyClass -> studyClass.id.value.toString() }
-                                textColumn("Название", sortKey = "name", size = 12) { studyClass -> studyClass.name }
-                                numberColumn("Учеников") { studyClass -> studyClass.students.size }
-                                empty("Классов пока нет", "Создайте класс и раздайте ученикам код-приглашение.")
+                                codeColumn(texts.id(), sortKey = "id", size = 6) { studyClass -> studyClass.id.value.toString() }
+                                textColumn(texts.name(), sortKey = "name", size = 12) { studyClass -> studyClass.name }
+                                numberColumn(texts.studentCount()) { studyClass -> studyClass.students.size }
+                                empty(texts.classesEmpty(), texts.classesEmptyHint())
                                 onRowClick(isNavigation = true) { studyClass ->
                                     UI.getCurrent().navigate(ManagerClassView::class.java, classParameters(studyClass.id))
                                 }
                             },
                             key = { studyClass -> studyClass.id },
-                            creation = Creation("Создать класс", "Новый класс", "Класс создан") { name ->
-                                managerService.createClass(name)
-                            },
+                            creation = Creation(
+                                label = texts.classesCreate(),
+                                title = texts.classesDialogTitle(),
+                                created = PageManager::classesCreated,
+                            ) { name -> managerService.createClass(name) },
                         )
                     }
                 }
@@ -124,6 +135,7 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
         key: (T) -> Any,
         creation: Creation,
     ) {
+        val texts = currentLocalization().pageManager
         var applied = GroupsFilter()
         val rows = table(key = key, fetch = { request -> fetch(request, applied) }, content = columns)
 
@@ -146,8 +158,8 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
             onRefresh = { rows.refresh(toFirstPage = true) },
         ) {
             row {
-                name = textInput("Название", labelSize = 4, size = 8, hint = "Часть названия, без учёта регистра")
-                dates = dateRangeInput("Дата создания", labelSize = 4, size = 8)
+                name = textInput(texts.name(), labelSize = 4, size = 8, hint = texts.filterNameHint())
+                dates = dateRangeInput(texts.filterCreated(), labelSize = 4, size = 8)
             }
         }
 
@@ -156,23 +168,25 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
 
     /** Adds the action of [creation] opening its dialog, which creates a named group and refreshes [rows]. */
     private fun BlockScope.creationAction(creation: Creation, rows: TableHandle<*>) {
+        val localization = currentLocalization()
+        val texts = localization.pageManager
         val draft = Binder<NameDraft>()
         val form = dialog(title = creation.title) {
             row {
-                textInput("Название", labelSize = 6, size = 18) {
+                textInput(texts.name(), labelSize = 6, size = 18) {
                     draft.forField(this)
-                        .nameRules("Укажите название")
+                        .nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             footer { dialog ->
-                action("Отменить") { onClick { dialog.close() } }
-                mainAction("Создать") {
+                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                mainAction(texts.create()) {
                     onClick {
                         val values = NameDraft()
                         if (draft.writeBeanIfValid(values)) {
                             creation.create(values.name)
-                            toast(FeedbackKind.Success, creation.resultTitle)
+                            toast(FeedbackKind.Success, creation.created(currentLocalization().pageManager))
                             dialog.close()
                             rows.refresh()
                         }
@@ -193,8 +207,11 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
     /** Applied filters of a table of classes or competitions: part of the name and the inclusive creation bounds. */
     private data class GroupsFilter(val name: String? = null, val from: Instant? = null, val to: Instant? = null)
 
-    /** Creation of a class or competition: the [label] of the action, the [title] of its dialog and the [create] call. */
-    private class Creation(val label: String, val title: String, val resultTitle: String, val create: (String) -> Unit)
+    /**
+     * Creation of a class or competition: the [label] of the action, the [title] of its dialog, the [created] toast message
+     * and the [create] call.
+     */
+    private class Creation(val label: String, val title: String, val created: (PageManager) -> String, val create: (String) -> Unit)
 
     /** Values of the creation form. */
     private class NameDraft(var name: String = "")

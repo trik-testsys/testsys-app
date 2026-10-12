@@ -2296,6 +2296,569 @@ class LocalizationTests {
         }
     }
 
+    @Nested
+    inner class PageManagerTests {
+
+        @Test
+        fun `should name the manager cabinet in title`() {
+            assertEquals("Кабинет Организатора", l.pageManager.title())
+        }
+
+        @Test
+        fun `should use the accusative plural class and competition terms in guide`() {
+            assertEquals(
+                "Создавайте Классы и Соревнования и открывайте их через таблицы соответствующих вкладок.",
+                l.pageManager.guide(),
+            )
+        }
+
+        @Test
+        fun `should name the identifier in id`() {
+            assertEquals("ID", l.pageManager.id())
+        }
+
+        @Test
+        fun `should name the name in name`() {
+            assertEquals("Название", l.pageManager.name())
+        }
+
+        @Test
+        fun `should name the nickname in nickname`() {
+            assertEquals("Псевдоним", l.pageManager.nickname())
+        }
+
+        @Test
+        fun `should name the last login in last login`() {
+            assertEquals("Последний вход", l.pageManager.lastLogin())
+        }
+
+        @Test
+        fun `should name the description in description`() {
+            assertEquals("Описание", l.pageManager.description())
+        }
+
+        @Test
+        fun `should use the access code term in access code`() {
+            assertEquals("Код-доступа", l.pageManager.accessCode())
+        }
+
+        @Test
+        fun `should use the genitive plural student term in student count`() {
+            assertEquals("Учеников", l.pageManager.studentCount())
+        }
+
+        @Test
+        fun `should use the genitive plural participant term in participant count`() {
+            assertEquals("Участников", l.pageManager.participantCount())
+        }
+
+        @Test
+        fun `should use the genitive plural contest term in contest count`() {
+            assertEquals("Туров", l.pageManager.contestCount())
+        }
+
+        @Test
+        fun `should ask for the name in name required`() {
+            assertEquals("Укажите название", l.pageManager.nameRequired())
+        }
+
+        @Test
+        fun `should name the creating action in create`() {
+            assertEquals("Создать", l.pageManager.create())
+        }
+
+        @Test
+        fun `should name the csv download in download csv`() {
+            assertEquals("Скачать CSV", l.pageManager.downloadCsv())
+        }
+
+        @Test
+        fun `should name the start in starts at`() {
+            assertEquals("Начало", l.pageManager.startsAt())
+        }
+
+        @Test
+        fun `should name the end in ends at`() {
+            assertEquals("Конец", l.pageManager.endsAt())
+        }
+
+        @Test
+        fun `should name the attempt duration in attempt duration`() {
+            assertEquals("Время на прохождение", l.pageManager.attemptDuration())
+        }
+
+        @Test
+        fun `should head the details block in details title`() {
+            assertEquals("Сведения", l.pageManager.detailsTitle())
+        }
+
+        @Test
+        fun `should quote the edit button in details guide`() {
+            assertEquals(
+                "Просмотрите параметры. Нажмите «Изменить», чтобы отредактировать их, затем сохраните изменения " +
+                    "или отмените их.",
+                l.pageManager.detailsGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive plural class term in classes guide`() {
+            assertEquals("Список Классов и сведения о них.", l.pageManager.classesGuide())
+        }
+
+        @Test
+        fun `should use the genitive plural class term in classes empty`() {
+            assertEquals("Классов пока нет", l.pageManager.classesEmpty())
+        }
+
+        @Test
+        fun `should decline the class, student and invite code terms in classes empty hint`() {
+            assertEquals(
+                "Создайте Класс и раздайте Ученикам Код-приглашение.",
+                l.pageManager.classesEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should use the accusative class term in classes create`() {
+            assertEquals("Создать Класс", l.pageManager.classesCreate())
+        }
+
+        @Test
+        fun `should use the class term in classes dialog title`() {
+            assertEquals("Новый Класс", l.pageManager.classesDialogTitle())
+        }
+
+        @Test
+        fun `should use the class term in classes created`() {
+            assertEquals("Класс создан", l.pageManager.classesCreated())
+        }
+
+        @Test
+        fun `should use the genitive plural competition term in competitions guide`() {
+            assertEquals("Список Соревнований и сведения о них.", l.pageManager.competitionsGuide())
+        }
+
+        @Test
+        fun `should use the genitive plural competition term in competitions empty`() {
+            assertEquals("Соревнований пока нет", l.pageManager.competitionsEmpty())
+        }
+
+        @Test
+        fun `should decline the competition and participant terms in competitions empty hint`() {
+            assertEquals(
+                "Создайте Соревнование и добавьте в него Участников.",
+                l.pageManager.competitionsEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should use the accusative competition term in competitions create`() {
+            assertEquals("Создать Соревнование", l.pageManager.competitionsCreate())
+        }
+
+        @Test
+        fun `should use the competition term in competitions dialog title`() {
+            assertEquals("Новое Соревнование", l.pageManager.competitionsDialogTitle())
+        }
+
+        @Test
+        fun `should use the competition term in competitions created`() {
+            assertEquals("Соревнование создано", l.pageManager.competitionsCreated())
+        }
+
+        @Test
+        fun `should describe the name match in filter name hint`() {
+            assertEquals("Часть названия, без учёта регистра", l.pageManager.filterNameHint())
+        }
+
+        @Test
+        fun `should name the creation date in filter created`() {
+            assertEquals("Дата создания", l.pageManager.filterCreated())
+        }
+
+        @Test
+        fun `should decline the contest term in contests guide`() {
+            assertEquals(
+                "Список Туров и их параметры. Выберите строку, чтобы открыть Тур.",
+                l.pageManager.contestsGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive plural contest term in contests empty`() {
+            assertEquals("Туров пока нет", l.pageManager.contestsEmpty())
+        }
+
+        @Test
+        fun `should decline the contest and community terms in contests empty hint`() {
+            assertEquals("Добавьте Тур, открытый вашим Сообществам.", l.pageManager.contestsEmptyHint())
+        }
+
+        @Test
+        fun `should use the accusative contest term in contests add`() {
+            assertEquals("Добавить Тур", l.pageManager.contestsAdd())
+        }
+
+        @Test
+        fun `should use the genitive contest term in contests dialog title`() {
+            assertEquals("Добавление Тура", l.pageManager.contestsDialogTitle())
+        }
+
+        @Test
+        fun `should use the contest term in contests contest`() {
+            assertEquals("Тур", l.pageManager.contestsContest())
+        }
+
+        @Test
+        fun `should decline the contest and community terms in contests lookup hint`() {
+            assertEquals("Туры, открытые вашим Сообществам", l.pageManager.contestsLookupHint())
+        }
+
+        @Test
+        fun `should use the accusative contest term in contests required`() {
+            assertEquals("Выберите Тур", l.pageManager.contestsRequired())
+        }
+
+        @Test
+        fun `should name the adding action in contests submit`() {
+            assertEquals("Добавить", l.pageManager.contestsSubmit())
+        }
+
+        @Test
+        fun `should use the class term in class tab title`() {
+            assertEquals("Класс", l.pageManager.classTabTitle())
+        }
+
+        @Test
+        fun `should quote the class name in class title`() {
+            assertEquals("Класс «7 «Б»»", l.pageManager.classTitle(name = "7 «Б»"))
+        }
+
+        @Test
+        fun `should decline the class, student and contest terms in class guide`() {
+            assertEquals(
+                "Управляйте сведениями Класса, приглашением, Учениками и назначенными Турами.",
+                l.pageManager.classGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the class term in class saved`() {
+            assertEquals("Класс изменён", l.pageManager.classSaved())
+        }
+
+        @Test
+        fun `should decline the contest and class terms in class contest added`() {
+            assertEquals("Тур добавлен в Класс", l.pageManager.classContestAdded())
+        }
+
+        @Test
+        fun `should use the invite code term in class invite code`() {
+            assertEquals("Код-приглашение", l.pageManager.classInviteCode())
+        }
+
+        @Test
+        fun `should keep the anaphoric code reference lowercase in class invite guide`() {
+            assertEquals(
+                "Передайте этот код Ученикам для присоединения к Классу. Здесь же можно продлить срок его действия.",
+                l.pageManager.classInviteGuide(),
+            )
+        }
+
+        @Test
+        fun `should name the expiry in class invite expires`() {
+            assertEquals("Действует до", l.pageManager.classInviteExpires())
+        }
+
+        @Test
+        fun `should name the copying action in class invite copy`() {
+            assertEquals("Скопировать", l.pageManager.classInviteCopy())
+        }
+
+        @Test
+        fun `should name the replacing action in class invite replace`() {
+            assertEquals("Заменить", l.pageManager.classInviteReplace())
+        }
+
+        @Test
+        fun `should use the accusative invite code term in class invite replace title`() {
+            assertEquals("Заменить Код-приглашение?", l.pageManager.classInviteReplaceTitle())
+        }
+
+        @Test
+        fun `should use the invite code term in class invite replace text`() {
+            assertEquals("Прежний Код-приглашение перестанет действовать.", l.pageManager.classInviteReplaceText())
+        }
+
+        @Test
+        fun `should use the invite code term in class invite replaced`() {
+            assertEquals("Код-приглашение заменён", l.pageManager.classInviteReplaced())
+        }
+
+        @Test
+        fun `should name the extending action in class invite extend`() {
+            assertEquals("Продлить", l.pageManager.classInviteExtend())
+        }
+
+        @Test
+        fun `should use the genitive invite code term in class invite extended`() {
+            assertEquals("Срок действия Кода-приглашения продлён", l.pageManager.classInviteExtended())
+        }
+
+        @Test
+        fun `should use the plural student term in class students title`() {
+            assertEquals("Ученики", l.pageManager.classStudentsTitle())
+        }
+
+        @Test
+        fun `should decline the student and class terms in class students guide`() {
+            assertEquals(
+                "Ученики, присоединившиеся к Классу, и время их входа.",
+                l.pageManager.classStudentsGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive plural student term in class students empty`() {
+            assertEquals("Учеников пока нет", l.pageManager.classStudentsEmpty())
+        }
+
+        @Test
+        fun `should decline the student, class and invite code terms in class students empty hint`() {
+            assertEquals(
+                "Ученики присоединяются к Классу по Коду-приглашению.",
+                l.pageManager.classStudentsEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should use the competition term in competition tab title`() {
+            assertEquals("Соревнование", l.pageManager.competitionTabTitle())
+        }
+
+        @Test
+        fun `should quote the competition name in competition title`() {
+            assertEquals("Соревнование «Кубок»", l.pageManager.competitionTitle(name = "Кубок"))
+        }
+
+        @Test
+        fun `should decline the competition, participant and contest terms in competition guide`() {
+            assertEquals(
+                "Управляйте Соревнованием, его Участниками и Турами.",
+                l.pageManager.competitionGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the competition term in competition saved`() {
+            assertEquals("Соревнование изменено", l.pageManager.competitionSaved())
+        }
+
+        @Test
+        fun `should decline the contest and competition terms in competition contest added`() {
+            assertEquals("Тур добавлен в Соревнование", l.pageManager.competitionContestAdded())
+        }
+
+        @Test
+        fun `should use the plural participant term in competition participants title`() {
+            assertEquals("Участники", l.pageManager.competitionParticipantsTitle())
+        }
+
+        @Test
+        fun `should decline the participant, competition and access code terms in competition participants guide`() {
+            assertEquals(
+                "Участники Соревнования, их Коды-доступа и сведения о входе.",
+                l.pageManager.competitionParticipantsGuide(),
+            )
+        }
+
+        @Test
+        fun `should quote the nickname in competition participants actions`() {
+            assertEquals(
+                "Действия с Участником «Маша»",
+                l.pageManager.competitionParticipantsActions(name = "Маша"),
+            )
+        }
+
+        @Test
+        fun `should name the deleting action in competition participants delete`() {
+            assertEquals("Удалить", l.pageManager.competitionParticipantsDelete())
+        }
+
+        @Test
+        fun `should use the genitive plural participant term in competition participants empty`() {
+            assertEquals("Участников пока нет", l.pageManager.competitionParticipantsEmpty())
+        }
+
+        @Test
+        fun `should decline the participant and access code terms in competition participants empty hint`() {
+            assertEquals(
+                "Создайте Участников, чтобы раздать им Коды-доступа.",
+                l.pageManager.competitionParticipantsEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should use the accusative plural participant term in competition participants create`() {
+            assertEquals("Создать Участников", l.pageManager.competitionParticipantsCreate())
+        }
+
+        @Test
+        fun `should quote the nickname in competition participants delete title`() {
+            assertEquals(
+                "Удалить Участника «Маша»?",
+                l.pageManager.competitionParticipantsDeleteTitle(name = "Маша"),
+            )
+        }
+
+        @Test
+        fun `should decline the access code, participant and submission terms in competition participants delete text`() {
+            assertEquals(
+                "Код-доступа Участника перестанет действовать. Участника с Посылками удалить нельзя.",
+                l.pageManager.competitionParticipantsDeleteText(),
+            )
+        }
+
+        @Test
+        fun `should use the participant term in competition participants deleted`() {
+            assertEquals("Участник удалён", l.pageManager.competitionParticipantsDeleted())
+        }
+
+        @Test
+        fun `should use the plural participant term in competition participants dialog title`() {
+            assertEquals("Новые Участники", l.pageManager.competitionParticipantsDialogTitle())
+        }
+
+        @Test
+        fun `should decline the participant and access code terms in competition participants dialog subtitle`() {
+            assertEquals(
+                "Каждый Участник получит свой Код-доступа",
+                l.pageManager.competitionParticipantsDialogSubtitle(),
+            )
+        }
+
+        @Test
+        fun `should name the amount in competition participants count`() {
+            assertEquals("Количество", l.pageManager.competitionParticipantsCount())
+        }
+
+        @Test
+        fun `should ask for the amount in competition participants count required`() {
+            assertEquals("Укажите количество", l.pageManager.competitionParticipantsCountRequired())
+        }
+
+        @Test
+        fun `should use the plural participant term in competition participants created`() {
+            assertEquals("Участники созданы", l.pageManager.competitionParticipantsCreated())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "1,    Всего: 1.",
+            "5,    Всего: 5.",
+            "1000, Всего: 1000.",
+        )
+        fun `should show the ungrouped count in competition participants created total`(count: Int, expected: String) {
+            assertEquals(expected, l.pageManager.competitionParticipantsCreatedTotal(count = count))
+        }
+
+        @Test
+        fun `should use the contest term in contest tab title`() {
+            assertEquals("Тур", l.pageManager.contestTabTitle())
+        }
+
+        @Test
+        fun `should quote the contest name in contest title`() {
+            assertEquals("Тур «Отборочный»", l.pageManager.contestTitle(name = "Отборочный"))
+        }
+
+        @Test
+        fun `should use the genitive contest term in contest guide`() {
+            assertEquals(
+                "Просмотрите параметры Тура и результаты его прохождения.",
+                l.pageManager.contestGuide(),
+            )
+        }
+
+        @Test
+        fun `should decline the contest, class and competition terms in contest details guide`() {
+            assertEquals(
+                "Параметры Тура, назначенного выбранному Классу или Соревнованию.",
+                l.pageManager.contestDetailsGuide(),
+            )
+        }
+
+        @Test
+        fun `should name the results in contest results title`() {
+            assertEquals("Результаты", l.pageManager.contestResultsTitle())
+        }
+
+        @Test
+        fun `should use the genitive contest term in contest results guide`() {
+            assertEquals(
+                "Сводные результаты Тура по Задачам; их можно скачать в CSV.",
+                l.pageManager.contestResultsGuide(),
+            )
+        }
+
+        @Test
+        fun `should keep the task id ungrouped in contest results task`() {
+            assertEquals("Движение · 12345", l.pageManager.contestResultsTask(name = "Движение", id = 12_345L))
+        }
+
+        @Test
+        fun `should keep the largest task id exact in contest results task`() {
+            assertEquals(
+                "Движение · 9223372036854775807",
+                l.pageManager.contestResultsTask(name = "Движение", id = Long.MAX_VALUE),
+            )
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "42,   3,    42 · 3",
+            "0,    1,    0 · 1",
+            "-5,   2,    -5 · 2",
+            "1000, 1000, 1000 · 1000",
+        )
+        fun `should show the ungrouped score and submission count in contest results cell`(score: Int, count: Int, expected: String) {
+            assertEquals(expected, l.pageManager.contestResultsCell(score = score, count = count))
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "0,    — · 0",
+            "1000, — · 1000",
+        )
+        fun `should show a dash for the missing best score in contest results cell empty`(count: Int, expected: String) {
+            assertEquals(expected, l.pageManager.contestResultsCellEmpty(count = count))
+        }
+
+        @Test
+        fun `should render the plain no-members text in contest results empty`() {
+            assertEquals("Участников нет", l.pageManager.contestResultsEmpty())
+        }
+
+        @Test
+        fun `should use the plural student and participant terms in contest results empty hint`() {
+            assertEquals(
+                "Строки появятся, когда в группе будут Ученики или Участники.",
+                l.pageManager.contestResultsEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should append the score column name to the task in contest csv score`() {
+            assertEquals("Движение — балл", l.pageManager.contestCsvScore(task = "Движение"))
+        }
+
+        @Test
+        fun `should use the genitive plural submission term in contest csv submissions`() {
+            assertEquals("Движение — Посылок", l.pageManager.contestCsvSubmissions(task = "Движение"))
+        }
+    }
+
     private companion object {
         // ICU separates digit groups with a no-break space; the code point keeps the expectations visible.
         val NBSP = Char(0x00A0).toString()

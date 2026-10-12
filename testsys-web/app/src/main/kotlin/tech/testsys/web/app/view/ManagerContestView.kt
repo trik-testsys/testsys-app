@@ -1,8 +1,9 @@
 package tech.testsys.web.app.view
 
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteAlias
 import com.vaadin.flow.router.RouteParameters
@@ -13,6 +14,7 @@ import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.UserId
+import tech.testsys.infra.localization.PageManager
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.manager.ContestResultsVo
 import tech.testsys.web.app.service.manager.ManagerService
@@ -24,6 +26,7 @@ import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
+import tech.testsys.web.components.texts.currentLocalization
 
 /** Columns of the identifier and nickname of a member in the results table. */
 private const val MEMBER_COLUMNS = 8
@@ -42,12 +45,15 @@ private const val MIN_RESULT_COLUMNS = 24
  */
 @Route("manager/classes/:classId([0-9]+)/contests/:contestId([0-9]+)")
 @RouteAlias("manager/competitions/:competitionId([0-9]+)/contests/:contestId([0-9]+)")
-@PageTitle("Тур")
 @RolesAllowed("MULTIPLE_ROLE")
 class ManagerContestView(private val headers: CabinetHeaders, private val managerService: ManagerService) :
     TestSysView(),
-    BeforeEnterObserver {
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageManager.contestTabTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
+        val texts = currentLocalization().pageManager
         val parameters = event.routeParameters
         val contestId = ContestId(parameters.getLong(MANAGER_CONTEST_ID_PARAMETER).orElseThrow())
         val classId = parameters.getLong(CLASS_ID_PARAMETER).map(::ClassId).orElse(null)
@@ -56,7 +62,7 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
             Group(
                 results = results(),
                 fetch = results,
-                name = "Класс «${managerService.viewClass(classId).studyClass.name}»",
+                name = texts.classTitle(name = managerService.viewClass(classId).studyClass.name),
                 section = CLASSES_SECTION,
                 parameters = classParameters(classId),
                 target = ManagerClassView::class.java,
@@ -68,7 +74,7 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
             Group(
                 results = results(),
                 fetch = results,
-                name = "Соревнование «${managerService.viewCompetition(competitionId).competition.name}»",
+                name = texts.competitionTitle(name = managerService.viewCompetition(competitionId).competition.name),
                 section = COMPETITIONS_SECTION,
                 parameters = competitionParameters(competitionId),
                 target = ManagerCompetitionView::class.java,
@@ -77,59 +83,72 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
         }
 
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Тур «${group.results.contest.name}»") {
+            head(texts.contestTitle(name = group.results.contest.name)) {
                 managerCrumbs(group.section)
                 crumb(group.name, group.target, group.parameters)
             }
-            guide("Просмотрите параметры Тура и результаты его прохождения.")
+            guide(texts.contestGuide())
             detailsBlock(group.results.contest)
             resultsBlock(group)
         }
     }
 
     private fun PageScope.detailsBlock(contest: ContestVo) {
+        val texts = currentLocalization().pageManager
         row {
-            block(title = "Сведения") {
-                guide("Параметры Тура, назначенного выбранному Классу или Соревнованию.")
+            block(title = texts.detailsTitle()) {
+                guide(texts.contestDetailsGuide())
                 row {
-                    codeInput("ID", labelSize = 4, size = 8) { value = contest.id.value.toString() }
-                    textInput("Название", labelSize = 4, size = 8) { value = contest.name }
+                    codeInput(texts.id(), labelSize = 4, size = 8) { value = contest.id.value.toString() }
+                    textInput(texts.name(), labelSize = 4, size = 8) { value = contest.name }
                 }
                 row {
-                    dateTimeInput("Начало", labelSize = 4, size = 8) { value = contest.startsAt?.toUserDateTime() }
-                    dateTimeInput("Конец", labelSize = 4, size = 8) { value = contest.endsAt?.toUserDateTime() }
+                    dateTimeInput(texts.startsAt(), labelSize = 4, size = 8) { value = contest.startsAt?.toUserDateTime() }
+                    dateTimeInput(texts.endsAt(), labelSize = 4, size = 8) { value = contest.endsAt?.toUserDateTime() }
                 }
                 row {
-                    codeInput("Время на прохождение", labelSize = 4, size = 8) { value = formatDuration(contest.attemptDuration).orEmpty() }
+                    codeInput(texts.attemptDuration(), labelSize = 4, size = 8) {
+                        value = formatDuration(contest.attemptDuration).orEmpty()
+                    }
                 }
             }.isEditable = false
         }
     }
 
     private fun PageScope.resultsBlock(group: Group) {
+        val texts = currentLocalization().pageManager
+        val ui = UI.getCurrent()
         val results = group.results
         val byMemberAndTask = results.results.associateBy { result -> result.authorId to result.taskId }
         row {
-            block(title = "Результаты") {
-                guide("Сводные результаты Тура по Задачам; их можно скачать в CSV.")
+            block(title = texts.contestResultsTitle()) {
+                guide(texts.contestResultsGuide())
                 table(
                     key = { (memberId, _): Pair<UserId, String> -> memberId },
                     gridColumns = maxOf(MIN_RESULT_COLUMNS, MEMBER_COLUMNS + TASK_COLUMNS * results.tasks.size),
                     fetch = { request -> pageOf(results.members, request) },
                 ) {
-                    codeColumn("ID", size = TASK_COLUMNS) { (memberId, _) -> memberId.value.toString() }
-                    textColumn("Псевдоним", size = MEMBER_COLUMNS - TASK_COLUMNS) { (_, name) -> name }
+                    codeColumn(texts.id(), size = TASK_COLUMNS) { (memberId, _) -> memberId.value.toString() }
+                    textColumn(texts.nickname(), size = MEMBER_COLUMNS - TASK_COLUMNS) { (_, name) -> name }
                     results.tasks.forEach { task ->
-                        codeColumn("${task.name} · ${task.id.value}", size = TASK_COLUMNS) { (memberId, _) ->
+                        codeColumn(texts.contestResultsTask(name = task.name, id = task.id.value), size = TASK_COLUMNS) { (memberId, _) ->
                             val result = byMemberAndTask[memberId to task.id]
-                            "${result?.bestScore?.value ?: "—"} · ${result?.submissionCount ?: 0}"
+                            val count = result?.submissionCount ?: 0
+                            val score = result?.bestScore?.value
+                            if (score == null) {
+                                texts.contestResultsCellEmpty(count = count)
+                            } else {
+                                texts.contestResultsCell(score = score, count = count)
+                            }
                         }
                     }
-                    empty("Участников нет", "Строки появятся, когда в группе будут ученики или участники.")
+                    empty(texts.contestResultsEmpty(), texts.contestResultsEmptyHint())
                 }
                 actions {
-                    downloadAction("Скачать CSV", produce = { context ->
-                        val bytes = contestResultsCsv(group.fetch()).toByteArray(Charsets.UTF_8)
+                    downloadAction(texts.downloadCsv(), produce = { context ->
+                        val fetched = group.fetch()
+                        val csv = inUiOf(ui) { contestResultsCsv(fetched, currentLocalization().pageManager) }
+                        val bytes = csv.toByteArray(Charsets.UTF_8)
                         context.ensureActive()
                         DownloadContent(filename = group.filename, contentType = "text/csv; charset=UTF-8", length = bytes.size.toLong()) {
                             bytes.inputStream()
@@ -156,13 +175,16 @@ class ManagerContestView(private val headers: CabinetHeaders, private val manage
 }
 
 /**
- * Returns [results] as CSV in UTF-8 with a byte order mark: columns separated by `;`, values quoted by RFC 4180, the identifier
- * and nickname of each member and the best result and submission count for each task; an absent best result is empty.
+ * Returns [results] as CSV in UTF-8 with a byte order mark: columns separated by `;`, values quoted by RFC 4180, the header
+ * from [texts], the identifier and nickname of each member and the best result and submission count for each task; an absent
+ * best result is empty.
  */
-internal fun contestResultsCsv(results: ContestResultsVo): String {
+internal fun contestResultsCsv(results: ContestResultsVo, texts: PageManager): String {
     val byMemberAndTask: Map<Pair<UserId, TaskId>, ContestTaskResult> =
         results.results.associateBy { result -> result.authorId to result.taskId }
-    val header = listOf("ID", "Псевдоним") + results.tasks.flatMap { task -> listOf("${task.name} — балл", "${task.name} — посылок") }
+    val header = listOf(texts.id(), texts.nickname()) + results.tasks.flatMap { task ->
+        listOf(texts.contestCsvScore(task = task.name), texts.contestCsvSubmissions(task = task.name))
+    }
     val rows = results.members.map { (memberId, name) ->
         listOf(memberId.value.toString(), name) + results.tasks.flatMap { task ->
             val result = byMemberAndTask[memberId to task.id]

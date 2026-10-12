@@ -23,7 +23,6 @@ import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.infra.grpc.api.GradingNodeRegistry
 import tech.testsys.infra.grpc.api.GradingQueueMonitor
 import tech.testsys.operation.TaskValidationDispatcher
-import tech.testsys.web.app.PostgresTestConfiguration
 import tech.testsys.web.app.PostgresTestContainer
 import tech.testsys.web.app.TestSysApplication
 import tech.testsys.web.app.service.user.UserService
@@ -37,6 +36,10 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import javax.sql.DataSource
 
+/**
+ * Starts the whole runtime against the shared test database, passed only by its address: a container bean in the closed
+ * hierarchy would stop the container shared with later tests.
+ */
 class WebContextsTests {
     @Test
     fun `should start isolated Vaadin children sharing infrastructure and stop all three listeners`() {
@@ -53,7 +56,6 @@ class WebContextsTests {
                 "--testsys.service.port=0",
                 "--testsys.service.secret=${"test-secret-".repeat(8)}",
             ),
-            arrayOf(PostgresTestConfiguration::class.java),
         )
         val ports = listOf(
             checkNotNull((runtime.mainWeb as? WebServerApplicationContext)?.webServer).port,

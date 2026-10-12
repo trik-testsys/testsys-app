@@ -15,3 +15,10 @@ vaadin:
   # Maven's target/.
   build:
     folder: build
+testsys:
+  web:
+    localization:
+      # Region of the users whose region cookie and browser languages are not supported, a SupportedRegion name.
+      default-region: RU
+      # Zone of the dates until the browser reports its own.
+      default-time-zone: Europe/Moscow

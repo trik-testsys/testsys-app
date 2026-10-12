@@ -5,6 +5,7 @@ import com.vaadin.flow.component.UI
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.navigation.tabs
+import tech.testsys.web.components.texts.currentLocalization
 
 private const val FORM_COLUMNS = 10
 private const val SIDE_COLUMNS = 7
@@ -12,19 +13,29 @@ private const val SIDE_COLUMNS = 7
 /**
  * Tab of the guest form block; each tab is a page with its own route.
  *
- * @property label the label of the tab.
  * @property view the page of the tab.
+ * @property label the label of the tab in the region of the current UI; it also titles the page of the tab.
  * @since %CURRENT_VERSION%
  */
-enum class GuestTab(val label: String, val view: Class<out Component>) {
+enum class GuestTab(val view: Class<out Component>) {
     /** Signing in by the access code. */
-    SignIn("Вход", AuthenticationView::class.java),
+    SignIn(AuthenticationView::class.java),
 
     /** Registration of a Student or a Manager. */
-    Registration("Регистрация", RegistrationView::class.java),
+    Registration(RegistrationView::class.java),
 
     /** Restoring access by e-mail. */
-    RestoreAccess("Восстановление доступа", RestoreAccessView::class.java),
+    RestoreAccess(RestoreAccessView::class.java),
+    ;
+
+    val label: String
+        get() = with(currentLocalization().pageGuest) {
+            when (this@GuestTab) {
+                SignIn -> tabSignIn()
+                Registration -> tabRegistration()
+                RestoreAccess -> tabRestoreAccess()
+            }
+        }
 }
 
 /**

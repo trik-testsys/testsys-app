@@ -1,14 +1,16 @@
 package tech.testsys.web.components.error
 
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Branded missing-route screen available in every profile, with browser-history navigation only.
  *
  * @since %CURRENT_VERSION%
  */
-open class NotFoundPage(texts: UiTexts) : ErrorPage(texts) {
+open class NotFoundPage : ErrorPage() {
     init {
-        show(title = texts.notFound.title, description = texts.notFound.description, pageTitle = texts.notFound.pageTitle)
+        with(currentLocalization().uiFeedback) {
+            show(title = errorNotFoundTitle(), description = errorNotFoundDescription(), pageTitle = errorNotFoundPageTitle())
+        }
     }
 }

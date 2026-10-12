@@ -11,7 +11,7 @@ import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setGridColumnSpan
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 /**
  * Scope of a block row: elements side by side on the block columns; an element without a size takes the rest of the row.
@@ -22,7 +22,7 @@ import tech.testsys.web.components.texts.UiTexts
 class BlockRowScope internal constructor(
     private val row: Div,
     columns: Int,
-    internal val texts: UiTexts,
+    internal val texts: UiLocalization,
     internal val editState: BlockEditState,
 ) {
     private val track = GridTrack(columns, owner = "Block row")

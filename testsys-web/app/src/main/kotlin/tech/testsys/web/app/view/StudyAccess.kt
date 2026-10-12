@@ -28,6 +28,7 @@ import tech.testsys.web.components.display.timer
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.navigation.PageHeadScope
+import tech.testsys.web.components.texts.currentLocalization
 import java.time.Duration
 import java.time.Instant
 
@@ -116,9 +117,11 @@ internal sealed class StudyAccess {
 
         override fun cabinetCrumbs(head: PageHeadScope) {
             val studyClass = studentService.viewClasses().first { studyClass -> studyClass.id == classId }
-            head.crumb("Главная", MultiMainView::class.java)
-            head.crumb("Кабинет Ученика", StudentView::class.java)
-            head.crumb("Класс «${studyClass.name}»", StudentClassView::class.java, studentClassParameters(classId))
+            val localization = currentLocalization()
+            val texts = localization.pageStudent
+            head.crumb(localization.pageCabinet.home(), MultiMainView::class.java)
+            head.crumb(texts.title(), StudentView::class.java)
+            head.crumb(texts.classTitle(name = studyClass.name), StudentClassView::class.java, studentClassParameters(classId))
         }
 
         override fun contestParameters(contestId: ContestId) = studentContestParameters(classId, contestId)
@@ -157,7 +160,7 @@ internal sealed class StudyAccess {
         }
 
         override fun cabinetCrumbs(head: PageHeadScope) {
-            head.crumb("Кабинет Участника", ParticipantView::class.java)
+            head.crumb(currentLocalization().pageParticipant.title(), ParticipantView::class.java)
         }
 
         override fun contestParameters(contestId: ContestId) = RouteParameters(STUDY_CONTEST_ID_PARAMETER, contestId.value.toString())
@@ -187,40 +190,46 @@ internal fun studyDeadline(contest: ContestVo, enteredAt: Instant?): Instant? {
 
 /** Returns [duration] as «1 ч 30 мин», or «Без ограничения» without it. */
 internal fun studyDurationText(duration: Duration?): String {
-    if (duration == null) return "Без ограничения"
+    val texts = currentLocalization().pageCabinet
+    if (duration == null) return texts.durationUnlimited()
 
     val hours = duration.toHours()
     val minutes = duration.toMinutesPart()
-    return listOfNotNull("$hours ч".takeIf { hours > 0 }, "$minutes мин".takeIf { minutes > 0 || hours == 0L }).joinToString(" ")
+    return when {
+        hours == 0L -> texts.durationMinutes(minutes = minutes)
+        minutes == 0 -> texts.durationHours(hours = hours)
+        else -> texts.durationHoursMinutes(hours = hours, minutes = minutes)
+    }
 }
 
 /**
  * Adds the state of [contest] for a user who entered it at [enteredAt]: not started without an entry before its end, running
  * before the deadline, otherwise completed.
  */
-internal fun ContentScope.studyState(contest: ContestVo, enteredAt: Instant?, now: Instant) {
+internal fun ContentScope.studyState(contest: ContestVo, enteredAt: Instant?, now: Instant, texts: StudyTexts) {
     val deadline = studyDeadline(contest, enteredAt)
-    when {
-        deadline != null && !now.isBefore(deadline) -> badge("Завершён", Tone.Neutral)
-        enteredAt == null -> badge("Не начат", Tone.Neutral)
-        else -> badge("Идёт", Tone.Info)
+    val (state, tone) = when {
+        deadline != null && !now.isBefore(deadline) -> StudyTexts.ContestState.FINISHED to Tone.Neutral
+        enteredAt == null -> StudyTexts.ContestState.NOT_STARTED to Tone.Neutral
+        else -> StudyTexts.ContestState.RUNNING to Tone.Info
     }
+    badge(texts.contestState(state), tone)
 }
 
 /**
  * Fills the body of the block with the time left to a user who entered [contest] at [enteredAt] and returns the live timer, if
  * the time is running out.
  */
-internal fun BlockScope.studyRemainingTime(contest: ContestVo, enteredAt: Instant?, now: Instant): TimerHandle? {
+internal fun BlockScope.studyRemainingTime(contest: ContestVo, enteredAt: Instant?, now: Instant, texts: StudyTexts): TimerHandle? {
     val deadline = studyDeadline(contest, enteredAt)
     var liveTimer: TimerHandle? = null
     row {
         when {
-            deadline != null && !now.isBefore(deadline) -> text("Время вышло")
-            enteredAt == null -> text("Отсчёт начнётся с началом тура")
-            deadline == null -> text("Без ограничения по времени")
+            deadline != null && !now.isBefore(deadline) -> text(texts.remainingOver())
+            enteredAt == null -> text(texts.remainingNotStarted())
+            deadline == null -> text(texts.remainingUnlimited())
             else -> {
-                liveTimer = timer("Осталось", TimerValue.Until(deadline), variant = TimerVariant.Hero)
+                liveTimer = timer(texts.remainingTitle(), TimerValue.Until(deadline), variant = TimerVariant.Hero)
             }
         }
     }
@@ -228,30 +237,30 @@ internal fun BlockScope.studyRemainingTime(contest: ContestVo, enteredAt: Instan
 }
 
 /** Shows the remaining time separately from the contest state. */
-internal fun ContentScope.studyTimer(contest: ContestVo, enteredAt: Instant?, now: Instant) {
+internal fun ContentScope.studyTimer(contest: ContestVo, enteredAt: Instant?, now: Instant, texts: StudyTexts) {
     val deadline = studyDeadline(contest, enteredAt)
     if (enteredAt != null && deadline != null && now.isBefore(deadline)) {
-        timer("Осталось", TimerValue.Until(deadline))
+        timer(texts.remainingTitle(), TimerValue.Until(deadline))
     } else {
         text("—")
     }
 }
 
 /** Shows a submission status independently from its score. */
-internal fun ContentScope.submissionStatus(status: SubmissionStatusVo?) {
+internal fun ContentScope.submissionStatus(status: SubmissionStatusVo?, texts: StudyTexts) {
     if (status == null) {
         text("—")
         return
     }
 
-    val (label, tone) = when (status) {
-        SubmissionStatusVo.Queued -> "В очереди" to Tone.Neutral
-        SubmissionStatusVo.InProgress -> "Проверяется" to Tone.Info
+    val (variant, tone) = when (status) {
+        SubmissionStatusVo.Queued -> StudyTexts.SubmissionStatus.QUEUED to Tone.Neutral
+        SubmissionStatusVo.InProgress -> StudyTexts.SubmissionStatus.IN_PROGRESS to Tone.Info
         is SubmissionStatusVo.Graded -> when (status.grade) {
-            is GradingResultVo.Success -> "Проверено" to Tone.Success
-            is GradingResultVo.GradingError -> "Ошибка проверки" to Tone.Danger
-            GradingResultVo.Timeout -> "Превышено время проверки" to Tone.Warning
+            is GradingResultVo.Success -> StudyTexts.SubmissionStatus.SUCCESS to Tone.Success
+            is GradingResultVo.GradingError -> StudyTexts.SubmissionStatus.GRADING_ERROR to Tone.Danger
+            GradingResultVo.Timeout -> StudyTexts.SubmissionStatus.TIMEOUT to Tone.Warning
         }
     }
-    badge(label, tone)
+    badge(texts.submissionStatus(variant), tone)
 }

@@ -43,7 +43,7 @@ class DateInputTests : MockVaadinTests() {
             assertEquals("Январь", i18n.monthNames.first())
             assertEquals(listOf("dd.MM.yyyy"), i18n.dateFormats)
             assertEquals(1, i18n.firstDayOfWeek)
-            assertEquals(testTexts.fieldErrors.badInput, i18n.badInputErrorMessage)
+            assertEquals(testTexts.messages.uiForm.fieldBadInput(), i18n.badInputErrorMessage)
             assertNull(control<DatePicker>("Начало").prefixComponent)
         }
 
@@ -273,9 +273,9 @@ class DateInputTests : MockVaadinTests() {
             val status = binder.validate()
 
             assertFalse(status.isOk)
-            assertEquals(testTexts.dateRangeReversed, status.fieldValidationErrors.single().message.orElseThrow())
+            assertEquals(testTexts.messages.uiForm.dateFieldRangeReversed(), status.fieldValidationErrors.single().message.orElseThrow())
             assertTrue(input.isInvalid)
-            assertEquals(testTexts.dateRangeReversed, input.errorMessage)
+            assertEquals(testTexts.messages.uiForm.dateFieldRangeReversed(), input.errorMessage)
         }
 
         @Test
@@ -303,7 +303,7 @@ class DateInputTests : MockVaadinTests() {
             val status = binder.validate()
 
             assertFalse(status.isOk)
-            assertEquals(testTexts.fieldErrors.badInput, status.fieldValidationErrors.single().message.orElseThrow())
+            assertEquals(testTexts.messages.uiForm.fieldBadInput(), status.fieldValidationErrors.single().message.orElseThrow())
         }
 
         @Test

@@ -2,8 +2,8 @@ package tech.testsys.web.app.view
 
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.NotFoundException
-import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.DomainId
@@ -13,6 +13,7 @@ import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.TestDiagnosticResult
 import tech.testsys.domain.model.task.TrikStudioVersion
+import tech.testsys.infra.localization.PageDeveloper.TestingSubmissionsStatusStatus
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
 import tech.testsys.web.app.service.developer.DeveloperSolutionInputVo
@@ -27,11 +28,7 @@ import tech.testsys.web.components.display.text
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockScope
-import tech.testsys.web.components.texts.UiTexts
-import java.time.format.DateTimeFormatter
-
-/** Format of the creation moment in the testing page heading. */
-private val MOMENT_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Results of one testing request owned by the Developer (testsys.web.page.developer.testing).
@@ -39,11 +36,13 @@ private val MOMENT_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.M
  * @since %CURRENT_VERSION%
  */
 @Route("developer/tasks/:taskId([0-9]+)/testing/:testingId([0-9]+)")
-@PageTitle("Тестирование задачи")
 @RolesAllowed("MULTIPLE_ROLE")
-class DeveloperTestingView(texts: UiTexts, private val headers: CabinetHeaders, private val developerService: DeveloperService) :
-    TestSysView(texts),
-    BeforeEnterObserver {
+class DeveloperTestingView(private val headers: CabinetHeaders, private val developerService: DeveloperService) :
+    TestSysView(),
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageDeveloper.testingTabTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         val taskId = TaskId(event.routeParameters.getLong(TASK_ID_PARAMETER).orElseThrow())
         val requestId = TaskValidationRequestId(event.routeParameters.getLong(TESTING_ID_PARAMETER).orElseThrow())
@@ -57,26 +56,30 @@ class DeveloperTestingView(texts: UiTexts, private val headers: CabinetHeaders, 
         } ?: throw NotFoundException("Testing request ${requestId.value} does not belong to task ${taskId.value}")
         val names = resourceNames(task, request)
         val execution = request.execution
+        val localization = currentLocalization()
+        val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Тестирование от ${request.createdAt.toServerDateTime().format(MOMENT_FORMAT)}") {
-                crumb("Главная", MultiMainView::class.java)
-                crumb("Кабинет Разработчика", DeveloperView::class.java)
-                crumb("Задача «${task.name}»", DeveloperTaskView::class.java, taskParameters(taskId))
+            head(texts.testingTitle(startedAt = request.createdAt)) {
+                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
+                crumb(texts.title(), DeveloperView::class.java)
+                crumb(texts.taskTitle(name = task.name), DeveloperTaskView::class.java, taskParameters(taskId))
             }
+            guide(texts.testingGuide())
             row {
-                block(title = "Сведения") {
+                block(title = texts.details()) {
+                    guide(texts.testingDetailsGuide())
                     row {
-                        codeInput("Запущено", labelSize = 6, size = 18) {
-                            value = request.createdAt.toServerDateTime().format(MOMENT_FORMAT)
+                        codeInput(texts.startedAt(), labelSize = 6, size = 18) {
+                            value = texts.testingStartedAtValue(startedAt = request.createdAt)
                             isEditable = false
                         }
                     }
                     row {
                         val (label, tone) = validationStatusOf(execution)
-                        field("Состояние", labelSize = 6, size = 18) { badge(label, tone) }
+                        field(texts.state(), labelSize = 6, size = 18) { badge(label, tone) }
                     }
                     row {
-                        textInput("Итог", labelSize = 6, size = 18) {
+                        textInput(texts.summary(), labelSize = 6, size = 18) {
                             value = summaryOf(execution)
                             isEditable = false
                         }
@@ -84,21 +87,29 @@ class DeveloperTestingView(texts: UiTexts, private val headers: CabinetHeaders, 
                 }
             }
             row {
-                block(title = "Диагностики") {
+                block(title = texts.testingDiagnosticsTitle()) {
+                    guide(texts.testingDiagnosticsGuide())
                     val diagnostics = diagnosticsOf(execution)
                     table(key = { result: TestDiagnosticResult -> result.testId }, fetch = { query -> pageOf(diagnostics, query) }) {
-                        textColumn("Полигон", size = 8) { result -> names[result.testId] ?: "#${result.testId.value}" }
-                        column("Замечания") { result ->
+                        textColumn(texts.testingDiagnosticsPolygon(), size = 8) { result ->
+                            names[result.testId] ?: texts.testingUnknownResource(id = result.testId.value)
+                        }
+                        column(texts.testingDiagnosticsRemarks()) { result ->
                             vertical {
-                                if (result.reports.isEmpty()) text("Без замечаний")
+                                if (result.reports.isEmpty()) text(texts.testingDiagnosticsNoRemarks())
                                 result.reports.forEach { report -> text(diagnosticText(report)) }
                             }
                         }
-                        empty("Диагностик пока нет", "Результаты появятся после выполнения диагностик.")
+                        empty(texts.testingDiagnosticsEmpty(), texts.testingDiagnosticsEmptyHint())
                     }
                 }
             }
-            row { block(title = "Посылки") { submissionRows(request, names) } }
+            row {
+                block(title = localization.pageCabinet.sectionSubmissions()) {
+                    guide(texts.testingSubmissionsGuide())
+                    submissionRows(request, names)
+                }
+            }
         }
     }
 
@@ -120,6 +131,7 @@ class DeveloperTestingView(texts: UiTexts, private val headers: CabinetHeaders, 
 
     /** Adds a row for each submission of a developer solution in a TRIK Studio version, in the order they were created. */
     private fun BlockScope.submissionRows(request: TaskValidationRequestVo, names: Map<DomainId, String>) {
+        val texts = currentLocalization().pageDeveloper
         val execution = request.execution
         val (submissions, failures) = when (execution) {
             is TaskValidationExecutionVo.SubmissionsCreated -> execution.submissions to null
@@ -141,28 +153,33 @@ class DeveloperTestingView(texts: UiTexts, private val headers: CabinetHeaders, 
             key = { row: Pair<Pair<DeveloperSolutionInputVo, TrikStudioVersion>, SubmissionId> -> row.second },
             fetch = { query -> pageOf(rows, query) },
         ) {
-            textColumn("Авторское решение", size = 7) { (run, _) ->
-                names[run.first.developerSolution] ?: "#${run.first.developerSolution.value}"
+            textColumn(texts.testingSubmissionsDeveloperSolution(), size = 7) { (run, _) ->
+                names[run.first.developerSolution] ?: texts.testingUnknownResource(id = run.first.developerSolution.value)
             }
-            codeColumn("Версия TRIK Studio", size = 5) { (run, _) -> run.second.version }
-            column("Статус", size = 7) { (_, submission) ->
+            codeColumn(texts.trikStudioVersion(), size = 5) { (run, _) -> run.second.version }
+            column(texts.status(), size = 7) { (_, submission) ->
                 val failure = failures?.firstOrNull { failed -> failed.submission == submission }
-                when {
-                    execution is TaskValidationExecutionVo.CreatedSubmissions -> badge("Без результата", Tone.Neutral)
-                    execution is TaskValidationExecutionVo.SubmissionsCreated -> badge("Проверяется", Tone.Info)
-                    failure is AuthorSubmissionFailure.ScoreMismatch -> badge("Другой балл", Tone.Danger)
-                    failure is AuthorSubmissionFailure.GradingFailed -> badge("Ошибка проверки", Tone.Danger)
-                    else -> badge("Ожидаемый балл", Tone.Success)
+                val (status, tone) = when {
+                    execution is TaskValidationExecutionVo.CreatedSubmissions -> TestingSubmissionsStatusStatus.NO_RESULT to Tone.Neutral
+                    execution is TaskValidationExecutionVo.SubmissionsCreated -> TestingSubmissionsStatusStatus.CHECKING to Tone.Info
+                    failure is AuthorSubmissionFailure.ScoreMismatch -> TestingSubmissionsStatusStatus.SCORE_MISMATCH to Tone.Danger
+                    failure is AuthorSubmissionFailure.GradingFailed -> TestingSubmissionsStatusStatus.GRADING_FAILED to Tone.Danger
+                    else -> TestingSubmissionsStatusStatus.EXPECTED_SCORE to Tone.Success
                 }
+                badge(texts.testingSubmissionsStatus(status = status), tone)
             }
-            codeColumn("Балл") { (run, submission) ->
+            codeColumn(texts.score()) { (run, submission) ->
                 val expected = run.first.expectedScore.value
-                val actual = when (val failure = failures?.firstOrNull { failed -> failed.submission == submission }) {
-                    is AuthorSubmissionFailure.ScoreMismatch -> failure.actualScore.toString()
-                    is AuthorSubmissionFailure.GradingFailed -> "—"
-                    null -> if (execution is TaskValidationExecutionVo.Completed) expected.toString() else "—"
+                when (val failure = failures?.firstOrNull { failed -> failed.submission == submission }) {
+                    is AuthorSubmissionFailure.ScoreMismatch ->
+                        texts.testingSubmissionsScore(actual = failure.actualScore, expected = expected)
+                    is AuthorSubmissionFailure.GradingFailed -> texts.testingSubmissionsScorePending(expected = expected)
+                    null -> if (execution is TaskValidationExecutionVo.Completed) {
+                        texts.testingSubmissionsScore(actual = expected, expected = expected)
+                    } else {
+                        texts.testingSubmissionsScorePending(expected = expected)
+                    }
                 }
-                "$actual / $expected"
             }
         }
     }

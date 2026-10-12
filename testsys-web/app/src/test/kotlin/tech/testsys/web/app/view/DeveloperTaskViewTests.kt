@@ -21,10 +21,12 @@ import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.component.upload.Upload
 import com.vaadin.flow.router.BeforeEnterEvent
+import com.vaadin.flow.router.HasDynamicTitle
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -53,7 +55,6 @@ import tech.testsys.web.app.service.developer.TaskValidationSnapshotVo
 import tech.testsys.web.app.service.developer.TestVo
 import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.app.service.toVo
-import tech.testsys.web.components.texts.buildUiTexts
 import tools.jackson.databind.ObjectMapper
 import java.time.Instant
 import javax.sql.DataSource
@@ -97,6 +98,16 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         open(task.id)
 
         assertEquals("Задача «Движение по линии»", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should title the browser tab of the task`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+
+        open(task.id)
+
+        assertEquals("Задача", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
     }
 
     @Test
@@ -220,7 +231,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
 
         clickButton("Зафиксировать")
 
-        assertEquals("Не удалось зафиксировать задачу", lastToastTitle())
+        assertEquals("Не удалось зафиксировать Задачу", lastToastTitle())
         assertEquals(1, UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.size)
     }
 
@@ -235,7 +246,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
 
         clickButton("Откатить")
 
-        assertEquals("Изменения задачи отменены", lastToastTitle())
+        assertEquals("Изменения Задачи отменены", lastToastTitle())
         assertNull(developerService.viewTask(taskId).first.wip)
     }
 
@@ -276,7 +287,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         val taskId = developers.committedTask(developers.trikStudioVersion())
         open(taskId)
 
-        rowMenu("Действия с ресурсом «Условие»")._clickItemWithCaption("Открепить")
+        rowMenu("Действия с Ресурсом «Условие»")._clickItemWithCaption("Открепить")
         val warning = openDialog().element.textRecursively
         clickButton("Продолжить")
 
@@ -339,7 +350,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         pageButton("Протестировать")._click()
 
         assertEquals("Не удалось запустить тестирование", lastToastTitle())
-        assertEquals("Прикрепите условие.", lastToastDescription())
+        assertEquals("Прикрепите Условие.", lastToastDescription())
     }
 
     @Test
@@ -365,7 +376,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         clickButton("Предоставить")
 
         assertEquals(listOf(community.id), developerService.viewTask(taskId).second.map { shared -> shared.id })
-        assertEquals("Доступ к задаче предоставлен", lastToastTitle())
+        assertEquals("Доступ к Задаче предоставлен", lastToastTitle())
     }
 
     @Test
@@ -416,7 +427,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         developers.signInDeveloper()
         val task = developers.task()
         open(task.id)
-        clickButton("Загрузить ресурсы")
+        clickButton("Загрузить Ресурсы")
         val identity = StudyPages.upload("removed.py", "print(1)".toByteArray())
         UI.getCurrent()._get<Upload>()._fireDomEvent(
             "testsys-transfer-remove",
@@ -460,7 +471,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
             assertEquals("Прикреплено в зафиксированной", row.element.getChild(2).textRecursively)
         }
         assertFalse(differencesField().isEnabled)
-        assertTrue("Для сравнения нужны рабочая и зафиксированная версии задачи." in filterPanel().element.textRecursively)
+        assertTrue("Для сравнения нужны рабочая и зафиксированная версии Задачи." in filterPanel().element.textRecursively)
     }
 
     @Test
@@ -497,7 +508,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         assertEquals(
             listOf(
                 "Решение",
-                "Авторское решение",
+                "Авторское Решение",
                 "Прикреплено в зафиксированнойПрикреплено в рабочей",
                 "",
             ),
@@ -639,7 +650,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         chooseFilter("Использование", ResourceUsage.Working)
         clickButton("Применить")
 
-        rowMenu("Действия с ресурсом «Новый полигон»")._clickItemWithCaption("Открепить")
+        rowMenu("Действия с Ресурсом «Новый полигон»")._clickItemWithCaption("Открепить")
 
         assertEquals(setOf("Условие", "Упражнение", "Новый полигон", "Черновик"), resourceNames())
         assertEquals(
@@ -725,7 +736,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         }
         every { service.viewTrikStudioVersions() } returns developerService.viewTrikStudioVersions()
         every { service.viewTaskValidationRequests(task.id) } returns requests
-        val view = DeveloperTaskView(buildUiTexts(), headers, service, multipleRoleUserService, mockk())
+        val view = DeveloperTaskView(headers, service, multipleRoleUserService, mockk())
         val event = mockk<BeforeEnterEvent>()
         every { event.routeParameters } returns taskParameters(task.id)
         UI.getCurrent().removeAll()

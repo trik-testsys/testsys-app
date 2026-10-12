@@ -7,7 +7,9 @@ import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.router.HasDynamicTitle
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -38,6 +40,16 @@ class StudentViewTests : MockSpringVaadinTests() {
 
         assertEquals(OperationErrorView::class.java, currentView)
         assertEquals("Нет доступа", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should title the browser tab of the student cabinet`() {
+        signIn(study.student())
+
+        UI.getCurrent().navigate(StudentView::class.java)
+
+        assertEquals("Кабинет Ученика", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        assertEquals("Кабинет Ученика", UI.getCurrent()._get<H1>().text)
     }
 
     @Test
@@ -86,7 +98,7 @@ class StudentViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._get<Button> { text = "Присоединиться" }._click()
 
         assertEquals(listOf(student.id), checkNotNull(classes.findById(studyClass.id)).data.students.ids)
-        assertEquals("Вы присоединились к классу «Новый класс»", StudyPages.lastToastTitle())
+        assertEquals("Вы присоединились к Классу «Новый класс»", StudyPages.lastToastTitle())
         assertTrue("Новый класс" in StudyPages.rowTexts("Описание").single())
     }
 

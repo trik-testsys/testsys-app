@@ -15,6 +15,8 @@ import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
+import tech.testsys.infra.localization.PageCabinet
+import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.service.AdministratorRoleVo
@@ -34,6 +36,7 @@ import tech.testsys.web.components.navigation.header.HeaderUserMenu
 import tech.testsys.web.components.navigation.header.HeaderUserMenuItem
 import tech.testsys.web.components.navigation.header.MegaMenuItem
 import tech.testsys.web.components.navigation.header.NavItem
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Returns the start page of a user of [kind]: the main page for a user with non-fixed roles, the page of the fixed role
@@ -49,17 +52,19 @@ fun startPageOf(kind: UserKind): Class<out Component> = when (kind) {
 }
 
 /**
- * Returns the label of [role] for pages.
+ * Returns the label of [role] for pages in the region of the current UI.
  *
  * @since %CURRENT_VERSION%
  */
-fun labelOf(role: RoleVo): String = when (role) {
-    is AdministratorRoleVo -> "Администратор"
-    is DeveloperRoleVo -> "Разработчик"
-    is ManagerRoleVo -> "Организатор"
-    is JudgeRoleVo -> "Судья"
-    is StudentRoleVo -> "Ученик"
-}
+fun labelOf(role: RoleVo): String = currentLocalization().pageCabinet.roleName(
+    role = when (role) {
+        is AdministratorRoleVo -> RoleNameRole.ADMINISTRATOR
+        is DeveloperRoleVo -> RoleNameRole.DEVELOPER
+        is ManagerRoleVo -> RoleNameRole.MANAGER
+        is JudgeRoleVo -> RoleNameRole.JUDGE
+        is StudentRoleVo -> RoleNameRole.STUDENT
+    },
+)
 
 /**
  * Returns the page of [role].
@@ -97,22 +102,23 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
      */
     fun cabinet(active: String? = null): CabinetHeader {
         val user = currentUser.user()
+        val texts = currentLocalization().pageCabinet
         val signOut = HeaderUserMenuItem(
-            label = "Выйти",
+            label = texts.signOut(),
             destination = HeaderDestination.Action { authenticationContext.logout() },
             isDestructive = true,
         )
 
         val userMenu = if (user is MultipleRoleUser) {
-            listOf(HeaderUserMenuItem("Профиль", HeaderDestination.Route(ProfileView::class.java)), signOut)
+            listOf(HeaderUserMenuItem(texts.profile(), HeaderDestination.Route(ProfileView::class.java)), signOut)
         } else {
             listOf(signOut)
         }
 
         return CabinetHeader(
             items = listOf(
-                NavItem(key = MAIN_SECTION, label = "Главная", target = startPageOf(CabinetPrincipal.of(user).kind)),
-                MegaMenuItem(key = MENU_SECTION, label = "Меню", menu = HeaderMegaMenu(columnsOf(user))),
+                NavItem(key = MAIN_SECTION, label = texts.home(), target = startPageOf(CabinetPrincipal.of(user).kind)),
+                MegaMenuItem(key = MENU_SECTION, label = texts.menu(), menu = HeaderMegaMenu(columnsOf(user, texts))),
             ),
             active = active,
             user = HeaderUser(name = nameOf(user), menu = HeaderUserMenu(userMenu)),
@@ -120,56 +126,56 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
         )
     }
 
-    private fun columnsOf(user: User<*>): List<HeaderMegaColumn> = when (user) {
-        is MultipleRoleUser -> user.data.roles.map { role -> columnOf(role) }.distinct().sortedBy { column -> column.title }
+    private fun columnsOf(user: User<*>, texts: PageCabinet): List<HeaderMegaColumn> = when (user) {
+        is MultipleRoleUser -> user.data.roles.map { role -> columnOf(role, texts) }.distinct().sortedBy { column -> column.title }
         is Participant -> listOf(
             roleColumn(
-                title = "Участник",
+                title = texts.roleName(role = RoleNameRole.PARTICIPANT),
                 page = ParticipantView::class.java,
-                sections = listOf("Туры" to "contests"),
+                sections = listOf(texts.sectionContests() to "contests"),
             ),
         )
         is Observer -> listOf(
             roleColumn(
-                title = "Наблюдатель",
+                title = texts.roleName(role = RoleNameRole.OBSERVER),
                 page = ObserverView::class.java,
-                sections = listOf("Туры" to "contests"),
+                sections = listOf(texts.sectionContests() to "contests"),
             ),
         )
         is Supervisor -> listOf(
             roleColumn(
-                title = "Супервайзер",
+                title = texts.roleName(role = RoleNameRole.SUPERVISOR),
                 page = SupervisorView::class.java,
-                sections = listOf("Пользователи" to "users", "Сообщества" to "communities"),
+                sections = listOf(texts.sectionUsers() to "users", texts.sectionCommunities() to "communities"),
             ),
         )
     }
 
-    private fun columnOf(role: CompatibleUserRole): HeaderMegaColumn = when (role) {
+    private fun columnOf(role: CompatibleUserRole, texts: PageCabinet): HeaderMegaColumn = when (role) {
         is Developer -> roleColumn(
-            title = "Разработчик",
+            title = texts.roleName(role = RoleNameRole.DEVELOPER),
             page = DeveloperView::class.java,
-            sections = listOf("Задачи" to "tasks", "Туры" to "contests"),
+            sections = listOf(texts.sectionTasks() to "tasks", texts.sectionContests() to "contests"),
         )
         is Manager -> roleColumn(
-            title = "Организатор",
+            title = texts.roleName(role = RoleNameRole.MANAGER),
             page = ManagerView::class.java,
-            sections = listOf("Классы" to "classes", "Соревнования" to "competitions"),
+            sections = listOf(texts.sectionClasses() to "classes", texts.sectionCompetitions() to "competitions"),
         )
         is Administrator -> roleColumn(
-            title = "Администратор",
+            title = texts.roleName(role = RoleNameRole.ADMINISTRATOR),
             page = AdminView::class.java,
-            sections = listOf("Сообщества" to "communities", "Пользователи" to "users"),
+            sections = listOf(texts.sectionCommunities() to "communities", texts.sectionUsers() to "users"),
         )
         is Judge -> roleColumn(
-            title = "Судья",
+            title = texts.roleName(role = RoleNameRole.JUDGE),
             page = JudgeView::class.java,
-            sections = listOf("Посылки" to "submissions"),
+            sections = listOf(texts.sectionSubmissions() to "submissions"),
         )
         is Student -> roleColumn(
-            title = "Ученик",
+            title = texts.roleName(role = RoleNameRole.STUDENT),
             page = StudentView::class.java,
-            sections = listOf("Классы" to "classes"),
+            sections = listOf(texts.sectionClasses() to "classes"),
         )
     }
 

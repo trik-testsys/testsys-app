@@ -11,7 +11,7 @@ import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.hasAriaBusy
 import tech.testsys.web.components.core.setAriaBusy
 import tech.testsys.web.components.core.setClassName
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 /**
  * Body of a block that a load fills after the block is built, again on every reload: either a placeholder or
@@ -22,7 +22,7 @@ import tech.testsys.web.components.texts.UiTexts
 internal class LoadedBody(
     private val body: Div,
     private val columns: Int,
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     private val editState: BlockEditState,
     private val title: String?,
 ) {

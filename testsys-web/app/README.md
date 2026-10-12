@@ -12,7 +12,7 @@
 
 | Пакет | Что лежит |
 |-------|-----------|
-| `config` | Spring-конфигурация: тексты, локаль, `InfraConfiguration`, `OperationsConfiguration`, `AfterTransactionExecutor`, `AfterCommitGrader` |
+| `config` | Spring-конфигурация: локализация `UI` (`UiLocaleInitializer`), `InfraConfiguration`, `OperationsConfiguration`, `AfterTransactionExecutor`, `AfterCommitGrader` |
 | `security` | `SecurityConfiguration`, `CabinetPrincipal` и программный вход `CabinetSignIn`, см. раздел [Безопасность](#безопасность) |
 | `service` | `CurrentUser`, общие VO и `Page.map` прокси-сервисов |
 | `service/<actor>` | Прокси-сервис `<Actor>Service` и его VO, см. раздел [Прокси-сервисы](#прокси-сервисы) |
@@ -22,9 +22,18 @@
 `InfraConfiguration` подключает конфигурации инфраструктурных модулей `database`, `grpc`, `diagnostics` и `mail`
 через `@Import`.
 
-Общие тексты создаются фабрикой `buildUiTexts()` из components; контракт — в
-[components/README.md](../components/README.md#тексты). Обработчик `NotFoundView` использует общий `NotFoundPage`;
-контракт маршрутизации — в разделе [Отсутствующие маршруты](#отсутствующие-маршруты).
+`UiLocaleInitializer` при создании каждого `UI` выбирает регион Пользователя и вызывает `initializeUiLocale`
+из components; устройство локализации `UI` и часового пояса — в разделе «Тексты»
+[components/README.md](../components/README.md#тексты). Регион берётся из cookie `TESTSYS_REGION`, значение
+которого — имя `SupportedRegion`, затем из лучшего поддерживаемого языка заголовка `Accept-Language`, затем из
+`testsys.web.localization.default-region`. Неизвестное значение cookie и некорректный заголовок пропускаются.
+Даты показываются в поясе браузера; до его получения — в `testsys.web.localization.default-time-zone`.
+`AppShell` строится до создания `UI`, поэтому имя бренда для заголовка вкладки он берёт из региона
+по умолчанию. Страницы показывают и читают даты в поясе `currentTimeZone()` через `toUserDateTime`,
+`toUserInstant`, `startOf` и `endOf`.
+
+Обработчик `NotFoundView` использует общий `NotFoundPage`; контракт маршрутизации — в разделе
+[Отсутствующие маршруты](#отсутствующие-маршруты).
 
 ## Отсутствующие маршруты
 
@@ -113,7 +122,8 @@
 `ManagerContestView` и `ManagerCompetitionView` скачивают CSV в UTF-8 с BOM. Столбцы разделены `;`, значения
 заключаются в кавычки по RFC 4180, строки завершаются `\r\n`. В сводной таблице Тура на каждую Задачу
 приходится два столбца: лучший результат и количество Посылок. Файл Участников содержит столбцы «ID»,
-«Псевдоним», «Код-доступа». Данные страницы запрашивают заново при скачивании.
+«Псевдоним», «Код-доступа». Данные страницы запрашивают заново при скачивании. Скачивание готовит файл в фоновом
+потоке, поэтому заголовки CSV из сообщений страница форматирует под блокировкой сессии своего `UI` через `inUiOf`.
 
 `DeveloperContestView` показывает отказы прикрепления Задачи тостом с причиной; диалог остаётся открытым.
 
@@ -137,6 +147,41 @@
 открытие страницы его не показывает. Ошибки входа и регистрации страницы показывают тостом с причиной сами,
 без `OperationErrorHandler`. Так же `MultiMainView` показывает отказы присоединения к Сообществу; после
 присоединения страница перестраивается вместе с шапкой, чтобы новая Роль появилась и в «Меню».
+
+Все текущие страницы настраивают вводное пояснение и гайды своих блоков, включая гостевые формы,
+страницы Наблюдателя и Супервайзера с пустым состоянием и обе стадии регистрации.
+Описания находятся рядом с содержимым блоков; общие секции используют те же описания при повторном построении.
+Экраны ошибок получают гайды из components. Контракт DSL — в разделе
+[Гайды страницы и блока](../components/README.md#гайды-страницы-и-блока).
+
+Тексты страниц из таблицы ниже — сообщения модуля локализации в бандлах `page_*`; страница получает их через
+`currentLocalization()` при каждом построении и в обработчиках. Как добавить сообщение — в
+[add-localization.md](../../docs/guides/add-localization.md).
+
+| Бандл | Тексты |
+|-------|--------|
+| `page_guest` | `MainView`, вкладки `guestForm`, `AuthenticationView`, `RestoreAccessView` |
+| `page_registration` | `RegistrationView` |
+| `page_profile` | `ProfileView` |
+| `page_confirmation` | Подтверждение почты кодом из письма, общее для `RegistrationView` и `ProfileView` |
+| `page_home` | `MultiMainView` |
+| `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню»; общие для Кабинетов пустое состояние нереализованного раздела, статус проверки Задачи, ограничение длины названия и запись длительности |
+| `page_administrator` | `AdminView`, `AdminCommunityView`, `AdminUserView` |
+| `page_developer` | `DeveloperView`, `DeveloperContestView`, `DeveloperTaskView`, `DeveloperResourceView`, `DeveloperTestingView` |
+| `page_manager` | `ManagerView`, `ManagerClassView`, `ManagerCompetitionView`, `ManagerContestView` и заголовки их CSV |
+| `page_judge` | `JudgeView`, `JudgeSolutionView` |
+| `page_student` | `StudentView`, `StudentClassView`, `StudentContestView`, `StudentTaskView` |
+| `page_participant` | `ParticipantView`, `ParticipantContestView`, `ParticipantTaskView` |
+| `page_observer` | `ObserverView` |
+| `page_supervisor` | `SupervisorView` |
+
+Как выбрать бандл для текста страницы Роли — в шаге 1
+[add-localization.md](../../docs/guides/add-localization.md#1-выбрать-ключ-и-файл-бандла). Общие страницы Тура
+и Задачи `StudyContestView` и `StudyTaskView` получают тексты через `StudyTexts`: страницы Ученика читают их
+из `page_student`, страницы Участника — из `page_participant`.
+
+Страницы из таблицы, у которых есть свой заголовок вкладки, задают его через `HasDynamicTitle` из сообщения.
+Остальные страницы Ролей пока задают тексты строками, а заголовок вкладки — через `@PageTitle`.
 
 ## Прокси-сервисы
 
@@ -211,12 +256,12 @@
 исключениями и обрабатываются Vaadin. Тур вне Класса или Соревнования Пользователя считается отсутствующим.
 
 Исключение в обработчике события получает `OperationErrorHandler`. Он становится `ErrorHandler` каждой новой
-сессии и показывает тост `FeedbackKind.Error` с заголовком из группы `failures`. Свой заголовок есть
+сессии и показывает тост `FeedbackKind.Error` с заголовком из сообщений `ui_feedback.error.failure.*`. Свой заголовок есть
 у `EntityNotExistsError`, `AccessDeniedError`, `MissedRequiredRoleError` и `ResourceAccessError`, общий —
 у остальных ошибок. Обработчик ищет `OperationException` и среди причин исключения. Исключения других типов
 он передаёт `DefaultErrorHandler` Vaadin без тоста.
 
-Тексты экранов и тостов входят в `UiTexts`, см. [components/README.md](../components/README.md#тексты).
+Тексты экранов и тостов — сообщения `ui_feedback.error.*`, см. [components/README.md](../components/README.md#тексты).
 
 ## Запуск и проверка
 
@@ -228,6 +273,8 @@
 каталоги `build/test-file-storage/<вид>` модуля из `src/test/resources/config/application.properties` и PostgreSQL
 в контейнере Testcontainers, поэтому для них нужен запущенный Docker. Каждый `@SpringBootTest` подключает
 `PostgresTestConfiguration`: все Spring-контексты тестов JVM работают с одним контейнером и одной базой.
+Тесты модуля запускаются с поясом JVM `UTC`, отличным от `testsys.web.localization.default-time-zone`, поэтому
+чтение дат в поясе JVM вместо пояса Пользователя заметно в тестах.
 
 Очистка файлов запускается явно в режиме обслуживания; условия и настройки описаны в разделе
 [«Очистка сирот»](../../testsys-infra/database/README.md#очистка-сирот).
@@ -244,6 +291,13 @@
 | `testsys.operation.competition.max-participants` | Предельное общее количество Участников в Соревновании |
 | `testsys.operation.class-invite.ttl` | Срок действия Кода-приглашения в Класс в формате ISO-8601 `Duration` |
 | `testsys.operation.class-invite.refresh-period` | Период замены Кодов-приглашений в Класс с истёкшим сроком в формате ISO-8601 `Duration`; пока не используется |
+
+Локализацию интерфейса задают свойства со значениями по умолчанию в `application.yml`:
+
+| Свойство | По умолчанию | Значение |
+|----------|--------------|----------|
+| `testsys.web.localization.default-region` | `RU` | Регион, если cookie региона и языки браузера не дают поддерживаемого; имя `SupportedRegion` |
+| `testsys.web.localization.default-time-zone` | `Europe/Moscow` | Часовой пояс дат, пока браузер не сообщил свой |
 
 Настройки SMTP-сервера — в разделе «Настройки» в [mail/README.md](../../testsys-infra/mail/README.md#настройки).
 Адреса Проверяющих узлов и настройки грейдера — в разделе «Настройки» в

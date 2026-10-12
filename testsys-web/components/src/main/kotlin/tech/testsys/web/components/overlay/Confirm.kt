@@ -14,7 +14,7 @@ import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.setWidth
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
-import tech.testsys.web.components.texts.currentTexts
+import tech.testsys.web.components.texts.currentUiLocalization
 
 /**
  * Asks to confirm an action: opens a dialog with [title], [text] and the [action] that runs [onConfirm] and closes it.
@@ -30,13 +30,13 @@ fun confirm(
     typeToConfirm: String? = null,
     onConfirm: () -> Unit,
 ) {
-    val texts = currentTexts()
+    val texts = currentUiLocalization()
     val shell = DialogShell(texts, title, subtitle = null, size = DialogSize.S, isAlert = isDanger)
     text?.let { description -> shell.content.add(Div(description)) }
 
     val confirmName = typeToConfirm?.let { name ->
         TextField().apply {
-            label = texts.dialog.typeToConfirm(name)
+            label = texts.messages.uiOverlay.dialogTypeToConfirm(name = name)
             valueChangeMode = ValueChangeMode.EAGER
             isAutofocus = true
             style.setWidth(value = 100, unit = CssUnit.Percent)
@@ -44,7 +44,7 @@ fun confirm(
     }
 
     val foot = ContentScope(shell.foot, texts, Placement.Body)
-    foot.action(texts.dialog.cancel) { onClick { shell.close() } }
+    foot.action(texts.messages.uiOverlay.dialogCancel()) { onClick { shell.close() } }
 
     val run: ActionHandle.() -> Unit = {
         onClick {

@@ -56,6 +56,13 @@ class ProfileViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should title the browser tab of the profile`() {
+        open()
+
+        assertEquals("Профиль", _get<ProfileView>().pageTitle)
+    }
+
+    @Test
     fun `should change the e-mail address by the code sent to the new address`() {
         val user = open()
         val newEmail = "${fixtures.unique("new")}@example.com".lowercase()

@@ -19,8 +19,10 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -39,9 +41,9 @@ import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.manager.ManagerService
+import tech.testsys.web.components.texts.currentTimeZone
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
 
 @SpringBootTest
 class ManagerClassViewTests : MockSpringVaadinTests() {
@@ -104,9 +106,16 @@ class ManagerClassViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should title the browser tab of the class`() {
+        open(fixtures.studyClass(owner = signInManager(), name = "Кружок").id)
+
+        assertEquals("Класс", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+    }
+
+    @Test
     fun `should show the students of the class with their last login`() {
         val student = fixtures.multipleRoleUser(name = "Ученик Иван")
-        users.recordLogin(student.id, LocalDateTime.of(2026, 3, 14, 9, 30).atZone(ZoneId.systemDefault()).toInstant())
+        users.recordLogin(student.id, LocalDateTime.of(2026, 3, 14, 9, 30).atZone(currentTimeZone()).toInstant())
 
         open(fixtures.studyClass(owner = signInManager(), students = listOf(student)).id)
 
@@ -166,7 +175,7 @@ class ManagerClassViewTests : MockSpringVaadinTests() {
         assertEquals(before.codeHash, after.codeHash)
         assertTrue(after.expiresAt < before.expiresAt)
         assertTrue(after.expiresAt > Instant.now())
-        assertEquals("Срок действия кода-приглашения продлён", lastToastTitle())
+        assertEquals("Срок действия Кода-приглашения продлён", lastToastTitle())
     }
 
     @Test
@@ -178,13 +187,13 @@ class ManagerClassViewTests : MockSpringVaadinTests() {
         open(studyClass.id)
         val contest = managerService.viewAvailableContests(Pagination(page = 0, size = 1)).content.single()
 
-        UI.getCurrent()._get<Button> { text = "Добавить тур" }._click()
+        UI.getCurrent()._get<Button> { text = "Добавить Тур" }._click()
         contestField().value = contest
         UI.getCurrent()._get<Button> { text = "Добавить" }._click()
 
         assertEquals(listOf(contest.id), checkNotNull(classes.findById(studyClass.id)).data.contests.ids)
         assertTrue("Весенний тур" in tableText("Время на прохождение"))
-        assertEquals("Тур добавлен в класс", lastToastTitle())
+        assertEquals("Тур добавлен в Класс", lastToastTitle())
     }
 
     @Test

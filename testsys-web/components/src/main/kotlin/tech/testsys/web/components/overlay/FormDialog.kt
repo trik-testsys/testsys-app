@@ -20,8 +20,8 @@ import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
-import tech.testsys.web.components.texts.UiTexts
-import tech.testsys.web.components.texts.currentTexts
+import tech.testsys.web.components.texts.UiLocalization
+import tech.testsys.web.components.texts.currentUiLocalization
 
 /**
  * Handle of a dialog built once and opened any number of times; field values stay between openings.
@@ -85,7 +85,7 @@ class DialogHandle internal constructor(private val shell: DialogShell, private 
 @TestSysDsl
 class DialogScope internal constructor(
     private val shell: DialogShell,
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     private val editState: BlockEditState,
     private val handle: DialogHandle,
 ) {
@@ -136,7 +136,7 @@ class DialogScope internal constructor(
 @TestSysDsl
 class DialogSectionScope internal constructor(
     private val container: Div,
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     private val editState: BlockEditState,
 ) {
     /**
@@ -158,7 +158,7 @@ class DialogSectionScope internal constructor(
  * @since %CURRENT_VERSION%
  */
 fun dialog(title: String, subtitle: String? = null, size: DialogSize = DialogSize.M, content: DialogScope.() -> Unit): DialogHandle {
-    val texts = currentTexts()
+    val texts = currentUiLocalization()
     val shell = DialogShell(texts, title = title, subtitle = subtitle, size = size, isAlert = false)
     shell.content.addClassName(CssClass.DialogGrid)
 

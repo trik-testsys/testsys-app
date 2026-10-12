@@ -44,7 +44,7 @@ import tech.testsys.web.components.core.setWidth
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 import java.io.IOException
 import java.io.InputStream
 import java.io.InterruptedIOException
@@ -283,7 +283,7 @@ internal class DownloadAttempt(val context: DownloadContext = DownloadContext())
 }
 
 internal class DownloadDisplay(
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     private val label: String,
     private val isIconOnly: Boolean,
     compact: Boolean,
@@ -354,10 +354,10 @@ internal class DownloadDisplay(
             state.map { value ->
                 when (value) {
                     DownloadState.Idle -> ""
-                    DownloadState.Preparing -> texts.components.preparing
-                    is DownloadState.Downloading -> texts.components.transferBytes(value.bytes)
-                    is DownloadState.Done -> texts.components.done
-                    is DownloadState.Error -> texts.components.failed
+                    DownloadState.Preparing -> texts.messages.uiTransfer.preparing()
+                    is DownloadState.Downloading -> texts.messages.uiTransfer.transferredBytes(count = value.bytes)
+                    is DownloadState.Done -> texts.messages.uiTransfer.done()
+                    is DownloadState.Error -> texts.messages.uiTransfer.failed()
                 }
             },
         )
@@ -472,10 +472,10 @@ internal class DownloadDisplay(
         }
 
         val caption = when (value) {
-            DownloadState.Preparing -> texts.components.preparing
-            is DownloadState.Downloading -> texts.components.cancel
-            is DownloadState.Done -> texts.components.downloadAgain
-            is DownloadState.Error -> texts.components.retry
+            DownloadState.Preparing -> texts.messages.uiTransfer.preparing()
+            is DownloadState.Downloading -> texts.messages.uiTransfer.cancel()
+            is DownloadState.Done -> texts.messages.uiTransfer.downloadAgain()
+            is DownloadState.Error -> texts.messages.uiTransfer.retry()
             DownloadState.Idle -> label
         }
 
@@ -487,14 +487,14 @@ internal class DownloadDisplay(
             else -> CssClass.BtnSecondary
         }
 
-        val accessible = texts.components.downloadLabel(label, caption)
+        val accessible = texts.messages.uiTransfer.downloadLabel(label = label, state = caption)
         trigger.element.setAttribute(HtmlAttribute.AriaLabel, accessible)
         trigger.element.setAttribute(HtmlAttribute.Title, accessible)
         trigger.element.setAriaBusy(isBusy)
         captionNode.text = caption
 
         percent?.let { progress ->
-            percentageNode.text = texts.components.percent(progress.toInt())
+            percentageNode.text = texts.messages.uiTransfer.percent(value = progress.toInt())
             fill.element.style.setWidth(progress, CssUnit.Percent)
             ring.element.style.setDownloadOffset(RING_CIRCUMFERENCE * (1 - progress / PERCENT_MAX))
         }

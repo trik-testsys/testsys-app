@@ -16,11 +16,11 @@ import tech.testsys.web.components.core.add
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setAttribute
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 import java.util.Locale
 
 /** Builds the `.ts-header` markup of [header]. */
-internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
+internal fun buildHeader(header: CabinetHeader, texts: UiLocalization): Div {
     val interactions = HeaderInteractions()
     val menus = header.items.filterIsInstance<MegaMenuItem>().associate { it.key to MegaMenuHandle(it, interactions) }
     require(header.menuSearchKey == null || header.menuSearchKey in menus) {
@@ -28,11 +28,11 @@ internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
     }
 
     val bar = Div().apply { addClassName(CssClass.HeaderBar) }
-    bar.add(buildBrand(texts.brand, href = "."), navigation(header, texts, menus))
+    bar.add(buildBrand(texts.messages.uiPage.brandName(), href = "."), navigation(header, texts, menus))
 
     // The search looks through the section items, so the field follows the navigation.
     if (header.menuSearchKey != null) {
-        bar.add(HeaderMenuSearchController(menus.getValue(header.menuSearchKey), texts.header).component)
+        bar.add(HeaderMenuSearchController(menus.getValue(header.menuSearchKey), texts.messages.uiPage).component)
     }
 
     bar.add(Div().apply { addClassName(CssClass.HeaderSpacer) })
@@ -41,11 +41,16 @@ internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
     val signIn = header.signIn
     if (user != null) {
         header.notifications?.let { notifications ->
-            bar.add(HeaderNotificationsController(notifications, texts.header, interactions).component)
+            bar.add(HeaderNotificationsController(notifications, texts.messages.uiPage, interactions).component)
         }
-        bar.add(if (user.menu == null) userChip(user, texts.locale) else userMenu(user, texts.header, interactions, texts.locale))
+        val userControl = if (user.menu == null) {
+            userChip(user, texts.locale)
+        } else {
+            userMenu(user, texts.messages.uiPage, interactions, texts.locale)
+        }
+        bar.add(userControl)
     } else if (signIn != null) {
-        bar.add(signInLink(texts.signIn, signIn, header.signInParameters))
+        bar.add(signInLink(texts.messages.uiPage.headerSignIn(), signIn, header.signInParameters))
     }
 
     return HeaderRoot().apply {
@@ -54,9 +59,9 @@ internal fun buildHeader(header: CabinetHeader, texts: UiTexts): Div {
     }
 }
 
-private fun navigation(header: CabinetHeader, texts: UiTexts, menus: Map<String, MegaMenuHandle>): Nav = Nav().apply {
+private fun navigation(header: CabinetHeader, texts: UiLocalization, menus: Map<String, MegaMenuHandle>): Nav = Nav().apply {
     addClassName(CssClass.Nav)
-    element.setAttribute(HtmlAttribute.AriaLabel, texts.navigation.sections)
+    element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiPage.navigationSections())
 
     header.items.forEach { item ->
         val entry = when (item) {

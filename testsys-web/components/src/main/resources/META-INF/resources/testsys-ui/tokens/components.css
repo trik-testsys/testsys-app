@@ -162,6 +162,7 @@
 .ts-block--sunken { background:var(--canvas-deep); border-color:transparent; box-shadow:none; }
 .ts-block__head { display:flex; align-items:center; gap:var(--space-3); padding:var(--space-2) var(--space-3); border-bottom:1px solid var(--border-default); min-height:40px; }
 .ts-block__titles { display:flex; flex-direction:column; gap:2px; flex:1; min-width:0; }
+.ts-block__title-row { display:flex; align-items:center; gap:var(--space-2); min-width:0; }
 .ts-block__title { font:var(--fw-bold) 14px/20px var(--font-sans); margin:0; }
 .ts-block__sub { font:var(--fw-regular) var(--fs-xs)/var(--lh-xs) var(--font-sans); color:var(--text-secondary); }
 .ts-block__actions { display:flex; align-items:center; gap:var(--space-2); }
@@ -536,4 +537,36 @@ button.ts-choice { background:transparent; border:0; padding:0; text-align:left;
   :scope .ts-tab--active::after { background:var(--white); }
   :scope .ts-pill { background:var(--ink-800); color:var(--white); }
   :scope .ts-pill--active { background:var(--white); color:var(--ink-900); }
+}
+
+/* Page and block guides use Driver.js for positioning and highlighting. */
+.ts-guide-controller { display: none; }
+.ts-guide-button { flex: 0 0 auto; }
+.ts-block--dark > .ts-block__head .ts-guide-button { color: var(--white); }
+.ts-block--dark > .ts-block__head .ts-guide-button:hover { background: var(--ink-800); }
+.ts-guide-popover.driver-popover {
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-popover);
+  font-family: var(--font-sans);
+  max-width: calc(100vw - 32px);
+}
+.ts-guide-popover .driver-popover-title { font-family: inherit; font-size: 16px; font-weight: 600; }
+.ts-guide-popover .driver-popover-description { font-family: inherit; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+.ts-guide-popover .driver-popover-progress-text { font-family: var(--font-mono); color: var(--text-secondary); }
+.ts-guide-popover .driver-popover-footer button {
+  position: relative;
+  background: var(--surface-card); color: var(--text-primary); border: 1px solid var(--line);
+  border-radius: var(--radius-md); min-width: 32px; min-height: 32px; text-shadow: none;
+}
+.ts-guide-popover .driver-popover-footer button:hover { background: var(--canvas); }
+.ts-guide-popover button:focus-visible { outline: 3px solid var(--accent-ring); outline-offset: 2px; }
+.ts-guide-popover .driver-popover-close-btn { color: var(--text-secondary); }
+.ts-guide-popover button svg { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.driver-fade .ts-guide-popover.driver-popover { animation: none; }
+.driver-fade .driver-overlay { animation: ts-fade-in var(--dur-base) var(--ease-out); }
+@media (prefers-reduced-motion: reduce) {
+  .driver-fade .driver-overlay { animation: none; }
 }

@@ -15,7 +15,7 @@ import tech.testsys.web.components.navigation.header.CabinetHeader
 
 /** Route target with a parameter whose head title comes from `beforeEnter`, as a page with route parameters does. */
 @Route("test/param/:id")
-class ParamTestView : TestSysView(testTexts), BeforeEnterObserver {
+class ParamTestView : TestSysView(), BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val id = event.routeParameters.get("id").orElseThrow()
         page(CabinetHeader()) { head(id) }
@@ -24,7 +24,7 @@ class ParamTestView : TestSysView(testTexts), BeforeEnterObserver {
 
 /** Route target whose page tabs include itself, to check that [TestSysView.page] marks its own tab as current. */
 @Route("test/self")
-class SelfTabTestView : TestSysView(testTexts) {
+class SelfTabTestView : TestSysView() {
     init {
         page(CabinetHeader()) {
             head("Тур") {
@@ -38,19 +38,19 @@ class SelfTabTestView : TestSysView(testTexts) {
 }
 
 class TestSysViewTests : MockVaadinTests() {
-    private class SampleView(body: PageScope.() -> Unit) : TestSysView(testTexts) {
+    private class SampleView(body: PageScope.() -> Unit) : TestSysView() {
         init {
             page(CabinetHeader(), body)
         }
     }
 
-    private class NestedPageView : TestSysView(testTexts) {
+    private class NestedPageView : TestSysView() {
         init {
             page(CabinetHeader()) { page(CabinetHeader()) {} }
         }
     }
 
-    private class RepeatedPageView : TestSysView(testTexts) {
+    private class RepeatedPageView : TestSysView() {
         init {
             page(CabinetHeader()) {
                 footer { link(label = "First", href = "/first") }

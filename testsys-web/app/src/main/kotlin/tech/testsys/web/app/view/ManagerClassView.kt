@@ -3,7 +3,7 @@ package tech.testsys.web.app.view
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.group.ClassId
@@ -24,7 +24,7 @@ import tech.testsys.web.components.layout.PageRowScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.menu
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 import java.time.Instant
 
 /** Columns of the class details block; the invite code takes the rest of the row beside it. */
@@ -37,19 +37,23 @@ private const val DETAILS_COLUMNS = 12
  * @since %CURRENT_VERSION%
  */
 @Route("manager/classes/:classId([0-9]+)")
-@PageTitle("Класс")
 @RolesAllowed("MULTIPLE_ROLE")
-class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, private val managerService: ManagerService) :
-    TestSysView(texts),
-    BeforeEnterObserver {
+class ManagerClassView(private val headers: CabinetHeaders, private val managerService: ManagerService) :
+    TestSysView(),
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageManager.classTabTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         show(ClassId(event.routeParameters.getLong(CLASS_ID_PARAMETER).orElseThrow()))
     }
 
     private fun show(classId: ClassId) {
         val details = managerService.viewClass(classId)
+        val texts = currentLocalization().pageManager
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Класс «${details.studyClass.name}»") { managerCrumbs(CLASSES_SECTION) }
+            head(texts.classTitle(name = details.studyClass.name)) { managerCrumbs(CLASSES_SECTION) }
+            guide(texts.classGuide())
             row {
                 detailsBlock(details)
                 inviteBlock(details)
@@ -61,7 +65,7 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
                 onOpen = { contest -> openClassContest(classId, contest.id) },
                 onAdd = { contest ->
                     managerService.addClassContest(classId, contest.id)
-                    toast(FeedbackKind.Success, "Тур добавлен в класс")
+                    toast(FeedbackKind.Success, currentLocalization().pageManager.classContestAdded())
                     show(classId)
                 },
             )
@@ -69,16 +73,18 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
     }
 
     private fun PageRowScope.detailsBlock(details: ClassDetailsVo) {
+        val texts = currentLocalization().pageManager
         val entity = details.studyClass
         val draft = Binder<DetailsDraft>()
-        block(size = DETAILS_COLUMNS, title = "Сведения") {
+        block(size = DETAILS_COLUMNS, title = texts.detailsTitle()) {
+            guide(texts.detailsGuide())
             editing(
                 onSave = {
                     val values = DetailsDraft()
                     val isValid = draft.writeBeanIfValid(values)
                     if (isValid) {
                         managerService.editClass(classId = entity.id, className = values.name, description = values.description)
-                        toast(FeedbackKind.Success, "Класс изменён")
+                        toast(FeedbackKind.Success, currentLocalization().pageManager.classSaved())
                         show(entity.id)
                     }
                     isValid
@@ -86,28 +92,28 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
                 onCancel = { draft.readBean(DetailsDraft(entity.name, entity.description)) },
             )
             row {
-                codeInput("ID", labelSize = 6, size = 18) {
+                codeInput(texts.id(), labelSize = 6, size = 18) {
                     value = entity.id.value.toString()
                     isEditable = false
                 }
             }
             row {
-                textInput("Название", labelSize = 6, size = 18) {
-                    draft.forField(this).nameRules("Укажите название")
+                textInput(texts.name(), labelSize = 6, size = 18) {
+                    draft.forField(this).nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
-                textArea("Описание", labelSize = 6, size = 18, maxLines = 4) {
+                textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
                     draft.forField(this).bind({ values -> values.description }, { values, description -> values.description = description })
                 }
             }
             row {
-                codeInput("Учеников", labelSize = 6, size = 6) {
+                codeInput(texts.studentCount(), labelSize = 6, size = 6) {
                     value = details.students.size.toString()
                     isEditable = false
                 }
-                codeInput("Туров", labelSize = 6, size = 6) {
+                codeInput(texts.contestCount(), labelSize = 6, size = 6) {
                     value = details.contests.size.toString()
                     isEditable = false
                 }
@@ -119,34 +125,36 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
 
     @RawInviteCodeDependency(reason = "Shows and copies the stored invite code of the class as the issued one.")
     private fun PageRowScope.inviteBlock(details: ClassDetailsVo) {
+        val texts = currentLocalization().pageManager
         val classId = details.studyClass.id
         val invite = details.invite
-        block(title = "Код-приглашение") {
+        block(title = texts.classInviteCode()) {
+            guide(texts.classInviteGuide())
             row {
-                codeInput("Код-приглашение", labelSize = 8, size = 16) {
+                codeInput(texts.classInviteCode(), labelSize = 8, size = 16) {
                     value = invite.codeHash.value
                     isObscured = true
                 }
             }
-            row { dateTimeInput("Действует до", labelSize = 8, size = 16) { value = invite.expiresAt.toServerDateTime() } }
+            row { dateTimeInput(texts.classInviteExpires(), labelSize = 8, size = 16) { value = invite.expiresAt.toUserDateTime() } }
             actions {
-                copyAction("Скопировать", value = { invite.codeHash.value })
+                copyAction(texts.classInviteCopy(), value = { invite.codeHash.value })
                 menu {
-                    item("Заменить") {
+                    item(texts.classInviteReplace()) {
                         confirm(
-                            title = "Заменить код-приглашение?",
-                            text = "Прежний Код-приглашение перестанет действовать.",
-                            action = "Заменить",
+                            title = texts.classInviteReplaceTitle(),
+                            text = texts.classInviteReplaceText(),
+                            action = texts.classInviteReplace(),
                             isDanger = true,
                         ) {
                             managerService.createClassInvite(classId)
-                            toast(FeedbackKind.Success, "Код-приглашение заменён")
+                            toast(FeedbackKind.Success, currentLocalization().pageManager.classInviteReplaced())
                             show(classId)
                         }
                     }
-                    item("Продлить") {
+                    item(texts.classInviteExtend()) {
                         managerService.extendClassInvite(classId)
-                        toast(FeedbackKind.Success, "Срок действия кода-приглашения продлён")
+                        toast(FeedbackKind.Success, currentLocalization().pageManager.classInviteExtended())
                         show(classId)
                     }
                 }
@@ -155,16 +163,18 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
     }
 
     private fun PageScope.studentsBlock(students: List<Pair<MultipleRoleUserVo, Instant?>>) {
+        val texts = currentLocalization().pageManager
         row {
-            block(title = "Ученики") {
+            block(title = texts.classStudentsTitle()) {
+                guide(texts.classStudentsGuide())
                 table(
                     key = { (student, _): Pair<MultipleRoleUserVo, Instant?> -> student.id },
                     fetch = { request -> pageOf(students, request) },
                 ) {
-                    codeColumn("ID", size = 6) { (student, _) -> student.id.value.toString() }
-                    textColumn("Псевдоним", size = 12) { (student, _) -> student.name }
-                    dateTimeColumn("Последний вход") { (_, lastLogin) -> lastLogin?.toServerDateTime() }
-                    empty("Учеников пока нет", "Ученики присоединяются к классу по коду-приглашению.")
+                    codeColumn(texts.id(), size = 6) { (student, _) -> student.id.value.toString() }
+                    textColumn(texts.nickname(), size = 12) { (student, _) -> student.name }
+                    dateTimeColumn(texts.lastLogin()) { (_, lastLogin) -> lastLogin?.toUserDateTime() }
+                    empty(texts.classStudentsEmpty(), texts.classStudentsEmptyHint())
                 }
             }
         }

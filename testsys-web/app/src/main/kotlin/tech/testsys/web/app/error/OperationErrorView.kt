@@ -14,8 +14,7 @@ import tech.testsys.operation.error.MissedRequiredRoleError
 import tech.testsys.operation.error.OperationException
 import tech.testsys.operation.error.ResourceAccessError
 import tech.testsys.web.components.error.ErrorPage
-import tech.testsys.web.components.texts.ErrorPageTexts
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Handler of a failed operation during navigation: a missing object or a contest outside the user's class or
@@ -25,27 +24,38 @@ import tech.testsys.web.components.texts.UiTexts
  * @since %CURRENT_VERSION%
  */
 @AnonymousAllowed
-class OperationErrorView(private val texts: UiTexts) : ErrorPage(texts), HasErrorParameter<OperationException> {
+class OperationErrorView : ErrorPage(), HasErrorParameter<OperationException> {
     override fun setErrorParameter(event: BeforeEnterEvent, parameter: ErrorParameter<OperationException>): Int {
         refreshHistoryNavigation()
 
+        val texts = currentLocalization().uiFeedback
         return when (parameter.exception.error) {
             is EntityNotExistsError, is ContestNotAddedToClassError, is ContestNotAddedToCompetitionError -> {
-                show(title = texts.notFound.title, description = texts.notFound.description, pageTitle = texts.notFound.pageTitle)
+                show(
+                    title = texts.errorNotFoundTitle(),
+                    description = texts.errorNotFoundDescription(),
+                    pageTitle = texts.errorNotFoundPageTitle(),
+                )
                 HttpStatusCode.NOT_FOUND.code
             }
 
             is AccessDeniedError, is MissedRequiredRoleError, is ResourceAccessError, is ContestNotEnteredError -> {
-                show(texts.forbidden)
+                show(
+                    title = texts.errorForbiddenTitle(),
+                    description = texts.errorForbiddenDescription(),
+                    pageTitle = texts.errorForbiddenPageTitle(),
+                )
                 HttpStatusCode.FORBIDDEN.code
             }
 
             else -> {
-                show(texts.pageFailed)
+                show(
+                    title = texts.errorPageFailedTitle(),
+                    description = texts.errorPageFailedDescription(),
+                    pageTitle = texts.errorPageFailedPageTitle(),
+                )
                 HttpStatusCode.BAD_REQUEST.code
             }
         }
     }
-
-    private fun show(screen: ErrorPageTexts) = show(title = screen.title, description = screen.description, pageTitle = screen.pageTitle)
 }

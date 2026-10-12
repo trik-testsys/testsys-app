@@ -10,7 +10,7 @@ import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.display.text
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Start page of the system for a guest (testsys.web.page.main); a signed-in user goes to their start page.
@@ -19,15 +19,19 @@ import tech.testsys.web.components.texts.UiTexts
  */
 @Route("")
 @AnonymousAllowed
-class MainView(texts: UiTexts, headers: CabinetHeaders) : TestSysView(texts), BeforeEnterObserver {
+class MainView(headers: CabinetHeaders) : TestSysView(), BeforeEnterObserver {
     init {
+        val localization = currentLocalization()
+        val texts = localization.pageGuest
         page(headers.guest()) {
-            head("TestSys")
+            head(localization.uiPage.brandName())
+            guide(texts.startGuide())
             guestBlock {
-                row { text("Войдите по Коду-доступа или зарегистрируйтесь как Ученик или Организатор.") }
+                guide(texts.startBlockGuide(), title = texts.startBlockGuideTitle())
+                row { text(texts.startText()) }
                 footer {
-                    mainAction("Войти") { onClick { UI.getCurrent().navigate(AuthenticationView::class.java) } }
-                    action("Зарегистрироваться") { onClick { UI.getCurrent().navigate(RegistrationView::class.java) } }
+                    mainAction(texts.signInButton()) { onClick { UI.getCurrent().navigate(AuthenticationView::class.java) } }
+                    action(texts.register()) { onClick { UI.getCurrent().navigate(RegistrationView::class.java) } }
                 }
             }
         }

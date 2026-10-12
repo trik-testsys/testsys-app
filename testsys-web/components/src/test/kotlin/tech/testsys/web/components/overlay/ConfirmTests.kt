@@ -4,6 +4,8 @@ import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10._setValue
+import com.vaadin.flow.component.ComponentUtil
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.textfield.TextField
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -24,6 +26,7 @@ import tech.testsys.web.components.find
 import tech.testsys.web.components.findAll
 import tech.testsys.web.components.openDialogs
 import tech.testsys.web.components.testTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 class ConfirmTests : MockVaadinTests() {
     @Nested
@@ -55,7 +58,7 @@ class ConfirmTests : MockVaadinTests() {
             assertFalse("ts-dialog--md" in card.classes())
             assertEquals("Закрыть тур?", card.find("ts-dialog__title").element.text)
             assertEquals("Посылки больше не принимаются", card.find("ts-dialog__body").child(0).child(0).element.text)
-            assertTrue(button(testTexts.dialog.cancel).isVisible)
+            assertTrue(button(testTexts.messages.uiOverlay.dialogCancel()).isVisible)
             assertTrue(button("Закрыть тур").isEnabled)
         }
 
@@ -77,7 +80,7 @@ class ConfirmTests : MockVaadinTests() {
             confirm(title = "Закрыть тур?", action = "Закрыть тур") { confirmations++ }
             openDialogs()
 
-            button(testTexts.dialog.cancel)._click()
+            button(testTexts.messages.uiOverlay.dialogCancel())._click()
 
             assertEquals(0, confirmations)
             assertTrue(openDialogs().isEmpty())
@@ -99,7 +102,7 @@ class ConfirmTests : MockVaadinTests() {
             confirm(title = "Закрыть тур?", action = "Закрыть тур") { confirmations++ }
             openDialogs()
 
-            _find<Button>().single { button -> button.ariaLabel.orElse(null) == testTexts.dialog.close }._click()
+            _find<Button>().single { button -> button.ariaLabel.orElse(null) == testTexts.messages.uiOverlay.dialogClose() }._click()
 
             assertEquals(0, confirmations)
             assertTrue(openDialogs().isEmpty())
@@ -167,12 +170,14 @@ class ConfirmTests : MockVaadinTests() {
             confirm(title = "Удалить тур?", action = "Удалить", isDanger = true, typeToConfirm = "Весенний кубок") {}
 
             val field = openDialogs().single()._get<TextField>()
-            assertEquals(testTexts.dialog.typeToConfirm("Весенний кубок"), field.label)
+            assertEquals(testTexts.messages.uiOverlay.dialogTypeToConfirm(name = "Весенний кубок"), field.label)
         }
     }
 
     @Test
-    fun `should reject opening without a page`() {
+    fun `should reject opening on a UI without a localization`() {
+        ComponentUtil.setData(UI.getCurrent(), UiLocalization::class.java, null)
+
         assertThrows(IllegalStateException::class.java) {
             confirm(title = "Закрыть тур?", action = "Закрыть тур") {}
         }

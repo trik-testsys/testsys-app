@@ -49,7 +49,7 @@ class LookupManyTests : MockVaadinTests() {
     @CsvSource("false,true", "true,false")
     fun `should close an open lookup when choice becomes unavailable`(enabled: Boolean, editable: Boolean) {
         val input = buildLookupMany()
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiForm.lookupOpen())._click()
         rows()[1]._fireDomEvent("click", rowClick())
 
         input.isEnabled = enabled
@@ -69,9 +69,9 @@ class LookupManyTests : MockVaadinTests() {
         }
         var changes = 0
         input.addValueChangeListener { changes++ }
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiForm.lookupOpen())._click()
         rows()[1]._fireDomEvent("click", rowClick())
-        val apply = dialogButton(testTexts.lookup.apply)
+        val apply = dialogButton(testTexts.messages.uiForm.lookupApply())
         input.isEnabled = enabled
         input.isEditable = editable
 
@@ -97,8 +97,8 @@ class LookupManyTests : MockVaadinTests() {
             buildLookupMany()
 
             assertTrue(field().findAll("ts-chip").isEmpty())
-            assertFalse(lookupButton(testTexts.lookup.clear).isVisible)
-            assertTrue(lookupButton(testTexts.lookup.open).isVisible)
+            assertFalse(lookupButton(testTexts.messages.uiForm.lookupClear()).isVisible)
+            assertTrue(lookupButton(testTexts.messages.uiForm.lookupOpen()).isVisible)
         }
 
         @Test
@@ -109,7 +109,7 @@ class LookupManyTests : MockVaadinTests() {
 
             assertEquals(listOf("Кубок 1", "Турнир 2"), chips().map { chip -> chip.element.textRecursively })
             assertTrue(field().findAll("ts-chip--more").isEmpty())
-            assertTrue(lookupButton(testTexts.lookup.clear).isVisible)
+            assertTrue(lookupButton(testTexts.messages.uiForm.lookupClear()).isVisible)
         }
 
         @Test
@@ -119,7 +119,7 @@ class LookupManyTests : MockVaadinTests() {
             input.value = source.contests.take(5).toSet()
 
             assertEquals(listOf("Кубок 1", "Турнир 2", "Кубок 3"), chips().map { chip -> chip.element.textRecursively })
-            assertEquals("+2", field().find("ts-chip--more").element.text)
+            assertEquals(testTexts.messages.uiForm.lookupMoreChip(count = 2), field().find("ts-chip--more").element.text)
         }
 
         @Test
@@ -128,7 +128,10 @@ class LookupManyTests : MockVaadinTests() {
 
             input.value = setOf(source.contests[0])
 
-            assertEquals(testTexts.lookup.remove("Кубок 1"), removeButtons().single().element.getAttribute("aria-label"))
+            assertEquals(
+                testTexts.messages.uiForm.lookupRemove(value = "Кубок 1"),
+                removeButtons().single().element.getAttribute("aria-label"),
+            )
         }
 
         @Test
@@ -172,7 +175,7 @@ class LookupManyTests : MockVaadinTests() {
             input.value = setOf(source.contests[0])
             pendingJavaScript()
 
-            lookupButton(testTexts.lookup.clear)._click()
+            lookupButton(testTexts.messages.uiForm.lookupClear())._click()
 
             val valueButton = field().find("ts-lookup__text")
             assertTrue(pendingJavaScript().any { call -> call.owner == valueButton.element.node && "focus" in call.invocation.expression })
@@ -185,12 +188,12 @@ class LookupManyTests : MockVaadinTests() {
             val fromClient = mutableListOf<Boolean>()
             input.addValueChangeListener { event -> fromClient += event.isFromClient }
 
-            lookupButton(testTexts.lookup.clear)._click()
+            lookupButton(testTexts.messages.uiForm.lookupClear())._click()
 
             assertEquals(emptySet<Contest>(), input.value)
             assertEquals(listOf(true), fromClient)
             assertTrue(chips().isEmpty())
-            assertFalse(lookupButton(testTexts.lookup.clear).isVisible)
+            assertFalse(lookupButton(testTexts.messages.uiForm.lookupClear()).isVisible)
         }
 
         @Test
@@ -209,7 +212,7 @@ class LookupManyTests : MockVaadinTests() {
             buildLookupMany()
 
             val valueButton = field().find("ts-lookup__text").element
-            assertEquals(testTexts.lookup.open, valueButton.getAttribute("aria-label"))
+            assertEquals(testTexts.messages.uiForm.lookupOpen(), valueButton.getAttribute("aria-label"))
             assertEquals("dialog", valueButton.getAttribute("aria-haspopup"))
         }
 
@@ -221,7 +224,7 @@ class LookupManyTests : MockVaadinTests() {
 
             val box = field().find("ts-lookup")
             assertTrue("ts-lookup__text" in box.children.toList().first().classes())
-            assertEquals(-1, lookupButton(testTexts.lookup.open).tabIndex)
+            assertEquals(-1, lookupButton(testTexts.messages.uiForm.lookupOpen()).tabIndex)
         }
 
         @Test
@@ -301,7 +304,7 @@ class LookupManyTests : MockVaadinTests() {
             openDialog()
 
             assertEquals(listOf(true, false, true, false), rows().take(4).map { row -> checkboxOf(row).value })
-            assertEquals(testTexts.lookup.selectedCount(2), selectedCount())
+            assertEquals(testTexts.messages.uiForm.lookupSelectedCount(count = 2), selectedCount())
         }
 
         @Test
@@ -313,7 +316,7 @@ class LookupManyTests : MockVaadinTests() {
 
             assertTrue(checkboxOf(rows()[1]).value)
             assertTrue("ts-row-selected" in rows()[1].classes())
-            assertEquals(testTexts.lookup.selectedCount(1), selectedCount())
+            assertEquals(testTexts.messages.uiForm.lookupSelectedCount(count = 1), selectedCount())
         }
 
         @Test
@@ -325,7 +328,7 @@ class LookupManyTests : MockVaadinTests() {
             rows()[1]._fireDomEvent("click", rowClick())
 
             assertFalse(checkboxOf(rows()[1]).value)
-            assertEquals(testTexts.lookup.selectedCount(0), selectedCount())
+            assertEquals(testTexts.messages.uiForm.lookupSelectedCount(count = 0), selectedCount())
         }
 
         @Test
@@ -357,7 +360,7 @@ class LookupManyTests : MockVaadinTests() {
 
             headerCheckbox()._setValue(true)
 
-            assertEquals(testTexts.lookup.selectedCount(10), selectedCount())
+            assertEquals(testTexts.messages.uiForm.lookupSelectedCount(count = 10), selectedCount())
         }
 
         @Test
@@ -367,7 +370,7 @@ class LookupManyTests : MockVaadinTests() {
 
             checkboxOf(rows()[0])._setValue(true)
 
-            assertEquals(testTexts.lookup.selectedCount(1), selectedCount())
+            assertEquals(testTexts.messages.uiForm.lookupSelectedCount(count = 1), selectedCount())
         }
 
         @Test
@@ -387,10 +390,10 @@ class LookupManyTests : MockVaadinTests() {
             input.value = setOf(source.contests[0], source.contests[1])
             openDialog()
 
-            dialogButton(testTexts.lookup.reset)._click()
+            dialogButton(testTexts.messages.uiForm.lookupReset())._click()
 
             assertEquals(listOf(false, false), rows().take(2).map { row -> checkboxOf(row).value })
-            assertEquals(testTexts.lookup.selectedCount(0), selectedCount())
+            assertEquals(testTexts.messages.uiForm.lookupSelectedCount(count = 0), selectedCount())
             assertEquals(setOf(source.contests[0], source.contests[1]), input.value)
         }
 
@@ -403,7 +406,7 @@ class LookupManyTests : MockVaadinTests() {
             openDialog()
             rows()[2]._fireDomEvent("click", rowClick())
 
-            dialogButton(testTexts.lookup.apply)._click()
+            dialogButton(testTexts.messages.uiForm.lookupApply())._click()
 
             assertEquals(setOf(source.contests[0], source.contests[2]), input.value)
             assertEquals(listOf(true), fromClient)
@@ -420,7 +423,8 @@ class LookupManyTests : MockVaadinTests() {
             openDialog()
             rows()[1]._fireDomEvent("click", rowClick())
 
-            openDialogs().single()._find<Button>().single { button -> button.ariaLabel.orElse(null) == testTexts.dialog.close }._click()
+            val close = testTexts.messages.uiOverlay.dialogClose()
+            openDialogs().single()._find<Button>().single { button -> button.ariaLabel.orElse(null) == close }._click()
 
             assertTrue(openDialogs().isEmpty())
             assertEquals(setOf(source.contests[0]), input.value)
@@ -450,7 +454,7 @@ class LookupManyTests : MockVaadinTests() {
             openDialog()
 
             assertFalse(checkboxOf(rows()[1]).value)
-            assertEquals(testTexts.lookup.selectedCount(0), selectedCount())
+            assertEquals(testTexts.messages.uiForm.lookupSelectedCount(count = 0), selectedCount())
         }
 
         @Test
@@ -468,7 +472,7 @@ class LookupManyTests : MockVaadinTests() {
         fun `should search with the typed query from the first page`() {
             buildLookupMany()
             openDialog()
-            pagerButton(testTexts.pagination.next)._click()
+            pagerButton(testTexts.messages.uiData.paginationNext())._click()
 
             searchField()._setValue(" турнир ")
 
@@ -485,7 +489,7 @@ class LookupManyTests : MockVaadinTests() {
 
             assertEquals("Турнир 2", rows()[0].element.textRecursively)
             assertTrue(checkboxOf(rows()[0]).value)
-            assertEquals(testTexts.lookup.selectedCount(1), selectedCount())
+            assertEquals(testTexts.messages.uiForm.lookupSelectedCount(count = 1), selectedCount())
         }
 
         @Test
@@ -496,7 +500,7 @@ class LookupManyTests : MockVaadinTests() {
             searchField()._setValue("турнир")
             rows()[0]._fireDomEvent("click", rowClick())
 
-            dialogButton(testTexts.lookup.apply)._click()
+            dialogButton(testTexts.messages.uiForm.lookupApply())._click()
 
             assertEquals(setOf(source.contests[0], source.contests[1]), input.value)
         }
@@ -506,10 +510,10 @@ class LookupManyTests : MockVaadinTests() {
             val input = buildLookupMany()
             openDialog()
             rows()[0]._fireDomEvent("click", rowClick())
-            pagerButton(testTexts.pagination.next)._click()
+            pagerButton(testTexts.messages.uiData.paginationNext())._click()
             rows()[0]._fireDomEvent("click", rowClick())
 
-            dialogButton(testTexts.lookup.apply)._click()
+            dialogButton(testTexts.messages.uiForm.lookupApply())._click()
 
             assertEquals(setOf(source.contests[0], source.contests[10]), input.value)
         }
@@ -521,7 +525,7 @@ class LookupManyTests : MockVaadinTests() {
 
             searchField()._setValue("олимпиада")
 
-            assertEquals(testTexts.lookup.empty, rows().single().element.textRecursively)
+            assertEquals(testTexts.messages.uiForm.lookupEmpty(), rows().single().element.textRecursively)
         }
 
         @Test
@@ -533,7 +537,8 @@ class LookupManyTests : MockVaadinTests() {
             val foot = openDialogs().single().find("ts-dialog__foot")
             assertTrue(foot.isVisible)
             assertEquals(1, foot.findAll("ts-lookup-count").size)
-            assertEquals(listOf(testTexts.lookup.reset, testTexts.lookup.apply), findAllButtons(foot).map { button -> button.text })
+            val labels = with(testTexts.messages.uiForm) { listOf(lookupReset(), lookupApply()) }
+            assertEquals(labels, findAllButtons(foot).map { button -> button.text })
         }
 
         @Test
@@ -570,8 +575,8 @@ class LookupManyTests : MockVaadinTests() {
 
             assertEquals(2, chips().size)
             assertTrue(removeButtons().isEmpty())
-            assertFalse(lookupButton(testTexts.lookup.clear).isVisible)
-            assertFalse(lookupButton(testTexts.lookup.open).isVisible)
+            assertFalse(lookupButton(testTexts.messages.uiForm.lookupClear()).isVisible)
+            assertFalse(lookupButton(testTexts.messages.uiForm.lookupOpen()).isVisible)
         }
 
         @Test
@@ -612,7 +617,7 @@ class LookupManyTests : MockVaadinTests() {
             input.addValueChangeListener { event -> fromClient += event.isFromClient }
             openDialog()
 
-            dialogButton(testTexts.lookup.apply)._click()
+            dialogButton(testTexts.messages.uiForm.lookupApply())._click()
 
             assertSame(fresh, input.value.single())
             assertSame(fresh, form.contests.single())
@@ -629,7 +634,7 @@ class LookupManyTests : MockVaadinTests() {
             input.addValueChangeListener { event -> changes += event.value }
             openDialog()
 
-            dialogButton(testTexts.lookup.apply)._click()
+            dialogButton(testTexts.messages.uiForm.lookupApply())._click()
 
             assertTrue(changes.isEmpty())
             assertEquals(listOf("Турнир 2", "Кубок 1"), chips().map { chip -> chip.element.textRecursively })
@@ -661,7 +666,7 @@ class LookupManyTests : MockVaadinTests() {
             openDialog()
             rows()[0]._fireDomEvent("click", rowClick())
 
-            dialogButton(testTexts.lookup.apply)._click()
+            dialogButton(testTexts.messages.uiForm.lookupApply())._click()
 
             assertEquals(setOf(source.contests[0]), form.contests)
         }
@@ -734,7 +739,7 @@ class LookupManyTests : MockVaadinTests() {
     private fun field(): CustomField<*> = control<CustomField<*>>("Туры")
 
     private fun openDialog() {
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiForm.lookupOpen())._click()
     }
 
     /** Chips of the values, without the chip of the rest. */

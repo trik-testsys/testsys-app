@@ -34,7 +34,7 @@ import tech.testsys.web.components.core.setPaddingPixels
 import tech.testsys.web.components.core.setScope
 import tech.testsys.web.components.feedback.EmptyContent
 import tech.testsys.web.components.feedback.buildEmptyState
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 private val logger = LoggerFactory.getLogger(DataTable::class.java)
 
@@ -54,7 +54,7 @@ internal const val ROW_CLICK_FILTER: String = TABLE_ROW_CLICK_FILTER
  * [initialSelection] start selected. A reload may mark the rows new to the page with `.ts-row-new`, which flashes them once.
  */
 internal class DataTable<T>(
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     private val key: (T) -> Any,
     private val pageSize: Int,
     private val isSelectable: Boolean,
@@ -102,7 +102,7 @@ internal class DataTable<T>(
     /** Keys of the rows of the last successful rendering; a failure keeps them. */
     private var renderedKeys: Set<Any> = emptySet()
     private val headerCheckbox = Checkbox().apply {
-        setAriaLabel(texts.table.selectAll)
+        setAriaLabel(texts.messages.uiData.tableSelectAll())
         addValueChangeListener { event -> if (event.isFromClient) selectPage(event.value) }
     }
 
@@ -189,7 +189,7 @@ internal class DataTable<T>(
             if (column.kind == CellKind.Number) cell.addClassName(CssClass.Right)
 
             if (column.kind == CellKind.Menu) {
-                cell.element.setAttribute(HtmlAttribute.AriaLabel, texts.menu.actions)
+                cell.element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiOverlay.menuActions())
             }
 
             column.sortKey?.let { sortKey ->
@@ -256,9 +256,9 @@ internal class DataTable<T>(
     }
 
     private fun failureContent(): EmptyContent = EmptyContent(
-        title = texts.load.failed,
-        description = texts.load.failedHint,
-        actions = { action(texts.load.retry) { onClick { reload(toFirstPage = false) } } },
+        title = texts.messages.uiFeedback.loadFailed(),
+        description = texts.messages.uiFeedback.loadFailedHint(),
+        actions = { action(texts.messages.uiFeedback.loadRetry()) { onClick { reload(toFirstPage = false) } } },
     )
 
     /** Row of one cell over all columns that holds [content] instead of rows. */
@@ -321,7 +321,7 @@ internal class DataTable<T>(
     /** Row of the shown page: its [key], its markup and its selection checkbox. */
     private inner class ShownRow(val key: Any, private val row: TableRow, private val isHighlighted: Boolean) {
         val checkbox = Checkbox(key in selected).apply {
-            setAriaLabel(texts.table.selectRow)
+            setAriaLabel(texts.messages.uiData.tableSelectRow())
             addValueChangeListener { event ->
                 if (event.isFromClient) {
                     select(event.value)

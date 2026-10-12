@@ -17,9 +17,11 @@ import com.vaadin.flow.component.html.Nav
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -99,6 +101,16 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should title the browser tab of the community`() {
+        val community = fixtures.community(owner = signInAdministrator(), name = "Кружок")
+
+        open(community.id)
+
+        assertEquals("Сообщество", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        assertEquals("Сообщество «Кружок»", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
     fun `should show both invite codes of the community`() {
         val community = fixtures.community(owner = signInAdministrator())
 
@@ -120,7 +132,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         val after = developerInvite(community)
         assertEquals(before.codeHash, after.codeHash)
         assertTrue(after.expiresAt < before.expiresAt)
-        assertEquals("Срок действия кода-приглашения продлён", lastToastTitle())
+        assertEquals("Срок действия Кода-приглашения продлён", lastToastTitle())
     }
 
     @Test
@@ -145,7 +157,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         open(community.id)
         val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
 
-        UI.getCurrent()._get<Button> { text = "Создать наблюдателя" }._click()
+        UI.getCurrent()._get<Button> { text = "Создать Наблюдателя" }._click()
         textField("Имя")._value = "Наблюдатель Анна"
         contestsField().value = setOf(contest)
         UI.getCurrent()._get<Button> { text = "Создать" }._click()
@@ -287,7 +299,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
 
     private fun inviteMenu(role: String): ContextMenu {
         val trigger = UI.getCurrent()._find<Button>().single { button ->
-            button.element.getAttribute("aria-label") == "Действия с кодом-приглашением для роли $role"
+            button.element.getAttribute("aria-label") == "Действия с Кодом-приглашением для Роли $role"
         }
         return checkNotNull(ComponentUtil.getData(trigger, ContextMenu::class.java))
     }

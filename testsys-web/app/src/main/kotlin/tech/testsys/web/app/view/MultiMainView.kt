@@ -1,7 +1,7 @@
 package tech.testsys.web.app.view
 
 import com.vaadin.flow.component.UI
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.operation.error.CommunityInviteCodeExpiredError
@@ -21,7 +21,7 @@ import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.layout.PageScope
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 
 /** Columns of the roles block; joining a community takes the rest of the row beside it. */
 private const val ROLES_COLUMNS = 12
@@ -34,10 +34,9 @@ private const val ROLES_COLUMNS = 12
  * @since %CURRENT_VERSION%
  */
 @Route("home")
-@PageTitle("Главная")
 @RolesAllowed("MULTIPLE_ROLE")
-class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private val multipleRoleUserService: MultipleRoleUserService) :
-    TestSysView(texts) {
+class MultiMainView(private val headers: CabinetHeaders, private val multipleRoleUserService: MultipleRoleUserService) :
+    TestSysView(), HasDynamicTitle {
     init {
         show(accessToken = null)
     }
@@ -51,28 +50,34 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
         show(accessToken)
     }
 
+    override fun getPageTitle(): String = currentLocalization().pageHome.title()
+
     private fun show(accessToken: String?) {
         val profile = multipleRoleUserService.viewProfile().roles
+        val texts = currentLocalization().pageHome
         page(headers.cabinet(active = CabinetHeaders.MAIN_SECTION)) {
-            head("Главная")
+            head(texts.title())
+            guide(texts.guide())
             accessToken?.let { issued -> accessTokenBlock(issued) }
             row {
-                block(size = ROLES_COLUMNS, title = "Роли") {
+                block(size = ROLES_COLUMNS, title = texts.rolesTitle()) {
+                    guide(texts.rolesGuide())
                     table(
                         key = { (role, _): Pair<RoleVo, List<CommunityVo>> -> labelOf(role) },
                         fetch = { request -> pageOf(profile, request) },
                     ) {
-                        column("Роль", size = 14) { (role, _) -> tag(labelOf(role)) }
-                        numberColumn("Сообществ") { (_, communities) -> communities.size }
-                        empty("Ролей пока нет", "Присоединитесь к сообществу по Коду-приглашению.")
+                        column(texts.rolesRole(), size = 14) { (role, _) -> tag(labelOf(role)) }
+                        numberColumn(texts.rolesCommunities()) { (_, communities) -> communities.size }
+                        empty(texts.rolesEmpty(), texts.joinHint())
                         onRowClick(isNavigation = true) { (role, _) -> UI.getCurrent().navigate(rolePageOf(role)) }
                     }
                 }
-                block(title = "Присоединиться к сообществу") {
+                block(title = texts.joinTitle()) {
+                    guide(texts.joinGuide())
                     lateinit var inviteCode: ValueInput<String>
-                    row { inviteCode = codeInput("Код-приглашение", labelSize = 6, size = 6) }
+                    row { inviteCode = codeInput(texts.joinInviteCode(), labelSize = 6, size = 6) }
                     footer {
-                        mainAction("Присоединиться") {
+                        mainAction(texts.joinButton()) {
                             clickOnEnter()
                             onClick { joinCommunity(inviteCode.value, accessToken) }
                         }
@@ -80,17 +85,18 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
                 }
             }
             row {
-                block(title = "Сообщества") {
+                block(title = texts.communitiesTitle()) {
+                    guide(texts.communitiesGuide())
                     val communities = communitiesOf(profile)
                     table(
                         key = { (community, _): Pair<CommunityVo, List<RoleVo>> -> community.id },
                         fetch = { request -> pageOf(communities, request) },
                     ) {
-                        codeColumn("ID", size = 4) { (community, _) -> community.id.value.toString() }
-                        textColumn("Название", size = 8) { (community, _) -> community.name }
-                        textColumn("Описание", size = 7) { (community, _) -> community.description }
-                        column("Роли") { (_, roles) -> roles.forEach { role -> tag(labelOf(role)) } }
-                        empty("Сообществ пока нет", "Присоединитесь к сообществу по Коду-приглашению.")
+                        codeColumn(texts.communitiesId(), size = 4) { (community, _) -> community.id.value.toString() }
+                        textColumn(texts.communitiesName(), size = 8) { (community, _) -> community.name }
+                        textColumn(texts.communitiesDescription(), size = 7) { (community, _) -> community.description }
+                        column(texts.communitiesRoles()) { (_, roles) -> roles.forEach { role -> tag(labelOf(role)) } }
+                        empty(texts.communitiesEmpty(), texts.joinHint())
                     }
                 }
             }
@@ -98,17 +104,19 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
     }
 
     private fun PageScope.accessTokenBlock(accessToken: String) {
+        val texts = currentLocalization().pageHome
         row {
-            block(title = "Код-доступа") {
+            block(title = texts.accessCodeTitle()) {
+                guide(texts.accessCodeGuide())
                 row {
                     alert(
                         kind = FeedbackKind.Warning,
-                        title = "Сохраните Код-доступа",
-                        text = "По нему вы входите в Систему. Код также отправлен на почту.",
+                        title = texts.accessCodeAlertTitle(),
+                        text = texts.accessCodeAlertText(),
                     )
                 }
                 row {
-                    codeInput("Код-доступа", labelSize = 6, size = 18) {
+                    codeInput(texts.accessCodeTitle(), labelSize = 6, size = 18) {
                         value = accessToken
                         isEditable = false
                         isObscured = true
@@ -120,19 +128,20 @@ class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private
 
     /** Joins the community by [inviteCode] and rebuilds the page, keeping the shown [accessToken]. */
     private fun joinCommunity(inviteCode: String, accessToken: String?) {
+        val texts = currentLocalization().pageHome
         try {
             multipleRoleUserService.joinCommunity(inviteCode)
         } catch (exception: OperationException) {
             when (val error = exception.error) {
                 is JoinCommunityError -> when (error) {
-                    is CommunityInviteCodeNotValidError -> toast(FeedbackKind.Error, "Код-приглашение недействителен")
-                    is CommunityInviteCodeExpiredError -> toast(FeedbackKind.Error, "Срок Кода-приглашения истёк")
+                    is CommunityInviteCodeNotValidError -> toast(FeedbackKind.Error, texts.inviteCodeInvalid())
+                    is CommunityInviteCodeExpiredError -> toast(FeedbackKind.Error, texts.inviteCodeExpired())
                 }
                 else -> throw exception
             }
             return
         }
-        toast(FeedbackKind.Success, "Вы присоединились к сообществу")
+        toast(FeedbackKind.Success, texts.joined())
         show(accessToken)
     }
 

@@ -8,9 +8,11 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Table
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
@@ -55,6 +57,18 @@ class StudyContestViewTests : MockSpringVaadinTests() {
         }
 
         @Test
+        fun `should title the browser tab of the contest`() {
+            val student = study.student()
+            val contest = study.runningContest()
+            val studyClass = study.studentClass(listOf(student), listOf(contest))
+            signIn(student)
+
+            open(studyClass, contest)
+
+            assertEquals("Тур", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        }
+
+        @Test
         fun `should keep the start disabled before the start of the contest`() {
             val student = study.student()
             val contest = study.contest(startsAt = StudyFixtures.FAR_FUTURE, contestDuration = Duration.ofHours(1))
@@ -78,7 +92,7 @@ class StudyContestViewTests : MockSpringVaadinTests() {
             UI.getCurrent()._get<Button> { text = "Начать" }._click()
 
             assertNotNull(studentEntries.findByContext(userId = student.id, studyClassId = studyClass.id, contestId = contest.id))
-            assertTrue(UI.getCurrent()._find<Button> { text = "Начать тур" }.isEmpty())
+            assertTrue(UI.getCurrent()._find<Button> { text = "Начать Тур" }.isEmpty())
             assertEquals("Тур начат", lastToastTitle())
         }
 
@@ -133,8 +147,8 @@ class StudyContestViewTests : MockSpringVaadinTests() {
             signIn(student)
             open(studyClass, contest)
 
-            assertTrue("90В очереди" in StudyPages.rowTexts("Последняя посылка").single())
-            StudyPages.clickRow("Последняя посылка")
+            assertTrue("90В очереди" in StudyPages.rowTexts("Последняя Посылка").single())
+            StudyPages.clickRow("Последняя Посылка")
 
             assertEquals(StudentTaskView::class.java, currentView)
             assertFalse(UI.getCurrent()._get<Button> { text = "Отправить" }.isEnabled)
@@ -155,6 +169,16 @@ class StudyContestViewTests : MockSpringVaadinTests() {
             open(contest)
 
             assertEquals(mapOf("Кабинет Участника" to "participant"), StudyPages.crumbs())
+        }
+
+        @Test
+        fun `should title the browser tab of the contest`() {
+            val contest = study.runningContest()
+            signIn(study.participant(listOf(contest)))
+
+            open(contest)
+
+            assertEquals("Тур", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
         }
 
         @Test
@@ -205,5 +229,5 @@ class StudyContestViewTests : MockSpringVaadinTests() {
         }
     }
 
-    private fun startAction(): Button = UI.getCurrent()._get<Button> { text = "Начать тур" }
+    private fun startAction(): Button = UI.getCurrent()._get<Button> { text = "Начать Тур" }
 }

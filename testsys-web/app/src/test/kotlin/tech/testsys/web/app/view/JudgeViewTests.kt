@@ -15,8 +15,10 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.internal.nodefeature.ElementListenerMap
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
@@ -47,6 +49,16 @@ class JudgeViewTests : MockSpringVaadinTests() {
 
         assertEquals(JudgeView::class.java, currentView)
         assertEquals("judge/submissions", UI.getCurrent().internals.activeViewLocation.path)
+    }
+
+    @Test
+    fun `should title the browser tab of the judge cabinet`() {
+        signIn(fixtures.judge())
+
+        openSubmissions()
+
+        assertEquals("Кабинет Судьи", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        assertEquals("Кабинет Судьи", UI.getCurrent()._get<H1>().text)
     }
 
     @Test
@@ -95,7 +107,7 @@ class JudgeViewTests : MockSpringVaadinTests() {
         val hidden = fixtures.gradingSubmission(student())
         openSubmissions()
 
-        field("ID посылки")._value = shown.id.value.toString()
+        field("ID Посылки")._value = shown.id.value.toString()
         UI.getCurrent()._get<Button> { text = "Применить" }._click()
 
         val text = tableText()
@@ -109,10 +121,10 @@ class JudgeViewTests : MockSpringVaadinTests() {
         val submission = fixtures.gradingSubmission(student())
         openSubmissions()
 
-        field("ID посылки")._value = "-5"
+        field("ID Посылки")._value = "-5"
         UI.getCurrent()._get<Button> { text = "Применить" }._click()
 
-        assertTrue(field("ID посылки").isInvalid)
+        assertTrue(field("ID Посылки").isInvalid)
         assertTrue(submission.id.value.toString() in tableText(), tableText())
     }
 

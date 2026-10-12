@@ -29,7 +29,7 @@ internal class MultiSelectTests : MockVaadinTests() {
     fun `should caption the clear action`() {
         buildMultiSelect()
 
-        assertEquals(testTexts.lookup.clear, clearAction().text)
+        assertEquals(testTexts.messages.uiForm.lookupClear(), clearAction().text)
     }
 
     @Test
@@ -60,7 +60,7 @@ internal class MultiSelectTests : MockVaadinTests() {
         field().open()
         field().toggle("Борис")
 
-        _find<NativeButton>().single { button -> button.text == testTexts.lookup.apply }._click()
+        _find<NativeButton>().single { button -> button.text == testTexts.messages.uiForm.lookupApply() }._click()
 
         assertEquals(setOf("Борис"), input.value)
     }
@@ -85,7 +85,7 @@ internal class MultiSelectTests : MockVaadinTests() {
 
         selectAll()._setValue(true)
 
-        assertTrue(_find<Span>().any { count -> count.text == testTexts.lookup.selectedCount(1) })
+        assertTrue(_find<Span>().any { count -> count.text == testTexts.messages.uiForm.lookupSelectedCount(count = 1) })
     }
 
     @Test
@@ -94,10 +94,10 @@ internal class MultiSelectTests : MockVaadinTests() {
         input.value = setOf("Анна")
         field().open()
 
-        _find<NativeButton>().single { button -> button.text == testTexts.lookup.reset }._click()
+        _find<NativeButton>().single { button -> button.text == testTexts.messages.uiForm.lookupReset() }._click()
 
         assertEquals(setOf("Анна"), input.value)
-        assertTrue(_find<Span>().any { count -> count.text == testTexts.lookup.selectedCount(0) })
+        assertTrue(_find<Span>().any { count -> count.text == testTexts.messages.uiForm.lookupSelectedCount(count = 0) })
     }
 
     @Test
@@ -105,7 +105,7 @@ internal class MultiSelectTests : MockVaadinTests() {
         buildMultiSelect()
         input.value = setOf("Анна", "Борис")
         val remove = field().findAll("ts-chip__x").filterIsInstance<NativeButton>()
-            .single { chip -> chip.element.getAttribute("aria-label") == testTexts.lookup.remove("Анна") }
+            .single { chip -> chip.element.getAttribute("aria-label") == testTexts.messages.uiForm.lookupRemove(value = "Анна") }
 
         remove._click()
 
@@ -128,7 +128,7 @@ internal class MultiSelectTests : MockVaadinTests() {
 
         input.value = setOf("Анна", "Борис")
 
-        assertEquals(testTexts.lookup.selectedCount(2), field().find("ts-counter").element.text)
+        assertEquals(testTexts.messages.uiForm.lookupSelectedCount(count = 2), field().find("ts-counter").element.text)
     }
 
     @Test
@@ -138,8 +138,8 @@ internal class MultiSelectTests : MockVaadinTests() {
         input.value = setOf("Анна", "Аркадий", "Борис")
 
         val more = field().find("ts-chip--more")
-        assertEquals("+2", more.element.text)
-        assertEquals(testTexts.components.more(2), more.element.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiForm.lookupMoreChip(count = 2), more.element.text)
+        assertEquals(testTexts.messages.uiForm.lookupMore(count = 2), more.element.getAttribute("aria-label"))
     }
 
     @Test
@@ -179,7 +179,7 @@ internal class MultiSelectTests : MockVaadinTests() {
 
         field().open()
 
-        assertTrue(_find<Span>().any { count -> count.text == testTexts.lookup.selectedCount(0) })
+        assertTrue(_find<Span>().any { count -> count.text == testTexts.messages.uiForm.lookupSelectedCount(count = 0) })
         assertEquals(emptySet<String>(), input.value)
     }
 
@@ -207,5 +207,6 @@ internal class MultiSelectTests : MockVaadinTests() {
 
     private fun clearAction(): NativeButton = field().findAll("ts-multiselect__clear").filterIsInstance<NativeButton>().single()
 
-    private fun selectAll(): Checkbox = _find<Checkbox>().single { checkbox -> checkbox.label == testTexts.components.selectAll }
+    private fun selectAll(): Checkbox =
+        _find<Checkbox>().single { checkbox -> checkbox.label == testTexts.messages.uiForm.lookupSelectAll() }
 }

@@ -10,17 +10,22 @@ import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.infra.localization.Localization
+import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.manager.ContestResultsVo
 import java.time.Instant
+import java.time.ZoneOffset
 
 class ContestResultsCsvTests {
+    private val texts = Localization.forRegion(SupportedRegion.RU, ZoneOffset.UTC).pageManager
+
     @Test
     fun `should start with a byte order mark and the header of the member and task columns`() {
-        val csv = contestResultsCsv(results(tasks = listOf(task(5, "Движение")), members = emptyList()))
+        val csv = contestResultsCsv(results(tasks = listOf(task(5, "Движение")), members = emptyList()), texts)
 
-        assertEquals("﻿ID;Псевдоним;Движение — балл;Движение — посылок\r\n", csv)
+        assertEquals("﻿ID;Псевдоним;Движение — балл;Движение — Посылок\r\n", csv)
     }
 
     @Test
@@ -34,7 +39,7 @@ class ContestResultsCsvTests {
             ),
         )
 
-        val rows = contestResultsCsv(results).removePrefix("﻿").split("\r\n")
+        val rows = contestResultsCsv(results, texts).removePrefix("﻿").split("\r\n")
 
         assertEquals("1;Иван;70;3;;2", rows[1])
     }
@@ -43,7 +48,7 @@ class ContestResultsCsvTests {
     fun `should write zero submissions and an empty result for a member without submissions`() {
         val results = results(tasks = listOf(task(5, "A")), members = listOf(MultipleRoleUserId(2) to "Анна"))
 
-        val rows = contestResultsCsv(results).removePrefix("﻿").split("\r\n")
+        val rows = contestResultsCsv(results, texts).removePrefix("﻿").split("\r\n")
 
         assertEquals("2;Анна;;0", rows[1])
     }
@@ -53,7 +58,7 @@ class ContestResultsCsvTests {
         val quoted = task(5, "Тур; \"финал\"")
         val results = results(tasks = listOf(quoted), members = listOf(MultipleRoleUserId(3) to "a\nb"))
 
-        val csv = contestResultsCsv(results)
+        val csv = contestResultsCsv(results, texts)
 
         assertTrue("\"Тур; \"\"финал\"\" — балл\"" in csv, csv)
         assertTrue("3;\"a\nb\";;0" in csv, csv)

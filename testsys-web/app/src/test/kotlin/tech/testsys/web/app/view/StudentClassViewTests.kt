@@ -6,7 +6,9 @@ import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.textfield.TextArea
+import com.vaadin.flow.router.HasDynamicTitle
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -43,6 +45,17 @@ class StudentClassViewTests : MockSpringVaadinTests() {
 
         assertEquals("Класс «Кружок»", UI.getCurrent()._get<H1>().text)
         assertEquals(mapOf("Главная" to "home", "Кабинет Ученика" to "student"), StudyPages.crumbs())
+    }
+
+    @Test
+    fun `should title the browser tab of the class`() {
+        val student = study.student()
+        val studyClass = study.studentClass(listOf(student))
+        signIn(student)
+
+        open(studyClass)
+
+        assertEquals("Класс", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
     }
 
     @Test

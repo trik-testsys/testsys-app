@@ -19,7 +19,7 @@ import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.overlay.MenuScope
 import tech.testsys.web.components.overlay.iconMenu
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -61,12 +61,12 @@ internal class TableSpec<T>(
  */
 @TestSysDsl
 class TableScope<T> internal constructor(
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     val gridColumns: Int = GRID_COLUMNS,
     private val selectionSize: Int = 0,
 ) {
     private val columns = mutableListOf<TableColumn<T>>()
-    private var emptyContent: EmptyContent = EmptyContent(texts.table.empty)
+    private var emptyContent: EmptyContent = EmptyContent(texts.messages.uiData.tableEmpty())
     private var rowClick: ((T) -> Unit)? = null
     private var isRowNavigation: Boolean = false
     private var isRowClickable: (T) -> Boolean = { true }
@@ -168,7 +168,7 @@ class TableScope<T> internal constructor(
      * @since %CURRENT_VERSION%
      */
     fun menuColumn(size: Int = 1, content: MenuScope.(T) -> Unit) {
-        menuColumn(ariaLabel = { texts.menu.actions }, size = size, content = content)
+        menuColumn(ariaLabel = { texts.messages.uiOverlay.menuActions() }, size = size, content = content)
     }
 
     /**

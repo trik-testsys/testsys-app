@@ -10,9 +10,13 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.customfield.CustomField
 import com.vaadin.flow.component.html.H1
+import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.HasDynamicTitle
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -53,6 +57,16 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should title the browser tab of the contest`() {
+        developers.signInDeveloper()
+        val contest = developers.contest(developers.trikStudioVersion(), name = "Весенний тур")
+
+        open(contest.id)
+
+        assertEquals("Тур", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+    }
+
+    @Test
     fun `should save the edited name of the contest`() {
         developers.signInDeveloper()
         val contest = developers.contest(developers.trikStudioVersion(), name = "Весенний тур")
@@ -75,13 +89,13 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
         val contest = developers.contest(version)
         open(contest.id)
 
-        clickButton("Прикрепить задачу")
+        clickButton("Прикрепить Задачу")
         taskField().value = developerService.viewTask(taskId).first
         clickButton("Прикрепить")
 
         assertEquals(listOf(taskId), developerService.viewContest(contest.id).first.tasks)
         assertTrue("Движение по линии" in tableText("Состояние"), tableText("Состояние"))
-        assertEquals("Задача прикреплена к туру", lastToastTitle())
+        assertEquals("Задача прикреплена к Туру", lastToastTitle())
     }
 
     @Test
@@ -93,10 +107,10 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
         developerService.attachTask(contest.id, taskId)
         open(contest.id)
 
-        rowMenu("Действия с задачей «Движение по линии»")._clickItemWithCaption("Открепить")
+        rowMenu("Действия с Задачей «Движение по линии»")._clickItemWithCaption("Открепить")
 
         assertEquals(emptyList<Any>(), developerService.viewContest(contest.id).first.tasks)
-        assertEquals("Задача откреплена от тура", lastToastTitle())
+        assertEquals("Задача откреплена от Тура", lastToastTitle())
     }
 
     @Test
@@ -114,7 +128,7 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
 
         assertTrue("нельзя будет изменить и удалить" in warning, warning)
         assertEquals(listOf(community.id), developerService.viewContest(contest.id).first.sharedTo)
-        assertEquals("Доступ к туру предоставлен", lastToastTitle())
+        assertEquals("Доступ к Туру предоставлен", lastToastTitle())
     }
 
     @Test
@@ -126,10 +140,11 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
 
         open(contest.id)
 
-        assertTrue(alertDescriptions().single().startsWith("Доступ к туру предоставлен сообществам"), alertDescriptions().toString())
+        assertTrue(alertDescriptions().single().startsWith("Доступ к Туру предоставлен Сообществам"), alertDescriptions().toString())
         assertEquals(emptyList<Button>(), UI.getCurrent()._find<Button> { text = "Изменить" })
-        assertFalse(pageButton("Удалить тур").isEnabled)
-        assertFalse(pageButton("Прикрепить задачу").isEnabled)
+        assertFalse(pageButton("Удалить Тур").isEnabled)
+        assertFalse(pageButton("Прикрепить Задачу").isEnabled)
+        assertRestrictedContestGuides()
     }
 
     @Test
@@ -142,8 +157,9 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
 
         open(contest.id)
 
-        assertEquals(listOf("Изменять тур может только его владелец."), alertDescriptions())
+        assertEquals(listOf("Изменять Тур может только его владелец."), alertDescriptions())
         assertFalse(pageButton("Предоставить доступ").isEnabled)
+        assertRestrictedContestGuides()
     }
 
     @Test
@@ -152,7 +168,7 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
         val contest = developers.contest(developers.trikStudioVersion(), name = "Весенний тур")
         open(contest.id)
 
-        clickButton("Удалить тур")
+        clickButton("Удалить Тур")
         assertFalse(openDialog()._get<Button> { text = "Удалить" }.isEnabled)
         openDialog()._get<TextField>()._setValue(contest.name)
         clickButton("Удалить")
@@ -168,19 +184,34 @@ class DeveloperContestViewTests : MockSpringVaadinTests() {
         val task = developers.task()
         val contest = developers.contest(developers.trikStudioVersion())
         open(contest.id)
-        clickButton("Прикрепить задачу")
+        clickButton("Прикрепить Задачу")
         taskField().value = task
 
         clickButton("Прикрепить")
 
         assertTrue(openDialog().isOpened)
-        assertEquals("Не удалось прикрепить задачу", lastToastTitle())
-        assertEquals("У задачи нет зафиксированной версии. Сначала протестируйте и зафиксируйте задачу.", lastToastDescription())
+        assertEquals("Не удалось прикрепить Задачу", lastToastTitle())
+        assertEquals("У Задачи нет зафиксированной версии. Сначала протестируйте и зафиксируйте Задачу.", lastToastDescription())
         assertEquals(emptyList<Any>(), developerService.viewContest(contest.id).first.tasks)
     }
 
     private fun open(contestId: ContestId) {
         UI.getCurrent().navigate(DeveloperContestView::class.java, contestParameters(contestId))
+    }
+
+    private fun assertRestrictedContestGuides() {
+        val blocks = UI.getCurrent()._find<Section> { classes = "ts-block" }
+        assertTrue(blocks.isNotEmpty())
+        assertTrue(blocks.all { block -> !block.element.getAttribute("data-guide-title").isNullOrBlank() })
+        assertTrue(blocks.all { block -> !block.element.getAttribute("data-guide-description").isNullOrBlank() })
+        assertTrue(
+            blocks.all { block ->
+                block._find<NativeButton> { classes = "ts-guide-button" }
+                    .count { button -> button.element.getAttribute("data-guide-start") == "block" } == 1
+            },
+        )
+        assertEquals("Тур нельзя изменить", blocks.first().element.getAttribute("data-guide-title"))
+        assertEquals(alertDescriptions().single(), blocks.first().element.getAttribute("data-guide-description"))
     }
 
     /** Returns the task field of the open dialog, the only custom field in it. */

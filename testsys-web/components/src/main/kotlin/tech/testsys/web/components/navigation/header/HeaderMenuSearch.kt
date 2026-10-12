@@ -6,6 +6,7 @@ import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Input
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.dom.Element
+import tech.testsys.infra.localization.UiPage
 import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.Autocomplete
 import tech.testsys.web.components.core.CssClass
@@ -27,7 +28,6 @@ import tech.testsys.web.components.core.setAutocomplete
 import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
-import tech.testsys.web.components.texts.HeaderTexts
 import java.util.UUID
 
 /** Native input and visual shell of the menu search. */
@@ -49,8 +49,8 @@ private fun headerSearchField(label: String): HeaderSearchField {
 }
 
 /** Filters the existing menu surface synchronously without creating a provider popup. */
-internal class HeaderMenuSearchController(private val menu: MegaMenuHandle, private val texts: HeaderTexts) {
-    private val input = headerSearchField(texts.search)
+internal class HeaderMenuSearchController(private val menu: MegaMenuHandle, private val texts: UiPage) {
+    private val input = headerSearchField(texts.headerSearch())
     val field = input.field
     val component = input.component
 
@@ -88,7 +88,7 @@ internal class HeaderMenuSearchController(private val menu: MegaMenuHandle, priv
     }
 
     fun inputChanged(query: String) {
-        menu.filter(query = query, emptyText = texts.searchEmpty)
+        menu.filter(query = query, emptyText = texts.headerSearchEmpty())
         menu.popup.open()
     }
 

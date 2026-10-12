@@ -13,7 +13,7 @@ import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 private const val EMPTY_ICON_SIZE = 22
 private const val EMPTY_STATE_OWNER = "an empty state"
@@ -27,7 +27,7 @@ internal class EmptyContent(
 )
 
 /** Builds the `.ts-empty` markup of [content]; an [isError] state is red and shows the alert icon instead. */
-internal fun buildEmptyState(content: EmptyContent, texts: UiTexts, isError: Boolean = false): Div {
+internal fun buildEmptyState(content: EmptyContent, texts: UiLocalization, isError: Boolean = false): Div {
     val icon = svgIcon(if (isError) IconName.TriangleAlert else content.icon, EMPTY_ICON_SIZE)
     val state = Div(
         Span(icon).apply { addClassName(CssClass.EmptyIcon) },

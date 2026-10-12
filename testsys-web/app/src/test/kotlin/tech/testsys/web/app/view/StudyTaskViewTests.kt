@@ -12,10 +12,12 @@ import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.upload.Upload
 import com.vaadin.flow.dom.Element
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -132,6 +134,29 @@ class StudyTaskViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should title the browser tab of the task of a student`() {
+        val (student, studyClass, contest, task) = entered()
+        signIn(student)
+
+        open(studyClass, contest, task)
+
+        assertEquals("Задача", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+    }
+
+    @Test
+    fun `should title the browser tab of the task of a participant`() {
+        val task = study.task()
+        val contest = study.runningContest(tasks = listOf(task))
+        val participant = study.participant(listOf(contest))
+        study.participantEntry(participant, contest)
+        signIn(participant)
+
+        openParticipantTask(contest, task)
+
+        assertEquals("Задача", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+    }
+
+    @Test
     fun `should lead the breadcrumbs of a participant to the cabinet and the contest`() {
         val task = study.task(name = "Лабиринт")
         val contest = study.runningContest(name = "Весенний тур", tasks = listOf(task))
@@ -139,12 +164,7 @@ class StudyTaskViewTests : MockSpringVaadinTests() {
         study.participantEntry(participant, contest)
         signIn(participant)
 
-        UI.getCurrent().navigate(
-            ParticipantTaskView::class.java,
-            RouteParameters(
-                mapOf(STUDY_CONTEST_ID_PARAMETER to contest.id.value.toString(), STUDY_TASK_ID_PARAMETER to task.id.value.toString()),
-            ),
-        )
+        openParticipantTask(contest, task)
 
         assertEquals("Задача «Лабиринт»", UI.getCurrent()._get<H1>().text)
         assertEquals(
@@ -231,6 +251,15 @@ class StudyTaskViewTests : MockSpringVaadinTests() {
             ),
         )
         UI.getCurrent().navigate(StudentTaskView::class.java, parameters)
+    }
+
+    private fun openParticipantTask(contest: Contest, task: Task) {
+        UI.getCurrent().navigate(
+            ParticipantTaskView::class.java,
+            RouteParameters(
+                mapOf(STUDY_CONTEST_ID_PARAMETER to contest.id.value.toString(), STUDY_TASK_ID_PARAMETER to task.id.value.toString()),
+            ),
+        )
     }
 
     @Suppress("UNCHECKED_CAST")

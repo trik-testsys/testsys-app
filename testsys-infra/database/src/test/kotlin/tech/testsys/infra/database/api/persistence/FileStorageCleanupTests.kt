@@ -11,14 +11,20 @@ import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
+import org.springframework.boot.context.properties.bind.BindException
+import org.springframework.core.env.MapPropertySource
+import org.springframework.core.env.StandardEnvironment
 import org.springframework.dao.DataAccessResourceFailureException
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.persistence.FileStorageCleanupRepository
 import tech.testsys.infra.database.internal.persistence.FileSystemBlobInventory
-import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
+import tech.testsys.infra.settings.api.Settings
 import tech.testsys.infra.settings.api.SettingsSnapshot
-import tech.testsys.infra.settings.api.SettingsValues
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.catalog.SettingsValues
+import tech.testsys.infra.settings.api.settingsOf
 import java.nio.file.FileSystemException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -27,6 +33,7 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.concurrent.atomic.AtomicInteger
 
 @OptIn(InternalDatabaseApi::class)
 class FileStorageCleanupTests {
@@ -53,23 +60,50 @@ class FileStorageCleanupTests {
             values = SettingsValues(mapOf(SettingKey.CleanupMinimumAge to "PT24H", SettingKey.CleanupBatchSize to "3")),
             activeMaxMessageBytes = 100,
         )
-        val runtime = mockk<RuntimeSettings> { every { snapshot() } returns snapshot }
+        val captures = AtomicInteger()
+        val environment = StandardEnvironment()
         every { repository.deleteFileData(3) } returnsMany listOf(3, 0)
         val paths = FileStoragePaths(directory, directory, directory, directory, directory, directory)
         val dynamic = FileStorageCleanup(
             repository = repository,
             inventory = FileSystemBlobInventory(),
             paths = paths,
-            settings = FileStorageCleanupSettings(Duration.ofDays(2), 2),
+            settings = Settings {
+                captures.incrementAndGet()
+                snapshot.get<FileStorageCleanupProperties>(environment)
+            },
             clock = Clock.fixed(now, ZoneOffset.UTC),
-            runtime = runtime,
         )
 
         dynamic.run()
 
-        verify(exactly = 1) { runtime.snapshot() }
+        assertEquals(1, captures.get())
         verify(exactly = 2) { repository.deleteFileData(3) }
         verify(exactly = 0) { repository.deleteFileData(2) }
+    }
+
+    @Test
+    fun `should bind Spring duration units without the shared holder`() {
+        val environment = environment("10m", "7")
+
+        val actual = settingsOf(FileStorageCleanupProperties::class.java, environment, null).current()
+
+        assertEquals(FileStorageCleanupProperties(Duration.ofMinutes(10), 7), actual)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["0s", "-1m"])
+    fun `should reject a nonpositive minimum age when created`(minimumAge: String) {
+        val environment = environment(minimumAge, "7")
+
+        assertThrows(BindException::class.java) { settingsOf(FileStorageCleanupProperties::class.java, environment, null) }
+    }
+
+    @Test
+    fun `should reject an unparsable minimum age when created`() {
+        val environment = environment("invalid", "7")
+
+        assertThrows(BindException::class.java) { settingsOf(FileStorageCleanupProperties::class.java, environment, null) }
     }
 
     @Test
@@ -176,7 +210,7 @@ class FileStorageCleanupTests {
             repository = repository,
             inventory = FileSystemBlobInventory(),
             paths = FileStoragePaths(directory, otherDirectory, directory, directory, directory, directory),
-            settings = FileStorageCleanupSettings(minimumAge = Duration.ofDays(1), batchSize = 2),
+            settings = Settings { FileStorageCleanupProperties(minimumAge = Duration.ofDays(1), batchSize = 2) },
             clock = Clock.fixed(now, ZoneOffset.UTC),
         )
 
@@ -213,11 +247,20 @@ class FileStorageCleanupTests {
         return path
     }
 
+    private fun environment(minimumAge: String, batchSize: String) = StandardEnvironment().apply {
+        propertySources.addFirst(
+            MapPropertySource(
+                "test",
+                mapOf("testsys.file-storage.cleanup.minimum-age" to minimumAge, "testsys.file-storage.cleanup.batch-size" to batchSize),
+            ),
+        )
+    }
+
     private fun cleanup() = FileStorageCleanup(
         repository = repository,
         inventory = FileSystemBlobInventory(),
         paths = FileStoragePaths(directory, directory, directory, directory, directory, directory),
-        settings = FileStorageCleanupSettings(minimumAge = Duration.ofDays(1), batchSize = 2),
+        settings = Settings { FileStorageCleanupProperties(minimumAge = Duration.ofDays(1), batchSize = 2) },
         clock = Clock.fixed(now, ZoneOffset.UTC),
     )
 }

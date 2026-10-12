@@ -6,6 +6,7 @@ import io.grpc.Status
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import org.apache.commons.logging.LogFactory
+import org.springframework.core.env.Environment
 import tech.testsys.domain.contract.GradingAdmission
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
@@ -15,7 +16,7 @@ import tech.testsys.infra.grpc.api.GradingQueueSnapshot
 import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.monitoring.api.TestSysMetrics
 import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
+import tech.testsys.infra.settings.api.Settings
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -36,12 +37,13 @@ import java.util.concurrent.atomic.AtomicReference
 internal class GradingCoordinator(
     private val persistence: GradingPersistenceService,
     private val nodes: GradingNodeManager,
-    private val settings: GradingSettings,
+    private val settings: Settings<GradingProperties>,
     private val executor: ScheduledExecutorService,
     private val senderExecutor: ExecutorService,
     private val pollingExecutor: ScheduledExecutorService,
     private val clock: Clock,
     private val parser: LogParser,
+    private val environment: Environment,
     private val runtime: RuntimeSettings? = null,
     private val failures: TechnicalFailures = TechnicalFailures.NONE,
     private val metrics: MeterRegistry = CompositeMeterRegistry(),
@@ -57,10 +59,10 @@ internal class GradingCoordinator(
     fun start() {
         senderExecutor.execute(::sendLoop)
         pollingRegistration = if (runtime == null) {
-            schedulePolling(currentSettings().pollInterval) { true }
+            schedulePolling(settings.current().pollInterval) { true }
         } else {
             runtime.register { candidate ->
-                schedulePolling(candidate.values.duration(SettingKey.PollInterval)) {
+                schedulePolling(candidate.get(GradingProperties::class.java, environment).pollInterval) {
                     runtime.snapshot() === candidate
                 }
             }
@@ -69,7 +71,7 @@ internal class GradingCoordinator(
 
     fun submit(submission: Submission): GradingAdmission = synchronized(isClosed) {
         check(!isClosed.get()) { "Grader is closed" }
-        val context = RunContext(submission = submission, acceptedAt = clock.instant(), settings = currentSettings())
+        val context = RunContext(submission = submission, acceptedAt = clock.instant(), settings = settings.current())
         val newRun = Pending.Preparing(context)
         val existing = pending.putIfAbsent(submission.id, newRun)
         if (existing == null) {
@@ -159,13 +161,11 @@ internal class GradingCoordinator(
         }
     }
 
-    private fun currentSettings(): GradingSettings = runtime?.snapshot()?.let(settings::resolved) ?: settings
-
     private fun schedulePolling(interval: Duration, isCurrent: () -> Boolean): AutoCloseable {
         val scheduled = pollingExecutor.scheduleWithFixedDelay(
             {
                 if (isCurrent()) {
-                    nodes.poll { currentSettings().statusTimeout }
+                    nodes.poll { settings.current().statusTimeout }
                     senderWakeup.release()
                 }
             },
@@ -196,7 +196,7 @@ internal class GradingCoordinator(
                 } catch (error: Exception) {
                     log.error("Failed to send submission ${run.context.submission.id.value}", error)
                     failures.record(source = SOURCE, stage = "send", failure = error)
-                    completed.complete(minOf(currentSettings().pollInterval, remaining(run.context)).coerceAtLeast(Duration.ZERO))
+                    completed.complete(minOf(settings.current().pollInterval, remaining(run.context)).coerceAtLeast(Duration.ZERO))
                 }
             }
             val wait = completed.get() ?: return
@@ -241,8 +241,8 @@ internal class GradingCoordinator(
             }
         }.groupingBy { address -> address }.eachCount()
         val address = selectNode(nodes.participantStatuses(), outstanding)
-            ?: return minOf(currentSettings().pollInterval, remaining(run.context))
-        val registration = nodes.registration(address) ?: return minOf(currentSettings().pollInterval, remaining(run.context))
+            ?: return minOf(settings.current().pollInterval, remaining(run.context))
+        val registration = nodes.registration(address) ?: return minOf(settings.current().pollInterval, remaining(run.context))
         persistence.markInProgress(run.context.submission.id)
         val attempt = Attempt(address = address, registration = registration)
         val sending = Pending.InFlight(context = run.context, prepared = run.prepared, attempt = attempt, attempts = run.attempts + 1)
@@ -344,7 +344,7 @@ internal class GradingCoordinator(
         } catch (error: RuntimeException) {
             log.error("Failed to save submission ${run.context.submission.id.value}", error)
             failures.record(source = SOURCE, stage = "save", failure = error)
-            run.saveRetry.set(executor.schedule({ save(run) }, currentSettings().pollInterval.toNanos(), TimeUnit.NANOSECONDS))
+            run.saveRetry.set(executor.schedule({ save(run) }, settings.current().pollInterval.toNanos(), TimeUnit.NANOSECONDS))
             return
         }
         run.saveRetry.get()?.cancel(false)
@@ -395,7 +395,7 @@ internal class GradingCoordinator(
     private class RunContext(
         val submission: Submission,
         val acceptedAt: Instant,
-        val settings: GradingSettings,
+        val settings: GradingProperties,
         val deadline: AtomicReference<ScheduledFuture<*>?> = AtomicReference(),
     )
 

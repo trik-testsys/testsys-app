@@ -17,8 +17,8 @@ import tech.testsys.infra.grpc.api.GradingNodeRegistryOverview
 import tech.testsys.infra.grpc.api.GradingQueueMonitor
 import tech.testsys.infra.grpc.api.GradingQueueSnapshot
 import tech.testsys.infra.monitoring.api.TestSysMetrics
-import tech.testsys.infra.settings.api.SettingsPersistence
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
+import tech.testsys.infra.settings.api.service.SettingsPersistence
 
 internal class GradingMeterBinderTests {
     private val meters = SimpleMeterRegistry()

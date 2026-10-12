@@ -1,4 +1,4 @@
-package tech.testsys.infra.database.api.settings
+package tech.testsys.infra.database.api.registry
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.infra.database.DatabaseIntegrationTests
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

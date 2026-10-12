@@ -10,6 +10,7 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.springframework.core.env.StandardEnvironment
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
 import tech.testsys.infra.grpc.api.GradingNodeChangeResult
@@ -21,9 +22,9 @@ import tech.testsys.infra.grpc.api.GradingNodeImportReport
 import tech.testsys.infra.grpc.api.GradingNodeRejection
 import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.monitoring.api.TestSysMetrics
-import tech.testsys.infra.settings.api.GradingNodeStore
-import tech.testsys.infra.settings.api.SettingsPersistence
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.registry.GradingNodeStore
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
+import tech.testsys.infra.settings.api.service.SettingsPersistence
 import java.time.Clock
 import java.util.concurrent.Executors
 
@@ -42,6 +43,7 @@ internal class GradingNodeRegistryCoordinatorTests {
         pollingExecutor = polling.service,
         clock = Clock.systemUTC(),
         parser = JsonLogParser(),
+        environment = StandardEnvironment(),
     )
     private val store = mockk<GradingNodeStore>()
     private val meters = SimpleMeterRegistry()

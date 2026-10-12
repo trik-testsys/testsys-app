@@ -1,7 +1,7 @@
 package tech.testsys.infra.settings.internal
 
-import tech.testsys.infra.settings.api.SettingKey
-import tech.testsys.infra.settings.api.SettingKind
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.catalog.SettingKind
 import java.time.Duration
 import java.time.Instant
 

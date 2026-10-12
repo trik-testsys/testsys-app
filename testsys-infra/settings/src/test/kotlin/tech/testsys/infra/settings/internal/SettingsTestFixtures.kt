@@ -4,8 +4,8 @@ package tech.testsys.infra.settings.internal
 
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.env.StandardEnvironment
-import tech.testsys.infra.settings.api.SettingsStore
-import tech.testsys.infra.settings.api.StoredSettings
+import tech.testsys.infra.settings.api.store.SettingsStore
+import tech.testsys.infra.settings.api.store.StoredSettings
 import java.util.UUID
 
 internal fun settingsEnvironment(): StandardEnvironment = StandardEnvironment()

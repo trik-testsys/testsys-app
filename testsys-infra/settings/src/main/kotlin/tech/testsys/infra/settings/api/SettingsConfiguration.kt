@@ -4,6 +4,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
 import tech.testsys.infra.monitoring.api.TechnicalFailures
+import tech.testsys.infra.settings.api.service.SettingsService
+import tech.testsys.infra.settings.api.store.SettingsStore
 import tech.testsys.infra.settings.internal.InternalSettingsApi
 import tech.testsys.infra.settings.internal.SettingsCoordinator
 import tech.testsys.infra.settings.internal.SettingsInitializer

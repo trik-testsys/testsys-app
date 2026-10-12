@@ -6,8 +6,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.persistence.FileStorageCleanupRepository
 import tech.testsys.infra.database.internal.persistence.FileSystemBlobInventory
-import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
+import tech.testsys.infra.settings.api.Settings
 import java.time.Clock
 
 /**
@@ -22,9 +21,8 @@ class FileStorageCleanup(
     private val repository: FileStorageCleanupRepository,
     private val inventory: FileSystemBlobInventory,
     private val paths: FileStoragePaths,
-    private val settings: FileStorageCleanupSettings,
+    private val settings: Settings<FileStorageCleanupProperties>,
     @param:Qualifier("fileStorageCleanupClock") private val clock: Clock,
-    private val runtime: RuntimeSettings? = null,
 ) {
 
     /**
@@ -36,15 +34,7 @@ class FileStorageCleanup(
      */
     fun run() {
         check(!TransactionSynchronizationManager.isActualTransactionActive()) { "File cleanup must run outside a transaction" }
-        val values = runtime?.snapshot()?.values
-        val pass = if (values == null) {
-            settings
-        } else {
-            FileStorageCleanupSettings(
-                minimumAge = values.duration(SettingKey.CleanupMinimumAge),
-                batchSize = values.int(SettingKey.CleanupBatchSize),
-            )
-        }
+        val pass = settings.current()
         val cutoff = clock.instant().minus(pass.minimumAge)
         drain(pass.batchSize)
         val directories =

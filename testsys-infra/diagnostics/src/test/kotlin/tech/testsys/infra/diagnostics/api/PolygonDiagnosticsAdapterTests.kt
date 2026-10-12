@@ -8,8 +8,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
+import org.springframework.beans.factory.BeanCreationException
+import org.springframework.boot.context.properties.bind.BindException
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.core.env.MapPropertySource
+import org.springframework.core.env.StandardEnvironment
 import tech.testsys.domain.builder.api.test
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.withData
@@ -20,13 +23,15 @@ import tech.testsys.domain.model.task.*
 import tech.testsys.infra.diagnostics.internal.DiagnosticsProperties
 import tech.testsys.infra.diagnostics.internal.InternalDiagnosticsApi
 import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
+import tech.testsys.infra.settings.api.Settings
 import tech.testsys.infra.settings.api.SettingsSnapshot
-import tech.testsys.infra.settings.api.SettingsValues
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.catalog.SettingsValues
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 
@@ -36,30 +41,27 @@ class PolygonDiagnosticsAdapterTests {
         every { read(any()) } answers { assertInstanceOf(FileContent.Inline::class.java, firstArg<FileData>().content).bytes }
     }
     private val adapter = PolygonDiagnosticsAdapter(
-        DiagnosticsProperties(maxTimeLimitMillis = 600_000, scorePrefix = "Набрано баллов:"),
+        Settings { DiagnosticsProperties(maxTimeLimitMillis = 600_000, scorePrefix = "Набрано баллов:") },
         fileContentReader,
     )
 
     @Test
     fun `should retain one diagnostic settings pair when settings change during file read`() {
-        val first = SettingsSnapshot(
-            revision = 0,
-            values = SettingsValues(mapOf(SettingKey.MaxTimeLimitMillis to "100", SettingKey.ScorePrefix to "old:")),
-            activeMaxMessageBytes = 100,
-        )
-        val second = SettingsSnapshot(
-            revision = 1,
-            values = SettingsValues(mapOf(SettingKey.MaxTimeLimitMillis to "0", SettingKey.ScorePrefix to "new:")),
-            activeMaxMessageBytes = 100,
-        )
+        val first = snapshot(revision = 0, maxTimeLimitMillis = "100", scorePrefix = "old:")
+        val second = snapshot(revision = 1, maxTimeLimitMillis = "0", scorePrefix = "new:")
         val current = AtomicReference(first)
-        val runtime = mockk<RuntimeSettings> { every { snapshot() } answers { current.get() } }
+        val captures = AtomicInteger()
+        val environment = StandardEnvironment()
+        val settings = Settings {
+            captures.incrementAndGet()
+            current.get().get<DiagnosticsProperties>(environment)
+        }
         val text = "<root><world/><constraints><timelimit value='1'/><init><message text='old: 42'/></init></constraints></root>"
         every { fileContentReader.read(any()) } answers {
             current.set(second)
             text.toByteArray()
         }
-        val dynamic = PolygonDiagnosticsAdapter(DiagnosticsProperties(0, "new:"), fileContentReader, runtime)
+        val dynamic = PolygonDiagnosticsAdapter(settings, fileContentReader)
 
         val initial = dynamic.diagnose(polygon(""))
         val next = dynamic.diagnose(polygon(""))
@@ -71,7 +73,40 @@ class PolygonDiagnosticsAdapterTests {
             listOf(DiagnosticData.ExcessiveTimeLimit(value = 1, maximum = 0)),
             next.reports.map { report -> report.data }.filterIsInstance<DiagnosticData.ExcessiveTimeLimit>(),
         )
-        verify(exactly = 2) { runtime.snapshot() }
+        assertEquals(2, captures.get())
+    }
+
+    @Test
+    fun `should apply a newly published snapshot to the registered adapter`() {
+        val current = AtomicReference(snapshot(0, "10", "Набрано баллов:"))
+        val runtime = mockk<RuntimeSettings>(relaxed = true) { every { snapshot() } answers { current.get() } }
+        val context = AnnotationConfigApplicationContext()
+        context.registerBean(FileContentReader::class.java, Supplier { fileContentReader })
+        context.registerBean(RuntimeSettings::class.java, Supplier { runtime })
+        context.register(DiagnosticsConfiguration::class.java)
+        context.refresh()
+
+        val (initial, next) = context.use {
+            val diagnostics = it.getBean(PolygonDiagnostics::class.java)
+            val initial = diagnostics.diagnose(polygon("<timelimit value='11'/>"))
+            current.set(snapshot(1, "20", "Набрано баллов:"))
+            initial to diagnostics.diagnose(polygon("<timelimit value='11'/>"))
+        }
+
+        assertEquals(DiagnosticData.ExcessiveTimeLimit(value = 11, maximum = 10), initial.reports.first().data)
+        assertFalse(next.reports.any { report -> report.data is DiagnosticData.ExcessiveTimeLimit })
+    }
+
+    @Test
+    fun `should reject a negative configured time limit at startup without the shared holder`() {
+        val context = AnnotationConfigApplicationContext()
+        context.environment.propertySources.addFirst(MapPropertySource("test", mapOf("testsys.diagnostics.max-time-limit-millis" to -1)))
+        context.registerBean(FileContentReader::class.java, Supplier { fileContentReader })
+        context.register(DiagnosticsConfiguration::class.java)
+
+        val error = assertThrows(BeanCreationException::class.java) { context.refresh() }
+
+        assertTrue(error.contains(BindException::class.java))
     }
 
     @Test
@@ -307,6 +342,12 @@ class PolygonDiagnosticsAdapterTests {
             DiagnosticsProperties(maxTimeLimitMillis = 600_000, scorePrefix = prefix)
         }
     }
+
+    private fun snapshot(revision: Long, maxTimeLimitMillis: String, scorePrefix: String) = SettingsSnapshot(
+        revision = revision,
+        values = SettingsValues(mapOf(SettingKey.MaxTimeLimitMillis to maxTimeLimitMillis, SettingKey.ScorePrefix to scorePrefix)),
+        activeMaxMessageBytes = 100,
+    )
 
     private fun polygon(constraints: String): tech.testsys.domain.model.task.Test =
         polygonXml("<root><world/><constraints>$constraints</constraints></root>")

@@ -1,4 +1,4 @@
-package tech.testsys.infra.settings.api
+package tech.testsys.infra.settings.api.registry
 
 import tech.testsys.domain.contract.GradingNodeAddress
 

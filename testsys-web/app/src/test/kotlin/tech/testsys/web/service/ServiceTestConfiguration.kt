@@ -29,12 +29,12 @@ import tech.testsys.infra.grpc.api.GradingNodeRegistryOverview
 import tech.testsys.infra.grpc.api.GradingQueueMonitor
 import tech.testsys.infra.grpc.api.GradingQueueSnapshot
 import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
-import tech.testsys.infra.settings.api.SettingsOverview
-import tech.testsys.infra.settings.api.SettingsPersistence
-import tech.testsys.infra.settings.api.SettingsService
 import tech.testsys.infra.settings.api.SettingsSnapshot
-import tech.testsys.infra.settings.api.SettingsValues
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.catalog.SettingsValues
+import tech.testsys.infra.settings.api.service.SettingsOverview
+import tech.testsys.infra.settings.api.service.SettingsPersistence
+import tech.testsys.infra.settings.api.service.SettingsService
 import java.time.Clock
 import java.time.Instant
 

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import org.springframework.core.env.StandardEnvironment
 import tech.testsys.domain.builder.api.submission
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.GradingAdmission
@@ -66,6 +67,7 @@ internal class GradingCoordinatorTests {
         pollingExecutor = polling.service,
         clock = clock,
         parser = JsonLogParser(),
+        environment = StandardEnvironment(),
         failures = TechnicalFailures(meters),
         metrics = meters,
     )

@@ -8,6 +8,8 @@ dependencies {
     implementation(project(":testsys-domain"))
     implementation(project(":testsys-infra:monitoring"))
     implementation(libs.spring.context)
+    implementation(libs.spring.boot.core)
+    runtimeOnly(libs.kotlin.reflect)
     testImplementation(libs.bundles.test.implementation)
     testRuntimeOnly(libs.bundles.test.runtime)
 }

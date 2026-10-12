@@ -17,20 +17,20 @@ import tech.testsys.infra.grpc.internal.GradingMeterBinder
 import tech.testsys.infra.grpc.internal.GradingNodeManager
 import tech.testsys.infra.grpc.internal.GradingNodeRegistryCoordinator
 import tech.testsys.infra.grpc.internal.GradingPersistenceService
-import tech.testsys.infra.grpc.internal.GradingSettings
+import tech.testsys.infra.grpc.internal.GradingProperties
 import tech.testsys.infra.grpc.internal.GrpcNodeClient
 import tech.testsys.infra.grpc.internal.InternalGrpcApi
 import tech.testsys.infra.grpc.internal.JsonLogParser
 import tech.testsys.infra.grpc.internal.LogParser
 import tech.testsys.infra.grpc.internal.MAX_GRADING_NODE_ADDRESS_LENGTH
 import tech.testsys.infra.grpc.internal.NodeClientFactory
-import tech.testsys.infra.grpc.internal.resolved
 import tech.testsys.infra.monitoring.api.TechnicalFailures
-import tech.testsys.infra.settings.api.GradingNodeStore
 import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.Settings
+import tech.testsys.infra.settings.api.registry.GradingNodeStore
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
+import tech.testsys.infra.settings.api.settingsOf
 import java.time.Clock
-import java.time.Duration
 import java.util.concurrent.Executors
 
 /**
@@ -46,42 +46,18 @@ import java.util.concurrent.Executors
 @PropertySource("classpath:grading-defaults.properties")
 class GrpcConfiguration {
     @Bean
-    internal fun gradingSettings(environment: Environment, runtime: RuntimeSettings? = null): GradingSettings {
-        if (runtime != null) {
-            val defaults = GradingSettings(
-                nodes = environment.nodes(),
-                maxAttempts = 1,
-                totalTimeout = Duration.ofSeconds(1),
-                rpcTimeout = Duration.ofSeconds(1),
-                statusTimeout = Duration.ofSeconds(1),
-                pollInterval = Duration.ofSeconds(1),
-                maxMessageBytes = 1,
-                shouldRecordVideo = false,
-                shouldImportNodes = environment.shouldImportNodes(),
-            )
-            return defaults.resolved(runtime.snapshot())
-        }
-        return GradingSettings(
-            nodes = environment.nodes(),
-            maxAttempts = environment.getRequiredProperty("testsys.grading.max-attempts", Int::class.java),
-            totalTimeout = environment.duration("total-timeout"),
-            rpcTimeout = environment.duration("rpc-timeout"),
-            statusTimeout = environment.duration("status-timeout"),
-            pollInterval = environment.duration("poll-interval"),
-            maxMessageBytes = environment.getRequiredProperty("testsys.grading.max-message-bytes", Int::class.java),
-            shouldRecordVideo = environment.getRequiredProperty("testsys.grading.should-record-video", Boolean::class.java),
-            shouldImportNodes = environment.shouldImportNodes(),
-        )
-    }
+    internal fun gradingSettings(environment: Environment, runtime: RuntimeSettings? = null): Settings<GradingProperties> =
+        settingsOf(GradingProperties::class.java, environment, runtime)
 
     @Bean
-    internal fun nodeClientFactory(settings: GradingSettings): NodeClientFactory =
-        NodeClientFactory { address -> GrpcNodeClient(address, settings) }
+    internal fun nodeClientFactory(settings: Settings<GradingProperties>): NodeClientFactory =
+        NodeClientFactory { address -> GrpcNodeClient(address, settings.current()) }
 
     @Bean(initMethod = "start", destroyMethod = "close")
     internal fun gradingCoordinator(
         persistence: GradingPersistenceService,
-        settings: GradingSettings,
+        settings: Settings<GradingProperties>,
+        environment: Environment,
         parser: LogParser,
         nodeClientFactory: NodeClientFactory,
         runtime: RuntimeSettings? = null,
@@ -89,10 +65,11 @@ class GrpcConfiguration {
         failures: TechnicalFailures? = null,
         metrics: MeterRegistry? = null,
     ): GradingCoordinator {
+        val properties = settings.current()
         val stored = nodeStore?.read()
-        val imports = if (stored != null && settings.shouldImportNodes) startupImports(settings.nodes, stored) else emptyList()
+        val imports = if (stored != null && properties.shouldImportNodes) startupImports(properties.addresses, stored) else emptyList()
         val registry = stored?.withImports(imports)
-            ?: settings.nodes.distinct().map { address -> StoredGradingNode(address, isActive = true) }
+            ?: properties.addresses.distinct().map { address -> StoredGradingNode(address, isActive = true) }
 
         val nodes = GradingNodeManager(nodeClientFactory)
         val coordinator = GradingCoordinator(
@@ -105,6 +82,7 @@ class GrpcConfiguration {
             clock = Clock.systemUTC(),
             parser = parser,
             runtime = runtime,
+            environment = environment,
             failures = failures ?: TechnicalFailures.NONE,
             metrics = metrics ?: CompositeMeterRegistry(),
         )
@@ -128,15 +106,18 @@ class GrpcConfiguration {
     @Bean
     internal fun gradingNodeRegistry(
         coordinator: GradingCoordinator,
-        settings: GradingSettings,
+        settings: Settings<GradingProperties>,
         nodeStore: GradingNodeStore? = null,
         failures: TechnicalFailures? = null,
-    ): GradingNodeRegistry = GradingNodeRegistryCoordinator(
-        coordinator = coordinator,
-        store = nodeStore ?: ConfiguredGradingNodeStore(settings.nodes),
-        configured = settings.nodes,
-        failures = failures ?: TechnicalFailures.NONE,
-    )
+    ): GradingNodeRegistry {
+        val configured = settings.current().addresses
+        return GradingNodeRegistryCoordinator(
+            coordinator = coordinator,
+            store = nodeStore ?: ConfiguredGradingNodeStore(configured),
+            configured = configured,
+            failures = failures ?: TechnicalFailures.NONE,
+        )
+    }
 
     @Bean
     internal fun gradingQueueMonitor(coordinator: GradingCoordinator): GradingQueueMonitor = GradingQueueMonitor(coordinator::queue)
@@ -146,23 +127,6 @@ class GrpcConfiguration {
 
     @Bean
     internal fun logParser(): LogParser = JsonLogParser()
-
-    private fun Environment.nodes(): List<GradingNodeAddress> {
-        val configured = getRequiredProperty("testsys.grading.nodes")
-        if (configured.isBlank()) {
-            return emptyList()
-        }
-
-        return configured.split(',').map { target ->
-            val address = target.trim()
-            require(address.isNotEmpty()) { "testsys.grading.nodes must contain nonblank addresses separated by commas" }
-            GradingNodeAddress(address)
-        }
-    }
-
-    private fun Environment.shouldImportNodes(): Boolean = getRequiredProperty("testsys.grading.import-nodes", Boolean::class.java)
-
-    private fun Environment.duration(name: String): Duration = Duration.parse(getRequiredProperty("testsys.grading.$name"))
 
     /** Plans the registry writes that add absent [configured] nodes and enable inactive ones, in configuration order. */
     private fun startupImports(configured: List<GradingNodeAddress>, stored: List<StoredGradingNode>): List<NodeImport> {

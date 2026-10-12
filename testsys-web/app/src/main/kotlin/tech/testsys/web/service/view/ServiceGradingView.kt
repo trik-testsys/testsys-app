@@ -17,8 +17,8 @@ import tech.testsys.infra.grpc.api.GradingNodeRegistry
 import tech.testsys.infra.grpc.api.GradingNodeRegistryOverview
 import tech.testsys.infra.grpc.api.GradingQueueMonitor
 import tech.testsys.infra.grpc.api.GradingQueueSnapshot
-import tech.testsys.infra.settings.api.SettingsPersistence
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
+import tech.testsys.infra.settings.api.service.SettingsPersistence
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action

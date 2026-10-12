@@ -13,9 +13,9 @@ import org.springframework.core.env.MapPropertySource
 import org.springframework.core.env.StandardEnvironment
 import org.springframework.jdbc.core.JdbcTemplate
 import tech.testsys.infra.database.DatabaseIntegrationTests
-import tech.testsys.infra.settings.api.SettingKey
 import tech.testsys.infra.settings.api.SettingsConfiguration
-import tech.testsys.infra.settings.api.StoredSettings
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.store.StoredSettings
 import java.util.UUID
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executors

@@ -1,4 +1,4 @@
-package tech.testsys.infra.database.api.settings
+package tech.testsys.infra.database.api.registry
 
 import org.springframework.stereotype.Component
 import org.springframework.transaction.PlatformTransactionManager
@@ -9,8 +9,8 @@ import tech.testsys.infra.database.api.transaction.TransactionRetry
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.settings.GradingNodeJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.settings.GradingNodeJpaEntityRepository
-import tech.testsys.infra.settings.api.GradingNodeStore
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.registry.GradingNodeStore
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
 
 /**
  * Checking node registry storage in independent transactions; idempotent writes repeat only database conflicts.

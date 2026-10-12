@@ -2,8 +2,8 @@ package tech.testsys.infra.grpc.api
 
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
-import tech.testsys.infra.settings.api.SettingsPersistence
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
+import tech.testsys.infra.settings.api.service.SettingsPersistence
 
 /**
  * Service registry of checking nodes: durable participation records applied to the running grader.

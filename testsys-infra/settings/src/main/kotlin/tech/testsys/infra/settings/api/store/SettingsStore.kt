@@ -1,4 +1,4 @@
-package tech.testsys.infra.settings.api
+package tech.testsys.infra.settings.api.store
 
 import java.util.UUID
 

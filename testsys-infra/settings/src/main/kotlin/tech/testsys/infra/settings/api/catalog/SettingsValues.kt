@@ -1,4 +1,4 @@
-package tech.testsys.infra.settings.api
+package tech.testsys.infra.settings.api.catalog
 
 import java.time.Duration
 import java.util.Collections
@@ -18,6 +18,9 @@ class SettingsValues(values: Map<SettingKey, String>) {
      * @since %CURRENT_VERSION%
      */
     operator fun get(key: SettingKey): String = values.getValue(key)
+
+    /** Returns the present values keyed by their Environment property names. */
+    internal fun properties(): Map<String, String> = values.mapKeys { (key, _) -> key.property }
 
     /**
      * Returns an integer setting.

@@ -2,27 +2,36 @@ package tech.testsys.bootstrap
 
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import org.springframework.beans.factory.getBeanProvider
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Primary
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.datasource.DriverManagerDataSource
+import tech.testsys.domain.builder.api.test
+import tech.testsys.domain.builder.api.testData
+import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
-import tech.testsys.infra.database.api.persistence.FileStorageCleanupSettings
+import tech.testsys.domain.model.task.DiagnosticData
+import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.infra.database.api.persistence.FileStorageCleanupProperties
 import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
-import tech.testsys.infra.settings.api.SettingsChangeResult
-import tech.testsys.infra.settings.api.SettingsService
-import tech.testsys.infra.settings.api.SettingsStore
+import tech.testsys.infra.settings.api.Settings
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.service.SettingsChangeResult
+import tech.testsys.infra.settings.api.service.SettingsService
+import tech.testsys.infra.settings.api.store.SettingsStore
 import tech.testsys.operation.config.CompetitionConfig
 import tech.testsys.web.app.PostgresTestContainer
 import tech.testsys.web.app.service.user.UserService
 import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
 class RuntimeSettingsRecoveryTests {
@@ -48,16 +57,23 @@ class RuntimeSettingsRecoveryTests {
                 val service = runtime.infrastructure.getBean(SettingsService::class.java)
                 val users = runtime.mainWeb.getBean(UserService::class.java)
                 val requests = runtime.infrastructure.getBean(RegistrationRequestRepository::class.java)
+                val diagnostics = runtime.infrastructure.getBean(PolygonDiagnostics::class.java)
+                val polygon = polygon("<timelimit value='11'/>")
                 val oldId = users.requestRegistration("settings-integration-old@example.test")
                 val oldRequest = checkNotNull(requests.findById(oldId))
+                val oldReports = diagnostics.diagnose(polygon).reports.map { report -> report.data }
                 val result = service.change(
                     service.overview().revision,
                     mapOf(
                         SettingKey.MaxParticipants to "7",
                         SettingKey.MaxConfirmationAttempts to "2",
                         SettingKey.ConfirmationCodeLifetime to "PT1M",
+                        SettingKey.MaxTimeLimitMillis to "10",
                     ),
                 )
+                val newReports = diagnostics.diagnose(polygon).reports.map { report -> report.data }
+                assertFalse(oldReports.any { data -> data is DiagnosticData.ExcessiveTimeLimit })
+                assertTrue(DiagnosticData.ExcessiveTimeLimit(value = 11, maximum = 10) in newReports)
                 users.requestRegistration("settings-integration-old@example.test")
                 val newId = users.requestRegistration("settings-integration-new@example.test")
                 assertEquals(oldRequest.data, checkNotNull(requests.findById(oldId)).data)
@@ -124,12 +140,23 @@ class RuntimeSettingsRecoveryTests {
             }
 
             TestSysRuntime.start(invalidEnvironment, arrayOf(RuntimeSettingsTestConfiguration::class.java)).use { runtime ->
-                val actual = runtime.infrastructure.getBean(FileStorageCleanupSettings::class.java)
+                val actual = runtime.infrastructure.getBeanProvider<Settings<FileStorageCleanupProperties>>().getObject().current()
 
-                assertEquals(FileStorageCleanupSettings(Duration.ofHours(2), 3), actual)
+                assertEquals(FileStorageCleanupProperties(Duration.ofHours(2), 3), actual)
             }
         } finally {
             jdbc.execute("truncate table ts_runtime_settings")
+        }
+    }
+
+    private fun polygon(constraints: String): tech.testsys.domain.model.task.Test = test {
+        id = 1
+        createdAt = Instant.EPOCH
+        data = testData {
+            name = "Polygon"
+            description = ""
+            versionBucket = VersionBucket(UUID(0, 1))
+            file("world.xml", "<root><world/><constraints>$constraints</constraints></root>".toByteArray())
         }
     }
 }

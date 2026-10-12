@@ -8,7 +8,8 @@ import org.springframework.core.env.Environment
 import tech.testsys.infra.diagnostics.internal.DiagnosticsProperties
 import tech.testsys.infra.diagnostics.internal.InternalDiagnosticsApi
 import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
+import tech.testsys.infra.settings.api.Settings
+import tech.testsys.infra.settings.api.settingsOf
 
 /**
  * Registers the synchronous polygon adapter and its application configuration.
@@ -21,13 +22,6 @@ import tech.testsys.infra.settings.api.SettingKey
 @OptIn(InternalDiagnosticsApi::class)
 class DiagnosticsConfiguration {
     @Bean
-    internal fun diagnosticsProperties(environment: Environment, runtime: RuntimeSettings? = null): DiagnosticsProperties {
-        val values = runtime?.snapshot()?.values
-        return DiagnosticsProperties(
-            maxTimeLimitMillis = values?.long(SettingKey.MaxTimeLimitMillis)
-                ?: environment.getRequiredProperty("testsys.diagnostics.max-time-limit-millis", Long::class.java),
-            scorePrefix = values?.get(SettingKey.ScorePrefix)
-                ?: environment.getRequiredProperty("testsys.diagnostics.score-prefix"),
-        )
-    }
+    internal fun diagnosticsSettings(environment: Environment, runtime: RuntimeSettings? = null): Settings<DiagnosticsProperties> =
+        settingsOf(DiagnosticsProperties::class.java, environment, runtime)
 }

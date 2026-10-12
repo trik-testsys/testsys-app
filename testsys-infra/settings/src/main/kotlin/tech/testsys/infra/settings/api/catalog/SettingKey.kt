@@ -1,4 +1,4 @@
-package tech.testsys.infra.settings.api
+package tech.testsys.infra.settings.api.catalog
 
 /**
  * Closed catalog of persisted settings; durations use ISO-8601 and strings retain whitespace.

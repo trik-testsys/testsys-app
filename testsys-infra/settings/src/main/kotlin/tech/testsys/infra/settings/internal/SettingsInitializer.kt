@@ -3,9 +3,9 @@ package tech.testsys.infra.settings.internal
 import org.springframework.core.env.Environment
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
 import tech.testsys.infra.settings.api.SettingsSnapshot
-import tech.testsys.infra.settings.api.StoredSettings
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.store.StoredSettings
 
 @InternalSettingsApi
 internal object SettingsInitializer {

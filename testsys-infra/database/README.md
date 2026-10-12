@@ -20,6 +20,8 @@
 | `api/persistence/adapter`     | Адаптеры портов хранения `XPersistenceAdapter`                                             | 9         |
 | `api/persistence`             | `FileDataStorage` — хранение файлов, `FileSystemBlobStorage` — содержимое файлов на диске  | —         |
 | `api/transaction`             | Повтор транзакций при конфликте, см. раздел [«Транзакции и согласованность»](#транзакции-и-согласованность) | — |
+| `api/settings`                | `DatabaseSettingsStore` — хранение служебных настроек                                      | —         |
+| `api/registry`                | `DatabaseGradingNodeStore` — хранение реестра Проверяющих узлов                            | —         |
 | `internal/jpa/id`             | Генератор идентификаторов                                                                  | —         |
 | `internal/utils`              | Общие помощники: `syncJoinTable`, `findLinkedIds`, `findAllInChunks`, `findAllByIdOrError`, `requireId`, `requireVersion`, `findByIdOrError`, `populateFields` | —         |
 
@@ -344,6 +346,11 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 | `testsys.file-storage.cleanup.minimum-age` | `24h` | Минимальное время после изменения физического файла, положительная длительность |
 | `testsys.file-storage.cleanup.batch-size` | `500` | Максимальный размер пакета, положительное целое число |
 
+`DatabaseConfiguration` объявляет `Settings<FileStorageCleanupProperties>`, а `FileStorageCleanup` один раз в начале
+`run()` получает из него оба значения. Возраст принимает ISO-8601 и единицы Spring, например `24h`.
+Неверная настройка прерывает запуск контекста. Источники значений описаны в
+[settings](../settings/README.md#типизированные-значения).
+
 Проход удаляет строки `ts_file_data` без владельцев независимо от времени создания.
 Для физических файлов он фиксирует один порог времени и удаляет только файлы со временем изменения строго раньше
 этого порога. Момент потери владельца не учитывается.
@@ -557,7 +564,6 @@ Spring-контекст через `@ServiceConnection`.
 и связей у таблицы нет. `set_key` уникален; `revision` растёт при каждой записи, `change_id` идентифицирует
 commit. Чтение и CAS-запись выполняются в завершённых `REQUIRES_NEW` транзакциях. Повтор охватывает только
 работу с БД. Полный протокол компенсации и восстановления — в [settings](../settings/README.md).
-Явный проход очистки фиксирует возраст файлов и размер пакета в начале `run()` для всех своих пакетов.
 
 `DatabaseGradingNodeStore` хранит реестр Проверяющих узлов в `ts_grading_node`: адрес и `is_active`, без доменных
 сущностей и связей. Ограничение `uk_ts_grading_node_address` запрещает повтор адреса. Каждая операция выполняется

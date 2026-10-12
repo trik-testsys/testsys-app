@@ -8,7 +8,7 @@ import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.infra.grpc.api.GradingNodeChangeResult
 import tech.testsys.infra.grpc.api.GradingNodeRegistry
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
 import tech.testsys.web.app.PostgresTestContainer
 
 class GradingNodeRegistryRecoveryTests {

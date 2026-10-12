@@ -1,13 +1,16 @@
 package tech.testsys.infra.diagnostics.internal
 
+import tech.testsys.infra.settings.api.SettingsProperties
+
 /**
- * Application configuration of polygon diagnostics.
+ * Application configuration of polygon diagnostics, bound from `testsys.diagnostics`.
  *
  * @property maxTimeLimitMillis the inclusive upper time limit in milliseconds.
  * @property scorePrefix the nonblank text identifying a score output message.
  * @since %CURRENT_VERSION%
  */
 @InternalDiagnosticsApi
+@SettingsProperties("testsys.diagnostics")
 class DiagnosticsProperties(
     val maxTimeLimitMillis: Long,
     val scorePrefix: String,

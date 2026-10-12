@@ -38,6 +38,7 @@ kotlin-noarg = { module = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "ko
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 
 spring-boot-bom = { module = "org.springframework.boot:spring-boot-dependencies", version.ref = "spring-boot" }
+spring-boot-core = { module = "org.springframework.boot:spring-boot" }
 spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
 spring-boot-starter-liquibase = { module = "org.springframework.boot:spring-boot-starter-liquibase" }
 spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }

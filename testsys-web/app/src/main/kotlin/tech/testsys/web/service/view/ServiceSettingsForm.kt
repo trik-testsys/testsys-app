@@ -1,8 +1,8 @@
 package tech.testsys.web.service.view
 
 import com.vaadin.flow.data.binder.Binder
-import tech.testsys.infra.settings.api.SettingKey
 import tech.testsys.infra.settings.api.SettingsSnapshot
+import tech.testsys.infra.settings.api.catalog.SettingKey
 import tech.testsys.web.components.forms.ValueInput
 
 internal class ServiceSettingsForm(private val initial: SettingsSnapshot) {

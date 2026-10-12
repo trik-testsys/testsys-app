@@ -6,12 +6,12 @@ import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
-import tech.testsys.infra.settings.api.SettingKind
-import tech.testsys.infra.settings.api.SettingsChangeResult
-import tech.testsys.infra.settings.api.SettingsPersistence
-import tech.testsys.infra.settings.api.SettingsService
 import tech.testsys.infra.settings.api.SettingsSnapshot
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.catalog.SettingKind
+import tech.testsys.infra.settings.api.service.SettingsChangeResult
+import tech.testsys.infra.settings.api.service.SettingsPersistence
+import tech.testsys.infra.settings.api.service.SettingsService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.iconAction
 import tech.testsys.web.components.core.IconName

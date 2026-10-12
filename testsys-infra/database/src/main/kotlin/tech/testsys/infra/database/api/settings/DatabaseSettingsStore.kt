@@ -9,8 +9,8 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.settings.RuntimeSettingsJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.settings.RuntimeSettingsJpaEntityRepository
 import tech.testsys.infra.database.internal.settings.SettingsPayloadCodec
-import tech.testsys.infra.settings.api.SettingsStore
-import tech.testsys.infra.settings.api.StoredSettings
+import tech.testsys.infra.settings.api.store.SettingsStore
+import tech.testsys.infra.settings.api.store.StoredSettings
 import java.util.UUID
 
 /**

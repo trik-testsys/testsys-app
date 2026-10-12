@@ -1,4 +1,7 @@
-package tech.testsys.infra.settings.api
+package tech.testsys.infra.settings.api.service
+
+import tech.testsys.infra.settings.api.SettingsSnapshot
+import tech.testsys.infra.settings.api.catalog.SettingKey
 
 /**
  * Current service-page state; an uncertain durable outcome locks further edits until restart.

@@ -5,7 +5,6 @@ import org.hibernate.boot.model.naming.PhysicalNamingStrategy
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.config.BeanDefinition
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.boot.convert.DurationStyle
 import org.springframework.boot.persistence.autoconfigure.EntityScan
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
@@ -19,7 +18,7 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor
 import org.springframework.transaction.interceptor.TransactionAttributeSource
 import org.springframework.transaction.support.TransactionOperations
-import tech.testsys.infra.database.api.persistence.FileStorageCleanupSettings
+import tech.testsys.infra.database.api.persistence.FileStorageCleanupProperties
 import tech.testsys.infra.database.api.persistence.FileStoragePaths
 import tech.testsys.infra.database.api.transaction.RetryingTransactionInterceptor
 import tech.testsys.infra.database.api.transaction.RetryingTransactionOperations
@@ -31,7 +30,8 @@ import tech.testsys.infra.database.internal.persistence.FileStorageCleanupReposi
 import tech.testsys.infra.database.internal.persistence.FileSystemBlobInventory
 import tech.testsys.infra.monitoring.api.TestSysMetrics
 import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
+import tech.testsys.infra.settings.api.Settings
+import tech.testsys.infra.settings.api.settingsOf
 import java.time.Clock
 
 /**
@@ -49,20 +49,14 @@ import java.time.Clock
 class DatabaseConfiguration {
 
     /**
-     * Resolves cleanup defaults independently, or uses the restored shared values in the full application.
+     * Binds the cleanup settings at creation, then reads them from the current snapshot of the shared holder,
+     * or from [environment] without the holder.
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun fileStorageCleanupSettings(environment: Environment, runtime: RuntimeSettings? = null): FileStorageCleanupSettings {
-        val values = runtime?.snapshot()?.values
-        return FileStorageCleanupSettings(
-            minimumAge = values?.duration(SettingKey.CleanupMinimumAge)
-                ?: DurationStyle.detectAndParse(environment.getRequiredProperty("testsys.file-storage.cleanup.minimum-age")),
-            batchSize = values?.int(SettingKey.CleanupBatchSize)
-                ?: environment.getRequiredProperty("testsys.file-storage.cleanup.batch-size", Int::class.java),
-        )
-    }
+    fun fileStorageCleanupSettings(environment: Environment, runtime: RuntimeSettings? = null): Settings<FileStorageCleanupProperties> =
+        settingsOf(FileStorageCleanupProperties::class.java, environment, runtime)
 
     /**
      * Dedicated UTC clock for file cleanup, selected explicitly so application clocks remain unambiguous.

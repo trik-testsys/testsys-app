@@ -44,8 +44,8 @@ import tech.testsys.infra.grpc.api.GradingNodeRegistryOverview
 import tech.testsys.infra.grpc.api.GradingNodeRejection
 import tech.testsys.infra.grpc.api.GradingQueueMonitor
 import tech.testsys.infra.grpc.api.GradingQueueSnapshot
-import tech.testsys.infra.settings.api.SettingsPersistence
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
+import tech.testsys.infra.settings.api.service.SettingsPersistence
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.service.SERVICE_TEST_SECRET

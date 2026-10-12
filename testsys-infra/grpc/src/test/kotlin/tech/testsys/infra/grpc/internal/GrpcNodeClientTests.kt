@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
+import org.springframework.core.env.StandardEnvironment
 import tech.testsys.domain.contract.GradingAdmission
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
@@ -66,6 +67,7 @@ class GrpcNodeClientTests {
             pollingExecutor = polling.service,
             clock = Clock.fixed(Instant.EPOCH, ZoneOffset.UTC),
             parser = JsonLogParser(),
+            environment = StandardEnvironment(),
         )
         val grader = BalancingGrader(coordinator)
         val callbacks = mutableListOf<Long>()

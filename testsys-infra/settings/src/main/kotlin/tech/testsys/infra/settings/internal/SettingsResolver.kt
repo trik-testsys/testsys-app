@@ -1,8 +1,8 @@
 package tech.testsys.infra.settings.internal
 
 import org.springframework.core.env.Environment
-import tech.testsys.infra.settings.api.SettingKey
-import tech.testsys.infra.settings.api.SettingsValues
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.catalog.SettingsValues
 import java.time.Duration
 
 @InternalSettingsApi

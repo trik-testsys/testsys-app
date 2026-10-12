@@ -15,9 +15,9 @@ import tech.testsys.infra.grpc.api.GradingNodeRegistry
 import tech.testsys.infra.grpc.api.GradingNodeRegistryOverview
 import tech.testsys.infra.grpc.api.GradingNodeRejection
 import tech.testsys.infra.monitoring.api.TechnicalFailures
-import tech.testsys.infra.settings.api.GradingNodeStore
-import tech.testsys.infra.settings.api.SettingsPersistence
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.registry.GradingNodeStore
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
+import tech.testsys.infra.settings.api.service.SettingsPersistence
 import java.util.concurrent.atomic.AtomicReference
 
 /** Maximum length of a checking node address accepted by the registry. */

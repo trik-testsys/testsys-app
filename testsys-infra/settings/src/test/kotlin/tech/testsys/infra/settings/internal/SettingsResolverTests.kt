@@ -5,7 +5,7 @@ package tech.testsys.infra.settings.internal
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import tech.testsys.infra.settings.api.SettingKey
+import tech.testsys.infra.settings.api.catalog.SettingKey
 
 class SettingsResolverTests {
     @Test

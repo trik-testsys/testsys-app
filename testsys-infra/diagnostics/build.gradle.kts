@@ -12,5 +12,6 @@ dependencies {
     implementation(libs.ksoup)
     implementation(libs.spring.context)
     testImplementation(libs.bundles.test.implementation)
+    testImplementation(libs.spring.boot.core)
     testRuntimeOnly(libs.bundles.test.runtime)
 }

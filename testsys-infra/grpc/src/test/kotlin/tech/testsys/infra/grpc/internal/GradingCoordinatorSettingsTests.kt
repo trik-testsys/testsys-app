@@ -13,16 +13,18 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.env.StandardEnvironment
+import org.springframework.core.io.support.ResourcePropertySource
 import tech.testsys.domain.contract.GradingAdmission
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
 import tech.testsys.domain.model.task.GradingResult
 import tech.testsys.domain.model.task.SubmissionStatus
-import tech.testsys.infra.settings.api.SettingKey
-import tech.testsys.infra.settings.api.SettingsChangeResult
 import tech.testsys.infra.settings.api.SettingsConfiguration
-import tech.testsys.infra.settings.api.SettingsStore
-import tech.testsys.infra.settings.api.StoredSettings
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.service.SettingsChangeResult
+import tech.testsys.infra.settings.api.settingsOf
+import tech.testsys.infra.settings.api.store.SettingsStore
+import tech.testsys.infra.settings.api.store.StoredSettings
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -46,6 +48,7 @@ internal class GradingCoordinatorSettingsTests {
         }
     }
     private val environment = StandardEnvironment().apply {
+        propertySources.addFirst(ResourcePropertySource("classpath:grading-defaults.properties"))
         propertySources.addFirst(
             MapPropertySource(
                 "settings-test",
@@ -70,13 +73,14 @@ internal class GradingCoordinatorSettingsTests {
     private val coordinator = GradingCoordinator(
         persistence = repository.persistence,
         nodes = GradingNodeManager(NodeClientFactory { node }),
-        settings = settings,
+        settings = settingsOf(GradingProperties::class.java, environment, runtime),
         executor = queue.service,
         senderExecutor = sender,
         pollingExecutor = polling.service,
         clock = clock,
         parser = JsonLogParser(),
         runtime = runtime,
+        environment = environment,
     )
 
     @AfterEach

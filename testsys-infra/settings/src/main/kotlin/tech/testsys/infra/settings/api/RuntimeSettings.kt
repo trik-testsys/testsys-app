@@ -5,16 +5,6 @@ import tech.testsys.infra.settings.internal.InternalSettingsApi
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Complete effective settings publication, including the transport limit fixed at process startup.
- *
- * @property revision the durable revision known at publication.
- * @property values the saved, resolved values.
- * @property activeMaxMessageBytes the inbound limit used by every channel in this process.
- * @since %CURRENT_VERSION%
- */
-data class SettingsSnapshot(val revision: Long, val values: SettingsValues, val activeMaxMessageBytes: Int)
-
-/**
  * Shared settings holder; readers capture one snapshot at their documented operation boundary.
  * Resource registration and updates share a lock so shutdown cannot race a prepared change.
  *

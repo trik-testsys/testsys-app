@@ -3,14 +3,14 @@ package tech.testsys.infra.settings.internal
 import org.apache.commons.logging.LogFactory
 import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
-import tech.testsys.infra.settings.api.SettingsChangeResult
-import tech.testsys.infra.settings.api.SettingsOverview
-import tech.testsys.infra.settings.api.SettingsPersistence
-import tech.testsys.infra.settings.api.SettingsService
 import tech.testsys.infra.settings.api.SettingsSnapshot
-import tech.testsys.infra.settings.api.SettingsStore
-import tech.testsys.infra.settings.api.StoredSettings
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.service.SettingsChangeResult
+import tech.testsys.infra.settings.api.service.SettingsOverview
+import tech.testsys.infra.settings.api.service.SettingsPersistence
+import tech.testsys.infra.settings.api.service.SettingsService
+import tech.testsys.infra.settings.api.store.SettingsStore
+import tech.testsys.infra.settings.api.store.StoredSettings
 import java.time.DateTimeException
 import java.util.UUID
 

@@ -1,8 +1,8 @@
 package tech.testsys.infra.grpc.internal
 
 import tech.testsys.domain.contract.GradingNodeAddress
-import tech.testsys.infra.settings.api.GradingNodeStore
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.registry.GradingNodeStore
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
 import java.util.TreeMap
 
 /** In-memory registry of a grader without durable storage: configured nodes participate, changes last until restart. */

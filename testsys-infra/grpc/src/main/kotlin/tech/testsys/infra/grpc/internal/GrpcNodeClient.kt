@@ -48,9 +48,9 @@ internal class GrpcNodeClient(private val channel: ManagedChannel, private val s
     // Status code of the latest logged poll failure: the same code logs at DEBUG until a poll succeeds.
     private val loggedPollFailure = AtomicReference<Status.Code?>()
 
-    constructor(address: GradingNodeAddress, settings: GradingSettings) : this(
-        ManagedChannelBuilder.forTarget(address.target).usePlaintext().maxInboundMessageSize(settings.maxMessageBytes).build(),
-        settings.statusTimeout,
+    constructor(address: GradingNodeAddress, properties: GradingProperties) : this(
+        ManagedChannelBuilder.forTarget(address.target).usePlaintext().maxInboundMessageSize(properties.maxMessageBytes).build(),
+        properties.statusTimeout,
     )
 
     override fun poll(onStatus: (GradingNodeStatus) -> Unit) = poll(statusTimeout, onStatus)

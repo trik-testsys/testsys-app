@@ -18,6 +18,7 @@ dependencies {
     implementation(libs.grading.protos)
     implementation(libs.grpc.okhttp)
     implementation(libs.spring.context)
+    implementation(libs.spring.boot.core)
     implementation(libs.spring.tx)
     implementation(libs.jackson.databind)
     testImplementation(libs.grpc.inprocess)

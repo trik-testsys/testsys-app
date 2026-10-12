@@ -1,23 +1,16 @@
 package tech.testsys.web.app.config
 
-import io.mockk.every
-import io.mockk.mockk
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
-import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingsSnapshot
-import tech.testsys.infra.settings.api.SettingsValues
+import tech.testsys.infra.settings.api.Settings
 import java.util.concurrent.atomic.AtomicReference
 
-class OperationSettingsSnapshotTests {
-    private val initial = SettingsSnapshot(0, SettingsValues(emptyMap()), 100)
-    private val next = SettingsSnapshot(1, SettingsValues(emptyMap()), 100)
-    private val current = AtomicReference(initial)
-    private val runtime = mockk<RuntimeSettings> { every { snapshot() } answers { current.get() } }
-    private val snapshots = OperationSettingsSnapshot(runtime)
+class TransactionSettingsTests {
+    private val current = AtomicReference(0)
+    private val settings = TransactionSettings(Int::class.javaObjectType, Settings { current.get() })
 
     @AfterEach
     fun cleanUp() {
@@ -25,28 +18,28 @@ class OperationSettingsSnapshotTests {
     }
 
     @Test
-    fun `should retain one revision in a transaction and capture a new one on retry`() {
+    fun `should retain one value in a transaction and capture a new one on retry`() {
         TransactionSynchronizationManager.initSynchronization()
-        assertEquals(0, snapshots.current().revision)
-        current.set(next)
-        assertEquals(0, snapshots.current().revision)
+        assertEquals(0, settings.current())
+        current.set(1)
+        assertEquals(0, settings.current())
         finish()
 
         TransactionSynchronizationManager.initSynchronization()
 
-        assertEquals(1, snapshots.current().revision)
+        assertEquals(1, settings.current())
     }
 
     @Test
-    fun `should suspend the outer snapshot and restore it after an independent transaction`() {
+    fun `should suspend the outer value and restore it after an independent transaction`() {
         TransactionSynchronizationManager.initSynchronization()
-        snapshots.current()
+        settings.current()
         val outer = TransactionSynchronizationManager.getSynchronizations()
         outer.forEach(TransactionSynchronization::suspend)
         TransactionSynchronizationManager.clearSynchronization()
-        current.set(next)
+        current.set(1)
         TransactionSynchronizationManager.initSynchronization()
-        assertEquals(1, snapshots.current().revision)
+        assertEquals(1, settings.current())
         finish()
         TransactionSynchronizationManager.initSynchronization()
         outer.forEach { synchronization ->
@@ -54,15 +47,15 @@ class OperationSettingsSnapshotTests {
             TransactionSynchronizationManager.registerSynchronization(synchronization)
         }
 
-        assertEquals(0, snapshots.current().revision)
+        assertEquals(0, settings.current())
     }
 
     @Test
-    fun `should capture current values on each call outside a transaction`() {
-        assertEquals(0, snapshots.current().revision)
-        current.set(next)
+    fun `should capture the current value on each call outside a transaction`() {
+        assertEquals(0, settings.current())
+        current.set(1)
 
-        assertEquals(1, snapshots.current().revision)
+        assertEquals(1, settings.current())
     }
 
     private fun finish() {

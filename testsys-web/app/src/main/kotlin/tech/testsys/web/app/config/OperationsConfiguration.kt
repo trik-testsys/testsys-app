@@ -38,7 +38,8 @@ import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.RuntimeSettings
-import tech.testsys.infra.settings.api.SettingKey
+import tech.testsys.infra.settings.api.Settings
+import tech.testsys.infra.settings.api.settingsOf
 import tech.testsys.operation.TaskValidationDispatcher
 import tech.testsys.operation.TaskValidationOperations
 import tech.testsys.operation.config.ClassInviteConfig
@@ -99,29 +100,49 @@ class OperationsConfiguration {
     }
 
     /**
-     * Confirmation code lifetime and attempts from the runtime snapshot captured for the current transaction.
+     * Email confirmation settings from the current snapshot of [runtime], retained for the transaction that reads them
+     * first so that the lifetime and attempts form one pair.
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun emailConfirmationConfig(runtime: RuntimeSettings): EmailConfirmationConfig {
-        val snapshots = OperationSettingsSnapshot(runtime)
+    fun emailConfirmationSettings(environment: Environment, runtime: RuntimeSettings): Settings<EmailConfirmationProperties> {
+        val type = EmailConfirmationProperties::class.java
+        return TransactionSettings(type, settingsOf(type, environment, runtime))
+    }
+
+    /**
+     * Confirmation code lifetime and attempts from [settings].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun emailConfirmationConfig(settings: Settings<EmailConfirmationProperties>): EmailConfirmationConfig {
         return object : EmailConfirmationConfig {
-            override val confirmationCodeLifetime get() = snapshots.current().values.duration(SettingKey.ConfirmationCodeLifetime)
-            override val maxConfirmationAttempts get() = snapshots.current().values.int(SettingKey.MaxConfirmationAttempts)
+            override val confirmationCodeLifetime get() = settings.current().confirmationCodeLifetime
+            override val maxConfirmationAttempts get() = settings.current().maxConfirmationAttempts
         }
     }
 
     /**
-     * Community invite validity from the runtime snapshot and a static refresh period from [environment].
+     * Community invite settings from the current snapshot of [runtime].
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun communityInviteConfig(environment: Environment, runtime: RuntimeSettings): CommunityInviteConfig {
+    fun communityInviteSettings(environment: Environment, runtime: RuntimeSettings): Settings<CommunityInviteProperties> =
+        settingsOf(CommunityInviteProperties::class.java, environment, runtime)
+
+    /**
+     * Community invite validity from [settings] and a static refresh period from [environment].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun communityInviteConfig(environment: Environment, settings: Settings<CommunityInviteProperties>): CommunityInviteConfig {
         val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.community-invite.refresh-period"))
         return object : CommunityInviteConfig {
-            override val ttl get() = runtime.snapshot().values.duration(SettingKey.CommunityInviteTtl)
+            override val ttl get() = settings.current().ttl
             override val refreshPeriod = refreshPeriod
         }
     }
@@ -435,27 +456,45 @@ class OperationsConfiguration {
     )
 
     /**
-     * Participant limit of competitions from the current runtime snapshot.
+     * Competition settings from the current snapshot of [runtime].
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun competitionConfig(runtime: RuntimeSettings): CompetitionConfig {
+    fun competitionSettings(environment: Environment, runtime: RuntimeSettings): Settings<CompetitionProperties> =
+        settingsOf(CompetitionProperties::class.java, environment, runtime)
+
+    /**
+     * Participant limit of competitions from [settings].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun competitionConfig(settings: Settings<CompetitionProperties>): CompetitionConfig {
         return object : CompetitionConfig {
-            override val maxParticipants get() = runtime.snapshot().values.int(SettingKey.MaxParticipants)
+            override val maxParticipants get() = settings.current().maxParticipants
         }
     }
 
     /**
-     * Class invite validity from the runtime snapshot and a static refresh period from [environment].
+     * Class invite settings from the current snapshot of [runtime].
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun classInviteConfig(environment: Environment, runtime: RuntimeSettings): ClassInviteConfig {
+    fun classInviteSettings(environment: Environment, runtime: RuntimeSettings): Settings<ClassInviteProperties> =
+        settingsOf(ClassInviteProperties::class.java, environment, runtime)
+
+    /**
+     * Class invite validity from [settings] and a static refresh period from [environment].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun classInviteConfig(environment: Environment, settings: Settings<ClassInviteProperties>): ClassInviteConfig {
         val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.class-invite.refresh-period"))
         return object : ClassInviteConfig {
-            override val ttl get() = runtime.snapshot().values.duration(SettingKey.ClassInviteTtl)
+            override val ttl get() = settings.current().ttl
             override val refreshPeriod = refreshPeriod
         }
     }

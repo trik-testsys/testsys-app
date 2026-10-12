@@ -15,9 +15,9 @@ import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
 import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.monitoring.api.TestSysMetrics
-import tech.testsys.infra.settings.api.SettingKey
-import tech.testsys.infra.settings.api.SettingsChangeResult
-import tech.testsys.infra.settings.api.SettingsPersistence
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.service.SettingsChangeResult
+import tech.testsys.infra.settings.api.service.SettingsPersistence
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors

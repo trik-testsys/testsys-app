@@ -16,20 +16,28 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.springframework.core.convert.ConversionFailedException
+import org.springframework.boot.context.properties.bind.BindException
+import org.springframework.core.NestedExceptionUtils
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.env.StandardEnvironment
 import org.springframework.core.env.SystemEnvironmentPropertySource
 import org.springframework.core.io.support.ResourcePropertySource
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.infra.grpc.internal.FakeNode
+import tech.testsys.infra.grpc.internal.GradingProperties
 import tech.testsys.infra.grpc.internal.InternalGrpcApi
 import tech.testsys.infra.grpc.internal.NodeClientFactory
-import tech.testsys.infra.grpc.internal.settings
+import tech.testsys.infra.grpc.internal.nodeSettings
 import tech.testsys.infra.monitoring.api.TestSysMetrics
-import tech.testsys.infra.settings.api.GradingNodeStore
-import tech.testsys.infra.settings.api.StoredGradingNode
+import tech.testsys.infra.settings.api.RuntimeSettings
+import tech.testsys.infra.settings.api.SettingsSnapshot
+import tech.testsys.infra.settings.api.catalog.SettingKey
+import tech.testsys.infra.settings.api.catalog.SettingsValues
+import tech.testsys.infra.settings.api.registry.GradingNodeStore
+import tech.testsys.infra.settings.api.registry.StoredGradingNode
+import java.time.Duration
 
 internal class GrpcConfigurationTests {
     private val configuration = GrpcConfiguration()
@@ -41,25 +49,25 @@ internal class GrpcConfigurationTests {
     inner class GradingSettingsTests {
         @Test
         fun `should enable video recording from the module defaults`() {
-            val settings = configuration.gradingSettings(environment)
+            val properties = configuration.gradingSettings(environment).current()
 
-            assertTrue(settings.shouldRecordVideo)
+            assertTrue(properties.shouldRecordVideo)
         }
 
         @Test
         fun `should disable video recording when the environment overrides its default`() {
             environment.propertySources.addFirst(MapPropertySource("override", mapOf("testsys.grading.should-record-video" to "false")))
 
-            val settings = configuration.gradingSettings(environment)
+            val properties = configuration.gradingSettings(environment).current()
 
-            assertFalse(settings.shouldRecordVideo)
+            assertFalse(properties.shouldRecordVideo)
         }
 
         @Test
         fun `should configure no nodes from the module defaults`() {
-            val settings = configuration.gradingSettings(environment)
+            val properties = configuration.gradingSettings(environment).current()
 
-            assertEquals(emptyList<GradingNodeAddress>(), settings.nodes)
+            assertEquals(emptyList<GradingNodeAddress>(), properties.addresses)
         }
 
         @ParameterizedTest
@@ -67,25 +75,25 @@ internal class GrpcConfigurationTests {
         fun `should configure no nodes when the setting is blank`(value: String) {
             overrideNodes(value)
 
-            val settings = configuration.gradingSettings(environment)
+            val properties = configuration.gradingSettings(environment).current()
 
-            assertEquals(emptyList<GradingNodeAddress>(), settings.nodes)
+            assertEquals(emptyList<GradingNodeAddress>(), properties.addresses)
         }
 
         @Test
         fun `should configure a single node from an environment override`() {
             overrideNodes("grader:50051")
 
-            val settings = configuration.gradingSettings(environment)
+            val properties = configuration.gradingSettings(environment).current()
 
-            assertEquals(listOf(GradingNodeAddress("grader:50051")), settings.nodes)
+            assertEquals(listOf(GradingNodeAddress("grader:50051")), properties.addresses)
         }
 
         @Test
         fun `should trim multiple addresses without changing grpc targets`() {
             overrideNodes(" grader-1:50051, dns:///grader-2:50051 , [::1]:50051 ")
 
-            val settings = configuration.gradingSettings(environment)
+            val properties = configuration.gradingSettings(environment).current()
 
             assertEquals(
                 listOf(
@@ -93,7 +101,7 @@ internal class GrpcConfigurationTests {
                     GradingNodeAddress("dns:///grader-2:50051"),
                     GradingNodeAddress("[::1]:50051"),
                 ),
-                settings.nodes,
+                properties.addresses,
             )
         }
 
@@ -103,9 +111,9 @@ internal class GrpcConfigurationTests {
                 SystemEnvironmentPropertySource("testEnvironment", mapOf("TESTSYS_GRADING_NODES" to "grader-1:50051,grader-2:50051")),
             )
 
-            val settings = configuration.gradingSettings(environment)
+            val properties = configuration.gradingSettings(environment).current()
 
-            assertEquals(listOf(GradingNodeAddress("grader-1:50051"), GradingNodeAddress("grader-2:50051")), settings.nodes)
+            assertEquals(listOf(GradingNodeAddress("grader-1:50051"), GradingNodeAddress("grader-2:50051")), properties.addresses)
         }
 
         @ParameterizedTest
@@ -113,16 +121,16 @@ internal class GrpcConfigurationTests {
         fun `should reject an empty address in a nonempty node list`(value: String) {
             overrideNodes(value)
 
-            val error = assertThrows<IllegalArgumentException> { configuration.gradingSettings(environment) }
+            val error = assertThrows<BindException> { configuration.gradingSettings(environment) }
 
-            assertTrue(error.message.orEmpty().contains("testsys.grading.nodes"))
+            assertTrue(NestedExceptionUtils.getRootCause(error)?.message.orEmpty().contains("testsys.grading.nodes"))
         }
 
         @Test
         fun `should not import nodes by default`() {
-            val settings = configuration.gradingSettings(environment)
+            val properties = configuration.gradingSettings(environment).current()
 
-            assertFalse(settings.shouldImportNodes)
+            assertFalse(properties.shouldImportNodes)
         }
 
         @Test
@@ -131,16 +139,52 @@ internal class GrpcConfigurationTests {
                 SystemEnvironmentPropertySource("testEnvironment", mapOf("TESTSYS_GRADING_IMPORT_NODES" to "true")),
             )
 
-            val settings = configuration.gradingSettings(environment)
+            val properties = configuration.gradingSettings(environment).current()
 
-            assertTrue(settings.shouldImportNodes)
+            assertTrue(properties.shouldImportNodes)
         }
 
         @Test
         fun `should reject an invalid node import flag`() {
             environment.propertySources.addFirst(MapPropertySource("override", mapOf("testsys.grading.import-nodes" to "sometimes")))
 
-            assertThrows<ConversionFailedException> { configuration.gradingSettings(environment) }
+            assertThrows<BindException> { configuration.gradingSettings(environment) }
+        }
+
+        @Test
+        fun `should read saved values over the environment and the active message limit with the shared holder`() {
+            overrideNodes("grader:50051")
+            val values = SettingsValues(
+                mapOf(
+                    SettingKey.GradingMaxAttempts to "1",
+                    SettingKey.TotalTimeout to "PT1M",
+                    SettingKey.RpcTimeout to "PT2S",
+                    SettingKey.StatusTimeout to "PT3S",
+                    SettingKey.PollInterval to "PT4S",
+                    SettingKey.MaxMessageBytes to "100",
+                    SettingKey.ShouldRecordVideo to "false",
+                ),
+            )
+            val snapshot = SettingsSnapshot(revision = 0, values = values, activeMaxMessageBytes = 200)
+            val runtime = RuntimeSettings(snapshot, CommunityId(42))
+
+            val properties = configuration.gradingSettings(environment, runtime).current()
+
+            assertEquals(
+                GradingProperties(
+                    nodes = "grader:50051",
+                    shouldImportNodes = false,
+                    maxAttempts = 1,
+                    totalTimeout = Duration.ofMinutes(1),
+                    rpcTimeout = Duration.ofSeconds(2),
+                    statusTimeout = Duration.ofSeconds(3),
+                    pollInterval = Duration.ofSeconds(4),
+                    maxMessageBytes = 200,
+                    shouldRecordVideo = false,
+                ),
+                properties,
+            )
+            assertEquals(listOf(GradingNodeAddress("grader:50051")), properties.addresses)
         }
     }
 
@@ -158,7 +202,8 @@ internal class GrpcConfigurationTests {
 
             configuration.gradingCoordinator(
                 persistence = mockk(),
-                settings = settings.copy(nodes = listOf(firstAddress, secondAddress)),
+                environment = environment,
+                settings = nodeSettings(listOf(firstAddress, secondAddress)),
                 parser = mockk(),
                 nodeClientFactory = factory,
             ).use { coordinator ->
@@ -182,6 +227,7 @@ internal class GrpcConfigurationTests {
 
             configuration.gradingCoordinator(
                 persistence = mockk(),
+                environment = environment,
                 settings = configuration.gradingSettings(environment),
                 parser = mockk(),
                 nodeClientFactory = factory,
@@ -202,7 +248,8 @@ internal class GrpcConfigurationTests {
 
             configuration.gradingCoordinator(
                 persistence = mockk(),
-                settings = settings.copy(nodes = listOf(GradingNodeAddress("configured:50051"))),
+                environment = environment,
+                settings = nodeSettings(listOf(GradingNodeAddress("configured:50051"))),
                 parser = mockk(),
                 nodeClientFactory = NodeClientFactory { FakeNode() },
                 nodeStore = store,
@@ -221,7 +268,8 @@ internal class GrpcConfigurationTests {
 
             configuration.gradingCoordinator(
                 persistence = mockk(),
-                settings = settings.copy(nodes = listOf(GradingNodeAddress("configured:50051"))),
+                environment = environment,
+                settings = nodeSettings(listOf(GradingNodeAddress("configured:50051"))),
                 parser = mockk(),
                 nodeClientFactory = NodeClientFactory { FakeNode() },
                 nodeStore = store,
@@ -239,7 +287,8 @@ internal class GrpcConfigurationTests {
             val error = assertThrows<IllegalStateException> {
                 configuration.gradingCoordinator(
                     persistence = mockk(),
-                    settings = settings.copy(nodes = listOf(GradingNodeAddress("configured:50051"))),
+                    environment = environment,
+                    settings = nodeSettings(listOf(GradingNodeAddress("configured:50051"))),
                     parser = mockk(),
                     nodeClientFactory = factory,
                     nodeStore = store,
@@ -259,7 +308,8 @@ internal class GrpcConfigurationTests {
             every { factory.create(GradingNodeAddress("grader-2:50051")) } returns secondNode
             val coordinator = configuration.gradingCoordinator(
                 persistence = mockk(),
-                settings = settings.copy(nodes = listOf(GradingNodeAddress("grader-1:50051"), GradingNodeAddress("grader-2:50051"))),
+                environment = environment,
+                settings = nodeSettings(listOf(GradingNodeAddress("grader-1:50051"), GradingNodeAddress("grader-2:50051"))),
                 parser = mockk(),
                 nodeClientFactory = factory,
             )
@@ -282,7 +332,8 @@ internal class GrpcConfigurationTests {
             val error = assertThrows<IllegalArgumentException> {
                 configuration.gradingCoordinator(
                     persistence = mockk(),
-                    settings = settings.copy(nodes = listOf(GradingNodeAddress("grader-1:50051"), GradingNodeAddress("invalid"))),
+                    environment = environment,
+                    settings = nodeSettings(listOf(GradingNodeAddress("grader-1:50051"), GradingNodeAddress("invalid"))),
                     parser = mockk(),
                     nodeClientFactory = factory,
                 )
@@ -304,7 +355,8 @@ internal class GrpcConfigurationTests {
 
             configuration.gradingCoordinator(
                 persistence = mockk(),
-                settings = importing(listOf(first, second)),
+                environment = environment,
+                settings = nodeSettings(listOf(first, second), shouldImportNodes = true),
                 parser = mockk(),
                 nodeClientFactory = NodeClientFactory { FakeNode() },
                 nodeStore = store,
@@ -327,7 +379,8 @@ internal class GrpcConfigurationTests {
 
             configuration.gradingCoordinator(
                 persistence = mockk(),
-                settings = importing(listOf(address)),
+                environment = environment,
+                settings = nodeSettings(listOf(address), shouldImportNodes = true),
                 parser = mockk(),
                 nodeClientFactory = NodeClientFactory { FakeNode() },
                 nodeStore = store,
@@ -353,7 +406,8 @@ internal class GrpcConfigurationTests {
 
             configuration.gradingCoordinator(
                 persistence = mockk(),
-                settings = importing(listOf(configured)),
+                environment = environment,
+                settings = nodeSettings(listOf(configured), shouldImportNodes = true),
                 parser = mockk(),
                 nodeClientFactory = NodeClientFactory { FakeNode() },
                 nodeStore = store,
@@ -375,7 +429,8 @@ internal class GrpcConfigurationTests {
 
             configuration.gradingCoordinator(
                 persistence = mockk(),
-                settings = settings.copy(nodes = listOf(inactive, absent)),
+                environment = environment,
+                settings = nodeSettings(listOf(inactive, absent)),
                 parser = mockk(),
                 nodeClientFactory = NodeClientFactory { FakeNode() },
                 nodeStore = store,
@@ -393,7 +448,8 @@ internal class GrpcConfigurationTests {
 
             configuration.gradingCoordinator(
                 persistence = mockk(),
-                settings = importing(listOf(address)),
+                environment = environment,
+                settings = nodeSettings(listOf(address), shouldImportNodes = true),
                 parser = mockk(),
                 nodeClientFactory = NodeClientFactory { FakeNode() },
             ).use { coordinator ->
@@ -420,7 +476,8 @@ internal class GrpcConfigurationTests {
             val error = assertThrows<IllegalStateException> {
                 configuration.gradingCoordinator(
                     persistence = mockk(),
-                    settings = importing(listOf(configured)),
+                    environment = environment,
+                    settings = nodeSettings(listOf(configured), shouldImportNodes = true),
                     parser = mockk(),
                     nodeClientFactory = factory,
                     nodeStore = store,
@@ -444,7 +501,8 @@ internal class GrpcConfigurationTests {
             val error = assertThrows<IllegalStateException> {
                 configuration.gradingCoordinator(
                     persistence = mockk(),
-                    settings = importing(listOf(address)),
+                    environment = environment,
+                    settings = nodeSettings(listOf(address), shouldImportNodes = true),
                     parser = mockk(),
                     nodeClientFactory = NodeClientFactory { node },
                     nodeStore = store,
@@ -467,7 +525,8 @@ internal class GrpcConfigurationTests {
             val error = assertThrows<IllegalStateException> {
                 configuration.gradingCoordinator(
                     persistence = mockk(),
-                    settings = importing(listOf(address)),
+                    environment = environment,
+                    settings = nodeSettings(listOf(address), shouldImportNodes = true),
                     parser = mockk(),
                     nodeClientFactory = NodeClientFactory { node },
                     nodeStore = store,
@@ -488,7 +547,8 @@ internal class GrpcConfigurationTests {
             val error = assertThrows<IllegalArgumentException> {
                 configuration.gradingCoordinator(
                     persistence = mockk(),
-                    settings = importing(listOf(address)),
+                    environment = environment,
+                    settings = nodeSettings(listOf(address), shouldImportNodes = true),
                     parser = mockk(),
                     nodeClientFactory = factory,
                     nodeStore = store,
@@ -507,7 +567,8 @@ internal class GrpcConfigurationTests {
             val error = assertThrows<IllegalArgumentException> {
                 configuration.gradingCoordinator(
                     persistence = mockk(),
-                    settings = importing(listOf(GradingNodeAddress("a".repeat(256)))),
+                    environment = environment,
+                    settings = nodeSettings(listOf(GradingNodeAddress("a".repeat(256))), shouldImportNodes = true),
                     parser = mockk(),
                     nodeClientFactory = factory,
                     nodeStore = store,
@@ -525,15 +586,16 @@ internal class GrpcConfigurationTests {
         @Test
         fun `should show configured nodes as registered participants without a store`() {
             val address = GradingNodeAddress("grader:50051")
-            val nodeSettings = settings.copy(nodes = listOf(address))
+            val configured = nodeSettings(listOf(address))
 
             configuration.gradingCoordinator(
                 persistence = mockk(),
-                settings = nodeSettings,
+                environment = environment,
+                settings = configured,
                 parser = mockk(),
                 nodeClientFactory = NodeClientFactory { FakeNode() },
             ).use { coordinator ->
-                val registry = configuration.gradingNodeRegistry(coordinator, nodeSettings)
+                val registry = configuration.gradingNodeRegistry(coordinator, configured)
 
                 assertEquals(
                     listOf(GradingNodeEntry(StoredGradingNode(address, isActive = true), GradingNodeStatus.Unknown)),
@@ -552,16 +614,17 @@ internal class GrpcConfigurationTests {
         @Test
         fun `should expose the queue and the configured nodes of the grader as gauges`() {
             val address = GradingNodeAddress("grader:50051")
-            val nodeSettings = settings.copy(nodes = listOf(address))
+            val configured = nodeSettings(listOf(address))
             val meters = SimpleMeterRegistry()
 
             configuration.gradingCoordinator(
                 persistence = mockk(),
-                settings = nodeSettings,
+                environment = environment,
+                settings = configured,
                 parser = mockk(),
                 nodeClientFactory = NodeClientFactory { FakeNode() },
             ).use { coordinator ->
-                val registry = configuration.gradingNodeRegistry(coordinator, nodeSettings)
+                val registry = configuration.gradingNodeRegistry(coordinator, configured)
 
                 configuration.gradingMeterBinder(configuration.gradingQueueMonitor(coordinator), registry).bindTo(meters)
 
@@ -574,8 +637,6 @@ internal class GrpcConfigurationTests {
             }
         }
     }
-
-    private fun importing(nodes: List<GradingNodeAddress>) = settings.copy(nodes = nodes, shouldImportNodes = true)
 
     private fun overrideNodes(value: String) {
         environment.propertySources.addFirst(MapPropertySource("override", mapOf("testsys.grading.nodes" to value)))

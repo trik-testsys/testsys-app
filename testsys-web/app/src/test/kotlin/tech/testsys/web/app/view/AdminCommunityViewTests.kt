@@ -41,6 +41,7 @@ import tech.testsys.domain.model.group.Community
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.user.MultipleRoleUser
+import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.ContestVo
@@ -69,6 +70,9 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var communities: CommunityRepository
+
+    @Autowired
+    private lateinit var communityConfig: CommunityConfig
 
     @Test
     fun `should show the not found screen for a missing community`() {
@@ -166,6 +170,23 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         assertEquals("Наблюдатель Анна", observer?.data?.name)
         assertEquals(listOf(contest.id), observer?.data?.contests?.ids)
         assertEquals("Наблюдатель создан", lastToastTitle())
+    }
+
+    @Test
+    fun `should create an observer of a contest shared to the public community`() {
+        val community = fixtures.community(owner = signInAdministrator())
+        sharedContest(checkNotNull(communities.findById(communityConfig.publicCommunityId)))
+        open(community.id)
+        val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
+
+        UI.getCurrent()._get<Button> { text = "Создать наблюдателя" }._click()
+        textField("Имя")._value = "Наблюдатель Анна"
+        contestsField().value = setOf(contest)
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+
+        val observer = observers.findByAccessToken(textField("Код-доступа").value)
+        assertEquals(community.id, observer?.data?.community?.id)
+        assertEquals(listOf(contest.id), observer?.data?.contests?.ids)
     }
 
     @Test

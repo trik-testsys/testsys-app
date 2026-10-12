@@ -341,7 +341,7 @@ class SupervisorOperations(
     }
 
     /**
-     * Creates an observer in any community for contests shared to it.
+     * Creates an observer in any community for contests shared to it or to the public community.
      *
      * @since %CURRENT_VERSION%
      */
@@ -362,8 +362,9 @@ class SupervisorOperations(
             ensure(contest != null) { ContestNotExistsError(id) }
             contest
         }
+        val grantedTo = setOf(communityId, communityConfig.publicCommunityId)
         selected.forEach { contest ->
-            ensure(communityId in contest.data.sharedTo.ids) { ContestAccessDeniedError(contest.id) }
+            ensure(contest.data.sharedTo.ids.any { it in grantedTo }) { ContestAccessDeniedError(contest.id) }
         }
         ensure(name.isNotBlank(), ObserverNameBlankError)
         ensure(name.codePointCount(0, name.length) <= MAX_NAME_CODE_POINTS) { ObserverNameTooLongError(name) }
@@ -378,7 +379,7 @@ class SupervisorOperations(
     }
 
     /**
-     * Lists contests shared to any community for observer assignment.
+     * Lists contests shared to any community or to the public community for observer assignment.
      *
      * @since %CURRENT_VERSION%
      */
@@ -392,7 +393,7 @@ class SupervisorOperations(
         operation<Page<Contest>, ViewSupervisorCommunityContestsError> {
             ensure(user is Supervisor, MissedSupervisorRoleError)
             ensure(communityRepository.findById(communityId) != null) { CommunityNotExistsError(communityId) }
-            contests.findSharedTo(setOf(communityId), pagination, ContestFilter(name = name, communityId = communityId))
+            contests.findSharedTo(setOf(communityId, communityConfig.publicCommunityId), pagination, ContestFilter(name = name))
         }
 
     /**

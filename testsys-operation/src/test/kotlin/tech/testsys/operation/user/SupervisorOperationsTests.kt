@@ -40,6 +40,7 @@ import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.operation.error.AdministratorInPublicCommunityError
 import tech.testsys.operation.error.CommunityNotExistsError
+import tech.testsys.operation.error.ContestAccessDeniedError
 import tech.testsys.operation.error.MissedSupervisorRoleError
 import tech.testsys.operation.error.UserHasFixedRoleError
 import tech.testsys.operation.error.UserNotExistsError
@@ -719,10 +720,37 @@ class SupervisorOperationsTests {
                 assertEquals(targetId, data.captured.community.id)
                 assertEquals(listOf(contest.id), data.captured.contests.ids)
             }
+
+            @Test
+            fun `should save an observer assigned to a contest shared only with the public community`() {
+                val contest = testContest { sharedTo = mutableListOf(publicId) }
+                val data = slot<ObserverData>()
+                every { communityRepository.findById(targetId) } returns testCommunity(targetId.value)
+                every { contests.findByIds(listOf(contest.id)) } returns listOf(contest)
+                every { observers.save(capture(data)) } returns testObserver()
+
+                operations.createObserver(supervisor, targetId, "New observer", setOf(contest.id)).getOrThrow()
+
+                assertEquals(targetId, data.captured.community.id)
+                assertEquals(listOf(contest.id), data.captured.contests.ids)
+            }
         }
 
         @Nested
         inner class RefusalTests {
+            @Test
+            fun `should reject a contest shared only with another community`() {
+                val contest = testContest { sharedTo = mutableListOf(CommunityId(99)) }
+                every { communityRepository.findById(targetId) } returns testCommunity(targetId.value)
+                every { contests.findByIds(listOf(contest.id)) } returns listOf(contest)
+
+                assertRaises(ContestAccessDeniedError(contest.id)) {
+                    operations.createObserver(supervisor, targetId, "Observer", setOf(contest.id))
+                }
+
+                verify { observers wasNot Called }
+            }
+
             @Test
             fun `should reject a non-supervisor before loading a community`() {
                 assertRaises(MissedSupervisorRoleError) {
@@ -739,10 +767,10 @@ class SupervisorOperationsTests {
         @Nested
         inner class HappyPathTests {
             @Test
-            fun `should list contests shared with a selected community`() {
+            fun `should list contests shared with a selected community or the public community`() {
                 val contest = testContest { sharedTo = mutableListOf(targetId) }
                 every { communityRepository.findById(targetId) } returns testCommunity(targetId.value)
-                every { contests.findSharedTo(setOf(targetId), pagination, ContestFilter(name = "Round", communityId = targetId)) } returns
+                every { contests.findSharedTo(setOf(targetId, publicId), pagination, ContestFilter(name = "Round")) } returns
                     Page(listOf(contest), pagination, 1)
 
                 val result = operations.viewCommunityContests(supervisor, targetId, pagination, "Round").getOrThrow()

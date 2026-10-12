@@ -43,7 +43,6 @@ import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.Community
-import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.task.Contest
@@ -107,8 +106,12 @@ class AppTestConfiguration {
 
     @Bean
     @Primary
-    fun publicCommunityConfig(fixtures: AppFixtures): CommunityConfig = object : CommunityConfig {
-        override val publicCommunityId: CommunityId by lazy { fixtures.community().id }
+    fun publicCommunityConfig(fixtures: AppFixtures): CommunityConfig {
+        // Created with the bean, so the first read never joins a transaction that rolls back.
+        val id = fixtures.community().id
+        return object : CommunityConfig {
+            override val publicCommunityId = id
+        }
     }
 
     @Bean

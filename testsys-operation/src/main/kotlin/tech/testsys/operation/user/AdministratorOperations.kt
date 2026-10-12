@@ -146,7 +146,8 @@ class AdministratorOperations(
 
     /**
      * Creates an observer named [observerName] in [communityId] owned by [user], assigning exactly [contestIds].
-     * Only contests shared to that community are allowed; a fresh access code is returned with the saved observer.
+     * Only contests shared to that community or the public community are allowed; a fresh access code is returned
+     * with the saved observer.
      *
      * @since %CURRENT_VERSION%
      */
@@ -168,8 +169,9 @@ class AdministratorOperations(
             contest
         }
         ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
+        val grantedTo = setOf(communityId, communityConfig.publicCommunityId)
         contests.forEach { contest ->
-            ensure(communityId in contest.data.sharedTo.ids) { ContestAccessDeniedError(contest.id) }
+            ensure(contest.data.sharedTo.ids.any { it in grantedTo }) { ContestAccessDeniedError(contest.id) }
         }
         ensure(observerName.isNotBlank(), ObserverNameBlankError)
         ensure(observerName.codePointCount(0, observerName.length) <= MAX_OBSERVER_NAME_CODE_POINTS) {
@@ -684,8 +686,9 @@ class AdministratorOperations(
         }
 
     /**
-     * Returns a [pagination] page of the contests shared to [communityId] owned by [user] whose names contain [name],
-     * from which an observer of the community is assigned. Missing role, community and access are expected failures.
+     * Returns a [pagination] page of the contests shared to [communityId] owned by [user] or to the public community
+     * whose names contain [name], from which an observer of the community is assigned. Missing role, community and
+     * access are expected failures.
      *
      * @since %CURRENT_VERSION%
      */
@@ -701,11 +704,10 @@ class AdministratorOperations(
         ensure(community != null) { CommunityNotExistsError(communityId) }
         ensure(community.data.owner.id == user.id) { CommunityAccessDeniedError(communityId) }
 
-        val contests = contestRepository.findAvailableToDeveloper(
-            ownerId = user.id,
-            communityIds = setOf(communityId),
+        val contests = contestRepository.findSharedTo(
+            communityIds = setOf(communityId, communityConfig.publicCommunityId),
             pagination = pagination,
-            filter = ContestFilter(name = name, communityId = communityId),
+            filter = ContestFilter(name = name),
         )
         return contests.asSuccess()
     }

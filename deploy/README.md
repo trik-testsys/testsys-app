@@ -288,13 +288,15 @@ Grafana хранит в томе `grafana-data`.
 | `GF_SECURITY_ADMIN_USER` | `deploy/compose.monitoring.yml` | `admin` |
 | `GF_USERS_ALLOW_SIGN_UP`, `GF_AUTH_ANONYMOUS_ENABLED` | `deploy/compose.monitoring.yml` | `false`: самостоятельная регистрация и анонимный доступ выключены |
 | `GF_ANALYTICS_REPORTING_ENABLED`, `GF_ANALYTICS_CHECK_FOR_UPDATES`, `GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES` | `deploy/compose.monitoring.yml` | `false` |
-| `GF_SERVER_ROOT_URL` | `deploy/compose.dev.yml`, `deploy/compose.prod.yml` из переменной Compose `TESTSYS_GRAFANA_URL` | Адрес Grafana в браузере |
+| `GF_SERVER_ROOT_URL` | `deploy/compose.dev.yml`, `deploy/compose.prod.yml` из переменной Compose `TESTSYS_GRAFANA_URL` | Адрес Grafana в браузере; его путь — префикс Grafana |
+| `GF_SERVER_SERVE_FROM_SUB_PATH` | `deploy/compose.monitoring.yml` | `true`: Grafana отвечает по префиксу из `GF_SERVER_ROOT_URL` |
 | `GF_SECURITY_ADMIN_PASSWORD` | `deploy/compose.prod.yml` из переменной Compose `TESTSYS_GRAFANA_ADMIN_PASSWORD` | Пароль `admin`; Grafana применяет его, только когда создаёт свою базу в пустом томе |
 
 Без `GF_SECURITY_ADMIN_PASSWORD` в dev администратор получает стандартный пароль Grafana. Тот же
 `TESTSYS_GRAFANA_URL` override передаёт приложению в `TESTSYS_SERVICE_GRAFANAURL`, поэтому кнопка «Grafana»
 служебного кабинета открывает Grafana своего проекта. Compose не сверяет порт в этом адресе с опубликованным портом
-Grafana; их согласует тот, кто задаёт переменные. В e2e Grafana нет, а `TESTSYS_GRAFANA_URL` нужен только
+Grafana; их согласует тот, кто задаёт переменные. Префикс в файлах переменных по умолчанию — `/grafana/`; другой
+путь в адресе Grafana принимает без изменений Compose-файлов. В e2e Grafana нет, а `TESTSYS_GRAFANA_URL` нужен только
 приложению.
 
 Порты Prometheus и Grafana публикуются только на `127.0.0.1` хоста:

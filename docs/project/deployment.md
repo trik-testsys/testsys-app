@@ -446,7 +446,7 @@ openssl rand -hex 32
 
 Кнопка «Grafana» служебного кабинета открывает адрес из `TESTSYS_GRAFANA_URL`. В dev и production это Grafana
 того же проекта, см. [Prometheus и Grafana](#prometheus-и-grafana). В e2e Grafana не запускается, но приложение
-без адреса не запустится. Поэтому `e2e.env` задаёт адрес Grafana dev `http://localhost:3000/`: он открывается,
+без адреса не запустится. Поэтому `e2e.env` задаёт адрес Grafana dev `http://localhost:3000/grafana/`: он открывается,
 только если запущен dev, а метрик e2e эта Grafana не показывает.
 
 ## Метрики и мониторинг
@@ -464,13 +464,13 @@ Dev и production запускают в своём проекте Prometheus и 
 
 | Окружение | Grafana | Prometheus |
 |-----------|---------|------------|
-| `dev` | `http://localhost:3000/` | `http://localhost:9090/` |
-| `prod` | `127.0.0.1:3000` сервера, через SSH-туннель | `127.0.0.1:9090` сервера, через SSH-туннель |
+| `dev` | `http://localhost:3000/grafana/` | `http://localhost:9090/` |
+| `prod` | `127.0.0.1:3000` сервера с префиксом `/grafana/`, через SSH-туннель | `127.0.0.1:9090` сервера, через SSH-туннель |
 
 Порты хоста задают `TESTSYS_GRAFANA_PORT` и `TESTSYS_PROMETHEUS_PORT`, в dev их значения — в `dev.env`.
 `TESTSYS_GRAFANA_URL` — адрес этой Grafana в браузере: его открывает кнопка «Grafana» служебного кабинета, и по нему
-Grafana строит свои ссылки. Если вы меняете `TESTSYS_GRAFANA_PORT` в `dev.local.env`, задайте там же
-`TESTSYS_GRAFANA_URL` с тем же портом.
+Grafana строит свои ссылки. Путь этого адреса — префикс, по которому отвечает Grafana; по умолчанию `/grafana/`.
+Если вы меняете `TESTSYS_GRAFANA_PORT` в `dev.local.env`, задайте там же `TESTSYS_GRAFANA_URL` с тем же портом.
 
 ### Учётные записи Grafana
 
@@ -501,8 +501,8 @@ SSH-туннель вместе со служебным интерфейсом:
 ssh -N -L 8081:127.0.0.1:8081 -L 3000:127.0.0.1:3000 -L 9090:127.0.0.1:9090 <пользователь>@<сервер>
 ```
 
-Затем откройте Grafana по адресу `http://localhost:3000/`, а Prometheus — по адресу `http://localhost:9090/`.
-Задайте адрес Grafana `http://localhost:3000/` в `TESTSYS_GRAFANA_URL`: локальный порт туннеля должен совпадать
+Затем откройте Grafana по адресу `http://localhost:3000/grafana/`, а Prometheus — по адресу `http://localhost:9090/`.
+Задайте адрес Grafana `http://localhost:3000/grafana/` в `TESTSYS_GRAFANA_URL`: локальный порт туннеля должен совпадать
 с портом этого адреса. Если на сервере заданы другие `TESTSYS_GRAFANA_PORT` или `TESTSYS_PROMETHEUS_PORT`, укажите
 их после `127.0.0.1:` в соответствующей опции `-L`.
 

@@ -34,6 +34,8 @@ services:
     environment:
       # Without GF_SECURITY_ADMIN_PASSWORD from the override, the administrator gets the Grafana default password,
       # which Grafana asks to change at the first sign-in. The overrides also set GF_SERVER_ROOT_URL.
+      # Grafana serves the path of GF_SERVER_ROOT_URL as its prefix, /grafana/ by default.
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
       GF_SECURITY_ADMIN_USER: admin
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"

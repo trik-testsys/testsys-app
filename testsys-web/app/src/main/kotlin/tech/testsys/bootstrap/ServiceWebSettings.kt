@@ -4,21 +4,18 @@ import org.springframework.core.env.Environment
 import java.net.URI
 import java.net.URISyntaxException
 import java.security.MessageDigest
-import java.util.regex.Pattern
 
 /**
  * Validated service listener settings and a digest of its startup secret; string rendering never includes the secret.
  *
  * @property address the listener address configured for deployment.
  * @property port the listener port; zero requests a random port in tests.
- * @property trustedProxies the explicit regular expression of trusted proxy addresses, or an expression matching none.
  * @property grafanaUrl the absolute http or https address of Grafana opened from the service cabinet without signing in.
  * @since %CURRENT_VERSION%
  */
 class ServiceWebSettings private constructor(
     val address: String,
     val port: Int,
-    val trustedProxies: String,
     val grafanaUrl: String,
     private val secretDigest: ByteArray,
 ) {
@@ -51,9 +48,6 @@ class ServiceWebSettings private constructor(
             val port = environment.getRequiredProperty("testsys.service.port", Int::class.java)
             require(port in 0..MAXIMUM_PORT) { "testsys.service.port must be between 0 and $MAXIMUM_PORT" }
 
-            val proxies = environment.getProperty("testsys.service.trusted-proxies")?.takeIf { it.isNotBlank() } ?: "(?!)"
-            Pattern.compile(proxies)
-
             val grafanaUrl = environment.getProperty("testsys.service.grafana-url")
             require(grafanaUrl != null && isWebAddress(grafanaUrl)) {
                 "testsys.service.grafana-url must be an absolute http or https URL without user information"
@@ -61,7 +55,6 @@ class ServiceWebSettings private constructor(
             return ServiceWebSettings(
                 address = address,
                 port = port,
-                trustedProxies = proxies,
                 grafanaUrl = grafanaUrl,
                 secretDigest = digest(secret),
             )

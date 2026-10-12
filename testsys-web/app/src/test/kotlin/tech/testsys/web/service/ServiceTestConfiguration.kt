@@ -4,7 +4,6 @@ import io.mockk.every
 import io.mockk.mockk
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Bean
-import org.springframework.core.env.Environment
 import org.springframework.mock.env.MockEnvironment
 import tech.testsys.bootstrap.ServiceWebSettings
 import tech.testsys.domain.builder.api.multipleRoleUser
@@ -127,9 +126,8 @@ class ServiceTestConfiguration {
     fun serviceUserSearch(): ServiceUserSearch = mockk<ServiceUserSearch>().also(::stubServiceTestUsers)
 
     @Bean
-    fun serviceSettings(environment: Environment): ServiceWebSettings = ServiceWebSettings.from(
+    fun serviceSettings(): ServiceWebSettings = ServiceWebSettings.from(
         MockEnvironment().withProperty("testsys.service.secret", SERVICE_TEST_SECRET)
-            .withProperty("testsys.service.trusted-proxies", environment.getProperty("testsys.service.trusted-proxies", ""))
             .withProperty("testsys.service.address", "127.0.0.1").withProperty("testsys.service.port", "0")
             .withProperty("testsys.service.grafana-url", SERVICE_TEST_GRAFANA_URL),
     )

@@ -28,7 +28,6 @@ testsys:
   service:
     address: 127.0.0.1
     port: 8081
-    trusted-proxies: '127[.]0[.]0[.]1'
     secret: ${TESTSYS_SERVICE_SECRET}
     # The required Grafana address testsys.service.grafana-url has no default and is passed at launch.
   metrics:

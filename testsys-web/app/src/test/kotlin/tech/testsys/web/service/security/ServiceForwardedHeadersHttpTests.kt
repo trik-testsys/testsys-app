@@ -23,50 +23,25 @@ import java.net.http.HttpResponse
         ServiceWebConfiguration::class,
         ServiceTestConfiguration::class,
         ServiceMetricsTestConfiguration::class,
-        ProxyProbeConfiguration::class,
+        ForwardedHeadersProbeConfiguration::class,
     ],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
         "vaadin.productionMode=true",
         "server.address=127.0.0.1",
         "server.forward-headers-strategy=none",
-        "testsys.service.trusted-proxies=",
     ],
 )
-class ServiceProxyHttpTests : ProxyHttpFixture() {
-    @Test
-    fun `should ignore forged forwarding headers from an untrusted peer`() {
-        assertEquals("127.0.0.1|false", probe("198.51.100.5"))
-    }
-}
-
-@SpringBootTest(
-    classes = [
-        ServiceWebConfiguration::class,
-        ServiceTestConfiguration::class,
-        ServiceMetricsTestConfiguration::class,
-        ProxyProbeConfiguration::class,
-    ],
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = [
-        "vaadin.productionMode=true",
-        "server.address=127.0.0.1",
-        "server.forward-headers-strategy=none",
-        "testsys.service.trusted-proxies=127\\.0\\.0\\.1|10\\.0\\.0\\.1",
-    ],
-)
-class TrustedServiceProxyHttpTests : ProxyHttpFixture() {
-    @Test
-    fun `should use the first untrusted address from the right of a verified proxy chain`() {
-        assertEquals("198.51.100.5|true", probe("192.0.2.99, 198.51.100.5, 10.0.0.1"))
-    }
-}
-
-abstract class ProxyHttpFixture {
+class ServiceForwardedHeadersHttpTests {
     @Value("\${local.server.port}")
     private var port = 0
 
-    protected fun probe(forwardedFor: String): String = HttpClient.newHttpClient().use { client ->
+    @Test
+    fun `should ignore forwarding headers and use the connection address`() {
+        assertEquals("127.0.0.1|false", probe("198.51.100.5"))
+    }
+
+    private fun probe(forwardedFor: String): String = HttpClient.newHttpClient().use { client ->
         client.send(
             HttpRequest.newBuilder(URI("http://127.0.0.1:$port/testsys-ui/proxy-probe"))
                 .header("X-Forwarded-For", forwardedFor).header("X-Forwarded-Proto", "https")
@@ -77,7 +52,7 @@ abstract class ProxyHttpFixture {
 }
 
 @TestConfiguration(proxyBeanMethods = false)
-class ProxyProbeConfiguration {
+class ForwardedHeadersProbeConfiguration {
     @Bean
     fun proxyProbe(): ServletRegistrationBean<HttpServlet> = ServletRegistrationBean(
         object : HttpServlet() {

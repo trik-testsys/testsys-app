@@ -19,7 +19,7 @@ object WebContextEnvironment {
 
     /**
      * Applies service-only listener and cookie settings after Boot has loaded deployment configuration.
-     * Native forwarded-header handling is installed explicitly with the service proxy allowlist.
+     * Forwarded headers are ignored: clients reach the service listener directly.
      *
      * @since %CURRENT_VERSION%
      */
@@ -37,7 +37,8 @@ object WebContextEnvironment {
                     "server.tomcat.remoteip.remote-ip-header" to "",
                     "server.servlet.session.cookie.name" to "TESTSYS_SERVICE_SESSION",
                     "server.servlet.session.cookie.http-only" to true,
-                    "server.servlet.session.cookie.secure" to true,
+                    // The listener is reached over plain HTTP, where browsers drop Secure cookies.
+                    "server.servlet.session.cookie.secure" to false,
                     "server.servlet.session.cookie.same-site" to "lax",
                     "server.servlet.session.cookie.domain" to "",
                     "server.servlet.session.cookie.path" to "/",

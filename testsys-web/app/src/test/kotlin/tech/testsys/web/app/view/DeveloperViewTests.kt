@@ -221,7 +221,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.signInDeveloper()
         val contest = developers.contest(developers.trikStudioVersion())
         open(CONTESTS_SECTION)
-        val row = UI.getCurrent()._find<Table>().last()._get<TableBody>()._get<TableRow>()
+        val row = UI.getCurrent()._get<Table>()._get<TableBody>()._get<TableRow>()
 
         row._fireDomEvent("click", acceptedClick(row))
 

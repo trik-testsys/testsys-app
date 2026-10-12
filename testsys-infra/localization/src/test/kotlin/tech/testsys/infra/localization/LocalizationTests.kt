@@ -8,6 +8,9 @@ import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.infra.localization.PageJudge.SolutionLanguageLanguage
 import tech.testsys.infra.localization.PageJudge.SolutionStatusStatus
+import tech.testsys.infra.localization.PageStudy.ContestStateState
+import tech.testsys.infra.localization.PageStudy.SubmissionStatusStatus
+import tech.testsys.infra.localization.PageStudy.TaskSendLanguageNameLanguage
 import tech.testsys.infra.localization.UiTransfer.UploadLimitsUnit
 import tech.testsys.infra.localization.bundle.SupportedRegion
 import java.time.ZoneId
@@ -1766,6 +1769,530 @@ class LocalizationTests {
         @Test
         fun `should use the judgment order term in solution dialog saved`() {
             assertEquals("Судейский вердикт сохранён", l.pageJudge.solutionDialogSaved())
+        }
+    }
+
+    @Nested
+    inner class PageStudyTests {
+
+        @Test
+        fun `should name the student cabinet in student title`() {
+            assertEquals("Кабинет Ученика", l.pageStudy.studentTitle())
+        }
+
+        @Test
+        fun `should decline the class and invite code terms in student guide`() {
+            assertEquals(
+                "Откройте свой Класс или присоединитесь к новому по Коду-приглашению.",
+                l.pageStudy.studentGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive plural class term in student classes guide`() {
+            assertEquals("Список Классов и сведения о них.", l.pageStudy.studentClassesGuide())
+        }
+
+        @Test
+        fun `should use the genitive plural class term in student classes empty`() {
+            assertEquals("Классов пока нет", l.pageStudy.studentClassesEmpty())
+        }
+
+        @Test
+        fun `should use the dative class and invite code terms in student classes empty hint`() {
+            assertEquals("Присоединитесь к Классу по Коду-приглашению.", l.pageStudy.studentClassesEmptyHint())
+        }
+
+        @Test
+        fun `should use the dative class term in student join title`() {
+            assertEquals("Присоединиться к Классу", l.pageStudy.studentJoinTitle())
+        }
+
+        @Test
+        fun `should quote the join button in student join guide`() {
+            assertEquals(
+                "Введите Код-приглашение от Организатора и нажмите «Присоединиться».",
+                l.pageStudy.studentJoinGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the invite code term in student join invite code`() {
+            assertEquals("Код-приглашение", l.pageStudy.studentJoinInviteCode())
+        }
+
+        @Test
+        fun `should name the joining action in student join submit`() {
+            assertEquals("Присоединиться", l.pageStudy.studentJoinSubmit())
+        }
+
+        @Test
+        fun `should agree with the masculine invite code term in student join invite code invalid`() {
+            assertEquals("Код-приглашение недействителен", l.pageStudy.studentJoinInviteCodeInvalid())
+        }
+
+        @Test
+        fun `should use the genitive invite code term in student join invite code expired`() {
+            assertEquals("Срок Кода-приглашения истёк", l.pageStudy.studentJoinInviteCodeExpired())
+        }
+
+        @Test
+        fun `should quote the class name in student join joined`() {
+            assertEquals("Вы присоединились к Классу «7А»", l.pageStudy.studentJoinJoined(name = "7А"))
+        }
+
+        @Test
+        fun `should use the class term in class tab title`() {
+            assertEquals("Класс", l.pageStudy.classTabTitle())
+        }
+
+        @Test
+        fun `should quote the class name in class title`() {
+            assertEquals("Класс «7А»", l.pageStudy.classTitle(name = "7А"))
+        }
+
+        @Test
+        fun `should decline the class and contest terms in class guide`() {
+            assertEquals("На странице Класса показаны его сведения и доступные Туры.", l.pageStudy.classGuide())
+        }
+
+        @Test
+        fun `should use the genitive class term in class details guide`() {
+            assertEquals(
+                "Идентификатор, название и описание Класса, к которому вы присоединились.",
+                l.pageStudy.classDetailsGuide(),
+            )
+        }
+
+        @Test
+        fun `should decline the contest and class terms in class contests empty hint`() {
+            assertEquals(
+                "Туры появятся, когда Организатор добавит их в Класс.",
+                l.pageStudy.classContestsEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should name the participant cabinet in participant title`() {
+            assertEquals("Кабинет Участника", l.pageStudy.participantTitle())
+        }
+
+        @Test
+        fun `should decline the contest and task terms in participant guide`() {
+            assertEquals("Выберите назначенный Тур, чтобы перейти к его Задачам.", l.pageStudy.participantGuide())
+        }
+
+        @Test
+        fun `should use the plural contest term in participant contests empty hint`() {
+            assertEquals(
+                "Туры появятся, когда Организатор добавит их в Соревнование.",
+                l.pageStudy.participantContestsEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should decline the contest term in contests guide`() {
+            assertEquals(
+                "Список Туров и их параметры. Выберите строку, чтобы открыть Тур.",
+                l.pageStudy.contestsGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive plural contest term in contests empty`() {
+            assertEquals("Туров пока нет", l.pageStudy.contestsEmpty())
+        }
+
+        @Test
+        fun `should name the id in id`() {
+            assertEquals("ID", l.pageStudy.id())
+        }
+
+        @Test
+        fun `should name the name in name`() {
+            assertEquals("Название", l.pageStudy.name())
+        }
+
+        @Test
+        fun `should name the description in description`() {
+            assertEquals("Описание", l.pageStudy.description())
+        }
+
+        @Test
+        fun `should head the details block in details title`() {
+            assertEquals("Сведения", l.pageStudy.detailsTitle())
+        }
+
+        @Test
+        fun `should name the start in starts at`() {
+            assertEquals("Начало", l.pageStudy.startsAt())
+        }
+
+        @Test
+        fun `should name the end in ends at`() {
+            assertEquals("Конец", l.pageStudy.endsAt())
+        }
+
+        @Test
+        fun `should name the time allowed in attempt duration`() {
+            assertEquals("Время на прохождение", l.pageStudy.attemptDuration())
+        }
+
+        @Test
+        fun `should name the state column in contest state title`() {
+            assertEquals("Состояние", l.pageStudy.contestStateTitle())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "NOT_STARTED, Не начат",
+            "RUNNING,     Идёт",
+            "FINISHED,    Завершён",
+            "OTHER,       Неизвестное состояние",
+        )
+        fun `should name the contest state in contest state`(state: ContestStateState, expected: String) {
+            assertEquals(expected, l.pageStudy.contestState(state = state))
+        }
+
+        @Test
+        fun `should name the remaining time in remaining title`() {
+            assertEquals("Осталось", l.pageStudy.remainingTitle())
+        }
+
+        @Test
+        fun `should decline the contest and solution terms in remaining guide`() {
+            assertEquals(
+                "Время, оставшееся для работы в Туре. После его окончания отправка Решений недоступна.",
+                l.pageStudy.remainingGuide(),
+            )
+        }
+
+        @Test
+        fun `should say the time is over in remaining over`() {
+            assertEquals("Время вышло", l.pageStudy.remainingOver())
+        }
+
+        @Test
+        fun `should use the genitive contest term in remaining not started`() {
+            assertEquals("Отсчёт начнётся с началом Тура", l.pageStudy.remainingNotStarted())
+        }
+
+        @Test
+        fun `should say there is no time limit in remaining unlimited`() {
+            assertEquals("Без ограничения по времени", l.pageStudy.remainingUnlimited())
+        }
+
+        @Test
+        fun `should say there is no limit in duration unlimited`() {
+            assertEquals("Без ограничения", l.pageStudy.durationUnlimited())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "1,                   1 ч",
+            "1000,                1000 ч",
+            "2562047788015215,    2562047788015215 ч",
+        )
+        fun `should show hours without digit grouping in duration hours`(hours: Long, expected: String) {
+            assertEquals(expected, l.pageStudy.durationHours(hours = hours))
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "0,  0 мин",
+            "1,  1 мин",
+            "59, 59 мин",
+        )
+        fun `should show minutes in duration minutes`(minutes: Int, expected: String) {
+            assertEquals(expected, l.pageStudy.durationMinutes(minutes = minutes))
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "1,    30, 1 ч 30 мин",
+            "1000, 59, 1000 ч 59 мин",
+        )
+        fun `should show hours without digit grouping and minutes in duration hours minutes`(hours: Long, minutes: Int, expected: String) {
+            assertEquals(expected, l.pageStudy.durationHoursMinutes(hours = hours, minutes = minutes))
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "QUEUED,        В очереди",
+            "IN_PROGRESS,   Проверяется",
+            "SUCCESS,       Проверено",
+            "GRADING_ERROR, Ошибка проверки",
+            "TIMEOUT,       Превышено время проверки",
+            "OTHER,         Неизвестный статус",
+        )
+        fun `should name the grading status in submission status`(status: SubmissionStatusStatus, expected: String) {
+            assertEquals(expected, l.pageStudy.submissionStatus(status = status))
+        }
+
+        @Test
+        fun `should use the contest term in contest tab title`() {
+            assertEquals("Тур", l.pageStudy.contestTabTitle())
+        }
+
+        @Test
+        fun `should quote the contest name in contest title`() {
+            assertEquals("Тур «Весенний»", l.pageStudy.contestTitle(name = "Весенний"))
+        }
+
+        @Test
+        fun `should keep the contest conditions lowercase in contest guide`() {
+            assertEquals(
+                "Здесь показаны условия Тура, оставшееся время и доступные Задачи.",
+                l.pageStudy.contestGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the accusative contest term in contest start`() {
+            assertEquals("Начать Тур", l.pageStudy.contestStart())
+        }
+
+        @Test
+        fun `should quote the contest name in contest start confirm title`() {
+            assertEquals("Начать Тур «Весенний»?", l.pageStudy.contestStartConfirmTitle(name = "Весенний"))
+        }
+
+        @Test
+        fun `should warn that the time starts in contest start confirm text`() {
+            assertEquals(
+                "С этого момента отсчитывается время на прохождение.",
+                l.pageStudy.contestStartConfirmText(),
+            )
+        }
+
+        @Test
+        fun `should name the starting action in contest start confirm action`() {
+            assertEquals("Начать", l.pageStudy.contestStartConfirmAction())
+        }
+
+        @Test
+        fun `should use the contest term in contest started`() {
+            assertEquals("Тур начат", l.pageStudy.contestStarted())
+        }
+
+        @Test
+        fun `should use the genitive contest term in contest details guide`() {
+            assertEquals(
+                "Название и описание Тура, время начала и окончания и ограничение времени на прохождение.",
+                l.pageStudy.contestDetailsGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive plural task term in contest tasks guide`() {
+            assertEquals("Список Задач и их основные сведения.", l.pageStudy.contestTasksGuide())
+        }
+
+        @Test
+        fun `should name the best score in contest tasks score`() {
+            assertEquals("Балл", l.pageStudy.contestTasksScore())
+        }
+
+        @Test
+        fun `should use the submission term in contest tasks last submission`() {
+            assertEquals("Последняя Посылка", l.pageStudy.contestTasksLastSubmission())
+        }
+
+        @Test
+        fun `should use the genitive plural task term in contest tasks empty`() {
+            assertEquals("Задач пока нет", l.pageStudy.contestTasksEmpty())
+        }
+
+        @Test
+        fun `should use the task term in task tab title`() {
+            assertEquals("Задача", l.pageStudy.taskTabTitle())
+        }
+
+        @Test
+        fun `should quote the task name in task title`() {
+            assertEquals("Задача «Лабиринт»", l.pageStudy.taskTitle(name = "Лабиринт"))
+        }
+
+        @Test
+        fun `should decline the task solution and submission terms in task guide`() {
+            assertEquals(
+                "Ознакомьтесь с Задачей, отправьте Решение и просмотрите результаты Посылок.",
+                l.pageStudy.taskGuide(),
+            )
+        }
+
+        @Test
+        fun `should quote the files field in task details guide`() {
+            assertEquals(
+                "Название и описание Задачи. В строке «Файлы» можно скачать доступные Ресурсы.",
+                l.pageStudy.taskDetailsGuide(),
+            )
+        }
+
+        @Test
+        fun `should name the files in task files`() {
+            assertEquals("Файлы", l.pageStudy.taskFiles())
+        }
+
+        @Test
+        fun `should say there are no files in task files empty`() {
+            assertEquals("Нет файлов", l.pageStudy.taskFilesEmpty())
+        }
+
+        @Test
+        fun `should name the statement in task download statement`() {
+            assertEquals("Скачать Условие", l.pageStudy.taskDownloadStatement())
+        }
+
+        @Test
+        fun `should quote the exercise name in task download exercise`() {
+            assertEquals("Скачать Упражнение «main.qrs»", l.pageStudy.taskDownloadExercise(name = "main.qrs"))
+        }
+
+        @Test
+        fun `should name the best result in task best`() {
+            assertEquals("Лучший результат", l.pageStudy.taskBest())
+        }
+
+        @Test
+        fun `should say there is no best result in task best none`() {
+            assertEquals("Нет", l.pageStudy.taskBestNone())
+        }
+
+        @Test
+        fun `should use the genitive solution term in task send title`() {
+            assertEquals("Отправка Решения", l.pageStudy.taskSendTitle())
+        }
+
+        @Test
+        fun `should use the genitive task term in task send unavailable`() {
+            assertEquals(
+                "Отправка недоступна: у Задачи нет разрешённых языков",
+                l.pageStudy.taskSendUnavailable(),
+            )
+        }
+
+        @Test
+        fun `should name the language in task send language`() {
+            assertEquals("Язык", l.pageStudy.taskSendLanguage())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "PYTHON,          Python",
+            "JAVASCRIPT,      JavaScript",
+            "VISUAL_LANGUAGE, Визуальный язык TRIK Studio",
+            "OTHER,           Неизвестный язык",
+        )
+        fun `should name the language in task send language name`(language: TaskSendLanguageNameLanguage, expected: String) {
+            assertEquals(expected, l.pageStudy.taskSendLanguageName(language = language))
+        }
+
+        @Test
+        fun `should use the genitive solution term in task send file`() {
+            assertEquals("Файл Решения", l.pageStudy.taskSendFile())
+        }
+
+        @Test
+        fun `should decline the solution and contest terms in task send guide`() {
+            assertEquals(
+                "Выберите язык, добавьте файл Решения и отправьте его на проверку, пока Тур доступен.",
+                l.pageStudy.taskSendGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive solution term in task send language step title`() {
+            assertEquals("Язык Решения", l.pageStudy.taskSendLanguageStepTitle())
+        }
+
+        @Test
+        fun `should ask for the file language in task send language step description`() {
+            assertEquals(
+                "Выберите язык, на котором написан отправляемый файл.",
+                l.pageStudy.taskSendLanguageStepDescription(),
+            )
+        }
+
+        @Test
+        fun `should decline the solution and task terms in task send file step description`() {
+            assertEquals(
+                "Прикрепите один файл с Решением выбранной Задачи.",
+                l.pageStudy.taskSendFileStepDescription(),
+            )
+        }
+
+        @Test
+        fun `should name the sending action in task send submit`() {
+            assertEquals("Отправить", l.pageStudy.taskSendSubmit())
+        }
+
+        @Test
+        fun `should ask for the language in task send language required`() {
+            assertEquals("Выберите язык", l.pageStudy.taskSendLanguageRequired())
+        }
+
+        @Test
+        fun `should ask for the file in task send file required`() {
+            assertEquals("Выберите файл", l.pageStudy.taskSendFileRequired())
+        }
+
+        @Test
+        fun `should agree with the neuter solution term in task send sent`() {
+            assertEquals("Решение отправлено", l.pageStudy.taskSendSent())
+        }
+
+        @Test
+        fun `should use the plural solution term in task submissions title`() {
+            assertEquals("Решения", l.pageStudy.taskSubmissionsTitle())
+        }
+
+        @Test
+        fun `should decline the submission and task terms in task submissions guide`() {
+            assertEquals(
+                "История ваших Посылок по этой Задаче, их состояние и результаты проверки.",
+                l.pageStudy.taskSubmissionsGuide(),
+            )
+        }
+
+        @Test
+        fun `should name the sending time in task submissions sent`() {
+            assertEquals("Отправлено", l.pageStudy.taskSubmissionsSent())
+        }
+
+        @Test
+        fun `should name the file in task submissions file`() {
+            assertEquals("Файл", l.pageStudy.taskSubmissionsFile())
+        }
+
+        @Test
+        fun `should name the result in task submissions result`() {
+            assertEquals("Результат", l.pageStudy.taskSubmissionsResult())
+        }
+
+        @Test
+        fun `should mark the best submission in task submissions best`() {
+            assertEquals("Лучшее", l.pageStudy.taskSubmissionsBest())
+        }
+
+        @Test
+        fun `should name the download action in task submissions download`() {
+            assertEquals("Скачать", l.pageStudy.taskSubmissionsDownload())
+        }
+
+        @Test
+        fun `should use the genitive plural solution term in task submissions empty`() {
+            assertEquals("Решений пока нет", l.pageStudy.taskSubmissionsEmpty())
+        }
+
+        @Test
+        fun `should use the accusative solution term in task submissions empty hint sendable`() {
+            assertEquals("Отправьте Решение в форме выше.", l.pageStudy.taskSubmissionsEmptyHintSendable())
+        }
+
+        @Test
+        fun `should decline the submission and contest terms in task submissions empty hint closed`() {
+            assertEquals("Посылок в этом Туре нет.", l.pageStudy.taskSubmissionsEmptyHintClosed())
         }
     }
 

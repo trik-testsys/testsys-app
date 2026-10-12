@@ -3,7 +3,7 @@ package tech.testsys.web.app.view
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
@@ -11,6 +11,7 @@ import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.participant.ParticipantService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.data.table
+import tech.testsys.web.components.texts.currentLocalization
 import java.time.Clock
 import java.time.Instant
 
@@ -20,34 +21,38 @@ import java.time.Instant
  * @since %CURRENT_VERSION%
  */
 @Route("participant/:section?(contests)")
-@PageTitle("Кабинет Участника")
 @RolesAllowed("PARTICIPANT")
 class ParticipantView(
     private val headers: CabinetHeaders,
     private val participantService: ParticipantService,
     private val clock: Clock,
 ) : TestSysView(),
-    BeforeEnterObserver {
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageStudy.participantTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         val contests = participantService.viewContests()
         val now = clock.instant()
+        val localization = currentLocalization()
+        val texts = localization.pageStudy
         page(headers.cabinet(active = CabinetHeaders.MAIN_SECTION)) {
-            head("Кабинет Участника")
-            guide("Выберите назначенный Тур, чтобы перейти к его Задачам.")
+            head(texts.participantTitle())
+            guide(texts.participantGuide())
             row {
-                block(title = "Туры") {
-                    guide("Список Туров и их параметры. Выберите строку, чтобы открыть Тур.")
+                block(title = localization.pageCabinet.sectionContests()) {
+                    guide(texts.contestsGuide())
                     table(
                         key = { (_, contest): Pair<Instant?, ContestVo> -> contest.id },
                         fetch = { request -> pageOf(contests, request) },
                     ) {
-                        textColumn("Название", size = 5) { (_, contest) -> contest.name }
-                        dateTimeColumn("Начало", size = 4) { (_, contest) -> contest.startsAt?.toUserDateTime() }
-                        dateTimeColumn("Конец", size = 4) { (_, contest) -> contest.endsAt?.toUserDateTime() }
-                        textColumn("Время на прохождение", size = 3) { (_, contest) -> studyDurationText(contest.attemptDuration) }
-                        column("Состояние", size = 4) { (enteredAt, contest) -> studyState(contest, enteredAt, now) }
-                        column("Осталось") { (enteredAt, contest) -> studyTimer(contest, enteredAt, now) }
-                        empty("Туров пока нет", "Туры появятся, когда Организатор добавит их в соревнование.")
+                        textColumn(texts.name(), size = 5) { (_, contest) -> contest.name }
+                        dateTimeColumn(texts.startsAt(), size = 4) { (_, contest) -> contest.startsAt?.toUserDateTime() }
+                        dateTimeColumn(texts.endsAt(), size = 4) { (_, contest) -> contest.endsAt?.toUserDateTime() }
+                        textColumn(texts.attemptDuration(), size = 3) { (_, contest) -> studyDurationText(contest.attemptDuration) }
+                        column(texts.contestStateTitle(), size = 4) { (enteredAt, contest) -> studyState(contest, enteredAt, now) }
+                        column(texts.remainingTitle()) { (enteredAt, contest) -> studyTimer(contest, enteredAt, now) }
+                        empty(texts.contestsEmpty(), texts.participantContestsEmptyHint())
                         onRowClick(isNavigation = true) { (_, contest) ->
                             UI.getCurrent().navigate(
                                 ParticipantContestView::class.java,

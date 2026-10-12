@@ -166,6 +166,7 @@
 | `page_home` | `MultiMainView` |
 | `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню», `ObserverView` и `SupervisorView` |
 | `page_judge` | `JudgeView`, `JudgeSolutionView` |
+| `page_study` | `StudentView`, `StudentClassView`, `ParticipantView` и общие страницы Тура и Задачи: `StudyContestView`, `StudyTaskView` с их страницами Ученика и Участника |
 
 Страницы из таблицы, у которых есть свой заголовок вкладки, задают его через `HasDynamicTitle` из сообщения.
 Остальные страницы Ролей пока задают тексты строками, а заголовок вкладки — через `@PageTitle`.

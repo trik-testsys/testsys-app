@@ -2,7 +2,7 @@ package tech.testsys.web.app.view
 
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
@@ -13,6 +13,7 @@ import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.infra.localization.PageStudy.TaskSendLanguageNameLanguage
 import tech.testsys.web.app.service.participant.ParticipantService
 import tech.testsys.web.app.service.student.StudentService
 import tech.testsys.web.app.service.study.StudyService
@@ -43,6 +44,7 @@ import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.PageScope
+import tech.testsys.web.components.texts.currentLocalization
 import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
 
@@ -68,7 +70,10 @@ abstract class StudyTaskView(
     private val fileContentReader: FileContentReader,
 ) :
     TestSysView(),
-    BeforeEnterObserver {
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageStudy.taskTabTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         val contestId = ContestId(event.routeParameters.getLong(STUDY_CONTEST_ID_PARAMETER).orElseThrow())
         val taskId = TaskId(event.routeParameters.getLong(STUDY_TASK_ID_PARAMETER).orElseThrow())
@@ -85,28 +90,29 @@ abstract class StudyTaskView(
         val now = clock.instant()
         val deadline = studyDeadline(contest, enteredAt)
         val isSendable = task.languages.isNotEmpty() && (deadline == null || now.isBefore(deadline))
+        val texts = currentLocalization().pageStudy
         page(headers.cabinet(active = access.activeSection)) {
-            head("Задача «${task.task.name}»") {
+            head(texts.taskTitle(name = task.task.name)) {
                 access.cabinetCrumbs(this)
-                crumb("Тур «${contest.name}»", access.contestPage, access.contestParameters(contestId))
+                crumb(texts.contestTitle(name = contest.name), access.contestPage, access.contestParameters(contestId))
             }
-            guide("Ознакомьтесь с Задачей, отправьте Решение и просмотрите результаты Посылок.")
+            guide(texts.taskGuide())
             var timer: TimerHandle? = null
             row {
-                block(size = TASK_DETAILS_COLUMNS, title = "Сведения") {
-                    guide("Название и описание Задачи. В строке «Файлы» можно скачать доступные Ресурсы.")
-                    row { codeInput("ID", labelSize = 6, size = 10) { value = task.task.id.value.toString() } }
-                    row { textInput("Название", labelSize = 6, size = 18) { value = task.task.name } }
-                    row { textArea("Описание", labelSize = 6, size = 18, maxLines = 4) { value = task.task.description } }
-                    row { field("Файлы", labelSize = 6, size = 18) { resourceDownloads(access, contestId, task) } }
+                block(size = TASK_DETAILS_COLUMNS, title = texts.detailsTitle()) {
+                    guide(texts.taskDetailsGuide())
+                    row { codeInput(texts.id(), labelSize = 6, size = 10) { value = task.task.id.value.toString() } }
+                    row { textInput(texts.name(), labelSize = 6, size = 18) { value = task.task.name } }
+                    row { textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) { value = task.task.description } }
+                    row { field(texts.taskFiles(), labelSize = 6, size = 18) { resourceDownloads(access, contestId, task) } }
                     row {
-                        field("Лучший результат", labelSize = 6, size = 18) {
-                            task.best?.score?.let { score -> verdict(score.toDouble()) } ?: text("Нет")
+                        field(texts.taskBest(), labelSize = 6, size = 18) {
+                            task.best?.score?.let { score -> verdict(score.toDouble()) } ?: text(texts.taskBestNone())
                         }
                     }
                 }.isEditable = false
-                highlightBlock(title = "Осталось") {
-                    guide("Время, оставшееся для работы в Туре. После его окончания отправка Решений недоступна.")
+                highlightBlock(title = texts.remainingTitle()) {
+                    guide(texts.remainingGuide())
                     timer = studyRemainingTime(contest, enteredAt, now)
                 }
             }
@@ -116,10 +122,11 @@ abstract class StudyTaskView(
     }
 
     private fun ContentScope.resourceDownloads(access: StudyAccess, contestId: ContestId, task: StudyTaskVo) {
-        if (task.statement == null && task.exercises.isEmpty()) text("Нет файлов")
-        task.statement?.let { statement -> resourceDownload("Скачать условие", access, contestId, task.task.id, statement.id) }
+        val texts = currentLocalization().pageStudy
+        if (task.statement == null && task.exercises.isEmpty()) text(texts.taskFilesEmpty())
+        task.statement?.let { statement -> resourceDownload(texts.taskDownloadStatement(), access, contestId, task.task.id, statement.id) }
         task.exercises.forEach { exercise ->
-            resourceDownload("Скачать упражнение «${exercise.name}»", access, contestId, task.task.id, exercise.id)
+            resourceDownload(texts.taskDownloadExercise(name = exercise.name), access, contestId, task.task.id, exercise.id)
         }
     }
 
@@ -154,18 +161,25 @@ abstract class StudyTaskView(
         val fileCopy = AtomicReference<Pair<String, FileData>?>()
         lateinit var drop: FileDropHandle
         lateinit var language: ValueInput<TrikSupportedLanguage?>
+        val texts = currentLocalization().pageStudy
         row {
-            block(title = "Отправка решения") {
+            block(title = texts.taskSendTitle()) {
                 if (task.languages.isEmpty()) {
-                    row { alert(FeedbackKind.Warning, "Отправка недоступна: у Задачи нет разрешённых языков") }
+                    row { alert(FeedbackKind.Warning, texts.taskSendUnavailable()) }
                 }
                 row {
-                    language = select("Язык", labelSize = 4, size = 8, items = task.languages, itemLabel = ::languageLabel) {
+                    language = select(
+                        texts.taskSendLanguage(),
+                        labelSize = 4,
+                        size = 8,
+                        items = task.languages,
+                        itemLabel = ::languageLabel,
+                    ) {
                         task.languages.singleOrNull()?.let { only -> value = only }
                         isEnabled = isSendable
                     }
                     drop = fileDrop(
-                        "Файл решения",
+                        texts.taskSendFile(),
                         labelSize = 4,
                         size = 8,
                         limits = UploadLimits(
@@ -179,12 +193,12 @@ abstract class StudyTaskView(
                         },
                     ) { isEnabled = isSendable }
                 }
-                guide("Выберите язык, добавьте файл Решения и отправьте его на проверку, пока Тур доступен.") {
-                    step(language, title = "Язык Решения", description = "Выберите язык, на котором написан отправляемый файл.")
-                    step(drop, title = "Файл Решения", description = "Прикрепите один файл с Решением выбранной Задачи.")
+                guide(texts.taskSendGuide()) {
+                    step(language, title = texts.taskSendLanguageStepTitle(), description = texts.taskSendLanguageStepDescription())
+                    step(drop, title = texts.taskSendFile(), description = texts.taskSendFileStepDescription())
                 }
                 footer {
-                    mainAction("Отправить") {
+                    mainAction(texts.taskSendSubmit()) {
                         if (isSendable && timer != null) {
                             bindEnabled(timer.remainingSeconds.map { seconds -> seconds > 0 })
                         } else {
@@ -201,39 +215,44 @@ abstract class StudyTaskView(
     }
 
     private fun send(access: StudyAccess, contestId: ContestId, taskId: TaskId, language: TrikSupportedLanguage?, file: FileData?) {
+        val texts = currentLocalization().pageStudy
         when {
-            language == null -> toast(FeedbackKind.Error, "Выберите язык")
-            file == null -> toast(FeedbackKind.Error, "Выберите файл")
+            language == null -> toast(FeedbackKind.Error, texts.taskSendLanguageRequired())
+            file == null -> toast(FeedbackKind.Error, texts.taskSendFileRequired())
             else -> {
                 access.sendSolution(contestId, taskId, file, language)
-                toast(FeedbackKind.Success, "Решение отправлено")
+                toast(FeedbackKind.Success, texts.taskSendSent())
                 show(access, contestId, taskId)
             }
         }
     }
 
     private fun PageScope.submissionsBlock(access: StudyAccess, contestId: ContestId, task: StudyTaskVo, isSendable: Boolean) {
+        val texts = currentLocalization().pageStudy
         row {
-            block(title = "Решения") {
-                guide("История ваших Посылок по этой Задаче, их состояние и результаты проверки.")
+            block(title = texts.taskSubmissionsTitle()) {
+                guide(texts.taskSubmissionsGuide())
                 table(
                     key = { submission: StudySubmissionVo -> submission.submission.id },
                     fetch = { request -> pageOf(task.submissions, request) },
                 ) {
-                    dateTimeColumn("Отправлено", size = 5) { submission -> submission.submission.createdAt.toUserDateTime() }
-                    textColumn("Файл", size = 9) { submission -> submission.filename }
-                    column("Результат", size = 8) { submission ->
+                    dateTimeColumn(texts.taskSubmissionsSent(), size = 5) { submission -> submission.submission.createdAt.toUserDateTime() }
+                    textColumn(texts.taskSubmissionsFile(), size = 9) { submission -> submission.filename }
+                    column(texts.taskSubmissionsResult(), size = 8) { submission ->
                         result(submission)
-                        if (submission == task.best) tag("Лучшее", TagKind.Rating)
+                        if (submission == task.best) tag(texts.taskSubmissionsBest(), TagKind.Rating)
                     }
                     column("") { submission ->
-                        iconDownloadAction("Скачать", produce = {
+                        iconDownloadAction(texts.taskSubmissionsDownload(), produce = {
                             val file = access.downloadSolution(contestId, task.task.id, submission.submission.id)
                             val content = fileContentReader.read(file)
                             DownloadContent(file.uploadedFilename, RESOURCE_CONTENT_TYPE, content.size.toLong()) { content.inputStream() }
                         })
                     }
-                    empty("Решений пока нет", if (isSendable) "Отправьте решение в форме выше." else "Посылок в этом туре нет.")
+                    empty(
+                        texts.taskSubmissionsEmpty(),
+                        if (isSendable) texts.taskSubmissionsEmptyHintSendable() else texts.taskSubmissionsEmptyHintClosed(),
+                    )
                 }
             }
         }
@@ -250,10 +269,13 @@ abstract class StudyTaskView(
         submissionStatus(submission.submission.status)
     }
 
-    private fun languageLabel(language: TrikSupportedLanguage): String = when (language) {
-        TrikSupportedLanguage.Python -> "Python"
-        TrikSupportedLanguage.JavaScript -> "JavaScript"
-        TrikSupportedLanguage.VisualLanguage -> "Визуальный язык TRIK Studio"
+    private fun languageLabel(language: TrikSupportedLanguage): String {
+        val variant = when (language) {
+            TrikSupportedLanguage.Python -> TaskSendLanguageNameLanguage.PYTHON
+            TrikSupportedLanguage.JavaScript -> TaskSendLanguageNameLanguage.JAVASCRIPT
+            TrikSupportedLanguage.VisualLanguage -> TaskSendLanguageNameLanguage.VISUAL_LANGUAGE
+        }
+        return currentLocalization().pageStudy.taskSendLanguageName(language = variant)
     }
 }
 
@@ -263,7 +285,6 @@ abstract class StudyTaskView(
  * @since %CURRENT_VERSION%
  */
 @Route("student/classes/:classId([0-9]+)/contests/:contestId([0-9]+)/tasks/:taskId([0-9]+)")
-@PageTitle("Задача")
 @RolesAllowed("MULTIPLE_ROLE")
 class StudentTaskView(
     headers: CabinetHeaders,
@@ -282,7 +303,6 @@ class StudentTaskView(
  * @since %CURRENT_VERSION%
  */
 @Route("participant/contests/:contestId([0-9]+)/tasks/:taskId([0-9]+)")
-@PageTitle("Задача")
 @RolesAllowed("PARTICIPANT")
 class ParticipantTaskView(
     headers: CabinetHeaders,

@@ -3,7 +3,7 @@ package tech.testsys.web.app.view
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.group.ClassId
@@ -14,6 +14,7 @@ import tech.testsys.web.components.data.table
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.texts.currentLocalization
 import java.time.Clock
 import java.time.Instant
 
@@ -24,48 +25,52 @@ import java.time.Instant
  * @since %CURRENT_VERSION%
  */
 @Route("student/classes/:classId([0-9]+)")
-@PageTitle("Класс")
 @RolesAllowed("MULTIPLE_ROLE")
 class StudentClassView(
     private val headers: CabinetHeaders,
     private val studentService: StudentService,
     private val clock: Clock,
 ) : TestSysView(),
-    BeforeEnterObserver {
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageStudy.classTabTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         val classId = ClassId(event.routeParameters.getLong(STUDY_CLASS_ID_PARAMETER).orElseThrow())
         // Checks the role, the class and the membership first, so that a refusal opens its error screen.
         val contests = studentService.viewContests(classId)
         val studyClass = studentService.viewClasses().first { studyClass -> studyClass.id == classId }
         val now = clock.instant()
+        val localization = currentLocalization()
+        val texts = localization.pageStudy
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Класс «${studyClass.name}»") {
-                crumb("Главная", MultiMainView::class.java)
-                crumb("Кабинет Ученика", StudentView::class.java)
+            head(texts.classTitle(name = studyClass.name)) {
+                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
+                crumb(texts.studentTitle(), StudentView::class.java)
             }
-            guide("На странице Класса показаны его сведения и доступные Туры.")
+            guide(texts.classGuide())
             row {
-                block(title = "Сведения") {
-                    guide("Идентификатор, название и описание Класса, к которому вы присоединились.")
-                    row { codeInput("ID", labelSize = 4, size = 8) { value = studyClass.id.value.toString() } }
-                    row { textInput("Название", labelSize = 4, size = 20) { value = studyClass.name } }
-                    row { textArea("Описание", labelSize = 4, size = 20, maxLines = 4) { value = studyClass.description } }
+                block(title = texts.detailsTitle()) {
+                    guide(texts.classDetailsGuide())
+                    row { codeInput(texts.id(), labelSize = 4, size = 8) { value = studyClass.id.value.toString() } }
+                    row { textInput(texts.name(), labelSize = 4, size = 20) { value = studyClass.name } }
+                    row { textArea(texts.description(), labelSize = 4, size = 20, maxLines = 4) { value = studyClass.description } }
                 }.isEditable = false
             }
             row {
-                block(title = "Туры") {
-                    guide("Список Туров и их параметры. Выберите строку, чтобы открыть Тур.")
+                block(title = localization.pageCabinet.sectionContests()) {
+                    guide(texts.contestsGuide())
                     table(
                         key = { (_, contest): Pair<Instant?, ContestVo> -> contest.id },
                         fetch = { request -> pageOf(contests, request) },
                     ) {
-                        textColumn("Название", size = 5) { (_, contest) -> contest.name }
-                        dateTimeColumn("Начало", size = 4) { (_, contest) -> contest.startsAt?.toUserDateTime() }
-                        dateTimeColumn("Конец", size = 4) { (_, contest) -> contest.endsAt?.toUserDateTime() }
-                        textColumn("Время на прохождение", size = 3) { (_, contest) -> studyDurationText(contest.attemptDuration) }
-                        column("Состояние", size = 4) { (enteredAt, contest) -> studyState(contest, enteredAt, now) }
-                        column("Осталось") { (enteredAt, contest) -> studyTimer(contest, enteredAt, now) }
-                        empty("Туров пока нет", "Туры появятся, когда Организатор добавит их в класс.")
+                        textColumn(texts.name(), size = 5) { (_, contest) -> contest.name }
+                        dateTimeColumn(texts.startsAt(), size = 4) { (_, contest) -> contest.startsAt?.toUserDateTime() }
+                        dateTimeColumn(texts.endsAt(), size = 4) { (_, contest) -> contest.endsAt?.toUserDateTime() }
+                        textColumn(texts.attemptDuration(), size = 3) { (_, contest) -> studyDurationText(contest.attemptDuration) }
+                        column(texts.contestStateTitle(), size = 4) { (enteredAt, contest) -> studyState(contest, enteredAt, now) }
+                        column(texts.remainingTitle()) { (enteredAt, contest) -> studyTimer(contest, enteredAt, now) }
+                        empty(texts.contestsEmpty(), texts.classContestsEmptyHint())
                         onRowClick(isNavigation = true) { (_, contest) ->
                             UI.getCurrent().navigate(StudentContestView::class.java, studentContestParameters(classId, contest.id))
                         }

@@ -268,3 +268,104 @@ glossary and owner documents stay authoritative.
 - In «Скачать логи Полигона «{name}»» the generic word precedes the quoted name, so the name stays undeclined
   (see the «Quoted names and declension» note above).
 - Source: https://ru.wiktionary.org/wiki/полигон (read 2026-10-12).
+
+## Student and Participant Cabinets (page_study)
+
+### «Тур»: the round sense is inanimate
+
+- Викисловарь separates «тур I» (inanimate, masculine, type 1a: a circle or turn; «этап поэтапного мероприятия»;
+  a stage of a competition; a dance circle; a cairn) from «тур II» (animate: the aurochs). The TestSys term
+  (definitions.md item 21, a set of Tasks with time limits) is «тур I», sense 2, so the accusative equals the
+  nominative: «Начать Тур», «открыть Тур». The animal reading would need «Тура» and does not arise with the
+  capitalized term in a cabinet. Forms used by `glossary.contest`: Им. «Тур» / «Туры», Р. «Тура» / «Туров», В. «Тур»,
+  П. «Туре».
+- Source: https://ru.wiktionary.org/wiki/тур (read 2026-10-12, first 100 000 characters of the page).
+
+### «Класс»: the school group sense
+
+- Викисловарь: inanimate masculine, type 1a; senses 3 and 4 are a school group of pupils («группа учеников,
+  занимающихся вместе»), sense 6 the classroom, sense 8 a programming class. The TestSys term (definitions.md
+  item 23: Students, Tours and an Organizer) fits sense 4; «присоединиться к Классу» excludes the room sense. Forms
+  in `glossary.class`: Им./В. «Класс», Р. «Класса», Д. «Классу», Р. мн. «Классов».
+- Source: https://ru.wiktionary.org/wiki/класс (read 2026-10-12).
+
+### «Задача»: forms
+
+- Викисловарь: inanimate feminine, type 4a; Тв. «задачей» / «задачею», the page uses the neutral «Задачей». Forms
+  in `glossary.task`: Им. «Задача» / «Задачи», Р. «Задачи» / «Задач», Д. «Задаче» / «Задачам», Тв. «Задачей».
+  Sense 2 (an exercise that requires logical methods or calculation) matches the domain term.
+- Source: https://ru.wiktionary.org/wiki/задача (read 2026-10-12, first 100 000 characters of the page).
+
+### «Решение»: decision versus solution
+
+- Викисловарь: inanimate neuter, type 7a. Senses include the act of solving, an official ruling, an answer to a
+  problem and a decision made. In TestSys it is a TRIK Studio program (definitions.md item 18); next to
+  «отправьте», «Файл Решения» and «Язык Решения» the decision sense does not fit. Neuter agreement: «Решение
+  отправлено»; the tag «Лучшее» and the badge «Проверено» agree with an implied «Решение» (inference).
+- Source: https://ru.wiktionary.org/wiki/решение (read 2026-10-12).
+
+### Subject of «показаны» takes the nominative
+
+- In «…показаны его сведения и доступные Туры» and «Здесь показаны условия Тура, оставшееся время и доступные
+  Задачи» the plural terms are subjects of the short passive participle «показаны», so they are nominative
+  (`case=nom number=pl`), not accusative. For these inanimate plurals Им. мн. = В. мн. («Туры», «Задачи»), so the
+  rendered text is the same; the case label matters for other languages and for future term forms. Verified by the
+  independent localization review (2026-10-12) against https://ru.wiktionary.org/wiki/тур (тур I) and
+  https://ru.wiktionary.org/wiki/задача.
+
+### «Проверено» outside the Submission list
+
+- The `submission_status` value «Проверено» (neuter) also appears in the Tour page column «Последняя Посылка»,
+  where it does not agree with the feminine «Посылка» and reads as an impersonal status («проверено»). Inference
+  from usage, no source.
+
+### «условия Тура» versus the domain term «Условие»
+
+- Викисловарь «условие» sense 4: «правило, существующее, установленное в той или иной области» («на условиях
+  конкурса»); sense 7 is the given of a problem. The domain term «Условие» (definitions.md item 16) is a Resource,
+  the Task statement. `page_study.contest.guide` uses lowercase plural «условия Тура» in sense 4 (the Tour's rules
+  and time limits), while «Скачать Условие» on the Task page means the Resource. The capital letter and «Тура»
+  separate them; a reader may still briefly connect the two (inference). A less ambiguous wording, such as
+  «параметры Тура», would need an explicit change request.
+- Source: https://ru.wiktionary.org/wiki/условие (read 2026-10-12).
+
+### «Время на прохождение»
+
+- Викисловарь «прохождение»: sense 1 «действие по значению гл. проходить/пройти»; senses 4–5 relate to finishing
+  a game. There is no explicit sense for completing a course or a test; sense 1 covers «пройти Тур» (complete it),
+  so the phrase reads as the time allowed to complete the Tour (inference). No undesirable connotation found.
+- Source: https://ru.wiktionary.org/wiki/прохождение (read 2026-10-12).
+
+### Glossary decisions for page_study
+
+- Project decision D2 (coordinator, 2026-10-12): declined or repeated domain terms become glossary terms.
+  `glossary.contest`, `glossary.class`, `glossary.task` and `glossary.solution` were added; the existing
+  `glossary.invite_code` and `glossary.submission` already had every form used.
+- Role names («Организатор», «Ученик», «Участник») stay literal, following earlier bundles (`page_guest`,
+  `page_registration`, `page_judge`). Single-occurrence terms «Соревнование», «Ресурсы», «Условие», «Упражнение»
+  and «Кабинет» also stay literal. This is a project choice, not a language finding.
+- Quoted names follow a generic word («Класс «{name}»», «Скачать Упражнение «{name}»»), so they stay undeclined
+  (see «Quoted names and declension» above).
+- Unverified: «Визуальный язык TRIK Studio» was kept verbatim; the TRIK Studio documentation name of its visual
+  language was not checked.
+
+### «Визуальный язык TRIK Studio»: no official name found
+
+- The independent review fetched https://help.trikset.com/ (2026-10-12): it describes TRIK Studio only as
+  «бесплатной средой программирования роботов» and names no visual language. Web searches found only SPbU theses and
+  slides speaking of a «визуальный язык программирования», «графические программы» and «диаграммы» (search snippets
+  only, not opened: https://dspace.spbu.ru/bitstream/11701/10976/1/Diploma_-_diploma.pdf,
+  https://oops.math.spbu.ru/SE/diploma/2017/bmo/444-Shigarov-presentation.pdf/at_download/file). The wording stays
+  verbatim until an official name is confirmed.
+
+### Wording kept verbatim with possible misreadings
+
+- «Отсчёт начнётся с началом Тура» (`page_study.remaining.not_started`) is shown before the user's first entry. The
+  same page shows the scheduled «Начало» and the «Начать Тур» button, while the countdown starts only when the user
+  presses that button; «начало Тура» can be read as the scheduled start. A wording such as «Отсчёт начнётся, когда
+  вы начнёте Тур» would need an explicit change request. Inference from page context by the independent review
+  (2026-10-12), no language source.
+- The Task page block that lists the user's sendings is titled «Решения» with the empty state «Решений пока нет»,
+  while its guide and closed hint speak of «Посылки». definitions.md separates Решение (item 18) from Посылка
+  (item 29); capitalization makes the mix visible. Not a grammar defect; «Посылки» / «Посылок пока нет» would need
+  an explicit change request. Inference by the independent review (2026-10-12).

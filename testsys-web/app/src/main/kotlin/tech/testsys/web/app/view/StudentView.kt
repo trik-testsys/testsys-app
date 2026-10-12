@@ -3,7 +3,7 @@ package tech.testsys.web.app.view
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.operation.error.ClassInviteCodeExpiredError
@@ -18,6 +18,7 @@ import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
+import tech.testsys.web.components.texts.currentLocalization
 
 /** Columns of the classes block; joining a class takes the rest of the row beside it. */
 private const val CLASSES_COLUMNS = 16
@@ -29,11 +30,13 @@ private const val CLASSES_COLUMNS = 16
  * @since %CURRENT_VERSION%
  */
 @Route("student/:section?(classes)")
-@PageTitle("Кабинет Ученика")
 @RolesAllowed("MULTIPLE_ROLE")
 class StudentView(private val headers: CabinetHeaders, private val studentService: StudentService) :
     TestSysView(),
-    BeforeEnterObserver {
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageStudy.studentTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         show()
     }
@@ -41,27 +44,29 @@ class StudentView(private val headers: CabinetHeaders, private val studentServic
     private fun show() {
         // Also checks the student role before the table loads, so that its absence opens the forbidden screen.
         val classes = studentService.viewClasses()
+        val localization = currentLocalization()
+        val texts = localization.pageStudy
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Кабинет Ученика") { crumb("Главная", MultiMainView::class.java) }
-            guide("Откройте свой Класс или присоединитесь к новому по Коду-приглашению.")
+            head(texts.studentTitle()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
+            guide(texts.studentGuide())
             row {
-                block(size = CLASSES_COLUMNS, title = "Классы") {
-                    guide("Список Классов и сведения о них.")
+                block(size = CLASSES_COLUMNS, title = localization.pageCabinet.sectionClasses()) {
+                    guide(texts.studentClassesGuide())
                     table(key = { studyClass: ClassVo -> studyClass.id }, fetch = { request -> pageOf(classes, request) }) {
-                        textColumn("Название", size = 8) { studyClass -> studyClass.name }
-                        textColumn("Описание") { studyClass -> studyClass.description }
-                        empty("Классов пока нет", "Присоединитесь к классу по Коду-приглашению.")
+                        textColumn(texts.name(), size = 8) { studyClass -> studyClass.name }
+                        textColumn(texts.description()) { studyClass -> studyClass.description }
+                        empty(texts.studentClassesEmpty(), texts.studentClassesEmptyHint())
                         onRowClick(isNavigation = true) { studyClass ->
                             UI.getCurrent().navigate(StudentClassView::class.java, studentClassParameters(studyClass.id))
                         }
                     }
                 }
-                block(title = "Присоединиться к классу") {
-                    guide("Введите Код-приглашение от Организатора и нажмите «Присоединиться».")
+                block(title = texts.studentJoinTitle()) {
+                    guide(texts.studentJoinGuide())
                     lateinit var inviteCode: ValueInput<String>
-                    row { inviteCode = codeInput("Код-приглашение", labelSize = 10, size = 14) }
+                    row { inviteCode = codeInput(texts.studentJoinInviteCode(), labelSize = 10, size = 14) }
                     footer {
-                        mainAction("Присоединиться") {
+                        mainAction(texts.studentJoinSubmit()) {
                             clickOnEnter()
                             onClick { joinClass(inviteCode.value) }
                         }
@@ -73,17 +78,18 @@ class StudentView(private val headers: CabinetHeaders, private val studentServic
 
     /** Joins the class by [inviteCode] and rebuilds the page with it. */
     private fun joinClass(inviteCode: String) {
+        val texts = currentLocalization().pageStudy
         val studyClass = try {
             studentService.joinClass(inviteCode)
         } catch (exception: OperationException) {
             when (exception.error) {
-                is ClassInviteCodeNotValidError -> toast(FeedbackKind.Error, "Код-приглашение недействителен")
-                is ClassInviteCodeExpiredError -> toast(FeedbackKind.Error, "Срок Кода-приглашения истёк")
+                is ClassInviteCodeNotValidError -> toast(FeedbackKind.Error, texts.studentJoinInviteCodeInvalid())
+                is ClassInviteCodeExpiredError -> toast(FeedbackKind.Error, texts.studentJoinInviteCodeExpired())
                 else -> throw exception
             }
             return
         }
-        toast(FeedbackKind.Success, "Вы присоединились к классу «${studyClass.name}»")
+        toast(FeedbackKind.Success, texts.studentJoinJoined(name = studyClass.name))
         show()
     }
 }

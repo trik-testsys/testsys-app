@@ -95,7 +95,8 @@ fun `should keep contests of a task when its name is updated`() { /*content*/ }
 сохранённого Пользователя вида, указанного в аннотации.
 
 Служебные маршруты независимо обходит `ServicePagesTests` в пакете `tech.testsys.web.service`.
-Он строит страницы с `ServicePrincipal`, не создавая доменного Пользователя.
+Он строит страницы с `ServicePrincipal`, не создавая доменного Пользователя. Наборы параметров служебной страницы
+с обязательным параметром добавьте в источник аргументов `pages()` этого теста (карта `parameterSets`).
 Реальные порты и изоляцию Spring/Vaadin проверяют тесты пакета `tech.testsys.bootstrap`;
 Karibu не заменяет эти проверки.
 

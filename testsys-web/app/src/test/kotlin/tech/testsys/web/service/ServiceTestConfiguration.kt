@@ -7,7 +7,22 @@ import org.springframework.context.annotation.Bean
 import org.springframework.core.env.Environment
 import org.springframework.mock.env.MockEnvironment
 import tech.testsys.bootstrap.ServiceWebSettings
+import tech.testsys.domain.builder.api.multipleRoleUser
+import tech.testsys.domain.builder.api.multipleRoleUserData
+import tech.testsys.domain.builder.api.observer
+import tech.testsys.domain.builder.api.observerData
+import tech.testsys.domain.builder.api.participant
+import tech.testsys.domain.builder.api.participantData
+import tech.testsys.domain.builder.api.studentData
+import tech.testsys.domain.builder.api.supervisor
+import tech.testsys.domain.builder.api.supervisorData
+import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.model.group.CommunityId
+import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.User
+import tech.testsys.infra.database.api.service.ServiceUserId
+import tech.testsys.infra.database.api.service.ServiceUserSearch
 import tech.testsys.infra.grpc.api.GradingNodeImportPreview
 import tech.testsys.infra.grpc.api.GradingNodeRegistry
 import tech.testsys.infra.grpc.api.GradingNodeRegistryOverview
@@ -21,8 +36,60 @@ import tech.testsys.infra.settings.api.SettingsService
 import tech.testsys.infra.settings.api.SettingsSnapshot
 import tech.testsys.infra.settings.api.SettingsValues
 import java.time.Clock
+import java.time.Instant
 
 const val SERVICE_TEST_SECRET: String = "test-service-code-that-is-only-used-by-automated-tests-0123456789-ABCD"
+
+/** Users of every kind that the mocked service user search finds by id. */
+val SERVICE_TEST_USERS: List<User<*>> = listOf(
+    multipleRoleUser {
+        id = 1001
+        createdAt = Instant.parse("2026-03-14T09:30:00Z")
+        data = multipleRoleUserData {
+            accessToken("multiple-role-token", algorithm = HashAlgorithm.Identity)
+            name = "Мария Иванова"
+            email = "maria@example.com"
+            roles {
+                administrator {}
+                student { data = studentData {} }
+            }
+        }
+    },
+    participant {
+        id = 1002
+        createdAt = Instant.parse("2026-03-14T09:30:00Z")
+        data = participantData {
+            competition(2001)
+            accessToken("participant-token", algorithm = HashAlgorithm.Identity)
+            name = "Участник Пётр"
+        }
+    },
+    observer {
+        id = 1003
+        createdAt = Instant.parse("2026-03-14T09:30:00Z")
+        data = observerData {
+            community(3001)
+            contests = mutableListOf(ContestId(4001), ContestId(4002))
+            accessToken("observer-token", algorithm = HashAlgorithm.Identity)
+            name = "Наблюдатель Анна"
+        }
+    },
+    supervisor {
+        id = 1004
+        createdAt = Instant.parse("2026-03-14T09:30:00Z")
+        data = supervisorData {
+            accessToken("supervisor-token", algorithm = HashAlgorithm.Identity)
+            name = "Супервайзер Олег"
+        }
+    },
+)
+
+/** Makes the mocked [search] find nothing by conditions and find each of [SERVICE_TEST_USERS] by its id. */
+fun stubServiceTestUsers(search: ServiceUserSearch) {
+    every { search.find(any(), any()) } answers { Page(emptyList(), secondArg(), 0) }
+    every { search.findById(any()) } returns null
+    SERVICE_TEST_USERS.forEach { user -> every { search.findById(ServiceUserId(user.id.value)) } returns user }
+}
 
 @TestConfiguration(proxyBeanMethods = false)
 class ServiceTestConfiguration {
@@ -53,6 +120,9 @@ class ServiceTestConfiguration {
     fun gradingQueueMonitor(): GradingQueueMonitor = mockk {
         every { snapshot() } returns GradingQueueSnapshot(preparing = 0, waiting = 0, grading = 0, saving = 0)
     }
+
+    @Bean
+    fun serviceUserSearch(): ServiceUserSearch = mockk<ServiceUserSearch>().also(::stubServiceTestUsers)
 
     @Bean
     fun serviceSettings(environment: Environment): ServiceWebSettings = ServiceWebSettings.from(

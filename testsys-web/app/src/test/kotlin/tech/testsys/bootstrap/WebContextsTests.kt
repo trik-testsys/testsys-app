@@ -15,7 +15,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.web.server.context.WebServerApplicationContext
 import org.springframework.boot.web.servlet.ServletRegistrationBean
 import org.springframework.web.context.WebApplicationContext
+import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.UserRepository
+import tech.testsys.infra.database.api.service.ServiceUserFilter
+import tech.testsys.infra.database.api.service.ServiceUserSearch
 import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.infra.grpc.api.GradingNodeRegistry
 import tech.testsys.infra.grpc.api.GradingQueueMonitor
@@ -85,6 +88,7 @@ class WebContextsTests {
                 GradingQueueMonitor::class.java,
                 TaskValidationDispatcher::class.java,
                 UserRepository::class.java,
+                ServiceUserSearch::class.java,
             )
             for (type in sharedTypes) {
                 assertSame(runtime.infrastructure.getBean(type), main.getBean(type))
@@ -92,6 +96,8 @@ class WebContextsTests {
                 assertTrue(main.getBeansOfType(type).isEmpty())
                 assertTrue(service.getBeansOfType(type).isEmpty())
             }
+            val firstUser = Pagination(page = 0, size = 1)
+            assertSame(firstUser, service.getBean(ServiceUserSearch::class.java).find(ServiceUserFilter(), firstUser).pagination)
             assertNotSame(main.getBean("applicationTaskExecutor"), service.getBean("applicationTaskExecutor"))
             assertTrue(main.getBean(UserService::class.java) is Advised)
             assertFalse(service.containsBean("userService"))

@@ -258,13 +258,15 @@ class DatabaseFixtures(
         }
     }
 
-    fun competition(owner: MultipleRoleUser = manager()): Competition {
+    fun competition(owner: MultipleRoleUser = manager(), contests: List<Contest> = emptyList()): Competition {
         val ownerId = owner.id.value
+        val contestIds = contests.map { contest -> contest.id.value }
         return competitions.save(
             competitionData {
                 owner(ownerId)
                 name = unique("Competition")
                 description = "Competition description"
+                contests(contestIds)
             },
         )
     }

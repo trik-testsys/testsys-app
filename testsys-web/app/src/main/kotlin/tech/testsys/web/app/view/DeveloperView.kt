@@ -3,7 +3,7 @@ package tech.testsys.web.app.view
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.contract.persistence.ContestFilter
@@ -36,14 +36,15 @@ import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.dialog
+import tech.testsys.web.components.texts.currentLocalization
 import java.time.Duration
 import java.time.LocalDateTime
 
-/** Labels of the task states a task list is filtered by. */
-private val STATE_FILTER_LABELS: Map<TaskFilter.State, String> = mapOf(
-    TaskFilter.State.NEW to TaskState.New.label,
-    TaskFilter.State.UNCOMMITTED to TaskState.Uncommitted.label,
-    TaskFilter.State.COMMITTED to TaskState.Committed.label,
+/** Task states a task list is filtered by. */
+private val FILTER_STATES: Map<TaskFilter.State, TaskState> = mapOf(
+    TaskFilter.State.NEW to TaskState.New,
+    TaskFilter.State.UNCOMMITTED to TaskState.Uncommitted,
+    TaskFilter.State.COMMITTED to TaskState.Committed,
 )
 
 /**
@@ -53,7 +54,6 @@ private val STATE_FILTER_LABELS: Map<TaskFilter.State, String> = mapOf(
  * @since %CURRENT_VERSION%
  */
 @Route("developer/:section?(tasks|contests)")
-@PageTitle("Кабинет Разработчика")
 @RolesAllowed("MULTIPLE_ROLE")
 class DeveloperView(
     private val headers: CabinetHeaders,
@@ -61,7 +61,10 @@ class DeveloperView(
     private val multipleRoleUserService: MultipleRoleUserService,
     private val currentUser: CurrentUser,
 ) : TestSysView(),
-    BeforeEnterObserver {
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageDeveloper.title()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         val section = event.routeParameters.get(DEVELOPER_SECTION_PARAMETER).orElse(null)
         if (section == null) {
@@ -73,15 +76,17 @@ class DeveloperView(
         val versions = developerService.viewTrikStudioVersions()
         val communities = developerCommunities(multipleRoleUserService)
         val me = currentUser.multipleRoleUser().id
+        val localization = currentLocalization()
+        val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Кабинет Разработчика") {
-                crumb("Главная", MultiMainView::class.java)
+            head(texts.title()) {
+                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
                 tabs(matchRouteParameters = true) {
-                    tab("Задачи", DeveloperView::class.java, developerSectionParameters(TASKS_SECTION))
-                    tab("Туры", DeveloperView::class.java, developerSectionParameters(CONTESTS_SECTION))
+                    tab(localization.pageCabinet.sectionTasks(), DeveloperView::class.java, developerSectionParameters(TASKS_SECTION))
+                    tab(localization.pageCabinet.sectionContests(), DeveloperView::class.java, developerSectionParameters(CONTESTS_SECTION))
                 }
             }
-            guide("Работайте с Задачами и Турами через вкладки Кабинета Разработчика.")
+            guide(texts.guide())
             if (section == CONTESTS_SECTION) {
                 contestsBlock(me, communities, versions)
             } else {
@@ -92,9 +97,10 @@ class DeveloperView(
     }
 
     private fun PageScope.tasksBlock(me: MultipleRoleUserId, communities: List<CommunityVo>, owned: Boolean) {
+        val texts = currentLocalization().pageDeveloper
         row {
-            block(title = if (owned) "Мои задачи" else "Доступные через сообщества") {
-                guide("Список ваших Задач или Задач, доступных через Сообщества. Фильтры помогают найти нужную запись.")
+            block(title = if (owned) texts.tasksOwned() else texts.tasksShared()) {
+                guide(texts.tasksGuide())
                 val initial = TaskFilter(ownerId = me.takeIf { owned }, excludeOwnerId = me.takeUnless { owned })
                 var applied = initial
                 val rows = table(
@@ -104,20 +110,20 @@ class DeveloperView(
                         Page(tasks.content, tasks.totalElements.toInt())
                     },
                 ) {
-                    codeColumn("ID", sortKey = "id", size = 5) { task -> task.id.value.toString() }
-                    textColumn("Название", sortKey = "name", size = 13) { task -> task.name }
+                    codeColumn(texts.id(), sortKey = "id", size = 5) { task -> task.id.value.toString() }
+                    textColumn(texts.name(), sortKey = "name", size = 13) { task -> task.name }
                     if (owned) {
                         onRowClick(isNavigation = true) { task -> openDeveloperTask(task.id) }
-                        column("Состояние") { task ->
+                        column(texts.state()) { task ->
                             val state = stateOf(task)
-                            badge(state.label, state.tone)
+                            badge(texts.taskState(state = state.variant), state.tone)
                         }
                     } else {
-                        column("Сообщества") { task ->
+                        column(texts.communities()) { task ->
                             communities.filter { community -> community.id in task.sharedTo }.forEach { community -> tag(community.name) }
                         }
                     }
-                    empty("Задач пока нет")
+                    empty(texts.tasksEmpty())
                 }
 
                 lateinit var name: ValueInput<String>
@@ -143,32 +149,34 @@ class DeveloperView(
                     onRefresh = { rows.refresh(toFirstPage = true) },
                 ) {
                     row {
-                        name = textInput("Название", labelSize = 4, size = 8, hint = "Часть названия, без учёта регистра")
+                        name = textInput(texts.name(), labelSize = 4, size = 8, hint = texts.nameHint())
                         state = select(
-                            "Состояние",
+                            texts.state(),
                             labelSize = 4,
                             size = 8,
                             items = TaskFilter.State.entries,
-                            itemLabel = STATE_FILTER_LABELS::getValue,
+                            itemLabel = { filtered -> texts.taskState(state = FILTER_STATES.getValue(filtered).variant) },
                         )
                     }
                     row {
-                        community = select("Сообщество", labelSize = 4, size = 8, items = communities, itemLabel = CommunityVo::name)
+                        community = select(texts.community(), labelSize = 4, size = 8, items = communities, itemLabel = CommunityVo::name)
                     }
                 }
 
                 if (owned) {
                     val creation = taskDialog { rows.refresh() }
-                    actions { action("Создать задачу") { onClick { creation() } } }
+                    actions { action(texts.tasksCreate()) { onClick { creation() } } }
                 }
             }
         }
     }
 
     private fun PageScope.contestsBlock(me: MultipleRoleUserId, communities: List<CommunityVo>, versions: List<TrikStudioVersion>) {
+        val localization = currentLocalization()
+        val texts = localization.pageDeveloper
         row {
-            block(title = "Туры") {
-                guide("Список Туров и их параметры. Выберите строку, чтобы открыть Тур.")
+            block(title = localization.pageCabinet.sectionContests()) {
+                guide(texts.contestsGuide())
                 var applied = ContestFilter(ownerId = me)
                 val rows = table(
                     key = { (contest, _): Pair<ContestVo, List<CommunityVo>> -> contest.id },
@@ -177,14 +185,16 @@ class DeveloperView(
                         Page(contests.content, contests.totalElements.toInt())
                     },
                 ) {
-                    codeColumn("ID", sortKey = "id", size = 3) { (contest, _) -> contest.id.value.toString() }
-                    textColumn("Название", sortKey = "name", size = 5) { (contest, _) -> contest.name }
-                    numberColumn("Задачи", size = 2) { (contest, _) -> contest.tasks.size }
-                    textColumn("Доступ предоставлен", size = 3) { (contest, _) -> if (contest.sharedTo.isEmpty()) "Нет" else "Да" }
-                    dateTimeColumn("Начало", size = 4) { (contest, _) -> contest.startsAt?.toUserDateTime() }
-                    dateTimeColumn("Конец", size = 4) { (contest, _) -> contest.endsAt?.toUserDateTime() }
-                    textColumn("Время на прохождение") { (contest, _) -> studyDurationText(contest.attemptDuration) }
-                    empty("Туров пока нет", "Создайте тур.")
+                    codeColumn(texts.id(), sortKey = "id", size = 3) { (contest, _) -> contest.id.value.toString() }
+                    textColumn(texts.name(), sortKey = "name", size = 5) { (contest, _) -> contest.name }
+                    numberColumn(texts.contestsTasks(), size = 2) { (contest, _) -> contest.tasks.size }
+                    textColumn(texts.contestsShared(), size = 3) { (contest, _) ->
+                        if (contest.sharedTo.isEmpty()) texts.contestsSharedNo() else texts.contestsSharedYes()
+                    }
+                    dateTimeColumn(texts.startsAt(), size = 4) { (contest, _) -> contest.startsAt?.toUserDateTime() }
+                    dateTimeColumn(texts.endsAt(), size = 4) { (contest, _) -> contest.endsAt?.toUserDateTime() }
+                    textColumn(texts.attemptDuration()) { (contest, _) -> studyDurationText(contest.attemptDuration) }
+                    empty(texts.contestsEmpty(), texts.contestsEmptyHint())
                     onRowClick(isNavigation = true) { (contest, _) -> openDeveloperContest(contest.id) }
                 }
 
@@ -207,43 +217,45 @@ class DeveloperView(
                     onRefresh = { rows.refresh(toFirstPage = true) },
                 ) {
                     row {
-                        name = textInput("Название", labelSize = 4, size = 8, hint = "Часть названия, без учёта регистра")
-                        community = select("Сообщество", labelSize = 4, size = 8, items = communities, itemLabel = CommunityVo::name)
+                        name = textInput(texts.name(), labelSize = 4, size = 8, hint = texts.nameHint())
+                        community = select(texts.community(), labelSize = 4, size = 8, items = communities, itemLabel = CommunityVo::name)
                     }
                 }
 
                 val creation = contestDialog(versions) { rows.refresh() }
-                actions { action("Создать тур") { onClick { creation() } } }
+                actions { action(texts.contestsCreate()) { onClick { creation() } } }
             }
         }
     }
 
     /** Builds the task creation dialog and returns its opening; [onCreated] refreshes the current list after creation. */
     private fun taskDialog(onCreated: () -> Unit): () -> Unit {
+        val localization = currentLocalization()
+        val texts = localization.pageDeveloper
         val draft = Binder<TaskDraft>()
-        val creation = dialog(title = "Новая задача") {
+        val creation = dialog(title = texts.tasksDialogTitle()) {
             row {
-                textInput("Название", labelSize = 6, size = 18) {
+                textInput(texts.name(), labelSize = 6, size = 18) {
                     draft.forField(this)
-                        .nameRules("Укажите название")
+                        .nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
-                textArea("Описание", labelSize = 6, size = 18, maxLines = 4) {
+                textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
             }
             footer { dialog ->
-                action("Отменить") { onClick { dialog.close() } }
-                mainAction("Создать") {
+                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                mainAction(texts.create()) {
                     onClick {
                         val values = TaskDraft()
                         if (draft.writeBeanIfValid(values)) {
                             developerService.createTask(taskName = values.name, taskDescription = values.description)
                             dialog.close()
-                            toast(FeedbackKind.Success, "Задача создана")
+                            toast(FeedbackKind.Success, currentLocalization().pageDeveloper.tasksCreated())
                             onCreated()
                         }
                     }
@@ -258,55 +270,61 @@ class DeveloperView(
 
     /** Builds the contest creation dialog of [versions] and returns its opening, which starts with an empty form. */
     private fun contestDialog(versions: List<TrikStudioVersion>, onCreated: () -> Unit): () -> Unit {
+        val localization = currentLocalization()
+        val texts = localization.pageDeveloper
         val draft = Binder<ContestDraft>()
         lateinit var startsAt: ValueInput<LocalDateTime?>
         lateinit var endsAt: ValueInput<LocalDateTime?>
-        val creation = dialog(title = "Новый тур", size = DialogSize.L) {
+        val creation = dialog(title = texts.contestsDialogTitle(), size = DialogSize.L) {
             row {
-                textInput("Название", labelSize = 7, size = 17) {
+                textInput(texts.name(), labelSize = 7, size = 17) {
                     draft.forField(this)
-                        .nameRules("Укажите название")
+                        .nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
-                select("Версия TRIK Studio", labelSize = 7, size = 17, items = versions, itemLabel = TrikStudioVersion::version) {
+                select(texts.trikStudioVersion(), labelSize = 7, size = 17, items = versions, itemLabel = TrikStudioVersion::version) {
                     draft.forField(this)
-                        .asRequired("Выберите версию")
+                        .asRequired(texts.contestsVersionRequired())
                         .bind({ values -> values.version }, { values, version -> values.version = version })
                 }
             }
             row {
-                textArea("Описание", labelSize = 7, size = 17, maxLines = 4) {
+                textArea(texts.description(), labelSize = 7, size = 17, maxLines = 4) {
                     draft.forField(this)
                         .bind({ values -> values.description }, { values, description -> values.description = description })
                 }
             }
             row {
-                startsAt = dateTimeInput("Начало", labelSize = 7, size = 17) {
+                startsAt = dateTimeInput(texts.startsAt(), labelSize = 7, size = 17) {
                     draft.forField(this).bind({ values -> values.startsAt }, { values, start -> values.startsAt = start })
                 }
             }
             row {
-                endsAt = dateTimeInput("Конец", labelSize = 7, size = 17) {
+                endsAt = dateTimeInput(texts.endsAt(), labelSize = 7, size = 17) {
                     draft.forField(this)
                         .scheduleRules { startsAt.value }
                         .bind({ values -> values.endsAt }, { values, end -> values.endsAt = end })
                 }
             }
             row {
-                integerInput("Индивидуальный лимит", labelSize = 7, size = 17, min = 1, unit = "мин", hint = "Время на прохождение") {
+                integerInput(
+                    texts.attemptLimit(),
+                    labelSize = 7,
+                    size = 17,
+                    min = 1,
+                    unit = texts.minutesUnit(),
+                    hint = texts.attemptDuration(),
+                ) {
                     draft.forField(this)
-                        .withValidator(
-                            { minutes -> fitsSchedule(minutes, startsAt.value, endsAt.value) },
-                            "Лимит больше длительности тура",
-                        )
+                        .withValidator({ minutes -> fitsSchedule(minutes, startsAt.value, endsAt.value) }, texts.contestsLimitExceeds())
                         .bind({ values -> values.attemptMinutes }, { values, minutes -> values.attemptMinutes = minutes })
                 }
             }
             footer { dialog ->
-                action("Отменить") { onClick { dialog.close() } }
-                mainAction("Создать") {
+                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                mainAction(texts.create()) {
                     onClick {
                         val values = ContestDraft()
                         if (draft.writeBeanIfValid(values)) {
@@ -319,7 +337,7 @@ class DeveloperView(
                                 contestDescription = values.description,
                             )
                             dialog.close()
-                            toast(FeedbackKind.Success, "Тур создан")
+                            toast(FeedbackKind.Success, currentLocalization().pageDeveloper.contestsCreated())
                             onCreated()
                         }
                     }

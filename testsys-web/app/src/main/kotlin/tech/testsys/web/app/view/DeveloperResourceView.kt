@@ -3,7 +3,7 @@ package tech.testsys.web.app.view
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.contract.FileContentReader
@@ -11,6 +11,7 @@ import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.infra.localization.PageDeveloper.ResourceTitleType
 import tech.testsys.web.app.service.TaskRevisionVo
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.developer.DeveloperService
@@ -36,6 +37,7 @@ import tech.testsys.web.components.forms.integerInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.confirm
+import tech.testsys.web.components.texts.currentLocalization
 import java.io.ByteArrayInputStream
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
@@ -59,14 +61,16 @@ private const val FILE_CONTENT_TYPE = "application/octet-stream"
  * @since %CURRENT_VERSION%
  */
 @Route("developer/tasks/:taskId([0-9]+)/resources/:resourceId([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})")
-@PageTitle("Ресурс")
 @RolesAllowed("MULTIPLE_ROLE")
 class DeveloperResourceView(
     private val headers: CabinetHeaders,
     private val developerService: DeveloperService,
     private val fileContentReader: FileContentReader,
 ) : TestSysView(),
-    BeforeEnterObserver {
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageDeveloper.resourceTabTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         val parameters = event.routeParameters
         val taskId = TaskId(parameters.getLong(TASK_ID_PARAMETER).orElseThrow())
@@ -78,32 +82,31 @@ class DeveloperResourceView(
         val history = developerService.viewResource(taskId, versionBucket).sortedWith(NEWEST_FIRST)
         val (task, _) = developerService.viewTask(taskId)
         val latest = history.first().first
+        val localization = currentLocalization()
+        val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("${typeOf(latest)} «${latest.name}»") {
-                crumb("Главная", MultiMainView::class.java)
-                crumb("Кабинет Разработчика", DeveloperView::class.java)
-                crumb("Задачи", DeveloperView::class.java, developerSectionParameters(TASKS_SECTION))
-                crumb("Задача «${task.name}»", DeveloperTaskView::class.java, taskParameters(taskId))
+            head(texts.resourceTitle(type = titleTypeOf(kindOf(latest)), name = latest.name)) {
+                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
+                crumb(texts.title(), DeveloperView::class.java)
+                crumb(localization.pageCabinet.sectionTasks(), DeveloperView::class.java, developerSectionParameters(TASKS_SECTION))
+                crumb(texts.taskTitle(name = task.name), DeveloperTaskView::class.java, taskParameters(taskId))
             }
-            guide(
-                "Просматривайте сведения о Ресурсе и историю его версий. " +
-                    "Изменение только названия сохраняется в последней версии. " +
-                    "Новый файл или изменение ожидаемого балла Авторского Решения создаёт новую версию Ресурса.",
-            )
+            guide(texts.resourceGuide())
             detailsBlock(task, history)
             historyBlock(task, history)
         }
     }
 
     private fun PageScope.detailsBlock(task: TaskVo, history: List<Pair<ResourceVo, SolutionVo?>>) {
+        val texts = currentLocalization().pageDeveloper
         val (latest, solution) = history.first()
         val draft = Binder<ResourceDraft>()
         val initial = ResourceDraft(latest.name, (latest as? DeveloperSolutionVo)?.expectedScore?.value)
         val fileCopy = AtomicReference<Pair<String, FileData>?>()
         lateinit var drop: FileDropHandle
         row {
-            block(title = "Сведения") {
-                guide("Просмотрите параметры. Нажмите «Изменить», чтобы отредактировать их, затем сохраните изменения или отмените их.")
+            block(title = texts.details()) {
+                guide(texts.editingGuide())
                 editing(
                     onSave = {
                         val values = ResourceDraft()
@@ -117,51 +120,51 @@ class DeveloperResourceView(
                     },
                 )
                 row {
-                    codeInput("ID", labelSize = 4, size = 8) {
+                    codeInput(texts.id(), labelSize = 4, size = 8) {
                         value = latest.versionBucket.value.toString()
                         isEditable = false
                     }
-                    textInput("Тип", labelSize = 4, size = 8) {
+                    textInput(texts.type(), labelSize = 4, size = 8) {
                         value = typeOf(latest)
                         isEditable = false
                     }
                 }
                 row {
-                    codeInput("ID последней версии", labelSize = 4, size = 8) {
+                    codeInput(texts.resourceLatestId(), labelSize = 4, size = 8) {
                         value = latest.id.value.toString()
                         isEditable = false
                     }
                 }
                 row {
-                    codeInput("ID в рабочей версии", labelSize = 4, size = 8) {
-                        value = attachedVersionId(history, task.wip, "Нет рабочей версии")
+                    codeInput(texts.resourceWorkingId(), labelSize = 4, size = 8) {
+                        value = attachedVersionId(history, task.wip, texts.resourceNoWorking())
                         isEditable = false
                     }
-                    codeInput("ID в зафиксированной версии", labelSize = 4, size = 8) {
-                        value = attachedVersionId(history, task.lastCommitted, "Не зафиксирована")
+                    codeInput(texts.resourceCommittedId(), labelSize = 4, size = 8) {
+                        value = attachedVersionId(history, task.lastCommitted, texts.resourceNotCommitted())
                         isEditable = false
                     }
                 }
                 row {
-                    textInput("Название", labelSize = 4, size = 8) {
+                    textInput(texts.name(), labelSize = 4, size = 8) {
                         draft.forField(this)
-                            .nameRules("Укажите название")
+                            .nameRules(texts.nameRequired())
                             .bind({ values -> values.name }, { values, name -> values.name = name })
                     }
                     languageOf(latest, solution)?.let { language ->
-                        textInput("Язык", labelSize = 4, size = 8) {
+                        textInput(texts.language(), labelSize = 4, size = 8) {
                             value = language
                             isEditable = false
                         }
                     }
                 }
                 row {
-                    textInput("Файл", labelSize = 4, size = 8) {
+                    textInput(texts.file(), labelSize = 4, size = 8) {
                         value = fileNameOf(latest, solution)
                         isEditable = false
                     }
                     drop = fileDrop(
-                        "Новый файл",
+                        texts.resourceNewFile(),
                         FILE_LIMITS,
                         labelSize = 4,
                         size = 8,
@@ -170,9 +173,9 @@ class DeveloperResourceView(
                 }
                 if (latest is DeveloperSolutionVo) {
                     row {
-                        integerInput("Ожидаемый балл", labelSize = 4, size = 8, min = 0) {
+                        integerInput(texts.expectedScore(), labelSize = 4, size = 8, min = 0) {
                             draft.forField(this)
-                                .asRequired("Укажите балл")
+                                .asRequired(texts.scoreRequired())
                                 .bind({ values -> values.score }, { values, score -> values.score = score })
                         }
                     }
@@ -184,27 +187,28 @@ class DeveloperResourceView(
     }
 
     private fun PageScope.historyBlock(task: TaskVo, history: List<Pair<ResourceVo, SolutionVo?>>) {
+        val texts = currentLocalization().pageDeveloper
         val isSolution = history.first().first is DeveloperSolutionVo
         row {
-            block(title = "История версий") {
-                guide("Сохранённые версии Ресурса. Для каждой версии можно скачать её файл.")
+            block(title = texts.resourceHistoryTitle()) {
+                guide(texts.resourceHistoryGuide())
                 table(
                     key = { (version, _): Pair<ResourceVo, SolutionVo?> -> version.id },
                     fetch = { request -> pageOf(history, request) },
                 ) {
-                    codeColumn("ID версии", size = 4) { (version, _) -> version.id.value.toString() }
-                    dateTimeColumn("Изменено", size = 3) { (version, _) -> version.createdAt.toUserDateTime() }
-                    textColumn("Название", size = if (isSolution) 4 else 5) { (version, _) -> version.name }
-                    textColumn("Файл", size = if (isSolution) 4 else 6) { (version, solution) -> fileNameOf(version, solution) }
+                    codeColumn(texts.versionId(), size = 4) { (version, _) -> version.id.value.toString() }
+                    dateTimeColumn(texts.resourceHistoryChangedAt(), size = 3) { (version, _) -> version.createdAt.toUserDateTime() }
+                    textColumn(texts.name(), size = if (isSolution) 4 else 5) { (version, _) -> version.name }
+                    textColumn(texts.file(), size = if (isSolution) 4 else 6) { (version, solution) -> fileNameOf(version, solution) }
                     if (isSolution) {
-                        numberColumn("Балл", size = 3) { (version, _) -> (version as? DeveloperSolutionVo)?.expectedScore?.value }
+                        numberColumn(texts.score(), size = 3) { (version, _) -> (version as? DeveloperSolutionVo)?.expectedScore?.value }
                     }
-                    column("Прикреплено", size = 5) { (version, _) ->
-                        if (version.id in idsOf(task.lastCommitted)) badge("Прикреплено в зафиксированной", tone = Tone.Success)
-                        if (version.id in idsOf(task.wip)) badge("Прикреплено в рабочей", tone = Tone.Warning)
+                    column(texts.attached(), size = 5) { (version, _) ->
+                        if (version.id in idsOf(task.lastCommitted)) badge(texts.attachedCommitted(), tone = Tone.Success)
+                        if (version.id in idsOf(task.wip)) badge(texts.attachedWorking(), tone = Tone.Warning)
                     }
                     column("") { (version, _) ->
-                        iconDownloadAction(label = "Скачать", produce = { _ ->
+                        iconDownloadAction(label = texts.download(), produce = { _ ->
                             val file = developerService.downloadResourceVersion(task.id, version.versionBucket, version.id)
                             val bytes = fileContentReader.read(file)
                             DownloadContent(
@@ -231,7 +235,7 @@ class DeveloperResourceView(
         val isOnlyCommitted = task.wip == null && idsOf(task.lastCommitted).any { id -> id in ids }
         val saving = {
             update(task.id, latest, values, file)
-            toast(FeedbackKind.Success, "Ресурс изменён")
+            toast(FeedbackKind.Success, currentLocalization().pageDeveloper.resourceEdited())
             show(task.id, latest.versionBucket)
         }
         if (!isNewVersion || !(isInWip || isOnlyCommitted)) {
@@ -239,11 +243,11 @@ class DeveloperResourceView(
             return true
         }
 
-        val state = if (isOnlyCommitted) " Задача перейдёт в состояние «${TaskState.Uncommitted.label}»." else ""
+        val texts = currentLocalization().pageDeveloper
         confirm(
-            title = "Изменить прикреплённый ресурс?",
-            text = "Появится новая версия ресурса, и у задачи появятся незафиксированные изменения.$state",
-            action = "Изменить",
+            title = texts.resourceChangeTitle(),
+            text = if (isOnlyCommitted) texts.resourceChangeTextUncommitted() else texts.resourceChangeText(),
+            action = texts.resourceChangeAction(),
             onConfirm = saving,
         )
         return false
@@ -273,7 +277,16 @@ private fun attachedVersionId(history: List<Pair<ResourceVo, SolutionVo?>>, revi
     if (revision == null) return absentLabel
 
     val ids = idsOf(revision)
-    return history.firstOrNull { (version, _) -> version.id in ids }?.first?.id?.value?.toString() ?: "Не прикреплён"
+    return history.firstOrNull { (version, _) -> version.id in ids }?.first?.id?.value?.toString()
+        ?: currentLocalization().pageDeveloper.resourceNotAttached()
+}
+
+/** Returns the message variant of the page heading of a resource of [kind]. */
+private fun titleTypeOf(kind: ResourceKind): ResourceTitleType = when (kind) {
+    ResourceKind.Statement -> ResourceTitleType.STATEMENT
+    ResourceKind.Exercise -> ResourceTitleType.EXERCISE
+    ResourceKind.Test -> ResourceTitleType.TEST
+    ResourceKind.DeveloperSolution -> ResourceTitleType.DEVELOPER_SOLUTION
 }
 
 /** Returns the uploaded file name of [version], the file of its [solution] for a developer solution. */
@@ -286,7 +299,7 @@ private fun fileNameOf(version: ResourceVo, solution: SolutionVo?): String = whe
 
 /** Returns the language label of [version], of its [solution] for a developer solution, or `null` for a resource without one. */
 private fun languageOf(version: ResourceVo, solution: SolutionVo?): String? = when (version) {
-    is ExerciseVo -> LANGUAGE_LABELS.getValue(version.language)
-    is DeveloperSolutionVo -> solution?.let { program -> LANGUAGE_LABELS.getValue(program.language) }
+    is ExerciseVo -> languageLabel(version.language)
+    is DeveloperSolutionVo -> solution?.let { program -> languageLabel(program.language) }
     is StatementVo, is TestVo -> null
 }

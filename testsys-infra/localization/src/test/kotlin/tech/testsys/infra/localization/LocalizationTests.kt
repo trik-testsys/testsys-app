@@ -6,10 +6,20 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
+import tech.testsys.infra.localization.PageDeveloper.DiagnosticLineAtSeverity
+import tech.testsys.infra.localization.PageDeveloper.DiagnosticLineSeverity
+import tech.testsys.infra.localization.PageDeveloper.RefusalNoExerciseLanguage
+import tech.testsys.infra.localization.PageDeveloper.ResourceTitleType
+import tech.testsys.infra.localization.PageDeveloper.ResourceTypeType
+import tech.testsys.infra.localization.PageDeveloper.TaskResourcesUsageValueUsage
+import tech.testsys.infra.localization.PageDeveloper.TaskStateChangeTitleState
+import tech.testsys.infra.localization.PageDeveloper.TaskStateState
+import tech.testsys.infra.localization.PageDeveloper.TestingSubmissionsStatusStatus
 import tech.testsys.infra.localization.PageJudge.SolutionLanguageLanguage
 import tech.testsys.infra.localization.PageJudge.SolutionStatusStatus
 import tech.testsys.infra.localization.UiTransfer.UploadLimitsUnit
 import tech.testsys.infra.localization.bundle.SupportedRegion
+import java.time.Instant
 import java.time.ZoneId
 
 // The golden test of the product messages; the functions and constructs are shown by ExampleLocalizationTests.
@@ -1766,6 +1776,1431 @@ class LocalizationTests {
         @Test
         fun `should use the judgment order term in solution dialog saved`() {
             assertEquals("Судейский вердикт сохранён", l.pageJudge.solutionDialogSaved())
+        }
+    }
+
+    @Nested
+    inner class PageDeveloperTests {
+
+        @Test
+        fun `should name the developer cabinet in title`() {
+            assertEquals("Кабинет Разработчика", l.pageDeveloper.title())
+        }
+
+        @Test
+        fun `should name the id in id`() {
+            assertEquals("ID", l.pageDeveloper.id())
+        }
+
+        @Test
+        fun `should name the name in name`() {
+            assertEquals("Название", l.pageDeveloper.name())
+        }
+
+        @Test
+        fun `should explain the name filter in name hint`() {
+            assertEquals("Часть названия, без учёта регистра", l.pageDeveloper.nameHint())
+        }
+
+        @Test
+        fun `should ask for the name in name required`() {
+            assertEquals("Укажите название", l.pageDeveloper.nameRequired())
+        }
+
+        @Test
+        fun `should name the description in description`() {
+            assertEquals("Описание", l.pageDeveloper.description())
+        }
+
+        @Test
+        fun `should name one trik studio version in trik studio version`() {
+            assertEquals("Версия TRIK Studio", l.pageDeveloper.trikStudioVersion())
+        }
+
+        @Test
+        fun `should name the trik studio versions in trik studio versions`() {
+            assertEquals("Версии TRIK Studio", l.pageDeveloper.trikStudioVersions())
+        }
+
+        @Test
+        fun `should name the start in starts at`() {
+            assertEquals("Начало", l.pageDeveloper.startsAt())
+        }
+
+        @Test
+        fun `should name the end in ends at`() {
+            assertEquals("Конец", l.pageDeveloper.endsAt())
+        }
+
+        @Test
+        fun `should name the individual limit in attempt limit`() {
+            assertEquals("Индивидуальный лимит", l.pageDeveloper.attemptLimit())
+        }
+
+        @Test
+        fun `should name the passing time in attempt duration`() {
+            assertEquals("Время на прохождение", l.pageDeveloper.attemptDuration())
+        }
+
+        @Test
+        fun `should abbreviate minutes lowercase in minutes unit`() {
+            assertEquals("мин", l.pageDeveloper.minutesUnit())
+        }
+
+        @Test
+        fun `should name the state in state`() {
+            assertEquals("Состояние", l.pageDeveloper.state())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "NEW,         Новая",
+            "UNCOMMITTED, Не зафиксирована",
+            "COMMITTED,   Зафиксирована",
+            "OTHER,       Неизвестное состояние",
+        )
+        fun `should name the feminine task state in task state`(state: TaskStateState, expected: String) {
+            assertEquals(expected, l.pageDeveloper.taskState(state = state))
+        }
+
+        @Test
+        fun `should use the community term in community`() {
+            assertEquals("Сообщество", l.pageDeveloper.community())
+        }
+
+        @Test
+        fun `should use the plural community term in communities`() {
+            assertEquals("Сообщества", l.pageDeveloper.communities())
+        }
+
+        @Test
+        fun `should head the details block in details`() {
+            assertEquals("Сведения", l.pageDeveloper.details())
+        }
+
+        @Test
+        fun `should explain viewing and editing in editing guide`() {
+            assertEquals(
+                "Просмотрите параметры. Нажмите «Изменить», чтобы отредактировать их, затем сохраните изменения " +
+                    "или отмените их.",
+                l.pageDeveloper.editingGuide(),
+            )
+        }
+
+        @Test
+        fun `should name the access in access`() {
+            assertEquals("Доступ", l.pageDeveloper.access())
+        }
+
+        @Test
+        fun `should state that no access is shared in access empty`() {
+            assertEquals("Доступ не предоставлен", l.pageDeveloper.accessEmpty())
+        }
+
+        @Test
+        fun `should name the sharing action in share`() {
+            assertEquals("Предоставить доступ", l.pageDeveloper.share())
+        }
+
+        @Test
+        fun `should name the sharing submit action in share submit`() {
+            assertEquals("Предоставить", l.pageDeveloper.shareSubmit())
+        }
+
+        @Test
+        fun `should name the attaching action in attach`() {
+            assertEquals("Прикрепить", l.pageDeveloper.attach())
+        }
+
+        @Test
+        fun `should name the detaching action in detach`() {
+            assertEquals("Открепить", l.pageDeveloper.detach())
+        }
+
+        @Test
+        fun `should name the creating action in create`() {
+            assertEquals("Создать", l.pageDeveloper.create())
+        }
+
+        @Test
+        fun `should quote the task name after the task term in task title`() {
+            assertEquals("Задача «Лабиринт»", l.pageDeveloper.taskTitle(name = "Лабиринт"))
+        }
+
+        @Test
+        fun `should name the type in type`() {
+            assertEquals("Тип", l.pageDeveloper.type())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "STATEMENT,          Условие",
+            "EXERCISE,           Упражнение",
+            "TEST,               Полигон",
+            "DEVELOPER_SOLUTION, Авторское Решение",
+            "OTHER,              Неизвестный тип",
+        )
+        fun `should use the resource type terms in resource type`(type: ResourceTypeType, expected: String) {
+            assertEquals(expected, l.pageDeveloper.resourceType(type = type))
+        }
+
+        @Test
+        fun `should name the language in language`() {
+            assertEquals("Язык", l.pageDeveloper.language())
+        }
+
+        @Test
+        fun `should ask for the language in language required`() {
+            assertEquals("Выберите язык", l.pageDeveloper.languageRequired())
+        }
+
+        @Test
+        fun `should name the expected score in expected score`() {
+            assertEquals("Ожидаемый балл", l.pageDeveloper.expectedScore())
+        }
+
+        @Test
+        fun `should ask for the score in score required`() {
+            assertEquals("Укажите балл", l.pageDeveloper.scoreRequired())
+        }
+
+        @Test
+        fun `should name the score in score`() {
+            assertEquals("Балл", l.pageDeveloper.score())
+        }
+
+        @Test
+        fun `should name the file in file`() {
+            assertEquals("Файл", l.pageDeveloper.file())
+        }
+
+        @Test
+        fun `should name the version id in version id`() {
+            assertEquals("ID версии", l.pageDeveloper.versionId())
+        }
+
+        @Test
+        fun `should name the download action in download`() {
+            assertEquals("Скачать", l.pageDeveloper.download())
+        }
+
+        @Test
+        fun `should name the attachment column in attached`() {
+            assertEquals("Прикреплено", l.pageDeveloper.attached())
+        }
+
+        @Test
+        fun `should name the committed revision in attached committed`() {
+            assertEquals("Прикреплено в зафиксированной", l.pageDeveloper.attachedCommitted())
+        }
+
+        @Test
+        fun `should name the working revision in attached working`() {
+            assertEquals("Прикреплено в рабочей", l.pageDeveloper.attachedWorking())
+        }
+
+        @Test
+        fun `should name the start of testing in started at`() {
+            assertEquals("Запущено", l.pageDeveloper.startedAt())
+        }
+
+        @Test
+        fun `should name the status in status`() {
+            assertEquals("Статус", l.pageDeveloper.status())
+        }
+
+        @Test
+        fun `should name the summary in summary`() {
+            assertEquals("Итог", l.pageDeveloper.summary())
+        }
+
+        @Test
+        fun `should use the genitive contest term in schedule start required`() {
+            assertEquals("Укажите начало Тура", l.pageDeveloper.scheduleStartRequired())
+        }
+
+        @Test
+        fun `should require the end after the start in schedule end before start`() {
+            assertEquals("Конец должен быть позже начала", l.pageDeveloper.scheduleEndBeforeStart())
+        }
+
+        @Test
+        fun `should use the plural diagnostic term in summary pending`() {
+            assertEquals("Выполняются Диагностики", l.pageDeveloper.summaryPending())
+        }
+
+        @Test
+        fun `should use the plural diagnostic and submission terms in summary awaiting`() {
+            assertEquals("Диагностики пройдены, создаются Посылки", l.pageDeveloper.summaryAwaiting())
+        }
+
+        @Test
+        fun `should use the prepositional plural polygon term in summary stopped`() {
+            assertEquals("Диагностики нашли ошибки в Полигонах", l.pageDeveloper.summaryStopped())
+        }
+
+        @Test
+        fun `should count the checked submissions in summary checking`() {
+            assertEquals("Проверяются Посылки: 3", l.pageDeveloper.summaryChecking(count = 3))
+        }
+
+        @Test
+        fun `should keep a large count ungrouped in summary checking`() {
+            assertEquals("Проверяются Посылки: 2147483647", l.pageDeveloper.summaryChecking(count = Int.MAX_VALUE))
+        }
+
+        @Test
+        fun `should use the plural submission term in summary passed`() {
+            assertEquals("Все Посылки набрали ожидаемый балл", l.pageDeveloper.summaryPassed())
+        }
+
+        @Test
+        fun `should show failed of total in summary failed`() {
+            assertEquals("Провалено Посылок: 2 из 5", l.pageDeveloper.summaryFailed(failed = 2, total = 5))
+        }
+
+        @Test
+        fun `should keep large counts ungrouped in summary failed`() {
+            assertEquals("Провалено Посылок: 1412 из 2147483647", l.pageDeveloper.summaryFailed(failed = 1412, total = Int.MAX_VALUE))
+        }
+
+        @Test
+        fun `should show the technical details verbatim in summary technical`() {
+            assertEquals(
+                "Техническая остановка: grader unavailable",
+                l.pageDeveloper.summaryTechnical(description = "grader unavailable"),
+            )
+        }
+
+        @Test
+        fun `should use the genitive task term in refusal already committed`() {
+            assertEquals("У Задачи нет незафиксированных изменений.", l.pageDeveloper.refusalAlreadyCommitted())
+        }
+
+        @Test
+        fun `should use the accusative statement term in refusal no statement`() {
+            assertEquals("Прикрепите Условие.", l.pageDeveloper.refusalNoStatement())
+        }
+
+        @Test
+        fun `should use the accusative polygon term in refusal no polygons`() {
+            assertEquals("Прикрепите хотя бы один Полигон.", l.pageDeveloper.refusalNoPolygons())
+        }
+
+        @Test
+        fun `should use the accusative developer solution term in refusal no developer solutions`() {
+            assertEquals("Прикрепите хотя бы одно Авторское Решение.", l.pageDeveloper.refusalNoDeveloperSolutions())
+        }
+
+        @Test
+        fun `should ask for supported versions in refusal no trik studio versions`() {
+            assertEquals("Укажите поддерживаемые версии TRIK Studio.", l.pageDeveloper.refusalNoTrikStudioVersions())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "PYTHON,          Прикрепите Упражнение для языка «Python».",
+            "JAVASCRIPT,      Прикрепите Упражнение для языка «JavaScript».",
+            "VISUAL_LANGUAGE, Прикрепите Упражнение для языка «Визуальный язык».",
+            "OTHER,           Прикрепите Упражнение.",
+        )
+        fun `should name the language of the missing exercise in refusal no exercise`(
+            language: RefusalNoExerciseLanguage,
+            expected: String,
+        ) {
+            assertEquals(expected, l.pageDeveloper.refusalNoExercise(language = language))
+        }
+
+        @Test
+        fun `should show the version verbatim in refusal version not supported`() {
+            assertEquals(
+                "Задача прикреплена к Туру с версией TRIK Studio 2024.1, которую она не поддерживает.",
+                l.pageDeveloper.refusalVersionNotSupported(version = "2024.1"),
+            )
+        }
+
+        @Test
+        fun `should use the genitive task term in refusal not tested`() {
+            assertEquals("Рабочая версия Задачи не прошла тестирование.", l.pageDeveloper.refusalNotTested())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "INFO,    Сведения · нет атрибута «id»",
+            "WARNING, Предупреждение · нет атрибута «id»",
+            "ERROR,   Ошибка · нет атрибута «id»",
+            "OTHER,   Замечание · нет атрибута «id»",
+        )
+        fun `should prefix the finding with the severity in diagnostic line`(severity: DiagnosticLineSeverity, expected: String) {
+            assertEquals(expected, l.pageDeveloper.diagnosticLine(severity = severity, finding = "нет атрибута «id»"))
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "INFO,    Сведения · world[0]/robots[0]@id · нет атрибута «id»",
+            "WARNING, Предупреждение · world[0]/robots[0]@id · нет атрибута «id»",
+            "ERROR,   Ошибка · world[0]/robots[0]@id · нет атрибута «id»",
+            "OTHER,   Замечание · world[0]/robots[0]@id · нет атрибута «id»",
+        )
+        fun `should put the place between the severity and the finding in diagnostic line at`(
+            severity: DiagnosticLineAtSeverity,
+            expected: String,
+        ) {
+            assertEquals(
+                expected,
+                l.pageDeveloper.diagnosticLineAt(severity = severity, place = "world[0]/robots[0]@id", finding = "нет атрибута «id»"),
+            )
+        }
+
+        @Test
+        fun `should quote the tag in diagnostic finding unknown element`() {
+            assertEquals("неизвестный элемент «robot»", l.pageDeveloper.diagnosticFindingUnknownElement(tag = "robot"))
+        }
+
+        @Test
+        fun `should show the details verbatim in diagnostic finding malformed xml`() {
+            assertEquals(
+                "некорректный XML: unexpected end of file",
+                l.pageDeveloper.diagnosticFindingMalformedXml(details = "unexpected end of file"),
+            )
+        }
+
+        @Test
+        fun `should quote the tag in diagnostic finding missing child`() {
+            assertEquals("нет вложенного элемента «world»", l.pageDeveloper.diagnosticFindingMissingChild(tag = "world"))
+        }
+
+        @Test
+        fun `should quote the attribute in diagnostic finding missing attribute`() {
+            assertEquals("нет атрибута «id»", l.pageDeveloper.diagnosticFindingMissingAttribute(attribute = "id"))
+        }
+
+        @Test
+        fun `should quote the attribute and the actual value in diagnostic finding invalid attribute value`() {
+            assertEquals(
+                "атрибут «value» равен «abc», ожидается целое число",
+                l.pageDeveloper.diagnosticFindingInvalidAttributeValue(attribute = "value", actual = "abc", expected = "целое число"),
+            )
+        }
+
+        @Test
+        fun `should keep large counts ungrouped in diagnostic finding invalid child count`() {
+            assertEquals(
+                "вложенных элементов 2147483647, ожидается 1412",
+                l.pageDeveloper.diagnosticFindingInvalidChildCount(actual = Int.MAX_VALUE, expected = 1412),
+            )
+        }
+
+        @Test
+        fun `should state the missing limit in diagnostic finding missing time limit`() {
+            assertEquals("не задано ограничение времени", l.pageDeveloper.diagnosticFindingMissingTimeLimit())
+        }
+
+        @Test
+        fun `should keep a large count ungrouped in diagnostic finding multiple time limits`() {
+            assertEquals(
+                "ограничений времени 1412, ожидается одно",
+                l.pageDeveloper.diagnosticFindingMultipleTimeLimits(count = 1412),
+            )
+        }
+
+        @Test
+        fun `should keep a negative value ungrouped in diagnostic finding negative time limit`() {
+            assertEquals(
+                "отрицательное ограничение времени -1412",
+                l.pageDeveloper.diagnosticFindingNegativeTimeLimit(value = -1412L),
+            )
+        }
+
+        @Test
+        fun `should keep large values exact and ungrouped in diagnostic finding excessive time limit`() {
+            assertEquals(
+                "ограничение времени 9223372036854775807 больше допустимого 600000",
+                l.pageDeveloper.diagnosticFindingExcessiveTimeLimit(value = Long.MAX_VALUE, maximum = 600_000L),
+            )
+        }
+
+        @Test
+        fun `should quote the event id in diagnostic finding invalid event id`() {
+            assertEquals(
+                "некорректный идентификатор события «finish»",
+                l.pageDeveloper.diagnosticFindingInvalidEventId(id = "finish"),
+            )
+        }
+
+        @Test
+        fun `should capitalize the polygon term in diagnostic finding missing score output`() {
+            assertEquals("Полигон не выводит балл", l.pageDeveloper.diagnosticFindingMissingScoreOutput())
+        }
+
+        @Test
+        fun `should use the instrumental plural task and contest terms in guide`() {
+            assertEquals(
+                "Работайте с Задачами и Турами через вкладки Кабинета Разработчика.",
+                l.pageDeveloper.guide(),
+            )
+        }
+
+        @Test
+        fun `should use the plural task term in tasks owned`() {
+            assertEquals("Мои Задачи", l.pageDeveloper.tasksOwned())
+        }
+
+        @Test
+        fun `should use the accusative plural community term in tasks shared`() {
+            assertEquals("Доступные через Сообщества", l.pageDeveloper.tasksShared())
+        }
+
+        @Test
+        fun `should use the genitive plural task term in tasks guide`() {
+            assertEquals(
+                "Список ваших Задач или Задач, доступных через Сообщества. Фильтры помогают найти нужную запись.",
+                l.pageDeveloper.tasksGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive plural task term in tasks empty`() {
+            assertEquals("Задач пока нет", l.pageDeveloper.tasksEmpty())
+        }
+
+        @Test
+        fun `should use the accusative task term in tasks create`() {
+            assertEquals("Создать Задачу", l.pageDeveloper.tasksCreate())
+        }
+
+        @Test
+        fun `should agree the adjective with the task term in tasks dialog title`() {
+            assertEquals("Новая Задача", l.pageDeveloper.tasksDialogTitle())
+        }
+
+        @Test
+        fun `should use the task term in tasks created`() {
+            assertEquals("Задача создана", l.pageDeveloper.tasksCreated())
+        }
+
+        @Test
+        fun `should use the genitive plural and accusative contest terms in contests guide`() {
+            assertEquals(
+                "Список Туров и их параметры. Выберите строку, чтобы открыть Тур.",
+                l.pageDeveloper.contestsGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the plural task term in contests tasks`() {
+            assertEquals("Задачи", l.pageDeveloper.contestsTasks())
+        }
+
+        @Test
+        fun `should name the sharing column in contests shared`() {
+            assertEquals("Доступ предоставлен", l.pageDeveloper.contestsShared())
+        }
+
+        @Test
+        fun `should say yes in contests shared yes`() {
+            assertEquals("Да", l.pageDeveloper.contestsSharedYes())
+        }
+
+        @Test
+        fun `should say no in contests shared no`() {
+            assertEquals("Нет", l.pageDeveloper.contestsSharedNo())
+        }
+
+        @Test
+        fun `should use the genitive plural contest term in contests empty`() {
+            assertEquals("Туров пока нет", l.pageDeveloper.contestsEmpty())
+        }
+
+        @Test
+        fun `should use the accusative contest term in contests empty hint`() {
+            assertEquals("Создайте Тур.", l.pageDeveloper.contestsEmptyHint())
+        }
+
+        @Test
+        fun `should use the accusative contest term in contests create`() {
+            assertEquals("Создать Тур", l.pageDeveloper.contestsCreate())
+        }
+
+        @Test
+        fun `should agree the adjective with the contest term in contests dialog title`() {
+            assertEquals("Новый Тур", l.pageDeveloper.contestsDialogTitle())
+        }
+
+        @Test
+        fun `should ask for the version in contests version required`() {
+            assertEquals("Выберите версию", l.pageDeveloper.contestsVersionRequired())
+        }
+
+        @Test
+        fun `should use the genitive contest term in contests limit exceeds`() {
+            assertEquals("Лимит больше длительности Тура", l.pageDeveloper.contestsLimitExceeds())
+        }
+
+        @Test
+        fun `should use the contest term in contests created`() {
+            assertEquals("Тур создан", l.pageDeveloper.contestsCreated())
+        }
+
+        @Test
+        fun `should use the contest term in contest tab title`() {
+            assertEquals("Тур", l.pageDeveloper.contestTabTitle())
+        }
+
+        @Test
+        fun `should quote the contest name in contest title`() {
+            assertEquals("Тур «Весенний»", l.pageDeveloper.contestTitle(name = "Весенний"))
+        }
+
+        @Test
+        fun `should use the accusative contest term in contest delete`() {
+            assertEquals("Удалить Тур", l.pageDeveloper.contestDelete())
+        }
+
+        @Test
+        fun `should decline the contest task and community terms in contest guide`() {
+            assertEquals(
+                "Здесь показаны параметры Тура, состав Задач и доступ Сообществ.",
+                l.pageDeveloper.contestGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the contest term in contest locked`() {
+            assertEquals("Тур нельзя изменить", l.pageDeveloper.contestLocked())
+        }
+
+        @Test
+        fun `should decline the contest community and task terms in contest locked shared`() {
+            assertEquals(
+                "Доступ к Туру предоставлен Сообществам, поэтому Тур нельзя изменить или удалить, а Задачи — " +
+                    "прикрепить к нему или открепить.",
+                l.pageDeveloper.contestLockedShared(),
+            )
+        }
+
+        @Test
+        fun `should use the accusative contest term in contest locked not owner`() {
+            assertEquals("Изменять Тур может только его владелец.", l.pageDeveloper.contestLockedNotOwner())
+        }
+
+        @Test
+        fun `should use the genitive contest term in contest details guide`() {
+            assertEquals(
+                "Нажмите «Изменить», чтобы настроить параметры Тура, затем сохраните изменения или отмените их.",
+                l.pageDeveloper.contestDetailsGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive contest term in contest details guide locked`() {
+            assertEquals(
+                "Параметры Тура доступны для просмотра. Причина ограничения изменений указана над блоками.",
+                l.pageDeveloper.contestDetailsGuideLocked(),
+            )
+        }
+
+        @Test
+        fun `should use the contest term in contest edited`() {
+            assertEquals("Тур изменён", l.pageDeveloper.contestEdited())
+        }
+
+        @Test
+        fun `should use the genitive contest term in contest limit exceeds`() {
+            assertEquals("Индивидуальный лимит больше длительности Тура", l.pageDeveloper.contestLimitExceeds())
+        }
+
+        @Test
+        fun `should show the minutes in contest attempt minutes`() {
+            assertEquals("90 мин", l.pageDeveloper.contestAttemptMinutes(minutes = 90L))
+        }
+
+        @Test
+        fun `should keep large minutes exact and ungrouped in contest attempt minutes`() {
+            assertEquals("9223372036854775807 мин", l.pageDeveloper.contestAttemptMinutes(minutes = Long.MAX_VALUE))
+        }
+
+        @Test
+        fun `should say no in contest no attempt limit`() {
+            assertEquals("Нет", l.pageDeveloper.contestNoAttemptLimit())
+        }
+
+        @Test
+        fun `should use the plural community and dative contest terms in contest access guide`() {
+            assertEquals(
+                "Сообщества, которым предоставлен доступ к этому Туру.",
+                l.pageDeveloper.contestAccessGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive plural task term in contest tasks guide`() {
+            assertEquals("Список Задач и их основные сведения.", l.pageDeveloper.contestTasksGuide())
+        }
+
+        @Test
+        fun `should quote the task name after the instrumental task term in contest task actions`() {
+            assertEquals("Действия с Задачей «Лабиринт»", l.pageDeveloper.contestTaskActions(name = "Лабиринт"))
+        }
+
+        @Test
+        fun `should use the task and genitive contest terms in contest task detached`() {
+            assertEquals("Задача откреплена от Тура", l.pageDeveloper.contestTaskDetached())
+        }
+
+        @Test
+        fun `should use the accusative task term in contest tasks empty hint`() {
+            assertEquals(
+                "Прикрепите Задачу, у которой есть зафиксированная версия.",
+                l.pageDeveloper.contestTasksEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should use the accusative task term in contest attach task`() {
+            assertEquals("Прикрепить Задачу", l.pageDeveloper.contestAttachTask())
+        }
+
+        @Test
+        fun `should use the genitive task term in contest attach title`() {
+            assertEquals("Прикрепление Задачи", l.pageDeveloper.contestAttachTitle())
+        }
+
+        @Test
+        fun `should use the task term in contest attach lookup`() {
+            assertEquals("Задача", l.pageDeveloper.contestAttachLookup())
+        }
+
+        @Test
+        fun `should use the prepositional contest and genitive task terms in contest attach hint`() {
+            assertEquals(
+                "В Туре используется последняя зафиксированная версия Задачи",
+                l.pageDeveloper.contestAttachHint(),
+            )
+        }
+
+        @Test
+        fun `should use the task and dative contest terms in contest attach done`() {
+            assertEquals("Задача прикреплена к Туру", l.pageDeveloper.contestAttachDone())
+        }
+
+        @Test
+        fun `should use the accusative task term in contest attach failed`() {
+            assertEquals("Не удалось прикрепить Задачу", l.pageDeveloper.contestAttachFailed())
+        }
+
+        @Test
+        fun `should decline the task term in contest attach not committed`() {
+            assertEquals(
+                "У Задачи нет зафиксированной версии. Сначала протестируйте и зафиксируйте Задачу.",
+                l.pageDeveloper.contestAttachNotCommitted(),
+            )
+        }
+
+        @Test
+        fun `should use the task and genitive contest terms in contest attach version not supported`() {
+            assertEquals(
+                "Задача не поддерживает версию TRIK Studio этого Тура.",
+                l.pageDeveloper.contestAttachVersionNotSupported(),
+            )
+        }
+
+        @Test
+        fun `should use the task and dative contest terms in contest attach already attached`() {
+            assertEquals("Эта Задача уже прикреплена к Туру.", l.pageDeveloper.contestAttachAlreadyAttached())
+        }
+
+        @Test
+        fun `should use the dative contest and plural task terms in contest attach shared`() {
+            assertEquals(
+                "Доступ к Туру уже предоставлен. Его Задачи нельзя изменить.",
+                l.pageDeveloper.contestAttachShared(),
+            )
+        }
+
+        @Test
+        fun `should use the dative contest term in contest share title`() {
+            assertEquals("Доступ к Туру", l.pageDeveloper.contestShareTitle())
+        }
+
+        @Test
+        fun `should use the dative contest term in contest share confirm title`() {
+            assertEquals("Предоставить доступ к Туру?", l.pageDeveloper.contestShareConfirmTitle())
+        }
+
+        @Test
+        fun `should use the accusative contest term in contest share confirm text`() {
+            assertEquals(
+                "Отозвать доступ нельзя. После этого Тур нельзя будет изменить и удалить.",
+                l.pageDeveloper.contestShareConfirmText(),
+            )
+        }
+
+        @Test
+        fun `should use the dative contest term in contest share done`() {
+            assertEquals("Доступ к Туру предоставлен", l.pageDeveloper.contestShareDone())
+        }
+
+        @Test
+        fun `should quote the contest name in contest delete confirm title`() {
+            assertEquals("Удалить Тур «Весенний»?", l.pageDeveloper.contestDeleteConfirmTitle(name = "Весенний"))
+        }
+
+        @Test
+        fun `should decline the contest and task terms in contest delete confirm text`() {
+            assertEquals(
+                "Тур удалится вместе со списком его Задач. Сами Задачи не изменятся.",
+                l.pageDeveloper.contestDeleteConfirmText(),
+            )
+        }
+
+        @Test
+        fun `should name the deleting action in contest delete confirm action`() {
+            assertEquals("Удалить", l.pageDeveloper.contestDeleteConfirmAction())
+        }
+
+        @Test
+        fun `should use the contest term in contest deleted`() {
+            assertEquals("Тур удалён", l.pageDeveloper.contestDeleted())
+        }
+
+        @Test
+        fun `should use the task term in task tab title`() {
+            assertEquals("Задача", l.pageDeveloper.taskTabTitle())
+        }
+
+        @Test
+        fun `should name the action in task view committed`() {
+            assertEquals("Посмотреть зафиксированную версию", l.pageDeveloper.taskViewCommitted())
+        }
+
+        @Test
+        fun `should use the accusative task and plural resource terms in task guide`() {
+            assertEquals(
+                "Настройте Задачу, её Ресурсы и доступ, затем проверьте результаты тестирования.",
+                l.pageDeveloper.taskGuide(),
+            )
+        }
+
+        @Test
+        fun `should name the committed version in task committed title`() {
+            assertEquals("Зафиксированная версия", l.pageDeveloper.taskCommittedTitle())
+        }
+
+        @Test
+        fun `should use the task term in task edited`() {
+            assertEquals("Задача изменена", l.pageDeveloper.taskEdited())
+        }
+
+        @Test
+        fun `should use the plural community term in task access guide`() {
+            assertEquals(
+                "Сообщества, которым предоставлен доступ. Управляйте доступом действиями этого блока.",
+                l.pageDeveloper.taskAccessGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the plural community term in task access empty hint`() {
+            assertEquals(
+                "Сообщества получат доступ к последней зафиксированной версии.",
+                l.pageDeveloper.taskAccessEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should use the plural resource term in task resources title`() {
+            assertEquals("Ресурсы", l.pageDeveloper.taskResourcesTitle())
+        }
+
+        @Test
+        fun `should list the resource type terms in task resources subtitle`() {
+            assertEquals("Условие, Упражнения, Полигоны и Авторские Решения", l.pageDeveloper.taskResourcesSubtitle())
+        }
+
+        @Test
+        fun `should list the resource type terms in task resources guide`() {
+            assertEquals(
+                "Файлы Задачи: Условие, Упражнения, Полигоны и Авторские Решения. Откройте Ресурс для просмотра " +
+                    "его версий.",
+                l.pageDeveloper.taskResourcesGuide(),
+            )
+        }
+
+        @Test
+        fun `should quote the resource name after the instrumental resource term in task resources actions`() {
+            assertEquals("Действия с Ресурсом «maze.xml»", l.pageDeveloper.taskResourcesActions(name = "maze.xml"))
+        }
+
+        @Test
+        fun `should use the resource term in task resources detached`() {
+            assertEquals("Ресурс откреплён", l.pageDeveloper.taskResourcesDetached())
+        }
+
+        @Test
+        fun `should use the genitive plural resource term in task resources empty`() {
+            assertEquals("Ресурсов пока нет", l.pageDeveloper.taskResourcesEmpty())
+        }
+
+        @Test
+        fun `should list the accusative resource type terms in task resources empty hint`() {
+            assertEquals(
+                "Загрузите Условие, Упражнения, Полигоны и Авторские Решения.",
+                l.pageDeveloper.taskResourcesEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should use the plural resource term in task resources not found`() {
+            assertEquals("Ресурсы не найдены", l.pageDeveloper.taskResourcesNotFound())
+        }
+
+        @Test
+        fun `should suggest changing the filters in task resources not found hint`() {
+            assertEquals("Измените или сбросьте фильтры.", l.pageDeveloper.taskResourcesNotFoundHint())
+        }
+
+        @Test
+        fun `should use the accusative plural resource term in task resources upload`() {
+            assertEquals("Загрузить Ресурсы", l.pageDeveloper.taskResourcesUpload())
+        }
+
+        @Test
+        fun `should name the usage filter in task resources usage`() {
+            assertEquals("Использование", l.pageDeveloper.taskResourcesUsage())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "ALL,          Все",
+            "WORKING,      В рабочей версии",
+            "COMMITTED,    В зафиксированной версии",
+            "ANY_REVISION, В любой версии",
+            "UNATTACHED,   Нигде не прикреплены",
+            "OTHER,        Неизвестное использование",
+        )
+        fun `should name the usage filter item in task resources usage value`(usage: TaskResourcesUsageValueUsage, expected: String) {
+            assertEquals(expected, l.pageDeveloper.taskResourcesUsageValue(usage = usage))
+        }
+
+        @Test
+        fun `should name the comparison in task resources differences`() {
+            assertEquals("Различия версий", l.pageDeveloper.taskResourcesDifferences())
+        }
+
+        @Test
+        fun `should use the plural resource term in task resources differences hint`() {
+            assertEquals(
+                "Различия версий: добавленные, откреплённые или заменённые Ресурсы.",
+                l.pageDeveloper.taskResourcesDifferencesHint(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive task term in task resources comparison unavailable`() {
+            assertEquals(
+                "Для сравнения нужны рабочая и зафиксированная версии Задачи.",
+                l.pageDeveloper.taskResourcesComparisonUnavailable(),
+            )
+        }
+
+        @Test
+        fun `should name the testing block in task testing title`() {
+            assertEquals("Тестирование", l.pageDeveloper.taskTestingTitle())
+        }
+
+        @Test
+        fun `should use the genitive task and plural diagnostic terms in task testing guide`() {
+            assertEquals(
+                "История проверок Задачи. Откройте запись, чтобы увидеть Диагностики и результаты.",
+                l.pageDeveloper.taskTestingGuide(),
+            )
+        }
+
+        @Test
+        fun `should state that there was no testing in task testing empty`() {
+            assertEquals("Тестирований пока не было", l.pageDeveloper.taskTestingEmpty())
+        }
+
+        @Test
+        fun `should suggest testing the working version in task testing empty hint`() {
+            assertEquals(
+                "Протестируйте рабочую версию, чтобы её можно было зафиксировать.",
+                l.pageDeveloper.taskTestingEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should name the testing action in task testing run`() {
+            assertEquals("Протестировать", l.pageDeveloper.taskTestingRun())
+        }
+
+        @Test
+        fun `should state the failure in task testing run failed`() {
+            assertEquals("Не удалось запустить тестирование", l.pageDeveloper.taskTestingRunFailed())
+        }
+
+        @Test
+        fun `should state the running testing in task testing running`() {
+            assertEquals("Тестирование уже идёт", l.pageDeveloper.taskTestingRunning())
+        }
+
+        @Test
+        fun `should ask to wait in task testing running hint`() {
+            assertEquals("Дождитесь результата текущего запроса.", l.pageDeveloper.taskTestingRunningHint())
+        }
+
+        @Test
+        fun `should state the start in task testing started`() {
+            assertEquals("Тестирование запущено", l.pageDeveloper.taskTestingStarted())
+        }
+
+        @Test
+        fun `should point to the history in task testing started hint`() {
+            assertEquals("Результат появится в истории тестирований.", l.pageDeveloper.taskTestingStartedHint())
+        }
+
+        @Test
+        fun `should name the commit action in task commit`() {
+            assertEquals("Зафиксировать", l.pageDeveloper.taskCommit())
+        }
+
+        @Test
+        fun `should use the accusative task term in task commit title`() {
+            assertEquals("Зафиксировать Задачу?", l.pageDeveloper.taskCommitTitle())
+        }
+
+        @Test
+        fun `should decline the task and contest terms in task commit text`() {
+            assertEquals(
+                "Задача перейдёт в состояние «Зафиксирована». Туры с Задачей начнут использовать новую версию.",
+                l.pageDeveloper.taskCommitText(),
+            )
+        }
+
+        @Test
+        fun `should use the accusative plural submission term in task commit regrade`() {
+            assertEquals("Перепроверить Посылки", l.pageDeveloper.taskCommitRegrade())
+        }
+
+        @Test
+        fun `should decline the submission contest and polygon terms in task commit regrade hint`() {
+            assertEquals(
+                "Посылки в Турах будут проверены заново, если изменился набор Полигонов.",
+                l.pageDeveloper.taskCommitRegradeHint(),
+            )
+        }
+
+        @Test
+        fun `should use the accusative task term in task commit failed`() {
+            assertEquals("Не удалось зафиксировать Задачу", l.pageDeveloper.taskCommitFailed())
+        }
+
+        @Test
+        fun `should use the task term in task committed`() {
+            assertEquals("Задача зафиксирована", l.pageDeveloper.taskCommitted())
+        }
+
+        @Test
+        fun `should name the revert action in task revert`() {
+            assertEquals("Откатить", l.pageDeveloper.taskRevert())
+        }
+
+        @Test
+        fun `should use the genitive task term in task revert title`() {
+            assertEquals("Откатить изменения Задачи?", l.pageDeveloper.taskRevertTitle())
+        }
+
+        @Test
+        fun `should use the task term in task revert text`() {
+            assertEquals(
+                "Задача вернётся к последней зафиксированной версии и перейдёт в состояние «Зафиксирована». " +
+                    "Незафиксированные изменения пропадут.",
+                l.pageDeveloper.taskRevertText(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive task term in task reverted`() {
+            assertEquals("Изменения Задачи отменены", l.pageDeveloper.taskReverted())
+        }
+
+        @Test
+        fun `should use the dative task term in task share title`() {
+            assertEquals("Доступ к Задаче", l.pageDeveloper.taskShareTitle())
+        }
+
+        @Test
+        fun `should use the dative task term in task share confirm title`() {
+            assertEquals("Предоставить доступ к Задаче?", l.pageDeveloper.taskShareConfirmTitle())
+        }
+
+        @Test
+        fun `should use the plural community and dative task terms in task share confirm text`() {
+            assertEquals(
+                "Отозвать доступ нельзя: Сообщества сохранят доступ к Задаче.",
+                l.pageDeveloper.taskShareConfirmText(),
+            )
+        }
+
+        @Test
+        fun `should use the dative task term in task share done`() {
+            assertEquals("Доступ к Задаче предоставлен", l.pageDeveloper.taskShareDone())
+        }
+
+        @Test
+        fun `should use the genitive plural resource term in task upload title`() {
+            assertEquals("Загрузка Ресурсов", l.pageDeveloper.taskUploadTitle())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "1,    10,   'До 1 файла, каждый до 10 МиБ'",
+            "2,    10,   'До 2 файлов, каждый до 10 МиБ'",
+            "5,    10,   'До 5 файлов, каждый до 10 МиБ'",
+            "20,   10,   'До 20 файлов, каждый до 10 МиБ'",
+            "21,   10,   'До 21 файла, каждый до 10 МиБ'",
+            "1412, 2048, 'До 1412 файлов, каждый до 2048 МиБ'",
+        )
+        fun `should agree the genitive file count and keep numbers ungrouped in task upload subtitle`(
+            maxFiles: Int,
+            maxMebibytes: Int,
+            expected: String,
+        ) {
+            assertEquals(expected, l.pageDeveloper.taskUploadSubtitle(maxFiles = maxFiles, maxMebibytes = maxMebibytes))
+        }
+
+        @Test
+        fun `should name the files in task upload files`() {
+            assertEquals("Файлы", l.pageDeveloper.taskUploadFiles())
+        }
+
+        @Test
+        fun `should name the next action in task upload next`() {
+            assertEquals("Далее", l.pageDeveloper.taskUploadNext())
+        }
+
+        @Test
+        fun `should use the plural resource term in task describe title`() {
+            assertEquals("Новые Ресурсы", l.pageDeveloper.taskDescribeTitle())
+        }
+
+        @Test
+        fun `should use the plural resource and accusative task terms in task describe subtitle`() {
+            assertEquals("Ресурсы загрузятся в Задачу без прикрепления", l.pageDeveloper.taskDescribeSubtitle())
+        }
+
+        @Test
+        fun `should number the resource and show the file name in task describe section`() {
+            assertEquals("Ресурс 1 · maze.xml", l.pageDeveloper.taskDescribeSection(number = 1, fileName = "maze.xml"))
+        }
+
+        @Test
+        fun `should keep a large number ungrouped in task describe section`() {
+            assertEquals("Ресурс 1412 · maze.xml", l.pageDeveloper.taskDescribeSection(number = 1412, fileName = "maze.xml"))
+        }
+
+        @Test
+        fun `should ask for the type in task describe type required`() {
+            assertEquals("Выберите тип", l.pageDeveloper.taskDescribeTypeRequired())
+        }
+
+        @Test
+        fun `should name the upload action in task describe submit`() {
+            assertEquals("Загрузить", l.pageDeveloper.taskDescribeSubmit())
+        }
+
+        @Test
+        fun `should use the plural resource term in task describe done`() {
+            assertEquals("Ресурсы загружены", l.pageDeveloper.taskDescribeDone())
+        }
+
+        @Test
+        fun `should keep a large count ungrouped in task total`() {
+            assertEquals("Всего: 1412.", l.pageDeveloper.taskTotal(count = 1412))
+        }
+
+        @Test
+        fun `should use the genitive plural resource term in task attach title`() {
+            assertEquals("Прикрепление Ресурсов", l.pageDeveloper.taskAttachTitle())
+        }
+
+        @Test
+        fun `should use the genitive resource term in task attach hint`() {
+            assertEquals("Прикрепляется последняя версия Ресурса", l.pageDeveloper.taskAttachHint())
+        }
+
+        @Test
+        fun `should use the plural resource term in task attach done`() {
+            assertEquals("Ресурсы прикреплены", l.pageDeveloper.taskAttachDone())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "NEW,         Задача перейдёт в состояние «Новая»",
+            "UNCOMMITTED, Задача перейдёт в состояние «Не зафиксирована»",
+            "COMMITTED,   Задача перейдёт в состояние «Зафиксирована»",
+            "OTHER,       Задача перейдёт в другое состояние",
+        )
+        fun `should quote the target state in task state change title`(state: TaskStateChangeTitleState, expected: String) {
+            assertEquals(expected, l.pageDeveloper.taskStateChangeTitle(state = state))
+        }
+
+        @Test
+        fun `should decline the contest and task terms in task state change text`() {
+            assertEquals(
+                "Изменения попадут в рабочую версию. Туры продолжат использовать последнюю зафиксированную версию, " +
+                    "пока Задачу не зафиксируют снова.",
+                l.pageDeveloper.taskStateChangeText(),
+            )
+        }
+
+        @Test
+        fun `should name the continue action in task state change action`() {
+            assertEquals("Продолжить", l.pageDeveloper.taskStateChangeAction())
+        }
+
+        @Test
+        fun `should use the resource term in resource tab title`() {
+            assertEquals("Ресурс", l.pageDeveloper.resourceTabTitle())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "STATEMENT,          Условие «maze.xml»",
+            "EXERCISE,           Упражнение «maze.xml»",
+            "TEST,               Полигон «maze.xml»",
+            "DEVELOPER_SOLUTION, Авторское Решение «maze.xml»",
+            "OTHER,              Ресурс «maze.xml»",
+        )
+        fun `should quote the name after the resource type term in resource title`(type: ResourceTitleType, expected: String) {
+            assertEquals(expected, l.pageDeveloper.resourceTitle(type = type, name = "maze.xml"))
+        }
+
+        @Test
+        fun `should decline the resource and developer solution terms in resource guide`() {
+            assertEquals(
+                "Просматривайте сведения о Ресурсе и историю его версий. Изменение только названия сохраняется " +
+                    "в последней версии. Новый файл или изменение ожидаемого балла Авторского Решения создаёт новую " +
+                    "версию Ресурса.",
+                l.pageDeveloper.resourceGuide(),
+            )
+        }
+
+        @Test
+        fun `should name the latest version id in resource latest id`() {
+            assertEquals("ID последней версии", l.pageDeveloper.resourceLatestId())
+        }
+
+        @Test
+        fun `should name the working version id in resource working id`() {
+            assertEquals("ID в рабочей версии", l.pageDeveloper.resourceWorkingId())
+        }
+
+        @Test
+        fun `should name the committed version id in resource committed id`() {
+            assertEquals("ID в зафиксированной версии", l.pageDeveloper.resourceCommittedId())
+        }
+
+        @Test
+        fun `should state the missing working version in resource no working`() {
+            assertEquals("Нет рабочей версии", l.pageDeveloper.resourceNoWorking())
+        }
+
+        @Test
+        fun `should agree with the feminine version in resource not committed`() {
+            assertEquals("Не зафиксирована", l.pageDeveloper.resourceNotCommitted())
+        }
+
+        @Test
+        fun `should agree with the masculine resource in resource not attached`() {
+            assertEquals("Не прикреплён", l.pageDeveloper.resourceNotAttached())
+        }
+
+        @Test
+        fun `should name the new file in resource new file`() {
+            assertEquals("Новый файл", l.pageDeveloper.resourceNewFile())
+        }
+
+        @Test
+        fun `should head the history block in resource history title`() {
+            assertEquals("История версий", l.pageDeveloper.resourceHistoryTitle())
+        }
+
+        @Test
+        fun `should use the genitive resource term in resource history guide`() {
+            assertEquals(
+                "Сохранённые версии Ресурса. Для каждой версии можно скачать её файл.",
+                l.pageDeveloper.resourceHistoryGuide(),
+            )
+        }
+
+        @Test
+        fun `should name the change time in resource history changed at`() {
+            assertEquals("Изменено", l.pageDeveloper.resourceHistoryChangedAt())
+        }
+
+        @Test
+        fun `should use the resource term in resource edited`() {
+            assertEquals("Ресурс изменён", l.pageDeveloper.resourceEdited())
+        }
+
+        @Test
+        fun `should use the accusative resource term in resource change title`() {
+            assertEquals("Изменить прикреплённый Ресурс?", l.pageDeveloper.resourceChangeTitle())
+        }
+
+        @Test
+        fun `should use the genitive resource and task terms in resource change text`() {
+            assertEquals(
+                "Появится новая версия Ресурса, и у Задачи появятся незафиксированные изменения.",
+                l.pageDeveloper.resourceChangeText(),
+            )
+        }
+
+        @Test
+        fun `should add the state change in resource change text uncommitted`() {
+            assertEquals(
+                "Появится новая версия Ресурса, и у Задачи появятся незафиксированные изменения. Задача перейдёт " +
+                    "в состояние «Не зафиксирована».",
+                l.pageDeveloper.resourceChangeTextUncommitted(),
+            )
+        }
+
+        @Test
+        fun `should name the change action in resource change action`() {
+            assertEquals("Изменить", l.pageDeveloper.resourceChangeAction())
+        }
+
+        @Test
+        fun `should use the genitive task term in testing tab title`() {
+            assertEquals("Тестирование Задачи", l.pageDeveloper.testingTabTitle())
+        }
+
+        @Test
+        fun `should show the start in the context zone with 24 hours in testing title`() {
+            assertEquals(
+                "Тестирование от 12.10.2026 14:05",
+                l.pageDeveloper.testingTitle(startedAt = Instant.parse("2026-10-12T11:05:00Z")),
+            )
+        }
+
+        @Test
+        fun `should show the start in the context zone in testing started at value`() {
+            assertEquals("12.10.2026 14:05", l.pageDeveloper.testingStartedAtValue(startedAt = Instant.parse("2026-10-12T11:05:00Z")))
+        }
+
+        @Test
+        fun `should pad the day month and hour with zeros in testing started at value`() {
+            assertEquals("05.03.2026 09:07", l.pageDeveloper.testingStartedAtValue(startedAt = Instant.parse("2026-03-05T06:07:00Z")))
+        }
+
+        @Test
+        fun `should decline the task diagnostic and submission terms in testing guide`() {
+            assertEquals(
+                "Здесь показаны состояние тестирования Задачи, Диагностики и результаты Посылок.",
+                l.pageDeveloper.testingGuide(),
+            )
+        }
+
+        @Test
+        fun `should describe the request in testing details guide`() {
+            assertEquals(
+                "Параметры выбранного запроса тестирования и состояние его выполнения.",
+                l.pageDeveloper.testingDetailsGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the plural diagnostic term in testing diagnostics title`() {
+            assertEquals("Диагностики", l.pageDeveloper.testingDiagnosticsTitle())
+        }
+
+        @Test
+        fun `should use the genitive plural polygon term in testing diagnostics guide`() {
+            assertEquals(
+                "Замечания проверки Полигонов из выбранного тестирования.",
+                l.pageDeveloper.testingDiagnosticsGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the polygon term in testing diagnostics polygon`() {
+            assertEquals("Полигон", l.pageDeveloper.testingDiagnosticsPolygon())
+        }
+
+        @Test
+        fun `should name the remarks in testing diagnostics remarks`() {
+            assertEquals("Замечания", l.pageDeveloper.testingDiagnosticsRemarks())
+        }
+
+        @Test
+        fun `should state no remarks in testing diagnostics no remarks`() {
+            assertEquals("Без замечаний", l.pageDeveloper.testingDiagnosticsNoRemarks())
+        }
+
+        @Test
+        fun `should use the genitive plural diagnostic term in testing diagnostics empty`() {
+            assertEquals("Диагностик пока нет", l.pageDeveloper.testingDiagnosticsEmpty())
+        }
+
+        @Test
+        fun `should use the genitive plural diagnostic term in testing diagnostics empty hint`() {
+            assertEquals(
+                "Результаты появятся после выполнения Диагностик.",
+                l.pageDeveloper.testingDiagnosticsEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should prefix the id with a number sign in testing unknown resource`() {
+            assertEquals("#42", l.pageDeveloper.testingUnknownResource(id = 42L))
+        }
+
+        @Test
+        fun `should keep the largest id exact and ungrouped in testing unknown resource`() {
+            assertEquals("#9223372036854775807", l.pageDeveloper.testingUnknownResource(id = Long.MAX_VALUE))
+        }
+
+        @Test
+        fun `should use the plural submission term in testing submissions guide`() {
+            assertEquals("Посылки и результаты их проверки.", l.pageDeveloper.testingSubmissionsGuide())
+        }
+
+        @Test
+        fun `should use the developer solution term in testing submissions developer solution`() {
+            assertEquals("Авторское Решение", l.pageDeveloper.testingSubmissionsDeveloperSolution())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "NO_RESULT,      Без результата",
+            "CHECKING,       Проверяется",
+            "SCORE_MISMATCH, Другой балл",
+            "GRADING_FAILED, Ошибка проверки",
+            "EXPECTED_SCORE, Ожидаемый балл",
+            "OTHER,          Неизвестный статус",
+        )
+        fun `should name the submission status in testing submissions status`(status: TestingSubmissionsStatusStatus, expected: String) {
+            assertEquals(expected, l.pageDeveloper.testingSubmissionsStatus(status = status))
+        }
+
+        @Test
+        fun `should show the actual and expected scores in testing submissions score`() {
+            assertEquals("7 / 10", l.pageDeveloper.testingSubmissionsScore(actual = 7L, expected = 10))
+        }
+
+        @Test
+        fun `should keep large scores exact and ungrouped in testing submissions score`() {
+            assertEquals(
+                "9223372036854775807 / 2147483647",
+                l.pageDeveloper.testingSubmissionsScore(actual = Long.MAX_VALUE, expected = Int.MAX_VALUE),
+            )
+        }
+
+        @Test
+        fun `should show a dash for the actual score in testing submissions score pending`() {
+            assertEquals("— / 1412", l.pageDeveloper.testingSubmissionsScorePending(expected = 1412))
         }
     }
 

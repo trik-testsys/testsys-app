@@ -13,6 +13,11 @@ import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequestId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.infra.localization.PageDeveloper.DiagnosticLineAtSeverity
+import tech.testsys.infra.localization.PageDeveloper.DiagnosticLineSeverity
+import tech.testsys.infra.localization.PageDeveloper.RefusalNoExerciseLanguage
+import tech.testsys.infra.localization.PageDeveloper.TaskStateState
+import tech.testsys.infra.localization.PageJudge.SolutionLanguageLanguage
 import tech.testsys.operation.error.OperationError
 import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskNotTestedError
@@ -32,6 +37,7 @@ import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.app.service.developer.TestVo
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.forms.UploadedFile
+import tech.testsys.web.components.texts.currentLocalization
 import tech.testsys.web.components.texts.currentTimeZone
 import java.time.Instant
 import java.time.LocalDateTime
@@ -57,28 +63,34 @@ internal const val CONTESTS_SECTION = "contests"
 /** Largest file of a resource version a page receives: 10 MiB. */
 internal const val MAX_RESOURCE_BYTES = 10 * 1024 * 1024
 
-/** Languages of exercises and developer solutions with their labels. */
-internal val LANGUAGE_LABELS: Map<TrikSupportedLanguage, String> = mapOf(
-    TrikSupportedLanguage.Python to "Python",
-    TrikSupportedLanguage.JavaScript to "JavaScript",
-    TrikSupportedLanguage.VisualLanguage to "Визуальный язык",
+/** Languages of exercises and developer solutions in the order a page offers them. */
+internal val LANGUAGES: List<TrikSupportedLanguage> =
+    listOf(TrikSupportedLanguage.Python, TrikSupportedLanguage.JavaScript, TrikSupportedLanguage.VisualLanguage)
+
+/** Returns the label of the programming [language] of an exercise or a developer solution. */
+internal fun languageLabel(language: TrikSupportedLanguage): String = currentLocalization().pageJudge.solutionLanguage(
+    language = when (language) {
+        TrikSupportedLanguage.Python -> SolutionLanguageLanguage.PYTHON
+        TrikSupportedLanguage.JavaScript -> SolutionLanguageLanguage.JAVASCRIPT
+        TrikSupportedLanguage.VisualLanguage -> SolutionLanguageLanguage.VISUAL_LANGUAGE
+    },
 )
 
 /**
  * State of a task as a page shows it.
  *
- * @property label the label of the state.
+ * @property variant the message variant naming the state.
  * @property tone the tone of its badge.
  */
-internal enum class TaskState(val label: String, val tone: Tone) {
+internal enum class TaskState(val variant: TaskStateState, val tone: Tone) {
     /** Never committed. */
-    New("Новая", Tone.Info),
+    New(TaskStateState.NEW, Tone.Info),
 
     /** Committed with changes in the working revision. */
-    Uncommitted("Не зафиксирована", Tone.Warning),
+    Uncommitted(TaskStateState.UNCOMMITTED, Tone.Warning),
 
     /** Committed without changes. */
-    Committed("Зафиксирована", Tone.Success),
+    Committed(TaskStateState.COMMITTED, Tone.Success),
 }
 
 /** Copies this temporary upload into a file the page keeps after the upload handler returns. */
@@ -91,8 +103,11 @@ internal fun LocalDateTime.toUserInstant(): Instant = atZone(currentTimeZone()).
 /** Requires a start before the end of a contest given by this field; an empty end needs no start. */
 internal fun <T> Binder.BindingBuilder<T, LocalDateTime?>.scheduleRules(
     start: () -> LocalDateTime?,
-): Binder.BindingBuilder<T, LocalDateTime?> = withValidator({ end -> end == null || start() != null }, "Укажите начало тура")
-    .withValidator({ end -> start()?.let { begin -> end == null || end > begin } != false }, "Конец должен быть позже начала")
+): Binder.BindingBuilder<T, LocalDateTime?> {
+    val texts = currentLocalization().pageDeveloper
+    return withValidator({ end -> end == null || start() != null }, texts.scheduleStartRequired())
+        .withValidator({ end -> start()?.let { begin -> end == null || end > begin } != false }, texts.scheduleEndBeforeStart())
+}
 
 /** Returns the state of [task]: without a working revision it is committed, without a committed one it is new. */
 internal fun stateOf(task: TaskVo): TaskState = when {
@@ -135,55 +150,83 @@ internal fun openDeveloperContest(contestId: ContestId) {
     UI.getCurrent().navigate(DeveloperContestView::class.java, contestParameters(contestId))
 }
 
-/** Returns the label of the type of [resource]. */
-internal fun typeOf(resource: ResourceVo): String = when (resource) {
-    is StatementVo -> "Условие"
-    is ExerciseVo -> "Упражнение"
-    is TestVo -> "Полигон"
-    is DeveloperSolutionVo -> "Авторское решение"
+/** Returns the kind of [resource]. */
+internal fun kindOf(resource: ResourceVo): ResourceKind = when (resource) {
+    is StatementVo -> ResourceKind.Statement
+    is ExerciseVo -> ResourceKind.Exercise
+    is TestVo -> ResourceKind.Test
+    is DeveloperSolutionVo -> ResourceKind.DeveloperSolution
 }
+
+/** Returns the label of the resource type [kind]. */
+internal fun kindLabelOf(kind: ResourceKind): String = currentLocalization().pageDeveloper.resourceType(type = kind.type)
+
+/** Returns the label of the type of [resource]. */
+internal fun typeOf(resource: ResourceVo): String = kindLabelOf(kindOf(resource))
 
 /** Returns the text of a diagnostic [report]: its severity, place and finding. */
 internal fun diagnosticText(report: DiagnosticReport): String {
-    val severity = when (report.severity) {
-        DiagnosticSeverity.Info -> "Сведения"
-        DiagnosticSeverity.Warning -> "Предупреждение"
-        DiagnosticSeverity.Error -> "Ошибка"
-    }
+    val texts = currentLocalization().pageDeveloper
+    // The place is a technical XML path, the same in every language.
     val place = report.location?.let { location ->
         val path = location.path.joinToString("/") { segment -> "${segment.tag}[${segment.index}]" }
         location.attribute?.let { attribute -> "$path@$attribute" } ?: path
     }
     val finding = when (val data = report.data) {
-        is DiagnosticData.UnknownElement -> "неизвестный элемент «${data.tag}»"
-        is DiagnosticData.MalformedXml -> "некорректный XML: ${data.details}"
-        is DiagnosticData.MissingChild -> "нет вложенного элемента «${data.tag}»"
-        is DiagnosticData.MissingAttribute -> "нет атрибута «${data.attribute}»"
-        is DiagnosticData.InvalidAttributeValue ->
-            "атрибут «${data.attribute}» равен «${data.actual}», ожидается ${data.expected}"
-        is DiagnosticData.InvalidChildCount -> "вложенных элементов ${data.actual}, ожидается ${data.expected}"
-        DiagnosticData.MissingTimeLimit -> "не задано ограничение времени"
-        is DiagnosticData.MultipleTimeLimits -> "ограничений времени ${data.count}, ожидается одно"
-        is DiagnosticData.NegativeTimeLimit -> "отрицательное ограничение времени ${data.value}"
-        is DiagnosticData.ExcessiveTimeLimit -> "ограничение времени ${data.value} больше допустимого ${data.maximum}"
-        is DiagnosticData.InvalidEventId -> "некорректный идентификатор события «${data.id}»"
-        DiagnosticData.MissingScoreOutput -> "полигон не выводит балл"
+        is DiagnosticData.UnknownElement -> texts.diagnosticFindingUnknownElement(tag = data.tag)
+        is DiagnosticData.MalformedXml -> texts.diagnosticFindingMalformedXml(details = data.details)
+        is DiagnosticData.MissingChild -> texts.diagnosticFindingMissingChild(tag = data.tag)
+        is DiagnosticData.MissingAttribute -> texts.diagnosticFindingMissingAttribute(attribute = data.attribute)
+        is DiagnosticData.InvalidAttributeValue -> texts.diagnosticFindingInvalidAttributeValue(
+            attribute = data.attribute,
+            actual = data.actual,
+            expected = data.expected,
+        )
+        is DiagnosticData.InvalidChildCount -> texts.diagnosticFindingInvalidChildCount(actual = data.actual, expected = data.expected)
+        DiagnosticData.MissingTimeLimit -> texts.diagnosticFindingMissingTimeLimit()
+        is DiagnosticData.MultipleTimeLimits -> texts.diagnosticFindingMultipleTimeLimits(count = data.count)
+        is DiagnosticData.NegativeTimeLimit -> texts.diagnosticFindingNegativeTimeLimit(value = data.value)
+        is DiagnosticData.ExcessiveTimeLimit -> texts.diagnosticFindingExcessiveTimeLimit(value = data.value, maximum = data.maximum)
+        is DiagnosticData.InvalidEventId -> texts.diagnosticFindingInvalidEventId(id = data.id)
+        DiagnosticData.MissingScoreOutput -> texts.diagnosticFindingMissingScoreOutput()
     }
-    return listOfNotNull(severity, place, finding).joinToString(" · ")
+    return if (place == null) {
+        val severity = when (report.severity) {
+            DiagnosticSeverity.Info -> DiagnosticLineSeverity.INFO
+            DiagnosticSeverity.Warning -> DiagnosticLineSeverity.WARNING
+            DiagnosticSeverity.Error -> DiagnosticLineSeverity.ERROR
+        }
+        texts.diagnosticLine(severity = severity, finding = finding)
+    } else {
+        val severity = when (report.severity) {
+            DiagnosticSeverity.Info -> DiagnosticLineAtSeverity.INFO
+            DiagnosticSeverity.Warning -> DiagnosticLineAtSeverity.WARNING
+            DiagnosticSeverity.Error -> DiagnosticLineAtSeverity.ERROR
+        }
+        texts.diagnosticLineAt(severity = severity, place = place, finding = finding)
+    }
 }
 
 /** Returns why testing or committing a task was refused, or `null` for a refusal the common handler shows. */
-internal fun testingRefusalOf(error: OperationError): String? = when (error) {
-    is TaskAlreadyCommittedError -> "У задачи нет незафиксированных изменений."
-    is TaskTestingNoStatementError -> "Прикрепите условие."
-    is TaskTestingNoPolygonsError -> "Прикрепите хотя бы один полигон."
-    is TaskTestingNoDeveloperSolutionsError -> "Прикрепите хотя бы одно авторское решение."
-    is TaskTestingNoTrikStudioVersionsError -> "Укажите поддерживаемые версии TRIK Studio."
-    is TaskTestingNoExerciseForLanguageError -> "Прикрепите упражнение для языка «${LANGUAGE_LABELS.getValue(error.language)}»."
-    is TaskTrikStudioVersionNotSupportedError ->
-        "Задача прикреплена к туру с версией TRIK Studio ${error.trikStudioVersion.version}, которую она не поддерживает."
-    is TaskNotTestedError -> "Рабочая версия задачи не прошла тестирование."
-    else -> null
+internal fun testingRefusalOf(error: OperationError): String? {
+    val texts = currentLocalization().pageDeveloper
+    return when (error) {
+        is TaskAlreadyCommittedError -> texts.refusalAlreadyCommitted()
+        is TaskTestingNoStatementError -> texts.refusalNoStatement()
+        is TaskTestingNoPolygonsError -> texts.refusalNoPolygons()
+        is TaskTestingNoDeveloperSolutionsError -> texts.refusalNoDeveloperSolutions()
+        is TaskTestingNoTrikStudioVersionsError -> texts.refusalNoTrikStudioVersions()
+        is TaskTestingNoExerciseForLanguageError -> texts.refusalNoExercise(
+            language = when (error.language) {
+                TrikSupportedLanguage.Python -> RefusalNoExerciseLanguage.PYTHON
+                TrikSupportedLanguage.JavaScript -> RefusalNoExerciseLanguage.JAVASCRIPT
+                TrikSupportedLanguage.VisualLanguage -> RefusalNoExerciseLanguage.VISUAL_LANGUAGE
+            },
+        )
+        is TaskTrikStudioVersionNotSupportedError -> texts.refusalVersionNotSupported(version = error.trikStudioVersion.version)
+        is TaskNotTestedError -> texts.refusalNotTested()
+        else -> null
+    }
 }
 
 /** Route parameter of the selected testing request. */
@@ -200,17 +243,20 @@ internal fun openDeveloperTesting(taskId: TaskId, requestId: TaskValidationReque
 }
 
 /** Returns a short result of [execution]. */
-internal fun summaryOf(execution: TaskValidationExecutionVo): String = when (execution) {
-    TaskValidationExecutionVo.PendingDiagnostics -> "Выполняются диагностики"
-    is TaskValidationExecutionVo.AwaitingSubmissions -> "Диагностики пройдены, создаются посылки"
-    is TaskValidationExecutionVo.StoppedByDiagnostics -> "Диагностики нашли ошибки в полигонах"
-    is TaskValidationExecutionVo.SubmissionsCreated -> "Проверяются посылки: ${execution.submissions.size}"
-    is TaskValidationExecutionVo.Completed -> if (execution.failures.isEmpty()) {
-        "Все посылки набрали ожидаемый балл"
-    } else {
-        "Провалено посылок: ${execution.failures.size} из ${execution.submissions.size}"
+internal fun summaryOf(execution: TaskValidationExecutionVo): String {
+    val texts = currentLocalization().pageDeveloper
+    return when (execution) {
+        TaskValidationExecutionVo.PendingDiagnostics -> texts.summaryPending()
+        is TaskValidationExecutionVo.AwaitingSubmissions -> texts.summaryAwaiting()
+        is TaskValidationExecutionVo.StoppedByDiagnostics -> texts.summaryStopped()
+        is TaskValidationExecutionVo.SubmissionsCreated -> texts.summaryChecking(count = execution.submissions.size)
+        is TaskValidationExecutionVo.Completed -> if (execution.failures.isEmpty()) {
+            texts.summaryPassed()
+        } else {
+            texts.summaryFailed(failed = execution.failures.size, total = execution.submissions.size)
+        }
+        is TaskValidationExecutionVo.IncompleteDiagnostics -> texts.summaryTechnical(description = execution.failure.description)
+        is TaskValidationExecutionVo.CompletedDiagnostics -> texts.summaryTechnical(description = execution.failure.description)
+        is TaskValidationExecutionVo.CreatedSubmissions -> texts.summaryTechnical(description = execution.failure.description)
     }
-    is TaskValidationExecutionVo.IncompleteDiagnostics -> "Техническая остановка: ${execution.failure.description}"
-    is TaskValidationExecutionVo.CompletedDiagnostics -> "Техническая остановка: ${execution.failure.description}"
-    is TaskValidationExecutionVo.CreatedSubmissions -> "Техническая остановка: ${execution.failure.description}"
 }

@@ -48,3 +48,8 @@ dependencies {
 }
 
 configureWebFrontend()
+
+tasks.withType<Test>().configureEach {
+    systemProperty("testsys.monitoring.path", rootProject.file("deploy/monitoring").absolutePath)
+    inputs.dir(rootProject.file("deploy/monitoring"))
+}

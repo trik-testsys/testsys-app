@@ -299,6 +299,10 @@ Cookie основного интерфейса называется `TESTSYS_APP
 Он не подключает `CurrentUser`, `CabinetHeaders` и прокси-сервисы доменных операций.
 `ServicePrincipal` хранит только техническую идентичность с полномочием `ROLE_SERVICE`.
 
+Кнопка «Grafana» на `ServiceHomeView` открывает в той же вкладке адрес из `testsys.service.grafana-url`.
+Кабинет не передаёт Grafana учётных данных: в Grafana входят её собственными учётными записями. Локальный
+запуск Grafana описан в [deploy/monitoring/README.md](../../deploy/monitoring/README.md).
+
 `ServiceSecurityConfiguration` сохраняет штатные правила Vaadin для ресурсов, init, UIDL, heartbeat, push и CSRF.
 Навигация проверяет аннотации страниц; остальные HTTP-точки закрыты через `denyAll`.
 Статические ресурсы компонентов доступны по `/testsys-ui/**`.
@@ -323,6 +327,7 @@ Vaadin использует штатный heartbeat и штатное закр�
 | `testsys.service.address` | Обязательный адрес служебного HTTP-сервера |
 | `testsys.service.port` | Обязательный порт служебного HTTP-сервера; `0` выбирает свободный порт в тестах |
 | `testsys.service.trusted-proxies` | Регулярное выражение адресов доверенных proxy; без него forwarded-заголовки игнорируются |
+| `testsys.service.grafana-url` | Обязательный абсолютный адрес Grafana со схемой `http` или `https`, без имени пользователя и пароля; значения по умолчанию нет |
 
 При развёртывании передавайте случайно сгенерированный код через `TESTSYS_SERVICE_SECRET` или защищённый файл
 конфигурации. Не добавляйте его в командную строку, исходники или журналы. Страницы не передают код через URL,
@@ -352,6 +357,7 @@ proxy должен передавать `X-Forwarded-For`, `X-Forwarded-Proto`, 
 `ServiceUserSearch` из `ServiceTestConfiguration`; как задать наборы параметров маршрута, описано в разделе
 [«Построение страниц»](../../docs/project/unit-tests.md#построение-страниц) unit-tests.md. Тесты основного
 интерфейса сохраняют свои fixtures и проверяют прежние страницы.
+`ServiceHomeViewTests` проверяет, что кнопка «Grafana» открывает в той же вкладке только адрес из конфигурации.
 `WebContextsTests` запускает настоящую иерархию на случайных портах и проверяет общую инфраструктуру,
 в том числе выполнение служебного поиска Пользователей в PostgreSQL, разные реестры маршрутов, исполнители
 и cookies, а после закрытия — освобождение портов трёх серверов, включая сервер метрик. `TestSysRuntimeTests` проверяет отказ до запуска инфраструктуры и освобождение основного порта
@@ -434,7 +440,8 @@ database/README.md. Требования к поиску и карточке —
 Требования к метрикам — в разделе `testsys.dev.metric` в [features.md](../../docs/domain/features.md#testsysdevmetricexport-implemented).
 Собственные метрики TestSys, их метки и правила учёта технических сбоев описаны
 в [monitoring/README.md](../../testsys-infra/monitoring/README.md). Этот раздел описывает реестр, HTTP-метрики, учёт
-в интерфейсах и сервер экспорта.
+в интерфейсах и сервер экспорта. Локальный стек Prometheus и Grafana и дашборды описаны
+в [deploy/monitoring/README.md](../../deploy/monitoring/README.md).
 
 ### Реестр
 
@@ -450,6 +457,11 @@ database/README.md. Требования к поиску и карточке —
 - наблюдения `spring.security.*` отключены, запрос наблюдается один раз на уровне веба.
 
 Метрики JVM, Tomcat и HikariCP не подключены.
+
+`management.prometheus.metrics.export.properties` в `application.yml` включает свойство client_java
+`io.prometheus.exporter.include_created_timestamps`: текстовый экспорт счётчиков и гистограмм содержит время
+их регистрации в рядах `_created`. Использование этого времени при подсчёте первого события описано в разделе
+[«Сбор метрик»](../../deploy/monitoring/README.md#сбор-метрик) deploy/monitoring/README.md.
 
 ### HTTP-запросы
 
@@ -480,6 +492,9 @@ database/README.md. Требования к поиску и карточке —
 запроса. Первый запрос страницы учитывается с её шаблоном и кодом ответа, который Vaadin определяет до отправки HTML
 благодаря `vaadin.eagerServerLoad`. Переходы без перезагрузки и действия на странице идут запросами `/?v-r=uidl`
 с кодом 200.
+
+Дашборды в `deploy/monitoring/grafana/dashboards/` используют метки `interface`, `uri`, `status` и `outcome`.
+Если эти метки или их значения меняются, обновите и дашборды.
 
 ### Ошибки операций и технические сбои
 
@@ -512,7 +527,8 @@ database/README.md. Требования к поиску и карточке —
 
 Третий дочерний контекст [MetricsWebConfiguration](src/main/kotlin/tech/testsys/bootstrap/MetricsWebConfiguration.kt)
 запускает Tomcat со Spring MVC и Actuator без Vaadin, Spring Security и сессий. Он отдаёт только
-`GET /actuator/prometheus` в текстовом формате Prometheus. Индекс `/actuator`, статические ресурсы и отдельный
+`GET /actuator/prometheus` в формате, согласованном по заголовку `Accept`: без него — текстовый Prometheus,
+с `application/openmetrics-text;version=1.0.0` — OpenMetrics 1.0.0. Индекс `/actuator`, статические ресурсы и отдельный
 management-сервер выключены; `management.server.port` в этом контексте сбрасывается. Не задавайте
 `management.server.address` и `management.server.ssl.enabled=true`: с ними сервер метрик не запустится.
 Запросы к серверу метрик не наблюдаются. Основной и служебный интерфейсы Actuator не подключают.

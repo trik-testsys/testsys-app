@@ -13,6 +13,7 @@
 testsys-app/
 ├── .github/workflows/        # CI: build, test, lint (Detekt + SARIF), проверка ветки PR
 ├── buildSrc/                 # Convention-плагин testsys.conventions
+├── deploy/monitoring/        # Локальные Prometheus и Grafana
 ├── docs/                     # Документация проекта
 ├── gradle/
 │   ├── libs.versions.toml    # Каталог версий зависимостей (единственное место с версиями)
@@ -209,6 +210,7 @@ Workflow лежат в `.github/workflows`.
 | Служебный запрос данных для служебного кабинета | `testsys-infra:database`, пакет `api/service`, см. [database/README.md](../../testsys-infra/database/README.md#служебный-поиск-пользователей) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Метрику или учёт технического сбоя | Каталог и правила учёта — [monitoring/README.md](../../testsys-infra/monitoring/README.md) |
+| Дашборд или настройку локального мониторинга | `deploy/monitoring/`, см. [deploy/monitoring/README.md](../../deploy/monitoring/README.md) |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
 | Токены, стили, бренд и иконки | `components/src/main/resources/META-INF/resources/testsys-ui/`, правила — [ui-design.md](ui-design.md) |
 | Необходимая клиентская реализация компонента | `components/src/main/resources/META-INF/frontend/testsys-ui/`, API — components/README.md |

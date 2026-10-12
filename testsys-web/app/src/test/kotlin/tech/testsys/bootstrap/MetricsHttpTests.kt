@@ -1,19 +1,20 @@
 package tech.testsys.bootstrap
 
 import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Tag
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.springframework.boot.web.server.context.WebServerApplicationContext
 import org.springframework.context.ConfigurableApplicationContext
+import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.web.app.PostgresTestContainer
 import java.net.URI
 import java.net.http.HttpClient
@@ -21,6 +22,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import io.micrometer.core.instrument.Tag as MeterTag
 
 /**
  * Checks HTTP metrics of both interfaces and their export on the real context hierarchy. The database is passed by
@@ -151,6 +153,46 @@ class MetricsHttpTests {
         assertTrue("testsys_grading_queue{state=\"waiting\"}" in response.body())
     }
 
+    // Review of uncommitted changes against c15e049, Findings, Issue 1: the first event needs a zero baseline.
+    @Test
+    @Tag("regression")
+    fun `should export the first counter event with a stable creation time in OpenMetrics`() {
+        runtime.infrastructure.getBean(TechnicalFailures::class.java).record(source = "grading", stage = "save")
+
+        val response = scrapeOpenMetrics()
+
+        assertEquals(200, response.statusCode())
+        assertTrue(response.headers().firstValue("Content-Type").orElseThrow().startsWith("application/openmetrics-text;version=1.0.0"))
+        assertTrue(response.headers().allValues("Set-Cookie").isEmpty())
+        assertTrue(response.body().endsWith("# EOF\n"))
+        val labels = "{exception=\"none\",source=\"grading\",stage=\"save\"}"
+        assertTrue("testsys_technical_failures_total$labels 1.0" in response.body())
+        val created = response.body().lineSequence().single { line -> line.startsWith("testsys_technical_failures_created$labels ") }
+        assertTrue(created.substringAfterLast(' ').toDouble() > 0)
+        assertTrue(created in scrapeOpenMetrics().body())
+    }
+
+    // Review of uncommitted changes against c15e049, Findings, Issue 1: HTTP histograms also need creation time.
+    @Test
+    @Tag("regression")
+    fun `should export creation time of the first HTTP error histogram in OpenMetrics`() {
+        val response = client.send(
+            request(runtime.mainWeb, "/no-such-openmetrics-page").method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
+            HttpResponse.BodyHandlers.ofString(),
+        )
+        assertEquals(404, response.statusCode())
+        assertTrue(awaitSeries("interface" to "main", "uri" to "NOT_FOUND", "status" to "404", "method" to "HEAD"))
+
+        val exported = scrapeOpenMetrics()
+
+        val created = exported.body().lineSequence().single { line ->
+            line.startsWith("http_server_requests_seconds_created{") &&
+                "interface=\"main\"" in line && "uri=\"NOT_FOUND\"" in line && "status=\"404\"" in line && "method=\"HEAD\"" in line
+        }
+        assertTrue(created.substringAfterLast(' ').toDouble() > 0)
+        assertTrue(created in scrapeOpenMetrics().body())
+    }
+
     @Test
     fun `should not observe requests of the metrics server`() {
         scrape()
@@ -187,6 +229,12 @@ class MetricsHttpTests {
         HttpResponse.BodyHandlers.ofString(),
     )
 
+    private fun scrapeOpenMetrics(): HttpResponse<String> = client.send(
+        HttpRequest.newBuilder(uri(runtime.metricsWeb, "/actuator/prometheus"))
+            .header("Accept", "application/openmetrics-text;version=1.0.0").GET().build(),
+        HttpResponse.BodyHandlers.ofString(),
+    )
+
     private fun request(context: ConfigurableApplicationContext, path: String): HttpRequest.Builder =
         HttpRequest.newBuilder(uri(context, path)).header("Accept", "text/html")
 
@@ -199,7 +247,7 @@ class MetricsHttpTests {
      */
     private fun awaitSeries(vararg labels: Pair<String, String>, series: String = COUNT_SERIES, bound: String? = null): Boolean {
         val registry = runtime.infrastructure.getBean(MeterRegistry::class.java)
-        val tags = labels.map { (name, value) -> Tag.of(name, value) }
+        val tags = labels.map { (name, value) -> MeterTag.of(name, value) }
         val added = CountDownLatch(1)
         registry.config().onMeterAdded { meter ->
             if (meter.id.name == HTTP_SERVER_REQUESTS && meter.id.tags.containsAll(tags)) added.countDown()

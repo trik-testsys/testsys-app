@@ -1,0 +1,15 @@
+# Prometheus reads the TestSys metrics server directly; see deploy/monitoring/README.md.
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: testsys
+    metrics_path: /actuator/prometheus
+    scheme: http
+    # client_java 1.7.0 omits histogram created timestamps from Protobuf; OpenMetrics includes them.
+    scrape_protocols: [OpenMetricsText1.0.0]
+    static_configs:
+      # testsys.metrics.port of the TestSys process; change it here when the port differs.
+      - targets:
+          - host.docker.internal:8082

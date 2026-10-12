@@ -5,6 +5,7 @@ import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.spring.security.AuthenticationContext
 import jakarta.annotation.security.RolesAllowed
+import tech.testsys.bootstrap.ServiceWebSettings
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
@@ -12,14 +13,14 @@ import tech.testsys.web.components.display.text
 import tech.testsys.web.components.texts.UiTexts
 
 /**
- * Protected initial service page with an explicit action to close the service session.
+ * Protected initial service page with service sections, a plain transition to Grafana and an explicit sign-out.
  *
  * @since %CURRENT_VERSION%
  */
 @Route("")
 @PageTitle("Служебный кабинет")
 @RolesAllowed("SERVICE")
-class ServiceHomeView(texts: UiTexts, authentication: AuthenticationContext) : TestSysView(texts) {
+class ServiceHomeView(texts: UiTexts, authentication: AuthenticationContext, settings: ServiceWebSettings) : TestSysView(texts) {
     init {
         page(ServiceHeaders.header()) {
             head("Служебный кабинет")
@@ -30,6 +31,7 @@ class ServiceHomeView(texts: UiTexts, authentication: AuthenticationContext) : T
                         action("Настройки") { onClick { UI.getCurrent().navigate(ServiceSettingsView::class.java) } }
                         action("Проверка") { onClick { UI.getCurrent().navigate(ServiceGradingView::class.java) } }
                         action("Пользователи") { onClick { UI.getCurrent().navigate(ServiceUsersView::class.java) } }
+                        action("Grafana") { onClick { UI.getCurrent().page.setLocation(settings.grafanaUrl) } }
                     }
                     footer { mainAction("Выйти") { onClick { authentication.logout() } } }
                 }

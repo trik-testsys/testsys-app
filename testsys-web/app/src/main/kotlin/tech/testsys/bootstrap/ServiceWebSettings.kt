@@ -1,6 +1,8 @@
 package tech.testsys.bootstrap
 
 import org.springframework.core.env.Environment
+import java.net.URI
+import java.net.URISyntaxException
 import java.security.MessageDigest
 import java.util.regex.Pattern
 
@@ -10,12 +12,14 @@ import java.util.regex.Pattern
  * @property address the listener address configured for deployment.
  * @property port the listener port; zero requests a random port in tests.
  * @property trustedProxies the explicit regular expression of trusted proxy addresses, or an expression matching none.
+ * @property grafanaUrl the absolute http or https address of Grafana opened from the service cabinet without signing in.
  * @since %CURRENT_VERSION%
  */
 class ServiceWebSettings private constructor(
     val address: String,
     val port: Int,
     val trustedProxies: String,
+    val grafanaUrl: String,
     private val secretDigest: ByteArray,
 ) {
     /**
@@ -28,6 +32,7 @@ class ServiceWebSettings private constructor(
     companion object {
         private const val MINIMUM_SECRET_LENGTH = 64
         private const val MAXIMUM_PORT = 65_535
+        private val WEB_SCHEMES = setOf("http", "https")
 
         /**
          * Reads and validates service settings before any infrastructure starts, without including the secret in errors.
@@ -48,9 +53,29 @@ class ServiceWebSettings private constructor(
 
             val proxies = environment.getProperty("testsys.service.trusted-proxies")?.takeIf { it.isNotBlank() } ?: "(?!)"
             Pattern.compile(proxies)
-            return ServiceWebSettings(address = address, port = port, trustedProxies = proxies, secretDigest = digest(secret))
+
+            val grafanaUrl = environment.getProperty("testsys.service.grafana-url")
+            require(grafanaUrl != null && isWebAddress(grafanaUrl)) {
+                "testsys.service.grafana-url must be an absolute http or https URL without user information"
+            }
+            return ServiceWebSettings(
+                address = address,
+                port = port,
+                trustedProxies = proxies,
+                grafanaUrl = grafanaUrl,
+                secretDigest = digest(secret),
+            )
         }
 
         private fun digest(secret: String): ByteArray = MessageDigest.getInstance("SHA-256").digest(secret.toByteArray(Charsets.UTF_8))
+
+        private fun isWebAddress(value: String): Boolean {
+            val uri = try {
+                URI(value)
+            } catch (_: URISyntaxException) {
+                return false
+            }
+            return uri.isAbsolute && uri.scheme.lowercase() in WEB_SCHEMES && !uri.host.isNullOrEmpty() && uri.rawUserInfo == null
+        }
     }
 }

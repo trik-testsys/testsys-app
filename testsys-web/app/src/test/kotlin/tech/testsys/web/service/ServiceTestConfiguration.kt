@@ -40,6 +40,8 @@ import java.time.Instant
 
 const val SERVICE_TEST_SECRET: String = "test-service-code-that-is-only-used-by-automated-tests-0123456789-ABCD"
 
+const val SERVICE_TEST_GRAFANA_URL: String = "https://grafana.example.test/monitoring/"
+
 /** Users of every kind that the mocked service user search finds by id. */
 val SERVICE_TEST_USERS: List<User<*>> = listOf(
     multipleRoleUser {
@@ -128,7 +130,8 @@ class ServiceTestConfiguration {
     fun serviceSettings(environment: Environment): ServiceWebSettings = ServiceWebSettings.from(
         MockEnvironment().withProperty("testsys.service.secret", SERVICE_TEST_SECRET)
             .withProperty("testsys.service.trusted-proxies", environment.getProperty("testsys.service.trusted-proxies", ""))
-            .withProperty("testsys.service.address", "127.0.0.1").withProperty("testsys.service.port", "0"),
+            .withProperty("testsys.service.address", "127.0.0.1").withProperty("testsys.service.port", "0")
+            .withProperty("testsys.service.grafana-url", SERVICE_TEST_GRAFANA_URL),
     )
 
     @Bean

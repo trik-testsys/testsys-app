@@ -35,6 +35,25 @@ class TestSysRuntimeTests {
     }
 
     @Test
+    fun `should fail before starting infrastructure when the Grafana address is missing`() {
+        val failure = assertThrows(IllegalArgumentException::class.java) {
+            TestSysRuntime.start(
+                arrayOf(
+                    "--testsys.service.secret=${"runtime-test-".repeat(8)}",
+                    "--testsys.service.address=127.0.0.1",
+                    "--testsys.service.port=0",
+                    "--testsys.service.grafana-url=",
+                ),
+                arrayOf(RuntimeProbeConfiguration::class.java),
+            )
+        }
+
+        assertTrue(checkNotNull(failure.message).startsWith("testsys.service.grafana-url"))
+        assertTrue(RuntimeProbeConfiguration.started.isEmpty())
+        assertTrue(RuntimeProbeConfiguration.infrastructure.isEmpty())
+    }
+
+    @Test
     fun `should close the main listener and parent when the service port is occupied`() {
         ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use { occupied ->
             val failure = assertThrows(RuntimeException::class.java) {

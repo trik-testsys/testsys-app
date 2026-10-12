@@ -9,7 +9,9 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
+import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.user.RegistrationRole
+import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.operation.error.InvalidAccessTokenError
 import tech.testsys.operation.error.OperationException
 import tech.testsys.web.app.AppFixtures
@@ -36,6 +38,9 @@ class UserServiceTests {
     @Autowired
     private lateinit var multipleRoleUsers: MultipleRoleUserRepository
 
+    @Autowired
+    private lateinit var users: UserRepository
+
     @Nested
     inner class AuthenticateTests {
         @Test
@@ -55,6 +60,19 @@ class UserServiceTests {
             val failure = assertThrows(OperationException::class.java) { service.authenticate(accessToken) }
 
             assertEquals(InvalidAccessTokenError, failure.error)
+        }
+
+        @Test
+        fun `should refuse the technical owner and roll back its last login`() {
+            val owner = requireNotNull(multipleRoleUsers.findByEmail(PublicCommunityOwner.EMAIL))
+            val before = users.findLastLogins(listOf(owner.id))
+
+            val failure = assertThrows(OperationException::class.java) {
+                service.authenticate(owner.data.accessTokenHash.value)
+            }
+
+            assertEquals(InvalidAccessTokenError, failure.error)
+            assertEquals(before, users.findLastLogins(listOf(owner.id)))
         }
     }
 

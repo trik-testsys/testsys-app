@@ -6,9 +6,13 @@ import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.CompetitionFilter
+import tech.testsys.domain.contract.persistence.ObserverContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.Sort
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
+import tech.testsys.domain.contract.persistence.repository.ContestRepository
+import tech.testsys.domain.contract.persistence.repository.ObserverContest
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionData
 import tech.testsys.domain.model.group.CompetitionId
@@ -43,10 +47,48 @@ class CompetitionPersistenceAdapter(
     jpaEntityRepository: CompetitionJpaEntityRepository,
     private val participantDataJpaEntityRepository: ParticipantDataJpaEntityRepository,
     private val contestToCompetitionJpaEntityRepository: ContestToCompetitionJpaEntityRepository,
+    private val contestRepository: ContestRepository,
 ) : AbstractPersistenceAdapter<CompetitionData, CompetitionId, Competition, CompetitionJpaEntity>(jpaEntityRepository),
     CompetitionRepository {
 
     private val competitionJpaEntityRepository: CompetitionJpaEntityRepository = jpaEntityRepository
+
+    @Transactional(readOnly = true)
+    override fun findAvailableToObserver(
+        contestIds: Set<ContestId>,
+        pagination: Pagination,
+        filter: ObserverContestFilter,
+    ): Page<ObserverContest> {
+        if (contestIds.isEmpty()) return Page(emptyList(), pagination, 0)
+        val contests = contestRepository.findByIds(contestIds.toList()).associateBy { contest -> contest.id }
+        val pairs = findByContestIds(contestIds).flatMap { competition ->
+            competition.data.contests.ids.mapNotNull { contestId ->
+                contests[contestId]?.takeIf { contest ->
+                    filter.contestId?.let { it == contest.id } != false
+                }?.let { contest -> ObserverContest(competition, contest) }
+            }
+        }.filter { pair ->
+            (filter.competitionId == null || pair.competition.id == filter.competitionId) &&
+                (filter.name?.let { pair.contest.data.name.contains(it, ignoreCase = true) } != false) &&
+                (filter.competitionName?.let { pair.competition.data.name.contains(it, ignoreCase = true) } != false)
+        }
+        val sorted = pairs.sortedWith { left, right ->
+            val orders = pagination.sort.orders + listOf(Sort.Order("competitionId"), Sort.Order("id"))
+            orders.firstNotNullOfOrNull { order ->
+                val comparison = when (order.field) {
+                    "competitionName" -> left.competition.data.name.compareTo(right.competition.data.name, ignoreCase = true)
+                    "name" -> left.contest.data.name.compareTo(right.contest.data.name, ignoreCase = true)
+                    "competitionId" -> left.competition.id.value.compareTo(right.competition.id.value)
+                    "id" -> left.contest.id.value.compareTo(right.contest.id.value)
+                    else -> throw IllegalArgumentException("Unsupported observer sort field: ${order.field}")
+                }
+                comparison.takeIf { it != 0 }?.let { if (order.direction == Sort.Direction.DESC) -it else it }
+            } ?: 0
+        }
+        val from = pagination.page.toLong() * pagination.size
+        val content = if (from >= sorted.size) emptyList() else sorted.drop(from.toInt()).take(pagination.size)
+        return Page(content, pagination, sorted.size.toLong())
+    }
 
     @Transactional(readOnly = true)
     override fun findAvailableToManager(

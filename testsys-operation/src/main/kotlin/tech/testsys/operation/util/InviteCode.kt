@@ -6,7 +6,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.Locale
-import java.util.Random
+import java.util.random.RandomGenerator
 
 private const val INVITE_CODE_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"
 private const val INVITE_CODE_LENGTH = 12
@@ -18,7 +18,7 @@ private const val INVITE_CODE_LENGTH = 12
  * @since %CURRENT_VERSION%
  */
 @InternalOperationsApi
-fun generateInviteCode(random: Random, previous: InviteCodeHash?): String = generateSequence { randomInviteCode(random) }
+fun generateInviteCode(random: RandomGenerator, previous: InviteCodeHash?): String = generateSequence { randomInviteCode(random) }
     .first { code -> previous == null || InviteCodeHash.hashInviteCode(code, previous.algorithm) != previous }
 
 /**
@@ -42,6 +42,6 @@ fun inviteExpiresAt(now: Instant, ttl: Duration): Instant {
     return now.plus(ttl).truncatedTo(ChronoUnit.MICROS)
 }
 
-private fun randomInviteCode(random: Random): String = buildString(INVITE_CODE_LENGTH) {
+private fun randomInviteCode(random: RandomGenerator): String = buildString(INVITE_CODE_LENGTH) {
     repeat(INVITE_CODE_LENGTH) { append(INVITE_CODE_ALPHABET[random.nextInt(INVITE_CODE_ALPHABET.length)]) }
 }

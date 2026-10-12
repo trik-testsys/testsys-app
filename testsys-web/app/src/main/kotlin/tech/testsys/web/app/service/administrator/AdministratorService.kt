@@ -17,6 +17,7 @@ import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.user.AdministratorOperations
 import tech.testsys.web.app.service.AdminUserVo
+import tech.testsys.web.app.service.CommunityManagementService
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.CompetitionVo
 import tech.testsys.web.app.service.ContestVo
@@ -24,6 +25,7 @@ import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.service.MultipleRoleUserVo
 import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.TaskVo
+import tech.testsys.web.app.service.UserRoleReadService
 import tech.testsys.web.app.service.developer.TaskValidationRequestVo
 import tech.testsys.web.app.service.developer.toVo
 import tech.testsys.web.app.service.judge.JudgmentOrderVo
@@ -43,22 +45,14 @@ import java.time.Instant
  */
 @Service
 @Transactional
-class AdministratorService(private val operations: AdministratorOperations, private val currentUser: CurrentUser) {
-    /**
-     * Runs [AdministratorOperations.createObserver].
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun createObserver(communityId: CommunityId, observerName: String, contestIds: Set<ContestId>): ObserverVo =
+class AdministratorService(private val operations: AdministratorOperations, private val currentUser: CurrentUser) :
+    CommunityManagementService,
+    UserRoleReadService {
+    override fun createObserver(communityId: CommunityId, observerName: String, contestIds: Set<ContestId>): ObserverVo =
         operations.createObserver(currentUser.multipleRoleUser(), communityId, observerName, contestIds).getOrThrow().toVo()
 
-    /**
-     * Runs [AdministratorOperations.viewUsers].
-     *
-     * @since %CURRENT_VERSION%
-     */
     @Transactional(readOnly = true)
-    fun viewUsers(pagination: Pagination, filter: UserFilter = UserFilter()): Page<Pair<AdminUserVo, Instant?>> =
+    override fun viewUsers(pagination: Pagination, filter: UserFilter): Page<Pair<AdminUserVo, Instant?>> =
         operations.viewUsers(currentUser.multipleRoleUser(), pagination, filter)
             .getOrThrow().map { (user, lastLogin) -> user.toAdminVo() to lastLogin }
 
@@ -73,100 +67,50 @@ class AdministratorService(private val operations: AdministratorOperations, priv
         return user.toAdminVo() to lastLogin
     }
 
-    /**
-     * Runs [AdministratorOperations.viewUserTasks].
-     *
-     * @since %CURRENT_VERSION%
-     */
     @Transactional(readOnly = true)
-    fun viewUserTasks(userId: UserId): List<Triple<TaskVo, TaskValidationRequestVo?, List<CommunityVo>>> =
+    override fun viewUserTasks(userId: UserId): List<Triple<TaskVo, TaskValidationRequestVo?, List<CommunityVo>>> =
         operations.viewUserTasks(currentUser.multipleRoleUser(), userId).getOrThrow().map { (task, request, communities) ->
             Triple(task.toVo(), request?.toVo(), communities.map { community -> community.toVo() })
         }
 
-    /**
-     * Runs [AdministratorOperations.viewUserContests].
-     *
-     * @since %CURRENT_VERSION%
-     */
     @Transactional(readOnly = true)
-    fun viewUserContests(userId: UserId): List<Pair<ContestVo, List<Pair<TaskVo, Long>>>> =
+    override fun viewUserContests(userId: UserId): List<Pair<ContestVo, List<Pair<TaskVo, Long>>>> =
         operations.viewUserContests(currentUser.multipleRoleUser(), userId).getOrThrow().map { (contest, tasks) ->
             contest.toVo() to tasks.map { (task, submissions) -> task.toVo() to submissions }
         }
 
-    /**
-     * Runs [AdministratorOperations.viewUserClasses].
-     *
-     * @since %CURRENT_VERSION%
-     */
     @Transactional(readOnly = true)
-    fun viewUserClasses(userId: UserId): List<Pair<ClassVo, SubmissionCount>> =
+    override fun viewUserClasses(userId: UserId): List<Pair<ClassVo, SubmissionCount>> =
         operations.viewUserClasses(currentUser.multipleRoleUser(), userId).getOrThrow().map { (group, count) -> group.toVo() to count }
 
-    /**
-     * Runs [AdministratorOperations.viewUserCompetitions].
-     *
-     * @since %CURRENT_VERSION%
-     */
     @Transactional(readOnly = true)
-    fun viewUserCompetitions(userId: UserId): List<Pair<CompetitionVo, SubmissionCount>> =
+    override fun viewUserCompetitions(userId: UserId): List<Pair<CompetitionVo, SubmissionCount>> =
         operations.viewUserCompetitions(currentUser.multipleRoleUser(), userId).getOrThrow()
             .map { (competition, count) -> competition.toVo() to count }
 
-    /**
-     * Runs [AdministratorOperations.viewUserJudgments].
-     *
-     * @since %CURRENT_VERSION%
-     */
     @Transactional(readOnly = true)
-    fun viewUserJudgments(userId: UserId): List<Triple<JudgmentOrderVo, SolutionId, Long?>> =
+    override fun viewUserJudgments(userId: UserId): List<Triple<JudgmentOrderVo, SolutionId, Long?>> =
         operations.viewUserJudgments(currentUser.multipleRoleUser(), userId).getOrThrow()
             .map { (order, solution, previous) -> Triple(order.toVo(), solution, previous) }
 
-    /**
-     * Runs [AdministratorOperations.viewUserAssignedContests].
-     *
-     * @since %CURRENT_VERSION%
-     */
     @Transactional(readOnly = true)
-    fun viewUserAssignedContests(userId: UserId): List<Pair<ContestVo, List<CompetitionVo>>> =
+    override fun viewUserAssignedContests(userId: UserId): List<Pair<ContestVo, List<CompetitionVo>>> =
         operations.viewUserAssignedContests(currentUser.multipleRoleUser(), userId).getOrThrow().map { (contest, competitions) ->
             contest.toVo() to competitions.map { competition -> competition.toVo() }
         }
 
-    /**
-     * Runs [AdministratorOperations.createCommunityInvite].
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun createCommunityInvite(communityId: CommunityId, kind: CommunityInvite.Kind): CommunityInviteVo =
+    override fun createCommunityInvite(communityId: CommunityId, kind: CommunityInvite.Kind): CommunityInviteVo =
         operations.createCommunityInvite(currentUser.multipleRoleUser(), communityId, kind).getOrThrow().toVo()
 
-    /**
-     * Runs [AdministratorOperations.extendCommunityInvite].
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun extendCommunityInvite(communityId: CommunityId, kind: CommunityInvite.Kind): CommunityInviteVo =
+    override fun extendCommunityInvite(communityId: CommunityId, kind: CommunityInvite.Kind): CommunityInviteVo =
         operations.extendCommunityInvite(currentUser.multipleRoleUser(), communityId, kind).getOrThrow().toVo()
 
-    /**
-     * Runs [AdministratorOperations.viewCommunityInvites].
-     *
-     * @since %CURRENT_VERSION%
-     */
     @Transactional(readOnly = true)
-    fun viewCommunityInvites(communityId: CommunityId): List<CommunityInviteVo> =
+    override fun viewCommunityInvites(communityId: CommunityId): List<CommunityInviteVo> =
         operations.viewCommunityInvites(currentUser.multipleRoleUser(), communityId).getOrThrow().map { invite -> invite.toVo() }
 
-    /**
-     * Runs [AdministratorOperations.viewCommunities].
-     *
-     * @since %CURRENT_VERSION%
-     */
     @Transactional(readOnly = true)
-    fun viewCommunities(): List<Pair<CommunityVo, Long>> =
+    override fun viewCommunities(): List<Pair<CommunityVo, Long>> =
         operations.viewCommunities(currentUser.multipleRoleUser()).getOrThrow().map { (community, users) -> community.toVo() to users }
 
     /**
@@ -180,17 +124,14 @@ class AdministratorService(private val operations: AdministratorOperations, priv
         description = description,
     ).getOrThrow().toVo()
 
-    /**
-     * Runs [AdministratorOperations.editCommunity].
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun editCommunity(communityId: CommunityId, communityName: String, description: String): CommunityVo = operations.editCommunity(
-        user = currentUser.multipleRoleUser(),
-        communityId = communityId,
-        communityName = communityName,
-        description = description,
-    ).getOrThrow().toVo()
+    override fun editCommunity(communityId: CommunityId, communityName: String, description: String): CommunityVo {
+        return operations.editCommunity(
+            user = currentUser.multipleRoleUser(),
+            communityId = communityId,
+            communityName = communityName,
+            description = description,
+        ).getOrThrow().toVo()
+    }
 
     /**
      * Runs [AdministratorOperations.grantRole].
@@ -216,13 +157,8 @@ class AdministratorService(private val operations: AdministratorOperations, priv
     fun deleteObserver(observerId: SingleRoleUserId): ObserverVo =
         operations.deleteObserver(currentUser.multipleRoleUser(), observerId).getOrThrow().toVo()
 
-    /**
-     * Runs [AdministratorOperations.viewCommunityContests].
-     *
-     * @since %CURRENT_VERSION%
-     */
     @Transactional(readOnly = true)
-    fun viewCommunityContests(communityId: CommunityId, pagination: Pagination, name: String? = null): Page<ContestVo> =
+    override fun viewCommunityContests(communityId: CommunityId, pagination: Pagination, name: String?): Page<ContestVo> =
         operations.viewCommunityContests(currentUser.multipleRoleUser(), communityId, pagination, name)
             .getOrThrow().map { contest -> contest.toVo() }
 }

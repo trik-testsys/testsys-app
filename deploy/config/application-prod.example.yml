@@ -1,0 +1,36 @@
+# Template of the production application parameters. Copy it to the server outside the Git checkout, replace
+# every <...> placeholder and pass the absolute path of the copy in TESTSYS_APP_CONFIG; deploy/compose.prod.yml
+# mounts it as application-environment.yml. The file must be readable by UID 10001 of the application container.
+# The SMTP password, the database password, the Supervisor access code, the service interface code
+# TESTSYS_SERVICE_SECRET, the Grafana address TESTSYS_GRAFANA_URL and TESTSYS_GRADING_NODES are Compose variables,
+# not part of this file. The email confirmation parameters, the invite TTLs and the participant limit are initial
+# values: values saved in the service cabinet override them.
+testsys:
+  operation:
+    community:
+      # ID of the existing Public Community, or the ID to create in an empty database.
+      public-community-id: <id>
+      public-community-name: <name>
+    supervisor:
+      # The Supervisor access code comes from TESTSYS_SUPERVISOR_ACCESS_TOKEN in the production variable file.
+      name: <name>
+    email-confirmation:
+      confirmation-code-lifetime: <ISO-8601 duration, for example PT15M>
+      max-confirmation-attempts: <number>
+    community-invite:
+      ttl: <ISO-8601 duration>
+      refresh-period: <ISO-8601 duration>
+    competition:
+      max-participants: <number>
+    class-invite:
+      ttl: <ISO-8601 duration>
+      refresh-period: <ISO-8601 duration>
+  # Every value is required: the module defaults are suitable only for a local SMTP server without authorization.
+  mail:
+    host: <SMTP host>
+    port: <SMTP port>
+    username: <SMTP username>
+    from: <sender address>
+    smtp-auth: <true or false>
+    ssl: <true or false>
+    starttls: <true or false>

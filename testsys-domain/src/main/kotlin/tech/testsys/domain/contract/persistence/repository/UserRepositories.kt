@@ -207,13 +207,24 @@ interface ParticipantRepository :
 }
 
 /**
- * Persistence port for [Supervisor] entities.
+ * Persistence port for [Supervisor] entities; the System has a single supervisor.
  *
  * @since %CURRENT_VERSION%
  */
 interface SupervisorRepository :
     EntityRepository<SupervisorData, SingleRoleUserId, Supervisor>,
-    UserAccessTokenFinder<SingleRoleUserId, Supervisor>
+    UserAccessTokenFinder<SingleRoleUserId, Supervisor> {
+
+    /**
+     * Synchronously finds the single supervisor of the System, without changing stored state.
+     * Storage exceptions propagate to the caller.
+     *
+     * @return the supervisor, or `null` if no supervisor is stored.
+     * @throws IllegalStateException if more than one supervisor is stored.
+     * @since %CURRENT_VERSION%
+     */
+    fun findSingle(): Supervisor?
+}
 
 /**
  * Persistence port for [RegistrationRequest] entities; at most one request is stored per e-mail address.

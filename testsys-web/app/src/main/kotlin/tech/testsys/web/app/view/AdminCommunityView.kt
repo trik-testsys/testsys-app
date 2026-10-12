@@ -1,5 +1,6 @@
 package tech.testsys.web.app.view
 
+import com.vaadin.flow.component.Component
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
@@ -12,6 +13,8 @@ import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
+import tech.testsys.web.app.service.AdminUserVo
+import tech.testsys.web.app.service.CommunityManagementService
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.ObserverVo
@@ -43,14 +46,18 @@ import tech.testsys.web.components.texts.currentLocalization
 private const val DETAILS_COLUMNS = 12
 
 /**
- * Community of an Administrator (testsys.web.page.admin.community): its name and description with their editing, its
- * invite codes, its users and creation of its observers; right after creating an observer it shows its access code once.
+ * Community details and applicable management actions shared by administrator and supervisor routes.
  *
  * @since %CURRENT_VERSION%
  */
-@Route("admin/communities/:communityId([0-9]+)")
-@RolesAllowed("MULTIPLE_ROLE")
-class AdminCommunityView(private val headers: CabinetHeaders, private val administratorService: AdministratorService) :
+abstract class CommunityDetailsView(
+    private val headers: CabinetHeaders,
+    private val service: CommunityManagementService,
+    private val homePage: Class<out Component>,
+    private val cabinetPage: Class<out Component>,
+    private val cabinetLabel: String,
+    private val onOpenUser: (AdminUserVo) -> Unit,
+) :
     TestSysView(),
     BeforeEnterObserver,
     HasDynamicTitle {
@@ -58,9 +65,9 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
 
     override fun beforeEnter(event: BeforeEnterEvent) {
         val communityId = CommunityId(event.routeParameters.getLong(COMMUNITY_ID_PARAMETER).orElseThrow())
-        // Checks the role, the community and its owner before the tables load, so that a refusal opens its error screen.
-        administratorService.viewCommunityInvites(communityId)
-        val communities = administratorService.viewCommunities().map { (community, _) -> community }
+        // Checks role and community access before the tables load, so a refusal opens its error screen.
+        service.viewCommunityInvites(communityId)
+        val communities = service.viewCommunities().map { (community, _) -> community }
         show(communities.first { community -> community.id == communityId }, communities, observer = null)
     }
 
@@ -69,11 +76,11 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.communityHead(name = community.name)) {
-                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
-                crumb(texts.title(), AdminView::class.java)
+                crumb(localization.pageCabinet.home(), homePage)
+                crumb(cabinetLabel, cabinetPage)
                 crumb(
                     localization.pageCabinet.sectionCommunities(),
-                    AdminView::class.java,
+                    cabinetPage,
                     RouteParameters(ADMIN_SECTION_PARAMETER, "communities"),
                 )
             }
@@ -86,7 +93,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
             row {
                 block(title = texts.communityUsersTitle()) {
                     guide(texts.communityUsersGuide())
-                    adminUsersTable(administratorService, communities, community.id)
+                    adminUsersTable(service, communities, community.id, onOpenUser)
                     val creation = observerDialog(community.id) { created -> show(community, communities, created) }
                     actions { action(texts.communityObserverCreate()) { onClick { creation() } } }
                 }
@@ -106,7 +113,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
                     val isValid = draft.writeBeanIfValid(values)
                     if (isValid) {
                         onEdited(
-                            administratorService.editCommunity(
+                            service.editCommunity(
                                 communityId = community.id,
                                 communityName = values.name,
                                 description = values.description,
@@ -162,7 +169,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
                         isObscured = true
                     }
                 }
-                footer { linkAction(texts.communityObserverOpen()) { onClick { openAdminUser(observer) } } }
+                footer { linkAction(texts.communityObserverOpen()) { onClick { onOpenUser(observer) } } }
             }
         }
     }
@@ -176,7 +183,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
             lateinit var rows: TableHandle<CommunityInviteVo>
             rows = table(
                 key = { invite: CommunityInviteVo -> invite.kind },
-                fetch = { request -> pageOf(administratorService.viewCommunityInvites(communityId), request) },
+                fetch = { request -> pageOf(service.viewCommunityInvites(communityId), request) },
             ) {
                 column(texts.communityInvitesRole(), size = 6) { invite -> tag(roleOf(invite.kind)) }
                 codeColumn(texts.communityInvitesCode(), size = 7, isObscured = true) { invite -> invite.codeHash.value }
@@ -189,13 +196,13 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
                             action = texts.communityInvitesReplace(),
                             isDanger = true,
                         ) {
-                            administratorService.createCommunityInvite(communityId, invite.kind)
+                            service.createCommunityInvite(communityId, invite.kind)
                             toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communityInvitesReplaced())
                             rows.refresh()
                         }
                     }
                     item(texts.communityInvitesExtend()) {
-                        administratorService.extendCommunityInvite(communityId, invite.kind)
+                        service.extendCommunityInvite(communityId, invite.kind)
                         toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communityInvitesExtended())
                         rows.refresh()
                     }
@@ -227,7 +234,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
                     size = 18,
                     fetch = { query, request ->
                         val contests =
-                            administratorService.viewCommunityContests(communityId, request.toPagination(), query.ifEmpty { null })
+                            service.viewCommunityContests(communityId, request.toPagination(), query.ifEmpty { null })
                         Page(contests.content, contests.totalElements.toInt())
                     },
                     display = ContestVo::name,
@@ -250,7 +257,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
                         val values = ObserverDraft()
                         if (draft.writeBeanIfValid(values)) {
                             val contestIds = values.contests.map { contest -> contest.id }.toSet()
-                            val observer = administratorService.createObserver(communityId, values.name, contestIds)
+                            val observer = service.createObserver(communityId, values.name, contestIds)
                             toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communityObserverCreated())
                             dialog.close()
                             onCreated(observer)
@@ -278,3 +285,19 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
         var contests: Set<ContestVo> = emptySet()
     }
 }
+
+/**
+ * Community detail route for an administrator.
+ *
+ * @since %CURRENT_VERSION%
+ */
+@Route("admin/communities/:communityId([0-9]+)")
+@RolesAllowed("MULTIPLE_ROLE")
+class AdminCommunityView(headers: CabinetHeaders, service: AdministratorService) : CommunityDetailsView(
+    headers,
+    service,
+    MultiMainView::class.java,
+    AdminView::class.java,
+    currentLocalization().pageAdministrator.title(),
+    ::openAdminUser,
+)

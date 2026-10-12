@@ -25,7 +25,7 @@ import tech.testsys.domain.model.user.UserId
 import java.time.Instant
 
 /**
- * Data for pages of a user available to an administrator, with links replaced by identifiers.
+ * Data for administrator and supervisor pages of a visible user, with links replaced by identifiers.
  *
  * @property id the identifier of the user.
  * @property createdAt the moment the user was created.
@@ -70,6 +70,19 @@ data class ObserverVo(
     override val name: String,
     val community: CommunityId,
     val contests: List<ContestId>,
+) : AdminUserVo
+
+/**
+ * Data of a participant visible to a supervisor.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data class ParticipantVo(
+    override val id: SingleRoleUserId,
+    override val createdAt: Instant,
+    override val accessTokenHash: AccessTokenHash,
+    override val name: String,
+    val competition: CompetitionId,
 ) : AdminUserVo
 
 /**
@@ -129,6 +142,14 @@ internal fun User<*>.toAdminVo(): AdminUserVo = when (this) {
     is MultipleRoleUser -> toVo()
     is Observer -> toVo()
     is Participant, is Supervisor -> error("User id=${id.value} of a kind unavailable to administrators was returned")
+}
+
+/** Maps a non-supervisor user to its cabinet data. */
+internal fun User<*>.toSupervisorVo(): AdminUserVo = when (this) {
+    is MultipleRoleUser -> toVo()
+    is Observer -> toVo()
+    is Participant -> ParticipantVo(id, createdAt, data.accessTokenHash, data.name, data.competition.id)
+    is Supervisor -> error("Supervisor id=${id.value} was returned by the supervisor read port")
 }
 
 internal fun Observer.toVo(): ObserverVo = ObserverVo(

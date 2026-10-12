@@ -17,6 +17,7 @@ import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRep
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRoleToUserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SupervisorDataJpaEntityRepository
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -140,6 +141,43 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         repository.save(newData())
 
         val found = repository.findByAccessToken(fixtures.unique("unknown"))
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should find no single supervisor if none is stored`() {
+        fixtures.participant()
+
+        val found = repository.findSingle()
+
+        assertNull(found)
+    }
+
+    @Test
+    fun `should find the single stored supervisor`() {
+        fixtures.participant()
+        val saved = repository.save(newData())
+
+        val found = assertNotNull(repository.findSingle())
+
+        assertSameEntity(saved, found)
+    }
+
+    @Test
+    fun `should fail to find the single supervisor if two are stored`() {
+        repository.save(newData())
+        repository.save(newData())
+
+        assertFailsWith<IllegalStateException> { repository.findSingle() }
+    }
+
+    @Test
+    fun `should find no single supervisor after it is removed`() {
+        val saved = repository.save(newData())
+        repository.remove(saved)
+
+        val found = repository.findSingle()
 
         assertNull(found)
     }

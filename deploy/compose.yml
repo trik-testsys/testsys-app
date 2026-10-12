@@ -1,0 +1,65 @@
+# Services shared by all TestSys environments. This file is not started alone: deploy/testsys.sh combines it with
+# the override of one environment and its variable files in deploy/env/, for example:
+#   sh deploy/testsys.sh dev up
+# Compose interpolates every file before merging, so this file contains no required (:?) variables: each override
+# checks the variables of its own environment.
+
+services:
+  app:
+    build: ..
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Shared settings and the settings of the environment mounted by its override.
+      SPRING_CONFIG_IMPORT: file:/etc/testsys/application.yml,file:/etc/testsys/application-environment.yml
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/testsys
+      SPRING_DATASOURCE_USERNAME: testsys
+      # The service interface listens on the loopback interface by default; inside the container it must accept
+      # connections forwarded from the published port. The ports are fixed here, so the published ports and the
+      # healthcheck do not depend on the defaults of the jar.
+      TESTSYS_SERVICE_ADDRESS: 0.0.0.0
+      TESTSYS_SERVICE_PORT: "8081"
+      TESTSYS_METRICS_PORT: "8082"
+    # All ports are published only on the loopback interface of the Docker host. Production puts an HTTPS proxy in
+    # front of the main interface only: the service interface is reached directly, for example through an SSH tunnel.
+    ports:
+      - "127.0.0.1:${TESTSYS_HTTP_PORT:-8080}:8080"
+      - "127.0.0.1:${TESTSYS_SERVICE_HTTP_PORT:-8081}:8081"
+      - "127.0.0.1:${TESTSYS_METRICS_HTTP_PORT:-8082}:8082"
+    # TestSysRuntime first starts the shared infrastructure context: Liquibase migrations and the Public Community
+    # and Supervisor bootstraps. Then it starts the main, service and metrics web contexts in this order, so the
+    # metrics port opens last. If any context fails, TestSysRuntime closes the started ones and the process exits.
+    # Accepted TCP connections on all three ports therefore mean the application is ready.
+    healthcheck:
+      test: ["CMD", "bash", "-c", ": </dev/tcp/127.0.0.1/8080 && : </dev/tcp/127.0.0.1/8081 && : </dev/tcp/127.0.0.1/8082"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5m
+      start_interval: 2s
+    volumes:
+      - files:/var/lib/testsys/files
+      - type: bind
+        source: ./config/application.yml
+        target: /etc/testsys/application.yml
+        read_only: true
+        bind:
+          create_host_path: false
+
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: testsys
+      POSTGRES_USER: testsys
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U testsys -d testsys"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
+  files:

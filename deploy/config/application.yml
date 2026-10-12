@@ -1,0 +1,12 @@
+# Settings shared by all Compose environments, imported through SPRING_CONFIG_IMPORT in deploy/compose.yml.
+# The environment file application-environment.yml holds the remaining application parameters.
+testsys:
+  file-storage:
+    # Subdirectories of the files volume mounted at /var/lib/testsys/files.
+    paths:
+      statement: /var/lib/testsys/files/statement
+      exercise: /var/lib/testsys/files/exercise
+      test: /var/lib/testsys/files/test
+      solution: /var/lib/testsys/files/solution
+      recording: /var/lib/testsys/files/recording
+      logs: /var/lib/testsys/files/logs

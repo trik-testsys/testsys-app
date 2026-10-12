@@ -236,6 +236,17 @@ class AdministratorOperationsTests {
             }
 
             @Test
+            fun `should accept a contest shared only to the public community`() {
+                prepareCreation(shared = listOf(publicCommunityId))
+                val saved = captureSave()
+
+                create().getOrThrow()
+
+                assertEquals(listOf(contestId), saved.captured.contests.ids)
+                assertEquals(communityId, saved.captured.community.id)
+            }
+
+            @Test
             fun `should return the observer persisted by the repository`() {
                 prepareCreation()
                 val persisted = observer {
@@ -1438,6 +1449,21 @@ class AdministratorOperationsTests {
         inner class HappyPathTests {
 
             @Test
+            fun `should name the first supervisor-granted community after the administrator and truncate Unicode code points`() {
+                val newAdministrator = testMultipleRoleUser {
+                    name = "😀".repeat(255)
+                    roles { administrator {} }
+                }
+                prepareSave()
+
+                val created = operations.createFirstCommunity(newAdministrator)
+
+                assertEquals(255, created.data.name.codePointCount(0, created.data.name.length))
+                assertTrue(created.data.name.startsWith("Сообщество "))
+                assertEquals("Сообщество " + "😀".repeat(244), created.data.name)
+            }
+
+            @Test
             fun `should accept a name of exactly 255 code points`() {
                 val name = "😀".repeat(255)
                 prepareSave()
@@ -2375,16 +2401,15 @@ class AdministratorOperationsTests {
         inner class HappyPathTests {
 
             @Test
-            fun `should return the contests shared to the community matching the name`() {
-                val contest = testContest { sharedTo = mutableListOf(communityId) }
+            fun `should return the contests shared to the community or the public community matching the name`() {
+                val contest = testContest { sharedTo = mutableListOf(publicCommunityId) }
                 val expected = Page(content = listOf(contest), pagination = pagination, totalElements = 1)
                 every { communities.findById(communityId) } returns testCommunity()
                 every {
-                    contests.findAvailableToDeveloper(
-                        ownerId = administrator.id,
-                        communityIds = setOf(communityId),
+                    contests.findSharedTo(
+                        communityIds = setOf(communityId, publicCommunityId),
                         pagination = pagination,
-                        filter = ContestFilter(name = "Тур", communityId = communityId),
+                        filter = ContestFilter(name = "Тур"),
                     )
                 } returns expected
 

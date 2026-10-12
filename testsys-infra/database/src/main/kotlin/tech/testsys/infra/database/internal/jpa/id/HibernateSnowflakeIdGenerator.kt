@@ -9,14 +9,14 @@ import org.hibernate.generator.GeneratorCreationContext
 import org.hibernate.id.Configurable
 import org.hibernate.service.ServiceRegistry
 import tech.testsys.infra.database.internal.InternalDatabaseApi
+import tech.testsys.infra.database.internal.jpa.entity.group.CommunityJpaEntity
 import java.lang.reflect.Member
 import java.util.EnumSet
 import java.util.Properties
 
 /**
- * Hibernate [BeforeExecutionGenerator] behind [SnowflakeId]: one [SnowflakeIdGenerator] per entity, its node id read from
- * the [NODE_ID_SETTING] setting (`spring.jpa.properties.testsys.id.node-id`), `0` when absent. The constructor has the
- * `@IdGeneratorType` signature and does no work; the node id is read in [configure] since Spring masks constructor failures.
+ * Hibernate [BeforeExecutionGenerator] behind [SnowflakeId], reading [NODE_ID_SETTING] in [configure].
+ * It keeps a supplied id only for [CommunityJpaEntity]; other entities receive generated ids.
  *
  * @since %CURRENT_VERSION%
  */
@@ -34,7 +34,9 @@ class HibernateSnowflakeIdGenerator(
     }
 
     override fun generate(session: SharedSessionContractImplementor, owner: Any, currentValue: Any?, eventType: EventType): Any =
-        generator.next()
+        if (owner is CommunityJpaEntity && currentValue != null) currentValue else generator.next()
+
+    override fun allowAssignedIdentifiers(): Boolean = true
 
     override fun getEventTypes(): EnumSet<EventType> = EventTypeSets.INSERT_ONLY
 

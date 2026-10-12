@@ -17,7 +17,9 @@
 Конфигурации основного и служебного интерфейсов помечены `@SpringBootApplication` для обнаружения приложений
 инструментами разработки.
 Стандартный поиск автоконфигураций отключён через `spring.boot.enableautoconfiguration=false`; явные импорты продолжают работать.
-Основной дочерний контекст включает транзакционные прокси сервисов через `@EnableTransactionManagement`.
+Основной дочерний контекст включает транзакционные прокси сервисов через
+`@EnableTransactionManagement(proxyTargetClass = true)`: прокси наследуют класс сервиса, поэтому страницы получают
+сервис по его классу и тогда, когда сервис реализует интерфейсы.
 `MainWebConfiguration` создаёт локальный retry-advisor с политикой родителя:
 инфраструктурный auto-proxy creator Spring рассматривает только локальные определения advisor.
 Transaction manager остаётся общим.
@@ -103,6 +105,9 @@ Transaction manager остаётся общим.
 | `AdminView` | `admin`, `admin/communities`, `admin/users` | `MULTIPLE_ROLE` с Ролью Администратора |
 | `AdminCommunityView` | `admin/communities/:communityId` | `MULTIPLE_ROLE`, создатель Сообщества |
 | `AdminUserView` | `admin/users/:userId`, `admin/users/:userId/developer`, `admin/users/:userId/manager`, `admin/users/:userId/judge`, `admin/observers/:observerId` | `MULTIPLE_ROLE`, Администратор с доступом к Пользователю |
+| `SupervisorView` | `supervisor`, `supervisor/users`, `supervisor/communities` | `SUPERVISOR` |
+| `SupervisorCommunityView` | `supervisor/communities/:communityId` | `SUPERVISOR` |
+| `SupervisorUserView` | `supervisor/users/:userId`, а также разделы `developer`, `manager`, `judge` | `SUPERVISOR`, любой Пользователь, кроме Супервайзеров |
 | `DeveloperView` | `developer`, `developer/tasks`, `developer/contests` | `MULTIPLE_ROLE` с Ролью Разработчика |
 | `DeveloperTaskView` | `developer/tasks/:taskId` | `MULTIPLE_ROLE`, владелец Задачи |
 | `DeveloperTestingView` | `developer/tasks/:taskId/testing/:testingId` | `MULTIPLE_ROLE`, владелец Задачи; запрос принадлежит Задаче |
@@ -115,15 +120,13 @@ Transaction manager остаётся общим.
 | `StudentView` | `student`, `student/classes` | `MULTIPLE_ROLE` с Ролью Ученика |
 | `StudentClassView` | `student/classes/:classId` | `MULTIPLE_ROLE`, Ученик Класса |
 | `StudentContestView`, `StudentTaskView` | `student/classes/:classId/contests/:contestId`, `student/classes/:classId/contests/:contestId/tasks/:taskId` | `MULTIPLE_ROLE`, Ученик Класса |
-| `ParticipantView`, `ObserverView`, `SupervisorView` | `participant`, `observer`, `supervisor` | Соответствующий вид |
+| `ParticipantView`, `ObserverView` | `participant`, `observer` | Соответствующий вид |
 | `ParticipantContestView`, `ParticipantTaskView` | `participant/contests/:contestId`, `participant/contests/:contestId/tasks/:taskId` | `PARTICIPANT` |
 | `JudgeView` | `judge`, `judge/submissions` | `MULTIPLE_ROLE` с Ролью Судьи |
 | `JudgeSolutionView` | `judge/submissions/:submissionId` | `MULTIPLE_ROLE` с Ролью Судьи |
 
-Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
-кроме стартовых страниц Наблюдателя и Супервайзера, реализованы; эти две пока показывают только шапку
-и пустое состояние: их маршруты и доступ окончательные, поэтому шапка уже ведёт на них. Стартовую страницу вида
-Пользователя возвращает `startPageOf`.
+Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы всех Ролей
+реализованы. Стартовую страницу вида Пользователя возвращает `startPageOf`.
 
 `ParticipantView` загружает Туры через `ParticipantService.viewContests` в `beforeEnter`.
 `StudyContestTaskVo` передаёт результаты таблицы Задач, `JudgeResultVo` — расширенные строки таблицы Судьи.
@@ -169,8 +172,8 @@ Transaction manager остаётся общим.
 без `OperationErrorHandler`. Так же `MultiMainView` показывает отказы присоединения к Сообществу; после
 присоединения страница перестраивается вместе с шапкой, чтобы новая Роль появилась и в «Меню».
 
-Все текущие страницы настраивают вводное пояснение и гайды своих блоков, включая гостевые формы,
-страницы Наблюдателя и Супервайзера с пустым состоянием и обе стадии регистрации.
+Все текущие страницы настраивают вводное пояснение и гайды своих блоков, включая гостевые формы
+и обе стадии регистрации.
 Описания находятся рядом с содержимым блоков; общие секции используют те же описания при повторном построении.
 Экраны ошибок получают гайды из components. Контракт DSL — в разделе
 [Гайды страницы и блока](../components/README.md#гайды-страницы-и-блока).
@@ -186,31 +189,37 @@ Transaction manager остаётся общим.
 | `page_profile` | `ProfileView` |
 | `page_confirmation` | Подтверждение почты кодом из письма, общее для `RegistrationView` и `ProfileView` |
 | `page_home` | `MultiMainView` |
-| `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню»; общие для Кабинетов пустое состояние нереализованного раздела, статус проверки Задачи, ограничение длины названия и запись длительности |
+| `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню»; общие для Кабинетов статус проверки Задачи, ограничение длины названия и запись длительности |
 | `page_administrator` | `AdminView`, `AdminCommunityView`, `AdminUserView` |
 | `page_developer` | `DeveloperView`, `DeveloperContestView`, `DeveloperTaskView`, `DeveloperResourceView`, `DeveloperTestingView` |
 | `page_manager` | `ManagerView`, `ManagerClassView`, `ManagerCompetitionView`, `ManagerContestView` и заголовки их CSV |
 | `page_judge` | `JudgeView`, `JudgeSolutionView` |
 | `page_student` | `StudentView`, `StudentClassView`, `StudentContestView`, `StudentTaskView` |
 | `page_participant` | `ParticipantView`, `ParticipantContestView`, `ParticipantTaskView` |
-| `page_observer` | `ObserverView` |
-| `page_supervisor` | `SupervisorView` |
+| `page_observer` | `ObserverView` и заголовки его CSV |
+| `page_supervisor` | `SupervisorView`, `SupervisorUserView`, `SupervisorCommunityView` |
 
 Как выбрать бандл для текста страницы Роли — в шаге 1
 [add-localization.md](../../docs/guides/add-localization.md#1-выбрать-ключ-и-файл-бандла). Общие страницы Тура
 и Задачи `StudyContestView` и `StudyTaskView` получают тексты через `StudyTexts`: страницы Ученика читают их
 из `page_student`, страницы Участника — из `page_participant`.
 
+Страницы Супервайзера используют общие блоки страниц Администратора: `CommunityDetailsView`, `adminUsersTable`
+и блоки разделов Ролей из `UserRoleDetails.kt`. Тексты этих блоков остаются в `page_administrator`, поэтому
+`SupervisorCommunityView` получает из `page_supervisor` только название Кабинета для хлебных крошек.
+
 Страницы из таблицы, у которых есть свой заголовок вкладки, задают его через `HasDynamicTitle` из сообщения.
-Остальные страницы Ролей пока задают тексты строками, а заголовок вкладки — через `@PageTitle`.
 
 ## Прокси-сервисы
 
 Страницы вызывают операции только через прокси-сервисы `<Actor>Service` в пакете `service/<actor>`:
 `AdministratorService`, `DeveloperService`, `JudgeService`, `ManagerService`, `MultipleRoleUserService`,
-`ParticipantService`, `StudentService`, `StudyService` и `UserService`. Методы сервиса соответствуют операциям один
-к одному и принимают те же входные данные без Пользователя. Сервиса для `TaskValidationOperations` нет: её вызывает
-только диспетчер. У `ObserverOperations` сервиса пока нет: страницы её не вызывают.
+`ObserverService`, `ParticipantService`, `StudentService`, `StudyService` и `UserService`. Методы сервиса соответствуют
+операциям один к одному и принимают те же входные данные без Пользователя. Сервиса для `TaskValidationOperations`
+нет: её вызывает только диспетчер. `ObserverService` возвращает странице пары Соревнование–назначенный Тур и
+результаты всех доступных Наблюдателю Соревнований. `ObserverView` формирует один CSV-файл независимо
+от фильтров, сортировки и текущей страницы таблицы. Заголовки этого CSV страница форматирует через `inUiOf`,
+как и страницы Организатора.
 `MultipleRoleUserService.viewProfile` добавляет к Ролям Псевдоним и почту текущего Пользователя и возвращает их
 в `ProfileVo`.
 `AdministratorService` не выставляет служебную `refreshCommunityInvite`, `ManagerService` — служебную
@@ -289,6 +298,7 @@ Transaction manager остаётся общим.
 ## Запуск и проверка
 
 Команды запуска и сборки — в [structure.md](../../docs/project/structure.md#сборка-веб-приложений).
+Запуск в Docker Compose для разработки, e2e и production — в [deployment.md](../../docs/project/deployment.md).
 
 Для запуска нужны база данных PostgreSQL, заданная стандартными свойствами `spring.datasource.*`, и абсолютные
 пути файлов в обязательных свойствах `testsys.file-storage.paths.<вид>` (виды перечислены в разделе
@@ -303,11 +313,30 @@ Transaction manager остаётся общим.
 Очистка файлов запускается явно в режиме обслуживания; условия и настройки описаны в разделе
 [«Очистка сирот»](../../testsys-infra/database/README.md#очистка-сирот).
 
-`OperationsConfiguration` разрешает три обязательных статических параметра при запуске:
+После миграций Liquibase приложение проверяет Сообщество с настроенным ID. Если ID свободен, оно в одной
+транзакции создаёт технического владельца, Сообщество и оба Кода-приглашения. При повторном запуске приложение
+проверяет владельца, его Роль и членство, а также приглашения. При неполных или противоречивых данных запуск
+завершается ошибкой. Конфликт при одновременном запуске двух экземпляров повторно проверяется в новой транзакции.
+Почта технического владельца — `public-community-owner@testsys.invalid`.
+По Коду-доступа технического владельца войти в приложение нельзя.
+
+После создания всех singleton-бинов общего контекста инфраструктуры и до запуска веб-контекстов бин
+`supervisorBootstrap` вызывает `SupervisorBootstrap`. Он создаёт единственного Супервайзера или устанавливает существующему Псевдоним
+и Код-доступа из конфигурации; требования — в фиче
+[testsys.entity.supervisor](../../docs/domain/features.md#testsysentitysupervisor-implemented). Псевдоним и формат
+Кода-доступа проверяются до транзакции. Проверка Кода-доступа у Пользователей других видов, поиск, создание
+и обновление Супервайзера выполняются в одной транзакции. Код-доступа не попадает в сообщения об ошибках.
+Единственность Супервайзера обеспечивает приложение, а не схема БД. Два экземпляра с разными Кодами-доступа при
+одновременном первом запуске могут создать двух Супервайзеров; тогда следующий запуск завершится ошибкой.
+
+`OperationsConfiguration` разрешает статические параметры при запуске:
 
 | Свойство | Значение |
 |----------|----------|
-| `testsys.operation.community.public-community-id` | Идентификатор Публичного Сообщества; Сообщество должно существовать |
+| `testsys.operation.community.public-community-id` | Обязательный точный ID Публичного Сообщества; приложение создаёт запись с этим ID или проверяет существующую |
+| `testsys.operation.community.public-community-name` | Название Публичного Сообщества, обязательное при первом создании |
+| `testsys.operation.supervisor.name` | Псевдоним Супервайзера; пробелы по краям удаляются |
+| `testsys.operation.supervisor.access-token` | Код-доступа Супервайзера в формате из фичи [testsys.entity.supervisor](../../docs/domain/features.md#testsysentitysupervisor-implemented) |
 | `testsys.operation.community-invite.refresh-period` | Период замены Кодов-приглашений в Сообщество с истёкшим сроком в формате ISO-8601 `Duration`; пока не используется |
 | `testsys.operation.class-invite.refresh-period` | Период замены Кодов-приглашений в Класс с истёкшим сроком в формате ISO-8601 `Duration`; пока не используется |
 
@@ -340,8 +369,9 @@ Transaction manager остаётся общим.
 
 Тесты страниц и `UserService` подключают `AppTestConfiguration`: она сохраняет Пользователей, Сообщества, Классы,
 Соревнования и Туры через порты хранения, подменяет Публичное Сообщество Сообществом из этих данных и записывает
-письма вместо отправки. Классы, Туры, Задачи, Посылки и записи входа для страниц Ученика и Участника сохраняет
-импортированный ею `StudyFixtures`. Тестовые Spring-контексты не приостанавливаются
+письма вместо отправки. Для Супервайзера `userOf` возвращает единственного Супервайзера, созданного при запуске
+контекста, с Псевдонимом и Кодом-доступа из тестовой конфигурации. Классы, Туры, Задачи, Посылки и записи входа
+для страниц Ученика и Участника сохраняет импортированный ею `StudyFixtures`. Тестовые Spring-контексты не приостанавливаются
 (`src/test/resources/spring.properties`): `TaskValidationDispatcherLifecycle` останавливает исполнитель диспетчера
 окончательно, и приостановленный контекст не запустился бы снова.
 
@@ -357,8 +387,9 @@ Cookie основного интерфейса называется `TESTSYS_APP
 `ServicePrincipal` хранит только техническую идентичность с полномочием `ROLE_SERVICE`.
 
 Кнопка «Grafana» на `ServiceHomeView` открывает в той же вкладке адрес из `testsys.service.grafana-url`.
-Кабинет не передаёт Grafana учётных данных: в Grafana входят её собственными учётными записями. Локальный
-запуск Grafana описан в [deploy/monitoring/README.md](../../deploy/monitoring/README.md).
+Кабинет не передаёт Grafana учётных данных: в Grafana входят её собственными учётными записями. Grafana окружений
+Docker Compose и её адрес описаны в разделе «Метрики и мониторинг»
+в [deployment.md](../../docs/project/deployment.md#метрики-и-мониторинг).
 
 `ServiceSecurityConfiguration` сохраняет штатные правила Vaadin для ресурсов, init, UIDL, heartbeat, push и CSRF.
 Навигация проверяет аннотации страниц; остальные HTTP-точки закрыты через `denyAll`.
@@ -495,8 +526,9 @@ database/README.md. Требования к поиску и карточке —
 Требования к метрикам — в разделе `testsys.dev.metric` в [features.md](../../docs/domain/features.md#testsysdevmetricexport-implemented).
 Собственные метрики TestSys, их метки и правила учёта технических сбоев описаны
 в [monitoring/README.md](../../testsys-infra/monitoring/README.md). Этот раздел описывает реестр, HTTP-метрики, учёт
-в интерфейсах и сервер экспорта. Локальный стек Prometheus и Grafana и дашборды описаны
-в [deploy/monitoring/README.md](../../deploy/monitoring/README.md).
+в интерфейсах и сервер экспорта. Prometheus, Grafana и дашборды описаны в разделе «Мониторинг»
+в [deploy/README.md](../../deploy/README.md#мониторинг), доступ к ним — в разделе «Метрики и мониторинг»
+в [deployment.md](../../docs/project/deployment.md#метрики-и-мониторинг).
 
 ### Реестр
 
@@ -516,7 +548,7 @@ database/README.md. Требования к поиску и карточке —
 `management.prometheus.metrics.export.properties` в `application.yml` включает свойство client_java
 `io.prometheus.exporter.include_created_timestamps`: текстовый экспорт счётчиков и гистограмм содержит время
 их регистрации в рядах `_created`. Использование этого времени при подсчёте первого события описано в разделе
-[«Сбор метрик»](../../deploy/monitoring/README.md#сбор-метрик) deploy/monitoring/README.md.
+[«Сбор метрик»](../../deploy/README.md#сбор-метрик) deploy/README.md.
 
 ### HTTP-запросы
 
@@ -548,7 +580,7 @@ database/README.md. Требования к поиску и карточке —
 благодаря `vaadin.eagerServerLoad`. Переходы без перезагрузки и действия на странице идут запросами `/?v-r=uidl`
 с кодом 200.
 
-Дашборды в `deploy/monitoring/grafana/dashboards/` используют метки `interface`, `uri`, `status` и `outcome`.
+Дашборды в `deploy/config/grafana/dashboards/` используют метки `interface`, `uri`, `status` и `outcome`.
 Если эти метки или их значения меняются, обновите и дашборды.
 
 ### Ошибки операций и технические сбои

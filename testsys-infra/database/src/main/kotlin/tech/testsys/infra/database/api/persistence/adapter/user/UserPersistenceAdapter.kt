@@ -14,10 +14,13 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
+import tech.testsys.domain.contract.persistence.SupervisorUserReadPort
 import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
+import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
+import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
@@ -29,6 +32,7 @@ import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.MultipleRoleToUserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.multiple.UserMultipleRoleJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ObserverDataJpaEntity
+import tech.testsys.infra.database.internal.jpa.entity.user.single.ParticipantDataJpaEntity
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.touchAggregateRoot
@@ -47,7 +51,8 @@ class UserPersistenceAdapter(
     private val userJpaEntityRepository: UserJpaEntityRepository,
     private val multipleRoleUserRepository: MultipleRoleUserRepository,
     private val observerRepository: ObserverRepository,
-) : UserRepository {
+    private val participantRepository: ParticipantRepository,
+) : UserRepository, SupervisorUserReadPort {
 
     @PersistenceContext
     private lateinit var entityManager: EntityManager
@@ -92,6 +97,36 @@ class UserPersistenceAdapter(
         userJpaEntityRepository.count(availableTo(administratorId = administratorId, filter = filter))
 
     @Transactional(readOnly = true)
+    override fun findUsers(pagination: Pagination, filter: UserFilter): Page<User<*>> {
+        val orders = pagination.sort.orders.map { order ->
+            JpaSort.Order(JpaSort.Direction.valueOf(order.direction.name), order.field)
+        }
+        val stableOrders = if (orders.any { order -> order.property == "id" }) orders else orders + JpaSort.Order.asc("id")
+        val page = userJpaEntityRepository.findAll(
+            supervisorSelection(filter),
+            PageRequest.of(pagination.page, pagination.size, JpaSort.by(stableOrders)),
+        )
+        return Page(assembleSupervisor(page.content), pagination, page.totalElements)
+    }
+
+    @Transactional(readOnly = true)
+    override fun findUserById(userId: UserId): User<*>? {
+        val type = typeOf(userId) ?: return null
+        val idAndType = Specification<UserJpaEntity> { entity, _, builder ->
+            builder.and(
+                builder.equal(entity.get<Long>("id"), userId.value),
+                builder.equal(entity.get<UserTypeJpaEnum>("type"), type),
+            )
+        }
+        val row = userJpaEntityRepository.findOne(supervisorSelection(UserFilter()).and(idAndType)).orElse(null) ?: return null
+        return assembleSupervisor(listOf(row)).single()
+    }
+
+    @Transactional(readOnly = true)
+    override fun countUsersInCommunity(communityId: CommunityId): Long =
+        userJpaEntityRepository.count(supervisorSelection(UserFilter(communityId = communityId)))
+
+    @Transactional(readOnly = true)
     override fun findLastLogins(userIds: List<UserId>): Map<UserId, Instant> {
         val typesById = userIds.mapNotNull { userId -> typeOf(userId)?.let { type -> userId.value to (userId to type) } }.toMap()
         return userJpaEntityRepository.findAllById(typesById.keys).mapNotNull { jpaEntity ->
@@ -132,6 +167,81 @@ class UserPersistenceAdapter(
             }
             builder.and(*predicates.toTypedArray())
         }
+
+    /** Selects every non-supervisor user, applying all conditions before pagination and counting. */
+    private fun supervisorSelection(filter: UserFilter): Specification<UserJpaEntity> = Specification { entity, query, builder ->
+        val grounds = mutableListOf<Predicate>()
+        val multipleRoles = filter.roles?.mapNotNull { role ->
+            when (role) {
+                UserFilter.Role.ADMINISTRATOR -> UserMultipleRoleJpaEnum.ADMINISTRATOR
+                UserFilter.Role.DEVELOPER -> UserMultipleRoleJpaEnum.DEVELOPER
+                UserFilter.Role.JUDGE -> UserMultipleRoleJpaEnum.JUDGE
+                UserFilter.Role.MANAGER -> UserMultipleRoleJpaEnum.MANAGER
+                UserFilter.Role.STUDENT -> UserMultipleRoleJpaEnum.STUDENT
+                UserFilter.Role.OBSERVER -> null
+            }
+        }
+        if (multipleRoles?.isNotEmpty() != false) {
+            val membership = query.subquery(Long::class.java)
+            val association = membership.from(MultipleRoleToUserJpaEntity::class.java)
+            val associationId = association.get<Any>("id")
+            val conditions = mutableListOf(builder.equal(associationId.get<Long>("userId"), entity.get<Long>("id")))
+            filter.communityId?.let { conditions.add(builder.equal(associationId.get<Long>("communityId"), it.value)) }
+            multipleRoles?.let { conditions.add(associationId.get<UserMultipleRoleJpaEnum>("multipleRole").`in`(it)) }
+            membership.select(associationId.get("userId")).where(*conditions.toTypedArray())
+            grounds.add(
+                builder.and(
+                    builder.equal(entity.get<UserTypeJpaEnum>("type"), UserTypeJpaEnum.MULTIPLE_ROLE),
+                    builder.exists(membership),
+                ),
+            )
+        }
+        if (filter.roles?.contains(UserFilter.Role.ADMINISTRATOR) != false) {
+            val owned = query.subquery(Long::class.java)
+            val community = owned.from(CommunityJpaEntity::class.java)
+            val conditions = mutableListOf(builder.equal(community.get<Long>("ownerId"), entity.get<Long>("id")))
+            filter.communityId?.let { conditions.add(builder.equal(community.get<Long>("id"), it.value)) }
+            owned.select(community.get("id")).where(*conditions.toTypedArray())
+            grounds.add(
+                builder.and(
+                    builder.equal(entity.get<UserTypeJpaEnum>("type"), UserTypeJpaEnum.MULTIPLE_ROLE),
+                    builder.exists(owned),
+                ),
+            )
+        }
+        if (filter.roles?.contains(UserFilter.Role.OBSERVER) != false) {
+            val observers = query.subquery(Long::class.java)
+            val observer = observers.from(ObserverDataJpaEntity::class.java)
+            val conditions = mutableListOf(builder.equal(observer.get<Long>("userId"), entity.get<Long>("id")))
+            filter.communityId?.let { conditions.add(builder.equal(observer.get<Long>("communityId"), it.value)) }
+            observers.select(observer.get("userId")).where(*conditions.toTypedArray())
+            grounds.add(builder.exists(observers))
+        }
+        if (filter.roles == null && filter.communityId == null) {
+            val participants = query.subquery(Long::class.java)
+            val participant = participants.from(ParticipantDataJpaEntity::class.java)
+            participants.select(participant.get("userId"))
+                .where(builder.equal(participant.get<Long>("userId"), entity.get<Long>("id")))
+            grounds.add(builder.exists(participants))
+        }
+        val predicates = mutableListOf(builder.or(*grounds.toTypedArray()))
+        filter.name?.let { name -> predicates.add(builder.gt(builder.locate(builder.lower(entity.get("name")), name.lowercase()), 0)) }
+        builder.and(*predicates.toTypedArray())
+    }
+
+    /** Assembles users selected by the supervisor scope in one fetch per concrete kind. */
+    private fun assembleSupervisor(rows: List<UserJpaEntity>): List<User<*>> {
+        val multipleIds = rows.filter { it.type == UserTypeJpaEnum.MULTIPLE_ROLE }.map { MultipleRoleUserId(it.requireId()) }
+        val singleIds = rows.filter { it.type == UserTypeJpaEnum.SINGLE_ROLE }.map { SingleRoleUserId(it.requireId()) }
+        val found = buildList<User<*>> {
+            if (multipleIds.isNotEmpty()) addAll(multipleRoleUserRepository.findByIds(multipleIds))
+            if (singleIds.isNotEmpty()) {
+                addAll(observerRepository.findByIds(singleIds))
+                addAll(participantRepository.findByIds(singleIds))
+            }
+        }.associateBy { it.id.value }
+        return rows.map { row -> checkNotNull(found[row.requireId()]) { "Selected user id=${row.requireId()} was not assembled" } }
+    }
 
     /**
      * Returns the row kind holding users with ids of the kind of [userId], or `null` for an unknown id kind.

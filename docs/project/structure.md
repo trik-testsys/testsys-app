@@ -11,9 +11,12 @@
 
 ```
 testsys-app/
-├── .github/workflows/        # CI: build, test, lint (Detekt + SARIF), проверка ветки PR
+├── .github/workflows/        # CI: build, test, lint (Detekt + SARIF), проверка ветки PR, публикация образа
+├── .dockerignore             # Исключения из контекста Docker-образа (см. deployment.md)
+├── .gitattributes            # Окончания строк LF для скриптов и файлов переменных deploy/ (см. deployment.md)
 ├── buildSrc/                 # Convention-плагин testsys.conventions
-├── deploy/monitoring/        # Локальные Prometheus и Grafana
+├── deploy/                   # Compose-файлы окружений, мониторинга (Prometheus и Grafana) и Проверяющего узла, файлы переменных окружений, конфигурация приложения и мониторинга, скрипт запуска и очистки (см. deploy/README.md и deployment.md)
+├── Dockerfile                # Образ приложения testsys-web:app (см. deployment.md)
 ├── docs/                     # Документация проекта
 ├── gradle/
 │   ├── libs.versions.toml    # Каталог версий зависимостей (единственное место с версиями)
@@ -201,7 +204,7 @@ Workflow лежат в `.github/workflows`.
 | `test.yml`                | push/PR в `master`, `dev`      | `./gradlew testAll -Pdetekt.autoCorrect=false --no-daemon` — все тесты без Detekt, затем клиентские тесты `components` на Node 24 (`node --test`); отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
 | `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detekt -Pdetekt.autoCorrect=false --continue --no-daemon` — все source set всех модулей без правки файлов; таблица замечаний в Summary запуска, исходные и подготовленные SARIF-артефакты; отдельная загрузка в GitHub Security для каждого модуля с сохранением категории на модуль и задачу |
 | `check-source-branch.yml` | PR в `dev`                     | Разрешает PR только из веток `sh1sh4k1n9/`, `ch3zych3z/`, `KarasssDev/`, `DirewolfPrime/`, `LutovolkVPraime/` |
-| `release.yml`             | —                              | Пока пустой                                                     |
+| `release.yml`             | публикация релиза GitHub       | Собирает образ из `Dockerfile` и публикует его в Docker Hub как `<DOCKER_USERNAME>/testsys-app` с тегом версии релиза (`v1.2.3` → `1.2.3`) и `latest`; пре-релиз не перемещает `latest`. Нужны секреты `DOCKER_USERNAME` и `DOCKER_PASSWORD` |
 
 ## Куда класть новый код
 
@@ -217,7 +220,7 @@ Workflow лежат в `.github/workflows`.
 | Служебный запрос данных для служебного кабинета | `testsys-infra:database`, пакет `api/service`, см. [database/README.md](../../testsys-infra/database/README.md#служебный-поиск-пользователей) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Метрику или учёт технического сбоя | Каталог и правила учёта — [monitoring/README.md](../../testsys-infra/monitoring/README.md) |
-| Дашборд или настройку локального мониторинга | `deploy/monitoring/`, см. [deploy/monitoring/README.md](../../deploy/monitoring/README.md) |
+| Дашборд или настройку мониторинга | `deploy/config/grafana/dashboards/`, `deploy/config/prometheus.yml`, `deploy/compose.monitoring.yml`, см. раздел «Мониторинг» в [deploy/README.md](../../deploy/README.md#мониторинг) |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
 | Токены, стили, бренд и иконки | `components/src/main/resources/META-INF/resources/testsys-ui/`, правила — [ui-design.md](ui-design.md) |
 | Необходимая клиентская реализация компонента | `components/src/main/resources/META-INF/frontend/testsys-ui/`, API — components/README.md |

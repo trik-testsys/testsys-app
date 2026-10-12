@@ -88,7 +88,7 @@
 - Действия вне БД выполняются после фиксации транзакции: Посылку грейдеру передаёт `AfterCommitGrader`
   в `testsys-web`, письма отправляет адаптер почты (см. [mail/README.md](../testsys-infra/mail/README.md)).
 
-`ManagerOperations`, `AdministratorOperations`, `UserOperations`, `MultipleRoleUserOperations`, `ObserverOperations`
+`ManagerOperations`, `AdministratorOperations`, `UserOperations`, `MultipleRoleUserOperations`
 и `InviteRefresher` пока не подключены к приложению, и транзакционного сервиса у них нет.
 
 ## Обработка запросов валидации
@@ -361,10 +361,10 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 в [features.md](../docs/domain/features.md).
 
 Операция ищет Пользователя по Коду-доступа в портах хранения всех четырёх видов Пользователей и возвращает
-найденного Пользователя как `User<*>`. Если КД не присвоен ни одному Пользователю, операция возвращает
-`InvalidAccessTokenError`. Данные Пользователей операция не изменяет: она только записывает момент входа через
-`UserRepository.recordLogin`. `UserOperations` получает `UserRepository` через конструктор; вызов читает время
-один раз и усекает его до микросекунд.
+найденного Пользователя как `User<*>`. Если КД не присвоен Пользователю или принадлежит техническому владельцу
+Публичного Сообщества, операция возвращает `InvalidAccessTokenError`. Данные Пользователей операция не изменяет:
+она записывает момент входа через `UserRepository.recordLogin`. `UserOperations` получает `UserRepository` через
+конструктор. Вызов читает время один раз и усекает его до микросекунд.
 
 ## Регистрация
 
@@ -391,9 +391,9 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 со сроком действия кода и числом попыток, `Clock` и `RandomGenerator`. Вызов читает время не более одного раза;
 момент окончания срока нормализуется до микросекунд. Код подтверждения и КД генерируют функции из
 [Credentials.kt](src/main/kotlin/tech/testsys/operation/util/Credentials.kt) с этим `RandomGenerator`. Приложение
-должно передать криптостойкий генератор, например `SecureRandom`. Приведение и проверку почты, момент окончания
-срока кода и проверку, действует ли запрос, выполняют функции из
-[Email.kt](src/main/kotlin/tech/testsys/operation/util/Email.kt).
+должно передать криптостойкий генератор, например `SecureRandom`. Там же функция `isAccessToken` проверяет, что
+строка записана в формате выдаваемого КД. Приведение и проверку почты, момент окончания срока кода и проверку,
+действует ли запрос, выполняют функции из [Email.kt](src/main/kotlin/tech/testsys/operation/util/Email.kt).
 
 ## Смена почты
 
@@ -436,8 +436,9 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 в Сообщество в Роли через `MultipleRoleUserRepository.addCommunityMembership`. Если у переданного Пользователя
 этой Роли ещё нет, функция сначала включает его в Публичное Сообщество в той же Роли. Правило определено
 в `testsys.entity.multi.role` в [features.md](../docs/domain/features.md). Функцию вызывают
-`MultipleRoleUserOperations.joinCommunity` и `AdministratorOperations.grantRole`. Вызывающий код выполняет оба
-включения в одной транзакции, чтобы исключение откатило их вместе; в `testsys-web:app` её открывает прокси-сервис.
+`MultipleRoleUserOperations.joinCommunity`, `AdministratorOperations.grantRole` и `SupervisorOperations.addToCommunity`.
+Вызывающий код выполняет необходимые включения в одной транзакции, чтобы исключение откатило их вместе;
+в `testsys-web:app` её открывает прокси-сервис.
 
 ## Кабинет Организатора
 
@@ -486,6 +487,17 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
   Вердикта или `null` без успешного Вердикта.
 - `viewCommunityContests` помечена кодификатором `createObserver`. Она возвращает страницу Туров, открытых
   Сообществу Администратора, из которых выбираются Туры Наблюдателя.
+
+## Кабинет Супервайзера
+
+[SupervisorOperations](src/main/kotlin/tech/testsys/operation/user/SupervisorOperations.kt) читает всех Пользователей,
+кроме Супервайзеров, и все Сообщества. `addToCommunity` выдаёт любую Нефиксированную Роль, кроме
+Администратора в Публичном Сообществе. При первой выдаче Администратора
+`AdministratorOperations.createFirstCommunity` создаёт ему Сообщество с Кодами-приглашениями.
+`grantAdministrator` выдаёт Роль Администратора без выбора Сообщества: если этой Роли у Пользователя нет,
+`AdministratorOperations.createFirstCommunity` создаёт ему первое Сообщество, и Пользователь становится его членом
+в этой Роли. Иначе Пользователь возвращается без изменений.
+Операции изменения Сообществ используют общие действия `AdministratorOperations`.
 
 ## Кабинет Судьи
 

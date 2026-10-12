@@ -54,15 +54,19 @@ data class ContestFilter(
 )
 
 /**
- * Optional observer contest criteria, combined with AND within the assigned contests before paging and counting.
+ * Optional observer pair criteria, combined with AND within current competition and assigned contest pairs.
  *
  * @property name a literal case-insensitive substring, preserving spaces; an empty string matches every name.
  * @property contestId the exact contest identifier, or `null` for every accessible contest; never expands access.
+ * @property competitionName a literal case-insensitive competition-name substring, or `null` for any name.
+ * @property competitionId the exact competition identifier, or `null` for every accessible competition.
  * @since %CURRENT_VERSION%
  */
 data class ObserverContestFilter(
     val name: String? = null,
     val contestId: ContestId? = null,
+    val competitionName: String? = null,
+    val competitionId: CompetitionId? = null,
 )
 
 /**

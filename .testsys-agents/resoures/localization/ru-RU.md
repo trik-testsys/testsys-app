@@ -684,3 +684,92 @@ Notes collected while localizing the Developer Cabinet pages (stage 2f, 2026-10-
   («finite double», «long integer», «integer», `a|b`), so a line reads «атрибут «value» равен «abc», ожидается
   finite double». The message reproduces the former hardcoded text; a fully Russian line needs a separate
   decision, e.g. a selector over the expected kinds.
+
+## Observer and Supervisor Cabinets (`page_observer`, `page_supervisor`)
+
+Notes collected while moving the Observer and Supervisor pages onto localization (2026-10-12).
+
+### «Супервайзер»: declension and the glossary term
+
+- Викисловарь: «суперва́йзер» — animate masculine, Zaliznyak type 1a; Им. «супервайзер» / «супервайзеры»,
+  Р. «супервайзера» / «супервайзеров», Д. «супервайзеру» / «супервайзерам», В. = Р. «супервайзера» / «супервайзеров»,
+  Тв. «супервайзером», П. «супервайзере». One sense, labelled «торг.»: «сотрудник, контролирующий чью-либо
+  деятельность, работу»; partial synonyms «инспектор», «контролёр»; «см. также: супервизор». The page gives no
+  spelling variant, so «супервизор» is a related entry, not a confirmed variant.
+- Applicability: the TestSys Role (features.md, testsys.entity.supervisor) extends the commercial sense to the one
+  User who controls all Users and Communities; the capitalized form follows features.md. No undesirable connotation
+  found. definitions.md defines it as a Fixed Role (items 3 and 12: «Супервайзер — Роль, наделяющая Пользователя
+  правом создавать других Пользователей и управлять ими. В Системе один Супервайзер.»; project-source fact verified
+  by the independent reviewer on 2026-10-12). `glossary.supervisor` was added because three `page_supervisor` messages
+  decline it («Кабинета Супервайзера», «кроме Супервайзеров», «доступные Супервайзеру»). `page_supervisor.title`
+  stays a literal «Кабинет Супервайзера» because existing text was not to be changed; a term reference there would
+  render the same output.
+- Source: https://ru.wiktionary.org/wiki/супервайзер (read 2026-10-12).
+
+### «Снять Роль Администратора нельзя»
+
+- Викисловарь «снять», sense 3 (перен.): «убрать, отменить что-либо» («снять вопрос с голосования», «снять
+  ограничения в торговле»); sense 9 (разг.) is «снять с должности»; sense 8 (перен., вульг.) is a vulgar sexual
+  sense that needs an animate object.
+- Applicability (inference): with the inanimate object «Роль Администратора» only sense 3 fits: the Role cannot be
+  withdrawn. The vulgar sense does not arise. No register problem.
+- Source: https://ru.wiktionary.org/wiki/снять (read 2026-10-12).
+
+### «Назначить «{name}» Администратором»
+
+- «Назначить» governs the person in the accusative and the position in the instrumental («назначить его
+  директором»). The quoted Псевдоним follows the verb directly, without a generic word, so it is a quote of data
+  as in «Исключить «{user}» из Сообщества …» (see «Quoted names and declension» above). Grammar fact and project
+  usage; no dictionary page opened for the government of «назначить». `glossary.administrator` gained `ins sg`
+  «Администратором».
+- Independent review: Викисловарь «назначить» — «Глагол, совершенный вид, переходный»; sense 5 «определить,
+  поставить на какую-либо работу», example fragment «кого бы назначить главнокомандующим» (person in the accusative,
+  position in the instrumental); sense 4 «определить, объявить, назвать». The page has no explicit government note.
+  A stricter optional form would put a generic word before the name («Назначить Пользователя «{name}»
+  Администратором?»); it was not adopted, the pattern stays parallel to the accepted removal title.
+  Source: https://ru.wiktionary.org/wiki/назначить (read 2026-10-12).
+
+### «Текущий» in UI text
+
+- Викисловарь «текущий», adjective sense 2: «имеющийся, существующий, происходящий сейчас, в настоящее время»;
+  sense 3: «совершаемый ежедневно»; sense 1 is the participle of «течь».
+- Applicability: «текущие Соревнования» joins "existing" and "ongoing", so in a page guide a reader may take it as a
+  time filter. Competitions have no dates, and future and finished Contests are shown (features.md,
+  testsys.user.single.observer.viewContests). The first revision of `page_observer.guide` («… Туры текущих
+  Соревнований …») was flagged by the independent review; the word was removed. features.md keeps «текущие
+  Соревнования» in operation steps, meaning the existing composition; that is documentation, not UI text.
+- Source: https://ru.wiktionary.org/wiki/текущий (read 2026-10-12).
+
+### «Просматривать», «одним файлом»
+
+- Викисловарь «просматривать» — imperfective transitive, type 1a; senses: 1 «внимательно смотреть, рассматривать»;
+  2 «наскоро, бегло прочитывать»; 3 «… упускать, пропускать по оплошности». In imperative guides with a concrete
+  object («Просматривайте назначенные вам Туры Соревнований …») sense 1 applies (reviewer inference); no undesirable
+  connotation. Source: https://ru.wiktionary.org/wiki/просматривать (read 2026-10-12).
+- Викисловарь «файл» — inanimate masculine, 1a, Тв. ед. «файлом»; senses: 1 комп. named digital record; 2 комп. its
+  storage place; 3 канц. transparent plastic sleeve. In «скачивайте все результаты одним файлом» the download context
+  rules out the stationery sense; «одним файлом» is an instrumental of manner (grammar inference; no normative source
+  for the collocation was found on 2026-10-12). Source: https://ru.wiktionary.org/wiki/файл (read 2026-10-12).
+- In «назначенные вам Туры Соревнований» the participle (acc pl) agrees only with «Туры», so it cannot mean
+  "assigned Competitions" (grammar analysis, no source).
+
+### «Относиться к», new glossary forms
+
+- Викисловарь «относиться», sense 4: «Быть частью какого-либо множества или класса» («К хищным жукам относятся и
+  плавунцы»). A Competition is a set including Участники (definitions.md item 22), so «Соревнование, к которому
+  относится Участник» is correct; the government «к + дат.» is inferred from the examples.
+  Source: https://ru.wiktionary.org/wiki/относиться (read 2026-10-12).
+- Forms of the new glossary variants confirmed by the independent review (all read 2026-10-12): Тв. мн.
+  «соревнованиями» (https://ru.wiktionary.org/wiki/соревнование); Им. «система», Р. «системы»
+  (https://ru.wiktionary.org/wiki/система); Тв. «администратором» (https://ru.wiktionary.org/wiki/администратор).
+- Style observation, not a defect: «кроме Супервайзеров» uses a generic plural although the System has one
+  Супервайзер; the wording is verbatim from features.md (testsys.web.page.supervisor).
+
+### CSV header «ID участника»
+
+- `page_observer.csv.participant_id` keeps lowercase «участника» because features.md
+  (testsys.user.single.observer.downloadResult, step 2) names the column verbatim and the caller fixed it as the
+  contract. It differs from the capitalized term elsewhere («Участник»); changing it needs a features.md change and
+  user approval. Project decision, not a language finding. The task column `{$contest} - {$task}` uses an ASCII
+  hyphen-minus with spaces, also verbatim from features.md. Running Russian text would normally use a dash
+  («Финал — Робот»; inference, no handbook opened), but the value is a CSV header contract, not running text.

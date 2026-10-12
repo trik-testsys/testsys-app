@@ -19,7 +19,6 @@ import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.recordingData
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.submissionData
-import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.builder.api.taskData
 import tech.testsys.domain.builder.api.testData
 import tech.testsys.domain.builder.api.verdictData
@@ -44,7 +43,6 @@ import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.group.Community
-import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.task.Contest
@@ -56,6 +54,8 @@ import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
+import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.security.UserKind
@@ -106,8 +106,12 @@ class AppTestConfiguration {
 
     @Bean
     @Primary
-    fun publicCommunityConfig(fixtures: AppFixtures): CommunityConfig = object : CommunityConfig {
-        override val publicCommunityId: CommunityId by lazy { fixtures.community().id }
+    fun publicCommunityConfig(fixtures: AppFixtures): CommunityConfig {
+        // Created with the bean, so the first read never joins a transaction that rolls back.
+        val id = fixtures.community().id
+        return object : CommunityConfig {
+            override val publicCommunityId = id
+        }
     }
 
     @Bean
@@ -153,7 +157,31 @@ class AppFixtures(
         },
     )
 
-    fun userOf(kind: UserKind, name: String = unique("User"), rawAccessToken: String = unique("token")): User<*> = when (kind) {
+    /**
+     * Returns a new user of [kind] with [name] and [rawAccessToken] or unique defaults; for a supervisor it returns the
+     * single supervisor created at context startup, whose name and access code come from the test configuration.
+     */
+    fun userOf(kind: UserKind, name: String? = null, rawAccessToken: String? = null): User<*> {
+        if (kind == UserKind.SUPERVISOR) {
+            require(name == null && rawAccessToken == null) { "The single supervisor keeps its configured name and access code" }
+            return supervisor()
+        }
+
+        return newUserOf(kind, name ?: unique("User"), rawAccessToken ?: unique("token"))
+    }
+
+    /** Returns the single supervisor created at context startup. */
+    fun supervisor(): Supervisor = checkNotNull(supervisors.findSingle()) { "The supervisor bootstrap has not run" }
+
+    /** Returns the access code of [user]: fixtures store it as is with [HashAlgorithm.Identity]. */
+    fun accessTokenOf(user: User<*>): String = when (user) {
+        is MultipleRoleUser -> user.data.accessTokenHash
+        is Participant -> user.data.accessTokenHash
+        is Observer -> user.data.accessTokenHash
+        is Supervisor -> user.data.accessTokenHash
+    }.value
+
+    private fun newUserOf(kind: UserKind, name: String, rawAccessToken: String): User<*> = when (kind) {
         UserKind.MULTIPLE_ROLE -> multipleRoleUser(name = name, rawAccessToken = rawAccessToken)
         UserKind.PARTICIPANT -> {
             val competitionId = competitions.save(
@@ -172,12 +200,7 @@ class AppFixtures(
             )
         }
         UserKind.OBSERVER -> observer(of = community(), name = name, rawAccessToken = rawAccessToken)
-        UserKind.SUPERVISOR -> supervisors.save(
-            supervisorData {
-                accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
-                this.name = name
-            },
-        )
+        UserKind.SUPERVISOR -> error("The single supervisor is created by the bootstrap")
     }
 
     /** Returns a new user holding only the administrator role. */

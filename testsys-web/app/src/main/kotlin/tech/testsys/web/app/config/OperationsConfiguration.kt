@@ -1,12 +1,16 @@
 package tech.testsys.web.app.config
 
+import org.springframework.beans.factory.SmartInitializingSingleton
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
+import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.contract.FileContentReader
 import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.UserMailSender
+import tech.testsys.domain.contract.persistence.SupervisorCommunityReadPort
+import tech.testsys.domain.contract.persistence.SupervisorUserReadPort
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -52,9 +56,11 @@ import tech.testsys.operation.user.DeveloperOperations
 import tech.testsys.operation.user.JudgeOperations
 import tech.testsys.operation.user.ManagerOperations
 import tech.testsys.operation.user.MultipleRoleUserOperations
+import tech.testsys.operation.user.ObserverOperations
 import tech.testsys.operation.user.ParticipantOperations
 import tech.testsys.operation.user.StudentOperations
 import tech.testsys.operation.user.StudyOperations
+import tech.testsys.operation.user.SupervisorOperations
 import tech.testsys.operation.user.UserOperations
 import java.security.SecureRandom
 import java.time.Clock
@@ -72,6 +78,27 @@ import java.util.random.RandomGenerator
 @Configuration
 class OperationsConfiguration {
     /**
+     * Supervisor operations over all users and communities.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun supervisorOperations(
+        users: SupervisorUserReadPort,
+        communities: SupervisorCommunityReadPort,
+        communityRepository: CommunityRepository,
+        multipleRoleUsers: MultipleRoleUserRepository,
+        userRepository: UserRepository,
+        communityConfig: CommunityConfig,
+        administratorOperations: AdministratorOperations,
+        contests: ContestRepository,
+        observers: ObserverRepository,
+    ): SupervisorOperations = SupervisorOperations(
+        users, communities, communityRepository, multipleRoleUsers, userRepository, communityConfig, administratorOperations,
+        contests, observers,
+    )
+
+    /**
      * Clock of the operations that check time.
      *
      * @since %CURRENT_VERSION%
@@ -88,15 +115,54 @@ class OperationsConfiguration {
     fun randomGenerator(): RandomGenerator = SecureRandom()
 
     /**
-     * Public community from the required property `testsys.operation.community.public-community-id`.
+     * Creates or verifies the public community with the required configured id before supplying it to operations.
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun communityConfig(runtime: RuntimeSettings): CommunityConfig {
+    fun communityConfig(
+        environment: Environment,
+        communities: CommunityRepository,
+        multipleRoleUsers: MultipleRoleUserRepository,
+        managerInvites: ManagerCommunityInviteRepository,
+        developerInvites: DeveloperCommunityInviteRepository,
+        transactions: TransactionOperations,
+        inviteConfig: CommunityInviteConfig,
+        clock: Clock,
+        randomGenerator: RandomGenerator,
+    ): CommunityConfig {
+        val id = PublicCommunityBootstrap(
+            communities,
+            multipleRoleUsers,
+            managerInvites,
+            developerInvites,
+            transactions,
+            inviteConfig,
+            clock,
+            randomGenerator,
+        ).ensure(environment)
         return object : CommunityConfig {
-            override val publicCommunityId = runtime.publicCommunityId
+            override val publicCommunityId = id
         }
+    }
+
+    /**
+     * Creates the single Supervisor or sets its name and access code from the required properties under
+     * `testsys.operation.supervisor` after all singletons of the shared infrastructure are created, before the web
+     * contexts start.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun supervisorBootstrap(
+        environment: Environment,
+        supervisors: SupervisorRepository,
+        multipleRoleUsers: MultipleRoleUserRepository,
+        participants: ParticipantRepository,
+        observers: ObserverRepository,
+        transactions: TransactionOperations,
+    ): SmartInitializingSingleton = SmartInitializingSingleton {
+        SupervisorBootstrap(supervisors, multipleRoleUsers, participants, observers, transactions).ensure(environment)
     }
 
     /**
@@ -400,6 +466,20 @@ class OperationsConfiguration {
         entries: ParticipantContestEntryRepository,
         clock: Clock,
     ): ParticipantOperations = ParticipantOperations(competitions, contests, entries, clock)
+
+    /**
+     * Operations of Observers.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun observerOperations(
+        contests: ContestRepository,
+        competitions: CompetitionRepository,
+        participants: ParticipantRepository,
+        tasks: TaskRepository,
+        submissions: SubmissionRepository,
+    ): ObserverOperations = ObserverOperations(contests, competitions, participants, tasks, submissions)
 
     /**
      * Operations of Students.

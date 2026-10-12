@@ -2,6 +2,7 @@ package tech.testsys.domain.contract.persistence.repository
 
 import tech.testsys.domain.contract.persistence.ClassFilter
 import tech.testsys.domain.contract.persistence.CompetitionFilter
+import tech.testsys.domain.contract.persistence.ObserverContestFilter
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.model.group.Class
@@ -21,6 +22,7 @@ import tech.testsys.domain.model.group.CompetitionData
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.group.InviteCodeHash
 import tech.testsys.domain.model.group.RawInviteCodeDependency
+import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import java.time.Instant
@@ -128,6 +130,24 @@ interface CommunityRepository : EntityRepository<CommunityData, CommunityId, Com
     ): Community
 
     /**
+     * Synchronously inserts a new community with exactly [id] and its two new invites, all or none.
+     * An occupied id or invite code fails the transaction; this method never updates an existing community.
+     *
+     * @param id the required id of the new community.
+     * @param managerInvite the manager-role invite data.
+     * @param developerInvite the developer-role invite data.
+     * @param data community data computed from the saved invite ids.
+     * @return the inserted community with [id].
+     * @since %CURRENT_VERSION%
+     */
+    fun saveWithIdAndInvites(
+        id: CommunityId,
+        managerInvite: CommunityInviteData,
+        developerInvite: CommunityInviteData,
+        data: (CommunityInviteId, CommunityInviteId) -> CommunityData,
+    ): Community
+
+    /**
      * Synchronously finds the community referencing [inviteId] in either role, without changing stored state.
      *
      * @param inviteId the invite of the searched community.
@@ -197,6 +217,22 @@ interface DeveloperCommunityInviteRepository : CommunityInviteRepository<Communi
 interface CompetitionRepository : EntityRepository<CompetitionData, CompetitionId, Competition> {
 
     /**
+     * Finds one page of current competition and assigned contest pairs, filtering and counting before paging.
+     * A contest in several competitions appears once for each competition.
+     *
+     * @param contestIds contests assigned to the observer; an empty set matches nothing.
+     * @param pagination requested page; competition id and contest id ascending break sorting ties.
+     * @param filter literal, case-insensitive names and exact ids combined with AND.
+     * @return matching pairs and their exact total, including when the requested page is empty.
+     * @since %CURRENT_VERSION%
+     */
+    fun findAvailableToObserver(
+        contestIds: Set<ContestId>,
+        pagination: Pagination,
+        filter: ObserverContestFilter = ObserverContestFilter(),
+    ): Page<ObserverContest>
+
+    /**
      * Synchronously finds current competitions owned by [ownerId], without changing stored state.
      * Repeated calls reflect current data; storage exceptions propagate to the caller.
      *
@@ -222,3 +258,12 @@ interface CompetitionRepository : EntityRepository<CompetitionData, CompetitionI
      */
     fun findByContestIds(contestIds: Set<ContestId>): List<Competition>
 }
+
+/**
+ * One current competition and contest association visible to an observer.
+ *
+ * @property competition the competition containing the contest.
+ * @property contest the assigned contest.
+ * @since %CURRENT_VERSION%
+ */
+data class ObserverContest(val competition: Competition, val contest: Contest)

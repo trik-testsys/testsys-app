@@ -1,0 +1,17 @@
+# Prometheus of a TestSys environment reads the metrics server of the app service of the same Compose project;
+# see the section "Мониторинг" in deploy/README.md. deploy/compose.monitoring.yml mounts this file.
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+scrape_configs:
+  - job_name: testsys
+    metrics_path: /actuator/prometheus
+    scheme: http
+    # client_java 1.7.0 omits histogram created timestamps from Protobuf; OpenMetrics includes them.
+    scrape_protocols: [OpenMetricsText1.0.0]
+    static_configs:
+      # The service app and its TESTSYS_METRICS_PORT from deploy/compose.yml, inside the project network. Prometheus
+      # does not substitute variables in this file.
+      - targets:
+          - app:8082

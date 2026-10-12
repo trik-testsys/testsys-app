@@ -150,6 +150,9 @@
 Его метод `findByAccessToken` принимает исходный КД и возвращает Пользователя своего вида, которому этот КД
 присвоен сейчас, или `null`. КД сравнивается без нормализации. Хэширование и сравнение выполняет адаптер хранения.
 
+`SupervisorRepository.findSingle` возвращает единственного Супервайзера Системы или `null`, если его ещё нет. Если
+сохранено несколько Супервайзеров, метод бросает `IllegalStateException`: схема БД второго Супервайзера не запрещает.
+
 `MultipleRoleUserRepository.findByEmail` и `RegistrationRequestRepository.findByEmail` сравнивают почту точно,
 без нормализации; нормализует почту операция.
 
@@ -157,10 +160,15 @@
 в данные Пользователя, но его запись повышает токен `version` корня агрегата. `UserRepository.findLastLogins` читает эти моменты
 сразу для нескольких Пользователей.
 
+[`SupervisorUserReadPort`](src/main/kotlin/tech/testsys/domain/contract/persistence/SupervisorUserReadPort.kt)
+читает всех Пользователей, кроме Супервайзеров, с фильтрацией и постраничной выдачей. Он также читает
+одного Пользователя и считает Пользователей Сообщества. [`SupervisorCommunityReadPort`](src/main/kotlin/tech/testsys/domain/contract/persistence/SupervisorCommunityReadPort.kt)
+возвращает все Сообщества по идентификатору.
+
 `MultipleRoleUserRepository.addCommunityMembership` включает Пользователя в Сообщество в Роли из перечисления
 [`CommunityRole`](src/main/kotlin/tech/testsys/domain/model/user/CommunityRole.kt): Администратора, Организатора,
 Разработчика, Ученика или Судьи. Роль выбирает операция: создание Сообщества, Код-приглашение или решение
-Администратора.
+Администратора или Супервайзера.
 `MultipleRoleUserRepository.removeCommunityMembership` исключает Пользователя из Сообщества в такой Роли; Роль и её
 данные остаются у Пользователя, даже если членств в этой Роли больше нет.
 
@@ -196,6 +204,9 @@
 Коды-приглашения и группу, данные которой строятся по их идентификаторам. Обычный `save` группы принимает данные
 со ссылками на уже сохранённые Коды-приглашения.
 
+`CommunityRepository.saveWithIdAndInvites` создаёт Сообщество с переданным ID и двумя новыми Кодами-приглашениями.
+Занятый ID приводит к отказу без изменения существующего Сообщества.
+
 Каждый вариант `CommunityInvite` хранится через свой порт: `ManagerCommunityInviteRepository`
 и `DeveloperCommunityInviteRepository` наследуют `CommunityInviteRepository<Invite>`, и Коды-приглашения
 другого варианта в них отсутствуют. Заменяется и продлевается Код-приглашение через `update` его порта.
@@ -223,6 +234,8 @@
 - `EntityRepository<Data, Id, Entity>` объединяет `EntityFinder`, `EntityLoader`, `EntitySaver` и `EntityRemover`
   ([Common.kt](src/main/kotlin/tech/testsys/domain/contract/persistence/repository/Common.kt)). Порты хранения
   конкретных сущностей объявлены в `contract/persistence/repository/*Repositories.kt`.
+- `CompetitionRepository.findAvailableToObserver` возвращает страницу текущих пар Соревнование–назначенный Тур.
+  Фильтры и общее число относятся к парам; условия доступа задаются идентификаторами назначенных Туров.
 - `FileBlobStorage` получает путь (`java.nio.file.Path`) в каждом вызове `store`, `load` и `delete`.
   `StoredBlobRef` действителен только вместе с путём, по которому создан блоб.
 - Остальные порты и их состояние — в разделе «Убедиться, что порт нужен»

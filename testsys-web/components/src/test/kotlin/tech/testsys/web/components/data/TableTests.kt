@@ -220,7 +220,7 @@ class TableTests : MockVaadinTests() {
     fun `should go back to the first page when the sort changes`() {
         val source = Source(size = 12)
         buildTable(source)
-        pagerButton(testTexts.pagination.next)._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
 
         scoreHeader()._fireDomEvent("click")
 
@@ -231,15 +231,21 @@ class TableTests : MockVaadinTests() {
     fun `should show the range and the page counter`() {
         buildTable(Source(size = 12))
 
-        assertEquals(testTexts.table.range(1, 5, 12), ui().find("ts-table-pager").child(0).element.textRecursively)
-        assertEquals("1 / 3", ui().find("ts-pager__label").element.textRecursively)
+        assertEquals(
+            testTexts.messages.uiData.tableRange(from = 1, to = 5, total = 12),
+            ui().find("ts-table-pager").child(0).element.textRecursively,
+        )
+        assertEquals(testTexts.messages.uiData.paginationCounter(page = 1, count = 3), ui().find("ts-pager__label").element.textRecursively)
     }
 
     @Test
-    fun `should group the digits of a large page count`() {
+    fun `should count the pages of a large table`() {
         buildTable(Source(size = 7_060))
 
-        assertEquals("1 / 1 412", ui().find("ts-pager__label").element.textRecursively)
+        assertEquals(
+            testTexts.messages.uiData.paginationCounter(page = 1, count = 1_412),
+            ui().find("ts-pager__label").element.textRecursively,
+        )
     }
 
     @Test
@@ -247,19 +253,19 @@ class TableTests : MockVaadinTests() {
         val source = Source(size = 12)
         buildTable(source)
 
-        pagerButton(testTexts.pagination.next)._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
 
         assertEquals(5, source.requests.last().offset)
-        assertEquals("2 / 3", ui().find("ts-pager__label").element.textRecursively)
+        assertEquals(testTexts.messages.uiData.paginationCounter(page = 2, count = 3), ui().find("ts-pager__label").element.textRecursively)
     }
 
     @Test
     fun `should go to the previous page`() {
         val source = Source(size = 12)
         buildTable(source)
-        pagerButton(testTexts.pagination.next)._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
 
-        pagerButton(testTexts.pagination.previous)._click()
+        pagerButton(testTexts.messages.uiData.paginationPrevious())._click()
 
         assertEquals(0, source.requests.last().offset)
     }
@@ -268,19 +274,19 @@ class TableTests : MockVaadinTests() {
     fun `should disable previous on the first page`() {
         buildTable(Source(size = 12))
 
-        assertFalse(pagerButton(testTexts.pagination.previous).isEnabled)
-        assertTrue(pagerButton(testTexts.pagination.next).isEnabled)
+        assertFalse(pagerButton(testTexts.messages.uiData.paginationPrevious()).isEnabled)
+        assertTrue(pagerButton(testTexts.messages.uiData.paginationNext()).isEnabled)
     }
 
     @Test
     fun `should disable next on the last page`() {
         buildTable(Source(size = 12))
-        pagerButton(testTexts.pagination.next)._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
 
-        pagerButton(testTexts.pagination.next)._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
 
-        assertTrue(pagerButton(testTexts.pagination.previous).isEnabled)
-        assertFalse(pagerButton(testTexts.pagination.next).isEnabled)
+        assertTrue(pagerButton(testTexts.messages.uiData.paginationPrevious()).isEnabled)
+        assertFalse(pagerButton(testTexts.messages.uiData.paginationNext()).isEnabled)
     }
 
     @Test
@@ -363,7 +369,7 @@ class TableTests : MockVaadinTests() {
     fun `should refresh the current page`() {
         val source = Source(size = 12)
         val handle = buildTable(source)
-        pagerButton(testTexts.pagination.next)._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
 
         handle.refresh()
 
@@ -374,7 +380,7 @@ class TableTests : MockVaadinTests() {
     fun `should refresh to the first page`() {
         val source = Source(size = 12)
         val handle = buildTable(source)
-        pagerButton(testTexts.pagination.next)._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
 
         handle.refresh(toFirstPage = true)
 
@@ -385,14 +391,14 @@ class TableTests : MockVaadinTests() {
     fun `should move to the last page with rows when the total shrinks`() {
         val source = Source(size = 12)
         val handle = buildTable(source)
-        pagerButton(testTexts.pagination.next)._click()
-        pagerButton(testTexts.pagination.next)._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
         source.rows = source.rows.take(6)
 
         handle.refresh()
 
         assertEquals(5, source.requests.last().offset)
-        assertEquals("2 / 2", ui().find("ts-pager__label").element.textRecursively)
+        assertEquals(testTexts.messages.uiData.paginationCounter(page = 2, count = 2), ui().find("ts-pager__label").element.textRecursively)
     }
 
     @Test
@@ -403,7 +409,7 @@ class TableTests : MockVaadinTests() {
 
         assertEquals(1, rows().size)
         assertEquals("3", rows()[0].child(0).element.getAttribute("colspan"))
-        assertEquals(testTexts.table.empty, rows()[0].element.textRecursively)
+        assertEquals(testTexts.messages.uiData.tableEmpty(), rows()[0].element.textRecursively)
     }
 
     @Test

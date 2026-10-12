@@ -18,7 +18,7 @@ import tech.testsys.web.components.core.HtmlAttribute
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setAttribute
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 import java.time.Clock
 import java.time.Year
 
@@ -60,14 +60,14 @@ class PageFooterScope internal constructor() {
 }
 
 internal fun buildPageFooter(
-    texts: UiTexts,
+    texts: UiLocalization,
     links: PageFooterScope = PageFooterScope(),
     clock: Clock = Clock.systemDefaultZone(),
 ): Footer {
-    val logo = Image(TestSysBrand.FOOTER, texts.brand).apply { addClassName(CssClass.FooterLogo) }
-    val year = Span(texts.footer.year(Year.now(clock).value)).apply { addClassName(CssClass.FooterYear) }
+    val logo = Image(TestSysBrand.FOOTER, texts.messages.uiPage.brandName()).apply { addClassName(CssClass.FooterLogo) }
+    val year = Span(texts.messages.uiPage.footerYear(year = Year.now(clock).value)).apply { addClassName(CssClass.FooterYear) }
     val brand = Div(logo, year).apply { addClassName(CssClass.FooterBrand) }
     val inner = Div(brand).apply { addClassName(CssClass.FooterInner) }
-    links.build(texts.footer.links)?.let { navigation -> inner.add(navigation) }
+    links.build(texts.messages.uiPage.footerLinks())?.let { navigation -> inner.add(navigation) }
     return Footer(inner).apply { addClassName(CssClass.Footer) }
 }

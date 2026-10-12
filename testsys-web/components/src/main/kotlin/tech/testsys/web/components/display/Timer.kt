@@ -25,7 +25,7 @@ import tech.testsys.web.components.core.setRole
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -149,7 +149,7 @@ internal class TimerDisplay(
     label: String,
     private var current: TimerValue,
     private val variant: TimerVariant,
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     private val dangerBelow: Duration,
 ) : Div() {
     val remainingState = ValueSignal(0L)
@@ -243,7 +243,9 @@ internal class TimerDisplay(
                     listOf(hours, minutes, rest)
                 }
 
-                val units = if (isTiles) texts.components.timerUnits else texts.components.timerUnits.drop(1)
+                val allUnits =
+                    with(texts.messages.uiFeedback) { listOf(timerDays(), timerHours(), timerMinutes(), timerSeconds()) }
+                val units = if (isTiles) allUnits else allUnits.drop(1)
                 values.forEachIndexed { index, number ->
                     val numeric = if (isTiles) {
                         number.timerTileNumber()

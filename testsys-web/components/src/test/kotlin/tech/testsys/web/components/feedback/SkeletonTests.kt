@@ -38,7 +38,7 @@ internal class SkeletonTests : MockVaadinTests() {
 
         val root = handle.component.element
         assertEquals("status", root.getAttribute("role"))
-        assertEquals(testTexts.components.loading, root.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiFeedback.loadLoading(), root.getAttribute("aria-label"))
         assertEquals("true", root.getChild(0).getAttribute("aria-hidden"))
     }
 
@@ -56,7 +56,7 @@ internal class SkeletonTests : MockVaadinTests() {
         buildTestContent { handle = skeletonRows(rows = 2) }
 
         assertEquals("status", handle.component.element.getAttribute("role"))
-        assertEquals(testTexts.components.loading, handle.component.element.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiFeedback.loadLoading(), handle.component.element.getAttribute("aria-label"))
     }
 
     @Test

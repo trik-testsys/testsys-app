@@ -22,12 +22,11 @@ import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.PageRequest
 import tech.testsys.web.components.data.TableScope
 import tech.testsys.web.components.data.TableSpec
-import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.overlay.DialogSize
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 /** Number of values shown as chips; the rest is counted in one more chip. */
 private const val MAX_CHIPS = 3
@@ -68,7 +67,7 @@ fun <T : Any> BlockRowScope.lookupMany(
  * `order`, then the clear button.
  */
 internal class LookupManyField<T : Any>(
-    texts: UiTexts,
+    texts: UiLocalization,
     private val title: String,
     private val display: (T) -> String,
     private val fetch: (String, PageRequest) -> Page<T>,
@@ -104,7 +103,7 @@ internal class LookupManyField<T : Any>(
 
         if (current.size > MAX_CHIPS) {
             chips.add(
-                Span("+${formatNumber(current.size - MAX_CHIPS, texts)}").apply {
+                Span(texts.messages.uiForm.lookupMoreChip(count = current.size - MAX_CHIPS)).apply {
                     addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue)
                 },
             )
@@ -135,16 +134,18 @@ internal class LookupManyField<T : Any>(
             highlighted = { false },
         ) { row -> table.toggle(row) }
 
-        val count = Span(texts.lookup.selectedCount(value.size)).apply { addClassNames(CssClass.Muted, CssClass.LookupCount) }
-        dialog.table.onSelectionChange = { keys -> count.text = texts.lookup.selectedCount(keys.size) }
+        val count = Span(texts.messages.uiForm.lookupSelectedCount(count = value.size)).apply {
+            addClassNames(CssClass.Muted, CssClass.LookupCount)
+        }
+        dialog.table.onSelectionChange = { keys -> count.text = texts.messages.uiForm.lookupSelectedCount(count = keys.size) }
         dialog.table.pager.root.addClassName(CssClass.LookupPager)
         dialog.shell.content.add(dialog.table.pager.root)
         dialog.shell.foot.add(count)
 
         val foot = ContentScope(dialog.shell.foot, texts, Placement.Body)
-        foot.action(texts.lookup.reset) { onClick { dialog.table.clearSelection() } }
+        foot.action(texts.messages.uiForm.lookupReset()) { onClick { dialog.table.clearSelection() } }
 
-        foot.mainAction(texts.lookup.apply) {
+        foot.mainAction(texts.messages.uiForm.lookupApply()) {
             onClick {
                 choose(dialog.table.selected.mapNotNullTo(LinkedHashSet()) { key -> knownRows[key] })
                 dialog.shell.close()
@@ -163,7 +164,7 @@ internal class LookupManyField<T : Any>(
                 NativeButton().apply {
                     addClassName(CssClass.ChipX)
                     element.setType(ElementType.Button)
-                    element.setAttribute(HtmlAttribute.AriaLabel, texts.lookup.remove(name))
+                    element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiForm.lookupRemove(value = name))
                     add(svgIcon(IconName.X, ICON_SIZE_TINY))
                     addClickListener { if (isChoosable()) chooseInBox(value - item) }
                 },

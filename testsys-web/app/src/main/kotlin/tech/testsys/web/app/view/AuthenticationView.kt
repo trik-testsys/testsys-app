@@ -1,7 +1,7 @@
 package tech.testsys.web.app.view
 
 import com.vaadin.flow.component.UI
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import tech.testsys.operation.error.OperationException
@@ -13,7 +13,7 @@ import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.passwordInput
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Sign-in page (testsys.web.page.authentication): signs the user in by the access code and opens the page saved before
@@ -22,16 +22,20 @@ import tech.testsys.web.components.texts.UiTexts
  * @since %CURRENT_VERSION%
  */
 @Route("login")
-@PageTitle("Вход")
 @AnonymousAllowed
-class AuthenticationView(texts: UiTexts, headers: CabinetHeaders, private val userService: UserService) : TestSysView(texts) {
+class AuthenticationView(headers: CabinetHeaders, private val userService: UserService) : TestSysView(), HasDynamicTitle {
     init {
+        val texts = currentLocalization().pageGuest
         page(headers.guest(hasSignIn = false)) {
+            guide(texts.signInGuide())
             guestForm(active = GuestTab.SignIn) {
                 lateinit var accessToken: ValueInput<String>
-                row { accessToken = passwordInput("Код-доступа", labelSize = 6, size = 18) }
+                row { accessToken = passwordInput(texts.signInAccessCode(), labelSize = 6, size = 18) }
+                guide(texts.signInBlockGuide(), title = texts.tabSignIn()) {
+                    step(accessToken, title = texts.signInAccessCode(), description = texts.signInAccessCodeGuide())
+                }
                 footer {
-                    mainAction("Войти") {
+                    mainAction(texts.signInButton()) {
                         clickOnEnter()
                         onClick { signIn(accessToken.value) }
                     }
@@ -40,12 +44,14 @@ class AuthenticationView(texts: UiTexts, headers: CabinetHeaders, private val us
         }
     }
 
+    override fun getPageTitle(): String = GuestTab.SignIn.label
+
     private fun signIn(accessToken: String) {
         // The only refusal of signing in is an access code assigned to nobody.
         val principal = try {
             userService.authenticate(accessToken)
         } catch (_: OperationException) {
-            toast(FeedbackKind.Error, "Код-доступа недействителен")
+            toast(FeedbackKind.Error, currentLocalization().pageGuest.signInInvalid())
             return
         }
 

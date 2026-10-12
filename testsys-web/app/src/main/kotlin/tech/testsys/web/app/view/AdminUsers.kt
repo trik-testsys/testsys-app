@@ -7,6 +7,7 @@ import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.UserId
+import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.MultipleRoleUserVo
@@ -22,9 +23,10 @@ import tech.testsys.web.components.forms.multiSelect
 import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockScope
+import tech.testsys.web.components.texts.currentLocalization
+import tech.testsys.web.components.texts.currentTimeZone
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
 import tech.testsys.domain.contract.persistence.Sort as DomainSort
 
 private const val MAX_NAME_CODE_POINTS = 255
@@ -44,14 +46,14 @@ internal const val ADMIN_USER_SECTION_PARAMETER = "section"
 /** Route parameter of the observer alias of [AdminUserView] with the observer id. */
 internal const val OBSERVER_ID_PARAMETER = "observerId"
 
-/** Labels of the community roles a user can be filtered by. */
-private val ROLE_LABELS: Map<UserFilter.Role, String> = mapOf(
-    UserFilter.Role.ADMINISTRATOR to "Администратор",
-    UserFilter.Role.DEVELOPER to "Разработчик",
-    UserFilter.Role.JUDGE to "Судья",
-    UserFilter.Role.MANAGER to "Организатор",
-    UserFilter.Role.STUDENT to "Ученик",
-    UserFilter.Role.OBSERVER to "Наблюдатель",
+/** Message variants naming the community roles a user can be filtered by. */
+private val ROLE_NAMES: Map<UserFilter.Role, RoleNameRole> = mapOf(
+    UserFilter.Role.ADMINISTRATOR to RoleNameRole.ADMINISTRATOR,
+    UserFilter.Role.DEVELOPER to RoleNameRole.DEVELOPER,
+    UserFilter.Role.JUDGE to RoleNameRole.JUDGE,
+    UserFilter.Role.MANAGER to RoleNameRole.MANAGER,
+    UserFilter.Role.STUDENT to RoleNameRole.STUDENT,
+    UserFilter.Role.OBSERVER to RoleNameRole.OBSERVER,
 )
 
 /** Returns the route parameters of the page of [communityId]. */
@@ -82,7 +84,9 @@ internal fun openAdminUser(user: AdminUserVo) {
 /** Returns the labels of the roles [user] holds in [communityId]. */
 private fun rolesIn(user: AdminUserVo, communityId: CommunityId): List<String> = when (user) {
     is MultipleRoleUserVo -> user.roles.filter { role -> communityId in role.memberOf }.map(::labelOf)
-    is ObserverVo -> listOfNotNull("Наблюдатель".takeIf { user.community == communityId })
+    is ObserverVo -> listOfNotNull(
+        currentLocalization().pageCabinet.roleName(role = RoleNameRole.OBSERVER).takeIf { user.community == communityId },
+    )
 }
 
 /** Converts a table page request into a pagination with the column sort keys as storage fields. */
@@ -98,13 +102,16 @@ internal fun PageRequest.toPagination(): Pagination {
 /** Returns the page of [rows] asked by [request] in their order. */
 internal fun <T> pageOf(rows: List<T>, request: PageRequest): Page<T> = Page(rows.drop(request.offset).take(request.limit), rows.size)
 
-/** Returns this moment in the time zone of the server. */
-internal fun Instant.toServerDateTime(): LocalDateTime = LocalDateTime.ofInstant(this, ZoneId.systemDefault())
+/** Returns this moment in the time zone of the user of the current UI. */
+internal fun Instant.toUserDateTime(): LocalDateTime = LocalDateTime.ofInstant(this, currentTimeZone())
 
 /** Requires a nonblank name of at most 255 Unicode code points, reporting [missing] for an empty or blank one. */
 internal fun <T> Binder.BindingBuilder<T, String>.nameRules(missing: String): Binder.BindingBuilder<T, String> = asRequired(missing)
     .withValidator({ name -> name.isNotBlank() }, missing)
-    .withValidator({ name -> name.codePointCount(0, name.length) <= MAX_NAME_CODE_POINTS }, "Не длиннее 255 символов")
+    .withValidator(
+        { name -> name.codePointCount(0, name.length) <= MAX_NAME_CODE_POINTS },
+        currentLocalization().pageCabinet.nameTooLong(max = MAX_NAME_CODE_POINTS),
+    )
 
 /** Values of the community creation and editing forms. */
 internal class CommunityDraft(var name: String = "", var description: String = "")
@@ -114,6 +121,8 @@ internal class CommunityDraft(var name: String = "", var description: String = "
  * and filtered by nickname, roles and, unless [community] fixes it, by one of [communities]; a row opens the user page.
  */
 internal fun BlockScope.adminUsersTable(service: AdministratorService, communities: List<CommunityVo>, community: CommunityId?) {
+    val localization = currentLocalization()
+    val texts = localization.pageAdministrator
     val defaults = UserFilter(communityId = community)
     var applied = defaults
     val rows = table(
@@ -123,13 +132,13 @@ internal fun BlockScope.adminUsersTable(service: AdministratorService, communiti
             Page(users.content, users.totalElements.toInt())
         },
     ) {
-        codeColumn("ID", sortKey = "id", size = if (community == null) 6 else 4) { (user, _) -> user.id.value.toString() }
-        textColumn("Псевдоним", sortKey = "name", size = if (community == null) 10 else 7) { (user, _) -> user.name }
+        codeColumn(texts.id(), sortKey = "id", size = if (community == null) 6 else 4) { (user, _) -> user.id.value.toString() }
+        textColumn(texts.nickname(), sortKey = "name", size = if (community == null) 10 else 7) { (user, _) -> user.name }
         community?.let { communityId ->
-            column("Роли", size = 7) { (user, _) -> rolesIn(user, communityId).forEach { role -> tag(role) } }
+            column(texts.roles(), size = 7) { (user, _) -> rolesIn(user, communityId).forEach { role -> tag(role) } }
         }
-        dateTimeColumn("Последний вход", sortKey = "lastLoginAt") { (_, lastLogin) -> lastLogin?.toServerDateTime() }
-        empty("Пользователей нет", "Пользователи появятся, когда присоединятся к сообществу.")
+        dateTimeColumn(texts.lastLogin(), sortKey = "lastLoginAt") { (_, lastLogin) -> lastLogin?.toUserDateTime() }
+        empty(texts.usersEmpty(), texts.usersEmptyHint())
         onRowClick(isNavigation = true) { (user, _) -> openAdminUser(user) }
     }
 
@@ -154,11 +163,17 @@ internal fun BlockScope.adminUsersTable(service: AdministratorService, communiti
         onRefresh = { rows.refresh(toFirstPage = true) },
     ) {
         row {
-            name = textInput("Псевдоним", labelSize = 4, size = 8, hint = "Часть псевдонима, без учёта регистра")
-            roles = multiSelect("Роли", labelSize = 4, size = 8, items = UserFilter.Role.entries, itemLabel = ROLE_LABELS::getValue)
+            name = textInput(texts.nickname(), labelSize = 4, size = 8, hint = texts.usersNicknameHint())
+            roles = multiSelect(
+                texts.roles(),
+                labelSize = 4,
+                size = 8,
+                items = UserFilter.Role.entries,
+                itemLabel = { role -> localization.pageCabinet.roleName(role = ROLE_NAMES.getValue(role)) },
+            )
         }
         row {
-            communityChoice = select("Сообщество", labelSize = 4, size = 8, items = communities, itemLabel = CommunityVo::name) {
+            communityChoice = select(texts.usersCommunity(), labelSize = 4, size = 8, items = communities, itemLabel = CommunityVo::name) {
                 isVisible = community == null
             }
         }

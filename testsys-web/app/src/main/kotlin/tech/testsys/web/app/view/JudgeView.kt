@@ -4,7 +4,7 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
@@ -23,7 +23,7 @@ import tech.testsys.web.components.data.table
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.layout.BlockScope
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 import tech.testsys.domain.contract.persistence.Sort as DomainSort
 
 /** Route parameter of [JudgeView] with the open section. */
@@ -55,11 +55,13 @@ internal fun openJudgeSolution(submissionId: SubmissionId) {
  * @since %CURRENT_VERSION%
  */
 @Route("judge/:section?(submissions)")
-@PageTitle("Кабинет Судьи")
 @RolesAllowed("MULTIPLE_ROLE")
-class JudgeView(texts: UiTexts, private val headers: CabinetHeaders, private val judgeService: JudgeService) :
-    TestSysView(texts),
-    BeforeEnterObserver {
+class JudgeView(private val headers: CabinetHeaders, private val judgeService: JudgeService) :
+    TestSysView(),
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageJudge.title()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         if (event.routeParameters.get(JUDGE_SECTION_PARAMETER).isEmpty) {
             event.forwardTo(JudgeView::class.java, judgeSubmissionsParameters())
@@ -68,13 +70,22 @@ class JudgeView(texts: UiTexts, private val headers: CabinetHeaders, private val
 
         // Checks the judge role before the table loads, so that its absence opens the forbidden screen.
         judgeService.viewResults(Pagination(page = 0, size = 1))
+        val localization = currentLocalization()
+        val texts = localization.pageJudge
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Кабинет Судьи") { crumb("Главная", MultiMainView::class.java) }
-            row { block(title = "Посылки") { submissionsTable() } }
+            head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
+            guide(texts.guide())
+            row {
+                block(title = localization.pageCabinet.sectionSubmissions()) {
+                    guide(texts.submissionsGuide())
+                    submissionsTable()
+                }
+            }
         }
     }
 
     private fun BlockScope.submissionsTable() {
+        val texts = currentLocalization().pageJudge
         var applied = VerdictFilter()
         val rows = table(
             key = { result: JudgeResultVo -> result.verdict.id },
@@ -84,15 +95,15 @@ class JudgeView(texts: UiTexts, private val headers: CabinetHeaders, private val
                 Page(results.content, results.totalElements.toInt())
             },
         ) {
-            codeColumn("Посылка", size = 4) { result -> result.submission.id.value.toString() }
-            textColumn("Автор", size = 5) { result -> result.author.name }
-            dateTimeColumn("Отправлено", size = 4) { result -> result.submission.createdAt.toServerDateTime() }
-            numberColumn("Автоматический балл", size = 4) { result ->
+            codeColumn(texts.submission(), size = 4) { result -> result.submission.id.value.toString() }
+            textColumn(texts.author(), size = 5) { result -> result.author.name }
+            dateTimeColumn(texts.submissionsSent(), size = 4) { result -> result.submission.createdAt.toUserDateTime() }
+            numberColumn(texts.submissionsAutoScore(), size = 4) { result ->
                 result.verdict.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() }
             }
-            numberColumn("Судейский балл", size = 3) { result -> result.lastJudgment?.score?.value }
-            numberColumn("Итоговый балл") { result -> result.finalScore }
-            empty("Посылок нет", "Здесь появятся успешно проверенные Посылки Учеников и Участников.")
+            numberColumn(texts.submissionsJudgeScore(), size = 3) { result -> result.lastJudgment?.score?.value }
+            numberColumn(texts.finalScore()) { result -> result.finalScore }
+            empty(texts.submissionsEmpty(), texts.submissionsEmptyHint())
             onRowClick(isNavigation = true) { result -> openJudgeSolution(result.submission.id) }
         }
 
@@ -111,18 +122,18 @@ class JudgeView(texts: UiTexts, private val headers: CabinetHeaders, private val
             onRefresh = { rows.refresh(toFirstPage = true) },
         ) {
             row {
-                codeInput("ID автора", labelSize = 4, size = 8) {
+                codeInput(texts.authorId(), labelSize = 4, size = 8) {
                     bindId(draft, { values -> values.author }, { values, id -> values.author = id })
                 }
-                codeInput("ID посылки", labelSize = 4, size = 8) {
+                codeInput(texts.filterSubmissionId(), labelSize = 4, size = 8) {
                     bindId(draft, { values -> values.submission }, { values, id -> values.submission = id })
                 }
             }
             row {
-                codeInput("ID класса", labelSize = 4, size = 8) {
+                codeInput(texts.filterClassId(), labelSize = 4, size = 8) {
                     bindId(draft, { values -> values.group }, { values, id -> values.group = id })
                 }
-                codeInput("ID соревнования", labelSize = 4, size = 8) {
+                codeInput(texts.filterCompetitionId(), labelSize = 4, size = 8) {
                     bindId(draft, { values -> values.competition }, { values, id -> values.competition = id })
                 }
             }
@@ -137,7 +148,7 @@ class JudgeView(texts: UiTexts, private val headers: CabinetHeaders, private val
         setter: (VerdictFilterDraft, String) -> Unit,
     ) {
         draft.forField(this)
-            .withValidator({ value -> value.isBlank() || idOf(value) != null }, "Введите положительное целое число")
+            .withValidator({ value -> value.isBlank() || idOf(value) != null }, currentLocalization().pageJudge.filterIdInvalid())
             .bind(getter, setter)
     }
 

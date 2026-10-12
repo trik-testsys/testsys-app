@@ -22,17 +22,17 @@ fun BlockRowScope.integerInput(
     unit: String? = null,
     configure: ValueInput<Int?>.() -> Unit = {},
 ): ValueInput<Int?> {
-    val errors = texts.fieldErrors
+    val errors = texts.messages.uiForm
     val control = IntegerField().apply {
         if (min != null) setMin(min)
         if (max != null) setMax(max)
         if (step != null) setStep(step)
         if (unit != null) suffixComponent = Span(unit)
         i18n = IntegerField.IntegerFieldI18n()
-            .setBadInputErrorMessage(errors.badInput)
-            .setMinErrorMessage(errors.belowMin)
-            .setMaxErrorMessage(errors.aboveMax)
-            .setStepErrorMessage(errors.stepMismatch)
+            .setBadInputErrorMessage(errors.fieldBadInput())
+            .setMinErrorMessage(errors.fieldBelowMin())
+            .setMaxErrorMessage(errors.fieldAboveMax())
+            .setStepErrorMessage(errors.fieldStepMismatch())
     }
 
     return addInput<IntegerField, Int?>(label, labelSize, size, control, hint, configure)
@@ -55,17 +55,17 @@ fun BlockRowScope.decimalInput(
     unit: String? = null,
     configure: ValueInput<Double?>.() -> Unit = {},
 ): ValueInput<Double?> {
-    val errors = texts.fieldErrors
+    val errors = texts.messages.uiForm
     val control = NumberField().apply {
         if (min != null) setMin(min)
         if (max != null) setMax(max)
         if (step != null) setStep(step)
         if (unit != null) suffixComponent = Span(unit)
         i18n = NumberField.NumberFieldI18n()
-            .setBadInputErrorMessage(errors.badInput)
-            .setMinErrorMessage(errors.belowMin)
-            .setMaxErrorMessage(errors.aboveMax)
-            .setStepErrorMessage(errors.stepMismatch)
+            .setBadInputErrorMessage(errors.fieldBadInput())
+            .setMinErrorMessage(errors.fieldBelowMin())
+            .setMaxErrorMessage(errors.fieldAboveMax())
+            .setStepErrorMessage(errors.fieldStepMismatch())
     }
 
     return addInput<NumberField, Double?>(label, labelSize, size, control, hint, configure)

@@ -20,11 +20,11 @@ class TestSysBrandTests : MockVaadinTests() {
 
     @Test
     fun `should give the missing route brand a localized accessible name`() {
-        val page = NotFoundPage(testTexts)
+        val page = NotFoundPage()
 
         val brand = page.find("ts-brand")
 
-        assertEquals(testTexts.brand, brand.element.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiPage.brandName(), brand.element.getAttribute("aria-label"))
         assertEquals("img", brand.element.getAttribute("role"))
         assertEquals(1L, brand.children.count())
         assertEquals(TestSysBrand.HEADER, brand.find("ts-brand__logo").element.getAttribute("src"))

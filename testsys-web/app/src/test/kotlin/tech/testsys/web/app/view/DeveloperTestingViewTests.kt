@@ -5,13 +5,16 @@ import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.router.BeforeEnterEvent
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouterLink
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -40,7 +43,6 @@ import tech.testsys.web.app.service.developer.DeveloperSolutionInputVo
 import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.app.service.developer.TaskValidationRequestVo
 import tech.testsys.web.app.service.developer.TaskValidationSnapshotVo
-import tech.testsys.web.components.texts.buildUiTexts
 import java.time.Instant
 import javax.sql.DataSource
 
@@ -70,6 +72,19 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
         UI.getCurrent().navigate(UI.getCurrent()._get<RouterLink> { text = "Задача «${task.name}»" }.href)
 
         assertEquals("developer/tasks/${task.id.value}", currentPath())
+    }
+
+    @Test
+    fun `should title the browser tab of the testing and head it with the start moment`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val request = developers.testing(task)
+
+        UI.getCurrent().navigate(DeveloperTestingView::class.java, testingParameters(task.id, request.id))
+
+        assertEquals("Тестирование Задачи", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        val heading = UI.getCurrent()._get<H1>().text
+        assertTrue(Regex("Тестирование от \\d{2}\\.\\d{2}\\.\\d{4} \\d{2}:\\d{2}").matches(heading), heading)
     }
 
     @Test
@@ -109,7 +124,7 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
 
         open(task.id, request.id, service)
 
-        assertEquals("Все посылки набрали ожидаемый балл", textField("Итог").value)
+        assertEquals("Все Посылки набрали ожидаемый балл", textField("Итог").value)
         assertTrue(UI.getCurrent()._find<Button> { text = "К задаче" }.isEmpty())
         assertTrue(UI.getCurrent()._find<Button> { text = "Обновить" }.isEmpty())
     }
@@ -184,7 +199,7 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
 
         open(task.id, request.id, service)
 
-        val submissions = UI.getCurrent()._find<Table>().single { table -> "Авторское решение" in table.element.textRecursively }
+        val submissions = UI.getCurrent()._find<Table>().single { table -> "Авторское Решение" in table.element.textRecursively }
         assertTrue(status in submissions.element.textRecursively)
         assertTrue(score in submissions.element.textRecursively)
         assertTrue("2026.1" in submissions.element.textRecursively)
@@ -209,7 +224,7 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
     }
 
     private fun open(taskId: TaskId, requestId: TaskValidationRequestId, service: DeveloperService) {
-        val view = DeveloperTestingView(buildUiTexts(), headers, service)
+        val view = DeveloperTestingView(headers, service)
         val event = mockk<BeforeEnterEvent>()
         every { event.routeParameters } returns testingParameters(taskId, requestId)
         UI.getCurrent().removeAll()

@@ -35,7 +35,6 @@ import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.multiSelect
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockScope
-import tech.testsys.web.components.texts.UiTexts
 import tech.testsys.domain.contract.persistence.Sort as DomainSort
 
 /** Route parameter of [ServiceUserView] with the id of a user of any kind. */
@@ -62,7 +61,7 @@ private val ROLE_LABELS: Map<ServiceUserRole, String> = mapOf(
 @Route("users")
 @PageTitle("Пользователи")
 @RolesAllowed("SERVICE")
-class ServiceUsersView(texts: UiTexts, private val search: ServiceUserSearch) : TestSysView(texts) {
+class ServiceUsersView(private val search: ServiceUserSearch) : TestSysView() {
     private var applied = ServiceUserFilter()
 
     init {

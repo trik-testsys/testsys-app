@@ -6,7 +6,7 @@ import tech.testsys.web.components.data.TableScope
 import tech.testsys.web.components.data.TableSpec
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.overlay.DialogSize
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 /**
  * Adds a field of one entity chosen in a dialog that searches with [fetch] and lists rows in [columns], [pageSize]
@@ -42,7 +42,7 @@ fun <T : Any> BlockRowScope.lookup(
  * highlighted.
  */
 internal class LookupField<T : Any>(
-    texts: UiTexts,
+    texts: UiLocalization,
     private val title: String,
     private val display: (T) -> String,
     private val fetch: (String, PageRequest) -> Page<T>,

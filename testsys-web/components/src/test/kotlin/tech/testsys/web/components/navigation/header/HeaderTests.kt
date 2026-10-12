@@ -35,36 +35,10 @@ class HeaderTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should derive avatar initials using the locale of the texts`() {
-        val texts = tech.testsys.web.components.texts.UiTexts(
-            locale = java.util.Locale.forLanguageTag("tr"),
-            brand = testTexts.brand,
-            signIn = testTexts.signIn,
-            calendar = testTexts.calendar,
-            fieldErrors = testTexts.fieldErrors,
-            dateRangeReversed = testTexts.dateRangeReversed,
-            editing = testTexts.editing,
-            table = testTexts.table,
-            pagination = testTexts.pagination,
-            load = testTexts.load,
-            dialog = testTexts.dialog,
-            lookup = testTexts.lookup,
-            navigation = testTexts.navigation,
-            menu = testTexts.menu,
-            dateFields = testTexts.dateFields,
-            notFound = testTexts.notFound,
-            forbidden = testTexts.forbidden,
-            pageFailed = testTexts.pageFailed,
-            failures = testTexts.failures,
-            components = testTexts.components,
-            header = testTexts.header,
-            footer = testTexts.footer,
-            tableFilters = testTexts.tableFilters,
-        )
+    fun `should derive avatar initials using the given locale`() {
+        val avatar = userAvatar("istanbul izmir", java.util.Locale.forLanguageTag("tr"))
 
-        val header = buildHeader(CabinetHeader(user = HeaderUser("istanbul izmir")), texts)
-
-        assertEquals("İİ", header.find("ts-header__avatar").element.text)
+        assertEquals("İİ", avatar.element.text)
     }
 
     @Test
@@ -131,7 +105,7 @@ class HeaderTests : MockVaadinTests() {
     fun `should render the decorative horizontal logo with the localized accessible name`() {
         val header = buildHeader(CabinetHeader(), testTexts)
 
-        assertEquals(testTexts.brand, header.find("ts-brand").element.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiPage.brandName(), header.find("ts-brand").element.getAttribute("aria-label"))
         assertEquals(".", header.find("ts-brand").element.getAttribute("href"))
         assertEquals(1L, header.find("ts-brand").children.count())
         assertEquals(TestSysBrand.HEADER, header.find("ts-brand__logo").element.getAttribute("src"))

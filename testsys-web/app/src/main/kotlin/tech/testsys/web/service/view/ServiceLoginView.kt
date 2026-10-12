@@ -10,7 +10,6 @@ import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.passwordInput
-import tech.testsys.web.components.texts.UiTexts
 import tech.testsys.web.service.security.ServiceSignIn
 import tech.testsys.web.service.security.ServiceSignInResult
 
@@ -22,7 +21,7 @@ import tech.testsys.web.service.security.ServiceSignInResult
 @Route("login")
 @PageTitle("Служебный вход")
 @AnonymousAllowed
-class ServiceLoginView(texts: UiTexts, private val signIn: ServiceSignIn) : TestSysView(texts) {
+class ServiceLoginView(private val signIn: ServiceSignIn) : TestSysView() {
     init {
         page(ServiceHeaders.header()) {
             head("Служебный вход")

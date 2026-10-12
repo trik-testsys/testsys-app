@@ -14,7 +14,9 @@ import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.removeClassName
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.overlay.BlockGuide
+import tech.testsys.web.components.overlay.GuideStepsScope
+import tech.testsys.web.components.texts.UiLocalization
 
 private const val TABLE_OWNER = "a table"
 
@@ -27,7 +29,7 @@ private const val TABLE_OWNER = "a table"
 class BlockScope internal constructor(
     private val body: Div,
     internal val columns: Int,
-    internal val texts: UiTexts,
+    internal val texts: UiLocalization,
     private val editState: BlockEditState,
     internal val title: String?,
     private val isLoadContent: Boolean = false,
@@ -43,6 +45,8 @@ class BlockScope internal constructor(
     internal var filtersBar: Component? = null
         private set
     private var editingSwitch: EditingSwitch? = null
+    internal var guide: BlockGuide? = null
+        private set
 
     /** Whether [editing] installed the standard switch of the block mode. */
     internal val hasEditingSwitch: Boolean
@@ -56,6 +60,22 @@ class BlockScope internal constructor(
 
     /** What fills the whole body, e.g. "a table"; `null` while the body is a grid of rows. */
     private var wholeBody: String? = null
+
+    /**
+     * Configures the explanation of this block and optional detailed steps of the page guide.
+     *
+     * @throws IllegalArgumentException if a text is blank or an untitled block has no explicit [title].
+     * @throws IllegalStateException if called twice or inside loaded content.
+     * @since %CURRENT_VERSION%
+     */
+    fun guide(description: String, title: String? = this.title, content: GuideStepsScope.() -> Unit = {}) {
+        checkBlockLevel("guide()")
+        check(guide == null) { "Block guide is already configured; call guide() once" }
+        val heading = requireNotNull(title) { "An untitled block needs an explicit guide title" }
+        require(heading.isNotBlank()) { "Block guide title must not be blank" }
+        require(description.isNotBlank()) { "Guide description for block '$heading' must not be blank" }
+        guide = BlockGuide(title = heading, description = description, steps = GuideStepsScope().apply(content))
+    }
 
     /**
      * Adds a row of the body; its elements take at most the block columns in total.

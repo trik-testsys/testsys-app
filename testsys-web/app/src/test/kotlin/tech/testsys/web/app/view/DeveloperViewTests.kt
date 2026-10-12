@@ -6,7 +6,6 @@ import com.github.mvysny.kaributesting.v10._fireDomEvent
 import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10._value
 import com.github.mvysny.kaributesting.v10.currentView
-import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
@@ -19,7 +18,9 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.HasDynamicTitle
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -30,6 +31,7 @@ import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.developer.DeveloperService
+import java.time.Instant
 import java.time.LocalDateTime
 import javax.sql.DataSource
 
@@ -57,6 +59,28 @@ class DeveloperViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should title the browser tab of the developer cabinet`() {
+        developers.signInDeveloper()
+
+        open(TASKS_SECTION)
+
+        assertEquals("Кабинет Разработчика", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        assertEquals("Кабинет Разработчика", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should show shared tasks before own tasks`() {
+        developers.signInDeveloper()
+
+        open(TASKS_SECTION)
+
+        assertEquals(
+            listOf("Доступные через Сообщества", "Мои Задачи"),
+            UI.getCurrent()._find<H3>().map { heading -> heading.text },
+        )
+    }
+
+    @Test
     fun `should show the forbidden screen to a user without the developer role`() {
         signIn(fixtures.multipleRoleUser())
 
@@ -71,7 +95,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.signInDeveloper()
         open(TASKS_SECTION)
 
-        clickButton("Создать задачу")
+        clickButton("Создать Задачу")
         textField("Название")._value = "Движение по линии"
         clickButton("Создать")
 
@@ -85,15 +109,15 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.signInDeveloper()
         developers.task("Линия")
         open(TASKS_SECTION)
-        textField("Название", ownTasksBlock())._value = "Линия"
-        clickButton("Применить", ownTasksBlock())
-        clickButton("Создать задачу")
+        ownTaskNameFilter()._value = "Линия"
+        ownTasksBlock()._get<Button> { text = "Применить" }._click()
+        clickButton("Создать Задачу")
         textField("Название")._value = "Кубики"
 
         clickButton("Создать")
 
         assertEquals(DeveloperView::class.java, currentView)
-        assertEquals("Линия", textField("Название", ownTasksBlock()).value)
+        assertEquals("Линия", ownTaskNameFilter().value)
         assertTrue("Кубики" !in tableText("Состояние"))
         assertEquals("Задача создана", lastToastTitle())
     }
@@ -135,8 +159,8 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.task("Сортировка кубиков")
         open(TASKS_SECTION)
 
-        textField("Название", ownTasksBlock())._value = "линии"
-        clickButton("Применить", ownTasksBlock())
+        ownTaskNameFilter()._value = "линии"
+        ownTasksBlock()._get<Button> { text = "Применить" }._click()
 
         val text = tableText("Состояние")
         assertTrue("Движение по линии" in text, text)
@@ -149,7 +173,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         val version = developers.trikStudioVersion()
         open(CONTESTS_SECTION)
 
-        clickButton("Создать тур")
+        clickButton("Создать Тур")
         textField("Название")._value = "Весенний тур"
         chooseVersion(version)
         clickButton("Создать")
@@ -161,12 +185,28 @@ class DeveloperViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should save the start of a created contest in the time zone of the user`() {
+        developers.signInDeveloper()
+        val version = developers.trikStudioVersion()
+        open(CONTESTS_SECTION)
+        clickButton("Создать Тур")
+        textField("Название")._value = "Весенний тур"
+        chooseVersion(version)
+        openDialog()._find<DateTimePicker>().first().value = LocalDateTime.of(2026, 5, 1, 10, 0)
+
+        clickButton("Создать")
+
+        val contest = developerService.viewContests(Pagination(page = 0, size = 10)).content.single().first
+        assertEquals(Instant.parse("2026-05-01T07:00:00Z"), contest.startsAt)
+    }
+
+    @Test
     fun `should create no contest if its end is set without its start`() {
         developers.signInDeveloper()
         val version = developers.trikStudioVersion()
         open(CONTESTS_SECTION)
 
-        clickButton("Создать тур")
+        clickButton("Создать Тур")
         textField("Название")._value = "Весенний тур"
         chooseVersion(version)
         openDialog()._find<DateTimePicker>().last().value = LocalDateTime.of(2026, 5, 1, 10, 0)
@@ -221,20 +261,18 @@ class DeveloperViewTests : MockSpringVaadinTests() {
             button.element.getAttribute("aria-label") == "Перейти на следующую страницу"
         }._click()
 
-        assertEquals(1, ownTasksBlock()._get<Table>()._get<TableBody>()._find<TableRow>().size)
+        val rows = ownTasksBlock()._get<Table>()._get<TableBody>()._find<TableRow>()
+        assertEquals(1, rows.size)
+        assertTrue("Своя " in rows.single().element.textRecursively)
         assertEquals(sharedBefore, tableText("Сообщества"))
     }
 
-    private fun ownTasksBlock(): Section = UI.getCurrent()._find<Section> { classes = "ts-block" }.single { block ->
-        block._find<H3>().singleOrNull()?.text == "Мои задачи"
+    private fun ownTasksBlock(): Section = UI.getCurrent()._find<Section>().single { block ->
+        block._find<H3>().any { heading -> heading.text == "Мои Задачи" }
     }
 
-    private fun textField(label: String, scope: Component? = null): TextField =
-        (scope?._find<TextField>() ?: inScope<TextField>()).single { field -> field.ariaLabel.orElse(null) == label }
-
-    private fun clickButton(label: String, scope: Component? = null) {
-        (scope?._find<Button>() ?: inScope<Button>()).single { button -> button.text == label }._click()
-    }
+    private fun ownTaskNameFilter(): TextField =
+        ownTasksBlock()._find<TextField>().single { field -> field.ariaLabel.orElse(null) == "Название" }
 
     private fun open(section: String) {
         UI.getCurrent().navigate(DeveloperView::class.java, developerSectionParameters(section))

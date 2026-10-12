@@ -4,7 +4,7 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.contract.persistence.TaskFilter
@@ -45,7 +45,7 @@ import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -59,16 +59,17 @@ private const val DETAILS_COLUMNS = 14
  * @since %CURRENT_VERSION%
  */
 @Route("developer/contests/:contestId([0-9]+)")
-@PageTitle("Тур")
 @RolesAllowed("MULTIPLE_ROLE")
 class DeveloperContestView(
-    texts: UiTexts,
     private val headers: CabinetHeaders,
     private val developerService: DeveloperService,
     private val multipleRoleUserService: MultipleRoleUserService,
     private val currentUser: CurrentUser,
-) : TestSysView(texts),
-    BeforeEnterObserver {
+) : TestSysView(),
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageDeveloper.contestTabTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         show(ContestId(event.routeParameters.getLong(CONTEST_ID_PARAMETER).orElseThrow()))
     }
@@ -78,26 +79,29 @@ class DeveloperContestView(
         val me = currentUser.multipleRoleUser().id
         val isOwner = contest.owner == me
         val isChangeable = isOwner && contest.sharedTo.isEmpty()
+        val localization = currentLocalization()
+        val texts = localization.pageDeveloper
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Тур «${contest.name}»") {
-                crumb("Главная", MultiMainView::class.java)
-                crumb("Кабинет Разработчика", DeveloperView::class.java)
-                crumb("Туры", DeveloperView::class.java, developerSectionParameters(CONTESTS_SECTION))
+            head(texts.contestTitle(name = contest.name)) {
+                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
+                crumb(texts.title(), DeveloperView::class.java)
+                crumb(localization.pageCabinet.sectionContests(), DeveloperView::class.java, developerSectionParameters(CONTESTS_SECTION))
                 actions {
-                    destructiveAction("Удалить тур") {
+                    destructiveAction(texts.contestDelete()) {
                         isEnabled = isChangeable
                         onClick { delete(contest) }
                     }
                 }
             }
+            guide(texts.contestGuide())
             if (!isChangeable) {
-                val reason = if (isOwner) {
-                    "Доступ к туру предоставлен сообществам, поэтому тур нельзя изменить или удалить, " +
-                        "а задачи — прикрепить к нему или открепить."
-                } else {
-                    "Изменять тур может только его владелец."
+                val reason = if (isOwner) texts.contestLockedShared() else texts.contestLockedNotOwner()
+                row {
+                    block {
+                        guide(description = reason, title = texts.contestLocked())
+                        row { alert(kind = FeedbackKind.Info, title = texts.contestLocked(), text = reason) }
+                    }
                 }
-                row { block { row { alert(kind = FeedbackKind.Info, title = "Тур нельзя изменить", text = reason) } } }
             }
             row {
                 detailsBlock(contest, isChangeable)
@@ -108,14 +112,16 @@ class DeveloperContestView(
     }
 
     private fun PageRowScope.detailsBlock(contest: ContestVo, isChangeable: Boolean) {
+        val texts = currentLocalization().pageDeveloper
         val draft = Binder<ContestDraft>()
         val initial = ContestDraft(
             name = contest.name,
-            startsAt = contest.startsAt?.toServerDateTime(),
-            endsAt = contest.endsAt?.toServerDateTime(),
+            startsAt = contest.startsAt?.toUserDateTime(),
+            endsAt = contest.endsAt?.toUserDateTime(),
         )
         lateinit var startsAt: ValueInput<LocalDateTime?>
-        val details = block(size = DETAILS_COLUMNS, title = "Сведения") {
+        val details = block(size = DETAILS_COLUMNS, title = texts.details()) {
+            guide(if (isChangeable) texts.contestDetailsGuide() else texts.contestDetailsGuideLocked())
             if (isChangeable) {
                 editing(
                     onSave = {
@@ -125,10 +131,10 @@ class DeveloperContestView(
                             developerService.editContest(
                                 contestId = contest.id,
                                 contestName = values.name,
-                                startsAt = values.startsAt?.toServerInstant(),
-                                endsAt = values.endsAt?.toServerInstant(),
+                                startsAt = values.startsAt?.toUserInstant(),
+                                endsAt = values.endsAt?.toUserInstant(),
                             )
-                            toast(FeedbackKind.Success, "Тур изменён")
+                            toast(FeedbackKind.Success, currentLocalization().pageDeveloper.contestEdited())
                             show(contest.id)
                         }
                         isValid
@@ -137,49 +143,47 @@ class DeveloperContestView(
                 )
             }
             row {
-                codeInput("ID", labelSize = 7, size = 17) {
+                codeInput(texts.id(), labelSize = 7, size = 17) {
                     value = contest.id.value.toString()
                     isEditable = false
                 }
             }
             row {
-                textInput("Название", labelSize = 7, size = 17) {
+                textInput(texts.name(), labelSize = 7, size = 17) {
                     draft.forField(this)
-                        .nameRules("Укажите название")
+                        .nameRules(texts.nameRequired())
                         .bind({ values -> values.name }, { values, name -> values.name = name })
                 }
             }
             row {
-                textInput("Версия TRIK Studio", labelSize = 7, size = 17) {
+                textInput(texts.trikStudioVersion(), labelSize = 7, size = 17) {
                     value = contest.trikStudioVersion.version
                     isEditable = false
                 }
             }
             row {
-                textArea("Описание", labelSize = 7, size = 17, maxLines = 4) {
+                textArea(texts.description(), labelSize = 7, size = 17, maxLines = 4) {
                     value = contest.description
                     isEditable = false
                 }
             }
             row {
-                startsAt = dateTimeInput("Начало", labelSize = 7, size = 17) {
+                startsAt = dateTimeInput(texts.startsAt(), labelSize = 7, size = 17) {
                     draft.forField(this).bind({ values -> values.startsAt }, { values, start -> values.startsAt = start })
                 }
             }
             row {
-                dateTimeInput("Конец", labelSize = 7, size = 17) {
+                dateTimeInput(texts.endsAt(), labelSize = 7, size = 17) {
                     draft.forField(this)
                         .scheduleRules { startsAt.value }
-                        .withValidator(
-                            { end -> fitsAttempt(contest.attemptDuration, startsAt.value, end) },
-                            "Индивидуальный лимит больше длительности тура",
-                        )
+                        .withValidator({ end -> fitsAttempt(contest.attemptDuration, startsAt.value, end) }, texts.contestLimitExceeds())
                         .bind({ values -> values.endsAt }, { values, end -> values.endsAt = end })
                 }
             }
             row {
-                textInput("Индивидуальный лимит", labelSize = 7, size = 17) {
-                    value = contest.attemptDuration?.let { duration -> "${duration.toMinutes()} мин" } ?: "Нет"
+                textInput(texts.attemptLimit(), labelSize = 7, size = 17) {
+                    value = contest.attemptDuration?.let { duration -> texts.contestAttemptMinutes(minutes = duration.toMinutes()) }
+                        ?: texts.contestNoAttemptLimit()
                     isEditable = false
                 }
             }
@@ -190,14 +194,16 @@ class DeveloperContestView(
     }
 
     private fun PageRowScope.accessBlock(contest: ContestVo, shared: List<CommunityVo>, isOwner: Boolean) {
-        block(title = "Доступ") {
+        val texts = currentLocalization().pageDeveloper
+        block(title = texts.access()) {
+            guide(texts.contestAccessGuide())
             table(key = { community: CommunityVo -> community.id }, fetch = { request -> pageOf(shared, request) }) {
-                textColumn("Сообщество") { community -> community.name }
-                empty("Доступ не предоставлен")
+                textColumn(texts.community()) { community -> community.name }
+                empty(texts.accessEmpty())
             }
             val sharing = shareDialog(contest, shared)
             actions {
-                action("Предоставить доступ") {
+                action(texts.share()) {
                     isEnabled = isOwner
                     onClick { sharing() }
                 }
@@ -206,28 +212,31 @@ class DeveloperContestView(
     }
 
     private fun PageScope.tasksBlock(contest: ContestVo, tasks: List<TaskVo>, me: MultipleRoleUserId, isChangeable: Boolean) {
+        val localization = currentLocalization()
+        val texts = localization.pageDeveloper
         row {
-            block(title = "Задачи") {
+            block(title = localization.pageCabinet.sectionTasks()) {
+                guide(texts.contestTasksGuide())
                 table(key = { task: TaskVo -> task.id }, fetch = { request -> pageOf(tasks, request) }) {
-                    codeColumn("ID", size = 5) { task -> task.id.value.toString() }
-                    textColumn("Название", size = 12) { task -> task.name }
+                    codeColumn(texts.id(), size = 5) { task -> task.id.value.toString() }
+                    textColumn(texts.name(), size = 12) { task -> task.name }
                     onRowClick(isNavigation = true, isClickable = { task -> task.owner == me }) { task -> openDeveloperTask(task.id) }
-                    column("Состояние", size = 6) { task ->
+                    column(texts.state(), size = 6) { task ->
                         val state = stateOf(task)
-                        badge(state.label, state.tone)
+                        badge(texts.taskState(state = state.variant), state.tone)
                     }
-                    menuColumn(ariaLabel = { task -> "Действия с задачей «${task.name}»" }) { task ->
-                        item("Открепить", isEnabled = isChangeable) {
+                    menuColumn(ariaLabel = { task -> texts.contestTaskActions(name = task.name) }) { task ->
+                        item(texts.detach(), isEnabled = isChangeable) {
                             developerService.detachTask(contest.id, task.id)
-                            toast(FeedbackKind.Success, "Задача откреплена от тура")
+                            toast(FeedbackKind.Success, currentLocalization().pageDeveloper.contestTaskDetached())
                             show(contest.id)
                         }
                     }
-                    empty("Задач пока нет", "Прикрепите задачу, у которой есть зафиксированная версия.")
+                    empty(texts.tasksEmpty(), texts.contestTasksEmptyHint())
                 }
                 val attaching = attachDialog(contest)
                 actions {
-                    action("Прикрепить задачу") {
+                    action(texts.contestAttachTask()) {
                         isEnabled = isChangeable
                         onClick { attaching() }
                     }
@@ -238,11 +247,13 @@ class DeveloperContestView(
 
     /** Builds the dialog attaching a task available to the developer to [contest] and returns its opening. */
     private fun attachDialog(contest: ContestVo): () -> Unit {
+        val localization = currentLocalization()
+        val texts = localization.pageDeveloper
         lateinit var chosen: ValueInput<TaskVo?>
-        val attaching = dialog(title = "Прикрепление задачи") {
+        val attaching = dialog(title = texts.contestAttachTitle()) {
             row {
                 chosen = lookup(
-                    "Задача",
+                    texts.contestAttachLookup(),
                     labelSize = 6,
                     size = 18,
                     fetch = { query, request ->
@@ -251,27 +262,28 @@ class DeveloperContestView(
                     },
                     display = TaskVo::name,
                     columns = {
-                        codeColumn("ID", size = 6) { task -> task.id.value.toString() }
-                        textColumn("Название") { task -> task.name }
+                        codeColumn(texts.id(), size = 6) { task -> task.id.value.toString() }
+                        textColumn(texts.name()) { task -> task.name }
                     },
-                    hint = "В туре используется последняя зафиксированная версия задачи",
+                    hint = texts.contestAttachHint(),
                     dialogSize = DialogSize.L,
                 )
             }
             footer { dialog ->
-                action("Отменить") { onClick { dialog.close() } }
-                mainAction("Прикрепить") {
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
+                mainAction(texts.attach()) {
                     onClick {
                         chosen.value?.let { task ->
+                            val current = currentLocalization().pageDeveloper
                             try {
                                 developerService.attachTask(contest.id, task.id)
-                                toast(FeedbackKind.Success, "Задача прикреплена к туру")
+                                toast(FeedbackKind.Success, current.contestAttachDone())
                                 dialog.close()
                                 show(contest.id)
                             } catch (exception: OperationException) {
                                 toast(
                                     FeedbackKind.Error,
-                                    "Не удалось прикрепить задачу",
+                                    current.contestAttachFailed(),
                                     attachRefusalOf(exception.error) ?: throw exception,
                                 )
                             }
@@ -288,28 +300,31 @@ class DeveloperContestView(
 
     /** Builds the sharing dialog of [contest] for the developer communities without access and returns its opening. */
     private fun shareDialog(contest: ContestVo, shared: List<CommunityVo>): () -> Unit {
+        val localization = currentLocalization()
+        val texts = localization.pageDeveloper
         val sharedIds = shared.map { community -> community.id }.toSet()
         val candidates = developerCommunities(multipleRoleUserService).filter { community -> community.id !in sharedIds }
         lateinit var chosen: ValueInput<Set<CommunityVo>>
-        val sharing = dialog(title = "Доступ к туру") {
+        val sharing = dialog(title = texts.contestShareTitle()) {
             row {
-                chosen = multiSelect("Сообщества", labelSize = 6, size = 18, items = candidates, itemLabel = CommunityVo::name)
+                chosen = multiSelect(texts.communities(), labelSize = 6, size = 18, items = candidates, itemLabel = CommunityVo::name)
             }
             footer { dialog ->
-                action("Отменить") { onClick { dialog.close() } }
-                mainAction("Предоставить") {
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
+                mainAction(texts.shareSubmit()) {
                     onClick {
                         val communities = chosen.value
                         if (communities.isNotEmpty()) {
+                            val current = currentLocalization().pageDeveloper
                             dialog.close()
                             confirm(
-                                title = "Предоставить доступ к туру?",
-                                text = "Отозвать доступ нельзя. После этого тур нельзя будет изменить и удалить.",
-                                action = "Предоставить",
+                                title = current.contestShareConfirmTitle(),
+                                text = current.contestShareConfirmText(),
+                                action = current.shareSubmit(),
                                 isDanger = true,
                             ) {
                                 developerService.shareContest(contest.id, communities.map { community -> community.id }.toSet())
-                                toast(FeedbackKind.Success, "Доступ к туру предоставлен")
+                                toast(FeedbackKind.Success, currentLocalization().pageDeveloper.contestShareDone())
                                 show(contest.id)
                             }
                         }
@@ -324,15 +339,16 @@ class DeveloperContestView(
     }
 
     private fun delete(contest: ContestVo) {
+        val texts = currentLocalization().pageDeveloper
         confirm(
-            title = "Удалить тур «${contest.name}»?",
-            text = "Тур удалится вместе со списком его задач. Сами задачи не изменятся.",
-            action = "Удалить",
+            title = texts.contestDeleteConfirmTitle(name = contest.name),
+            text = texts.contestDeleteConfirmText(),
+            action = texts.contestDeleteConfirmAction(),
             isDanger = true,
             typeToConfirm = contest.name,
         ) {
             developerService.deleteContest(contest.id)
-            toast(FeedbackKind.Success, "Тур удалён")
+            toast(FeedbackKind.Success, currentLocalization().pageDeveloper.contestDeleted())
             UI.getCurrent().navigate(DeveloperView::class.java, developerSectionParameters(CONTESTS_SECTION))
         }
     }
@@ -345,10 +361,14 @@ class DeveloperContestView(
 private fun fitsAttempt(attempt: Duration?, start: LocalDateTime?, end: LocalDateTime?): Boolean =
     attempt == null || start == null || end == null || attempt <= Duration.between(start, end)
 
-private fun attachRefusalOf(error: OperationError): String? = when (error) {
-    is TaskNotCommittedError -> "У задачи нет зафиксированной версии. Сначала протестируйте и зафиксируйте задачу."
-    is TaskTrikStudioVersionNotSupportedError -> "Задача не поддерживает версию TRIK Studio этого тура."
-    is TaskAlreadyAttachedToContestError -> "Эта задача уже прикреплена к туру."
-    is ContestAlreadySharedError -> "Доступ к туру уже предоставлен. Его задачи нельзя изменить."
-    else -> null
+/** Returns why attaching a task to a contest was refused, or `null` for a refusal the common handler shows. */
+private fun attachRefusalOf(error: OperationError): String? {
+    val texts = currentLocalization().pageDeveloper
+    return when (error) {
+        is TaskNotCommittedError -> texts.contestAttachNotCommitted()
+        is TaskTrikStudioVersionNotSupportedError -> texts.contestAttachVersionNotSupported()
+        is TaskAlreadyAttachedToContestError -> texts.contestAttachAlreadyAttached()
+        is ContestAlreadySharedError -> texts.contestAttachShared()
+        else -> null
+    }
 }

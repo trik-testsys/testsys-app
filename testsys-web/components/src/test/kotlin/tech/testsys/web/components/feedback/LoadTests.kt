@@ -365,9 +365,9 @@ class LoadTests : MockVaadinTests() {
 
             val state = ui().find("ts-empty")
             assertTrue("ts-empty--error" in state.classes())
-            assertEquals(testTexts.load.failed, state.find("ts-empty__title").element.text)
-            assertEquals(testTexts.load.failedHint, state.find("ts-empty__desc").element.text)
-            assertTrue(button(testTexts.load.retry).isVisible)
+            assertEquals(testTexts.messages.uiFeedback.loadFailed(), state.find("ts-empty__title").element.text)
+            assertEquals(testTexts.messages.uiFeedback.loadFailedHint(), state.find("ts-empty__desc").element.text)
+            assertTrue(button(testTexts.messages.uiFeedback.loadRetry()).isVisible)
         }
 
         @Test
@@ -405,7 +405,7 @@ class LoadTests : MockVaadinTests() {
             buildTestPage { row { block { load(FailingOnce()::fetch) { value -> row { text("Всего: $value") } } } } }
             queue.runAll()
 
-            button(testTexts.load.retry)._click()
+            button(testTexts.messages.uiFeedback.loadRetry())._click()
 
             assertEquals(3, ui().findAll("ts-skel-row").size)
             assertTrue(ui().findAll("ts-empty").isEmpty())
@@ -415,7 +415,7 @@ class LoadTests : MockVaadinTests() {
         fun `should show the content after a successful retry`() {
             buildTestPage { row { block { load(FailingOnce()::fetch) { value -> row { text("Всего: $value") } } } } }
             queue.runAll()
-            button(testTexts.load.retry)._click()
+            button(testTexts.messages.uiFeedback.loadRetry())._click()
 
             queue.runAll()
 
@@ -837,6 +837,18 @@ class LoadTests : MockVaadinTests() {
             queue.runAll()
 
             assertEquals("Content of a load fills the block body only; call footer { } on the block itself", failure?.message)
+        }
+
+        @Test
+        fun `should reject a guide in the loaded content`() {
+            var failure: IllegalStateException? = null
+            buildTestPage {
+                row { block { load({ 1 }) { _ -> failure = assertThrows { guide("Описание", title = "Блок") } } } }
+            }
+
+            queue.runAll()
+
+            assertEquals("Content of a load fills the block body only; call guide() on the block itself", failure?.message)
         }
 
         @Test

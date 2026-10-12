@@ -34,3 +34,9 @@ testsys:
   metrics:
     # The metrics server listens on all interfaces; the deployment keeps the port in an internal network.
     port: 8082
+  web:
+    localization:
+      # Region of the users whose region cookie and browser languages are not supported, a SupportedRegion name.
+      default-region: RU
+      # Zone of the dates until the browser reports its own.
+      default-time-zone: Europe/Moscow

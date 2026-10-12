@@ -10,7 +10,6 @@ import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.display.text
-import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Protected initial service page with service sections, a plain transition to Grafana and an explicit sign-out.
@@ -20,7 +19,7 @@ import tech.testsys.web.components.texts.UiTexts
 @Route("")
 @PageTitle("Служебный кабинет")
 @RolesAllowed("SERVICE")
-class ServiceHomeView(texts: UiTexts, authentication: AuthenticationContext, settings: ServiceWebSettings) : TestSysView(texts) {
+class ServiceHomeView(authentication: AuthenticationContext, settings: ServiceWebSettings) : TestSysView() {
     init {
         page(ServiceHeaders.header()) {
             head("Служебный кабинет")

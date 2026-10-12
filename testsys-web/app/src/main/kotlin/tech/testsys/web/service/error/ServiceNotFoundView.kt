@@ -7,7 +7,6 @@ import com.vaadin.flow.router.NotFoundException
 import com.vaadin.flow.server.HttpStatusCode
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import tech.testsys.web.components.error.NotFoundPage
-import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Missing-route handler backed by the shared branded page.
@@ -15,7 +14,7 @@ import tech.testsys.web.components.texts.UiTexts
  * @since %CURRENT_VERSION%
  */
 @AnonymousAllowed
-class ServiceNotFoundView(texts: UiTexts) : NotFoundPage(texts), HasErrorParameter<NotFoundException> {
+class ServiceNotFoundView : NotFoundPage(), HasErrorParameter<NotFoundException> {
     override fun setErrorParameter(event: BeforeEnterEvent, parameter: ErrorParameter<NotFoundException>): Int {
         refreshHistoryNavigation()
         return HttpStatusCode.NOT_FOUND.code

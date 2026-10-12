@@ -23,7 +23,7 @@ import tech.testsys.web.components.core.setProperty
 import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 private const val GLYPH_SIZE = 20
 
@@ -51,7 +51,7 @@ enum class DialogSize(internal val cssClass: CssClass?) {
  * with a warning glyph; [content] and [foot] take the content. [size] gives the width of the card. An open dialog
  * closes on navigation: opening attaches it to the UI, not to the page, so leaving the page would keep it shown.
  */
-internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, size: DialogSize, isAlert: Boolean) {
+internal class DialogShell(texts: UiLocalization, title: String, subtitle: String?, size: DialogSize, isAlert: Boolean) {
     val dialog = Dialog().apply {
         addThemeName(CssTheme.Dialog)
         // Vaadin defaults, set explicitly to state how every dialog closes.
@@ -88,7 +88,7 @@ internal class DialogShell(texts: UiTexts, title: String, subtitle: String?, siz
             val titles = Div(heading).apply { addClassName(CssClass.BlockTitles) }
             subtitle?.let { text -> titles.add(Span(text).apply { addClassName(CssClass.BlockSub) }) }
             val head = Div(titles).apply { addClassName(CssClass.DialogHead) }
-            ContentScope(head, texts, Placement.Head).iconAction(IconName.X, texts.dialog.close) { onClick { close() } }
+            ContentScope(head, texts, Placement.Head).iconAction(IconName.X, texts.messages.uiOverlay.dialogClose()) { onClick { close() } }
             body.add(content)
             card.add(head, body, foot)
         }

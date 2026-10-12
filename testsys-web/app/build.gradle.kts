@@ -27,6 +27,7 @@ dependencies {
     implementation(project(":testsys-infra:mail"))
     implementation(project(":testsys-infra:monitoring"))
     implementation(project(":testsys-web:components"))
+    implementation(libs.bundles.icu.implementation)
     implementation(libs.spring.tx)
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.liquibase)
@@ -52,4 +53,6 @@ configureWebFrontend()
 tasks.withType<Test>().configureEach {
     systemProperty("testsys.monitoring.path", rootProject.file("deploy/monitoring").absolutePath)
     inputs.dir(rootProject.file("deploy/monitoring"))
+    // A JVM zone other than the default user zone reveals dates read in the JVM zone instead of the zone of the user.
+    jvmArgs("-Duser.timezone=UTC")
 }

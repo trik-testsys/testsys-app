@@ -17,7 +17,9 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.textfield.IntegerField
 import com.vaadin.flow.component.textfield.TextArea
+import com.vaadin.flow.router.HasDynamicTitle
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -36,6 +38,7 @@ import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.manager.ManagerService
+import tech.testsys.web.components.texts.currentLocalization
 
 @SpringBootTest
 class ManagerCompetitionViewTests : MockSpringVaadinTests() {
@@ -57,7 +60,7 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
         val exported = managerService.downloadParticipants(competition.id)
         val renamed = exported.single().copy(name = "A;\"B\"\r\nC")
 
-        val csv = participantsCsv(listOf(renamed))
+        val csv = participantsCsv(listOf(renamed), currentLocalization().pageManager)
 
         assertEquals(listOf(participant.id), exported.map { row -> row.id })
         assertEquals(
@@ -117,11 +120,18 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should title the browser tab of the competition`() {
+        open(fixtures.competition(owner = signInManager(), name = "Кубок").id)
+
+        assertEquals("Соревнование", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+    }
+
+    @Test
     fun `should create the given number of participants and show them`() {
         val competition = fixtures.competition(owner = signInManager())
         open(competition.id)
 
-        UI.getCurrent()._get<Button> { text = "Создать участников" }._click()
+        UI.getCurrent()._get<Button> { text = "Создать Участников" }._click()
         UI.getCurrent()._get<Dialog>()._get<IntegerField>()._value = 3
         UI.getCurrent()._get<Button> { text = "Создать" }._click()
 
@@ -167,13 +177,13 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
         open(competition.id)
         val contest = managerService.viewAvailableContests(Pagination(page = 0, size = 1)).content.single()
 
-        UI.getCurrent()._get<Button> { text = "Добавить тур" }._click()
+        UI.getCurrent()._get<Button> { text = "Добавить Тур" }._click()
         contestField().value = contest
         UI.getCurrent()._get<Button> { text = "Добавить" }._click()
 
         assertEquals(listOf(contest.id), checkNotNull(competitions.findById(competition.id)).data.contests.ids)
         assertTrue("Финал" in UI.getCurrent()._find<Table>().last().element.textRecursively)
-        assertEquals("Тур добавлен в соревнование", lastToastTitle())
+        assertEquals("Тур добавлен в Соревнование", lastToastTitle())
     }
 
     private fun signInManager(): MultipleRoleUser =
@@ -194,7 +204,7 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
 
     private fun participantMenu(participant: Participant): ContextMenu {
         val trigger = UI.getCurrent()._find<Button>().single { button ->
-            button.element.getAttribute("aria-label") == "Действия с участником «${participant.data.name}»"
+            button.element.getAttribute("aria-label") == "Действия с Участником «${participant.data.name}»"
         }
         return checkNotNull(ComponentUtil.getData(trigger, ContextMenu::class.java))
     }

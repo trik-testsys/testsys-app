@@ -33,7 +33,6 @@ import tech.testsys.web.components.feedback.emptyState
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.overlay.confirm
-import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Service snapshot of grading: unfinished runs by state and the checking node registry with the latest known
@@ -45,10 +44,9 @@ import tech.testsys.web.components.texts.UiTexts
 @PageTitle("Состояние проверки")
 @RolesAllowed("SERVICE")
 class ServiceGradingView(
-    texts: UiTexts,
     private val registry: GradingNodeRegistry,
     private val queue: GradingQueueMonitor,
-) : TestSysView(texts), BeforeEnterObserver, BeforeLeaveObserver {
+) : TestSysView(), BeforeEnterObserver, BeforeLeaveObserver {
     private val counters = QueueCounters()
 
     // Participation changed but not applied yet; a poll may rebuild the page, and the change must survive it.

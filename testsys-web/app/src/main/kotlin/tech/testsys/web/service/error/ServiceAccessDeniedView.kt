@@ -7,7 +7,7 @@ import com.vaadin.flow.router.HasErrorParameter
 import com.vaadin.flow.server.HttpStatusCode
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import tech.testsys.web.components.error.ErrorPage
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Handles navigation denied by service access rules with the shared forbidden screen and status 403.
@@ -15,10 +15,12 @@ import tech.testsys.web.components.texts.UiTexts
  * @since %CURRENT_VERSION%
  */
 @AnonymousAllowed
-class ServiceAccessDeniedView(private val texts: UiTexts) : ErrorPage(texts), HasErrorParameter<AccessDeniedException> {
+class ServiceAccessDeniedView : ErrorPage(), HasErrorParameter<AccessDeniedException> {
     override fun setErrorParameter(event: BeforeEnterEvent, parameter: ErrorParameter<AccessDeniedException>): Int {
         refreshHistoryNavigation()
-        show(title = texts.forbidden.title, description = texts.forbidden.description, pageTitle = texts.forbidden.pageTitle)
+        with(currentLocalization().uiFeedback) {
+            show(title = errorForbiddenTitle(), description = errorForbiddenDescription(), pageTitle = errorForbiddenPageTitle())
+        }
         return HttpStatusCode.FORBIDDEN.code
     }
 }

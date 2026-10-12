@@ -2,7 +2,7 @@ package tech.testsys.web.app.view
 
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
@@ -24,7 +24,7 @@ import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageRowScope
 import tech.testsys.web.components.overlay.confirm
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 import java.time.Clock
 import java.time.Instant
 
@@ -33,13 +33,18 @@ private const val CONTEST_DETAILS_COLUMNS = 16
 
 /**
  * Contest of a Participant or a Student (testsys.web.page.study.contest): its details, starting it, the time left and its
- * tasks, which open after the start. Each kind of user has its own page with its own route.
+ * tasks, which open after the start. Each kind of user has its own page with its own route and texts.
  *
  * @since %CURRENT_VERSION%
  */
-abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHeaders, private val clock: Clock) :
-    TestSysView(texts),
-    BeforeEnterObserver {
+abstract class StudyContestView(private val headers: CabinetHeaders, private val clock: Clock) :
+    TestSysView(),
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    internal abstract val texts: StudyTexts
+
+    override fun getPageTitle(): String = texts.contestTabTitle()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         val contestId = ContestId(event.routeParameters.getLong(STUDY_CONTEST_ID_PARAMETER).orElseThrow())
         show(accessOf(event.routeParameters), contestId)
@@ -52,21 +57,22 @@ abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHead
         // Checks the access before building, so that a refusal opens its error screen.
         val (enteredAt, contest, tasks) = access.viewContest(contestId)
         val now = clock.instant()
+        val localization = currentLocalization()
         page(headers.cabinet(active = access.activeSection)) {
-            head("Тур «${contest.name}»") {
+            head(texts.contestTitle(name = contest.name)) {
                 access.cabinetCrumbs(this)
                 if (enteredAt == null) {
                     actions {
-                        mainAction("Начать тур") {
+                        mainAction(texts.contestStart()) {
                             isEnabled = canEnter(contest, now)
                             onClick {
                                 confirm(
-                                    title = "Начать тур «${contest.name}»?",
-                                    text = "С этого момента отсчитывается время на прохождение.",
-                                    action = "Начать",
+                                    title = texts.contestStartConfirmTitle(name = contest.name),
+                                    text = texts.contestStartConfirmText(),
+                                    action = texts.contestStartConfirmAction(),
                                 ) {
                                     access.enterContest(contestId)
-                                    toast(FeedbackKind.Success, "Тур начат")
+                                    toast(FeedbackKind.Success, texts.contestStarted())
                                     show(access, contestId)
                                 }
                             }
@@ -74,18 +80,23 @@ abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHead
                     }
                 }
             }
+            guide(texts.contestGuide())
             row {
                 contestDetails(contest)
-                highlightBlock(title = "Осталось") { studyRemainingTime(contest, enteredAt, now) }
+                highlightBlock(title = texts.remainingTitle()) {
+                    guide(texts.remainingGuide())
+                    studyRemainingTime(contest, enteredAt, now, texts)
+                }
             }
             if (enteredAt != null && contest.startsAt?.let { start -> !now.isBefore(start) } != false) {
                 row {
-                    block(title = "Задачи") {
+                    block(title = localization.pageCabinet.sectionTasks()) {
+                        guide(texts.contestTasksGuide())
                         table(key = { item: StudyContestTaskVo -> item.task.id }, fetch = { request -> pageOf(tasks, request) }) {
-                            textColumn("Название", size = 12) { item -> item.task.name }
-                            numberColumn("Балл", size = 4) { item -> item.bestScore }
-                            column("Последняя посылка") { item -> submissionStatus(item.lastSubmission?.status) }
-                            empty("Задач пока нет")
+                            textColumn(texts.name(), size = 12) { item -> item.task.name }
+                            numberColumn(texts.contestTasksScore(), size = 4) { item -> item.bestScore }
+                            column(texts.contestTasksLastSubmission()) { item -> submissionStatus(item.lastSubmission?.status, texts) }
+                            empty(texts.contestTasksEmpty())
                             onRowClick(isNavigation = true) { item -> access.openTask(contestId, item.task.id) }
                         }
                     }
@@ -99,15 +110,16 @@ abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHead
         contest.startsAt?.let { start -> !now.isBefore(start) } != false && contest.endsAt?.let { end -> now.isBefore(end) } != false
 
     private fun PageRowScope.contestDetails(contest: ContestVo) {
-        block(size = CONTEST_DETAILS_COLUMNS, title = "Сведения") {
-            row { codeInput("ID", labelSize = 6, size = 10) { value = contest.id.value.toString() } }
-            row { textInput("Название", labelSize = 6, size = 18) { value = contest.name } }
-            row { textArea("Описание", labelSize = 6, size = 18, maxLines = 4) { value = contest.description } }
+        block(size = CONTEST_DETAILS_COLUMNS, title = texts.detailsTitle()) {
+            guide(texts.contestDetailsGuide())
+            row { codeInput(texts.id(), labelSize = 6, size = 10) { value = contest.id.value.toString() } }
+            row { textInput(texts.name(), labelSize = 6, size = 18) { value = contest.name } }
+            row { textArea(texts.description(), labelSize = 6, size = 18, maxLines = 4) { value = contest.description } }
             row {
-                dateTimeInput("Начало", labelSize = 6, size = 6) { value = contest.startsAt?.toServerDateTime() }
-                dateTimeInput("Конец", labelSize = 6, size = 6) { value = contest.endsAt?.toServerDateTime() }
+                dateTimeInput(texts.startsAt(), labelSize = 6, size = 6) { value = contest.startsAt?.toUserDateTime() }
+                dateTimeInput(texts.endsAt(), labelSize = 6, size = 6) { value = contest.endsAt?.toUserDateTime() }
             }
-            row { textInput("Время на прохождение", labelSize = 6, size = 6) { value = studyDurationText(contest.attemptDuration) } }
+            row { textInput(texts.attemptDuration(), labelSize = 6, size = 6) { value = studyDurationText(contest.attemptDuration) } }
         }.isEditable = false
     }
 }
@@ -118,15 +130,15 @@ abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHead
  * @since %CURRENT_VERSION%
  */
 @Route("student/classes/:classId([0-9]+)/contests/:contestId([0-9]+)")
-@PageTitle("Тур")
 @RolesAllowed("MULTIPLE_ROLE")
 class StudentContestView(
-    texts: UiTexts,
     headers: CabinetHeaders,
     clock: Clock,
     private val studyService: StudyService,
     private val studentService: StudentService,
-) : StudyContestView(texts, headers, clock) {
+) : StudyContestView(headers, clock) {
+    override val texts: StudyTexts = StudentStudyTexts
+
     override fun accessOf(parameters: RouteParameters): StudyAccess =
         StudyAccess.Student(ClassId(parameters.getLong(STUDY_CLASS_ID_PARAMETER).orElseThrow()), studyService, studentService)
 }
@@ -137,14 +149,14 @@ class StudentContestView(
  * @since %CURRENT_VERSION%
  */
 @Route("participant/contests/:contestId([0-9]+)")
-@PageTitle("Тур")
 @RolesAllowed("PARTICIPANT")
 class ParticipantContestView(
-    texts: UiTexts,
     headers: CabinetHeaders,
     clock: Clock,
     private val studyService: StudyService,
     private val participantService: ParticipantService,
-) : StudyContestView(texts, headers, clock) {
+) : StudyContestView(headers, clock) {
+    override val texts: StudyTexts = ParticipantStudyTexts
+
     override fun accessOf(parameters: RouteParameters): StudyAccess = StudyAccess.Participant(studyService, participantService)
 }

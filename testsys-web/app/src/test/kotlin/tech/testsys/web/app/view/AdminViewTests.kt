@@ -13,8 +13,10 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -30,8 +32,8 @@ import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.service.CommunityVo
+import tech.testsys.web.components.texts.currentTimeZone
 import java.time.LocalDateTime
-import java.time.ZoneId
 
 @SpringBootTest
 class AdminViewTests : MockSpringVaadinTests() {
@@ -49,6 +51,16 @@ class AdminViewTests : MockSpringVaadinTests() {
 
         assertEquals(AdminView::class.java, currentView)
         assertEquals("admin/communities", UI.getCurrent().internals.activeViewLocation.path)
+    }
+
+    @Test
+    fun `should title the browser tab of the administrator cabinet`() {
+        signIn(fixtures.administrator())
+
+        UI.getCurrent().navigate(AdminView::class.java)
+
+        assertEquals("Кабинет Администратора", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        assertEquals("Кабинет Администратора", UI.getCurrent()._get<H1>().text)
     }
 
     @Test
@@ -88,7 +100,7 @@ class AdminViewTests : MockSpringVaadinTests() {
         val administrator = signInAdministrator()
         UI.getCurrent().navigate(AdminView::class.java, section("communities"))
 
-        UI.getCurrent()._get<Button> { text = "Создать сообщество" }._click()
+        UI.getCurrent()._get<Button> { text = "Создать Сообщество" }._click()
         field("Название")._value = "Новое сообщество"
         UI.getCurrent()._get<Button> { text = "Создать" }._click()
 
@@ -102,7 +114,7 @@ class AdminViewTests : MockSpringVaadinTests() {
         val administrator = signInAdministrator()
         UI.getCurrent().navigate(AdminView::class.java, section("communities"))
 
-        UI.getCurrent()._get<Button> { text = "Создать сообщество" }._click()
+        UI.getCurrent()._get<Button> { text = "Создать Сообщество" }._click()
         field("Название")._value = "   "
         UI.getCurrent()._get<Button> { text = "Создать" }._click()
 
@@ -190,7 +202,7 @@ class AdminViewTests : MockSpringVaadinTests() {
     @Test
     fun `should show the last login of a user in the users table`() {
         val member = developerOf(fixtures.community(owner = signInAdministrator()), name = "Разработчик Иван")
-        users.recordLogin(member.id, LocalDateTime.of(2026, 3, 14, 9, 30).atZone(ZoneId.systemDefault()).toInstant())
+        users.recordLogin(member.id, LocalDateTime.of(2026, 3, 14, 9, 30).atZone(currentTimeZone()).toInstant())
 
         UI.getCurrent().navigate(AdminView::class.java, section("users"))
 
@@ -208,7 +220,7 @@ class AdminViewTests : MockSpringVaadinTests() {
         UI.getCurrent().navigate(AdminView::class.java, section("users"))
 
         assertSame(page, UI.getCurrent()._get<AdminView>())
-        assertEquals(emptyList<Button>(), UI.getCurrent()._find<Button> { text = "Создать сообщество" })
+        assertEquals(emptyList<Button>(), UI.getCurrent()._find<Button> { text = "Создать Сообщество" })
         val shown = tableText()
         assertTrue("Наблюдатель Пётр" in shown, shown)
     }

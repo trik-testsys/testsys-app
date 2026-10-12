@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.web.components.MockVaadinTests
 import tech.testsys.web.components.buildTestPage
 import tech.testsys.web.components.buildTestRow
@@ -33,6 +35,23 @@ class FileDropDisplayTests : MockVaadinTests() {
     fun releaseHandlers() {
         finish.countDown()
         pool.shutdownNow()
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        delimiter = '|',
+        value = [
+            "1023|1 023 Б",
+            "1024|1 КБ",
+            "1536|1,5 КБ",
+            "10485760|10 МБ",
+            "2147483647|2 ГБ",
+        ],
+    )
+    fun `should show the upload size limit in the largest binary unit with one fraction digit`(bytes: Int, size: String) {
+        val limits = UploadLimits(maxFiles = 1, maxFileBytes = bytes, maxMemoryBytes = bytes.toLong())
+
+        assertEquals("До 1 файла, до $size каждый", describeLimits(testTexts, limits))
     }
 
     @Test
@@ -60,8 +79,8 @@ class FileDropDisplayTests : MockVaadinTests() {
         assertEquals(limits.maxFiles, upload.maxFiles)
         assertEquals(limits.maxFileBytes, upload.maxFileSize)
         assertEquals("Files", row.find("ts-filedrop").element.getAttribute("aria-label"))
-        assertTrue(_find<NativeButton>().any { button -> button.text == testTexts.components.upload })
-        assertEquals(testTexts.components.uploadLimits(2, 4), row.find("ts-filedrop__meta").find("ts-hint").element.text)
+        assertTrue(_find<NativeButton>().any { button -> button.text == testTexts.messages.uiTransfer.upload() })
+        assertEquals("До 2 файлов, до 4 Б каждый", row.find("ts-filedrop__meta").find("ts-hint").element.text)
         assertEquals("", row.find("ts-filedrop__status").element.text)
     }
 
@@ -71,8 +90,8 @@ class FileDropDisplayTests : MockVaadinTests() {
 
         val i18n = _find<Upload>().single().i18n
 
-        assertEquals(testTexts.components.removeFile, i18n.file.remove)
-        assertEquals(testTexts.components.stalled, i18n.uploading.status.stalled)
+        assertEquals(testTexts.messages.uiTransfer.removeFile(), i18n.file.remove)
+        assertEquals(testTexts.messages.uiTransfer.stalled(), i18n.uploading.status.stalled)
     }
 
     @Test
@@ -120,7 +139,7 @@ class FileDropDisplayTests : MockVaadinTests() {
         input.cancel()
 
         assertEquals(FileUploadState.Cancelled, input.state.peek())
-        assertEquals(testTexts.components.cancelled, row.find("ts-filedrop__status").element.text)
+        assertEquals(testTexts.messages.uiTransfer.cancelled(), row.find("ts-filedrop__status").element.text)
     }
 
     @Test
@@ -136,7 +155,7 @@ class FileDropDisplayTests : MockVaadinTests() {
         _find<Upload>().single()._fireDomEvent("testsys-transfer-remove", removal(identity(engine, "running.txt")))
 
         assertEquals(FileUploadState.Cancelled, input.state.peek())
-        assertFalse(button(testTexts.components.cancel).isVisible)
+        assertFalse(button(testTexts.messages.uiTransfer.cancel()).isVisible)
     }
 
     @Test

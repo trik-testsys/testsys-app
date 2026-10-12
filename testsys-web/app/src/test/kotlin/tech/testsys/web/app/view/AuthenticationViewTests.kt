@@ -10,8 +10,10 @@ import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.textfield.PasswordField
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.server.VaadinSession
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -126,6 +128,14 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
         assertEquals("true", UI.getCurrent()._get<NativeButton> { text = "Регистрация" }.element.getAttribute("aria-pressed"))
     }
 
+    @ParameterizedTest
+    @MethodSource("guestTitles")
+    fun `should title the browser tab of a guest form page by its tab`(view: Class<out Component>, title: String) {
+        UI.getCurrent().navigate(view)
+
+        assertEquals(title, assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+    }
+
     private fun signInWith(accessToken: String) {
         UI.getCurrent()._find<PasswordField>().single().value = accessToken
         UI.getCurrent()._get<Button> { text = "Войти" }._click()
@@ -138,6 +148,13 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
             Arguments.of(UserKind.PARTICIPANT, ParticipantView::class.java),
             Arguments.of(UserKind.OBSERVER, ObserverView::class.java),
             Arguments.of(UserKind.SUPERVISOR, SupervisorView::class.java),
+        )
+
+        @JvmStatic
+        fun guestTitles(): List<Arguments> = listOf(
+            Arguments.of(AuthenticationView::class.java, "Вход"),
+            Arguments.of(RegistrationView::class.java, "Регистрация"),
+            Arguments.of(RestoreAccessView::class.java, "Восстановление доступа"),
         )
     }
 }

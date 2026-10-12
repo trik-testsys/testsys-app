@@ -24,7 +24,6 @@ import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
-import tech.testsys.web.components.texts.UiTexts
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -38,7 +37,7 @@ import java.time.ZoneId
 @Route("users/:$SERVICE_USER_ID_PARAMETER")
 @PageTitle("Пользователь")
 @RolesAllowed("SERVICE")
-class ServiceUserView(texts: UiTexts, private val search: ServiceUserSearch) : TestSysView(texts), BeforeEnterObserver {
+class ServiceUserView(private val search: ServiceUserSearch) : TestSysView(), BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val user = event.routeParameters.get(SERVICE_USER_ID_PARAMETER).orElse(null)
             ?.toLongOrNull()

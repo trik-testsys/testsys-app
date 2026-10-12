@@ -19,7 +19,6 @@ import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.textInput
-import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Service-only atomic settings editor, refreshed on navigation and after successful changes.
@@ -30,10 +29,9 @@ import tech.testsys.web.components.texts.UiTexts
 @PageTitle("Настройки Системы")
 @RolesAllowed("SERVICE")
 class ServiceSettingsView(
-    texts: UiTexts,
     private val settings: SettingsService,
     private val runtime: RuntimeSettings,
-) : TestSysView(texts), BeforeEnterObserver {
+) : TestSysView(), BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) = showSettings()
 
     private fun showSettings() {

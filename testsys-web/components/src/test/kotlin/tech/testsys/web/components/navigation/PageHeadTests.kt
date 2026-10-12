@@ -72,7 +72,7 @@ class PageHeadTests : MockVaadinTests() {
         }
 
         val crumbs = ui().find("ts-crumbs")
-        assertEquals(testTexts.navigation.breadcrumbs, crumbs.element.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiPage.navigationBreadcrumbs(), crumbs.element.getAttribute("aria-label"))
         val parts = crumbs.children.toList()
         assertEquals(5, parts.size)
         assertEquals("test/first", parts[0].element.getAttribute("href"))
@@ -144,7 +144,8 @@ class PageHeadTests : MockVaadinTests() {
         }
 
         assertEquals(listOf("test/item/42", "test/first"), pageTabs().map { tab -> tab.element.getAttribute("href") })
-        assertEquals(testTexts.navigation.sections, ui().find("ts-page-head").find("ts-tabs").element.getAttribute("aria-label"))
+        val tabs = ui().find("ts-page-head").find("ts-tabs")
+        assertEquals(testTexts.messages.uiPage.navigationSections(), tabs.element.getAttribute("aria-label"))
     }
 
     @Test

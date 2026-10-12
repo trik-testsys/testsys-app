@@ -5,14 +5,14 @@ import com.vaadin.flow.component.html.Div
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.layout.renderPage
 import tech.testsys.web.components.navigation.header.CabinetHeader
-import tech.testsys.web.components.texts.UiTexts
 
 /**
- * Base class of a Cabinet page built with the design system DSL.
+ * Base class of a Cabinet page built with the design system DSL; built-in texts come from the localization bound to
+ * the current UI.
  *
  * @since %CURRENT_VERSION%
  */
-abstract class TestSysView(protected val texts: UiTexts) : Composite<Div>() {
+abstract class TestSysView : Composite<Div>() {
     private var isBuilding = false
 
     /**
@@ -29,7 +29,7 @@ abstract class TestSysView(protected val texts: UiTexts) : Composite<Div>() {
 
         isBuilding = true
         try {
-            renderPage(content, header, texts, this::class.java, body)
+            renderPage(content, header, this::class.java, body)
         } finally {
             isBuilding = false
         }

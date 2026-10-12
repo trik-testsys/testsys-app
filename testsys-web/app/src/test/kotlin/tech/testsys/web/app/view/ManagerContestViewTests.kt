@@ -7,8 +7,10 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Nav
 import com.vaadin.flow.component.html.Table
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -77,6 +79,16 @@ class ManagerContestViewTests : MockSpringVaadinTests() {
             crumbs,
         )
         assertEquals("Тур «Весенний тур»", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should title the browser tab of the contest`() {
+        val contest = fixtures.contest()
+        val competition = fixtures.competition(owner = signInManager(), contests = listOf(contest))
+
+        UI.getCurrent().navigate(ManagerContestView::class.java, competitionContestParameters(competition.id, contest.id))
+
+        assertEquals("Тур", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
     }
 
     @Test

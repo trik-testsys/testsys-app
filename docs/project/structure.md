@@ -11,7 +11,7 @@
 
 ```
 testsys-app/
-├── .github/workflows/        # CI: build, test, lint (Detekt + SARIF), проверка ветки PR
+├── .github/workflows/        # CI: build, test, lint (Detekt + SARIF), проверка ветки PR, публикация образа
 ├── .dockerignore             # Исключения из контекста Docker-образа (см. deployment.md)
 ├── .gitattributes            # Окончания строк LF для скриптов и файлов переменных deploy/ (см. deployment.md)
 ├── buildSrc/                 # Convention-плагин testsys.conventions
@@ -205,7 +205,7 @@ Workflow лежат в `.github/workflows`.
 | `test.yml`                | push/PR в `master`, `dev`      | `./gradlew testAll -Pdetekt.autoCorrect=false --no-daemon` — все тесты без Detekt, затем клиентские тесты `components` на Node 24 (`node --test`); отчёт в Summary запуска, в check `Test report` и комментарием в PR, аннотации упавших тестов |
 | `lint.yml`                | push/PR в `master`, `dev`      | `./gradlew detekt -Pdetekt.autoCorrect=false --continue --no-daemon` — все source set всех модулей без правки файлов; таблица замечаний в Summary запуска, исходные и подготовленные SARIF-артефакты; отдельная загрузка в GitHub Security для каждого модуля с сохранением категории на модуль и задачу |
 | `check-source-branch.yml` | PR в `dev`                     | Разрешает PR только из веток `sh1sh4k1n9/`, `ch3zych3z/`, `KarasssDev/`, `DirewolfPrime/`, `LutovolkVPraime/` |
-| `release.yml`             | —                              | Пока пустой                                                     |
+| `release.yml`             | публикация релиза GitHub       | Собирает образ из `Dockerfile` и публикует его в Docker Hub как `<DOCKER_USERNAME>/testsys-app` с тегом версии релиза (`v1.2.3` → `1.2.3`) и `latest`; пре-релиз не перемещает `latest`. Нужны секреты `DOCKER_USERNAME` и `DOCKER_PASSWORD` |
 
 ## Куда класть новый код
 

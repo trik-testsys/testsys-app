@@ -177,6 +177,11 @@ sh deploy/testsys.sh prod up --no-build --env-file <путь>
 Если образа приложения нет у демона Docker, скрипт завершается с ошибкой до запуска сервисов. Опция работает
 и в dev и e2e.
 
+При публикации релиза GitHub образ приложения публикуется в Docker Hub как `testsystrik/testsys-app` с тегом
+версии релиза, например `1.2.3`, и тегом `latest` (см. раздел CI в [structure.md](structure.md#ci)). Чтобы запустить
+его, загрузите образ командой `docker pull testsystrik/testsys-app:<версия>`, задайте это имя в `TESTSYS_APP_IMAGE`
+и запустите окружение с `--no-build`.
+
 ### Почта
 
 Локального SMTP-сервиса в production нет. Приложение отправляет письма через внешний SMTP-сервер. Адрес, порт,

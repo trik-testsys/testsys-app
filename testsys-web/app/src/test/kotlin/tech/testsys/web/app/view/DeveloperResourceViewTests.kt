@@ -29,7 +29,6 @@ import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.developer.DeveloperService
-import tech.testsys.web.components.texts.buildUiTexts
 import javax.sql.DataSource
 
 @SpringBootTest
@@ -75,7 +74,7 @@ class DeveloperResourceViewTests : MockSpringVaadinTests() {
         val service = mockk<DeveloperService>()
         every { service.viewResource(task.id, latest.versionBucket) } returns history
         every { service.viewTask(task.id) } returns (loaded to emptyList())
-        val view = DeveloperResourceView(buildUiTexts(), headers, service, fileContentReader)
+        val view = DeveloperResourceView(headers, service, fileContentReader)
         val event = mockk<BeforeEnterEvent>()
         every { event.routeParameters } returns resourceParameters(task.id, latest.versionBucket)
         UI.getCurrent().removeAll()

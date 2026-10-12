@@ -28,7 +28,9 @@ import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
+import tech.testsys.web.components.texts.currentTimeZone
 import tools.jackson.databind.ObjectMapper
+import java.time.Instant
 import java.time.LocalDate
 
 @SpringBootTest
@@ -145,10 +147,11 @@ class ManagerViewTests : MockSpringVaadinTests() {
     @Test
     fun `should show no competitions created before the lower bound of the date filter`() {
         val manager = signInManager()
-        fixtures.competition(owner = manager, name = "Весенний кубок")
+        val competition = fixtures.competition(owner = manager, name = "Весенний кубок")
         UI.getCurrent().navigate(ManagerView::class.java, managerSection(COMPETITIONS_SECTION))
+        val createdOn = competition.createdAt.atZone(currentTimeZone()).toLocalDate()
 
-        UI.getCurrent()._find<DatePicker>().first()._value = LocalDate.now().plusDays(1)
+        UI.getCurrent()._find<DatePicker>().first()._value = createdOn.plusDays(1)
         UI.getCurrent()._get<Button> { text = "Применить" }._click()
 
         val text = tableText()
@@ -158,16 +161,27 @@ class ManagerViewTests : MockSpringVaadinTests() {
     @Test
     fun `should show the competitions created on the day of the date filter`() {
         val manager = signInManager()
-        fixtures.competition(owner = manager, name = "Весенний кубок")
+        val competition = fixtures.competition(owner = manager, name = "Весенний кубок")
         UI.getCurrent().navigate(ManagerView::class.java, managerSection(COMPETITIONS_SECTION))
+        val createdOn = competition.createdAt.atZone(currentTimeZone()).toLocalDate()
         val pickers = UI.getCurrent()._find<DatePicker>()
 
-        pickers.first()._value = LocalDate.now()
-        pickers.last()._value = LocalDate.now()
+        pickers.first()._value = createdOn
+        pickers.last()._value = createdOn
         UI.getCurrent()._get<Button> { text = "Применить" }._click()
 
         val text = tableText()
         assertTrue("Весенний кубок" in text, text)
+    }
+
+    @Test
+    fun `should start the filter day at midnight in the time zone of the user`() {
+        assertEquals(Instant.parse("2026-03-14T21:00:00Z"), startOf(LocalDate.of(2026, 3, 15)))
+    }
+
+    @Test
+    fun `should end the filter day at its last microsecond in the time zone of the user`() {
+        assertEquals(Instant.parse("2026-03-15T20:59:59.999999Z"), endOf(LocalDate.of(2026, 3, 15)))
     }
 
     @Test

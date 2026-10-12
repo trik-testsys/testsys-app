@@ -25,7 +25,7 @@ internal class PageFooterScopeTests : MockVaadinTests() {
 
         assertEquals("footer", footer.element.tag)
         assertEquals(TestSysBrand.FOOTER, footer.find("ts-footer__logo").element.getAttribute("src"))
-        assertEquals(testTexts.brand, footer.find("ts-footer__logo").element.getAttribute("alt"))
+        assertEquals(testTexts.messages.uiBrand.name(), footer.find("ts-footer__logo").element.getAttribute("alt"))
         assertEquals("2037", footer.element.textRecursively)
     }
 
@@ -46,7 +46,7 @@ internal class PageFooterScopeTests : MockVaadinTests() {
         val footer = buildPageFooter(testTexts, links, clock = fixedClock)
 
         val rendered = footer.findAll("ts-footer__link")
-        assertEquals(testTexts.footer.links, footer.find("ts-footer__links").element.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiFooter.links(), footer.find("ts-footer__links").element.getAttribute("aria-label"))
         assertEquals(listOf("Item", "Source"), rendered.map { link -> link.element.textRecursively })
         assertEquals(
             listOf("test/item/7", "https://github.com/trik-testsys/testsys-app"),

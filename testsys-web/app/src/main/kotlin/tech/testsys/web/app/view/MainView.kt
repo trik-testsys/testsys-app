@@ -10,7 +10,6 @@ import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.display.text
-import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Start page of the system for a guest (testsys.web.page.main); a signed-in user goes to their start page.
@@ -19,7 +18,7 @@ import tech.testsys.web.components.texts.UiTexts
  */
 @Route("")
 @AnonymousAllowed
-class MainView(texts: UiTexts, headers: CabinetHeaders) : TestSysView(texts), BeforeEnterObserver {
+class MainView(headers: CabinetHeaders) : TestSysView(), BeforeEnterObserver {
     init {
         page(headers.guest()) {
             head("TestSys")

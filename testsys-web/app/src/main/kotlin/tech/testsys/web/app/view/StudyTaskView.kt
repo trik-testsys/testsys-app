@@ -43,7 +43,6 @@ import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.PageScope
-import tech.testsys.web.components.texts.UiTexts
 import java.time.Clock
 import java.util.concurrent.atomic.AtomicReference
 
@@ -64,12 +63,11 @@ private const val RESOURCE_CONTENT_TYPE = "application/octet-stream"
  * @since %CURRENT_VERSION%
  */
 abstract class StudyTaskView(
-    texts: UiTexts,
     private val headers: CabinetHeaders,
     private val clock: Clock,
     private val fileContentReader: FileContentReader,
 ) :
-    TestSysView(texts),
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val contestId = ContestId(event.routeParameters.getLong(STUDY_CONTEST_ID_PARAMETER).orElseThrow())
@@ -222,7 +220,7 @@ abstract class StudyTaskView(
                     key = { submission: StudySubmissionVo -> submission.submission.id },
                     fetch = { request -> pageOf(task.submissions, request) },
                 ) {
-                    dateTimeColumn("Отправлено", size = 5) { submission -> submission.submission.createdAt.toServerDateTime() }
+                    dateTimeColumn("Отправлено", size = 5) { submission -> submission.submission.createdAt.toUserDateTime() }
                     textColumn("Файл", size = 9) { submission -> submission.filename }
                     column("Результат", size = 8) { submission ->
                         result(submission)
@@ -268,13 +266,12 @@ abstract class StudyTaskView(
 @PageTitle("Задача")
 @RolesAllowed("MULTIPLE_ROLE")
 class StudentTaskView(
-    texts: UiTexts,
     headers: CabinetHeaders,
     clock: Clock,
     private val studyService: StudyService,
     private val studentService: StudentService,
     fileContentReader: FileContentReader,
-) : StudyTaskView(texts, headers, clock, fileContentReader) {
+) : StudyTaskView(headers, clock, fileContentReader) {
     override fun accessOf(parameters: RouteParameters): StudyAccess =
         StudyAccess.Student(ClassId(parameters.getLong(STUDY_CLASS_ID_PARAMETER).orElseThrow()), studyService, studentService)
 }
@@ -288,12 +285,11 @@ class StudentTaskView(
 @PageTitle("Задача")
 @RolesAllowed("PARTICIPANT")
 class ParticipantTaskView(
-    texts: UiTexts,
     headers: CabinetHeaders,
     clock: Clock,
     private val studyService: StudyService,
     private val participantService: ParticipantService,
     fileContentReader: FileContentReader,
-) : StudyTaskView(texts, headers, clock, fileContentReader) {
+) : StudyTaskView(headers, clock, fileContentReader) {
     override fun accessOf(parameters: RouteParameters): StudyAccess = StudyAccess.Participant(studyService, participantService)
 }

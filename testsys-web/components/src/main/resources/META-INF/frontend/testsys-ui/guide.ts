@@ -7,7 +7,6 @@ class GuideController extends HTMLElement {
   nextLabel = '';
   doneLabel = '';
   closeLabel = '';
-  progressLabel = '';
   private cleanup?: () => void;
 
   connectedCallback() {

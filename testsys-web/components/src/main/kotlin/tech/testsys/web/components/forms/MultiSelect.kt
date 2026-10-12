@@ -33,7 +33,7 @@ import tech.testsys.web.components.core.svgIcon
 import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 /**
  * Adds a local multi-selection of [items] shown by [itemLabel]; popup changes become the value only on Apply.
@@ -60,7 +60,7 @@ fun <T : Any> BlockRowScope.multiSelect(
 
 @JsModule(POPUP_FOCUS_MODULE)
 internal class MultiSelectField<T : Any>(
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     label: String,
     private val items: List<T>,
     private val itemLabel: (T) -> String,
@@ -68,7 +68,7 @@ internal class MultiSelectField<T : Any>(
     private val display: MultiSelectDisplay = MultiSelectDisplay.Chips,
     private val maxChips: Int = 3,
 ) : CustomField<Set<T>>(emptySet(), true), HasValidator<Set<T>> {
-    private val trigger: NativeButton = NativeButton(texts.lookup.open).apply {
+    private val trigger: NativeButton = NativeButton(texts.messages.uiLookup.open()).apply {
         element.setType(ElementType.Button)
         element.setAttribute(HtmlAttribute.AriaLabel, label)
         element.setAriaHasPopup(AriaPopup.Dialog)
@@ -76,7 +76,7 @@ internal class MultiSelectField<T : Any>(
     }
 
     private val chips = Div().apply { addClassName(CssClass.LookupChips) }
-    private val clear = NativeButton(texts.lookup.clear).apply {
+    private val clear = NativeButton(texts.messages.uiLookup.clear()).apply {
         element.setType(ElementType.Button)
         addClassName(CssClass.MultiselectClear)
     }
@@ -94,8 +94,8 @@ internal class MultiSelectField<T : Any>(
     }
 
     private val search = TextField().apply {
-        placeholder = texts.lookup.search
-        setAriaLabel(texts.lookup.search)
+        placeholder = texts.messages.uiLookup.search()
+        setAriaLabel(texts.messages.uiLookup.search())
         valueChangeMode = ValueChangeMode.EAGER
         addClassName(CssClass.PopoverSearch)
     }
@@ -116,7 +116,7 @@ internal class MultiSelectField<T : Any>(
 
         val foot = Div(count).apply { addClassName(CssClass.PopoverFoot) }
         foot.add(
-            NativeButton(texts.lookup.reset).apply {
+            NativeButton(texts.messages.uiLookup.reset()).apply {
                 element.setType(ElementType.Button)
                 addClassNames(CssClass.Btn, CssClass.BtnSecondary)
                 addClickListener {
@@ -124,7 +124,7 @@ internal class MultiSelectField<T : Any>(
                     renderDraft()
                 }
             },
-            NativeButton(texts.lookup.apply).apply {
+            NativeButton(texts.messages.uiLookup.apply()).apply {
                 addClassNames(CssClass.Btn, CssClass.BtnPrimary)
                 addClickListener { applyDraft() }
             },
@@ -230,7 +230,7 @@ internal class MultiSelectField<T : Any>(
                 val remove = NativeButton().apply {
                     add(svgIcon(IconName.X, ICON_SIZE_TINY))
                     addClassName(CssClass.ChipX)
-                    element.setAttribute(HtmlAttribute.AriaLabel, texts.lookup.remove(itemLabel(item)))
+                    element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiLookup.remove(value = itemLabel(item)))
                     addClickListener { if (choosable()) choose(value - item) }
                 }
                 chip.add(remove)
@@ -240,7 +240,7 @@ internal class MultiSelectField<T : Any>(
         }
 
         if (display == MultiSelectDisplay.Count && selected.isNotEmpty()) {
-            val counter = Span(texts.lookup.selectedCount(selected.size)).apply {
+            val counter = Span(texts.messages.uiLookup.selectedCount(count = selected.size)).apply {
                 addClassNames(CssClass.Counter, CssClass.CounterAccent, CssClass.ObscuredValue)
             }
             chips.add(counter)
@@ -249,7 +249,7 @@ internal class MultiSelectField<T : Any>(
         if (display == MultiSelectDisplay.Chips && selected.size > maxChips) {
             val more = Span("+${formatNumber(selected.size - maxChips, texts)}").apply {
                 addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue)
-                element.setAttribute(HtmlAttribute.AriaLabel, texts.components.more(selected.size - maxChips))
+                element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiLookup.more(count = selected.size - maxChips))
             }
             chips.add(more)
         }
@@ -264,7 +264,7 @@ internal class MultiSelectField<T : Any>(
         val visible = items.filter { item -> itemLabel(item).contains(search.value.trim(), ignoreCase = true) }
         options.removeAll()
 
-        val all = Checkbox(texts.components.selectAll).apply {
+        val all = Checkbox(texts.messages.uiLookup.selectAll()).apply {
             value = visible.isNotEmpty() && current.containsAll(visible)
             isIndeterminate = visible.any { item -> item in current } && !value
             addValueChangeListener { event ->
@@ -289,8 +289,8 @@ internal class MultiSelectField<T : Any>(
             if (item == focused) choice.focus()
         }
 
-        if (visible.isEmpty()) options.add(Span(texts.lookup.empty))
-        count.text = texts.lookup.selectedCount(current.size)
+        if (visible.isEmpty()) options.add(Span(texts.messages.uiLookup.empty()))
+        count.text = texts.messages.uiLookup.selectedCount(count = current.size)
     }
 }
 

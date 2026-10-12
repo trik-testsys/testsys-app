@@ -48,7 +48,6 @@ import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.MenuScope
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
-import tech.testsys.web.components.texts.UiTexts
 import java.time.Instant
 
 /**
@@ -88,11 +87,10 @@ private val GRANTED_ROLE_LABELS: Map<CommunityRole, String> = mapOf(
 @PageTitle("Пользователь")
 @RolesAllowed("MULTIPLE_ROLE")
 class AdminUserView(
-    texts: UiTexts,
     private val headers: CabinetHeaders,
     private val administratorService: AdministratorService,
     private val communityConfig: CommunityConfig,
-) : TestSysView(texts),
+) : TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val parameters = event.routeParameters
@@ -155,7 +153,7 @@ class AdminUserView(
                     codeInput("ID", labelSize = 3, size = 6) { value = user.id.value.toString() }
                     textInput("Псевдоним", labelSize = 3, size = 8) { value = user.name }
                 }
-                row { dateTimeInput("Последний вход", labelSize = 3, size = 6) { value = lastLogin?.toServerDateTime() } }
+                row { dateTimeInput("Последний вход", labelSize = 3, size = 6) { value = lastLogin?.toUserDateTime() } }
                 if (user is ObserverVo) {
                     row {
                         codeInput("Код-доступа", labelSize = 3, size = 6) {
@@ -351,7 +349,7 @@ class AdminUserView(
                 guide("История выставленных Судьями Вердиктов.")
                 table(key = { (order, _, _) -> order.id }, fetch = { request -> pageOf(judgments, request) }) {
                     codeColumn("Решение", size = 6) { (_, solution, _) -> solution.value.toString() }
-                    dateTimeColumn("Выставлен", size = 6) { (order, _, _) -> order.createdAt.toServerDateTime() }
+                    dateTimeColumn("Выставлен", size = 6) { (order, _, _) -> order.createdAt.toUserDateTime() }
                     numberColumn("Предыдущий результат", size = 6) { (_, _, previous) -> previous }
                     numberColumn("Новый результат") { (order, _, _) -> order.score.value }
                     empty("Судейских вердиктов нет")

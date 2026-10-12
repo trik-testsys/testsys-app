@@ -19,7 +19,6 @@ import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.dialog
-import tech.testsys.web.components.texts.UiTexts
 
 private const val COMMUNITIES_SECTION = "communities"
 
@@ -34,8 +33,8 @@ private const val USERS_SECTION = "users"
 @Route("admin/:section?(communities|users)")
 @PageTitle("Кабинет Администратора")
 @RolesAllowed("MULTIPLE_ROLE")
-class AdminView(texts: UiTexts, private val headers: CabinetHeaders, private val administratorService: AdministratorService) :
-    TestSysView(texts),
+class AdminView(private val headers: CabinetHeaders, private val administratorService: AdministratorService) :
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val section = event.routeParameters.get(ADMIN_SECTION_PARAMETER).orElse(null)

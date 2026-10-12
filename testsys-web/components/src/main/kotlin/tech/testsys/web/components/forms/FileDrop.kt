@@ -17,6 +17,7 @@ import com.vaadin.flow.server.streams.UploadEvent
 import com.vaadin.flow.server.streams.UploadHandler
 import com.vaadin.flow.signals.Signal
 import com.vaadin.flow.signals.local.ValueSignal
+import tech.testsys.infra.localization.UiTransfer
 import tech.testsys.web.components.FieldHandle
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
@@ -45,7 +46,7 @@ import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.layout.placeField
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
@@ -56,6 +57,28 @@ import java.util.concurrent.atomic.AtomicLong
 
 private const val PROGRESS_BYTES_INTERVAL = 65_536
 private const val PROGRESS_NANOS_INTERVAL = 100_000_000L
+private const val BYTES_PER_UNIT = 1024.0
+private val LIMIT_UNITS = listOf(
+    UiTransfer.UploadLimitsUnit.BYTE,
+    UiTransfer.UploadLimitsUnit.KILOBYTE,
+    UiTransfer.UploadLimitsUnit.MEGABYTE,
+    UiTransfer.UploadLimitsUnit.GIGABYTE,
+)
+
+/** Describes [limits] with the file size in the largest binary unit that keeps at least one whole unit. */
+internal fun describeLimits(texts: UiLocalization, limits: UploadLimits): String {
+    var size = limits.maxFileBytes.toDouble()
+    var unit = 0
+    while (size >= BYTES_PER_UNIT && unit < LIMIT_UNITS.lastIndex) {
+        size /= BYTES_PER_UNIT
+        unit++
+    }
+    return texts.messages.uiTransfer.uploadLimits(count = limits.maxFiles, size = size, unit = LIMIT_UNITS[unit])
+}
+
+private fun byteUnits(texts: UiLocalization): List<String> = with(texts.messages.uiTransfer) {
+    listOf(unitByte(), unitKilobyte(), unitMegabyte(), unitGigabyte())
+}
 
 /**
  * Server-enforced limits including all buffers retained until application handlers finish.
@@ -352,7 +375,7 @@ fun BlockRowScope.fileDrop(
 
 @JsModule(FILE_TRANSFER_MODULE)
 internal class FileDropDisplay(
-    texts: UiTexts,
+    texts: UiLocalization,
     label: String,
     limits: UploadLimits,
     consume: (UploadedFile) -> Unit,
@@ -371,6 +394,10 @@ internal class FileDropDisplay(
         element.setAriaLive(AriaLive.Polite)
     }
 
+    // The upload handler runs without the session lock, so it must not touch the shared UI localization.
+    private val rejectedMessage = texts.messages.uiTransfer.uploadRejected()
+    private val failedMessage = texts.messages.uiTransfer.failed()
+
     private val upload = Upload(
         object : UploadHandler {
             override fun handleUploadRequest(event: UploadEvent) {
@@ -383,9 +410,9 @@ internal class FileDropDisplay(
                         stream = event.inputStream,
                     )
                 } catch (_: UploadRejectedException) {
-                    event.reject(texts.components.uploadRejected)
+                    event.reject(rejectedMessage)
                 } catch (_: Exception) {
-                    event.reject(texts.components.failed)
+                    event.reject(failedMessage)
                 }
             }
 
@@ -404,44 +431,44 @@ internal class FileDropDisplay(
         maxFileSize = limits.maxFileBytes
         setAcceptedMimeTypes(*limits.mimeTypes.toTypedArray())
         setAcceptedFileExtensions(*limits.extensions.toTypedArray())
-        setDropLabel(Span(texts.components.drop).apply { addClassName(CssClass.DropTitle) })
-        val selectAction = NativeButton(texts.components.upload).apply {
+        setDropLabel(Span(texts.messages.uiTransfer.drop()).apply { addClassName(CssClass.DropTitle) })
+        val selectAction = NativeButton(texts.messages.uiTransfer.upload()).apply {
             addClassNames(CssClass.Btn, CssClass.BtnSecondary, CssClass.BtnSm)
         }
         setUploadButton(selectAction)
         element.setAttribute(HtmlAttribute.AriaLabel, label)
         i18n = UploadI18N()
-            .setDropFiles(UploadI18N.DropFiles().setOne(texts.components.drop).setMany(texts.components.drop))
-            .setAddFiles(UploadI18N.AddFiles().setOne(texts.components.upload).setMany(texts.components.upload))
+            .setDropFiles(UploadI18N.DropFiles().setOne(texts.messages.uiTransfer.drop()).setMany(texts.messages.uiTransfer.drop()))
+            .setAddFiles(UploadI18N.AddFiles().setOne(texts.messages.uiTransfer.upload()).setMany(texts.messages.uiTransfer.upload()))
             .setError(
-                UploadI18N.Error().setTooManyFiles(texts.components.uploadRejected).setFileIsTooBig(
-                    texts.components.uploadRejected,
-                ).setIncorrectFileType(texts.components.uploadRejected),
+                UploadI18N.Error().setTooManyFiles(texts.messages.uiTransfer.uploadRejected()).setFileIsTooBig(
+                    texts.messages.uiTransfer.uploadRejected(),
+                ).setIncorrectFileType(texts.messages.uiTransfer.uploadRejected()),
             )
             .setFile(
-                UploadI18N.File().setRetry(texts.components.retry).setStart(texts.components.upload).setRemove(
-                    texts.components.removeFile,
+                UploadI18N.File().setRetry(texts.messages.uiTransfer.retry()).setStart(texts.messages.uiTransfer.upload()).setRemove(
+                    texts.messages.uiTransfer.removeFile(),
                 ),
             )
             .setUploading(
                 UploadI18N.Uploading()
                     .setStatus(
-                        UploadI18N.Uploading.Status().setConnecting(texts.components.preparing).setStalled(
-                            texts.components.stalled,
-                        ).setProcessing(texts.components.preparing).setHeld(texts.components.preparing),
+                        UploadI18N.Uploading.Status().setConnecting(texts.messages.uiTransfer.preparing()).setStalled(
+                            texts.messages.uiTransfer.stalled(),
+                        ).setProcessing(texts.messages.uiTransfer.preparing()).setHeld(texts.messages.uiTransfer.preparing()),
                     )
                     .setRemainingTime(
                         UploadI18N.Uploading.RemainingTime().setPrefix("").setUnknown(
-                            texts.components.downloading,
+                            texts.messages.uiTransfer.downloading(),
                         ),
                     )
                     .setError(
-                        UploadI18N.Uploading.Error().setServerUnavailable(texts.components.failed).setUnexpectedServerError(
-                            texts.components.failed,
-                        ).setForbidden(texts.components.failed).setFileTooLarge(texts.components.uploadRejected),
+                        UploadI18N.Uploading.Error().setServerUnavailable(texts.messages.uiTransfer.failed()).setUnexpectedServerError(
+                            texts.messages.uiTransfer.failed(),
+                        ).setForbidden(texts.messages.uiTransfer.failed()).setFileTooLarge(texts.messages.uiTransfer.uploadRejected()),
                     ),
             )
-            .setUnits(texts.components.byteUnits)
+            .setUnits(byteUnits(texts))
     }
 
     private val actions = Div().apply { addClassNames(CssClass.Hstack, CssClass.FiledropActions) }
@@ -450,8 +477,8 @@ internal class FileDropDisplay(
 
     init {
         val controls = ContentScope(actions, texts, Placement.Head)
-        cancelAction = controls.action(texts.components.cancel) { onClick { this@FileDropDisplay.cancel() } }
-        clearAction = controls.action(texts.lookup.clear) { onClick { this@FileDropDisplay.clear() } }
+        cancelAction = controls.action(texts.messages.uiTransfer.cancel()) { onClick { this@FileDropDisplay.cancel() } }
+        clearAction = controls.action(texts.messages.uiLookup.clear()) { onClick { this@FileDropDisplay.clear() } }
 
         upload.element.addEventListener(DomEvent.TransferRemove) { event ->
             val wasActive = engine.remove(event.eventData.get(DomEventData.DetailIdentity).asString())
@@ -465,7 +492,7 @@ internal class FileDropDisplay(
         element.setRole(ElementRole.Group)
         element.setAttribute(HtmlAttribute.AriaLabel, label)
 
-        val limitsHint = Span(texts.components.uploadLimits(limits.maxFiles, limits.maxFileBytes.toLong())).apply {
+        val limitsHint = Span(describeLimits(texts, limits)).apply {
             addClassName(CssClass.Hint)
         }
 
@@ -500,11 +527,11 @@ internal class FileDropDisplay(
             state.map { value ->
                 when (value) {
                     FileUploadState.Idle -> ""
-                    is FileUploadState.Uploading -> texts.components.transferBytes(value.bytes)
-                    is FileUploadState.Processing -> texts.components.preparing
-                    is FileUploadState.Done -> texts.components.done
-                    is FileUploadState.Error -> texts.components.failed
-                    FileUploadState.Cancelled -> texts.components.cancelled
+                    is FileUploadState.Uploading -> texts.messages.uiTransfer.transferredBytes(count = value.bytes)
+                    is FileUploadState.Processing -> texts.messages.uiTransfer.preparing()
+                    is FileUploadState.Done -> texts.messages.uiTransfer.done()
+                    is FileUploadState.Error -> texts.messages.uiTransfer.failed()
+                    FileUploadState.Cancelled -> texts.messages.uiTransfer.cancelled()
                 }
             },
         )

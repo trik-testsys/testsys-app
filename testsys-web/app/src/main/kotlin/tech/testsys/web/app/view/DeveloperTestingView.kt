@@ -27,7 +27,6 @@ import tech.testsys.web.components.display.text
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockScope
-import tech.testsys.web.components.texts.UiTexts
 import java.time.format.DateTimeFormatter
 
 /** Format of the creation moment in the testing page heading. */
@@ -41,8 +40,8 @@ private val MOMENT_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.M
 @Route("developer/tasks/:taskId([0-9]+)/testing/:testingId([0-9]+)")
 @PageTitle("Тестирование задачи")
 @RolesAllowed("MULTIPLE_ROLE")
-class DeveloperTestingView(texts: UiTexts, private val headers: CabinetHeaders, private val developerService: DeveloperService) :
-    TestSysView(texts),
+class DeveloperTestingView(private val headers: CabinetHeaders, private val developerService: DeveloperService) :
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val taskId = TaskId(event.routeParameters.getLong(TASK_ID_PARAMETER).orElseThrow())
@@ -58,7 +57,7 @@ class DeveloperTestingView(texts: UiTexts, private val headers: CabinetHeaders, 
         val names = resourceNames(task, request)
         val execution = request.execution
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Тестирование от ${request.createdAt.toServerDateTime().format(MOMENT_FORMAT)}") {
+            head("Тестирование от ${request.createdAt.toUserDateTime().format(MOMENT_FORMAT)}") {
                 crumb("Главная", MultiMainView::class.java)
                 crumb("Кабинет Разработчика", DeveloperView::class.java)
                 crumb("Задача «${task.name}»", DeveloperTaskView::class.java, taskParameters(taskId))
@@ -69,7 +68,7 @@ class DeveloperTestingView(texts: UiTexts, private val headers: CabinetHeaders, 
                     guide("Параметры выбранного запроса тестирования и состояние его выполнения.")
                     row {
                         codeInput("Запущено", labelSize = 6, size = 18) {
-                            value = request.createdAt.toServerDateTime().format(MOMENT_FORMAT)
+                            value = request.createdAt.toUserDateTime().format(MOMENT_FORMAT)
                             isEditable = false
                         }
                     }

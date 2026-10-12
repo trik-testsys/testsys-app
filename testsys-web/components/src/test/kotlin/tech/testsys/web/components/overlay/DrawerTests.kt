@@ -46,7 +46,7 @@ internal class DrawerTests : MockVaadinTests() {
         assertEquals(2, dialog.findAll("ts-table-scroll").size)
         assertTrue("Polygon 1" in dialog.element.textRecursively)
         assertTrue("Polygon 2" in dialog.element.textRecursively)
-        assertTrue(testTexts.table.empty in dialog.element.textRecursively)
+        assertTrue(testTexts.messages.uiTable.empty() in dialog.element.textRecursively)
         assertTrue(dialog.findAll("ts-table-pager").isEmpty())
         assertEquals("Diagnostics", dialog.findAll("ts-block__title").first().element.text)
     }

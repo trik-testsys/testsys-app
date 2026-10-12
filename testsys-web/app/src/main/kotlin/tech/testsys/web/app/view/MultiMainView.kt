@@ -21,7 +21,6 @@ import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.layout.PageScope
-import tech.testsys.web.components.texts.UiTexts
 
 /** Columns of the roles block; joining a community takes the rest of the row beside it. */
 private const val ROLES_COLUMNS = 12
@@ -36,8 +35,8 @@ private const val ROLES_COLUMNS = 12
 @Route("home")
 @PageTitle("Главная")
 @RolesAllowed("MULTIPLE_ROLE")
-class MultiMainView(texts: UiTexts, private val headers: CabinetHeaders, private val multipleRoleUserService: MultipleRoleUserService) :
-    TestSysView(texts) {
+class MultiMainView(private val headers: CabinetHeaders, private val multipleRoleUserService: MultipleRoleUserService) :
+    TestSysView() {
     init {
         show(accessToken = null)
     }

@@ -36,7 +36,6 @@ import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.dialog
-import tech.testsys.web.components.texts.UiTexts
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -57,12 +56,11 @@ private val STATE_FILTER_LABELS: Map<TaskFilter.State, String> = mapOf(
 @PageTitle("Кабинет Разработчика")
 @RolesAllowed("MULTIPLE_ROLE")
 class DeveloperView(
-    texts: UiTexts,
     private val headers: CabinetHeaders,
     private val developerService: DeveloperService,
     private val multipleRoleUserService: MultipleRoleUserService,
     private val currentUser: CurrentUser,
-) : TestSysView(texts),
+) : TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val section = event.routeParameters.get(DEVELOPER_SECTION_PARAMETER).orElse(null)
@@ -183,8 +181,8 @@ class DeveloperView(
                     textColumn("Название", sortKey = "name", size = 5) { (contest, _) -> contest.name }
                     numberColumn("Задачи", size = 2) { (contest, _) -> contest.tasks.size }
                     textColumn("Доступ предоставлен", size = 3) { (contest, _) -> if (contest.sharedTo.isEmpty()) "Нет" else "Да" }
-                    dateTimeColumn("Начало", size = 4) { (contest, _) -> contest.startsAt?.toServerDateTime() }
-                    dateTimeColumn("Конец", size = 4) { (contest, _) -> contest.endsAt?.toServerDateTime() }
+                    dateTimeColumn("Начало", size = 4) { (contest, _) -> contest.startsAt?.toUserDateTime() }
+                    dateTimeColumn("Конец", size = 4) { (contest, _) -> contest.endsAt?.toUserDateTime() }
                     textColumn("Время на прохождение") { (contest, _) -> studyDurationText(contest.attemptDuration) }
                     empty("Туров пока нет", "Создайте тур.")
                     onRowClick(isNavigation = true) { (contest, _) -> openDeveloperContest(contest.id) }
@@ -316,8 +314,8 @@ class DeveloperView(
                                 contestName = values.name,
                                 trikStudioVersion = checkNotNull(values.version),
                                 attemptDuration = values.attemptMinutes?.let { minutes -> Duration.ofMinutes(minutes.toLong()) },
-                                startsAt = values.startsAt?.toServerInstant(),
-                                endsAt = values.endsAt?.toServerInstant(),
+                                startsAt = values.startsAt?.toUserInstant(),
+                                endsAt = values.endsAt?.toUserInstant(),
                                 contestDescription = values.description,
                             )
                             dialog.close()

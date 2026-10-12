@@ -9,7 +9,7 @@ import tech.testsys.web.components.testTexts
 class ErrorPageTests : MockVaadinTests() {
     @Test
     fun `should replace heading, description and page title when shown`() {
-        val page = NotFoundPage(testTexts)
+        val page = NotFoundPage()
 
         page.show(title = "Нет доступа", description = "Нет прав", pageTitle = "Нет доступа — TestSys")
 
@@ -20,10 +20,10 @@ class ErrorPageTests : MockVaadinTests() {
 
     @Test
     fun `should show the missing page texts on the not found page`() {
-        val page = NotFoundPage(testTexts)
+        val page = NotFoundPage()
 
-        assertEquals(testTexts.notFound.title, page.find("ts-h1").element.text)
-        assertEquals(testTexts.notFound.description, page.find("ts-empty__desc").element.text)
-        assertEquals(testTexts.notFound.pageTitle, page.pageTitle)
+        assertEquals(testTexts.messages.uiError.notFoundTitle(), page.find("ts-h1").element.text)
+        assertEquals(testTexts.messages.uiError.notFoundDescription(), page.find("ts-empty__desc").element.text)
+        assertEquals(testTexts.messages.uiError.notFoundPageTitle(), page.pageTitle)
     }
 }

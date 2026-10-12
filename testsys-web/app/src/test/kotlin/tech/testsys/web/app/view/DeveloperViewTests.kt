@@ -29,6 +29,7 @@ import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.developer.DeveloperService
+import java.time.Instant
 import java.time.LocalDateTime
 import javax.sql.DataSource
 
@@ -169,6 +170,22 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         assertEquals(listOf("Весенний тур"), contests.map { (contest, _) -> contest.name })
         assertTrue("Весенний тур" in tableText("Задачи"), tableText("Задачи"))
         assertEquals("Тур создан", lastToastTitle())
+    }
+
+    @Test
+    fun `should save the start of a created contest in the time zone of the user`() {
+        developers.signInDeveloper()
+        val version = developers.trikStudioVersion()
+        open(CONTESTS_SECTION)
+        clickButton("Создать тур")
+        textField("Название")._value = "Весенний тур"
+        chooseVersion(version)
+        openDialog()._find<DateTimePicker>().first().value = LocalDateTime.of(2026, 5, 1, 10, 0)
+
+        clickButton("Создать")
+
+        val contest = developerService.viewContests(Pagination(page = 0, size = 10)).content.single().first
+        assertEquals(Instant.parse("2026-05-01T07:00:00Z"), contest.startsAt)
     }
 
     @Test

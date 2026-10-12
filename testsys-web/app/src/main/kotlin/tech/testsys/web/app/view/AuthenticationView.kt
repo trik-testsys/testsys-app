@@ -13,7 +13,6 @@ import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.passwordInput
-import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Sign-in page (testsys.web.page.authentication): signs the user in by the access code and opens the page saved before
@@ -24,7 +23,7 @@ import tech.testsys.web.components.texts.UiTexts
 @Route("login")
 @PageTitle("Вход")
 @AnonymousAllowed
-class AuthenticationView(texts: UiTexts, headers: CabinetHeaders, private val userService: UserService) : TestSysView(texts) {
+class AuthenticationView(headers: CabinetHeaders, private val userService: UserService) : TestSysView() {
     init {
         page(headers.guest(hasSignIn = false)) {
             guide("Войдите в TestSys по своему Коду-доступа.")

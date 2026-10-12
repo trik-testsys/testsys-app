@@ -12,7 +12,7 @@ import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.removeClassName
 import tech.testsys.web.components.overlay.BlockGuide
 import tech.testsys.web.components.overlay.GuideStepsScope
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 private const val TABLE_OWNER = "a table"
 
@@ -25,7 +25,7 @@ private const val TABLE_OWNER = "a table"
 class BlockScope internal constructor(
     private val body: Div,
     internal val columns: Int,
-    internal val texts: UiTexts,
+    internal val texts: UiLocalization,
     private val editState: BlockEditState,
     internal val title: String?,
     private val isLoadContent: Boolean = false,

@@ -158,7 +158,7 @@ class GuideTests : MockVaadinTests() {
         val buttons = UI.getCurrent().findAll("ts-guide-button")
         assertEquals(listOf("page", "block"), buttons.map { button -> button.element.getAttribute("data-guide-start") })
         assertEquals(
-            listOf(testTexts.guide.page, testTexts.guide.block),
+            listOf(testTexts.messages.uiGuide.page(), testTexts.messages.uiGuide.block()),
             buttons.map { button -> button.element.getAttribute("aria-label") },
         )
         assertEquals("Описание страницы", UI.getCurrent().find("ts-page-head").element.getAttribute("data-guide-description"))
@@ -283,14 +283,14 @@ class GuideTests : MockVaadinTests() {
 
     @Test
     fun `should add guides to error pages`() {
-        val page = NotFoundPage(testTexts)
+        val page = NotFoundPage()
 
         assertEquals(2, page.findAll("ts-guide-button").size)
         assertFalse(page.find("ts-block").element.getAttribute("data-guide-description").isNullOrBlank())
     }
 }
 
-private class RebuiltGuideView : TestSysView(testTexts) {
+private class RebuiltGuideView : TestSysView() {
     fun show(description: String) {
         page(CabinetHeader()) {
             head("Страница")

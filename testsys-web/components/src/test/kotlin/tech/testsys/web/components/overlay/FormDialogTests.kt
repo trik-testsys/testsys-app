@@ -276,7 +276,7 @@ class FormDialogTests : MockVaadinTests() {
         handle.open()
         openDialogs()
 
-        _find<Button>().single { button -> button.ariaLabel.orElse(null) == testTexts.dialog.close }._click()
+        _find<Button>().single { button -> button.ariaLabel.orElse(null) == testTexts.messages.uiDialog.close() }._click()
 
         assertEquals(2, closes)
     }

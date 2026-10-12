@@ -14,7 +14,7 @@ import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.addClassNames
 import tech.testsys.web.components.core.setGridColumnSpan
 import tech.testsys.web.components.overlay.guideButton
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 /** Title and subtitle of a block head; actions, tabs or a guide can also require a head. */
 internal class BlockHeading(val title: String?, val subtitle: String?)
@@ -24,7 +24,7 @@ internal class BlockHeading(val title: String?, val subtitle: String?)
  * [span] sets the grid span of the block in its page row.
  */
 internal fun buildBlock(
-    texts: UiTexts,
+    texts: UiLocalization,
     heading: BlockHeading,
     highlight: Boolean,
     span: Int,
@@ -35,7 +35,7 @@ internal fun buildBlock(
     val block = Section()
     val editState = BlockEditState(block.element)
     val scope = BlockScope(body, columns, texts, editState, heading.title).apply(content).apply { finish() }
-    val guideControl = scope.guide?.let { guideButton(texts.guide.block, isPage = false) }
+    val guideControl = scope.guide?.let { guideButton(texts.messages.uiGuide.block(), isPage = false) }
     with(block) {
         addClassNames(CssClass.Block, CssClass.BlockGrid)
         if (scope.filtersBar != null) addClassName(CssClass.BlockFilters)

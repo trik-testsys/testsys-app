@@ -1,6 +1,6 @@
 import type {Config, Driver, DriveStep} from 'driver.js';
 
-type Labels = {previousLabel: string; nextLabel: string; doneLabel: string; closeLabel: string; progressLabel: string};
+type Labels = {previousLabel: string; nextLabel: string; doneLabel: string; closeLabel: string};
 type DriverFactory = (config: Config) => Driver;
 type GuideIcon = 'chevron-left' | 'chevron-right' | 'check' | 'x';
 
@@ -240,7 +240,7 @@ export function installGuide(root: HTMLElement, labels: Labels, createDriver: Dr
     const driver = createDriver({
       steps, animate: !motion.matches, duration: 240, smoothScroll: !motion.matches, overlayOpacity: 0.55,
       disableActiveInteraction: true, allowKeyboardControl: true, overlayClickBehavior: () => {},
-      popoverClass: 'ts-guide-popover', showProgress: isSequential, progressText: plainText(labels.progressLabel),
+      popoverClass: 'ts-guide-popover', showProgress: isSequential, progressText: '{{current}} / {{total}}',
       showButtons: isSequential ? ['previous', 'next', 'close'] : ['close'],
       onPopoverRender: popover => {
         if (closed) return;

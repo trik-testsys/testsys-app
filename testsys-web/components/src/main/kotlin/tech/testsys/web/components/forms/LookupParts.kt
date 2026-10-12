@@ -46,7 +46,7 @@ import tech.testsys.web.components.layout.GRID_COLUMNS
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.overlay.DialogShell
 import tech.testsys.web.components.overlay.DialogSize
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 /** Default number of rows on a page of the lookup dialog. */
 internal const val LOOKUP_PAGE_SIZE: Int = 10
@@ -95,7 +95,7 @@ internal fun <T : Any> BlockRowScope.lookupColumns(
  * with [updateView].
  */
 internal abstract class LookupFrame<V>(
-    protected val texts: UiTexts,
+    protected val texts: UiLocalization,
     private val title: String,
     emptyValue: V,
 ) : CustomField<V>(emptyValue, true), HasValidator<V> {
@@ -110,8 +110,8 @@ internal abstract class LookupFrame<V>(
 
     init {
         val actions = ContentScope(box, texts, Placement.Head)
-        clearAction = actions.iconAction(IconName.X, texts.lookup.clear) { onClick { clearByUser() } }
-        openAction = actions.iconAction(IconName.Search, texts.lookup.open) { onClick { openDialog() } }
+        clearAction = actions.iconAction(IconName.X, texts.messages.uiLookup.clear()) { onClick { clearByUser() } }
+        openAction = actions.iconAction(IconName.Search, texts.messages.uiLookup.open()) { onClick { openDialog() } }
         openAction.button.tabIndex = -1
         box.element.addEventListener(DomEvent.Click) { openDialog() }.setFilter(DomEventFilter.LookupClick)
         add(box)
@@ -161,7 +161,7 @@ internal abstract class LookupFrame<V>(
 
         // An empty button would have no accessible name: it is named after what it does, or after the field if it does nothing.
         val label = when {
-            name.isEmpty() -> if (isChoosable) texts.lookup.open else title
+            name.isEmpty() -> if (isChoosable) texts.messages.uiLookup.open() else title
             text == name -> null
             else -> name
         }
@@ -211,7 +211,7 @@ private fun Element.setOrRemove(name: HtmlAttribute, value: String?) {
  * the table. The caller places the pager and fills the footer of [shell].
  */
 internal class LookupDialog<T : Any>(
-    texts: UiTexts,
+    texts: UiLocalization,
     title: String,
     size: DialogSize,
     fetch: (String, PageRequest) -> Page<T>,
@@ -229,7 +229,7 @@ internal class LookupDialog<T : Any>(
     init {
         var query = ""
         val spec =
-            TableSpec(columns.columns, EmptyContent(texts.lookup.empty), columns.layout) { row -> onRowClick(this, row) }
+            TableSpec(columns.columns, EmptyContent(texts.messages.uiLookup.empty()), columns.layout) { row -> onRowClick(this, row) }
         table = DataTable(
             texts,
             key = { row -> row },
@@ -243,8 +243,8 @@ internal class LookupDialog<T : Any>(
 
         search = TextField().apply {
             addClassName(CssClass.LookupSearch)
-            placeholder = texts.lookup.search
-            setAriaLabel(texts.lookup.search)
+            placeholder = texts.messages.uiLookup.search()
+            setAriaLabel(texts.messages.uiLookup.search())
             isAutofocus = true
             valueChangeMode = ValueChangeMode.LAZY
             valueChangeTimeout = SEARCH_DELAY_MS

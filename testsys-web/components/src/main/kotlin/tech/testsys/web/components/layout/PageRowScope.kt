@@ -8,7 +8,7 @@ import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.setAriaHidden
 import tech.testsys.web.components.core.setGridColumnSpan
 import tech.testsys.web.components.core.setPageColumns
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 /**
  * Scope of a page row: blocks side by side whose sizes take at most 24 columns in total.
@@ -16,7 +16,7 @@ import tech.testsys.web.components.texts.UiTexts
  * @since %CURRENT_VERSION%
  */
 @TestSysDsl
-class PageRowScope internal constructor(private val row: Div, private val texts: UiTexts) {
+class PageRowScope internal constructor(private val row: Div, private val texts: UiLocalization) {
     private val track = GridTrack(GRID_COLUMNS, owner = "Row")
     private var hasHighlight = false
 

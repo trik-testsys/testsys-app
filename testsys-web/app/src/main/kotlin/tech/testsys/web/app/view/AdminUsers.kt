@@ -22,9 +22,9 @@ import tech.testsys.web.components.forms.multiSelect
 import tech.testsys.web.components.forms.select
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockScope
+import tech.testsys.web.components.texts.currentTimeZone
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
 import tech.testsys.domain.contract.persistence.Sort as DomainSort
 
 private const val MAX_NAME_CODE_POINTS = 255
@@ -98,8 +98,8 @@ internal fun PageRequest.toPagination(): Pagination {
 /** Returns the page of [rows] asked by [request] in their order. */
 internal fun <T> pageOf(rows: List<T>, request: PageRequest): Page<T> = Page(rows.drop(request.offset).take(request.limit), rows.size)
 
-/** Returns this moment in the time zone of the server. */
-internal fun Instant.toServerDateTime(): LocalDateTime = LocalDateTime.ofInstant(this, ZoneId.systemDefault())
+/** Returns this moment in the time zone of the user of the current UI. */
+internal fun Instant.toUserDateTime(): LocalDateTime = LocalDateTime.ofInstant(this, currentTimeZone())
 
 /** Requires a nonblank name of at most 255 Unicode code points, reporting [missing] for an empty or blank one. */
 internal fun <T> Binder.BindingBuilder<T, String>.nameRules(missing: String): Binder.BindingBuilder<T, String> = asRequired(missing)
@@ -128,7 +128,7 @@ internal fun BlockScope.adminUsersTable(service: AdministratorService, communiti
         community?.let { communityId ->
             column("Роли", size = 7) { (user, _) -> rolesIn(user, communityId).forEach { role -> tag(role) } }
         }
-        dateTimeColumn("Последний вход", sortKey = "lastLoginAt") { (_, lastLogin) -> lastLogin?.toServerDateTime() }
+        dateTimeColumn("Последний вход", sortKey = "lastLoginAt") { (_, lastLogin) -> lastLogin?.toUserDateTime() }
         empty("Пользователей нет", "Пользователи появятся, когда присоединятся к сообществу.")
         onRowClick(isNavigation = true) { (user, _) -> openAdminUser(user) }
     }

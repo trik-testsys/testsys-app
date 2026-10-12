@@ -28,7 +28,6 @@ import tech.testsys.web.components.forms.dateRangeInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.overlay.dialog
-import tech.testsys.web.components.texts.UiTexts
 import java.time.Instant
 
 /**
@@ -40,8 +39,8 @@ import java.time.Instant
 @Route("manager/:section?(classes|competitions)")
 @PageTitle("Кабинет Организатора")
 @RolesAllowed("MULTIPLE_ROLE")
-class ManagerView(texts: UiTexts, private val headers: CabinetHeaders, private val managerService: ManagerService) :
-    TestSysView(texts),
+class ManagerView(private val headers: CabinetHeaders, private val managerService: ManagerService) :
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val section = event.routeParameters.get(MANAGER_SECTION_PARAMETER).orElse(null)

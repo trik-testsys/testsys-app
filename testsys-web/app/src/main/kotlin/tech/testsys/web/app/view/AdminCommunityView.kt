@@ -36,7 +36,6 @@ import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
-import tech.testsys.web.components.texts.UiTexts
 
 /** Columns of the community details block; the invite codes take the rest of the row beside it. */
 private const val DETAILS_COLUMNS = 12
@@ -50,8 +49,8 @@ private const val DETAILS_COLUMNS = 12
 @Route("admin/communities/:communityId([0-9]+)")
 @PageTitle("Сообщество")
 @RolesAllowed("MULTIPLE_ROLE")
-class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, private val administratorService: AdministratorService) :
-    TestSysView(texts),
+class AdminCommunityView(private val headers: CabinetHeaders, private val administratorService: AdministratorService) :
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val communityId = CommunityId(event.routeParameters.getLong(COMMUNITY_ID_PARAMETER).orElseThrow())
@@ -162,7 +161,7 @@ class AdminCommunityView(texts: UiTexts, private val headers: CabinetHeaders, pr
             ) {
                 column("Роль", size = 6) { invite -> tag(roleOf(invite.kind)) }
                 codeColumn("Код-приглашение", size = 7, isObscured = true) { invite -> invite.codeHash.value }
-                dateTimeColumn("Действует до") { invite -> invite.expiresAt.toServerDateTime() }
+                dateTimeColumn("Действует до") { invite -> invite.expiresAt.toUserDateTime() }
                 menuColumn(ariaLabel = { invite -> "Действия с кодом-приглашением для роли ${roleOf(invite.kind)}" }, size = 2) { invite ->
                     item("Заменить") {
                         confirm(

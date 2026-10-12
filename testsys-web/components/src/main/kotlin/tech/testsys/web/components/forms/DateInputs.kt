@@ -4,7 +4,7 @@ import com.vaadin.flow.component.datepicker.DatePicker
 import com.vaadin.flow.component.datetimepicker.DateTimePicker
 import com.vaadin.flow.component.timepicker.TimePicker
 import tech.testsys.web.components.layout.BlockRowScope
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 import java.time.DayOfWeek
 import java.time.Duration
 import java.time.LocalDate
@@ -45,9 +45,9 @@ fun BlockRowScope.timeInput(
         locale = texts.locale
         if (step != null) setStep(step)
         i18n = TimePicker.TimePickerI18n()
-            .setBadInputErrorMessage(texts.fieldErrors.badInput)
-            .setMinErrorMessage(texts.fieldErrors.belowMin)
-            .setMaxErrorMessage(texts.fieldErrors.aboveMax)
+            .setBadInputErrorMessage(texts.messages.uiField.badInput())
+            .setMinErrorMessage(texts.messages.uiField.belowMin())
+            .setMaxErrorMessage(texts.messages.uiField.aboveMax())
     }
     return addInput<TimePicker, LocalTime?>(label, labelSize, size, control, hint, configure)
 }
@@ -68,13 +68,13 @@ fun BlockRowScope.dateTimeInput(
     val control = DateTimePicker().apply {
         locale = texts.locale
         setDatePickerI18n(datePickerI18n(texts))
-        setDateAriaLabel(texts.dateFields.date)
-        setTimeAriaLabel(texts.dateFields.time)
+        setDateAriaLabel(texts.messages.uiDateField.date())
+        setTimeAriaLabel(texts.messages.uiDateField.time())
         i18n = DateTimePicker.DateTimePickerI18n()
-            .setBadInputErrorMessage(texts.fieldErrors.badInput)
-            .setIncompleteInputErrorMessage(texts.fieldErrors.badInput)
-            .setMinErrorMessage(texts.fieldErrors.belowMin)
-            .setMaxErrorMessage(texts.fieldErrors.aboveMax)
+            .setBadInputErrorMessage(texts.messages.uiField.badInput())
+            .setIncompleteInputErrorMessage(texts.messages.uiField.badInput())
+            .setMinErrorMessage(texts.messages.uiField.belowMin())
+            .setMaxErrorMessage(texts.messages.uiField.aboveMax())
     }
     return addInput<DateTimePicker, LocalDateTime?>(label, labelSize, size, control, hint, configure)
 }
@@ -93,31 +93,29 @@ fun BlockRowScope.dateRangeInput(
     configure: ValueInput<DateRange>.() -> Unit = {},
 ): ValueInput<DateRange> {
     val control = DateRangeField(
-        start = datePicker(texts).apply { setAriaLabel(texts.dateFields.rangeFrom(label)) },
-        end = datePicker(texts).apply { setAriaLabel(texts.dateFields.rangeTo(label)) },
-        reversedMessage = texts.dateRangeReversed,
-        requiredMessage = texts.dateFields.rangeRequired,
+        start = datePicker(texts).apply { setAriaLabel(texts.messages.uiDateField.rangeFrom(label = label)) },
+        end = datePicker(texts).apply { setAriaLabel(texts.messages.uiDateField.rangeTo(label = label)) },
+        reversedMessage = texts.messages.uiDateField.rangeReversed(),
+        requiredMessage = texts.messages.uiDateField.rangeRequired(),
         texts = texts,
-        calendarName = texts.components.openCalendar(label),
+        calendarName = texts.messages.uiCalendar.open(label = label),
     )
     return addInput(label, labelSize, size, control, hint, configure)
 }
 
-private fun datePicker(texts: UiTexts): DatePicker = DatePicker().apply {
+private fun datePicker(texts: UiLocalization): DatePicker = DatePicker().apply {
     locale = texts.locale
     i18n = datePickerI18n(texts)
 }
 
-private fun datePickerI18n(texts: UiTexts): DatePicker.DatePickerI18n = with(texts.calendar) {
-    DatePicker.DatePickerI18n()
-        .setMonthNames(monthNames)
-        .setWeekdays(weekdays)
-        .setWeekdaysShort(weekdaysShort)
-        .setFirstDayOfWeek(firstDayOfWeek.value % DAYS_IN_WEEK)
-        .setDateFormat(dateFormat)
-        .setToday(today)
-        .setCancel(cancel)
-        .setBadInputErrorMessage(texts.fieldErrors.badInput)
-        .setMinErrorMessage(texts.fieldErrors.belowMin)
-        .setMaxErrorMessage(texts.fieldErrors.aboveMax)
-}
+private fun datePickerI18n(texts: UiLocalization): DatePicker.DatePickerI18n = DatePicker.DatePickerI18n()
+    .setMonthNames(texts.monthNames)
+    .setWeekdays(texts.weekdays)
+    .setWeekdaysShort(texts.weekdaysShort)
+    .setFirstDayOfWeek(texts.firstDayOfWeek.value % DAYS_IN_WEEK)
+    .setDateFormat(texts.dateFormat)
+    .setToday(texts.messages.uiCalendar.today())
+    .setCancel(texts.messages.uiCalendar.cancel())
+    .setBadInputErrorMessage(texts.messages.uiField.badInput())
+    .setMinErrorMessage(texts.messages.uiField.belowMin())
+    .setMaxErrorMessage(texts.messages.uiField.aboveMax())

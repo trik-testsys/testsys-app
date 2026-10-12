@@ -25,7 +25,7 @@ import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.data.formatNumber
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 /** The most pages shown without gaps. */
 private const val MAX_PAGES_WITHOUT_GAPS = 7
@@ -47,12 +47,12 @@ private const val EDGE_REACH = 4
  */
 class PaginationHandle internal constructor(
     private val root: Div,
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     pageCount: Int,
     page: Int,
 ) : ElementHandle(root) {
-    private val previous = pagerArrow(IconName.ChevronLeft, texts.pagination.previous)
-    private val next = pagerArrow(IconName.ChevronRight, texts.pagination.next)
+    private val previous = pagerArrow(IconName.ChevronLeft, texts.messages.uiPagination.previous())
+    private val next = pagerArrow(IconName.ChevronRight, texts.messages.uiPagination.next())
     private var count = pageCount
     private var items: List<Component> = emptyList()
     private var listener: (Int) -> Unit = {}
@@ -139,7 +139,7 @@ class PaginationHandle internal constructor(
     private fun pageButton(target: Int, shown: Int): NativeButton = NativeButton(formatNumber(target, texts)).apply {
         addClassName(CssClass.PagerBtn)
         element.setType(ElementType.Button)
-        element.setAttribute(HtmlAttribute.AriaLabel, texts.pagination.page(target))
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiPagination.page(page = target))
 
         if (target == shown) {
             addClassName(CssClass.PagerBtnActive)

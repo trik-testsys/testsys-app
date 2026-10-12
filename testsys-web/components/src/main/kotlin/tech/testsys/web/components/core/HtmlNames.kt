@@ -54,7 +54,6 @@ internal enum class DomProperty(internal val value: String) {
     GuideNextLabel("nextLabel"),
     GuideDoneLabel("doneLabel"),
     GuideCloseLabel("closeLabel"),
-    GuideProgressLabel("progressLabel"),
     ReadOnly("readOnly"),
     Value("value"),
 }

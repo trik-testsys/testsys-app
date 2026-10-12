@@ -5,7 +5,6 @@ import com.vaadin.flow.router.Route
 import com.vaadin.flow.server.auth.AnonymousAllowed
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.feedback.emptyState
-import tech.testsys.web.components.texts.UiTexts
 
 /**
  * Tab «Восстановление доступа» of the sign-in page (testsys.web.page.authentication); restoring access is not
@@ -16,7 +15,7 @@ import tech.testsys.web.components.texts.UiTexts
 @Route("restore-access")
 @PageTitle("Восстановление доступа")
 @AnonymousAllowed
-class RestoreAccessView(texts: UiTexts, headers: CabinetHeaders) : TestSysView(texts) {
+class RestoreAccessView(headers: CabinetHeaders) : TestSysView() {
     init {
         page(headers.guest(hasSignIn = false)) {
             guide("Восстановление доступа ещё не реализовано. Для входа используйте свой Код-доступа.")

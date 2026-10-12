@@ -18,7 +18,6 @@ import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
-import tech.testsys.web.components.texts.UiTexts
 
 /** Columns of the classes block; joining a class takes the rest of the row beside it. */
 private const val CLASSES_COLUMNS = 16
@@ -32,8 +31,8 @@ private const val CLASSES_COLUMNS = 16
 @Route("student/:section?(classes)")
 @PageTitle("Кабинет Ученика")
 @RolesAllowed("MULTIPLE_ROLE")
-class StudentView(texts: UiTexts, private val headers: CabinetHeaders, private val studentService: StudentService) :
-    TestSysView(texts),
+class StudentView(private val headers: CabinetHeaders, private val studentService: StudentService) :
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         show()

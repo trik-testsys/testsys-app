@@ -59,9 +59,9 @@ import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.components.display.Tone
+import tech.testsys.web.components.texts.currentTimeZone
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
 import javax.sql.DataSource
 
 @SpringBootTest
@@ -410,7 +410,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
     @Test
     fun `should show the date and time of the last login in the details`() {
         val member = developerOf(fixtures.community(owner = signInAdministrator()))
-        users.recordLogin(member.id, LocalDateTime.of(2026, 3, 14, 9, 30).atZone(ZoneId.systemDefault()).toInstant())
+        users.recordLogin(member.id, LocalDateTime.of(2026, 3, 14, 9, 30).atZone(currentTimeZone()).toInstant())
 
         openUser(member)
 

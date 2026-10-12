@@ -24,7 +24,6 @@ import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageRowScope
 import tech.testsys.web.components.overlay.confirm
-import tech.testsys.web.components.texts.UiTexts
 import java.time.Clock
 import java.time.Instant
 
@@ -37,8 +36,8 @@ private const val CONTEST_DETAILS_COLUMNS = 16
  *
  * @since %CURRENT_VERSION%
  */
-abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHeaders, private val clock: Clock) :
-    TestSysView(texts),
+abstract class StudyContestView(private val headers: CabinetHeaders, private val clock: Clock) :
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val contestId = ContestId(event.routeParameters.getLong(STUDY_CONTEST_ID_PARAMETER).orElseThrow())
@@ -110,8 +109,8 @@ abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHead
             row { textInput("Название", labelSize = 6, size = 18) { value = contest.name } }
             row { textArea("Описание", labelSize = 6, size = 18, maxLines = 4) { value = contest.description } }
             row {
-                dateTimeInput("Начало", labelSize = 6, size = 6) { value = contest.startsAt?.toServerDateTime() }
-                dateTimeInput("Конец", labelSize = 6, size = 6) { value = contest.endsAt?.toServerDateTime() }
+                dateTimeInput("Начало", labelSize = 6, size = 6) { value = contest.startsAt?.toUserDateTime() }
+                dateTimeInput("Конец", labelSize = 6, size = 6) { value = contest.endsAt?.toUserDateTime() }
             }
             row { textInput("Время на прохождение", labelSize = 6, size = 6) { value = studyDurationText(contest.attemptDuration) } }
         }.isEditable = false
@@ -127,12 +126,11 @@ abstract class StudyContestView(texts: UiTexts, private val headers: CabinetHead
 @PageTitle("Тур")
 @RolesAllowed("MULTIPLE_ROLE")
 class StudentContestView(
-    texts: UiTexts,
     headers: CabinetHeaders,
     clock: Clock,
     private val studyService: StudyService,
     private val studentService: StudentService,
-) : StudyContestView(texts, headers, clock) {
+) : StudyContestView(headers, clock) {
     override fun accessOf(parameters: RouteParameters): StudyAccess =
         StudyAccess.Student(ClassId(parameters.getLong(STUDY_CLASS_ID_PARAMETER).orElseThrow()), studyService, studentService)
 }
@@ -146,11 +144,10 @@ class StudentContestView(
 @PageTitle("Тур")
 @RolesAllowed("PARTICIPANT")
 class ParticipantContestView(
-    texts: UiTexts,
     headers: CabinetHeaders,
     clock: Clock,
     private val studyService: StudyService,
     private val participantService: ParticipantService,
-) : StudyContestView(texts, headers, clock) {
+) : StudyContestView(headers, clock) {
     override fun accessOf(parameters: RouteParameters): StudyAccess = StudyAccess.Participant(studyService, participantService)
 }

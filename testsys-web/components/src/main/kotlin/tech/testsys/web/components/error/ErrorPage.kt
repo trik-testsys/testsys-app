@@ -24,15 +24,18 @@ import tech.testsys.web.components.layout.buildPageFooter
 import tech.testsys.web.components.overlay.GuideClient
 import tech.testsys.web.components.overlay.GuideStep
 import tech.testsys.web.components.overlay.guideButton
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentUiLocalization
 
 /**
- * Branded error screen available in every profile, with browser-history navigation only; [show] sets its texts.
+ * Branded error screen available in every profile, with browser-history navigation only; [show] sets its texts, the
+ * built-in texts come from the localization bound to the current UI.
  *
  * @since %CURRENT_VERSION%
  */
-open class ErrorPage(texts: UiTexts) : Div(), HasDynamicTitle {
-    private val back = Button(texts.notFound.back).apply {
+open class ErrorPage : Div(), HasDynamicTitle {
+    private val texts = currentUiLocalization()
+
+    private val back = Button(texts.messages.uiError.back()).apply {
         element.setActionRole(ActionRole.Neutral)
         element.setSize(ElementSize.Medium)
         isEnabled = false
@@ -44,7 +47,7 @@ open class ErrorPage(texts: UiTexts) : Div(), HasDynamicTitle {
     private val description = Div().apply { addClassName(CssClass.EmptyDesc) }
 
     private var pageTitle = ""
-    private val guideHeading = Div(heading, guideButton(texts.guide.page, isPage = true)).apply {
+    private val guideHeading = Div(heading, guideButton(texts.messages.uiGuide.page(), isPage = true)).apply {
         addClassName(CssClass.PageHeadTitleRow)
         element.setAttribute(HtmlAttribute.DataGuideIntroduction, "")
     }
@@ -53,7 +56,7 @@ open class ErrorPage(texts: UiTexts) : Div(), HasDynamicTitle {
     init {
         addClassName(CssClass.App)
 
-        val brand = buildBrand(texts.brand)
+        val brand = buildBrand(texts.messages.uiBrand.name())
         val bar = Div(brand).apply { addClassName(CssClass.HeaderBar) }
         val header = Header(bar).apply { addClassName(CssClass.Header) }
 
@@ -61,10 +64,10 @@ open class ErrorPage(texts: UiTexts) : Div(), HasDynamicTitle {
         val content = Div(guideHeading, description, actions).apply {
             addClassName(CssClass.Empty)
         }
-        val blockHead = Header(guideButton(texts.guide.block, isPage = false)).apply { addClassName(CssClass.BlockHead) }
+        val blockHead = Header(guideButton(texts.messages.uiGuide.block(), isPage = false)).apply { addClassName(CssClass.BlockHead) }
         block.add(blockHead, content)
         block.addClassName(CssClass.Block)
-        val footer = buildPageFooter(texts).apply { add(GuideClient(texts.guide)) }
+        val footer = buildPageFooter(texts).apply { add(GuideClient(texts.messages.uiGuide)) }
         add(header, Main(block).apply { addClassName(CssClass.Page) }, footer)
     }
 

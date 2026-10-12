@@ -28,7 +28,7 @@ import tech.testsys.web.components.display.buildCounter
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
 import tech.testsys.web.components.navigation.header.configureExactRoute
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 private const val MIN_PAGE_TABS = 2
 
@@ -38,7 +38,7 @@ private const val MIN_PAGE_TABS = 2
  * @since %CURRENT_VERSION%
  */
 @TestSysDsl
-class PageHeadScope internal constructor(private val texts: UiTexts, private val view: Class<out Component>?) {
+class PageHeadScope internal constructor(private val texts: UiLocalization, private val view: Class<out Component>?) {
     private val crumbs = mutableListOf<RouterLink>()
     private val marks = mutableListOf<Component>()
     private var actionsBar: Div? = null
@@ -104,7 +104,7 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
      */
     fun tabs(matchRouteParameters: Boolean, content: PageTabsScope.() -> Unit) {
         check(tabsNav == null) { "Page head already has tabs; call tabs() once" }
-        tabsNav = PageTabsScope(view, texts, matchRouteParameters).apply(content).build(texts.navigation.sections)
+        tabsNav = PageTabsScope(view, texts, matchRouteParameters).apply(content).build(texts.messages.uiNavigation.sections())
     }
 
     internal fun build(title: String): Div {
@@ -121,7 +121,7 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
 
     private fun breadcrumbs(title: String): Nav = Nav().apply {
         addClassName(CssClass.Crumbs)
-        element.setAttribute(HtmlAttribute.AriaLabel, texts.navigation.breadcrumbs)
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiNavigation.breadcrumbs())
         crumbs.forEach { link -> add(link, separator()) }
         add(Span(title).apply { element.setAriaCurrent(AriaCurrent.Page) })
     }
@@ -140,7 +140,7 @@ class PageHeadScope internal constructor(private val texts: UiTexts, private val
 @TestSysDsl
 class PageTabsScope internal constructor(
     private val view: Class<out Component>?,
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     private val isRouteExactMatch: Boolean = false,
 ) {
     private val tabs = mutableListOf<PageTab>()

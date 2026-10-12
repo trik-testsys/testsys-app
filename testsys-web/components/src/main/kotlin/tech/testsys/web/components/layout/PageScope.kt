@@ -16,7 +16,7 @@ import tech.testsys.web.components.navigation.PageHeadScope
 import tech.testsys.web.components.navigation.placePageGuideButton
 import tech.testsys.web.components.overlay.GuideStep
 import tech.testsys.web.components.overlay.guideButton
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 /**
  * Scope of a page: the head, rows and the links of its footer.
@@ -26,7 +26,7 @@ import tech.testsys.web.components.texts.UiTexts
 @TestSysDsl
 class PageScope internal constructor(
     private val main: Main,
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     private val view: Class<out Component>?,
     private val placeHead: (Component) -> Unit,
 ) {
@@ -34,7 +34,7 @@ class PageScope internal constructor(
     private var isHeadAllowed = true
     private var guideDescription: String? = null
     private var pageHead: Div? = null
-    private var pageTitle = texts.brand
+    private var pageTitle = texts.messages.uiBrand.name()
 
     /**
      * Adds the page introduction before block explanations in display order, with an information button in its head.
@@ -54,7 +54,7 @@ class PageScope internal constructor(
             val head = pageHead ?: PageHeadScope(texts, view).build(pageTitle).also(placeHead)
             GuideStep(head, title = pageTitle, description = description).install()
             head.element.setAttribute(HtmlAttribute.DataGuideIntroduction, "")
-            placePageGuideButton(head, guideButton(texts.guide.page, isPage = true))
+            placePageGuideButton(head, guideButton(texts.messages.uiGuide.page(), isPage = true))
         }
     }
 

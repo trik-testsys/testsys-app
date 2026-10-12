@@ -39,9 +39,9 @@ import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.manager.ManagerService
+import tech.testsys.web.components.texts.currentTimeZone
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
 
 @SpringBootTest
 class ManagerClassViewTests : MockSpringVaadinTests() {
@@ -106,7 +106,7 @@ class ManagerClassViewTests : MockSpringVaadinTests() {
     @Test
     fun `should show the students of the class with their last login`() {
         val student = fixtures.multipleRoleUser(name = "Ученик Иван")
-        users.recordLogin(student.id, LocalDateTime.of(2026, 3, 14, 9, 30).atZone(ZoneId.systemDefault()).toInstant())
+        users.recordLogin(student.id, LocalDateTime.of(2026, 3, 14, 9, 30).atZone(currentTimeZone()).toInstant())
 
         open(fixtures.studyClass(owner = signInManager(), students = listOf(student)).id)
 

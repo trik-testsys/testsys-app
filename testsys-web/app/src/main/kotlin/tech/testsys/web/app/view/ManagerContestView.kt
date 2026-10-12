@@ -24,7 +24,6 @@ import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
-import tech.testsys.web.components.texts.UiTexts
 
 /** Columns of the identifier and nickname of a member in the results table. */
 private const val MEMBER_COLUMNS = 8
@@ -45,8 +44,8 @@ private const val MIN_RESULT_COLUMNS = 24
 @RouteAlias("manager/competitions/:competitionId([0-9]+)/contests/:contestId([0-9]+)")
 @PageTitle("Тур")
 @RolesAllowed("MULTIPLE_ROLE")
-class ManagerContestView(texts: UiTexts, private val headers: CabinetHeaders, private val managerService: ManagerService) :
-    TestSysView(texts),
+class ManagerContestView(private val headers: CabinetHeaders, private val managerService: ManagerService) :
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val parameters = event.routeParameters
@@ -97,8 +96,8 @@ class ManagerContestView(texts: UiTexts, private val headers: CabinetHeaders, pr
                     textInput("Название", labelSize = 4, size = 8) { value = contest.name }
                 }
                 row {
-                    dateTimeInput("Начало", labelSize = 4, size = 8) { value = contest.startsAt?.toServerDateTime() }
-                    dateTimeInput("Конец", labelSize = 4, size = 8) { value = contest.endsAt?.toServerDateTime() }
+                    dateTimeInput("Начало", labelSize = 4, size = 8) { value = contest.startsAt?.toUserDateTime() }
+                    dateTimeInput("Конец", labelSize = 4, size = 8) { value = contest.endsAt?.toUserDateTime() }
                 }
                 row {
                     codeInput("Время на прохождение", labelSize = 4, size = 8) { value = formatDuration(contest.attemptDuration).orEmpty() }

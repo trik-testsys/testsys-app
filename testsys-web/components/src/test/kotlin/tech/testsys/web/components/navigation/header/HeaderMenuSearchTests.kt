@@ -39,13 +39,13 @@ class HeaderMenuSearchTests : MockVaadinTests() {
 
     @Test
     fun `should preserve search attributes without native value synchronization`() {
-        val search = HeaderMenuSearchController(menu(), testTexts.header)
+        val search = HeaderMenuSearchController(menu(), testTexts.messages.uiHeader)
 
         val field = search.field.element
 
         assertEquals("search", field.getAttribute("type"))
-        assertEquals(testTexts.header.search, field.getAttribute("placeholder"))
-        assertEquals(testTexts.header.search, field.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiHeader.search(), field.getAttribute("placeholder"))
+        assertEquals(testTexts.messages.uiHeader.search(), field.getAttribute("aria-label"))
         assertEquals("off", field.getAttribute("autocomplete"))
         assertNull(field.node.getFeature(ElementListenerMap::class.java).getPropertySynchronizationMode("value"))
     }
@@ -53,7 +53,7 @@ class HeaderMenuSearchTests : MockVaadinTests() {
     @Test
     fun `should anchor the full menu to the header edge`() {
         val menu = menu()
-        val search = HeaderMenuSearchController(menu, testTexts.header)
+        val search = HeaderMenuSearchController(menu, testTexts.messages.uiHeader)
         val header = Div()
         menu.fullAnchor(header)
 
@@ -66,7 +66,7 @@ class HeaderMenuSearchTests : MockVaadinTests() {
     @Test
     fun `should anchor compact results to the right edge of the search`() {
         val menu = menu()
-        val search = HeaderMenuSearchController(menu, testTexts.header)
+        val search = HeaderMenuSearchController(menu, testTexts.messages.uiHeader)
         menu.fullAnchor(Div())
 
         search.inputChanged("Ученик")
@@ -78,7 +78,7 @@ class HeaderMenuSearchTests : MockVaadinTests() {
     @Test
     fun `should return the full menu to the header edge after the query is cleared`() {
         val menu = menu()
-        val search = HeaderMenuSearchController(menu, testTexts.header)
+        val search = HeaderMenuSearchController(menu, testTexts.messages.uiHeader)
         val header = Div()
         menu.fullAnchor(header)
         search.inputChanged("Ученик")
@@ -159,7 +159,7 @@ class HeaderMenuSearchTests : MockVaadinTests() {
     @Test
     fun `should reuse one menu popup for typing and keep headings as navigation links`() {
         val menu = menu()
-        val search = HeaderMenuSearchController(menu, testTexts.header)
+        val search = HeaderMenuSearchController(menu, testTexts.messages.uiHeader)
 
         search.inputChanged("Ученик")
 
@@ -175,19 +175,19 @@ class HeaderMenuSearchTests : MockVaadinTests() {
     @Test
     fun `should show the empty status if no menu item matches the query`() {
         val menu = menu()
-        val search = HeaderMenuSearchController(menu, testTexts.header)
+        val search = HeaderMenuSearchController(menu, testTexts.messages.uiHeader)
 
         search.inputChanged("missing")
 
         val status = menu.component.find("ts-header-search-status").element
-        assertEquals(testTexts.header.searchEmpty, status.text)
+        assertEquals(testTexts.messages.uiHeader.searchEmpty(), status.text)
         assertEquals("status", status.getAttribute("role"))
     }
 
     @Test
     fun `should show all groups again when the query is cleared`() {
         val menu = menu()
-        val search = HeaderMenuSearchController(menu, testTexts.header)
+        val search = HeaderMenuSearchController(menu, testTexts.messages.uiHeader)
         search.inputChanged("Ученик")
 
         search.inputChanged("")
@@ -199,7 +199,7 @@ class HeaderMenuSearchTests : MockVaadinTests() {
     @Test
     fun `should close the menu popup with the search`() {
         val menu = menu()
-        val search = HeaderMenuSearchController(menu, testTexts.header)
+        val search = HeaderMenuSearchController(menu, testTexts.messages.uiHeader)
         search.inputChanged("Ученик")
 
         search.close()

@@ -23,7 +23,6 @@ import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.textInput
-import tech.testsys.web.components.texts.UiTexts
 
 private const val RESEND_HINT = "Отправьте код повторно."
 
@@ -36,8 +35,8 @@ private const val RESEND_HINT = "Отправьте код повторно."
 @Route("profile")
 @PageTitle("Профиль")
 @RolesAllowed("MULTIPLE_ROLE")
-class ProfileView(texts: UiTexts, private val headers: CabinetHeaders, private val multipleRoleUserService: MultipleRoleUserService) :
-    TestSysView(texts) {
+class ProfileView(private val headers: CabinetHeaders, private val multipleRoleUserService: MultipleRoleUserService) :
+    TestSysView() {
     init {
         show(newEmail = null)
     }

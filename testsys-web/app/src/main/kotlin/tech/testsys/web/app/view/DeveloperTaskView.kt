@@ -57,7 +57,6 @@ import tech.testsys.web.components.overlay.DialogSectionScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
-import tech.testsys.web.components.texts.UiTexts
 import java.util.concurrent.ConcurrentHashMap
 
 /** Columns of the task details block; the access block takes the rest of the row beside it. */
@@ -108,12 +107,11 @@ internal enum class ResourceUsage(val label: String) {
 @PageTitle("Задача")
 @RolesAllowed("MULTIPLE_ROLE")
 class DeveloperTaskView(
-    texts: UiTexts,
     private val headers: CabinetHeaders,
     private val developerService: DeveloperService,
     private val multipleRoleUserService: MultipleRoleUserService,
     private val fileContentReader: FileContentReader,
-) : TestSysView(texts),
+) : TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         show(TaskId(event.routeParameters.getLong(TASK_ID_PARAMETER).orElseThrow()))
@@ -412,7 +410,7 @@ class DeveloperTaskView(
             block(title = "Тестирование") {
                 guide("История проверок Задачи. Откройте запись, чтобы увидеть диагностики и результаты.")
                 table(key = { request: TaskValidationRequestVo -> request.id }, fetch = { request -> pageOf(requests, request) }) {
-                    dateTimeColumn("Запущено", size = 6) { request -> request.createdAt.toServerDateTime() }
+                    dateTimeColumn("Запущено", size = 6) { request -> request.createdAt.toUserDateTime() }
                     column("Статус", size = 5) { request ->
                         val (label, tone) = validationStatusOf(request.execution)
                         badge(label, tone)

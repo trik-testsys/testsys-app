@@ -40,7 +40,7 @@ class HeaderUserMenuTests : MockVaadinTests() {
     fun `should name the user menu by the user`() {
         val header = buildMenuHeader()
 
-        assertEquals("Меню: Anna", header.findAll("ts-header__user").single().element.getAttribute("aria-label"))
+        assertEquals("Меню пользователя: Anna", header.findAll("ts-header__user").single().element.getAttribute("aria-label"))
     }
 
     @Test

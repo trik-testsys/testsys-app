@@ -14,7 +14,7 @@ import tech.testsys.operation.error.OperationException
 import tech.testsys.operation.error.ResourceAccessError
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Error handler of every session: a failed operation in an event handler shows an error toast by the kind
@@ -23,7 +23,7 @@ import tech.testsys.web.components.texts.UiTexts
  * @since %CURRENT_VERSION%
  */
 @SpringComponent
-class OperationErrorHandler(private val texts: UiTexts) : VaadinServiceInitListener, ErrorHandler {
+class OperationErrorHandler : VaadinServiceInitListener, ErrorHandler {
     override fun serviceInit(event: ServiceInitEvent) {
         event.source.addSessionInitListener { sessionEvent -> sessionEvent.session.errorHandler = this }
     }
@@ -40,11 +40,13 @@ class OperationErrorHandler(private val texts: UiTexts) : VaadinServiceInitListe
         toast(FeedbackKind.Error, title(failure.error))
     }
 
-    private fun title(error: OperationError): String = when (error) {
-        is EntityNotExistsError -> texts.failures.notFound
-        is AccessDeniedError -> texts.failures.accessDenied
-        is MissedRequiredRoleError -> texts.failures.missingRole
-        is ResourceAccessError -> texts.failures.resourceNotInTask
-        else -> texts.failures.failed
+    private fun title(error: OperationError): String = with(currentLocalization().uiError) {
+        when (error) {
+            is EntityNotExistsError -> failureNotFound()
+            is AccessDeniedError -> failureAccessDenied()
+            is MissedRequiredRoleError -> failureMissingRole()
+            is ResourceAccessError -> failureResourceNotInTask()
+            else -> failureFailed()
+        }
     }
 }

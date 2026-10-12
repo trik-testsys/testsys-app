@@ -30,7 +30,6 @@ import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.radio
 import tech.testsys.web.components.forms.textInput
-import tech.testsys.web.components.texts.UiTexts
 
 private const val RESEND_HINT = "Отправьте код повторно."
 
@@ -44,10 +43,9 @@ private const val RESEND_HINT = "Отправьте код повторно."
 @PageTitle("Регистрация")
 @AnonymousAllowed
 class RegistrationView(
-    texts: UiTexts,
     private val headers: CabinetHeaders,
     private val userService: UserService,
-) : TestSysView(texts) {
+) : TestSysView() {
     init {
         showEmailStep(email = "")
     }

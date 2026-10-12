@@ -54,7 +54,7 @@ class LookupTests : MockVaadinTests() {
         }
         val fromClient = mutableListOf<Boolean>()
         input.addValueChangeListener { event -> fromClient += event.isFromClient }
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         rows()[0]._fireDomEvent("click", rowClick())
 
@@ -71,7 +71,7 @@ class LookupTests : MockVaadinTests() {
         input.value = source.contests[0]
         var changes = 0
         input.addValueChangeListener { changes++ }
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         rows()[0]._fireDomEvent("click", rowClick())
 
@@ -84,7 +84,7 @@ class LookupTests : MockVaadinTests() {
     @CsvSource("false,true", "true,false")
     fun `should close an open lookup when choice becomes unavailable`(enabled: Boolean, editable: Boolean) {
         val input = buildLookup()
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         input.isEnabled = enabled
         input.isEditable = editable
@@ -103,7 +103,7 @@ class LookupTests : MockVaadinTests() {
         }
         var changes = 0
         input.addValueChangeListener { changes++ }
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
         val oldRow = rows()[1]
         input.isEnabled = enabled
         input.isEditable = editable
@@ -128,11 +128,11 @@ class LookupTests : MockVaadinTests() {
     fun `should open the lookup dialog on the open button`() {
         buildLookup()
 
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         val dialog = openDialogs().single()
         assertEquals("Тур", dialog.find("ts-dialog__title").element.text)
-        assertEquals(testTexts.lookup.search, dialog._find<TextField>().single().placeholder)
+        assertEquals(testTexts.messages.uiLookup.search(), dialog._find<TextField>().single().placeholder)
         assertTrue(dialog._find<TextField>().single().isAutofocus)
         assertEquals(10, rows().size)
         assertEquals("" to PageRequest(offset = 0, limit = 10, sort = null), source.requests.single())
@@ -151,7 +151,7 @@ class LookupTests : MockVaadinTests() {
             )
         }
 
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         assertTrue("ts-dialog--md" in openDialogs().single().find("ts-dialog").classes())
     }
@@ -160,7 +160,7 @@ class LookupTests : MockVaadinTests() {
     fun `should open the dialog of the given size`() {
         buildLookup(dialogSize = DialogSize.XL)
 
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         assertTrue("ts-dialog--xl" in openDialogs().single().find("ts-dialog").classes())
     }
@@ -169,7 +169,7 @@ class LookupTests : MockVaadinTests() {
     fun `should lay the dialog table on 24 fractions of 12 page columns`() {
         buildLookup()
 
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         assertEquals("12.0", searchField().parent.get().element.style.get("--ts-page-columns"))
         assertEquals("24", openDialogs().single().find("ts-table").element.style.get("--ts-table-used"))
@@ -179,7 +179,7 @@ class LookupTests : MockVaadinTests() {
     fun `should keep lookup search and pagination outside the table viewport`() {
         buildLookup()
 
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         val dialog = openDialogs().single()
         val viewport = dialog.find("ts-table-scroll")
@@ -209,8 +209,8 @@ class LookupTests : MockVaadinTests() {
     @Test
     fun `should search with the typed query from the first page`() {
         buildLookup()
-        lookupButton(testTexts.lookup.open)._click()
-        pagerButton(testTexts.pagination.next)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
+        pagerButton(testTexts.messages.uiPagination.next())._click()
 
         searchField()._setValue(" кубок ")
 
@@ -222,7 +222,7 @@ class LookupTests : MockVaadinTests() {
         val input = buildLookup()
         var changes = 0
         input.addValueChangeListener { changes++ }
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         rows()[1]._fireDomEvent("click", rowClick())
 
@@ -237,7 +237,7 @@ class LookupTests : MockVaadinTests() {
         val input = buildLookup()
         val fromClient = mutableListOf<Boolean>()
         input.addValueChangeListener { event -> fromClient += event.isFromClient }
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         rows()[1]._fireDomEvent("click", rowClick())
 
@@ -250,9 +250,10 @@ class LookupTests : MockVaadinTests() {
         input.value = source.contests[0]
         var changes = 0
         input.addValueChangeListener { changes++ }
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
-        openDialogs().single()._find<Button>().single { button -> button.ariaLabel.orElse(null) == testTexts.dialog.close }._click()
+        val close = testTexts.messages.uiDialog.close()
+        openDialogs().single()._find<Button>().single { button -> button.ariaLabel.orElse(null) == close }._click()
 
         assertTrue(openDialogs().isEmpty())
         assertEquals(source.contests[0], input.value)
@@ -262,7 +263,7 @@ class LookupTests : MockVaadinTests() {
     @Test
     fun `should not open a second dialog while one is open`() {
         buildLookup()
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         field().find("ts-lookup")._fireDomEvent("click", fieldClick(isOnButton = false))
 
@@ -274,7 +275,7 @@ class LookupTests : MockVaadinTests() {
     fun `should fetch pages of the given size`() {
         buildLookup(pageSize = 5)
 
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         assertEquals(PageRequest(offset = 0, limit = 5, sort = null), source.requests.single().second)
         assertEquals(5, rows().size)
@@ -285,7 +286,7 @@ class LookupTests : MockVaadinTests() {
         val input = buildLookup()
         input.value = source.contests[0]
 
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         assertTrue("ts-row-selected" in rows()[0].classes())
         assertFalse("ts-row-selected" in rows()[1].classes())
@@ -296,10 +297,10 @@ class LookupTests : MockVaadinTests() {
         val input = buildLookup()
         input.value = source.contests[0]
 
-        lookupButton(testTexts.lookup.clear)._click()
+        lookupButton(testTexts.messages.uiLookup.clear())._click()
 
         assertNull(input.value)
-        assertFalse(lookupButton(testTexts.lookup.clear).isVisible)
+        assertFalse(lookupButton(testTexts.messages.uiLookup.clear()).isVisible)
         assertEquals("", field().find("ts-lookup__text").element.text)
     }
 
@@ -310,7 +311,7 @@ class LookupTests : MockVaadinTests() {
         val fromClient = mutableListOf<Boolean>()
         input.addValueChangeListener { event -> fromClient += event.isFromClient }
 
-        lookupButton(testTexts.lookup.clear)._click()
+        lookupButton(testTexts.messages.uiLookup.clear())._click()
 
         assertEquals(listOf(true), fromClient)
     }
@@ -321,7 +322,7 @@ class LookupTests : MockVaadinTests() {
         input.value = source.contests[0]
         pendingJavaScript()
 
-        lookupButton(testTexts.lookup.clear)._click()
+        lookupButton(testTexts.messages.uiLookup.clear())._click()
 
         val valueButton = field().find("ts-lookup__text")
         assertTrue(pendingJavaScript().any { call -> call.owner == valueButton.element.node && "focus" in call.invocation.expression })
@@ -332,8 +333,8 @@ class LookupTests : MockVaadinTests() {
         val input = buildLookup()
         input.value = source.contests[0]
 
-        assertEquals(-1, lookupButton(testTexts.lookup.open).tabIndex)
-        assertNull(lookupButton(testTexts.lookup.clear).element.getAttribute("tabindex"))
+        assertEquals(-1, lookupButton(testTexts.messages.uiLookup.open()).tabIndex)
+        assertNull(lookupButton(testTexts.messages.uiLookup.clear()).element.getAttribute("tabindex"))
     }
 
     @Test
@@ -341,7 +342,7 @@ class LookupTests : MockVaadinTests() {
         buildLookup()
 
         val valueButton = field().find("ts-lookup__text").element
-        assertEquals(testTexts.lookup.open, valueButton.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiLookup.open(), valueButton.getAttribute("aria-label"))
         assertEquals("dialog", valueButton.getAttribute("aria-haspopup"))
         assertNull(valueButton.getAttribute("aria-disabled"))
     }
@@ -379,8 +380,8 @@ class LookupTests : MockVaadinTests() {
     fun `should hide the clear button when the value is empty`() {
         buildLookup()
 
-        assertFalse(lookupButton(testTexts.lookup.clear).isVisible)
-        assertTrue(lookupButton(testTexts.lookup.open).isVisible)
+        assertFalse(lookupButton(testTexts.messages.uiLookup.clear()).isVisible)
+        assertTrue(lookupButton(testTexts.messages.uiLookup.open()).isVisible)
     }
 
     @ParameterizedTest
@@ -392,8 +393,8 @@ class LookupTests : MockVaadinTests() {
         input.isEditable = isEditable
         input.isEnabled = isEnabled
 
-        assertFalse(lookupButton(testTexts.lookup.clear).isVisible)
-        assertFalse(lookupButton(testTexts.lookup.open).isVisible)
+        assertFalse(lookupButton(testTexts.messages.uiLookup.clear()).isVisible)
+        assertFalse(lookupButton(testTexts.messages.uiLookup.open()).isVisible)
     }
 
     @Test
@@ -477,18 +478,18 @@ class LookupTests : MockVaadinTests() {
     @Test
     fun `should show nothing found when the search finds no rows`() {
         buildLookup()
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         searchField()._setValue("олимпиада")
 
-        assertEquals(testTexts.lookup.empty, rows().single().element.textRecursively)
+        assertEquals(testTexts.messages.uiLookup.empty(), rows().single().element.textRecursively)
     }
 
     @Test
     fun `should show the pager in the dialog footer`() {
         buildLookup()
 
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         val foot = openDialogs().single().find("ts-dialog__foot")
         assertTrue(foot.isVisible)
@@ -500,21 +501,21 @@ class LookupTests : MockVaadinTests() {
         buildLookup()
         source.failures = 1
 
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
 
         val state = openDialogs().single().find("ts-empty")
         assertTrue("ts-empty--error" in state.classes())
-        assertEquals(testTexts.load.failed, state.find("ts-empty__title").element.text)
+        assertEquals(testTexts.messages.uiLoad.failed(), state.find("ts-empty__title").element.text)
     }
 
     @Test
     fun `should load rows with the pager on retry after the first fetch failed`() {
         buildLookup()
         source.failures = 1
-        lookupButton(testTexts.lookup.open)._click()
+        lookupButton(testTexts.messages.uiLookup.open())._click()
         val dialog = openDialogs().single()
 
-        findAllButtons(dialog).single { button -> button.text == testTexts.load.retry }._click()
+        findAllButtons(dialog).single { button -> button.text == testTexts.messages.uiLoad.retry() }._click()
 
         assertEquals(10, rows().size)
         assertTrue(dialog.find("ts-dialog__foot").isVisible)

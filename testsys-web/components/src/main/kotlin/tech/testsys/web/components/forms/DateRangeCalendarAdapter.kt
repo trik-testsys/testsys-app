@@ -11,14 +11,14 @@ import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addEventData
 import tech.testsys.web.components.core.addEventListener
 import tech.testsys.web.components.core.get
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 import java.time.LocalDate
 
 private const val DAYS_IN_WEEK = 7
 
 @Tag(DATE_RANGE_CALENDAR_TAG)
 @JsModule(DATE_RANGE_CALENDAR_MODULE)
-internal class DateRangeCalendarAdapter(private val texts: UiTexts) : ReactAdapterComponent() {
+internal class DateRangeCalendarAdapter(private val texts: UiLocalization) : ReactAdapterComponent() {
     var onPick: (DateRange) -> Unit = {}
 
     init {
@@ -31,19 +31,18 @@ internal class DateRangeCalendarAdapter(private val texts: UiTexts) : ReactAdapt
     }
 
     fun present(value: DateRange) {
-        val calendar = texts.calendar
-        val firstDay = calendar.firstDayOfWeek.value % DAYS_IN_WEEK
+        val firstDay = texts.firstDayOfWeek.value % DAYS_IN_WEEK
         setState(
             "calendar",
             mapOf(
                 "start" to value.from?.toString(),
                 "end" to value.to?.toString(),
-                "months" to calendar.monthNames,
-                "weekdays" to (0 until DAYS_IN_WEEK).map { day -> calendar.weekdaysShort[(day + firstDay) % DAYS_IN_WEEK] },
+                "months" to texts.monthNames,
+                "weekdays" to (0 until DAYS_IN_WEEK).map { day -> texts.weekdaysShort[(day + firstDay) % DAYS_IN_WEEK] },
                 "firstDay" to firstDay,
                 "locale" to texts.locale.toLanguageTag(),
-                "previousLabel" to texts.components.previousMonth,
-                "nextLabel" to texts.components.nextMonth,
+                "previousLabel" to texts.messages.uiCalendar.previousMonth(),
+                "nextLabel" to texts.messages.uiCalendar.nextMonth(),
             ),
         )
     }

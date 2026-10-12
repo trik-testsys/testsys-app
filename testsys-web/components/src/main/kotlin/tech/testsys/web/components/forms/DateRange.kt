@@ -35,7 +35,7 @@ import tech.testsys.web.components.core.setHidden
 import tech.testsys.web.components.core.setRangePart
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 import java.time.LocalDate
 import java.util.UUID
 
@@ -55,7 +55,7 @@ internal class DateRangeField(
     private val end: DatePicker,
     private val reversedMessage: String,
     requiredMessage: String,
-    texts: UiTexts,
+    texts: UiLocalization,
     calendarName: String,
 ) : CustomField<DateRange>(DateRange()), HasValidator<DateRange> {
     private var isPresenting = false
@@ -83,7 +83,8 @@ internal class DateRangeField(
     }
 
     init {
-        listOf(start to texts.dateFields.rangeFromPrefix, end to texts.dateFields.rangeToPrefix).forEach { (picker, prefix) ->
+        val prefixes = with(texts.messages.uiDateField) { listOf(start to rangeFromPrefix(), end to rangeToPrefix()) }
+        prefixes.forEach { (picker, prefix) ->
             picker.prefixComponent = Span(prefix).apply {
                 addClassName(CssClass.DateRangePrefix)
                 element.setAriaHidden(true)

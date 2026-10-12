@@ -30,7 +30,7 @@ import tech.testsys.web.components.display.buildCounter
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 private const val MIN_OPTIONS = 2
 
@@ -191,7 +191,7 @@ fun <V> BlockRowScope.pills(initial: V, size: Int? = null, content: PillsScope<V
     return ChoiceHandle(group)
 }
 
-private fun <V> pillGroup(initial: V, texts: UiTexts, content: PillsScope<V>.() -> Unit): ChoiceGroup<V> = ChoiceGroup(
+private fun <V> pillGroup(initial: V, texts: UiLocalization, content: PillsScope<V>.() -> Unit): ChoiceGroup<V> = ChoiceGroup(
     options = PillsScope<V>().apply(content).options,
     initial = initial,
     root = Div().apply { addClassName(CssClass.Pills) },
@@ -209,7 +209,7 @@ internal class ChoiceGroup<V>(
     val root: Div,
     buttonClass: CssClass,
     private val activeClass: CssClass,
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
 ) {
     private val counters = mutableMapOf<V, Span>()
     private val counts = mutableMapOf<V, Int?>()

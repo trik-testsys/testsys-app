@@ -26,7 +26,6 @@ import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
-import tech.testsys.web.components.texts.UiTexts
 import java.time.Instant
 
 /**
@@ -38,8 +37,8 @@ import java.time.Instant
 @Route("manager/competitions/:competitionId([0-9]+)")
 @PageTitle("Соревнование")
 @RolesAllowed("MULTIPLE_ROLE")
-class ManagerCompetitionView(texts: UiTexts, private val headers: CabinetHeaders, private val managerService: ManagerService) :
-    TestSysView(texts),
+class ManagerCompetitionView(private val headers: CabinetHeaders, private val managerService: ManagerService) :
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         show(CompetitionId(event.routeParameters.getLong(COMPETITION_ID_PARAMETER).orElseThrow()))
@@ -133,7 +132,7 @@ class ManagerCompetitionView(texts: UiTexts, private val headers: CabinetHeaders
                 ) {
                     codeColumn("ID", size = 4) { (participant, _) -> participant.id.value.toString() }
                     textColumn("Псевдоним", size = 6) { (participant, _) -> participant.name }
-                    dateTimeColumn("Последний вход", size = 5) { (_, lastLogin) -> lastLogin?.toServerDateTime() }
+                    dateTimeColumn("Последний вход", size = 5) { (_, lastLogin) -> lastLogin?.toUserDateTime() }
                     codeColumn("Код-доступа", isObscured = true) { (participant, _) -> participant.accessTokenHash.value }
                     menuColumn(ariaLabel = { (participant, _) -> "Действия с участником «${participant.name}»" }) { (participant, _) ->
                         destructiveItem("Удалить") { deleteParticipant(competitionId, participant) }

@@ -38,7 +38,7 @@ class TableScopeTests {
 
     @Test
     fun `should default the empty text to the table texts`() {
-        assertEquals(testTexts.table.empty, TableScope<Row>(testTexts).spec().empty.title)
+        assertEquals(testTexts.messages.uiTable.empty(), TableScope<Row>(testTexts).spec().empty.title)
     }
 
     @Test

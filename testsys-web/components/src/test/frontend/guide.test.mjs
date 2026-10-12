@@ -171,7 +171,7 @@ function fixture({pending = false, reduced = false, lifecycle = false} = {}) {
     instances.push(instance);
     return instance;
   }
-  const labels = {previousLabel: 'Назад', nextLabel: 'Далее', doneLabel: 'Готово', closeLabel: 'Закрыть', progressLabel: '{{current}} из {{total}}'};
+  const labels = {previousLabel: 'Назад', nextLabel: 'Далее', doneLabel: 'Готово', closeLabel: 'Закрыть'};
   const finishCard = () => popover.wrapper.animations.findLast(animation => !animation.canceled)?.finish();
   return {root, intro, block, detail, trigger, labels, factory, instances, observers, get popover() { return popover; }, overlay, motion,
     finishCard,
@@ -643,6 +643,7 @@ test('should show progress and navigation buttons when a block guide has detaile
   const config = f.instances[0].config;
   assert.deepEqual(config.showButtons, ['previous', 'next', 'close']);
   assert.equal(config.showProgress, true);
+  assert.equal(config.progressText, '{{current}} / {{total}}');
   cleanup();
 });
 

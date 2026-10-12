@@ -83,7 +83,7 @@ fun ContentScope.skeleton(
     val root = Div(part).apply {
         addClassNames(CssClass.Skeleton, shape.rootClass)
         element.setRole(ElementRole.Status)
-        element.setAttribute(HtmlAttribute.AriaLabel, texts.components.loading)
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiLoad.loading())
     }
     add(root)
     return ElementHandle(root).apply(configure)
@@ -117,7 +117,7 @@ fun ContentScope.skeletonRows(rows: Int = 5, configure: ElementHandle.() -> Unit
         element.setRole(ElementRole.Status)
         element.setAttribute(
             HtmlAttribute.AriaLabel,
-            texts.components.loading,
+            texts.messages.uiLoad.loading(),
         )
     }
 

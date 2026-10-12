@@ -30,8 +30,8 @@ import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.service.CommunityVo
+import tech.testsys.web.components.texts.currentTimeZone
 import java.time.LocalDateTime
-import java.time.ZoneId
 
 @SpringBootTest
 class AdminViewTests : MockSpringVaadinTests() {
@@ -190,7 +190,7 @@ class AdminViewTests : MockSpringVaadinTests() {
     @Test
     fun `should show the last login of a user in the users table`() {
         val member = developerOf(fixtures.community(owner = signInAdministrator()), name = "Разработчик Иван")
-        users.recordLogin(member.id, LocalDateTime.of(2026, 3, 14, 9, 30).atZone(ZoneId.systemDefault()).toInstant())
+        users.recordLogin(member.id, LocalDateTime.of(2026, 3, 14, 9, 30).atZone(currentTimeZone()).toInstant())
 
         UI.getCurrent().navigate(AdminView::class.java, section("users"))
 

@@ -9,7 +9,7 @@ import tech.testsys.web.components.TestSysDsl
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.addClassName
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 
 /**
  * Scope of a flow of content without sizes: head, footer and row groups of a block, the value of a field, table cells,
@@ -20,7 +20,7 @@ import tech.testsys.web.components.texts.UiTexts
 @TestSysDsl
 class ContentScope internal constructor(
     internal val container: HasComponents,
-    internal val texts: UiTexts,
+    internal val texts: UiLocalization,
     internal val placement: Placement,
 ) {
     /**

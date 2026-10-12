@@ -53,7 +53,6 @@ import tech.testsys.web.app.service.developer.TaskValidationSnapshotVo
 import tech.testsys.web.app.service.developer.TestVo
 import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.app.service.toVo
-import tech.testsys.web.components.texts.buildUiTexts
 import tools.jackson.databind.ObjectMapper
 import java.time.Instant
 import javax.sql.DataSource
@@ -725,7 +724,7 @@ internal class DeveloperTaskViewTests : MockSpringVaadinTests() {
         }
         every { service.viewTrikStudioVersions() } returns developerService.viewTrikStudioVersions()
         every { service.viewTaskValidationRequests(task.id) } returns requests
-        val view = DeveloperTaskView(buildUiTexts(), headers, service, multipleRoleUserService, mockk())
+        val view = DeveloperTaskView(headers, service, multipleRoleUserService, mockk())
         val event = mockk<BeforeEnterEvent>()
         every { event.routeParameters } returns taskParameters(task.id)
         UI.getCurrent().removeAll()

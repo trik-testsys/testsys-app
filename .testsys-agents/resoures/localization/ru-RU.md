@@ -135,3 +135,46 @@ glossary and owner documents stay authoritative.
   registration letter's «Вы начали … Если Вы не начинали …»: the recipient may not be the account owner, and the
   closing paragraph covers that case. It names no page («введите в TestSys этот код»), because the page that
   accepts the code is not implemented yet.
+
+## «Футер», not «футтер»
+
+- The borrowing from English "footer" is spelled with one «т»: Викисловарь has the entry «футер» (фу́тер), sense 2
+  marked as computing jargon, «нижний колонтитул; подвал». The page does not mention «футтер». «Футер» is also a
+  textile term (a knitted fabric), so a reader can resolve the jargon sense only from context.
+- Usage evidence: a blog post on spark.ru says its editors did not know whether to write «футтер» or «футер»,
+  so the double «т» is a common slip, not an accepted variant. No orthographic dictionary entry was opened.
+- Applicability: `ui_footer.links` keeps «Ссылки футтера» verbatim because the 2026-10-11 migration requires the
+  rendered output to stay unchanged. It is an accessible name read by screen readers. If the coordinator allows
+  a wording change, «Ссылки футера» fixes the spelling. Non-jargon alternatives for a general audience, such as
+  «Ссылки в подвале сайта» or «Нижняя навигация», are suggestions only and were not checked against a source.
+- Sources: https://ru.wiktionary.org/wiki/футер (read 2026-10-11);
+  https://spark.ru/startup/522832472692b/blog/1835/novij-futer (search snippet only, 2026-10-11).
+- Independent review re-read the Викисловарь entry on 2026-10-11 with the same result. The project documentation
+  (components README, ui-design.md) also writes «футтер», so a fix of the message may need the same docs change.
+
+## Free text after a transitive verb: «Убрать {$value}»
+
+- «Убрать» is transitive (Викисловарь: «Глагол, совершенный вид, переходный»), so its object takes the accusative.
+  A nominative placeholder after it renders a wrong case for feminine nouns in -а/-я and animate masculine names
+  («Убрать Маша», «Убрать Задача про лабиринт»); it reads correctly only for inanimate masculine or neuter values.
+- Patterns that keep free nominative text grammatical, already used in the `ui_*` bundles: a colon
+  («Меню пользователя: {$name}») or guillemets («Введите «{$name}», чтобы подтвердить»). This is the reviewer's
+  inference, not a dictionary statement.
+- Applicability: `ui_lookup.remove` keeps «Убрать {$value}» verbatim in the 2026-10-11 migration; a change such as
+  «Убрать: {$value}» needs explicit approval.
+- Source: https://ru.wiktionary.org/wiki/убрать (read 2026-10-11).
+
+## Percent sign spacing: «45%» or «45 %»
+
+- Russian references disagree: Шульмейстер (1967) and Гиленсон (1988) attach the sign to the number; ГОСТ 8.417
+  requires a space before unit symbols; Мильчин и Чельцова (1998) require a space. Runet usage mostly attaches it.
+- Applicability: `ui_transfer.percent` «45%» is an accepted traditional variant, not an error; keep one style.
+- Source: https://dic.academic.ru/dic.nsf/ruwiki/57875 (Wikipedia mirror, read 2026-10-11); the handbooks
+  themselves and the CLDR ru percent pattern were not checked.
+
+## «Гайд»
+
+- Викисловарь gives one sense, «справочник; справочное руководство», without a stylistic label, borrowed from
+  English *guide*. TestSys uses «гайд» for an interactive step-by-step page tour (`ui_guide.*`), slightly broader
+  than the dictionary sense; not a defect. No normative orthographic dictionary entry was opened.
+- Source: https://ru.wiktionary.org/wiki/гайд (read 2026-10-11).

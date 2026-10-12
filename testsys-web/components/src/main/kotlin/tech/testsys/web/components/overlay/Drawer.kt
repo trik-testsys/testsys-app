@@ -19,8 +19,8 @@ import tech.testsys.web.components.data.TableScope
 import tech.testsys.web.components.layout.BlockEditState
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
-import tech.testsys.web.components.texts.UiTexts
-import tech.testsys.web.components.texts.currentTexts
+import tech.testsys.web.components.texts.UiLocalization
+import tech.testsys.web.components.texts.currentUiLocalization
 
 /**
  * Handle of a reusable side drawer whose form values survive closing.
@@ -90,7 +90,7 @@ class DrawerScope internal constructor(
     private val delegate: DialogScope,
     private val handle: DrawerHandle,
     internal val container: Div,
-    internal val texts: UiTexts,
+    internal val texts: UiLocalization,
 ) {
     /**
      * Adds one row of [content] to the drawer.
@@ -126,7 +126,7 @@ fun drawer(
     configure: DrawerHandle.() -> Unit = {},
     content: DrawerScope.() -> Unit,
 ): DrawerHandle {
-    val texts = currentTexts()
+    val texts = currentUiLocalization()
     val shell = DialogShell(texts, title = title, subtitle = subtitle, size = DialogSize.M, isAlert = false)
     shell.dialog.addThemeName(CssTheme.Drawer)
     shell.content.addClassName(CssClass.DialogGrid)

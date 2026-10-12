@@ -285,7 +285,7 @@ class TableLiveTests : MockVaadinTests() {
             handle.refresh()
             source.add(Row(4, 40))
 
-            button(testTexts.load.retry)._click()
+            button(testTexts.messages.uiLoad.retry())._click()
 
             assertTrue(newIds().isEmpty())
         }

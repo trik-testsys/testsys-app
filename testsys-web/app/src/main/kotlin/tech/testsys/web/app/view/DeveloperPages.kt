@@ -32,9 +32,9 @@ import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.app.service.developer.TestVo
 import tech.testsys.web.components.display.Tone
 import tech.testsys.web.components.forms.UploadedFile
+import tech.testsys.web.components.texts.currentTimeZone
 import java.time.Instant
 import java.time.LocalDateTime
-import java.time.ZoneId
 
 /** Route parameter of [DeveloperView] with the open tab. */
 internal const val DEVELOPER_SECTION_PARAMETER = "section"
@@ -85,8 +85,8 @@ internal enum class TaskState(val label: String, val tone: Tone) {
 internal fun UploadedFile.toFileData(): FileData =
     FileData(uploadedFilename = filename, content = openStream().use { stream -> stream.readBytes() })
 
-/** Returns this date and time in the time zone of the server as a moment. */
-internal fun LocalDateTime.toServerInstant(): Instant = atZone(ZoneId.systemDefault()).toInstant()
+/** Returns this date and time in the time zone of the user of the current UI as a moment. */
+internal fun LocalDateTime.toUserInstant(): Instant = atZone(currentTimeZone()).toInstant()
 
 /** Requires a start before the end of a contest given by this field; an empty end needs no start. */
 internal fun <T> Binder.BindingBuilder<T, LocalDateTime?>.scheduleRules(

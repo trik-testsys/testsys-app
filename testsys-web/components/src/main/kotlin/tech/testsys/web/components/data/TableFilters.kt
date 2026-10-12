@@ -31,7 +31,7 @@ import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.Placement
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 import java.util.UUID
 
 /**
@@ -43,7 +43,7 @@ import java.util.UUID
 class TableFiltersScope internal constructor(
     private val fields: Div,
     private val columns: Int,
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     private val editState: BlockEditState,
 ) {
     /**
@@ -104,7 +104,7 @@ fun BlockScope.filters(
         element.setAttribute(HtmlAttribute.AriaControls, panelId)
         element.setType(ElementType.Button)
         add(svgIcon(IconName.ChevronDown))
-        element.appendChild(Text(texts.tableFilters.title).element)
+        element.appendChild(Text(texts.messages.uiTableFilters.title()).element)
     }
 
     val panel = Div().apply {
@@ -121,13 +121,13 @@ fun BlockScope.filters(
 
     val actions = Div().apply { addClassName(CssClass.TableFiltersActions) }
     val bar = ContentScope(actions, texts, Placement.Body)
-    bar.action(texts.tableFilters.reset) {
+    bar.action(texts.messages.uiTableFilters.reset()) {
         onClick {
             onReset()
             onRefresh()
         }
     }.component.addClassName(CssClass.TableFiltersReset)
-    bar.mainAction(texts.tableFilters.apply) { onClick { if (onApply()) onRefresh() } }
+    bar.mainAction(texts.messages.uiTableFilters.apply()) { onClick { if (onApply()) onRefresh() } }
         .component.addClassName(CssClass.TableFiltersApply)
 
     TableFiltersScope(fields, columns, texts, BlockEditState(fields.element)).apply(content)

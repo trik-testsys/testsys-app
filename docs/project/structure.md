@@ -42,7 +42,7 @@ testsys-app/
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
 | `testsys-infra:mail` | Отправка писем Пользователям по SMTP (реализация порта `UserMailSender`). | Реализован |
 | `testsys-web:app` | Основное приложение Vaadin Flow: точка входа, конфигурация, безопасность, страницы, маршрутизация ошибок и подключение операций через прокси-сервисы, см. [app/README.md](../../testsys-web/app/README.md). | В разработке; состав страниц — в [app/README.md](../../testsys-web/app/README.md#страницы) |
-| `testsys-web:components` | Kotlin-DSL, общая фабрика текстов и визуальная часть страниц ошибок, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
+| `testsys-web:components` | Kotlin-DSL, привязка локализации `UI` (встроенные тексты из бандлов `ui_*`) и визуальная часть страниц ошибок, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
 
 Отсутствующие маршруты веб-приложение обрабатывает само: см. раздел «Отсутствующие маршруты»
 в [app/README.md](../../testsys-web/app/README.md#отсутствующие-маршруты).
@@ -58,9 +58,11 @@ testsys-app/
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
 - Сейчас в Gradle прописаны связи `operation → domain`, `database → domain`, `database → codegen-api`,
   `database → codegen` (через `ksp`), `codegen → codegen-api`, `mail → domain`, `mail → localization`,
-  `grpc → domain`, `diagnostics → domain`, `app → components`, `app → domain`,
-  `app → operation`, `app → grpc`, `app → database`, `app → diagnostics` и `app → mail`.
+  `grpc → domain`, `diagnostics → domain`, `components → localization` (через `api`), `app → components`,
+  `app → domain`, `app → operation`, `app → grpc`, `app → database`, `app → diagnostics` и `app → mail`.
   Остальные связи — целевая архитектура.
+- Модуль `localization` подключает ICU4J как `implementation`, поэтому `components` и `app`, которые вызывают
+  API ICU4J или `SupportedRegion.toULocale()`, сами подключают `libs.bundles.icu.implementation`.
 - Приложение подключает конфигурации инфраструктурных модулей через `@Import` в `InfraConfiguration`;
   см. шаг «Регистрация бина» в [implement-port.md](../guides/implement-port.md#5-регистрация-бина).
 

@@ -11,7 +11,7 @@ import tech.testsys.web.components.core.Background
 import tech.testsys.web.components.core.Bindable
 import tech.testsys.web.components.layout.BlockScope
 import tech.testsys.web.components.layout.LoadedBody
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.UiLocalization
 import java.util.concurrent.atomic.AtomicLong
 
 private val logger = LoggerFactory.getLogger(LoadHandle::class.java)
@@ -82,7 +82,7 @@ fun <T> BlockScope.load(fetch: () -> T, skeletonRows: Int = 3, content: BlockSco
  */
 internal class BlockLoader<T>(
     private val slot: LoadedBody,
-    private val texts: UiTexts,
+    private val texts: UiLocalization,
     ui: UI,
     private val skeletonRows: Int,
     private val fetch: () -> T,
@@ -171,9 +171,9 @@ internal class BlockLoader<T>(
 
     private fun showFailure() {
         val failure = EmptyContent(
-            title = texts.load.failed,
-            description = texts.load.failedHint,
-            actions = { action(texts.load.retry) { onClick { reload() } } },
+            title = texts.messages.uiLoad.failed(),
+            description = texts.messages.uiLoad.failedHint(),
+            actions = { action(texts.messages.uiLoad.retry()) { onClick { reload() } } },
         )
 
         slot.showWhole(buildEmptyState(failure, texts, isError = true), isFlush = false)

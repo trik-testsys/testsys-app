@@ -19,10 +19,10 @@ import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.navigation.PageHeadScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.dialog
+import tech.testsys.web.components.texts.currentTimeZone
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 
 /** Route parameter of [ManagerView] with the open tab. */
 internal const val MANAGER_SECTION_PARAMETER = "section"
@@ -68,10 +68,10 @@ internal fun PageHeadScope.managerCrumbs(section: String) {
     crumb(if (section == CLASSES_SECTION) "Классы" else "Соревнования", ManagerView::class.java, managerSection(section))
 }
 
-/** Returns the first moment of [date] in the time zone of the server. */
-internal fun startOf(date: LocalDate): Instant = date.atStartOfDay(ZoneId.systemDefault()).toInstant()
+/** Returns the first moment of [date] in the time zone of the user of the current UI. */
+internal fun startOf(date: LocalDate): Instant = date.atStartOfDay(currentTimeZone()).toInstant()
 
-/** Returns the last microsecond of [date] in the time zone of the server. */
+/** Returns the last microsecond of [date] in the time zone of the user of the current UI. */
 internal fun endOf(date: LocalDate): Instant = startOf(date.plusDays(1)).minusNanos(NANOS_IN_MICROSECOND)
 
 /** Formats [duration] as hours and minutes `Ч:ММ`, or returns `null` without one. */
@@ -132,8 +132,8 @@ internal fun PageScope.managerContestsBlock(
             guide("Список Туров и их параметры. Выберите строку, чтобы открыть Тур.")
             table(key = { contest: ContestVo -> contest.id }, fetch = { request -> pageOf(contests, request) }) {
                 textColumn("Название", size = 9) { contest -> contest.name }
-                dateTimeColumn("Начало", size = 5) { contest -> contest.startsAt?.toServerDateTime() }
-                dateTimeColumn("Конец", size = 5) { contest -> contest.endsAt?.toServerDateTime() }
+                dateTimeColumn("Начало", size = 5) { contest -> contest.startsAt?.toUserDateTime() }
+                dateTimeColumn("Конец", size = 5) { contest -> contest.endsAt?.toUserDateTime() }
                 codeColumn("Время на прохождение") { contest -> formatDuration(contest.attemptDuration) }
                 empty("Туров пока нет", "Добавьте тур, открытый вашим сообществам.")
                 onRowClick(isNavigation = true, listener = onOpen)

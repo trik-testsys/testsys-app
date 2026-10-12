@@ -40,7 +40,6 @@ import tech.testsys.web.app.service.developer.DeveloperSolutionInputVo
 import tech.testsys.web.app.service.developer.TaskValidationExecutionVo
 import tech.testsys.web.app.service.developer.TaskValidationRequestVo
 import tech.testsys.web.app.service.developer.TaskValidationSnapshotVo
-import tech.testsys.web.components.texts.buildUiTexts
 import java.time.Instant
 import javax.sql.DataSource
 
@@ -209,7 +208,7 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
     }
 
     private fun open(taskId: TaskId, requestId: TaskValidationRequestId, service: DeveloperService) {
-        val view = DeveloperTestingView(buildUiTexts(), headers, service)
+        val view = DeveloperTestingView(headers, service)
         val event = mockk<BeforeEnterEvent>()
         every { event.routeParameters } returns testingParameters(taskId, requestId)
         UI.getCurrent().removeAll()

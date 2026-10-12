@@ -12,7 +12,7 @@
 
 | Пакет | Что лежит |
 |-------|-----------|
-| `config` | Spring-конфигурация: тексты, локаль, `InfraConfiguration`, `OperationsConfiguration`, `AfterTransactionExecutor`, `AfterCommitGrader` |
+| `config` | Spring-конфигурация: локализация `UI` (`UiLocaleInitializer`), `InfraConfiguration`, `OperationsConfiguration`, `AfterTransactionExecutor`, `AfterCommitGrader` |
 | `security` | `SecurityConfiguration`, `CabinetPrincipal` и программный вход `CabinetSignIn`, см. раздел [Безопасность](#безопасность) |
 | `service` | `CurrentUser`, общие VO и `Page.map` прокси-сервисов |
 | `service/<actor>` | Прокси-сервис `<Actor>Service` и его VO, см. раздел [Прокси-сервисы](#прокси-сервисы) |
@@ -22,9 +22,18 @@
 `InfraConfiguration` подключает конфигурации инфраструктурных модулей `database`, `grpc`, `diagnostics` и `mail`
 через `@Import`.
 
-Общие тексты создаются фабрикой `buildUiTexts()` из components; контракт — в
-[components/README.md](../components/README.md#тексты). Обработчик `NotFoundView` использует общий `NotFoundPage`;
-контракт маршрутизации — в разделе [Отсутствующие маршруты](#отсутствующие-маршруты).
+`UiLocaleInitializer` при создании каждого `UI` выбирает регион Пользователя и вызывает `initializeUiLocale`
+из components; устройство локализации `UI` и часового пояса — в разделе «Тексты»
+[components/README.md](../components/README.md#тексты). Регион берётся из cookie `TESTSYS_REGION`, значение
+которого — имя `SupportedRegion`, затем из лучшего поддерживаемого языка заголовка `Accept-Language`, затем из
+`testsys.web.localization.default-region`. Неизвестное значение cookie и некорректный заголовок пропускаются.
+Даты показываются в поясе браузера; до его получения — в `testsys.web.localization.default-time-zone`.
+`AppShell` строится до создания `UI`, поэтому имя бренда для заголовка вкладки он берёт из региона
+по умолчанию. Страницы показывают и читают даты в поясе `currentTimeZone()` через `toUserDateTime`,
+`toUserInstant`, `startOf` и `endOf`.
+
+Обработчик `NotFoundView` использует общий `NotFoundPage`; контракт маршрутизации — в разделе
+[Отсутствующие маршруты](#отсутствующие-маршруты).
 
 ## Отсутствующие маршруты
 
@@ -217,12 +226,12 @@
 исключениями и обрабатываются Vaadin. Тур вне Класса или Соревнования Пользователя считается отсутствующим.
 
 Исключение в обработчике события получает `OperationErrorHandler`. Он становится `ErrorHandler` каждой новой
-сессии и показывает тост `FeedbackKind.Error` с заголовком из группы `failures`. Свой заголовок есть
+сессии и показывает тост `FeedbackKind.Error` с заголовком из сообщений `ui_error.failure.*`. Свой заголовок есть
 у `EntityNotExistsError`, `AccessDeniedError`, `MissedRequiredRoleError` и `ResourceAccessError`, общий —
 у остальных ошибок. Обработчик ищет `OperationException` и среди причин исключения. Исключения других типов
 он передаёт `DefaultErrorHandler` Vaadin без тоста.
 
-Тексты экранов и тостов входят в `UiTexts`, см. [components/README.md](../components/README.md#тексты).
+Тексты экранов и тостов — сообщения бандла `ui_error`, см. [components/README.md](../components/README.md#тексты).
 
 ## Запуск и проверка
 
@@ -234,6 +243,8 @@
 каталоги `build/test-file-storage/<вид>` модуля из `src/test/resources/config/application.properties` и PostgreSQL
 в контейнере Testcontainers, поэтому для них нужен запущенный Docker. Каждый `@SpringBootTest` подключает
 `PostgresTestConfiguration`: все Spring-контексты тестов JVM работают с одним контейнером и одной базой.
+Тесты модуля запускаются с поясом JVM `UTC`, отличным от `testsys.web.localization.default-time-zone`, поэтому
+чтение дат в поясе JVM вместо пояса Пользователя заметно в тестах.
 
 Очистка файлов запускается явно в режиме обслуживания; условия и настройки описаны в разделе
 [«Очистка сирот»](../../testsys-infra/database/README.md#очистка-сирот).
@@ -250,6 +261,13 @@
 | `testsys.operation.competition.max-participants` | Предельное общее количество Участников в Соревновании |
 | `testsys.operation.class-invite.ttl` | Срок действия Кода-приглашения в Класс в формате ISO-8601 `Duration` |
 | `testsys.operation.class-invite.refresh-period` | Период замены Кодов-приглашений в Класс с истёкшим сроком в формате ISO-8601 `Duration`; пока не используется |
+
+Локализацию интерфейса задают свойства со значениями по умолчанию в `application.yml`:
+
+| Свойство | По умолчанию | Значение |
+|----------|--------------|----------|
+| `testsys.web.localization.default-region` | `RU` | Регион, если cookie региона и языки браузера не дают поддерживаемого; имя `SupportedRegion` |
+| `testsys.web.localization.default-time-zone` | `Europe/Moscow` | Часовой пояс дат, пока браузер не сообщил свой |
 
 Настройки SMTP-сервера — в разделе «Настройки» в [mail/README.md](../../testsys-infra/mail/README.md#настройки).
 Адреса Проверяющих узлов и настройки грейдера — в разделе «Настройки» в

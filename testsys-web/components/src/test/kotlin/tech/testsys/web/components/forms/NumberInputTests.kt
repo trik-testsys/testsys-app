@@ -43,7 +43,7 @@ class NumberInputTests : MockVaadinTests() {
         val status = binder.validate()
 
         assertFalse(status.isOk)
-        assertEquals(testTexts.fieldErrors.aboveMax, status.fieldValidationErrors.single().message.orElseThrow())
+        assertEquals(testTexts.messages.uiField.aboveMax(), status.fieldValidationErrors.single().message.orElseThrow())
     }
 
     @Test

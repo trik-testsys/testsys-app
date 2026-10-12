@@ -24,7 +24,6 @@ import tech.testsys.web.components.layout.PageRowScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.menu
-import tech.testsys.web.components.texts.UiTexts
 import java.time.Instant
 
 /** Columns of the class details block; the invite code takes the rest of the row beside it. */
@@ -39,8 +38,8 @@ private const val DETAILS_COLUMNS = 12
 @Route("manager/classes/:classId([0-9]+)")
 @PageTitle("Класс")
 @RolesAllowed("MULTIPLE_ROLE")
-class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, private val managerService: ManagerService) :
-    TestSysView(texts),
+class ManagerClassView(private val headers: CabinetHeaders, private val managerService: ManagerService) :
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         show(ClassId(event.routeParameters.getLong(CLASS_ID_PARAMETER).orElseThrow()))
@@ -131,7 +130,7 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
                     isObscured = true
                 }
             }
-            row { dateTimeInput("Действует до", labelSize = 8, size = 16) { value = invite.expiresAt.toServerDateTime() } }
+            row { dateTimeInput("Действует до", labelSize = 8, size = 16) { value = invite.expiresAt.toUserDateTime() } }
             actions {
                 copyAction("Скопировать", value = { invite.codeHash.value })
                 menu {
@@ -167,7 +166,7 @@ class ManagerClassView(texts: UiTexts, private val headers: CabinetHeaders, priv
                 ) {
                     codeColumn("ID", size = 6) { (student, _) -> student.id.value.toString() }
                     textColumn("Псевдоним", size = 12) { (student, _) -> student.name }
-                    dateTimeColumn("Последний вход") { (_, lastLogin) -> lastLogin?.toServerDateTime() }
+                    dateTimeColumn("Последний вход") { (_, lastLogin) -> lastLogin?.toUserDateTime() }
                     empty("Учеников пока нет", "Ученики присоединяются к классу по коду-приглашению.")
                 }
             }

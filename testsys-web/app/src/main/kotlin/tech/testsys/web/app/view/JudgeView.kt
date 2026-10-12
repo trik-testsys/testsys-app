@@ -23,7 +23,6 @@ import tech.testsys.web.components.data.table
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.layout.BlockScope
-import tech.testsys.web.components.texts.UiTexts
 import tech.testsys.domain.contract.persistence.Sort as DomainSort
 
 /** Route parameter of [JudgeView] with the open section. */
@@ -57,8 +56,8 @@ internal fun openJudgeSolution(submissionId: SubmissionId) {
 @Route("judge/:section?(submissions)")
 @PageTitle("Кабинет Судьи")
 @RolesAllowed("MULTIPLE_ROLE")
-class JudgeView(texts: UiTexts, private val headers: CabinetHeaders, private val judgeService: JudgeService) :
-    TestSysView(texts),
+class JudgeView(private val headers: CabinetHeaders, private val judgeService: JudgeService) :
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         if (event.routeParameters.get(JUDGE_SECTION_PARAMETER).isEmpty) {
@@ -92,7 +91,7 @@ class JudgeView(texts: UiTexts, private val headers: CabinetHeaders, private val
         ) {
             codeColumn("Посылка", size = 4) { result -> result.submission.id.value.toString() }
             textColumn("Автор", size = 5) { result -> result.author.name }
-            dateTimeColumn("Отправлено", size = 4) { result -> result.submission.createdAt.toServerDateTime() }
+            dateTimeColumn("Отправлено", size = 4) { result -> result.submission.createdAt.toUserDateTime() }
             numberColumn("Автоматический балл", size = 4) { result ->
                 result.verdict.testVerdicts.sumOf { outcome -> outcome.score.value.toLong() }
             }

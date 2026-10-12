@@ -11,7 +11,6 @@ import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.participant.ParticipantService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.data.table
-import tech.testsys.web.components.texts.UiTexts
 import java.time.Clock
 import java.time.Instant
 
@@ -24,11 +23,10 @@ import java.time.Instant
 @PageTitle("Кабинет Участника")
 @RolesAllowed("PARTICIPANT")
 class ParticipantView(
-    texts: UiTexts,
     private val headers: CabinetHeaders,
     private val participantService: ParticipantService,
     private val clock: Clock,
-) : TestSysView(texts),
+) : TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val contests = participantService.viewContests()
@@ -44,8 +42,8 @@ class ParticipantView(
                         fetch = { request -> pageOf(contests, request) },
                     ) {
                         textColumn("Название", size = 5) { (_, contest) -> contest.name }
-                        dateTimeColumn("Начало", size = 4) { (_, contest) -> contest.startsAt?.toServerDateTime() }
-                        dateTimeColumn("Конец", size = 4) { (_, contest) -> contest.endsAt?.toServerDateTime() }
+                        dateTimeColumn("Начало", size = 4) { (_, contest) -> contest.startsAt?.toUserDateTime() }
+                        dateTimeColumn("Конец", size = 4) { (_, contest) -> contest.endsAt?.toUserDateTime() }
                         textColumn("Время на прохождение", size = 3) { (_, contest) -> studyDurationText(contest.attemptDuration) }
                         column("Состояние", size = 4) { (enteredAt, contest) -> studyState(contest, enteredAt, now) }
                         column("Осталось") { (enteredAt, contest) -> studyTimer(contest, enteredAt, now) }

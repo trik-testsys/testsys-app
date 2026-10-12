@@ -7,6 +7,7 @@ import com.vaadin.flow.component.Tag
 import com.vaadin.flow.component.dependency.JsModule
 import com.vaadin.flow.component.dependency.NpmPackage
 import com.vaadin.flow.component.html.NativeButton
+import tech.testsys.infra.localization.UiGuide
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.DomProperty
 import tech.testsys.web.components.core.ElementType
@@ -19,7 +20,6 @@ import tech.testsys.web.components.core.setAttribute
 import tech.testsys.web.components.core.setProperty
 import tech.testsys.web.components.core.setType
 import tech.testsys.web.components.core.svgIcon
-import tech.testsys.web.components.texts.GuideTexts
 
 private const val GUIDE_MODULE = "./testsys-ui/guide.ts"
 private const val GUIDE_CONTROLLER_MODULE = "./testsys-ui/guide-controller.ts"
@@ -30,15 +30,14 @@ private const val DRIVER_PACKAGE = "driver.js"
 @JsModule(GUIDE_MODULE)
 @JsModule(GUIDE_CONTROLLER_MODULE)
 @NpmPackage(value = DRIVER_PACKAGE, version = DRIVER_VERSION)
-internal class GuideClient(texts: GuideTexts) : Component() {
+internal class GuideClient(texts: UiGuide) : Component() {
     init {
         element.classList.add(CssClass.GuideController)
         // The custom element owns this protocol; the application only supplies semantic texts.
-        element.setProperty(DomProperty.GuidePreviousLabel, texts.previous)
-        element.setProperty(DomProperty.GuideNextLabel, texts.next)
-        element.setProperty(DomProperty.GuideDoneLabel, texts.done)
-        element.setProperty(DomProperty.GuideCloseLabel, texts.close)
-        element.setProperty(DomProperty.GuideProgressLabel, texts.progress)
+        element.setProperty(DomProperty.GuidePreviousLabel, texts.previous())
+        element.setProperty(DomProperty.GuideNextLabel, texts.next())
+        element.setProperty(DomProperty.GuideDoneLabel, texts.done())
+        element.setProperty(DomProperty.GuideCloseLabel, texts.close())
     }
 }
 

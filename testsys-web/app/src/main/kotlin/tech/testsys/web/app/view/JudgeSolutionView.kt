@@ -39,7 +39,6 @@ import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.dialog
-import tech.testsys.web.components.texts.UiTexts
 
 /** Content type of downloaded files, whose real type the system does not know. */
 private const val FILE_CONTENT_TYPE = "application/octet-stream"
@@ -54,12 +53,11 @@ private const val FILE_CONTENT_TYPE = "application/octet-stream"
 @PageTitle("Посылка")
 @RolesAllowed("MULTIPLE_ROLE")
 class JudgeSolutionView(
-    texts: UiTexts,
     private val headers: CabinetHeaders,
     private val judgeService: JudgeService,
     private val fileContentReader: FileContentReader,
 ) :
-    TestSysView(texts),
+    TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         // Loads the submission before the page is built, so that a refusal opens its error screen.
@@ -91,7 +89,7 @@ class JudgeSolutionView(
                 guide("Сведения об отправленной Посылке, её авторе и состоянии проверки.")
                 row {
                     codeInput("ID", labelSize = 3, size = 9) { value = submissionId.value.toString() }
-                    dateTimeInput("Отправлена", labelSize = 3, size = 9) { value = details.submission.createdAt.toServerDateTime() }
+                    dateTimeInput("Отправлена", labelSize = 3, size = 9) { value = details.submission.createdAt.toUserDateTime() }
                 }
                 row {
                     textInput("Автор", labelSize = 3, size = 9) { value = details.author.name }
@@ -158,7 +156,7 @@ class JudgeSolutionView(
                     numberColumn("Балл", size = 3) { (order, _) -> order.score.value }
                     textColumn("Обоснование", size = 11) { (order, _) -> order.reason }
                     textColumn("Судья", size = 5) { (_, judge) -> judge.name }
-                    dateTimeColumn("Выставлен") { (order, _) -> order.createdAt.toServerDateTime() }
+                    dateTimeColumn("Выставлен") { (order, _) -> order.createdAt.toUserDateTime() }
                     empty("Судейских вердиктов нет")
                 }
                 if (details.verdict != null) {

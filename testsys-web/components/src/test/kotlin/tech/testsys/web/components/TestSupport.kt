@@ -12,167 +12,26 @@ import com.vaadin.flow.component.internal.PendingJavaScriptInvocation
 import com.vaadin.flow.router.Route
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.layout.renderPage
 import tech.testsys.web.components.navigation.header.CabinetHeader
-import tech.testsys.web.components.texts.CalendarTexts
-import tech.testsys.web.components.texts.ComponentTexts
-import tech.testsys.web.components.texts.DateFieldTexts
-import tech.testsys.web.components.texts.DialogTexts
-import tech.testsys.web.components.texts.EditingTexts
-import tech.testsys.web.components.texts.ErrorPageTexts
-import tech.testsys.web.components.texts.FailureTexts
-import tech.testsys.web.components.texts.FieldErrorTexts
-import tech.testsys.web.components.texts.FooterTexts
-import tech.testsys.web.components.texts.GuideTexts
-import tech.testsys.web.components.texts.HeaderTexts
-import tech.testsys.web.components.texts.LoadTexts
-import tech.testsys.web.components.texts.LookupTexts
-import tech.testsys.web.components.texts.MenuTexts
-import tech.testsys.web.components.texts.NavigationTexts
-import tech.testsys.web.components.texts.NotFoundTexts
-import tech.testsys.web.components.texts.PaginationTexts
-import tech.testsys.web.components.texts.TableFiltersTexts
-import tech.testsys.web.components.texts.TableTexts
-import tech.testsys.web.components.texts.UiTexts
-import java.time.DayOfWeek
-import java.util.Locale
+import tech.testsys.web.components.texts.UiLocalization
+import tech.testsys.web.components.texts.bindUiLocalization
+import java.time.ZoneOffset
 
-/** Texts of the tests; values are distinct so that assertions can tell them apart. */
-internal val testTexts = UiTexts(
-    locale = Locale.forLanguageTag("ru-RU"),
-    brand = "TestSys",
-    signIn = "Войти",
-    guide = GuideTexts(
-        page = "Гайд страницы",
-        block = "Гайд блока",
-        previous = "Назад",
-        next = "Вперёд",
-        done = "Готово",
-        close = "Закрыть",
-        progress = "{{current}} из {{total}}",
-    ),
-    footer = FooterTexts(year = { year -> year.toString() }, links = "Ссылки подвала"),
-    tableFilters = TableFiltersTexts(title = "Настроить фильтры", apply = "Применить", reset = "Сбросить"),
-    calendar = CalendarTexts(
-        monthNames = listOf(
-            "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
-            "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
-        ),
-        weekdays = listOf("воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"),
-        weekdaysShort = listOf("вс", "пн", "вт", "ср", "чт", "пт", "сб"),
-        firstDayOfWeek = DayOfWeek.MONDAY,
-        dateFormat = "dd.MM.yyyy",
-        today = "Сегодня",
-        cancel = "Отменить",
-    ),
-    fieldErrors = FieldErrorTexts(
-        badInput = "Проверьте формат",
-        belowMin = "Меньше допустимого",
-        aboveMax = "Больше допустимого",
-        stepMismatch = "Не по шагу",
-    ),
-    dateRangeReversed = "Конец раньше начала",
-    editing = EditingTexts(start = "Изменить", save = "Сохранить", cancel = "Отменить"),
-    table = TableTexts(
-        empty = "Пусто",
-        range = { from, to, total -> "$from–$to из $total" },
-        selectAll = "Отметить всё на странице",
-        selectRow = "Отметить строку",
-    ),
-    pagination = PaginationTexts(
-        previous = "Перейти на предыдущую страницу",
-        next = "Перейти на следующую страницу",
-        page = { page -> "Стр. $page" },
-    ),
-    load = LoadTexts(failed = "Сбой загрузки", failedHint = "Повторите позже", retry = "Ещё раз"),
-    dialog = DialogTexts(cancel = "Отказаться", close = "Закрыть", typeToConfirm = { name -> "Введите $name" }),
-    lookup = LookupTexts(
-        search = "Поиск",
-        open = "Выбрать",
-        clear = "Очистить",
-        empty = "Не найдено",
-        remove = { value -> "Убрать $value" },
-        reset = "Снять все",
-        apply = "Применить",
-        selectedCount = { count -> "Отмечено: $count" },
-    ),
-    navigation = NavigationTexts(breadcrumbs = "Цепочка", sections = "Разделы страницы"),
-    menu = MenuTexts(actions = "Меню действий"),
-    dateFields = DateFieldTexts(
-        date = "дата",
-        time = "время",
-        rangeFrom = { label -> "$label: с" },
-        rangeTo = { label -> "$label: до" },
-        rangeFromPrefix = "С",
-        rangeToPrefix = "До",
-        rangeRequired = "Укажите хотя бы одну границу периода",
-    ),
-    components = ComponentTexts(
-        selectAll = "Выбрать все",
-        previousMonth = "Показать предыдущий месяц",
-        nextMonth = "Показать следующий месяц",
-        calendar = "Открыть календарь",
-        upload = "Выбрать файлы",
-        drop = "Перетащите файлы сюда",
-        cancel = "Отменить",
-        cancelled = "Отменено",
-        removeFile = "Убрать файл",
-        stalled = "Передача приостановлена",
-        preparing = "Подготовка",
-        downloading = "Передача",
-        done = "Передано сервером",
-        failed = "Ошибка передачи",
-        retry = "Повторить",
-        downloadAgain = "Скачать снова",
-        uploadRejected = "Файл не соответствует ограничениям",
-        loading = "Загрузка",
-        openCalendar = { label -> "Календарь: $label" },
-        uploadLimits = { count, bytes -> "$count по $bytes байт" },
-        downloadLabel = { label, state -> "$label: $state" },
-        percent = { value -> "$value%" },
-        byteUnits = listOf("Б", "КБ", "МБ", "ГБ"),
-        timerUnits = listOf("дни", "часы", "минуты", "секунды"),
-        more = { count -> "Ещё значений: $count" },
-        transferBytes = { count -> "Байты: $count" },
-    ),
-    header = HeaderTexts(
-        search = "Поиск",
-        searchEmpty = "Пустой поиск",
-        notifications = "Уведомления",
-        notificationsEmpty = "Пустые уведомления",
-        readAll = "Прочитать всё",
-        unreadCount = { count -> "Непрочитанных: $count" },
-        unreadItem = { label -> "Не прочитано: $label" },
-        userMenu = { name -> "Меню: $name" },
-        arrivalOpen = "Открыть поступление",
-        arrivalClose = "Закрыть поступление",
-        arrivalCount = { count -> "Получено: $count" },
-        arrivalBatchHint = "Открыть список",
-    ),
-    notFound = NotFoundTexts(
-        title = "Страница не найдена",
-        description = "Проверьте адрес",
-        back = "Вернуться",
-        pageTitle = "Страница не найдена — TestSys",
-    ),
-    forbidden = ErrorPageTexts(title = "Нет доступа", description = "Нет прав", pageTitle = "Нет доступа — TestSys"),
-    pageFailed = ErrorPageTexts(title = "Сбой страницы", description = "Обновите", pageTitle = "Сбой страницы — TestSys"),
-    failures = FailureTexts(
-        notFound = "Не найдено",
-        accessDenied = "Запрещено",
-        missingRole = "Нет роли",
-        resourceNotInTask = "Не в задаче",
-        failed = "Не выполнено",
-    ),
-)
+/** Localization of the tests: the Russian messages with dates in UTC, bound to the UI of every test. */
+internal val testTexts = UiLocalization(SupportedRegion.RU, ZoneOffset.UTC)
 
-/** Starts a mocked Vaadin UI with the test routes of this package before each test. */
+/** Starts a mocked Vaadin UI with the test routes of this package and the test localization before each test. */
 abstract class MockVaadinTests {
     @BeforeEach
-    fun setUpVaadin() = MockVaadin.setup(Routes().autoDiscoverViews("tech.testsys.web.components"))
+    fun setUpVaadin() {
+        MockVaadin.setup(Routes().autoDiscoverViews("tech.testsys.web.components"))
+        bindUiLocalization(UI.getCurrent(), testTexts)
+    }
 
     @AfterEach
     fun tearDownVaadin() = MockVaadin.tearDown()
@@ -205,7 +64,7 @@ private fun Component.descendants(): List<Component> = children.toList().flatMap
 /** Builds a page of [view] with an empty header, attaches it to the current UI and returns its `main.ts-page`. */
 internal fun buildTestPage(view: Class<out Component>? = null, body: PageScope.() -> Unit): Component {
     val root = Div()
-    renderPage(root, CabinetHeader(), testTexts, view, body)
+    renderPage(root, CabinetHeader(), view, body)
     UI.getCurrent().add(root)
     return root.children.toList().single { child -> child.element.tag == "main" }
 }

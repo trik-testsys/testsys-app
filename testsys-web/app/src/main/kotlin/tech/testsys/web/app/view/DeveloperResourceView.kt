@@ -36,7 +36,6 @@ import tech.testsys.web.components.forms.integerInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.confirm
-import tech.testsys.web.components.texts.UiTexts
 import java.io.ByteArrayInputStream
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
@@ -63,11 +62,10 @@ private const val FILE_CONTENT_TYPE = "application/octet-stream"
 @PageTitle("Ресурс")
 @RolesAllowed("MULTIPLE_ROLE")
 class DeveloperResourceView(
-    texts: UiTexts,
     private val headers: CabinetHeaders,
     private val developerService: DeveloperService,
     private val fileContentReader: FileContentReader,
-) : TestSysView(texts),
+) : TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val parameters = event.routeParameters
@@ -195,7 +193,7 @@ class DeveloperResourceView(
                     fetch = { request -> pageOf(history, request) },
                 ) {
                     codeColumn("ID версии", size = 4) { (version, _) -> version.id.value.toString() }
-                    dateTimeColumn("Изменено", size = 3) { (version, _) -> version.createdAt.toServerDateTime() }
+                    dateTimeColumn("Изменено", size = 3) { (version, _) -> version.createdAt.toUserDateTime() }
                     textColumn("Название", size = if (isSolution) 4 else 5) { (version, _) -> version.name }
                     textColumn("Файл", size = if (isSolution) 4 else 6) { (version, solution) -> fileNameOf(version, solution) }
                     if (isSolution) {

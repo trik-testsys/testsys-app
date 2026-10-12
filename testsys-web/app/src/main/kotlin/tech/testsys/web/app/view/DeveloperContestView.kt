@@ -45,7 +45,6 @@ import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.confirm
 import tech.testsys.web.components.overlay.dialog
-import tech.testsys.web.components.texts.UiTexts
 import java.time.Duration
 import java.time.LocalDateTime
 
@@ -62,12 +61,11 @@ private const val DETAILS_COLUMNS = 14
 @PageTitle("Тур")
 @RolesAllowed("MULTIPLE_ROLE")
 class DeveloperContestView(
-    texts: UiTexts,
     private val headers: CabinetHeaders,
     private val developerService: DeveloperService,
     private val multipleRoleUserService: MultipleRoleUserService,
     private val currentUser: CurrentUser,
-) : TestSysView(texts),
+) : TestSysView(),
     BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         show(ContestId(event.routeParameters.getLong(CONTEST_ID_PARAMETER).orElseThrow()))
@@ -117,8 +115,8 @@ class DeveloperContestView(
         val draft = Binder<ContestDraft>()
         val initial = ContestDraft(
             name = contest.name,
-            startsAt = contest.startsAt?.toServerDateTime(),
-            endsAt = contest.endsAt?.toServerDateTime(),
+            startsAt = contest.startsAt?.toUserDateTime(),
+            endsAt = contest.endsAt?.toUserDateTime(),
         )
         lateinit var startsAt: ValueInput<LocalDateTime?>
         val details = block(size = DETAILS_COLUMNS, title = "Сведения") {
@@ -138,8 +136,8 @@ class DeveloperContestView(
                             developerService.editContest(
                                 contestId = contest.id,
                                 contestName = values.name,
-                                startsAt = values.startsAt?.toServerInstant(),
-                                endsAt = values.endsAt?.toServerInstant(),
+                                startsAt = values.startsAt?.toUserInstant(),
+                                endsAt = values.endsAt?.toUserInstant(),
                             )
                             toast(FeedbackKind.Success, "Тур изменён")
                             show(contest.id)

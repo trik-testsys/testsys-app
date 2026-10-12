@@ -198,6 +198,12 @@ glossary and owner documents stay authoritative.
   masculine agreement after the first part; this remains an inference without a primary rule text.
 - Sources: https://ru.wiktionary.org/wiki/код, https://ru.wiktionary.org/wiki/город-государство,
   https://ru.wiktionary.org/wiki/диван-кровать (all read 2026-10-12).
+- Instrumental singular and nominative plural (independent review, 2026-10-12): Викисловарь gives Тв. ед.
+  «до́мом-музе́ем» and Им. мн. «дома́-музе́и» (В. мн. = Им. мн.), and «го́родом-госуда́рством» /
+  «города́-госуда́рства» for the masculine plus neuter analogue. By analogy `glossary.invite_code` `ins sg`
+  «Кодом-приглашением» and `nom pl` «Коды-приглашения» (`page_admin`); an inference, no entry for the term itself.
+- Sources: https://ru.wiktionary.org/wiki/дом-музей, https://ru.wiktionary.org/wiki/город-государство (read
+  2026-10-12).
 - Lowercase «к сообществу» in `page_home.join_hint`, `page_home.join.title` and `page_home.joined` reproduces the
   page literals verbatim; definitions.md capitalizes terms («Сообщество»). Changing it needs user approval.
 
@@ -462,3 +468,100 @@ glossary and owner documents stay authoritative.
   различаются» (see «Case sensitivity» above) stays a choice for general-audience text. Changing the hint needs an
   explicit decision. No normative dictionary or style guide was opened.
 - Source: https://ru.wiktionary.org/wiki/регистр (read 2026-10-12).
+## Administrator Cabinet (page_admin)
+
+### Glossary terms added for the cabinet
+
+- New terms (2026-10-12), each a self-contained block in `glossary.properties`: `administrator`, `cabinet`, `class`
+  (entity `Class`; a term name does not become a Kotlin identifier, so the keyword is valid), `community`,
+  `competition`, `contest` (Тур), `judge`, `nickname` (Псевдоним, definitions.md item 31; the code field is
+  `UserData.name`), `observer`, `participant`, `role`, `solution`, `student`, `system`, `task`, `user`.
+  `invite_code` gained `nom pl` «Коды-приглашения» and `ins sg` «Кодом-приглашением». Only referenced forms exist;
+  the `* *` variant is the nominative singular. Other cabinets may need more forms of the same terms.
+- Animate masculine nouns take the genitive form in the accusative: «Создать Наблюдателя», «пригласите
+  Пользователей». Inanimate plurals keep the nominative form in the accusative: «Выберите Туры». Grammar facts, no
+  source opened.
+- Independent review (2026-10-12): «его Роли» in `page_admin.user.guide` (a subject of «показаны» with «сведения»
+  and «статистика») and «связанные Соревнования» in `page_admin.user.assigned.guide` (an ungoverned list item) are
+  nominative, not accusative; reference them with `case=nom`, so the glossary needs no unused `acc pl` forms.
+  Grammar analysis, no source opened.
+
+### «Псевдоним»
+
+- Викисловарь gives one sense, a fictitious name an author uses, with no computing sense. «Ник» and «никнейм»
+  appear only as synonyms. Genitive singular «псевдонима». In TestSys the word is the domain term for the name a
+  User is shown under (definitions.md item 31). In the cabinet tables and filters the domain sense is clear; nothing
+  undesirable was found.
+- Source: https://ru.wiktionary.org/wiki/псевдоним (read 2026-10-12).
+
+### «Неуспех» as a status badge
+
+- Викисловарь: «неуспех» is a masculine noun with no stylistic label, meaning «отсутствие успеха; неудача»
+  (Грибоедов: «по службе неуспех?»). It is a standard word, not a coinage, and it pairs naturally with «Успех» on
+  badges. No undesirable connotation was found.
+- Source: https://ru.wiktionary.org/wiki/неуспех (read 2026-10-12).
+
+### «Техническая остановка»
+
+- In general usage (production, transport, aviation) the phrase means stopping equipment or a vehicle for
+  maintenance or a fault, for example a train or aircraft «техническая остановка». No dictionary entry was found;
+  a web search returned only related terms such as «технический перерыв».
+- Applicability (inference): `page_cabinet.validation_status` `stopped` is a badge in the Статус проверки column.
+  The column context makes it read as «the check stopped for technical reasons», and the transport sense does not
+  apply. It differs from `failure` «Неуспех», which is a check that ran and failed.
+- Source: web search on 2026-10-12, no primary source read.
+
+### Numerals with «символ» in `page_cabinet.name_too_long`
+
+- The comparative «длиннее» governs the genitive, so the noun follows the genitive of the numeral: «не длиннее
+  1 / 21 символа» (одного, двадцати одного символа); «3 / 5 / 255 символов». So `one` → «символа», and `few` and
+  `many` → «символов». This is a grammar inference; a search found no handbook page for the exact phrase.
+- Source: web search on 2026-10-12, secondary summaries only.
+- Independent review (2026-10-12) confirms the forms by standard grammar (a compound numeral ending in «один» takes
+  the singular noun: «двадцати одного символа»); under `:integer` in `ru` the `*` variant is unreachable and equals
+  `many`. Still no primary handbook text: https://mel.fm/gramotnost/kak-govorit/6417539-numerals («Мел»,
+  16.09.2018, read 2026-10-12) does not cover the rule; other search results were snippets only.
+
+### Role names in apposition: «в Роли Разработчик»
+
+- `page_admin.user.roles.remove`, `remove_title` and `community.invites.actions` insert the nominative role name
+  from `page_cabinet.role_name` after a declined «Роль»: «Исключить в Роли Разработчик», «для Роли Разработчик».
+  Ordinary Russian puts a common noun in the genitive («в роли разработчика»). The nominative reads as a name of an
+  item in a list, a label after a generic word. A generic word before a quoted name keeps the name undeclined (see
+  «Quoted names and declension» above), but these names are not quoted. The coordinator kept the text verbatim. A
+  normative-looking alternative would quote the name («в Роли «Разработчик»») or use a colon. Either change needs
+  approval. A web search found no source specific to role labels.
+- «Исключить» (Викисловарь, sense 1: «устранить, удалить откуда-либо, из состава чего-либо») fits removing
+  membership. No stylistic label. The punitive colouring of «исключить из школы» comes from that context, not from
+  the word. «Исключить в Роли X» without «из» is elliptical: the menu sits in a row of one Community, which
+  supplies the missing «из Сообщества».
+- Sources: https://ru.wiktionary.org/wiki/исключить (read 2026-10-12); the «Мел» article cited above.
+
+### Other notes
+
+- `page_admin.users.nickname_hint` «без учёта регистра» uses «регистр». The note «Case sensitivity: …» above
+  records a project preference for describing letter case without that word. The text is verbatim by coordinator
+  decision; it is not a grammar error.
+- `page_admin.communities.users` «Пользователей» (genitive plural) is a numeric column header, read as an
+  elliptical «(число) Пользователей». It is verbatim; «Пользователи» would be the usual header form.
+- Independent review (2026-10-12): the Observer creation dialog labels the name field «Имя» / «Укажите имя»
+  (`page_admin.community.observer.name*`), while the same value is «Псевдоним» elsewhere on the pages. The meaning
+  survives (definitions.md item 31 defines Псевдоним as a name); aligning the label needs user approval.
+
+### «Роль» and «Соревнование»: declension and the user page guides
+
+- Викисловарь: «роль» — inanimate feminine, 3rd declension (Zaliznyak 8e); Им. роль / роли, Р. роли / ролей,
+  В. роль / роли, Тв. ролью / ролями, Пр. роли / ролях. Sense 5 (информ., a set of functions assigned to a server)
+  is close to the domain term; theatre senses do not fit the capitalized term. «Соревнование» — inanimate neuter,
+  type 7a; Им. мн. «соревнования», Р. мн. «соревнований». They confirm `glossary.role` and `glossary.competition`.
+- In `page_admin.user.guide` the singular locative «Роли» coincides with the plural nominative, so «о Пользователе,
+  его Роли и …» could be read as «(о) его Роли»; the nominative «доступная вам статистика» makes the three-subject
+  list the natural reading, and «показаны» agrees under either pattern (reviewer's inference; no primary
+  agreement rule text read).
+- «Туры, назначенные Пользователю, и связанные Соревнования»: Правила 1956 § 151 п. 1 sets off a postpositive
+  participial phrase with commas; the comma before «и» closes it (inference for this exact combination).
+  «Связанные» without a complement (Викисловарь «связанный», «находящийся во взаимосвязи с кем-либо, чем-либо»)
+  is clear from «Туры» and the table.
+- Sources: https://ru.wiktionary.org/wiki/роль, https://ru.wiktionary.org/wiki/соревнование,
+  https://ru.wiktionary.org/wiki/связанный,
+  https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/34 (all read 2026-10-12).

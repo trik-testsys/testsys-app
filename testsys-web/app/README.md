@@ -165,10 +165,11 @@
 | `page_profile` | `ProfileView` |
 | `page_confirmation` | Подтверждение почты кодом из письма, общее для `RegistrationView` и `ProfileView` |
 | `page_home` | `MultiMainView` |
-| `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню», `ObserverView` и `SupervisorView` |
+| `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню», `ObserverView` и `SupervisorView`; общие для Кабинетов статус проверки Задачи и ограничение длины названия |
 | `page_judge` | `JudgeView`, `JudgeSolutionView` |
 | `page_study` | `StudentView`, `StudentClassView`, `ParticipantView` и общие страницы Тура и Задачи: `StudyContestView`, `StudyTaskView` с их страницами Ученика и Участника |
 | `page_manager` | `ManagerView`, `ManagerClassView`, `ManagerCompetitionView`, `ManagerContestView` и заголовки их CSV |
+| `page_admin` | `AdminView`, `AdminCommunityView`, `AdminUserView` |
 
 Страницы из таблицы, у которых есть свой заголовок вкладки, задают его через `HasDynamicTitle` из сообщения.
 Остальные страницы Ролей пока задают тексты строками, а заголовок вкладки — через `@PageTitle`.

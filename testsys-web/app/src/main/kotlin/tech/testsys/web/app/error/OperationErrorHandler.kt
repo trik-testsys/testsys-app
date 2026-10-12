@@ -15,20 +15,22 @@ import tech.testsys.operation.error.ResourceAccessError
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.texts.currentLocalization
+import tech.testsys.web.monitoring.WebFailures
 
 /**
  * Error handler of every session: a failed operation in an event handler shows an error toast by the kind
- * of the failure, any other exception goes to the default Vaadin handler.
+ * of the failure, any other exception is counted in [failures] and goes to the default Vaadin handler.
  *
  * @since %CURRENT_VERSION%
  */
 @SpringComponent
-class OperationErrorHandler : VaadinServiceInitListener, ErrorHandler {
+class OperationErrorHandler(private val failures: WebFailures) : VaadinServiceInitListener, ErrorHandler {
     override fun serviceInit(event: ServiceInitEvent) {
         event.source.addSessionInitListener { sessionEvent -> sessionEvent.session.errorHandler = this }
     }
 
     override fun error(event: ErrorEvent) {
+        failures.record(WebFailures.EVENT, event.throwable)
         val failure = generateSequence(event.throwable) { throwable -> throwable.cause }
             .filterIsInstance<OperationException>()
             .firstOrNull()

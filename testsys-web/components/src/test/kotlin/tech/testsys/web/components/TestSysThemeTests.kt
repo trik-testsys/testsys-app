@@ -26,6 +26,16 @@ class TestSysThemeTests {
     }
 
     @Test
+    fun `should remove Lumo icon theme padding from square icon actions`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+        val iconAction = rule(overrides, "vaadin-button[data-ts-icon-only]")
+
+        assertEquals("0", iconAction["padding"])
+        assertEquals("var(--control-md)", iconAction["width"])
+        assertEquals("var(--control-sm)", rule(overrides, "vaadin-button[data-ts-icon-only][data-ts-size=\"sm\"]")["width"])
+    }
+
+    @Test
     fun `should use canonical typography tokens for headings`() {
         val components = text("testsys-ui/tokens/components.css")
 
@@ -33,6 +43,20 @@ class TestSysThemeTests {
         assertEquals("var(--tracking-tight)", rule(components, ".ts-h1")["letter-spacing"])
         assertTrue(rule(components, ".ts-block__title").getValue("font").contains("var(--fw-bold)"))
         assertTrue(rule(components, ".ts-dialog__title").getValue("font").contains("var(--fw-bold)"))
+    }
+
+    @Test
+    fun `should span block section headings and neutral separators across the body`() {
+        val components = text("testsys-ui/tokens/components.css")
+        val heading = rule(components, ".ts-block__section-title")
+        val separator = rule(components, ".ts-block__separator")
+
+        assertEquals("1 / -1", heading["grid-column"])
+        assertEquals("var(--fw-bold) var(--fs-h3)/var(--lh-h3) var(--font-sans)", heading["font"])
+        assertEquals("inherit", heading["color"])
+        assertEquals("1 / -1", separator["grid-column"])
+        assertEquals("1px solid var(--border-default)", separator["border-top"])
+        assertEquals("0", separator["margin"])
     }
 
     @Test

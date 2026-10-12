@@ -23,6 +23,7 @@ import tech.testsys.domain.builder.api.testDiagnosticResult
 import tech.testsys.domain.builder.api.verdict
 import tech.testsys.domain.builder.data
 import tech.testsys.domain.contract.FileContentReader
+import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
 import tech.testsys.domain.contract.persistence.repository.ContestRepository
 import tech.testsys.domain.contract.persistence.repository.LogsRepository
@@ -55,6 +56,7 @@ import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictData
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.infra.settings.api.Settings
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -68,8 +70,9 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import trik.testsys.grading.GradingNodeOuterClass as Proto
 
-internal val settings = GradingSettings(
-    nodes = emptyList(),
+internal val properties = GradingProperties(
+    nodes = "",
+    shouldImportNodes = false,
     maxAttempts = 3,
     totalTimeout = Duration.ofMinutes(30),
     rpcTimeout = Duration.ofMinutes(10),
@@ -78,6 +81,14 @@ internal val settings = GradingSettings(
     maxMessageBytes = 400_000_000,
     shouldRecordVideo = true,
 )
+
+internal val settings = Settings { properties }
+
+internal fun nodeSettings(addresses: List<GradingNodeAddress>, shouldImportNodes: Boolean = false): Settings<GradingProperties> {
+    val nodes = addresses.joinToString(",") { address -> address.target }
+    val configured = properties.copy(nodes = nodes, shouldImportNodes = shouldImportNodes)
+    return Settings { configured }
+}
 
 internal fun testSubmission(id: Long = 42) = submission {
     this.id = id
@@ -317,9 +328,17 @@ internal class FakeNode : NodeClient {
     val isClosed = AtomicBoolean(false)
     val cancellations = AtomicReference(0)
     val polls = AtomicReference(0)
+    val pollFailure = AtomicReference<RuntimeException?>(null)
+    val statusTimeouts = mutableListOf<Duration>()
+
+    override fun poll(timeout: Duration, onStatus: (GradingNodeStatus) -> Unit) {
+        statusTimeouts.add(timeout)
+        poll(onStatus)
+    }
 
     override fun poll(onStatus: (GradingNodeStatus) -> Unit) {
         polls.updateAndGet { value -> value + 1 }
+        pollFailure.get()?.let { failure -> throw failure }
         onStatus(status.get())
     }
 

@@ -79,7 +79,7 @@ vaadin-button[data-ts-role="link"]:hover { --vaadin-button-background: var(--inf
 /* Danger: the confirming action of a dangerous dialog, mirroring .ts-btn--danger; pages have no such role. */
 vaadin-button[data-ts-role="danger"] { --vaadin-button-background: var(--danger); --vaadin-button-text-color: var(--white); }
 vaadin-button[data-ts-role="danger"]:hover { --vaadin-button-background: var(--danger-hover); }
-vaadin-button[data-ts-icon-only] { --vaadin-button-padding: 0; width: var(--control-md); }
+vaadin-button[data-ts-icon-only] { --vaadin-button-padding: 0; padding: 0; width: var(--control-md); }
 vaadin-button[data-ts-icon-only][data-ts-size="sm"] { width: var(--control-sm); }
 /* Disabled action of any role, mirroring .ts-btn:disabled: Lumo only greys the text, which is unreadable on a filled role. */
 vaadin-button[data-ts-role][disabled] {

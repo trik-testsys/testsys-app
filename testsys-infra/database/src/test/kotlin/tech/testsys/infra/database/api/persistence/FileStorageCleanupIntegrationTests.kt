@@ -18,6 +18,7 @@ import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import tech.testsys.infra.database.internal.persistence.FileStorageCleanupRepository
 import tech.testsys.infra.database.internal.persistence.FileSystemBlobInventory
+import tech.testsys.infra.settings.api.Settings
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.attribute.FileTime
@@ -224,7 +225,7 @@ class FileStorageCleanupIntegrationTests : DatabaseIntegrationTests() {
         repository = repository,
         inventory = FileSystemBlobInventory(),
         paths = FileStoragePaths(directory, directory, directory, directory, directory, directory),
-        settings = FileStorageCleanupSettings(minimumAge = Duration.ofDays(1), batchSize = 2),
+        settings = Settings { FileStorageCleanupProperties(minimumAge = Duration.ofDays(1), batchSize = 2) },
         clock = Clock.fixed(now, ZoneOffset.UTC),
     )
 }

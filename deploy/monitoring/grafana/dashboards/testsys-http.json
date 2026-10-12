@@ -1,0 +1,225 @@
+{
+  "uid": "testsys-http",
+  "title": "TestSys — HTTP",
+  "description": "HTTP-запросы основного и служебного интерфейсов. Коды HTTP-ответов, ошибки операций и технические сбои — разные срезы одних событий; эти показатели не складываются.",
+  "tags": ["testsys"],
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": { "refresh_intervals": ["30s", "1m", "5m", "15m"] },
+  "timezone": "browser",
+  "templating": {
+    "list": [
+      {
+        "name": "interface",
+        "label": "Интерфейс",
+        "type": "custom",
+        "query": "main,service",
+        "multi": true,
+        "includeAll": true,
+        "current": { "selected": true, "text": ["All"], "value": ["$__all"] },
+        "options": []
+      },
+      {
+        "name": "smoothing",
+        "label": "Сглаживание",
+        "type": "custom",
+        "query": "Авто : $__rate_interval, 1 мин : 1m, 5 мин : 5m, 10 мин : 10m, 30 мин : 30m",
+        "multi": false,
+        "includeAll": false,
+        "current": { "selected": true, "text": "Авто", "value": "$__rate_interval" },
+        "options": []
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Запросы в секунду",
+      "description": "Число HTTP-запросов в секунду по интерфейсам.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "sum by (interface) (rate(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[${smoothing:raw}]))",
+          "legendFormat": "{{interface}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Группы кодов ответа",
+      "description": "Запросы в секунду по группам кодов ответа: 2xx, 3xx, 4xx, 5xx. Ответы 4xx и 5xx не складываются с ошибками операций и техническими сбоями.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "min": 0 },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "INFORMATIONAL" }, "properties": [{ "id": "displayName", "value": "1xx" }] },
+          { "matcher": { "id": "byName", "options": "SUCCESS" }, "properties": [{ "id": "displayName", "value": "2xx" }, { "id": "color", "value": { "mode": "fixed", "fixedColor": "green" } }] },
+          { "matcher": { "id": "byName", "options": "REDIRECTION" }, "properties": [{ "id": "displayName", "value": "3xx" }, { "id": "color", "value": { "mode": "fixed", "fixedColor": "blue" } }] },
+          { "matcher": { "id": "byName", "options": "CLIENT_ERROR" }, "properties": [{ "id": "displayName", "value": "4xx" }, { "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] },
+          { "matcher": { "id": "byName", "options": "SERVER_ERROR" }, "properties": [{ "id": "displayName", "value": "5xx" }, { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "sum by (outcome) (rate(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[${smoothing:raw}]))",
+          "legendFormat": "{{outcome}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Коды ответа",
+      "description": "Запросы в секунду по отдельным кодам ответа.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "sum by (status) (rate(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[${smoothing:raw}]))",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Среднее время ответа",
+      "description": "Среднее время обработки запроса по интерфейсам.",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "sum by (interface) (rate(http_server_requests_seconds_sum{job=\"testsys\", interface=~\"$interface\"}[${smoothing:raw}])) / sum by (interface) (rate(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[${smoothing:raw}]))",
+          "legendFormat": "{{interface}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "95-й перцентиль времени ответа",
+      "description": "95-й перцентиль времени обработки запроса по интерфейсам, оценка по корзинам гистограммы.",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "histogram_quantile(0.95, sum by (le, interface) (rate(http_server_requests_seconds_bucket{job=\"testsys\", interface=~\"$interface\"}[${smoothing:raw}])))",
+          "legendFormat": "{{interface}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Точки входа за выбранный период",
+      "description": "Точки входа с запросами за выбранный период. Сортировка — щелчком по заголовку столбца. Счётчики округлены: прирост оценивается по замерам, включая нулевую точку создания HTTP-гистограммы, если она входит в период. Первый запрос становится виден после успешного опроса.",
+      "gridPos": { "h": 14, "w": 24, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "none", "decimals": 0 },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Доля 4xx" }, "properties": [{ "id": "unit", "value": "percentunit" }, { "id": "decimals", "value": 1 }] },
+          { "matcher": { "id": "byName", "options": "Доля 5xx" }, "properties": [{ "id": "unit", "value": "percentunit" }, { "id": "decimals", "value": 1 }] },
+          { "matcher": { "id": "byName", "options": "p95" }, "properties": [{ "id": "unit", "value": "s" }, { "id": "decimals", "value": 3 }] }
+        ]
+      },
+      "options": { "showHeader": true, "cellHeight": "sm", "sortBy": [{ "displayName": "Доля 5xx", "desc": true }] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "round(sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[$__range])) > 0)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "round((sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\", outcome=\"CLIENT_ERROR\"}[$__range])) or 0 * sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[$__range]))) and sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[$__range])) > 0)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "(sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\", outcome=\"CLIENT_ERROR\"}[$__range])) or 0 * sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[$__range]))) / (sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[$__range])) > 0)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "D",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "round((sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\", outcome=\"SERVER_ERROR\"}[$__range])) or 0 * sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[$__range]))) and sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[$__range])) > 0)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "E",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "(sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\", outcome=\"SERVER_ERROR\"}[$__range])) or 0 * sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[$__range]))) / (sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[$__range])) > 0)",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "F",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "histogram_quantile(0.95, sum by (le, interface, uri) (increase(http_server_requests_seconds_bucket{job=\"testsys\", interface=~\"$interface\"}[$__range]))) and sum by (interface, uri) (increase(http_server_requests_seconds_count{job=\"testsys\", interface=~\"$interface\"}[$__range])) > 0",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        { "id": "merge", "options": {} },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true },
+            "indexByName": { "interface": 0, "uri": 1, "Value #A": 2, "Value #B": 3, "Value #C": 4, "Value #D": 5, "Value #E": 6, "Value #F": 7 },
+            "renameByName": {
+              "interface": "Интерфейс",
+              "uri": "Точка входа",
+              "Value #A": "Запросов",
+              "Value #B": "4xx",
+              "Value #C": "Доля 4xx",
+              "Value #D": "5xx",
+              "Value #E": "Доля 5xx",
+              "Value #F": "p95"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

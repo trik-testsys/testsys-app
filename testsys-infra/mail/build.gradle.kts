@@ -9,6 +9,7 @@ dependencies {
     implementation(platform(libs.spring.boot.bom))
     implementation(project(":testsys-domain"))
     implementation(project(":testsys-infra:localization"))
+    implementation(project(":testsys-infra:monitoring"))
     implementation(libs.spring.context)
     implementation(libs.spring.context.support)
     implementation(libs.spring.tx)

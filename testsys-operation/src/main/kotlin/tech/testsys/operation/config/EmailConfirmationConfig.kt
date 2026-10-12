@@ -1,6 +1,5 @@
 package tech.testsys.operation.config
 
-import tech.testsys.operation.annotation.OperationConfig
 import java.time.Duration
 
 /**
@@ -10,7 +9,6 @@ import java.time.Duration
  * @property maxConfirmationAttempts the number of attempts to enter a newly issued confirmation code.
  * @since %CURRENT_VERSION%
  */
-@OperationConfig("email-confirmation")
 interface EmailConfirmationConfig {
 
     val confirmationCodeLifetime: Duration

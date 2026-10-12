@@ -30,11 +30,14 @@
 | `docs/project/`                   | Устройство проекта и общие правила разработки: структура, стиль кода           |
 | `docs/guides/`                    | Гайды: пошаговые инструкции «как сделать X»                                    |
 | `<модуль>/README.md`              | Документация конкретного модуля                                                |
+| `deploy/<каталог>/README.md`      | Конфигурация запуска внешних компонентов рядом с её файлами                    |
 
 Место для нового документа выбирается по его назначению:
 
 - описывает, **что** делает система и на каком языке говорит заказчик, — `docs/domain/`;
 - описывает, как устроен **конкретный модуль** — `README.md` в корне этого модуля;
+- описывает конфигурацию запуска внешних компонентов, например мониторинга, — `README.md` рядом с этой
+  конфигурацией в `deploy/<каталог>/`;
 - описывает, как устроен проект в целом и по каким правилам пишется код, — `docs/project/`;
 - ведёт по шагам к результату — `docs/guides/`, независимо от темы, в том числе если гайд касается одного модуля.
 
@@ -68,12 +71,15 @@
 | [database/README.md](../testsys-infra/database/README.md)              | Справочник | Слои модуля хранения, транзакции, идентификаторы, файлы, схема БД |
 | [codegen/README.md](../testsys-infra/database/codegen/README.md)       | Справочник | KSP-кодогенерация модуля `database`                            |
 | [localization/README.md](../testsys-infra/localization/README.md)     | Справочник | Модуль локализации: зачем, как устроен, наш код и ICU4J       |
-| [grpc/README.md](../testsys-infra/grpc/README.md)                     | Справочник | gRPC-грейдер: компоненты, балансировка и настройки             |
+| [grpc/README.md](../testsys-infra/grpc/README.md)                     | Справочник | gRPC-грейдер: компоненты, балансировка, настройки, реестр узлов и очередь |
 | [diagnostics/README.md](../testsys-infra/diagnostics/README.md)       | Справочник | Анализ XML Полигонов и конфигурация диагностик                  |
 | [ui-design.md](project/ui-design.md) | Справочник | Общие правила оформления веб-интерфейса |
 | [components/README.md](../testsys-web/components/README.md)                            | Справочник | Kotlin-DSL дизайн-системы: страница, сетка, скоупы, компоненты  |
-| [app/README.md](../testsys-web/app/README.md) | Справочник | Основное веб-приложение: запуск и границы ответственности |
+| [app/README.md](../testsys-web/app/README.md) | Справочник | Основное и служебное веб-приложения: запуск и границы ответственности |
 | [mail/README.md](../testsys-infra/mail/README.md)                     | Справочник | Отправка писем Пользователям по SMTP и настройки                |
+| [settings/README.md](../testsys-infra/settings/README.md) | Справочник | Общие служебные настройки, снимки, переключение и восстановление, контракт хранения реестра узлов |
+| [monitoring/README.md](../testsys-infra/monitoring/README.md) | Справочник | Учёт технических сбоев, имена и метки метрик TestSys |
+| [deploy/monitoring/README.md](../deploy/monitoring/README.md) | Справочник | Локальные Prometheus и Grafana: запуск, сбор метрик TestSys, дашборды |
 | [implement-entity.md](guides/implement-entity.md)                      | Гайд       | Добавление доменной сущности и её хранения в БД                |
 | [implement-port.md](guides/implement-port.md)                          | Гайд       | Объявление порта в домене и его реализация                     |
 | [implement-feature.md](guides/implement-feature.md)                    | Гайд       | Реализация пользовательской фичи: спецификация, операция, тесты |

@@ -5,8 +5,17 @@ server:
       cookie:
         name: TESTSYS_APP_SESSION
 spring:
+  boot:
+    # Keep auto-configuration limited to explicit imports in each context.
+    enableautoconfiguration: false
   application:
     name: testsys-web-app
+management:
+  prometheus:
+    metrics:
+      export:
+        properties:
+          "[io.prometheus.exporter.include_created_timestamps]": "true"
 vaadin:
   launch-browser: false
   # Resolve the initial route before sending HTML, preserving the error handler HTTP status.
@@ -16,6 +25,14 @@ vaadin:
   build:
     folder: build
 testsys:
+  service:
+    address: 127.0.0.1
+    port: 8081
+    secret: ${TESTSYS_SERVICE_SECRET}
+    # The required Grafana address testsys.service.grafana-url has no default and is passed at launch.
+  metrics:
+    # The metrics server listens on all interfaces; the deployment keeps the port in an internal network.
+    port: 8082
   web:
     localization:
       # Region of the users whose region cookie and browser languages are not supported, a SupportedRegion name.

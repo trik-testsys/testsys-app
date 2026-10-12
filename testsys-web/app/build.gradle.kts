@@ -19,15 +19,21 @@ dependencies {
     implementation(platform(libs.spring.boot.bom))
     implementation(platform(libs.vaadin.bom))
     implementation(project(":testsys-domain"))
+    implementation(project(":testsys-infra:settings"))
     implementation(project(":testsys-operation"))
     implementation(project(":testsys-infra:database"))
     implementation(project(":testsys-infra:diagnostics"))
     implementation(project(":testsys-infra:grpc"))
     implementation(project(":testsys-infra:mail"))
+    implementation(project(":testsys-infra:monitoring"))
     implementation(project(":testsys-web:components"))
     implementation(libs.bundles.icu.implementation)
     implementation(libs.spring.tx)
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.liquibase)
     implementation(libs.spring.boot.starter.security)
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.micrometer.registry.prometheus)
     implementation(libs.vaadin.spring.boot.starter)
     implementation(libs.kotlin.reflect)
     developmentOnly(platform(libs.vaadin.bom))
@@ -44,7 +50,9 @@ dependencies {
 
 configureWebFrontend()
 
-tasks.test {
+tasks.withType<Test>().configureEach {
+    systemProperty("testsys.monitoring.path", rootProject.file("deploy/monitoring").absolutePath)
+    inputs.dir(rootProject.file("deploy/monitoring"))
     // A JVM zone other than the default user zone reveals dates read in the JVM zone instead of the zone of the user.
     jvmArgs("-Duser.timezone=UTC")
 }

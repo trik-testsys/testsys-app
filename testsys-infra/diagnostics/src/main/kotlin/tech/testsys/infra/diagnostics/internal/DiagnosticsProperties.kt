@@ -1,23 +1,18 @@
 package tech.testsys.infra.diagnostics.internal
 
-import org.springframework.beans.factory.annotation.Value
-import org.springframework.stereotype.Component
+import tech.testsys.infra.settings.api.SettingsProperties
 
 /**
- * Application configuration of polygon diagnostics.
+ * Application configuration of polygon diagnostics, bound from `testsys.diagnostics`.
  *
  * @property maxTimeLimitMillis the inclusive upper time limit in milliseconds.
  * @property scorePrefix the nonblank text identifying a score output message.
  * @since %CURRENT_VERSION%
  */
 @InternalDiagnosticsApi
-@Component
+@SettingsProperties("testsys.diagnostics")
 class DiagnosticsProperties(
-    @Suppress("UnnecessaryAnnotationUseSiteTarget")
-    @param:Value("\${testsys.diagnostics.max-time-limit-millis}")
     val maxTimeLimitMillis: Long,
-    @Suppress("UnnecessaryAnnotationUseSiteTarget")
-    @param:Value("\${testsys.diagnostics.score-prefix}")
     val scorePrefix: String,
 ) {
     init {

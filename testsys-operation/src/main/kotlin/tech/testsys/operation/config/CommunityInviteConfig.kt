@@ -1,7 +1,5 @@
 package tech.testsys.operation.config
 
-import tech.testsys.operation.annotation.ConfigProperty
-import tech.testsys.operation.annotation.OperationConfig
 import java.time.Duration
 
 /**
@@ -11,10 +9,8 @@ import java.time.Duration
  * @property refreshPeriod the delay between checks that replace expired community invites, fixed until restart.
  * @since %CURRENT_VERSION%
  */
-@OperationConfig("community-invite")
 interface CommunityInviteConfig {
 
-    @ConfigProperty(isDynamic = true)
     val ttl: Duration
 
     val refreshPeriod: Duration

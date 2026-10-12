@@ -9,6 +9,7 @@ import tech.testsys.domain.model.task.TestDiagnosticResult
 import tech.testsys.infra.diagnostics.internal.DiagnosticsProperties
 import tech.testsys.infra.diagnostics.internal.InternalDiagnosticsApi
 import tech.testsys.infra.diagnostics.internal.polygon.PolygonDiagnosticRunner
+import tech.testsys.infra.settings.api.Settings
 
 /**
  * Synchronous polygon analysis adapter with independent parser and diagnostics for each call.
@@ -18,15 +19,18 @@ import tech.testsys.infra.diagnostics.internal.polygon.PolygonDiagnosticRunner
 @Component
 @OptIn(InternalDiagnosticsApi::class)
 class PolygonDiagnosticsAdapter(
-    private val properties: DiagnosticsProperties,
+    private val settings: Settings<DiagnosticsProperties>,
     private val fileContentReader: FileContentReader,
 ) : PolygonDiagnostics {
-    override fun diagnose(test: Test): TestDiagnosticResult = testDiagnosticResult {
-        testId = test.id
-        reports = PolygonDiagnosticRunner().diagnose(
-            text = fileContentReader.read(test.data.file).toString(Charsets.UTF_8),
-            maxTimeLimitMillis = properties.maxTimeLimitMillis,
-            scorePrefix = properties.scorePrefix,
-        ).toMutableList()
+    override fun diagnose(test: Test): TestDiagnosticResult {
+        val properties = settings.current()
+        return testDiagnosticResult {
+            testId = test.id
+            reports = PolygonDiagnosticRunner().diagnose(
+                text = fileContentReader.read(test.data.file).toString(Charsets.UTF_8),
+                maxTimeLimitMillis = properties.maxTimeLimitMillis,
+                scorePrefix = properties.scorePrefix,
+            ).toMutableList()
+        }
     }
 }

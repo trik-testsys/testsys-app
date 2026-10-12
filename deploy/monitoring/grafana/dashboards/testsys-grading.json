@@ -1,0 +1,232 @@
+{
+  "uid": "testsys-grading",
+  "title": "TestSys — проверка Посылок",
+  "description": "Очередь проверки, Проверяющие узлы и завершённые проверки TestSys.",
+  "tags": ["testsys"],
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "time": { "from": "now-3h", "to": "now" },
+  "timepicker": { "refresh_intervals": ["30s", "1m", "5m", "15m"] },
+  "timezone": "browser",
+  "templating": {
+    "list": [
+      {
+        "name": "smoothing",
+        "label": "Сглаживание",
+        "type": "custom",
+        "query": "Авто : $__rate_interval, 1 мин : 1m, 5 мин : 5m, 10 мин : 10m, 30 мин : 30m",
+        "multi": false,
+        "includeAll": false,
+        "current": { "selected": true, "text": "Авто", "value": "$__rate_interval" },
+        "options": []
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Опрос TestSys",
+      "description": "Результат последнего опроса сервера метрик TestSys. Если TestSys недоступен, остальные панели не получают новых данных; это не то же самое, что нулевые значения.",
+      "gridPos": { "h": 6, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "Нет данных",
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "Недоступен", "color": "red", "index": 0 }, "1": { "text": "Доступен", "color": "green", "index": 1 } } }
+          ],
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "background", "graphMode": "none", "textMode": "value" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "min(up{job=\"testsys\"})",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Незавершённые проверки",
+      "description": "Общее число незавершённых проверок на всех четырёх этапах.",
+      "gridPos": { "h": 6, "w": 4, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0, "color": { "mode": "fixed", "fixedColor": "text" } }, "overrides": [] },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "area", "textMode": "value" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "sum(testsys_grading_queue{job=\"testsys\"})",
+          "legendFormat": "Всего"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Очередь проверки по этапам",
+      "description": "Незавершённые проверки на каждом этапе: подготовка, ожидание отправки, проверка на узле, сохранение результата. Линия «Всего» — их сумма.",
+      "gridPos": { "h": 6, "w": 16, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "none", "decimals": 0, "min": 0, "custom": { "stacking": { "mode": "normal", "group": "A" }, "fillOpacity": 30 } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "preparing" }, "properties": [{ "id": "displayName", "value": "Подготовка" }] },
+          { "matcher": { "id": "byName", "options": "waiting" }, "properties": [{ "id": "displayName", "value": "Ожидание отправки" }] },
+          { "matcher": { "id": "byName", "options": "grading" }, "properties": [{ "id": "displayName", "value": "Проверка на узле" }] },
+          { "matcher": { "id": "byName", "options": "saving" }, "properties": [{ "id": "displayName", "value": "Сохранение" }] },
+          {
+            "matcher": { "id": "byName", "options": "Всего" },
+            "properties": [
+              { "id": "custom.stacking", "value": { "mode": "none", "group": "A" } },
+              { "id": "custom.fillOpacity", "value": 0 },
+              { "id": "color", "value": { "mode": "fixed", "fixedColor": "text" } }
+            ]
+          }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "sum by (state) (testsys_grading_queue{job=\"testsys\"})",
+          "legendFormat": "{{state}}"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "sum(testsys_grading_queue{job=\"testsys\"})",
+          "legendFormat": "Всего"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Проверяющие узлы сейчас",
+      "description": "Число узлов реестра по участию в проверке и последнему известному результату опроса.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0 }, "overrides": [] },
+      "options": { "showHeader": true, "cellHeight": "sm" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "sum by (participation, status) (testsys_grading_nodes{job=\"testsys\"})",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true },
+            "indexByName": { "participation": 0, "status": 1, "Value": 2 },
+            "renameByName": { "participation": "Участие", "status": "Результат опроса", "Value": "Узлов" }
+          }
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Проверяющие узлы",
+      "description": "Число узлов реестра по участию в проверке (active, inactive) и последнему известному результату опроса (unknown, available, unavailable).",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0, "min": 0 }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "sum by (participation, status) (testsys_grading_nodes{job=\"testsys\"})",
+          "legendFormat": "{{participation}}/{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Очередь и ёмкость узлов",
+      "description": "Сообщённые узлами число Посылок в очереди и ёмкость, суммарно по доступным узлам, участвующим в проверке.",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "none", "decimals": 0, "min": 0 }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "none" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "sum(testsys_grading_nodes_queued{job=\"testsys\"})",
+          "legendFormat": "Посылок в очереди"
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "sum(testsys_grading_nodes_capacity{job=\"testsys\"})",
+          "legendFormat": "Ёмкость"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Завершённые проверки за период",
+      "description": "Завершённые проверки за выбранный период по исходу: verdict — создан Вердикт, failure — ошибка без Вердикта, timeout — таймаут без Вердикта. Первый исход учитывается после успешного опроса, если нулевая точка создания ряда входит в период. Без завершённых проверок показывается 0.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": {
+        "defaults": { "unit": "none", "decimals": 0, "noValue": "0", "color": { "mode": "fixed", "fixedColor": "text" } },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "failure" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] },
+          { "matcher": { "id": "byName", "options": "timeout" }, "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "orange" } }] }
+        ]
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "colorMode": "value", "graphMode": "none", "textMode": "value_and_name" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "round(sum by (result) (increase(testsys_grading_checks_total{job=\"testsys\"}[$__range])))",
+          "legendFormat": "{{result}}",
+          "instant": true,
+          "range": false
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Завершённые проверки в минуту",
+      "description": "Завершённые проверки в минуту по исходу. Первое событие даёт прирост, пока нулевая точка создания ряда входит в окно расчёта.",
+      "gridPos": { "h": 8, "w": 16, "x": 8, "y": 14 },
+      "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+      "fieldConfig": { "defaults": { "unit": "opm", "min": 0 }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }, "tooltip": { "mode": "multi", "sort": "desc" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "prometheus", "uid": "testsys-prometheus" },
+          "expr": "60 * sum by (result) (rate(testsys_grading_checks_total{job=\"testsys\"}[${smoothing:raw}]))",
+          "legendFormat": "{{result}}"
+        }
+      ]
+    }
+  ]
+}

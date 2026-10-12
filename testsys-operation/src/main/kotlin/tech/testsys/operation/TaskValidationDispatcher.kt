@@ -10,9 +10,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 
 /**
- * Drives saved task validation requests through [TaskValidationOperations] on [executor], which must run tasks one
- * at a time; this gives exclusive execution within a single application instance. Processing is scheduled when testing
- * is requested and when an author submission is graded; a technical exception records a terminal technical failure.
+ * Drives saved task validation requests through [TaskValidationOperations] on [executor], which must run tasks one at a time for
+ * exclusive execution within one application instance; processing is scheduled on a testing request and a graded author submission.
+ * A technical exception records a terminal failure, then goes to [onTechnicalFailure], like a logged exception of recording or lookup.
  *
  * @since %CURRENT_VERSION%
  */
@@ -21,6 +21,7 @@ class TaskValidationDispatcher(
     private val operations: TaskValidationOperations,
     private val grader: Grader,
     private val executor: Executor,
+    private val onTechnicalFailure: (Exception) -> Unit = {},
 ) {
     private val scheduled: MutableSet<TaskValidationRequestId> = ConcurrentHashMap.newKeySet()
 
@@ -31,11 +32,13 @@ class TaskValidationDispatcher(
      * @since %CURRENT_VERSION%
      */
     fun start() {
-        grader.subscribeOnGraded { submissionId -> executor.execute { onGraded(submissionId) } }
+        grader.subscribeOnGraded { submissionId -> executor.execute { reported { onGraded(submissionId) } } }
         executor.execute {
-            requests.findActive().forEach { request ->
-                guarded(request.id) { operations.resendUnfinishedSubmissions(request.id) }
-                schedule(request.id)
+            reported {
+                requests.findActive().forEach { request ->
+                    reported { guarded(request.id) { operations.resendUnfinishedSubmissions(request.id) } }
+                    schedule(request.id)
+                }
             }
         }
     }
@@ -47,7 +50,7 @@ class TaskValidationDispatcher(
      * @since %CURRENT_VERSION%
      */
     fun schedule(requestId: TaskValidationRequestId) {
-        if (scheduled.add(requestId)) executor.execute { process(requestId) }
+        if (scheduled.add(requestId)) executor.execute { reported { process(requestId) } }
     }
 
     private fun onGraded(submissionId: SubmissionId) {
@@ -66,13 +69,32 @@ class TaskValidationDispatcher(
         try {
             action()
         } catch (exception: Exception) {
-            requests.recordTechnicalFailure(
-                requestId = requestId,
-                failure = taskValidationTechnicalFailure {
-                    description = "${exception::class.qualifiedName}: ${exception.message}"
-                    occurredAt = Instant.now()
-                },
-            )
+            try {
+                requests.recordTechnicalFailure(
+                    requestId = requestId,
+                    failure = taskValidationTechnicalFailure {
+                        description = "${exception::class.qualifiedName}: ${exception.message}"
+                        occurredAt = Instant.now()
+                    },
+                )
+            } finally {
+                onTechnicalFailure(exception)
+            }
         }
+    }
+
+    // An exception escaping an executor task would stop its worker thread and drop the failure unnoticed.
+    @Suppress("TooGenericExceptionCaught")
+    private fun reported(action: () -> Unit) {
+        try {
+            action()
+        } catch (exception: Exception) {
+            onTechnicalFailure(exception)
+            logger.log(System.Logger.Level.WARNING, "Failed to handle a task validation request", exception)
+        }
+    }
+
+    private companion object {
+        val logger: System.Logger = System.getLogger(TaskValidationDispatcher::class.java.name)
     }
 }

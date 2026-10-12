@@ -1,5 +1,6 @@
 package tech.testsys.web.app.config
 
+import org.springframework.beans.factory.SmartInitializingSingleton
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -143,6 +144,25 @@ class OperationsConfiguration {
         return object : CommunityConfig {
             override val publicCommunityId = id
         }
+    }
+
+    /**
+     * Creates the single Supervisor or sets its name and access code from the required properties under
+     * `testsys.operation.supervisor` after all singletons of the shared infrastructure are created, before the web
+     * contexts start.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun supervisorBootstrap(
+        environment: Environment,
+        supervisors: SupervisorRepository,
+        multipleRoleUsers: MultipleRoleUserRepository,
+        participants: ParticipantRepository,
+        observers: ObserverRepository,
+        transactions: TransactionOperations,
+    ): SmartInitializingSingleton = SmartInitializingSingleton {
+        SupervisorBootstrap(supervisors, multipleRoleUsers, participants, observers, transactions).ensure(environment)
     }
 
     /**

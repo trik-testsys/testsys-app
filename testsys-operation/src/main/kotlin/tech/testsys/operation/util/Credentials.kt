@@ -29,6 +29,19 @@ fun RandomGenerator.nextAccessToken(): String = List(ACCESS_TOKEN_GROUP_COUNT) {
     nextString(ACCESS_TOKEN_ALPHABET, ACCESS_TOKEN_GROUP_LENGTH)
 }.joinToString(ACCESS_TOKEN_SEPARATOR)
 
+/**
+ * Checks that [value] has the format of codes from [nextAccessToken]: 16 Latin letters and digits in groups of four
+ * separated by `-`, without surrounding whitespace.
+ *
+ * @since %CURRENT_VERSION%
+ */
+@InternalOperationsApi
+fun isAccessToken(value: String): Boolean {
+    val groups = value.split(ACCESS_TOKEN_SEPARATOR)
+    return groups.size == ACCESS_TOKEN_GROUP_COUNT &&
+        groups.all { group -> group.length == ACCESS_TOKEN_GROUP_LENGTH && group.all { char -> char in ACCESS_TOKEN_ALPHABET } }
+}
+
 private fun RandomGenerator.nextString(alphabet: String, length: Int): String = buildString(length) {
     repeat(length) { append(alphabet[nextInt(alphabet.length)]) }
 }

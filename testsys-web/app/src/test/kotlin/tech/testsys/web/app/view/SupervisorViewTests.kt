@@ -37,12 +37,12 @@ class SupervisorViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should filter non-supervisor users and open the communities tab`() {
-        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+    fun `should filter users without the supervisor and open the communities tab`() {
+        val supervisor = fixtures.supervisor()
+        signIn(supervisor)
         val first = fixtures.community(name = "Первое сообщество")
         fixtures.community(name = "Второе сообщество")
         fixtures.observer(first, name = "Наблюдатель Анна")
-        fixtures.userOf(UserKind.SUPERVISOR, name = "Другой супервайзер")
 
         UI.getCurrent().navigate(SupervisorView::class.java, section("users"))
         field("Псевдоним")._value = "Наблюдатель Анна"
@@ -50,9 +50,9 @@ class SupervisorViewTests : MockSpringVaadinTests() {
 
         val users = tableText()
         assertTrue("Наблюдатель Анна" in users, users)
-        field("Псевдоним")._value = "Другой супервайзер"
+        field("Псевдоним")._value = supervisor.data.name
         UI.getCurrent()._get<Button> { text = "Применить" }._click()
-        assertFalse("Другой супервайзер" in tableText())
+        assertFalse(supervisor.data.name in tableText())
 
         UI.getCurrent().navigate(SupervisorView::class.java, section("communities"))
 

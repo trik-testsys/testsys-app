@@ -16,6 +16,7 @@ import tech.testsys.infra.database.internal.jpa.repository.user.single.SingleRol
 import tech.testsys.infra.database.internal.jpa.repository.user.single.SupervisorDataJpaEntityRepository
 import tech.testsys.infra.database.internal.mapping.user.single.SupervisorMapping
 import tech.testsys.infra.database.internal.utils.findAllInChunks
+import tech.testsys.infra.database.internal.utils.findByIdOrError
 import tech.testsys.infra.database.internal.utils.requireById
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.requireVersion
@@ -59,6 +60,16 @@ class SupervisorPersistenceAdapter(
 
         val domainEntity = SupervisorMapping.toDomain(updatedUserJpaEntity, currentDataJpaEntity)
         return domainEntity
+    }
+
+    @Transactional(readOnly = true)
+    override fun findSingle(): Supervisor? {
+        val dataJpaEntities = supervisorDataJpaEntityRepository.findAll()
+        check(dataJpaEntities.size <= 1) { "Expected at most one supervisor, found ${dataJpaEntities.size}" }
+        val dataJpaEntity = dataJpaEntities.singleOrNull() ?: return null
+
+        val userJpaEntity = jpaEntityRepository.findByIdOrError(dataJpaEntity.userId)
+        return SupervisorMapping.toDomain(userJpaEntity, dataJpaEntity)
     }
 
     override fun removeRoot(id: SingleRoleUserId, expectedVersion: Long?) {

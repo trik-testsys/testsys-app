@@ -5,6 +5,10 @@ testsys:
     community:
       public-community-id: 1
       public-community-name: Публичное Сообщество
+    # Supervisor of the environment; its access code is fixed and not secret.
+    supervisor:
+      name: Супервайзер
+      access-token: Supe-rvis-or00-0001
     email-confirmation:
       confirmation-code-lifetime: PT15M
       max-confirmation-attempts: 3

@@ -38,11 +38,10 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     @ParameterizedTest
     @MethodSource("startPages")
     fun `should sign the user in and open the start page of their kind`(kind: UserKind, startPage: Class<out Component>) {
-        val accessToken = fixtures.unique("token")
-        val user = fixtures.userOf(kind, rawAccessToken = accessToken)
+        val user = fixtures.userOf(kind)
         UI.getCurrent().navigate(AuthenticationView::class.java)
 
-        signInWith(accessToken)
+        signInWith(fixtures.accessTokenOf(user))
 
         assertEquals(startPage, currentView)
         assertEquals(CabinetPrincipal.of(user), CabinetSignIn.principal())
@@ -73,8 +72,7 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
 
     @Test
     fun `should compare the access code exactly`() {
-        val accessToken = fixtures.unique("token")
-        fixtures.userOf(UserKind.SUPERVISOR, rawAccessToken = accessToken)
+        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
         UI.getCurrent().navigate(AuthenticationView::class.java)
 
         signInWith(" $accessToken ")

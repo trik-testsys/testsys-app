@@ -152,6 +152,7 @@ HTTPS-прокси:
 | `SPRING_DATASOURCE_PASSWORD` | Override окружения | `spring.datasource.password` |
 | `TESTSYS_MAIL_HOST`, `TESTSYS_MAIL_PORT` | `deploy/compose.dev.yml`, `deploy/compose.e2e.yml`: `mailpit`, `1025` | `testsys.mail.host`, `port` |
 | `TESTSYS_MAIL_PASSWORD` | `deploy/compose.prod.yml` | `testsys.mail.password` |
+| `TESTSYS_OPERATION_SUPERVISOR_ACCESS_TOKEN` | `deploy/compose.prod.yml` из переменной Compose `TESTSYS_SUPERVISOR_ACCESS_TOKEN` | `testsys.operation.supervisor.access-token` |
 | `TESTSYS_GRADING_NODES` | Override окружения из переменной Compose `TESTSYS_GRADING_NODES` | `testsys.grading.nodes`, формат — в разделе «Настройки» в [grpc/README.md](../testsys-infra/grpc/README.md#настройки) |
 | `SERVER_FORWARDHEADERSSTRATEGY` | `deploy/compose.prod.yml` | `server.forward-headers-strategy` |
 
@@ -160,8 +161,9 @@ HTTPS-прокси:
 ### Готовность приложения
 
 Healthcheck сервиса `app` проверяет, что порт `8080` внутри контейнера принимает TCP-соединение:
-`bash -c ': </dev/tcp/127.0.0.1/8080'`. Spring Boot открывает HTTP-порт после создания всех singleton-бинов,
-то есть после миграций Liquibase и проверки Публичного Сообщества в `PublicCommunityBootstrap`. Поэтому статус
+`bash -c ': </dev/tcp/127.0.0.1/8080'`. Spring Boot открывает HTTP-порт после создания всех singleton-бинов
+и вызова их `SmartInitializingSingleton`, то есть после миграций Liquibase, проверки Публичного Сообщества
+в `PublicCommunityBootstrap` и проверки Супервайзера в `SupervisorBootstrap`. Поэтому статус
 `healthy` означает, что миграции применены и приложение принимает запросы. Пока проверка ни разу не прошла, но
 не дольше пяти минут (`start_period`), Docker проверяет порт каждые 2 секунды (`start_interval`) и не учитывает
 неудачи. После первой успешной проверки или по истечении пяти минут он проверяет порт каждые 10 секунд и после
@@ -171,8 +173,9 @@ Healthcheck сервиса `app` проверяет, что порт `8080` вн
 
 Сервис `db-seed` в `deploy/compose.dev.yml` работает на образе `postgres:17-alpine` и запускает
 `deploy/db-seed/entrypoint.sh` при каждом `up`. Он зависит от `app` с условием `service_healthy`, поэтому стартует
-после миграций Liquibase и создания Публичного Сообщества. `psql` подключается к базе `testsys` от пользователя
-`testsys`. Каталог данных образа postgres смонтирован в `tmpfs`, чтобы `db-seed` не оставлял анонимный том.
+после миграций Liquibase, создания Публичного Сообщества и проверки Супервайзера. `psql` подключается к базе
+`testsys` от пользователя `testsys`. Каталог данных образа postgres смонтирован в `tmpfs`, чтобы `db-seed`
+не оставлял анонимный том.
 
 Скрипт из `TESTSYS_DB_SEED_SCRIPT` монтируется как `/opt/testsys/db-seed.sql`. `db-seed` действует так:
 

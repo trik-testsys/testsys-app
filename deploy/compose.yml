@@ -18,8 +18,9 @@ services:
     # Published only on the loopback interface of the Docker host; production puts an HTTPS proxy in front of it.
     ports:
       - "127.0.0.1:${TESTSYS_HTTP_PORT:-8080}:8080"
-    # Spring Boot opens the HTTP port after creating all singletons, that is after Liquibase migrations and the
-    # Public Community bootstrap, so an accepted TCP connection means the application is ready.
+    # Spring Boot opens the HTTP port after creating all singletons and running their SmartInitializingSingleton
+    # callbacks, that is after Liquibase migrations and the Public Community and Supervisor bootstraps, so an accepted
+    # TCP connection means the application is ready.
     healthcheck:
       test: ["CMD", "bash", "-c", ": </dev/tcp/127.0.0.1/8080"]
       interval: 10s

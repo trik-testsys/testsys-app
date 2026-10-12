@@ -8,13 +8,16 @@ import com.github.mvysny.kaributesting.v10.currentView
 import com.github.mvysny.kaributesting.v10.expectView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Location
 import com.vaadin.flow.router.NavigationTrigger
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -75,6 +78,16 @@ class SupervisorViewTests : MockSpringVaadinTests() {
         field("Псевдоним")._value = observer.data.name
         UI.getCurrent()._get<Button> { text = "Применить" }._click()
         assertTrue(observer.data.name in tableText())
+    }
+
+    @Test
+    fun `should title the head and the browser tab of the supervisor cabinet`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+
+        UI.getCurrent().navigate(SupervisorView::class.java, section("communities"))
+
+        assertEquals("Кабинет Супервайзера", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        assertEquals("Кабинет Супервайзера", UI.getCurrent()._get<H1>().text)
     }
 
     private fun section(name: String) = RouteParameters(ADMIN_SECTION_PARAMETER, name)

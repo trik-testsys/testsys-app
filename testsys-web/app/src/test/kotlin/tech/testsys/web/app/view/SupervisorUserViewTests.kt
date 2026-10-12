@@ -10,9 +10,11 @@ import com.vaadin.flow.component.dialog.Dialog
 import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -55,9 +57,9 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
         assertEquals(SupervisorUserView::class.java, currentView)
         assertEquals(accessToken, field("Код-доступа").value)
         assertTrue(field("Код-доступа").isReadOnly)
-        assertTrue(UI.getCurrent()._find<Button> { text = "Включить в сообщество" }.isEmpty())
-        assertTrue(UI.getCurrent()._find<Button> { text = "Удалить наблюдателя" }.isEmpty())
-        assertTrue(UI.getCurrent()._find<Button> { text = "Назначить администратором" }.isEmpty())
+        assertTrue(UI.getCurrent()._find<Button> { text = "Включить в Сообщество" }.isEmpty())
+        assertTrue(UI.getCurrent()._find<Button> { text = "Удалить Наблюдателя" }.isEmpty())
+        assertTrue(UI.getCurrent()._find<Button> { text = "Назначить Администратором" }.isEmpty())
     }
 
     @Test
@@ -104,7 +106,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
         }
         open(member.id.value)
 
-        UI.getCurrent()._get<Button> { text = "Назначить администратором" }._click()
+        UI.getCurrent()._get<Button> { text = "Назначить Администратором" }._click()
         openDialog()._get<Button> { text = "Назначить" }._click()
 
         val administrator = checkNotNull(users.findById(member.id)).data.roles.filterIsInstance<Administrator>().single()
@@ -123,8 +125,8 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
         open(administrator.id.value)
 
-        assertEquals(1, UI.getCurrent()._find<Button> { text = "Включить в сообщество" }.size)
-        assertTrue(UI.getCurrent()._find<Button> { text = "Назначить администратором" }.isEmpty())
+        assertEquals(1, UI.getCurrent()._find<Button> { text = "Включить в Сообщество" }.size)
+        assertTrue(UI.getCurrent()._find<Button> { text = "Назначить Администратором" }.isEmpty())
     }
 
     @Test
@@ -142,7 +144,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
         }
         open(member.id.value)
 
-        UI.getCurrent()._get<Button> { text = "Включить в сообщество" }._click()
+        UI.getCurrent()._get<Button> { text = "Включить в Сообщество" }._click()
         choose("Сообщество", CommunityVo::id, target.id)
         choose("Роль", { role: CommunityRole -> role }, CommunityRole.Student)
         UI.getCurrent()._get<Button> { text = "Включить" }._click()
@@ -152,6 +154,22 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
         assertTrue(target.id in student.memberOf.ids)
         assertTrue(original.id in updated.data.roles.first { it !is Student }.memberOf.ids)
         assertEquals(SupervisorUserView::class.java, currentView)
+    }
+
+    @Test
+    fun `should title the browser tab of a user and head the page with its kind`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        val name = fixtures.unique("Наблюдатель")
+        val observer = fixtures.observer(fixtures.community(), name = name)
+        val participant = study.participant(emptyList())
+
+        open(observer.id.value)
+        val observerHead = UI.getCurrent()._get<H1>().text
+        open(participant.id.value)
+
+        assertEquals("Пользователь", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        assertEquals("Наблюдатель «$name»", observerHead)
+        assertEquals("Участник «${participant.data.name}»", UI.getCurrent()._get<H1>().text)
     }
 
     @Test

@@ -67,7 +67,7 @@ class SupervisorCommunityViewTests : MockSpringVaadinTests() {
         openSupervisorCommunity(community.id)
 
         val trigger = UI.getCurrent()._find<Button>().single { button ->
-            button.element.getAttribute("aria-label") == "Действия с кодом-приглашением для роли Организатор"
+            button.element.getAttribute("aria-label") == "Действия с Кодом-приглашением для Роли Организатор"
         }
         val menu = checkNotNull(ComponentUtil.getData(trigger, ContextMenu::class.java))
         menu._clickItemWithCaption("Заменить")

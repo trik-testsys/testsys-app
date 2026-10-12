@@ -5,9 +5,14 @@ import org.junit.jupiter.api.Test
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.SingleRoleUserId
+import tech.testsys.infra.localization.Localization
+import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.operation.user.ObserverResult
+import java.time.ZoneOffset
 
 class ObserverResultsCsvTests {
+    private val texts = Localization.forRegion(SupportedRegion.RU, ZoneOffset.UTC).pageObserver
+
     @Test
     fun `should write headings and scores with byte order mark and escaped CRLF rows`() {
         val result = ObserverResult(
@@ -24,7 +29,7 @@ class ObserverResultsCsvTests {
             ),
         )
 
-        val csv = observerResultsCsv(result)
+        val csv = observerResultsCsv(result, texts)
 
         assertEquals(
             "\uFEFFID участника;\"Тур;\"\"А - Задача\"\r\n" +
@@ -35,7 +40,7 @@ class ObserverResultsCsvTests {
 
     @Test
     fun `should write only a header when no competition is accessible`() {
-        val csv = observerResultsCsv(ObserverResult(columns = emptyList(), rows = emptyList()))
+        val csv = observerResultsCsv(ObserverResult(columns = emptyList(), rows = emptyList()), texts)
 
         assertEquals("\uFEFFID участника\r\n", csv)
     }

@@ -17,7 +17,9 @@
 Конфигурации основного и служебного интерфейсов помечены `@SpringBootApplication` для обнаружения приложений
 инструментами разработки.
 Стандартный поиск автоконфигураций отключён через `spring.boot.enableautoconfiguration=false`; явные импорты продолжают работать.
-Основной дочерний контекст включает транзакционные прокси сервисов через `@EnableTransactionManagement`.
+Основной дочерний контекст включает транзакционные прокси сервисов через
+`@EnableTransactionManagement(proxyTargetClass = true)`: прокси наследуют класс сервиса, поэтому страницы получают
+сервис по его классу и тогда, когда сервис реализует интерфейсы.
 `MainWebConfiguration` создаёт локальный retry-advisor с политикой родителя:
 инфраструктурный auto-proxy creator Spring рассматривает только локальные определения advisor.
 Transaction manager остаётся общим.
@@ -123,10 +125,8 @@ Transaction manager остаётся общим.
 | `JudgeView` | `judge`, `judge/submissions` | `MULTIPLE_ROLE` с Ролью Судьи |
 | `JudgeSolutionView` | `judge/submissions/:submissionId` | `MULTIPLE_ROLE` с Ролью Судьи |
 
-Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы Ролей,
-кроме стартовой страницы Наблюдателя, реализованы; она пока показывает только шапку
-и пустое состояние. Стартовую страницу вида
-Пользователя возвращает `startPageOf`.
+Требования к страницам — в разделе `testsys.web` в [features.md](../../docs/domain/features.md). Страницы всех Ролей
+реализованы. Стартовую страницу вида Пользователя возвращает `startPageOf`.
 
 `ParticipantView` загружает Туры через `ParticipantService.viewContests` в `beforeEnter`.
 `StudyContestTaskVo` передаёт результаты таблицы Задач, `JudgeResultVo` — расширенные строки таблицы Судьи.
@@ -172,8 +172,8 @@ Transaction manager остаётся общим.
 без `OperationErrorHandler`. Так же `MultiMainView` показывает отказы присоединения к Сообществу; после
 присоединения страница перестраивается вместе с шапкой, чтобы новая Роль появилась и в «Меню».
 
-Все текущие страницы настраивают вводное пояснение и гайды своих блоков, включая гостевые формы,
-страницы Наблюдателя и Супервайзера с пустым состоянием и обе стадии регистрации.
+Все текущие страницы настраивают вводное пояснение и гайды своих блоков, включая гостевые формы
+и обе стадии регистрации.
 Описания находятся рядом с содержимым блоков; общие секции используют те же описания при повторном построении.
 Экраны ошибок получают гайды из components. Контракт DSL — в разделе
 [Гайды страницы и блока](../components/README.md#гайды-страницы-и-блока).
@@ -189,23 +189,26 @@ Transaction manager остаётся общим.
 | `page_profile` | `ProfileView` |
 | `page_confirmation` | Подтверждение почты кодом из письма, общее для `RegistrationView` и `ProfileView` |
 | `page_home` | `MultiMainView` |
-| `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню»; общие для Кабинетов пустое состояние нереализованного раздела, статус проверки Задачи, ограничение длины названия и запись длительности |
+| `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню»; общие для Кабинетов статус проверки Задачи, ограничение длины названия и запись длительности |
 | `page_administrator` | `AdminView`, `AdminCommunityView`, `AdminUserView` |
 | `page_developer` | `DeveloperView`, `DeveloperContestView`, `DeveloperTaskView`, `DeveloperResourceView`, `DeveloperTestingView` |
 | `page_manager` | `ManagerView`, `ManagerClassView`, `ManagerCompetitionView`, `ManagerContestView` и заголовки их CSV |
 | `page_judge` | `JudgeView`, `JudgeSolutionView` |
 | `page_student` | `StudentView`, `StudentClassView`, `StudentContestView`, `StudentTaskView` |
 | `page_participant` | `ParticipantView`, `ParticipantContestView`, `ParticipantTaskView` |
-| `page_observer` | `ObserverView` |
-| `page_supervisor` | `SupervisorView` |
+| `page_observer` | `ObserverView` и заголовки его CSV |
+| `page_supervisor` | `SupervisorView`, `SupervisorUserView`, `SupervisorCommunityView` |
 
 Как выбрать бандл для текста страницы Роли — в шаге 1
 [add-localization.md](../../docs/guides/add-localization.md#1-выбрать-ключ-и-файл-бандла). Общие страницы Тура
 и Задачи `StudyContestView` и `StudyTaskView` получают тексты через `StudyTexts`: страницы Ученика читают их
 из `page_student`, страницы Участника — из `page_participant`.
 
+Страницы Супервайзера используют общие блоки страниц Администратора: `CommunityDetailsView`, `adminUsersTable`
+и блоки разделов Ролей из `UserRoleDetails.kt`. Тексты этих блоков остаются в `page_administrator`, поэтому
+`SupervisorCommunityView` получает из `page_supervisor` только название Кабинета для хлебных крошек.
+
 Страницы из таблицы, у которых есть свой заголовок вкладки, задают его через `HasDynamicTitle` из сообщения.
-Остальные страницы Ролей пока задают тексты строками, а заголовок вкладки — через `@PageTitle`.
 
 ## Прокси-сервисы
 
@@ -215,7 +218,8 @@ Transaction manager остаётся общим.
 операциям один к одному и принимают те же входные данные без Пользователя. Сервиса для `TaskValidationOperations`
 нет: её вызывает только диспетчер. `ObserverService` возвращает странице пары Соревнование–назначенный Тур и
 результаты всех доступных Наблюдателю Соревнований. `ObserverView` формирует один CSV-файл независимо
-от фильтров, сортировки и текущей страницы таблицы.
+от фильтров, сортировки и текущей страницы таблицы. Заголовки этого CSV страница форматирует через `inUiOf`,
+как и страницы Организатора.
 `MultipleRoleUserService.viewProfile` добавляет к Ролям Псевдоним и почту текущего Пользователя и возвращает их
 в `ProfileVo`.
 `AdministratorService` не выставляет служебную `refreshCommunityInvite`, `ManagerService` — служебную

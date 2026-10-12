@@ -27,7 +27,7 @@ import tech.testsys.web.app.config.OperationsConfiguration
     ],
 )
 @EnableVaadin("tech.testsys.web.app", "tech.testsys.web.shell")
-@EnableTransactionManagement
+@EnableTransactionManagement(proxyTargetClass = true)
 @Import(WebAutoConfiguration::class)
 class TestSysApplication
 

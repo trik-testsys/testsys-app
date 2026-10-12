@@ -6,8 +6,13 @@ import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10._value
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.H1
 import com.vaadin.flow.component.html.NativeButton
+import com.vaadin.flow.component.html.Nav
+import com.vaadin.flow.router.HasDynamicTitle
+import com.vaadin.flow.router.RouterLink
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -105,5 +110,25 @@ class ObserverViewTests : MockSpringVaadinTests() {
         UI.getCurrent().navigate(ObserverView::class.java)
 
         assertTrue("Туров пока нет" in StudyPages.pageText())
+    }
+
+    @Test
+    fun `should title the head and the browser tab of the observer cabinet`() {
+        signIn(fixtures.observer(fixtures.community()))
+
+        UI.getCurrent().navigate(ObserverView::class.java)
+
+        assertEquals("Кабинет Наблюдателя", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        assertEquals("Кабинет Наблюдателя", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should show no breadcrumbs on the start page of an observer`() {
+        signIn(fixtures.observer(fixtures.community()))
+
+        UI.getCurrent().navigate(ObserverView::class.java)
+
+        val crumbs = UI.getCurrent()._find<Nav> { classes = "ts-crumbs" }.flatMap { nav -> nav._find<RouterLink>() }
+        assertTrue(crumbs.isEmpty())
     }
 }

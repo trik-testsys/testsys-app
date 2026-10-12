@@ -179,7 +179,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
         open(community.id)
         val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
 
-        UI.getCurrent()._get<Button> { text = "Создать наблюдателя" }._click()
+        UI.getCurrent()._get<Button> { text = "Создать Наблюдателя" }._click()
         textField("Имя")._value = "Наблюдатель Анна"
         contestsField().value = setOf(contest)
         UI.getCurrent()._get<Button> { text = "Создать" }._click()

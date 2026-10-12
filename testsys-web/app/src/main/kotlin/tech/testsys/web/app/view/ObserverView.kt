@@ -1,14 +1,16 @@
 package tech.testsys.web.app.view
 
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.contract.persistence.ObserverContestFilter
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.infra.localization.PageObserver
 import tech.testsys.operation.user.ObserverResult
 import tech.testsys.web.app.service.observer.ObserverService
 import tech.testsys.web.components.TestSysView
@@ -19,7 +21,7 @@ import tech.testsys.web.components.data.filters
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.textInput
-import tech.testsys.web.components.texts.UiTexts
+import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Observer cabinet with current competition and assigned contest pairs and a results download.
@@ -27,19 +29,24 @@ import tech.testsys.web.components.texts.UiTexts
  * @since %CURRENT_VERSION%
  */
 @Route("observer/:section?(contests)")
-@PageTitle("Кабинет Наблюдателя")
 @RolesAllowed("OBSERVER")
-class ObserverView(texts: UiTexts, private val headers: CabinetHeaders, private val service: ObserverService) :
-    TestSysView(texts),
-    BeforeEnterObserver {
+class ObserverView(private val headers: CabinetHeaders, private val service: ObserverService) :
+    TestSysView(),
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageObserver.title()
 
     override fun beforeEnter(event: BeforeEnterEvent) {
         service.viewContests(Pagination(0, 1))
         var applied = ObserverContestFilter()
+        val ui = UI.getCurrent()
+        val texts = currentLocalization().pageObserver
         page(headers.cabinet(active = CabinetHeaders.MAIN_SECTION)) {
-            head("Кабинет Наблюдателя")
+            head(texts.title())
+            guide(texts.guide())
             row {
-                block(title = "Туры Соревнований") {
+                block(title = texts.contestsTitle()) {
+                    guide(texts.contestsGuide())
                     val rows = table(
                         key = { pair: tech.testsys.web.app.service.observer.ObserverContestVo ->
                             pair.competition.id to pair.contest.id
@@ -49,12 +56,12 @@ class ObserverView(texts: UiTexts, private val headers: CabinetHeaders, private 
                             Page(result.content, result.totalElements.toInt())
                         },
                     ) {
-                        textColumn("Соревнование", sortKey = "competitionName", size = 5) { it.competition.name }
-                        textColumn("Тур", sortKey = "name", size = 5) { it.contest.name }
-                        dateTimeColumn("Начало", size = 4) { it.contest.startsAt?.toServerDateTime() }
-                        dateTimeColumn("Конец", size = 4) { it.contest.endsAt?.toServerDateTime() }
-                        textColumn("Время на прохождение", size = 4) { studyDurationText(it.contest.attemptDuration) }
-                        empty("Туров пока нет", "Назначенные Туры появятся здесь вместе с Соревнованиями.")
+                        textColumn(texts.competition(), sortKey = "competitionName", size = 5) { it.competition.name }
+                        textColumn(texts.contest(), sortKey = "name", size = 5) { it.contest.name }
+                        dateTimeColumn(texts.startsAt(), size = 4) { it.contest.startsAt?.toUserDateTime() }
+                        dateTimeColumn(texts.endsAt(), size = 4) { it.contest.endsAt?.toUserDateTime() }
+                        textColumn(texts.attemptDuration(), size = 4) { studyDurationText(it.contest.attemptDuration) }
+                        empty(texts.contestsEmpty(), texts.contestsEmptyHint())
                     }
 
                     lateinit var competitionName: ValueInput<String>
@@ -87,18 +94,19 @@ class ObserverView(texts: UiTexts, private val headers: CabinetHeaders, private 
                         onRefresh = { rows.refresh(toFirstPage = true) },
                     ) {
                         row {
-                            competitionName = textInput("Соревнование", labelSize = 4, size = 8)
-                            contestName = textInput("Тур", labelSize = 4, size = 8)
+                            competitionName = textInput(texts.competition(), labelSize = 4, size = 8)
+                            contestName = textInput(texts.contest(), labelSize = 4, size = 8)
                         }
                         row {
-                            competitionId = textInput("ID Соревнования", labelSize = 4, size = 8)
-                            contestId = textInput("ID Тура", labelSize = 4, size = 8)
+                            competitionId = textInput(texts.filterCompetitionId(), labelSize = 4, size = 8)
+                            contestId = textInput(texts.filterContestId(), labelSize = 4, size = 8)
                         }
                     }
                     actions {
-                        downloadAction("Скачать все результаты", produce = { context ->
+                        downloadAction(texts.contestsDownload(), produce = { context ->
                             val result = service.downloadResult()
-                            val bytes = observerResultsCsv(result).toByteArray(Charsets.UTF_8)
+                            val csv = inUiOf(ui) { observerResultsCsv(result, currentLocalization().pageObserver) }
+                            val bytes = csv.toByteArray(Charsets.UTF_8)
                             context.ensureActive()
                             DownloadContent(
                                 "observer-results.csv",
@@ -115,10 +123,13 @@ class ObserverView(texts: UiTexts, private val headers: CabinetHeaders, private 
     }
 }
 
-/** Serializes [result] with observer column labels and CSV escaping. */
-internal fun observerResultsCsv(result: ObserverResult): String {
-    val header = listOf("ID участника") + result.columns.map { column ->
-        "${column.contestName} - ${column.taskName}"
+/**
+ * Serializes [result] with CSV escaping: the participant identifier column and a «Contest - Task» column per task, with the
+ * header from [texts].
+ */
+internal fun observerResultsCsv(result: ObserverResult, texts: PageObserver): String {
+    val header = listOf(texts.csvParticipantId()) + result.columns.map { column ->
+        texts.csvTask(contest = column.contestName, task = column.taskName)
     }
     val rows = result.rows.map { row ->
         listOf(row.participantId.value.toString()) + row.scores.map { score -> score?.toString().orEmpty() }

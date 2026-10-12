@@ -147,7 +147,9 @@ class PagesTests : MockSpringVaadinTests() {
                     RouteParameters(OBSERVER_ID_PARAMETER, observer.id.value.toString())
                 },
             ) + AdminUserSection.entries.associate { section ->
-                section.value to parametersOf { fixtures, user -> userParameters(memberWithAllSections(fixtures, user).id, section) }
+                section.value to parametersOf { fixtures, user ->
+                    userParameters(memberWithAllSections(fixtures, fixtures.community(owner = administrator(user)).id.value).id, section)
+                }
             },
             SupervisorView::class.java to mapOf(
                 "" to parametersOf { _, _ -> RouteParameters.empty() },
@@ -172,7 +174,17 @@ class PagesTests : MockSpringVaadinTests() {
                     }
                     RouteParameters(USER_ID_PARAMETER, member.id.value.toString())
                 },
-            ),
+                "observer" to parametersOf { fixtures, _ ->
+                    RouteParameters(USER_ID_PARAMETER, fixtures.observer(fixtures.community()).id.value.toString())
+                },
+                "participant" to parametersOf { _, _ ->
+                    RouteParameters(USER_ID_PARAMETER, study().participant(emptyList()).id.value.toString())
+                },
+            ) + AdminUserSection.entries.associate { section ->
+                section.value to parametersOf { fixtures, _ ->
+                    userParameters(memberWithAllSections(fixtures, fixtures.community().id.value).id, section)
+                }
+            },
             ManagerView::class.java to mapOf(
                 "" to parametersOf { fixtures, user ->
                     manager(fixtures, user)
@@ -318,9 +330,9 @@ class PagesTests : MockSpringVaadinTests() {
             parameters(developers)
         }
 
-        /** Returns a member of a community of the signed-in administrator [user] with the roles of all user page tabs. */
-        private fun memberWithAllSections(fixtures: AppFixtures, user: User<*>?): MultipleRoleUser {
-            val communityId = listOf(fixtures.community(owner = administrator(user)).id.value)
+        /** Returns a member of the community [communityValue] with the roles of all user page tabs. */
+        private fun memberWithAllSections(fixtures: AppFixtures, communityValue: Long): MultipleRoleUser {
+            val communityId = listOf(communityValue)
             return fixtures.multipleRoleUser {
                 roles {
                     developer {

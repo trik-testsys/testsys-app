@@ -1410,29 +1410,6 @@ class LocalizationTests {
             assertEquals("Посылки", l.pageCabinet.sectionSubmissions())
         }
 
-        @Test
-        fun `should point to the header in pending guide`() {
-            assertEquals(
-                "Этот раздел пока не реализован. Доступные разделы можно открыть через шапку.",
-                l.pageCabinet.pendingGuide(),
-            )
-        }
-
-        @Test
-        fun `should state the missing actions in pending block guide`() {
-            assertEquals("Действия этого раздела ещё не реализованы.", l.pageCabinet.pendingBlockGuide())
-        }
-
-        @Test
-        fun `should head the pending block guide in pending block guide title`() {
-            assertEquals("Состояние раздела", l.pageCabinet.pendingBlockGuideTitle())
-        }
-
-        @Test
-        fun `should state the missing section in pending empty`() {
-            assertEquals("Раздел пока не реализован", l.pageCabinet.pendingEmpty())
-        }
-
         @ParameterizedTest
         @CsvSource(
             "1,   Не длиннее 1 символа",
@@ -5293,6 +5270,92 @@ class LocalizationTests {
         fun `should name the observer cabinet in title`() {
             assertEquals("Кабинет Наблюдателя", l.pageObserver.title())
         }
+
+        @Test
+        fun `should decline the contest and competition terms in guide`() {
+            assertEquals(
+                "Просматривайте назначенные вам Туры Соревнований и скачивайте все результаты одним файлом.",
+                l.pageObserver.guide(),
+            )
+        }
+
+        @Test
+        fun `should use the competition term in competition`() {
+            assertEquals("Соревнование", l.pageObserver.competition())
+        }
+
+        @Test
+        fun `should use the contest term in contest`() {
+            assertEquals("Тур", l.pageObserver.contest())
+        }
+
+        @Test
+        fun `should name the start in starts at`() {
+            assertEquals("Начало", l.pageObserver.startsAt())
+        }
+
+        @Test
+        fun `should name the end in ends at`() {
+            assertEquals("Конец", l.pageObserver.endsAt())
+        }
+
+        @Test
+        fun `should name the time to pass in attempt duration`() {
+            assertEquals("Время на прохождение", l.pageObserver.attemptDuration())
+        }
+
+        @Test
+        fun `should use the genitive competition term in filter competition id`() {
+            assertEquals("ID Соревнования", l.pageObserver.filterCompetitionId())
+        }
+
+        @Test
+        fun `should use the genitive contest term in filter contest id`() {
+            assertEquals("ID Тура", l.pageObserver.filterContestId())
+        }
+
+        @Test
+        fun `should use the plural contest and genitive plural competition terms in contests title`() {
+            assertEquals("Туры Соревнований", l.pageObserver.contestsTitle())
+        }
+
+        @Test
+        fun `should quote the download button in contests guide`() {
+            assertEquals(
+                "Каждая строка — Соревнование и назначенный вам Тур с датами и временем на прохождение. " +
+                    "Фильтры сужают список. Кнопка «Скачать все результаты» выгружает один CSV-файл с результатами " +
+                    "всех доступных вам Соревнований независимо от фильтров.",
+                l.pageObserver.contestsGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive plural contest term in contests empty`() {
+            assertEquals("Туров пока нет", l.pageObserver.contestsEmpty())
+        }
+
+        @Test
+        fun `should use the instrumental plural competition term in contests empty hint`() {
+            assertEquals(
+                "Назначенные Туры появятся здесь вместе с Соревнованиями.",
+                l.pageObserver.contestsEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should name the download action in contests download`() {
+            assertEquals("Скачать все результаты", l.pageObserver.contestsDownload())
+        }
+
+        @Test
+        fun `should keep the lowercase participant in csv participant id`() {
+            assertEquals("ID участника", l.pageObserver.csvParticipantId())
+        }
+
+        @Test
+        fun `should join the contest and task names with a spaced hyphen in csv task`() {
+            assertEquals("Финал - Робот", l.pageObserver.csvTask(contest = "Финал", task = "Робот"))
+        }
     }
 
     @Nested
@@ -5301,6 +5364,281 @@ class LocalizationTests {
         @Test
         fun `should name the supervisor cabinet in title`() {
             assertEquals("Кабинет Супервайзера", l.pageSupervisor.title())
+        }
+
+        @Test
+        fun `should decline the user, system, supervisor, community and cabinet terms in guide`() {
+            assertEquals(
+                "Все Пользователи Системы, кроме Супервайзеров, и все Сообщества собраны во вкладках " +
+                    "Кабинета Супервайзера.",
+                l.pageSupervisor.guide(),
+            )
+        }
+
+        @Test
+        fun `should name the identifier in id`() {
+            assertEquals("ID", l.pageSupervisor.id())
+        }
+
+        @Test
+        fun `should name the name in name`() {
+            assertEquals("Название", l.pageSupervisor.name())
+        }
+
+        @Test
+        fun `should name the description in description`() {
+            assertEquals("Описание", l.pageSupervisor.description())
+        }
+
+        @Test
+        fun `should head the details in details`() {
+            assertEquals("Сведения", l.pageSupervisor.details())
+        }
+
+        @Test
+        fun `should use the nickname term in nickname`() {
+            assertEquals("Псевдоним", l.pageSupervisor.nickname())
+        }
+
+        @Test
+        fun `should use the plural role term in roles`() {
+            assertEquals("Роли", l.pageSupervisor.roles())
+        }
+
+        @Test
+        fun `should name the last sign-in in last login`() {
+            assertEquals("Последний вход", l.pageSupervisor.lastLogin())
+        }
+
+        @Test
+        fun `should use the access code term in access code`() {
+            assertEquals("Код-доступа", l.pageSupervisor.accessCode())
+        }
+
+        @Test
+        fun `should decline the user, system and supervisor terms in users guide`() {
+            assertEquals(
+                "Все Пользователи Системы, кроме Супервайзеров. Фильтры помогают найти нужную запись. " +
+                    "Выберите строку, чтобы открыть сведения о Пользователе.",
+                l.pageSupervisor.usersGuide(),
+            )
+        }
+
+        @Test
+        fun `should decline the community and system terms in communities guide`() {
+            assertEquals(
+                "Все Сообщества Системы. Выберите строку, чтобы открыть Сообщество.",
+                l.pageSupervisor.communitiesGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive plural user term in communities users`() {
+            assertEquals("Пользователей", l.pageSupervisor.communitiesUsers())
+        }
+
+        @Test
+        fun `should use the genitive plural community term in communities empty`() {
+            assertEquals("Сообществ пока нет", l.pageSupervisor.communitiesEmpty())
+        }
+
+        @Test
+        fun `should use the user term in user title`() {
+            assertEquals("Пользователь", l.pageSupervisor.userTitle())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "USER,        Пользователь «Маша»",
+            "OBSERVER,    Наблюдатель «Маша»",
+            "PARTICIPANT, Участник «Маша»",
+            "OTHER,       Пользователь «Маша»",
+        )
+        fun `should name the user kind and quote the nickname in user head`(kind: PageSupervisor.UserHeadKind, expected: String) {
+            assertEquals(expected, l.pageSupervisor.userHead(kind = kind, name = "Маша"))
+        }
+
+        @Test
+        fun `should decline the user, role and supervisor terms in user guide`() {
+            assertEquals(
+                "Здесь показаны сведения о Пользователе, его Роли и связанные с ним данные, доступные Супервайзеру.",
+                l.pageSupervisor.userGuide(),
+            )
+        }
+
+        @Test
+        fun `should decline the nickname, access code and user terms in user details guide`() {
+            assertEquals(
+                "Идентификатор, Псевдоним, время последнего входа и Код-доступа Пользователя.",
+                l.pageSupervisor.userDetailsGuide(),
+            )
+        }
+
+        @Test
+        fun `should show the role name after the role term in user role`() {
+            assertEquals("Роль: Организатор.", l.pageSupervisor.userRole(role = "Организатор"))
+        }
+
+        @Test
+        fun `should use the prepositional plural community term in user roles title`() {
+            assertEquals("Роли в Сообществах", l.pageSupervisor.userRolesTitle())
+        }
+
+        @Test
+        fun `should decline the community, user and role terms in user roles guide`() {
+            assertEquals(
+                "Сообщества Пользователя и Роли, которые он выполняет в каждом из них.",
+                l.pageSupervisor.userRolesGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the community term in user roles community`() {
+            assertEquals("Сообщество", l.pageSupervisor.userRolesCommunity())
+        }
+
+        @Test
+        fun `should quote the community name in user roles actions`() {
+            assertEquals(
+                "Роли в Сообществе «Робототехника»",
+                l.pageSupervisor.userRolesActions(community = "Робототехника"),
+            )
+        }
+
+        @Test
+        fun `should use the genitive role and prepositional community terms in user roles empty`() {
+            assertEquals("Ролей в Сообществах нет", l.pageSupervisor.userRolesEmpty())
+        }
+
+        @Test
+        fun `should use the accusative community term in user roles grant`() {
+            assertEquals("Включить в Сообщество", l.pageSupervisor.userRolesGrant())
+        }
+
+        @Test
+        fun `should use the genitive plural role term in user roles nothing to remove`() {
+            assertEquals("Нет Ролей для исключения", l.pageSupervisor.userRolesNothingToRemove())
+        }
+
+        @Test
+        fun `should keep the role name nominative after the prepositional role term in user roles remove`() {
+            assertEquals("Исключить в Роли Разработчик", l.pageSupervisor.userRolesRemove(role = "Разработчик"))
+        }
+
+        @Test
+        fun `should quote the nickname and community name in user roles remove title`() {
+            assertEquals(
+                "Исключить «Маша» из Сообщества «Робототехника» в Роли Разработчик?",
+                l.pageSupervisor.userRolesRemoveTitle(user = "Маша", community = "Робототехника", role = "Разработчик"),
+            )
+        }
+
+        @Test
+        fun `should decline the user, community and role terms in user roles remove text`() {
+            assertEquals(
+                "Пользователь потеряет доступ к тому, что было доступно ему только через это Сообщество " +
+                    "в этой Роли.",
+                l.pageSupervisor.userRolesRemoveText(),
+            )
+        }
+
+        @Test
+        fun `should name the removing action in user roles remove action`() {
+            assertEquals("Исключить", l.pageSupervisor.userRolesRemoveAction())
+        }
+
+        @Test
+        fun `should use the genitive community term in user roles removed`() {
+            assertEquals("Пользователь исключён из Сообщества", l.pageSupervisor.userRolesRemoved())
+        }
+
+        @Test
+        fun `should use the instrumental administrator term in user administrator grant`() {
+            assertEquals("Назначить Администратором", l.pageSupervisor.userAdministratorGrant())
+        }
+
+        @Test
+        fun `should quote the nickname in user administrator grant title`() {
+            assertEquals(
+                "Назначить «Маша» Администратором?",
+                l.pageSupervisor.userAdministratorGrantTitle(name = "Маша"),
+            )
+        }
+
+        @Test
+        fun `should decline the system, community, role and administrator terms in user administrator grant text`() {
+            assertEquals(
+                "Система создаст Сообщество Администратора. Снять Роль Администратора нельзя.",
+                l.pageSupervisor.userAdministratorGrantText(),
+            )
+        }
+
+        @Test
+        fun `should name the granting action in user administrator grant action`() {
+            assertEquals("Назначить", l.pageSupervisor.userAdministratorGrantAction())
+        }
+
+        @Test
+        fun `should use the user and instrumental administrator terms in user administrator granted`() {
+            assertEquals("Пользователь назначен Администратором", l.pageSupervisor.userAdministratorGranted())
+        }
+
+        @Test
+        fun `should use the accusative community term in user grant title`() {
+            assertEquals("Включение в Сообщество", l.pageSupervisor.userGrantTitle())
+        }
+
+        @Test
+        fun `should use the community term in user grant community`() {
+            assertEquals("Сообщество", l.pageSupervisor.userGrantCommunity())
+        }
+
+        @Test
+        fun `should use the accusative community term in user grant community required`() {
+            assertEquals("Выберите Сообщество", l.pageSupervisor.userGrantCommunityRequired())
+        }
+
+        @Test
+        fun `should use the role term in user grant role`() {
+            assertEquals("Роль", l.pageSupervisor.userGrantRole())
+        }
+
+        @Test
+        fun `should use the accusative role term in user grant role required`() {
+            assertEquals("Выберите Роль", l.pageSupervisor.userGrantRoleRequired())
+        }
+
+        @Test
+        fun `should name the granting action in user grant submit`() {
+            assertEquals("Включить", l.pageSupervisor.userGrantSubmit())
+        }
+
+        @Test
+        fun `should use the user and accusative community terms in user grant granted`() {
+            assertEquals("Пользователь включён в Сообщество", l.pageSupervisor.userGrantGranted())
+        }
+
+        @Test
+        fun `should use the community term in user community title`() {
+            assertEquals("Сообщество", l.pageSupervisor.userCommunityTitle())
+        }
+
+        @Test
+        fun `should use the community and observer terms in user community guide`() {
+            assertEquals("Сообщество, в котором создан Наблюдатель.", l.pageSupervisor.userCommunityGuide())
+        }
+
+        @Test
+        fun `should use the competition term in user participant title`() {
+            assertEquals("Соревнование", l.pageSupervisor.userParticipantTitle())
+        }
+
+        @Test
+        fun `should use the competition and participant terms in user participant guide`() {
+            assertEquals(
+                "Соревнование, к которому относится Участник.",
+                l.pageSupervisor.userParticipantGuide(),
+            )
         }
     }
 

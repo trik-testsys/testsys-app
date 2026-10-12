@@ -18,7 +18,9 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.HasDynamicTitle
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -57,13 +59,23 @@ class DeveloperViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should title the browser tab of the developer cabinet`() {
+        developers.signInDeveloper()
+
+        open(TASKS_SECTION)
+
+        assertEquals("Кабинет Разработчика", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+        assertEquals("Кабинет Разработчика", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
     fun `should show shared tasks before own tasks`() {
         developers.signInDeveloper()
 
         open(TASKS_SECTION)
 
         assertEquals(
-            listOf("Доступные через сообщества", "Мои задачи"),
+            listOf("Доступные через Сообщества", "Мои Задачи"),
             UI.getCurrent()._find<H3>().map { heading -> heading.text },
         )
     }
@@ -83,7 +95,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.signInDeveloper()
         open(TASKS_SECTION)
 
-        clickButton("Создать задачу")
+        clickButton("Создать Задачу")
         textField("Название")._value = "Движение по линии"
         clickButton("Создать")
 
@@ -99,7 +111,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         open(TASKS_SECTION)
         ownTaskNameFilter()._value = "Линия"
         ownTasksBlock()._get<Button> { text = "Применить" }._click()
-        clickButton("Создать задачу")
+        clickButton("Создать Задачу")
         textField("Название")._value = "Кубики"
 
         clickButton("Создать")
@@ -161,7 +173,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         val version = developers.trikStudioVersion()
         open(CONTESTS_SECTION)
 
-        clickButton("Создать тур")
+        clickButton("Создать Тур")
         textField("Название")._value = "Весенний тур"
         chooseVersion(version)
         clickButton("Создать")
@@ -177,7 +189,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         developers.signInDeveloper()
         val version = developers.trikStudioVersion()
         open(CONTESTS_SECTION)
-        clickButton("Создать тур")
+        clickButton("Создать Тур")
         textField("Название")._value = "Весенний тур"
         chooseVersion(version)
         openDialog()._find<DateTimePicker>().first().value = LocalDateTime.of(2026, 5, 1, 10, 0)
@@ -194,7 +206,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
         val version = developers.trikStudioVersion()
         open(CONTESTS_SECTION)
 
-        clickButton("Создать тур")
+        clickButton("Создать Тур")
         textField("Название")._value = "Весенний тур"
         chooseVersion(version)
         openDialog()._find<DateTimePicker>().last().value = LocalDateTime.of(2026, 5, 1, 10, 0)
@@ -256,7 +268,7 @@ class DeveloperViewTests : MockSpringVaadinTests() {
     }
 
     private fun ownTasksBlock(): Section = UI.getCurrent()._find<Section>().single { block ->
-        block._find<H3>().any { heading -> heading.text == "Мои задачи" }
+        block._find<H3>().any { heading -> heading.text == "Мои Задачи" }
     }
 
     private fun ownTaskNameFilter(): TextField =

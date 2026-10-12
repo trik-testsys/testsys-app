@@ -565,3 +565,118 @@ glossary and owner documents stay authoritative.
 - Sources: https://ru.wiktionary.org/wiki/роль, https://ru.wiktionary.org/wiki/соревнование,
   https://ru.wiktionary.org/wiki/связанный,
   https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/34 (all read 2026-10-12).
+## Developer Cabinet (`page_developer`)
+
+Notes collected while localizing the Developer Cabinet pages (stage 2f, 2026-10-12).
+
+### «Тур» as the domain term
+
+- Викисловарь has three entries: «тур I» (inanimate masculine; senses include 2. «этап поэтапного мероприятия» and
+  3. спорт. «отдельный этап соревнования…»; sense 1 is a trip/tour), «тур II» (animate masculine, the extinct wild
+  ox) and «тур III» (genitive plural of «тура»). Declension of «тур I»: Им. «тур» / «туры», Р. «тура» / «туров»,
+  Д. «туру» / «турам», В. «тур» / «туры», Т. «туром» / «турами», П. «туре» / «турах».
+- Applicability: the TestSys term (definitions.md item 21, a set of Задачи with time limits) fits senses 2–3. The
+  capitalized term, the Developer Cabinet context (Задачи, начало, конец, длительность) and the inanimate
+  accusative «Тур» rule out the trip and animal senses. No undesirable connotation found.
+- Source: https://ru.wiktionary.org/wiki/тур (read 2026-10-12; the last ~11 % of the page was not read).
+
+### «Условие» as the domain term
+
+- Викисловарь lists seven senses (agreement, contract clause, circumstance, rule, setting, premise, and 7.
+  «положение, сведение, лежащее в основе чего-либо, то, из чего надо исходить» with the gloss «при решении задачи»);
+  it has no separate sense «текст задачи». Inanimate neuter, type 7a: Им. «условие» / «условия», Р. «условия» /
+  «условий», В. = Им.
+- Applicability: the TestSys term is a resource type, the problem statement document (definitions.md item 16).
+  As a bare label («Тип: Условие», «Прикрепите Условие.») it could in principle be read as "condition"; the
+  neighbouring Упражнение, Полигон, Авторское Решение and the capital letter resolve it. This is an inference, no
+  usage source for «Условие» alone as a file type was read.
+- Source: https://ru.wiktionary.org/wiki/условие (read 2026-10-12).
+
+### «Диагностика» in the plural
+
+- Викисловарь: senses 1. мед., техн. «исследование с целью определить причину болезни организма, неисправности
+  механизма и т. п.»; 2. a branch of medicine. The article gives a full plural paradigm: Им. «диагностики»,
+  Р. «диагностик», Д. «диагностикам», В. «диагностики». No note restricts the plural.
+- Applicability: the TestSys term (definitions.md item 28) is one check of a Полигон XML, so the countable plural
+  «Диагностики», «Диагностик пока нет» fits sense 1. No undesirable connotation found.
+- Source: https://ru.wiktionary.org/wiki/диагностика (read 2026-10-12).
+
+### «Откатить»: technical jargon with a bribery sense
+
+- Викисловарь gives three senses: 1. «переместить дальше от чего-либо»; 2. техн. жарг. «вернуть систему в одно из
+  предыдущих состояний»; 3. жарг. «дать откат, т. е. взятку должностному лицу…» (the entry is in the category of
+  bribery verbs).
+- Applicability: the Developer Cabinet keeps «Откатить» and «Откатить изменения Задачи?» verbatim (2026-10-12
+  migration). With the object «изменения Задачи» and in the confirmation dialog sense 2 is the only plausible
+  reading; the bare button label relies on that dialog context. The toast already uses the neutral «Изменения
+  Задачи отменены»; «Отменить изменения» would be a jargon-free alternative and needs an explicit decision.
+- Source: https://ru.wiktionary.org/wiki/откатить (read 2026-10-12).
+
+### «МиБ» (mebibyte)
+
+- Викисловарь defines «мебибайт» as «единица измерения количества информации, равная 2^20 (1024^2) байт»,
+  masculine, genitive plural «мебибайтов» (also «мебибайт»); it gives no abbreviation. The abbreviation «МиБ» in
+  `page_developer.task.upload.subtitle` is kept verbatim; its normative status (ГОСТ IEC 80000-13) was not checked.
+- Source: https://ru.wiktionary.org/wiki/мебибайт (read 2026-10-12).
+
+### «Сведения» as both a block title and a severity
+
+- Project observation, not a language source: on the testing page «Сведения» is the details block title
+  (`page_developer.details`) and the Info severity prefix of a Диагностика line («Сведения · …»). The line format
+  «Сведения · место · замечание» keeps them apart; a different Info label would need an explicit decision.
+
+### Date and time «12.10.2026 14:05» in `ru`
+
+- Tooling fact, not a language finding: ICU4J 78.1 `:date fields=year-month-day length=short` renders `ru` as
+  «12.10.2026» (day and month padded) and `:time precision=minute hour12=false` as «14:05» / «09:07»; two
+  expressions separated by a space reproduce the former `dd.MM.yyyy HH:mm`; a single `:datetime` would use the
+  locale's date-time glue instead (its exact `ru` output was not checked).
+  Pinned by `PageDeveloperTests` (checked locally 2026-10-12).
+
+### «Зафиксировать» as "commit"
+
+- Викисловарь lists five senses of «зафиксировать», none stylistically labelled and none about computing; among
+  them 1. «закрепить, запечатлеть с помощью рисунка, фотографии и т.п.» and 3. «умертвить, хлороформировать мелких
+  животных, насекомых для целей научного исследования».
+- Usage evidence: the Russian Pro Git uses the word for `git commit` («Простейший способ зафиксировать изменения —
+  это набрать `git commit`», «фиксировать «снимки» состояния»). The page does not contain «зафиксированный»,
+  «незафиксированные» or «фиксация».
+- Applicability (independent review's inference): «Зафиксировать Задачу?», «Зафиксирована» and «незафиксированные
+  изменения» follow established version-control usage; the objects Задача, версия, изменения rule out sense 3.
+  No undesirable connotation found.
+- Sources: https://ru.wiktionary.org/wiki/зафиксировать, https://git-scm.com/book/ru/v2/Основы-Git-Запись-изменений-в-репозиторий
+  (both read 2026-10-12 by the independent review).
+
+### «Провалить»
+
+- Викисловарь gives one sense, «не справиться, потерпеть неудачу», without a stylistic label; perfective,
+  transitive, synonym «завалить». «Провалено Посылок: 2 из 5» has no register problem.
+- Not checked: whether a Посылка is a natural grammatical object of «провалить»; the page has no usage example.
+- Source: https://ru.wiktionary.org/wiki/провалить (read 2026-10-12 by the independent review).
+
+### «Замечание» as the fallback severity label
+
+- Викисловарь: neuter, inanimate, type 7a; 1. «краткое суждение, высказанное устно или письменно по поводу
+  чего-либо увиденного, услышанного, прочитанного» (no label); 3. a reprimand or admonition; 2 and 4 книжн., устар.
+- Applicability (inference): the column «Замечания» and the «· место · замечание» line format select sense 1 for
+  the `*` variant of `page_developer.diagnostic.line` / `line_at`; the reprimand reading is implausible there.
+- Source: https://ru.wiktionary.org/wiki/замечание (read 2026-10-12 by the independent review).
+
+### «До N файла/файлов» — unverified
+
+- Standard grammar as reported by the independent review: «до» takes the genitive and every part of a compound
+  numeral declines; a numeral ending in «один» keeps the noun in the singular («до (двадцати) одного файла»);
+  2–4 and 5+ in oblique cases take the plural of the same case («до двух файлов», «до пяти файлов»). So the CLDR
+  `one` category maps to «файла», `few`/`many` to «файлов», as in `page_developer.task.upload.subtitle`.
+- Unverified: confirmed only through search-engine summaries of teaching materials. Rosental, chapter XXXVIII
+  (https://evartist.narod.ru/text1/59.htm), does not state it; https://ru.wiktionary.org/wiki/двадцать_один has no
+  declension table; https://mel.fm/amp/gramotnost/kak-govorit/6417539-numerals only says that all parts of
+  compound numerals decline (all read 2026-10-12). rusgram.ru failed with a certificate error.
+
+### English technical data inside Russian diagnostic lines
+
+- Project observation: `$expected` of `page_developer.diagnostic.finding.invalid_attribute_value` (and the free
+  text of `malformed_xml` and `summary.technical`) comes from the diagnostics module as English technical text
+  («finite double», «long integer», «integer», `a|b`), so a line reads «атрибут «value» равен «abc», ожидается
+  finite double». The message reproduces the former hardcoded text; a fully Russian line needs a separate
+  decision, e.g. a selector over the expected kinds.

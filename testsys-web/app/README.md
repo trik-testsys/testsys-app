@@ -170,6 +170,7 @@
 | `page_study` | `StudentView`, `StudentClassView`, `ParticipantView` и общие страницы Тура и Задачи: `StudyContestView`, `StudyTaskView` с их страницами Ученика и Участника |
 | `page_manager` | `ManagerView`, `ManagerClassView`, `ManagerCompetitionView`, `ManagerContestView` и заголовки их CSV |
 | `page_admin` | `AdminView`, `AdminCommunityView`, `AdminUserView` |
+| `page_developer` | `DeveloperView`, `DeveloperContestView`, `DeveloperTaskView`, `DeveloperResourceView`, `DeveloperTestingView` |
 
 Страницы из таблицы, у которых есть свой заголовок вкладки, задают его через `HasDynamicTitle` из сообщения.
 Остальные страницы Ролей пока задают тексты строками, а заголовок вкладки — через `@PageTitle`.

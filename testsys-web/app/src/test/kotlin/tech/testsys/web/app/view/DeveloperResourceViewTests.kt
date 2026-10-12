@@ -12,9 +12,11 @@ import com.vaadin.flow.component.html.TableBody
 import com.vaadin.flow.component.html.TableRow
 import com.vaadin.flow.component.textfield.IntegerField
 import com.vaadin.flow.router.BeforeEnterEvent
+import com.vaadin.flow.router.HasDynamicTitle
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -168,6 +170,17 @@ class DeveloperResourceViewTests : MockSpringVaadinTests() {
         open(task.id, statement.versionBucket)
 
         assertEquals("Условие «Условие задачи»", UI.getCurrent()._get<H1>().text)
+    }
+
+    @Test
+    fun `should title the browser tab of the resource`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val statement = developers.statement(task.id)
+
+        open(task.id, statement.versionBucket)
+
+        assertEquals("Ресурс", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
     }
 
     @Test

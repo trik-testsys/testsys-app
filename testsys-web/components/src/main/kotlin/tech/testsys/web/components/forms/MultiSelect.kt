@@ -67,7 +67,7 @@ internal class MultiSelectField<T : Any>(
     private val display: MultiSelectDisplay = MultiSelectDisplay.Chips,
     private val maxChips: Int = 3,
 ) : CustomField<Set<T>>(emptySet(), true), HasValidator<Set<T>> {
-    private val trigger: NativeButton = NativeButton(texts.messages.uiLookup.open()).apply {
+    private val trigger: NativeButton = NativeButton(texts.messages.uiForm.lookupOpen()).apply {
         element.setType(ElementType.Button)
         element.setAttribute(HtmlAttribute.AriaLabel, label)
         element.setAriaHasPopup(AriaPopup.Dialog)
@@ -75,7 +75,7 @@ internal class MultiSelectField<T : Any>(
     }
 
     private val chips = Div().apply { addClassName(CssClass.LookupChips) }
-    private val clear = NativeButton(texts.messages.uiLookup.clear()).apply {
+    private val clear = NativeButton(texts.messages.uiForm.lookupClear()).apply {
         element.setType(ElementType.Button)
         addClassName(CssClass.MultiselectClear)
     }
@@ -93,8 +93,8 @@ internal class MultiSelectField<T : Any>(
     }
 
     private val search = TextField().apply {
-        placeholder = texts.messages.uiLookup.search()
-        setAriaLabel(texts.messages.uiLookup.search())
+        placeholder = texts.messages.uiForm.lookupSearch()
+        setAriaLabel(texts.messages.uiForm.lookupSearch())
         valueChangeMode = ValueChangeMode.EAGER
         addClassName(CssClass.PopoverSearch)
     }
@@ -115,7 +115,7 @@ internal class MultiSelectField<T : Any>(
 
         val foot = Div(count).apply { addClassName(CssClass.PopoverFoot) }
         foot.add(
-            NativeButton(texts.messages.uiLookup.reset()).apply {
+            NativeButton(texts.messages.uiForm.lookupReset()).apply {
                 element.setType(ElementType.Button)
                 addClassNames(CssClass.Btn, CssClass.BtnSecondary)
                 addClickListener {
@@ -123,7 +123,7 @@ internal class MultiSelectField<T : Any>(
                     renderDraft()
                 }
             },
-            NativeButton(texts.messages.uiLookup.apply()).apply {
+            NativeButton(texts.messages.uiForm.lookupApply()).apply {
                 addClassNames(CssClass.Btn, CssClass.BtnPrimary)
                 addClickListener { applyDraft() }
             },
@@ -229,7 +229,7 @@ internal class MultiSelectField<T : Any>(
                 val remove = NativeButton().apply {
                     add(svgIcon(IconName.X, ICON_SIZE_TINY))
                     addClassName(CssClass.ChipX)
-                    element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiLookup.remove(value = itemLabel(item)))
+                    element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiForm.lookupRemove(value = itemLabel(item)))
                     addClickListener { if (choosable()) choose(value - item) }
                 }
                 chip.add(remove)
@@ -239,16 +239,16 @@ internal class MultiSelectField<T : Any>(
         }
 
         if (display == MultiSelectDisplay.Count && selected.isNotEmpty()) {
-            val counter = Span(texts.messages.uiLookup.selectedCount(count = selected.size)).apply {
+            val counter = Span(texts.messages.uiForm.lookupSelectedCount(count = selected.size)).apply {
                 addClassNames(CssClass.Counter, CssClass.CounterAccent, CssClass.ObscuredValue)
             }
             chips.add(counter)
         }
 
         if (display == MultiSelectDisplay.Chips && selected.size > maxChips) {
-            val more = Span(texts.messages.uiLookup.moreChip(count = selected.size - maxChips)).apply {
+            val more = Span(texts.messages.uiForm.lookupMoreChip(count = selected.size - maxChips)).apply {
                 addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue)
-                element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiLookup.more(count = selected.size - maxChips))
+                element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiForm.lookupMore(count = selected.size - maxChips))
             }
             chips.add(more)
         }
@@ -263,7 +263,7 @@ internal class MultiSelectField<T : Any>(
         val visible = items.filter { item -> itemLabel(item).contains(search.value.trim(), ignoreCase = true) }
         options.removeAll()
 
-        val all = Checkbox(texts.messages.uiLookup.selectAll()).apply {
+        val all = Checkbox(texts.messages.uiForm.lookupSelectAll()).apply {
             value = visible.isNotEmpty() && current.containsAll(visible)
             isIndeterminate = visible.any { item -> item in current } && !value
             addValueChangeListener { event ->
@@ -288,8 +288,8 @@ internal class MultiSelectField<T : Any>(
             if (item == focused) choice.focus()
         }
 
-        if (visible.isEmpty()) options.add(Span(texts.messages.uiLookup.empty()))
-        count.text = texts.messages.uiLookup.selectedCount(count = current.size)
+        if (visible.isEmpty()) options.add(Span(texts.messages.uiForm.lookupEmpty()))
+        count.text = texts.messages.uiForm.lookupSelectedCount(count = current.size)
     }
 }
 

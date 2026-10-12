@@ -28,20 +28,32 @@ class OperationErrorView : ErrorPage(), HasErrorParameter<OperationException> {
     override fun setErrorParameter(event: BeforeEnterEvent, parameter: ErrorParameter<OperationException>): Int {
         refreshHistoryNavigation()
 
-        val texts = currentLocalization().uiError
+        val texts = currentLocalization().uiFeedback
         return when (parameter.exception.error) {
             is EntityNotExistsError, is ContestNotAddedToClassError, is ContestNotAddedToCompetitionError -> {
-                show(title = texts.notFoundTitle(), description = texts.notFoundDescription(), pageTitle = texts.notFoundPageTitle())
+                show(
+                    title = texts.errorNotFoundTitle(),
+                    description = texts.errorNotFoundDescription(),
+                    pageTitle = texts.errorNotFoundPageTitle(),
+                )
                 HttpStatusCode.NOT_FOUND.code
             }
 
             is AccessDeniedError, is MissedRequiredRoleError, is ResourceAccessError, is ContestNotEnteredError -> {
-                show(title = texts.forbiddenTitle(), description = texts.forbiddenDescription(), pageTitle = texts.forbiddenPageTitle())
+                show(
+                    title = texts.errorForbiddenTitle(),
+                    description = texts.errorForbiddenDescription(),
+                    pageTitle = texts.errorForbiddenPageTitle(),
+                )
                 HttpStatusCode.FORBIDDEN.code
             }
 
             else -> {
-                show(title = texts.pageFailedTitle(), description = texts.pageFailedDescription(), pageTitle = texts.pageFailedPageTitle())
+                show(
+                    title = texts.errorPageFailedTitle(),
+                    description = texts.errorPageFailedDescription(),
+                    pageTitle = texts.errorPageFailedPageTitle(),
+                )
                 HttpStatusCode.BAD_REQUEST.code
             }
         }

@@ -33,7 +33,7 @@ class StudentClassView(
 ) : TestSysView(),
     BeforeEnterObserver,
     HasDynamicTitle {
-    override fun getPageTitle(): String = currentLocalization().pageStudy.classTabTitle()
+    override fun getPageTitle(): String = currentLocalization().pageStudent.classTabTitle()
 
     override fun beforeEnter(event: BeforeEnterEvent) {
         val classId = ClassId(event.routeParameters.getLong(STUDY_CLASS_ID_PARAMETER).orElseThrow())
@@ -42,11 +42,11 @@ class StudentClassView(
         val studyClass = studentService.viewClasses().first { studyClass -> studyClass.id == classId }
         val now = clock.instant()
         val localization = currentLocalization()
-        val texts = localization.pageStudy
+        val texts = localization.pageStudent
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.classTitle(name = studyClass.name)) {
                 crumb(localization.pageCabinet.home(), MultiMainView::class.java)
-                crumb(texts.studentTitle(), StudentView::class.java)
+                crumb(texts.title(), StudentView::class.java)
             }
             guide(texts.classGuide())
             row {
@@ -68,8 +68,10 @@ class StudentClassView(
                         dateTimeColumn(texts.startsAt(), size = 4) { (_, contest) -> contest.startsAt?.toUserDateTime() }
                         dateTimeColumn(texts.endsAt(), size = 4) { (_, contest) -> contest.endsAt?.toUserDateTime() }
                         textColumn(texts.attemptDuration(), size = 3) { (_, contest) -> studyDurationText(contest.attemptDuration) }
-                        column(texts.contestStateTitle(), size = 4) { (enteredAt, contest) -> studyState(contest, enteredAt, now) }
-                        column(texts.remainingTitle()) { (enteredAt, contest) -> studyTimer(contest, enteredAt, now) }
+                        column(texts.contestStateTitle(), size = 4) { (enteredAt, contest) ->
+                            studyState(contest, enteredAt, now, StudentStudyTexts)
+                        }
+                        column(texts.remainingTitle()) { (enteredAt, contest) -> studyTimer(contest, enteredAt, now, StudentStudyTexts) }
                         empty(texts.contestsEmpty(), texts.classContestsEmptyHint())
                         onRowClick(isNavigation = true) { (_, contest) ->
                             UI.getCurrent().navigate(StudentContestView::class.java, studentContestParameters(classId, contest.id))

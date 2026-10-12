@@ -26,7 +26,7 @@ class AppShell(private val environment: Environment) : AppShellConfigurator {
     override fun configurePage(settings: AppShellSettings) {
         // The shell page is built before any UI, so it uses the default region rather than the user's one.
         val messages = Localization.forRegion(environment.defaultRegion(), environment.defaultTimeZone())
-        settings.setPageTitle(messages.uiBrand.name())
+        settings.setPageTitle(messages.uiPage.brandName())
         settings.addBrandFavicon()
     }
 }

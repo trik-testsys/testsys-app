@@ -158,7 +158,7 @@ class GuideTests : MockVaadinTests() {
         val buttons = UI.getCurrent().findAll("ts-guide-button")
         assertEquals(listOf("page", "block"), buttons.map { button -> button.element.getAttribute("data-guide-start") })
         assertEquals(
-            listOf(testTexts.messages.uiGuide.page(), testTexts.messages.uiGuide.block()),
+            listOf(testTexts.messages.uiPage.guidePage(), testTexts.messages.uiPage.guideBlock()),
             buttons.map { button -> button.element.getAttribute("aria-label") },
         )
         assertEquals("Описание страницы", UI.getCurrent().find("ts-page-head").element.getAttribute("data-guide-description"))

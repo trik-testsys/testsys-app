@@ -248,7 +248,7 @@ class DeveloperView(
                 }
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.create()) {
                     onClick {
                         val values = TaskDraft()
@@ -323,7 +323,7 @@ class DeveloperView(
                 }
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.create()) {
                     onClick {
                         val values = ContestDraft()

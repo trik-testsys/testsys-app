@@ -180,7 +180,7 @@ class ManagerView(private val headers: CabinetHeaders, private val managerServic
                 }
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.create()) {
                     onClick {
                         val values = NameDraft()

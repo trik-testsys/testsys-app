@@ -41,7 +41,7 @@ abstract class PendingCabinetView(headers: CabinetHeaders, private val title: St
 @Route("observer/:section?(contests)")
 @RolesAllowed("OBSERVER")
 class ObserverView(headers: CabinetHeaders) :
-    PendingCabinetView(headers, title = currentLocalization().pageCabinet.observerTitle(), active = CabinetHeaders.MAIN_SECTION)
+    PendingCabinetView(headers, title = currentLocalization().pageObserver.title(), active = CabinetHeaders.MAIN_SECTION)
 
 /**
  * Cabinet of a Supervisor (testsys.web.page.supervisor), not implemented yet.
@@ -51,4 +51,4 @@ class ObserverView(headers: CabinetHeaders) :
 @Route("supervisor/:section?(users|communities)")
 @RolesAllowed("SUPERVISOR")
 class SupervisorView(headers: CabinetHeaders) :
-    PendingCabinetView(headers, title = currentLocalization().pageCabinet.supervisorTitle(), active = CabinetHeaders.MAIN_SECTION)
+    PendingCabinetView(headers, title = currentLocalization().pageSupervisor.title(), active = CabinetHeaders.MAIN_SECTION)

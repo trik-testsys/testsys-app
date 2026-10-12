@@ -37,7 +37,7 @@ class AdminView(private val headers: CabinetHeaders, private val administratorSe
     TestSysView(),
     BeforeEnterObserver,
     HasDynamicTitle {
-    override fun getPageTitle(): String = currentLocalization().pageAdmin.title()
+    override fun getPageTitle(): String = currentLocalization().pageAdministrator.title()
 
     override fun beforeEnter(event: BeforeEnterEvent) {
         val section = event.routeParameters.get(ADMIN_SECTION_PARAMETER).orElse(null)
@@ -49,7 +49,7 @@ class AdminView(private val headers: CabinetHeaders, private val administratorSe
         // Also checks the administrator role before the tables load, so that its absence opens the forbidden screen.
         val communities = administratorService.viewCommunities().map { (community, _) -> community }
         val localization = currentLocalization()
-        val texts = localization.pageAdmin
+        val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.title()) {
                 crumb(localization.pageCabinet.home(), MultiMainView::class.java)
@@ -74,7 +74,7 @@ class AdminView(private val headers: CabinetHeaders, private val administratorSe
 
     private fun PageScope.communitiesBlock() {
         val localization = currentLocalization()
-        val texts = localization.pageAdmin
+        val texts = localization.pageAdministrator
         row {
             block(title = localization.pageCabinet.sectionCommunities()) {
                 guide(texts.communitiesGuide())
@@ -106,13 +106,13 @@ class AdminView(private val headers: CabinetHeaders, private val administratorSe
                         }
                     }
                     footer { dialog ->
-                        action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                        action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                         mainAction(texts.create()) {
                             onClick {
                                 val created = CommunityDraft()
                                 if (draft.writeBeanIfValid(created)) {
                                     administratorService.createCommunity(communityName = created.name, description = created.description)
-                                    toast(FeedbackKind.Success, currentLocalization().pageAdmin.communitiesCreated())
+                                    toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communitiesCreated())
                                     dialog.close()
                                     rows.refresh()
                                 }

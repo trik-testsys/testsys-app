@@ -18,8 +18,8 @@ import tech.testsys.web.components.texts.currentLocalization
 class AccessDeniedView : ErrorPage(), HasErrorParameter<AccessDeniedException> {
     override fun setErrorParameter(event: BeforeEnterEvent, parameter: ErrorParameter<AccessDeniedException>): Int {
         refreshHistoryNavigation()
-        with(currentLocalization().uiError) {
-            show(title = forbiddenTitle(), description = forbiddenDescription(), pageTitle = forbiddenPageTitle())
+        with(currentLocalization().uiFeedback) {
+            show(title = errorForbiddenTitle(), description = errorForbiddenDescription(), pageTitle = errorForbiddenPageTitle())
         }
         return HttpStatusCode.FORBIDDEN.code
     }

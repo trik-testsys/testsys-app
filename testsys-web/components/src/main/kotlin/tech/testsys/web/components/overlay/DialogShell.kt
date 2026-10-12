@@ -88,7 +88,7 @@ internal class DialogShell(texts: UiLocalization, title: String, subtitle: Strin
             val titles = Div(heading).apply { addClassName(CssClass.BlockTitles) }
             subtitle?.let { text -> titles.add(Span(text).apply { addClassName(CssClass.BlockSub) }) }
             val head = Div(titles).apply { addClassName(CssClass.DialogHead) }
-            ContentScope(head, texts, Placement.Head).iconAction(IconName.X, texts.messages.uiDialog.close()) { onClick { close() } }
+            ContentScope(head, texts, Placement.Head).iconAction(IconName.X, texts.messages.uiOverlay.dialogClose()) { onClick { close() } }
             body.add(content)
             card.add(head, body, foot)
         }

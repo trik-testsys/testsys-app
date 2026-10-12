@@ -5,7 +5,7 @@ package tech.testsys.web.components.navigation.header
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
-import tech.testsys.infra.localization.UiHeader
+import tech.testsys.infra.localization.UiPage
 import tech.testsys.web.components.core.AriaPopup
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
@@ -59,10 +59,10 @@ data class HeaderUserMenuItem(
     val isDestructive: Boolean = false,
 )
 
-internal fun userMenu(user: HeaderUser, texts: UiHeader, interactions: HeaderInteractions, locale: Locale): Div {
+internal fun userMenu(user: HeaderUser, texts: UiPage, interactions: HeaderInteractions, locale: Locale): Div {
     val trigger = NativeButton().apply {
         addClassName(CssClass.HeaderUser)
-        element.setAttribute(HtmlAttribute.AriaLabel, texts.userMenu(name = user.name))
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.headerUserMenu(name = user.name))
         add(
             userAvatar(user.name, locale),
             Span(user.name).apply { addClassName(CssClass.HeaderUserName) },
@@ -70,7 +70,12 @@ internal fun userMenu(user: HeaderUser, texts: UiHeader, interactions: HeaderInt
         )
     }
 
-    val popup = interactions.popup(trigger, label = texts.userMenu(name = user.name), theme = CssTheme.HeaderUserPopup, autofocus = true)
+    val popup = interactions.popup(
+        trigger,
+        label = texts.headerUserMenu(name = user.name),
+        theme = CssTheme.HeaderUserPopup,
+        autofocus = true,
+    )
     trigger.element.setAriaHasPopup(AriaPopup.Menu)
     popup.setAriaRole(ElementRole.Menu)
 

@@ -102,7 +102,7 @@ internal class DataTable<T>(
     /** Keys of the rows of the last successful rendering; a failure keeps them. */
     private var renderedKeys: Set<Any> = emptySet()
     private val headerCheckbox = Checkbox().apply {
-        setAriaLabel(texts.messages.uiTable.selectAll())
+        setAriaLabel(texts.messages.uiData.tableSelectAll())
         addValueChangeListener { event -> if (event.isFromClient) selectPage(event.value) }
     }
 
@@ -189,7 +189,7 @@ internal class DataTable<T>(
             if (column.kind == CellKind.Number) cell.addClassName(CssClass.Right)
 
             if (column.kind == CellKind.Menu) {
-                cell.element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiMenu.actions())
+                cell.element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiOverlay.menuActions())
             }
 
             column.sortKey?.let { sortKey ->
@@ -256,9 +256,9 @@ internal class DataTable<T>(
     }
 
     private fun failureContent(): EmptyContent = EmptyContent(
-        title = texts.messages.uiLoad.failed(),
-        description = texts.messages.uiLoad.failedHint(),
-        actions = { action(texts.messages.uiLoad.retry()) { onClick { reload(toFirstPage = false) } } },
+        title = texts.messages.uiFeedback.loadFailed(),
+        description = texts.messages.uiFeedback.loadFailedHint(),
+        actions = { action(texts.messages.uiFeedback.loadRetry()) { onClick { reload(toFirstPage = false) } } },
     )
 
     /** Row of one cell over all columns that holds [content] instead of rows. */
@@ -321,7 +321,7 @@ internal class DataTable<T>(
     /** Row of the shown page: its [key], its markup and its selection checkbox. */
     private inner class ShownRow(val key: Any, private val row: TableRow, private val isHighlighted: Boolean) {
         val checkbox = Checkbox(key in selected).apply {
-            setAriaLabel(texts.messages.uiTable.selectRow())
+            setAriaLabel(texts.messages.uiData.tableSelectRow())
             addValueChangeListener { event ->
                 if (event.isFromClient) {
                     select(event.value)

@@ -243,7 +243,8 @@ internal class TimerDisplay(
                     listOf(hours, minutes, rest)
                 }
 
-                val allUnits = with(texts.messages.uiTimer) { listOf(days(), hours(), minutes(), seconds()) }
+                val allUnits =
+                    with(texts.messages.uiFeedback) { listOf(timerDays(), timerHours(), timerMinutes(), timerSeconds()) }
                 val units = if (isTiles) allUnits else allUnits.drop(1)
                 values.forEachIndexed { index, number ->
                     val numeric = if (isTiles) {

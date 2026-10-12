@@ -34,7 +34,7 @@ class PageScope internal constructor(
     private var isHeadAllowed = true
     private var guideDescription: String? = null
     private var pageHead: Div? = null
-    private var pageTitle = texts.messages.uiBrand.name()
+    private var pageTitle = texts.messages.uiPage.brandName()
 
     /**
      * Adds the page introduction before block explanations in display order, with an information button in its head.
@@ -54,7 +54,7 @@ class PageScope internal constructor(
             val head = pageHead ?: PageHeadScope(texts, view).build(pageTitle).also(placeHead)
             GuideStep(head, title = pageTitle, description = description).install()
             head.element.setAttribute(HtmlAttribute.DataGuideIntroduction, "")
-            placePageGuideButton(head, guideButton(texts.messages.uiGuide.page(), isPage = true))
+            placePageGuideButton(head, guideButton(texts.messages.uiPage.guidePage(), isPage = true))
         }
     }
 

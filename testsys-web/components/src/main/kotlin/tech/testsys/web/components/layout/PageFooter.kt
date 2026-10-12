@@ -64,10 +64,10 @@ internal fun buildPageFooter(
     links: PageFooterScope = PageFooterScope(),
     clock: Clock = Clock.systemDefaultZone(),
 ): Footer {
-    val logo = Image(TestSysBrand.FOOTER, texts.messages.uiBrand.name()).apply { addClassName(CssClass.FooterLogo) }
-    val year = Span(texts.messages.uiFooter.year(year = Year.now(clock).value)).apply { addClassName(CssClass.FooterYear) }
+    val logo = Image(TestSysBrand.FOOTER, texts.messages.uiPage.brandName()).apply { addClassName(CssClass.FooterLogo) }
+    val year = Span(texts.messages.uiPage.footerYear(year = Year.now(clock).value)).apply { addClassName(CssClass.FooterYear) }
     val brand = Div(logo, year).apply { addClassName(CssClass.FooterBrand) }
     val inner = Div(brand).apply { addClassName(CssClass.FooterInner) }
-    links.build(texts.messages.uiFooter.links())?.let { navigation -> inner.add(navigation) }
+    links.build(texts.messages.uiPage.footerLinks())?.let { navigation -> inner.add(navigation) }
     return Footer(inner).apply { addClassName(CssClass.Footer) }
 }

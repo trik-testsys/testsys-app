@@ -10,8 +10,6 @@ import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
-import tech.testsys.infra.localization.PageStudy.ContestStateState
-import tech.testsys.infra.localization.PageStudy.SubmissionStatusStatus
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.participant.ParticipantService
 import tech.testsys.web.app.service.student.StudentService
@@ -120,9 +118,9 @@ internal sealed class StudyAccess {
         override fun cabinetCrumbs(head: PageHeadScope) {
             val studyClass = studentService.viewClasses().first { studyClass -> studyClass.id == classId }
             val localization = currentLocalization()
-            val texts = localization.pageStudy
+            val texts = localization.pageStudent
             head.crumb(localization.pageCabinet.home(), MultiMainView::class.java)
-            head.crumb(texts.studentTitle(), StudentView::class.java)
+            head.crumb(texts.title(), StudentView::class.java)
             head.crumb(texts.classTitle(name = studyClass.name), StudentClassView::class.java, studentClassParameters(classId))
         }
 
@@ -162,7 +160,7 @@ internal sealed class StudyAccess {
         }
 
         override fun cabinetCrumbs(head: PageHeadScope) {
-            head.crumb(currentLocalization().pageStudy.participantTitle(), ParticipantView::class.java)
+            head.crumb(currentLocalization().pageParticipant.title(), ParticipantView::class.java)
         }
 
         override fun contestParameters(contestId: ContestId) = RouteParameters(STUDY_CONTEST_ID_PARAMETER, contestId.value.toString())
@@ -192,7 +190,7 @@ internal fun studyDeadline(contest: ContestVo, enteredAt: Instant?): Instant? {
 
 /** Returns [duration] as «1 ч 30 мин», or «Без ограничения» without it. */
 internal fun studyDurationText(duration: Duration?): String {
-    val texts = currentLocalization().pageStudy
+    val texts = currentLocalization().pageCabinet
     if (duration == null) return texts.durationUnlimited()
 
     val hours = duration.toHours()
@@ -208,22 +206,21 @@ internal fun studyDurationText(duration: Duration?): String {
  * Adds the state of [contest] for a user who entered it at [enteredAt]: not started without an entry before its end, running
  * before the deadline, otherwise completed.
  */
-internal fun ContentScope.studyState(contest: ContestVo, enteredAt: Instant?, now: Instant) {
+internal fun ContentScope.studyState(contest: ContestVo, enteredAt: Instant?, now: Instant, texts: StudyTexts) {
     val deadline = studyDeadline(contest, enteredAt)
     val (state, tone) = when {
-        deadline != null && !now.isBefore(deadline) -> ContestStateState.FINISHED to Tone.Neutral
-        enteredAt == null -> ContestStateState.NOT_STARTED to Tone.Neutral
-        else -> ContestStateState.RUNNING to Tone.Info
+        deadline != null && !now.isBefore(deadline) -> StudyTexts.ContestState.FINISHED to Tone.Neutral
+        enteredAt == null -> StudyTexts.ContestState.NOT_STARTED to Tone.Neutral
+        else -> StudyTexts.ContestState.RUNNING to Tone.Info
     }
-    badge(currentLocalization().pageStudy.contestState(state = state), tone)
+    badge(texts.contestState(state), tone)
 }
 
 /**
  * Fills the body of the block with the time left to a user who entered [contest] at [enteredAt] and returns the live timer, if
  * the time is running out.
  */
-internal fun BlockScope.studyRemainingTime(contest: ContestVo, enteredAt: Instant?, now: Instant): TimerHandle? {
-    val texts = currentLocalization().pageStudy
+internal fun BlockScope.studyRemainingTime(contest: ContestVo, enteredAt: Instant?, now: Instant, texts: StudyTexts): TimerHandle? {
     val deadline = studyDeadline(contest, enteredAt)
     var liveTimer: TimerHandle? = null
     row {
@@ -240,30 +237,30 @@ internal fun BlockScope.studyRemainingTime(contest: ContestVo, enteredAt: Instan
 }
 
 /** Shows the remaining time separately from the contest state. */
-internal fun ContentScope.studyTimer(contest: ContestVo, enteredAt: Instant?, now: Instant) {
+internal fun ContentScope.studyTimer(contest: ContestVo, enteredAt: Instant?, now: Instant, texts: StudyTexts) {
     val deadline = studyDeadline(contest, enteredAt)
     if (enteredAt != null && deadline != null && now.isBefore(deadline)) {
-        timer(currentLocalization().pageStudy.remainingTitle(), TimerValue.Until(deadline))
+        timer(texts.remainingTitle(), TimerValue.Until(deadline))
     } else {
         text("—")
     }
 }
 
 /** Shows a submission status independently from its score. */
-internal fun ContentScope.submissionStatus(status: SubmissionStatusVo?) {
+internal fun ContentScope.submissionStatus(status: SubmissionStatusVo?, texts: StudyTexts) {
     if (status == null) {
         text("—")
         return
     }
 
     val (variant, tone) = when (status) {
-        SubmissionStatusVo.Queued -> SubmissionStatusStatus.QUEUED to Tone.Neutral
-        SubmissionStatusVo.InProgress -> SubmissionStatusStatus.IN_PROGRESS to Tone.Info
+        SubmissionStatusVo.Queued -> StudyTexts.SubmissionStatus.QUEUED to Tone.Neutral
+        SubmissionStatusVo.InProgress -> StudyTexts.SubmissionStatus.IN_PROGRESS to Tone.Info
         is SubmissionStatusVo.Graded -> when (status.grade) {
-            is GradingResultVo.Success -> SubmissionStatusStatus.SUCCESS to Tone.Success
-            is GradingResultVo.GradingError -> SubmissionStatusStatus.GRADING_ERROR to Tone.Danger
-            GradingResultVo.Timeout -> SubmissionStatusStatus.TIMEOUT to Tone.Warning
+            is GradingResultVo.Success -> StudyTexts.SubmissionStatus.SUCCESS to Tone.Success
+            is GradingResultVo.GradingError -> StudyTexts.SubmissionStatus.GRADING_ERROR to Tone.Danger
+            GradingResultVo.Timeout -> StudyTexts.SubmissionStatus.TIMEOUT to Tone.Warning
         }
     }
-    badge(currentLocalization().pageStudy.submissionStatus(status = variant), tone)
+    badge(texts.submissionStatus(variant), tone)
 }

@@ -9,7 +9,7 @@ import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.dom.Element
 import com.vaadin.flow.dom.ElementEffect
 import com.vaadin.flow.signals.Signal
-import tech.testsys.infra.localization.UiHeader
+import tech.testsys.infra.localization.UiPage
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
 import tech.testsys.web.components.core.ElementType
@@ -62,7 +62,7 @@ data class HeaderNotification(
 
 internal class HeaderNotificationsController(
     private val notifications: HeaderNotifications,
-    private val texts: UiHeader,
+    private val texts: UiPage,
     interactions: HeaderInteractions,
 ) {
     val indicator = Span().apply {
@@ -73,20 +73,25 @@ internal class HeaderNotificationsController(
         addClassNames(CssClass.Btn, CssClass.BtnGhost, CssClass.BtnIcon, CssClass.Bell)
         add(svgIcon(IconName.Bell, ICON_SIZE_LARGE), indicator)
     }
-    val popup = interactions.popup(trigger, label = texts.notifications(), theme = CssTheme.HeaderNotificationsPopup, autofocus = true)
-    val readAll = NativeButton(texts.readAll()).apply {
+    val popup = interactions.popup(
+        trigger,
+        label = texts.headerNotifications(),
+        theme = CssTheme.HeaderNotificationsPopup,
+        autofocus = true,
+    )
+    val readAll = NativeButton(texts.headerReadAll()).apply {
         addClassNames(CssClass.Btn, CssClass.BtnLink, CssClass.BtnSm, CssClass.HeaderReadAll)
         addClickListener { notifications.onReadAll() }
     }
     private var isAcceptingArrivals = false
     private val seen = notifications.items.peek().map { item -> item.key }.toMutableSet()
     private val list = Div().apply { addClassName(CssClass.HeaderNotificationsList) }
-    private val empty = Div(texts.notificationsEmpty()).apply { addClassName(CssClass.HeaderNotificationsEmpty) }
+    private val empty = Div(texts.headerNotificationsEmpty()).apply { addClassName(CssClass.HeaderNotificationsEmpty) }
     val component = Div(trigger, popup)
     val arrival = HeaderNotificationArrival(component, texts, ::openNotification) { popup.open() }
 
     init {
-        popup.add(Div(Span(texts.notifications()), readAll).apply { addClassName(CssClass.HeaderPopupHead) }, list, empty)
+        popup.add(Div(Span(texts.headerNotifications()), readAll).apply { addClassName(CssClass.HeaderPopupHead) }, list, empty)
 
         component.addAttachListener {
             seen.addAll(notifications.items.peek().map { item -> item.key })
@@ -114,7 +119,7 @@ internal class HeaderNotificationsController(
 
         val unread = values.count { value -> value.isUnread }
         indicator.isVisible = unread > 0
-        trigger.element.setAttribute(HtmlAttribute.AriaLabel, texts.unreadCount(count = unread))
+        trigger.element.setAttribute(HtmlAttribute.AriaLabel, texts.headerUnreadCount(count = unread))
         readAll.isEnabled = unread > 0
         empty.isVisible = values.isEmpty()
 
@@ -172,7 +177,7 @@ internal class HeaderNotificationsController(
 
         row.element.setAttribute(
             HtmlAttribute.AriaLabel,
-            if (notification.isUnread) texts.unreadItem(label = notification.label) else notification.label,
+            if (notification.isUnread) texts.headerUnreadItem(label = notification.label) else notification.label,
         )
 
         notification.description?.let { description -> row.element.appendChild(Span(description).element) }

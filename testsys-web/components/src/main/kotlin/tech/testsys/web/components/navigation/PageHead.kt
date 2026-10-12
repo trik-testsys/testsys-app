@@ -104,7 +104,7 @@ class PageHeadScope internal constructor(private val texts: UiLocalization, priv
      */
     fun tabs(matchRouteParameters: Boolean, content: PageTabsScope.() -> Unit) {
         check(tabsNav == null) { "Page head already has tabs; call tabs() once" }
-        tabsNav = PageTabsScope(view, texts, matchRouteParameters).apply(content).build(texts.messages.uiNavigation.sections())
+        tabsNav = PageTabsScope(view, texts, matchRouteParameters).apply(content).build(texts.messages.uiPage.navigationSections())
     }
 
     internal fun build(title: String): Div {
@@ -121,7 +121,7 @@ class PageHeadScope internal constructor(private val texts: UiLocalization, priv
 
     private fun breadcrumbs(title: String): Nav = Nav().apply {
         addClassName(CssClass.Crumbs)
-        element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiNavigation.breadcrumbs())
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiPage.navigationBreadcrumbs())
         crumbs.forEach { link -> add(link, separator()) }
         add(Span(title).apply { element.setAriaCurrent(AriaCurrent.Page) })
     }

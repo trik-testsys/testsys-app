@@ -20,8 +20,8 @@ internal class EditingSwitch(private val onSave: () -> Boolean, private val onCa
     fun install(bar: Div, texts: UiLocalization, state: BlockEditState, body: Div) {
         val actions = EditingActions().also { container -> bar.add(container) }
         val head = ContentScope(actions, texts, Placement.Head)
-        val start = head.action(texts.messages.uiEditing.start(), icon = IconName.Pencil)
-        val cancel = head.action(texts.messages.uiEditing.cancel()) {
+        val start = head.action(texts.messages.uiForm.editingStart(), icon = IconName.Pencil)
+        val cancel = head.action(texts.messages.uiForm.editingCancel()) {
             onClick {
                 onCancel()
                 state.isEditable = false
@@ -33,7 +33,7 @@ internal class EditingSwitch(private val onSave: () -> Boolean, private val onCa
             focusFirstEditableInput(body = body, fallback = cancel.button)
         }
 
-        val save = head.mainAction(texts.messages.uiEditing.save()) { onClick { if (onSave()) state.isEditable = false } }
+        val save = head.mainAction(texts.messages.uiForm.editingSave()) { onClick { if (onSave()) state.isEditable = false } }
         state.follow { editable ->
             start.isVisible = !editable
             cancel.isVisible = editable

@@ -35,7 +35,7 @@ class StudentView(private val headers: CabinetHeaders, private val studentServic
     TestSysView(),
     BeforeEnterObserver,
     HasDynamicTitle {
-    override fun getPageTitle(): String = currentLocalization().pageStudy.studentTitle()
+    override fun getPageTitle(): String = currentLocalization().pageStudent.title()
 
     override fun beforeEnter(event: BeforeEnterEvent) {
         show()
@@ -45,28 +45,28 @@ class StudentView(private val headers: CabinetHeaders, private val studentServic
         // Also checks the student role before the table loads, so that its absence opens the forbidden screen.
         val classes = studentService.viewClasses()
         val localization = currentLocalization()
-        val texts = localization.pageStudy
+        val texts = localization.pageStudent
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head(texts.studentTitle()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
-            guide(texts.studentGuide())
+            head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
+            guide(texts.guide())
             row {
                 block(size = CLASSES_COLUMNS, title = localization.pageCabinet.sectionClasses()) {
-                    guide(texts.studentClassesGuide())
+                    guide(texts.classesGuide())
                     table(key = { studyClass: ClassVo -> studyClass.id }, fetch = { request -> pageOf(classes, request) }) {
                         textColumn(texts.name(), size = 8) { studyClass -> studyClass.name }
                         textColumn(texts.description()) { studyClass -> studyClass.description }
-                        empty(texts.studentClassesEmpty(), texts.studentClassesEmptyHint())
+                        empty(texts.classesEmpty(), texts.classesEmptyHint())
                         onRowClick(isNavigation = true) { studyClass ->
                             UI.getCurrent().navigate(StudentClassView::class.java, studentClassParameters(studyClass.id))
                         }
                     }
                 }
-                block(title = texts.studentJoinTitle()) {
-                    guide(texts.studentJoinGuide())
+                block(title = texts.joinTitle()) {
+                    guide(texts.joinGuide())
                     lateinit var inviteCode: ValueInput<String>
-                    row { inviteCode = codeInput(texts.studentJoinInviteCode(), labelSize = 10, size = 14) }
+                    row { inviteCode = codeInput(texts.joinInviteCode(), labelSize = 10, size = 14) }
                     footer {
-                        mainAction(texts.studentJoinSubmit()) {
+                        mainAction(texts.joinSubmit()) {
                             clickOnEnter()
                             onClick { joinClass(inviteCode.value) }
                         }
@@ -78,18 +78,18 @@ class StudentView(private val headers: CabinetHeaders, private val studentServic
 
     /** Joins the class by [inviteCode] and rebuilds the page with it. */
     private fun joinClass(inviteCode: String) {
-        val texts = currentLocalization().pageStudy
+        val texts = currentLocalization().pageStudent
         val studyClass = try {
             studentService.joinClass(inviteCode)
         } catch (exception: OperationException) {
             when (exception.error) {
-                is ClassInviteCodeNotValidError -> toast(FeedbackKind.Error, texts.studentJoinInviteCodeInvalid())
-                is ClassInviteCodeExpiredError -> toast(FeedbackKind.Error, texts.studentJoinInviteCodeExpired())
+                is ClassInviteCodeNotValidError -> toast(FeedbackKind.Error, texts.joinInviteCodeInvalid())
+                is ClassInviteCodeExpiredError -> toast(FeedbackKind.Error, texts.joinInviteCodeExpired())
                 else -> throw exception
             }
             return
         }
-        toast(FeedbackKind.Success, texts.studentJoinJoined(name = studyClass.name))
+        toast(FeedbackKind.Success, texts.joinJoined(name = studyClass.name))
         show()
     }
 }

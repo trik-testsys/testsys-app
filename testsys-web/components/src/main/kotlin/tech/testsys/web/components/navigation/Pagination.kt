@@ -51,8 +51,8 @@ class PaginationHandle internal constructor(
     pageCount: Int,
     page: Int,
 ) : ElementHandle(root) {
-    private val previous = pagerArrow(IconName.ChevronLeft, texts.messages.uiPagination.previous())
-    private val next = pagerArrow(IconName.ChevronRight, texts.messages.uiPagination.next())
+    private val previous = pagerArrow(IconName.ChevronLeft, texts.messages.uiData.paginationPrevious())
+    private val next = pagerArrow(IconName.ChevronRight, texts.messages.uiData.paginationNext())
     private var count = pageCount
     private var items: List<Component> = emptyList()
     private var listener: (Int) -> Unit = {}
@@ -139,7 +139,7 @@ class PaginationHandle internal constructor(
     private fun pageButton(target: Int, shown: Int): NativeButton = NativeButton(formatNumber(target, texts)).apply {
         addClassName(CssClass.PagerBtn)
         element.setType(ElementType.Button)
-        element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiPagination.page(page = target))
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiData.paginationPage(page = target))
 
         if (target == shown) {
             addClassName(CssClass.PagerBtnActive)

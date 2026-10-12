@@ -66,7 +66,7 @@ class TableScope<T> internal constructor(
     private val selectionSize: Int = 0,
 ) {
     private val columns = mutableListOf<TableColumn<T>>()
-    private var emptyContent: EmptyContent = EmptyContent(texts.messages.uiTable.empty())
+    private var emptyContent: EmptyContent = EmptyContent(texts.messages.uiData.tableEmpty())
     private var rowClick: ((T) -> Unit)? = null
     private var isRowNavigation: Boolean = false
     private var isRowClickable: (T) -> Boolean = { true }
@@ -168,7 +168,7 @@ class TableScope<T> internal constructor(
      * @since %CURRENT_VERSION%
      */
     fun menuColumn(size: Int = 1, content: MenuScope.(T) -> Unit) {
-        menuColumn(ariaLabel = { texts.messages.uiMenu.actions() }, size = size, content = content)
+        menuColumn(ariaLabel = { texts.messages.uiOverlay.menuActions() }, size = size, content = content)
     }
 
     /**

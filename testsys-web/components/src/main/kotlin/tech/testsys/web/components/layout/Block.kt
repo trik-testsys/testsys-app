@@ -35,7 +35,7 @@ internal fun buildBlock(
     val block = Section()
     val editState = BlockEditState(block.element)
     val scope = BlockScope(body, columns, texts, editState, heading.title).apply(content).apply { finish() }
-    val guideControl = scope.guide?.let { guideButton(texts.messages.uiGuide.block(), isPage = false) }
+    val guideControl = scope.guide?.let { guideButton(texts.messages.uiPage.guideBlock(), isPage = false) }
     with(block) {
         addClassNames(CssClass.Block, CssClass.BlockGrid)
         if (scope.filtersBar != null) addClassName(CssClass.BlockFilters)

@@ -121,7 +121,7 @@ internal fun PageScope.managerContestsBlock(
             }
         }
         footer { dialog ->
-            action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+            action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
             mainAction(texts.contestsSubmit()) {
                 onClick {
                     val values = ContestDraft()

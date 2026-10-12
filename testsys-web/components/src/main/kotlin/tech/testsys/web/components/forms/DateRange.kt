@@ -83,7 +83,8 @@ internal class DateRangeField(
     }
 
     init {
-        val prefixes = with(texts.messages.uiDateField) { listOf(start to rangeFromPrefix(), end to rangeToPrefix()) }
+        val prefixes =
+            with(texts.messages.uiForm) { listOf(start to dateFieldRangeFromPrefix(), end to dateFieldRangeToPrefix()) }
         prefixes.forEach { (picker, prefix) ->
             picker.prefixComponent = Span(prefix).apply {
                 addClassName(CssClass.DateRangePrefix)

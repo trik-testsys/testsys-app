@@ -27,7 +27,7 @@ class MenuTests : MockVaadinTests() {
         buildTestPage { row { block(title = "Тур") { actions { menu { item("Открыть") {} } } } } }
 
         val trigger = ellipsis()
-        assertEquals(testTexts.messages.uiMenu.actions(), trigger.element.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiOverlay.menuActions(), trigger.element.getAttribute("aria-label"))
         assertEquals("menu", trigger.element.getAttribute("aria-haspopup"))
         assertEquals("sm", trigger.element.getAttribute("data-ts-size"))
         assertTrue(menuOf(trigger).isOpenOnClick)
@@ -148,7 +148,7 @@ class MenuTests : MockVaadinTests() {
 
         val header = UI.getCurrent().find("ts-table").children.toList()[0].children.toList()[0].children.toList().last()
         assertEquals("50.0%", UI.getCurrent().find("ts-table").element.getChild(0).children.toList().last().style.get("width"))
-        assertEquals(testTexts.messages.uiMenu.actions(), header.element.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiOverlay.menuActions(), header.element.getAttribute("aria-label"))
     }
 
     @Test
@@ -235,7 +235,7 @@ class MenuTests : MockVaadinTests() {
     private fun ellipsis(): Button = ellipses().single()
 
     private fun ellipses(): List<Button> = findAllButtons(UI.getCurrent()).filter { button ->
-        button.element.getAttribute("aria-label") == testTexts.messages.uiMenu.actions()
+        button.element.getAttribute("aria-label") == testTexts.messages.uiOverlay.menuActions()
     }
 
     private fun caption(item: Component): String = if (item is Hr) "-" else item.element.textRecursively

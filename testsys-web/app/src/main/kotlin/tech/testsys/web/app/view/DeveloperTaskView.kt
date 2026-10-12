@@ -149,7 +149,7 @@ class DeveloperTaskView(
                 }
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.taskDescribeSubmit()) {
                     onClick {
                         val drafts = uploads.map { (file, binder) ->
@@ -237,7 +237,7 @@ class DeveloperTaskView(
                     }
                 }
             }
-            footer { view -> action(localization.uiDialog.close()) { onClick { view.close() } } }
+            footer { view -> action(localization.uiOverlay.dialogClose()) { onClick { view.close() } } }
         }.open()
     }
 
@@ -510,7 +510,7 @@ class DeveloperTaskView(
             }
             row { text(texts.taskCommitRegradeHint()) }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.taskCommit()) {
                     onClick {
                         val current = currentLocalization().pageDeveloper
@@ -542,7 +542,7 @@ class DeveloperTaskView(
                 chosen = multiSelect(texts.communities(), labelSize = 6, size = 18, items = candidates, itemLabel = CommunityVo::name)
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.shareSubmit()) {
                     onClick {
                         val communities = chosen.value
@@ -587,7 +587,7 @@ class DeveloperTaskView(
                 drop = fileDrop(texts.taskUploadFiles(), UPLOAD_LIMITS, consume = { file -> files[file.id] = file.toFileData() })
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.taskUploadNext()) {
                     onClick {
                         val chosen = drop.fileIds.mapNotNull(files::get)
@@ -678,7 +678,7 @@ class DeveloperTaskView(
                 )
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.attach()) {
                     onClick {
                         val selected = chosen.value

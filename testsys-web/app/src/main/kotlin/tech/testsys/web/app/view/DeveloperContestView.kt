@@ -270,7 +270,7 @@ class DeveloperContestView(
                 )
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.attach()) {
                     onClick {
                         chosen.value?.let { task ->
@@ -310,7 +310,7 @@ class DeveloperContestView(
                 chosen = multiSelect(texts.communities(), labelSize = 6, size = 18, items = candidates, itemLabel = CommunityVo::name)
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.shareSubmit()) {
                     onClick {
                         val communities = chosen.value

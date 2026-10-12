@@ -24,7 +24,7 @@ class TestSysBrandTests : MockVaadinTests() {
 
         val brand = page.find("ts-brand")
 
-        assertEquals(testTexts.messages.uiBrand.name(), brand.element.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiPage.brandName(), brand.element.getAttribute("aria-label"))
         assertEquals("img", brand.element.getAttribute("role"))
         assertEquals(1L, brand.children.count())
         assertEquals(TestSysBrand.HEADER, brand.find("ts-brand__logo").element.getAttribute("src"))

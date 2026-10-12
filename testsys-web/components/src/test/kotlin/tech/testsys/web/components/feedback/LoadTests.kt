@@ -343,9 +343,9 @@ class LoadTests : MockVaadinTests() {
 
             val state = ui().find("ts-empty")
             assertTrue("ts-empty--error" in state.classes())
-            assertEquals(testTexts.messages.uiLoad.failed(), state.find("ts-empty__title").element.text)
-            assertEquals(testTexts.messages.uiLoad.failedHint(), state.find("ts-empty__desc").element.text)
-            assertTrue(button(testTexts.messages.uiLoad.retry()).isVisible)
+            assertEquals(testTexts.messages.uiFeedback.loadFailed(), state.find("ts-empty__title").element.text)
+            assertEquals(testTexts.messages.uiFeedback.loadFailedHint(), state.find("ts-empty__desc").element.text)
+            assertTrue(button(testTexts.messages.uiFeedback.loadRetry()).isVisible)
         }
 
         @Test
@@ -383,7 +383,7 @@ class LoadTests : MockVaadinTests() {
             buildTestPage { row { block { load(FailingOnce()::fetch) { value -> row { text("Всего: $value") } } } } }
             queue.runAll()
 
-            button(testTexts.messages.uiLoad.retry())._click()
+            button(testTexts.messages.uiFeedback.loadRetry())._click()
 
             assertEquals(3, ui().findAll("ts-skel-row").size)
             assertTrue(ui().findAll("ts-empty").isEmpty())
@@ -393,7 +393,7 @@ class LoadTests : MockVaadinTests() {
         fun `should show the content after a successful retry`() {
             buildTestPage { row { block { load(FailingOnce()::fetch) { value -> row { text("Всего: $value") } } } } }
             queue.runAll()
-            button(testTexts.messages.uiLoad.retry())._click()
+            button(testTexts.messages.uiFeedback.loadRetry())._click()
 
             queue.runAll()
 

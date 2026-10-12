@@ -15,8 +15,8 @@ import tech.testsys.web.components.texts.UiLocalization
 internal class Pager(private val texts: UiLocalization, private val onPage: (Int) -> Unit) {
     private val range = Span().apply { addClassName(CssClass.Muted) }
     private val counter = Span().apply { addClassName(CssClass.PagerLabel) }
-    private val previous = pagerArrow(IconName.ChevronLeft, texts.messages.uiPagination.previous())
-    private val next = pagerArrow(IconName.ChevronRight, texts.messages.uiPagination.next())
+    private val previous = pagerArrow(IconName.ChevronLeft, texts.messages.uiData.paginationPrevious())
+    private val next = pagerArrow(IconName.ChevronRight, texts.messages.uiData.paginationNext())
     private var page = 0
 
     val root: Div = Div(
@@ -32,8 +32,8 @@ internal class Pager(private val texts: UiLocalization, private val onPage: (Int
     /** Shows page [page] (from 0) of [pageCount] with rows [from]–[to] of [total]. */
     fun show(page: Int, pageCount: Int, from: Int, to: Int, total: Int) {
         this.page = page
-        range.text = texts.messages.uiTable.range(from = from, to = to, total = total)
-        counter.text = texts.messages.uiPagination.counter(page = page + 1, count = pageCount)
+        range.text = texts.messages.uiData.tableRange(from = from, to = to, total = total)
+        counter.text = texts.messages.uiData.paginationCounter(page = page + 1, count = pageCount)
         previous.isEnabled = page > 0
         next.isEnabled = page < pageCount - 1
     }

@@ -40,13 +40,13 @@ class OperationErrorHandler : VaadinServiceInitListener, ErrorHandler {
         toast(FeedbackKind.Error, title(failure.error))
     }
 
-    private fun title(error: OperationError): String = with(currentLocalization().uiError) {
+    private fun title(error: OperationError): String = with(currentLocalization().uiFeedback) {
         when (error) {
-            is EntityNotExistsError -> failureNotFound()
-            is AccessDeniedError -> failureAccessDenied()
-            is MissedRequiredRoleError -> failureMissingRole()
-            is ResourceAccessError -> failureResourceNotInTask()
-            else -> failureFailed()
+            is EntityNotExistsError -> errorFailureNotFound()
+            is AccessDeniedError -> errorFailureAccessDenied()
+            is MissedRequiredRoleError -> errorFailureMissingRole()
+            is ResourceAccessError -> errorFailureResourceNotInTask()
+            else -> errorFailureFailed()
         }
     }
 }

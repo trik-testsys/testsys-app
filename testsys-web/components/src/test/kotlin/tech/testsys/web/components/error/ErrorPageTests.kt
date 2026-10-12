@@ -22,8 +22,8 @@ class ErrorPageTests : MockVaadinTests() {
     fun `should show the missing page texts on the not found page`() {
         val page = NotFoundPage()
 
-        assertEquals(testTexts.messages.uiError.notFoundTitle(), page.find("ts-h1").element.text)
-        assertEquals(testTexts.messages.uiError.notFoundDescription(), page.find("ts-empty__desc").element.text)
-        assertEquals(testTexts.messages.uiError.notFoundPageTitle(), page.pageTitle)
+        assertEquals(testTexts.messages.uiFeedback.errorNotFoundTitle(), page.find("ts-h1").element.text)
+        assertEquals(testTexts.messages.uiFeedback.errorNotFoundDescription(), page.find("ts-empty__desc").element.text)
+        assertEquals(testTexts.messages.uiFeedback.errorNotFoundPageTitle(), page.pageTitle)
     }
 }

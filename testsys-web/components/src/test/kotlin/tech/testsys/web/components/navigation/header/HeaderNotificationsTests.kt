@@ -80,7 +80,7 @@ class HeaderNotificationsTests : MockVaadinTests() {
 
         source.set(listOf(notification("one", mutableListOf()), notification("two", mutableListOf())))
 
-        assertEquals(testTexts.messages.uiHeader.arrivalCount(count = 2), controller.arrival.title.text)
+        assertEquals(testTexts.messages.uiPage.headerArrivalCount(count = 2), controller.arrival.title.text)
         controller.arrival.openDestination()
         assertTrue(controller.popup.isOpened)
         assertTrue(source.peek().all { item -> item.isUnread })
@@ -191,7 +191,7 @@ class HeaderNotificationsTests : MockVaadinTests() {
 
         assertFalse(controller.popup.isOpened)
         val empty = controller.component.find("ts-header-notifications-empty")
-        assertEquals(testTexts.messages.uiHeader.notificationsEmpty(), empty.element.text)
+        assertEquals(testTexts.messages.uiPage.headerNotificationsEmpty(), empty.element.text)
         assertFalse(controller.indicator.isVisible)
     }
 
@@ -200,7 +200,7 @@ class HeaderNotificationsTests : MockVaadinTests() {
         val source = ValueSignal(listOf(notification("first", mutableListOf())))
         val controller = HeaderNotificationsController(
             HeaderNotifications(source, onRead = {}, onReadAll = { source.set(emptyList()) }),
-            testTexts.messages.uiHeader,
+            testTexts.messages.uiPage,
             HeaderInteractions(),
         )
         UI.getCurrent().add(controller.component)
@@ -224,7 +224,7 @@ class HeaderNotificationsTests : MockVaadinTests() {
         onRead: (String) -> Unit = {},
     ): HeaderNotificationsController = HeaderNotificationsController(
         HeaderNotifications(source, onRead = onRead, onReadAll = {}),
-        testTexts.messages.uiHeader,
+        testTexts.messages.uiPage,
         HeaderInteractions(),
     ).also { controller -> UI.getCurrent().add(controller.component) }
 

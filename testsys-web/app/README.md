@@ -165,12 +165,20 @@
 | `page_profile` | `ProfileView` |
 | `page_confirmation` | Подтверждение почты кодом из письма, общее для `RegistrationView` и `ProfileView` |
 | `page_home` | `MultiMainView` |
-| `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню», `ObserverView` и `SupervisorView`; общие для Кабинетов статус проверки Задачи и ограничение длины названия |
-| `page_judge` | `JudgeView`, `JudgeSolutionView` |
-| `page_study` | `StudentView`, `StudentClassView`, `ParticipantView` и общие страницы Тура и Задачи: `StudyContestView`, `StudyTaskView` с их страницами Ученика и Участника |
-| `page_manager` | `ManagerView`, `ManagerClassView`, `ManagerCompetitionView`, `ManagerContestView` и заголовки их CSV |
-| `page_admin` | `AdminView`, `AdminCommunityView`, `AdminUserView` |
+| `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню»; общие для Кабинетов пустое состояние нереализованного раздела, статус проверки Задачи, ограничение длины названия и запись длительности |
+| `page_administrator` | `AdminView`, `AdminCommunityView`, `AdminUserView` |
 | `page_developer` | `DeveloperView`, `DeveloperContestView`, `DeveloperTaskView`, `DeveloperResourceView`, `DeveloperTestingView` |
+| `page_manager` | `ManagerView`, `ManagerClassView`, `ManagerCompetitionView`, `ManagerContestView` и заголовки их CSV |
+| `page_judge` | `JudgeView`, `JudgeSolutionView` |
+| `page_student` | `StudentView`, `StudentClassView`, `StudentContestView`, `StudentTaskView` |
+| `page_participant` | `ParticipantView`, `ParticipantContestView`, `ParticipantTaskView` |
+| `page_observer` | `ObserverView` |
+| `page_supervisor` | `SupervisorView` |
+
+Как выбрать бандл для текста страницы Роли — в шаге 1
+[add-localization.md](../../docs/guides/add-localization.md#1-выбрать-ключ-и-файл-бандла). Общие страницы Тура
+и Задачи `StudyContestView` и `StudyTaskView` получают тексты через `StudyTexts`: страницы Ученика читают их
+из `page_student`, страницы Участника — из `page_participant`.
 
 Страницы из таблицы, у которых есть свой заголовок вкладки, задают его через `HasDynamicTitle` из сообщения.
 Остальные страницы Ролей пока задают тексты строками, а заголовок вкладки — через `@PageTitle`.
@@ -248,12 +256,12 @@
 исключениями и обрабатываются Vaadin. Тур вне Класса или Соревнования Пользователя считается отсутствующим.
 
 Исключение в обработчике события получает `OperationErrorHandler`. Он становится `ErrorHandler` каждой новой
-сессии и показывает тост `FeedbackKind.Error` с заголовком из сообщений `ui_error.failure.*`. Свой заголовок есть
+сессии и показывает тост `FeedbackKind.Error` с заголовком из сообщений `ui_feedback.error.failure.*`. Свой заголовок есть
 у `EntityNotExistsError`, `AccessDeniedError`, `MissedRequiredRoleError` и `ResourceAccessError`, общий —
 у остальных ошибок. Обработчик ищет `OperationException` и среди причин исключения. Исключения других типов
 он передаёт `DefaultErrorHandler` Vaadin без тоста.
 
-Тексты экранов и тостов — сообщения бандла `ui_error`, см. [components/README.md](../components/README.md#тексты).
+Тексты экранов и тостов — сообщения `ui_feedback.error.*`, см. [components/README.md](../components/README.md#тексты).
 
 ## Запуск и проверка
 

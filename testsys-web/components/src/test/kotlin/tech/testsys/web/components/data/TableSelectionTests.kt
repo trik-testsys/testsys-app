@@ -86,8 +86,8 @@ class TableSelectionTests : MockVaadinTests() {
     fun `should name the header and row checkboxes for screen readers`() {
         buildTable(Source(size = 12))
 
-        assertEquals(testTexts.messages.uiTable.selectAll(), headerCheckbox().ariaLabel.orElseThrow())
-        assertEquals(testTexts.messages.uiTable.selectRow(), rowCheckbox(0).ariaLabel.orElseThrow())
+        assertEquals(testTexts.messages.uiData.tableSelectAll(), headerCheckbox().ariaLabel.orElseThrow())
+        assertEquals(testTexts.messages.uiData.tableSelectRow(), rowCheckbox(0).ariaLabel.orElseThrow())
     }
 
     @Test
@@ -135,9 +135,9 @@ class TableSelectionTests : MockVaadinTests() {
     fun `should keep the selection across pages`() {
         val handle = buildTable(Source(size = 12))
         rowCheckbox(0)._setValue(true)
-        pagerButton(testTexts.messages.uiPagination.next())._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
 
-        pagerButton(testTexts.messages.uiPagination.previous())._click()
+        pagerButton(testTexts.messages.uiData.paginationPrevious())._click()
 
         assertTrue(rowCheckbox(0).value)
         assertTrue("ts-row-selected" in rows()[0].classes())
@@ -171,9 +171,9 @@ class TableSelectionTests : MockVaadinTests() {
     @Test
     fun `should unselect only the rows of the page with the header checkbox`() {
         val handle = buildTable(Source(size = 12))
-        pagerButton(testTexts.messages.uiPagination.next())._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
         rowCheckbox(0)._setValue(true)
-        pagerButton(testTexts.messages.uiPagination.previous())._click()
+        pagerButton(testTexts.messages.uiData.paginationPrevious())._click()
         headerCheckbox()._setValue(true)
 
         headerCheckbox()._setValue(false)
@@ -209,7 +209,7 @@ class TableSelectionTests : MockVaadinTests() {
         buildTable(Source(size = 12))
         headerCheckbox()._setValue(true)
 
-        pagerButton(testTexts.messages.uiPagination.next())._click()
+        pagerButton(testTexts.messages.uiData.paginationNext())._click()
 
         assertFalse(headerCheckbox().value)
         assertFalse(headerCheckbox().isIndeterminate)

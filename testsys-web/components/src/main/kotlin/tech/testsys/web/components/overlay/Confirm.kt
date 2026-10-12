@@ -36,7 +36,7 @@ fun confirm(
 
     val confirmName = typeToConfirm?.let { name ->
         TextField().apply {
-            label = texts.messages.uiDialog.typeToConfirm(name = name)
+            label = texts.messages.uiOverlay.dialogTypeToConfirm(name = name)
             valueChangeMode = ValueChangeMode.EAGER
             isAutofocus = true
             style.setWidth(value = 100, unit = CssUnit.Percent)
@@ -44,7 +44,7 @@ fun confirm(
     }
 
     val foot = ContentScope(shell.foot, texts, Placement.Body)
-    foot.action(texts.messages.uiDialog.cancel()) { onClick { shell.close() } }
+    foot.action(texts.messages.uiOverlay.dialogCancel()) { onClick { shell.close() } }
 
     val run: ActionHandle.() -> Unit = {
         onClick {

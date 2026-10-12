@@ -122,7 +122,7 @@ internal class CommunityDraft(var name: String = "", var description: String = "
  */
 internal fun BlockScope.adminUsersTable(service: AdministratorService, communities: List<CommunityVo>, community: CommunityId?) {
     val localization = currentLocalization()
-    val texts = localization.pageAdmin
+    val texts = localization.pageAdministrator
     val defaults = UserFilter(communityId = community)
     var applied = defaults
     val rows = table(

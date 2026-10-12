@@ -110,8 +110,8 @@ internal abstract class LookupFrame<V>(
 
     init {
         val actions = ContentScope(box, texts, Placement.Head)
-        clearAction = actions.iconAction(IconName.X, texts.messages.uiLookup.clear()) { onClick { clearByUser() } }
-        openAction = actions.iconAction(IconName.Search, texts.messages.uiLookup.open()) { onClick { openDialog() } }
+        clearAction = actions.iconAction(IconName.X, texts.messages.uiForm.lookupClear()) { onClick { clearByUser() } }
+        openAction = actions.iconAction(IconName.Search, texts.messages.uiForm.lookupOpen()) { onClick { openDialog() } }
         openAction.button.tabIndex = -1
         box.element.addEventListener(DomEvent.Click) { openDialog() }.setFilter(DomEventFilter.LookupClick)
         add(box)
@@ -161,7 +161,7 @@ internal abstract class LookupFrame<V>(
 
         // An empty button would have no accessible name: it is named after what it does, or after the field if it does nothing.
         val label = when {
-            name.isEmpty() -> if (isChoosable) texts.messages.uiLookup.open() else title
+            name.isEmpty() -> if (isChoosable) texts.messages.uiForm.lookupOpen() else title
             text == name -> null
             else -> name
         }
@@ -229,7 +229,7 @@ internal class LookupDialog<T : Any>(
     init {
         var query = ""
         val spec =
-            TableSpec(columns.columns, EmptyContent(texts.messages.uiLookup.empty()), columns.layout) { row -> onRowClick(this, row) }
+            TableSpec(columns.columns, EmptyContent(texts.messages.uiForm.lookupEmpty()), columns.layout) { row -> onRowClick(this, row) }
         table = DataTable(
             texts,
             key = { row -> row },
@@ -243,8 +243,8 @@ internal class LookupDialog<T : Any>(
 
         search = TextField().apply {
             addClassName(CssClass.LookupSearch)
-            placeholder = texts.messages.uiLookup.search()
-            setAriaLabel(texts.messages.uiLookup.search())
+            placeholder = texts.messages.uiForm.lookupSearch()
+            setAriaLabel(texts.messages.uiForm.lookupSearch())
             isAutofocus = true
             valueChangeMode = ValueChangeMode.LAZY
             valueChangeTimeout = SEARCH_DELAY_MS

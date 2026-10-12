@@ -66,7 +66,7 @@ class MenuScope internal constructor(private val menu: ContextMenu) {
  * @since %CURRENT_VERSION%
  */
 fun ContentScope.menu(label: String? = null, content: MenuScope.() -> Unit): ElementHandle {
-    if (label == null) return iconMenu(texts.messages.uiMenu.actions(), content)
+    if (label == null) return iconMenu(texts.messages.uiOverlay.menuActions(), content)
     val trigger = action(label)
     attachMenu(trigger.button, content)
     return ElementHandle(trigger.button)

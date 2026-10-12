@@ -205,7 +205,7 @@ class JudgeSolutionView(
                 }
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.solutionDialogSubmit()) {
                     onClick {
                         val values = JudgmentDraft()

@@ -58,7 +58,7 @@ class ConfirmTests : MockVaadinTests() {
             assertFalse("ts-dialog--md" in card.classes())
             assertEquals("Закрыть тур?", card.find("ts-dialog__title").element.text)
             assertEquals("Посылки больше не принимаются", card.find("ts-dialog__body").child(0).child(0).element.text)
-            assertTrue(button(testTexts.messages.uiDialog.cancel()).isVisible)
+            assertTrue(button(testTexts.messages.uiOverlay.dialogCancel()).isVisible)
             assertTrue(button("Закрыть тур").isEnabled)
         }
 
@@ -80,7 +80,7 @@ class ConfirmTests : MockVaadinTests() {
             confirm(title = "Закрыть тур?", action = "Закрыть тур") { confirmations++ }
             openDialogs()
 
-            button(testTexts.messages.uiDialog.cancel())._click()
+            button(testTexts.messages.uiOverlay.dialogCancel())._click()
 
             assertEquals(0, confirmations)
             assertTrue(openDialogs().isEmpty())
@@ -102,7 +102,7 @@ class ConfirmTests : MockVaadinTests() {
             confirm(title = "Закрыть тур?", action = "Закрыть тур") { confirmations++ }
             openDialogs()
 
-            _find<Button>().single { button -> button.ariaLabel.orElse(null) == testTexts.messages.uiDialog.close() }._click()
+            _find<Button>().single { button -> button.ariaLabel.orElse(null) == testTexts.messages.uiOverlay.dialogClose() }._click()
 
             assertEquals(0, confirmations)
             assertTrue(openDialogs().isEmpty())
@@ -170,7 +170,7 @@ class ConfirmTests : MockVaadinTests() {
             confirm(title = "Удалить тур?", action = "Удалить", isDanger = true, typeToConfirm = "Весенний кубок") {}
 
             val field = openDialogs().single()._get<TextField>()
-            assertEquals(testTexts.messages.uiDialog.typeToConfirm(name = "Весенний кубок"), field.label)
+            assertEquals(testTexts.messages.uiOverlay.dialogTypeToConfirm(name = "Весенний кубок"), field.label)
         }
     }
 

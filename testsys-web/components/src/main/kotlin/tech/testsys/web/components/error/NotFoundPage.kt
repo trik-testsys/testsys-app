@@ -9,8 +9,8 @@ import tech.testsys.web.components.texts.currentLocalization
  */
 open class NotFoundPage : ErrorPage() {
     init {
-        with(currentLocalization().uiError) {
-            show(title = notFoundTitle(), description = notFoundDescription(), pageTitle = notFoundPageTitle())
+        with(currentLocalization().uiFeedback) {
+            show(title = errorNotFoundTitle(), description = errorNotFoundDescription(), pageTitle = errorNotFoundPageTitle())
         }
     }
 }

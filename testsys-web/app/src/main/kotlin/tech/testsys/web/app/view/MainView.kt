@@ -24,7 +24,7 @@ class MainView(headers: CabinetHeaders) : TestSysView(), BeforeEnterObserver {
         val localization = currentLocalization()
         val texts = localization.pageGuest
         page(headers.guest()) {
-            head(localization.uiBrand.name())
+            head(localization.uiPage.brandName())
             guide(texts.startGuide())
             guestBlock {
                 guide(texts.startBlockGuide(), title = texts.startBlockGuideTitle())

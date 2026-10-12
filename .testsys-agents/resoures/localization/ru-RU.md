@@ -143,7 +143,7 @@ glossary and owner documents stay authoritative.
   textile term (a knitted fabric), so a reader can resolve the jargon sense only from context.
 - Usage evidence: a blog post on spark.ru says its editors did not know whether to write «футтер» or «футер»,
   so the double «т» is a common slip, not an accepted variant. No orthographic dictionary entry was opened.
-- Applicability: `ui_footer.links` keeps «Ссылки футтера» verbatim because the 2026-10-11 migration requires the
+- Applicability: `ui_page.footer.links` keeps «Ссылки футтера» verbatim because the 2026-10-11 migration requires the
   rendered output to stay unchanged. It is an accessible name read by screen readers. If the coordinator allows
   a wording change, «Ссылки футера» fixes the spelling. Non-jargon alternatives for a general audience, such as
   «Ссылки в подвале сайта» or «Нижняя навигация», are suggestions only and were not checked against a source.
@@ -151,7 +151,7 @@ glossary and owner documents stay authoritative.
   https://spark.ru/startup/522832472692b/blog/1835/novij-futer (search snippet only, 2026-10-11).
 - Independent review re-read the Викисловарь entry on 2026-10-11 with the same result. The project documentation
   (components README, ui-design.md) also writes «футтер», so a fix of the message may need the same docs change.
-- Project decision (2026-10-12): the user approved «Ссылки футера»; `ui_footer.links` now uses one «т». The same
+- Project decision (2026-10-12): the user approved «Ссылки футера»; `ui_page.footer.links` now uses one «т». The same
   change replaced «футтер» with «футер» in the project documentation (components README, ui-design.md), so the
   note above about the docs is historical.
 - Independent review re-read the Викисловарь entry on 2026-10-12: «фу́тер», «Существительное, неодушевлённое,
@@ -166,14 +166,14 @@ glossary and owner documents stay authoritative.
 - Patterns that keep free nominative text grammatical, already used in the `ui_*` bundles: a colon
   («Меню пользователя: {$name}») or guillemets («Введите «{$name}», чтобы подтвердить»). This is the reviewer's
   inference, not a dictionary statement.
-- Applicability: `ui_lookup.remove` keeps «Убрать {$value}» verbatim in the 2026-10-11 migration; a change such as
+- Applicability: `ui_form.lookup.remove` keeps «Убрать {$value}» verbatim in the 2026-10-11 migration; a change such as
   «Убрать: {$value}» needs explicit approval.
 - Source: https://ru.wiktionary.org/wiki/убрать (read 2026-10-11).
 - Project decision (2026-10-12): the user approved guillemets, «Убрать «{$value}»» («Убрать «Маша»»).
 - Quoted names and declension: «Мел» (08.09.2022, a popular outlet citing no handbook) states «если рядом есть
   родовое слово, то название в кавычках не склоняется»; without a generic word the name declines like an ordinary
   noun («работать в «Газпроме»» / «в компании «Газпром»»). Independent review (2026-10-12) reads the guillemets in
-  `ui_lookup.remove` as a verbatim quote of arbitrary data, like «нажмите «Войти»», and does not call it a defect;
+  `ui_form.lookup.remove` as a verbatim quote of arbitrary data, like «нажмите «Войти»», and does not call it a defect;
   the strictly normative form would add a generic word («Убрать значение «{$value}»»). A `$value` that already
   contains guillemets gives nested «». Rosental's own text was not found.
 - Source: https://mel.fm/gramotnost/kak-pisat/8935620-gramotnost-na-mele-ili-gramotnost-na-mel-nuzhno-li-sklonyat-slova-v-kavychkakh
@@ -201,7 +201,7 @@ glossary and owner documents stay authoritative.
 - Instrumental singular and nominative plural (independent review, 2026-10-12): Викисловарь gives Тв. ед.
   «до́мом-музе́ем» and Им. мн. «дома́-музе́и» (В. мн. = Им. мн.), and «го́родом-госуда́рством» /
   «города́-госуда́рства» for the masculine plus neuter analogue. By analogy `glossary.invite_code` `ins sg`
-  «Кодом-приглашением» and `nom pl` «Коды-приглашения» (`page_admin`); an inference, no entry for the term itself.
+  «Кодом-приглашением» and `nom pl` «Коды-приглашения» (`page_administrator`); an inference, no entry for the term itself.
 - Sources: https://ru.wiktionary.org/wiki/дом-музей, https://ru.wiktionary.org/wiki/город-государство (read
   2026-10-12).
 - Lowercase «к сообществу» in `page_home.join_hint`, `page_home.join.title` and `page_home.joined` reproduces the
@@ -211,8 +211,8 @@ glossary and owner documents stay authoritative.
 
 - ICU4J 78.1 `:integer` renders `ru` digit groups with U+00A0 NO-BREAK SPACE («1 412»), the same as JDK 21
   `java.text.NumberFormat.getIntegerInstance(ru-RU)` (checked locally 2026-10-12 with Corretto 21.0.10). Golden tests
-  pin it with the `NBSP` constant. Not a language finding; recorded for UI counters (`ui_pagination.counter`,
-  `ui_lookup.more_chip`).
+  pin it with the `NBSP` constant. Not a language finding; recorded for UI counters (`ui_data.pagination.counter`,
+  `ui_form.lookup.more_chip`).
 
 ## Percent sign spacing: «45%» or «45 %»
 
@@ -225,7 +225,7 @@ glossary and owner documents stay authoritative.
 ## «Гайд»
 
 - Викисловарь gives one sense, «справочник; справочное руководство», without a stylistic label, borrowed from
-  English *guide*. TestSys uses «гайд» for an interactive step-by-step page tour (`ui_guide.*`), slightly broader
+  English *guide*. TestSys uses «гайд» for an interactive step-by-step page tour (`ui_page.guide.*`), slightly broader
   than the dictionary sense; not a defect. No normative orthographic dictionary entry was opened.
 - Source: https://ru.wiktionary.org/wiki/гайд (read 2026-10-11).
 
@@ -275,7 +275,7 @@ glossary and owner documents stay authoritative.
   (see the «Quoted names and declension» note above).
 - Source: https://ru.wiktionary.org/wiki/полигон (read 2026-10-12).
 
-## Student and Participant Cabinets (page_study)
+## Student and Participant Cabinets (page_student, page_participant)
 
 ### «Тур»: the round sense is inanimate
 
@@ -329,7 +329,7 @@ glossary and owner documents stay authoritative.
 
 - Викисловарь «условие» sense 4: «правило, существующее, установленное в той или иной области» («на условиях
   конкурса»); sense 7 is the given of a problem. The domain term «Условие» (definitions.md item 16) is a Resource,
-  the Task statement. `page_study.contest.guide` uses lowercase plural «условия Тура» in sense 4 (the Tour's rules
+  the Task statement. `page_student.contest.guide` and `page_participant.contest.guide` use lowercase plural «условия Тура» in sense 4 (the Tour's rules
   and time limits), while «Скачать Условие» on the Task page means the Resource. The capital letter and «Тура»
   separate them; a reader may still briefly connect the two (inference). A less ambiguous wording, such as
   «параметры Тура», would need an explicit change request.
@@ -342,7 +342,7 @@ glossary and owner documents stay authoritative.
   so the phrase reads as the time allowed to complete the Tour (inference). No undesirable connotation found.
 - Source: https://ru.wiktionary.org/wiki/прохождение (read 2026-10-12).
 
-### Glossary decisions for page_study
+### Glossary decisions for page_student and page_participant
 
 - Project decision D2 (coordinator, 2026-10-12): declined or repeated domain terms become glossary terms.
   `glossary.contest`, `glossary.class`, `glossary.task` and `glossary.solution` were added; the existing
@@ -363,10 +363,14 @@ glossary and owner documents stay authoritative.
   only, not opened: https://dspace.spbu.ru/bitstream/11701/10976/1/Diploma_-_diploma.pdf,
   https://oops.math.spbu.ru/SE/diploma/2017/bmo/444-Shigarov-presentation.pdf/at_download/file). The wording stays
   verbatim until an official name is confirmed.
+- Project observation (2026-10-12, no source): the role bundles name this language differently.
+  `page_student.task.send.language_name` and `page_participant.task.send.language_name` use «Визуальный язык
+  TRIK Studio»; `page_judge.solution.language`, `page_developer.language_name` and the `visual_language` variant of
+  `page_developer.refusal.no_exercise` use «Визуальный язык». A confirmed official name affects all of them.
 
 ### Wording kept verbatim with possible misreadings
 
-- «Отсчёт начнётся с началом Тура» (`page_study.remaining.not_started`) is shown before the user's first entry. The
+- «Отсчёт начнётся с началом Тура» (`page_student.remaining.not_started`, `page_participant.remaining.not_started`) is shown before the user's first entry. The
   same page shows the scheduled «Начало» and the «Начать Тур» button, while the countdown starts only when the user
   presses that button; «начало Тура» can be read as the scheduled start. A wording such as «Отсчёт начнётся, когда
   вы начнёте Тур» would need an explicit change request. Inference from page context by the independent review
@@ -468,7 +472,7 @@ glossary and owner documents stay authoritative.
   различаются» (see «Case sensitivity» above) stays a choice for general-audience text. Changing the hint needs an
   explicit decision. No normative dictionary or style guide was opened.
 - Source: https://ru.wiktionary.org/wiki/регистр (read 2026-10-12).
-## Administrator Cabinet (page_admin)
+## Administrator Cabinet (page_administrator)
 
 ### Glossary terms added for the cabinet
 
@@ -481,8 +485,8 @@ glossary and owner documents stay authoritative.
 - Animate masculine nouns take the genitive form in the accusative: «Создать Наблюдателя», «пригласите
   Пользователей». Inanimate plurals keep the nominative form in the accusative: «Выберите Туры». Grammar facts, no
   source opened.
-- Independent review (2026-10-12): «его Роли» in `page_admin.user.guide` (a subject of «показаны» with «сведения»
-  and «статистика») and «связанные Соревнования» in `page_admin.user.assigned.guide` (an ungoverned list item) are
+- Independent review (2026-10-12): «его Роли» in `page_administrator.user.guide` (a subject of «показаны» with «сведения»
+  and «статистика») and «связанные Соревнования» in `page_administrator.user.assigned.guide` (an ungoverned list item) are
   nominative, not accusative; reference them with `case=nom`, so the glossary needs no unused `acc pl` forms.
   Grammar analysis, no source opened.
 
@@ -524,7 +528,7 @@ glossary and owner documents stay authoritative.
 
 ### Role names in apposition: «в Роли Разработчик»
 
-- `page_admin.user.roles.remove`, `remove_title` and `community.invites.actions` insert the nominative role name
+- `page_administrator.user.roles.remove`, `remove_title` and `community.invites.actions` insert the nominative role name
   from `page_cabinet.role_name` after a declined «Роль»: «Исключить в Роли Разработчик», «для Роли Разработчик».
   Ordinary Russian puts a common noun in the genitive («в роли разработчика»). The nominative reads as a name of an
   item in a list, a label after a generic word. A generic word before a quoted name keeps the name undeclined (see
@@ -539,13 +543,13 @@ glossary and owner documents stay authoritative.
 
 ### Other notes
 
-- `page_admin.users.nickname_hint` «без учёта регистра» uses «регистр». The note «Case sensitivity: …» above
+- `page_administrator.users.nickname_hint` «без учёта регистра» uses «регистр». The note «Case sensitivity: …» above
   records a project preference for describing letter case without that word. The text is verbatim by coordinator
   decision; it is not a grammar error.
-- `page_admin.communities.users` «Пользователей» (genitive plural) is a numeric column header, read as an
+- `page_administrator.communities.users` «Пользователей» (genitive plural) is a numeric column header, read as an
   elliptical «(число) Пользователей». It is verbatim; «Пользователи» would be the usual header form.
 - Independent review (2026-10-12): the Observer creation dialog labels the name field «Имя» / «Укажите имя»
-  (`page_admin.community.observer.name*`), while the same value is «Псевдоним» elsewhere on the pages. The meaning
+  (`page_administrator.community.observer.name*`), while the same value is «Псевдоним» elsewhere on the pages. The meaning
   survives (definitions.md item 31 defines Псевдоним as a name); aligning the label needs user approval.
 
 ### «Роль» and «Соревнование»: declension and the user page guides
@@ -554,7 +558,7 @@ glossary and owner documents stay authoritative.
   В. роль / роли, Тв. ролью / ролями, Пр. роли / ролях. Sense 5 (информ., a set of functions assigned to a server)
   is close to the domain term; theatre senses do not fit the capitalized term. «Соревнование» — inanimate neuter,
   type 7a; Им. мн. «соревнования», Р. мн. «соревнований». They confirm `glossary.role` and `glossary.competition`.
-- In `page_admin.user.guide` the singular locative «Роли» coincides with the plural nominative, so «о Пользователе,
+- In `page_administrator.user.guide` the singular locative «Роли» coincides with the plural nominative, so «о Пользователе,
   его Роли и …» could be read as «(о) его Роли»; the nominative «доступная вам статистика» makes the three-subject
   list the natural reading, and «показаны» agrees under either pattern (reviewer's inference; no primary
   agreement rule text read).

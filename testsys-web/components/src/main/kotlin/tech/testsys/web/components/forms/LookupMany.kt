@@ -103,7 +103,7 @@ internal class LookupManyField<T : Any>(
 
         if (current.size > MAX_CHIPS) {
             chips.add(
-                Span(texts.messages.uiLookup.moreChip(count = current.size - MAX_CHIPS)).apply {
+                Span(texts.messages.uiForm.lookupMoreChip(count = current.size - MAX_CHIPS)).apply {
                     addClassNames(CssClass.Chip, CssClass.ChipMore, CssClass.ObscuredValue)
                 },
             )
@@ -134,18 +134,18 @@ internal class LookupManyField<T : Any>(
             highlighted = { false },
         ) { row -> table.toggle(row) }
 
-        val count = Span(texts.messages.uiLookup.selectedCount(count = value.size)).apply {
+        val count = Span(texts.messages.uiForm.lookupSelectedCount(count = value.size)).apply {
             addClassNames(CssClass.Muted, CssClass.LookupCount)
         }
-        dialog.table.onSelectionChange = { keys -> count.text = texts.messages.uiLookup.selectedCount(count = keys.size) }
+        dialog.table.onSelectionChange = { keys -> count.text = texts.messages.uiForm.lookupSelectedCount(count = keys.size) }
         dialog.table.pager.root.addClassName(CssClass.LookupPager)
         dialog.shell.content.add(dialog.table.pager.root)
         dialog.shell.foot.add(count)
 
         val foot = ContentScope(dialog.shell.foot, texts, Placement.Body)
-        foot.action(texts.messages.uiLookup.reset()) { onClick { dialog.table.clearSelection() } }
+        foot.action(texts.messages.uiForm.lookupReset()) { onClick { dialog.table.clearSelection() } }
 
-        foot.mainAction(texts.messages.uiLookup.apply()) {
+        foot.mainAction(texts.messages.uiForm.lookupApply()) {
             onClick {
                 choose(dialog.table.selected.mapNotNullTo(LinkedHashSet()) { key -> knownRows[key] })
                 dialog.shell.close()
@@ -164,7 +164,7 @@ internal class LookupManyField<T : Any>(
                 NativeButton().apply {
                     addClassName(CssClass.ChipX)
                     element.setType(ElementType.Button)
-                    element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiLookup.remove(value = name))
+                    element.setAttribute(HtmlAttribute.AriaLabel, texts.messages.uiForm.lookupRemove(value = name))
                     add(svgIcon(IconName.X, ICON_SIZE_TINY))
                     addClickListener { if (isChoosable()) chooseInBox(value - item) }
                 },

@@ -15,7 +15,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.UserId
-import tech.testsys.infra.localization.PageAdmin.UserHeadKind
+import tech.testsys.infra.localization.PageAdministrator.UserHeadKind
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.infra.localization.PageCabinet.ValidationStatusStatus
 import tech.testsys.operation.config.CommunityConfig
@@ -95,7 +95,7 @@ class AdminUserView(
 ) : TestSysView(),
     BeforeEnterObserver,
     HasDynamicTitle {
-    override fun getPageTitle(): String = currentLocalization().pageAdmin.userTitle()
+    override fun getPageTitle(): String = currentLocalization().pageAdministrator.userTitle()
 
     override fun beforeEnter(event: BeforeEnterEvent) {
         val parameters = event.routeParameters
@@ -117,7 +117,7 @@ class AdminUserView(
         if (section != null && section !in sections) return userParameters(userId)
 
         val localization = currentLocalization()
-        val texts = localization.pageAdmin
+        val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.userHead(kind = if (user is ObserverVo) UserHeadKind.OBSERVER else UserHeadKind.USER, name = user.name)) {
                 crumb(localization.pageCabinet.home(), MultiMainView::class.java)
@@ -156,7 +156,7 @@ class AdminUserView(
 
     @RawAccessTokenDependency(reason = "Shows the stored access code of an observer as the issued one.")
     private fun PageScope.detailsBlock(user: AdminUserVo, lastLogin: Instant?) {
-        val texts = currentLocalization().pageAdmin
+        val texts = currentLocalization().pageAdministrator
         row {
             block(title = texts.details()) {
                 guide(texts.userDetailsGuide())
@@ -180,7 +180,7 @@ class AdminUserView(
 
     private fun PageScope.rolesBlock(user: AdminUserVo, communities: List<CommunityVo>) {
         val localization = currentLocalization()
-        val texts = localization.pageAdmin
+        val texts = localization.pageAdministrator
         val memberships = communities.mapNotNull { community ->
             when (user) {
                 is MultipleRoleUserVo -> user.roles.filter { role -> community.id in role.memberOf }
@@ -214,7 +214,7 @@ class AdminUserView(
 
     /** Adds an item removing [user] from the community of [membership] in each of its roles, or a disabled explanation. */
     private fun MenuScope.removalItems(user: MultipleRoleUserVo, membership: Membership, communities: List<CommunityVo>) {
-        val texts = currentLocalization().pageAdmin
+        val texts = currentLocalization().pageAdministrator
         val removable = membership.roles.mapNotNull { role -> communityRoleOf(role)?.let { removed -> removed to labelOf(role) } }
         if (membership.community.id == communityConfig.publicCommunityId || removable.isEmpty()) {
             item(texts.userRolesNothingToRemove(), isEnabled = false) {}
@@ -230,7 +230,7 @@ class AdminUserView(
                     isDanger = true,
                 ) {
                     removeFromCommunity(user, membership.community.id, role, communities)
-                    val shown = currentLocalization().pageAdmin
+                    val shown = currentLocalization().pageAdministrator
                     toast(FeedbackKind.Success, shown.userRolesRemoved(), shown.userRole(role = label))
                 }
             }
@@ -259,7 +259,7 @@ class AdminUserView(
     }
 
     private fun deleteObserver(observer: ObserverVo) {
-        val texts = currentLocalization().pageAdmin
+        val texts = currentLocalization().pageAdministrator
         confirm(
             title = texts.userObserverDeleteTitle(name = observer.name),
             text = texts.userObserverDeleteText(),
@@ -269,7 +269,7 @@ class AdminUserView(
         ) {
             administratorService.deleteObserver(observer.id)
             openAdminCommunity(observer.community)
-            toast(FeedbackKind.Success, currentLocalization().pageAdmin.userObserverDeleted())
+            toast(FeedbackKind.Success, currentLocalization().pageAdministrator.userObserverDeleted())
         }
     }
 
@@ -291,7 +291,7 @@ class AdminUserView(
 
     private fun PageScope.tasksBlock(userId: UserId) {
         val localization = currentLocalization()
-        val texts = localization.pageAdmin
+        val texts = localization.pageAdministrator
         val tasks = administratorService.viewUserTasks(userId)
         row {
             block(title = localization.pageCabinet.sectionTasks()) {
@@ -311,7 +311,7 @@ class AdminUserView(
 
     private fun PageScope.contestsBlock(userId: UserId) {
         val localization = currentLocalization()
-        val texts = localization.pageAdmin
+        val texts = localization.pageAdministrator
         val contests = administratorService.viewUserContests(userId)
         row {
             block(title = localization.pageCabinet.sectionContests()) {
@@ -333,7 +333,7 @@ class AdminUserView(
 
     private fun PageScope.classesBlock(userId: UserId) {
         val localization = currentLocalization()
-        val texts = localization.pageAdmin
+        val texts = localization.pageAdministrator
         val classes = administratorService.viewUserClasses(userId)
         row {
             block(title = localization.pageCabinet.sectionClasses()) {
@@ -351,7 +351,7 @@ class AdminUserView(
 
     private fun PageScope.competitionsBlock(userId: UserId) {
         val localization = currentLocalization()
-        val texts = localization.pageAdmin
+        val texts = localization.pageAdministrator
         val competitions = administratorService.viewUserCompetitions(userId)
         row {
             block(title = localization.pageCabinet.sectionCompetitions()) {
@@ -368,7 +368,7 @@ class AdminUserView(
     }
 
     private fun PageScope.judgmentsBlock(userId: UserId) {
-        val texts = currentLocalization().pageAdmin
+        val texts = currentLocalization().pageAdministrator
         val judgments = administratorService.viewUserJudgments(userId)
         row {
             block(title = texts.userJudgmentsTitle()) {
@@ -385,7 +385,7 @@ class AdminUserView(
     }
 
     private fun PageScope.assignedContestsBlock(userId: UserId) {
-        val texts = currentLocalization().pageAdmin
+        val texts = currentLocalization().pageAdministrator
         val contests = administratorService.viewUserAssignedContests(userId)
         row {
             block(title = texts.userAssignedTitle()) {
@@ -404,7 +404,7 @@ class AdminUserView(
     /** Builds the role granting dialog of [user] and returns its opening, which starts with an empty form. */
     private fun grantDialog(user: MultipleRoleUserVo, communities: List<CommunityVo>): () -> Unit {
         val localization = currentLocalization()
-        val texts = localization.pageAdmin
+        val texts = localization.pageAdministrator
         val draft = Binder<GrantDraft>()
         val granting = dialog(title = texts.userGrantTitle()) {
             row {
@@ -429,7 +429,7 @@ class AdminUserView(
                 }
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.userGrantSubmit()) {
                     onClick {
                         val values = GrantDraft()
@@ -438,8 +438,8 @@ class AdminUserView(
                             val shown = currentLocalization()
                             toast(
                                 FeedbackKind.Success,
-                                shown.pageAdmin.userGrantGranted(),
-                                shown.pageAdmin.userRole(
+                                shown.pageAdministrator.userGrantGranted(),
+                                shown.pageAdministrator.userRole(
                                     role = shown.pageCabinet.roleName(role = GRANTED_ROLE_NAMES.getValue(checkNotNull(values.role))),
                                 ),
                             )

@@ -41,8 +41,8 @@ internal class DateRangeCalendarAdapter(private val texts: UiLocalization) : Rea
                 "weekdays" to (0 until DAYS_IN_WEEK).map { day -> texts.weekdaysShort[(day + firstDay) % DAYS_IN_WEEK] },
                 "firstDay" to firstDay,
                 "locale" to texts.locale.toLanguageTag(),
-                "previousLabel" to texts.messages.uiCalendar.previousMonth(),
-                "nextLabel" to texts.messages.uiCalendar.nextMonth(),
+                "previousLabel" to texts.messages.uiForm.calendarPreviousMonth(),
+                "nextLabel" to texts.messages.uiForm.calendarNextMonth(),
             ),
         )
     }

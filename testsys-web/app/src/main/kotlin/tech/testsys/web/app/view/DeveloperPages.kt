@@ -15,9 +15,9 @@ import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.infra.localization.PageDeveloper.DiagnosticLineAtSeverity
 import tech.testsys.infra.localization.PageDeveloper.DiagnosticLineSeverity
+import tech.testsys.infra.localization.PageDeveloper.LanguageNameLanguage
 import tech.testsys.infra.localization.PageDeveloper.RefusalNoExerciseLanguage
 import tech.testsys.infra.localization.PageDeveloper.TaskStateState
-import tech.testsys.infra.localization.PageJudge.SolutionLanguageLanguage
 import tech.testsys.operation.error.OperationError
 import tech.testsys.operation.error.TaskAlreadyCommittedError
 import tech.testsys.operation.error.TaskNotTestedError
@@ -68,11 +68,11 @@ internal val LANGUAGES: List<TrikSupportedLanguage> =
     listOf(TrikSupportedLanguage.Python, TrikSupportedLanguage.JavaScript, TrikSupportedLanguage.VisualLanguage)
 
 /** Returns the label of the programming [language] of an exercise or a developer solution. */
-internal fun languageLabel(language: TrikSupportedLanguage): String = currentLocalization().pageJudge.solutionLanguage(
+internal fun languageLabel(language: TrikSupportedLanguage): String = currentLocalization().pageDeveloper.languageName(
     language = when (language) {
-        TrikSupportedLanguage.Python -> SolutionLanguageLanguage.PYTHON
-        TrikSupportedLanguage.JavaScript -> SolutionLanguageLanguage.JAVASCRIPT
-        TrikSupportedLanguage.VisualLanguage -> SolutionLanguageLanguage.VISUAL_LANGUAGE
+        TrikSupportedLanguage.Python -> LanguageNameLanguage.PYTHON
+        TrikSupportedLanguage.JavaScript -> LanguageNameLanguage.JAVASCRIPT
+        TrikSupportedLanguage.VisualLanguage -> LanguageNameLanguage.VISUAL_LANGUAGE
     },
 )
 

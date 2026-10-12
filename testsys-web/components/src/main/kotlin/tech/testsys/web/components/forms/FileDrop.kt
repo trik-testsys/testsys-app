@@ -478,7 +478,7 @@ internal class FileDropDisplay(
     init {
         val controls = ContentScope(actions, texts, Placement.Head)
         cancelAction = controls.action(texts.messages.uiTransfer.cancel()) { onClick { this@FileDropDisplay.cancel() } }
-        clearAction = controls.action(texts.messages.uiLookup.clear()) { onClick { this@FileDropDisplay.clear() } }
+        clearAction = controls.action(texts.messages.uiForm.lookupClear()) { onClick { this@FileDropDisplay.clear() } }
 
         upload.element.addEventListener(DomEvent.TransferRemove) { event ->
             val wasActive = engine.remove(event.eventData.get(DomEventData.DetailIdentity).asString())

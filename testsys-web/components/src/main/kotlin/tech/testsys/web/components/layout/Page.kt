@@ -29,5 +29,5 @@ internal fun renderPage(root: Div, header: CabinetHeader, view: Class<out Compon
 
     val scope = PageScope(main, texts, view) { head -> root.addComponentAtIndex(1, head) }.apply(body)
     scope.finishGuide()
-    root.add(scope.buildFooter().apply { add(GuideClient(texts.messages.uiGuide)) })
+    root.add(scope.buildFooter().apply { add(GuideClient(texts.messages.uiPage)) })
 }

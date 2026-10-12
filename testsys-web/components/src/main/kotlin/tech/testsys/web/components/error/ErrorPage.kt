@@ -35,7 +35,7 @@ import tech.testsys.web.components.texts.currentUiLocalization
 open class ErrorPage : Div(), HasDynamicTitle {
     private val texts = currentUiLocalization()
 
-    private val back = Button(texts.messages.uiError.back()).apply {
+    private val back = Button(texts.messages.uiFeedback.errorBack()).apply {
         element.setActionRole(ActionRole.Neutral)
         element.setSize(ElementSize.Medium)
         isEnabled = false
@@ -47,7 +47,7 @@ open class ErrorPage : Div(), HasDynamicTitle {
     private val description = Div().apply { addClassName(CssClass.EmptyDesc) }
 
     private var pageTitle = ""
-    private val guideHeading = Div(heading, guideButton(texts.messages.uiGuide.page(), isPage = true)).apply {
+    private val guideHeading = Div(heading, guideButton(texts.messages.uiPage.guidePage(), isPage = true)).apply {
         addClassName(CssClass.PageHeadTitleRow)
         element.setAttribute(HtmlAttribute.DataGuideIntroduction, "")
     }
@@ -56,7 +56,7 @@ open class ErrorPage : Div(), HasDynamicTitle {
     init {
         addClassName(CssClass.App)
 
-        val brand = buildBrand(texts.messages.uiBrand.name())
+        val brand = buildBrand(texts.messages.uiPage.brandName())
         val bar = Div(brand).apply { addClassName(CssClass.HeaderBar) }
         val header = Header(bar).apply { addClassName(CssClass.Header) }
 
@@ -64,10 +64,10 @@ open class ErrorPage : Div(), HasDynamicTitle {
         val content = Div(guideHeading, description, actions).apply {
             addClassName(CssClass.Empty)
         }
-        val blockHead = Header(guideButton(texts.messages.uiGuide.block(), isPage = false)).apply { addClassName(CssClass.BlockHead) }
+        val blockHead = Header(guideButton(texts.messages.uiPage.guideBlock(), isPage = false)).apply { addClassName(CssClass.BlockHead) }
         block.add(blockHead, content)
         block.addClassName(CssClass.Block)
-        val footer = buildPageFooter(texts).apply { add(GuideClient(texts.messages.uiGuide)) }
+        val footer = buildPageFooter(texts).apply { add(GuideClient(texts.messages.uiPage)) }
         add(header, Main(block).apply { addClassName(CssClass.Page) }, footer)
     }
 

@@ -171,9 +171,9 @@ internal class BlockLoader<T>(
 
     private fun showFailure() {
         val failure = EmptyContent(
-            title = texts.messages.uiLoad.failed(),
-            description = texts.messages.uiLoad.failedHint(),
-            actions = { action(texts.messages.uiLoad.retry()) { onClick { reload() } } },
+            title = texts.messages.uiFeedback.loadFailed(),
+            description = texts.messages.uiFeedback.loadFailedHint(),
+            actions = { action(texts.messages.uiFeedback.loadRetry()) { onClick { reload() } } },
         )
 
         slot.showWhole(buildEmptyState(failure, texts, isError = true), isFlush = false)

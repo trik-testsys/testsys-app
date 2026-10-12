@@ -45,9 +45,9 @@ fun BlockRowScope.timeInput(
         locale = texts.locale
         if (step != null) setStep(step)
         i18n = TimePicker.TimePickerI18n()
-            .setBadInputErrorMessage(texts.messages.uiField.badInput())
-            .setMinErrorMessage(texts.messages.uiField.belowMin())
-            .setMaxErrorMessage(texts.messages.uiField.aboveMax())
+            .setBadInputErrorMessage(texts.messages.uiForm.fieldBadInput())
+            .setMinErrorMessage(texts.messages.uiForm.fieldBelowMin())
+            .setMaxErrorMessage(texts.messages.uiForm.fieldAboveMax())
     }
     return addInput<TimePicker, LocalTime?>(label, labelSize, size, control, hint, configure)
 }
@@ -68,13 +68,13 @@ fun BlockRowScope.dateTimeInput(
     val control = DateTimePicker().apply {
         locale = texts.locale
         setDatePickerI18n(datePickerI18n(texts))
-        setDateAriaLabel(texts.messages.uiDateField.date())
-        setTimeAriaLabel(texts.messages.uiDateField.time())
+        setDateAriaLabel(texts.messages.uiForm.dateFieldDate())
+        setTimeAriaLabel(texts.messages.uiForm.dateFieldTime())
         i18n = DateTimePicker.DateTimePickerI18n()
-            .setBadInputErrorMessage(texts.messages.uiField.badInput())
-            .setIncompleteInputErrorMessage(texts.messages.uiField.badInput())
-            .setMinErrorMessage(texts.messages.uiField.belowMin())
-            .setMaxErrorMessage(texts.messages.uiField.aboveMax())
+            .setBadInputErrorMessage(texts.messages.uiForm.fieldBadInput())
+            .setIncompleteInputErrorMessage(texts.messages.uiForm.fieldBadInput())
+            .setMinErrorMessage(texts.messages.uiForm.fieldBelowMin())
+            .setMaxErrorMessage(texts.messages.uiForm.fieldAboveMax())
     }
     return addInput<DateTimePicker, LocalDateTime?>(label, labelSize, size, control, hint, configure)
 }
@@ -93,12 +93,12 @@ fun BlockRowScope.dateRangeInput(
     configure: ValueInput<DateRange>.() -> Unit = {},
 ): ValueInput<DateRange> {
     val control = DateRangeField(
-        start = datePicker(texts).apply { setAriaLabel(texts.messages.uiDateField.rangeFrom(label = label)) },
-        end = datePicker(texts).apply { setAriaLabel(texts.messages.uiDateField.rangeTo(label = label)) },
-        reversedMessage = texts.messages.uiDateField.rangeReversed(),
-        requiredMessage = texts.messages.uiDateField.rangeRequired(),
+        start = datePicker(texts).apply { setAriaLabel(texts.messages.uiForm.dateFieldRangeFrom(label = label)) },
+        end = datePicker(texts).apply { setAriaLabel(texts.messages.uiForm.dateFieldRangeTo(label = label)) },
+        reversedMessage = texts.messages.uiForm.dateFieldRangeReversed(),
+        requiredMessage = texts.messages.uiForm.dateFieldRangeRequired(),
         texts = texts,
-        calendarName = texts.messages.uiCalendar.open(label = label),
+        calendarName = texts.messages.uiForm.calendarOpen(label = label),
     )
     return addInput(label, labelSize, size, control, hint, configure)
 }
@@ -114,8 +114,8 @@ private fun datePickerI18n(texts: UiLocalization): DatePicker.DatePickerI18n = D
     .setWeekdaysShort(texts.weekdaysShort)
     .setFirstDayOfWeek(texts.firstDayOfWeek.value % DAYS_IN_WEEK)
     .setDateFormat(texts.dateFormat)
-    .setToday(texts.messages.uiCalendar.today())
-    .setCancel(texts.messages.uiCalendar.cancel())
-    .setBadInputErrorMessage(texts.messages.uiField.badInput())
-    .setMinErrorMessage(texts.messages.uiField.belowMin())
-    .setMaxErrorMessage(texts.messages.uiField.aboveMax())
+    .setToday(texts.messages.uiForm.calendarToday())
+    .setCancel(texts.messages.uiForm.calendarCancel())
+    .setBadInputErrorMessage(texts.messages.uiForm.fieldBadInput())
+    .setMinErrorMessage(texts.messages.uiForm.fieldBelowMin())
+    .setMaxErrorMessage(texts.messages.uiForm.fieldAboveMax())

@@ -104,7 +104,7 @@ fun BlockScope.filters(
         element.setAttribute(HtmlAttribute.AriaControls, panelId)
         element.setType(ElementType.Button)
         add(svgIcon(IconName.ChevronDown))
-        element.appendChild(Text(texts.messages.uiTableFilters.title()).element)
+        element.appendChild(Text(texts.messages.uiData.tableFiltersTitle()).element)
     }
 
     val panel = Div().apply {
@@ -121,13 +121,13 @@ fun BlockScope.filters(
 
     val actions = Div().apply { addClassName(CssClass.TableFiltersActions) }
     val bar = ContentScope(actions, texts, Placement.Body)
-    bar.action(texts.messages.uiTableFilters.reset()) {
+    bar.action(texts.messages.uiData.tableFiltersReset()) {
         onClick {
             onReset()
             onRefresh()
         }
     }.component.addClassName(CssClass.TableFiltersReset)
-    bar.mainAction(texts.messages.uiTableFilters.apply()) { onClick { if (onApply()) onRefresh() } }
+    bar.mainAction(texts.messages.uiData.tableFiltersApply()) { onClick { if (onApply()) onRefresh() } }
         .component.addClassName(CssClass.TableFiltersApply)
 
     TableFiltersScope(fields, columns, texts, BlockEditState(fields.element)).apply(content)

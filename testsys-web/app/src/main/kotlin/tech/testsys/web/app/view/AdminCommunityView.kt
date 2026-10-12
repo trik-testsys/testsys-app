@@ -54,7 +54,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
     TestSysView(),
     BeforeEnterObserver,
     HasDynamicTitle {
-    override fun getPageTitle(): String = currentLocalization().pageAdmin.communityTitle()
+    override fun getPageTitle(): String = currentLocalization().pageAdministrator.communityTitle()
 
     override fun beforeEnter(event: BeforeEnterEvent) {
         val communityId = CommunityId(event.routeParameters.getLong(COMMUNITY_ID_PARAMETER).orElseThrow())
@@ -66,7 +66,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
 
     private fun show(community: CommunityVo, communities: List<CommunityVo>, observer: ObserverVo?) {
         val localization = currentLocalization()
-        val texts = localization.pageAdmin
+        val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
             head(texts.communityHead(name = community.name)) {
                 crumb(localization.pageCabinet.home(), MultiMainView::class.java)
@@ -96,7 +96,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
 
     /** Shows the name and description of [community] for viewing; a saved change rebuilds the page through [onEdited]. */
     private fun PageRowScope.detailsBlock(community: CommunityVo, onEdited: (CommunityVo) -> Unit) {
-        val texts = currentLocalization().pageAdmin
+        val texts = currentLocalization().pageAdministrator
         val draft = Binder<CommunityDraft>()
         block(size = DETAILS_COLUMNS, title = texts.details()) {
             guide(texts.communityDetailsGuide())
@@ -112,7 +112,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
                                 description = values.description,
                             ),
                         )
-                        toast(FeedbackKind.Success, currentLocalization().pageAdmin.communityEdited())
+                        toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communityEdited())
                     }
                     isValid
                 },
@@ -144,7 +144,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
 
     @RawAccessTokenDependency(reason = "Shows the stored access code of the created observer as the issued one.")
     private fun PageScope.createdObserverBlock(observer: ObserverVo) {
-        val texts = currentLocalization().pageAdmin
+        val texts = currentLocalization().pageAdministrator
         row {
             block(title = texts.communityObserverCreatedTitle(name = observer.name)) {
                 guide(texts.communityObserverCreatedGuide())
@@ -169,7 +169,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
 
     @RawInviteCodeDependency(reason = "Shows the stored invite codes as the issued ones.")
     private fun PageRowScope.invitesBlock(communityId: CommunityId) {
-        val texts = currentLocalization().pageAdmin
+        val texts = currentLocalization().pageAdministrator
         block(title = texts.communityInvitesTitle()) {
             guide(texts.communityInvitesGuide())
             // The menu of a row refreshes the table that contains it.
@@ -190,13 +190,13 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
                             isDanger = true,
                         ) {
                             administratorService.createCommunityInvite(communityId, invite.kind)
-                            toast(FeedbackKind.Success, currentLocalization().pageAdmin.communityInvitesReplaced())
+                            toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communityInvitesReplaced())
                             rows.refresh()
                         }
                     }
                     item(texts.communityInvitesExtend()) {
                         administratorService.extendCommunityInvite(communityId, invite.kind)
-                        toast(FeedbackKind.Success, currentLocalization().pageAdmin.communityInvitesExtended())
+                        toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communityInvitesExtended())
                         rows.refresh()
                     }
                 }
@@ -207,7 +207,7 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
     /** Builds the observer creation dialog of [communityId] and returns its opening, which starts with an empty form. */
     private fun observerDialog(communityId: CommunityId, onCreated: (ObserverVo) -> Unit): () -> Unit {
         val localization = currentLocalization()
-        val texts = localization.pageAdmin
+        val texts = localization.pageAdministrator
         val draft = Binder<ObserverDraft>()
         val creation = dialog(
             title = texts.communityObserverDialogTitle(),
@@ -244,14 +244,14 @@ class AdminCommunityView(private val headers: CabinetHeaders, private val admini
                 }
             }
             footer { dialog ->
-                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                action(localization.uiOverlay.dialogCancel()) { onClick { dialog.close() } }
                 mainAction(texts.create()) {
                     onClick {
                         val values = ObserverDraft()
                         if (draft.writeBeanIfValid(values)) {
                             val contestIds = values.contests.map { contest -> contest.id }.toSet()
                             val observer = administratorService.createObserver(communityId, values.name, contestIds)
-                            toast(FeedbackKind.Success, currentLocalization().pageAdmin.communityObserverCreated())
+                            toast(FeedbackKind.Success, currentLocalization().pageAdministrator.communityObserverCreated())
                             dialog.close()
                             onCreated(observer)
                         }

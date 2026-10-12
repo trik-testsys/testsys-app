@@ -7,7 +7,7 @@ import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.notification.Notification
 import com.vaadin.flow.dom.Element
-import tech.testsys.infra.localization.UiHeader
+import tech.testsys.infra.localization.UiPage
 import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.CssTheme
 import tech.testsys.web.components.core.DomEvent
@@ -33,7 +33,7 @@ private const val ARRIVAL_DURATION_MS = 6000
 /** Owns one reusable arrival card; it never owns notification read state. */
 internal class HeaderNotificationArrival(
     private val widget: Div,
-    private val texts: UiHeader,
+    private val texts: UiPage,
     private val onOpen: (String) -> Unit,
     private val onOpenList: () -> Unit,
 ) {
@@ -41,13 +41,13 @@ internal class HeaderNotificationArrival(
     private var selection: Selection = Selection.Hidden
     val title = Span().apply { addClassName(CssClass.ToastTitle) }
     private val description = Span().apply { addClassName(CssClass.ToastDesc) }
-    private val open = NativeButton(texts.arrivalOpen()).apply {
+    private val open = NativeButton(texts.headerArrivalOpen()).apply {
         addClassNames(CssClass.Btn, CssClass.BtnLink, CssClass.BtnSm)
         addClickListener { openDestination() }
     }
     private val dismiss = NativeButton().apply {
         addClassName(CssClass.ToastClose)
-        element.setAttribute(HtmlAttribute.AriaLabel, texts.arrivalClose())
+        element.setAttribute(HtmlAttribute.AriaLabel, texts.headerArrivalClose())
         element.setType(ElementType.Button)
         add(svgIcon(IconName.X, ICON_SIZE_SMALL))
         addClickListener { close() }
@@ -117,8 +117,8 @@ internal class HeaderNotificationArrival(
 
     private fun render(values: List<HeaderNotification>) {
         val single = values.singleOrNull()
-        title.text = single?.label ?: texts.arrivalCount(count = values.size)
-        description.text = single?.description ?: if (single == null) texts.arrivalBatchHint() else ""
+        title.text = single?.label ?: texts.headerArrivalCount(count = values.size)
+        description.text = single?.description ?: if (single == null) texts.headerArrivalBatchHint() else ""
         description.isVisible = description.text.isNotEmpty()
     }
 

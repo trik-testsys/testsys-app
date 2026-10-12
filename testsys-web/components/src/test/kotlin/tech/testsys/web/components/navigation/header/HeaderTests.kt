@@ -105,7 +105,7 @@ class HeaderTests : MockVaadinTests() {
     fun `should render the decorative horizontal logo with the localized accessible name`() {
         val header = buildHeader(CabinetHeader(), testTexts)
 
-        assertEquals(testTexts.messages.uiBrand.name(), header.find("ts-brand").element.getAttribute("aria-label"))
+        assertEquals(testTexts.messages.uiPage.brandName(), header.find("ts-brand").element.getAttribute("aria-label"))
         assertEquals(".", header.find("ts-brand").element.getAttribute("href"))
         assertEquals(1L, header.find("ts-brand").children.count())
         assertEquals(TestSysBrand.HEADER, header.find("ts-brand__logo").element.getAttribute("src"))

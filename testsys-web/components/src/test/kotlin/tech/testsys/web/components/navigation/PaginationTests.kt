@@ -83,8 +83,8 @@ class PaginationTests : MockVaadinTests() {
 
             val pager = ui().find("ts-pager")
             val children = pager.children.toList()
-            assertEquals(testTexts.messages.uiPagination.previous(), children.first().element.getAttribute("aria-label"))
-            assertEquals(testTexts.messages.uiPagination.next(), children.last().element.getAttribute("aria-label"))
+            assertEquals(testTexts.messages.uiData.paginationPrevious(), children.first().element.getAttribute("aria-label"))
+            assertEquals(testTexts.messages.uiData.paginationNext(), children.last().element.getAttribute("aria-label"))
             assertEquals(listOf("1", "…", "9", "10", "11", "…", "20"), children.drop(1).dropLast(1).map { child -> child.element.text })
             assertEquals(2, pager.findAll("ts-pager__gap").size)
         }
@@ -111,7 +111,7 @@ class PaginationTests : MockVaadinTests() {
             buildPagination(pageCount = 3)
 
             assertEquals(
-                listOf(1, 2, 3).map { page -> testTexts.messages.uiPagination.page(page = page) },
+                listOf(1, 2, 3).map { page -> testTexts.messages.uiData.paginationPage(page = page) },
                 numberButtons().map { button -> button.element.getAttribute("aria-label") },
             )
         }
@@ -120,8 +120,8 @@ class PaginationTests : MockVaadinTests() {
         fun `should render the arrows as buttons with chevrons`() {
             buildPagination(pageCount = 3)
 
-            val previous = arrow(testTexts.messages.uiPagination.previous())
-            val next = arrow(testTexts.messages.uiPagination.next())
+            val previous = arrow(testTexts.messages.uiData.paginationPrevious())
+            val next = arrow(testTexts.messages.uiData.paginationNext())
             assertEquals(listOf("button", "button"), listOf(previous, next).map { button -> button.element.getAttribute("type") })
             assertTrue(previous.iconSvg().contains("""testsys-ui/icons.svg#chevron-left"""))
             assertTrue(next.iconSvg().contains("""testsys-ui/icons.svg#chevron-right"""))
@@ -133,16 +133,16 @@ class PaginationTests : MockVaadinTests() {
         fun `should disable the previous button on the first page`() {
             buildPagination(pageCount = 3, page = 1)
 
-            assertFalse(arrow(testTexts.messages.uiPagination.previous()).isEnabled)
-            assertTrue(arrow(testTexts.messages.uiPagination.next()).isEnabled)
+            assertFalse(arrow(testTexts.messages.uiData.paginationPrevious()).isEnabled)
+            assertTrue(arrow(testTexts.messages.uiData.paginationNext()).isEnabled)
         }
 
         @Test
         fun `should disable the next button on the last page`() {
             buildPagination(pageCount = 3, page = 3)
 
-            assertTrue(arrow(testTexts.messages.uiPagination.previous()).isEnabled)
-            assertFalse(arrow(testTexts.messages.uiPagination.next()).isEnabled)
+            assertTrue(arrow(testTexts.messages.uiData.paginationPrevious()).isEnabled)
+            assertFalse(arrow(testTexts.messages.uiData.paginationNext()).isEnabled)
         }
 
         @Test
@@ -176,7 +176,7 @@ class PaginationTests : MockVaadinTests() {
             val chosen = mutableListOf<Int>()
             handle.onChange { page -> chosen += page }
 
-            arrow(testTexts.messages.uiPagination.next())._click()
+            arrow(testTexts.messages.uiData.paginationNext())._click()
 
             assertEquals(3, handle.page)
             assertEquals(listOf(3), chosen)
@@ -188,11 +188,11 @@ class PaginationTests : MockVaadinTests() {
             val chosen = mutableListOf<Int>()
             handle.onChange { page -> chosen += page }
 
-            arrow(testTexts.messages.uiPagination.previous())._click()
+            arrow(testTexts.messages.uiData.paginationPrevious())._click()
 
             assertEquals(1, handle.page)
             assertEquals(listOf(1), chosen)
-            assertFalse(arrow(testTexts.messages.uiPagination.previous()).isEnabled)
+            assertFalse(arrow(testTexts.messages.uiData.paginationPrevious()).isEnabled)
         }
 
         @Test
@@ -207,7 +207,7 @@ class PaginationTests : MockVaadinTests() {
         @Test
         fun `should keep the arrows in place after a click`() {
             buildPagination(pageCount = 5, page = 2)
-            val next = arrow(testTexts.messages.uiPagination.next())
+            val next = arrow(testTexts.messages.uiData.paginationNext())
             var detachments = 0
             next.addDetachListener { detachments++ }
 
@@ -232,7 +232,7 @@ class PaginationTests : MockVaadinTests() {
             buildPagination(pageCount = 5, page = 2)
             pendingJavaScript()
 
-            arrow(testTexts.messages.uiPagination.next())._click()
+            arrow(testTexts.messages.uiData.paginationNext())._click()
 
             assertTrue(pendingJavaScript().none { call -> "focus" in call.invocation.expression })
         }
@@ -242,7 +242,7 @@ class PaginationTests : MockVaadinTests() {
             buildPagination(pageCount = 5, page = 4)
             pendingJavaScript()
 
-            arrow(testTexts.messages.uiPagination.next())._click()
+            arrow(testTexts.messages.uiData.paginationNext())._click()
 
             assertTrue(isFocused(pageButton(5)))
         }
@@ -323,7 +323,7 @@ class PaginationTests : MockVaadinTests() {
 
             assertTrue(chosen.isEmpty())
             assertEquals(listOf("5"), activePages())
-            assertFalse(arrow(testTexts.messages.uiPagination.next()).isEnabled)
+            assertFalse(arrow(testTexts.messages.uiData.paginationNext()).isEnabled)
         }
 
         @Test
@@ -371,7 +371,7 @@ class PaginationTests : MockVaadinTests() {
 
             assertEquals(2, handle.page)
             assertEquals(listOf("1", "2", "3", "4", "5", "…", "20"), pageLabels())
-            assertTrue(arrow(testTexts.messages.uiPagination.next()).isEnabled)
+            assertTrue(arrow(testTexts.messages.uiData.paginationNext()).isEnabled)
         }
 
         @Test

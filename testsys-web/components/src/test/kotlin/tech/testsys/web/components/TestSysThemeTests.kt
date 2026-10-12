@@ -205,6 +205,13 @@ class TestSysThemeTests {
         assertEquals("stretch", rule(css, ".ts-row")["align-items"])
     }
 
+    @Test
+    fun `should align a block without stretch at the start of its row`() {
+        val css = text("testsys-ui/tokens/components.css")
+
+        assertEquals("start", rule(css, ".ts-block--no-stretch")["align-self"])
+    }
+
     @ParameterizedTest
     @CsvSource(
         delimiter = '|',

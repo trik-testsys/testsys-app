@@ -29,6 +29,7 @@ internal enum class CssClass(internal val value: String) {
     BlockDark("ts-block--dark"),
     BlockFilters("ts-block--filters"),
     BlockGrid("ts-block--grid"),
+    BlockNoStretch("ts-block--no-stretch"),
     BlockActions("ts-block__actions"),
     BlockBody("ts-block__body"),
     BlockBodyFlush("ts-block__body--flush"),

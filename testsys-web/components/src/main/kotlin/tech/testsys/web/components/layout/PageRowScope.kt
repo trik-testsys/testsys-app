@@ -4,7 +4,9 @@ package tech.testsys.web.components.layout
 
 import com.vaadin.flow.component.html.Div
 import tech.testsys.web.components.TestSysDsl
+import tech.testsys.web.components.core.CssClass
 import tech.testsys.web.components.core.InternalComponentsApi
+import tech.testsys.web.components.core.addClassName
 import tech.testsys.web.components.core.setAriaHidden
 import tech.testsys.web.components.core.setGridColumnSpan
 import tech.testsys.web.components.core.setPageColumns
@@ -23,23 +25,35 @@ class PageRowScope internal constructor(private val row: Div, private val texts:
     /**
      * Adds a block of [size] columns, or of the rest of the row if [size] is `null`; such a block closes the row.
      *
+     * @param stretch whether to match the row height (default `true`); `false` keeps content height at the row's top.
      * @throws IllegalArgumentException if [size] is out of `1..24`.
      * @throws IllegalStateException if the block does not fit in the row.
      * @since %CURRENT_VERSION%
      */
-    fun block(size: Int? = null, title: String? = null, subtitle: String? = null, content: BlockScope.() -> Unit): BlockHandle =
-        place(size, BlockHeading(title, subtitle), highlight = false, content)
+    fun block(
+        size: Int? = null,
+        title: String? = null,
+        subtitle: String? = null,
+        stretch: Boolean = true,
+        content: BlockScope.() -> Unit,
+    ): BlockHandle = place(size, BlockHeading(title, subtitle), highlight = false, stretch = stretch, content)
 
     /**
      * Adds a dark block that highlights one thing, such as a running timer; a row holds at most one.
      * The block takes [size] columns, or the rest of the row if [size] is `null`; such a block closes the row.
      *
+     * @param stretch whether to match the row height (default `true`); `false` keeps content height at the row's top.
      * @throws IllegalArgumentException if [size] is out of `1..24`.
      * @throws IllegalStateException if the block does not fit in the row or the row already holds a highlight block.
      * @since %CURRENT_VERSION%
      */
-    fun highlightBlock(size: Int? = null, title: String? = null, subtitle: String? = null, content: BlockScope.() -> Unit): BlockHandle =
-        place(size, BlockHeading(title, subtitle), highlight = true, content)
+    fun highlightBlock(
+        size: Int? = null,
+        title: String? = null,
+        subtitle: String? = null,
+        stretch: Boolean = true,
+        content: BlockScope.() -> Unit,
+    ): BlockHandle = place(size, BlockHeading(title, subtitle), highlight = true, stretch = stretch, content)
 
     /**
      * Leaves [size] columns of the row empty, for example on both sides of a narrow block to center it.
@@ -53,7 +67,13 @@ class PageRowScope internal constructor(private val row: Div, private val texts:
         row.add(Div().apply { element.setAriaHidden(true).style.setGridColumnSpan(size) })
     }
 
-    private fun place(size: Int?, heading: BlockHeading, highlight: Boolean, content: BlockScope.() -> Unit): BlockHandle {
+    private fun place(
+        size: Int?,
+        heading: BlockHeading,
+        highlight: Boolean,
+        stretch: Boolean,
+        content: BlockScope.() -> Unit,
+    ): BlockHandle {
         val columns = size?.also(track::take) ?: track.takeRest()
         if (highlight) {
             check(!hasHighlight) { "Row already holds a highlight block; a row holds at most one" }
@@ -62,6 +82,7 @@ class PageRowScope internal constructor(private val row: Div, private val texts:
 
         val block = buildBlock(texts, heading, highlight, span = columns, columns = GRID_COLUMNS, content)
         block.component.element.style.setPageColumns(columns.toDouble())
+        if (!stretch) block.component.addClassName(CssClass.BlockNoStretch)
         row.add(block.component)
         return block
     }

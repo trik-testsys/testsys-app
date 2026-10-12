@@ -636,7 +636,7 @@ data class CommunityNameTooLongError(val communityName: String) : CreateCommunit
  * @property userId the id of the user with the fixed role.
  * @since %CURRENT_VERSION%
  */
-data class UserHasFixedRoleError(val userId: UserId) : GrantRoleError, AddToCommunityError
+data class UserHasFixedRoleError(val userId: UserId) : GrantRoleError, AddToCommunityError, GrantAdministratorError
 
 /**
  * The user does not exist.
@@ -656,6 +656,7 @@ data class UserNotExistsError(val userId: UserId) :
     RemoveFromCommunityError,
     DeleteObserverError,
     AddToCommunityError,
+    GrantAdministratorError,
     ViewSupervisorUserError,
     RemoveSupervisorMemberError,
     EntityNotExistsError
@@ -802,6 +803,13 @@ sealed interface ViewSupervisorCommunityError : OperationError
 sealed interface AddToCommunityError : OperationError
 
 /**
+ * Failure of granting the administrator role to a multiple-role user without choosing a community.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface GrantAdministratorError : OperationError
+
+/**
  * Failure of editing a community as a supervisor.
  *
  * @since %CURRENT_VERSION%
@@ -868,6 +876,7 @@ data object MissedSupervisorRoleError :
     ViewSupervisorCommunitiesError,
     ViewSupervisorCommunityError,
     AddToCommunityError,
+    GrantAdministratorError,
     EditSupervisorCommunityError,
     RemoveSupervisorMemberError,
     CreateSupervisorObserverError,

@@ -11,6 +11,7 @@ import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.service.AdminUserVo
+import tech.testsys.web.app.service.AdministratorRoleVo
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.DeveloperRoleVo
 import tech.testsys.web.app.service.JudgeRoleVo
@@ -164,6 +165,21 @@ class SupervisorUserView(
                         val add = addDialog(user, communities) { show(id) }
                         actions {
                             action("Включить в сообщество") { onClick { add() } }
+                            if (user.roles.none { it is AdministratorRoleVo }) {
+                                action("Назначить администратором") {
+                                    onClick {
+                                        confirm(
+                                            title = "Назначить «${user.name}» администратором?",
+                                            text = "Система создаст сообщество администратора. Снять роль администратора нельзя.",
+                                            action = "Назначить",
+                                        ) {
+                                            service.grantAdministrator(user.id)
+                                            toast(FeedbackKind.Success, "Пользователь назначен администратором")
+                                            show(id)
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }

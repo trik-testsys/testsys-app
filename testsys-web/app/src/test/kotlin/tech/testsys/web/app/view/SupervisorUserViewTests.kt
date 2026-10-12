@@ -12,14 +12,18 @@ import com.vaadin.flow.component.select.Select
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.domain.builder.api.developerData
+import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
+import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.Student
+import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.error.OperationErrorView
 import tech.testsys.web.app.security.UserKind
@@ -29,6 +33,12 @@ import tech.testsys.web.app.service.CommunityVo
 class SupervisorUserViewTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var users: MultipleRoleUserRepository
+
+    @Autowired
+    private lateinit var communities: CommunityRepository
+
+    @Autowired
+    private lateinit var communityConfig: CommunityConfig
 
     @Test
     fun `should show an observer for viewing without modification actions`() {
@@ -43,6 +53,44 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
         assertTrue(field("Код-доступа").isReadOnly)
         assertTrue(UI.getCurrent()._find<Button> { text = "Включить в сообщество" }.isEmpty())
         assertTrue(UI.getCurrent()._find<Button> { text = "Удалить наблюдателя" }.isEmpty())
+        assertTrue(UI.getCurrent()._find<Button> { text = "Назначить администратором" }.isEmpty())
+    }
+
+    @Test
+    fun `should grant the administrator role to a user who is only in the public community`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        val name = fixtures.unique("Разработчик")
+        val member = fixtures.multipleRoleUser(name = name) {
+            roles {
+                developer {
+                    memberOf(listOf(communityConfig.publicCommunityId.value))
+                    data = developerData {}
+                }
+            }
+        }
+        open(member.id.value)
+
+        UI.getCurrent()._get<Button> { text = "Назначить администратором" }._click()
+        openDialog()._get<Button> { text = "Назначить" }._click()
+
+        val administrator = checkNotNull(users.findById(member.id)).data.roles.filterIsInstance<Administrator>().single()
+        val owned = communities.findByOwner(member.id)
+        assertEquals(listOf("Сообщество $name"), owned.map { community -> community.data.name })
+        assertEquals(owned.map { community -> community.id }, administrator.memberOf.ids)
+        assertFalse(communityConfig.publicCommunityId in administrator.memberOf.ids)
+        assertEquals(SupervisorUserView::class.java, currentView)
+    }
+
+    @Test
+    fun `should not offer the administrator role to a user who already holds it`() {
+        signIn(fixtures.userOf(UserKind.SUPERVISOR))
+        val administrator = fixtures.administrator()
+        fixtures.community(owner = administrator)
+
+        open(administrator.id.value)
+
+        assertEquals(1, UI.getCurrent()._find<Button> { text = "Включить в сообщество" }.size)
+        assertTrue(UI.getCurrent()._find<Button> { text = "Назначить администратором" }.isEmpty())
     }
 
     @Test
@@ -86,6 +134,8 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
     private fun open(id: Long) {
         UI.getCurrent().navigate(SupervisorUserView::class.java, RouteParameters(USER_ID_PARAMETER, id.toString()))
     }
+
+    private fun openDialog(): Dialog = UI.getCurrent()._find<Dialog>().single { dialog -> dialog.isOpened }
 
     private fun field(label: String): TextField = UI.getCurrent()._find<TextField>().single { it.ariaLabel.orElse(null) == label }
 

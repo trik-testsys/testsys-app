@@ -137,6 +137,14 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     fun addToCommunity(userId: UserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUserVo =
         operations.addToCommunity(currentUser.user(), userId, communityId, role).getOrThrow().toVo()
 
+    /**
+     * Grants the administrator role to a non-fixed-role user without choosing a community.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun grantAdministrator(userId: UserId): MultipleRoleUserVo =
+        operations.grantAdministrator(currentUser.user(), userId).getOrThrow().toVo()
+
     override fun editCommunity(communityId: CommunityId, communityName: String, description: String): CommunityVo =
         operations.editCommunity(currentUser.user(), communityId, communityName, description).getOrThrow().toVo()
 

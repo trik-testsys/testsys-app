@@ -49,6 +49,7 @@ import tech.testsys.operation.error.CreateSupervisorCommunityInviteError
 import tech.testsys.operation.error.CreateSupervisorObserverError
 import tech.testsys.operation.error.EditSupervisorCommunityError
 import tech.testsys.operation.error.ExtendSupervisorCommunityInviteError
+import tech.testsys.operation.error.GrantAdministratorError
 import tech.testsys.operation.error.MissedSupervisorRoleError
 import tech.testsys.operation.error.ObserverContestsEmptyError
 import tech.testsys.operation.error.ObserverNameBlankError
@@ -274,6 +275,25 @@ class SupervisorOperations(
         }
         checkNotNull(multipleRoleUsers.findById(joined.id))
     }
+
+    /**
+     * Grants the administrator role to a non-fixed-role [userId] by creating their first community, or returns them
+     * unchanged if they already hold the role.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.single.supervisor.grantAdministrator")
+    fun grantAdministrator(user: User<*>, userId: UserId): OperationResult<MultipleRoleUser, GrantAdministratorError> =
+        operation<MultipleRoleUser, GrantAdministratorError> {
+            ensure(user is Supervisor, MissedSupervisorRoleError)
+            val member = users.findUserById(userId)
+            ensure(member != null) { UserNotExistsError(userId) }
+            ensure(member is MultipleRoleUser) { UserHasFixedRoleError(userId) }
+            if (member.heldRole(CommunityRole.Administrator) != null) return@operation member
+
+            administratorOperations.createFirstCommunity(member)
+            checkNotNull(multipleRoleUsers.findById(member.id))
+        }
 
     /**
      * Edits the name and description of any community.

@@ -550,6 +550,93 @@ class SupervisorOperationsTests {
     }
 
     @Nested
+    inner class GrantAdministratorTests {
+        @Nested
+        inner class HappyPathTests {
+            @Test
+            fun `should create a first community and return the stored user when granting the administrator role`() {
+                val administrator = testAdministrator {}
+                every { users.findUserById(member.id) } returns member
+                every { administratorOperations.createFirstCommunity(member) } returns testCommunity(88)
+                every { multipleRoleUsers.findById(member.id) } returns administrator
+
+                val result = operations.grantAdministrator(supervisor, member.id).getOrThrow()
+
+                assertSame(administrator, result)
+                verify(exactly = 1) { administratorOperations.createFirstCommunity(member) }
+                verify(exactly = 1) { multipleRoleUsers.findById(member.id) }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+            @Test
+            fun `should reject a non-supervisor before reading the user`() {
+                assertRaises(MissedSupervisorRoleError) {
+                    operations.grantAdministrator(member, member.id)
+                }
+
+                verify { users wasNot Called }
+                verify { administratorOperations wasNot Called }
+            }
+
+            @Test
+            fun `should reject a missing user without creating a community`() {
+                every { users.findUserById(member.id) } returns null
+
+                assertRaises(UserNotExistsError(member.id)) {
+                    operations.grantAdministrator(supervisor, member.id)
+                }
+
+                verify { multipleRoleUsers wasNot Called }
+                verify { administratorOperations wasNot Called }
+            }
+
+            @Test
+            fun `should reject a fixed-role user without creating a community`() {
+                val observer = testObserver()
+                every { users.findUserById(observer.id) } returns observer
+
+                assertRaises(UserHasFixedRoleError(observer.id)) {
+                    operations.grantAdministrator(supervisor, observer.id)
+                }
+
+                verify { multipleRoleUsers wasNot Called }
+                verify { administratorOperations wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+            @Test
+            fun `should return an unchanged user when already holding the administrator role`() {
+                val administrator = testAdministrator { memberOf(listOf(targetId.value)) }
+                every { users.findUserById(administrator.id) } returns administrator
+
+                val result = operations.grantAdministrator(supervisor, administrator.id).getOrThrow()
+
+                assertSame(administrator, result)
+                assertEquals(EntityVersion(0), result.version)
+                verify { multipleRoleUsers wasNot Called }
+                verify { communityRepository wasNot Called }
+                verify { administratorOperations wasNot Called }
+            }
+
+            @Test
+            fun `should not add a membership in the public or another community when granting the administrator role`() {
+                every { users.findUserById(member.id) } returns member
+                every { administratorOperations.createFirstCommunity(member) } returns testCommunity(88)
+                every { multipleRoleUsers.findById(member.id) } returns testAdministrator {}
+
+                operations.grantAdministrator(supervisor, member.id).getOrThrow()
+
+                verify(exactly = 0) { multipleRoleUsers.addCommunityMembership(any(), any(), any()) }
+                verify { communityRepository wasNot Called }
+            }
+        }
+    }
+
+    @Nested
     inner class EditCommunityTests {
         @Nested
         inner class HappyPathTests {

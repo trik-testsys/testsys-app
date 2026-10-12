@@ -268,3 +268,97 @@ glossary and owner documents stay authoritative.
 - In «Скачать логи Полигона «{name}»» the generic word precedes the quoted name, so the name stays undeclined
   (see the «Quoted names and declension» note above).
 - Source: https://ru.wiktionary.org/wiki/полигон (read 2026-10-12).
+
+## Manager Cabinet (page_manager)
+
+### Declension of the Manager domain terms
+
+- Викисловарь tables (read 2026-10-12), used for the new `glossary.class`, `glossary.competition`,
+  `glossary.contest`, `glossary.student`, `glossary.participant` and `glossary.community`:
+  - «класс»: inanimate masculine, type 1a; Р. «класса» / «классов», Д. «классу», В. = Им. «класс» / «классы».
+  - «соревнование»: inanimate neuter, type 7a; Р. «соревнования» / «соревнований», Д. «соревнованию»,
+    В. = Им. «соревнование» / «соревнования», Тв. «соревнованием».
+  - «тур» I: inanimate masculine, type 1a; Им. мн. «туры», Р. «тура» / «туров», В. = Им. «тур», Тв. мн. «турами».
+  - «ученик»: animate masculine, type 3b; Им. мн. «ученики», Р. мн. «учеников», Д. мн. «ученикам», Тв. мн.
+    «учениками».
+  - «участник»: animate masculine, type 3a; Р. «участника» / «участников», В. = Р. «участника» / «участников»,
+    Тв. «участником» / «участниками».
+  - «сообщество»: inanimate neuter, type 1a; Д. мн. «сообществам».
+- Animacy matters in the accusative: «Удалить Участника «…»?», «Участника с Посылками удалить нельзя», «Создайте
+  Участников», «добавьте в него Участников» use the accusative equal to the genitive; inanimate «Класс», «Тур»,
+  «Соревнование» keep the nominative form («Создать Класс», «Добавить Тур», «в Соревнование»).
+- Sources: https://ru.wiktionary.org/wiki/класс, https://ru.wiktionary.org/wiki/соревнование,
+  https://ru.wiktionary.org/wiki/тур, https://ru.wiktionary.org/wiki/ученик, https://ru.wiktionary.org/wiki/участник,
+  https://ru.wiktionary.org/wiki/сообщество (all read 2026-10-12).
+
+### Other meanings of «Тур», «Класс», «Ученик»
+
+- «Тур» has a homonym «тур» II, an animate noun for the extinct aurochs (В. «тура»); «тур» I also means a tourist
+  trip, a dance circuit or a summit cairn. The relevant sense is «тур» I, 2–3: a stage of a multi-stage event or
+  competition. Capitalization, the Manager context and «Тур «{name}»» next to «Соревнование» rule out the other
+  senses; the inanimate accusative «Добавить Тур» is the correct form for sense I.
+- «Класс» also means a category, a social class, an OOP class (sense 8) and, as predicative slang, «очень хорошо»
+  («Класс!»). The relevant sense is 4: «группа учеников, занимающихся совместно». In «Класс создан» or «Класс «7 Б»»
+  the slang reading is not plausible (inference); no undesirable connotation found.
+- «Ученик» also means an apprentice and a follower of a teaching; the relevant sense is 1, a school pupil, here the
+  domain Role (definitions.md item 7). No undesirable connotation found.
+- Sources: the Викисловарь pages above (read 2026-10-12).
+
+### Plural and instrumental forms of existing terms
+
+- «Коды-доступа»: Викисловарь «код» gives Им./В. мн. «ко́ды», Тв. мн. «ко́дами»; in «Код-доступа» only the first
+  part declines (see «Код-приглашение»: both parts decline above), so the plural is «Коды-доступа» in both the
+  nominative («Участники Соревнования, их Коды-доступа …») and the accusative («раздать им Коды-доступа»).
+- «Посылками»: Викисловарь «посылка» I gives Тв. мн. «посы́лками» («Участника с Посылками удалить нельзя»).
+- Sources: https://ru.wiktionary.org/wiki/код, https://ru.wiktionary.org/wiki/посылка (read 2026-10-12).
+
+### Count labels in the genitive plural
+
+- Column and field labels «Учеников», «Участников», «Туров» are elliptical counts («(число) учеников»); the number is
+  in the cell, not in the message. They reproduce the existing interface text with the genitive plural term forms.
+  This is a reading of the existing text, not a dictionary finding.
+
+### Quoted user names after a generic word
+
+- «Класс «{name}»», «Соревнование «{name}»», «Тур «{name}»», «Действия с Участником «{name}»» and «Удалить Участника
+  «{name}»?» put the generic word before the quoted name, so the name stays undeclined (see «Quoted names and
+  declension» above). A name that itself contains guillemets renders nested «ёлочки»: «Класс «7 «Б»»» (pinned by
+  the golden test). Russian typography usually puts „лапки“ inside «ёлочки»; the output is kept verbatim, as on the
+  other pages. Not verified against a typography handbook.
+
+### Lowercase anaphoric «этот код»
+
+- «Передайте этот код Ученикам …» keeps lowercase «код» because it refers back to the Код-приглашение shown in the
+  block rather than naming the domain term; the caller required it verbatim. Project decision, not a language
+  source.
+
+### Ungrouped numbers in results and toasts
+
+- `:integer` / `:number` with `useGrouping=never` keep the previous Kotlin `toString` output: «Всего: 1000.»,
+  «1000 · 1000», «Движение · 9223372036854775807». A negative score renders with an ASCII hyphen-minus («-5 · 2»)
+  in ICU4J 78.1 `ru`, the same as Kotlin; checked by the golden test on 2026-10-12. Not a language finding.
+
+### «Участник»: general sense versus the domain Role
+
+- Викисловарь «участник», sense 1: «тот, кто участвует в чём-либо, то есть занимается чем-либо совместно с другими».
+  In this general sense the word also covers Ученики taking part in a Тур, while the domain term (definitions.md
+  item 6) is a specific Role distinct from Ученик (item 7).
+- Applicability: `page_manager.contest.results.empty` («Участников нет») is shown for a Тур in a Class and in a
+  Competition, so it is a plain literal in the general sense and does not reference `glossary.participant`; a term
+  reference would narrow it to the Role, and translations would follow that binding. The capitalized ru-RU output
+  is the same either way because the word starts the sentence.
+- Project source, not a language source: definitions.md items 6 and 7 give both Roles the right «принимать участие
+  в доступных Турах», so Ученики are «участники» of a Тур in the general sense; the hint «… будут Ученики или
+  Участники» resolves the reading on the page.
+- Source: https://ru.wiktionary.org/wiki/участник (read 2026-10-12, re-read 2026-10-12 by an independent review).
+
+### «Без учёта регистра» in the name filter hint
+
+- Викисловарь «регистр», sense 6 (техн., комп.): «группа знаков на клавишах пишущей машинки или на клавиатуре
+  компьютера»; no sense names прописные/строчные буквы explicitly, so «без учёта регистра» relies on this technical
+  keyboard sense.
+- Applicability: `page_manager.filter.name_hint` keeps «Часть названия, без учёта регистра» verbatim. It is
+  established software-UI usage for Organizers and not an error; the e-mail wording «Большие и маленькие буквы
+  различаются» (see «Case sensitivity» above) stays a choice for general-audience text. Changing the hint needs an
+  explicit decision. No normative dictionary or style guide was opened.
+- Source: https://ru.wiktionary.org/wiki/регистр (read 2026-10-12).

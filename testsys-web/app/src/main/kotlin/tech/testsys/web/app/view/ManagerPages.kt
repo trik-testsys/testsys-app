@@ -7,6 +7,7 @@ import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.infra.localization.PageManager
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.manager.ManagerService
 import tech.testsys.web.app.service.manager.ParticipantVo
@@ -19,6 +20,7 @@ import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.navigation.PageHeadScope
 import tech.testsys.web.components.overlay.DialogSize
 import tech.testsys.web.components.overlay.dialog
+import tech.testsys.web.components.texts.currentLocalization
 import tech.testsys.web.components.texts.currentTimeZone
 import java.time.Duration
 import java.time.Instant
@@ -61,11 +63,14 @@ internal fun competitionContestParameters(competitionId: CompetitionId, contestI
     mapOf(COMPETITION_ID_PARAMETER to competitionId.value.toString(), MANAGER_CONTEST_ID_PARAMETER to contestId.value.toString()),
 )
 
-/** Adds the breadcrumbs from «Главная» to the [section] of the Cabinet of a Manager. */
+/** Adds the breadcrumbs from the main page to the [section] of the Cabinet of a Manager. */
 internal fun PageHeadScope.managerCrumbs(section: String) {
-    crumb("Главная", MultiMainView::class.java)
-    crumb("Кабинет Организатора", ManagerView::class.java)
-    crumb(if (section == CLASSES_SECTION) "Классы" else "Соревнования", ManagerView::class.java, managerSection(section))
+    val localization = currentLocalization()
+    val cabinet = localization.pageCabinet
+    crumb(cabinet.home(), MultiMainView::class.java)
+    crumb(localization.pageManager.title(), ManagerView::class.java)
+    val title = if (section == CLASSES_SECTION) cabinet.sectionClasses() else cabinet.sectionCompetitions()
+    crumb(title, ManagerView::class.java, managerSection(section))
 }
 
 /** Returns the first moment of [date] in the time zone of the user of the current UI. */
@@ -80,7 +85,7 @@ internal fun formatDuration(duration: Duration?): String? =
 
 /**
  * Adds the block of [contests] added to a class or competition: a row opens the page of the contest through [onOpen], and
- * the action «Добавить тур» adds a contest shared to the communities of the manager through [onAdd]
+ * the action of adding a contest adds one shared to the communities of the manager through [onAdd]
  * (testsys.user.multi.manager.addContest).
  */
 internal fun PageScope.managerContestsBlock(
@@ -89,11 +94,13 @@ internal fun PageScope.managerContestsBlock(
     onOpen: (ContestVo) -> Unit,
     onAdd: (ContestVo) -> Unit,
 ) {
+    val localization = currentLocalization()
+    val texts = localization.pageManager
     val draft = Binder<ContestDraft>()
-    val adding = dialog(title = "Добавление тура") {
+    val adding = dialog(title = texts.contestsDialogTitle()) {
         row {
             lookup(
-                "Тур",
+                texts.contestsContest(),
                 labelSize = 6,
                 size = 18,
                 fetch = { query, request ->
@@ -102,20 +109,20 @@ internal fun PageScope.managerContestsBlock(
                 },
                 display = ContestVo::name,
                 columns = {
-                    codeColumn("ID", size = 6) { contest -> contest.id.value.toString() }
-                    textColumn("Название", size = 16) { contest -> contest.name }
+                    codeColumn(texts.id(), size = 6) { contest -> contest.id.value.toString() }
+                    textColumn(texts.name(), size = 16) { contest -> contest.name }
                 },
-                hint = "Туры, открытые вашим сообществам",
+                hint = texts.contestsLookupHint(),
                 dialogSize = DialogSize.L,
             ) {
                 draft.forField(this)
-                    .asRequired("Выберите тур")
+                    .asRequired(texts.contestsRequired())
                     .bind({ values -> values.contest }, { values, contest -> values.contest = contest })
             }
         }
         footer { dialog ->
-            action("Отменить") { onClick { dialog.close() } }
-            mainAction("Добавить") {
+            action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+            mainAction(texts.contestsSubmit()) {
                 onClick {
                     val values = ContestDraft()
                     if (draft.writeBeanIfValid(values)) {
@@ -128,18 +135,18 @@ internal fun PageScope.managerContestsBlock(
     }
 
     row {
-        block(title = "Туры") {
-            guide("Список Туров и их параметры. Выберите строку, чтобы открыть Тур.")
+        block(title = localization.pageCabinet.sectionContests()) {
+            guide(texts.contestsGuide())
             table(key = { contest: ContestVo -> contest.id }, fetch = { request -> pageOf(contests, request) }) {
-                textColumn("Название", size = 9) { contest -> contest.name }
-                dateTimeColumn("Начало", size = 5) { contest -> contest.startsAt?.toUserDateTime() }
-                dateTimeColumn("Конец", size = 5) { contest -> contest.endsAt?.toUserDateTime() }
-                codeColumn("Время на прохождение") { contest -> formatDuration(contest.attemptDuration) }
-                empty("Туров пока нет", "Добавьте тур, открытый вашим сообществам.")
+                textColumn(texts.name(), size = 9) { contest -> contest.name }
+                dateTimeColumn(texts.startsAt(), size = 5) { contest -> contest.startsAt?.toUserDateTime() }
+                dateTimeColumn(texts.endsAt(), size = 5) { contest -> contest.endsAt?.toUserDateTime() }
+                codeColumn(texts.attemptDuration()) { contest -> formatDuration(contest.attemptDuration) }
+                empty(texts.contestsEmpty(), texts.contestsEmptyHint())
                 onRowClick(isNavigation = true, listener = onOpen)
             }
             actions {
-                action("Добавить тур") {
+                action(texts.contestsAdd()) {
                     onClick {
                         draft.readBean(ContestDraft())
                         adding.open()
@@ -160,6 +167,16 @@ internal fun openCompetitionContest(competitionId: CompetitionId, contestId: Con
     UI.getCurrent().navigate(ManagerContestView::class.java, competitionContestParameters(competitionId, contestId))
 }
 
+/**
+ * Runs [produce] under the session lock of [ui] and returns its result. A download producer runs in a background
+ * thread, and the localization of a UI is used only under its lock, so a producer formats its texts through this call.
+ */
+internal fun <T> inUiOf(ui: UI, produce: () -> T): T {
+    var result: Result<T>? = null
+    ui.accessSynchronously { result = runCatching(produce) }
+    return checkNotNull(result) { "UI access did not run" }.getOrThrow()
+}
+
 /** Values of the contest adding form. */
 private class ContestDraft {
     var contest: ContestVo? = null
@@ -168,14 +185,14 @@ private class ContestDraft {
 private const val NANOS_IN_MICROSECOND = 1_000L
 
 /** Serializes [rows] as semicolon-separated CSV with a UTF-8 byte order mark and RFC 4180 quoting. */
-internal fun csvOf(rows: List<List<String>>): String = rows.joinToString(separator = "", prefix = "\uFEFF") { cells ->
+internal fun csvOf(rows: List<List<String>>): String = rows.joinToString(separator = "", prefix = "﻿") { cells ->
     cells.joinToString(separator = ";", postfix = "\r\n", transform = ::csvCell)
 }
 
-/** Exports the identifiers, nicknames and issued access codes of [participants]. */
+/** Exports the identifiers, nicknames and issued access codes of [participants] with the header from [texts]. */
 @RawAccessTokenDependency(reason = "Exports stored participant access codes as the issued ones.")
-internal fun participantsCsv(participants: List<ParticipantVo>): String = csvOf(
-    listOf(listOf("ID", "Псевдоним", "Код-доступа")) + participants.map { participant ->
+internal fun participantsCsv(participants: List<ParticipantVo>, texts: PageManager): String = csvOf(
+    listOf(listOf(texts.id(), texts.nickname(), texts.accessCode())) + participants.map { participant ->
         listOf(participant.id.value.toString(), participant.name, participant.accessTokenHash.value)
     },
 )

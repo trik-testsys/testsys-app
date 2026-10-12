@@ -6,6 +6,8 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
+import tech.testsys.infra.localization.PageJudge.SolutionLanguageLanguage
+import tech.testsys.infra.localization.PageJudge.SolutionStatusStatus
 import tech.testsys.infra.localization.UiTransfer.UploadLimitsUnit
 import tech.testsys.infra.localization.bundle.SupportedRegion
 import java.time.ZoneId
@@ -1478,6 +1480,292 @@ class LocalizationTests {
         @Test
         fun `should name the supervisor cabinet in supervisor title`() {
             assertEquals("Кабинет Супервайзера", l.pageCabinet.supervisorTitle())
+        }
+    }
+
+    @Nested
+    inner class PageJudgeTests {
+
+        @Test
+        fun `should name the judge cabinet in title`() {
+            assertEquals("Кабинет Судьи", l.pageJudge.title())
+        }
+
+        @Test
+        fun `should decline the submission and verdict terms in guide`() {
+            assertEquals(
+                "Найдите Посылку в таблице и откройте её для просмотра Решения и Вердикта.",
+                l.pageJudge.guide(),
+            )
+        }
+
+        @Test
+        fun `should use the submission term in submission`() {
+            assertEquals("Посылка", l.pageJudge.submission())
+        }
+
+        @Test
+        fun `should name the author in author`() {
+            assertEquals("Автор", l.pageJudge.author())
+        }
+
+        @Test
+        fun `should name the author id in author id`() {
+            assertEquals("ID автора", l.pageJudge.authorId())
+        }
+
+        @Test
+        fun `should name the final score in final score`() {
+            assertEquals("Итоговый балл", l.pageJudge.finalScore())
+        }
+
+        @Test
+        fun `should use the plural submission term in submissions guide`() {
+            assertEquals("Посылки и результаты их проверки.", l.pageJudge.submissionsGuide())
+        }
+
+        @Test
+        fun `should name the sending time in submissions sent`() {
+            assertEquals("Отправлено", l.pageJudge.submissionsSent())
+        }
+
+        @Test
+        fun `should name the automatic score in submissions auto score`() {
+            assertEquals("Автоматический балл", l.pageJudge.submissionsAutoScore())
+        }
+
+        @Test
+        fun `should name the judge score in submissions judge score`() {
+            assertEquals("Судейский балл", l.pageJudge.submissionsJudgeScore())
+        }
+
+        @Test
+        fun `should use the genitive plural submission term in submissions empty`() {
+            assertEquals("Посылок нет", l.pageJudge.submissionsEmpty())
+        }
+
+        @Test
+        fun `should use the accusative plural submission term in submissions empty hint`() {
+            assertEquals(
+                "Здесь появятся успешно проверенные Посылки Учеников и Участников.",
+                l.pageJudge.submissionsEmptyHint(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive submission term in filter submission id`() {
+            assertEquals("ID Посылки", l.pageJudge.filterSubmissionId())
+        }
+
+        @Test
+        fun `should name the class id in filter class id`() {
+            assertEquals("ID Класса", l.pageJudge.filterClassId())
+        }
+
+        @Test
+        fun `should name the competition id in filter competition id`() {
+            assertEquals("ID Соревнования", l.pageJudge.filterCompetitionId())
+        }
+
+        @Test
+        fun `should ask for a positive integer in filter id invalid`() {
+            assertEquals("Введите положительное целое число", l.pageJudge.filterIdInvalid())
+        }
+
+        @Test
+        fun `should number the submission in solution title`() {
+            assertEquals("Посылка №42", l.pageJudge.solutionTitle(id = 42L))
+        }
+
+        @Test
+        fun `should keep the largest id exact and ungrouped in solution title`() {
+            assertEquals("Посылка №9223372036854775807", l.pageJudge.solutionTitle(id = Long.MAX_VALUE))
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "QUEUED,        В очереди",
+            "IN_PROGRESS,   Проверяется",
+            "SUCCESS,       Проверена",
+            "GRADING_ERROR, Ошибка проверки",
+            "TIMEOUT,       Превышено время проверки",
+            "OTHER,         Неизвестный статус",
+        )
+        fun `should name the grading status in solution status`(status: SolutionStatusStatus, expected: String) {
+            assertEquals(expected, l.pageJudge.solutionStatus(status = status))
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "PYTHON,          Python",
+            "JAVASCRIPT,      JavaScript",
+            "VISUAL_LANGUAGE, Визуальный язык",
+            "OTHER,           Неизвестный язык",
+        )
+        fun `should name the language in solution language`(language: SolutionLanguageLanguage, expected: String) {
+            assertEquals(expected, l.pageJudge.solutionLanguage(language = language))
+        }
+
+        @Test
+        fun `should decline the submission and judgment order terms in solution guide`() {
+            assertEquals(
+                "Просмотрите сведения о Посылке, результаты проверки и историю Судейских вердиктов.",
+                l.pageJudge.solutionGuide(),
+            )
+        }
+
+        @Test
+        fun `should name the score in solution score`() {
+            assertEquals("Балл", l.pageJudge.solutionScore())
+        }
+
+        @Test
+        fun `should name the reason in solution reason`() {
+            assertEquals("Обоснование", l.pageJudge.solutionReason())
+        }
+
+        @Test
+        fun `should head the details block in solution details title`() {
+            assertEquals("Сведения", l.pageJudge.solutionDetailsTitle())
+        }
+
+        @Test
+        fun `should use the prepositional submission term in solution details guide`() {
+            assertEquals(
+                "Сведения об отправленной Посылке, её авторе и состоянии проверки.",
+                l.pageJudge.solutionDetailsGuide(),
+            )
+        }
+
+        @Test
+        fun `should name the id in solution details id`() {
+            assertEquals("ID", l.pageJudge.solutionDetailsId())
+        }
+
+        @Test
+        fun `should name the sending time in solution details sent`() {
+            assertEquals("Отправлена", l.pageJudge.solutionDetailsSent())
+        }
+
+        @Test
+        fun `should name the task in solution details task`() {
+            assertEquals("Задача", l.pageJudge.solutionDetailsTask())
+        }
+
+        @Test
+        fun `should name the contest in solution details contest`() {
+            assertEquals("Тур", l.pageJudge.solutionDetailsContest())
+        }
+
+        @Test
+        fun `should name the file in solution details file`() {
+            assertEquals("Файл", l.pageJudge.solutionDetailsFile())
+        }
+
+        @Test
+        fun `should name the language in solution details language`() {
+            assertEquals("Язык", l.pageJudge.solutionDetailsLanguage())
+        }
+
+        @Test
+        fun `should name the grading status in solution details status`() {
+            assertEquals("Статус проверки", l.pageJudge.solutionDetailsStatus())
+        }
+
+        @Test
+        fun `should use the verdict term in solution verdict title`() {
+            assertEquals("Вердикт", l.pageJudge.solutionVerdictTitle())
+        }
+
+        @Test
+        fun `should use the dative plural polygon term in solution verdict guide`() {
+            assertEquals(
+                "Результаты автоматической проверки по Полигонам и итоговый балл.",
+                l.pageJudge.solutionVerdictGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the genitive verdict term in solution verdict empty`() {
+            assertEquals("Вердикта нет", l.pageJudge.solutionVerdictEmpty())
+        }
+
+        @Test
+        fun `should use the dative plural polygon term in solution verdict empty hint`() {
+            assertEquals("Баллы по Полигонам появятся после успешной проверки.", l.pageJudge.solutionVerdictEmptyHint())
+        }
+
+        @Test
+        fun `should use the polygon term in solution verdict polygon`() {
+            assertEquals("Полигон", l.pageJudge.solutionVerdictPolygon())
+        }
+
+        @Test
+        fun `should name the files in solution verdict files`() {
+            assertEquals("Файлы", l.pageJudge.solutionVerdictFiles())
+        }
+
+        @Test
+        fun `should quote the polygon name in solution verdict download logs`() {
+            assertEquals("Скачать логи Полигона «Лабиринт»", l.pageJudge.solutionVerdictDownloadLogs(name = "Лабиринт"))
+        }
+
+        @Test
+        fun `should quote the polygon name in solution verdict download recording`() {
+            assertEquals(
+                "Скачать видеозапись Полигона «Лабиринт»",
+                l.pageJudge.solutionVerdictDownloadRecording(name = "Лабиринт"),
+            )
+        }
+
+        @Test
+        fun `should use the plural judgment order term in solution judgments title`() {
+            assertEquals("Судейские вердикты", l.pageJudge.solutionJudgmentsTitle())
+        }
+
+        @Test
+        fun `should keep the partial verdict reference lowercase in solution judgments guide`() {
+            assertEquals("История выставленных Судьями вердиктов.", l.pageJudge.solutionJudgmentsGuide())
+        }
+
+        @Test
+        fun `should name the issue time in solution judgments issued`() {
+            assertEquals("Выставлен", l.pageJudge.solutionJudgmentsIssued())
+        }
+
+        @Test
+        fun `should use the genitive plural judgment order term in solution judgments empty`() {
+            assertEquals("Судейских вердиктов нет", l.pageJudge.solutionJudgmentsEmpty())
+        }
+
+        @Test
+        fun `should keep the partial verdict reference lowercase in solution judgments issue`() {
+            assertEquals("Выставить вердикт", l.pageJudge.solutionJudgmentsIssue())
+        }
+
+        @Test
+        fun `should use the judgment order term in solution dialog title`() {
+            assertEquals("Новый Судейский вердикт", l.pageJudge.solutionDialogTitle())
+        }
+
+        @Test
+        fun `should ask for the score in solution dialog score required`() {
+            assertEquals("Укажите балл", l.pageJudge.solutionDialogScoreRequired())
+        }
+
+        @Test
+        fun `should ask for the reason in solution dialog reason required`() {
+            assertEquals("Укажите обоснование", l.pageJudge.solutionDialogReasonRequired())
+        }
+
+        @Test
+        fun `should name the issuing action in solution dialog submit`() {
+            assertEquals("Выставить", l.pageJudge.solutionDialogSubmit())
+        }
+
+        @Test
+        fun `should use the judgment order term in solution dialog saved`() {
+            assertEquals("Судейский вердикт сохранён", l.pageJudge.solutionDialogSaved())
         }
     }
 

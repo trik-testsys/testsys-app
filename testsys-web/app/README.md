@@ -165,6 +165,7 @@
 | `page_confirmation` | Подтверждение почты кодом из письма, общее для `RegistrationView` и `ProfileView` |
 | `page_home` | `MultiMainView` |
 | `page_cabinet` | Шапка Кабинета, названия Ролей и разделы «Меню», `ObserverView` и `SupervisorView` |
+| `page_judge` | `JudgeView`, `JudgeSolutionView` |
 
 Страницы из таблицы, у которых есть свой заголовок вкладки, задают его через `HasDynamicTitle` из сообщения.
 Остальные страницы Ролей пока задают тексты строками, а заголовок вкладки — через `@PageTitle`.

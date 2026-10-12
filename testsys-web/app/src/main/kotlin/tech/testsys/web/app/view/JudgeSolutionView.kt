@@ -3,7 +3,7 @@ package tech.testsys.web.app.view
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
-import com.vaadin.flow.router.PageTitle
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.contract.FileContentReader
@@ -11,6 +11,9 @@ import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.infra.localization.PageCabinet.RoleNameRole
+import tech.testsys.infra.localization.PageJudge.SolutionLanguageLanguage
+import tech.testsys.infra.localization.PageJudge.SolutionStatusStatus
 import tech.testsys.web.app.service.developer.TestVo
 import tech.testsys.web.app.service.judge.JudgeService
 import tech.testsys.web.app.service.judge.JudgmentOrderVo
@@ -39,6 +42,7 @@ import tech.testsys.web.components.forms.textArea
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.overlay.dialog
+import tech.testsys.web.components.texts.currentLocalization
 
 /** Content type of downloaded files, whose real type the system does not know. */
 private const val FILE_CONTENT_TYPE = "application/octet-stream"
@@ -50,7 +54,6 @@ private const val FILE_CONTENT_TYPE = "application/octet-stream"
  * @since %CURRENT_VERSION%
  */
 @Route("judge/submissions/:submissionId([0-9]+)")
-@PageTitle("Посылка")
 @RolesAllowed("MULTIPLE_ROLE")
 class JudgeSolutionView(
     private val headers: CabinetHeaders,
@@ -58,7 +61,10 @@ class JudgeSolutionView(
     private val fileContentReader: FileContentReader,
 ) :
     TestSysView(),
-    BeforeEnterObserver {
+    BeforeEnterObserver,
+    HasDynamicTitle {
+    override fun getPageTitle(): String = currentLocalization().pageJudge.submission()
+
     override fun beforeEnter(event: BeforeEnterEvent) {
         // Loads the submission before the page is built, so that a refusal opens its error screen.
         show(SubmissionId(event.routeParameters.getLong(SUBMISSION_ID_PARAMETER).orElseThrow()))
@@ -67,14 +73,16 @@ class JudgeSolutionView(
     private fun show(submissionId: SubmissionId) {
         val details = judgeService.viewSolution(submissionId)
         val (status, tone) = statusOf(details.submission.status)
+        val localization = currentLocalization()
+        val texts = localization.pageJudge
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
-            head("Посылка №${details.submission.id.value}") {
-                crumb("Главная", MultiMainView::class.java)
-                crumb("Кабинет Судьи", JudgeView::class.java)
-                crumb("Посылки", JudgeView::class.java, judgeSubmissionsParameters())
-                badge(status, tone)
+            head(texts.solutionTitle(id = details.submission.id.value)) {
+                crumb(localization.pageCabinet.home(), MultiMainView::class.java)
+                crumb(texts.title(), JudgeView::class.java)
+                crumb(localization.pageCabinet.sectionSubmissions(), JudgeView::class.java, judgeSubmissionsParameters())
+                badge(texts.solutionStatus(status = status), tone)
             }
-            guide("Просмотрите сведения о Посылке, результаты проверки и историю судейских Вердиктов.")
+            guide(texts.solutionGuide())
             detailsBlock(details)
             verdictBlock(details)
             judgmentsBlock(details)
@@ -82,58 +90,64 @@ class JudgeSolutionView(
     }
 
     private fun PageScope.detailsBlock(details: SubmissionDetailsVo) {
+        val texts = currentLocalization().pageJudge
         val submissionId = details.submission.id
         val (status, tone) = statusOf(details.submission.status)
         row {
-            block(title = "Сведения") {
-                guide("Сведения об отправленной Посылке, её авторе и состоянии проверки.")
+            block(title = texts.solutionDetailsTitle()) {
+                guide(texts.solutionDetailsGuide())
                 row {
-                    codeInput("ID", labelSize = 3, size = 9) { value = submissionId.value.toString() }
-                    dateTimeInput("Отправлена", labelSize = 3, size = 9) { value = details.submission.createdAt.toUserDateTime() }
+                    codeInput(texts.solutionDetailsId(), labelSize = 3, size = 9) { value = submissionId.value.toString() }
+                    dateTimeInput(texts.solutionDetailsSent(), labelSize = 3, size = 9) {
+                        value = details.submission.createdAt.toUserDateTime()
+                    }
                 }
                 row {
-                    textInput("Автор", labelSize = 3, size = 9) { value = details.author.name }
-                    codeInput("ID автора", labelSize = 3, size = 9) { value = details.author.id.value.toString() }
+                    textInput(texts.author(), labelSize = 3, size = 9) { value = details.author.name }
+                    codeInput(texts.authorId(), labelSize = 3, size = 9) { value = details.author.id.value.toString() }
                 }
                 row {
-                    textInput("Задача", labelSize = 3, size = 9) { value = details.task.name }
-                    textInput("Тур", labelSize = 3, size = 9) { value = details.contest.name }
+                    textInput(texts.solutionDetailsTask(), labelSize = 3, size = 9) { value = details.task.name }
+                    textInput(texts.solutionDetailsContest(), labelSize = 3, size = 9) { value = details.contest.name }
                 }
                 row {
-                    field("Файл", labelSize = 3, size = 9) {
+                    field(texts.solutionDetailsFile(), labelSize = 3, size = 9) {
                         downloadAction(details.solution.fileName, produce = { download(judgeService.downloadSolution(submissionId)) })
                     }
-                    textInput("Язык", labelSize = 3, size = 9) { value = languageOf(details.solution.language) }
+                    textInput(texts.solutionDetailsLanguage(), labelSize = 3, size = 9) {
+                        value = texts.solutionLanguage(language = languageOf(details.solution.language))
+                    }
                 }
                 row {
-                    field("Статус проверки", labelSize = 3, size = 9) { badge(status, tone) }
-                    codeInput("Итоговый балл", labelSize = 3, size = 9) { value = details.finalScore?.toString() ?: "—" }
+                    field(texts.solutionDetailsStatus(), labelSize = 3, size = 9) { badge(texts.solutionStatus(status = status), tone) }
+                    codeInput(texts.finalScore(), labelSize = 3, size = 9) { value = details.finalScore?.toString() ?: "—" }
                 }
             }.isEditable = false
         }
     }
 
     private fun PageScope.verdictBlock(details: SubmissionDetailsVo) {
+        val texts = currentLocalization().pageJudge
         val submissionId = details.submission.id
         val verdict = details.verdict
         row {
-            block(title = "Вердикт") {
-                guide("Результаты автоматической проверки по Полигонам и итоговый балл.")
+            block(title = texts.solutionVerdictTitle()) {
+                guide(texts.solutionVerdictGuide())
                 if (verdict == null) {
-                    emptyState("Вердикта нет", "Баллы по полигонам появятся после успешной проверки.")
+                    emptyState(texts.solutionVerdictEmpty(), texts.solutionVerdictEmptyHint())
                 } else {
                     val outcomes = verdict.testVerdicts.zip(details.tests)
                     table(key = { (_, test): Pair<TestVerdictVo, TestVo> -> test.id }, fetch = { request -> pageOf(outcomes, request) }) {
-                        textColumn("Полигон", size = 12) { (_, test) -> test.name }
-                        numberColumn("Балл", size = 6) { (outcome, _) -> outcome.score.value }
-                        column("Файлы") { (outcome, test) ->
+                        textColumn(texts.solutionVerdictPolygon(), size = 12) { (_, test) -> test.name }
+                        numberColumn(texts.solutionScore(), size = 6) { (outcome, _) -> outcome.score.value }
+                        column(texts.solutionVerdictFiles()) { (outcome, test) ->
                             iconDownloadAction(
-                                "Скачать логи полигона «${test.name}»",
+                                texts.solutionVerdictDownloadLogs(name = test.name),
                                 produce = { download(judgeService.downloadLogs(submissionId, outcome.test)) },
                             )
                             if (outcome.recording != null) {
                                 iconDownloadAction(
-                                    "Скачать видеозапись полигона «${test.name}»",
+                                    texts.solutionVerdictDownloadRecording(name = test.name),
                                     produce = { download(judgeService.downloadRecording(submissionId, outcome.test)) },
                                 )
                             }
@@ -145,23 +159,25 @@ class JudgeSolutionView(
     }
 
     private fun PageScope.judgmentsBlock(details: SubmissionDetailsVo) {
+        val localization = currentLocalization()
+        val texts = localization.pageJudge
         val orders = details.judgmentOrders
         row {
-            block(title = "Судейские вердикты") {
-                guide("История выставленных Судьями Вердиктов.")
+            block(title = texts.solutionJudgmentsTitle()) {
+                guide(texts.solutionJudgmentsGuide())
                 table(
                     key = { (order, _): Pair<JudgmentOrderVo, NamedUserVo> -> order.id },
                     fetch = { request -> pageOf(orders, request) },
                 ) {
-                    numberColumn("Балл", size = 3) { (order, _) -> order.score.value }
-                    textColumn("Обоснование", size = 11) { (order, _) -> order.reason }
-                    textColumn("Судья", size = 5) { (_, judge) -> judge.name }
-                    dateTimeColumn("Выставлен") { (order, _) -> order.createdAt.toUserDateTime() }
-                    empty("Судейских вердиктов нет")
+                    numberColumn(texts.solutionScore(), size = 3) { (order, _) -> order.score.value }
+                    textColumn(texts.solutionReason(), size = 11) { (order, _) -> order.reason }
+                    textColumn(localization.pageCabinet.roleName(role = RoleNameRole.JUDGE), size = 5) { (_, judge) -> judge.name }
+                    dateTimeColumn(texts.solutionJudgmentsIssued()) { (order, _) -> order.createdAt.toUserDateTime() }
+                    empty(texts.solutionJudgmentsEmpty())
                 }
                 if (details.verdict != null) {
                     val issuing = judgmentDialog(details.submission.id)
-                    actions { action("Выставить вердикт") { onClick { issuing() } } }
+                    actions { action(texts.solutionJudgmentsIssue()) { onClick { issuing() } } }
                 }
             }
         }
@@ -169,31 +185,33 @@ class JudgeSolutionView(
 
     /** Builds the dialog issuing a judgment order for [submissionId] and returns its opening, which starts with an empty form. */
     private fun judgmentDialog(submissionId: SubmissionId): () -> Unit {
+        val localization = currentLocalization()
+        val texts = localization.pageJudge
         val draft = Binder<JudgmentDraft>()
-        val issuing = dialog(title = "Новый судейский вердикт") {
+        val issuing = dialog(title = texts.solutionDialogTitle()) {
             row {
-                integerInput("Балл", labelSize = 6, size = 18, min = 0) {
+                integerInput(texts.solutionScore(), labelSize = 6, size = 18, min = 0) {
                     draft.forField(this)
-                        .asRequired("Укажите балл")
+                        .asRequired(texts.solutionDialogScoreRequired())
                         .bind({ values -> values.score }, { values, score -> values.score = score })
                 }
             }
             row {
-                textArea("Обоснование", labelSize = 6, size = 18, maxLines = 4) {
+                textArea(texts.solutionReason(), labelSize = 6, size = 18, maxLines = 4) {
                     draft.forField(this)
-                        .asRequired("Укажите обоснование")
-                        .withValidator({ reason -> reason.isNotBlank() }, "Укажите обоснование")
+                        .asRequired(texts.solutionDialogReasonRequired())
+                        .withValidator({ reason -> reason.isNotBlank() }, texts.solutionDialogReasonRequired())
                         .bind({ values -> values.reason }, { values, reason -> values.reason = reason })
                 }
             }
             footer { dialog ->
-                action("Отменить") { onClick { dialog.close() } }
-                mainAction("Выставить") {
+                action(localization.uiDialog.cancel()) { onClick { dialog.close() } }
+                mainAction(texts.solutionDialogSubmit()) {
                     onClick {
                         val values = JudgmentDraft()
                         if (draft.writeBeanIfValid(values)) {
                             judgeService.changeVerdict(submissionId, Score(checkNotNull(values.score)), values.reason)
-                            toast(FeedbackKind.Success, "Судейский вердикт сохранён")
+                            toast(FeedbackKind.Success, currentLocalization().pageJudge.solutionDialogSaved())
                             dialog.close()
                             show(submissionId)
                         }
@@ -219,20 +237,20 @@ class JudgeSolutionView(
     }
 }
 
-/** Returns the text and tone of the grading [status] of a submission. */
-private fun statusOf(status: SubmissionStatusVo): Pair<String, Tone> = when (status) {
-    SubmissionStatusVo.Queued -> "В очереди" to Tone.Neutral
-    SubmissionStatusVo.InProgress -> "Проверяется" to Tone.Info
+/** Returns the message variant and tone of the grading [status] of a submission. */
+private fun statusOf(status: SubmissionStatusVo): Pair<SolutionStatusStatus, Tone> = when (status) {
+    SubmissionStatusVo.Queued -> SolutionStatusStatus.QUEUED to Tone.Neutral
+    SubmissionStatusVo.InProgress -> SolutionStatusStatus.IN_PROGRESS to Tone.Info
     is SubmissionStatusVo.Graded -> when (status.grade) {
-        is GradingResultVo.Success -> "Проверена" to Tone.Success
-        is GradingResultVo.GradingError -> "Ошибка проверки" to Tone.Danger
-        GradingResultVo.Timeout -> "Превышено время проверки" to Tone.Warning
+        is GradingResultVo.Success -> SolutionStatusStatus.SUCCESS to Tone.Success
+        is GradingResultVo.GradingError -> SolutionStatusStatus.GRADING_ERROR to Tone.Danger
+        GradingResultVo.Timeout -> SolutionStatusStatus.TIMEOUT to Tone.Warning
     }
 }
 
-/** Returns the name of the programming [language] of a solution. */
-private fun languageOf(language: TrikSupportedLanguage): String = when (language) {
-    TrikSupportedLanguage.Python -> "Python"
-    TrikSupportedLanguage.JavaScript -> "JavaScript"
-    TrikSupportedLanguage.VisualLanguage -> "Визуальный язык"
+/** Returns the message variant naming the programming [language] of a solution. */
+private fun languageOf(language: TrikSupportedLanguage): SolutionLanguageLanguage = when (language) {
+    TrikSupportedLanguage.Python -> SolutionLanguageLanguage.PYTHON
+    TrikSupportedLanguage.JavaScript -> SolutionLanguageLanguage.JAVASCRIPT
+    TrikSupportedLanguage.VisualLanguage -> SolutionLanguageLanguage.VISUAL_LANGUAGE
 }

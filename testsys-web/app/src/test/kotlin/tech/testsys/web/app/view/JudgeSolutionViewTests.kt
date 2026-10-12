@@ -16,8 +16,10 @@ import com.vaadin.flow.component.html.Table
 import com.vaadin.flow.component.textfield.IntegerField
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
+import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.RouteParameters
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -83,14 +85,23 @@ class JudgeSolutionViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should title the browser tab of the submission`() {
+        signIn(fixtures.judge())
+
+        open(fixtures.gradingSubmission(student()))
+
+        assertEquals("Посылка", assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)
+    }
+
+    @Test
     fun `should show the score of each polygon with the downloads of its logs and recording`() {
         signIn(fixtures.judge())
 
         open(fixtures.gradingSubmission(student(), score = 42))
 
         assertTrue("42" in tableText("Полигон"), tableText("Полигон"))
-        assertTrue(downloadLabels().any { label -> "Скачать логи полигона" in label }, downloadLabels().toString())
-        assertTrue(downloadLabels().any { label -> "Скачать видеозапись полигона" in label }, downloadLabels().toString())
+        assertTrue(downloadLabels().any { label -> "Скачать логи Полигона" in label }, downloadLabels().toString())
+        assertTrue(downloadLabels().any { label -> "Скачать видеозапись Полигона" in label }, downloadLabels().toString())
     }
 
     @Test

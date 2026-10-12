@@ -222,3 +222,49 @@ glossary and owner documents stay authoritative.
   English *guide*. TestSys uses «гайд» for an interactive step-by-step page tour (`ui_guide.*`), slightly broader
   than the dictionary sense; not a defect. No normative orthographic dictionary entry was opened.
 - Source: https://ru.wiktionary.org/wiki/гайд (read 2026-10-11).
+
+## «Посылка» as the domain term
+
+- Викисловарь gives two homonyms: «посылка I» (the act of sending; a parcel sent by mail) and «посылка II»
+  (филос., логич.: a premise). No computing sense is listed. In TestSys the word is the domain term (definitions.md,
+  item 29: a sending of a Solution for checking a Task); the capitalized term form, the table/filter context and
+  «ID Посылки» rule out the parcel and premise senses on the Judge pages. No undesirable connotation was found.
+- Declension (Викисловарь): Им. «посылка» / «посылки», Р. «посылки» / «посылок», Д. «посылке» / «посылкам»,
+  В. «посылку» / «посылки», П. «посылке» / «посылках». `glossary.submission` holds the forms used by `page_judge`.
+- Source: https://ru.wiktionary.org/wiki/посылка (read 2026-10-12).
+
+## Space after the number sign: «№ 7»
+
+- Normacs experts state that the space between «№» and the first digit follows ordinary Russian rules, as in
+  «номер 7», i.e. «№ 7»; their cited ГОСТ Р 2.105-2019 example is «Изм. № 1, 2». A Habr commenter reports that
+  Мильчин's handbook separates «№» from the number in all editions since 1974; this is a secondary retelling, the
+  handbook itself was not read. A no-break space keeps the sign and the number on one line (inference).
+- Applicability: `page_judge.solution.title` renders «Посылка №{id}» without a space because the caller required
+  the current text verbatim («Посылка №9223372036854775807»); «Посылка № 42» with a no-break space would be the
+  normative variant and needs an explicit decision.
+- Sources: https://www.normacs.info/answers/5654 (read 2026-10-12); https://habr.com/en/articles/870856/comments
+  (search snippet only, 2026-10-12).
+
+## «Вердикт» as the domain term
+
+- Викисловарь: «вердикт» — inanimate masculine noun, Zaliznyak type 1a; Им. «вердикт» / «вердикты», Р. «вердикта» /
+  «вердиктов». Meanings: 1. «юр. решение (обычно — вынесенное в судебном процессе присяжными заседателями),
+  приговор»; 2. «перен. решение, суждение».
+- Applicability: TestSys uses the figurative sense for the automatic checking result (definitions.md item 19) and,
+  as «Судейский вердикт», for the Judge's result (item 26). No undesirable connotation found.
+- Project decision, not a language source: on the Judge pages lowercase «вердикт» in «Выставить вердикт» and
+  «История выставленных Судьями вердиктов.» is a shortened reference to «Судейский вердикт»; capitalized «Вердикт»
+  means the automatic one. The surrounding «Судьями», «Судейские вердикты» and «Новый Судейский вердикт» disambiguate.
+- Source: https://ru.wiktionary.org/wiki/вердикт (read 2026-10-12).
+
+## «Полигон» as the domain term
+
+- Викисловарь: inanimate masculine, type 1a; Им. «полигон» / «полигоны», Р. «полигона» / «полигонов», Д. «полигону» /
+  «полигонам». Meanings: 1. воен. testing ground for weapons; 2. «место или сфера, область, где производится
+  испытание, обработка, хранение или проверка чего-либо»; 3. матем., информ. «то же, что многоугольник»; 4. a
+  polygon-shaped area.
+- Applicability: the TestSys term (definitions.md item 15, a TRIK Studio world model used for checking) fits
+  sense 2; scores and logs «по Полигонам» rule out the geometric sense. No undesirable connotation found.
+- In «Скачать логи Полигона «{name}»» the generic word precedes the quoted name, so the name stays undeclined
+  (see the «Quoted names and declension» note above).
+- Source: https://ru.wiktionary.org/wiki/полигон (read 2026-10-12).

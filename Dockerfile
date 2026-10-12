@@ -16,6 +16,8 @@ RUN --mount=type=cache,target=/root/.gradle \
     && test -f /workspace/testsys-app.jar
 
 # Runs the jar without environment settings or secrets; Compose files supply them.
+# One process serves three HTTP servers: the main interface on 8080, the service interface on 8081 and the metrics
+# server on 8082.
 FROM eclipse-temurin:21-jre-noble
 RUN groupadd --system --gid 10001 testsys \
     && useradd --system --uid 10001 --gid testsys --no-create-home --home-dir /nonexistent \
@@ -24,5 +26,5 @@ RUN groupadd --system --gid 10001 testsys \
     && chown testsys:testsys /var/lib/testsys/files
 COPY --from=build /workspace/testsys-app.jar /app/app.jar
 USER testsys
-EXPOSE 8080
+EXPOSE 8080 8081 8082
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

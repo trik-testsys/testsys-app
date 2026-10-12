@@ -387,8 +387,9 @@ Cookie основного интерфейса называется `TESTSYS_APP
 `ServicePrincipal` хранит только техническую идентичность с полномочием `ROLE_SERVICE`.
 
 Кнопка «Grafana» на `ServiceHomeView` открывает в той же вкладке адрес из `testsys.service.grafana-url`.
-Кабинет не передаёт Grafana учётных данных: в Grafana входят её собственными учётными записями. Локальный
-запуск Grafana описан в [deploy/monitoring/README.md](../../deploy/monitoring/README.md).
+Кабинет не передаёт Grafana учётных данных: в Grafana входят её собственными учётными записями. Grafana окружений
+Docker Compose и её адрес описаны в разделе «Метрики и мониторинг»
+в [deployment.md](../../docs/project/deployment.md#метрики-и-мониторинг).
 
 `ServiceSecurityConfiguration` сохраняет штатные правила Vaadin для ресурсов, init, UIDL, heartbeat, push и CSRF.
 Навигация проверяет аннотации страниц; остальные HTTP-точки закрыты через `denyAll`.
@@ -525,8 +526,9 @@ database/README.md. Требования к поиску и карточке —
 Требования к метрикам — в разделе `testsys.dev.metric` в [features.md](../../docs/domain/features.md#testsysdevmetricexport-implemented).
 Собственные метрики TestSys, их метки и правила учёта технических сбоев описаны
 в [monitoring/README.md](../../testsys-infra/monitoring/README.md). Этот раздел описывает реестр, HTTP-метрики, учёт
-в интерфейсах и сервер экспорта. Локальный стек Prometheus и Grafana и дашборды описаны
-в [deploy/monitoring/README.md](../../deploy/monitoring/README.md).
+в интерфейсах и сервер экспорта. Prometheus, Grafana и дашборды описаны в разделе «Мониторинг»
+в [deploy/README.md](../../deploy/README.md#мониторинг), доступ к ним — в разделе «Метрики и мониторинг»
+в [deployment.md](../../docs/project/deployment.md#метрики-и-мониторинг).
 
 ### Реестр
 
@@ -546,7 +548,7 @@ database/README.md. Требования к поиску и карточке —
 `management.prometheus.metrics.export.properties` в `application.yml` включает свойство client_java
 `io.prometheus.exporter.include_created_timestamps`: текстовый экспорт счётчиков и гистограмм содержит время
 их регистрации в рядах `_created`. Использование этого времени при подсчёте первого события описано в разделе
-[«Сбор метрик»](../../deploy/monitoring/README.md#сбор-метрик) deploy/monitoring/README.md.
+[«Сбор метрик»](../../deploy/README.md#сбор-метрик) deploy/README.md.
 
 ### HTTP-запросы
 
@@ -578,7 +580,7 @@ database/README.md. Требования к поиску и карточке —
 благодаря `vaadin.eagerServerLoad`. Переходы без перезагрузки и действия на странице идут запросами `/?v-r=uidl`
 с кодом 200.
 
-Дашборды в `deploy/monitoring/grafana/dashboards/` используют метки `interface`, `uri`, `status` и `outcome`.
+Дашборды в `deploy/config/grafana/dashboards/` используют метки `interface`, `uri`, `status` и `outcome`.
 Если эти метки или их значения меняются, обновите и дашборды.
 
 ### Ошибки операций и технические сбои

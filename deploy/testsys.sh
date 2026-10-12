@@ -11,6 +11,7 @@ Environments:
   dev, e2e     local environments; variables from deploy/env/<environment>.env and <environment>.local.env
   prod         production; variables from the file given by --env-file or TESTSYS_ENV_FILE
   node         separate grading node; variables from the file given by --env-file or TESTSYS_ENV_FILE
+  dev and prod also run Prometheus and Grafana; every command includes them
 Commands:
   up [--node] [--no-build]           build the application image and start the environment
   down [--node]                      stop and remove the containers, keep the volumes
@@ -176,15 +177,29 @@ case "$environment" in
     ;;
 esac
 
-# Runs Compose with the project name, variable files and Compose files of the environment.
+# Prometheus and Grafana belong to dev and prod. Their file is passed to every command of these environments, so
+# "down --volumes" also removes their volumes and "--remove-orphans" never removes their containers.
+monitoring_file=
+case "$environment" in
+  dev | prod) monitoring_file=compose.monitoring.yml ;;
+esac
+
+# Runs Compose with the project name, variable files and Compose files of the environment. The override of the
+# environment follows the shared files; further -f options given to this function, such as the node file, come last.
 compose() {
   if [ "$environment" = node ]; then
     docker compose -p "$project" --env-file "$env_file" -f compose.grading-node.yml "$@"
-  elif [ -n "$local_env_file" ]; then
-    docker compose -p "$project" --env-file "$env_file" --env-file "$local_env_file" \
-      -f compose.yml -f "compose.$environment.yml" "$@"
+    return
+  fi
+  if [ -n "$monitoring_file" ]; then
+    set -- -f "$monitoring_file" -f "compose.$environment.yml" "$@"
   else
-    docker compose -p "$project" --env-file "$env_file" -f compose.yml -f "compose.$environment.yml" "$@"
+    set -- -f "compose.$environment.yml" "$@"
+  fi
+  if [ -n "$local_env_file" ]; then
+    docker compose -p "$project" --env-file "$env_file" --env-file "$local_env_file" -f compose.yml "$@"
+  else
+    docker compose -p "$project" --env-file "$env_file" -f compose.yml "$@"
   fi
 }
 

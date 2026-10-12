@@ -9,10 +9,15 @@ services:
   app:
     environment:
       SPRING_DATASOURCE_PASSWORD: testsys
+      # Fixed and not secret, like the database password: the sign-in code of the service interface in dev and e2e.
+      TESTSYS_SERVICE_SECRET: local-service-secret-for-dev-and-e2e-environments-only-not-secret
+      TESTSYS_SERVICE_GRAFANAURL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL to the Grafana address}
       TESTSYS_MAIL_HOST: mailpit
       TESTSYS_MAIL_PORT: "1025"
       # grading-node:8080 with deploy/compose.grading-node.yml, addresses of other nodes, or empty for no nodes.
       TESTSYS_GRADING_NODES: ${TESTSYS_GRADING_NODES?set TESTSYS_GRADING_NODES to grading node addresses or to an empty value}
+      # The grading node registry is stored in the database; every start adds these addresses to it as enabled.
+      TESTSYS_GRADING_IMPORT_NODES: "true"
     volumes:
       - type: bind
         source: ./config/application-e2e.yml

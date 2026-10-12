@@ -4,10 +4,11 @@
 именами, метками и их допустимыми значениями. Документ предназначен для тех, кто добавляет метрику или учёт сбоя
 в модуль системы. Требования к метрикам — в разделе `testsys.dev.metric` в [features.md](../../docs/domain/features.md),
 HTTP-метрики, реестр метрик и сервер экспорта — в разделе [«Метрики»](../../testsys-web/app/README.md#метрики)
-app/README.md. Дашборды Grafana по этим метрикам описаны в [deploy/monitoring/README.md](../../deploy/monitoring/README.md).
+app/README.md. Дашборды Grafana по этим метрикам описаны в разделе [«Дашборды»](../../deploy/README.md#дашборды)
+deploy/README.md.
 
 Если меняется имя метрики, метка или перечень её допустимых значений, обновите и дашборды
-в `deploy/monitoring/grafana/dashboards/`.
+в `deploy/config/grafana/dashboards/`.
 
 ## Компоненты
 

@@ -106,7 +106,7 @@ class PrometheusIngestionTests {
         zeroIngestion: Boolean = true,
         protocol: String = "OpenMetricsText1.0.0",
     ) : AutoCloseable {
-        private val monitoring = Path.of(checkNotNull(System.getProperty("testsys.monitoring.path")))
+        private val deploy = Path.of(checkNotNull(System.getProperty("testsys.deploy.path")))
         private val mapper = JsonMapper.builder().build()
         private val client = HttpClient.newHttpClient()
         private var runtime = startRuntime(0)
@@ -243,7 +243,7 @@ class PrometheusIngestionTests {
         }
 
         private fun panelValues(file: String, panel: Int, target: String = "A"): List<Double> {
-            val dashboard = mapper.readTree(monitoring.resolve("grafana/dashboards/$file").toFile())
+            val dashboard = mapper.readTree(deploy.resolve("config/grafana/dashboards/$file").toFile())
             val definition = dashboard.path("panels").single { entry -> entry.path("id").asInt() == panel }
                 .path("targets").single { entry -> entry.path("refId").asString() == target }
             val expression = definition.path("expr").asString()
@@ -266,11 +266,11 @@ class PrometheusIngestionTests {
         }
 
         private fun container(zeroIngestion: Boolean, protocol: String): GenericContainer<*> {
-            val compose = YamlPropertiesFactoryBean().apply { setResources(FileSystemResource(monitoring.resolve("compose.yaml"))) }
+            val compose = YamlPropertiesFactoryBean().apply { setResources(FileSystemResource(deploy.resolve("compose.monitoring.yml"))) }
             val properties = checkNotNull(compose.getObject())
             val command = command(properties).filter { argument -> zeroIngestion || argument != ZERO_INGESTION }
-            val config = monitoring.resolve("prometheus/prometheus.yml").toFile().readText()
-                .replace("host.docker.internal:8082", "host.testcontainers.internal:$port")
+            val config = deploy.resolve("config/prometheus.yml").toFile().readText()
+                .replace("app:8082", "host.testcontainers.internal:$port")
                 .replace("[OpenMetricsText1.0.0]", "[$protocol]")
             return PrometheusContainer(DockerImageName.parse(properties.getProperty("services.prometheus.image")))
                 .withExposedPorts(9090)

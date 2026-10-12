@@ -1,10 +1,14 @@
-# Production environment over deploy/compose.yml: application and PostgreSQL with persistent volumes, external SMTP.
+# Production environment over deploy/compose.yml and deploy/compose.monitoring.yml: application, PostgreSQL,
+# Prometheus and Grafana with persistent volumes, external SMTP.
 # Start it with deploy/testsys.sh and the production variable file kept outside the Git checkout
 # (template: deploy/env/prod.env.example):
 #   sh deploy/testsys.sh prod up [--node] --env-file <path>
-# HTTP is published only on 127.0.0.1 for an external HTTPS proxy.
-# TESTSYS_GRADING_NODES points to external grading nodes. --node adds deploy/compose.grading-node.yml as the last
-# file to run a node on the same server, with TESTSYS_GRADING_NODES=grading-node:8080.
+# All ports are published only on 127.0.0.1. The main interface is meant for an external HTTPS proxy.
+# The service interface, Grafana and Prometheus are reached directly, for example through an SSH tunnel; do not put
+# them behind the HTTPS proxy. Prometheus of this project reads the metrics server inside the project network.
+# Grading nodes are managed in the service cabinet. TESTSYS_GRADING_NODES lists addresses for import there, or for
+# every start with TESTSYS_GRADING_IMPORT_NODES=true. --node adds deploy/compose.grading-node.yml as the last file
+# to run a node on the same server at grading-node:8080.
 name: testsys-prod
 
 services:
@@ -15,7 +19,11 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
       TESTSYS_MAIL_PASSWORD: ${TESTSYS_MAIL_PASSWORD:?set TESTSYS_MAIL_PASSWORD}
       TESTSYS_OPERATION_SUPERVISOR_ACCESS_TOKEN: ${TESTSYS_SUPERVISOR_ACCESS_TOKEN:?set TESTSYS_SUPERVISOR_ACCESS_TOKEN}
-      TESTSYS_GRADING_NODES: ${TESTSYS_GRADING_NODES:?set TESTSYS_GRADING_NODES to grading node addresses}
+      TESTSYS_SERVICE_SECRET: ${TESTSYS_SERVICE_SECRET:?set TESTSYS_SERVICE_SECRET}
+      TESTSYS_SERVICE_GRAFANAURL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL}
+      TESTSYS_GRADING_NODES: ${TESTSYS_GRADING_NODES:-}
+      TESTSYS_GRADING_IMPORT_NODES: ${TESTSYS_GRADING_IMPORT_NODES:-false}
+      # Applies only to the main interface: the service and metrics contexts reset it to none.
       SERVER_FORWARDHEADERSSTRATEGY: native
     volumes:
       # Server copy of deploy/config/application-prod.example.yml, kept outside the Git checkout.
@@ -30,3 +38,14 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
+
+  prometheus:
+    restart: unless-stopped
+
+  grafana:
+    restart: unless-stopped
+    environment:
+      # The address of this Grafana through the SSH tunnel, also opened from the service cabinet.
+      GF_SERVER_ROOT_URL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL}
+      # Grafana applies it only when it creates its database in an empty volume; later change it in Grafana.
+      GF_SECURITY_ADMIN_PASSWORD: ${TESTSYS_GRAFANA_ADMIN_PASSWORD:?set TESTSYS_GRAFANA_ADMIN_PASSWORD}

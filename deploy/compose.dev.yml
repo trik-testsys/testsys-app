@@ -1,4 +1,5 @@
-# Development environment over deploy/compose.yml: application, PostgreSQL, Mailpit and the optional seed script.
+# Development environment over deploy/compose.yml and deploy/compose.monitoring.yml: application, PostgreSQL,
+# Prometheus, Grafana, Mailpit and the optional seed script.
 # Start it with deploy/testsys.sh, which reads deploy/env/dev.env and deploy/env/dev.local.env:
 #   sh deploy/testsys.sh dev up [--node]
 # --node adds deploy/compose.grading-node.yml as the last file to run a grading node in this project.
@@ -9,10 +10,15 @@ services:
   app:
     environment:
       SPRING_DATASOURCE_PASSWORD: testsys
+      # Fixed and not secret, like the database password: the sign-in code of the service interface in dev and e2e.
+      TESTSYS_SERVICE_SECRET: local-service-secret-for-dev-and-e2e-environments-only-not-secret
+      TESTSYS_SERVICE_GRAFANAURL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL to the Grafana address}
       TESTSYS_MAIL_HOST: mailpit
       TESTSYS_MAIL_PORT: "1025"
       # grading-node:8080 with deploy/compose.grading-node.yml, addresses of other nodes, or empty for no nodes.
       TESTSYS_GRADING_NODES: ${TESTSYS_GRADING_NODES?set TESTSYS_GRADING_NODES to grading node addresses or to an empty value}
+      # The grading node registry is stored in the database; every start adds these addresses to it as enabled.
+      TESTSYS_GRADING_IMPORT_NODES: "true"
     volumes:
       - type: bind
         source: ./config/application-dev.yml
@@ -26,6 +32,11 @@ services:
       POSTGRES_PASSWORD: testsys
     ports:
       - "127.0.0.1:${TESTSYS_DB_PORT:-5433}:5432"
+
+  grafana:
+    environment:
+      # The address of this Grafana, also opened from the service cabinet; its port is TESTSYS_GRAFANA_PORT.
+      GF_SERVER_ROOT_URL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL to the Grafana address}
 
   # Accepts all mail on the internal SMTP port 1025 without relaying it; messages are shown in the web UI.
   mailpit:

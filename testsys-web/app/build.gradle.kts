@@ -51,8 +51,10 @@ dependencies {
 configureWebFrontend()
 
 tasks.withType<Test>().configureEach {
-    systemProperty("testsys.monitoring.path", rootProject.file("deploy/monitoring").absolutePath)
-    inputs.dir(rootProject.file("deploy/monitoring"))
+    systemProperty("testsys.deploy.path", rootProject.file("deploy").absolutePath)
+    inputs.file(rootProject.file("deploy/compose.monitoring.yml"))
+    inputs.file(rootProject.file("deploy/config/prometheus.yml"))
+    inputs.dir(rootProject.file("deploy/config/grafana/dashboards"))
     // A JVM zone other than the default user zone reveals dates read in the JVM zone instead of the zone of the user.
     jvmArgs("-Duser.timezone=UTC")
 }

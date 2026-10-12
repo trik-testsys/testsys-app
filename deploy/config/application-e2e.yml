@@ -1,5 +1,7 @@
 # Application parameters of the e2e environment, mounted by deploy/compose.e2e.yml as application-environment.yml.
-# The Mailpit address is set in deploy/compose.e2e.yml, the grading node addresses in TESTSYS_GRADING_NODES.
+# The Mailpit address, the service interface code and the Grafana address are set in deploy/compose.e2e.yml,
+# the grading node addresses in TESTSYS_GRADING_NODES. The email confirmation parameters, the invite TTLs and
+# the participant limit are initial values: values saved in the service cabinet override them.
 testsys:
   operation:
     community:

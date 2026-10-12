@@ -17,12 +17,13 @@ import org.springframework.boot.servlet.autoconfigure.MultipartAutoConfiguration
 import org.springframework.boot.tomcat.autoconfigure.servlet.TomcatServletWebServerAutoConfiguration
 import org.springframework.boot.webmvc.autoconfigure.DispatcherServletAutoConfiguration
 import org.springframework.boot.webmvc.autoconfigure.WebMvcAutoConfiguration
+import org.springframework.boot.webmvc.autoconfigure.WebMvcObservationAutoConfiguration
 import org.springframework.boot.webmvc.autoconfigure.error.ErrorMvcAutoConfiguration
 import org.springframework.context.annotation.Configuration
 
 /**
- * Imports only servlet, UI and security auto-configurations; persistence belongs to the shared parent.
- * Each importing child owns its web server and application executor.
+ * Imports only servlet, UI, security and request observation auto-configurations; persistence and the metrics
+ * registry belong to the shared parent. Each importing child owns its web server and application executor.
  *
  * @since %CURRENT_VERSION%
  */
@@ -39,6 +40,7 @@ import org.springframework.context.annotation.Configuration
     TomcatServletWebServerAutoConfiguration::class,
     DispatcherServletAutoConfiguration::class,
     WebMvcAutoConfiguration::class,
+    WebMvcObservationAutoConfiguration::class,
     ErrorMvcAutoConfiguration::class,
     SecurityAutoConfiguration::class,
     ServletWebSecurityAutoConfiguration::class,

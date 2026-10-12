@@ -1,6 +1,7 @@
 package tech.testsys.infra.settings.internal
 
 import org.apache.commons.logging.LogFactory
+import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.RuntimeSettings
 import tech.testsys.infra.settings.api.SettingKey
 import tech.testsys.infra.settings.api.SettingsChangeResult
@@ -19,6 +20,7 @@ internal class SettingsCoordinator(
     private val runtime: RuntimeSettings,
     private val resolver: SettingsResolver,
     private var stored: StoredSettings,
+    private val failures: TechnicalFailures = TechnicalFailures.NONE,
 ) : SettingsService {
     private var persistence = SettingsPersistence.Known
     private val log = LogFactory.getLog(javaClass)
@@ -58,6 +60,7 @@ internal class SettingsCoordinator(
             runtime.prepare(candidate)
         } catch (error: RuntimeException) {
             log.error("Settings preparation failed", error)
+            failures.record(source = SOURCE, stage = "prepare", failure = error)
             return SettingsChangeResult.Failed
         }
         val changeId = UUID.randomUUID()
@@ -66,6 +69,8 @@ internal class SettingsCoordinator(
         } catch (error: RuntimeException) {
             release(prepared)
             log.error("Settings write failed; resolving commit outcome", error)
+            // Resolving the outcome belongs to this incident, so its own failures are not counted separately.
+            failures.record(source = SOURCE, stage = "write", failure = error)
             return recover(changeId)
         }
         if (committed == null) {
@@ -113,5 +118,9 @@ internal class SettingsCoordinator(
                 log.warn("Cannot release obsolete settings resource", error)
             }
         }
+    }
+
+    private companion object {
+        const val SOURCE = "settings"
     }
 }

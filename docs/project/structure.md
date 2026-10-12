@@ -37,12 +37,13 @@ testsys-app/
 | `testsys-domain`                     | Доменные модели, порты (`contract`), DSL билдеров. Без Spring, JPA и любых внешних зависимостей.     | Реализован        |
 | `testsys-operation`                  | Операции — реализация пользовательских фич из [features.md](../domain/features.md), по классу на Роль или группу Пользователей. | В разработке      |
 | `testsys-infra:settings` | Общий инфраструктурный API служебных настроек, снимки и протокол применения; контракт хранения реестра Проверяющих узлов. | Реализован |
+| `testsys-infra:monitoring` | Учёт технических сбоев и каталог собственных метрик TestSys на Micrometer, см. [monitoring/README.md](../../testsys-infra/monitoring/README.md). | Реализован |
 | `testsys-infra:database`             | Реализация портов хранения домена: JPA-сущности, репозитории, маппинги, адаптеры, Liquibase.         | Реализован        |
 | `testsys-infra:diagnostics`          | Синхронный анализ XML одного Полигона через порт `PolygonDiagnostics`.                           | Реализован        |
 | `testsys-infra:grpc`                 | Связь с Проверяющими узлами и балансировка проверок (реализация порта `Grader`).                    | Реализован        |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
 | `testsys-infra:mail` | Отправка писем Пользователям по SMTP (реализация порта `UserMailSender`). | Реализован |
-| `testsys-web:app` | Основное и служебное приложения Vaadin Flow в одном процессе: точка входа, конфигурация, безопасность, страницы, маршрутизация ошибок и подключение операций через прокси-сервисы, см. [app/README.md](../../testsys-web/app/README.md). | В разработке; состав страниц — в [app/README.md](../../testsys-web/app/README.md#страницы) |
+| `testsys-web:app` | Основное и служебное приложения Vaadin Flow и сервер метрик в одном процессе: точка входа, конфигурация, безопасность, страницы, маршрутизация ошибок и подключение операций через прокси-сервисы, см. [app/README.md](../../testsys-web/app/README.md). | В разработке; состав страниц — в [app/README.md](../../testsys-web/app/README.md#страницы) |
 | `testsys-web:components` | Kotlin-DSL, общая фабрика текстов и визуальная часть страниц ошибок, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
 
 Отсутствующие маршруты веб-приложение обрабатывает само: см. раздел «Отсутствующие маршруты»
@@ -63,6 +64,9 @@ testsys-app/
   `app → operation`, `app → grpc`, `app → database`, `app → diagnostics` и `app → mail`.
   Связи настроек: `settings → domain`, `database → settings`, `grpc → settings`, `diagnostics → settings`,
   `app → settings`. Общий протокол принадлежит [settings/README.md](../../testsys-infra/settings/README.md).
+  Связи метрик: `settings → monitoring`, `database → monitoring`, `grpc → monitoring`, `mail → monitoring`,
+  `app → monitoring`; сам `monitoring` зависит только от внешних библиотек Micrometer и Spring Context, см.
+  [monitoring/README.md](../../testsys-infra/monitoring/README.md).
   Остальные связи — целевая архитектура.
 - Приложение подключает конфигурации инфраструктурных модулей через `@Import` в `InfraConfiguration`;
   см. шаг «Регистрация бина» в [implement-port.md](../guides/implement-port.md#5-регистрация-бина).
@@ -130,7 +134,8 @@ testsys-app/
 
 ### Сборка веб-приложений
 
-Запуск одного процесса с основным и служебным интерфейсами (основной порт по умолчанию 8080).
+Запуск одного процесса с основным и служебным интерфейсами (основной порт по умолчанию 8080) и сервером метрик,
+описанным в разделе [«Метрики»](../../testsys-web/app/README.md#метрики) app/README.md.
 Нужны PostgreSQL, каталоги файлов и обязательные служебные параметры из разделов «Запуск и проверка»
 и «Конфигурация запуска» в [app/README.md](../../testsys-web/app/README.md#конфигурация-запуска):
 
@@ -203,6 +208,7 @@ Workflow лежат в `.github/workflows`.
 | Служебную замену Кодов-приглашений с истёкшим сроком | `refreshClassInvite` в `ManagerOperations` и `refreshCommunityInvite` в `AdministratorOperations`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
 | Служебный запрос данных для служебного кабинета | `testsys-infra:database`, пакет `api/service`, см. [database/README.md](../../testsys-infra/database/README.md#служебный-поиск-пользователей) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
+| Метрику или учёт технического сбоя | Каталог и правила учёта — [monitoring/README.md](../../testsys-infra/monitoring/README.md) |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
 | Токены, стили, бренд и иконки | `components/src/main/resources/META-INF/resources/testsys-ui/`, правила — [ui-design.md](ui-design.md) |
 | Необходимая клиентская реализация компонента | `components/src/main/resources/META-INF/frontend/testsys-ui/`, API — components/README.md |

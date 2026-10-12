@@ -1,5 +1,8 @@
 package tech.testsys.infra.grpc.api
 
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.binder.MeterBinder
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 import org.springframework.context.annotation.Bean
@@ -10,6 +13,7 @@ import org.springframework.core.env.Environment
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.infra.grpc.internal.ConfiguredGradingNodeStore
 import tech.testsys.infra.grpc.internal.GradingCoordinator
+import tech.testsys.infra.grpc.internal.GradingMeterBinder
 import tech.testsys.infra.grpc.internal.GradingNodeManager
 import tech.testsys.infra.grpc.internal.GradingNodeRegistryCoordinator
 import tech.testsys.infra.grpc.internal.GradingPersistenceService
@@ -21,6 +25,7 @@ import tech.testsys.infra.grpc.internal.LogParser
 import tech.testsys.infra.grpc.internal.MAX_GRADING_NODE_ADDRESS_LENGTH
 import tech.testsys.infra.grpc.internal.NodeClientFactory
 import tech.testsys.infra.grpc.internal.resolved
+import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.GradingNodeStore
 import tech.testsys.infra.settings.api.RuntimeSettings
 import tech.testsys.infra.settings.api.StoredGradingNode
@@ -81,6 +86,8 @@ class GrpcConfiguration {
         nodeClientFactory: NodeClientFactory,
         runtime: RuntimeSettings? = null,
         nodeStore: GradingNodeStore? = null,
+        failures: TechnicalFailures? = null,
+        metrics: MeterRegistry? = null,
     ): GradingCoordinator {
         val stored = nodeStore?.read()
         val imports = if (stored != null && settings.shouldImportNodes) startupImports(settings.nodes, stored) else emptyList()
@@ -98,6 +105,8 @@ class GrpcConfiguration {
             clock = Clock.systemUTC(),
             parser = parser,
             runtime = runtime,
+            failures = failures ?: TechnicalFailures.NONE,
+            metrics = metrics ?: CompositeMeterRegistry(),
         )
 
         try {
@@ -121,14 +130,19 @@ class GrpcConfiguration {
         coordinator: GradingCoordinator,
         settings: GradingSettings,
         nodeStore: GradingNodeStore? = null,
+        failures: TechnicalFailures? = null,
     ): GradingNodeRegistry = GradingNodeRegistryCoordinator(
         coordinator = coordinator,
         store = nodeStore ?: ConfiguredGradingNodeStore(settings.nodes),
         configured = settings.nodes,
+        failures = failures ?: TechnicalFailures.NONE,
     )
 
     @Bean
     internal fun gradingQueueMonitor(coordinator: GradingCoordinator): GradingQueueMonitor = GradingQueueMonitor(coordinator::queue)
+
+    @Bean
+    internal fun gradingMeterBinder(queue: GradingQueueMonitor, nodes: GradingNodeRegistry): MeterBinder = GradingMeterBinder(queue, nodes)
 
     @Bean
     internal fun logParser(): LogParser = JsonLogParser()

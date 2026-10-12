@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.web.servlet.ServletRegistrationBean
 import org.springframework.context.annotation.Bean
+import tech.testsys.web.service.ServiceMetricsTestConfiguration
 import tech.testsys.web.service.ServiceTestConfiguration
 import tech.testsys.web.service.ServiceWebConfiguration
 import java.net.URI
@@ -18,7 +19,12 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
 @SpringBootTest(
-    classes = [ServiceWebConfiguration::class, ServiceTestConfiguration::class, ProxyProbeConfiguration::class],
+    classes = [
+        ServiceWebConfiguration::class,
+        ServiceTestConfiguration::class,
+        ServiceMetricsTestConfiguration::class,
+        ProxyProbeConfiguration::class,
+    ],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
         "vaadin.productionMode=true",
@@ -35,7 +41,12 @@ class ServiceProxyHttpTests : ProxyHttpFixture() {
 }
 
 @SpringBootTest(
-    classes = [ServiceWebConfiguration::class, ServiceTestConfiguration::class, ProxyProbeConfiguration::class],
+    classes = [
+        ServiceWebConfiguration::class,
+        ServiceTestConfiguration::class,
+        ServiceMetricsTestConfiguration::class,
+        ProxyProbeConfiguration::class,
+    ],
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = [
         "vaadin.productionMode=true",

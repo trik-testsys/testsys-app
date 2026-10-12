@@ -14,6 +14,7 @@ import tech.testsys.infra.grpc.api.GradingNodeImportReport
 import tech.testsys.infra.grpc.api.GradingNodeRegistry
 import tech.testsys.infra.grpc.api.GradingNodeRegistryOverview
 import tech.testsys.infra.grpc.api.GradingNodeRejection
+import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.GradingNodeStore
 import tech.testsys.infra.settings.api.SettingsPersistence
 import tech.testsys.infra.settings.api.StoredGradingNode
@@ -24,15 +25,16 @@ import java.util.concurrent.atomic.AtomicReference
 internal const val MAX_GRADING_NODE_ADDRESS_LENGTH = 255
 
 /**
- * Applies registry changes to the store and the running coordinator. A reversible runtime step goes first:
- * start observation or participation before writing, stop participation or observation only after a confirmed write.
- * A write exception is resolved by reading back; an unreadable or unexpected record locks changes until restart.
+ * Applies registry changes to the store and the running coordinator, starting observation or participation before a write
+ * and stopping them only after a confirmed write. [failures] counts one technical failure per failed step, the read-back
+ * that resolves a write exception included; an unreadable or unexpected read-back locks changes until restart.
  */
 @InternalGrpcApi
 internal class GradingNodeRegistryCoordinator(
     private val coordinator: GradingCoordinator,
     private val store: GradingNodeStore,
     configured: List<GradingNodeAddress>,
+    private val failures: TechnicalFailures = TechnicalFailures.NONE,
 ) : GradingNodeRegistry {
     private val configured = configured.distinct()
     private val changes = Any()
@@ -62,6 +64,7 @@ internal class GradingNodeRegistryCoordinator(
             if (isActive) coordinator.addNode(node.address) else coordinator.observe(node.address)
         } catch (error: RuntimeException) {
             log.error("Cannot start checking node ${node.address.target}", error)
+            failures.record(source = SOURCE, stage = "start", failure = error)
             coordinator.forget(node.address)
             return GradingNodeChangeResult.Failed
         }
@@ -70,10 +73,12 @@ internal class GradingNodeRegistryCoordinator(
             store.add(node)
         } catch (error: RuntimeException) {
             log.error("Checking node write failed; resolving commit outcome", error)
+            failures.record(source = SOURCE, stage = "write", failure = error)
             return resolve(node.address, expected = node, previous = null) { coordinator.forget(node.address) }
         }
         if (!isStored) {
             log.error("Checking node ${node.address.target} has a different stored record")
+            failures.record(source = SOURCE, stage = "record_mismatch")
             coordinator.forget(node.address)
             return GradingNodeChangeResult.Failed
         }
@@ -101,6 +106,7 @@ internal class GradingNodeRegistryCoordinator(
             store.remove(address)
         } catch (error: RuntimeException) {
             log.error("Checking node removal failed; resolving commit outcome", error)
+            failures.record(source = SOURCE, stage = "write", failure = error)
             return resolve(address, expected = null, previous = StoredGradingNode(address, wasActive)) {}
         }
         coordinator.forget(address)
@@ -141,6 +147,7 @@ internal class GradingNodeRegistryCoordinator(
             coordinator.addNode(address)
         } catch (error: RuntimeException) {
             log.error("Cannot start participation of checking node ${address.target}", error)
+            failures.record(source = SOURCE, stage = "start", failure = error)
             coordinator.removeNode(address)
             return GradingNodeChangeResult.Failed
         }
@@ -149,6 +156,7 @@ internal class GradingNodeRegistryCoordinator(
             store.setActive(address, isActive = true)
         } catch (error: RuntimeException) {
             log.error("Checking node write failed; resolving commit outcome", error)
+            failures.record(source = SOURCE, stage = "write", failure = error)
             return resolve(
                 address,
                 expected = StoredGradingNode(address, isActive = true),
@@ -157,6 +165,7 @@ internal class GradingNodeRegistryCoordinator(
         }
         if (!isStored) {
             log.error("Checking node ${address.target} has no stored record")
+            failures.record(source = SOURCE, stage = "record_mismatch")
             coordinator.removeNode(address)
             return GradingNodeChangeResult.Failed
         }
@@ -169,6 +178,7 @@ internal class GradingNodeRegistryCoordinator(
             store.setActive(address, isActive = false)
         } catch (error: RuntimeException) {
             log.error("Checking node write failed; resolving commit outcome", error)
+            failures.record(source = SOURCE, stage = "write", failure = error)
             return resolve(
                 address,
                 expected = StoredGradingNode(address, isActive = false),
@@ -177,6 +187,7 @@ internal class GradingNodeRegistryCoordinator(
         }
         if (!isStored) {
             log.error("Checking node ${address.target} has no stored record")
+            failures.record(source = SOURCE, stage = "record_mismatch")
             return GradingNodeChangeResult.Failed
         }
         coordinator.removeNode(address)
@@ -247,6 +258,8 @@ internal class GradingNodeRegistryCoordinator(
     private data class KnownRegistry(val nodes: Map<GradingNodeAddress, Boolean>, val persistence: SettingsPersistence)
 
     private companion object {
+        const val SOURCE = "nodes"
+
         /** Restores the known registry from the coordinator started with it: observed nodes, registered ones active. */
         fun startedNodes(coordinator: GradingCoordinator): Map<GradingNodeAddress, Boolean> {
             val participants = coordinator.statuses().keys

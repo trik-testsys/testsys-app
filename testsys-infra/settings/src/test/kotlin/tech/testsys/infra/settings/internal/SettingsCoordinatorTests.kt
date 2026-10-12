@@ -2,14 +2,19 @@
 
 package tech.testsys.infra.settings.internal
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.EnumSource
+import tech.testsys.infra.monitoring.api.TechnicalFailures
+import tech.testsys.infra.monitoring.api.TestSysMetrics
 import tech.testsys.infra.settings.api.SettingKey
 import tech.testsys.infra.settings.api.SettingsChangeResult
 import tech.testsys.infra.settings.api.SettingsPersistence
@@ -23,7 +28,14 @@ class SettingsCoordinatorTests {
     private val environment = settingsEnvironment()
     private val store = MemorySettingsStore()
     private val runtime = SettingsInitializer.initialize(store.read(), environment)
-    private val service = SettingsCoordinator(store, runtime, SettingsResolver(environment), store.read())
+    private val registry = SimpleMeterRegistry()
+    private val service = SettingsCoordinator(
+        store = store,
+        runtime = runtime,
+        resolver = SettingsResolver(environment),
+        stored = store.read(),
+        failures = TechnicalFailures(registry),
+    )
 
     @ParameterizedTest
     @EnumSource(SettingKey::class, names = ["ConfirmationCodeLifetime", "CommunityInviteTtl", "ClassInviteTtl", "CleanupMinimumAge"])
@@ -227,5 +239,58 @@ class SettingsCoordinatorTests {
 
         assertEquals(SettingsChangeResult.Failed, service.change(0, mapOf(SettingKey.MaxParticipants to "3")))
         assertEquals(0, store.stored.revision)
+    }
+
+    @Nested
+    inner class TechnicalFailureTests {
+        @Test
+        fun `should count a preparation failure`() {
+            val original = runtime.snapshot()
+            runtime.register { candidate ->
+                check(candidate === original) { "Preparation failed" }
+                AutoCloseable {}
+            }
+
+            service.change(0, mapOf(SettingKey.PollInterval to "PT1S"))
+
+            assertEquals(1.0, failures("prepare"))
+            assertEquals(0.0, failures("write"))
+        }
+
+        @Test
+        fun `should count a write failure once when resolving its outcome also fails`() {
+            store.afterWrite = { error("Commit response lost") }
+            store.beforeRead = { error("Database unavailable") }
+
+            service.change(0, mapOf(SettingKey.MaxParticipants to "3"))
+
+            assertEquals(1.0, failures("write"))
+            assertEquals(1.0, registry.find(TestSysMetrics.TECHNICAL_FAILURES).counters().sumOf { counter -> counter.count() })
+        }
+
+        @Test
+        fun `should not count a change refused while the saved state is uncertain`() {
+            store.afterWrite = { error("Commit response lost") }
+            store.beforeRead = { error("Database unavailable") }
+            service.change(0, mapOf(SettingKey.MaxParticipants to "3"))
+
+            service.change(0, mapOf(SettingKey.MaxParticipants to "4"))
+
+            assertEquals(1.0, failures("write"))
+        }
+
+        @Test
+        fun `should not count a stale or invalid form`() {
+            service.change(0, mapOf(SettingKey.MaxParticipants to "3"))
+
+            service.change(0, mapOf(SettingKey.MaxParticipants to "4"))
+            service.change(1, mapOf(SettingKey.TotalTimeout to "wrong"))
+
+            assertNull(registry.find(TestSysMetrics.TECHNICAL_FAILURES).counter())
+        }
+
+        private fun failures(stage: String): Double = registry.find(TestSysMetrics.TECHNICAL_FAILURES)
+            .tags(TestSysMetrics.SOURCE, "settings", TestSysMetrics.STAGE, stage)
+            .counters().sumOf { counter -> counter.count() }
     }
 }

@@ -76,10 +76,9 @@ private val GRANTED_ROLE_LABELS: Map<CommunityRole, String> = mapOf(
 )
 
 /**
- * User available to an Administrator (testsys.web.page.admin.user): the common data of the user, the roles in the
- * communities of the administrator with granting and removal, the sections of its roles and deleting an observer. The
- * sections of each role of a user with non-fixed roles are on a tab of the page with its own address; without a section
- * the page opens the common data. Observers have their own address and show their section below the common data.
+ * User available to an Administrator (testsys.web.page.admin.user): common data, community roles with granting and removal,
+ * role sections and observer deletion. Each role of a user with non-fixed roles has a tab with its own address; an observer
+ * has its own address with its section below the common data.
  *
  * @since %CURRENT_VERSION%
  */

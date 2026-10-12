@@ -6,37 +6,42 @@
 в [structure.md](../../docs/project/structure.md), операции — в [testsys-operation/README.md](../../testsys-operation/README.md).
 
 Точка входа в `TestSysApplication.kt` запускает [TestSysRuntime](src/main/kotlin/tech/testsys/bootstrap/TestSysRuntime.kt).
-Один `bootJar` содержит общий невебовый Spring-контекст и два соседних servlet-контекста с отдельными Tomcat.
-Родитель создаёт datasource, JPA, Liquibase, операции, грейдер и диспетчер валидации один раз.
-Основной интерфейс и служебный интерфейс получают эти зависимости из родителя.
+Один `bootJar` содержит общий невебовый Spring-контекст и три соседних servlet-контекста с отдельными Tomcat:
+основной интерфейс, служебный интерфейс и сервер метрик.
+Родитель создаёт datasource, JPA, Liquibase, операции, грейдер, диспетчер валидации и реестр метрик один раз.
+Дочерние контексты получают эти зависимости из родителя.
 
-`SharedInfrastructureConfiguration` явно подключает инфраструктурные автоконфигурации;
-`WebAutoConfiguration` подключает servlet, Vaadin и security отдельно в каждом дочернем контексте.
-Обе дочерние конфигурации помечены `@SpringBootApplication` для обнаружения приложений инструментами разработки.
+`SharedInfrastructureConfiguration` явно подключает инфраструктурные автоконфигурации и автоконфигурации метрик;
+`WebAutoConfiguration` подключает servlet, Vaadin, security и наблюдение HTTP-запросов отдельно в основном
+и служебном контекстах. Сервер метрик описан в разделе [Метрики](#метрики).
+Конфигурации основного и служебного интерфейсов помечены `@SpringBootApplication` для обнаружения приложений
+инструментами разработки.
 Стандартный поиск автоконфигураций отключён через `spring.boot.enableautoconfiguration=false`; явные импорты продолжают работать.
 Основной дочерний контекст включает транзакционные прокси сервисов через `@EnableTransactionManagement`.
 `MainWebConfiguration` создаёт локальный retry-advisor с политикой родителя:
 инфраструктурный auto-proxy creator Spring рассматривает только локальные определения advisor.
 Transaction manager остаётся общим.
-Каждый дочерний контекст создаёт свой `applicationTaskExecutor` с декоратором своего security context.
+Основной и служебный контексты создают свой `applicationTaskExecutor` с декоратором своего security context.
 
-Пакет `tech.testsys.bootstrap` владеет запуском и окружениями. `tech.testsys.web.service` содержит служебные страницы,
-security и proxy-конфигурацию. Общий `AppShell` находится в `tech.testsys.web.shell`: каждый Vaadin-контекст создаёт
+Пакет `tech.testsys.bootstrap` владеет запуском, окружениями и сервером метрик. `tech.testsys.web.service` содержит
+служебные страницы, security и proxy-конфигурацию. `tech.testsys.web.monitoring` содержит общую для обоих интерфейсов
+разметку HTTP-запросов, учёт сбоев страниц и настройку реестра метрик родителя; ни один интерфейс этот пакет
+не сканирует. Общий `AppShell` находится в `tech.testsys.web.shell`: каждый Vaadin-контекст создаёт
 свою оболочку и свой реестр маршрутов. `@EnableVaadin` ограничивает сканирование пакетами своего интерфейса
 и оболочки. Основной интерфейс остаётся в `tech.testsys.web.app`; таблица ниже описывает его подпакеты.
 Зависимости модулей перечислены в structure.md.
 
 | Пакет | Что лежит |
 |-------|-----------|
-| `config` | Spring-конфигурация: тексты, локаль, `InfraConfiguration`, `OperationsConfiguration`, `AfterTransactionExecutor`, `AfterCommitGrader` |
+| `config` | Spring-конфигурация: тексты, локаль, `InfraConfiguration`, `OperationsConfiguration`, `MainWebConfiguration` с метриками основного интерфейса, `AfterTransactionExecutor`, `AfterCommitGrader` |
 | `security` | `SecurityConfiguration`, `CabinetPrincipal` и программный вход `CabinetSignIn`, см. раздел [Безопасность](#безопасность) |
 | `service` | `CurrentUser`, общие VO и `Page.map` прокси-сервисов |
 | `service/<actor>` | Прокси-сервис `<Actor>Service` и его VO, см. раздел [Прокси-сервисы](#прокси-сервисы) |
 | `view` | Страницы и шапки `CabinetHeaders`, см. раздел [Страницы](#страницы) |
-| `error` | Обработчики отсутствующих маршрутов, отказа в доступе и ошибок операций |
+| `error` | Обработчики отсутствующих маршрутов, отказа в доступе, ошибок операций и непредвиденных исключений навигации |
 
-`InfraConfiguration` подключает конфигурации инфраструктурных модулей `database`, `grpc`, `diagnostics`, `mail` и `settings`
-через `@Import`.
+`InfraConfiguration` подключает конфигурации инфраструктурных модулей `database`, `grpc`, `diagnostics`, `mail`,
+`settings` и `monitoring` через `@Import`.
 
 Общие тексты создаются фабрикой `buildUiTexts()` из components; контракт — в
 [components/README.md](../components/README.md#тексты). Обработчик `NotFoundView` использует общий `NotFoundPage`;
@@ -230,7 +235,9 @@ security и proxy-конфигурацию. Общий `AppShell` находит
 сессии и показывает тост `FeedbackKind.Error` с заголовком из группы `failures`. Свой заголовок есть
 у `EntityNotExistsError`, `AccessDeniedError`, `MissedRequiredRoleError` и `ResourceAccessError`, общий —
 у остальных ошибок. Обработчик ищет `OperationException` и среди причин исключения. Исключения других типов
-он передаёт `DefaultErrorHandler` Vaadin без тоста.
+он учитывает как технический сбой и передаёт `DefaultErrorHandler` Vaadin без тоста. Непредвиденное исключение
+при навигации показывает штатный экран Vaadin через `InternalErrorView` — наследника `InternalServerError`, который
+сначала учитывает сбой. Правила учёта — в разделе [Метрики](#метрики).
 
 Тексты экранов и тостов входят в `UiTexts`, см. [components/README.md](../components/README.md#тексты).
 
@@ -321,11 +328,12 @@ Vaadin использует штатный heartbeat и штатное закр�
 конфигурации. Не добавляйте его в командную строку, исходники или журналы. Страницы не передают код через URL,
 а после обработки попытки очищают поле. Объект конфигурации хранит дайджест и не выводит секрет через `toString`.
 
-У трёх контекстов отдельные изменяемые `Environment`. Spring Boot загружает файлы, переменные окружения и аргументы
-командной строки обычным порядком. `server.*` задаёт основной HTTP-сервер. В служебном дочернем контексте
+У каждого из четырёх контекстов отдельный изменяемый `Environment`. Spring Boot загружает файлы, переменные окружения
+и аргументы командной строки обычным порядком. `server.*` задаёт основной HTTP-сервер. В служебном дочернем контексте
 [WebContextEnvironment](src/main/kotlin/tech/testsys/bootstrap/WebContextEnvironment.kt) после загрузки свойств задаёт
 служебные адрес, порт, корневой context path и параметры cookie. Настройки основного HTTP-сервера их не заменяют.
-После загрузки конфигурации `TestSysRuntime` закрепляет в обоих дочерних контекстах только внутренний инвариант
+Так же `WebContextEnvironment` задаёт свойства сервера метрик, см. раздел [Метрики](#метрики).
+После загрузки конфигурации `TestSysRuntime` закрепляет во всех дочерних контекстах только внутренний инвариант
 `spring.boot.enableautoconfiguration=false`, в том числе при замене конфигурационного файла через `spring.config.location`.
 
 TLS завершается на reverse proxy. Внутренние порты закрывают от внешнего доступа средствами развёртывания;
@@ -335,7 +343,7 @@ proxy должен передавать `X-Forwarded-For`, `X-Forwarded-Proto`, 
 недоверенного адреса. Proxy должен заменять входящие forwarded-заголовки клиента.
 
 При ошибке запуска любого дочернего контекста `TestSysRuntime` закрывает уже созданные контексты.
-Единственный shutdown hook закрывает служебный, затем основной интерфейс и последним общий родитель.
+Единственный shutdown hook закрывает сервер метрик, служебный, затем основной интерфейс и последним общий родитель.
 
 ### Проверки двух интерфейсов
 
@@ -346,8 +354,10 @@ proxy должен передавать `X-Forwarded-For`, `X-Forwarded-Proto`, 
 интерфейса сохраняют свои fixtures и проверяют прежние страницы.
 `WebContextsTests` запускает настоящую иерархию на случайных портах и проверяет общую инфраструктуру,
 в том числе выполнение служебного поиска Пользователей в PostgreSQL, разные реестры маршрутов, исполнители
-и cookies. `TestSysRuntimeTests` проверяет отказ до запуска инфраструктуры и освобождение основного порта
-при ошибке второго HTTP-сервера. HTTP-тесты proxy проверяют поддельные заголовки и цепочку доверенных адресов.
+и cookies, а после закрытия — освобождение портов трёх серверов, включая сервер метрик. `TestSysRuntimeTests` проверяет отказ до запуска инфраструктуры и освобождение основного порта
+при ошибке второго HTTP-сервера, а также закрытие обоих интерфейсов и родителя при занятом порте метрик.
+HTTP-тесты proxy проверяют поддельные заголовки и цепочку доверенных адресов. Проверки метрик перечислены
+в разделе [Метрики](#метрики).
 
 Оба интерфейса используют frontend одного артефакта и ресурсы jar компонентов.
 HTTP-тестовая оболочка не проверяет клиентский код: для его проверки запускают собранный `bootJar`
@@ -418,3 +428,121 @@ database/README.md. Требования к поиску и карточке —
 [«Скрытые значения»](../components/README.md#скрытые-значения) components/README.md. «Копировать» записывает
 в буфер значение этого поля и не читает Пользователя заново. Код-доступа не передаётся в адресе и не записывается
 страницами в журнал.
+
+## Метрики
+
+Требования к метрикам — в разделе `testsys.dev.metric` в [features.md](../../docs/domain/features.md#testsysdevmetricexport-implemented).
+Собственные метрики TestSys, их метки и правила учёта технических сбоев описаны
+в [monitoring/README.md](../../testsys-infra/monitoring/README.md). Этот раздел описывает реестр, HTTP-метрики, учёт
+в интерфейсах и сервер экспорта.
+
+### Реестр
+
+`SharedInfrastructureConfiguration` подключает в родителе `MetricsAutoConfiguration`,
+`CompositeMeterRegistryAutoConfiguration`, `PrometheusMetricsExportAutoConfiguration` и `ObservationAutoConfiguration`.
+Реестр Prometheus и `ObservationRegistry` создаются один раз, дочерние контексты используют их из родителя.
+[MetricsConfiguration](src/main/kotlin/tech/testsys/web/monitoring/MetricsConfiguration.kt) настраивает реестр:
+
+- `http.server.requests` публикует корзины 10, 25, 50, 100, 250 и 500 мс, 1, 2,5, 5, 10 и 30 с; клиентские
+  перцентили не вычисляются, 95-й перцентиль строится по корзинам;
+- после 100 разных значений `uri` новые ряды `http.server.requests` отбрасываются;
+- long task timer наблюдений не создаются;
+- наблюдения `spring.security.*` отключены, запрос наблюдается один раз на уровне веба.
+
+Метрики JVM, Tomcat и HikariCP не подключены.
+
+### HTTP-запросы
+
+`WebAutoConfiguration` подключает `WebMvcObservationAutoConfiguration` в основном и служебном контекстах. Фильтр
+наблюдения охватывает все запросы контекста, включая фильтры безопасности и сервлет Vaadin. Метрика
+`http.server.requests` получает метки `method`, `status`, `outcome` (группа кода), `exception` (простое имя класса
+исключения, вышедшего в контейнер, или `none`), `uri` и `interface`. Конвенция
+[WebRequestObservationConvention](src/main/kotlin/tech/testsys/web/monitoring/WebRequestObservationConvention.kt)
+добавляет `interface` — `main` из `MainWebConfiguration` или `service` из `ServiceMetricsConfiguration` — и заменяет
+`uri`:
+
+| Запрос | `uri` |
+|--------|-------|
+| Путь `/VAADIN/push` и пути под ним | `/VAADIN/push` |
+| Параметр `v-r` в строке запроса: `uidl`, `heartbeat`, `init`, `push` | `/?v-r=<вид>` |
+| Другое значение `v-r` | `/?v-r=other` |
+| `/VAADIN/dynamic/**` — скачивание файлов | `/VAADIN/dynamic/**` |
+| Остальные пути `/VAADIN/**` | `/VAADIN/**` |
+| `/testsys-ui/**` — ресурсы компонентов | `/testsys-ui/**` |
+| Путь страницы своего интерфейса | Шаблон маршрута без шаблонов значений: `/developer/tasks/:taskId`, `/admin/users/:userId/:section?` |
+| Прочее с кодом 404 | `NOT_FOUND` |
+| Прочее с кодом 3xx | `REDIRECTION` |
+| Прочее | `OTHER` |
+
+Шаблоны конвенция берёт из реестра маршрутов Vaadin своего servlet-контекста вместе с алиасами. Значение параметра
+в пути должно подходить под шаблон значения из маршрута. Если путь подходит к нескольким маршрутам, выбирается
+маршрут с большим числом литеральных сегментов. Строку запроса конвенция читает только для `v-r` и не разбирает тело
+запроса. Первый запрос страницы учитывается с её шаблоном и кодом ответа, который Vaadin определяет до отправки HTML
+благодаря `vaadin.eagerServerLoad`. Переходы без перезагрузки и действия на странице идут запросами `/?v-r=uidl`
+с кодом 200.
+
+### Ошибки операций и технические сбои
+
+`MainWebConfiguration` регистрирует инфраструктурный advisor на `@Service`-классах пакета `service` с порядком
+`HIGHEST_PRECEDENCE`, снаружи advisor повтора транзакций. Его `OperationMetricsInterceptor` учитывает только самый
+внешний вызов прокси-сервиса и только после всех повторов. `OperationException` увеличивает
+`testsys.operation.errors` с меткой `operation` вида `<Сервис>.<метод>`; суффикс Kotlin-имени метода с value-классами
+отбрасывается. Любое другое исключение учитывается как технический сбой `main`/`service`. Исключение в обоих случаях
+пробрасывается без изменений; успешные вызовы не считаются. Если страница сама обрабатывает `OperationException`,
+отказ всё равно учтён один раз на границе сервиса.
+
+[WebFailures](src/main/kotlin/tech/testsys/web/monitoring/WebFailures.kt) учитывает сбои страниц интерфейса до показа
+уведомления:
+
+| Где | Этап |
+|-----|------|
+| `OperationErrorHandler` основного и `ServiceErrorHandler` служебного интерфейса: обработчики событий и задачи `UI.access` | `event` |
+| `InternalErrorView` основного и `ServiceInternalErrorView` служебного интерфейса: открытие страницы | `navigation` |
+
+`WebFailures` не учитывает исключение, в цепочке причин которого есть `OperationException`, и обрыв соединения клиентом
+из списка `DefaultErrorHandler.SOCKET_EXCEPTIONS`. Исключение, уже учтённое на границе сервиса, обработчик повторно
+не считает. Не учитываются исключения, которые компоненты перехватывают сами: при фоновой загрузке блока страницы
+и в производителях файлов для скачивания, если исключение не прошло через прокси-сервис. Исключение, вышедшее
+в servlet-контейнер вне Vaadin, видно только как HTTP-ответ 5xx с меткой `exception`.
+
+`OperationsConfiguration` передаёт диспетчеру валидации обработчик, который учитывает технический сбой
+`validation`/`processing`.
+
+### Сервер метрик
+
+Третий дочерний контекст [MetricsWebConfiguration](src/main/kotlin/tech/testsys/bootstrap/MetricsWebConfiguration.kt)
+запускает Tomcat со Spring MVC и Actuator без Vaadin, Spring Security и сессий. Он отдаёт только
+`GET /actuator/prometheus` в текстовом формате Prometheus. Индекс `/actuator`, статические ресурсы и отдельный
+management-сервер выключены; `management.server.port` в этом контексте сбрасывается. Не задавайте
+`management.server.address` и `management.server.ssl.enabled=true`: с ними сервер метрик не запустится.
+Запросы к серверу метрик не наблюдаются. Основной и служебный интерфейсы Actuator не подключают.
+
+[MetricsWebSettings](src/main/kotlin/tech/testsys/bootstrap/MetricsWebSettings.kt) проверяется до создания
+инфраструктуры:
+
+| Свойство | Назначение |
+|----------|------------|
+| `testsys.metrics.address` | Необязательный адрес сервера метрик; по умолчанию `0.0.0.0` — все интерфейсы |
+| `testsys.metrics.port` | Обязательный порт сервера метрик: `8082` в `application.yml`, `0` в тестах |
+
+Приложение не ограничивает доступ к метрикам. Изоляцию порта метрик от внешнего доступа обеспечивает развёртывание,
+например внутренняя сеть Docker, из которой Prometheus читает метрики. Если сервер метрик не запустился, например
+порт занят, `TestSysRuntime` закрывает оба интерфейса и родителя, и процесс не запускается.
+
+### Проверки метрик
+
+- `MetricsHttpTests` запускает настоящую иерархию и по HTTP проверяет метки `uri` и `interface` страниц, служебных
+  запросов Vaadin, ресурсов и отсутствующих адресов, корзины длительности запроса, отсутствие значений параметров
+  в выдаче, чтение метрик без cookie и недоступность `/actuator/prometheus` на основном и служебном портах.
+- `MetricsConfigurationTests` проверяет фильтры реестра: корзины длительности, предел значений `uri`, запрет long task
+  timer и пропуск наблюдений Spring Security.
+- `WebRequestObservationConventionTests` и `VaadinRouteTemplatesTests` проверяют нормализацию путей.
+- `OperationMetricsInterceptorTests`, `OperationErrorHandlerTests`, `InternalErrorViewTests`, `ServiceErrorHandlerTests`
+  и `ServiceInternalErrorViewTests` проверяют учёт ошибок операций и сбоев, в том числе однократный учёт исключения,
+  которое прошло границу сервиса и дошло до обработчика.
+- `OperationsConfigurationTests` проверяет учёт сбоя обработки запроса валидации с источником `validation`
+  и этапом `processing`.
+- `MetricsPrivacyTests` основного и служебного интерфейсов проверяют, что Код-доступа и код служебного входа
+  не попадают в выдачу Prometheus.
+
+Служебным тестам без родителя реестр и `TechnicalFailures` подставляет `ServiceMetricsTestConfiguration`.

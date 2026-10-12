@@ -6,22 +6,25 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.core.env.MapPropertySource
+import org.springframework.web.context.support.StandardServletEnvironment
 import tech.testsys.web.app.TestSysApplication
 import tech.testsys.web.service.ServiceWebConfiguration
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Owns one non-web infrastructure parent and two servlet children; closing stops children before their shared resources.
+ * Owns one non-web infrastructure parent and three servlet children; closing stops children before their shared resources.
  *
  * @property infrastructure the shared non-web parent.
  * @property mainWeb the main user interface.
  * @property serviceWeb the isolated service interface.
+ * @property metricsWeb the metrics server read by Prometheus.
  * @since %CURRENT_VERSION%
  */
 class TestSysRuntime private constructor(
     val infrastructure: ConfigurableApplicationContext,
     val mainWeb: ConfigurableApplicationContext,
     val serviceWeb: ConfigurableApplicationContext,
+    val metricsWeb: ConfigurableApplicationContext,
 ) : AutoCloseable {
     private val closed = AtomicBoolean()
 
@@ -36,15 +39,7 @@ class TestSysRuntime private constructor(
 
     override fun close() {
         if (closed.compareAndSet(false, true)) {
-            try {
-                serviceWeb.close()
-            } finally {
-                try {
-                    mainWeb.close()
-                } finally {
-                    infrastructure.close()
-                }
-            }
+            closeInOrder(listOf(metricsWeb, serviceWeb, mainWeb, infrastructure))
         }
     }
 
@@ -65,22 +60,34 @@ class TestSysRuntime private constructor(
             parentApplication.addInitializers(
                 ApplicationContextInitializer<ConfigurableApplicationContext> { context ->
                     context.beanFactory.registerSingleton("serviceWebSettings", ServiceWebSettings.from(context.environment))
+                    context.beanFactory.registerSingleton("metricsWebSettings", MetricsWebSettings.from(context.environment))
                 },
             )
             val parent = parentApplication.run(*args)
+            val children = mutableListOf<ConfigurableApplicationContext>()
             var isStarted = false
             try {
-                val main = child(parent, TestSysApplication::class.java, args, service = false)
-                try {
-                    val service = child(parent, ServiceWebConfiguration::class.java, args, service = true)
-                    val runtime = TestSysRuntime(infrastructure = parent, mainWeb = main, serviceWeb = service)
-                    isStarted = true
-                    return runtime
-                } finally {
-                    if (!isStarted) main.close()
-                }
+                children.add(child(parent, TestSysApplication::class.java, args))
+                children.add(
+                    child(parent, ServiceWebConfiguration::class.java, args) { environment ->
+                        WebContextEnvironment.configureService(environment, parent.getBean(ServiceWebSettings::class.java))
+                    },
+                )
+                children.add(
+                    child(parent, MetricsWebConfiguration::class.java, args) { environment ->
+                        WebContextEnvironment.configureMetrics(environment, parent.getBean(MetricsWebSettings::class.java))
+                    },
+                )
+                val runtime = TestSysRuntime(
+                    infrastructure = parent,
+                    mainWeb = children[0],
+                    serviceWeb = children[1],
+                    metricsWeb = children[2],
+                )
+                isStarted = true
+                return runtime
             } finally {
-                if (!isStarted) parent.close()
+                if (!isStarted) closeInOrder(children.asReversed() + parent)
             }
         }
 
@@ -88,7 +95,7 @@ class TestSysRuntime private constructor(
             parent: ConfigurableApplicationContext,
             source: Class<*>,
             args: Array<String>,
-            service: Boolean,
+            configure: (StandardServletEnvironment) -> Unit = {},
         ): ConfigurableApplicationContext {
             val application = application(WebApplicationType.SERVLET, source)
             val environment = WebContextEnvironment.create()
@@ -102,9 +109,7 @@ class TestSysRuntime private constructor(
                             mapOf(EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY to false),
                         ),
                     )
-                    if (service) {
-                        WebContextEnvironment.configureService(environment, parent.getBean(ServiceWebSettings::class.java))
-                    }
+                    configure(environment)
                 },
             )
             return application.run(*args)
@@ -113,6 +118,17 @@ class TestSysRuntime private constructor(
         private fun application(type: WebApplicationType, vararg sources: Class<*>): SpringApplication = SpringApplication(*sources).apply {
             setWebApplicationType(type)
             setRegisterShutdownHook(false)
+        }
+
+        /** Closes [contexts] in the given order; a failing close still lets the following contexts close. */
+        private fun closeInOrder(contexts: List<ConfigurableApplicationContext>) {
+            if (contexts.isEmpty()) return
+
+            try {
+                contexts.first().close()
+            } finally {
+                closeInOrder(contexts.drop(1))
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 package tech.testsys.infra.mail.api
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -22,6 +23,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import tech.testsys.infra.localization.bundle.SupportedRegion
 import tech.testsys.infra.mail.internal.InternalMailApi
 import tech.testsys.infra.mail.internal.MailSettings
+import tech.testsys.infra.monitoring.api.TechnicalFailures
+import tech.testsys.infra.monitoring.api.TestSysMetrics
 import java.time.ZoneId
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -31,9 +34,11 @@ import kotlin.test.assertFailsWith
 class SmtpUserMailSenderTests {
 
     private val mailSender = mockk<JavaMailSender>()
+    private val registry = SimpleMeterRegistry()
     private val sender = SmtpUserMailSender(
         mailSender = mailSender,
         settings = MailSettings(from = "noreply@testsys.tech", region = SupportedRegion.RU, timeZone = ZoneId.of("Europe/Moscow")),
+        failures = TechnicalFailures(registry),
     )
     private val message = slot<SimpleMailMessage>()
 
@@ -252,6 +257,32 @@ class SmtpUserMailSenderTests {
 
             assertDoesNotThrow { transactionManager.commit(transaction) }
         }
+
+        @Test
+        fun `should count a mail failure after the commit as a technical failure`() {
+            every { mailSender.send(any<SimpleMailMessage>()) } throws MailSendException("smtp is down")
+            val transaction = transactionManager.getTransaction(DefaultTransactionDefinition())
+            sender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "012345")
+
+            transactionManager.commit(transaction)
+
+            assertEquals(1.0, afterCommitFailures())
+        }
+
+        @Test
+        fun `should not count a mail failure that reaches the caller at once`() {
+            every { mailSender.send(any<SimpleMailMessage>()) } throws MailSendException("smtp is down")
+
+            assertFailsWith<MailSendException> {
+                sender.sendRegistrationConfirmationCode(email = "user@example.com", confirmationCode = "012345")
+            }
+
+            assertEquals(0.0, afterCommitFailures())
+        }
+
+        private fun afterCommitFailures(): Double = registry.find(TestSysMetrics.TECHNICAL_FAILURES)
+            .tags(TestSysMetrics.SOURCE, "mail", TestSysMetrics.STAGE, "after_commit", TestSysMetrics.EXCEPTION, "MailSendException")
+            .counter()?.count() ?: 0.0
     }
 
     /**

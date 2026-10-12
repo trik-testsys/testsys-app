@@ -4,7 +4,8 @@ import org.springframework.core.env.MapPropertySource
 import org.springframework.web.context.support.StandardServletEnvironment
 
 /**
- * Creates separate mutable environments for web children, leaving configuration-file and command-line loading to Boot.
+ * Creates separate mutable environments for web and metrics children, leaving configuration-file and command-line
+ * loading to Boot.
  *
  * @since %CURRENT_VERSION%
  */
@@ -43,6 +44,34 @@ object WebContextEnvironment {
                     "server.servlet.session.cookie.max-age" to "-1s",
                     "server.servlet.session.tracking-modes" to "cookie",
                     "vaadin.allowed-packages" to "tech.testsys.web.service,tech.testsys.web.shell,tech.testsys.web.components,com.vaadin",
+                ),
+            ),
+        )
+    }
+
+    /**
+     * Applies the metrics listener and exposes only the Prometheus endpoint at `/actuator/prometheus`,
+     * without static resources, the endpoint index or a separate management server.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun configureMetrics(environment: StandardServletEnvironment, settings: MetricsWebSettings) {
+        environment.propertySources.addFirst(
+            MapPropertySource(
+                "testsysMetricsWeb",
+                mapOf(
+                    "server.address" to settings.address,
+                    "server.port" to settings.port,
+                    "server.servlet.context-path" to "",
+                    "server.ssl.enabled" to false,
+                    "server.forward-headers-strategy" to "none",
+                    "spring.web.resources.add-mappings" to false,
+                    // An empty port reads as unset, so the endpoints stay on this server.
+                    "management.server.port" to "",
+                    "management.endpoints.web.base-path" to "/actuator",
+                    "management.endpoints.web.exposure.include" to "prometheus",
+                    "management.endpoints.web.exposure.exclude" to "",
+                    "management.endpoints.web.discovery.enabled" to false,
                 ),
             ),
         )

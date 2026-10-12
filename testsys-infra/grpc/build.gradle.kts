@@ -14,6 +14,7 @@ dependencies {
     implementation(platform(libs.spring.boot.bom))
     implementation(project(":testsys-domain"))
     implementation(project(":testsys-infra:settings"))
+    implementation(project(":testsys-infra:monitoring"))
     implementation(libs.grading.protos)
     implementation(libs.grpc.okhttp)
     implementation(libs.spring.context)

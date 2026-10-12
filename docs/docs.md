@@ -75,6 +75,7 @@
 | [app/README.md](../testsys-web/app/README.md) | Справочник | Основное и служебное веб-приложения: запуск и границы ответственности |
 | [mail/README.md](../testsys-infra/mail/README.md)                     | Справочник | Отправка писем Пользователям по SMTP и настройки                |
 | [settings/README.md](../testsys-infra/settings/README.md) | Справочник | Общие служебные настройки, снимки, переключение и восстановление, контракт хранения реестра узлов |
+| [monitoring/README.md](../testsys-infra/monitoring/README.md) | Справочник | Учёт технических сбоев, имена и метки метрик TestSys |
 | [implement-entity.md](guides/implement-entity.md)                      | Гайд       | Добавление доменной сущности и её хранения в БД                |
 | [implement-port.md](guides/implement-port.md)                          | Гайд       | Объявление порта в домене и его реализация                     |
 | [implement-feature.md](guides/implement-feature.md)                    | Гайд       | Реализация пользовательской фичи: спецификация, операция, тесты |

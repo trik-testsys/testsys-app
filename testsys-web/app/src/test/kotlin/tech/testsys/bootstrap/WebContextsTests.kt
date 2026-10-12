@@ -39,7 +39,7 @@ import javax.sql.DataSource
 
 class WebContextsTests {
     @Test
-    fun `should start isolated Vaadin children sharing infrastructure and stop both listeners`() {
+    fun `should start isolated Vaadin children sharing infrastructure and stop all three listeners`() {
         val database = PostgresTestContainer.instance
         val runtime = TestSysRuntime.start(
             arrayOf(
@@ -58,6 +58,7 @@ class WebContextsTests {
         val ports = listOf(
             checkNotNull((runtime.mainWeb as? WebServerApplicationContext)?.webServer).port,
             checkNotNull((runtime.serviceWeb as? WebServerApplicationContext)?.webServer).port,
+            checkNotNull((runtime.metricsWeb as? WebServerApplicationContext)?.webServer).port,
         )
         runtime.use {
             val main = runtime.mainWeb
@@ -133,6 +134,7 @@ class WebContextsTests {
         assertFalse(runtime.infrastructure.isActive)
         assertFalse(runtime.mainWeb.isActive)
         assertFalse(runtime.serviceWeb.isActive)
+        assertFalse(runtime.metricsWeb.isActive)
         for (port in ports) {
             ServerSocket(port).use { available -> assertEquals(port, available.localPort) }
         }

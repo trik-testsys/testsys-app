@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.WebApplicationType
+import org.springframework.boot.actuate.autoconfigure.web.server.ManagementPortType
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.MapPropertySource
 import org.springframework.core.env.StandardEnvironment
@@ -41,6 +42,29 @@ class WebContextEnvironmentTests {
         assertEquals("TESTSYS_SERVICE_SESSION", service.getProperty("server.servlet.session.cookie.name"))
         assertEquals("", service.getProperty("server.servlet.session.cookie.domain"))
         assertEquals("none", service.getProperty("server.forward-headers-strategy"))
+    }
+
+    @Test
+    fun `should keep endpoints on the metrics listener and expose only the scrape endpoint`() {
+        val metrics = WebContextEnvironment.create()
+        metrics.propertySources.addFirst(
+            MapPropertySource(
+                "deployment",
+                mapOf<String, Any>(
+                    "server.port" to 8080,
+                    "management.server.port" to 9999,
+                    "management.endpoints.web.exposure.include" to "*",
+                ),
+            ),
+        )
+
+        WebContextEnvironment.configureMetrics(metrics, MetricsWebSettings(address = "0.0.0.0", port = 8082))
+
+        assertEquals("8082", metrics.getProperty("server.port"))
+        assertEquals("0.0.0.0", metrics.getProperty("server.address"))
+        assertEquals(ManagementPortType.SAME, ManagementPortType.get(metrics))
+        assertEquals("prometheus", metrics.getProperty("management.endpoints.web.exposure.include"))
+        assertEquals("false", metrics.getProperty("spring.web.resources.add-mappings"))
     }
 
     @Test

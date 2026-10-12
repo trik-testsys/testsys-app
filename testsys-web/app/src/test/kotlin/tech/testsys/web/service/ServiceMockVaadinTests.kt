@@ -14,7 +14,7 @@ import org.springframework.context.ApplicationContext
 import org.springframework.security.core.context.SecurityContextHolder
 import java.util.concurrent.atomic.AtomicInteger
 
-@SpringBootTest(classes = [ServiceWebConfiguration::class, ServiceTestConfiguration::class])
+@SpringBootTest(classes = [ServiceWebConfiguration::class, ServiceTestConfiguration::class, ServiceMetricsTestConfiguration::class])
 abstract class ServiceMockVaadinTests {
     @Autowired
     private lateinit var context: ApplicationContext

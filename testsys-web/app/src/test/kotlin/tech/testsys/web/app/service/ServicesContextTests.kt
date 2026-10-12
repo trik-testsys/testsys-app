@@ -18,6 +18,7 @@ import tech.testsys.domain.contract.FileBlobStorage
 import tech.testsys.infra.database.api.persistence.FileSystemBlobStorage
 import tech.testsys.infra.database.api.transaction.RetryingTransactionInterceptor
 import tech.testsys.web.app.PostgresTestConfiguration
+import tech.testsys.web.app.config.OperationMetricsInterceptor
 import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.app.service.developer.DeveloperService
 import tech.testsys.web.app.service.judge.JudgeService
@@ -67,6 +68,30 @@ class ServicesContextTests {
         val transactionIndex = advice.indexOfFirst { interceptor -> interceptor is TransactionInterceptor }
 
         assertTrue(retryIndex in 0 until transactionIndex, "advice: $advice")
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+        classes = [
+            AdministratorService::class,
+            DeveloperService::class,
+            JudgeService::class,
+            ManagerService::class,
+            MultipleRoleUserService::class,
+            ParticipantService::class,
+            StudentService::class,
+            StudyService::class,
+            UserService::class,
+        ],
+    )
+    fun `should apply the operation metrics advisor outside the retrying advisor of the service`(type: Class<*>) {
+        val service = assertInstanceOf(Advised::class.java, context.getBean(type))
+
+        val advice = service.advisors.map { advisor -> advisor.advice }
+        val metricsIndex = advice.indexOfFirst { interceptor -> interceptor is OperationMetricsInterceptor }
+        val retryIndex = advice.indexOfFirst { interceptor -> interceptor is RetryingTransactionInterceptor }
+
+        assertTrue(metricsIndex in 0 until retryIndex, "advice: $advice")
     }
 
     @Test

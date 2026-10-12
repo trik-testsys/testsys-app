@@ -36,6 +36,7 @@ import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.infra.grpc.api.BalancingGrader
+import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.RuntimeSettings
 import tech.testsys.infra.settings.api.SettingKey
 import tech.testsys.operation.TaskValidationDispatcher
@@ -270,6 +271,7 @@ class OperationsConfiguration {
 
     /**
      * Dispatcher of task validation requests; a request scheduled in a transaction is processed after it completes.
+     * Its technical failures are counted in [failures].
      *
      * @since %CURRENT_VERSION%
      */
@@ -279,7 +281,14 @@ class OperationsConfiguration {
         operations: TaskValidationOperations,
         grader: BalancingGrader,
         @Qualifier("taskValidationExecutor") executor: ThreadPoolExecutor,
-    ): TaskValidationDispatcher = TaskValidationDispatcher(requests, operations, grader, AfterTransactionExecutor(executor))
+        failures: TechnicalFailures,
+    ): TaskValidationDispatcher = TaskValidationDispatcher(
+        requests = requests,
+        operations = operations,
+        grader = grader,
+        executor = AfterTransactionExecutor(executor),
+        onTechnicalFailure = { exception -> failures.record(source = "validation", stage = "processing", failure = exception) },
+    )
 
     /**
      * Starts the task validation dispatcher with the context and stops its executor before the grader closes.

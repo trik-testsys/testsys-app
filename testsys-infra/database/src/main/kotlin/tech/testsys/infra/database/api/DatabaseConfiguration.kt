@@ -1,6 +1,8 @@
 package tech.testsys.infra.database.api
 
+import io.micrometer.core.instrument.MeterRegistry
 import org.hibernate.boot.model.naming.PhysicalNamingStrategy
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.config.BeanDefinition
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.convert.DurationStyle
@@ -27,6 +29,7 @@ import tech.testsys.infra.database.internal.jpa.TestsysPhysicalNamingStrategy
 import tech.testsys.infra.database.internal.jpa.repository.task.FileDataJpaEntityRepository
 import tech.testsys.infra.database.internal.persistence.FileStorageCleanupRepository
 import tech.testsys.infra.database.internal.persistence.FileSystemBlobInventory
+import tech.testsys.infra.monitoring.api.TestSysMetrics
 import tech.testsys.infra.settings.api.RuntimeSettings
 import tech.testsys.infra.settings.api.SettingKey
 import java.time.Clock
@@ -116,14 +119,17 @@ class DatabaseConfiguration {
     companion object {
 
         /**
-         * The policy shared by all repeated transactions.
+         * The policy shared by all repeated transactions; each repeat is counted in the metrics registry, if any.
+         * The registry is looked up at the first repeat, so this early bean does not create it.
          *
          * @since %CURRENT_VERSION%
          */
         @JvmStatic
         @Bean
         @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-        fun transactionRetry(): TransactionRetry = TransactionRetry()
+        fun transactionRetry(registry: ObjectProvider<MeterRegistry>): TransactionRetry = TransactionRetry(
+            onRetry = { registry.ifAvailable?.counter(TestSysMetrics.TRANSACTION_RETRIES)?.increment() },
+        )
 
         /**
          * Advisor of the methods the transaction advisor matches, ordered just outside it, so that each repeat

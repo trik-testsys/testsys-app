@@ -11,10 +11,12 @@ import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.infra.localization.Localization
 import tech.testsys.infra.mail.internal.InternalMailApi
 import tech.testsys.infra.mail.internal.MailSettings
+import tech.testsys.infra.monitoring.api.TechnicalFailures
 
 /**
  * Sends letters to users as plain-text e-mails through [JavaMailSender], rendered in the configured region;
- * within active transaction synchronization a letter is sent after the commit and a failure is only logged.
+ * within active transaction synchronization a letter is sent after the commit and a failure is logged and counted
+ * in [failures].
  *
  * @since %CURRENT_VERSION%
  */
@@ -23,6 +25,7 @@ import tech.testsys.infra.mail.internal.MailSettings
 class SmtpUserMailSender(
     private val mailSender: JavaMailSender,
     private val settings: MailSettings,
+    private val failures: TechnicalFailures = TechnicalFailures.NONE,
 ) : UserMailSender {
 
     override fun sendRegistrationConfirmationCode(email: String, confirmationCode: String) {
@@ -88,6 +91,7 @@ class SmtpUserMailSender(
             mailSender.send(message)
         } catch (exception: MailException) {
             log.error("Failed to send letter to $to after transaction commit", exception)
+            failures.record(source = "mail", stage = "after_commit", failure = exception)
         }
     }
 

@@ -3,6 +3,7 @@
 package tech.testsys.infra.grpc.internal
 
 import io.grpc.Status
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -32,11 +33,14 @@ import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.VerdictId
 import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.infra.grpc.api.GradingQueueSnapshot
+import tech.testsys.infra.monitoring.api.TechnicalFailures
+import tech.testsys.infra.monitoring.api.TestSysMetrics
 import java.io.IOException
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.Executors
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
@@ -52,6 +56,7 @@ internal class GradingCoordinatorTests {
     private val clock = mockk<Clock> {
         every { instant() } answers { now.get() }
     }
+    private val meters = SimpleMeterRegistry()
     private val coordinator = GradingCoordinator(
         persistence = repository.persistence,
         nodes = manager,
@@ -61,6 +66,8 @@ internal class GradingCoordinatorTests {
         pollingExecutor = polling.service,
         clock = clock,
         parser = JsonLogParser(),
+        failures = TechnicalFailures(meters),
+        metrics = meters,
     )
     private val grader = BalancingGrader(coordinator)
     private val address = GradingNodeAddress("node")
@@ -811,6 +818,214 @@ internal class GradingCoordinatorTests {
             assertEquals(GradingQueueSnapshot(preparing = 1, waiting = 1, grading = 1, saving = 0), snapshot)
             assertEquals(3, snapshot.total)
         }
+    }
+
+    @Nested
+    inner class MetricsTests {
+        @Test
+        fun `should count a preparation failure and the finished failure`() {
+            coordinator.start()
+            every { repository.solutions.load(any<LazyEntity<SolutionId, Solution>>()) } throws IllegalStateException("Unavailable")
+
+            grader.sendToGrade(repository.initial)
+            queue.drain()
+
+            assertEquals(1.0, failures("prepare", "IllegalStateException"))
+            assertEquals(1.0, checks("failure"))
+        }
+
+        @Test
+        fun `should count a created verdict without technical failures`() {
+            startRun()
+
+            node.results[0](result())
+            queue.drain()
+
+            assertEquals(1.0, checks("verdict"))
+            assertEquals(0.0, allFailures())
+        }
+
+        @Test
+        fun `should count each unavailable node response`() {
+            startRun()
+
+            node.errors[0](Status.UNAVAILABLE.asRuntimeException())
+            queue.drain()
+
+            assertEquals(1.0, failures("node_unavailable", "StatusRuntimeException"))
+        }
+
+        @Test
+        fun `should count a node deadline before the total deadline`() {
+            startRun()
+
+            node.errors[0](Status.DEADLINE_EXCEEDED.asRuntimeException())
+            queue.drain()
+
+            assertEquals(1.0, failures("node_deadline", "StatusRuntimeException"))
+        }
+
+        @Test
+        fun `should not count a node deadline once the total deadline is exhausted`() {
+            startRun()
+            now.set(Instant.EPOCH.plusSeconds(1_800))
+
+            node.errors[0](Status.DEADLINE_EXCEEDED.asRuntimeException())
+            queue.drain()
+
+            assertEquals(0.0, allFailures())
+            assertEquals(1.0, checks("timeout"))
+        }
+
+        @Test
+        fun `should count a failed grading RPC as a node error`() {
+            startRun()
+
+            node.errors[0](Status.INTERNAL.asRuntimeException())
+            queue.drain()
+
+            assertEquals(1.0, failures("node_error", "StatusRuntimeException"))
+            assertEquals(1.0, checks("failure"))
+        }
+
+        @Test
+        fun `should count a rejected node result without an exception`() {
+            startRun()
+
+            node.results[0](result(id = 7))
+            queue.drain()
+
+            assertEquals(1.0, failures("invalid_result", "none"))
+            assertEquals(1.0, checks("failure"))
+        }
+
+        @Test
+        fun `should count every failed save attempt`() {
+            startRun()
+            every { repository.submissions.update(any<Submission>()) } answers { throw IllegalStateException("Storage unavailable") }
+            node.results[0](result())
+            queue.drain()
+
+            queue.scheduled[1].fire()
+
+            assertEquals(2.0, failures("save", "IllegalStateException"))
+            assertEquals(0.0, checks("verdict"))
+        }
+
+        @Test
+        fun `should count a failed sending step`() {
+            coordinator.start()
+            grader.addNode(address)
+            polling.tick()
+            grader.sendToGrade(repository.initial)
+            queue.runNext()
+            every { repository.submissions.update(any<Submission>()) } throws IOException("Storage unavailable")
+
+            queue.runNext()
+
+            assertEquals(1.0, failures("send", "IOException"))
+        }
+
+        @Test
+        fun `should count a failed subscriber`() {
+            startRun()
+            grader.subscribeOnGraded { throw IOException("Subscriber failed") }
+
+            node.results[0](result())
+            queue.drain()
+
+            assertEquals(1.0, failures("subscriber", "IOException"))
+        }
+
+        @Test
+        fun `should not count a status poll that reports an unreachable node`() {
+            coordinator.start()
+            grader.addNode(address)
+            node.status.set(GradingNodeStatus.Unreachable("UNAVAILABLE"))
+
+            polling.tick()
+
+            assertEquals(mapOf(address to GradingNodeStatus.Unreachable("UNAVAILABLE")), coordinator.statuses())
+            assertEquals(0.0, allFailures())
+        }
+
+        @Test
+        fun `should not count a status poll that throws`() {
+            coordinator.start()
+            grader.addNode(address)
+            node.pollFailure.set(Status.UNAVAILABLE.asRuntimeException())
+
+            polling.tick()
+
+            assertEquals(mapOf(address to GradingNodeStatus.Unreachable("UNAVAILABLE")), coordinator.statuses())
+            assertEquals(0.0, allFailures())
+        }
+
+        @Test
+        fun `should count a failed grading work step`() {
+            coordinator.start()
+            val timerFailure = IllegalStateException("Timer unavailable")
+            every { queue.service.schedule(any<Runnable>(), any<Long>(), any<TimeUnit>()) } throws timerFailure
+            grader.sendToGrade(repository.initial)
+
+            queue.drain()
+
+            assertEquals(1.0, failures("work", "IllegalStateException"))
+        }
+
+        @Test
+        fun `should count grading work rejected while the coordinator is open`() {
+            coordinator.start()
+            every { queue.service.execute(any()) } throws RejectedExecutionException("Queue is full")
+
+            grader.sendToGrade(repository.initial)
+
+            assertEquals(1.0, failures("rejected", "RejectedExecutionException"))
+        }
+
+        @Test
+        fun `should not count a node removed during a check`() {
+            startRun()
+            grader.removeNode(address)
+
+            queue.drain()
+
+            assertEquals(0.0, allFailures())
+            assertEquals(GradingQueueSnapshot(preparing = 0, waiting = 1, grading = 0, saving = 0), coordinator.queue())
+        }
+
+        @Test
+        fun `should not count a result that arrives after its node was removed`() {
+            startRun()
+            node.results[0](result())
+            grader.removeNode(address)
+
+            queue.drain()
+
+            assertEquals(0.0, allFailures())
+            assertEquals(0.0, checks("verdict"))
+        }
+
+        @Test
+        fun `should not count a failed grading RPC of a removed node`() {
+            startRun()
+            node.errors[0](Status.INTERNAL.asRuntimeException())
+            grader.removeNode(address)
+
+            queue.drain()
+
+            assertEquals(0.0, allFailures())
+        }
+
+        private fun failures(stage: String, exception: String): Double = meters.find(TestSysMetrics.TECHNICAL_FAILURES)
+            .tags(TestSysMetrics.SOURCE, "grading", TestSysMetrics.STAGE, stage, TestSysMetrics.EXCEPTION, exception)
+            .counter()?.count() ?: 0.0
+
+        private fun allFailures(): Double = meters.find(TestSysMetrics.TECHNICAL_FAILURES).counters().sumOf { counter -> counter.count() }
+
+        private fun checks(result: String): Double = meters.find(TestSysMetrics.GRADING_CHECKS)
+            .tag(TestSysMetrics.RESULT, result)
+            .counter()?.count() ?: 0.0
     }
 
     private fun startRun() {

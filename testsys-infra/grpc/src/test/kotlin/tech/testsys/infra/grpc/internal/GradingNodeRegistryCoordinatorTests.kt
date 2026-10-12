@@ -2,6 +2,7 @@
 
 package tech.testsys.infra.grpc.internal
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -18,6 +19,8 @@ import tech.testsys.infra.grpc.api.GradingNodeImportOutcome
 import tech.testsys.infra.grpc.api.GradingNodeImportPreview
 import tech.testsys.infra.grpc.api.GradingNodeImportReport
 import tech.testsys.infra.grpc.api.GradingNodeRejection
+import tech.testsys.infra.monitoring.api.TechnicalFailures
+import tech.testsys.infra.monitoring.api.TestSysMetrics
 import tech.testsys.infra.settings.api.GradingNodeStore
 import tech.testsys.infra.settings.api.SettingsPersistence
 import tech.testsys.infra.settings.api.StoredGradingNode
@@ -41,6 +44,7 @@ internal class GradingNodeRegistryCoordinatorTests {
         parser = JsonLogParser(),
     )
     private val store = mockk<GradingNodeStore>()
+    private val meters = SimpleMeterRegistry()
     private val active = GradingNodeAddress("grader-1:50051")
     private val inactive = GradingNodeAddress("grader-2:50051")
     private val added = GradingNodeAddress("grader-3:50051")
@@ -622,10 +626,61 @@ internal class GradingNodeRegistryCoordinatorTests {
         }
     }
 
+    @Nested
+    inner class TechnicalFailureTests {
+        @Test
+        fun `should count a node that cannot start`() {
+            val registry = registry()
+            val failing = GradingNodeAddress("invalid")
+            every { factory.create(failing) } throws IllegalArgumentException("Invalid target")
+
+            registry.add(failing.target, isActive = true)
+
+            assertEquals(1.0, failures("start", "IllegalArgumentException"))
+        }
+
+        @Test
+        fun `should count a write failure once when its outcome cannot be read`() {
+            val registry = registry()
+            every { store.add(any()) } throws IllegalStateException("Commit failed")
+            every { store.read() } throws IllegalStateException("Read failed")
+
+            registry.add(added.target, isActive = true)
+
+            assertEquals(1.0, failures("write", "IllegalStateException"))
+            assertEquals(1.0, meters.find(TestSysMetrics.TECHNICAL_FAILURES).counters().sumOf { counter -> counter.count() })
+        }
+
+        @Test
+        fun `should count a stored record that does not match the change`() {
+            val registry = registry()
+            every { store.setActive(inactive, isActive = true) } returns false
+
+            registry.setActive(inactive, isActive = true)
+
+            assertEquals(1.0, failures("record_mismatch", "none"))
+        }
+
+        @Test
+        fun `should not count changes refused after the registry is locked`() {
+            val registry = registry()
+            lockChanges(registry)
+
+            registry.add(added.target, isActive = true)
+            registry.setActive(inactive, isActive = true)
+
+            assertEquals(1.0, meters.find(TestSysMetrics.TECHNICAL_FAILURES).counters().sumOf { counter -> counter.count() })
+        }
+
+        private fun failures(stage: String, exception: String): Double = meters.find(TestSysMetrics.TECHNICAL_FAILURES)
+            .tags(TestSysMetrics.SOURCE, "nodes", TestSysMetrics.STAGE, stage, TestSysMetrics.EXCEPTION, exception)
+            .counter()?.count() ?: 0.0
+    }
+
     private fun registry(configured: List<GradingNodeAddress> = emptyList()): GradingNodeRegistryCoordinator {
         coordinator.addNode(active)
         coordinator.observe(inactive)
-        return GradingNodeRegistryCoordinator(coordinator, store, configured)
+        return GradingNodeRegistryCoordinator(coordinator, store, configured, TechnicalFailures(meters))
     }
 
     /** Locks [registry] through a removal of the inactive node whose outcome cannot be read. */

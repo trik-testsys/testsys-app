@@ -3,6 +3,8 @@
 package tech.testsys.infra.grpc.internal
 
 import io.grpc.Status
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 import org.apache.commons.logging.LogFactory
 import tech.testsys.domain.contract.GradingAdmission
 import tech.testsys.domain.contract.GradingNodeAddress
@@ -10,6 +12,8 @@ import tech.testsys.domain.contract.GradingNodeStatus
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.infra.grpc.api.GradingQueueSnapshot
+import tech.testsys.infra.monitoring.api.TechnicalFailures
+import tech.testsys.infra.monitoring.api.TestSysMetrics
 import tech.testsys.infra.settings.api.RuntimeSettings
 import tech.testsys.infra.settings.api.SettingKey
 import java.time.Clock
@@ -39,6 +43,8 @@ internal class GradingCoordinator(
     private val clock: Clock,
     private val parser: LogParser,
     private val runtime: RuntimeSettings? = null,
+    private val failures: TechnicalFailures = TechnicalFailures.NONE,
+    private val metrics: MeterRegistry = CompositeMeterRegistry(),
 ) : AutoCloseable {
     private val pending = ConcurrentHashMap<SubmissionId, Pending>()
     private val submissions = LinkedBlockingQueue<Pending.Queued>()
@@ -189,6 +195,7 @@ internal class GradingCoordinator(
                     completed.complete(send(run))
                 } catch (error: Exception) {
                     log.error("Failed to send submission ${run.context.submission.id.value}", error)
+                    failures.record(source = SOURCE, stage = "send", failure = error)
                     completed.complete(minOf(currentSettings().pollInterval, remaining(run.context)).coerceAtLeast(Duration.ZERO))
                 }
             }
@@ -214,6 +221,7 @@ internal class GradingCoordinator(
             pending[run.context.submission.id] = waiting
             submissions.add(waiting)
         } catch (error: RuntimeException) {
+            failures.record(source = SOURCE, stage = "prepare", failure = error)
             finish(run, CheckedResult.Failure("Cannot prepare submission ${run.context.submission.id.value}: ${error.message}"))
         }
     }
@@ -260,6 +268,7 @@ internal class GradingCoordinator(
                                     run.prepared.testIds,
                                     parser,
                                 )
+                                if (checked is CheckedResult.Failure) failures.record(source = SOURCE, stage = "invalid_result")
                                 finish(sending, checked)
                             }
                         }
@@ -282,13 +291,19 @@ internal class GradingCoordinator(
             Status.Code.UNAVAILABLE -> {
                 val attempt = run.attempt
                 log.warn("Checking node ${attempt.address.target} is unavailable for submission ${run.context.submission.id.value}", error)
+                failures.record(source = SOURCE, stage = "node_unavailable", failure = error)
                 nodes.markUnavailable(address = attempt.address, registration = attempt.registration, reason = unreachableReason(error))
                 retry(run, CheckedResult.Failure("Checking node unavailable: ${error.message}"))
             }
-            Status.Code.DEADLINE_EXCEEDED -> retry(run, CheckedResult.Timeout)
+            Status.Code.DEADLINE_EXCEEDED -> {
+                // An exhausted total deadline is a timeout of the run, not a failure of the node.
+                if (remaining(run.context) > Duration.ZERO) failures.record(source = SOURCE, stage = "node_deadline", failure = error)
+                retry(run, CheckedResult.Timeout)
+            }
             else -> if (nodes.registration(run.attempt.address) !== run.attempt.registration) {
                 retry(run, CheckedResult.Failure("Checking node was removed"))
             } else {
+                failures.record(source = SOURCE, stage = "node_error", failure = error)
                 finish(run, CheckedResult.Failure("Grading RPC failed: ${error.message}"))
             }
         }
@@ -328,18 +343,27 @@ internal class GradingCoordinator(
             persistence.saveResult(run.context.submission, run.result)
         } catch (error: RuntimeException) {
             log.error("Failed to save submission ${run.context.submission.id.value}", error)
+            failures.record(source = SOURCE, stage = "save", failure = error)
             run.saveRetry.set(executor.schedule({ save(run) }, currentSettings().pollInterval.toNanos(), TimeUnit.NANOSECONDS))
             return
         }
         run.saveRetry.get()?.cancel(false)
         pending.remove(run.context.submission.id, run)
+        metrics.counter(TestSysMetrics.GRADING_CHECKS, TestSysMetrics.RESULT, outcome(run.result)).increment()
         subscribers.forEach { subscriber ->
             try {
                 subscriber(run.context.submission.id)
             } catch (error: Exception) {
                 log.error("Grading subscriber failed for ${run.context.submission.id.value}", error)
+                failures.record(source = SOURCE, stage = "subscriber", failure = error)
             }
         }
+    }
+
+    private fun outcome(result: CheckedResult): String = when (result) {
+        is CheckedResult.Success -> "verdict"
+        is CheckedResult.Failure -> "failure"
+        CheckedResult.Timeout -> "timeout"
     }
 
     private fun isCurrent(run: Pending): Boolean = !isClosed.get() && pending[run.context.submission.id] === run
@@ -355,11 +379,13 @@ internal class GradingCoordinator(
                         action()
                     } catch (error: RuntimeException) {
                         log.error("Failed to handle grading work", error)
+                        failures.record(source = SOURCE, stage = "work", failure = error)
                     }
                 }
             } catch (error: RejectedExecutionException) {
                 if (!isClosed.get()) {
                     log.error("Grading executor rejected work", error)
+                    failures.record(source = SOURCE, stage = "rejected", failure = error)
                 }
             }
         }
@@ -396,5 +422,9 @@ internal class GradingCoordinator(
 
     private class Attempt(val address: GradingNodeAddress, val registration: GradingRegistration) {
         val cancel = AtomicReference<AutoCloseable?>()
+    }
+
+    private companion object {
+        const val SOURCE = "grading"
     }
 }

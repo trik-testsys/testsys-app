@@ -24,3 +24,6 @@ testsys:
     port: 8081
     trusted-proxies: '127[.]0[.]0[.]1'
     secret: ${TESTSYS_SERVICE_SECRET}
+  metrics:
+    # The metrics server listens on all interfaces; the deployment keeps the port in an internal network.
+    port: 8082

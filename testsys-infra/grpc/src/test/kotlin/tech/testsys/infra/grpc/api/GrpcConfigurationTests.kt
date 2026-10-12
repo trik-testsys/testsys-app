@@ -2,6 +2,7 @@
 
 package tech.testsys.infra.grpc.api
 
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -26,6 +27,7 @@ import tech.testsys.infra.grpc.internal.FakeNode
 import tech.testsys.infra.grpc.internal.InternalGrpcApi
 import tech.testsys.infra.grpc.internal.NodeClientFactory
 import tech.testsys.infra.grpc.internal.settings
+import tech.testsys.infra.monitoring.api.TestSysMetrics
 import tech.testsys.infra.settings.api.GradingNodeStore
 import tech.testsys.infra.settings.api.StoredGradingNode
 
@@ -540,6 +542,34 @@ internal class GrpcConfigurationTests {
                 assertEquals(
                     GradingNodeImportPreview(listOf(GradingNodeImportCandidate(address, StoredGradingNode(address, isActive = true)))),
                     registry.importPreview(),
+                )
+            }
+        }
+    }
+
+    @Nested
+    inner class GradingMeterBinderTests {
+        @Test
+        fun `should expose the queue and the configured nodes of the grader as gauges`() {
+            val address = GradingNodeAddress("grader:50051")
+            val nodeSettings = settings.copy(nodes = listOf(address))
+            val meters = SimpleMeterRegistry()
+
+            configuration.gradingCoordinator(
+                persistence = mockk(),
+                settings = nodeSettings,
+                parser = mockk(),
+                nodeClientFactory = NodeClientFactory { FakeNode() },
+            ).use { coordinator ->
+                val registry = configuration.gradingNodeRegistry(coordinator, nodeSettings)
+
+                configuration.gradingMeterBinder(configuration.gradingQueueMonitor(coordinator), registry).bindTo(meters)
+
+                assertEquals(0.0, meters.get(TestSysMetrics.GRADING_QUEUE).tag(TestSysMetrics.STATE, "waiting").gauge().value())
+                assertEquals(
+                    1.0,
+                    meters.get(TestSysMetrics.GRADING_NODES)
+                        .tags(TestSysMetrics.PARTICIPATION, "active", TestSysMetrics.STATUS, "unknown").gauge().value(),
                 )
             }
         }

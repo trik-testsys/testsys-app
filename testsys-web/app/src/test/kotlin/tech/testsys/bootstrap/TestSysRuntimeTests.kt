@@ -21,6 +21,7 @@ class TestSysRuntimeTests {
     fun reset() {
         RuntimeProbeConfiguration.started.clear()
         RuntimeProbeConfiguration.infrastructure.clear()
+        RuntimeProbeConfiguration.ports.clear()
     }
 
     @Test
@@ -51,6 +52,22 @@ class TestSysRuntimeTests {
     }
 
     @Test
+    fun `should close both interfaces and the parent when the metrics port is occupied`() {
+        ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use { occupied ->
+            assertThrows(RuntimeException::class.java) {
+                start(mainPort = 0, servicePort = 0, metricsPort = occupied.localPort).close()
+            }
+        }
+
+        assertEquals(2, RuntimeProbeConfiguration.started.size)
+        assertTrue(RuntimeProbeConfiguration.started.none { context -> context.isActive })
+        assertFalse(RuntimeProbeConfiguration.infrastructure.single().isActive)
+        val (mainPort, servicePort) = RuntimeProbeConfiguration.ports
+        ServerSocket(mainPort).use { available -> assertEquals(mainPort, available.localPort) }
+        ServerSocket(servicePort).use { available -> assertEquals(servicePort, available.localPort) }
+    }
+
+    @Test
     fun `should close infrastructure when the main port is occupied`() {
         ServerSocket(0, 1, InetAddress.getByName("127.0.0.1")).use { occupied ->
             assertThrows(RuntimeException::class.java) { start(mainPort = occupied.localPort, servicePort = 0).close() }
@@ -60,7 +77,7 @@ class TestSysRuntimeTests {
         assertFalse(RuntimeProbeConfiguration.infrastructure.single().isActive)
     }
 
-    private fun start(mainPort: Int, servicePort: Int): TestSysRuntime {
+    private fun start(mainPort: Int, servicePort: Int, metricsPort: Int = 0): TestSysRuntime {
         val database = PostgresTestContainer.instance
         return TestSysRuntime.start(
             arrayOf(
@@ -73,6 +90,8 @@ class TestSysRuntimeTests {
                 "--testsys.service.secret=${"runtime-test-".repeat(8)}",
                 "--testsys.service.address=127.0.0.1",
                 "--testsys.service.port=$servicePort",
+                "--testsys.metrics.address=127.0.0.1",
+                "--testsys.metrics.port=$metricsPort",
             ),
             arrayOf(RuntimeProbeConfiguration::class.java),
         )
@@ -89,6 +108,7 @@ class RuntimeProbeConfiguration {
             if (webContext is ConfigurableApplicationContext) {
                 started.add(webContext)
                 mainPort = (webContext as? WebServerApplicationContext)?.webServer?.port ?: error("Missing test web server")
+                ports.add(mainPort)
             }
         }
     }
@@ -96,6 +116,7 @@ class RuntimeProbeConfiguration {
     companion object {
         val started = mutableListOf<ConfigurableApplicationContext>()
         val infrastructure = mutableListOf<ConfigurableApplicationContext>()
+        val ports = mutableListOf<Int>()
         var mainPort = 0
     }
 }

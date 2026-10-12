@@ -3,6 +3,7 @@ package tech.testsys.infra.settings.api
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
+import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.internal.InternalSettingsApi
 import tech.testsys.infra.settings.internal.SettingsCoordinator
 import tech.testsys.infra.settings.internal.SettingsInitializer
@@ -26,11 +27,21 @@ class SettingsConfiguration {
         SettingsInitializer.initialize(store.read(), environment)
 
     /**
-     * Serializes service changes in the shared infrastructure context.
+     * Serializes service changes in the shared infrastructure context and counts their technical failures in [failures].
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun settingsService(store: SettingsStore, runtime: RuntimeSettings, environment: Environment): SettingsService =
-        SettingsCoordinator(store, runtime, SettingsResolver(environment), store.read())
+    fun settingsService(
+        store: SettingsStore,
+        runtime: RuntimeSettings,
+        environment: Environment,
+        failures: TechnicalFailures? = null,
+    ): SettingsService = SettingsCoordinator(
+        store = store,
+        runtime = runtime,
+        resolver = SettingsResolver(environment),
+        stored = store.read(),
+        failures = failures ?: TechnicalFailures.NONE,
+    )
 }

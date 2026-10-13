@@ -22,3 +22,7 @@ testsys:
     class-invite:
       ttl: P7D
       refresh-period: PT1H
+  web:
+    # The e2e test process sends every request from one address, so the rate limit only logs.
+    rate-limit:
+      enforce: false

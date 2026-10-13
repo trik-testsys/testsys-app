@@ -3,6 +3,7 @@ package tech.testsys.web.app.config
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.aop.Advisor
 import org.springframework.aop.ClassFilter
+import org.springframework.aop.Pointcut
 import org.springframework.aop.support.ComposablePointcut
 import org.springframework.aop.support.DefaultPointcutAdvisor
 import org.springframework.aop.support.StaticMethodMatcher
@@ -29,8 +30,8 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 
 /**
- * Registers the child-local retry advisor, with the parent's policy and transaction manager, and the metrics of the main interface;
- * the infrastructure auto-proxy creator accepts only local advisor definitions.
+ * Registers the child-local retry advisor, with the parent's policy and transaction manager, the metrics and the call log
+ * of the main interface; the infrastructure auto-proxy creator accepts only local advisor definitions.
  *
  * @since %CURRENT_VERSION%
  */
@@ -83,6 +84,29 @@ class MainWebConfiguration {
         @Bean
         @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
         fun operationMetricsAdvisor(registry: ObjectProvider<MeterRegistry>, failures: ObjectProvider<TechnicalFailures>): Advisor {
+            val interceptor = OperationMetricsInterceptor(
+                registry = { registry.ifAvailable },
+                failures = { failures.getIfAvailable { TechnicalFailures.NONE } },
+            )
+            return DefaultPointcutAdvisor(serviceOperations(), interceptor).apply {
+                order = Ordered.HIGHEST_PRECEDENCE
+            }
+        }
+
+        /**
+         * Writes proxy service calls at DEBUG inside the metrics and outside the transaction repeats, so a repeated
+         * call is written once.
+         *
+         * @since %CURRENT_VERSION%
+         */
+        @JvmStatic
+        @Bean
+        @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+        fun callLoggingAdvisor(): Advisor = DefaultPointcutAdvisor(serviceOperations(), CallLoggingInterceptor()).apply {
+            order = Ordered.HIGHEST_PRECEDENCE + 1
+        }
+
+        private fun serviceOperations(): Pointcut {
             val services = ClassFilter { type ->
                 type.packageName.startsWith(SERVICE_PACKAGE) && type.isAnnotationPresent(Service::class.java)
             }
@@ -90,13 +114,7 @@ class MainWebConfiguration {
                 override fun matches(method: Method, targetClass: Class<*>): Boolean =
                     Modifier.isPublic(method.modifiers) && method.declaringClass != Any::class.java
             }
-            val interceptor = OperationMetricsInterceptor(
-                registry = { registry.ifAvailable },
-                failures = { failures.getIfAvailable { TechnicalFailures.NONE } },
-            )
-            return DefaultPointcutAdvisor(ComposablePointcut(services, operations), interceptor).apply {
-                order = Ordered.HIGHEST_PRECEDENCE
-            }
+            return ComposablePointcut(services, operations)
         }
     }
 }

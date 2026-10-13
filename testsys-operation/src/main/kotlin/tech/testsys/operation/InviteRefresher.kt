@@ -1,5 +1,7 @@
 package tech.testsys.operation
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -112,7 +114,7 @@ class InviteRefresher(
 
     private fun logError(subject: String, result: OperationResult<*, *>) {
         if (result is OperationResult.Error<*>) {
-            logger.log(System.Logger.Level.WARNING, "Failed to refresh $subject: ${result.error}", result.failure)
+            logger.warn("Failed to refresh $subject: ${result.error}", result.failure)
         }
     }
 
@@ -122,11 +124,11 @@ class InviteRefresher(
         try {
             action()
         } catch (exception: Exception) {
-            logger.log(System.Logger.Level.WARNING, "Failed to refresh $subject", exception)
+            logger.warn("Failed to refresh $subject", exception)
         }
     }
 
     private companion object {
-        val logger: System.Logger = System.getLogger(InviteRefresher::class.java.name)
+        val logger: Logger = LoggerFactory.getLogger(InviteRefresher::class.java)
     }
 }

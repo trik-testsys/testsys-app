@@ -1,6 +1,6 @@
 package tech.testsys.infra.settings.internal
 
-import org.apache.commons.logging.LogFactory
+import org.slf4j.LoggerFactory
 import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.RuntimeSettings
 import tech.testsys.infra.settings.api.SettingsSnapshot
@@ -23,7 +23,7 @@ internal class SettingsCoordinator(
     private val failures: TechnicalFailures = TechnicalFailures.NONE,
 ) : SettingsService {
     private var persistence = SettingsPersistence.Known
-    private val log = LogFactory.getLog(javaClass)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     override fun overview(): SettingsOverview = synchronized(runtime.monitor) {
         SettingsOverview(stored.revision, runtime.snapshot(), persistence)

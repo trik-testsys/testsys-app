@@ -8,7 +8,7 @@ import io.grpc.ManagedChannel
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Status
 import io.grpc.stub.StreamObserver
-import org.apache.commons.logging.LogFactory
+import org.slf4j.LoggerFactory
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
 import trik.testsys.grading.GradingNodeGrpc
@@ -43,7 +43,7 @@ internal fun unreachableReason(error: Throwable): String = Status.fromThrowable(
 
 @InternalGrpcApi
 internal class GrpcNodeClient(private val channel: ManagedChannel, private val statusTimeout: Duration) : NodeClient {
-    private val log = LogFactory.getLog(javaClass)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     // Status code of the latest logged poll failure: the same code logs at DEBUG until a poll succeeds.
     private val loggedPollFailure = AtomicReference<Status.Code?>()

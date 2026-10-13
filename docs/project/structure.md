@@ -90,7 +90,8 @@ testsys-app/
 - `gradle/libs.versions.toml` — версии, библиотеки и bundles. Версии зависимостей указываются только здесь.
   Версия Spring Boot одна на весь проект. Модули со Spring подключают BOM `libs.spring.boot.bom` через
   `platform(...)`; версии стартеров, Hibernate, Liquibase, Testcontainers и драйвера PostgreSQL задаёт BOM,
-  в каталоге их нет.
+  в каталоге их нет. Модуль без Spring подключает BOM так же, если использует библиотеку каталога без версии,
+  например `libs.slf4j.api`.
 - `gradle.properties` — память Gradle-демона (`org.gradle.jvmargs`): значений Gradle по умолчанию полной сборке
   с KSP, Vaadin и Detekt не хватает. Демон Kotlin наследует эти параметры.
 - В `build.gradle.kts` модуля, кроме плагинов сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`, у веб-приложения

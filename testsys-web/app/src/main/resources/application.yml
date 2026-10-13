@@ -10,6 +10,10 @@ spring:
     enableautoconfiguration: false
   application:
     name: testsys-web-app
+logging:
+  pattern:
+    # Every line shows the signed-in user id and the open page of the main interface request, or `-` outside it.
+    correlation: "[%X{user:--} %X{route:--}] "
 management:
   prometheus:
     metrics:

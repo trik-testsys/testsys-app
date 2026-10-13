@@ -1,6 +1,6 @@
 package tech.testsys.infra.mail.api
 
-import org.apache.commons.logging.LogFactory
+import org.slf4j.LoggerFactory
 import org.springframework.mail.MailException
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
@@ -96,6 +96,6 @@ class SmtpUserMailSender(
     }
 
     private companion object {
-        private val log = LogFactory.getLog(SmtpUserMailSender::class.java)
+        private val log = LoggerFactory.getLogger(SmtpUserMailSender::class.java)
     }
 }

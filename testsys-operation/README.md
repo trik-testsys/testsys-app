@@ -181,7 +181,7 @@ TRIK Studio. Затем `proceed` отправляет Посылки грейд
 - Проход находит Коды-приглашения с истёкшим сроком через `findExpired` в `ClassInviteRepository` или
   в `ManagerCommunityInviteRepository` и `DeveloperCommunityInviteRepository` и заменяет каждый отдельно.
   Ошибка операции (например, `MissedManagerRoleError`, если владелец потерял Роль) и исключение записываются
-  в `System.Logger` с уровнем `WARNING` и не останавливают ни проход, ни следующие проходы.
+  в лог SLF4J с уровнем `WARN` и не останавливают ни проход, ни следующие проходы.
 - `close()` останавливает `ScheduledExecutorService` через `shutdownNow()`; повторный вызов безопасен.
 
 Приложение создаёт `ScheduledExecutorService` и вызывает `start()`; в `testsys-web` это пока не реализовано.

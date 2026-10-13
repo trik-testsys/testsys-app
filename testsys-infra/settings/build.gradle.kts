@@ -7,6 +7,7 @@ dependencies {
     implementation(platform(libs.spring.boot.bom))
     implementation(project(":testsys-domain"))
     implementation(project(":testsys-infra:monitoring"))
+    implementation(libs.slf4j.api)
     implementation(libs.spring.context)
     implementation(libs.spring.boot.core)
     runtimeOnly(libs.kotlin.reflect)

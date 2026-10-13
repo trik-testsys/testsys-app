@@ -2,6 +2,8 @@ package tech.testsys.infra.settings.api
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.ProxyType
+import org.springframework.context.annotation.Proxyable
 import org.springframework.core.env.Environment
 import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.service.SettingsService
@@ -34,6 +36,7 @@ class SettingsConfiguration {
      * @since %CURRENT_VERSION%
      */
     @Bean
+    @Proxyable(ProxyType.INTERFACES)
     fun settingsService(
         store: SettingsStore,
         runtime: RuntimeSettings,

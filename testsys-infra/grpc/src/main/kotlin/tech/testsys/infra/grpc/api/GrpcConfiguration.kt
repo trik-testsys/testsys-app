@@ -3,12 +3,14 @@ package tech.testsys.infra.grpc.api
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.binder.MeterBinder
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.PropertySource
+import org.springframework.context.annotation.ProxyType
+import org.springframework.context.annotation.Proxyable
 import org.springframework.core.env.Environment
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.infra.grpc.internal.ConfiguredGradingNodeStore
@@ -104,6 +106,7 @@ class GrpcConfiguration {
     }
 
     @Bean
+    @Proxyable(ProxyType.INTERFACES)
     internal fun gradingNodeRegistry(
         coordinator: GradingCoordinator,
         settings: Settings<GradingProperties>,
@@ -179,6 +182,6 @@ class GrpcConfiguration {
     }
 
     private companion object {
-        val log: Log = LogFactory.getLog(GrpcConfiguration::class.java)
+        val log: Logger = LoggerFactory.getLogger(GrpcConfiguration::class.java)
     }
 }

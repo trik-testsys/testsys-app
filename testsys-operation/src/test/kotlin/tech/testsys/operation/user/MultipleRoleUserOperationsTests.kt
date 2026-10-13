@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import tech.testsys.domain.builder.api.accessRestorationRequest
 import tech.testsys.domain.builder.api.communityInviteData
 import tech.testsys.domain.builder.api.developerCommunityInvite
 import tech.testsys.domain.builder.api.developerData
@@ -26,6 +27,7 @@ import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.builder.api.multipleRoleUser
 import tech.testsys.domain.builder.api.studentData
 import tech.testsys.domain.contract.UserMailSender
+import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
@@ -37,6 +39,9 @@ import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.CommunityInviteData
 import tech.testsys.domain.model.group.CommunityInviteId
 import tech.testsys.domain.model.group.InviteCodeHash
+import tech.testsys.domain.model.user.AccessRestorationRequest
+import tech.testsys.domain.model.user.AccessRestorationRequestData
+import tech.testsys.domain.model.user.AccessRestorationRequestId
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.EmailChangeRequest
 import tech.testsys.domain.model.user.EmailChangeRequestData
@@ -46,6 +51,8 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Student
 import tech.testsys.operation.config.EmailConfirmationConfig
+import tech.testsys.operation.config.PublicCommunityOwner
+import tech.testsys.operation.error.AccessRestorationRequestNotExistsError
 import tech.testsys.operation.error.CommunityInviteCodeExpiredError
 import tech.testsys.operation.error.CommunityInviteCodeNotValidError
 import tech.testsys.operation.error.ConfirmationAttemptsExhaustedError
@@ -58,6 +65,7 @@ import tech.testsys.operation.error.InvalidEmailError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.publicCommunityConfig
+import tech.testsys.operation.util.testAccessRestorationRequest
 import tech.testsys.operation.util.testCommunity
 import tech.testsys.operation.util.testDeveloper
 import tech.testsys.operation.util.testEmailChangeRequest
@@ -79,6 +87,7 @@ class MultipleRoleUserOperationsTests {
     private val managerInvites = mockk<ManagerCommunityInviteRepository>()
     private val developerInvites = mockk<DeveloperCommunityInviteRepository>()
     private val emailChangeRequests = mockk<EmailChangeRequestRepository>()
+    private val accessRestorationRequests = mockk<AccessRestorationRequestRepository>()
     private val mailSender = mockk<UserMailSender>()
     private val clock = mockk<Clock>()
     private val random = mockk<RandomGenerator>()
@@ -93,6 +102,7 @@ class MultipleRoleUserOperationsTests {
         managerInviteRepository = managerInvites,
         developerInviteRepository = developerInvites,
         emailChangeRequestRepository = emailChangeRequests,
+        accessRestorationRequestRepository = accessRestorationRequests,
         mailSender = mailSender,
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,
@@ -114,8 +124,14 @@ class MultipleRoleUserOperationsTests {
         every { emailChangeRequests.remove(any<EmailChangeRequest>()) } just runs
         every { mailSender.sendEmailChangeConfirmationCode(any(), any()) } just runs
         every { mailSender.sendEmailChangedNotice(any(), any()) } just runs
+        every { accessRestorationRequests.findByUser(any()) } returns null
+        every { accessRestorationRequests.save(any<AccessRestorationRequestData>()) } answers { savedAccessRestorationRequest(firstArg()) }
+        every { accessRestorationRequests.update(any<AccessRestorationRequest>()) } answers { firstArg() }
+        every { accessRestorationRequests.remove(any<AccessRestorationRequest>()) } just runs
+        every { mailSender.sendAccessRestorationCode(any(), any()) } just runs
         every { clock.instant() } returns now
         every { random.nextInt(10) } returnsMany listOf(8, 7, 6, 5, 4, 3, 2, 1)
+        every { random.nextInt(62) } returnsMany (0..15).toList()
     }
 
     private fun testUser(name: String = "Nickname", email: String = "old@example.com"): MultipleRoleUser = testMultipleRoleUser {
@@ -131,6 +147,12 @@ class MultipleRoleUserOperationsTests {
 
     private fun savedRequest(data: EmailChangeRequestData): EmailChangeRequest = emailChangeRequest {
         id = 41
+        createdAt = now
+        this.data = data
+    }
+
+    private fun savedAccessRestorationRequest(data: AccessRestorationRequestData): AccessRestorationRequest = accessRestorationRequest {
+        id = 44
         createdAt = now
         this.data = data
     }
@@ -1236,6 +1258,469 @@ class MultipleRoleUserOperationsTests {
             fun `should propagate mail sender exceptions`() {
                 every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns testEmailChangeRequest()
                 every { mailSender.sendEmailChangedNotice(any(), any()) } throws IllegalStateException("smtp is down")
+
+                assertFailsWith<IllegalStateException> {
+                    confirm()
+                }
+            }
+        }
+    }
+
+    @Nested
+    inner class RequestAccessRestorationTests {
+
+        @BeforeEach
+        fun bindEmail() {
+            every { multipleRoleUsers.findByEmail("old@example.com") } returns user
+        }
+
+        private fun request(email: String = "old@example.com") = operations.requestAccessRestoration(email = email)
+
+        private fun verifyNothingStoredOrSent() {
+            verify(exactly = 0) {
+                accessRestorationRequests.save(any<AccessRestorationRequestData>())
+                accessRestorationRequests.update(any<AccessRestorationRequest>())
+                mailSender.sendAccessRestorationCode(any(), any())
+            }
+        }
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should save new request of the user with generated code, expiry and attempts if the user has no request`() {
+                val data = slot<AccessRestorationRequestData>()
+                every { accessRestorationRequests.save(capture(data)) } answers { savedAccessRestorationRequest(firstArg()) }
+
+                request().getOrThrow()
+
+                assertEquals(MultipleRoleUserId(0), data.captured.user.id)
+                assertEquals("87654321", data.captured.confirmationCode)
+                assertEquals(Instant.parse("2026-01-01T00:15:00Z"), data.captured.expiresAt)
+                assertEquals(3, data.captured.attemptsLeft)
+            }
+
+            @Test
+            fun `should send the confirmation code of the new request to the email of the user`() {
+                request()
+
+                verify(exactly = 1) { mailSender.sendAccessRestorationCode(email = "old@example.com", confirmationCode = "87654321") }
+            }
+
+            @Test
+            fun `should trim and lowercase the email when looking the user up`() {
+                request(email = "  Old@Example.COM ")
+
+                verify(exactly = 1) { mailSender.sendAccessRestorationCode(email = "old@example.com", confirmationCode = "87654321") }
+            }
+
+            @Test
+            fun `should overwrite a request expiring exactly now with a new code, expiry and attempts`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { expiresAt = now }
+                val updated = slot<AccessRestorationRequest>()
+                every { accessRestorationRequests.update(capture(updated)) } answers { firstArg() }
+
+                request()
+
+                assertEquals(AccessRestorationRequestId(43), updated.captured.id)
+                assertEquals("87654321", updated.captured.data.confirmationCode)
+                assertEquals(Instant.parse("2026-01-01T00:15:00Z"), updated.captured.data.expiresAt)
+                assertEquals(3, updated.captured.data.attemptsLeft)
+            }
+
+            @Test
+            fun `should overwrite a request without attempts left`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { attemptsLeft = 0 }
+                val updated = slot<AccessRestorationRequest>()
+                every { accessRestorationRequests.update(capture(updated)) } answers { firstArg() }
+
+                request()
+
+                assertEquals("87654321", updated.captured.data.confirmationCode)
+                assertEquals(3, updated.captured.data.attemptsLeft)
+            }
+
+            @Test
+            fun `should send the new code if the request is overwritten`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { expiresAt = now }
+
+                request()
+
+                verify(exactly = 1) { mailSender.sendAccessRestorationCode(email = "old@example.com", confirmationCode = "87654321") }
+            }
+
+            @Test
+            fun `should keep a request expiring one moment later and send its code`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { expiresAt = now.plusNanos(1) }
+
+                request()
+
+                verify(exactly = 1) { mailSender.sendAccessRestorationCode(email = "old@example.com", confirmationCode = "12345678") }
+            }
+
+            @Test
+            fun `should succeed without storing or sending anything if the email is bound to no user`() {
+                request(email = "unknown@example.com").getOrThrow()
+
+                verifyNothingStoredOrSent()
+            }
+
+            @Test
+            fun `should succeed without storing or sending anything if the email belongs to the public community owner`() {
+                every { multipleRoleUsers.findByEmail(PublicCommunityOwner.EMAIL) } returns
+                    testUser(email = PublicCommunityOwner.EMAIL)
+
+                request(email = PublicCommunityOwner.EMAIL).getOrThrow()
+
+                verifyNothingStoredOrSent()
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should overwrite rather than add a request if the user already has one`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { attemptsLeft = 0 }
+
+                request()
+
+                verify(exactly = 0) { accessRestorationRequests.save(any<AccessRestorationRequestData>()) }
+            }
+
+            @Test
+            fun `should not change an active request`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns testAccessRestorationRequest {
+                    expiresAt = Instant.parse("2026-01-01T00:05:00Z")
+                    attemptsLeft = 2
+                }
+
+                request()
+
+                verify(exactly = 0) {
+                    accessRestorationRequests.save(any<AccessRestorationRequestData>())
+                    accessRestorationRequests.update(any<AccessRestorationRequest>())
+                }
+            }
+
+            @Test
+            fun `should send the stored code again if the request is active`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns testAccessRestorationRequest()
+
+                request()
+
+                verify(exactly = 1) { mailSender.sendAccessRestorationCode(email = "old@example.com", confirmationCode = "12345678") }
+            }
+
+            @Test
+            fun `should not change the user when requesting`() {
+                request()
+
+                verify(exactly = 0) { multipleRoleUsers.update(any<MultipleRoleUser>()) }
+            }
+        }
+
+        @Nested
+        inner class ModuleRuleTests {
+
+            @Test
+            fun `should read the current time once when requesting`() {
+                request()
+
+                verify(exactly = 1) { clock.instant() }
+            }
+
+            @Test
+            fun `should not send the confirmation code if saving the new request fails`() {
+                every { accessRestorationRequests.save(any<AccessRestorationRequestData>()) } throws
+                    IllegalStateException("database is down")
+
+                assertFailsWith<IllegalStateException> {
+                    request()
+                }
+                verify(exactly = 0) { mailSender.sendAccessRestorationCode(any(), any()) }
+            }
+
+            @Test
+            fun `should not send the confirmation code if overwriting the request fails`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { expiresAt = now }
+                every { accessRestorationRequests.update(any<AccessRestorationRequest>()) } throws IllegalStateException("stale version")
+
+                assertFailsWith<IllegalStateException> {
+                    request()
+                }
+                verify(exactly = 0) { mailSender.sendAccessRestorationCode(any(), any()) }
+            }
+
+            @Test
+            fun `should propagate mail sender exceptions`() {
+                every { mailSender.sendAccessRestorationCode(any(), any()) } throws IllegalStateException("smtp is down")
+
+                assertFailsWith<IllegalStateException> {
+                    request()
+                }
+            }
+        }
+    }
+
+    @Nested
+    inner class ConfirmAccessRestorationTests {
+
+        @BeforeEach
+        fun prepareRequest() {
+            every { multipleRoleUsers.findByEmail("old@example.com") } returns user
+            every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns testAccessRestorationRequest()
+        }
+
+        private fun confirm(email: String = "old@example.com", confirmationCode: String = "12345678") =
+            operations.confirmAccessRestoration(email = email, confirmationCode = confirmationCode)
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the new access code`() {
+                val result = confirm().getOrThrow()
+
+                assertEquals("ABCD-EFGH-IJKL-MNOP", result)
+            }
+
+            @Test
+            fun `should assign the new access code to the user with Identity`() {
+                val updated = slot<MultipleRoleUser>()
+                every { multipleRoleUsers.update(capture(updated)) } answers { firstArg() }
+
+                confirm()
+
+                assertEquals(MultipleRoleUserId(0), updated.captured.id)
+                assertEquals("ABCD-EFGH-IJKL-MNOP", updated.captured.data.accessTokenHash.value)
+                assertEquals(HashAlgorithm.Identity, updated.captured.data.accessTokenHash.algorithm)
+            }
+
+            @Test
+            fun `should store one attempt less if the code matches`() {
+                val updated = slot<AccessRestorationRequest>()
+                every { accessRestorationRequests.update(capture(updated)) } answers { firstArg() }
+
+                confirm()
+
+                assertEquals(AccessRestorationRequestId(43), updated.captured.id)
+                assertEquals(2, updated.captured.data.attemptsLeft)
+            }
+
+            @Test
+            fun `should remove the request after the change`() {
+                confirm()
+
+                verify(exactly = 1) {
+                    accessRestorationRequests.remove(match<AccessRestorationRequest> { it.id == AccessRestorationRequestId(43) })
+                }
+            }
+
+            @Test
+            fun `should trim and lowercase the email when looking the user up`() {
+                val result = confirm(email = "  Old@Example.COM ").getOrThrow()
+
+                assertEquals("ABCD-EFGH-IJKL-MNOP", result)
+            }
+
+            @Test
+            fun `should accept the code one moment before it expires`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { expiresAt = now.plusNanos(1) }
+
+                val result = confirm().getOrThrow()
+
+                assertEquals("ABCD-EFGH-IJKL-MNOP", result)
+            }
+
+            @Test
+            fun `should accept the code of the last attempt`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { attemptsLeft = 1 }
+
+                val result = confirm().getOrThrow()
+
+                assertEquals("ABCD-EFGH-IJKL-MNOP", result)
+            }
+
+            @Test
+            fun `should accept a code with surrounding whitespace`() {
+                val result = confirm(confirmationCode = " \t12345678 \n").getOrThrow()
+
+                assertEquals("ABCD-EFGH-IJKL-MNOP", result)
+            }
+
+            @Test
+            fun `should not mail the new access code`() {
+                confirm()
+
+                verify { mailSender wasNot Called }
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise AccessRestorationRequestNotExistsError if the email is bound to no user`() {
+                assertRaises(AccessRestorationRequestNotExistsError) {
+                    confirm(email = "unknown@example.com")
+                }
+            }
+
+            @Test
+            fun `should raise AccessRestorationRequestNotExistsError if the user has no request`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns null
+
+                assertRaises(AccessRestorationRequestNotExistsError) {
+                    confirm()
+                }
+            }
+
+            @Test
+            fun `should raise ConfirmationCodeExpiredError if the code expires exactly now`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { expiresAt = now }
+
+                assertRaises(ConfirmationCodeExpiredError) {
+                    confirm()
+                }
+            }
+
+            @Test
+            fun `should raise ConfirmationAttemptsExhaustedError if no attempts are left`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { attemptsLeft = 0 }
+
+                assertRaises(ConfirmationAttemptsExhaustedError) {
+                    confirm()
+                }
+            }
+
+            @Test
+            fun `should raise InvalidConfirmationCodeError if the code differs`() {
+                assertRaises(InvalidConfirmationCodeError) {
+                    confirm(confirmationCode = "00000000")
+                }
+            }
+
+            @Test
+            fun `should not accept a code with whitespace inside`() {
+                assertRaises(InvalidConfirmationCodeError) {
+                    confirm(confirmationCode = "1234 5678")
+                }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should not spend an attempt if the code expired`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { expiresAt = now }
+
+                confirm()
+
+                verify(exactly = 0) { accessRestorationRequests.update(any<AccessRestorationRequest>()) }
+            }
+
+            @Test
+            fun `should not spend an attempt if no attempts are left`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { attemptsLeft = 0 }
+
+                confirm()
+
+                verify(exactly = 0) { accessRestorationRequests.update(any<AccessRestorationRequest>()) }
+            }
+
+            @Test
+            fun `should store one attempt less and keep the code if the code differs`() {
+                val updated = slot<AccessRestorationRequest>()
+                every { accessRestorationRequests.update(capture(updated)) } answers { firstArg() }
+
+                confirm(confirmationCode = "00000000")
+
+                assertEquals(2, updated.captured.data.attemptsLeft)
+                assertEquals("12345678", updated.captured.data.confirmationCode)
+            }
+
+            @Test
+            fun `should keep the access code and the request if the code differs`() {
+                confirm(confirmationCode = "00000000")
+
+                verify(exactly = 0) {
+                    multipleRoleUsers.update(any<MultipleRoleUser>())
+                    accessRestorationRequests.remove(any<AccessRestorationRequest>())
+                }
+            }
+
+            @Test
+            fun `should keep the access code if the code expired`() {
+                every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
+                    testAccessRestorationRequest { expiresAt = now }
+
+                confirm()
+
+                verify(exactly = 0) { multipleRoleUsers.update(any<MultipleRoleUser>()) }
+            }
+
+            @Test
+            fun `should keep the email, nickname, roles and communities of the user`() {
+                val updated = slot<MultipleRoleUser>()
+                every { multipleRoleUsers.update(capture(updated)) } answers { firstArg() }
+
+                confirm()
+
+                assertEquals("old@example.com", updated.captured.data.email)
+                assertEquals("Nickname", updated.captured.data.name)
+                val role = assertIs<Student>(updated.captured.data.roles.single())
+                assertEquals(listOf(CommunityId(5)), role.memberOf.ids)
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["12345678", "00000000"])
+            fun `should propagate the storage exception and keep the access code if spending the attempt fails`(confirmationCode: String) {
+                every { accessRestorationRequests.update(any<AccessRestorationRequest>()) } throws IllegalStateException("stale version")
+
+                assertFailsWith<IllegalStateException> {
+                    confirm(confirmationCode = confirmationCode)
+                }
+                verify(exactly = 0) { multipleRoleUsers.update(any<MultipleRoleUser>()) }
+            }
+        }
+
+        @Nested
+        inner class ModuleRuleTests {
+
+            @Test
+            fun `should read the current time once when confirming`() {
+                confirm()
+
+                verify(exactly = 1) { clock.instant() }
+            }
+
+            @Test
+            fun `should not remove the request if updating the user fails`() {
+                every { multipleRoleUsers.update(any<MultipleRoleUser>()) } throws IllegalStateException("stale version")
+
+                assertFailsWith<IllegalStateException> {
+                    confirm()
+                }
+                verify(exactly = 0) { accessRestorationRequests.remove(any<AccessRestorationRequest>()) }
+            }
+
+            @Test
+            fun `should propagate the storage exception if removing the request fails`() {
+                every { accessRestorationRequests.remove(any<AccessRestorationRequest>()) } throws IllegalStateException("stale version")
 
                 assertFailsWith<IllegalStateException> {
                     confirm()

@@ -85,7 +85,7 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 | Пользователь с несколькими Ролями, `ts_user` | `ts_multiple_role_to_user`, `ts_developer_data`, `ts_student_data`, `ts_judge_data`, `ts_manager_data`, `ts_administrator_data` |
 | Пользователь с одной Ролью, `ts_user` | `ts_single_role_to_user`, `ts_participant_data`, `ts_observer_data`, `ts_supervisor_data`, `ts_contest_to_observer` |
 | Запрос проверки, `ts_task_validation_request` | Четыре таблицы `ts_*_to_task_validation_request`, `ts_test_diagnostic_result`, `ts_diagnostic_report` |
-| Посылка, Приказ судьи, Вердикт, Коды-приглашения, запросы регистрации и смены почты, записи первого входа | Частей нет; у Вердикта часть `ts_test_verdict` |
+| Посылка, Приказ судьи, Вердикт, Коды-приглашения, запросы регистрации, смены почты и восстановления доступа, записи первого входа | Частей нет; у Вердикта часть `ts_test_verdict` |
 
 Некоторые записи меняют чужой агрегат и поэтому повышают его версию:
 
@@ -473,7 +473,7 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 `removeCommunityMembership` повышает версию корня Пользователя и удаляет одну строку членства,
 если она есть; строки данных Роли остаются.
 
-## Регистрация, смена почты и поиск по почте
+## Регистрация, смена почты, восстановление доступа и поиск по почте
 
 `RegistrationRequestPersistenceAdapter` хранит запросы регистрации в `ts_registration_request`
 ([changelog.16-init-registration-request.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.16-init-registration-request.xml)).
@@ -489,6 +489,15 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 запроса не уникальна. Внешний ключ `fk_ts_email_change_request_user_id` удаляет запрос вместе с Пользователем.
 `update` берёт `user_id` из сохранённой строки (KDoc `EmailChangeRequestMapping.toJpaEntity(entity, current)`
 в [EmailChangeRequestMapping.kt](src/main/kotlin/tech/testsys/infra/database/internal/mapping/user/EmailChangeRequestMapping.kt)).
+`findByUser` ищет запрос по идентификатору Пользователя. Код подтверждения хранится в исходном виде.
+
+`AccessRestorationRequestPersistenceAdapter` хранит запросы восстановления доступа
+в `ts_access_restoration_request`
+([changelog.21-init-access-restoration-request.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.21-init-access-restoration-request.xml)).
+Ограничение `uk_ts_access_restoration_request_user_id` не даёт сохранить второй запрос того же Пользователя,
+а внешний ключ `fk_ts_access_restoration_request_user_id` удаляет запрос вместе с Пользователем. `update` берёт
+`user_id` из сохранённой строки (KDoc `AccessRestorationRequestMapping.toJpaEntity(entity, current)`
+в [AccessRestorationRequestMapping.kt](src/main/kotlin/tech/testsys/infra/database/internal/mapping/user/AccessRestorationRequestMapping.kt)).
 `findByUser` ищет запрос по идентификатору Пользователя. Код подтверждения хранится в исходном виде.
 
 `MultipleRoleUserPersistenceAdapter.findByEmail` ищет строку `ts_user` по точному совпадению почты

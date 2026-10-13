@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
+import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
@@ -34,6 +35,9 @@ class UserServiceTests {
 
     @Autowired
     private lateinit var requests: RegistrationRequestRepository
+
+    @Autowired
+    private lateinit var accessRestorationRequests: AccessRestorationRequestRepository
 
     @Autowired
     private lateinit var multipleRoleUsers: MultipleRoleUserRepository
@@ -106,6 +110,37 @@ class UserServiceTests {
 
             assertEquals(mail.accessTokens.getValue(email), accessToken)
             assertEquals(accessToken, multipleRoleUsers.findByEmail(email)?.data?.accessTokenHash?.value)
+        }
+    }
+
+    @Nested
+    inner class ConfirmAccessRestorationTests {
+        @Test
+        fun `should keep the spent attempt if the confirmation code differs`() {
+            val user = fixtures.multipleRoleUser()
+            val email = user.data.email
+            service.requestAccessRestoration(email)
+            val wrongCode = fixtures.otherCode(mail.confirmationCodes.getValue(email))
+
+            assertThrows(OperationException::class.java) {
+                service.confirmAccessRestoration(email, confirmationCode = wrongCode)
+            }
+
+            assertEquals(2, accessRestorationRequests.findByUser(user.id)?.data?.attemptsLeft)
+        }
+
+        @Test
+        fun `should sign in with the new access code and refuse the previous one`() {
+            val previousToken = fixtures.unique("token")
+            val user = fixtures.multipleRoleUser(rawAccessToken = previousToken)
+            val email = user.data.email
+            service.requestAccessRestoration(email)
+
+            val accessToken = service.confirmAccessRestoration(email, confirmationCode = mail.confirmationCodes.getValue(email))
+
+            assertEquals(CabinetPrincipal.of(user), service.authenticate(accessToken))
+            val failure = assertThrows(OperationException::class.java) { service.authenticate(previousToken) }
+            assertEquals(InvalidAccessTokenError, failure.error)
         }
     }
 }

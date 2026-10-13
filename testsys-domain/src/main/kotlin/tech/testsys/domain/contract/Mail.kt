@@ -50,4 +50,14 @@ interface UserMailSender {
      * @since %CURRENT_VERSION%
      */
     fun sendEmailChangedNotice(email: String, name: String)
+
+    /**
+     * Sends [confirmationCode] for restoring access of the user whose e-mail address is [email]; the letter has no
+     * nickname. Technical exceptions of the adapter are propagated, except those of delivery after the commit.
+     *
+     * @param email the e-mail address of the user to send the letter to.
+     * @param confirmationCode the code the user enters to restore access.
+     * @since %CURRENT_VERSION%
+     */
+    fun sendAccessRestorationCode(email: String, confirmationCode: String)
 }

@@ -1,6 +1,7 @@
 package tech.testsys.infra.database
 
 import org.springframework.boot.test.context.TestComponent
+import tech.testsys.domain.builder.api.accessRestorationRequestData
 import tech.testsys.domain.builder.api.classData
 import tech.testsys.domain.builder.api.classInviteData
 import tech.testsys.domain.builder.api.communityData
@@ -33,6 +34,7 @@ import tech.testsys.domain.builder.api.verdictData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
 import tech.testsys.domain.builder.util.chooser.LanguageChooser
+import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -84,6 +86,7 @@ import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.AccessRestorationRequest
 import tech.testsys.domain.model.user.EmailChangeRequest
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -136,6 +139,7 @@ class DatabaseFixtures(
     private val trikStudioVersionJpaEntityRepository: TrikStudioVersionJpaEntityRepository,
     private val registrationRequests: RegistrationRequestRepository,
     private val emailChangeRequests: EmailChangeRequestRepository,
+    private val accessRestorationRequests: AccessRestorationRequestRepository,
 ) {
 
     fun participantContestEntry(
@@ -225,6 +229,15 @@ class DatabaseFixtures(
                 attemptsLeft = 5
             },
         )
+
+    fun accessRestorationRequest(user: MultipleRoleUser = student()): AccessRestorationRequest = accessRestorationRequests.save(
+        accessRestorationRequestData {
+            this.user = user.id
+            confirmationCode = "12345678"
+            expiresAt = Instant.EPOCH
+            attemptsLeft = 5
+        },
+    )
 
     fun registrationRequest(email: String = email("registration")): RegistrationRequest = registrationRequests.save(
         registrationRequestData {

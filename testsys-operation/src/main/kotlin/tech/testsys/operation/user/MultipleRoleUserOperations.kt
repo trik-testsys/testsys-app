@@ -1,8 +1,10 @@
 package tech.testsys.operation.user
 
+import tech.testsys.domain.builder.api.accessRestorationRequestData
 import tech.testsys.domain.builder.api.emailChangeRequestData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.UserMailSender
+import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
@@ -20,8 +22,11 @@ import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.operation.config.EmailConfirmationConfig
+import tech.testsys.operation.config.PublicCommunityOwner
+import tech.testsys.operation.error.AccessRestorationRequestNotExistsError
 import tech.testsys.operation.error.CommunityInviteCodeExpiredError
 import tech.testsys.operation.error.CommunityInviteCodeNotValidError
+import tech.testsys.operation.error.ConfirmAccessRestorationError
 import tech.testsys.operation.error.ConfirmEmailChangeError
 import tech.testsys.operation.error.ConfirmationAttemptsExhaustedError
 import tech.testsys.operation.error.ConfirmationCodeExpiredError
@@ -32,6 +37,7 @@ import tech.testsys.operation.error.InvalidConfirmationCodeError
 import tech.testsys.operation.error.InvalidEmailError
 import tech.testsys.operation.error.JoinCommunityError
 import tech.testsys.operation.error.OperationResult
+import tech.testsys.operation.error.RequestAccessRestorationError
 import tech.testsys.operation.error.RequestEmailChangeError
 import tech.testsys.operation.error.ViewProfileError
 import tech.testsys.operation.error.asSuccess
@@ -41,6 +47,7 @@ import tech.testsys.operation.util.confirmationCodeExpiresAt
 import tech.testsys.operation.util.isConfirmationActive
 import tech.testsys.operation.util.isValidEmail
 import tech.testsys.operation.util.joinCommunity
+import tech.testsys.operation.util.nextAccessToken
 import tech.testsys.operation.util.nextConfirmationCode
 import tech.testsys.operation.util.normalizeEmail
 import tech.testsys.operation.util.normalizeInviteCode
@@ -59,6 +66,7 @@ class MultipleRoleUserOperations(
     private val managerInviteRepository: ManagerCommunityInviteRepository,
     private val developerInviteRepository: DeveloperCommunityInviteRepository,
     private val emailChangeRequestRepository: EmailChangeRequestRepository,
+    private val accessRestorationRequestRepository: AccessRestorationRequestRepository,
     private val mailSender: UserMailSender,
     private val emailConfirmationConfig: EmailConfirmationConfig,
     private val clock: Clock,
@@ -194,5 +202,68 @@ class MultipleRoleUserOperations(
             emailChangeRequestRepository.remove(spentRequest)
             mailSender.sendEmailChangedNotice(email = previousEmail, name = updatedUser.data.name)
             return updatedUser.asSuccess()
+        }
+
+    /**
+     * Stores the only access restoration request of the user bound to the trimmed lower-case [email] and mails its code
+     * there, resending an active request unchanged; storage and mail exceptions propagate. An address bound to no user
+     * or to the public community owner succeeds without writing or mailing anything.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.restoreAccess")
+    fun requestAccessRestoration(email: String): OperationResult<Unit, RequestAccessRestorationError> =
+        operation<Unit, RequestAccessRestorationError> {
+            val user = multipleRoleUserRepository.findByEmail(normalizeEmail(email))
+            if (user == null || user.data.email == PublicCommunityOwner.EMAIL) return Unit.asSuccess()
+            val now = clock.instant()
+            val existing = accessRestorationRequestRepository.findByUser(user.id)
+            val request = when {
+                existing == null -> accessRestorationRequestRepository.save(
+                    accessRestorationRequestData {
+                        this.user = user.id
+                        confirmationCode = randomGenerator.nextConfirmationCode()
+                        expiresAt = emailConfirmationConfig.confirmationCodeExpiresAt(now)
+                        attemptsLeft = emailConfirmationConfig.maxConfirmationAttempts
+                    },
+                )
+                isConfirmationActive(expiresAt = existing.data.expiresAt, attemptsLeft = existing.data.attemptsLeft, now = now) -> existing
+                else -> accessRestorationRequestRepository.update(
+                    existing.withData {
+                        confirmationCode = randomGenerator.nextConfirmationCode()
+                        expiresAt = emailConfirmationConfig.confirmationCodeExpiresAt(now)
+                        attemptsLeft = emailConfirmationConfig.maxConfirmationAttempts
+                    },
+                )
+            }
+            mailSender.sendAccessRestorationCode(email = user.data.email, confirmationCode = request.data.confirmationCode)
+            return Unit.asSuccess()
+        }
+
+    /**
+     * Spends an attempt of the access restoration request of the user bound to the trimmed lower-case [email] and
+     * compares the trimmed [confirmationCode] with the sent one; on a match assigns the user a new access code and removes
+     * the request. Returns the new access code; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.restoreAccess")
+    fun confirmAccessRestoration(email: String, confirmationCode: String): OperationResult<String, ConfirmAccessRestorationError> =
+        operation<String, ConfirmAccessRestorationError> {
+            val user = multipleRoleUserRepository.findByEmail(normalizeEmail(email))
+            ensure(user != null, AccessRestorationRequestNotExistsError)
+            val request = accessRestorationRequestRepository.findByUser(user.id)
+            ensure(request != null, AccessRestorationRequestNotExistsError)
+            ensure(clock.instant().isBefore(request.data.expiresAt), ConfirmationCodeExpiredError)
+            ensure(request.data.attemptsLeft > 0, ConfirmationAttemptsExhaustedError)
+            val attemptsLeft = request.data.attemptsLeft - 1
+            // The versioned update spends the attempt before the comparison, so concurrent confirmations with a stale
+            // version fail without comparing their codes.
+            val spentRequest = accessRestorationRequestRepository.update(request.withData { this.attemptsLeft = attemptsLeft })
+            ensure(confirmationCode.trim() == request.data.confirmationCode, InvalidConfirmationCodeError)
+            val rawAccessToken = randomGenerator.nextAccessToken()
+            multipleRoleUserRepository.update(user.withData { accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity) })
+            accessRestorationRequestRepository.remove(spentRequest)
+            return rawAccessToken.asSuccess()
         }
 }

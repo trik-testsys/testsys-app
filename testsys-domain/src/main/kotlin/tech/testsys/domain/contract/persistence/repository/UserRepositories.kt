@@ -5,6 +5,9 @@ import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.UserFilter
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CompetitionId
+import tech.testsys.domain.model.user.AccessRestorationRequest
+import tech.testsys.domain.model.user.AccessRestorationRequestData
+import tech.testsys.domain.model.user.AccessRestorationRequestId
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.EmailChangeRequest
@@ -260,4 +263,23 @@ interface EmailChangeRequestRepository : EntityRepository<EmailChangeRequestData
      * @since %CURRENT_VERSION%
      */
     fun findByUser(user: MultipleRoleUserId): EmailChangeRequest?
+}
+
+/**
+ * Persistence port for [AccessRestorationRequest] entities; at most one request is stored per user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+interface AccessRestorationRequestRepository :
+    EntityRepository<AccessRestorationRequestData, AccessRestorationRequestId, AccessRestorationRequest> {
+
+    /**
+     * Finds the access restoration request of the user [user].
+     * Technical exceptions of the adapter are propagated.
+     *
+     * @param user the user restoring access.
+     * @return the request, or `null` if the user has no access restoration request.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByUser(user: MultipleRoleUserId): AccessRestorationRequest?
 }

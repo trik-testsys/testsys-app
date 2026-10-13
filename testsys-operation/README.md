@@ -40,9 +40,10 @@
 - Зависимости операций — порты из `tech.testsys.domain.contract` и интерфейсы конфигурации из
   `tech.testsys.operation.config` (см. раздел «Конфигурация») — передаются через конструктор класса.
 - Первый параметр операции — Пользователь, который её выполняет; остальные — входные данные фичи.
-  Исключения — `UserOperations.authenticate`, `UserOperations.requestRegistration` и
-  `UserOperations.confirmRegistration`: до входа Пользователь неизвестен, поэтому операции принимают только
-  входные данные фичи (см. разделы «Вход в Систему» и «Регистрация»).
+  Исключения — `UserOperations.authenticate`, `UserOperations.requestRegistration`,
+  `UserOperations.confirmRegistration`, `MultipleRoleUserOperations.requestAccessRestoration` и
+  `MultipleRoleUserOperations.confirmAccessRestoration`: до входа Пользователь неизвестен, поэтому операции
+  принимают только входные данные фичи (см. разделы «Вход в Систему», «Регистрация» и «Восстановление доступа»).
 - Операция возвращает `OperationResult<T, <Operation>Error>`.
 
 | Префикс кодификатора                | Класс                        |
@@ -426,9 +427,28 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
 не содержит ни одной ошибки.
 
 `MultipleRoleUserOperations` получает через конструктор `MultipleRoleUserRepository`, `CommunityRepository`,
-`ManagerCommunityInviteRepository`, `DeveloperCommunityInviteRepository`, `EmailChangeRequestRepository`, `UserMailSender`, `EmailConfirmationConfig`, `Clock`, `RandomGenerator`
+`ManagerCommunityInviteRepository`, `DeveloperCommunityInviteRepository`, `EmailChangeRequestRepository`,
+`AccessRestorationRequestRepository`, `UserMailSender`, `EmailConfirmationConfig`, `Clock`, `RandomGenerator`
 и `CommunityConfig` с Публичным Сообществом.
-Код подтверждения, срок его действия и чтение времени — те же, что в регистрации.
+Код подтверждения, Код-доступа, срок действия кода и чтение времени — те же, что в регистрации.
+
+## Восстановление доступа
+
+`MultipleRoleUserOperations` предоставляет `requestAccessRestoration(email)` и
+`confirmAccessRestoration(email, confirmationCode)`. Обе операции помечены кодификатором
+`testsys.user.multi.restoreAccess`; требования определены в этой фиче в [features.md](../docs/domain/features.md).
+
+- Обе операции находят Пользователя по приведённой почте через `MultipleRoleUserRepository.findByEmail`, а его
+  запрос — через `AccessRestorationRequestRepository.findByUser`. Формат почты операции не проверяют.
+- `requestAccessRestoration` ничего не возвращает, и у `RequestAccessRestorationError` нет ни одной ошибки.
+  Если почта не привязана или принадлежит владельцу Публичного Сообщества (`PublicCommunityOwner.EMAIL`),
+  операция ничего не записывает и не отправляет. Действующий запрос операция не сохраняет заново,
+  а недействующий перезаписывает через `update`. Последним шагом она отправляет код на почту Пользователя.
+- `confirmAccessRestoration` возвращает новый Код-доступа. Если почта не привязана или у Пользователя нет
+  запроса, операция возвращает `AccessRestorationRequestNotExistsError`. Попытку она тратит так же, как
+  `confirmEmailChange`; в `testsys-web` транзакцию при отказе фиксирует `UserService.confirmAccessRestoration`.
+  При совпадении кода операция сохраняет Пользователя с новым Кодом-доступа и удаляет запрос. Новый
+  Код-доступа письмом не отправляется.
 
 ## Первое получение Роли
 

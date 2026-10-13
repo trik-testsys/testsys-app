@@ -11,6 +11,7 @@ import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.SupervisorCommunityReadPort
 import tech.testsys.domain.contract.persistence.SupervisorUserReadPort
+import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -269,6 +270,7 @@ class OperationsConfiguration {
         managerInvites: ManagerCommunityInviteRepository,
         developerInvites: DeveloperCommunityInviteRepository,
         emailChangeRequests: EmailChangeRequestRepository,
+        accessRestorationRequests: AccessRestorationRequestRepository,
         mailSender: UserMailSender,
         emailConfirmationConfig: EmailConfirmationConfig,
         clock: Clock,
@@ -280,6 +282,7 @@ class OperationsConfiguration {
         managerInviteRepository = managerInvites,
         developerInviteRepository = developerInvites,
         emailChangeRequestRepository = emailChangeRequests,
+        accessRestorationRequestRepository = accessRestorationRequests,
         mailSender = mailSender,
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,

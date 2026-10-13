@@ -407,4 +407,8 @@ class RecordedMail : UserMailSender {
     }
 
     override fun sendEmailChangedNotice(email: String, name: String) = Unit
+
+    override fun sendAccessRestorationCode(email: String, confirmationCode: String) {
+        confirmationCodes[email] = confirmationCode
+    }
 }

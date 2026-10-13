@@ -158,6 +158,17 @@ class RequestLogContextTests {
         }
 
         @Test
+        fun `should put the user and the page of the UI into the log context for a push request without a response`() {
+            signIn(userId = 42)
+            every { httpSession.getAttribute("testsys.route.3") } returns "/developer/tasks"
+
+            context.requestStart(request(uiId = "3"), null)
+
+            assertEquals("42", MDC.get("user"))
+            assertEquals("/developer/tasks", MDC.get("route"))
+        }
+
+        @Test
         fun `should leave the user out of the log context for a guest`() {
             context.requestStart(request(uiId = null), response)
 

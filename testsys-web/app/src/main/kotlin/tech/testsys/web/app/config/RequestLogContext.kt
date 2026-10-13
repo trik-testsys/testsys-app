@@ -37,7 +37,8 @@ class RequestLogContext :
         }
     }
 
-    override fun requestStart(request: VaadinRequest, response: VaadinResponse) {
+    // Push over a websocket starts and ends its requests without a response.
+    override fun requestStart(request: VaadinRequest, response: VaadinResponse?) {
         putUser()
 
         // The Vaadin session is not looked up yet, so the page path of the UI is read from the HTTP session.
@@ -46,9 +47,9 @@ class RequestLogContext :
         route?.let { path -> MDC.put(ROUTE, path) }
     }
 
-    override fun handleException(request: VaadinRequest, response: VaadinResponse, session: VaadinSession?, exception: Exception) = Unit
+    override fun handleException(request: VaadinRequest, response: VaadinResponse?, session: VaadinSession?, exception: Exception) = Unit
 
-    override fun requestEnd(request: VaadinRequest, response: VaadinResponse, session: VaadinSession?) {
+    override fun requestEnd(request: VaadinRequest, response: VaadinResponse?, session: VaadinSession?) {
         MDC.remove(USER)
         MDC.remove(ROUTE)
     }

@@ -124,6 +124,8 @@ fun testSavedTask(updatedTask: Task): Task = task {
     data = updatedTask.data
 }
 
+fun testTrikStudioVersion(version: String = "3.0.0"): TrikStudioVersion = TrikStudioVersion(tag = "trik-studio:$version", version = version)
+
 fun testContest(builder: ContestDataBuilder.() -> Unit = {}): Contest = contest {
     id = 19L
     createdAt = Instant.parse("2019-01-01T00:00:00Z")
@@ -132,7 +134,7 @@ fun testContest(builder: ContestDataBuilder.() -> Unit = {}): Contest = contest 
         owner = MultipleRoleUserId(0)
         name = "Contest"
         description = "Description"
-        trikStudioVersion = TrikStudioVersion("3.0.0")
+        trikStudioVersion = testTrikStudioVersion("3.0.0")
         builder()
     }
 }

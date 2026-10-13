@@ -420,7 +420,8 @@ Cookie основного интерфейса называется `TESTSYS_APP
 [ServiceWebConfiguration](src/main/kotlin/tech/testsys/web/service/ServiceWebConfiguration.kt) подключает только
 служебные страницы: `ServiceLoginView` по адресу `login`, `ServiceHomeView` в корне своего сервера,
 `ServiceSettingsView` по адресу `settings`, `ServiceGradingView` по адресу `grading`, `ServiceUsersView` по адресу
-`users` и `ServiceUserView` по адресу `users/:userId`.
+`users`, `ServiceUserView` по адресу `users/:userId` и `ServiceTrikStudioVersionsView` по адресу
+`trik-studio-versions`.
 Он не подключает `CurrentUser`, `CabinetHeaders` и прокси-сервисы доменных операций.
 `ServicePrincipal` хранит только техническую идентичность с полномочием `ROLE_SERVICE`.
 
@@ -565,6 +566,19 @@ database/README.md. Требования к поиску и карточке —
 в буфер значение этого поля и не читает Пользователя заново. Код-доступа не передаётся в адресе и не записывается
 страницами в журнал.
 
+## Версии TRIK Studio в служебном кабинете
+
+Служебная главная открывает маршрут `trik-studio-versions` действием «Версии TRIK Studio». Страница требует
+`ROLE_SERVICE` и работает с версиями через `ServiceTrikStudioVersions` общего родителя; его устройство описано
+в разделе [«Служебная регистрация версий TRIK Studio»](../../testsys-infra/database/README.md#служебная-регистрация-версий-trik-studio)
+database/README.md. Требования — в
+[testsys.dev.service.trikStudioVersions](../../docs/domain/features.md#testsysdevservicetrikstudioversions-implemented).
+
+Таблица `ServiceTrikStudioVersionsView` показывает номер версии и тег образа моноширинным шрифтом в порядке тегов.
+«Добавить» в шапке блока открывает диалог с полями «Версия» и «Тег образа»; каждое открытие начинается с пустых полей.
+После регистрации диалог закрывается, страница показывает уведомление и перечитывает таблицу. Отказ оставляет диалог
+открытым и показывает причину ошибкой на поле, к которому она относится.
+
 ## Логирование
 
 Требования описаны в фичах `testsys.dev.logging.calls` и `testsys.dev.logging.navigation`
@@ -578,7 +592,7 @@ database/README.md. Требования к поиску и карточке —
 | Advisor | Где объявлен | Что оборачивает | Порядок |
 |---------|--------------|-----------------|---------|
 | `callLoggingAdvisor` | `MainWebConfiguration` | Те же методы прокси-сервисов, что и `operationMetricsAdvisor` | `HIGHEST_PRECEDENCE + 1`: внутри метрик, снаружи повтора транзакций |
-| `infrastructureCallLoggingAdvisor` | `InfraConfiguration` в общем родителе | Бины классов из пакетов `tech.testsys.infra.*`, которые реализуют порт из `tech.testsys.domain.contract` или `SettingsService`, `SettingsStore`, `GradingNodeStore`, `GradingNodeRegistry`, `ServiceUserSearch`; оборачиваются только методы с именами из этих интерфейсов | `HIGHEST_PRECEDENCE`: снаружи транзакции и её повторов |
+| `infrastructureCallLoggingAdvisor` | `InfraConfiguration` в общем родителе | Бины классов из пакетов `tech.testsys.infra.*`, которые реализуют порт из `tech.testsys.domain.contract` или `SettingsService`, `SettingsStore`, `GradingNodeStore`, `GradingNodeRegistry`, `ServiceUserSearch`, `ServiceTrikStudioVersions`; оборачиваются только методы с именами из этих интерфейсов | `HIGHEST_PRECEDENCE`: снаружи транзакции и её повторов |
 
 Вызов, повторённый после конфликта транзакций, записывается один раз. Вложенный вызов другого обёрнутого бина
 записывается отдельно.

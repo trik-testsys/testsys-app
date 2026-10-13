@@ -97,14 +97,14 @@ internal fun testSubmission(id: Long = 42) = submission {
         author(1)
         solution(2)
         task(3)
-        kind.developerSolutionTest { trikStudioVersion("2025.1") }
+        kind.developerSolutionTest { trikStudioVersion(tag = "trik-studio:2025.1", version = "2025.1") }
         status.queued()
     }
 }
 
 internal fun validationRequest(
     submitted: Submission = testSubmission(),
-    version: TrikStudioVersion = TrikStudioVersion("2025.1"),
+    version: TrikStudioVersion = TrikStudioVersion(tag = "trik-studio:2025.1", version = "2025.1"),
 ): TaskValidationRequest = taskValidationRequest {
     id = 11
     createdAt = Instant.EPOCH
@@ -185,7 +185,7 @@ internal class RepositoryFixture(val initial: Submission = testSubmission()) {
                 owner(1)
                 name = "Contest"
                 description = ""
-                trikStudioVersion("contest-version")
+                trikStudioVersion(tag = "trik-studio:contest-version", version = "contest-version")
             }
         }
         every {

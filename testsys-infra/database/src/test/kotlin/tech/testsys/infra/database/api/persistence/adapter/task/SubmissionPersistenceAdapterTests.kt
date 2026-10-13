@@ -206,7 +206,7 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     @Test
     fun `should keep the TRIK Studio version if an unregistered version is passed on update`() {
         val saved = repository.save(newData())
-        val unknownVersion = TrikStudioVersion(fixtures.unique("unregistered"))
+        val unknownVersion = fixtures.unregisteredTrikStudioVersion()
         val changed = saved.withData { kind.developerSolutionTest { trikStudioVersion = unknownVersion } }
 
         val updated = repository.update(changed)
@@ -217,7 +217,7 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
 
     @Test
     fun `should fail to save a submission with an unregistered TRIK Studio version`() {
-        val unknownVersion = TrikStudioVersion(fixtures.unique("unregistered"))
+        val unknownVersion = fixtures.unregisteredTrikStudioVersion()
         val data = developerSolutionTestData(unknownVersion)
 
         assertFailsWith<IllegalArgumentException> { repository.save(data) }
@@ -265,7 +265,7 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val contestId = fixtures.contest().id.value
         val saved = repository.save(gradingSubmissionData(contestId))
         val version = fixtures.trikStudioVersion()
-        val versionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(version.version)
+        val versionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(version.tag)
         val failure = assertFailsWith<DataIntegrityViolationException> {
             jdbcTemplate.update("update ts_submission set trik_studio_version_id = ? where id = ?", versionId, saved.id.value)
         }
@@ -289,7 +289,7 @@ class SubmissionPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     fun `should keep grading kind if developer solution test with unknown version is passed on update`() {
         val contestId = fixtures.contest().id.value
         val saved = repository.save(gradingSubmissionData(contestId))
-        val unknownVersion = TrikStudioVersion(fixtures.unique("unregistered"))
+        val unknownVersion = fixtures.unregisteredTrikStudioVersion()
 
         val updated = repository.update(
             saved.withData { kind.developerSolutionTest { trikStudioVersion = unknownVersion } },

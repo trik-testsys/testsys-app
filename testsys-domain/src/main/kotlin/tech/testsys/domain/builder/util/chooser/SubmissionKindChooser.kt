@@ -48,12 +48,12 @@ class DeveloperSolutionTestSubmissionKindBuilder : Builder<SubmissionKind> {
     var trikStudioVersion: TrikStudioVersion? = null
 
     /**
-     * Sets [trikStudioVersion] from a raw version tag.
+     * Sets [trikStudioVersion] from a raw Docker image [tag] and a version number [version].
      *
      * @since %CURRENT_VERSION%
      */
-    fun trikStudioVersion(version: String) {
-        trikStudioVersion = TrikStudioVersion(version = version)
+    fun trikStudioVersion(tag: String, version: String) {
+        trikStudioVersion = TrikStudioVersion(tag = tag, version = version)
     }
 
     override fun build(): SubmissionKind {

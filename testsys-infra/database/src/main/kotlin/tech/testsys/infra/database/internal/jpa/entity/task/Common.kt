@@ -41,13 +41,15 @@ class FileDataJpaEntity(
 /**
  * JPA entity of [tech.testsys.domain.model.task.TrikStudioVersion].
  *
- * @property tag the version tag.
+ * @property tag the Docker image tag that grading nodes run.
+ * @property studioVersion the version number shown to people.
  * @since %CURRENT_VERSION%
  */
 @Entity
 @InternalDatabaseApi
 class TrikStudioVersionJpaEntity(
     val tag: String,
+    val studioVersion: String,
 ) : SnowflakeJpaEntity()
 
 /**

@@ -19,6 +19,7 @@ import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.infra.database.api.persistence.FileSystemBlobStorage
+import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserSearch
 import tech.testsys.infra.database.api.transaction.RetryingTransactionInterceptor
 import tech.testsys.infra.grpc.api.BalancingGrader
@@ -143,6 +144,7 @@ class ServicesContextTests {
             GradingNodeStore::class,
             GradingNodeRegistry::class,
             ServiceUserSearch::class,
+            ServiceTrikStudioVersions::class,
             TaskRepository::class,
             FileBlobStorage::class,
             PolygonDiagnostics::class,

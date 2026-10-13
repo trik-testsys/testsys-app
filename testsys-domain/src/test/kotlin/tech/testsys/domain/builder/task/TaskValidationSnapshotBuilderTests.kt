@@ -7,16 +7,18 @@ import tech.testsys.domain.model.task.*
 
 class TaskValidationSnapshotBuilderTests {
     @Test
-    fun `should normalize polygon and version order without retaining mutable builder lists`() {
+    fun `should normalize polygon order and order versions by Docker image tag without retaining mutable builder lists`() {
         val source = mutableListOf(TestId(3), TestId(1), TestId(3))
+        val newer = TrikStudioVersion(tag = "image:a", version = "4")
+        val older = TrikStudioVersion(tag = "image:b", version = "3")
         val snapshot = taskValidationSnapshot {
             tests = source
-            supportedTrikStudioVersions = mutableListOf(TrikStudioVersion("4"), TrikStudioVersion("3"), TrikStudioVersion("4"))
+            supportedTrikStudioVersions = mutableListOf(older, newer, older)
         }
         source.clear()
 
         assertEquals(listOf(TestId(1), TestId(3)), snapshot.tests.ids)
-        assertEquals(listOf(TrikStudioVersion("3"), TrikStudioVersion("4")), snapshot.supportedTrikStudioVersions)
+        assertEquals(listOf(newer, older), snapshot.supportedTrikStudioVersions)
         assertEquals(emptyList<DeveloperSolutionValidationInput>(), snapshot.developerSolutions)
     }
 

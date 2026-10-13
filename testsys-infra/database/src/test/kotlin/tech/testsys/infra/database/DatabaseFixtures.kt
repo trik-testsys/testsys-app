@@ -304,9 +304,12 @@ class DatabaseFixtures(
         this.expiresAt = expiresAt
     }
 
-    fun trikStudioVersion(tag: String = unique("tsv")): TrikStudioVersion {
-        trikStudioVersionJpaEntityRepository.save(TrikStudioVersionJpaEntity(tag))
-        return TrikStudioVersion(tag)
+    fun unregisteredTrikStudioVersion(): TrikStudioVersion =
+        TrikStudioVersion(tag = unique("unregistered"), version = unique("unregistered-version"))
+
+    fun trikStudioVersion(tag: String = unique("tsv"), version: String = unique("tsv-version")): TrikStudioVersion {
+        trikStudioVersionJpaEntityRepository.save(TrikStudioVersionJpaEntity(tag = tag, studioVersion = version))
+        return TrikStudioVersion(tag = tag, version = version)
     }
 
     fun solution(language: TrikSupportedLanguage = TrikSupportedLanguage.Python): Solution = solutions.save(

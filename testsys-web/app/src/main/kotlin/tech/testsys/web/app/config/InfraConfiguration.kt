@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Role
 import org.springframework.core.Ordered
 import org.springframework.util.ClassUtils
 import tech.testsys.infra.database.api.DatabaseConfiguration
+import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserSearch
 import tech.testsys.infra.diagnostics.api.DiagnosticsConfiguration
 import tech.testsys.infra.grpc.api.GradingNodeRegistry
@@ -54,6 +55,7 @@ class InfraConfiguration {
             GradingNodeStore::class.java,
             GradingNodeRegistry::class.java,
             ServiceUserSearch::class.java,
+            ServiceTrikStudioVersions::class.java,
         )
 
         /**

@@ -24,6 +24,7 @@ import tech.testsys.domain.contract.persistence.repository.VerdictRepository
 import tech.testsys.domain.model.LazyEntityList
 import tech.testsys.domain.model.task.*
 import tech.testsys.operation.util.testTaskValidationRequest
+import tech.testsys.operation.util.testTrikStudioVersion
 import java.time.Instant
 import java.util.UUID
 
@@ -188,7 +189,7 @@ class TaskValidationOperationsTests {
                         snapshot = taskValidationSnapshot {
                             tests(listOf(1, 2))
                             developerSolutions = mutableListOf(input(authorId = 20, expected = 9), input(authorId = 10, expected = 5))
-                            supportedTrikStudioVersions = mutableListOf(TrikStudioVersion("v1"))
+                            supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("v1"))
                         }
                         execution.submissionsCreated {
                             diagnostics = diagnosticResults()
@@ -690,7 +691,7 @@ class TaskValidationOperationsTests {
                 snapshot = taskValidationSnapshot {
                     tests(listOf(1, 2))
                     developerSolutions = mutableListOf(input(authorId = 10, expected = 5))
-                    supportedTrikStudioVersions = mutableListOf(TrikStudioVersion("v2"), TrikStudioVersion("v1"))
+                    supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("v2"), testTrikStudioVersion("v1"))
                 }
                 builder()
             }
@@ -723,7 +724,7 @@ class TaskValidationOperationsTests {
                 author(0)
                 task(0)
                 solution(7)
-                kind.developerSolutionTest { trikStudioVersion(version) }
+                kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion(version) }
                 status.queued()
                 builder()
             }

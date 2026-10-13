@@ -361,7 +361,7 @@ class AppFixtures(
         return submissions.update(submission.withData { status.graded { status.success { this.verdict = verdict.id } } })
     }
 
-    /** Adds a TRIK Studio version and returns its tag. */
+    /** Adds a TRIK Studio version row and returns it. */
     private fun trikStudioVersion(): TrikStudioVersion {
         // No domain port stores versions, so the fixture adds the row a contest refers to.
         val tag = unique("tsv")

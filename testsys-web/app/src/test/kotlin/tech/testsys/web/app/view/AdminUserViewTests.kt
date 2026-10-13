@@ -495,7 +495,7 @@ class AdminUserViewTests : MockSpringVaadinTests() {
     private fun tableText(title: String): String =
         UI.getCurrent()._find<Table>().first { table -> title in table.element.textRecursively }.element.textRecursively
 
-    /** Adds a TRIK Studio version and returns its tag. */
+    /** Adds a TRIK Studio version row and returns it. */
     private fun trikStudioVersion(): TrikStudioVersion {
         // No domain port stores versions, so the test adds the row the contest refers to.
         val tag = fixtures.unique("tsv")

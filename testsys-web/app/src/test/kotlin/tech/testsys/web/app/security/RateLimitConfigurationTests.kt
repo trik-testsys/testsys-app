@@ -55,6 +55,33 @@ class RateLimitConfigurationTests {
         assertSame(request, chain.request)
     }
 
+    @Test
+    fun `should not count requests under VAADIN within the context path`() {
+        val filter = rateLimitFilter(environment(requests = "1")).also { this.filter = it }
+        filter.init(MockFilterConfig())
+        filter.doFilter(request("/testsys/VAADIN/build/app.js"), MockHttpServletResponse(), MockFilterChain())
+        val response = MockHttpServletResponse()
+
+        filter.doFilter(request("/testsys/VAADIN/build/app.js"), response, MockFilterChain())
+
+        assertEquals(200, response.status)
+    }
+
+    @Test
+    fun `should count requests outside VAADIN within the context path`() {
+        val filter = rateLimitFilter(environment(requests = "1")).also { this.filter = it }
+        filter.init(MockFilterConfig())
+        filter.doFilter(request("/testsys/VAADIN/build/app.js"), MockHttpServletResponse(), MockFilterChain())
+        filter.doFilter(request("/testsys/login"), MockHttpServletResponse(), MockFilterChain())
+        val response = MockHttpServletResponse()
+
+        filter.doFilter(request("/testsys/login"), response, MockFilterChain())
+
+        assertEquals(429, response.status)
+    }
+
+    private fun request(uri: String) = MockHttpServletRequest("GET", uri).apply { contextPath = "/testsys" }
+
     private fun rateLimitFilter(environment: MockEnvironment): RateLimitFilter =
         checkNotNull(RateLimitConfiguration().rateLimitFilter(environment).filter)
 

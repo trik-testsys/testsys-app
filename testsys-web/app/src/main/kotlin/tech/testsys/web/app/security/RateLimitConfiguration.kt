@@ -1,5 +1,9 @@
 package tech.testsys.web.app.security
 
+import jakarta.servlet.FilterChain
+import jakarta.servlet.ServletRequest
+import jakarta.servlet.ServletResponse
+import jakarta.servlet.http.HttpServletRequest
 import org.apache.catalina.filters.RateLimitFilter
 import org.apache.catalina.util.ExactRateLimiter
 import org.springframework.boot.web.servlet.FilterRegistrationBean
@@ -11,6 +15,7 @@ import java.time.Duration
 
 /**
  * Limits the number of HTTP requests of the main interface per client address with the Tomcat [RateLimitFilter].
+ * Requests under `/VAADIN/` are not counted.
  *
  * @since %CURRENT_VERSION%
  */
@@ -33,7 +38,17 @@ class RateLimitConfiguration {
             "$PREFIX.duration must be a positive whole number of seconds up to ${Int.MAX_VALUE}, got $rawDuration"
         }
 
-        val filter = RateLimitFilter().apply {
+        val filter: RateLimitFilter = object : RateLimitFilter() {
+            // Bundles, fonts and the push channel live under /VAADIN/; browsers do not retry them after a 429.
+            override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
+                val http = request as HttpServletRequest
+                if (http.requestURI.removePrefix(http.contextPath).startsWith(VAADIN_PATH)) {
+                    chain.doFilter(request, response)
+                } else {
+                    super.doFilter(request, response, chain)
+                }
+            }
+        }.apply {
             setRateLimitClassName(ExactRateLimiter::class.java.name)
             setBucketRequests(requests)
             setBucketDuration(duration.seconds.toInt())
@@ -47,5 +62,6 @@ class RateLimitConfiguration {
 
     private companion object {
         const val PREFIX = "testsys.web.rate-limit"
+        const val VAADIN_PATH = "/VAADIN/"
     }
 }

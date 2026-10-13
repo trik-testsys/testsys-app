@@ -54,6 +54,17 @@ class WebRequestObservationConventionTests {
         assertEquals(endpoint, uri)
     }
 
+    @Test
+    fun `should name a page endpoint without the context path`() {
+        val request = MockHttpServletRequest(servletContext, "GET", "/testsys/developer/tasks/42").apply { contextPath = "/testsys" }
+        val context = ServerRequestObservationContext(request, MockHttpServletResponse())
+
+        val uri = convention.getLowCardinalityKeyValues(context).stream()
+            .filter { label -> label.key == "uri" }.findFirst().map(KeyValue::getValue).orElseThrow()
+
+        assertEquals("/developer/tasks/:taskId", uri)
+    }
+
     private fun context(path: String, query: String? = null, status: Int = 200): ServerRequestObservationContext {
         val request = MockHttpServletRequest(servletContext, "GET", path).apply { queryString = query }
         val response = MockHttpServletResponse().apply { this.status = status }

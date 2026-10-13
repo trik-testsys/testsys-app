@@ -1,6 +1,7 @@
 package tech.testsys.infra.database.internal.utils
 
 import org.springframework.data.repository.CrudRepository
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.JpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikStudioVersionJpaEntity
@@ -58,3 +59,9 @@ internal fun TrikStudioVersionJpaEntityRepository.findIdsByTagOrError(tags: Coll
     require(unknownTag == null) { "TRIK Studio version with tag=$unknownTag is not registered" }
     return idsByTag
 }
+
+/**
+ * Converts this row to the domain [TrikStudioVersion].
+ */
+@InternalDatabaseApi
+internal fun TrikStudioVersionJpaEntity.toDomain(): TrikStudioVersion = TrikStudioVersion(tag = tag, version = studioVersion)

@@ -102,6 +102,7 @@ import tech.testsys.operation.util.testMultipleRoleUser
 import tech.testsys.operation.util.testNewTask
 import tech.testsys.operation.util.testParticipant
 import tech.testsys.operation.util.testStudent
+import tech.testsys.operation.util.testTrikStudioVersion
 import java.time.Instant
 import java.util.UUID
 import tech.testsys.domain.builder.api.test as polygon
@@ -630,7 +631,7 @@ class JudgeOperationsTests {
                 every { userRepository.findById(author.id) } returns author
                 every { submissionRepository.findById(submissionId) } returns testSubmission {
                     this.author = author.id
-                    kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+                    kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion("3.0.0") }
                 }
 
                 assertRefusal(SubmissionIsDeveloperSolutionTestError(submissionId))
@@ -642,7 +643,7 @@ class JudgeOperationsTests {
                 every { userRepository.findById(author.id) } returns author
                 every { submissionRepository.findById(submissionId) } returns testSubmission {
                     this.author = author.id
-                    kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+                    kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion("3.0.0") }
                 }
 
                 assertRefusal(SubmissionAccessDeniedError(submissionId))
@@ -909,7 +910,9 @@ class JudgeOperationsTests {
 
             @Test
             fun `should deny access to a developer solution test`() {
-                arrangeSubmission(gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion("3.0.0") } })
+                arrangeSubmission(
+                    gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion() } },
+                )
 
                 assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
                     operations.viewSolution(user = judge, submissionId = SUBMISSION_ID)
@@ -998,7 +1001,9 @@ class JudgeOperationsTests {
 
             @Test
             fun `should deny access to a developer solution test`() {
-                arrangeSubmission(gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion("3.0.0") } })
+                arrangeSubmission(
+                    gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion() } },
+                )
 
                 assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
                     operations.downloadSolution(user = judge, submissionId = SUBMISSION_ID)
@@ -1131,7 +1136,9 @@ class JudgeOperationsTests {
 
             @Test
             fun `should deny access to a developer solution test`() {
-                arrangeSubmission(gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion("3.0.0") } })
+                arrangeSubmission(
+                    gradedSubmission(studentAuthor.id) { kind.developerSolutionTest { trikStudioVersion = testTrikStudioVersion() } },
+                )
 
                 assertRaises(SubmissionAccessDeniedError(SUBMISSION_ID)) {
                     operations.downloadRecording(user = judge, submissionId = SUBMISSION_ID, testId = TestId(11))

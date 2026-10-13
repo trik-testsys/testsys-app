@@ -144,8 +144,8 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
             is TaskValidationExecutionVo.CompletedDiagnostics,
             -> emptyList<SubmissionId>() to null
         }
-        // The same order as TaskValidationSnapshot.authorRuns: by developer solution, then by version.
-        val versions = request.snapshot.supportedTrikStudioVersions.sortedBy { version -> version.version }
+        // The same order as TaskValidationSnapshot.authorRuns: by developer solution, then by Docker image tag.
+        val versions = request.snapshot.supportedTrikStudioVersions.sortedBy { version -> version.tag }
         val runs = request.snapshot.developerSolutions.sortedBy { input -> input.developerSolution.value }
             .flatMap { input -> versions.map { version -> input to version } }
         val rows = runs.zip(submissions)

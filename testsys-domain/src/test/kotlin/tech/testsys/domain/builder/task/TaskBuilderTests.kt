@@ -26,7 +26,7 @@ class TaskBuilderTests : DomainEntityBuilderTests<Task, TaskData, TaskDataBuilde
     private fun committedTaskContent(): CommittedTaskContentBuilder.() -> Unit = {
         exercises(listOf(1, 2))
         statement(1)
-        supportedTrikStudioVersions(listOf("3.0.0"))
+        supportedTrikStudioVersions(listOf("trik-studio:3.0.0" to "3.0.0"))
     }
 
     private fun wipTaskContent(): WipTaskContentBuilder.() -> Unit = {}

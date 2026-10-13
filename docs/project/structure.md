@@ -218,7 +218,7 @@ Workflow лежат в `.github/workflows`.
 | Служебную обработку запроса валидации           | `TaskValidationOperations` в `testsys-operation`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
 | Прокси-сервис операций                          | `testsys-web/app/.../service/<actor>/<Actor>Service.kt`, см. [app/README.md](../../testsys-web/app/README.md#прокси-сервисы) |
 | Служебную замену Кодов-приглашений с истёкшим сроком | `refreshClassInvite` в `ManagerOperations` и `refreshCommunityInvite` в `AdministratorOperations`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
-| Служебный запрос данных для служебного кабинета | `testsys-infra:database`, пакет `api/service`, см. [database/README.md](../../testsys-infra/database/README.md#служебный-поиск-пользователей) |
+| Служебные чтение и запись данных для служебного кабинета | `testsys-infra:database`, пакет `api/service`, см. [database/README.md](../../testsys-infra/database/README.md#служебный-поиск-пользователей) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Метрику или учёт технического сбоя | Каталог и правила учёта — [monitoring/README.md](../../testsys-infra/monitoring/README.md) |
 | Дашборд или настройку мониторинга | `deploy/config/grafana/dashboards/`, `deploy/config/prometheus.yml`, `deploy/compose.monitoring.yml`, см. раздел «Мониторинг» в [deploy/README.md](../../deploy/README.md#мониторинг) |

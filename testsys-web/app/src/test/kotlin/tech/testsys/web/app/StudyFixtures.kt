@@ -38,6 +38,7 @@ import tech.testsys.domain.model.group.Class
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.Task
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.HashAlgorithm
@@ -116,7 +117,7 @@ class StudyFixtures(
                 this.startsAt = startsAt
                 this.contestDuration = contestDuration
                 this.attemptDuration = attemptDuration
-                trikStudioVersion(version)
+                trikStudioVersion = version
             },
         )
     }
@@ -260,17 +261,20 @@ class StudyFixtures(
         },
     )
 
-    /** Adds a TRIK Studio version: versions come from the grader and no port stores them. */
-    private fun trikStudioVersion(): String {
+    /** Adds a TRIK Studio version row: no domain port stores versions. */
+    private fun trikStudioVersion(): TrikStudioVersion {
         val tag = fixtures.unique("tsv")
+        val version = fixtures.unique("tsv-version")
         dataSource.connection.use { connection ->
-            val insert = "insert into ts_trik_studio_version (id, tag) select coalesce(max(id), 0) + 1, ? from ts_trik_studio_version"
+            val insert = "insert into ts_trik_studio_version (id, tag, studio_version) " +
+                "select coalesce(max(id), 0) + 1, ?, ? from ts_trik_studio_version"
             connection.prepareStatement(insert).use { statement ->
                 statement.setString(1, tag)
+                statement.setString(2, version)
                 statement.executeUpdate()
             }
         }
-        return tag
+        return TrikStudioVersion(tag = tag, version = version)
     }
 
     private fun LanguageChooser.choose(language: TrikSupportedLanguage) = when (language) {

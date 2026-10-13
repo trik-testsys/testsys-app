@@ -3,6 +3,7 @@ package tech.testsys.infra.database.internal.jpa
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -76,6 +77,26 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
         assertEquals("22001", (error.mostSpecificCause as? SQLException)?.sqlState)
     }
 
+    @Test
+    fun `should reject a TRIK Studio version with an already stored version number`() {
+        val error = assertThrows<DataIntegrityViolationException> {
+            jdbc.update("INSERT INTO ts_trik_studio_version (id, tag, studio_version) VALUES (2, 'other', '1.0')")
+        }
+
+        val cause = error.mostSpecificCause
+        assertEquals("23505", (cause as? SQLException)?.sqlState)
+        assertTrue(cause.message.orEmpty().contains("uk_ts_trik_studio_version_studio_version"), cause.message)
+    }
+
+    @Test
+    fun `should reject a TRIK Studio version without a version number`() {
+        val error = assertThrows<DataIntegrityViolationException> {
+            jdbc.update("INSERT INTO ts_trik_studio_version (id, tag) VALUES (2, 'other')")
+        }
+
+        assertEquals("23502", (error.mostSpecificCause as? SQLException)?.sqlState)
+    }
+
     private fun insertExtra(table: String, values: Map<String, String>) {
         jdbc.execute(insertSql(table, rows.getValue(table) + values))
     }
@@ -136,6 +157,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
             "ts_trik_studio_version" to mapOf(
                 "id" to "1",
                 "tag" to "'version'",
+                "studio_version" to "'1.0'",
             ),
             "ts_solution" to mapOf(
                 "id" to "1",

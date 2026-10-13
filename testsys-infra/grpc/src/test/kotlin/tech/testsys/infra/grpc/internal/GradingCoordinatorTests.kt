@@ -83,7 +83,9 @@ internal class GradingCoordinatorTests {
     @Test
     fun `should reserve a submission by id before preparation and preserve its accepted snapshot`() {
         grader.sendToGrade(repository.initial)
-        val changed = repository.initial.withData { kind.developerSolutionTest { trikStudioVersion("other") } }
+        val changed = repository.initial.withData {
+            kind.developerSolutionTest { trikStudioVersion(tag = "trik-studio:other", version = "other") }
+        }
 
         assertEquals(GradingAdmission.AlreadyPending, grader.sendToGrade(repository.initial))
         assertEquals(
@@ -95,7 +97,7 @@ internal class GradingCoordinatorTests {
         grader.addNode(address)
         polling.tick()
         queue.await { node.messages.isNotEmpty() }
-        assertEquals("2025.1", node.messages.single().options.dockerImage)
+        assertEquals("trik-studio:2025.1", node.messages.single().options.dockerImage)
         assertTrue(node.messages.single().options.recordVideo)
     }
 

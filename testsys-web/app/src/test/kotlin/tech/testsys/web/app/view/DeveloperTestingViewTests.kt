@@ -191,7 +191,7 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
                         expectedScore = Score(10),
                     ),
                 ),
-                supportedTrikStudioVersions = listOf(TrikStudioVersion("2026.1")),
+                supportedTrikStudioVersions = listOf(TrikStudioVersion(tag = "trikset/trik-studio:image", version = "2026.1")),
             ),
             execution = execution,
         )
@@ -203,6 +203,7 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
         assertTrue(status in submissions.element.textRecursively)
         assertTrue(score in submissions.element.textRecursively)
         assertTrue("2026.1" in submissions.element.textRecursively)
+        assertFalse("trikset/trik-studio:image" in submissions.element.textRecursively)
     }
 
     private fun testingRequest(task: TaskVo): TaskValidationRequestVo = TaskValidationRequestVo(

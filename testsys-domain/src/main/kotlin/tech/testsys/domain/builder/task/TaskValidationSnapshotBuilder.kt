@@ -30,7 +30,7 @@ class TaskValidationSnapshotBuilder : Builder<TaskValidationSnapshot> {
     override fun build(): TaskValidationSnapshot = TaskValidationSnapshot(
         tests = tests.distinct().sortedBy { it.value }.lazify(),
         developerSolutions = developerSolutions.toList(),
-        supportedTrikStudioVersions = supportedTrikStudioVersions.distinct().sortedBy { it.version },
+        supportedTrikStudioVersions = supportedTrikStudioVersions.distinct().sortedBy { it.tag },
     )
 }
 

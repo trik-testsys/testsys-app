@@ -25,6 +25,12 @@ services:
         read_only: true
         bind:
           create_host_path: false
+      # Application log files; deploy/testsys.sh creates the directory before starting.
+      - type: bind
+        source: ./logs/e2e
+        target: /var/log/testsys
+        bind:
+          create_host_path: false
 
   postgres:
     environment:

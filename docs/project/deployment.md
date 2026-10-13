@@ -71,7 +71,7 @@ cp deploy/env/dev.local.env.example deploy/env/dev.local.env
 |--------|------|------------|
 | `dev`, `e2e` без узла | — | Ничего |
 | `dev`, `e2e` с `--node` | `<окружение>.local.env` | `TESTSYS_GRADING_NODE_WORKSPACE`, см. [Рабочий каталог узла](#рабочий-каталог-узла) |
-| `prod` | Файл переменных production | `TESTSYS_DB_PASSWORD`, `TESTSYS_MAIL_PASSWORD`, `TESTSYS_SUPERVISOR_ACCESS_TOKEN` (см. [Супервайзер](#супервайзер)), `TESTSYS_SERVICE_SECRET`, `TESTSYS_GRAFANA_URL` и `TESTSYS_GRAFANA_ADMIN_PASSWORD` (см. [Мониторинг в production](#мониторинг-в-production)), `TESTSYS_APP_CONFIG` (см. [Конфигурационный файл на сервере](#конфигурационный-файл-на-сервере)) |
+| `prod` | Файл переменных production | `TESTSYS_DB_PASSWORD`, `TESTSYS_MAIL_PASSWORD`, `TESTSYS_SUPERVISOR_ACCESS_TOKEN` (см. [Супервайзер](#супервайзер)), `TESTSYS_SERVICE_SECRET`, `TESTSYS_GRAFANA_URL` и `TESTSYS_GRAFANA_ADMIN_PASSWORD` (см. [Мониторинг в production](#мониторинг-в-production)), `TESTSYS_APP_CONFIG` (см. [Конфигурационный файл на сервере](#конфигурационный-файл-на-сервере)), `TESTSYS_LOG_DIR` (см. [Каталог логов на сервере](#каталог-логов-на-сервере)) |
 | `prod` с `--node` | Файл переменных production | Те же, а также `TESTSYS_GRADING_NODE_TAG`, `TESTSYS_GRADING_NODE_WORKSPACE`; узел подключают по адресу `grading-node:8080`, см. [Проверяющие узлы в production](#проверяющие-узлы-в-production) |
 | `node` | Файл переменных отдельного узла | `TESTSYS_GRADING_NODE_TAG`, `TESTSYS_GRADING_NODE_WORKSPACE`, `TESTSYS_GRADING_NODE_HOST_IP` (см. [Порт и безопасность](#порт-и-безопасность)) |
 
@@ -174,6 +174,15 @@ Production-окружение запускает приложение, PostgreSQ
 Обязательность и формат параметров операций — в разделе «Запуск и проверка»
 в [app/README.md](../../testsys-web/app/README.md#запуск-и-проверка). Если файла по пути `TESTSYS_APP_CONFIG` нет,
 на Linux запуск завершается с ошибкой.
+
+### Каталог логов на сервере
+
+1. Создайте каталог для файлов лога приложения вне репозитория.
+2. Дайте пользователю контейнера с UID `10001` право писать в него, например `sudo chown 10001 <путь>`.
+3. Укажите абсолютный путь к каталогу в `TESTSYS_LOG_DIR` в файле переменных production.
+
+Приложение пишет в каталог файл `testsys.log` и сжатые файлы прошлых дней. Ротация описана в разделе «Логирование»
+в [deploy/README.md](../../deploy/README.md#логирование). В dev и e2e файлы лога лежат в `deploy/logs/<окружение>/`.
 
 ### Образ
 

@@ -594,6 +594,9 @@ HTTP-сессии. Действия на странице попадают в л
 
 DEBUG по умолчанию выключен. Конфигурация лога `src/main/resources/logback.xml` выводит строки в консоль в формате
 Spring Boot на уровне INFO и добавляет логгеры из необязательного файла `/etc/testsys/logging/loggers.xml`.
+Если задано свойство `logging.file.name`, она пишет те же строки в файл с ротацией Spring Boot
+`logging.logback.rollingpolicy.*`. Условие проверяет системное свойство JVM `LOG_FILE`, которое Spring Boot
+выставляет из `logging.file.name`.
 Logback проверяет этот файл раз в 10 секунд и после изменения перечитывает всю конфигурацию, поэтому уровень
 меняется без перезапуска. Файл содержит элементы `<logger>` внутри `<included>`. В окружениях Compose это
 `deploy/config/logging/loggers.xml`, см. раздел «Логирование» в [deploy/README.md](../../deploy/README.md#логирование).

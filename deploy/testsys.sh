@@ -271,6 +271,13 @@ run_up() {
   if [ "$environment" = node ] || [ -n "$node_file" ]; then
     create_node_workspace
   fi
+  case "$environment" in
+    dev | e2e)
+      # The application writes as the user 10001 of the image, which a native Linux daemon maps to the same uid.
+      mkdir -p "logs/$environment"
+      chmod a+rwx "logs/$environment"
+      ;;
+  esac
   if [ "$environment" = node ]; then
     compose up -d --remove-orphans
     return

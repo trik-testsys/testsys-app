@@ -33,6 +33,12 @@ services:
         read_only: true
         bind:
           create_host_path: false
+      # Application log files in an existing directory outside the Git checkout, writable by the user 10001.
+      - type: bind
+        source: ${TESTSYS_LOG_DIR:?set TESTSYS_LOG_DIR to the absolute path of the application log directory}
+        target: /var/log/testsys
+        bind:
+          create_host_path: false
 
   postgres:
     restart: unless-stopped

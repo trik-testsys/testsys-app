@@ -810,3 +810,30 @@ Notes collected while moving the Observer and Supervisor pages onto localization
   «во вкладке» was found on 2026-10-13; the project uses «на вкладке» (`user.properties`, `page_guest`) and
   `page_supervisor` uses «во вкладках» — unverified usage, not a rule. Source: https://ru.wiktionary.org/wiki/вкладка
   (read 2026-10-13).
+
+## Warning in confirmation-code letters: «Никому не сообщайте этот код.»
+
+- The three confirmation-code letters (`user.registration.confirmation_code.body`,
+  `user.email_change.confirmation_code.body`, `user.access_restoration.confirmation_code.body`) carry the same
+  separate paragraph «Никому не сообщайте этот код.» right after the code line. Identical wording in all three is
+  a coordinator requirement; the sentence gives no reason, unlike the Код-доступа letter («Никому его не сообщайте:
+  тот, кто знает код, может войти…»), because the consequence differs per letter (binding an address versus
+  obtaining a new Код-доступа). Project decision, not a language finding.
+- «Сообщить»: МАС sense 1 «Довести до чьего-л. сведения, уведомить, известить», «Рассказать о чем-л.»; Ушаков
+  «Довести до чьего-н. сведения, передать словами». With a dative recipient and «код» as the object only the
+  "convey information" sense applies. Source: https://kartaslov.ru/значение-слова/сообщить (read 2026-10-13).
+- «Этот код» right after the code line is unambiguous; appending the warning to the validity paragraph would follow
+  «…придёт новый код», where «этот» could be read as the new code. Placement reasoning, not a source finding.
+- Usage: a search on 2026-10-13 found no page with the exact phrase «Никому не сообщайте этот код»; close security
+  wording («никому не сообщайте код подтверждения») appears in service help pages (search snippets only, not
+  opened). The Kaspi usage noted under «Код-доступа» above also shows «Никому не сообщайте код». No undesirable
+  or offensive reading was found.
+- Object case (independent review, 2026-10-13): Rosental, «Литературное редактирование текста», §201 «Падеж
+  дополнения при переходных глаголах с отрицанием» (https://evartist.narod.ru/text1/66.htm, read as a paraphrase
+  with short quotes): a word starting with «ни» favours the genitive («До вас никто еще этого браслета не надевал»),
+  while a concrete object and an imperative favour the accusative («Гляди под ноги, не смеши народ»); where both
+  fit, the genitive is bookish and the accusative colloquial. Inference: «Никому не сообщайте этот код» is
+  acceptable; «этого кода» is only a more bookish alternative, not a correction.
+- Usage (independent review, 2026-10-13): Т—Ж, «Внимательно читайте текст уведомлений и смс» (03.12.2024,
+  https://t-j.ru/advice-notification/) quotes a bank SMS «Никому не говорите этот код» and a Gosuslugi SMS
+  «Никому не сообщайте!». Usage evidence, not a norm.

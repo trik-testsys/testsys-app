@@ -22,10 +22,12 @@ import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import tech.testsys.domain.builder.api.diagnosticReport
 import tech.testsys.domain.builder.api.testDiagnosticResult
 import tech.testsys.domain.contract.persistence.repository.TaskRepository
 import tech.testsys.domain.model.task.AuthorSubmissionFailure
 import tech.testsys.domain.model.task.DeveloperSolutionId
+import tech.testsys.domain.model.task.DiagnosticSeverity
 import tech.testsys.domain.model.task.FileData
 import tech.testsys.domain.model.task.Score
 import tech.testsys.domain.model.task.SolutionId
@@ -153,6 +155,43 @@ class DeveloperTestingViewTests : MockSpringVaadinTests() {
         val diagnostics = tableText("Полигон")
         assertTrue("Прежний полигон" in diagnostics)
         assertFalse("Новый полигон" in diagnostics)
+        assertTrue("Без замечаний" in diagnostics)
+    }
+
+    @Test
+    fun `should hide info diagnostics and show no remarks for a polygon with only info`() {
+        developers.signInDeveloper()
+        val task = developers.task()
+        val info = diagnosticReport {
+            severity = DiagnosticSeverity.Info
+            data.unknownElement { tag = "setState" }
+        }
+        val warning = diagnosticReport {
+            severity = DiagnosticSeverity.Warning
+            data.missingScoreOutput()
+        }
+        val request = testingRequest(task).copy(
+            execution = TaskValidationExecutionVo.StoppedByDiagnostics(
+                listOf(
+                    testDiagnosticResult {
+                        testId(1)
+                        reports = mutableListOf(info, warning)
+                    },
+                    testDiagnosticResult {
+                        testId(2)
+                        reports = mutableListOf(info)
+                    },
+                ),
+                Instant.EPOCH,
+            ),
+        )
+
+        open(task.id, request.id, service(task, listOf(request)))
+
+        val diagnostics = tableText("Полигон")
+        assertFalse("Сведения" in diagnostics)
+        assertFalse("«setState»" in diagnostics)
+        assertTrue("Предупреждение · Полигон не выводит балл" in diagnostics)
         assertTrue("Без замечаний" in diagnostics)
     }
 

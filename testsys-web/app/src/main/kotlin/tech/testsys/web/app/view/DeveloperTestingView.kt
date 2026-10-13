@@ -8,6 +8,7 @@ import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.task.AuthorSubmissionFailure
+import tech.testsys.domain.model.task.DiagnosticSeverity
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.task.TaskValidationRequestId
@@ -95,9 +96,11 @@ class DeveloperTestingView(private val headers: CabinetHeaders, private val deve
                             names[result.testId] ?: texts.testingUnknownResource(id = result.testId.value)
                         }
                         column(texts.testingDiagnosticsRemarks()) { result ->
+                            // Info neither blocks author solutions nor needs action, so the page shows only Warning and Error.
+                            val reports = result.reports.filter { report -> report.severity != DiagnosticSeverity.Info }
                             vertical {
-                                if (result.reports.isEmpty()) text(texts.testingDiagnosticsNoRemarks())
-                                result.reports.forEach { report -> text(diagnosticText(report)) }
+                                if (reports.isEmpty()) text(texts.testingDiagnosticsNoRemarks())
+                                reports.forEach { report -> text(diagnosticText(report)) }
                             }
                         }
                         empty(texts.testingDiagnosticsEmpty(), texts.testingDiagnosticsEmptyHint())

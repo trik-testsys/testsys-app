@@ -80,8 +80,9 @@
 попасть в остальные модули. Тогда:
 
 1. Модуль добавляется в `settings.gradle.kts`.
-2. `build.gradle.kts` модуля — минимальный: плагин `testsys.conventions`, зависимость на `:testsys-domain`
-   и тестовые bundles. Правила сборочных скриптов — в разделе «Сборка» в [structure.md](../project/structure.md).
+2. `build.gradle.kts` модуля — минимальный: плагины `testsys.conventions` и `kotlin("plugin.spring")`,
+   зависимость на `:testsys-domain` и тестовые bundles. `plugin.spring` открывает бины модуля для прокси
+   advisor-ов приложения. Правила сборочных скриптов — в разделе «Сборка» в [structure.md](../project/structure.md).
 
 ## 4. Реализация
 

@@ -46,6 +46,14 @@ services:
         read_only: true
         bind:
           create_host_path: false
+      # Loggers reread by the application after a change; the directory is mounted, so a file saved by replacing
+      # it is seen too.
+      - type: bind
+        source: ./config/logging
+        target: /etc/testsys/logging
+        read_only: true
+        bind:
+          create_host_path: false
 
   postgres:
     image: postgres:17-alpine

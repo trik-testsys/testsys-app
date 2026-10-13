@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Loggers appended to the logging of the application in all Compose environments; deploy/compose.yml mounts this
+directory. The application rereads this file within 10 seconds after a change, without restarting.
+-->
+<included>
+    <!-- Writing of calls and opened pages; the loggers are listed in testsys-web/app/README.md. -->
+    <!-- <logger name="tech.testsys" level="DEBUG"/> -->
+</included>

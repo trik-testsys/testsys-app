@@ -64,6 +64,15 @@ class SmtpUserMailSender(
         )
     }
 
+    override fun sendAccessRestorationCode(email: String, confirmationCode: String) {
+        val messages = Localization.forRegion(settings.region, settings.timeZone).user
+        send(
+            to = email,
+            subject = messages.accessRestorationConfirmationCodeSubject(),
+            text = messages.accessRestorationConfirmationCodeBody(confirmationCode = confirmationCode),
+        )
+    }
+
     private fun send(to: String, subject: String, text: String) {
         val message = SimpleMailMessage().apply {
             from = settings.from

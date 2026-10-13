@@ -183,6 +183,43 @@ class SmtpUserMailSenderTests {
     }
 
     @Nested
+    inner class SendAccessRestorationCodeTests {
+
+        @Test
+        fun `should send the letter from the configured address to the email`() {
+            sender.sendAccessRestorationCode(email = "user@example.com", confirmationCode = "01234567")
+
+            assertEquals("noreply@testsys.tech", message.captured.from)
+            assertEquals(listOf("user@example.com"), message.captured.to?.toList())
+        }
+
+        @Test
+        fun `should render the access restoration code subject`() {
+            sender.sendAccessRestorationCode(email = "user@example.com", confirmationCode = "01234567")
+
+            assertEquals("Код подтверждения для восстановления доступа к TestSys", message.captured.subject)
+        }
+
+        @Test
+        fun `should put the code into the text without a nickname`() {
+            sender.sendAccessRestorationCode(email = "user@example.com", confirmationCode = "01234567")
+
+            val text = message.captured.text.orEmpty()
+            assertContains(text, "Здравствуйте!\n\n")
+            assertContains(text, "\n\n01234567\n\n")
+        }
+
+        @Test
+        fun `should propagate exceptions of the mail sender`() {
+            every { mailSender.send(any<SimpleMailMessage>()) } throws MailSendException("smtp is down")
+
+            assertFailsWith<MailSendException> {
+                sender.sendAccessRestorationCode(email = "user@example.com", confirmationCode = "01234567")
+            }
+        }
+    }
+
+    @Nested
     inner class DeliveryTests {
 
         private val transactionManager = NoOpTransactionManager()

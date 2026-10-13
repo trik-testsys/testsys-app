@@ -34,7 +34,8 @@
   `author`, `solution`, `task` и `kind` со всеми его полями у Посылки; `judge` и `submission`
   у Судейского вердикта (`JudgmentOrder`); `versionBucket` у Полигона, Условия, Упражнения и Авторского
   Решения; `invite` у Класса; `managerInvite` и `developerInvite` у Сообщества; `email` у запроса регистрации
-  (`RegistrationRequest`); `user` у запроса смены почты (`EmailChangeRequest`); `competition` у Участника.
+  (`RegistrationRequest`); `user` у запроса смены почты (`EmailChangeRequest`) и у запроса восстановления доступа
+  (`AccessRestorationRequest`); `competition` у Участника.
   `save` их записывает, а `update` игнорирует значение из переданной сущности и оставляет сохранённое.
   В KDoc такое поле помечено «fixed on creation and ignored on update».
 - Ещё часть полей фиксируется при создании так, что `update` с другим значением падает: `file` у Полигона,
@@ -187,6 +188,14 @@
 момент окончания его срока и число оставшихся попыток. У одного Пользователя хранится не более одного запроса;
 `EmailChangeRequestRepository.findByUser` находит запрос по Пользователю. Запрос не резервирует новую почту:
 одну и ту же почту могут указать запросы разных Пользователей.
+
+### Запросы восстановления доступа
+
+[`AccessRestorationRequest`](src/main/kotlin/tech/testsys/domain/model/user/AccessRestorationRequest.kt) хранит
+незавершённое восстановление доступа Пользователя без Фиксированной Роли: Пользователя, код подтверждения,
+момент окончания его срока и число оставшихся попыток. Почту запрос не хранит: код уходит на текущую почту
+Пользователя. У одного Пользователя хранится не более одного запроса;
+`AccessRestorationRequestRepository.findByUser` находит запрос по Пользователю.
 
 ### Коды-приглашения
 

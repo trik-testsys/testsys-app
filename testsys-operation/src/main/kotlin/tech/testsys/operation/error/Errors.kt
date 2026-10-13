@@ -2323,21 +2323,21 @@ data class RegistrationRequestNotExistsError(val registrationRequestId: Registra
  *
  * @since %CURRENT_VERSION%
  */
-data object ConfirmationCodeExpiredError : ConfirmRegistrationError, ConfirmEmailChangeError
+data object ConfirmationCodeExpiredError : ConfirmRegistrationError, ConfirmEmailChangeError, ConfirmAccessRestorationError
 
 /**
  * No attempts to enter the confirmation code are left.
  *
  * @since %CURRENT_VERSION%
  */
-data object ConfirmationAttemptsExhaustedError : ConfirmRegistrationError, ConfirmEmailChangeError
+data object ConfirmationAttemptsExhaustedError : ConfirmRegistrationError, ConfirmEmailChangeError, ConfirmAccessRestorationError
 
 /**
  * The entered confirmation code differs from the sent one.
  *
  * @since %CURRENT_VERSION%
  */
-data object InvalidConfirmationCodeError : ConfirmRegistrationError, ConfirmEmailChangeError
+data object InvalidConfirmationCodeError : ConfirmRegistrationError, ConfirmEmailChangeError, ConfirmAccessRestorationError
 
 // endregion
 
@@ -2370,5 +2370,27 @@ data object EmailUnchangedError : RequestEmailChangeError
  * @since %CURRENT_VERSION%
  */
 data object EmailChangeRequestNotExistsError : ConfirmEmailChangeError, EntityNotExistsError
+
+/**
+ * Failure of requesting restoration of access by an e-mail address. It has no cases: the response does not disclose
+ * whether the address is bound to a user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface RequestAccessRestorationError : OperationError
+
+/**
+ * Failure of confirming restoration of access by the code sent to the e-mail address.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ConfirmAccessRestorationError : OperationError
+
+/**
+ * The e-mail address is bound to no user with an access restoration request.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object AccessRestorationRequestNotExistsError : ConfirmAccessRestorationError, EntityNotExistsError
 
 // endregion

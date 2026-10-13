@@ -6,18 +6,23 @@ import tech.testsys.domain.model.user.RegistrationRequestId
 import tech.testsys.domain.model.user.RegistrationRole
 import tech.testsys.operation.error.OperationException
 import tech.testsys.operation.error.getOrThrow
+import tech.testsys.operation.user.MultipleRoleUserOperations
 import tech.testsys.operation.user.UserOperations
 import tech.testsys.web.app.security.CabinetPrincipal
 
 /**
- * Runs [UserOperations] before the user is known, in one transaction per call.
- * A failed operation throws `OperationException`, which rolls the transaction back, except in [confirmRegistration].
+ * Runs [UserOperations] and the [MultipleRoleUserOperations] of access restoration before the user is known, in one
+ * transaction per call. A failed operation throws `OperationException`, which rolls the transaction back, except in
+ * [confirmRegistration] and [confirmAccessRestoration].
  *
  * @since %CURRENT_VERSION%
  */
 @Service
 @Transactional
-class UserService(private val operations: UserOperations) {
+class UserService(
+    private val operations: UserOperations,
+    private val multipleRoleUserOperations: MultipleRoleUserOperations,
+) {
     /**
      * Runs [UserOperations.authenticate] and returns the principal of the found user instead of the user data.
      *
@@ -50,4 +55,23 @@ class UserService(private val operations: UserOperations) {
         name = name,
         role = role,
     ).getOrThrow().second
+
+    /**
+     * Runs [MultipleRoleUserOperations.requestAccessRestoration].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun requestAccessRestoration(email: String) {
+        multipleRoleUserOperations.requestAccessRestoration(email).getOrThrow()
+    }
+
+    /**
+     * Runs [MultipleRoleUserOperations.confirmAccessRestoration] and returns the new access code. The transaction
+     * commits even if the operation fails, so that a spent attempt to enter the code is kept.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(noRollbackFor = [OperationException::class])
+    fun confirmAccessRestoration(email: String, confirmationCode: String): String =
+        multipleRoleUserOperations.confirmAccessRestoration(email = email, confirmationCode = confirmationCode).getOrThrow()
 }

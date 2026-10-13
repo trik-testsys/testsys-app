@@ -3,8 +3,8 @@
 Модуль отправляет письма Пользователям по SMTP: реализует порт
 [`UserMailSender`](../../testsys-domain/src/main/kotlin/tech/testsys/domain/contract/Mail.kt).
 Документ описывает адаптер и его настройки для разработчиков и тех, кто собирает приложение.
-Когда и какие письма отправляются, описано в фичах `testsys.user.registration` и `testsys.user.multi.changeMail`
-в [features.md](../../docs/domain/features.md). Тексты писем — в бандле `user`
+Когда и какие письма отправляются, описано в фичах `testsys.user.registration`, `testsys.user.multi.changeMail`
+и `testsys.user.multi.restoreAccess` в [features.md](../../docs/domain/features.md). Тексты писем — в бандле `user`
 ([user.properties](../localization/src/main/resources/localization/ru-RU/user.properties)), правила сообщений —
 в [localization/README.md](../localization/README.md) и [add-localization.md](../../docs/guides/add-localization.md).
 
@@ -21,7 +21,8 @@
 `SmtpUserMailSender` отправляет письмо одному получателю простым текстом в UTF-8.
 Тему и текст письма адаптер берёт из бандла `user` модуля локализации в регионе из настроек;
 своего текста он не добавляет. Каждый вызов создаёт свой экземпляр `Localization`.
-Письма с кодом подтверждения при регистрации и при смене почты не содержат Псевдоним. Письмо с Кодом-доступа
+Письма с кодом подтверждения при регистрации, смене почты и восстановлении доступа не содержат Псевдоним.
+Письмо с Кодом-доступа
 и уведомление о смене почты содержат Псевдоним; уведомление не содержит новую почту.
 
 Письмо собирается при вызове, а момент отправки зависит от синхронизации транзакций Spring

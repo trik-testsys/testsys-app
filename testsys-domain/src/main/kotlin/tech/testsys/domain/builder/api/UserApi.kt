@@ -1,5 +1,7 @@
 package tech.testsys.domain.builder.api
 
+import tech.testsys.domain.builder.user.AccessRestorationRequestBuilder
+import tech.testsys.domain.builder.user.AccessRestorationRequestDataBuilder
 import tech.testsys.domain.builder.user.DeveloperDataBuilder
 import tech.testsys.domain.builder.user.EmailChangeRequestBuilder
 import tech.testsys.domain.builder.user.EmailChangeRequestDataBuilder
@@ -17,6 +19,8 @@ import tech.testsys.domain.builder.user.StudentDataBuilder
 import tech.testsys.domain.builder.user.SupervisorBuilder
 import tech.testsys.domain.builder.user.SupervisorDataBuilder
 import tech.testsys.domain.builder.util.applyVersion
+import tech.testsys.domain.model.user.AccessRestorationRequest
+import tech.testsys.domain.model.user.AccessRestorationRequestData
 import tech.testsys.domain.model.user.DeveloperData
 import tech.testsys.domain.model.user.EmailChangeRequest
 import tech.testsys.domain.model.user.EmailChangeRequestData
@@ -119,6 +123,22 @@ inline fun emailChangeRequestData(builder: EmailChangeRequestDataBuilder.() -> U
  * @since %CURRENT_VERSION%
  */
 inline fun emailChangeRequest(builder: EmailChangeRequestBuilder.() -> Unit) = EmailChangeRequestBuilder().apply(builder).build()
+
+/**
+ * Builds [AccessRestorationRequestData] with an [AccessRestorationRequestDataBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun accessRestorationRequestData(builder: AccessRestorationRequestDataBuilder.() -> Unit) =
+    AccessRestorationRequestDataBuilder().apply(builder).build()
+
+/**
+ * Builds an [AccessRestorationRequest] with an [AccessRestorationRequestBuilder] block.
+ *
+ * @since %CURRENT_VERSION%
+ */
+inline fun accessRestorationRequest(builder: AccessRestorationRequestBuilder.() -> Unit) =
+    AccessRestorationRequestBuilder().apply(builder).build()
 
 /**
  * Builds [DeveloperData] with a [DeveloperDataBuilder] block.
@@ -278,6 +298,29 @@ private fun EmailChangeRequestData.toBuilder(): EmailChangeRequestDataBuilder {
  */
 fun EmailChangeRequest.withData(builder: EmailChangeRequestDataBuilder.() -> Unit): EmailChangeRequest {
     return EmailChangeRequest(
+        id = this.id,
+        createdAt = this.createdAt,
+        data = this.data.toBuilder().apply(builder).build(),
+    ).applyVersion(this.version)
+}
+
+private fun AccessRestorationRequestData.toBuilder(): AccessRestorationRequestDataBuilder {
+    val thisData = this
+    return AccessRestorationRequestDataBuilder().apply {
+        user = thisData.user.id
+        confirmationCode = thisData.confirmationCode
+        expiresAt = thisData.expiresAt
+        attemptsLeft = thisData.attemptsLeft
+    }
+}
+
+/**
+ * Returns a copy of this access restoration request with its data modified by [builder].
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun AccessRestorationRequest.withData(builder: AccessRestorationRequestDataBuilder.() -> Unit): AccessRestorationRequest {
+    return AccessRestorationRequest(
         id = this.id,
         createdAt = this.createdAt,
         data = this.data.toBuilder().apply(builder).build(),

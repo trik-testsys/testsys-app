@@ -773,3 +773,40 @@ Notes collected while moving the Observer and Supervisor pages onto localization
   user approval. Project decision, not a language finding. The task column `{$contest} - {$task}` uses an ASCII
   hyphen-minus with spaces, also verbatim from features.md. Running Russian text would normally use a dash
   («Финал — Робот»; inference, no handbook opened), but the value is a CSV header contract, not running text.
+
+## Access restoration (`page_guest.restore_access.*`, `user.access_restoration.*`)
+
+- «Запрос принят» (toast after the request and the resend): МАС lists «принять» both as «Взять для исполнения»
+  («Принять заказ», «по принятой … заявке») and as «Согласиться с чем-л., отнестись к чему-л. положительно»
+  («Принять предложение»). For a request the first sense is the usual reading («заявка принята»), so the title
+  means "taken for processing", not "approved". The description states the condition («Если почта … привязана
+  к Пользователю, на неё придёт письмо с кодом»), so the toast claims neither restored access nor a sent letter.
+  The usual-reading claim is an inference from the dictionary examples, not a corpus check. Alternative without
+  the second reading: «Код запрошен».
+- Source: https://kartaslov.ru/значение-слова/принять (МАС, Ушаков as reproduced there, read 2026-10-13).
+- Usage (search result only, not opened, 2026-10-13): Russian Roblox help speaks of a letter that comes «на
+  привязанную почту»; the UI phrase «привязанная почта» matches `page_profile` («изменить привязанную почту»).
+  The letter itself names no address.
+- The confirmation-code letter mirrors the registration and e-mail change letters: «Если код больше не действует…»
+  covers expiry and exhausted attempts; «Если Вам пришло несколько таких писем, введите код из последнего» stays
+  correct because an active request resends the same code and an inactive one is overwritten with a new code
+  (features.md, testsys.user.multi.restoreAccess). It names the tab «Восстановление доступа» of the sign-in page,
+  where the code is entered. Project inference, not a language finding.
+- Colon or dash when the second clause states a result: «Мел», «8 предложений, в которых вы путаете двоеточие
+  и тире» (14.01.2018): a result or consequence («так что», «поэтому») takes a dash; a colon marks explanation
+  («а именно», «то есть») or cause. Applies to instructions like «нажмите «X» — придёт письмо»; a colon remains
+  possible when the clause explains what the action does. Popular outlet, not a handbook; the primary Правила 1956
+  text was not readable on 2026-10-13. Source: https://mel.fm/russky_yazyk/5841376-colon_and_dash.
+- «Принять» with a request noun also allows a "granted" reading (Ушаков sense 7, «П. просьбу об отставке»); the
+  conditional description of the toast rules it out. Source: https://kartaslov.ru/значение-слова/принять
+  (read 2026-10-13).
+- «Привязать»: Викисловарь has no sense for linking an e-mail to an account (closest: 5, перен., «связать с кем-,
+  чем-либо»; 7, проф., «соотнести с чем-либо»). «Привязанная почта» is established UI usage and already used in
+  the project. Source: https://ru.wiktionary.org/wiki/привязать (read 2026-10-13).
+- A guide that says «этот блок исчезнет» is accurate only for a separate block; the restore-access result is shown
+  inside the guest block with the tabs, so the guide speaks of the shown Код-доступа instead. Project usage note.
+- «Вкладка»: Викисловарь sense 2 is a browser tab; a tab of a page component is a natural extension, and a quoted
+  label («Вход») names it (inference). Prepositional singular «вкла́дке». No primary source on «на вкладке» vs
+  «во вкладке» was found on 2026-10-13; the project uses «на вкладке» (`user.properties`, `page_guest`) and
+  `page_supervisor` uses «во вкладках» — unverified usage, not a rule. Source: https://ru.wiktionary.org/wiki/вкладка
+  (read 2026-10-13).

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="1.0.0-21-1" author="testsys">
+        <createTable tableName="ts_access_restoration_request">
+            <column name="id" type="BIGINT">
+                <constraints primaryKey="true" primaryKeyName="pk_ts_access_restoration_request" nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_ts_access_restoration_request_user_id"/>
+            </column>
+            <column name="confirmation_code" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="attempts_left" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="ts_access_restoration_request" baseColumnNames="user_id"
+                                 referencedTableName="ts_user" referencedColumnNames="id"
+                                 constraintName="fk_ts_access_restoration_request_user_id" onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="1.0.0-21-init-access-restoration-request-checks" author="testsys">
+        <sql><![CDATA[
+            ALTER TABLE ts_access_restoration_request ADD CONSTRAINT ck_ts_access_restoration_request_attempts_left CHECK (
+                attempts_left >= 0
+            );
+        ]]></sql>
+        <rollback>
+            <sql>
+                ALTER TABLE ts_access_restoration_request DROP CONSTRAINT ck_ts_access_restoration_request_attempts_left;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

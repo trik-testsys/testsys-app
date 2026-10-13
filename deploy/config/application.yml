@@ -10,8 +10,12 @@ testsys:
       solution: /var/lib/testsys/files/solution
       recording: /var/lib/testsys/files/recording
       logs: /var/lib/testsys/files/logs
-# Application log files in the directory that the override of the environment mounts at /var/log/testsys.
+# The console gets one logstash JSON object per line for Loki; the application log files in the directory that the
+# override of the environment mounts at /var/log/testsys keep the text format.
 logging:
+  structured:
+    format:
+      console: logstash
   file:
     name: /var/log/testsys/testsys.log
   logback:

@@ -41,5 +41,7 @@ services:
   # Accepts all mail on the internal SMTP port 1025 without relaying it; messages are shown in the web UI.
   mailpit:
     image: axllent/mailpit:v1.31.5
+    logging:
+      driver: local
     ports:
       - "127.0.0.1:${TESTSYS_MAIL_UI_PORT:-8026}:8025"

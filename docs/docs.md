@@ -78,8 +78,8 @@
 | [mail/README.md](../testsys-infra/mail/README.md)                     | Справочник | Отправка писем Пользователям по SMTP и настройки                |
 | [settings/README.md](../testsys-infra/settings/README.md) | Справочник | Общие служебные настройки, снимки, переключение и восстановление, контракт хранения реестра узлов |
 | [monitoring/README.md](../testsys-infra/monitoring/README.md) | Справочник | Учёт технических сбоев, имена и метки метрик TestSys |
-| [deployment.md](project/deployment.md) | Справочник | Запуск окружений dev, e2e и production, доступ к Prometheus и Grafana, Проверяющий узел |
-| [deploy/README.md](../deploy/README.md) | Справочник | Устройство Docker-образа, Compose-файлов, файлов переменных, скрипта запуска и мониторинга с дашбордами |
+| [deployment.md](project/deployment.md) | Справочник | Запуск окружений dev, e2e и production, доступ к Prometheus, Grafana и логам, Проверяющий узел |
+| [deploy/README.md](../deploy/README.md) | Справочник | Устройство Docker-образа, Compose-файлов, файлов переменных, скрипта запуска, мониторинга с дашбордами и сбора логов |
 | [implement-entity.md](guides/implement-entity.md)                      | Гайд       | Добавление доменной сущности и её хранения в БД                |
 | [implement-port.md](guides/implement-port.md)                          | Гайд       | Объявление порта в домене и его реализация                     |
 | [implement-feature.md](guides/implement-feature.md)                    | Гайд       | Реализация пользовательской фичи: спецификация, операция, тесты |

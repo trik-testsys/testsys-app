@@ -587,9 +587,9 @@ database/README.md. Требования — в
 
 ## Логирование
 
-Требования описаны в фичах `testsys.dev.logging.calls` и `testsys.dev.logging.navigation`
-в [features.md](../../docs/domain/features.md#testsysdevloggingcalls-implemented). Правила записи в лог из кода —
-в разделе «Логирование» [code-style.md](../../docs/project/code-style.md#логирование).
+Требования описаны в фичах `testsys.dev.logging.calls`, `testsys.dev.logging.navigation`
+и `testsys.dev.logging.view` в [features.md](../../docs/domain/features.md#testsysdevloggingcalls-implemented).
+Правила записи в лог из кода — в разделе «Логирование» [code-style.md](../../docs/project/code-style.md#логирование).
 
 ### Вызовы
 
@@ -649,24 +649,45 @@ HTTP-сессии. Действия на странице попадают в л
 `WEBSOCKET_XHR`, поэтому запросы клиента идут через XHR и проходят `RequestLogContext`. Фоновая работа страницы
 получает MDC через `TaskDecorator`, см. раздел [Безопасность](#безопасность).
 
-`logging.pattern.correlation` в `application.yml` добавляет в каждую строку лога `[<user> <route>]`; вне запроса
-основного интерфейса выводится `[- -]`. Служебный интерфейс MDC не заполняет.
+`logging.pattern.correlation` в `application.yml` добавляет в каждую строку текстового лога `[<user> <route>]`;
+вне запроса основного интерфейса выводится `[- -]`. В JSON ключи MDC выводятся отдельными полями, см.
+[Формат вывода](#формат-вывода). Служебный интерфейс MDC не заполняет.
+
+### Формат вывода
+
+Конфигурация лога `src/main/resources/logback.xml` выводит записи в консоль, корневой уровень — INFO. Если задано
+свойство `logging.structured.format.console`, каждая запись выводится в консоль одной строкой JSON в заданном
+формате Spring Boot. Окружения Compose задают формат `logstash`, см. раздел «Логирование»
+в [deploy/README.md](../../deploy/README.md#логирование). Без этого свойства, например при локальном запуске
+и в тестах, записи выводятся текстом в формате Spring Boot. Условие проверяет системное свойство JVM
+`CONSOLE_LOG_STRUCTURED_FORMAT`, которое Spring Boot выставляет из `logging.structured.format.console`.
+
+Запись в формате `logstash` содержит поля `@timestamp`, `@version`, `message`, `logger_name`, `thread_name`, `level`
+и `level_value`. Каждый ключ MDC становится полем с тем же именем, в том числе `user` и `route`
+из `RequestLogContext`. У записи с исключением есть поле `stack_trace`, у записи с маркерами — `tags`.
+
+Если задано свойство `logging.file.name`, конфигурация пишет те же записи в файл с ротацией Spring Boot
+`logging.logback.rollingpolicy.*`. В файл записи всегда пишутся текстом. Условие проверяет системное свойство JVM
+`LOG_FILE`, которое Spring Boot выставляет из `logging.file.name`.
+
+JSON-кодировщик Spring Boot `StructuredLogEncoder` берёт `Environment` Spring из контекста Logback и без него
+не запускается. Перечитывая конфигурацию, Logback очищает контекст. Поэтому `LogbackEnvironmentListener`, который
+объявлен в `logback.xml`, возвращает в контекст `Environment`, полученный при настройке. Без него консольный вывод
+пропал бы после первой правки `loggers.xml`. Когда Logback настраивается сам до запуска Spring, системного свойства
+формата ещё нет, и записи выводятся текстом.
 
 ### Включение
 
-DEBUG по умолчанию выключен. Конфигурация лога `src/main/resources/logback.xml` выводит строки в консоль в формате
-Spring Boot на уровне INFO и добавляет логгеры из необязательного файла `/etc/testsys/logging/loggers.xml`.
-Если задано свойство `logging.file.name`, она пишет те же строки в файл с ротацией Spring Boot
-`logging.logback.rollingpolicy.*`. Условие проверяет системное свойство JVM `LOG_FILE`, которое Spring Boot
-выставляет из `logging.file.name`.
-Logback проверяет этот файл раз в 10 секунд и после изменения перечитывает всю конфигурацию, поэтому уровень
-меняется без перезапуска. Файл содержит элементы `<logger>` внутри `<included>`. В окружениях Compose это
-`deploy/config/logging/loggers.xml`, см. раздел «Логирование» в [deploy/README.md](../../deploy/README.md#логирование).
+DEBUG по умолчанию выключен. Конфигурация лога добавляет логгеры из необязательного файла
+`/etc/testsys/logging/loggers.xml`. Logback проверяет этот файл раз в 10 секунд и после изменения перечитывает всю
+конфигурацию, поэтому уровень меняется без перезапуска. Файл содержит элементы `<logger>` внутри `<included>`.
+В окружениях Compose это `deploy/config/logging/loggers.xml`, см. раздел «Логирование»
+в [deploy/README.md](../../deploy/README.md#логирование).
 
 При перечитывании Logback сбрасывает уровни, заданные свойствами `logging.level.*`, поэтому в окружениях Compose
 уровни задаются только в `loggers.xml`. Расширения Spring Boot вроде `<springProfile>` в конфигурации
-не работают. Формат строк и `logging.pattern.correlation` Spring Boot передаёт через системные свойства JVM,
-поэтому перечитывание их не меняет. Если файл после правки некорректен, Logback продолжает работать
+не работают. Формат вывода, путь файла лога и `logging.pattern.correlation` Spring Boot передаёт через системные
+свойства JVM, поэтому перечитывание их не меняет. Если файл после правки некорректен, Logback продолжает работать
 с последней корректной конфигурацией и не пишет об ошибке в лог. Исправленный файл снова применяется.
 
 Без файла `loggers.xml`, например при локальном запуске, уровень задаётся без пересборки свойством
@@ -684,6 +705,8 @@ Logback проверяет этот файл раз в 10 секунд и пос
 `LoggedValuesTests`, `CallLoggingInterceptorTests` и `RequestLogContextTests` проверяют маскирование, строки вызовов
 и контекст запроса. `ServicesContextTests` проверяет порядок advisor-ов у прокси-сервисов и инфраструктурных бинов,
 `SecurityConfigurationTests` — передачу MDC фоновой работе и адрес перехода после выхода.
+`LogbackEnvironmentListenerTests` проверяет выбор формата консоли, поля `user` и `route` в JSON и JSON-вывод
+после перечитывания конфигурации.
 
 ## Метрики
 

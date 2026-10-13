@@ -21,6 +21,10 @@ services:
       TESTSYS_SERVICE_ADDRESS: 0.0.0.0
       TESTSYS_SERVICE_PORT: "8081"
       TESTSYS_METRICS_PORT: "8082"
+    # Every service of all Compose files keeps its output with the local driver of Docker, which rotates it: by
+    # default five compressed files of 20 MB per container.
+    logging:
+      driver: local
     # All ports are published only on the loopback interface of the Docker host. Production puts an HTTPS proxy in
     # front of the main interface only: the service interface is reached directly, for example through an SSH tunnel.
     ports:
@@ -57,6 +61,8 @@ services:
 
   postgres:
     image: postgres:17-alpine
+    logging:
+      driver: local
     environment:
       POSTGRES_DB: testsys
       POSTGRES_USER: testsys

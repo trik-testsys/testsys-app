@@ -1,14 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-Logging of the application: the console format of Spring Boot, including logging.pattern.correlation, at INFO,
-and the rolling file of Spring Boot when logging.file.name is set.
+Logging of the application at INFO: to the console as JSON when logging.structured.format.console is set,
+otherwise in the console format of Spring Boot, including logging.pattern.correlation; and in the text rolling
+file of Spring Boot when logging.file.name is set.
 Loggers of a deployment are appended from the optional file below; Logback rereads it within scanPeriod after
 a change, so levels change without restarting the application. A rereading resets the levels of logging.level.*
 properties and does not support Spring extensions such as springProfile.
 -->
 <configuration scan="true" scanPeriod="10 seconds">
+    <!-- The JSON encoder needs the Spring environment, which a rereading removes from the logger context. -->
+    <contextListener class="tech.testsys.bootstrap.LogbackEnvironmentListener"/>
+
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
-    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+    <!--
+    Spring Boot passes logging.structured.format.console as a JVM system property; defaults.xml defines it as
+    empty otherwise, for example when Logback configures itself before the Spring environment exists.
+    -->
+    <condition class="ch.qos.logback.core.boolex.ExpressionPropertyCondition">
+        <expression>!propertyEquals("CONSOLE_LOG_STRUCTURED_FORMAT", "")</expression>
+    </condition>
+    <if>
+        <then>
+            <include resource="org/springframework/boot/logging/logback/structured-console-appender.xml"/>
+        </then>
+        <else>
+            <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+        </else>
+    </if>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

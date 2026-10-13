@@ -14,6 +14,8 @@ services:
     restart: ${TESTSYS_GRADING_NODE_RESTART:-no}
     # Checks the settings of the node before starting it, see deploy/grading-node/entrypoint.sh.
     entrypoint: ["/bin/sh", "/opt/testsys/grading-node-entrypoint.sh"]
+    logging:
+      driver: local
     environment:
       MOUNTED_DIRECTORY: /grading-node-workspace
       # The same directory as seen by the Docker daemon: check containers mount its subdirectories.

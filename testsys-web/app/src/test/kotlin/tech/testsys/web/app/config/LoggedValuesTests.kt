@@ -11,6 +11,7 @@ import tech.testsys.domain.builder.api.participant
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.group.CommunityInviteDataBuilder
 import tech.testsys.domain.contract.StoredBlobRef
+import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.group.InviteCodeHash
 import tech.testsys.domain.model.task.FileContent
 import tech.testsys.domain.model.task.FileData
@@ -18,6 +19,9 @@ import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.SingleRoleUserId
+import tech.testsys.web.app.service.manager.IssuedParticipantVo
+import tech.testsys.web.app.service.manager.ParticipantVo
 import java.io.ByteArrayInputStream
 import java.lang.reflect.Method
 import java.time.Instant
@@ -72,6 +76,22 @@ class LoggedValuesTests {
         @Test
         fun `should write other results by the value rules`() {
             assertEquals("[1, 2]", LoggedValues.result(listOf(1, 2)))
+        }
+
+        @Test
+        fun `should mask the issued access code of created participants`() {
+            val participant = ParticipantVo(
+                id = SingleRoleUserId(31),
+                createdAt = Instant.EPOCH,
+                accessTokenHash = AccessTokenHash(SECRET_VALUE, HashAlgorithm.Identity),
+                name = "st31",
+                competition = CompetitionId(21),
+            )
+
+            val rendered = LoggedValues.result(listOf(IssuedParticipantVo(participant = participant, accessToken = SECRET_VALUE)))
+
+            assertFalse(SECRET_VALUE in rendered, rendered)
+            assertTrue("accessToken=***" in rendered, rendered)
         }
     }
 

@@ -82,15 +82,15 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
         open(observer.id.value)
 
         assertEquals(SupervisorUserView::class.java, currentView)
-        assertEquals(accessToken, field("Код-доступа").value)
-        assertTrue(field("Код-доступа").isReadOnly)
+        assertTrue(accessCodeFields().isEmpty())
+        assertTrue(UI.getCurrent()._find<TextField>().none { textField -> textField.value == accessToken })
         assertTrue(UI.getCurrent()._find<Button> { text = "Включить в Сообщество" }.isEmpty())
         assertTrue(UI.getCurrent()._find<Button> { text = "Удалить Наблюдателя" }.isEmpty())
         assertTrue(UI.getCurrent()._find<Button> { text = "Назначить Администратором" }.isEmpty())
     }
 
     @Test
-    fun `should show the access code of a user with non-fixed roles in a read-only field`() {
+    fun `should not show the access code of a user with non-fixed roles`() {
         signIn(fixtures.userOf(UserKind.SUPERVISOR))
         val accessToken = fixtures.unique("member-code")
         val member = fixtures.multipleRoleUser(rawAccessToken = accessToken) {
@@ -104,19 +104,19 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
         open(member.id.value)
 
-        assertEquals(accessToken, field("Код-доступа").value)
-        assertTrue(field("Код-доступа").isReadOnly)
+        assertTrue(accessCodeFields().isEmpty())
+        assertTrue(UI.getCurrent()._find<TextField>().none { textField -> textField.value == accessToken })
     }
 
     @Test
-    fun `should show the access code of a participant in a read-only field`() {
+    fun `should not show the access code of a participant`() {
         signIn(fixtures.userOf(UserKind.SUPERVISOR))
         val participant = study.participant(emptyList())
 
         open(participant.id.value)
 
-        assertEquals(participant.data.accessTokenHash.value, field("Код-доступа").value)
-        assertTrue(field("Код-доступа").isReadOnly)
+        assertTrue(accessCodeFields().isEmpty())
+        assertTrue(UI.getCurrent()._find<TextField>().none { textField -> textField.value == participant.data.accessTokenHash.value })
     }
 
     @Test
@@ -292,7 +292,8 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
 
     private fun openDialog(): Dialog = UI.getCurrent()._find<Dialog>().single { dialog -> dialog.isOpened }
 
-    private fun field(label: String): TextField = UI.getCurrent()._find<TextField>().single { it.ariaLabel.orElse(null) == label }
+    private fun accessCodeFields(): List<TextField> =
+        UI.getCurrent()._find<TextField>().filter { textField -> textField.ariaLabel.orElse(null) == "Код-доступа" }
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any, K> choose(label: String, key: (T) -> K, expected: K) {

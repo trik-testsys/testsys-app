@@ -22,7 +22,6 @@ import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.HashAlgorithm
-import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.domain.model.user.Observer
@@ -30,7 +29,6 @@ import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.RegistrationRequestData
 import tech.testsys.domain.model.user.RegistrationRequestId
-import tech.testsys.domain.model.user.RegistrationRole
 import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.operation.config.CommunityConfig
@@ -519,15 +517,10 @@ class UserOperationsTests {
     @Nested
     inner class ConfirmRegistrationTests {
 
-        private fun confirm(
-            confirmationCode: String = "12345678",
-            name: String = "Nickname",
-            role: RegistrationRole = RegistrationRole.Student,
-        ) = operations.confirmRegistration(
+        private fun confirm(confirmationCode: String = "12345678", name: String = "Nickname") = operations.confirmRegistration(
             registrationRequestId = RegistrationRequestId(31),
             confirmationCode = confirmationCode,
             name = name,
-            role = role,
         )
 
         @Nested
@@ -539,25 +532,13 @@ class UserOperationsTests {
                 val data = slot<MultipleRoleUserData>()
                 every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
 
-                confirm(name = "Nickname", role = RegistrationRole.Student)
+                confirm(name = "Nickname")
 
                 assertEquals("Nickname", data.captured.name)
                 assertEquals("user@example.com", data.captured.email)
                 assertEquals("ABCD-EFGH-IJKL-MNOP", data.captured.accessTokenHash.value)
                 assertEquals(HashAlgorithm.Identity, data.captured.accessTokenHash.algorithm)
                 val role = assertIs<Student>(data.captured.roles.single())
-                assertEquals(listOf(CommunityId(77)), role.memberOf.ids)
-            }
-
-            @Test
-            fun `should create manager in the public community if manager role is chosen`() {
-                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-                val data = slot<MultipleRoleUserData>()
-                every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
-
-                confirm(role = RegistrationRole.Manager)
-
-                val role = assertIs<Manager>(data.captured.roles.single())
                 assertEquals(listOf(CommunityId(77)), role.memberOf.ids)
             }
 
@@ -716,7 +697,6 @@ class UserOperationsTests {
                         registrationRequestId = RegistrationRequestId(99),
                         confirmationCode = "12345678",
                         name = "Nickname",
-                        role = RegistrationRole.Student,
                     )
                 }
             }

@@ -19,8 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
-import tech.testsys.domain.model.user.Manager
-import tech.testsys.domain.model.user.RegistrationRole
+import tech.testsys.domain.model.user.Student
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.RecordedMail
 import tech.testsys.web.app.security.CabinetSignIn
@@ -66,13 +65,14 @@ class RegistrationViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should register the user in the chosen role`() {
+    fun `should register a student without offering a role choice`() {
         requestCode(email)
-        UI.getCurrent()._get<RadioButtonGroup<RegistrationRole>>().value = RegistrationRole.Manager
 
-        confirm(code = mail.confirmationCodes.getValue(email), name = "Организатор")
+        val roleChoices = UI.getCurrent()._find<RadioButtonGroup<*>>()
+        confirm(code = mail.confirmationCodes.getValue(email), name = "Ученик")
 
-        assertInstanceOf(Manager::class.java, multipleRoleUsers.findByEmail(email)?.data?.roles?.single())
+        assertTrue(roleChoices.isEmpty())
+        assertInstanceOf(Student::class.java, multipleRoleUsers.findByEmail(email)?.data?.roles?.single())
     }
 
     @Test

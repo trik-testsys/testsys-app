@@ -11,9 +11,7 @@ import jakarta.annotation.security.RolesAllowed
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import tech.testsys.domain.model.user.CommunityRole
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.UserId
-import tech.testsys.domain.model.user.issuedAccessToken
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.infra.localization.PageSupervisor.UserHeadKind
 import tech.testsys.operation.config.CommunityConfig
@@ -175,7 +173,6 @@ class SupervisorUserView(
         return true
     }
 
-    @RawAccessTokenDependency(reason = "Shows the original access code of any user while Identity hashing is in use.")
     private fun PageScope.detailsBlock(user: AdminUserVo, login: Instant?) {
         val texts = currentLocalization().pageSupervisor
         row {
@@ -194,13 +191,6 @@ class SupervisorUserView(
                 row {
                     dateTimeInput(texts.lastLogin(), labelSize = 3, size = 6) {
                         value = login?.toUserDateTime()
-                        isEditable = false
-                    }
-                }
-                row {
-                    codeInput(texts.accessCode(), labelSize = 3, size = 6) {
-                        value = user.accessTokenHash.issuedAccessToken()
-                        isObscured = true
                         isEditable = false
                     }
                 }

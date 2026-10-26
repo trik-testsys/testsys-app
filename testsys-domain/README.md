@@ -177,9 +177,7 @@
 
 [`RegistrationRequest`](src/main/kotlin/tech/testsys/domain/model/user/RegistrationRequest.kt) хранит
 незавершённую регистрацию: почту, код подтверждения, момент окончания его срока и число оставшихся попыток.
-Для одной почты хранится не более одного запроса. Роль, которую Пользователь выбирает при подтверждении
-регистрации, задаётся перечислением
-[`RegistrationRole`](src/main/kotlin/tech/testsys/domain/model/user/RegistrationRole.kt).
+Для одной почты хранится не более одного запроса.
 
 ### Запросы смены почты
 

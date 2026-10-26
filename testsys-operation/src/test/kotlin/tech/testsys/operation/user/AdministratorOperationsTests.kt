@@ -83,6 +83,7 @@ import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictId
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -198,12 +199,13 @@ class AdministratorOperationsTests {
                 prepareCreation()
                 val saved = captureSave()
 
-                val result = create(name = name).getOrThrow()
+                val issued = create(name = name).getOrThrow()
 
+                val result = issued.observer
                 assertEquals(name, result.data.name)
                 assertEquals(communityId, result.data.community.id)
-                assertEquals(HashAlgorithm.Identity, result.data.accessTokenHash.algorithm)
-                assertEquals(result.data.accessTokenHash.value, UUID.fromString(result.data.accessTokenHash.value).toString())
+                assertEquals(AccessTokenHash.hashAccessToken(issued.accessToken, HashAlgorithm.Identity), result.data.accessTokenHash)
+                assertEquals(issued.accessToken, UUID.fromString(issued.accessToken).toString())
                 assertSame(saved.captured, result.data)
             }
 
@@ -214,7 +216,7 @@ class AdministratorOperationsTests {
                 val saved = captureSave()
                 val name = character.repeat(255)
 
-                val result = create(name = name).getOrThrow()
+                val result = create(name = name).getOrThrow().observer
 
                 assertEquals(name, result.data.name)
                 assertEquals(name, saved.captured.name)
@@ -263,7 +265,7 @@ class AdministratorOperationsTests {
 
                 val result = create().getOrThrow()
 
-                assertSame(persisted, result)
+                assertSame(persisted, result.observer)
             }
         }
 
@@ -405,8 +407,8 @@ class AdministratorOperationsTests {
                     }
                 }
 
-                val first = create().getOrThrow()
-                val second = create().getOrThrow()
+                val first = create().getOrThrow().observer
+                val second = create().getOrThrow().observer
 
                 assertNotEquals(first.id, second.id)
                 assertNotEquals(first.data.accessTokenHash, second.data.accessTokenHash)

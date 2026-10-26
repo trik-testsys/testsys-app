@@ -22,6 +22,7 @@ import tech.testsys.domain.model.user.Student
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
+import tech.testsys.operation.user.IssuedObserver
 import java.time.Instant
 
 /**
@@ -71,6 +72,18 @@ data class ObserverVo(
     val community: CommunityId,
     val contests: List<ContestId>,
 ) : AdminUserVo
+
+/**
+ * Observer just created in a community with its original access code, which cannot be read back later.
+ *
+ * @property observer the created observer.
+ * @property accessToken the original access code issued to [observer].
+ * @since %CURRENT_VERSION%
+ */
+data class IssuedObserverVo(
+    val observer: ObserverVo,
+    val accessToken: String,
+)
 
 /**
  * Data of a participant visible to a supervisor.
@@ -160,6 +173,8 @@ internal fun Observer.toVo(): ObserverVo = ObserverVo(
     community = data.community.id,
     contests = data.contests.ids,
 )
+
+internal fun IssuedObserver.toVo(): IssuedObserverVo = IssuedObserverVo(observer = observer.toVo(), accessToken = accessToken)
 
 internal fun MultipleRoleUser.toVo(): MultipleRoleUserVo = MultipleRoleUserVo(
     id = id,

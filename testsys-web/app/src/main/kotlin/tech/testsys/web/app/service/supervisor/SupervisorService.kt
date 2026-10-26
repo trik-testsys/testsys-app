@@ -24,8 +24,8 @@ import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.CompetitionVo
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.CurrentUser
+import tech.testsys.web.app.service.IssuedObserverVo
 import tech.testsys.web.app.service.MultipleRoleUserVo
-import tech.testsys.web.app.service.ObserverVo
 import tech.testsys.web.app.service.TaskVo
 import tech.testsys.web.app.service.UserRoleReadService
 import tech.testsys.web.app.service.administrator.CommunityInviteVo
@@ -170,7 +170,7 @@ class SupervisorService(private val operations: SupervisorOperations, private va
     fun removeFromCommunity(userId: MultipleRoleUserId, communityId: CommunityId, role: CommunityRole): MultipleRoleUserVo =
         operations.removeFromCommunity(currentUser.user(), userId, communityId, role).getOrThrow().toVo()
 
-    override fun createObserver(communityId: CommunityId, observerName: String, contestIds: Set<ContestId>): ObserverVo =
+    override fun createObserver(communityId: CommunityId, observerName: String, contestIds: Set<ContestId>): IssuedObserverVo =
         operations.createObserver(currentUser.user(), communityId, observerName, contestIds).getOrThrow().toVo()
 
     @Transactional(readOnly = true)

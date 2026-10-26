@@ -1,6 +1,5 @@
 package tech.testsys.operation.user
 
-import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.registrationRequestData
 import tech.testsys.domain.builder.api.studentData
@@ -15,7 +14,6 @@ import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.RegistrationRequestId
-import tech.testsys.domain.model.user.RegistrationRole
 import tech.testsys.domain.model.user.User
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
@@ -128,8 +126,8 @@ class UserOperations(
 
     /**
      * Checks the trimmed [name], spends an attempt of [registrationRequestId] and compares the trimmed [confirmationCode]
-     * with the sent one; on a match creates the user with [name] and [role] in the public community, removes the request
-     * and mails the new access code. Returns the user with the original access code; storage and mail exceptions propagate.
+     * with the sent one; on a match creates a student with [name] in the public community, removes the request and mails
+     * the new access code. Returns the user with the original access code; storage and mail exceptions propagate.
      *
      * @since %CURRENT_VERSION%
      */
@@ -138,7 +136,6 @@ class UserOperations(
         registrationRequestId: RegistrationRequestId,
         confirmationCode: String,
         name: String,
-        role: RegistrationRole,
     ): OperationResult<Pair<MultipleRoleUser, String>, ConfirmRegistrationError> =
         operation<Pair<MultipleRoleUser, String>, ConfirmRegistrationError> {
             val normalizedName = name.trim()
@@ -162,15 +159,9 @@ class UserOperations(
                     this.name = normalizedName
                     email = request.data.email
                     roles {
-                        when (role) {
-                            RegistrationRole.Student -> student {
-                                memberOf = mutableListOf(publicCommunityId)
-                                data = studentData {}
-                            }
-                            RegistrationRole.Manager -> manager {
-                                memberOf = mutableListOf(publicCommunityId)
-                                data = managerData {}
-                            }
+                        student {
+                            memberOf = mutableListOf(publicCommunityId)
+                            data = studentData {}
                         }
                     }
                 },

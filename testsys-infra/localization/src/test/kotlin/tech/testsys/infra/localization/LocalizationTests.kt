@@ -875,7 +875,7 @@ class LocalizationTests {
         @Test
         fun `should render the access code term in dative in start text`() {
             assertEquals(
-                "Войдите по Коду-доступа или зарегистрируйтесь как Ученик или Организатор.",
+                "Войдите по Коду-доступа или зарегистрируйтесь как Ученик.",
                 l.pageGuest.startText(),
             )
         }
@@ -1038,7 +1038,7 @@ class LocalizationTests {
         @Test
         fun `should describe the registration in guide`() {
             assertEquals(
-                "Регистрация Ученика или Организатора: подтвердите почту и укажите сведения о себе.",
+                "Регистрация Ученика: подтвердите почту и укажите сведения о себе.",
                 l.pageRegistration.guide(),
             )
         }
@@ -1077,19 +1077,6 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should label the role field in role`() {
-            assertEquals("Роль", l.pageRegistration.role())
-        }
-
-        @Test
-        fun `should explain the role choice in role guide`() {
-            assertEquals(
-                "Выберите Ученика для обучения или Организатора для проведения Туров.",
-                l.pageRegistration.roleGuide(),
-            )
-        }
-
-        @Test
         fun `should point to the last letter in code guide`() {
             assertEquals("Введите код из последнего письма с подтверждением.", l.pageRegistration.codeGuide())
         }
@@ -1097,7 +1084,7 @@ class LocalizationTests {
         @Test
         fun `should explain the second step in details step block guide`() {
             assertEquals(
-                "Введите код из письма, выберите Псевдоним и Роль.",
+                "Введите код из письма и выберите Псевдоним.",
                 l.pageRegistration.detailsStepBlockGuide(),
             )
         }
@@ -3127,9 +3114,9 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should decline the participant, competition and access code terms in competition participants guide`() {
+        fun `should decline the participant and competition terms in competition participants guide`() {
             assertEquals(
-                "Участники Соревнования, их Коды-доступа и сведения о входе.",
+                "Участники Соревнования и сведения о входе. Отметьте строки, чтобы удалить нескольких Участников сразу.",
                 l.pageManager.competitionParticipantsGuide(),
             )
         }
@@ -3187,6 +3174,54 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should name the batch deleting action in competition participants delete selected`() {
+            assertEquals("Удалить выбранных", l.pageManager.competitionParticipantsDeleteSelected())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "1,    Удалить 1 Участника?",
+            "2,    Удалить 2 Участников?",
+            "3,    Удалить 3 Участников?",
+            "4,    Удалить 4 Участников?",
+            "5,    Удалить 5 Участников?",
+            "11,   Удалить 11 Участников?",
+            "21,   Удалить 21 Участника?",
+            "22,   Удалить 22 Участника?",
+            "1000, Удалить 1000 Участников?",
+        )
+        fun `should agree the participant term with the ungrouped count in competition participants delete selected title`(
+            count: Int,
+            expected: String,
+        ) {
+            assertEquals(expected, l.pageManager.competitionParticipantsDeleteSelectedTitle(count = count))
+        }
+
+        @Test
+        fun `should decline the access code, participant and submission terms in competition participants delete selected text`() {
+            assertEquals(
+                "Коды-доступа выбранных Участников перестанут действовать. Участников с Посылками удалить нельзя: " +
+                    "если такие есть среди выбранных, никто не будет удалён.",
+                l.pageManager.competitionParticipantsDeleteSelectedText(),
+            )
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "1,    1 Участник удалён",
+            "3,    3 Участника удалены",
+            "5,    5 Участников удалены",
+            "21,   21 Участник удалён",
+            "1000, 1000 Участников удалены",
+        )
+        fun `should agree the participant term with the ungrouped count in competition participants deleted selected`(
+            count: Int,
+            expected: String,
+        ) {
+            assertEquals(expected, l.pageManager.competitionParticipantsDeletedSelected(count = count))
+        }
+
+        @Test
         fun `should use the plural participant term in competition participants dialog title`() {
             assertEquals("Новые Участники", l.pageManager.competitionParticipantsDialogTitle())
         }
@@ -3222,6 +3257,33 @@ class LocalizationTests {
         )
         fun `should show the ungrouped count in competition participants created total`(count: Int, expected: String) {
             assertEquals(expected, l.pageManager.competitionParticipantsCreatedTotal(count = count))
+        }
+
+        @Test
+        fun `should use the plural participant term in competition participants issued title`() {
+            assertEquals("Созданные Участники", l.pageManager.competitionParticipantsIssuedTitle())
+        }
+
+        @Test
+        fun `should decline the participant and access code terms in competition participants issued guide`() {
+            assertEquals(
+                "Скачайте файл с созданными Участниками и их Кодами-доступа, затем раздайте коды Участникам.",
+                l.pageManager.competitionParticipantsIssuedGuide(),
+            )
+        }
+
+        @Test
+        fun `should ask to download the file now in competition participants issued alert title`() {
+            assertEquals("Скачайте файл сейчас", l.pageManager.competitionParticipantsIssuedAlertTitle())
+        }
+
+        @Test
+        fun `should decline the access code and participant terms in competition participants issued alert text`() {
+            assertEquals(
+                "Коды-доступа созданных Участников можно скачать только сейчас: после любого действия на странице, " +
+                    "ухода с неё или её обновления узнать их будет нельзя.",
+                l.pageManager.competitionParticipantsIssuedAlertText(),
+            )
         }
 
         @Test
@@ -3622,7 +3684,7 @@ class LocalizationTests {
         @Test
         fun `should decline the access code and observer terms in community observer created guide`() {
             assertEquals(
-                "Сохраните Код-доступа созданного Наблюдателя и передайте его владельцу.",
+                "Код-доступа созданного Наблюдателя показан только один раз: сохраните его и передайте владельцу.",
                 l.pageAdministrator.communityObserverCreatedGuide(),
             )
         }
@@ -3633,8 +3695,12 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should use the accusative system term in community observer alert text`() {
-            assertEquals("Наблюдатель входит по нему в Систему.", l.pageAdministrator.communityObserverAlertText())
+        fun `should decline the system and access code terms in community observer alert text`() {
+            assertEquals(
+                "Наблюдатель входит по нему в Систему. Код-доступа показан только сейчас: " +
+                    "после ухода со страницы узнать его будет нельзя.",
+                l.pageAdministrator.communityObserverAlertText(),
+            )
         }
 
         @Test
@@ -5545,11 +5611,6 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should use the access code term in access code`() {
-            assertEquals("Код-доступа", l.pageSupervisor.accessCode())
-        }
-
-        @Test
         fun `should decline the user, system and supervisor terms in users guide`() {
             assertEquals(
                 "Все Пользователи Системы, кроме Супервайзеров. Фильтры помогают найти нужную запись. " +
@@ -5606,9 +5667,9 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should decline the nickname, access code and user terms in user details guide`() {
+        fun `should decline the nickname and user terms in user details guide`() {
             assertEquals(
-                "Идентификатор, Псевдоним, время последнего входа и Код-доступа Пользователя.",
+                "Идентификатор, Псевдоним и время последнего входа Пользователя.",
                 l.pageSupervisor.userDetailsGuide(),
             )
         }

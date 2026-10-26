@@ -869,3 +869,52 @@ Notes collected while moving the Observer and Supervisor pages onto localization
     XML: …».
   - «супервайзер»: Р. ед. «суперва́йзера», Д. ед. «суперва́йзеру». Source:
     https://ru.wiktionary.org/wiki/супервайзер.
+
+## Access codes shown once and batch deletion of Participants (`page_manager`, `page_administrator`)
+
+### Animate accusative after a count: «Удалить 2 Участников?», «Удалить 22 Участника?»
+
+- `page_manager.competition.participants.delete_selected_title` puts a digit count before the animate term in the
+  accusative. For «два», «три», «четыре» the animate accusative equals the genitive: Викисловарь «два» gives Вн.
+  одуш. «дву́х», неодуш. «два́»/«две́» (https://ru.wiktionary.org/wiki/два, read 2026-10-27). So «Удалить 2
+  Участников?» («двух участников»), not «2 Участника».
+- For compound numerals ending in два/три/четыре (22, 33, 104) the accusative keeps the nominative form even with
+  animate nouns. Verified by the independent review on 2026-10-27:
+  - Розенталь, «Справочник по правописанию и стилистике», section «Формы винительного падежа одушевленных
+    и неодушевленных существительных» (https://pravopisanie_i_stilistika.academic.ru/152/): point 4 —
+    «доставить двадцать два пассажира», «двадцать двух пассажиров» is colloquial; point 3 — «купить двух коров»
+    is literary, «две коровы» colloquial; point 5 — «нескольких товарищей» and «несколько товарищей» are both
+    acceptable.
+  - Грамота.ру № 296810 (https://gramota.ru/poisk?mode=spravka&query=296810): «винительный падеж сохраняет форму
+    именительного независимо от категории одушевленности»; № 301355
+    (https://gramota.ru/poisk?mode=spravka&query=301355), with digits: «Корректно: освободить 24 моряка»;
+    № 210165 (https://gramota.ru/poisk?mode=spravka&query=210165): «вижу двадцать одного мальчика» is correct.
+  - rusgram.ru still fails with a self-signed certificate; search-engine summaries contradicted each other and are
+    not citable.
+- Applied: exact keys `2`, `3`, `4` render the genitive plural «Участников»; CLDR `few` (22–24, 32–34, …) renders
+  the genitive singular «Участника»; `one` (1, 21, …) renders the animate accusative «Участника» («один» agrees in
+  animacy: «двадцать одного участника»); `many` renders «Участников».
+
+### Predicate agreement in the batch toast: «3 Участника удалены», «5 Участников удалены»
+
+- `page_manager.competition.participants.deleted_selected` keeps the subject-first order of
+  `…participants.deleted` («Участник удалён»): `one` takes the singular («21 Участник удалён»), `few` and `many`
+  the plural. With a numeral subject both a singular («удалено») and a plural predicate are accepted; the plural
+  stresses definite, individually counted people. General grammar knowledge, not checked against a source on
+  2026-10-27; «Удалено N Участников» is the alternative word order. The review found no defect; Розенталь's section
+  «Сказуемое при подлежащем – количественно-именном сочетании» (https://pravopisanie_i_stilistika.academic.ru/185/)
+  returned HTTP 502, so this stays unverified.
+
+### Term forms and other wording
+
+- `glossary.access_code` gained `ins pl` «Кодами-доступа» (Викисловарь «код», Тв. мн. «ко́дами», see «Plural and
+  instrumental forms of existing terms» above; only the first part declines). `glossary.participant` gained `dat pl`
+  «Участникам» (Викисловарь «участник», type 3a, see «Declension of the Manager domain terms» above).
+- «раздайте коды Участникам»: lowercase anaphoric «коды» after the term in the same sentence, like «этот код» above.
+- «Отметьте строки, чтобы удалить нескольких Участников сразу»: «отметьте» for row checkboxes keeps it apart from
+  «Выберите строку, чтобы открыть …», which other guides use for opening a row. Project wording choice.
+- «Удалить выбранных» (button) is an elliptical animate accusative plural («выбранных Участников»); the table
+  context resolves it. No undesirable reading found.
+- «узнать его будет нельзя» is used instead of the colloquial «его не узнать» from features.md: «не узнать» also
+  means "not to recognise" («его не узнать» — changed beyond recognition). Inference from common usage; no
+  dictionary opened.

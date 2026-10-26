@@ -163,11 +163,11 @@ sealed interface ExtendClassInviteError : OperationError
 sealed interface RefreshClassInviteError : OperationError
 
 /**
- * Failure of deleting a participant of a competition owned by the manager.
+ * Failure of deleting selected participants of a competition owned by the manager.
  *
  * @since %CURRENT_VERSION%
  */
-sealed interface DeleteParticipantError : OperationError
+sealed interface DeleteParticipantsError : OperationError
 
 /**
  * Failure of listing the contests the manager can add to classes and competitions.
@@ -191,19 +191,12 @@ sealed interface EditClassError : OperationError
 sealed interface EditCompetitionError : OperationError
 
 /**
- * Failure of downloading the participants of a competition owned by the manager with their access codes.
- *
- * @since %CURRENT_VERSION%
- */
-sealed interface DownloadParticipantsError : OperationError
-
-/**
  * The user does not hold the manager role.
  *
  * @since %CURRENT_VERSION%
  */
 data object MissedManagerRoleError :
-    DeleteParticipantError,
+    DeleteParticipantsError,
     ViewAvailableContestsError,
     CreateClassError,
     CreateCompetitionError,
@@ -221,7 +214,6 @@ data object MissedManagerRoleError :
     RefreshClassInviteError,
     EditClassError,
     EditCompetitionError,
-    DownloadParticipantsError,
     MissedRequiredRoleError
 
 /**
@@ -308,9 +300,8 @@ data class ClassAccessDeniedError(val classId: ClassId) :
  * @since %CURRENT_VERSION%
  */
 data class CompetitionNotExistsError(val competitionId: CompetitionId) :
-    DeleteParticipantError,
+    DeleteParticipantsError,
     EditCompetitionError,
-    DownloadParticipantsError,
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,
@@ -331,9 +322,8 @@ data class CompetitionNotExistsError(val competitionId: CompetitionId) :
  * @since %CURRENT_VERSION%
  */
 data class CompetitionAccessDeniedError(val competitionId: CompetitionId) :
-    DeleteParticipantError,
+    DeleteParticipantsError,
     EditCompetitionError,
-    DownloadParticipantsError,
     ViewCompetitionError,
     ViewCompetitionContestError,
     AddCompetitionContestError,
@@ -410,7 +400,7 @@ data class CompetitionParticipantLimitExceededError(
  * @since %CURRENT_VERSION%
  */
 data class CompetitionParticipantNotExistsError(val competitionId: CompetitionId, val participantId: SingleRoleUserId) :
-    DeleteParticipantError,
+    DeleteParticipantsError,
     EntityNotExistsError
 
 /**
@@ -419,7 +409,7 @@ data class CompetitionParticipantNotExistsError(val competitionId: CompetitionId
  * @property participantId the id of the participant.
  * @since %CURRENT_VERSION%
  */
-data class ParticipantHasSubmissionsError(val participantId: SingleRoleUserId) : DeleteParticipantError
+data class ParticipantHasSubmissionsError(val participantId: SingleRoleUserId) : DeleteParticipantsError
 
 // endregion
 

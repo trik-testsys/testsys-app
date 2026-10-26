@@ -11,14 +11,12 @@ import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.RawInviteCodeDependency
-import tech.testsys.domain.model.user.RawAccessTokenDependency
-import tech.testsys.domain.model.user.issuedAccessToken
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.CommunityManagementService
 import tech.testsys.web.app.service.CommunityVo
 import tech.testsys.web.app.service.ContestVo
-import tech.testsys.web.app.service.ObserverVo
+import tech.testsys.web.app.service.IssuedObserverVo
 import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.app.service.administrator.CommunityInviteVo
 import tech.testsys.web.components.TestSysView
@@ -72,7 +70,7 @@ abstract class CommunityDetailsView(
         show(communities.first { community -> community.id == communityId }, communities, observer = null)
     }
 
-    private fun show(community: CommunityVo, communities: List<CommunityVo>, observer: ObserverVo?) {
+    private fun show(community: CommunityVo, communities: List<CommunityVo>, observer: IssuedObserverVo?) {
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -150,9 +148,9 @@ abstract class CommunityDetailsView(
         draft.readBean(CommunityDraft(community.name, community.description))
     }
 
-    @RawAccessTokenDependency(reason = "Shows the stored access code of the created observer as the issued one.")
-    private fun PageScope.createdObserverBlock(observer: ObserverVo) {
+    private fun PageScope.createdObserverBlock(created: IssuedObserverVo) {
         val texts = currentLocalization().pageAdministrator
+        val observer = created.observer
         row {
             block(title = texts.communityObserverCreatedTitle(name = observer.name)) {
                 guide(texts.communityObserverCreatedGuide())
@@ -165,7 +163,7 @@ abstract class CommunityDetailsView(
                 }
                 row {
                     codeInput(texts.accessCode(), labelSize = 6, size = 18) {
-                        value = observer.accessTokenHash.issuedAccessToken()
+                        value = created.accessToken
                         isEditable = false
                         isObscured = true
                     }
@@ -213,7 +211,7 @@ abstract class CommunityDetailsView(
     }
 
     /** Builds the observer creation dialog of [communityId] and returns its opening, which starts with an empty form. */
-    private fun observerDialog(communityId: CommunityId, onCreated: (ObserverVo) -> Unit): () -> Unit {
+    private fun observerDialog(communityId: CommunityId, onCreated: (IssuedObserverVo) -> Unit): () -> Unit {
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         val draft = Binder<ObserverDraft>()

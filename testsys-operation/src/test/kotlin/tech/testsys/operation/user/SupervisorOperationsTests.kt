@@ -35,6 +35,7 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.SolutionId
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.ObserverData
@@ -800,7 +801,8 @@ class SupervisorOperationsTests {
 
                 val result = operations.createObserver(supervisor, targetId, "New observer", setOf(contest.id)).getOrThrow()
 
-                assertSame(saved, result)
+                assertSame(saved, result.observer)
+                assertEquals(AccessTokenHash.hashAccessToken(result.accessToken, HashAlgorithm.Identity), data.captured.accessTokenHash)
                 assertEquals("New observer", data.captured.name)
                 assertEquals(targetId, data.captured.community.id)
                 assertEquals(listOf(contest.id), data.captured.contests.ids)

@@ -9,17 +9,13 @@ import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
-import tech.testsys.domain.model.user.issuedAccessToken
 import tech.testsys.infra.database.api.service.ServiceUserId
 import tech.testsys.infra.database.api.service.ServiceUserSearch
 import tech.testsys.web.components.TestSysView
-import tech.testsys.web.components.actions.copyAction
 import tech.testsys.web.components.display.field
 import tech.testsys.web.components.display.tag
-import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.dateTimeInput
 import tech.testsys.web.components.forms.textInput
@@ -29,8 +25,7 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 /**
- * Service card of a user of any kind: its data and its access code from the user read on opening, hidden until hover
- * or focus and copied from its field. The access code is never part of the address.
+ * Service card of a user of any kind with its data read on opening; the access code is not shown.
  *
  * @since %CURRENT_VERSION%
  */
@@ -50,7 +45,6 @@ class ServiceUserView(private val search: ServiceUserSearch) : TestSysView(), Be
         page(ServiceHeaders.header()) {
             head("Пользователь «${dataOf(user).name}»") { crumb("Пользователи", ServiceUsersView::class.java) }
             detailsBlock(user)
-            accessTokenBlock(user)
         }
     }
 
@@ -79,24 +73,6 @@ class ServiceUserView(private val search: ServiceUserSearch) : TestSysView(), Be
                         }
                     }
                 }
-            }.isEditable = false
-        }
-    }
-
-    /** Adds the access code of [user] in a hidden field and an action copying the value of that field. */
-    @RawAccessTokenDependency(reason = "Shows and copies the stored access code of the user as the issued one.")
-    private fun PageScope.accessTokenBlock(user: User<*>) {
-        row {
-            block(title = "Код-доступа") {
-                lateinit var code: ValueInput<String>
-                row {
-                    code = codeInput("Код-доступа", labelSize = 4, size = 12) {
-                        value = dataOf(user).accessTokenHash.issuedAccessToken()
-                        isObscured = true
-                    }
-                }
-
-                actions { copyAction("Копировать", value = { code.value }) }
             }.isEditable = false
         }
     }

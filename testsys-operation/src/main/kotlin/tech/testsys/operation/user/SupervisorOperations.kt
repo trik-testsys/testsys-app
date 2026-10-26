@@ -29,8 +29,6 @@ import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
-import tech.testsys.domain.model.user.Observer
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
@@ -110,9 +108,6 @@ class SupervisorOperations(
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.single.supervisor.authorization")
-    @RawAccessTokenDependency(
-        reason = "Returned users carry stored access codes that the supervisor sees as the original codes only with Identity.",
-    )
     fun viewUsers(
         user: User<*>,
         pagination: Pagination,
@@ -131,9 +126,6 @@ class SupervisorOperations(
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.single.supervisor.authorization")
-    @RawAccessTokenDependency(
-        reason = "The returned user carries the stored access code that the supervisor sees as the original code only with Identity.",
-    )
     fun viewUser(user: User<*>, userId: UserId): OperationResult<Pair<User<*>, Instant?>, ViewSupervisorUserError> =
         operation<Pair<User<*>, Instant?>, ViewSupervisorUserError> {
             ensure(user is Supervisor, MissedSupervisorRoleError)
@@ -366,18 +358,18 @@ class SupervisorOperations(
     }
 
     /**
-     * Creates an observer in any community for contests shared to it or to the public community.
+     * Creates an observer in any community for contests shared to it or to the public community and returns it with its
+     * original access code.
      *
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.admin.createObserver")
-    @RawAccessTokenDependency(reason = "Returns the issued access code while Identity hashing is in use.")
     fun createObserver(
         user: User<*>,
         communityId: CommunityId,
         name: String,
         contestIds: Set<ContestId>,
-    ): OperationResult<Observer, CreateSupervisorObserverError> = operation<Observer, CreateSupervisorObserverError> {
+    ): OperationResult<IssuedObserver, CreateSupervisorObserverError> = operation<IssuedObserver, CreateSupervisorObserverError> {
         ensure(user is Supervisor, MissedSupervisorRoleError)
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
@@ -394,13 +386,14 @@ class SupervisorOperations(
         ensure(name.isNotBlank(), ObserverNameBlankError)
         ensure(name.codePointCount(0, name.length) <= MAX_NAME_CODE_POINTS) { ObserverNameTooLongError(name) }
         ensure(contestIds.isNotEmpty(), ObserverContestsEmptyError)
+        val accessToken = UUID.randomUUID().toString()
         val data = observerData {
             this.community = communityId
             this.name = name
             this.contests = contestIds.toMutableList()
-            accessToken(UUID.randomUUID().toString(), HashAlgorithm.Identity)
+            accessToken(accessToken, HashAlgorithm.Identity)
         }
-        observers.save(data)
+        IssuedObserver(observer = observers.save(data), accessToken = accessToken)
     }
 
     /**

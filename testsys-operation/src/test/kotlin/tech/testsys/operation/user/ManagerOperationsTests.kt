@@ -340,60 +340,6 @@ class ManagerOperationsTests {
     }
 
     @Nested
-    inner class DownloadParticipantsTests {
-
-        private val manager = testManager { data = managerData {} }
-        private val id = CompetitionId(21)
-
-        @Test
-        fun `should reject a user without Manager role before loading participants`() {
-            assertRaises(MissedManagerRoleError) { operations.downloadParticipants(testAdministrator {}, id) }
-
-            verify { listOf(competitionRepository, participantRepository) wasNot Called }
-        }
-
-        @Test
-        fun `should reject a missing competition`() {
-            every { competitionRepository.findById(id) } returns null
-
-            assertRaises(CompetitionNotExistsError(id)) { operations.downloadParticipants(manager, id) }
-        }
-
-        @Test
-        fun `should reject another owner's competition`() {
-            every { competitionRepository.findById(id) } returns testCompetition { owner = MultipleRoleUserId(99) }
-
-            assertRaises(CompetitionAccessDeniedError(id)) { operations.downloadParticipants(manager, id) }
-
-            verify { participantRepository wasNot Called }
-        }
-
-        @Test
-        fun `should return only the competition participants in stored order without changing their codes`() {
-            val first = testCompetitionParticipant(31)
-            val second = testCompetitionParticipant(32)
-            val ids = listOf(second.id, first.id)
-            every { competitionRepository.findById(id) } returns testCompetition { participants(listOf(32, 31)) }
-            every { participantRepository.findByIds(ids) } returns listOf(first, second)
-
-            val actual = operations.downloadParticipants(manager, id).getOrThrow()
-
-            assertEquals(listOf(second, first), actual)
-            verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
-        }
-
-        @Test
-        fun `should return an empty list if the competition has no participants`() {
-            every { competitionRepository.findById(id) } returns testCompetition()
-            every { participantRepository.findByIds(emptyList()) } returns emptyList()
-
-            val actual = operations.downloadParticipants(manager, id).getOrThrow()
-
-            assertEquals(emptyList<Participant>(), actual)
-        }
-    }
-
-    @Nested
     inner class CreateClassTests {
 
         private val manager = testManager { data = managerData {} }
@@ -3052,15 +2998,20 @@ class ManagerOperationsTests {
             }
 
             @Test
-            fun `should return exactly the participants saved by the port`() {
+            fun `should return the participants saved by the port with the original access codes of their saved hashes`() {
+                val accessTokenHashes = slot<List<AccessTokenHash>>()
                 val saved = listOf(testParticipant(41), testParticipant(42))
                 every { competitionRepository.findById(competitionId) } returns testCompetition()
                 every { competitionConfig.maxParticipants } returns 10
-                every { participantRepository.saveToCompetition(competitionId, any(), any()) } returns saved
+                every { participantRepository.saveToCompetition(competitionId, capture(accessTokenHashes), any()) } returns saved
 
                 val actual = operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 2).getOrThrow()
 
-                assertSame(saved, actual)
+                assertEquals(saved, actual.map { issued -> issued.participant })
+                assertEquals(
+                    accessTokenHashes.captured,
+                    actual.map { issued -> AccessTokenHash.hashAccessToken(issued.accessToken, HashAlgorithm.Identity) },
+                )
             }
 
             @Test
@@ -3079,7 +3030,7 @@ class ManagerOperationsTests {
 
                 val actual = operations.createParticipants(user = user, competitionId = competitionId, participantCount = 1).getOrThrow()
 
-                assertSame(saved, actual)
+                assertEquals(saved, actual.map { issued -> issued.participant })
             }
 
             @Test
@@ -3092,7 +3043,7 @@ class ManagerOperationsTests {
 
                 val actual = operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 2).getOrThrow()
 
-                assertSame(saved, actual)
+                assertEquals(saved, actual.map { issued -> issued.participant })
                 assertEquals(2, accessTokenHashes.captured.size)
             }
         }
@@ -3271,34 +3222,53 @@ class ManagerOperationsTests {
     }
 
     @Nested
-    inner class DeleteParticipantTests {
+    inner class DeleteParticipantsTests {
 
         private val competitionId = CompetitionId(21)
-        private val participantId = SingleRoleUserId(31)
+        private val first = SingleRoleUserId(31)
+        private val second = SingleRoleUserId(32)
         private val manager = testManager { data = managerData {} }
+        private val contestIds = setOf(ContestId(19), ContestId(20))
 
         @Nested
         inner class HappyPathTests {
 
             @Test
-            fun `should delete the participant once and return it as it was if it has no submissions in the competition contests`() {
-                val participant = testCompetitionParticipant(31)
+            fun `should delete every selected participant once and return them as they were in the selection order`() {
+                val firstParticipant = testCompetitionParticipant(31)
+                val secondParticipant = testCompetitionParticipant(32)
                 every { competitionRepository.findById(competitionId) } returns testCompetition {
-                    participants(listOf(31, 32))
+                    participants(listOf(31, 32, 33))
                     contests(listOf(19, 20))
                 }
-                every { participantRepository.findById(participantId) } returns participant
-                every {
-                    submissionRepository.countGrading(authorIds = setOf(participantId), contestIds = setOf(ContestId(19), ContestId(20)))
-                } returns SubmissionCount(submissions = 0, authors = 0)
-                every { participantRepository.removeById(participantId) } returns Unit
+                every { participantRepository.findByIds(listOf(second, first)) } returns listOf(firstParticipant, secondParticipant)
+                every { submissionRepository.countGrading(authorIds = any(), contestIds = contestIds) } returns
+                    SubmissionCount(submissions = 0, authors = 0)
+                every { participantRepository.removeById(any()) } returns Unit
 
-                val actual = operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                val actual = operations.deleteParticipants(
+                    user = manager,
+                    competitionId = competitionId,
+                    participantIds = linkedSetOf(second, first),
+                ).getOrThrow()
+
+                assertEquals(listOf(secondParticipant, firstParticipant), actual)
+                verify(exactly = 1) { participantRepository.findByIds(any()) }
+                verify(exactly = 1) { participantRepository.removeById(first) }
+                verify(exactly = 1) { participantRepository.removeById(second) }
+                verify(exactly = 0) { participantRepository.removeById(SingleRoleUserId(33)) }
+                verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+            }
+
+            @Test
+            fun `should delete nobody and return an empty list for an empty selection`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
+
+                val actual = operations.deleteParticipants(user = manager, competitionId = competitionId, participantIds = emptySet())
                     .getOrThrow()
 
-                assertSame(participant, actual)
-                verify(exactly = 1) { participantRepository.removeById(participantId) }
-                verify(exactly = 0) { competitionRepository.update(any<Competition>()) }
+                assertEquals(emptyList<Participant>(), actual)
+                verify { listOf(participantRepository, submissionRepository) wasNot Called }
             }
         }
 
@@ -3310,7 +3280,7 @@ class ManagerOperationsTests {
                 val user = testAdministrator {}
 
                 assertRaises(MissedManagerRoleError) {
-                    operations.deleteParticipant(user = user, competitionId = competitionId, participantId = participantId)
+                    operations.deleteParticipants(user = user, competitionId = competitionId, participantIds = setOf(first))
                 }
 
                 verify { listOf(competitionRepository, participantRepository, submissionRepository) wasNot Called }
@@ -3321,7 +3291,7 @@ class ManagerOperationsTests {
                 every { competitionRepository.findById(competitionId) } returns null
 
                 assertRaises(CompetitionNotExistsError(competitionId)) {
-                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                    operations.deleteParticipants(user = manager, competitionId = competitionId, participantIds = setOf(first))
                 }
 
                 verify { listOf(participantRepository, submissionRepository) wasNot Called }
@@ -3335,19 +3305,23 @@ class ManagerOperationsTests {
                 }
 
                 assertRaises(CompetitionAccessDeniedError(competitionId)) {
-                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                    operations.deleteParticipants(user = manager, competitionId = competitionId, participantIds = setOf(first))
                 }
 
                 verify { listOf(participantRepository, submissionRepository) wasNot Called }
             }
 
             @Test
-            fun `should raise CompetitionParticipantNotExistsError without deleting if participant does not exist`() {
-                every { competitionRepository.findById(competitionId) } returns testCompetition()
-                every { participantRepository.findById(participantId) } returns null
+            fun `should raise CompetitionParticipantNotExistsError for the first missing participant without deleting anyone`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
+                every { participantRepository.findByIds(any()) } returns listOf(testCompetitionParticipant(31))
 
-                assertRaises(CompetitionParticipantNotExistsError(competitionId = competitionId, participantId = participantId)) {
-                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                assertRaises(CompetitionParticipantNotExistsError(competitionId = competitionId, participantId = second)) {
+                    operations.deleteParticipants(
+                        user = manager,
+                        competitionId = competitionId,
+                        participantIds = linkedSetOf(first, second, SingleRoleUserId(33)),
+                    )
                 }
 
                 verify(exactly = 0) { participantRepository.removeById(any()) }
@@ -3355,28 +3329,37 @@ class ManagerOperationsTests {
             }
 
             @Test
-            fun `should raise CompetitionParticipantNotExistsError without deleting if participant belongs to another competition`() {
-                every { competitionRepository.findById(competitionId) } returns testCompetition()
-                every { participantRepository.findById(participantId) } returns testCompetitionParticipant(31, competitionId = 22)
+            fun `should raise CompetitionParticipantNotExistsError without deleting anyone for a participant of another competition`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
+                every { participantRepository.findByIds(any()) } returns listOf(
+                    testCompetitionParticipant(31),
+                    testCompetitionParticipant(32, competitionId = 22),
+                )
 
-                assertRaises(CompetitionParticipantNotExistsError(competitionId = competitionId, participantId = participantId)) {
-                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                assertRaises(CompetitionParticipantNotExistsError(competitionId = competitionId, participantId = second)) {
+                    operations.deleteParticipants(manager, competitionId, participantIds = linkedSetOf(first, second))
                 }
 
                 verify(exactly = 0) { participantRepository.removeById(any()) }
             }
 
             @Test
-            fun `should raise ParticipantHasSubmissionsError without deleting if participant has submissions`() {
+            fun `should raise ParticipantHasSubmissionsError without deleting anyone if one participant has submissions`() {
                 every { competitionRepository.findById(competitionId) } returns testCompetition {
-                    participants(listOf(31))
-                    contests(listOf(19))
+                    participants(listOf(31, 32))
+                    contests(listOf(19, 20))
                 }
-                every { participantRepository.findById(participantId) } returns testCompetitionParticipant(31)
-                every { submissionRepository.countGrading(any(), any()) } returns SubmissionCount(submissions = 1, authors = 1)
+                every { participantRepository.findByIds(any()) } returns listOf(
+                    testCompetitionParticipant(31),
+                    testCompetitionParticipant(32),
+                )
+                every { submissionRepository.countGrading(authorIds = setOf(first), contestIds = contestIds) } returns
+                    SubmissionCount(submissions = 0, authors = 0)
+                every { submissionRepository.countGrading(authorIds = setOf(second), contestIds = contestIds) } returns
+                    SubmissionCount(submissions = 1, authors = 1)
 
-                assertRaises(ParticipantHasSubmissionsError(participantId)) {
-                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                assertRaises(ParticipantHasSubmissionsError(second)) {
+                    operations.deleteParticipants(manager, competitionId, participantIds = linkedSetOf(first, second))
                 }
 
                 verify(exactly = 0) { participantRepository.removeById(any()) }
@@ -3387,15 +3370,15 @@ class ManagerOperationsTests {
         inner class ModuleRuleTests {
 
             @Test
-            fun `should propagate a technical exception when deleting the participant`() {
+            fun `should propagate a technical exception when deleting a participant`() {
                 val failure = IllegalStateException("Participant storage unavailable")
                 every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
-                every { participantRepository.findById(participantId) } returns testCompetitionParticipant(31)
+                every { participantRepository.findByIds(any()) } returns listOf(testCompetitionParticipant(31))
                 every { submissionRepository.countGrading(any(), any()) } returns SubmissionCount(submissions = 0, authors = 0)
-                every { participantRepository.removeById(participantId) } throws failure
+                every { participantRepository.removeById(first) } throws failure
 
                 val actual = assertThrows(IllegalStateException::class.java) {
-                    operations.deleteParticipant(user = manager, competitionId = competitionId, participantId = participantId)
+                    operations.deleteParticipants(user = manager, competitionId = competitionId, participantIds = setOf(first))
                 }
 
                 assertSame(failure, actual)

@@ -370,14 +370,14 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
 ## Регистрация
 
 [UserOperations](src/main/kotlin/tech/testsys/operation/user/UserOperations.kt) предоставляет
-`requestRegistration(email)` и `confirmRegistration(registrationRequestId, confirmationCode, name, role)`.
+`requestRegistration(email)` и `confirmRegistration(registrationRequestId, confirmationCode, name)`.
 Обе операции помечены кодификатором `testsys.user.registration`; требования определены в этой фиче
 в [features.md](../docs/domain/features.md).
 
 - `requestRegistration` ищет запрос через `RegistrationRequestRepository.findByEmail` и возвращает идентификатор
   `RegistrationRequest`. Действующий запрос операция не сохраняет заново, а недействующий перезаписывает через
   `update`, поэтому идентификатор не меняется.
-- `confirmRegistration` принимает Роль как `RegistrationRole` и возвращает `Pair<MultipleRoleUser, String>`:
+- `confirmRegistration` создаёт Пользователя в Роли Ученика и возвращает `Pair<MultipleRoleUser, String>`:
   сохранённого Пользователя и исходный Код-доступа. До сравнения кода операция сохраняет запрос с уменьшенным
   `attemptsLeft` через `update` с токеном `version`. Если версия устарела, `update` бросает исключение и код
   не сравнивается. Неверный код возвращает `InvalidConfirmationCodeError`. Вызывающий код должен зафиксировать
@@ -471,9 +471,15 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
   через `UserRepository.findLastLogins` одним вызовом.
 - `viewClassContest` и `viewCompetitionContest` возвращают `ContestResults`: Тур, его Задачи в порядке Тура,
   Учеников или Участников и результаты пар автора и Задачи с Посылками.
-- `deleteParticipant` проверяет Посылки Участника в Турах Соревнования через `SubmissionRepository.countGrading`
-  и отклоняет удаление ошибкой `ParticipantHasSubmissionsError`, если они есть. Иначе операция удаляет Участника
-  через `ParticipantRepository.removeById` и возвращает его загруженное состояние.
+- `createParticipants` возвращает `IssuedParticipant`: сохранённого Участника и его исходный Код-доступа. Сохранённое
+  значение КД восстанавливать нельзя, поэтому исходный КД есть только в этом ответе. Так же `createObserver`
+  Администратора и Супервайзера возвращает `IssuedObserver`. Оба типа объявлены в
+  [IssuedUsers.kt](src/main/kotlin/tech/testsys/operation/user/IssuedUsers.kt).
+- `deleteParticipants` загружает Участников одним вызовом `findByIdsAsMap` и проверяет Посылки каждого в Турах
+  Соревнования через `SubmissionRepository.countGrading`. Первый отсутствующий Участник или Участник с Посылками
+  отклоняет удаление ошибкой `CompetitionParticipantNotExistsError` или `ParticipantHasSubmissionsError`. Операция
+  удаляет Участников через `ParticipantRepository.removeById` только после всех проверок и возвращает их
+  загруженные состояния в порядке набора.
 - `viewAvailableContests` помечена кодификатором `addContest`. Она возвращает страницу Туров, открытых Сообществам
   Пользователя в Роли Организатора, через `ContestRepository.findSharedTo`; из них выбирается добавляемый Тур.
 

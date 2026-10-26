@@ -11,7 +11,6 @@ import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequ
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
-import tech.testsys.domain.model.user.RegistrationRole
 import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.operation.error.InvalidAccessTokenError
 import tech.testsys.operation.error.OperationException
@@ -89,7 +88,7 @@ class UserServiceTests {
             val wrongCode = fixtures.otherCode(mail.confirmationCodes.getValue(email))
 
             assertThrows(OperationException::class.java) {
-                service.confirmRegistration(requestId, confirmationCode = wrongCode, name = "Пользователь", role = RegistrationRole.Student)
+                service.confirmRegistration(requestId, confirmationCode = wrongCode, name = "Пользователь")
             }
 
             assertEquals(2, requests.findById(requestId)?.data?.attemptsLeft)
@@ -105,7 +104,6 @@ class UserServiceTests {
                 requestId,
                 confirmationCode = code,
                 name = "Пользователь",
-                role = RegistrationRole.Student,
             )
 
             assertEquals(mail.accessTokens.getValue(email), accessToken)

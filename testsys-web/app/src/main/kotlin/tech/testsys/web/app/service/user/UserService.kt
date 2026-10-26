@@ -3,7 +3,6 @@ package tech.testsys.web.app.service.user
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.model.user.RegistrationRequestId
-import tech.testsys.domain.model.user.RegistrationRole
 import tech.testsys.operation.error.OperationException
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.user.MultipleRoleUserOperations
@@ -44,17 +43,8 @@ class UserService(
      * @since %CURRENT_VERSION%
      */
     @Transactional(noRollbackFor = [OperationException::class])
-    fun confirmRegistration(
-        registrationRequestId: RegistrationRequestId,
-        confirmationCode: String,
-        name: String,
-        role: RegistrationRole,
-    ): String = operations.confirmRegistration(
-        registrationRequestId = registrationRequestId,
-        confirmationCode = confirmationCode,
-        name = name,
-        role = role,
-    ).getOrThrow().second
+    fun confirmRegistration(registrationRequestId: RegistrationRequestId, confirmationCode: String, name: String): String =
+        operations.confirmRegistration(registrationRequestId, confirmationCode = confirmationCode, name = name).getOrThrow().second
 
     /**
      * Runs [MultipleRoleUserOperations.requestAccessRestoration].

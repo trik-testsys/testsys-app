@@ -50,7 +50,6 @@ import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Observer
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
@@ -146,19 +145,18 @@ class AdministratorOperations(
 
     /**
      * Creates an observer named [observerName] in [communityId] owned by [user], assigning exactly [contestIds].
-     * Only contests shared to that community or the public community are allowed; a fresh access code is returned
-     * with the saved observer.
+     * Only contests shared to that community or the public community are allowed; the original fresh access code is
+     * returned with the saved observer.
      *
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.admin.createObserver")
-    @RawAccessTokenDependency(reason = "Returns the issued access code in the saved observer's stored value with Identity.")
     fun createObserver(
         user: MultipleRoleUser,
         communityId: CommunityId,
         observerName: String,
         contestIds: Set<ContestId>,
-    ): OperationResult<Observer, CreateObserverError> = operation<Observer, CreateObserverError> {
+    ): OperationResult<IssuedObserver, CreateObserverError> = operation<IssuedObserver, CreateObserverError> {
         ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)
         val community = communityRepository.findById(communityId)
         ensure(community != null) { CommunityNotExistsError(communityId) }
@@ -178,13 +176,14 @@ class AdministratorOperations(
             ObserverNameTooLongError(observerName)
         }
         ensure(contestIds.isNotEmpty(), ObserverContestsEmptyError)
+        val accessToken = UUID.randomUUID().toString()
         val data = observerData {
             this.community = communityId
             name = observerName
             this.contests = contestIds.toMutableList()
-            accessToken(UUID.randomUUID().toString(), algorithm = HashAlgorithm.Identity)
+            accessToken(accessToken, algorithm = HashAlgorithm.Identity)
         }
-        return observerRepository.save(data).asSuccess()
+        return IssuedObserver(observer = observerRepository.save(data), accessToken = accessToken).asSuccess()
     }
 
     /**
@@ -194,9 +193,6 @@ class AdministratorOperations(
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.admin.viewUsers")
-    @RawAccessTokenDependency(
-        reason = "Returned users carry stored access codes that the administrator sees as the original codes only with Identity.",
-    )
     fun viewUsers(
         user: MultipleRoleUser,
         pagination: Pagination,
@@ -216,9 +212,6 @@ class AdministratorOperations(
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.admin.viewUser")
-    @RawAccessTokenDependency(
-        reason = "The returned user carries the stored access code that the administrator sees as the original code only with Identity.",
-    )
     fun viewUser(user: MultipleRoleUser, userId: UserId): OperationResult<Pair<User<*>, Instant?>, ViewUserError> =
         operation<Pair<User<*>, Instant?>, ViewUserError> {
             ensure(user.hasRole<Administrator>(), MissedAdministratorRoleError)

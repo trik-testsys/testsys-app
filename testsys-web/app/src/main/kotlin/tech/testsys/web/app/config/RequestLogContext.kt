@@ -18,8 +18,8 @@ import org.slf4j.MDC
 import tech.testsys.web.app.security.CabinetSignIn
 
 /**
- * Puts the id of the signed-in user and the path of the open page into the log context of every Vaadin request
- * of the main interface and writes each opened page at DEBUG.
+ * Puts the id of the signed-in user, the id of the supervisor signed in as them, and the path of the open page into
+ * the log context of every Vaadin request of the main interface and writes each opened page at DEBUG.
  *
  * @since %CURRENT_VERSION%
  */
@@ -51,6 +51,7 @@ class RequestLogContext :
 
     override fun requestEnd(request: VaadinRequest, response: VaadinResponse?, session: VaadinSession?) {
         MDC.remove(USER)
+        MDC.remove(IMPERSONATED_BY)
         MDC.remove(ROUTE)
     }
 
@@ -78,6 +79,13 @@ class RequestLogContext :
         } else {
             MDC.put(USER, principal.userId.toString())
         }
+
+        val supervisorId = principal?.impersonatedBy
+        if (supervisorId == null) {
+            MDC.remove(IMPERSONATED_BY)
+        } else {
+            MDC.put(IMPERSONATED_BY, supervisorId.toString())
+        }
     }
 
     // A file transfer request carries the UI id in its path instead of the parameter.
@@ -100,6 +108,7 @@ class RequestLogContext :
 
     private companion object {
         const val USER = "user"
+        const val IMPERSONATED_BY = "impersonatedBy"
         const val ROUTE = "route"
         const val ROUTE_ATTRIBUTE = "testsys.route."
         const val RESOURCE_PATH = "/" + StreamRequestHandler.DYN_RES_PREFIX

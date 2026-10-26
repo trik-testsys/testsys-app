@@ -37,6 +37,7 @@ import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.annotation.Feature
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.config.CommunityConfig
+import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.operation.error.AddToCommunityError
 import tech.testsys.operation.error.AdministratorInPublicCommunityError
 import tech.testsys.operation.error.CommunityIsPublicError
@@ -50,6 +51,8 @@ import tech.testsys.operation.error.CreateSupervisorObserverError
 import tech.testsys.operation.error.EditSupervisorCommunityError
 import tech.testsys.operation.error.ExtendSupervisorCommunityInviteError
 import tech.testsys.operation.error.GrantAdministratorError
+import tech.testsys.operation.error.ImpersonateError
+import tech.testsys.operation.error.ImpersonationDeniedError
 import tech.testsys.operation.error.MissedSupervisorRoleError
 import tech.testsys.operation.error.ObserverContestsEmptyError
 import tech.testsys.operation.error.ObserverNameBlankError
@@ -300,6 +303,22 @@ class SupervisorOperations(
             administratorOperations.createFirstCommunity(member)
             checkNotNull(multipleRoleUsers.findById(member.id))
         }
+
+    /**
+     * Returns the non-supervisor user [userId] for a supervisor to sign in as, unchanged and without recording a login.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.single.supervisor.impersonate")
+    fun impersonate(user: User<*>, userId: UserId): OperationResult<User<*>, ImpersonateError> = operation<User<*>, ImpersonateError> {
+        ensure(user is Supervisor, MissedSupervisorRoleError)
+        val target = users.findUserById(userId)
+        ensure(target != null) { UserNotExistsError(userId) }
+        ensure(target !is MultipleRoleUser || target.data.email != PublicCommunityOwner.EMAIL) {
+            ImpersonationDeniedError(userId)
+        }
+        target
+    }
 
     /**
      * Edits the name and description of any community.

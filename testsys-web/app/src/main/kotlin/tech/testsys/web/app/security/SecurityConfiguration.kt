@@ -3,15 +3,20 @@ package tech.testsys.web.app.security
 import com.vaadin.flow.spring.security.NavigationAccessControlConfigurer
 import com.vaadin.flow.spring.security.UidlRedirectStrategy
 import com.vaadin.flow.spring.security.VaadinSecurityConfigurer
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.event.EventListener
 import org.springframework.core.task.TaskDecorator
 import org.springframework.security.concurrent.DelegatingSecurityContextRunnable
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler
+import org.springframework.security.web.session.HttpSessionDestroyedEvent
+import org.springframework.security.web.session.HttpSessionEventPublisher
 import tech.testsys.web.app.view.AuthenticationView
 
 /**
@@ -24,6 +29,8 @@ import tech.testsys.web.app.view.AuthenticationView
 @Configuration
 @EnableWebSecurity
 class SecurityConfiguration {
+    private val logger: Logger = LoggerFactory.getLogger(SecurityConfiguration::class.java)
+
     /**
      * Decorator of the application executor tasks that runs each task with the security context and the log context
      * of its submitter.
@@ -43,6 +50,28 @@ class SecurityConfiguration {
         }
 
         DelegatingSecurityContextRunnable(withLogContext)
+    }
+
+    /**
+     * Publisher of the HTTP session events of the servlet container as application events.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun httpSessionEventPublisher(): HttpSessionEventPublisher = HttpSessionEventPublisher()
+
+    /**
+     * Writes at INFO the end of the session of a supervisor signed in as a user, by signing out or by expiry, from the
+     * security contexts of the destroyed session [event] (testsys.user.single.supervisor.impersonate).
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @EventListener
+    fun sessionDestroyed(event: HttpSessionDestroyedEvent) {
+        event.securityContexts
+            .mapNotNull { context -> context.authentication?.principal as? CabinetPrincipal }
+            .filter { principal -> principal.impersonatedBy != null }
+            .forEach { principal -> logger.info("Session of supervisor {} as user {} ended", principal.impersonatedBy, principal.userId) }
     }
 
     /**

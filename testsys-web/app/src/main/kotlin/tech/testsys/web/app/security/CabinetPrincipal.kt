@@ -25,9 +25,10 @@ enum class UserKind {
  *
  * @property userId the raw id of the user.
  * @property kind the kind of the user.
+ * @property impersonatedBy the raw id of the supervisor signed in as the user, or `null` if the user signed in themselves.
  * @since %CURRENT_VERSION%
  */
-data class CabinetPrincipal(val userId: Long, val kind: UserKind) : Serializable {
+data class CabinetPrincipal(val userId: Long, val kind: UserKind, val impersonatedBy: Long? = null) : Serializable {
     companion object {
         private const val serialVersionUID: Long = 1
 

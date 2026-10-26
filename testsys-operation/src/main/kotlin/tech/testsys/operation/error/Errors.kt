@@ -659,6 +659,7 @@ data class UserNotExistsError(val userId: UserId) :
     GrantAdministratorError,
     ViewSupervisorUserError,
     RemoveSupervisorMemberError,
+    ImpersonateError,
     EntityNotExistsError
 
 /**
@@ -866,6 +867,13 @@ sealed interface ExtendSupervisorCommunityInviteError : OperationError
 sealed interface RefreshSupervisorCommunityInviteError : OperationError
 
 /**
+ * Failure of signing a supervisor in as another user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ImpersonateError : OperationError
+
+/**
  * The actor is not a supervisor.
  *
  * @since %CURRENT_VERSION%
@@ -885,6 +893,7 @@ data object MissedSupervisorRoleError :
     CreateSupervisorCommunityInviteError,
     ExtendSupervisorCommunityInviteError,
     RefreshSupervisorCommunityInviteError,
+    ImpersonateError,
     MissedRequiredRoleError
 
 /**
@@ -894,6 +903,16 @@ data object MissedSupervisorRoleError :
  * @since %CURRENT_VERSION%
  */
 data class AdministratorInPublicCommunityError(val communityId: CommunityId) : AddToCommunityError
+
+/**
+ * The user is the technical owner of the public community, whom nobody signs in as.
+ *
+ * @property userId the id of the technical owner.
+ * @since %CURRENT_VERSION%
+ */
+data class ImpersonationDeniedError(val userId: UserId) :
+    ImpersonateError,
+    AccessDeniedError
 
 // endregion
 

@@ -5,6 +5,8 @@ import com.vaadin.flow.server.VaadinServletRequest
 import com.vaadin.flow.server.VaadinServletResponse
 import com.vaadin.flow.server.auth.AccessAnnotationChecker
 import com.vaadin.flow.server.auth.NavigationAccessControl
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
@@ -19,6 +21,8 @@ import kotlin.jvm.optionals.getOrNull
  */
 object CabinetSignIn {
     private const val ROLE_PREFIX = "ROLE_"
+
+    private val logger: Logger = LoggerFactory.getLogger(CabinetSignIn::class.java)
 
     private val repository = HttpSessionSecurityContextRepository()
 
@@ -54,6 +58,21 @@ object CabinetSignIn {
         session?.removeAttribute(NavigationAccessControl.SESSION_STORED_REDIRECT)
         session?.removeAttribute(NavigationAccessControl.SESSION_STORED_REDIRECT_ABSOLUTE)
         return returnAddress?.takeIf { isOpenTo(it, principal) }
+    }
+
+    /**
+     * Signs the supervisor who signed in as the current user back in with [signIn] and returns the raw id of the user
+     * they leave, or `null` without changes if the current user signed in themselves.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun returnToSupervisor(): Long? {
+        val principal = principal() ?: return null
+        val supervisorId = principal.impersonatedBy ?: return null
+
+        signIn(CabinetPrincipal(userId = supervisorId, kind = UserKind.SUPERVISOR))
+        logger.info("Supervisor {} returned from user {}", supervisorId, principal.userId)
+        return principal.userId
     }
 
     /** Whether [address] leads to a page whose access annotations let [principal] in. */

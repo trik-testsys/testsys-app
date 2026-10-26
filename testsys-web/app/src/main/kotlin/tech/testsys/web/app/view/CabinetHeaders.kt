@@ -1,6 +1,7 @@
 package tech.testsys.web.app.view
 
 import com.vaadin.flow.component.Component
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.RouteParameters
 import com.vaadin.flow.spring.annotation.SpringComponent
 import com.vaadin.flow.spring.security.AuthenticationContext
@@ -18,6 +19,7 @@ import tech.testsys.domain.model.user.User
 import tech.testsys.infra.localization.PageCabinet
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.web.app.security.CabinetPrincipal
+import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.security.UserKind
 import tech.testsys.web.app.service.AdministratorRoleVo
 import tech.testsys.web.app.service.CurrentUser
@@ -96,7 +98,8 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
 
     /**
      * Returns the Cabinet header of the signed-in user with the [active] section: the start page, the menu of the roles
-     * with search and the nickname menu with the profile, unless the role is fixed, and signing out.
+     * with search and the nickname menu with the profile, unless the role is fixed, the return of a supervisor signed in
+     * as the user, and signing out.
      *
      * @since %CURRENT_VERSION%
      */
@@ -109,11 +112,15 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
             isDestructive = true,
         )
 
-        val userMenu = if (user is MultipleRoleUser) {
-            listOf(HeaderUserMenuItem(texts.profile(), HeaderDestination.Route(ProfileView::class.java)), signOut)
-        } else {
-            listOf(signOut)
-        }
+        val isImpersonated = CabinetSignIn.principal()?.impersonatedBy != null
+        val returnToSupervisor = HeaderUserMenuItem(
+            label = texts.impersonationReturn(),
+            destination = HeaderDestination.Action { returnToSupervisor() },
+        ).takeIf { isImpersonated }
+        val profile = HeaderUserMenuItem(texts.profile(), HeaderDestination.Route(ProfileView::class.java))
+            .takeIf { user is MultipleRoleUser }
+        val userMenu = listOfNotNull(profile, returnToSupervisor, signOut)
+        val name = if (isImpersonated) texts.impersonationName(name = nameOf(user)) else nameOf(user)
 
         return CabinetHeader(
             items = listOf(
@@ -121,9 +128,15 @@ class CabinetHeaders(private val currentUser: CurrentUser, private val authentic
                 MegaMenuItem(key = MENU_SECTION, label = texts.menu(), menu = HeaderMegaMenu(columnsOf(user, texts))),
             ),
             active = active,
-            user = HeaderUser(name = nameOf(user), menu = HeaderUserMenu(userMenu)),
+            user = HeaderUser(name = name, menu = HeaderUserMenu(userMenu)),
             menuSearchKey = MENU_SECTION,
         )
+    }
+
+    /** Signs the supervisor back in and opens their details of the user they leave (testsys.user.single.supervisor.impersonate). */
+    private fun returnToSupervisor() {
+        val userId = CabinetSignIn.returnToSupervisor() ?: return
+        UI.getCurrent().navigate(SupervisorUserView::class.java, RouteParameters(USER_ID_PARAMETER, userId.toString()))
     }
 
     private fun columnsOf(user: User<*>, texts: PageCabinet): List<HeaderMegaColumn> = when (user) {

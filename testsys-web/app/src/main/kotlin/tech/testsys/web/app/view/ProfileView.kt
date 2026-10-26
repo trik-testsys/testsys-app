@@ -14,6 +14,7 @@ import tech.testsys.operation.error.InvalidEmailError
 import tech.testsys.operation.error.OperationError
 import tech.testsys.operation.error.OperationException
 import tech.testsys.operation.error.RequestEmailChangeError
+import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.service.multi.MultipleRoleUserService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
@@ -26,8 +27,9 @@ import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.texts.currentLocalization
 
 /**
- * Profile of a user with non-fixed roles (testsys.web.page.multi.profile): the nickname and the e-mail address, and the
- * change of the e-mail address in two steps, the new address and then the code from the letter.
+ * Profile of a user with non-fixed roles (testsys.web.page.multi.profile): the nickname and the e-mail address, and,
+ * unless a supervisor is signed in as the user, the change of the e-mail address in two steps, the new address and then
+ * the code from the letter.
  *
  * @since %CURRENT_VERSION%
  */
@@ -47,42 +49,46 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
         val localization = currentLocalization()
         val texts = localization.pageProfile
         val confirmation = localization.pageConfirmation
+        // A supervisor signed in as the user does not change their e-mail address (testsys.user.single.supervisor.impersonate).
+        val isImpersonated = CabinetSignIn.principal()?.impersonatedBy != null
         page(headers.cabinet(active = null)) {
             head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
-            guide(texts.guide())
+            guide(if (isImpersonated) texts.impersonationGuide() else texts.guide())
             row {
                 block(size = HALF_COLUMNS, title = texts.title()) {
                     guide(texts.profileBlockGuide())
                     row { textInput(texts.nickname(), labelSize = 6, size = 18) { value = profile.name } }
                     row { textInput(texts.email(), labelSize = 6, size = 18) { value = profile.email } }
                 }.isEditable = false
-                block(title = texts.changeTitle()) {
-                    guide(texts.changeBlockGuide())
-                    if (newEmail == null) {
-                        lateinit var email: ValueInput<String>
-                        row { email = textInput(texts.changeNewEmail(), labelSize = 6, size = 18) }
-                        footer {
-                            mainAction(confirmation.sendCode()) {
-                                clickOnEnter()
-                                onClick { requestCode(email.value) }
+                if (!isImpersonated) {
+                    block(title = texts.changeTitle()) {
+                        guide(texts.changeBlockGuide())
+                        if (newEmail == null) {
+                            lateinit var email: ValueInput<String>
+                            row { email = textInput(texts.changeNewEmail(), labelSize = 6, size = 18) }
+                            footer {
+                                mainAction(confirmation.sendCode()) {
+                                    clickOnEnter()
+                                    onClick { requestCode(email.value) }
+                                }
                             }
-                        }
-                    } else {
-                        lateinit var code: ValueInput<String>
-                        row {
-                            textInput(texts.changeNewEmail(), labelSize = 6, size = 18) {
-                                value = newEmail
-                                isEditable = false
+                        } else {
+                            lateinit var code: ValueInput<String>
+                            row {
+                                textInput(texts.changeNewEmail(), labelSize = 6, size = 18) {
+                                    value = newEmail
+                                    isEditable = false
+                                }
                             }
-                        }
-                        row { code = codeInput(confirmation.code(), labelSize = 6, size = 18) }
-                        footer {
-                            mainAction(texts.changeButton()) {
-                                clickOnEnter()
-                                onClick { confirm(code.value) }
+                            row { code = codeInput(confirmation.code(), labelSize = 6, size = 18) }
+                            footer {
+                                mainAction(texts.changeButton()) {
+                                    clickOnEnter()
+                                    onClick { confirm(code.value) }
+                                }
+                                action(confirmation.resendCode()) { onClick { resendCode(newEmail) } }
+                                action(confirmation.changeEmail()) { onClick { show(newEmail = null) } }
                             }
-                            action(confirmation.resendCode()) { onClick { resendCode(newEmail) } }
-                            action(confirmation.changeEmail()) { onClick { show(newEmail = null) } }
                         }
                     }
                 }

@@ -17,6 +17,7 @@ import tech.testsys.domain.model.user.UserId
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.user.SupervisorOperations
+import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.CommunityManagementService
 import tech.testsys.web.app.service.CommunityVo
@@ -144,6 +145,19 @@ class SupervisorService(private val operations: SupervisorOperations, private va
      */
     fun grantAdministrator(userId: UserId): MultipleRoleUserVo =
         operations.grantAdministrator(currentUser.user(), userId).getOrThrow().toVo()
+
+    /**
+     * Runs [SupervisorOperations.impersonate] and returns the principal of the found user marked with the current
+     * supervisor instead of the user data.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Transactional(readOnly = true)
+    fun impersonate(userId: UserId): CabinetPrincipal {
+        val supervisor = currentUser.user()
+        val user = operations.impersonate(supervisor, userId).getOrThrow()
+        return CabinetPrincipal.of(user).copy(impersonatedBy = supervisor.id.value)
+    }
 
     override fun editCommunity(communityId: CommunityId, communityName: String, description: String): CommunityVo =
         operations.editCommunity(currentUser.user(), communityId, communityName, description).getOrThrow().toVo()

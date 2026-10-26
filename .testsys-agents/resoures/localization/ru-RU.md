@@ -837,3 +837,35 @@ Notes collected while moving the Observer and Supervisor pages onto localization
 - Usage (independent review, 2026-10-13): Т—Ж, «Внимательно читайте текст уведомлений и смс» (03.12.2024,
   https://t-j.ru/advice-notification/) quotes a bank SMS «Никому не говорите этот код» and a Gosuslugi SMS
   «Никому не сообщайте!». Usage evidence, not a norm.
+
+## Supervisor impersonation: «Войти под Пользователем», «вход Супервайзера»
+
+- «Войти под {:term user ins}» uses «под» + instrumental for acting under another account, the usual IT phrasing
+  («войти под пользователем», «авторизоваться под другим администратором»). Usage evidence only, no dictionary
+  entry: a GetCourse help question titled «Как один администратор может авторизоваться под другим
+  администратором?» and an infostart.ru 1C tool that lets an administrator «войти в программу под нужным
+  пользователем» (search results, not opened, 2026-10-27). The glossary term `glossary.user` gained `ins sg`
+  «Пользователем» for this message.
+- «вход»: Викисловарь lists only two senses, the action of entering and the place of entry («Вход в дом»); there
+  is no separate log-in sense, so «вход Супервайзера» meaning "the Supervisor has signed in" extends the action
+  sense by context. Applicability (inference): next to a nickname in the Cabinet header, after a middle dot
+  (ui-design.md: meta facts are separated by «·»), the place reading is implausible. The noun avoids a gendered
+  past tense («вошёл/вошла Супервайзер»), since the Supervisor's gender is unknown. Lowercase after «·» marks it
+  as an annotation of the nickname; no project rule or source fixes the case after a middle dot. No offensive or
+  undesirable reading was found.
+- Source: https://ru.wiktionary.org/wiki/вход (read 2026-10-27): «неодушевлённое, мужской род, 2-е склонение
+  (тип 1a по Зализняку)».
+- Independent review (2026-10-27):
+  - «пользователь»: Тв. ед. «по́льзователем», sense 2 «комп.» — «тот, кто использует вычислительную систему или
+    программное средство»; confirms `glossary.user` `ins sg`. Source: https://ru.wiktionary.org/wiki/пользователь.
+  - «под» + instrumental for the name one acts under: Викисловарь «под» has no such sense, but dictionary examples
+    reproduced by kartaslov.ru include «Писать под псевдонимом» (МАС), «Статья под моим именем» (Ушаков); sense
+    definitions there were not verified verbatim. «Войти под Пользователем» extends this sense to an account
+    (inference). Source: https://kartaslov.ru/значение-слова/под.
+  - Usage, now opened: GetCourse question «Как один администратор может авторизоваться под другим
+    администратором?» (https://getcourse.ru/chtm/q/kak-odin-administrator-mozhet-avtorizovatsya-pod-drugim-administratorom).
+    Usage, not a norm. infostart.ru (https://infostart.ru/public/152797) returned HTTP 429 and remains unread.
+  - Project precedent for lowercase after «·»: `page_developer.diagnostic.line` renders «Ошибка · некорректный
+    XML: …».
+  - «супервайзер»: Р. ед. «суперва́йзера», Д. ед. «суперва́йзеру». Source:
+    https://ru.wiktionary.org/wiki/супервайзер.

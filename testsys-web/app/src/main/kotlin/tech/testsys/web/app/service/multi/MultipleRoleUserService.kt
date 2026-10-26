@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional
 import tech.testsys.operation.error.OperationException
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.user.MultipleRoleUserOperations
+import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.service.MultipleRoleUserVo
 import tech.testsys.web.app.service.toVo
@@ -32,23 +33,27 @@ class MultipleRoleUserService(private val operations: MultipleRoleUserOperations
     }
 
     /**
-     * Runs [MultipleRoleUserOperations.requestEmailChange].
+     * Runs [MultipleRoleUserOperations.requestEmailChange]; throws `IllegalStateException` while a supervisor is signed in
+     * as the user.
      *
      * @since %CURRENT_VERSION%
      */
     fun requestEmailChange(email: String) {
+        checkNotImpersonated()
         operations.requestEmailChange(currentUser.multipleRoleUser(), email).getOrThrow()
     }
 
     /**
-     * Runs [MultipleRoleUserOperations.confirmEmailChange]. The transaction commits even if the operation fails, so that
-     * a spent attempt to enter the code is kept.
+     * Runs [MultipleRoleUserOperations.confirmEmailChange]; throws `IllegalStateException` while a supervisor is signed in
+     * as the user. The transaction commits even if the operation fails, so that a spent attempt to enter the code is kept.
      *
      * @since %CURRENT_VERSION%
      */
     @Transactional(noRollbackFor = [OperationException::class])
-    fun confirmEmailChange(confirmationCode: String): MultipleRoleUserVo =
-        operations.confirmEmailChange(currentUser.multipleRoleUser(), confirmationCode).getOrThrow().toVo()
+    fun confirmEmailChange(confirmationCode: String): MultipleRoleUserVo {
+        checkNotImpersonated()
+        return operations.confirmEmailChange(currentUser.multipleRoleUser(), confirmationCode).getOrThrow().toVo()
+    }
 
     /**
      * Runs [MultipleRoleUserOperations.joinCommunity].
@@ -57,4 +62,9 @@ class MultipleRoleUserService(private val operations: MultipleRoleUserOperations
      */
     fun joinCommunity(inviteCode: String): MultipleRoleUserVo =
         operations.joinCommunity(currentUser.multipleRoleUser(), inviteCode).getOrThrow().toVo()
+
+    private fun checkNotImpersonated() {
+        val supervisorId = CabinetSignIn.principal()?.impersonatedBy
+        check(supervisorId == null) { "Supervisor $supervisorId signed in as the user cannot change their e-mail address" }
+    }
 }

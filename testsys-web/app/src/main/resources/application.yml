@@ -12,8 +12,9 @@ spring:
     name: testsys-web-app
 logging:
   pattern:
-    # Every line shows the signed-in user id and the open page of the main interface request, or `-` outside it.
-    correlation: "[%X{user:--} %X{route:--}] "
+    # Every line shows the signed-in user id, the open page of the main interface request and the id of the supervisor
+    # signed in as the user, or `-` for each value that is absent.
+    correlation: "[%X{user:--} %X{route:--} %X{impersonatedBy:--}] "
 management:
   prometheus:
     metrics:

@@ -1158,6 +1158,11 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should name the profile of the user without the e-mail change in impersonation guide`() {
+            assertEquals("Здесь можно просмотреть Профиль Пользователя.", l.pageProfile.impersonationGuide())
+        }
+
+        @Test
         fun `should describe the profile block in profile block guide`() {
             assertEquals("Ваш Псевдоним и текущая привязанная почта.", l.pageProfile.profileBlockGuide())
         }
@@ -1476,6 +1481,16 @@ class LocalizationTests {
         @Test
         fun `should name the sign out item in sign out`() {
             assertEquals("Выйти", l.pageCabinet.signOut())
+        }
+
+        @Test
+        fun `should mark the supervisor sign in after a middle dot joined by no-break spaces in impersonation name`() {
+            assertEquals("Маша$NBSP·${NBSP}вход${NBSP}Супервайзера", l.pageCabinet.impersonationName(name = "Маша"))
+        }
+
+        @Test
+        fun `should use the dative supervisor term in impersonation return`() {
+            assertEquals("Вернуться к Супервайзеру", l.pageCabinet.impersonationReturn())
         }
 
         @ParameterizedTest
@@ -5586,6 +5601,11 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should use the instrumental user term in user impersonate`() {
+            assertEquals("Войти под Пользователем", l.pageSupervisor.userImpersonate())
+        }
+
+        @Test
         fun `should decline the nickname, access code and user terms in user details guide`() {
             assertEquals(
                 "Идентификатор, Псевдоним, время последнего входа и Код-доступа Пользователя.",
@@ -5762,7 +5782,7 @@ class LocalizationTests {
     }
 
     private companion object {
-        // ICU separates digit groups with a no-break space; the code point keeps the expectations visible.
+        // ICU digit groups and some messages use a no-break space; the code point keeps the expectations visible.
         val NBSP = Char(0x00A0).toString()
     }
 }

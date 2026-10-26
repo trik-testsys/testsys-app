@@ -1,5 +1,6 @@
 package tech.testsys.web.app.view
 
+import com.vaadin.flow.component.UI
 import com.vaadin.flow.data.binder.Binder
 import com.vaadin.flow.router.BeforeEnterEvent
 import com.vaadin.flow.router.BeforeEnterObserver
@@ -7,12 +8,16 @@ import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.UserId
 import tech.testsys.domain.model.user.issuedAccessToken
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.infra.localization.PageSupervisor.UserHeadKind
 import tech.testsys.operation.config.CommunityConfig
+import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.AdministratorRoleVo
 import tech.testsys.web.app.service.CommunityVo
@@ -199,8 +204,19 @@ class SupervisorUserView(
                         isEditable = false
                     }
                 }
+                actions {
+                    action(texts.userImpersonate()) { onClick { impersonate(user.id) } }
+                }
             }
         }
+    }
+
+    /** Signs the supervisor in as [userId] and opens the start page of that user. */
+    private fun impersonate(userId: UserId) {
+        val principal = service.impersonate(userId)
+        CabinetSignIn.signIn(principal)
+        logger.info("Supervisor {} signed in as user {} ({})", principal.impersonatedBy, principal.userId, principal.kind)
+        UI.getCurrent().navigate(startPageOf(principal.kind))
     }
 
     /** Shows the community roles of [user] with their removal, the inclusion into a community and the administrator grant. */
@@ -322,5 +338,9 @@ class SupervisorUserView(
     private class MembershipDraft {
         var community: CommunityVo? = null
         var role: CommunityRole? = null
+    }
+
+    private companion object {
+        val logger: Logger = LoggerFactory.getLogger(SupervisorUserView::class.java)
     }
 }

@@ -169,6 +169,26 @@ class RequestLogContextTests {
         }
 
         @Test
+        fun `should put the supervisor signed in as the user into the log context`() {
+            signIn(userId = 42, impersonatedBy = 7)
+
+            context.requestStart(request(uiId = null), response)
+
+            assertEquals("42", MDC.get("user"))
+            assertEquals("7", MDC.get("impersonatedBy"))
+        }
+
+        @Test
+        fun `should leave the supervisor out of the log context for a user who signed in themselves`() {
+            MDC.put("impersonatedBy", "7")
+            signIn(userId = 42)
+
+            context.requestStart(request(uiId = null), response)
+
+            assertNull(MDC.get("impersonatedBy"))
+        }
+
+        @Test
         fun `should leave the user out of the log context for a guest`() {
             context.requestStart(request(uiId = null), response)
 
@@ -189,6 +209,16 @@ class RequestLogContextTests {
 
             assertNull(MDC.get("user"))
             assertNull(MDC.get("route"))
+        }
+
+        @Test
+        fun `should remove the supervisor signed in as the user from the log context`() {
+            signIn(userId = 42, impersonatedBy = 7)
+            context.requestStart(request(uiId = null), response)
+
+            context.requestEnd(request(uiId = null), response, null)
+
+            assertNull(MDC.get("impersonatedBy"))
         }
     }
 
@@ -247,8 +277,12 @@ class RequestLogContextTests {
         }
     }
 
-    private fun signIn(userId: Long) {
-        val principal = CabinetPrincipal(userId = userId, kind = UserKind.MULTIPLE_ROLE)
+    private fun signIn(userId: Long, impersonatedBy: Long? = null) {
+        val principal = CabinetPrincipal(
+            userId = userId,
+            kind = UserKind.MULTIPLE_ROLE,
+            impersonatedBy = impersonatedBy,
+        )
         SecurityContextHolder.getContext().authentication = UsernamePasswordAuthenticationToken(principal, null, emptyList())
     }
 

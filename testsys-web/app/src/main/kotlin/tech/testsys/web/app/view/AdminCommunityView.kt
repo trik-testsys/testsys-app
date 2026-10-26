@@ -12,6 +12,7 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.issuedAccessToken
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.web.app.service.AdminUserVo
 import tech.testsys.web.app.service.CommunityManagementService
@@ -164,7 +165,7 @@ abstract class CommunityDetailsView(
                 }
                 row {
                     codeInput(texts.accessCode(), labelSize = 6, size = 18) {
-                        value = observer.accessTokenHash.value
+                        value = observer.accessTokenHash.issuedAccessToken()
                         isEditable = false
                         isObscured = true
                     }

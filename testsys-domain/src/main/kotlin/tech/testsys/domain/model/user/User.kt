@@ -68,6 +68,17 @@ data class AccessTokenHash(
 }
 
 /**
+ * Returns the original access code restored from the stored value; a new algorithm must decide here whether it is
+ * recoverable.
+ *
+ * @since %CURRENT_VERSION%
+ */
+@RawAccessTokenDependency(reason = "Restores the original access code from the stored value, which only Identity allows.")
+fun AccessTokenHash.issuedAccessToken(): String = when (algorithm) {
+    HashAlgorithm.Identity -> value
+}
+
+/**
  * Data common to every kind of [User].
  *
  * @property accessTokenHash the stored access-code representation together with its hashing algorithm.

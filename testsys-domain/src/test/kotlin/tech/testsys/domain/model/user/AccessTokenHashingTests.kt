@@ -13,4 +13,14 @@ class AccessTokenHashingTests {
 
         assertEquals(AccessTokenHash(value = rawAccessToken, algorithm = HashAlgorithm.Identity), result)
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["token", "", "  token  ", "Token", "Код-доступа"])
+    fun `should restore the issued access token with Identity`(rawAccessToken: String) {
+        val accessTokenHash = AccessTokenHash.hashAccessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+
+        val result = accessTokenHash.issuedAccessToken()
+
+        assertEquals(rawAccessToken, result)
+    }
 }

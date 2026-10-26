@@ -10,6 +10,7 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.util.isAccessToken
@@ -47,6 +48,9 @@ class SupervisorBootstrap(
         return transactions.execute { ensureInTransaction(name, rawAccessToken) }
     }
 
+    @RawAccessTokenDependency(
+        reason = "Compares the stored access code with the configured one hashed by Identity, so another algorithm never matches.",
+    )
     private fun ensureInTransaction(name: String, rawAccessToken: String): Supervisor {
         check(
             multipleRoleUsers.findByAccessToken(rawAccessToken) == null &&

@@ -6,13 +6,13 @@ import com.vaadin.flow.router.NotFoundException
 import com.vaadin.flow.router.PageTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
-import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
+import tech.testsys.domain.model.user.issuedAccessToken
 import tech.testsys.infra.database.api.service.ServiceUserId
 import tech.testsys.infra.database.api.service.ServiceUserSearch
 import tech.testsys.web.components.TestSysView
@@ -84,28 +84,20 @@ class ServiceUserView(private val search: ServiceUserSearch) : TestSysView(), Be
     }
 
     /** Adds the access code of [user] in a hidden field and an action copying the value of that field. */
+    @RawAccessTokenDependency(reason = "Shows and copies the stored access code of the user as the issued one.")
     private fun PageScope.accessTokenBlock(user: User<*>) {
         row {
             block(title = "Код-доступа") {
                 lateinit var code: ValueInput<String>
                 row {
                     code = codeInput("Код-доступа", labelSize = 4, size = 12) {
-                        value = accessTokenOf(user)
+                        value = dataOf(user).accessTokenHash.issuedAccessToken()
                         isObscured = true
                     }
                 }
 
                 actions { copyAction("Копировать", value = { code.value }) }
             }.isEditable = false
-        }
-    }
-
-    /** Returns the stored access code of [user] as the issued one. */
-    @RawAccessTokenDependency(reason = "Shows and copies the stored access code of the user as the issued one.")
-    private fun accessTokenOf(user: User<*>): String {
-        val accessTokenHash = dataOf(user).accessTokenHash
-        return when (accessTokenHash.algorithm) {
-            HashAlgorithm.Identity -> accessTokenHash.value
         }
     }
 }

@@ -7,6 +7,7 @@ import tech.testsys.domain.model.group.ClassId
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.issuedAccessToken
 import tech.testsys.infra.localization.PageManager
 import tech.testsys.web.app.service.ContestVo
 import tech.testsys.web.app.service.manager.ManagerService
@@ -193,7 +194,7 @@ internal fun csvOf(rows: List<List<String>>): String = rows.joinToString(separat
 @RawAccessTokenDependency(reason = "Exports stored participant access codes as the issued ones.")
 internal fun participantsCsv(participants: List<ParticipantVo>, texts: PageManager): String = csvOf(
     listOf(listOf(texts.id(), texts.nickname(), texts.accessCode())) + participants.map { participant ->
-        listOf(participant.id.value.toString(), participant.name, participant.accessTokenHash.value)
+        listOf(participant.id.value.toString(), participant.name, participant.accessTokenHash.issuedAccessToken())
     },
 )
 

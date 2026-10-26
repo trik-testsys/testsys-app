@@ -15,6 +15,7 @@ import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.UserId
+import tech.testsys.domain.model.user.issuedAccessToken
 import tech.testsys.infra.localization.PageAdministrator.UserHeadKind
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.infra.localization.PageCabinet.ValidationStatusStatus
@@ -166,7 +167,7 @@ class AdminUserView(
                 if (user is ObserverVo) {
                     row {
                         codeInput(texts.accessCode(), labelSize = 3, size = 6) {
-                            value = user.accessTokenHash.value
+                            value = user.accessTokenHash.issuedAccessToken()
                             isObscured = true
                         }
                     }

@@ -9,6 +9,7 @@ import com.vaadin.flow.router.RouteParameters
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.issuedAccessToken
 import tech.testsys.infra.localization.PageCabinet.RoleNameRole
 import tech.testsys.infra.localization.PageSupervisor.UserHeadKind
 import tech.testsys.operation.config.CommunityConfig
@@ -193,7 +194,7 @@ class SupervisorUserView(
                 }
                 row {
                     codeInput(texts.accessCode(), labelSize = 3, size = 6) {
-                        value = user.accessTokenHash.value
+                        value = user.accessTokenHash.issuedAccessToken()
                         isObscured = true
                         isEditable = false
                     }

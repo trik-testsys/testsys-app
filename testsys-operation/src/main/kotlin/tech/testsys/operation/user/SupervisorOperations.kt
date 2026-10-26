@@ -107,6 +107,9 @@ class SupervisorOperations(
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.single.supervisor.authorization")
+    @RawAccessTokenDependency(
+        reason = "Returned users carry stored access codes that the supervisor sees as the original codes only with Identity.",
+    )
     fun viewUsers(
         user: User<*>,
         pagination: Pagination,
@@ -125,6 +128,9 @@ class SupervisorOperations(
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.single.supervisor.authorization")
+    @RawAccessTokenDependency(
+        reason = "The returned user carries the stored access code that the supervisor sees as the original code only with Identity.",
+    )
     fun viewUser(user: User<*>, userId: UserId): OperationResult<Pair<User<*>, Instant?>, ViewSupervisorUserError> =
         operation<Pair<User<*>, Instant?>, ViewSupervisorUserError> {
             ensure(user is Supervisor, MissedSupervisorRoleError)

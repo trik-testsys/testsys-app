@@ -9,6 +9,7 @@ import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
 import tech.testsys.domain.model.group.CompetitionId
 import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.issuedAccessToken
 import tech.testsys.web.app.service.manager.CompetitionDetailsVo
 import tech.testsys.web.app.service.manager.ManagerService
 import tech.testsys.web.app.service.manager.ParticipantVo
@@ -141,7 +142,9 @@ class ManagerCompetitionView(private val headers: CabinetHeaders, private val ma
                     codeColumn(texts.id(), size = 4) { (participant, _) -> participant.id.value.toString() }
                     textColumn(texts.nickname(), size = 6) { (participant, _) -> participant.name }
                     dateTimeColumn(texts.lastLogin(), size = 5) { (_, lastLogin) -> lastLogin?.toUserDateTime() }
-                    codeColumn(texts.accessCode(), isObscured = true) { (participant, _) -> participant.accessTokenHash.value }
+                    codeColumn(texts.accessCode(), isObscured = true) { (participant, _) ->
+                        participant.accessTokenHash.issuedAccessToken()
+                    }
                     val actionsLabel = { (participant, _): Pair<ParticipantVo, Instant?> ->
                         texts.competitionParticipantsActions(name = participant.name)
                     }

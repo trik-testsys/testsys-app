@@ -13,7 +13,6 @@ import tech.testsys.domain.model.task.SubmissionData
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.SubmissionKind
 import tech.testsys.domain.model.task.TaskId
-import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.UserId
@@ -36,6 +35,7 @@ import tech.testsys.infra.database.internal.utils.findIdByTagOrError
 import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.requireVersion
+import tech.testsys.infra.database.internal.utils.toDomain
 
 /**
  * Persistence adapter of [Submission] entities backed by [SubmissionJpaEntity].
@@ -63,7 +63,7 @@ class SubmissionPersistenceAdapter(
             is SubmissionKind.Grading -> null
         }
         val trikStudioVersionId = trikStudioVersion?.let {
-            trikStudioVersionJpaEntityRepository.findIdByTagOrError(it.version)
+            trikStudioVersionJpaEntityRepository.findIdByTagOrError(it.tag)
         }
         val jpaEntity = SubmissionMapping.toJpaEntity(data, trikStudioVersionId)
         val savedJpaEntity = jpaEntityRepository.save(jpaEntity)
@@ -173,7 +173,7 @@ class SubmissionPersistenceAdapter(
             SubmissionMapping.toDomain(
                 jpaEntity = row,
                 authorId = authorIds.getValue(row.authorId),
-                trikStudioVersion = trikStudioVersionIdOf(row)?.let { versionId -> TrikStudioVersion(versions.getValue(versionId).tag) },
+                trikStudioVersion = trikStudioVersionIdOf(row)?.let { versionId -> versions.getValue(versionId).toDomain() },
                 judgmentOrderIds = judgmentOrderIds.getValue(row.requireId()),
             )
         }

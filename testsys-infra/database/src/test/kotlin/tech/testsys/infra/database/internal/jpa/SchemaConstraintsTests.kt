@@ -3,6 +3,7 @@ package tech.testsys.infra.database.internal.jpa
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -76,6 +77,26 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
         assertEquals("22001", (error.mostSpecificCause as? SQLException)?.sqlState)
     }
 
+    @Test
+    fun `should reject a TRIK Studio version with an already stored version number`() {
+        val error = assertThrows<DataIntegrityViolationException> {
+            jdbc.update("INSERT INTO ts_trik_studio_version (id, tag, studio_version) VALUES (2, 'other', '1.0')")
+        }
+
+        val cause = error.mostSpecificCause
+        assertEquals("23505", (cause as? SQLException)?.sqlState)
+        assertTrue(cause.message.orEmpty().contains("uk_ts_trik_studio_version_studio_version"), cause.message)
+    }
+
+    @Test
+    fun `should reject a TRIK Studio version without a version number`() {
+        val error = assertThrows<DataIntegrityViolationException> {
+            jdbc.update("INSERT INTO ts_trik_studio_version (id, tag) VALUES (2, 'other')")
+        }
+
+        assertEquals("23502", (error.mostSpecificCause as? SQLException)?.sqlState)
+    }
+
     private fun insertExtra(table: String, values: Map<String, String>) {
         jdbc.execute(insertSql(table, rows.getValue(table) + values))
     }
@@ -94,6 +115,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                     "ts_submission_to_task_validation_request" -> mapOf("request_id" to "2")
                     "ts_registration_request" -> mapOf("id" to "2", "email" to "'new@test'")
                     "ts_email_change_request" -> mapOf("id" to "2", "user_id" to "2")
+                    "ts_access_restoration_request" -> mapOf("id" to "2", "user_id" to "2")
                     "ts_class_invite", "ts_community_invite" -> mapOf("id" to "3", "code" to "'new-code'")
                     "ts_diagnostic_report" -> mapOf("id" to "2", "position" to "1")
                     else -> mapOf("id" to "2")
@@ -136,6 +158,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
             "ts_trik_studio_version" to mapOf(
                 "id" to "1",
                 "tag" to "'version'",
+                "studio_version" to "'1.0'",
             ),
             "ts_solution" to mapOf(
                 "id" to "1",
@@ -258,6 +281,13 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                 "id" to "1",
                 "user_id" to "1",
                 "email" to "'change@test'",
+                "confirmation_code" to "'code'",
+                "expires_at" to TIME,
+                "attempts_left" to "3",
+            ),
+            "ts_access_restoration_request" to mapOf(
+                "id" to "1",
+                "user_id" to "1",
                 "confirmation_code" to "'code'",
                 "expires_at" to TIME,
                 "attempts_left" to "3",
@@ -485,6 +515,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
             val nonnegativeColumns = listOf(
                 "ts_registration_request" to "attempts_left",
                 "ts_email_change_request" to "attempts_left",
+                "ts_access_restoration_request" to "attempts_left",
                 "ts_judgment_order" to "score",
                 "ts_submission_to_task_validation_request" to "position",
                 "ts_diagnostic_report" to "position",

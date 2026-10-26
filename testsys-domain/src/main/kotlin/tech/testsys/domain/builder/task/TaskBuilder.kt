@@ -80,12 +80,14 @@ abstract class TaskContentBuilder<T> : Builder<T> {
     }
 
     /**
-     * Sets [supportedTrikStudioVersions] from raw version tags.
+     * Sets [supportedTrikStudioVersions] from pairs of a raw Docker image tag and a version number.
      *
      * @since %CURRENT_VERSION%
      */
-    fun supportedTrikStudioVersions(supportedTrikStudioVersions: Iterable<String>) {
-        this.supportedTrikStudioVersions = supportedTrikStudioVersions.map { TrikStudioVersion(it) }.toMutableList()
+    fun supportedTrikStudioVersions(supportedTrikStudioVersions: Iterable<Pair<String, String>>) {
+        this.supportedTrikStudioVersions = supportedTrikStudioVersions
+            .map { (tag, version) -> TrikStudioVersion(tag = tag, version = version) }
+            .toMutableList()
     }
 }
 

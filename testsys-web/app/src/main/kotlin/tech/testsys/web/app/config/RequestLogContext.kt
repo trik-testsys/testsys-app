@@ -1,0 +1,108 @@
+package tech.testsys.web.app.config
+
+import com.vaadin.flow.router.AfterNavigationEvent
+import com.vaadin.flow.router.BeforeEnterEvent
+import com.vaadin.flow.router.Location
+import com.vaadin.flow.server.ServiceInitEvent
+import com.vaadin.flow.server.VaadinRequest
+import com.vaadin.flow.server.VaadinRequestInterceptor
+import com.vaadin.flow.server.VaadinResponse
+import com.vaadin.flow.server.VaadinServiceInitListener
+import com.vaadin.flow.server.VaadinSession
+import com.vaadin.flow.server.communication.StreamRequestHandler
+import com.vaadin.flow.shared.ApplicationConstants
+import com.vaadin.flow.spring.annotation.SpringComponent
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.slf4j.MDC
+import tech.testsys.web.app.security.CabinetSignIn
+
+/**
+ * Puts the id of the signed-in user and the path of the open page into the log context of every Vaadin request
+ * of the main interface and writes each opened page at DEBUG.
+ *
+ * @since %CURRENT_VERSION%
+ */
+@SpringComponent
+class RequestLogContext :
+    VaadinServiceInitListener,
+    VaadinRequestInterceptor {
+    override fun serviceInit(event: ServiceInitEvent) {
+        event.addVaadinRequestInterceptor(this)
+        event.source.addUIInitListener { uiEvent ->
+            val ui = uiEvent.ui
+            ui.addBeforeEnterListener { entered -> entering(entered) }
+            ui.addAfterNavigationListener { navigation -> opened(navigation, ui.uiId, ui.session) }
+            ui.addDetachListener { forget(ui.session, ui.uiId) }
+        }
+    }
+
+    // Push over a websocket starts and ends its requests without a response.
+    override fun requestStart(request: VaadinRequest, response: VaadinResponse?) {
+        putUser()
+
+        // The Vaadin session is not looked up yet, so the page path of the UI is read from the HTTP session.
+        val uiId = uiIdOf(request) ?: return
+        val route = request.getWrappedSession(false)?.getAttribute(ROUTE_ATTRIBUTE + uiId) as? String
+        route?.let { path -> MDC.put(ROUTE, path) }
+    }
+
+    override fun handleException(request: VaadinRequest, response: VaadinResponse?, session: VaadinSession?, exception: Exception) = Unit
+
+    override fun requestEnd(request: VaadinRequest, response: VaadinResponse?, session: VaadinSession?) {
+        MDC.remove(USER)
+        MDC.remove(ROUTE)
+    }
+
+    /**
+     * Puts the user signed in by now and the path of the page entered by [event] into the log context, so the calls
+     * made while the page is built and its background work carry them even when sign-in and navigation share a request.
+     */
+    internal fun entering(event: BeforeEnterEvent) {
+        putUser()
+        MDC.put(ROUTE, pathOf(event.location))
+    }
+
+    /** Writes the page opened by [event] in the UI [uiId] and remembers its path for the next requests of that UI. */
+    internal fun opened(event: AfterNavigationEvent, uiId: Int, session: VaadinSession?) {
+        val path = pathOf(event.location)
+        MDC.put(ROUTE, path)
+        session?.session?.setAttribute(ROUTE_ATTRIBUTE + uiId, path)
+        logger.debug("Opened {} ({})", path, event.activeChain.firstOrNull()?.javaClass?.simpleName)
+    }
+
+    private fun putUser() {
+        val principal = CabinetSignIn.principal()
+        if (principal == null) {
+            MDC.remove(USER)
+        } else {
+            MDC.put(USER, principal.userId.toString())
+        }
+    }
+
+    // A file transfer request carries the UI id in its path instead of the parameter.
+    private fun uiIdOf(request: VaadinRequest): String? = request.getParameter(ApplicationConstants.UI_ID_PARAMETER)
+        ?: request.pathInfo
+            ?.takeIf { path -> path.startsWith(RESOURCE_PATH) }
+            ?.removePrefix(RESOURCE_PATH)
+            ?.substringBefore('/')
+
+    private fun pathOf(location: Location): String = "/" + location.path
+
+    private fun forget(session: VaadinSession?, uiId: Int) {
+        // A UI is also detached when its HTTP session is already invalidated, and then nothing is left to remove.
+        try {
+            session?.session?.removeAttribute(ROUTE_ATTRIBUTE + uiId)
+        } catch (_: IllegalStateException) {
+            return
+        }
+    }
+
+    private companion object {
+        const val USER = "user"
+        const val ROUTE = "route"
+        const val ROUTE_ATTRIBUTE = "testsys.route."
+        const val RESOURCE_PATH = "/" + StreamRequestHandler.DYN_RES_PREFIX
+        val logger: Logger = LoggerFactory.getLogger(RequestLogContext::class.java)
+    }
+}

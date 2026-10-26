@@ -146,6 +146,7 @@ import tech.testsys.operation.util.testSavedContest
 import tech.testsys.operation.util.testSavedTask
 import tech.testsys.operation.util.testStatement
 import tech.testsys.operation.util.testTaskValidationRequest
+import tech.testsys.operation.util.testTrikStudioVersion
 import tech.testsys.operation.util.testUncommittedTask
 import java.time.Duration
 import java.time.Instant
@@ -227,13 +228,15 @@ class DeveloperOperationsTests {
 
             @Test
             fun `should save a request for a task supporting the TRIK Studio version of every attached contest`() {
-                val task = validTask().withData { content.new { supportedTrikStudioVersions(listOf("v1", "v2")) } }
+                val task = validTask().withData {
+                    content.new { supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("v1"), testTrikStudioVersion("v2")) }
+                }
                 prepareContent(task)
                 val request = testTaskValidationRequest()
                 every { taskRepository.findById(task.id) } returns task
                 every { contestRepository.findByTaskId(task.id) } returns listOf(
-                    testContest { trikStudioVersion("v1") },
-                    testContest { trikStudioVersion("v2") },
+                    testContest { trikStudioVersion = testTrikStudioVersion("v1") },
+                    testContest { trikStudioVersion = testTrikStudioVersion("v2") },
                 )
                 every { taskValidationRequestRepository.findOrCreateActive(task.id, developer.id) } returns request
 
@@ -379,9 +382,11 @@ class DeveloperOperationsTests {
                 val task = validTask()
                 prepareContent(task)
                 every { taskRepository.findById(task.id) } returns task
-                every { contestRepository.findByTaskId(task.id) } returns listOf(testContest { trikStudioVersion("other") })
+                every { contestRepository.findByTaskId(task.id) } returns listOf(
+                    testContest { trikStudioVersion = testTrikStudioVersion("other") },
+                )
 
-                assertRaises(TaskTrikStudioVersionNotSupportedError(task.id, TrikStudioVersion("other"))) {
+                assertRaises(TaskTrikStudioVersionNotSupportedError(task.id, testTrikStudioVersion("other"))) {
                     developerOperations.testTask(developer, task.id)
                 }
 
@@ -466,7 +471,7 @@ class DeveloperOperationsTests {
                     exercises(listOf(2))
                     tests(listOf(3))
                     developerSolutions(listOf(4))
-                    supportedTrikStudioVersions(listOf("v1"))
+                    supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("v1"))
                 }
                 if (state == "new") {
                     content.new(contentBuilder)
@@ -606,7 +611,10 @@ class DeveloperOperationsTests {
                 Assertions.assertEquals(listOf(ExerciseId(2)), content.exercises.ids)
                 Assertions.assertEquals(listOf(TestId(3), TestId(6)), content.tests.ids)
                 Assertions.assertEquals(listOf(DeveloperSolutionId(4)), content.developerSolutions.ids)
-                Assertions.assertEquals(listOf(TrikStudioVersion("3.0.0"), TrikStudioVersion("4.0.0")), content.supportedTrikStudioVersions)
+                Assertions.assertEquals(
+                    listOf(testTrikStudioVersion("3.0.0"), testTrikStudioVersion("4.0.0")),
+                    content.supportedTrikStudioVersions,
+                )
                 Assertions.assertEquals(savedTaskVersion, result.version)
                 verify(exactly = 1) { taskRepository.update(any<Task>()) }
             }
@@ -615,8 +623,8 @@ class DeveloperOperationsTests {
             fun `should commit a task compatible with every attached contest`() {
                 every { taskRepository.findById(taskId) } returns uncommittedTask()
                 every { contestRepository.findByTaskId(taskId) } returns listOf(
-                    testContest { trikStudioVersion("3.0.0") },
-                    testContest { trikStudioVersion("4.0.0") },
+                    testContest { trikStudioVersion = testTrikStudioVersion("3.0.0") },
+                    testContest { trikStudioVersion = testTrikStudioVersion("4.0.0") },
                 )
 
                 val result = developerOperations.commitTask(developer, taskId, regradeSubmissions = false).getOrThrow()
@@ -629,7 +637,7 @@ class DeveloperOperationsTests {
                 every { taskRepository.findById(taskId) } returns uncommittedTask {
                     tests(listOf(6, 3))
                     developerSolutions(listOf(8, 4))
-                    supportedTrikStudioVersions(listOf("4.0.0", "3.0.0"))
+                    supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("4.0.0"), testTrikStudioVersion("3.0.0"))
                 }
                 every { taskValidationRequestRepository.findHistory(taskId) } returns listOf(validationRequest(authorIds = listOf(4, 8)))
 
@@ -835,9 +843,11 @@ class DeveloperOperationsTests {
             @Test
             fun `should reject an attached contest with an unsupported TRIK Studio version`() {
                 every { taskRepository.findById(taskId) } returns uncommittedTask()
-                every { contestRepository.findByTaskId(taskId) } returns listOf(testContest { trikStudioVersion("2.0.0") })
+                every { contestRepository.findByTaskId(taskId) } returns listOf(
+                    testContest { trikStudioVersion = testTrikStudioVersion("2.0.0") },
+                )
 
-                assertRaises(TaskTrikStudioVersionNotSupportedError(taskId, TrikStudioVersion("2.0.0"))) {
+                assertRaises(TaskTrikStudioVersionNotSupportedError(taskId, testTrikStudioVersion("2.0.0"))) {
                     developerOperations.commitTask(developer, taskId, regradeSubmissions = true)
                 }
 
@@ -957,7 +967,7 @@ class DeveloperOperationsTests {
                     exercises(listOf(99))
                     tests(committedPolygonIds)
                     developerSolutions(listOf(4))
-                    supportedTrikStudioVersions(listOf("3.0.0", "4.0.0"))
+                    supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("3.0.0"), testTrikStudioVersion("4.0.0"))
                 },
             )
         }
@@ -967,7 +977,7 @@ class DeveloperOperationsTests {
             exercises(listOf(2))
             tests(listOf(3, 6))
             developerSolutions(listOf(4))
-            supportedTrikStudioVersions(listOf("3.0.0", "4.0.0"))
+            supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("3.0.0"), testTrikStudioVersion("4.0.0"))
         }
 
         private fun validationRequest(
@@ -985,7 +995,7 @@ class DeveloperOperationsTests {
                         expectedScore = Score(42)
                     }
                 }.toMutableList()
-                supportedTrikStudioVersions = versionTags.map { tag -> TrikStudioVersion(tag) }.toMutableList()
+                supportedTrikStudioVersions = versionTags.map { tag -> testTrikStudioVersion(tag) }.toMutableList()
             }
             execution.chooseExecution()
         }
@@ -1472,7 +1482,7 @@ class DeveloperOperationsTests {
 
             @Test
             fun `should return the registered TRIK Studio versions`() {
-                val versions = listOf(TrikStudioVersion("2.9.0"), TrikStudioVersion("3.0.0"))
+                val versions = listOf(testTrikStudioVersion("2.9.0"), testTrikStudioVersion("3.0.0"))
                 every { contestRepository.findTrikStudioVersions() } returns versions
 
                 val result = developerOperations.viewTrikStudioVersions(developer).getOrThrow()
@@ -1518,14 +1528,14 @@ class DeveloperOperationsTests {
                     exercises(listOf(22, 99))
                     tests(listOf(23, 98))
                     developerSolutions(listOf(24, 97))
-                    supportedTrikStudioVersions(listOf("4.0.0"))
+                    supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("4.0.0"))
                 },
                 lastCommittedBuilder = {
                     statement = this@RevertTaskTests.statement.id
                     exercises = mutableListOf(exercise.id)
                     tests = mutableListOf(polygon.id)
                     developerSolutions = mutableListOf(referenceSolution.id)
-                    supportedTrikStudioVersions(listOf("3.0.0"))
+                    supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("3.0.0"))
                 },
             )
         }
@@ -1556,7 +1566,7 @@ class DeveloperOperationsTests {
                 Assertions.assertEquals(listOf(ExerciseId(12)), content.exercises.ids)
                 Assertions.assertEquals(listOf(TestId(13)), content.tests.ids)
                 Assertions.assertEquals(listOf(DeveloperSolutionId(14)), content.developerSolutions.ids)
-                Assertions.assertEquals(listOf(TrikStudioVersion("3.0.0")), content.supportedTrikStudioVersions)
+                Assertions.assertEquals(listOf(testTrikStudioVersion("3.0.0")), content.supportedTrikStudioVersions)
                 verify(exactly = 1) { taskRepository.update(any<Task>()) }
                 verify(exactly = 0) { statementRepository.save(any<StatementData>()) }
                 verify(exactly = 0) { exerciseRepository.save(any<ExerciseData>()) }
@@ -1848,7 +1858,7 @@ class DeveloperOperationsTests {
     @Nested
     inner class CreateContestTests {
 
-        private val version = TrikStudioVersion("3.0.0")
+        private val version = testTrikStudioVersion("3.0.0")
         private val start = Instant.parse("2020-01-01T10:00:00Z")
         private val end = Instant.parse("2020-01-01T12:00:00Z")
 
@@ -2563,7 +2573,7 @@ class DeveloperOperationsTests {
                 Assertions.assertEquals("Description", updated.captured.data.description)
                 Assertions.assertEquals(listOf(TaskId(2), TaskId(7)), updated.captured.data.tasks.ids)
                 Assertions.assertEquals(Duration.ofMinutes(30), updated.captured.data.attemptDuration)
-                Assertions.assertEquals(TrikStudioVersion("3.0.0"), updated.captured.data.trikStudioVersion)
+                Assertions.assertEquals(testTrikStudioVersion("3.0.0"), updated.captured.data.trikStudioVersion)
             }
 
             @Test
@@ -3017,7 +3027,7 @@ class DeveloperOperationsTests {
 
         private val contestId = ContestId(19)
         private val taskId = TaskId(0)
-        private val version = TrikStudioVersion("3.0.0")
+        private val version = testTrikStudioVersion("3.0.0")
 
         @Nested
         inner class HappyPathTests {
@@ -3242,7 +3252,9 @@ class DeveloperOperationsTests {
 
             @Test
             fun `should reject New task even if its working revision supports the contest version`() {
-                val newTask = testNewTask().withData { content.new { supportedTrikStudioVersions(listOf("3.0.0")) } }
+                val newTask = testNewTask().withData {
+                    content.new { supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("3.0.0")) }
+                }
                 prepare(originalTask = newTask)
 
                 assertRaises(TaskNotCommittedError(taskId)) {
@@ -3435,7 +3447,7 @@ class DeveloperOperationsTests {
         }
 
         private fun committedTask(versions: List<String> = listOf("3.0.0")): Task = testCommitedTask().withData {
-            content.committed { supportedTrikStudioVersions(versions) }
+            content.committed { supportedTrikStudioVersions = versions.map(::testTrikStudioVersion).toMutableList() }
         }
 
         private fun uncommittedTask(
@@ -3443,8 +3455,8 @@ class DeveloperOperationsTests {
             workingVersions: List<String> = listOf("3.0.0"),
         ): Task = testUncommittedTask().withData {
             content.uncommitted(
-                wipBuilder = { supportedTrikStudioVersions(workingVersions) },
-                lastCommittedBuilder = { supportedTrikStudioVersions(committedVersions) },
+                wipBuilder = { supportedTrikStudioVersions = workingVersions.map(::testTrikStudioVersion).toMutableList() },
+                lastCommittedBuilder = { supportedTrikStudioVersions = committedVersions.map(::testTrikStudioVersion).toMutableList() },
             )
         }
 
@@ -3682,7 +3694,7 @@ class DeveloperOperationsTests {
                 Assertions.assertEquals(Duration.ofHours(2), saved.captured.data.contestDuration)
                 Assertions.assertEquals(Duration.ofMinutes(30), saved.captured.data.attemptDuration)
                 Assertions.assertEquals(original.data.endsAt, saved.captured.data.endsAt)
-                Assertions.assertEquals(TrikStudioVersion("3.0.0"), saved.captured.data.trikStudioVersion)
+                Assertions.assertEquals(testTrikStudioVersion("3.0.0"), saved.captured.data.trikStudioVersion)
                 Assertions.assertEquals(emptyList<CommunityId>(), saved.captured.data.sharedTo.ids)
             }
 
@@ -4231,7 +4243,7 @@ class DeveloperOperationsTests {
 
                 val expected = taskContentNew {
                     detachResources()
-                    supportedTrikStudioVersions(listOf("3.0.0"))
+                    supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("3.0.0"))
                 }.wip
                 assertDetachedTask(original = original, result = result, expected = expected)
                 verify(exactly = 1) { taskRepository.update(any<Task>()) }
@@ -4298,7 +4310,10 @@ class DeveloperOperationsTests {
             @Test
             fun `should compare supplied versions to WIP rather than committed versions`() {
                 val original = taskInState("Uncommitted").withData {
-                    content.uncommitted(wipBuilder = { supportedTrikStudioVersions(listOf("4.0.0")) }, lastCommittedBuilder = {})
+                    content.uncommitted(
+                        wipBuilder = { supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("4.0.0")) },
+                        lastCommittedBuilder = {},
+                    )
                 }
                 every { taskRepository.findById(taskId) } returns original
                 every { taskRepository.update(any<Task>()) } answers { testSavedTask(firstArg()) }
@@ -4513,7 +4528,7 @@ class DeveloperOperationsTests {
         }
 
         private fun versions(tags: String): List<TrikStudioVersion> =
-            tags.split(' ').filter { it.isNotEmpty() }.map { TrikStudioVersion(it) }
+            tags.split(' ').filter { it.isNotEmpty() }.map { version -> testTrikStudioVersion(version) }
     }
 
     @Nested
@@ -5221,7 +5236,7 @@ class DeveloperOperationsTests {
     private fun tech.testsys.domain.builder.task.TaskContentBuilder<*>.existingResources() {
         tests(listOf(7))
         developerSolutions(listOf(8))
-        supportedTrikStudioVersions(listOf("3.0.0"))
+        supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("3.0.0"))
     }
 
     private fun assertCommittedUnchanged(expected: CommittedTaskContent, result: Task) {
@@ -10160,7 +10175,7 @@ class DeveloperOperationsTests {
         exercises(listOf(12))
         tests(listOf(13, 14, 15))
         developerSolutions(listOf(16, 17, 18))
-        supportedTrikStudioVersions(listOf("3.0.0", "4.0.0"))
+        supportedTrikStudioVersions = mutableListOf(testTrikStudioVersion("3.0.0"), testTrikStudioVersion("4.0.0"))
     }
 
     private fun assertDetachedTask(original: Task, result: Task, expected: WipTaskContent) {

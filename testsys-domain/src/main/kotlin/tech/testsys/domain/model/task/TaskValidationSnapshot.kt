@@ -38,12 +38,12 @@ data class TaskValidationSnapshot(
     companion object {
         /**
          * Lists every author solution and TRIK Studio version pair of [snapshot] in the canonical order
-         * of author submissions: by author solution identifier, then by version string.
+         * of author submissions: by author solution identifier, then by Docker image tag.
          *
          * @since %CURRENT_VERSION%
          */
         fun authorRuns(snapshot: TaskValidationSnapshot): List<AuthorSolutionRun> {
-            val versions = snapshot.supportedTrikStudioVersions.sortedBy { it.version }
+            val versions = snapshot.supportedTrikStudioVersions.sortedBy { it.tag }
             return snapshot.developerSolutions.sortedBy { it.developerSolution.id.value }.flatMap { input ->
                 versions.map { version -> AuthorSolutionRun(input = input, trikStudioVersion = version) }
             }

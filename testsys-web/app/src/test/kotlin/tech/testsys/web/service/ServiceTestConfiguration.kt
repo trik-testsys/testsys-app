@@ -20,6 +20,7 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.User
+import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserId
 import tech.testsys.infra.database.api.service.ServiceUserSearch
 import tech.testsys.infra.grpc.api.GradingNodeImportPreview
@@ -124,6 +125,9 @@ class ServiceTestConfiguration {
 
     @Bean
     fun serviceUserSearch(): ServiceUserSearch = mockk<ServiceUserSearch>().also(::stubServiceTestUsers)
+
+    @Bean
+    fun serviceTrikStudioVersions(): ServiceTrikStudioVersions = mockk { every { findAll() } returns emptyList() }
 
     @Bean
     fun serviceSettings(): ServiceWebSettings = ServiceWebSettings.from(

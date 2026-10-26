@@ -1,6 +1,6 @@
 package tech.testsys.infra.database.api.transaction
 
-import org.apache.commons.logging.LogFactory
+import org.slf4j.LoggerFactory
 import org.springframework.core.retry.RetryException
 import org.springframework.core.retry.RetryListener
 import org.springframework.core.retry.RetryPolicy
@@ -65,7 +65,7 @@ class TransactionRetry(
      */
     private class ConflictListener(private val onRetry: () -> Unit) : RetryListener {
 
-        private val log = LogFactory.getLog(TransactionRetry::class.java)
+        private val log = LoggerFactory.getLogger(TransactionRetry::class.java)
 
         override fun beforeRetry(retryPolicy: RetryPolicy, retryable: Retryable<*>, retryState: RetryState) {
             onRetry()

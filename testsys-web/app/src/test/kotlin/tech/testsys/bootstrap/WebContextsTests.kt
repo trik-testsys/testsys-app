@@ -17,6 +17,7 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean
 import org.springframework.web.context.WebApplicationContext
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.repository.UserRepository
+import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserFilter
 import tech.testsys.infra.database.api.service.ServiceUserSearch
 import tech.testsys.infra.grpc.api.BalancingGrader
@@ -43,20 +44,7 @@ import javax.sql.DataSource
 class WebContextsTests {
     @Test
     fun `should start isolated Vaadin children sharing infrastructure and stop all three listeners`() {
-        val database = PostgresTestContainer.instance
-        val runtime = TestSysRuntime.start(
-            arrayOf(
-                "--server.port=0",
-                "--spring.boot.enableautoconfiguration=true",
-                "--spring.datasource.url=${database.jdbcUrl}",
-                "--spring.datasource.username=${database.username}",
-                "--spring.datasource.password=${database.password}",
-                "--vaadin.productionMode=true",
-                "--testsys.service.address=127.0.0.1",
-                "--testsys.service.port=0",
-                "--testsys.service.secret=${"test-secret-".repeat(8)}",
-            ),
-        )
+        val runtime = TestSysRuntime.start(arguments())
         val ports = listOf(
             checkNotNull((runtime.mainWeb as? WebServerApplicationContext)?.webServer).port,
             checkNotNull((runtime.serviceWeb as? WebServerApplicationContext)?.webServer).port,
@@ -92,6 +80,7 @@ class WebContextsTests {
                 TaskValidationDispatcher::class.java,
                 UserRepository::class.java,
                 ServiceUserSearch::class.java,
+                ServiceTrikStudioVersions::class.java,
             )
             for (type in sharedTypes) {
                 assertSame(runtime.infrastructure.getBean(type), main.getBean(type))
@@ -143,13 +132,54 @@ class WebContextsTests {
         }
     }
 
+    @Test
+    fun `should serve the main interface under its context path and keep service and metrics at the root`() {
+        TestSysRuntime.start(arguments("--server.servlet.context-path=/testsys")).use { runtime ->
+            val mainPort = (runtime.mainWeb as? WebServerApplicationContext)?.webServer?.port
+            val servicePort = (runtime.serviceWeb as? WebServerApplicationContext)?.webServer?.port
+            val metricsPort = (runtime.metricsWeb as? WebServerApplicationContext)?.webServer?.port
+            HttpClient.newHttpClient().use { client ->
+                val mainResponse = get(client, mainPort, "/testsys/login")
+                assertEquals(200, mainResponse.statusCode(), mainResponse.body())
+                val mainCookie = mainResponse.headers().firstValue("Set-Cookie").orElseThrow()
+                assertTrue(mainCookie.startsWith("TESTSYS_APP_SESSION="), mainCookie)
+                assertTrue("Path=/testsys" in mainCookie.split("; "), mainCookie)
+                assertEquals(200, get(client, mainPort, "/testsys/testsys-ui/styles/styles.css").statusCode())
+                assertEquals(404, get(client, mainPort, "/login").statusCode())
+                val serviceResponse = get(client, servicePort, "/login")
+                assertEquals(200, serviceResponse.statusCode(), serviceResponse.body())
+                val serviceCookie = serviceResponse.headers().firstValue("Set-Cookie").orElseThrow()
+                assertTrue(serviceCookie.startsWith("TESTSYS_SERVICE_SESSION="), serviceCookie)
+                assertTrue("Path=/" in serviceCookie.split("; "), serviceCookie)
+                val metrics = get(client, metricsPort, "/actuator/prometheus", accept = "text/plain")
+                assertEquals(200, metrics.statusCode(), metrics.body())
+            }
+        }
+    }
+
+    private fun arguments(vararg extra: String): Array<String> {
+        val database = PostgresTestContainer.instance
+        return arrayOf(
+            "--server.port=0",
+            "--spring.boot.enableautoconfiguration=true",
+            "--spring.datasource.url=${database.jdbcUrl}",
+            "--spring.datasource.username=${database.username}",
+            "--spring.datasource.password=${database.password}",
+            "--vaadin.productionMode=true",
+            "--testsys.service.address=127.0.0.1",
+            "--testsys.service.port=0",
+            "--testsys.service.secret=${"test-secret-".repeat(8)}",
+            *extra,
+        )
+    }
+
     private fun vaadin(bean: Any): VaadinServlet {
         val registration = checkNotNull(bean as? ServletRegistrationBean<*>)
         return checkNotNull(registration.servlet as? VaadinServlet)
     }
 
-    private fun get(client: HttpClient, port: Int?, path: String): HttpResponse<String> = client.send(
-        HttpRequest.newBuilder(URI("http://127.0.0.1:$port$path")).header("Accept", "text/html").GET().build(),
+    private fun get(client: HttpClient, port: Int?, path: String, accept: String = "text/html"): HttpResponse<String> = client.send(
+        HttpRequest.newBuilder(URI("http://127.0.0.1:$port$path")).header("Accept", accept).GET().build(),
         HttpResponse.BodyHandlers.ofString(),
     )
 }

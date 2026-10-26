@@ -54,11 +54,14 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
             solution(1)
             task(1)
             status.queued()
-            kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+            kind.developerSolutionTest { trikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0") }
             kind.developerSolutionTest { }
         }
 
-        Assertions.assertEquals(TrikStudioVersion("3.0.0"), (data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion)
+        Assertions.assertEquals(
+            TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0"),
+            (data.kind as? SubmissionKind.DeveloperSolutionTest)?.trikStudioVersion,
+        )
     }
 
     override fun buildDataWithAllFields() = listOf(
@@ -67,7 +70,7 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
             solution(1)
             task(1)
             status.queued()
-            kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+            kind.developerSolutionTest { trikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0") }
         },
         submissionData {
             author(42)
@@ -89,7 +92,7 @@ class SubmissionBuilderTests : DomainEntityBuilderTests<Submission, SubmissionDa
             solution(1)
             task(1)
             status.graded { status.error { description = "description" } }
-            kind.developerSolutionTest { trikStudioVersion("3.0.0") }
+            kind.developerSolutionTest { trikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0") }
         },
         submissionData {
             author(42)

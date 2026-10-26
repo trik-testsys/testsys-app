@@ -1,11 +1,14 @@
-# Prometheus and Grafana of a TestSys environment. deploy/testsys.sh adds this file to every command of the dev
-# and prod environments, after deploy/compose.yml and before the override of the environment, for example:
+# Prometheus, Grafana, Loki and Grafana Alloy of a TestSys environment. deploy/testsys.sh adds this file to every
+# command of the dev and prod environments, after deploy/compose.yml and before the override of the environment,
+# for example:
 #   sh deploy/testsys.sh dev up
 # The e2e environment and the separate grading node project do not use it. Like deploy/compose.grading-node.yml,
 # the file has no project name; like deploy/compose.yml, it contains no required (:?) variables: the overrides of
 # dev and prod check the variables of their environment.
 # Prometheus reads the metrics server of the app service of the same project inside the project network, see
-# deploy/config/prometheus.yml. Prometheus and Grafana are published only on 127.0.0.1 of the Docker host.
+# deploy/config/prometheus.yml. Alloy sends the output of the containers of the same project to Loki, see
+# deploy/config/alloy.alloy. Prometheus and Grafana are published only on 127.0.0.1 of the Docker host; Grafana
+# reaches Loki inside the project network, so Loki and Alloy are not published.
 
 services:
   prometheus:
@@ -16,6 +19,8 @@ services:
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=14d
       - --enable-feature=created-timestamp-zero-ingestion
+    logging:
+      driver: local
     ports:
       - "127.0.0.1:${TESTSYS_PROMETHEUS_PORT:-9090}:9090"
     volumes:
@@ -27,10 +32,54 @@ services:
         bind:
           create_host_path: false
 
+  loki:
+    # LogCollectionTests starts this image with this command: keep both literal, without variables.
+    image: grafana/loki:3.7.8
+    command:
+      - -config.file=/etc/loki/loki.yml
+    logging:
+      driver: local
+    volumes:
+      - loki-data:/loki
+      - type: bind
+        source: ./config/loki.yml
+        target: /etc/loki/loki.yml
+        read_only: true
+        bind:
+          create_host_path: false
+
+  # Reads the output of the containers of this Compose project through the Docker socket. Access to the socket
+  # equals root access to the Docker host.
+  alloy:
+    # LogCollectionTests starts this image with this command: keep both literal, without variables.
+    image: grafana/alloy:v1.20.1
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    depends_on:
+      - loki
+    environment:
+      # Alloy collects only the containers of this project.
+      TESTSYS_COMPOSE_PROJECT: ${COMPOSE_PROJECT_NAME}
+    logging:
+      driver: local
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy-data:/var/lib/alloy/data
+      - type: bind
+        source: ./config/alloy.alloy
+        target: /etc/alloy/config.alloy
+        read_only: true
+        bind:
+          create_host_path: false
+
   grafana:
     image: grafana/grafana:13.2.3
     depends_on:
       - prometheus
+      - loki
     environment:
       # Without GF_SECURITY_ADMIN_PASSWORD from the override, the administrator gets the Grafana default password,
       # which Grafana asks to change at the first sign-in. The overrides also set GF_SERVER_ROOT_URL.
@@ -42,6 +91,8 @@ services:
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
       GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+    logging:
+      driver: local
     ports:
       - "127.0.0.1:${TESTSYS_GRAFANA_PORT:-3000}:3000"
     volumes:
@@ -68,3 +119,5 @@ services:
 volumes:
   prometheus-data:
   grafana-data:
+  loki-data:
+  alloy-data:

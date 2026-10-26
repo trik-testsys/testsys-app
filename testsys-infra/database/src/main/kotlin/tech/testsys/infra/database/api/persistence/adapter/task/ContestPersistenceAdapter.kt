@@ -33,6 +33,7 @@ import tech.testsys.infra.database.internal.utils.findLinkedIds
 import tech.testsys.infra.database.internal.utils.requireId
 import tech.testsys.infra.database.internal.utils.requireVersion
 import tech.testsys.infra.database.internal.utils.syncJoinTable
+import tech.testsys.infra.database.internal.utils.toDomain
 import org.springframework.data.domain.Sort as JpaSort
 
 /**
@@ -186,12 +187,12 @@ class ContestPersistenceAdapter(
     }
 
     override fun findTrikStudioVersions(): List<TrikStudioVersion> = trikStudioVersionJpaEntityRepository.findAll()
-        .map { entity -> TrikStudioVersion(entity.tag) }
-        .sortedBy { version -> version.version }
+        .map { entity -> entity.toDomain() }
+        .sortedBy { version -> version.tag }
 
     @Transactional
     override fun save(data: ContestData): Contest {
-        val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(data.trikStudioVersion.version)
+        val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(data.trikStudioVersion.tag)
         val jpaEntity = ContestMapping.toJpaEntity(data, trikStudioVersionId)
         val savedJpaEntity = jpaEntityRepository.save(jpaEntity)
         val contestId = savedJpaEntity.requireId()
@@ -208,7 +209,7 @@ class ContestPersistenceAdapter(
 
     @Transactional
     override fun update(entity: Contest): Contest {
-        val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(entity.data.trikStudioVersion.version)
+        val trikStudioVersionId = trikStudioVersionJpaEntityRepository.findIdByTagOrError(entity.data.trikStudioVersion.tag)
         val savedJpaEntity = updateRoot(entity.id.value, entity.requireVersion()) { current ->
             ContestMapping.toJpaEntity(entity, current, trikStudioVersionId)
         }
@@ -256,7 +257,7 @@ class ContestPersistenceAdapter(
             val contestId = row.requireId()
             ContestMapping.toDomain(
                 jpaEntity = row,
-                trikStudioVersion = TrikStudioVersion(versions.getValue(row.trikStudioVersionId).tag),
+                trikStudioVersion = versions.getValue(row.trikStudioVersionId).toDomain(),
                 taskIds = taskIds.getValue(contestId),
                 sharedToIds = sharedToIds.getValue(contestId),
             )

@@ -1,5 +1,7 @@
 package tech.testsys.operation
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import tech.testsys.domain.builder.api.taskValidationTechnicalFailure
 import tech.testsys.domain.contract.Grader
 import tech.testsys.domain.contract.persistence.repository.TaskValidationRequestRepository
@@ -90,11 +92,11 @@ class TaskValidationDispatcher(
             action()
         } catch (exception: Exception) {
             onTechnicalFailure(exception)
-            logger.log(System.Logger.Level.WARNING, "Failed to handle a task validation request", exception)
+            logger.warn("Failed to handle a task validation request", exception)
         }
     }
 
     private companion object {
-        val logger: System.Logger = System.getLogger(TaskValidationDispatcher::class.java.name)
+        val logger: Logger = LoggerFactory.getLogger(TaskValidationDispatcher::class.java)
     }
 }

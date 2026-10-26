@@ -15,7 +15,8 @@ class PageConfigurationTests {
         listOf(
             "com\\.vaadin\\.flow\\.(component\\.(?!(?:UI|Component)\\b|dependency\\.|page\\.)|dom)",
             "\\belement\\s*\\.|getStyle\\s*\\(|\\.element\\b|\\.style\\b|\\.class(?:Names?|List)\\b|executeJs\\s*\\(",
-            "(?:addClassNames?|setClassName|setAttribute|getElement|custom)\\s*\\(|RawVaadin",
+            // An attribute of the HTTP session is not markup.
+            "(?:addClassNames?|setClassName|(?<!session\\??\\.)setAttribute|getElement|custom)\\s*\\(|RawVaadin",
         ).joinToString("|"),
     )
 
@@ -45,6 +46,7 @@ class PageConfigurationTests {
             "element.getStyle().set(\"color\", \"red\")",
             "view.classNames",
             "getElement()",
+            "setAttribute(\"title\", \"value\")",
             "executeJs()",
             "custom(component)",
             "import com.vaadin.flow.component.button.Button",
@@ -63,6 +65,7 @@ class PageConfigurationTests {
             "import com.vaadin.flow.component.page.Push",
             "import com.vaadin.flow.data.binder.Binder",
             "import com.vaadin.flow.signals.Signal",
+            "session?.session?.setAttribute(\"testsys.route.1\", path)",
         ],
     )
     fun `should allow supported framework integration in a source fragment`(source: String) {

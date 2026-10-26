@@ -1,12 +1,16 @@
 package tech.testsys.web.app.security
 
+import com.vaadin.flow.router.RouteConfiguration
 import com.vaadin.flow.server.VaadinServletRequest
 import com.vaadin.flow.server.VaadinServletResponse
+import com.vaadin.flow.server.auth.AccessAnnotationChecker
 import com.vaadin.flow.server.auth.NavigationAccessControl
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository
+import java.security.Principal
+import kotlin.jvm.optionals.getOrNull
 
 /**
  * Signs a user in from a Vaadin request handler, without a login form of Spring Security.
@@ -27,7 +31,8 @@ object CabinetSignIn {
 
     /**
      * Changes the session id against session fixation, stores [principal] with the role of its kind in the session
-     * and returns the page the user opened before being sent to sign in, removing it, or `null` if there is none.
+     * and returns the page the user opened before being sent to sign in, removing it, or `null` if there is none
+     * or it is closed to the kind of [principal].
      *
      * @since %CURRENT_VERSION%
      */
@@ -48,6 +53,12 @@ object CabinetSignIn {
         val returnAddress = session?.getAttribute(NavigationAccessControl.SESSION_STORED_REDIRECT) as? String
         session?.removeAttribute(NavigationAccessControl.SESSION_STORED_REDIRECT)
         session?.removeAttribute(NavigationAccessControl.SESSION_STORED_REDIRECT_ABSOLUTE)
-        return returnAddress
+        return returnAddress?.takeIf { isOpenTo(it, principal) }
+    }
+
+    /** Whether [address] leads to a page whose access annotations let [principal] in. */
+    private fun isOpenTo(address: String, principal: CabinetPrincipal): Boolean {
+        val page = RouteConfiguration.forApplicationScope().getRoute(address.substringBefore('?')).getOrNull() ?: return false
+        return AccessAnnotationChecker().hasAccess(page, Principal { principal.userId.toString() }) { role -> role == principal.kind.name }
     }
 }

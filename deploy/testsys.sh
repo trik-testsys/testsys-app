@@ -11,7 +11,7 @@ Environments:
   dev, e2e     local environments; variables from deploy/env/<environment>.env and <environment>.local.env
   prod         production; variables from the file given by --env-file or TESTSYS_ENV_FILE
   node         separate grading node; variables from the file given by --env-file or TESTSYS_ENV_FILE
-  dev and prod also run Prometheus and Grafana; every command includes them
+  dev and prod also run Prometheus, Grafana, Loki and Alloy; every command includes them
 Commands:
   up [--node] [--no-build]           build the application image and start the environment
   down [--node]                      stop and remove the containers, keep the volumes
@@ -177,8 +177,8 @@ case "$environment" in
     ;;
 esac
 
-# Prometheus and Grafana belong to dev and prod. Their file is passed to every command of these environments, so
-# "down --volumes" also removes their volumes and "--remove-orphans" never removes their containers.
+# Prometheus, Grafana, Loki and Alloy belong to dev and prod. Their file is passed to every command of these
+# environments, so "down --volumes" also removes their volumes and "--remove-orphans" never removes their containers.
 monitoring_file=
 case "$environment" in
   dev | prod) monitoring_file=compose.monitoring.yml ;;
@@ -271,6 +271,13 @@ run_up() {
   if [ "$environment" = node ] || [ -n "$node_file" ]; then
     create_node_workspace
   fi
+  case "$environment" in
+    dev | e2e)
+      # The application writes as the user 10001 of the image, which a native Linux daemon maps to the same uid.
+      mkdir -p "logs/$environment"
+      chmod a+rwx "logs/$environment"
+      ;;
+  esac
   if [ "$environment" = node ]; then
     compose up -d --remove-orphans
     return

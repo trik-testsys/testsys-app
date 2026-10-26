@@ -5,7 +5,7 @@ package tech.testsys.infra.grpc.internal
 import io.grpc.Status
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
-import org.apache.commons.logging.LogFactory
+import org.slf4j.LoggerFactory
 import org.springframework.core.env.Environment
 import tech.testsys.domain.contract.GradingAdmission
 import tech.testsys.domain.contract.GradingNodeAddress
@@ -54,7 +54,7 @@ internal class GradingCoordinator(
     private val subscribers = CopyOnWriteArrayList<(SubmissionId) -> Unit>()
     private val isClosed = AtomicBoolean(false)
     private var pollingRegistration: AutoCloseable? = null
-    private val log = LogFactory.getLog(javaClass)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     fun start() {
         senderExecutor.execute(::sendLoop)

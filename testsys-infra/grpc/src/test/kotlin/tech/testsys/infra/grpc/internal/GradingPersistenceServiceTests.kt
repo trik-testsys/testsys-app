@@ -71,7 +71,7 @@ class GradingPersistenceServiceTests {
             assertEquals(listOf(TestId(4)), prepared.testIds)
             assertEquals("4", prepared.message.task.fieldsList.single().name)
             assertEquals("world", prepared.message.task.fieldsList.single().content.toStringUtf8())
-            assertEquals("2025.1", prepared.message.options.dockerImage)
+            assertEquals("trik-studio:2025.1", prepared.message.options.dockerImage)
             verify(exactly = 0) { repository.tasks.load(submitted.data.task) }
         }
 
@@ -88,7 +88,7 @@ class GradingPersistenceServiceTests {
                             expectedScore = Score(5)
                         },
                     )
-                    supportedTrikStudioVersions = mutableListOf(TrikStudioVersion("2025.1"))
+                    supportedTrikStudioVersions = mutableListOf(TrikStudioVersion(tag = "trik-studio:2025.1", version = "2025.1"))
                 }
             }
             every { repository.validationRequests.findBySubmissionId(repository.initial.id) } returns request
@@ -110,7 +110,7 @@ class GradingPersistenceServiceTests {
 
             assertEquals(listOf(TestId(4)), prepared.testIds)
             assertEquals("4", prepared.message.task.fieldsList.single().name)
-            assertEquals("contest-version", prepared.message.options.dockerImage)
+            assertEquals("trik-studio:contest-version", prepared.message.options.dockerImage)
         }
 
         @Test

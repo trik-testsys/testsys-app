@@ -88,7 +88,9 @@
 
 `GradingNodeRegistry` хранит адрес и признак участия каждого Проверяющего узла через `GradingNodeStore`
 из [settings](../settings/README.md#реестр-проверяющих-узлов). Требования к реестру определены в
-[features.md](../../docs/domain/features.md#testsysdevgradingbalancing-implemented).
+[features.md](../../docs/domain/features.md#testsysdevgradingbalancing-implemented). Почему бин
+`GradingNodeRegistry` объявлен с `@Proxyable(ProxyType.INTERFACES)` — в разделе
+[«Вызовы»](../../testsys-web/app/README.md#вызовы) app/README.md.
 
 Менеджер разделяет наблюдение и участие. Монитор узла владеет каналом опроса и кешем статуса. Регистрация участия
 владеет отдельным каналом проверки. Фоновый опрос обходит все мониторы, а выбор узла и `Grader.getNodeStatuses`

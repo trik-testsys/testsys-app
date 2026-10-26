@@ -34,6 +34,7 @@ class TestsysPhysicalNamingStrategyTests {
         "gradingErrorDescription, grading_error_description",
         "id, id",
         "contestDurationMillis, contest_duration_millis",
+        "studioVersion, studio_version",
     )
     fun `should convert column names to snake case`(logical: String, expected: String) {
         val physical = strategy.toPhysicalColumnName(Identifier.toIdentifier(logical), jdbcEnvironment)

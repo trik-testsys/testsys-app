@@ -49,6 +49,8 @@ spring-boot-testcontainers = { module = "org.springframework.boot:spring-boot-te
 micrometer-core = { module = "io.micrometer:micrometer-core" }
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
 
+slf4j-api = { module = "org.slf4j:slf4j-api" }
+
 postgresql = { module = "org.postgresql:postgresql" }
 testcontainers-postgresql = { module = "org.testcontainers:testcontainers-postgresql" }
 

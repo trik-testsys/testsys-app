@@ -68,12 +68,13 @@ class ContestDataBuilder : Builder<ContestData> {
     }
 
     /**
-     * Sets [trikStudioVersion] from a raw version tag, e.g. `"3.0.0"`.
+     * Sets [trikStudioVersion] from a raw Docker image [tag] and a version number [version].
      *
      * @since %CURRENT_VERSION%
      */
-    fun trikStudioVersion(version: String) {
+    fun trikStudioVersion(tag: String, version: String) {
         trikStudioVersion = TrikStudioVersion(
+            tag = tag,
             version = version,
         )
     }

@@ -84,4 +84,11 @@ interface TrikStudioVersionJpaEntityRepository : SnowflakeJpaEntityRepository<Tr
      * @since %CURRENT_VERSION%
      */
     fun findAllByTagIn(tags: Collection<String>): List<TrikStudioVersionJpaEntity>
+
+    /**
+     * Checks whether a version with the version number [studioVersion] is stored.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun existsByStudioVersion(studioVersion: String): Boolean
 }

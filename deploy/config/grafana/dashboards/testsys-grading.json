@@ -10,6 +10,7 @@
   "time": { "from": "now-3h", "to": "now" },
   "timepicker": { "refresh_intervals": ["30s", "1m", "5m", "15m"] },
   "timezone": "browser",
+  "links": [{"type": "link", "title": "Логи", "icon": "doc", "url": "/d/testsys-logs", "keepTime": true, "tooltip": "Записи лога приложения за тот же период"}],
   "templating": {
     "list": [
       {

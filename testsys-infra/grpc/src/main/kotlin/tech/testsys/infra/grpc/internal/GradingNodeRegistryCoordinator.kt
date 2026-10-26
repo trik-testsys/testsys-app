@@ -2,7 +2,7 @@
 
 package tech.testsys.infra.grpc.internal
 
-import org.apache.commons.logging.LogFactory
+import org.slf4j.LoggerFactory
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
 import tech.testsys.infra.grpc.api.GradingNodeChangeResult
@@ -39,7 +39,7 @@ internal class GradingNodeRegistryCoordinator(
     private val configured = configured.distinct()
     private val changes = Any()
     private val known = AtomicReference(KnownRegistry(startedNodes(coordinator), SettingsPersistence.Known))
-    private val log = LogFactory.getLog(javaClass)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     override fun overview(): GradingNodeRegistryOverview {
         val registry = known.get()

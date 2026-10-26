@@ -33,7 +33,7 @@ internal class OperationMetricsInterceptor(
         } catch (failure: OperationException) {
             if (level == 0) countOperationError(invocation, failure.error)
             throw failure
-        } catch (failure: Exception) {
+        } catch (failure: Throwable) {
             if (level == 0) failures().record(source = SOURCE, stage = STAGE, failure = failure)
             throw failure
         } finally {

@@ -19,7 +19,7 @@ class ContestBuilderTests : DomainEntityBuilderTests<Contest, ContestData, Conte
             owner(42)
             name = "Test Contest"
             description = "A test contest"
-            trikStudioVersion("3.0.0")
+            trikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0")
         },
         contestData {
             owner(42)
@@ -27,7 +27,7 @@ class ContestBuilderTests : DomainEntityBuilderTests<Contest, ContestData, Conte
             description = "A contest with all optional fields"
             contestDuration = Duration.ofHours(3)
             attemptDuration = Duration.ofHours(1)
-            trikStudioVersion("4.0.0")
+            trikStudioVersion(tag = "trik-studio:4.0.0", version = "4.0.0")
             tasks = mutableListOf()
             startsAt = Instant.ofEpochSecond(1000L)
             sharedTo(listOf(1L, 2L))
@@ -41,7 +41,7 @@ class ContestBuilderTests : DomainEntityBuilderTests<Contest, ContestData, Conte
             owner(42)
             name = "Contest"
             description = "Description"
-            trikStudioVersion("3.0.0")
+            trikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0")
             startsAt = Instant.ofEpochSecond(1000).takeIf { hasStart }
             contestDuration = Duration.ofSeconds(60).takeIf { hasDuration }
         }

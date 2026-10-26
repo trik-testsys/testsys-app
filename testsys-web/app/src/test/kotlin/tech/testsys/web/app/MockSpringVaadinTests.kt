@@ -7,6 +7,7 @@ import com.github.mvysny.kaributesting.v10.spring.MockSpringServlet
 import com.vaadin.flow.component.UI
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
+import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Import
@@ -38,6 +39,7 @@ abstract class MockSpringVaadinTests {
     fun tearDownVaadin() {
         MockVaadin.tearDown()
         SecurityContextHolder.clearContext()
+        MDC.clear()
     }
 
     /** Signs [user] in the current session the way the sign-in page does. */

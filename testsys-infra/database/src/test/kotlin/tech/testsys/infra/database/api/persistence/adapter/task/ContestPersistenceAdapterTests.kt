@@ -16,7 +16,6 @@ import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestData
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.TaskId
-import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import java.time.Duration
@@ -184,14 +183,14 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
     inner class FindTrikStudioVersionsTests {
 
         @Test
-        fun `should return every registered version ordered by tag`() {
-            fixtures.trikStudioVersion("3.1.0")
-            fixtures.trikStudioVersion("2.9.0")
-            fixtures.trikStudioVersion("3.0.0")
+        fun `should return every registered version with its version number ordered by tag`() {
+            val second = fixtures.trikStudioVersion(tag = "trik-studio:b", version = "3.1.0")
+            val first = fixtures.trikStudioVersion(tag = "trik-studio:a", version = "3.0.0")
+            val third = fixtures.trikStudioVersion(tag = "trik-studio:c", version = "2.9.0")
 
             val result = repository.findTrikStudioVersions()
 
-            assertEquals(listOf("2.9.0", "3.0.0", "3.1.0").map(::TrikStudioVersion), result)
+            assertEquals(listOf(first, second, third), result)
         }
 
         @Test
@@ -313,7 +312,7 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
                     description = "Contest description"
                     contestDuration = Duration.ofHours(2)
                     attemptDuration = Duration.ofMinutes(30)
-                    trikStudioVersion = TrikStudioVersion(fixtures.unique("unregistered"))
+                    trikStudioVersion = fixtures.unregisteredTrikStudioVersion()
                 },
             )
         }
@@ -324,7 +323,7 @@ class ContestPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<
         val saved = repository.save(newData())
 
         assertFailsWith<IllegalArgumentException> {
-            repository.update(saved.withData { trikStudioVersion = TrikStudioVersion(fixtures.unique("unregistered")) })
+            repository.update(saved.withData { trikStudioVersion = fixtures.unregisteredTrikStudioVersion() })
         }
         assertEquals(saved.data.trikStudioVersion, assertNotNull(repository.findById(saved.id)).data.trikStudioVersion)
     }

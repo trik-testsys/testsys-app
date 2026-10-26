@@ -54,13 +54,14 @@ value class Score(
 )
 
 /**
- * Version tag of TRIK Studio, e.g. `"3.0.0"`.
+ * Registered TRIK Studio version: a Docker image tag that grading nodes run and a version number shown to people.
  *
- * @property version the raw version string.
+ * @property tag the Docker image tag, e.g. `"trikset/trik-studio:2026.2"`.
+ * @property version the version number, e.g. `"2026.2"`.
  * @since %CURRENT_VERSION%
  */
-@JvmInline
-value class TrikStudioVersion(
+data class TrikStudioVersion(
+    val tag: String,
     val version: String,
 )
 

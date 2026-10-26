@@ -21,7 +21,6 @@ import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskContent
 import tech.testsys.domain.model.task.TaskData
 import tech.testsys.domain.model.task.TaskId
-import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.WipTaskContent
 import tech.testsys.domain.model.user.MultipleRoleUserId
@@ -545,7 +544,7 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
             content.committed {
                 exercises(listOf(exerciseId))
                 statement(statementId)
-                supportedTrikStudioVersions = mutableListOf(TrikStudioVersion(fixtures.unique("unregistered")))
+                supportedTrikStudioVersions = mutableListOf(fixtures.unregisteredTrikStudioVersion())
             }
         }
 
@@ -678,7 +677,7 @@ class TaskPersistenceAdapterTests : UpdatablePersistenceAdapterContractTests<Tas
             owner(ownerId)
             name = fixtures.unique("Task")
             description = "Task description"
-            content.new { supportedTrikStudioVersions = mutableListOf(registered, TrikStudioVersion(fixtures.unique("unregistered"))) }
+            content.new { supportedTrikStudioVersions = mutableListOf(registered, fixtures.unregisteredTrikStudioVersion()) }
         }
 
         assertFailsWith<IllegalArgumentException> { repository.save(data) }

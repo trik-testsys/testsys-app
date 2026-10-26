@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":testsys-domain"))
     implementation(project(":testsys-infra:localization"))
     implementation(project(":testsys-infra:monitoring"))
+    implementation(libs.slf4j.api)
     implementation(libs.spring.context)
     implementation(libs.spring.context.support)
     implementation(libs.spring.tx)

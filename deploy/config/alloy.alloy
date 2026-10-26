@@ -1,0 +1,58 @@
+// Grafana Alloy of a TestSys environment sends the output of the app service of its Compose project to Loki of the
+// same project; see the section "Мониторинг" in deploy/README.md. deploy/compose.monitoring.yml mounts this file
+// and sets TESTSYS_COMPOSE_PROJECT to the name of the project.
+
+discovery.docker "project" {
+  host = "unix:///var/run/docker.sock"
+
+  // Docker requires all label values; other services and other Compose projects on the host are not collected.
+  filter {
+    name   = "label"
+    values = [
+      "com.docker.compose.project=" + sys.env("TESTSYS_COMPOSE_PROJECT"),
+      "com.docker.compose.service=app",
+    ]
+  }
+}
+
+// Loki labels from the labels that Compose gives to every container.
+discovery.relabel "project" {
+  targets = []
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_project"]
+    target_label  = "project"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+}
+
+loki.source.docker "project" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.docker.project.targets
+  relabel_rules = discovery.relabel.project.rules
+  forward_to    = [loki.process.project.receiver]
+}
+
+// The application writes one JSON object per line; its level becomes a label. Other fields, such as user and
+// route, stay in the line and are parsed at query time.
+loki.process "project" {
+  stage.json {
+    expressions = { level = "" }
+  }
+
+  stage.labels {
+    values = { level = "" }
+  }
+
+  forward_to = [loki.write.loki.receiver]
+}
+
+loki.write "loki" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

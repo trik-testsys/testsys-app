@@ -1,10 +1,11 @@
 # deploy
 
 Документ описывает, как устроены Docker-образ основного приложения `testsys-web:app`, Compose-файлы окружений
-dev, e2e и production, мониторинг на Prometheus и Grafana, файл Проверяющего узла и скрипт `deploy/testsys.sh`.
-Он предназначен для тех, кто меняет эти файлы. Как запускать окружения, открывать Grafana и что задать перед
-запуском — в [deployment.md](../docs/project/deployment.md); смысл свойств приложения — в документах модулей; имена
-и метки метрик TestSys — в [monitoring/README.md](../testsys-infra/monitoring/README.md).
+dev, e2e и production, мониторинг на Prometheus и Grafana, сбор логов на Loki и Grafana Alloy, файл Проверяющего узла
+и скрипт `deploy/testsys.sh`. Он предназначен для тех, кто меняет эти файлы. Как запускать окружения, открывать
+Grafana, искать логи и что задать перед запуском — в [deployment.md](../docs/project/deployment.md); смысл свойств
+приложения — в документах модулей; имена и метки метрик TestSys — в
+[monitoring/README.md](../testsys-infra/monitoring/README.md).
 
 ## Устройство
 
@@ -12,12 +13,12 @@ dev, e2e и production, мониторинг на Prometheus и Grafana, фай�
 - **Окружение** — проект Compose `testsys-<окружение>`. Его основа — общий `deploy/compose.yml` (приложение
   и PostgreSQL), поверх которого подключается override окружения `deploy/compose.<окружение>.yml`. Dev и e2e
   добавляют Mailpit, dev — ещё загрузку начальных данных.
-- **Мониторинг** — Prometheus и Grafana из `deploy/compose.monitoring.yml`. Этот файл входит в проекты dev
-  и production между общим файлом и override; в e2e мониторинга нет.
+- **Мониторинг** — Prometheus, Grafana, Loki и Grafana Alloy из `deploy/compose.monitoring.yml`. Этот файл входит
+  в проекты dev и production между общим файлом и override; в e2e мониторинга нет.
 - **Проверяющий узел** описан отдельным файлом `deploy/compose.grading-node.yml`. Его подключают к окружению
   или запускают отдельным проектом, в том числе на другой машине.
 - **Переменные Compose** — порты, адреса, секреты, настройки узла — лежат в файлах переменных `deploy/env/`.
-- **Конфигурационные файлы** приложения, Prometheus и Grafana лежат в `deploy/config/`, Compose монтирует их
+- **Конфигурационные файлы** приложения и сервисов мониторинга лежат в `deploy/config/`, Compose монтирует их
   в контейнеры.
 - **Скрипт** `deploy/testsys.sh` собирает из этих файлов команду Compose.
 
@@ -36,7 +37,7 @@ Compose-файлы:
 | Файл | Назначение |
 |------|------------|
 | `deploy/compose.yml` | Общие сервисы всех окружений: приложение и PostgreSQL; отдельно не запускается |
-| `deploy/compose.monitoring.yml` | Prometheus и Grafana проектов dev и production, см. [Мониторинг](#мониторинг); отдельно не запускается |
+| `deploy/compose.monitoring.yml` | Prometheus, Grafana, Loki и Alloy проектов dev и production, см. [Мониторинг](#мониторинг); отдельно не запускается |
 | `deploy/compose.dev.yml` | Override проекта `testsys-dev`: пароли, порты, адрес Grafana, Mailpit, начальные данные |
 | `deploy/compose.e2e.yml` | Override проекта `testsys-e2e` для внешнего тестового процесса |
 | `deploy/compose.prod.yml` | Override проекта `testsys-prod`: конфигурационный файл на сервере, секреты, пароль и адрес Grafana, политика перезапуска |
@@ -66,13 +67,17 @@ Compose-файлы:
 | `deploy/config/application.yml` | Настройки приложения, общие для всех окружений |
 | `deploy/config/application-dev.yml`, `deploy/config/application-e2e.yml` | Параметры приложения в dev и e2e |
 | `deploy/config/application-prod.example.yml` | Шаблон параметров приложения в production |
+| `deploy/config/logging/loggers.xml` | Уровни логгеров приложения во всех окружениях, см. [Логирование](#логирование) |
 
 Конфигурация мониторинга, см. [Мониторинг](#мониторинг):
 
 | Файл | Назначение |
 |------|------------|
 | `deploy/config/prometheus.yml` | Интервал сбора, протокол опроса и адрес сервера метрик TestSys |
+| `deploy/config/loki.yml` | Хранилище логов Loki и срок хранения, см. [Сбор логов](#сбор-логов) |
+| `deploy/config/alloy.alloy` | Выбор контейнера приложения, метки и отправка логов в Loki, см. [Сбор логов](#сбор-логов) |
 | `deploy/config/grafana/provisioning/datasources/prometheus.yaml` | Источник данных Prometheus с `uid` `testsys-prometheus` |
+| `deploy/config/grafana/provisioning/datasources/loki.yaml` | Источник данных Loki с `uid` `testsys-loki` |
 | `deploy/config/grafana/provisioning/dashboards/testsys.yaml` | Загрузка дашбордов из `/etc/grafana/dashboards` в папку «TestSys» |
 | `deploy/config/grafana/dashboards/*.json` | Дашборды, см. [Дашборды](#дашборды) |
 
@@ -113,8 +118,8 @@ Production получает один файл переменных `--env-file <
 Override идёт после файла мониторинга, потому что дополняет его сервисы: задаёт адрес Grafana, а в production ещё
 пароль администратора Grafana и политику перезапуска. Без `-f compose.monitoring.yml` Compose не принимает модель
 dev и production: сервис `grafana` в override не имеет образа. Поэтому прямой вызов Compose для этих окружений тоже
-передаёт файл мониторинга. Так `up` и `down` с `--remove-orphans` не удаляют Prometheus и Grafana, а `clean`
-удаляет и их тома.
+передаёт файл мониторинга. Так `up` и `down` с `--remove-orphans` не удаляют Prometheus, Grafana, Loki и Alloy,
+а `clean` удаляет и их тома.
 
 Команда `up` в каждом окружении:
 
@@ -154,7 +159,7 @@ Git Bash на Windows при запуске `docker` преобразует зн
 
 | Файл в контейнере | Источник | Содержимое |
 |-------------------|----------|------------|
-| `/etc/testsys/application.yml` | `deploy/config/application.yml`, монтирует `deploy/compose.yml` | Шесть путей `testsys.file-storage.paths.<вид>` |
+| `/etc/testsys/application.yml` | `deploy/config/application.yml`, монтирует `deploy/compose.yml` | Шесть путей `testsys.file-storage.paths.<вид>`; формат вывода в консоль, файл лога и его ротация `logging.*` |
 | `/etc/testsys/application-environment.yml` | Файл окружения, монтирует override | Параметры операций `testsys.operation.*`; в production также настройки почты |
 
 Пути файлов указывают на подкаталоги `/var/lib/testsys/files/<вид>` тома `files`. Виды и смысл путей описаны
@@ -225,6 +230,47 @@ Healthcheck сервиса `app` проверяет, что порты `8080`, `
 (`start_interval`) и не учитывает неудачи. После первой успешной проверки или по истечении пяти минут он проверяет
 порты каждые 10 секунд и после трёх неудач подряд помечает контейнер `unhealthy`.
 
+### Логирование
+
+`deploy/compose.yml` монтирует каталог `deploy/config/logging/` в `/etc/testsys/logging/`. Приложение добавляет
+логгеры из `loggers.xml` этого каталога к своей конфигурации лога и проверяет файл раз в 10 секунд. После
+изменения уровни применяются без перезапуска приложения. Устройство конфигурации и логгеры описаны в разделе
+«Логирование» в [app/README.md](../testsys-web/app/README.md#логирование).
+
+В `loggers.xml` лежат закомментированные заготовки: DEBUG для частей TestSys, понижение шумных логгеров (опрос
+Проверяющих узлов, предупреждения gRPC и ограничения частоты запросов) и логгеры библиотек для короткого
+расследования. Чтобы применить заготовку, раскомментируйте её строку. Значения параметров SQL логгер
+`org.hibernate.orm.jdbc.bind` пишет без маскирования, поэтому включайте его только на время расследования.
+
+Compose монтирует каталог, а не отдельный файл. Многие редакторы сохраняют файл заменой, и смонтированный
+отдельно файл остался бы в контейнере старым.
+
+`deploy/config/application.yml` задаёт `logging.structured.format.console: logstash`, поэтому во всех окружениях
+Compose приложение выводит в консоль каждую запись одной строкой JSON. Этот вывод читают `docker logs`, команда
+`logs` скрипта и Alloy, см. [Сбор логов](#сбор-логов). Поля записи описаны в разделе «Формат вывода»
+в [app/README.md](../testsys-web/app/README.md#формат-вывода).
+
+Кроме консоли, приложение пишет лог текстом в файл `/var/log/testsys/testsys.log`. Путь и ротация заданы
+в `deploy/config/application.yml`: новый файл начинается каждые сутки и при размере 10 МБ, старые файлы
+сжимаются в `testsys.log.<дата>.<номер>.gz` и удаляются через 14 дней или когда их общий размер превышает 1 ГБ.
+Override окружения монтирует в `/var/log/testsys` каталог хоста:
+
+| Окружение | Каталог хоста |
+|-----------|---------------|
+| `dev`, `e2e` | `deploy/logs/<окружение>/` в checkout, каталог `deploy/logs/` не хранится в Git |
+| `prod` | `TESTSYS_LOG_DIR` из файла переменных, см. [Каталог логов на сервере](../docs/project/deployment.md#каталог-логов-на-сервере) |
+
+Приложение пишет файлы от пользователя с UID `10001`. Перед `up` в dev и e2e скрипт создаёт каталог окружения
+и разрешает запись в него всем пользователям, чтобы приложение могло писать и под демоном Docker на Linux.
+Каталог production администратор создаёт сам; без него Compose не запускает приложение.
+
+## Ротация логов Docker
+
+Каждый сервис всех Compose-файлов задаёт `logging: driver: local`. Docker хранит вывод контейнера в сжатых файлах
+и ротирует их: по умолчанию не больше пяти файлов по 20 МБ на контейнер. Драйвер задан в Compose-файлах, поэтому
+`log-driver` из настроек демона Docker на эти сервисы не действует. Когда Compose пересоздаёт или удаляет
+контейнер, его вывод пропадает; копия вывода приложения, собранная Alloy в dev и production, остаётся в Loki.
+
 ## Начальные данные dev
 
 Сервис `db-seed` в `deploy/compose.dev.yml` работает на образе `postgres:17-alpine` и запускает
@@ -247,11 +293,11 @@ Healthcheck сервиса `app` проверяет, что порты `8080`, `
 
 ## Мониторинг
 
-Сервисы `prometheus` и `grafana` описаны в `deploy/compose.monitoring.yml` и работают в проектах `testsys-dev`
-и `testsys-prod` рядом с приложением. Образы закреплены в этом файле: `prom/prometheus` и `grafana/grafana`.
-Адреса, учётные записи Grafana и проверка сбора — в разделе «Метрики и мониторинг»
-в [deployment.md](../docs/project/deployment.md#метрики-и-мониторинг), устройство сервера метрик — в разделе
-«Сервер метрик» в [app/README.md](../testsys-web/app/README.md#сервер-метрик).
+Сервисы `prometheus`, `grafana`, `loki` и `alloy` описаны в `deploy/compose.monitoring.yml` и работают в проектах
+`testsys-dev` и `testsys-prod` рядом с приложением. Образы закреплены в этом файле: `prom/prometheus`,
+`grafana/grafana`, `grafana/loki` и `grafana/alloy`. Адреса, учётные записи Grafana, поиск логов и проверка
+сбора — в разделе «Метрики и мониторинг» в [deployment.md](../docs/project/deployment.md#метрики-и-мониторинг),
+устройство сервера метрик — в разделе «Сервер метрик» в [app/README.md](../testsys-web/app/README.md#сервер-метрик).
 
 ### Сбор метрик
 
@@ -277,11 +323,40 @@ Protobuf-экспортер используемого client_java 1.7.0 пер�
 docker restart testsys-dev-prometheus-1
 ```
 
+### Сбор логов
+
+Alloy читает вывод контейнеров через сокет Docker `/var/run/docker.sock`. Сокет смонтирован только для чтения,
+но это не ограничивает API Docker: доступ к сокету равен правам root на хосте. Alloy собирает только вывод сервиса
+`app` своего проекта: контейнер должен иметь и метку Compose `com.docker.compose.project`, равную имени проекта,
+и метку `com.docker.compose.service=app`. Имя проекта Compose передаёт Alloy в переменной
+`TESTSYS_COMPOSE_PROJECT` из `COMPOSE_PROJECT_NAME`. Вывод остальных сервисов, контейнеров других проектов
+и контейнеров проверок `run-<guid>` в Loki не попадает; его показывает команда `logs` скрипта.
+
+Alloy отправляет строки в Loki своего проекта по адресу `http://loki:3100` внутри сети проекта и задаёт метки:
+
+| Метка Loki | Источник |
+|------------|----------|
+| `project` | Метка Compose `com.docker.compose.project` |
+| `service` | Метка Compose `com.docker.compose.service`, всегда `app` |
+| `level` | Поле `level` JSON-строки |
+
+Остальные поля записи приложения, в том числе `user` и `route`, остаются в строке и разбираются при запросе. Метками
+они не становятся: каждое значение метки создаёт в Loki отдельный поток. Позиции чтения Alloy хранит в томе
+`alloy-data`, поэтому после перезапуска он не отправляет прочитанные строки повторно.
+
+Loki работает одним процессом и хранит логи в томе `loki-data`. Компактор Loki удаляет логи старше 14 дней:
+это срок хранения метрик в Prometheus. Loki и Alloy читают `deploy/config/loki.yml` и `deploy/config/alloy.alloy`
+только при запуске, поэтому после правки перезапустите контейнер, например в dev:
+
+```bash
+docker restart testsys-dev-loki-1 testsys-dev-alloy-1
+```
+
 ### Grafana
 
-При запуске Grafana загружает из `deploy/config/grafana/provisioning/` источник данных Prometheus по адресу
-`http://prometheus:9090` и дашборды из `deploy/config/grafana/dashboards/`. Пользователей, пароли и настройки
-Grafana хранит в томе `grafana-data`.
+При запуске Grafana загружает из `deploy/config/grafana/provisioning/` источники данных Prometheus по адресу
+`http://prometheus:9090` и Loki по адресу `http://loki:3100`, а также дашборды из `deploy/config/grafana/dashboards/`.
+Prometheus — источник по умолчанию. Пользователей, пароли и настройки Grafana хранит в томе `grafana-data`.
 
 | Переменная Grafana | Где задана | Значение |
 |--------------------|------------|----------|
@@ -306,8 +381,11 @@ Grafana; их согласует тот, кто задаёт переменны�
 | `9090` | `prometheus` | `TESTSYS_PROMETHEUS_PORT` | `9090` |
 | `3000` | `grafana` | `TESTSYS_GRAFANA_PORT` | `3000` |
 
-В production `deploy/compose.prod.yml` задаёт обоим сервисам `restart: unless-stopped`; в dev политика перезапуска
-не задана. Healthcheck у сервисов нет, поэтому `up --wait` в production ждёт только их запуска.
+Loki и Alloy порты не публикуют: Grafana обращается к Loki внутри сети проекта.
+
+В production `deploy/compose.prod.yml` задаёт сервисам `prometheus`, `grafana`, `loki` и `alloy`
+`restart: unless-stopped`; в dev политика перезапуска не задана. Healthcheck у этих сервисов нет, поэтому `up --wait`
+в production ждёт только их запуска.
 
 ### Дашборды
 
@@ -320,8 +398,9 @@ JSON-файл в репозитории, Grafana перечитывает его
 | «TestSys — HTTP», `testsys-http.json` | Число запросов, группы кодов и отдельные коды ответа, среднее время и 95-й перцентиль; таблица точек входа за период. Фильтр «Интерфейс» выбирает основной или служебный интерфейс |
 | «TestSys — ошибки операций и технические сбои», `testsys-failures.json` | Ошибки операций по родам и операциям, технические сбои по источникам, этапам и исключениям, повторы транзакций — отдельными панелями |
 | «TestSys — проверка Посылок», `testsys-grading.json` | Результат опроса TestSys; очередь проверки по четырём этапам и общее число незавершённых проверок; узлы по участию и результату опроса; сообщённые узлами очередь и ёмкость; завершённые проверки по исходу |
+| «TestSys — логи», `testsys-logs.json` | Записи лога приложения из Loki: число ошибок и предупреждений за период, записи по уровням, десять источников с наибольшим числом ошибок и предупреждений и сами записи, новые сверху. Фильтры «Уровень», «Текст», «Пользователь», «Страница» и «Источник» действуют на все панели |
 
-На каждом дашборде переключатель «Сглаживание» выбирает окно расчёта: «Авто», «1 мин», «5 мин», «10 мин»
+На дашбордах метрик переключатель «Сглаживание» выбирает окно расчёта: «Авто», «1 мин», «5 мин», «10 мин»
 или «30 мин». Он влияет на графики частоты HTTP-запросов, среднего времени и 95-го перцентиля ответа,
 ошибок операций, технических сбоев, повторов транзакций и завершённых проверок. Очередь, узлы, статус опроса,
 итоги и таблицы за выбранный период от этого переключателя не зависят.
@@ -337,6 +416,13 @@ JSON-файл в репозитории, Grafana перечитывает его
 Таблица точек входа показывает для каждой точки входа число запросов, число и долю ответов 4xx и 5xx и 95-й
 перцентиль времени ответа за выбранный период. Столбцы сортируются щелчком по заголовку; по умолчанию таблица
 отсортирована по доле 5xx.
+
+Дашборд логов по умолчанию показывает уровни ERROR, WARN и INFO; DEBUG и TRACE выбираются в фильтре «Уровень».
+«Текст» ищет подстроку записи без учёта регистра, в том числе в стектрейсе. «Пользователь» и «Страница» отбирают
+записи, у которых ID Пользователя или адрес страницы начинается с введённого значения, а «Источник» — записи,
+в имени логгера которых есть введённая часть. Пустое поле не отбирает записи. Щелчок по записи показывает все её
+поля, в том числе `stack_trace`. В шапке дашбордов метрик ссылка «Логи» открывает этот дашборд за тот же период.
+Запросы дашборда логов к Loki проверяет `LogCollectionTests`, см. [Проверка конфигурации](#проверка-конфигурации).
 
 Коды HTTP-ответов, ошибки операций и технические сбои — разные срезы одних событий, поэтому дашборды их
 не складывают. Требование — в [testsys.dev.metric.failures](../docs/domain/features.md#testsysdevmetricfailures-implemented).
@@ -367,6 +453,19 @@ JSON-файл в репозитории, Grafana перечитывает его
 
 ```bash
 ./gradlew :testsys-web:app:test --tests 'tech.testsys.bootstrap.PrometheusIngestionTests' -Pdetekt.autoCorrect=false
+```
+
+Сбор логов проверяет `LogCollectionTests` в `testsys-web:app`. Тест берёт образы и команды Loki и Alloy
+из `deploy/compose.monitoring.yml`, а конфигурации — из `deploy/config/loki.yml` и `deploy/config/alloy.alloy`.
+Он запускает три контейнера с метками Compose: сервис `app` тестового проекта, сервис `app` чужого проекта
+и другой сервис тестового проекта. Все раз в секунду выводят строку JSON в формате `logstash`. Тест проверяет,
+что Loki находит строку сервиса `app` тестового проекта по меткам `project`, `service` и `level` и по полю `user`,
+а строк двух других контейнеров в Loki нет. Отдельный тест выполняет запросы панелей `testsys-logs.json`
+с фильтрами по умолчанию и проверяет форму строки в панели записей. Alloy подключается к демону Docker,
+на котором работает тест; проекты окружений на том же демоне он не собирает:
+
+```bash
+./gradlew :testsys-web:app:test --tests 'tech.testsys.bootstrap.LogCollectionTests' -Pdetekt.autoCorrect=false
 ```
 
 ## Проверяющий узел
@@ -411,9 +510,9 @@ gRPC-вызове. Поэтому файл монтирует `deploy/grading-no
 ## Очистка
 
 `clean` выполняет `down --volumes --remove-orphans` для проекта `testsys-dev` или `testsys-e2e`, с `--rmi` — ещё
-`--rmi local`. В dev команда получает файл мониторинга и поэтому удаляет и тома `prometheus-data`
-и `grafana-data`. Файл узла скрипт передаёт, только если с ним проходит `config --quiet`; иначе контейнер узла удаляет
-`--remove-orphans`. Затем одноразовый контейнер `postgres:17-alpine`, в который смонтирован подкаталог
+`--rmi local`. В dev команда получает файл мониторинга и поэтому удаляет и тома `prometheus-data`, `grafana-data`,
+`loki-data` и `alloy-data`. Файл узла скрипт передаёт, только если с ним проходит `config --quiet`; иначе контейнер
+узла удаляет `--remove-orphans`. Затем одноразовый контейнер `postgres:17-alpine`, в который смонтирован подкаталог
 `${TESTSYS_GRADING_NODE_WORKSPACE}/testsys-<окружение>`, удаляет его содержимое командой
 `find /workspace -mindepth 1 -delete`; сам подкаталог остаётся. Имя проекта скрипт задаёт сам и не берёт
 из `COMPOSE_PROJECT_NAME`, чтобы очистка не затронула другой проект.

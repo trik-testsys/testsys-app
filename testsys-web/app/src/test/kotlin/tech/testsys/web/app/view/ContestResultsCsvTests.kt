@@ -80,7 +80,7 @@ class ContestResultsCsvTests {
         startsAt = null,
         contestDuration = null,
         attemptDuration = null,
-        trikStudioVersion = TrikStudioVersion("3.0.0"),
+        trikStudioVersion = TrikStudioVersion(tag = "trik-studio:3.0.0", version = "3.0.0"),
         sharedTo = emptyList<CommunityId>(),
         endsAt = null,
     )

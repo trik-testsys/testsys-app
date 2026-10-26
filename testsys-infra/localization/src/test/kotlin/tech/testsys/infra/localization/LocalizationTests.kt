@@ -50,6 +50,7 @@ class LocalizationTests {
                     "Вы начали регистрацию в TestSys. Чтобы подтвердить адрес электронной почты, введите этот код " +
                     "на странице регистрации:\n\n" +
                     "01234567\n\n" +
+                    "Никому не сообщайте этот код.\n\n" +
                     "Код действует ограниченное время. Если код больше не действует, начните регистрацию заново, " +
                     "и Вам придёт новый код.\n\n" +
                     "Если Вам пришло несколько таких писем, введите код из последнего.\n\n" +
@@ -93,6 +94,7 @@ class LocalizationTests {
                     "Вы запросили смену адреса электронной почты в TestSys на этот адрес. Чтобы подтвердить новый " +
                     "адрес, введите в TestSys этот код:\n\n" +
                     "01234567\n\n" +
+                    "Никому не сообщайте этот код.\n\n" +
                     "Код действует ограниченное время. Если код больше не действует, запросите смену адреса заново, " +
                     "и Вам придёт новый код.\n\n" +
                     "Если Вам пришло несколько таких писем, введите код из последнего.\n\n" +
@@ -115,6 +117,31 @@ class LocalizationTests {
                     "на новый адрес, а не на этот.\n\n" +
                     "Изменить адрес может только тот, кто знает Ваш Код-доступа.",
                 l.user.emailChangeNoticeBody(name = "Маша"),
+            )
+        }
+
+        @Test
+        fun `should name the confirmation code in access restoration confirmation code subject`() {
+            assertEquals(
+                "Код подтверждения для восстановления доступа к TestSys",
+                l.user.accessRestorationConfirmationCodeSubject(),
+            )
+        }
+
+        @Test
+        fun `should greet without nickname and show the code on its own line in access restoration confirmation code body`() {
+            assertEquals(
+                "Здравствуйте!\n\n" +
+                    "Вы запросили восстановление доступа к TestSys. Чтобы получить новый Код-доступа, введите этот " +
+                    "код на вкладке «Восстановление доступа» страницы входа:\n\n" +
+                    "01234567\n\n" +
+                    "Никому не сообщайте этот код.\n\n" +
+                    "Код действует ограниченное время. Если код больше не действует, запросите восстановление " +
+                    "доступа заново, и Вам придёт новый код.\n\n" +
+                    "Если Вам пришло несколько таких писем, введите код из последнего.\n\n" +
+                    "Если Вы не запрашивали восстановление доступа к TestSys, ничего делать не нужно. " +
+                    "Просто удалите это письмо.",
+                l.user.accessRestorationConfirmationCodeBody(confirmationCode = "01234567"),
             )
         }
     }
@@ -894,22 +921,114 @@ class LocalizationTests {
         @Test
         fun `should render the access code term in accusative in restore access guide`() {
             assertEquals(
-                "Восстановление доступа ещё не реализовано. Для входа используйте свой Код-доступа.",
+                "Если вы потеряли Код-доступа, получите новый: укажите привязанную почту и введите код из письма.",
                 l.pageGuest.restoreAccessGuide(),
             )
         }
 
         @Test
-        fun `should render the access code term in nominative in restore access block guide`() {
+        fun `should explain the email step in restore access block guide`() {
             assertEquals(
-                "Восстановление доступа пока недоступно. Используйте вкладку входа, если у вас есть Код-доступа.",
+                "Укажите привязанную почту и нажмите «Получить код»: на неё придёт письмо с кодом.",
                 l.pageGuest.restoreAccessBlockGuide(),
             )
         }
 
         @Test
-        fun `should state the missing feature in restore access empty`() {
-            assertEquals("Восстановление доступа пока не реализовано", l.pageGuest.restoreAccessEmpty())
+        fun `should head the email step guide in restore access block guide title`() {
+            assertEquals("Запрос кода", l.pageGuest.restoreAccessBlockGuideTitle())
+        }
+
+        @Test
+        fun `should label the email field in restore access email`() {
+            assertEquals("Почта", l.pageGuest.restoreAccessEmail())
+        }
+
+        @Test
+        fun `should ask for the bound email in restore access email guide`() {
+            assertEquals("Введите почту, привязанную к вашему Профилю.", l.pageGuest.restoreAccessEmailGuide())
+        }
+
+        @Test
+        fun `should report the accepted request in restore access requested title`() {
+            assertEquals("Запрос принят", l.pageGuest.restoreAccessRequestedTitle())
+        }
+
+        @Test
+        fun `should promise the letter only for a bound email in restore access requested description`() {
+            assertEquals(
+                "Если почта masha@example.com привязана к Пользователю, на неё придёт письмо с кодом.",
+                l.pageGuest.restoreAccessRequestedDescription(email = "masha@example.com"),
+            )
+        }
+
+        @Test
+        fun `should point to the last letter in restore access code guide`() {
+            assertEquals(
+                "Введите код из последнего письма о восстановлении доступа.",
+                l.pageGuest.restoreAccessCodeGuide(),
+            )
+        }
+
+        @Test
+        fun `should explain the code step in restore access code step block guide`() {
+            assertEquals(
+                "Введите код из письма и нажмите «Восстановить доступ».",
+                l.pageGuest.restoreAccessCodeStepBlockGuide(),
+            )
+        }
+
+        @Test
+        fun `should head the code step guide in restore access code step block guide title`() {
+            assertEquals("Ввод кода", l.pageGuest.restoreAccessCodeStepBlockGuideTitle())
+        }
+
+        @Test
+        fun `should label the main action in restore access button`() {
+            assertEquals("Восстановить доступ", l.pageGuest.restoreAccessButton())
+        }
+
+        @Test
+        fun `should report a missing request in restore access request not found`() {
+            assertEquals("Запрос восстановления не найден", l.pageGuest.restoreAccessRequestNotFound())
+        }
+
+        @Test
+        fun `should report the restored access in restore access completed title`() {
+            assertEquals("Доступ восстановлен", l.pageGuest.restoreAccessCompletedTitle())
+        }
+
+        @Test
+        fun `should render the access code term in dative in restore access completed description`() {
+            assertEquals("Войдите по новому Коду-доступа.", l.pageGuest.restoreAccessCompletedDescription())
+        }
+
+        @Test
+        fun `should render the access code term in nominative in restore access result title`() {
+            assertEquals("Новый Код-доступа", l.pageGuest.restoreAccessResultTitle())
+        }
+
+        @Test
+        fun `should render the access code term in accusative in restore access result block guide`() {
+            assertEquals(
+                "Сохраните новый Код-доступа и войдите по нему на вкладке «Вход». При повторном открытии страницы " +
+                    "Код-доступа больше не будет показан.",
+                l.pageGuest.restoreAccessResultBlockGuide(),
+            )
+        }
+
+        @Test
+        fun `should render the access code term in accusative in restore access result alert title`() {
+            assertEquals("Сохраните Код-доступа", l.pageGuest.restoreAccessResultAlertTitle())
+        }
+
+        @Test
+        fun `should warn about the old code and the mail in restore access result alert text`() {
+            assertEquals(
+                "По нему вы входите в TestSys. Прежний Код-доступа больше не действует. Новый код на почту " +
+                    "не отправляется.",
+                l.pageGuest.restoreAccessResultAlertText(),
+            )
         }
     }
 

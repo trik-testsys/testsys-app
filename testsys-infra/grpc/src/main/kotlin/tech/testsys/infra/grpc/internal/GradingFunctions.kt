@@ -50,7 +50,7 @@ internal fun encodeSubmission(
             ),
         )
         .setOptions(
-            Proto.Options.newBuilder().setDockerImage(trikStudioVersion.version).setRecordVideo(shouldRecordVideo),
+            Proto.Options.newBuilder().setDockerImage(trikStudioVersion.tag).setRecordVideo(shouldRecordVideo),
         )
     when (solution.data.language) {
         TrikSupportedLanguage.Python -> builder.setPythonSubmission(Proto.PythonSubmission.newBuilder().setFile(file))

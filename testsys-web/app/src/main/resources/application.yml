@@ -10,6 +10,10 @@ spring:
     enableautoconfiguration: false
   application:
     name: testsys-web-app
+logging:
+  pattern:
+    # Every line shows the signed-in user id and the open page of the main interface request, or `-` outside it.
+    correlation: "[%X{user:--} %X{route:--}] "
 management:
   prometheus:
     metrics:
@@ -39,3 +43,10 @@ testsys:
       default-region: RU
       # Zone of the dates until the browser reports its own.
       default-time-zone: Europe/Moscow
+    # Requests of one client address to the main interface within one window; the next ones get 429.
+    rate-limit:
+      requests: 1200
+      # Window length, an ISO-8601 duration of whole seconds.
+      duration: PT1M
+      # false only logs the clients over the limit.
+      enforce: true

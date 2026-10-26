@@ -30,6 +30,9 @@ class ServiceHomeView(authentication: AuthenticationContext, settings: ServiceWe
                         action("Настройки") { onClick { UI.getCurrent().navigate(ServiceSettingsView::class.java) } }
                         action("Проверка") { onClick { UI.getCurrent().navigate(ServiceGradingView::class.java) } }
                         action("Пользователи") { onClick { UI.getCurrent().navigate(ServiceUsersView::class.java) } }
+                        action("Версии TRIK Studio") {
+                            onClick { UI.getCurrent().navigate(ServiceTrikStudioVersionsView::class.java) }
+                        }
                         action("Grafana") { onClick { UI.getCurrent().page.setLocation(settings.grafanaUrl) } }
                     }
                     footer { mainAction("Выйти") { onClick { authentication.logout() } } }

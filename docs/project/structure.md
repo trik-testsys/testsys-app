@@ -15,7 +15,7 @@ testsys-app/
 ├── .dockerignore             # Исключения из контекста Docker-образа (см. deployment.md)
 ├── .gitattributes            # Окончания строк LF для скриптов и файлов переменных deploy/ (см. deployment.md)
 ├── buildSrc/                 # Convention-плагин testsys.conventions
-├── deploy/                   # Compose-файлы окружений, мониторинга (Prometheus и Grafana) и Проверяющего узла, файлы переменных окружений, конфигурация приложения и мониторинга, скрипт запуска и очистки (см. deploy/README.md и deployment.md)
+├── deploy/                   # Compose-файлы окружений, мониторинга (Prometheus, Grafana и сбор логов в Loki через Grafana Alloy) и Проверяющего узла, файлы переменных окружений, конфигурация приложения и мониторинга, скрипт запуска и очистки (см. deploy/README.md и deployment.md)
 ├── Dockerfile                # Образ приложения testsys-web:app (см. deployment.md)
 ├── docs/                     # Документация проекта
 ├── gradle/
@@ -90,7 +90,8 @@ testsys-app/
 - `gradle/libs.versions.toml` — версии, библиотеки и bundles. Версии зависимостей указываются только здесь.
   Версия Spring Boot одна на весь проект. Модули со Spring подключают BOM `libs.spring.boot.bom` через
   `platform(...)`; версии стартеров, Hibernate, Liquibase, Testcontainers и драйвера PostgreSQL задаёт BOM,
-  в каталоге их нет.
+  в каталоге их нет. Модуль без Spring подключает BOM так же, если использует библиотеку каталога без версии,
+  например `libs.slf4j.api`.
 - `gradle.properties` — память Gradle-демона (`org.gradle.jvmargs`): значений Gradle по умолчанию полной сборке
   с KSP, Vaadin и Detekt не хватает. Демон Kotlin наследует эти параметры.
 - В `build.gradle.kts` модуля, кроме плагинов сверх конвенций (`ksp`, `plugin.spring`, `plugin.jpa`, у веб-приложения
@@ -217,10 +218,10 @@ Workflow лежат в `.github/workflows`.
 | Служебную обработку запроса валидации           | `TaskValidationOperations` в `testsys-operation`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
 | Прокси-сервис операций                          | `testsys-web/app/.../service/<actor>/<Actor>Service.kt`, см. [app/README.md](../../testsys-web/app/README.md#прокси-сервисы) |
 | Служебную замену Кодов-приглашений с истёкшим сроком | `refreshClassInvite` в `ManagerOperations` и `refreshCommunityInvite` в `AdministratorOperations`; контракт вызова — в [testsys-operation/README.md](../../testsys-operation/README.md) |
-| Служебный запрос данных для служебного кабинета | `testsys-infra:database`, пакет `api/service`, см. [database/README.md](../../testsys-infra/database/README.md#служебный-поиск-пользователей) |
+| Служебные чтение и запись данных для служебного кабинета | `testsys-infra:database`, пакет `api/service`, см. [database/README.md](../../testsys-infra/database/README.md#служебный-поиск-пользователей) |
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Метрику или учёт технического сбоя | Каталог и правила учёта — [monitoring/README.md](../../testsys-infra/monitoring/README.md) |
-| Дашборд или настройку мониторинга | `deploy/config/grafana/dashboards/`, `deploy/config/prometheus.yml`, `deploy/compose.monitoring.yml`, см. раздел «Мониторинг» в [deploy/README.md](../../deploy/README.md#мониторинг) |
+| Дашборд, настройку мониторинга или сбора логов | `deploy/config/grafana/dashboards/`, `deploy/config/prometheus.yml`, `deploy/config/loki.yml`, `deploy/config/alloy.alloy`, `deploy/compose.monitoring.yml`, см. раздел «Мониторинг» в [deploy/README.md](../../deploy/README.md#мониторинг) |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
 | Токены, стили, бренд и иконки | `components/src/main/resources/META-INF/resources/testsys-ui/`, правила — [ui-design.md](ui-design.md) |
 | Необходимая клиентская реализация компонента | `components/src/main/resources/META-INF/frontend/testsys-ui/`, API — components/README.md |

@@ -2,7 +2,7 @@
 
 package tech.testsys.infra.grpc.internal
 
-import org.apache.commons.logging.LogFactory
+import org.slf4j.LoggerFactory
 import tech.testsys.domain.contract.GradingNodeAddress
 import tech.testsys.domain.contract.GradingNodeStatus
 import java.time.Duration
@@ -16,7 +16,7 @@ internal class NodeMonitor(private val address: GradingNodeAddress, val client: 
     // A new holder per change lets a poll publish only over the observation it started from, even for equal statuses.
     private val observation = AtomicReference(Observation(GradingNodeStatus.Unknown))
     private val isPolling = AtomicBoolean(false)
-    private val log = LogFactory.getLog(javaClass)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     fun status(): GradingNodeStatus = observation.get().status
 
@@ -55,7 +55,7 @@ internal class GradingNodeManager(private val factory: NodeClientFactory) : Auto
     private val monitors = ConcurrentHashMap<GradingNodeAddress, NodeMonitor>()
     private val registrations = ConcurrentHashMap<GradingNodeAddress, GradingRegistration>()
     private val changes = Any()
-    private val log = LogFactory.getLog(javaClass)
+    private val log = LoggerFactory.getLogger(javaClass)
 
     fun observe(address: GradingNodeAddress) = synchronized(changes) {
         requireAddress(address)

@@ -54,6 +54,8 @@ tasks.withType<Test>().configureEach {
     systemProperty("testsys.deploy.path", rootProject.file("deploy").absolutePath)
     inputs.file(rootProject.file("deploy/compose.monitoring.yml"))
     inputs.file(rootProject.file("deploy/config/prometheus.yml"))
+    inputs.file(rootProject.file("deploy/config/loki.yml"))
+    inputs.file(rootProject.file("deploy/config/alloy.alloy"))
     inputs.dir(rootProject.file("deploy/config/grafana/dashboards"))
     // A JVM zone other than the default user zone reveals dates read in the JVM zone instead of the zone of the user.
     jvmArgs("-Duser.timezone=UTC")

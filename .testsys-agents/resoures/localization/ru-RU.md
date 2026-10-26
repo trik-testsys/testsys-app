@@ -773,3 +773,67 @@ Notes collected while moving the Observer and Supervisor pages onto localization
   user approval. Project decision, not a language finding. The task column `{$contest} - {$task}` uses an ASCII
   hyphen-minus with spaces, also verbatim from features.md. Running Russian text would normally use a dash
   («Финал — Робот»; inference, no handbook opened), but the value is a CSV header contract, not running text.
+
+## Access restoration (`page_guest.restore_access.*`, `user.access_restoration.*`)
+
+- «Запрос принят» (toast after the request and the resend): МАС lists «принять» both as «Взять для исполнения»
+  («Принять заказ», «по принятой … заявке») and as «Согласиться с чем-л., отнестись к чему-л. положительно»
+  («Принять предложение»). For a request the first sense is the usual reading («заявка принята»), so the title
+  means "taken for processing", not "approved". The description states the condition («Если почта … привязана
+  к Пользователю, на неё придёт письмо с кодом»), so the toast claims neither restored access nor a sent letter.
+  The usual-reading claim is an inference from the dictionary examples, not a corpus check. Alternative without
+  the second reading: «Код запрошен».
+- Source: https://kartaslov.ru/значение-слова/принять (МАС, Ушаков as reproduced there, read 2026-10-13).
+- Usage (search result only, not opened, 2026-10-13): Russian Roblox help speaks of a letter that comes «на
+  привязанную почту»; the UI phrase «привязанная почта» matches `page_profile` («изменить привязанную почту»).
+  The letter itself names no address.
+- The confirmation-code letter mirrors the registration and e-mail change letters: «Если код больше не действует…»
+  covers expiry and exhausted attempts; «Если Вам пришло несколько таких писем, введите код из последнего» stays
+  correct because an active request resends the same code and an inactive one is overwritten with a new code
+  (features.md, testsys.user.multi.restoreAccess). It names the tab «Восстановление доступа» of the sign-in page,
+  where the code is entered. Project inference, not a language finding.
+- Colon or dash when the second clause states a result: «Мел», «8 предложений, в которых вы путаете двоеточие
+  и тире» (14.01.2018): a result or consequence («так что», «поэтому») takes a dash; a colon marks explanation
+  («а именно», «то есть») or cause. Applies to instructions like «нажмите «X» — придёт письмо»; a colon remains
+  possible when the clause explains what the action does. Popular outlet, not a handbook; the primary Правила 1956
+  text was not readable on 2026-10-13. Source: https://mel.fm/russky_yazyk/5841376-colon_and_dash.
+- «Принять» with a request noun also allows a "granted" reading (Ушаков sense 7, «П. просьбу об отставке»); the
+  conditional description of the toast rules it out. Source: https://kartaslov.ru/значение-слова/принять
+  (read 2026-10-13).
+- «Привязать»: Викисловарь has no sense for linking an e-mail to an account (closest: 5, перен., «связать с кем-,
+  чем-либо»; 7, проф., «соотнести с чем-либо»). «Привязанная почта» is established UI usage and already used in
+  the project. Source: https://ru.wiktionary.org/wiki/привязать (read 2026-10-13).
+- A guide that says «этот блок исчезнет» is accurate only for a separate block; the restore-access result is shown
+  inside the guest block with the tabs, so the guide speaks of the shown Код-доступа instead. Project usage note.
+- «Вкладка»: Викисловарь sense 2 is a browser tab; a tab of a page component is a natural extension, and a quoted
+  label («Вход») names it (inference). Prepositional singular «вкла́дке». No primary source on «на вкладке» vs
+  «во вкладке» was found on 2026-10-13; the project uses «на вкладке» (`user.properties`, `page_guest`) and
+  `page_supervisor` uses «во вкладках» — unverified usage, not a rule. Source: https://ru.wiktionary.org/wiki/вкладка
+  (read 2026-10-13).
+
+## Warning in confirmation-code letters: «Никому не сообщайте этот код.»
+
+- The three confirmation-code letters (`user.registration.confirmation_code.body`,
+  `user.email_change.confirmation_code.body`, `user.access_restoration.confirmation_code.body`) carry the same
+  separate paragraph «Никому не сообщайте этот код.» right after the code line. Identical wording in all three is
+  a coordinator requirement; the sentence gives no reason, unlike the Код-доступа letter («Никому его не сообщайте:
+  тот, кто знает код, может войти…»), because the consequence differs per letter (binding an address versus
+  obtaining a new Код-доступа). Project decision, not a language finding.
+- «Сообщить»: МАС sense 1 «Довести до чьего-л. сведения, уведомить, известить», «Рассказать о чем-л.»; Ушаков
+  «Довести до чьего-н. сведения, передать словами». With a dative recipient and «код» as the object only the
+  "convey information" sense applies. Source: https://kartaslov.ru/значение-слова/сообщить (read 2026-10-13).
+- «Этот код» right after the code line is unambiguous; appending the warning to the validity paragraph would follow
+  «…придёт новый код», where «этот» could be read as the new code. Placement reasoning, not a source finding.
+- Usage: a search on 2026-10-13 found no page with the exact phrase «Никому не сообщайте этот код»; close security
+  wording («никому не сообщайте код подтверждения») appears in service help pages (search snippets only, not
+  opened). The Kaspi usage noted under «Код-доступа» above also shows «Никому не сообщайте код». No undesirable
+  or offensive reading was found.
+- Object case (independent review, 2026-10-13): Rosental, «Литературное редактирование текста», §201 «Падеж
+  дополнения при переходных глаголах с отрицанием» (https://evartist.narod.ru/text1/66.htm, read as a paraphrase
+  with short quotes): a word starting with «ни» favours the genitive («До вас никто еще этого браслета не надевал»),
+  while a concrete object and an imperative favour the accusative («Гляди под ноги, не смеши народ»); where both
+  fit, the genitive is bookish and the accusative colloquial. Inference: «Никому не сообщайте этот код» is
+  acceptable; «этого кода» is only a more bookish alternative, not a correction.
+- Usage (independent review, 2026-10-13): Т—Ж, «Внимательно читайте текст уведомлений и смс» (03.12.2024,
+  https://t-j.ru/advice-notification/) quotes a bank SMS «Никому не говорите этот код» and a Gosuslugi SMS
+  «Никому не сообщайте!». Usage evidence, not a norm.

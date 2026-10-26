@@ -49,6 +49,7 @@ import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskId
+import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.HashAlgorithm
@@ -265,14 +266,14 @@ class AppFixtures(
 
     /** Saves a contest of a new developer shared to [sharedTo], registering its TRIK Studio version first. */
     fun contest(name: String = unique("Contest"), sharedTo: List<Community> = emptyList(), tasks: List<TaskId> = emptyList()): Contest {
-        val tag = trikStudioVersion()
+        val version = trikStudioVersion()
         val ownerId = multipleRoleUser().id.value
         return contests.save(
             contestData {
                 owner(ownerId)
                 this.name = name
                 description = ""
-                trikStudioVersion(tag)
+                trikStudioVersion = version
                 sharedTo(sharedTo.map { community -> community.id.value })
                 this.tasks = tasks.toMutableList()
             },
@@ -293,7 +294,7 @@ class AppFixtures(
                 owner(task.data.owner.id.value)
                 name = unique("Contest")
                 description = "Contest"
-                trikStudioVersion(trikStudioVersion())
+                trikStudioVersion = trikStudioVersion()
                 tasks(listOf(task.id.value))
             },
         )
@@ -304,7 +305,7 @@ class AppFixtures(
     /** Stores a successfully graded test run of a developer solution made by [author]. */
     fun developerSolutionTestSubmission(author: MultipleRoleUser): Submission {
         val version = trikStudioVersion()
-        return graded(submission(author, task()) { kind.developerSolutionTest { trikStudioVersion(version) } }, DEFAULT_SCORE)
+        return graded(submission(author, task()) { kind.developerSolutionTest { trikStudioVersion = version } }, DEFAULT_SCORE)
     }
 
     private fun task(): Task = tasks.save(
@@ -360,18 +361,21 @@ class AppFixtures(
         return submissions.update(submission.withData { status.graded { status.success { this.verdict = verdict.id } } })
     }
 
-    /** Adds a TRIK Studio version and returns its tag. */
-    private fun trikStudioVersion(): String {
-        // Versions come from the grader; no port stores them, so the fixture adds the row a contest refers to.
+    /** Adds a TRIK Studio version row and returns it. */
+    private fun trikStudioVersion(): TrikStudioVersion {
+        // No domain port stores versions, so the fixture adds the row a contest refers to.
         val tag = unique("tsv")
+        val version = unique("tsv-version")
         dataSource.connection.use { connection ->
-            val insert = "insert into ts_trik_studio_version (id, tag) select coalesce(max(id), 0) + 1, ? from ts_trik_studio_version"
+            val insert = "insert into ts_trik_studio_version (id, tag, studio_version) " +
+                "select coalesce(max(id), 0) + 1, ?, ? from ts_trik_studio_version"
             connection.prepareStatement(insert).use { statement ->
                 statement.setString(1, tag)
+                statement.setString(2, version)
                 statement.executeUpdate()
             }
         }
-        return tag
+        return TrikStudioVersion(tag = tag, version = version)
     }
 
     private fun invite(): CommunityInviteData = communityInviteData {
@@ -403,4 +407,8 @@ class RecordedMail : UserMailSender {
     }
 
     override fun sendEmailChangedNotice(email: String, name: String) = Unit
+
+    override fun sendAccessRestorationCode(email: String, confirmationCode: String) {
+        confirmationCodes[email] = confirmationCode
+    }
 }

@@ -290,12 +290,15 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
     }
 
     private fun sharedContest(community: Community) {
-        // Versions come from the grader; no port stores them, so the test adds the row the contest refers to.
+        // No domain port stores versions, so the test adds the row the contest refers to.
         val tag = fixtures.unique("tsv")
+        val version = fixtures.unique("tsv-version")
         dataSource.connection.use { connection ->
-            val insert = "insert into ts_trik_studio_version (id, tag) select coalesce(max(id), 0) + 1, ? from ts_trik_studio_version"
+            val insert = "insert into ts_trik_studio_version (id, tag, studio_version) " +
+                "select coalesce(max(id), 0) + 1, ?, ? from ts_trik_studio_version"
             connection.prepareStatement(insert).use { statement ->
                 statement.setString(1, tag)
+                statement.setString(2, version)
                 statement.executeUpdate()
             }
         }
@@ -304,7 +307,7 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
                 owner(community.data.owner.id.value)
                 name = "Весенний тур"
                 description = ""
-                trikStudioVersion(tag)
+                trikStudioVersion(tag = tag, version = version)
                 sharedTo(listOf(community.id.value))
             },
         )

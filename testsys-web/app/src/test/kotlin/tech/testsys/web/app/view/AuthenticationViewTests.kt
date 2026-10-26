@@ -99,6 +99,17 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should open the start page instead of a saved page closed to the user's kind`() {
+        val accessToken = fixtures.unique("token")
+        fixtures.userOf(UserKind.OBSERVER, rawAccessToken = accessToken)
+        UI.getCurrent().navigate(MultiMainView::class.java)
+
+        signInWith(accessToken)
+
+        assertEquals(ObserverView::class.java, currentView)
+    }
+
+    @Test
     fun `should change the session id when signing in`() {
         val accessToken = fixtures.unique("token")
         fixtures.userOf(UserKind.OBSERVER, rawAccessToken = accessToken)

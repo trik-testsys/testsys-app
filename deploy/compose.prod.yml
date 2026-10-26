@@ -1,5 +1,5 @@
 # Production environment over deploy/compose.yml and deploy/compose.monitoring.yml: application, PostgreSQL,
-# Prometheus and Grafana with persistent volumes, external SMTP.
+# Prometheus, Grafana, Loki and Grafana Alloy with persistent volumes, external SMTP.
 # Start it with deploy/testsys.sh and the production variable file kept outside the Git checkout
 # (template: deploy/env/prod.env.example):
 #   sh deploy/testsys.sh prod up [--node] --env-file <path>
@@ -33,6 +33,12 @@ services:
         read_only: true
         bind:
           create_host_path: false
+      # Application log files in an existing directory outside the Git checkout, writable by the user 10001.
+      - type: bind
+        source: ${TESTSYS_LOG_DIR:?set TESTSYS_LOG_DIR to the absolute path of the application log directory}
+        target: /var/log/testsys
+        bind:
+          create_host_path: false
 
   postgres:
     restart: unless-stopped
@@ -40,6 +46,12 @@ services:
       POSTGRES_PASSWORD: ${TESTSYS_DB_PASSWORD:?set TESTSYS_DB_PASSWORD}
 
   prometheus:
+    restart: unless-stopped
+
+  loki:
+    restart: unless-stopped
+
+  alloy:
     restart: unless-stopped
 
   grafana:

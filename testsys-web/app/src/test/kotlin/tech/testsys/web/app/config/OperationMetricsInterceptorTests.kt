@@ -95,6 +95,16 @@ class OperationMetricsInterceptorTests {
     }
 
     @Test
+    fun `should count an error as a technical failure of the main interface`() {
+        val failure = StackOverflowError()
+
+        val thrown = assertThrows(StackOverflowError::class.java) { inner.fail(failure) }
+
+        assertSame(failure, thrown)
+        assertEquals(1.0, technicalFailures(exception = "StackOverflowError"))
+    }
+
+    @Test
     fun `should count a technical failure once when it passes through nested services`() {
         assertThrows(IllegalStateException::class.java) { outer.delegate(IllegalStateException("Storage unavailable")) }
 
@@ -145,7 +155,7 @@ class OperationMetricsInterceptorTests {
     }.proxy as T
 
     open class InnerService {
-        open fun fail(failure: Exception): Nothing = throw failure
+        open fun fail(failure: Throwable): Nothing = throw failure
 
         open fun view(taskId: TaskId): Nothing = throw operationFailure(TaskNotExistsError(taskId))
 

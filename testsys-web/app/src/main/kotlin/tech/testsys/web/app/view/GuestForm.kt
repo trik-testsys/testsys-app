@@ -18,13 +18,13 @@ private const val SIDE_COLUMNS = 7
  * @since %CURRENT_VERSION%
  */
 enum class GuestTab(val view: Class<out Component>) {
-    /** Signing in by the access code. */
+    /** Signing in by the e-mail address and the password or by the access code. */
     SignIn(AuthenticationView::class.java),
 
     /** Registration of a Student or a Manager. */
     Registration(RegistrationView::class.java),
 
-    /** Restoring access by e-mail. */
+    /** Restoring access by e-mail with a new password. */
     RestoreAccess(RestoreAccessView::class.java),
     ;
 

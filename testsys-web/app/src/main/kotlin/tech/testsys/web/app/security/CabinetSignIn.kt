@@ -1,6 +1,7 @@
 package tech.testsys.web.app.security
 
 import com.vaadin.flow.router.RouteConfiguration
+import com.vaadin.flow.server.VaadinService
 import com.vaadin.flow.server.VaadinServletRequest
 import com.vaadin.flow.server.VaadinServletResponse
 import com.vaadin.flow.server.auth.AccessAnnotationChecker
@@ -10,6 +11,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.security.core.session.SessionRegistry
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository
 import java.security.Principal
 import kotlin.jvm.optionals.getOrNull
@@ -34,16 +36,18 @@ object CabinetSignIn {
     fun principal(): CabinetPrincipal? = SecurityContextHolder.getContext().authentication?.principal as? CabinetPrincipal
 
     /**
-     * Changes the session id against session fixation, stores [principal] with the role of its kind in the session
-     * and returns the page the user opened before being sent to sign in, removing it, or `null` if there is none
-     * or it is closed to the kind of [principal].
+     * Changes the session id against session fixation, registers the session of [principal] in the [SessionRegistry],
+     * stores [principal] with the role of its kind in the session and returns the page the user opened before being
+     * sent to sign in, removing it, or `null` if there is none or it is closed to the kind of [principal].
      *
      * @since %CURRENT_VERSION%
      */
     fun signIn(principal: CabinetPrincipal): String? {
         val request = checkNotNull(VaadinServletRequest.getCurrent()) { "Sign-in needs a Vaadin servlet request" }.httpServletRequest
         val response = checkNotNull(VaadinServletResponse.getCurrent()) { "Sign-in needs a Vaadin servlet response" }.httpServletResponse
-        request.changeSessionId()
+        val sessionId = request.changeSessionId()
+        // The registry lets password changes end the other sessions of the user (CabinetSessions).
+        VaadinService.getCurrent().instantiator.getOrCreate(SessionRegistry::class.java).registerNewSession(sessionId, principal)
 
         val strategy = SecurityContextHolder.getContextHolderStrategy()
         val authority = SimpleGrantedAuthority(ROLE_PREFIX + principal.kind.name)

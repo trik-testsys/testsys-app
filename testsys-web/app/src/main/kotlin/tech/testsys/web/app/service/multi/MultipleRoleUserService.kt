@@ -1,10 +1,12 @@
 package tech.testsys.web.app.service.multi
 
+import com.vaadin.flow.server.VaadinServletRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.operation.error.OperationException
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.user.MultipleRoleUserOperations
+import tech.testsys.web.app.security.CabinetSessions
 import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.service.CurrentUser
 import tech.testsys.web.app.service.MultipleRoleUserVo
@@ -18,7 +20,11 @@ import tech.testsys.web.app.service.toVo
  */
 @Service
 @Transactional
-class MultipleRoleUserService(private val operations: MultipleRoleUserOperations, private val currentUser: CurrentUser) {
+class MultipleRoleUserService(
+    private val operations: MultipleRoleUserOperations,
+    private val currentUser: CurrentUser,
+    private val sessions: CabinetSessions,
+) {
     /**
      * Runs [MultipleRoleUserOperations.viewProfile] and adds the nickname and the e-mail address of the current user.
      *
@@ -56,6 +62,19 @@ class MultipleRoleUserService(private val operations: MultipleRoleUserOperations
     }
 
     /**
+     * Runs [MultipleRoleUserOperations.changePassword] and ends the other sessions of the user, keeping the current one;
+     * throws `IllegalStateException` while a supervisor is signed in as the user.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun changePassword(currentPassword: String, newPassword: String) {
+        checkNotImpersonated()
+        val user = operations.changePassword(currentUser.multipleRoleUser(), currentPassword = currentPassword, newPassword = newPassword)
+            .getOrThrow()
+        sessions.expire(user.id.value, except = VaadinServletRequest.getCurrent()?.httpServletRequest?.getSession(false)?.id)
+    }
+
+    /**
      * Runs [MultipleRoleUserOperations.joinCommunity].
      *
      * @since %CURRENT_VERSION%
@@ -65,6 +84,6 @@ class MultipleRoleUserService(private val operations: MultipleRoleUserOperations
 
     private fun checkNotImpersonated() {
         val supervisorId = CabinetSignIn.principal()?.impersonatedBy
-        check(supervisorId == null) { "Supervisor $supervisorId signed in as the user cannot change their e-mail address" }
+        check(supervisorId == null) { "Supervisor $supervisorId signed in as the user cannot change their e-mail address or password" }
     }
 }

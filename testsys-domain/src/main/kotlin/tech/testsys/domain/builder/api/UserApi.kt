@@ -216,7 +216,7 @@ fun Observer.withData(builder: ObserverDataBuilder.() -> Unit): Observer {
 private fun MultipleRoleUserData.toBuilder(): MultipleRoleUserDataBuilder {
     val thisData = this
     return MultipleRoleUserDataBuilder().apply {
-        storedAccessToken(thisData.accessTokenHash)
+        passwordHash = thisData.passwordHash
         name = thisData.name
         email = thisData.email
         roles { addAll(thisData.roles) }

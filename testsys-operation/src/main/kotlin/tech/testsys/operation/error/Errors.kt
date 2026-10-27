@@ -2265,18 +2265,39 @@ data class ResourceNotInCommittedTaskError(val taskId: TaskId, val resourceId: D
 // region UserOperations
 
 /**
- * Failure of signing in to the system by an access code.
+ * Failure of signing in to the system by the access code of a fixed-role user.
  *
  * @since %CURRENT_VERSION%
  */
 sealed interface AuthenticateError : OperationError
 
 /**
- * The entered access code is not assigned to any user.
+ * The entered access code is not assigned to any fixed-role user.
  *
  * @since %CURRENT_VERSION%
  */
 data object InvalidAccessTokenError : AuthenticateError
+
+/**
+ * Failure of signing in to the system by the e-mail address and the password of a user without a fixed role.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface AuthenticateByPasswordError : OperationError
+
+/**
+ * The e-mail address is bound to no user who can sign in, or the password differs from the password of that user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object InvalidCredentialsError : AuthenticateByPasswordError
+
+/**
+ * The new password is shorter than 8 or longer than 64 Unicode code points, or takes more than 72 bytes in UTF-8.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object InvalidPasswordError : ConfirmRegistrationError, ConfirmAccessRestorationError, ChangePasswordError
 
 /**
  * Failure of requesting self-registration with an e-mail address.
@@ -2401,5 +2422,19 @@ sealed interface ConfirmAccessRestorationError : OperationError
  * @since %CURRENT_VERSION%
  */
 data object AccessRestorationRequestNotExistsError : ConfirmAccessRestorationError, EntityNotExistsError
+
+/**
+ * Failure of changing the password of the user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ChangePasswordError : OperationError
+
+/**
+ * The entered current password differs from the password of the user.
+ *
+ * @since %CURRENT_VERSION%
+ */
+data object InvalidCurrentPasswordError : ChangePasswordError
 
 // endregion

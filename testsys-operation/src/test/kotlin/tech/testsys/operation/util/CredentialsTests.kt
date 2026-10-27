@@ -5,6 +5,7 @@ import io.mockk.mockk
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.operation.annotation.InternalOperationsApi
 import java.util.random.RandomGenerator
@@ -76,6 +77,32 @@ class CredentialsTests {
         )
         fun `should reject a value outside the access code format`(value: String) {
             assertFalse(isAccessToken(value))
+        }
+    }
+
+    @Nested
+    inner class IsValidPasswordTests {
+
+        @ParameterizedTest
+        @CsvSource("a,8", "😀,8", "a,64", "п,36")
+        fun `should accept a password of 8 to 64 code points taking at most 72 bytes in UTF-8`(symbol: String, count: Int) {
+            assertTrue(isValidPassword(symbol.repeat(count)))
+        }
+
+        @Test
+        fun `should accept a password with surrounding spaces counted as its symbols`() {
+            assertTrue(isValidPassword("  pass  "))
+        }
+
+        @ParameterizedTest
+        @CsvSource("a,7", "😀,7", "a,65", "a,0")
+        fun `should reject a password shorter than 8 or longer than 64 code points`(symbol: String, count: Int) {
+            assertFalse(isValidPassword(symbol.repeat(count)))
+        }
+
+        @Test
+        fun `should reject a password of 37 code points taking 73 bytes in UTF-8`() {
+            assertFalse(isValidPassword("п".repeat(36) + "a"))
         }
     }
 }

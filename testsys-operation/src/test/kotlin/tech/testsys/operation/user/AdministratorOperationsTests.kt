@@ -90,6 +90,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
@@ -694,7 +695,7 @@ class AdministratorOperationsTests {
                     id = userId.value
                     createdAt = Instant.EPOCH
                     data = multipleRoleUserData {
-                        accessToken("member", algorithm = HashAlgorithm.Identity)
+                        passwordHash = PasswordHash("member")
                         name = "Member"
                         email = "member@example.com"
                         roles {
@@ -1888,7 +1889,7 @@ class AdministratorOperationsTests {
             id = memberId.value
             createdAt = Instant.EPOCH
             data = multipleRoleUserData {
-                accessToken("member", algorithm = HashAlgorithm.Identity)
+                passwordHash = PasswordHash("member")
                 name = "Member"
                 email = "member@example.com"
                 roles {
@@ -2012,7 +2013,7 @@ class AdministratorOperationsTests {
             id = memberId.value
             createdAt = Instant.EPOCH
             data = multipleRoleUserData {
-                accessToken("member", algorithm = HashAlgorithm.Identity)
+                passwordHash = PasswordHash("member")
                 name = "Member"
                 email = "member@example.com"
                 roles {

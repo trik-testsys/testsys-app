@@ -121,7 +121,14 @@
 
 Смысл Фиксированных и Нефиксированных Ролей — в [definitions.md](../docs/domain/definitions.md).
 
-`UserData.accessTokenHash` хранит представление Кода-доступа и алгоритм в одном объекте `AccessTokenHash`
+`UserData` содержит только Псевдоним. Код-доступа есть только у Пользователей с Фиксированной Ролью: данные
+`Participant`, `Observer` и `Supervisor` реализуют `SingleRoleUserData`
+([SingleRoleUser.kt](src/main/kotlin/tech/testsys/domain/model/user/SingleRoleUser.kt)). Пользователь
+с Нефиксированными Ролями входит по почте и Паролю: `MultipleRoleUserData.passwordHash` хранит `PasswordHash`
+([MultipleRoleUser.kt](src/main/kotlin/tech/testsys/domain/model/user/MultipleRoleUser.kt)) — значение, которое
+получает и проверяет только порт `PasswordHasher` (раздел [«Порты»](#порты)).
+
+`SingleRoleUserData.accessTokenHash` хранит представление Кода-доступа и алгоритм в одном объекте `AccessTokenHash`
 ([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)). Сейчас доступен только `HashAlgorithm.Identity`:
 он оставляет Код-доступа без изменений, поэтому сохранённое значение совпадает с исходным КД.
 `Identity` — временное решение и не обеспечивает криптографическую защиту.
@@ -133,8 +140,9 @@
 Простое копирование значения между объектами такой зависимости не создаёт. Методы,
 показывающие исходный КД, должны получить эту аннотацию.
 
-Все четыре билдера данных Пользователей наследуют `UserDataBuilder`
-([UserBuilder.kt](src/main/kotlin/tech/testsys/domain/builder/user/UserBuilder.kt)).
+Билдеры данных Пользователей с Фиксированной Ролью наследуют `UserDataBuilder`
+([UserBuilder.kt](src/main/kotlin/tech/testsys/domain/builder/user/UserBuilder.kt)). `MultipleRoleUserDataBuilder`
+его не наследует: он требует готовый `passwordHash`, а `withData` переносит сохранённый хеш Пароля.
 Метод `accessToken(rawAccessToken, algorithm)` вызывает функцию `AccessTokenHash.hashAccessToken`
 ([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)).
 Она применяет переданный алгоритм и возвращает значение вместе с ним в `AccessTokenHash`.
@@ -145,7 +153,7 @@
 `withData` переносит сохранённый `AccessTokenHash`. Для замены КД вызывается `accessToken(newToken, algorithm)` внутри блока `withData`.
 Конструкторы классов данных и их `copy` принимают готовый `AccessTokenHash`.
 
-Порты хранения Пользователей `MultipleRoleUserRepository`, `ParticipantRepository`, `ObserverRepository`
+Порты хранения Пользователей с Фиксированной Ролью `ParticipantRepository`, `ObserverRepository`
 и `SupervisorRepository` расширяют `UserAccessTokenFinder`
 ([UserRepositories.kt](src/main/kotlin/tech/testsys/domain/contract/persistence/repository/UserRepositories.kt)).
 Его метод `findByAccessToken` принимает исходный КД и возвращает Пользователя своего вида, которому этот КД
@@ -245,6 +253,9 @@
   Фильтры и общее число относятся к парам; условия доступа задаются идентификаторами назначенных Туров.
 - `FileBlobStorage` получает путь (`java.nio.file.Path`) в каждом вызове `store`, `load` и `delete`.
   `StoredBlobRef` действителен только вместе с путём, по которому создан блоб.
+- `PasswordHasher` ([Password.kt](src/main/kotlin/tech/testsys/domain/contract/Password.kt)) хеширует Пароль
+  с новой солью и сравнивает введённый Пароль с `PasswordHash` точно. Проверка без хеша (`null`) тратит примерно
+  столько же времени и возвращает `false`, поэтому время ответа не показывает, привязана ли почта.
 - Остальные порты и их состояние — в разделе «Убедиться, что порт нужен»
   в [implement-port.md](../docs/guides/implement-port.md).
 

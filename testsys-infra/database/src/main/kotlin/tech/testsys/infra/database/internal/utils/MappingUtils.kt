@@ -8,6 +8,7 @@ import tech.testsys.domain.model.DomainId
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.task.TrikSupportedLanguage
+import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.JpaEntity
@@ -15,6 +16,7 @@ import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.group.CommunityInviteRoleJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.task.TrikSupportedLanguageEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
+import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 
 @InternalDatabaseApi
 internal fun <Entity : SnowflakeJpaEntity> Entity.requireId() = requireNotNull(id) { "${this::class.simpleName} has null id" }
@@ -59,6 +61,14 @@ internal fun TrikSupportedLanguage.toJpaEnum() = when (this) {
 internal fun HashAlgorithmJpaEnum.toDomain(): HashAlgorithm = when (this) {
     HashAlgorithmJpaEnum.IDENTITY -> HashAlgorithm.Identity
 }
+
+/** Reads the stored access code of a single-role row; fails when the row has no access code. */
+@InternalDatabaseApi
+internal fun UserJpaEntity.requireAccessTokenHash() = AccessTokenHash(
+    value = requireNotNull(accessToken) { "User $id is SINGLE_ROLE but access_token is null" },
+    algorithm = requireNotNull(accessTokenHashAlgorithm) { "User $id is SINGLE_ROLE but access_token_hash_algorithm is null" }
+        .toDomain(),
+)
 
 @InternalDatabaseApi
 internal fun HashAlgorithm.toJpaEnum() = when (this) {

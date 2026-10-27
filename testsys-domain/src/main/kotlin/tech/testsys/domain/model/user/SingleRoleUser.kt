@@ -21,6 +21,16 @@ value class SingleRoleUserId(
 ) : UserId
 
 /**
+ * Data common to every kind of [SingleRoleUser]: fixed-role users sign in with an access code.
+ *
+ * @property accessTokenHash the stored access-code representation together with its hashing algorithm.
+ * @since %CURRENT_VERSION%
+ */
+interface SingleRoleUserData : UserData {
+    val accessTokenHash: AccessTokenHash
+}
+
+/**
  * Sealed base of users holding exactly one fixed role, which excludes any other role.
  *
  * @since %CURRENT_VERSION%
@@ -28,7 +38,7 @@ value class SingleRoleUserId(
 sealed class SingleRoleUser(
     id: SingleRoleUserId,
     createdAt: Instant,
-    data: UserData,
+    data: SingleRoleUserData,
 ) : User<SingleRoleUserId>(id, createdAt, data)
 
 /**
@@ -41,7 +51,7 @@ data class ParticipantData(
     override val accessTokenHash: AccessTokenHash,
     override val name: String,
     val competition: LazyEntity<CompetitionId, Competition>,
-) : UserData
+) : SingleRoleUserData
 
 /**
  * A fixed-role user who belongs to exactly one [Competition] and takes part in its contests.
@@ -67,7 +77,7 @@ data class ObserverData(
     override val name: String,
     val community: LazyEntity<CommunityId, Community>,
     val contests: LazyEntityList<ContestId, Contest>,
-) : UserData
+) : SingleRoleUserData
 
 /**
  * A fixed-role user who may view competitions containing any contest assigned to them, limited to those contests.
@@ -89,7 +99,7 @@ class Observer(
 data class SupervisorData(
     override val accessTokenHash: AccessTokenHash,
     override val name: String,
-) : UserData
+) : SingleRoleUserData
 
 /**
  * A fixed-role user who creates and manages other users.

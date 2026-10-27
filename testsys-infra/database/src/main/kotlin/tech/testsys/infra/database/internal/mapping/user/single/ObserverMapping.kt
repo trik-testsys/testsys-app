@@ -3,7 +3,6 @@ package tech.testsys.infra.database.internal.mapping.user.single
 import tech.testsys.domain.builder.api.observer
 import tech.testsys.domain.builder.data
 import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -12,8 +11,8 @@ import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ContestToObserverJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.single.ObserverDataJpaEntity
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireAccessTokenHash
 import tech.testsys.infra.database.internal.utils.requireVersion
-import tech.testsys.infra.database.internal.utils.toDomain
 import tech.testsys.infra.database.internal.utils.toJpaEnum
 
 /**
@@ -35,12 +34,7 @@ object ObserverMapping {
             "ObserverData ${dataJpaEntity.id} bound to user ${dataJpaEntity.userId} != ${userJpaEntity.id}"
         }
         data {
-            storedAccessToken(
-                AccessTokenHash(
-                    value = userJpaEntity.accessToken,
-                    algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
-                ),
-            )
+            storedAccessToken(userJpaEntity.requireAccessTokenHash())
             name = userJpaEntity.name
             community(dataJpaEntity.communityId)
             contests(contestIds.map { it.value })
@@ -56,6 +50,7 @@ object ObserverMapping {
         name = data.name,
         accessToken = data.accessTokenHash.value,
         accessTokenHashAlgorithm = data.accessTokenHash.algorithm.toJpaEnum(),
+        passwordHash = null,
         email = null,
         type = UserTypeJpaEnum.SINGLE_ROLE,
     )
@@ -69,6 +64,7 @@ object ObserverMapping {
         name = entity.data.name,
         accessToken = entity.data.accessTokenHash.value,
         accessTokenHashAlgorithm = entity.data.accessTokenHash.algorithm.toJpaEnum(),
+        passwordHash = null,
         email = current.email,
         type = UserTypeJpaEnum.SINGLE_ROLE,
         id = entity.id.value,

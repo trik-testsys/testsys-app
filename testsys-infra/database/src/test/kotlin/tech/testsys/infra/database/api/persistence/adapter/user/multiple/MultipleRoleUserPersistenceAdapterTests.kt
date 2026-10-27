@@ -15,16 +15,15 @@ import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.CompatibleUserRole
 import tech.testsys.domain.model.user.Developer
-import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Judge
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.Student
 import tech.testsys.infra.database.api.persistence.adapter.UpdatablePersistenceAdapterContractTests
 import tech.testsys.infra.database.internal.InternalDatabaseApi
-import tech.testsys.infra.database.internal.jpa.entity.user.HashAlgorithmJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.repository.user.UserJpaEntityRepository
 import tech.testsys.infra.database.internal.jpa.repository.user.multiple.AdministratorDataJpaEntityRepository
@@ -63,12 +62,10 @@ class MultipleRoleUserPersistenceAdapterTests :
     @Autowired
     private lateinit var classes: ClassRepository
 
-    override fun newData() = newData(fixtures.unique("token"))
-
-    private fun newData(rawAccessToken: String): MultipleRoleUserData {
+    override fun newData(): MultipleRoleUserData {
         val communityId = fixtures.community().id.value
         return multipleRoleUserData {
-            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash(fixtures.unique("password-hash"))
             name = fixtures.unique("User")
             email = fixtures.email("user")
             roles {
@@ -84,7 +81,7 @@ class MultipleRoleUserPersistenceAdapterTests :
     override fun modified(entity: MultipleRoleUser): MultipleRoleUser {
         val communityId = fixtures.community().id.value
         return entity.withData {
-            accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash(fixtures.unique("password-hash"))
             name = fixtures.unique("Renamed user")
             email = fixtures.email("renamed")
             roles {
@@ -107,7 +104,7 @@ class MultipleRoleUserPersistenceAdapterTests :
     override fun idOf(value: Long) = MultipleRoleUserId(value)
 
     override fun assertSameData(expected: MultipleRoleUser, actual: MultipleRoleUser) {
-        assertEquals(expected.data.accessTokenHash, actual.data.accessTokenHash)
+        assertEquals(expected.data.passwordHash, actual.data.passwordHash)
         assertEquals(expected.data.name, actual.data.name)
         assertEquals(expected.data.email, actual.data.email)
         assertSameRoles(expected.data.roles, actual.data.roles)
@@ -147,7 +144,7 @@ class MultipleRoleUserPersistenceAdapterTests :
         val first = fixtures.community().id.value
         val second = fixtures.community().id.value
         val data = multipleRoleUserData {
-            accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash(fixtures.unique("password-hash"))
             name = fixtures.unique("Jack of all trades")
             email = fixtures.email("jack")
             roles {
@@ -257,7 +254,7 @@ class MultipleRoleUserPersistenceAdapterTests :
     fun `should ignore role projections given on save`() {
         val saved = repository.save(
             multipleRoleUserData {
-                accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+                passwordHash = PasswordHash(fixtures.unique("password-hash"))
                 name = fixtures.unique("User")
                 email = fixtures.email("user")
                 roles {
@@ -271,7 +268,7 @@ class MultipleRoleUserPersistenceAdapterTests :
     }
 
     @Test
-    fun `should store the access code and its algorithm through save and update`() {
+    fun `should store the password hash without an access code through save and update`() {
         val data = newData()
 
         val saved = repository.save(data)
@@ -280,12 +277,11 @@ class MultipleRoleUserPersistenceAdapterTests :
         val found = requireNotNull(repository.findById(updated.id))
         val row = userJpaEntityRepository.findById(updated.id.value).orElseThrow()
 
-        assertEquals(data.accessTokenHash.value, saved.data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, saved.data.accessTokenHash.algorithm)
-        assertEquals(modified.data.accessTokenHash.value, found.data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, found.data.accessTokenHash.algorithm)
-        assertEquals(modified.data.accessTokenHash.value, row.accessToken)
-        assertEquals(HashAlgorithmJpaEnum.IDENTITY, row.accessTokenHashAlgorithm)
+        assertEquals(data.passwordHash, saved.data.passwordHash)
+        assertEquals(modified.data.passwordHash, found.data.passwordHash)
+        assertEquals(modified.data.passwordHash.value, row.passwordHash)
+        assertNull(row.accessToken)
+        assertNull(row.accessTokenHashAlgorithm)
     }
 
     @Test
@@ -543,79 +539,6 @@ class MultipleRoleUserPersistenceAdapterTests :
     }
 
     @Test
-    fun `should find user by its access code`() {
-        val token = fixtures.unique("token")
-        val saved = repository.save(newData(token))
-
-        val found = repository.findByAccessToken(token)
-
-        assertNotNull(found)
-        assertEquals(saved.id, found.id)
-        assertSameData(saved, found)
-    }
-
-    @Test
-    fun `should not find user of another kind by its access code`() {
-        val token = fixtures.unique("token")
-        fixtures.supervisor(rawAccessToken = token)
-
-        val found = repository.findByAccessToken(token)
-
-        assertNull(found)
-    }
-
-    @Test
-    fun `should not find user by unknown access code`() {
-        repository.save(newData())
-
-        val found = repository.findByAccessToken(fixtures.unique("unknown"))
-
-        assertNull(found)
-    }
-
-    @Test
-    fun `should not find user by access code with different letter case`() {
-        val token = fixtures.unique("token")
-        repository.save(newData(token))
-
-        val found = repository.findByAccessToken(token.uppercase())
-
-        assertNull(found)
-    }
-
-    @Test
-    fun `should not find user by access code with surrounding whitespace`() {
-        val token = fixtures.unique("token")
-        repository.save(newData(token))
-
-        val found = repository.findByAccessToken(" $token ")
-
-        assertNull(found)
-    }
-
-    @Test
-    fun `should not find user by previous access code after it is replaced`() {
-        val previous = fixtures.unique("token")
-        val saved = repository.save(newData(previous))
-        repository.update(saved.withData { accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity) })
-
-        val found = repository.findByAccessToken(previous)
-
-        assertNull(found)
-    }
-
-    @Test
-    fun `should find user by new access code after it is replaced`() {
-        val saved = repository.save(newData())
-        val replacement = fixtures.unique("token")
-        val updated = repository.update(saved.withData { accessToken(replacement, algorithm = HashAlgorithm.Identity) })
-
-        val found = repository.findByAccessToken(replacement)
-
-        assertEquals(updated.id, assertNotNull(found).id)
-    }
-
-    @Test
     fun `should find user by its email`() {
         val saved = repository.save(newData())
 
@@ -650,7 +573,7 @@ class MultipleRoleUserPersistenceAdapterTests :
         val saved = List(20) {
             repository.save(
                 multipleRoleUserData {
-                    accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+                    passwordHash = PasswordHash(fixtures.unique("password-hash"))
                     name = fixtures.unique("User")
                     email = fixtures.email("user")
                     roles {

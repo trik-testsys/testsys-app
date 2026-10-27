@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Import
 import org.springframework.core.env.Environment
 import org.springframework.mock.env.MockEnvironment
 import org.springframework.transaction.support.TransactionOperations
-import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
@@ -40,9 +39,6 @@ import kotlin.test.assertTrue
 class SupervisorBootstrapTests {
     @Autowired
     private lateinit var supervisors: SupervisorRepository
-
-    @Autowired
-    private lateinit var multipleRoleUsers: MultipleRoleUserRepository
 
     @Autowired
     private lateinit var participants: ParticipantRepository
@@ -124,7 +120,7 @@ class SupervisorBootstrapTests {
     }
 
     @ParameterizedTest
-    @EnumSource(value = UserKind::class, names = ["MULTIPLE_ROLE", "PARTICIPANT", "OBSERVER"])
+    @EnumSource(value = UserKind::class, names = ["PARTICIPANT", "OBSERVER"])
     fun `should reject an access code held by a user of another kind`(kind: UserKind) {
         val before = single()
         val token = newToken()
@@ -217,7 +213,7 @@ class SupervisorBootstrapTests {
         }
     }
 
-    private fun bootstrap() = SupervisorBootstrap(supervisors, multipleRoleUsers, participants, observers, transactions)
+    private fun bootstrap() = SupervisorBootstrap(supervisors, participants, observers, transactions)
 
     private fun single(): Supervisor = assertNotNull(supervisors.findSingle())
 

@@ -4,7 +4,6 @@ import org.springframework.core.env.Environment
 import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.builder.api.withData
-import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
@@ -25,7 +24,6 @@ private const val MAX_SUPERVISOR_NAME_CODE_POINTS = 512
 @OptIn(InternalOperationsApi::class)
 class SupervisorBootstrap(
     private val supervisors: SupervisorRepository,
-    private val multipleRoleUsers: MultipleRoleUserRepository,
     private val participants: ParticipantRepository,
     private val observers: ObserverRepository,
     private val transactions: TransactionOperations,
@@ -52,11 +50,9 @@ class SupervisorBootstrap(
         reason = "Compares the stored access code with the configured one hashed by Identity, so another algorithm never matches.",
     )
     private fun ensureInTransaction(name: String, rawAccessToken: String): Supervisor {
-        check(
-            multipleRoleUsers.findByAccessToken(rawAccessToken) == null &&
-                participants.findByAccessToken(rawAccessToken) == null &&
-                observers.findByAccessToken(rawAccessToken) == null,
-        ) { "Supervisor access code is already held by a user of another kind" }
+        check(participants.findByAccessToken(rawAccessToken) == null && observers.findByAccessToken(rawAccessToken) == null) {
+            "Supervisor access code is already held by a user of another kind"
+        }
 
         val supervisor = supervisors.findSingle() ?: return supervisors.save(
             supervisorData {

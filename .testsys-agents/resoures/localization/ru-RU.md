@@ -918,3 +918,43 @@ Notes collected while moving the Observer and Supervisor pages onto localization
 - «узнать его будет нельзя» is used instead of the colloquial «его не узнать» from features.md: «не узнать» also
   means "not to recognise" («его не узнать» — changed beyond recognition). Inference from common usage; no
   dictionary opened.
+
+## Sign-in by e-mail and Пароль (`page_guest`, `page_registration`, `page_profile`, `page_password`, `user`)
+
+- «Пароль»: Викисловарь gives one sense, «секретное слово или набор символов, предназначенный для подтверждения
+  личности или полномочий»; inanimate masculine, type 2a: Р. «пароля», Д. «паролю», В. «пароль», Тв. «паролем».
+  No second sense or undesirable reading found. `glossary.password` holds the forms `nom/gen/dat/acc/ins sg`.
+  Source: https://ru.wiktionary.org/wiki/пароль (read 2026-10-27).
+- «Почта или Пароль неверны»: Розенталь, «Справочник по правописанию и стилистике», «Согласование сказуемого
+  с однородными подлежащими», п. 2: with disjunctive conjunctions the predicate is singular «если не возникает
+  необходимость согласования в роде», plural when the subjects differ in gender («Статья в целом или отрывок из неё
+  представили бы интерес…»). «Почта» (f.) and «Пароль» (m.) differ, so the short adjective is plural. The usual UI
+  pattern «Неверный логин или пароль» was not used: the attribute would agree only with the nearest noun.
+  Source: https://pravopisanie_i_stilistika.academic.ru/191/ (read 2026-10-27).
+- «Сменить пароль» (button) stays lower-case: features.md (testsys.web.page.multi.profile) fixes the label; elsewhere
+  the domain term is capitalized. Project decision, not a language finding. «Сменить» on the button and «изменён»
+  in the toast repeat the accepted e-mail pair («Сменить почту» / «Почта изменена»); see «Смена адреса … на этот
+  адрес» above. The block title «Смена Пароля» parallels «Смена почты».
+- «Текущий Пароль»: sense 2 of «текущий» («имеющийся, существующий… сейчас») applies; unlike «текущие Соревнования»
+  (see «Текущий» in UI text above) a Пароль has no time span, so no "ongoing" misreading. Inference.
+- Length rule of a new Пароль (8–64 code points, at most 72 bytes in UTF-8) is told without naming the encoding:
+  «латинская буква или цифра занимает 1 байт, русская буква — 2». These are UTF-8 facts for ASCII and Cyrillic;
+  other symbols (for example «№», 3 bytes, or emoji, 4) are not listed. Project wording choice; the coordinator's
+  example «a purely Cyrillic Пароль may have at most 36 letters» follows from it.
+- «Вход временно закрыт» follows features.md («закрывает вход по этой почте»). The description does not promise
+  a wait of exactly 5 minutes («Попробуйте позже»), since the remaining lock time can be shorter. Inference.
+- «72 байт»: after a numeral the counting form «байт» (zero ending) is used; «байтов» only without a numeral.
+  Грамота.ру answers № 265242, № 310954 («равен 536 байт… 1220 байт»; «вне сочетания с количественным
+  числительным … байтов»), № 237033 («длину 6 байт (4 байта)»); Викисловарь lists the counting form «байт» next
+  to Р. мн. «байтов». So «не больше 72 байт» and «1 байт» are correct; «русская буква — 2» is an elliptical
+  «2 байта» (inference). Sources: https://gramota.ru/poisk?mode=spravka&query=байт,
+  https://ru.wiktionary.org/wiki/байт (read 2026-10-27, independent review).
+- «Войдите или зарегистрируйтесь как Ученик» (`page_guest.start.text`): a reviewer noted that «как Ученик» after
+  two coordinated verbs may be read as applying to both. Grammatical inference without a source; the earlier text
+  had the same structure and was kept.
+- «Используйте код, который вам выдали.» (`page_guest.sign_in.access_code_guide`): Викисловарь sense 1 of «выдать»
+  (issue or hand out officially, transfer to someone's control) applies; sense 3 (reveal a secret) is not plausible
+  on a sign-in field, and the neighbouring `page_guest.access_code.block_guide` already uses «Если вам выдали
+  Код-доступа». The indefinite-personal «выдали» covers every issuer (Организатор, Администратор, deployment
+  configuration) without naming one. Lowercase anaphoric «код» after the field label, like «этот код» above.
+  Source: https://ru.wiktionary.org/wiki/выдать (read 2026-10-27).

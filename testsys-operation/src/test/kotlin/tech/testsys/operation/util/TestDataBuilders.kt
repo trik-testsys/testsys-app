@@ -39,6 +39,7 @@ import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.operation.config.CommunityConfig
@@ -52,7 +53,7 @@ fun testMultipleRoleUser(builder: MultipleRoleUserDataBuilder.() -> Unit): Multi
     data = multipleRoleUserData {
         name = "Name"
         email = "email"
-        accessToken("token", algorithm = HashAlgorithm.Identity)
+        passwordHash = PasswordHash("password-hash")
         builder()
     }
 }

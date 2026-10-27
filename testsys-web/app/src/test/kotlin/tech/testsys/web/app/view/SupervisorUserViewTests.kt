@@ -90,10 +90,9 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should not show the access code of a user with non-fixed roles`() {
+    fun `should show neither an access code nor the password hash of a user with non-fixed roles`() {
         signIn(fixtures.userOf(UserKind.SUPERVISOR))
-        val accessToken = fixtures.unique("member-code")
-        val member = fixtures.multipleRoleUser(rawAccessToken = accessToken) {
+        val member = fixtures.multipleRoleUser {
             roles {
                 developer {
                     memberOf(listOf(communityConfig.publicCommunityId.value))
@@ -105,7 +104,7 @@ class SupervisorUserViewTests : MockSpringVaadinTests() {
         open(member.id.value)
 
         assertTrue(accessCodeFields().isEmpty())
-        assertTrue(UI.getCurrent()._find<TextField>().none { textField -> textField.value == accessToken })
+        assertTrue(UI.getCurrent()._find<TextField>().none { textField -> textField.value == member.data.passwordHash.value })
     }
 
     @Test

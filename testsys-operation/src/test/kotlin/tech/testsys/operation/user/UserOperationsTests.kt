@@ -1,5 +1,6 @@
 package tech.testsys.operation.user
 
+import io.mockk.Called
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -10,9 +11,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.multipleRoleUser
 import tech.testsys.domain.builder.api.registrationRequest
+import tech.testsys.domain.contract.PasswordHasher
 import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
@@ -21,11 +24,11 @@ import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRe
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.model.group.CommunityId
-import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserData
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.RegistrationRequestData
 import tech.testsys.domain.model.user.RegistrationRequestId
@@ -39,7 +42,9 @@ import tech.testsys.operation.error.ConfirmationCodeExpiredError
 import tech.testsys.operation.error.EmailAlreadyBoundError
 import tech.testsys.operation.error.InvalidAccessTokenError
 import tech.testsys.operation.error.InvalidConfirmationCodeError
+import tech.testsys.operation.error.InvalidCredentialsError
 import tech.testsys.operation.error.InvalidEmailError
+import tech.testsys.operation.error.InvalidPasswordError
 import tech.testsys.operation.error.InvalidUserNameError
 import tech.testsys.operation.error.RegistrationRequestNotExistsError
 import tech.testsys.operation.error.getOrThrow
@@ -67,6 +72,7 @@ class UserOperationsTests {
     private val users = mockk<UserRepository>()
     private val registrationRequests = mockk<RegistrationRequestRepository>()
     private val mailSender = mockk<UserMailSender>()
+    private val passwordHasher = mockk<PasswordHasher>()
     private val clock = mockk<Clock>()
     private val random = mockk<RandomGenerator>()
     private val communityConfig = object : CommunityConfig {
@@ -84,6 +90,7 @@ class UserOperationsTests {
         userRepository = users,
         registrationRequestRepository = registrationRequests,
         mailSender = mailSender,
+        passwordHasher = passwordHasher,
         communityConfig = communityConfig,
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,
@@ -93,7 +100,6 @@ class UserOperationsTests {
 
     @BeforeEach
     fun setUp() {
-        every { multipleRoleUsers.findByAccessToken(any()) } returns null
         every { participants.findByAccessToken(any()) } returns null
         every { observers.findByAccessToken(any()) } returns null
         every { supervisors.findByAccessToken(any()) } returns null
@@ -105,11 +111,14 @@ class UserOperationsTests {
         every { registrationRequests.remove(any<RegistrationRequest>()) } just runs
         every { multipleRoleUsers.save(any<MultipleRoleUserData>()) } answers { savedUser(firstArg()) }
         every { mailSender.sendRegistrationConfirmationCode(any(), any()) } just runs
-        every { mailSender.sendAccessToken(any(), any(), any()) } just runs
+        every { passwordHasher.hash(any()) } answers { hashOf(firstArg()) }
+        every { passwordHasher.matches(any(), any()) } returns false
+        every { passwordHasher.matches("correct horse", hashOf("correct horse")) } returns true
         every { clock.instant() } returns now
         every { random.nextInt(10) } returnsMany listOf(8, 7, 6, 5, 4, 3, 2, 1)
-        every { random.nextInt(62) } returnsMany (0..15).toList()
     }
+
+    private fun hashOf(password: String) = PasswordHash("hash:$password")
 
     private fun savedRequest(data: RegistrationRequestData): RegistrationRequest = registrationRequest {
         id = 41
@@ -128,16 +137,6 @@ class UserOperationsTests {
 
         @Nested
         inner class HappyPathTests {
-
-            @Test
-            fun `should return multiple-role user whose access code matches`() {
-                val user = testMultipleRoleUser {}
-                every { multipleRoleUsers.findByAccessToken("token") } returns user
-
-                val result = operations.authenticate(accessToken = "token").getOrThrow()
-
-                assertSame(user, result)
-            }
 
             @Test
             fun `should return participant whose access code matches`() {
@@ -182,23 +181,11 @@ class UserOperationsTests {
 
             @Test
             fun `should raise InvalidAccessTokenError if access code differs only by surrounding whitespace`() {
-                every { multipleRoleUsers.findByAccessToken("token") } returns testMultipleRoleUser {}
+                every { participants.findByAccessToken("participant") } returns testParticipant()
 
                 assertRaises(InvalidAccessTokenError) {
-                    operations.authenticate(accessToken = " token ")
+                    operations.authenticate(accessToken = " participant ")
                 }
-            }
-
-            @Test
-            fun `should refuse the technical public community owner`() {
-                val owner = testMultipleRoleUser { email = PublicCommunityOwner.EMAIL }
-                every { multipleRoleUsers.findByAccessToken("technical-token") } returns owner
-
-                assertRaises(InvalidAccessTokenError) {
-                    operations.authenticate("technical-token")
-                }
-
-                verify(exactly = 1) { users.recordLogin(owner.id, now) }
             }
         }
 
@@ -217,11 +204,11 @@ class UserOperationsTests {
 
             @Test
             fun `should record the last login truncated to microseconds`() {
-                val user = testMultipleRoleUser {}
-                every { multipleRoleUsers.findByAccessToken("token") } returns user
+                val user = testSupervisor()
+                every { supervisors.findByAccessToken("supervisor") } returns user
                 every { clock.instant() } returns Instant.parse("2026-01-01T00:00:00.123456789Z")
 
-                operations.authenticate(accessToken = "token")
+                operations.authenticate(accessToken = "supervisor")
 
                 verify(exactly = 1) { users.recordLogin(user.id, Instant.parse("2026-01-01T00:00:00.123456Z")) }
             }
@@ -234,17 +221,136 @@ class UserOperationsTests {
             }
 
             @Test
-            fun `should not update any user when authenticating`() {
-                every { multipleRoleUsers.findByAccessToken("token") } returns testMultipleRoleUser {}
+            fun `should not look for users without a fixed role by an access code`() {
+                operations.authenticate(accessToken = "unknown")
 
-                operations.authenticate(accessToken = "token")
+                verify { multipleRoleUsers wasNot Called }
+            }
+
+            @Test
+            fun `should not update any user when authenticating`() {
+                every { observers.findByAccessToken("observer") } returns testObserver()
+
+                operations.authenticate(accessToken = "observer")
 
                 verify(exactly = 0) {
-                    multipleRoleUsers.update(any<MultipleRoleUser>())
                     participants.update(any<Participant>())
                     observers.update(any<Observer>())
                     supervisors.update(any<Supervisor>())
                 }
+            }
+        }
+    }
+
+    @Nested
+    inner class AuthenticateByPasswordTests {
+
+        private val user = testMultipleRoleUser { passwordHash = hashOf("correct horse") }
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should return the user whose email and password match`() {
+                every { multipleRoleUsers.findByEmail("user@example.com") } returns user
+
+                val result = operations.authenticateByPassword(email = "user@example.com", password = "correct horse").getOrThrow()
+
+                assertSame(user, result)
+            }
+
+            @Test
+            fun `should find the user by the trimmed lower-case email`() {
+                every { multipleRoleUsers.findByEmail("user@example.com") } returns user
+
+                val result = operations.authenticateByPassword(email = "  User@Example.COM ", password = "correct horse").getOrThrow()
+
+                assertSame(user, result)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @Test
+            fun `should raise InvalidCredentialsError if the email is bound to no user`() {
+                assertRaises(InvalidCredentialsError) {
+                    operations.authenticateByPassword(email = "unknown@example.com", password = "correct horse")
+                }
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["wrong horse", "Correct horse", " correct horse", "correct horse "])
+            fun `should raise InvalidCredentialsError if the password differs exactly`(password: String) {
+                every { multipleRoleUsers.findByEmail("user@example.com") } returns user
+
+                assertRaises(InvalidCredentialsError) {
+                    operations.authenticateByPassword(email = "user@example.com", password = password)
+                }
+            }
+
+            @Test
+            fun `should raise InvalidCredentialsError for the technical public community owner even with its password`() {
+                val owner = testMultipleRoleUser {
+                    email = PublicCommunityOwner.EMAIL
+                    passwordHash = hashOf("correct horse")
+                }
+                every { multipleRoleUsers.findByEmail(PublicCommunityOwner.EMAIL) } returns owner
+
+                assertRaises(InvalidCredentialsError) {
+                    operations.authenticateByPassword(email = PublicCommunityOwner.EMAIL, password = "correct horse")
+                }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should check the password even if the email is bound to no user`() {
+                operations.authenticateByPassword(email = "unknown@example.com", password = "correct horse")
+
+                verify(exactly = 1) { passwordHasher.matches("correct horse", null) }
+            }
+
+            @Test
+            fun `should record the current moment truncated to microseconds as the last login`() {
+                every { multipleRoleUsers.findByEmail("user@example.com") } returns user
+                every { clock.instant() } returns Instant.parse("2026-01-01T00:00:00.123456789Z")
+
+                operations.authenticateByPassword(email = "user@example.com", password = "correct horse")
+
+                verify(exactly = 1) { users.recordLogin(user.id, Instant.parse("2026-01-01T00:00:00.123456Z")) }
+            }
+
+            @Test
+            fun `should not record a login if the password differs`() {
+                every { multipleRoleUsers.findByEmail("user@example.com") } returns user
+
+                operations.authenticateByPassword(email = "user@example.com", password = "wrong horse")
+
+                verify(exactly = 0) { users.recordLogin(any(), any()) }
+            }
+
+            @Test
+            fun `should not record a login of the technical public community owner`() {
+                every { multipleRoleUsers.findByEmail(PublicCommunityOwner.EMAIL) } returns testMultipleRoleUser {
+                    email = PublicCommunityOwner.EMAIL
+                    passwordHash = hashOf("correct horse")
+                }
+
+                operations.authenticateByPassword(email = PublicCommunityOwner.EMAIL, password = "correct horse")
+
+                verify(exactly = 0) { users.recordLogin(any(), any()) }
+            }
+
+            @Test
+            fun `should not update the user when authenticating`() {
+                every { multipleRoleUsers.findByEmail("user@example.com") } returns user
+
+                operations.authenticateByPassword(email = "user@example.com", password = "correct horse")
+
+                verify(exactly = 0) { multipleRoleUsers.update(any<MultipleRoleUser>()) }
             }
         }
     }
@@ -517,29 +623,51 @@ class UserOperationsTests {
     @Nested
     inner class ConfirmRegistrationTests {
 
-        private fun confirm(confirmationCode: String = "12345678", name: String = "Nickname") = operations.confirmRegistration(
-            registrationRequestId = RegistrationRequestId(31),
-            confirmationCode = confirmationCode,
-            name = name,
-        )
+        private fun confirm(confirmationCode: String = "12345678", name: String = "Nickname", password: String = "correct horse") =
+            operations.confirmRegistration(
+                registrationRequestId = RegistrationRequestId(31),
+                confirmationCode = confirmationCode,
+                name = name,
+                password = password,
+            )
 
         @Nested
         inner class HappyPathTests {
 
             @Test
-            fun `should create student in the public community with nickname, email and generated access code`() {
+            fun `should create student in the public community with nickname, email and hash of the password`() {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
                 val data = slot<MultipleRoleUserData>()
                 every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
 
-                confirm(name = "Nickname")
+                confirm(name = "Nickname", password = "correct horse")
 
                 assertEquals("Nickname", data.captured.name)
                 assertEquals("user@example.com", data.captured.email)
-                assertEquals("ABCD-EFGH-IJKL-MNOP", data.captured.accessTokenHash.value)
-                assertEquals(HashAlgorithm.Identity, data.captured.accessTokenHash.algorithm)
+                assertEquals(hashOf("correct horse"), data.captured.passwordHash)
                 val role = assertIs<Student>(data.captured.roles.single())
                 assertEquals(listOf(CommunityId(77)), role.memberOf.ids)
+            }
+
+            @Test
+            fun `should hash the password without trimming it`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+                val data = slot<MultipleRoleUserData>()
+                every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
+
+                confirm(password = "  correct horse  ")
+
+                assertEquals(hashOf("  correct horse  "), data.captured.passwordHash)
+            }
+
+            @ParameterizedTest
+            @CsvSource("a,8", "😀,8", "a,64", "п,36")
+            fun `should accept a password of 8 to 64 code points taking at most 72 bytes in UTF-8`(symbol: String, count: Int) {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+
+                val user = confirm(password = symbol.repeat(count)).getOrThrow()
+
+                assertEquals(hashOf(symbol.repeat(count)), user.data.passwordHash)
             }
 
             @Test
@@ -554,13 +682,12 @@ class UserOperationsTests {
             }
 
             @Test
-            fun `should return the created user with its access code if the code matches`() {
+            fun `should return the created user if the code matches`() {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
-                val (user, accessToken) = confirm().getOrThrow()
+                val user = confirm().getOrThrow()
 
                 assertEquals(51L, user.id.value)
-                assertEquals("ABCD-EFGH-IJKL-MNOP", accessToken)
             }
 
             @Test
@@ -573,14 +700,12 @@ class UserOperationsTests {
             }
 
             @Test
-            fun `should send the access code to the email if the code matches`() {
+            fun `should send no letter if the code matches`() {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
-                confirm(name = "Nickname")
+                confirm()
 
-                verify(exactly = 1) {
-                    mailSender.sendAccessToken(email = "user@example.com", name = "Nickname", accessToken = "ABCD-EFGH-IJKL-MNOP")
-                }
+                verify { mailSender wasNot Called }
             }
 
             @Test
@@ -588,7 +713,7 @@ class UserOperationsTests {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
                 val name = "n".repeat(512)
 
-                val (user, _) = confirm(name = name).getOrThrow()
+                val user = confirm(name = name).getOrThrow()
 
                 assertEquals(name, user.data.name)
             }
@@ -598,7 +723,7 @@ class UserOperationsTests {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
                 val name = "😀".repeat(512)
 
-                val (user, _) = confirm(name = name).getOrThrow()
+                val user = confirm(name = name).getOrThrow()
 
                 assertEquals(name, user.data.name)
             }
@@ -607,7 +732,7 @@ class UserOperationsTests {
             fun `should accept nickname of 512 characters if surrounding whitespace makes it longer`() {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
-                val (user, _) = confirm(name = "  " + "n".repeat(512) + "  ").getOrThrow()
+                val user = confirm(name = "  " + "n".repeat(512) + "  ").getOrThrow()
 
                 assertEquals("n".repeat(512), user.data.name)
             }
@@ -617,18 +742,18 @@ class UserOperationsTests {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns
                     testRegistrationRequest { expiresAt = now.plusNanos(1) }
 
-                val (_, accessToken) = confirm().getOrThrow()
+                val user = confirm().getOrThrow()
 
-                assertEquals("ABCD-EFGH-IJKL-MNOP", accessToken)
+                assertEquals(51L, user.id.value)
             }
 
             @Test
             fun `should accept the matching code on the last attempt`() {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest { attemptsLeft = 1 }
 
-                val (_, accessToken) = confirm().getOrThrow()
+                val user = confirm().getOrThrow()
 
-                assertEquals("ABCD-EFGH-IJKL-MNOP", accessToken)
+                assertEquals(51L, user.id.value)
             }
 
             @Test
@@ -647,7 +772,7 @@ class UserOperationsTests {
             fun `should accept a code with surrounding whitespace`() {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
-                val (user, _) = confirm(confirmationCode = " \t12345678 \n").getOrThrow()
+                val user = confirm(confirmationCode = " \t12345678 \n").getOrThrow()
 
                 assertEquals("user@example.com", user.data.email)
             }
@@ -688,6 +813,39 @@ class UserOperationsTests {
                 verify(exactly = 0) { registrationRequests.findById(any()) }
             }
 
+            @ParameterizedTest
+            @CsvSource("a,7", "😀,7", "a,65")
+            fun `should raise InvalidPasswordError if the password is shorter than 8 or longer than 64 code points`(
+                symbol: String,
+                count: Int,
+            ) {
+                assertRaises(InvalidPasswordError) {
+                    confirm(password = symbol.repeat(count))
+                }
+            }
+
+            @Test
+            fun `should raise InvalidPasswordError if the password takes more than 72 bytes in UTF-8`() {
+                assertRaises(InvalidPasswordError) {
+                    confirm(password = "п".repeat(36) + "a")
+                }
+            }
+
+            @Test
+            fun `should raise InvalidUserNameError before checking the password if both are invalid`() {
+                assertRaises(InvalidUserNameError) {
+                    confirm(name = "   ", password = "short")
+                }
+            }
+
+            @Test
+            fun `should raise InvalidPasswordError without looking up the request if the password is invalid`() {
+                assertRaises(InvalidPasswordError) {
+                    confirm(password = "short")
+                }
+                verify(exactly = 0) { registrationRequests.findById(any()) }
+            }
+
             @Test
             fun `should raise RegistrationRequestNotExistsError if the request does not exist`() {
                 every { registrationRequests.findById(RegistrationRequestId(99)) } returns null
@@ -697,6 +855,7 @@ class UserOperationsTests {
                         registrationRequestId = RegistrationRequestId(99),
                         confirmationCode = "12345678",
                         name = "Nickname",
+                        password = "correct horse",
                     )
                 }
             }
@@ -760,7 +919,6 @@ class UserOperationsTests {
                 verify(exactly = 0) {
                     multipleRoleUsers.save(any<MultipleRoleUserData>())
                     registrationRequests.remove(any<RegistrationRequest>())
-                    mailSender.sendAccessToken(any(), any(), any())
                 }
             }
         }
@@ -773,6 +931,15 @@ class UserOperationsTests {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
                 confirm(name = "   ")
+
+                verify(exactly = 0) { registrationRequests.update(any<RegistrationRequest>()) }
+            }
+
+            @Test
+            fun `should not spend an attempt if the password is invalid`() {
+                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
+
+                confirm(password = "short")
 
                 verify(exactly = 0) { registrationRequests.update(any<RegistrationRequest>()) }
             }
@@ -829,15 +996,12 @@ class UserOperationsTests {
             }
 
             @Test
-            fun `should keep the request and send no access code if the code differs`() {
+            fun `should keep the request if the code differs`() {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
                 confirm(confirmationCode = "00000000")
 
-                verify(exactly = 0) {
-                    registrationRequests.remove(any<RegistrationRequest>())
-                    mailSender.sendAccessToken(any(), any(), any())
-                }
+                verify(exactly = 0) { registrationRequests.remove(any<RegistrationRequest>()) }
             }
         }
 
@@ -845,25 +1009,14 @@ class UserOperationsTests {
         inner class ModuleRuleTests {
 
             @Test
-            fun `should not send the access code if saving the user fails`() {
+            fun `should propagate the exception and keep the request if saving the user fails`() {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
                 every { multipleRoleUsers.save(any<MultipleRoleUserData>()) } throws IllegalStateException("database is down")
 
                 assertFailsWith<IllegalStateException> {
                     confirm()
                 }
-                verify(exactly = 0) { mailSender.sendAccessToken(any(), any(), any()) }
-            }
-
-            @Test
-            fun `should not send the access code if removing the request fails`() {
-                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-                every { registrationRequests.remove(any<RegistrationRequest>()) } throws IllegalStateException("stale version")
-
-                assertFailsWith<IllegalStateException> {
-                    confirm()
-                }
-                verify(exactly = 0) { mailSender.sendAccessToken(any(), any(), any()) }
+                verify(exactly = 0) { registrationRequests.remove(any<RegistrationRequest>()) }
             }
         }
     }

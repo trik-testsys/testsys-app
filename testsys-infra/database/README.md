@@ -397,16 +397,25 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 Удаление Задачи очищает эти строки, сохраняя версии Ресурсов и их файлы. Таблица хранит только текущую
 принадлежность; история владельцев цепочки не сохраняется. Операций переноса или удаления Ресурсов пока нет.
 
-## Коды-доступа Пользователей
+## Коды-доступа и Пароли Пользователей
 
-`ts_user.access_token_hash_algorithm` хранит алгоритм строкой из `HashAlgorithmJpaEnum` рядом с `access_token`
-([User.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/entity/user/User.kt)).
-Колонка создаётся с `NOT NULL` в
-[changelog.03-init-user.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.03-init-user.xml).
-Значения по умолчанию у колонки нет: при записи алгоритм передаётся явно.
+Код-доступа есть только у Пользователей с Фиксированной Ролью, Пароль — только у Пользователей с Нефиксированными
+Ролями. `ts_user.access_token_hash_algorithm` хранит алгоритм строкой из `HashAlgorithmJpaEnum` рядом
+с `access_token`, `ts_user.password_hash` — хеш Пароля
+([User.kt](src/main/kotlin/tech/testsys/infra/database/internal/jpa/entity/user/User.kt)). Все три колонки допускают
+`NULL`; какие из них заполнены, задаёт `CHECK` `ck_ts_user_type_credentials` в
+[changelog.03-init-user.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.03-init-user.xml): у строки
+`MULTIPLE_ROLE` заполнен только `password_hash`, у строки `SINGLE_ROLE` — только `access_token`
+и `access_token_hash_algorithm`. Значений по умолчанию у колонок нет: при записи они передаются явно.
 
-Маппинги Пользователей объединяют значение и алгоритм в `AccessTokenHash` и передают его в `storedAccessToken(hash)`.
-При записи оба поля переносятся из доменных данных без хэширования. Ввод исходного КД описан в разделе
+Колонки и ограничение добавлены в changeset'ы `1.0.0-03-1` и `1.0.0-03-init-user-checks`, поэтому их контрольные
+суммы изменились. Базы окружений dev и e2e, созданные до этого изменения, пересоздаются командой `clean`,
+см. раздел [«Остановка и очистка»](../../docs/project/deployment.md#остановка-и-очистка) deployment.md.
+
+Маппинги Пользователей с Фиксированной Ролью объединяют значение и алгоритм в `AccessTokenHash` и передают его
+в `storedAccessToken(hash)`; строку без КД они не собирают и бросают `IllegalArgumentException`. Маппинг Пользователя
+с Нефиксированными Ролями так же требует `password_hash`. При записи поля переносятся из доменных данных
+без хэширования. Ввод исходного КД и хеш Пароля описаны в разделе
 [«Пользователи»](../../testsys-domain/README.md#пользователи).
 
 Ограничение `uk_ts_user_access_token` обеспечивает уникальность исходных КД благодаря `Identity`.
@@ -418,6 +427,7 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 `ts_user` по сохранённому значению и алгоритму
 ([AbstractUserPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/AbstractUserPersistenceAdapter.kt)).
 Строку Пользователя другого вида метод не возвращает: `assembleSupported` адаптера собирает только строки своего вида.
+Порт `MultipleRoleUserRepository` этот метод не объявляет: у Пользователей с Нефиксированными Ролями нет КД.
 Поиск находит Пользователя, только пока сохранённое значение совпадает с исходным КД, поэтому метод помечен
 `@RawAccessTokenDependency`.
 При переходе к хэшированию с солью этот поиск нужно пересмотреть.

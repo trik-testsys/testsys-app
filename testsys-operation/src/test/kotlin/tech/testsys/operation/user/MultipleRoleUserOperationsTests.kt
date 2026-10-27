@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.domain.builder.api.accessRestorationRequest
 import tech.testsys.domain.builder.api.communityInviteData
@@ -26,6 +27,7 @@ import tech.testsys.domain.builder.api.managerCommunityInvite
 import tech.testsys.domain.builder.api.managerData
 import tech.testsys.domain.builder.api.multipleRoleUser
 import tech.testsys.domain.builder.api.studentData
+import tech.testsys.domain.contract.PasswordHasher
 import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -49,6 +51,7 @@ import tech.testsys.domain.model.user.EmailChangeRequestId
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.Student
 import tech.testsys.operation.config.EmailConfirmationConfig
 import tech.testsys.operation.config.PublicCommunityOwner
@@ -61,7 +64,9 @@ import tech.testsys.operation.error.EmailAlreadyBoundError
 import tech.testsys.operation.error.EmailChangeRequestNotExistsError
 import tech.testsys.operation.error.EmailUnchangedError
 import tech.testsys.operation.error.InvalidConfirmationCodeError
+import tech.testsys.operation.error.InvalidCurrentPasswordError
 import tech.testsys.operation.error.InvalidEmailError
+import tech.testsys.operation.error.InvalidPasswordError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.publicCommunityConfig
@@ -89,6 +94,7 @@ class MultipleRoleUserOperationsTests {
     private val emailChangeRequests = mockk<EmailChangeRequestRepository>()
     private val accessRestorationRequests = mockk<AccessRestorationRequestRepository>()
     private val mailSender = mockk<UserMailSender>()
+    private val passwordHasher = mockk<PasswordHasher>()
     private val clock = mockk<Clock>()
     private val random = mockk<RandomGenerator>()
     private val publicCommunityId = CommunityId(1)
@@ -104,6 +110,7 @@ class MultipleRoleUserOperationsTests {
         emailChangeRequestRepository = emailChangeRequests,
         accessRestorationRequestRepository = accessRestorationRequests,
         mailSender = mailSender,
+        passwordHasher = passwordHasher,
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,
         randomGenerator = random,
@@ -129,14 +136,23 @@ class MultipleRoleUserOperationsTests {
         every { accessRestorationRequests.update(any<AccessRestorationRequest>()) } answers { firstArg() }
         every { accessRestorationRequests.remove(any<AccessRestorationRequest>()) } just runs
         every { mailSender.sendAccessRestorationCode(any(), any()) } just runs
+        every { passwordHasher.hash(any()) } answers { hashOf(firstArg()) }
+        every { passwordHasher.matches(any(), any()) } returns false
+        every { passwordHasher.matches("current password", hashOf("current password")) } returns true
         every { clock.instant() } returns now
         every { random.nextInt(10) } returnsMany listOf(8, 7, 6, 5, 4, 3, 2, 1)
-        every { random.nextInt(62) } returnsMany (0..15).toList()
     }
 
-    private fun testUser(name: String = "Nickname", email: String = "old@example.com"): MultipleRoleUser = testMultipleRoleUser {
+    private fun hashOf(password: String) = PasswordHash("hash:$password")
+
+    private fun testUser(
+        name: String = "Nickname",
+        email: String = "old@example.com",
+        passwordHash: PasswordHash = hashOf("password"),
+    ): MultipleRoleUser = testMultipleRoleUser {
         this.name = name
         this.email = email
+        this.passwordHash = passwordHash
         roles {
             student {
                 memberOf = mutableListOf(CommunityId(5))
@@ -1161,15 +1177,14 @@ class MultipleRoleUserOperationsTests {
             }
 
             @Test
-            fun `should keep access code, nickname, roles and communities of the user`() {
+            fun `should keep password, nickname, roles and communities of the user`() {
                 every { emailChangeRequests.findByUser(MultipleRoleUserId(0)) } returns testEmailChangeRequest()
                 val updated = slot<MultipleRoleUser>()
                 every { multipleRoleUsers.update(capture(updated)) } answers { firstArg() }
 
                 confirm()
 
-                assertEquals("token", updated.captured.data.accessTokenHash.value)
-                assertEquals(HashAlgorithm.Identity, updated.captured.data.accessTokenHash.algorithm)
+                assertEquals(hashOf("password"), updated.captured.data.passwordHash)
                 assertEquals("Nickname", updated.captured.data.name)
                 val role = assertIs<Student>(updated.captured.data.roles.single())
                 assertEquals(listOf(CommunityId(5)), role.memberOf.ids)
@@ -1478,29 +1493,37 @@ class MultipleRoleUserOperationsTests {
             every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns testAccessRestorationRequest()
         }
 
-        private fun confirm(email: String = "old@example.com", confirmationCode: String = "12345678") =
-            operations.confirmAccessRestoration(email = email, confirmationCode = confirmationCode)
+        private fun confirm(email: String = "old@example.com", confirmationCode: String = "12345678", password: String = "new password") =
+            operations.confirmAccessRestoration(email = email, confirmationCode = confirmationCode, password = password)
 
         @Nested
         inner class HappyPathTests {
 
             @Test
-            fun `should return the new access code`() {
+            fun `should return the user with the new password`() {
                 val result = confirm().getOrThrow()
 
-                assertEquals("ABCD-EFGH-IJKL-MNOP", result)
+                assertEquals(MultipleRoleUserId(0), result.id)
+                assertEquals(hashOf("new password"), result.data.passwordHash)
             }
 
             @Test
-            fun `should assign the new access code to the user with Identity`() {
+            fun `should replace the password of the user with a hash of the untrimmed new password`() {
                 val updated = slot<MultipleRoleUser>()
                 every { multipleRoleUsers.update(capture(updated)) } answers { firstArg() }
 
-                confirm()
+                confirm(password = "  new password  ")
 
                 assertEquals(MultipleRoleUserId(0), updated.captured.id)
-                assertEquals("ABCD-EFGH-IJKL-MNOP", updated.captured.data.accessTokenHash.value)
-                assertEquals(HashAlgorithm.Identity, updated.captured.data.accessTokenHash.algorithm)
+                assertEquals(hashOf("  new password  "), updated.captured.data.passwordHash)
+            }
+
+            @ParameterizedTest
+            @CsvSource("a,8", "😀,8", "a,64", "п,36")
+            fun `should accept a new password of 8 to 64 code points taking at most 72 bytes in UTF-8`(symbol: String, count: Int) {
+                val result = confirm(password = symbol.repeat(count)).getOrThrow()
+
+                assertEquals(hashOf(symbol.repeat(count)), result.data.passwordHash)
             }
 
             @Test
@@ -1527,7 +1550,7 @@ class MultipleRoleUserOperationsTests {
             fun `should trim and lowercase the email when looking the user up`() {
                 val result = confirm(email = "  Old@Example.COM ").getOrThrow()
 
-                assertEquals("ABCD-EFGH-IJKL-MNOP", result)
+                assertEquals(MultipleRoleUserId(0), result.id)
             }
 
             @Test
@@ -1537,7 +1560,7 @@ class MultipleRoleUserOperationsTests {
 
                 val result = confirm().getOrThrow()
 
-                assertEquals("ABCD-EFGH-IJKL-MNOP", result)
+                assertEquals(hashOf("new password"), result.data.passwordHash)
             }
 
             @Test
@@ -1547,18 +1570,18 @@ class MultipleRoleUserOperationsTests {
 
                 val result = confirm().getOrThrow()
 
-                assertEquals("ABCD-EFGH-IJKL-MNOP", result)
+                assertEquals(hashOf("new password"), result.data.passwordHash)
             }
 
             @Test
             fun `should accept a code with surrounding whitespace`() {
                 val result = confirm(confirmationCode = " \t12345678 \n").getOrThrow()
 
-                assertEquals("ABCD-EFGH-IJKL-MNOP", result)
+                assertEquals(hashOf("new password"), result.data.passwordHash)
             }
 
             @Test
-            fun `should not mail the new access code`() {
+            fun `should not mail the new password`() {
                 confirm()
 
                 verify { mailSender wasNot Called }
@@ -1617,10 +1640,43 @@ class MultipleRoleUserOperationsTests {
                     confirm(confirmationCode = "1234 5678")
                 }
             }
+
+            @ParameterizedTest
+            @CsvSource("a,7", "😀,7", "a,65")
+            fun `should raise InvalidPasswordError if the new password is shorter than 8 or longer than 64 code points`(
+                symbol: String,
+                count: Int,
+            ) {
+                assertRaises(InvalidPasswordError) {
+                    confirm(password = symbol.repeat(count))
+                }
+            }
+
+            @Test
+            fun `should raise InvalidPasswordError if the new password takes more than 72 bytes in UTF-8`() {
+                assertRaises(InvalidPasswordError) {
+                    confirm(password = "п".repeat(36) + "a")
+                }
+            }
+
+            @Test
+            fun `should raise InvalidPasswordError before looking the user up if the email is bound to no user`() {
+                assertRaises(InvalidPasswordError) {
+                    confirm(email = "unknown@example.com", password = "short")
+                }
+                verify(exactly = 0) { multipleRoleUsers.findByEmail(any()) }
+            }
         }
 
         @Nested
         inner class InvariantTests {
+
+            @Test
+            fun `should not spend an attempt if the new password is invalid`() {
+                confirm(password = "short")
+
+                verify(exactly = 0) { accessRestorationRequests.update(any<AccessRestorationRequest>()) }
+            }
 
             @Test
             fun `should not spend an attempt if the code expired`() {
@@ -1654,7 +1710,7 @@ class MultipleRoleUserOperationsTests {
             }
 
             @Test
-            fun `should keep the access code and the request if the code differs`() {
+            fun `should keep the password and the request if the code differs`() {
                 confirm(confirmationCode = "00000000")
 
                 verify(exactly = 0) {
@@ -1664,7 +1720,7 @@ class MultipleRoleUserOperationsTests {
             }
 
             @Test
-            fun `should keep the access code if the code expired`() {
+            fun `should keep the password if the code expired`() {
                 every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns
                     testAccessRestorationRequest { expiresAt = now }
 
@@ -1688,7 +1744,7 @@ class MultipleRoleUserOperationsTests {
 
             @ParameterizedTest
             @ValueSource(strings = ["12345678", "00000000"])
-            fun `should propagate the storage exception and keep the access code if spending the attempt fails`(confirmationCode: String) {
+            fun `should propagate the storage exception and keep the password if spending the attempt fails`(confirmationCode: String) {
                 every { accessRestorationRequests.update(any<AccessRestorationRequest>()) } throws IllegalStateException("stale version")
 
                 assertFailsWith<IllegalStateException> {
@@ -1724,6 +1780,145 @@ class MultipleRoleUserOperationsTests {
 
                 assertFailsWith<IllegalStateException> {
                     confirm()
+                }
+            }
+        }
+    }
+
+    @Nested
+    inner class ChangePasswordTests {
+
+        @BeforeEach
+        fun prepareStoredUser() {
+            every { multipleRoleUsers.findById(MultipleRoleUserId(0)) } returns testUser(passwordHash = hashOf("current password"))
+        }
+
+        private fun change(currentPassword: String = "current password", newPassword: String = "new password") =
+            operations.changePassword(user = user, currentPassword = currentPassword, newPassword = newPassword)
+
+        @Nested
+        inner class HappyPathTests {
+
+            @Test
+            fun `should replace the password of the user with a hash of the untrimmed new password`() {
+                val updated = slot<MultipleRoleUser>()
+                every { multipleRoleUsers.update(capture(updated)) } answers { firstArg() }
+
+                change(newPassword = "  new password  ")
+
+                assertEquals(MultipleRoleUserId(0), updated.captured.id)
+                assertEquals(hashOf("  new password  "), updated.captured.data.passwordHash)
+            }
+
+            @Test
+            fun `should return the updated user`() {
+                val result = change().getOrThrow()
+
+                assertEquals(hashOf("new password"), result.data.passwordHash)
+            }
+
+            @Test
+            fun `should accept a new password equal to the current one`() {
+                val result = change(newPassword = "current password").getOrThrow()
+
+                assertEquals(hashOf("current password"), result.data.passwordHash)
+            }
+
+            @ParameterizedTest
+            @CsvSource("a,8", "😀,8", "a,64", "п,36")
+            fun `should accept a new password of 8 to 64 code points taking at most 72 bytes in UTF-8`(symbol: String, count: Int) {
+                val result = change(newPassword = symbol.repeat(count)).getOrThrow()
+
+                assertEquals(hashOf(symbol.repeat(count)), result.data.passwordHash)
+            }
+        }
+
+        @Nested
+        inner class RefusalTests {
+
+            @ParameterizedTest
+            @CsvSource("a,7", "😀,7", "a,65")
+            fun `should raise InvalidPasswordError if the new password is shorter than 8 or longer than 64 code points`(
+                symbol: String,
+                count: Int,
+            ) {
+                assertRaises(InvalidPasswordError) {
+                    change(newPassword = symbol.repeat(count))
+                }
+            }
+
+            @Test
+            fun `should raise InvalidPasswordError if the new password takes more than 72 bytes in UTF-8`() {
+                assertRaises(InvalidPasswordError) {
+                    change(newPassword = "п".repeat(36) + "a")
+                }
+            }
+
+            @ParameterizedTest
+            @ValueSource(strings = ["wrong password", "Current password", " current password", "current password "])
+            fun `should raise InvalidCurrentPasswordError if the current password differs exactly`(currentPassword: String) {
+                assertRaises(InvalidCurrentPasswordError) {
+                    change(currentPassword = currentPassword)
+                }
+            }
+
+            @Test
+            fun `should raise InvalidPasswordError before checking the current password if both are wrong`() {
+                assertRaises(InvalidPasswordError) {
+                    change(currentPassword = "wrong password", newPassword = "short")
+                }
+            }
+
+            @Test
+            fun `should check the current password against the stored user rather than the given one`() {
+                val staleUser = testUser(passwordHash = hashOf("previous password"))
+
+                assertRaises(InvalidCurrentPasswordError) {
+                    operations.changePassword(user = staleUser, currentPassword = "previous password", newPassword = "new password")
+                }
+            }
+        }
+
+        @Nested
+        inner class InvariantTests {
+
+            @Test
+            fun `should keep the email, nickname, roles and communities of the stored user`() {
+                val updated = slot<MultipleRoleUser>()
+                every { multipleRoleUsers.update(capture(updated)) } answers { firstArg() }
+
+                change()
+
+                assertEquals("old@example.com", updated.captured.data.email)
+                assertEquals("Nickname", updated.captured.data.name)
+                val role = assertIs<Student>(updated.captured.data.roles.single())
+                assertEquals(listOf(CommunityId(5)), role.memberOf.ids)
+            }
+
+            @Test
+            fun `should not update the user if the current password differs`() {
+                change(currentPassword = "wrong password")
+
+                verify(exactly = 0) { multipleRoleUsers.update(any<MultipleRoleUser>()) }
+            }
+
+            @Test
+            fun `should not update the user if the new password is invalid`() {
+                change(newPassword = "short")
+
+                verify(exactly = 0) { multipleRoleUsers.update(any<MultipleRoleUser>()) }
+            }
+        }
+
+        @Nested
+        inner class ModuleRuleTests {
+
+            @Test
+            fun `should propagate the storage exception if updating the user fails`() {
+                every { multipleRoleUsers.update(any<MultipleRoleUser>()) } throws IllegalStateException("stale version")
+
+                assertFailsWith<IllegalStateException> {
+                    change()
                 }
             }
         }

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import tech.testsys.domain.builder.api.multipleRoleUserData
 import tech.testsys.domain.builder.api.participant
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.group.CommunityInviteDataBuilder
@@ -19,6 +20,7 @@ import tech.testsys.domain.model.task.FileStorageKind
 import tech.testsys.domain.model.task.TaskId
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.web.app.service.manager.IssuedParticipantVo
 import tech.testsys.web.app.service.manager.ParticipantVo
@@ -110,6 +112,27 @@ class LoggedValuesTests {
             assertFalse(SECRET_VALUE in rendered, rendered)
             assertTrue("accessTokenHash=***" in rendered, rendered)
             assertTrue("name=Участник Пётр" in rendered, rendered)
+        }
+
+        @Test
+        fun `should mask the password hash inside a data class`() {
+            val data = multipleRoleUserData {
+                passwordHash = PasswordHash(SECRET_VALUE)
+                name = "Мария"
+                email = "maria@testsys.tech"
+            }
+
+            val rendered = LoggedValues.value(data)
+
+            assertFalse(SECRET_VALUE in rendered, rendered)
+            assertTrue("passwordHash=***" in rendered, rendered)
+        }
+
+        @Test
+        fun `should mask a password hash in a collection`() {
+            val rendered = LoggedValues.value(listOf(PasswordHash(SECRET_VALUE)))
+
+            assertEquals("[***]", rendered)
         }
 
         @Test

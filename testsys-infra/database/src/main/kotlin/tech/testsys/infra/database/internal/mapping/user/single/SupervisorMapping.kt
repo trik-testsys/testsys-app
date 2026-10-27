@@ -2,7 +2,6 @@ package tech.testsys.infra.database.internal.mapping.user.single
 
 import tech.testsys.domain.builder.api.supervisor
 import tech.testsys.domain.builder.data
-import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
 import tech.testsys.infra.database.internal.InternalDatabaseApi
@@ -10,8 +9,8 @@ import tech.testsys.infra.database.internal.jpa.entity.user.UserJpaEntity
 import tech.testsys.infra.database.internal.jpa.entity.user.UserTypeJpaEnum
 import tech.testsys.infra.database.internal.jpa.entity.user.single.SupervisorDataJpaEntity
 import tech.testsys.infra.database.internal.utils.populateFields
+import tech.testsys.infra.database.internal.utils.requireAccessTokenHash
 import tech.testsys.infra.database.internal.utils.requireVersion
-import tech.testsys.infra.database.internal.utils.toDomain
 import tech.testsys.infra.database.internal.utils.toJpaEnum
 
 /**
@@ -34,12 +33,7 @@ object SupervisorMapping {
             "SupervisorData ${dataJpaEntity.id} bound to user ${dataJpaEntity.userId} != ${userJpaEntity.id}"
         }
         data {
-            storedAccessToken(
-                AccessTokenHash(
-                    value = userJpaEntity.accessToken,
-                    algorithm = userJpaEntity.accessTokenHashAlgorithm.toDomain(),
-                ),
-            )
+            storedAccessToken(userJpaEntity.requireAccessTokenHash())
             name = userJpaEntity.name
         }
     }
@@ -53,6 +47,7 @@ object SupervisorMapping {
         name = data.name,
         accessToken = data.accessTokenHash.value,
         accessTokenHashAlgorithm = data.accessTokenHash.algorithm.toJpaEnum(),
+        passwordHash = null,
         email = null,
         type = UserTypeJpaEnum.SINGLE_ROLE,
     )
@@ -66,6 +61,7 @@ object SupervisorMapping {
         name = entity.data.name,
         accessToken = entity.data.accessTokenHash.value,
         accessTokenHashAlgorithm = entity.data.accessTokenHash.algorithm.toJpaEnum(),
+        passwordHash = null,
         email = current.email,
         type = UserTypeJpaEnum.SINGLE_ROLE,
         id = entity.id.value,

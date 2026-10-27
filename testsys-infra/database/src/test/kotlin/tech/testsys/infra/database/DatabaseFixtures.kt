@@ -92,6 +92,7 @@ import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.RegistrationRequest
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.UserId
@@ -175,7 +176,7 @@ class DatabaseFixtures(
 
     fun multipleRoleUser(roles: MultipleRoleUserDataBuilder.() -> Unit): MultipleRoleUser = multipleRoleUsers.save(
         multipleRoleUserData {
-            accessToken(unique("token"), algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash(unique("password-hash"))
             name = unique("User")
             email = email("user")
             roles()

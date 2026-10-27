@@ -18,14 +18,26 @@ import tech.testsys.domain.model.task.TaskId
 import java.time.Instant
 
 /**
+ * Stored password representation of a [MultipleRoleUser]; only the password hashing port interprets it.
+ *
+ * @property value the salted slow hash together with what the hashing port needs to verify it.
+ * @since %CURRENT_VERSION%
+ */
+@JvmInline
+value class PasswordHash(
+    val value: String,
+)
+
+/**
  * Data of a [MultipleRoleUser].
  *
+ * @property passwordHash the stored password representation of the user.
  * @property email the e-mail address of the user.
  * @property roles the roles held by the user.
  * @since %CURRENT_VERSION%
  */
 data class MultipleRoleUserData(
-    override val accessTokenHash: AccessTokenHash,
+    val passwordHash: PasswordHash,
     override val name: String,
     val email: String,
     val roles: List<CompatibleUserRole>,

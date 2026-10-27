@@ -8,8 +8,10 @@ import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.Nav
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.router.RouterLink
+import com.vaadin.flow.server.VaadinSession
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.security.core.session.SessionRegistry
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.EmailChangeRequestRepository
 import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepository
@@ -27,6 +30,7 @@ import tech.testsys.web.app.RecordedMail
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.service.multi.MultipleRoleUserService
+import tech.testsys.web.app.service.user.UserService
 import java.time.Instant
 
 @SpringBootTest
@@ -42,6 +46,12 @@ class ProfileViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var multipleRoleUserService: MultipleRoleUserService
+
+    @Autowired
+    private lateinit var userService: UserService
+
+    @Autowired
+    private lateinit var sessionRegistry: SessionRegistry
 
     @Test
     fun `should announce the first email confirmation code delivery`() {
@@ -209,7 +219,57 @@ class ProfileViewTests : MockSpringVaadinTests() {
     fun `should offer the e-mail change in the page guide when the user signed in themselves`() {
         open()
 
-        assertEquals("Здесь можно просмотреть свой Профиль и изменить привязанную почту.", pageGuide())
+        assertEquals("Здесь можно просмотреть свой Профиль, изменить привязанную почту и сменить Пароль.", pageGuide())
+    }
+
+    @Test
+    fun `should change the password and end the other sessions of the user, keeping the current one`() {
+        val user = open()
+        val otherSession = fixtures.unique("session")
+        sessionRegistry.registerNewSession(otherSession, CabinetPrincipal.of(user))
+
+        changePassword(current = fixtures.password, new = NEW_PASSWORD)
+
+        assertEquals("Пароль изменён", lastToastTitle())
+        assertEquals(user.id.value, userService.authenticateByPassword(user.data.email, NEW_PASSWORD).userId)
+        assertTrue(checkNotNull(sessionRegistry.getSessionInformation(otherSession)).isExpired)
+        assertFalse(checkNotNull(sessionRegistry.getSessionInformation(VaadinSession.getCurrent().session.id)).isExpired)
+    }
+
+    @Test
+    fun `should tell that the current password is wrong and keep the password`() {
+        val user = open()
+
+        changePassword(current = "Wrong password", new = NEW_PASSWORD)
+
+        assertEquals("Текущий Пароль неверен", lastToastTitle())
+        assertEquals(user.id.value, userService.authenticateByPassword(user.data.email, fixtures.password).userId)
+    }
+
+    @Test
+    fun `should show the password rules if the new password is too short`() {
+        open()
+
+        changePassword(current = fixtures.password, new = "short")
+
+        assertEquals("Пароль не подходит по длине", lastToastTitle())
+    }
+
+    @Test
+    fun `should not offer the password change while a supervisor is signed in as the user`() {
+        openImpersonated()
+
+        assertTrue(UI.getCurrent()._find<PasswordField>().isEmpty())
+        assertTrue(UI.getCurrent()._find<Button> { text = "Сменить пароль" }.isEmpty())
+    }
+
+    @Test
+    fun `should refuse a password change while a supervisor is signed in as the user`() {
+        val user = openImpersonated()
+
+        assertThrows<IllegalStateException> { multipleRoleUserService.changePassword(fixtures.password, NEW_PASSWORD) }
+
+        assertEquals(user.id.value, userService.authenticateByPassword(user.data.email, fixtures.password).userId)
     }
 
     @Test
@@ -249,6 +309,15 @@ class ProfileViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._get<Button> { text = "Сменить почту" }._click()
     }
 
+    private fun changePassword(current: String, new: String) {
+        passwordField("Текущий Пароль").value = current
+        passwordField("Новый Пароль").value = new
+        UI.getCurrent()._get<Button> { text = "Сменить пароль" }._click()
+    }
+
+    private fun passwordField(label: String): PasswordField =
+        UI.getCurrent()._find<PasswordField>().single { field -> field.ariaLabel.orElse(null) == label }
+
     private fun textField(label: String): TextField =
         UI.getCurrent()._find<TextField>().single { field -> field.ariaLabel.orElse(null) == label }
 
@@ -262,5 +331,6 @@ class ProfileViewTests : MockSpringVaadinTests() {
 
     private companion object {
         const val MAX_ATTEMPTS = 3
+        const val NEW_PASSWORD = "Changed password 1"
     }
 }

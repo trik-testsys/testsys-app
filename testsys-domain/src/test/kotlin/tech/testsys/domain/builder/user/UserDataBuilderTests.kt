@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
-import tech.testsys.domain.builder.api.multipleRoleUser
 import tech.testsys.domain.builder.api.observer
 import tech.testsys.domain.builder.api.participant
 import tech.testsys.domain.builder.api.supervisor
@@ -17,17 +16,16 @@ import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
-import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.SingleRoleUser
+import tech.testsys.domain.model.user.SingleRoleUserData
 import tech.testsys.domain.model.user.Supervisor
-import tech.testsys.domain.model.user.User
-import tech.testsys.domain.model.user.UserData
 import java.time.Instant
 
 class UserDataBuilderTests {
 
-    enum class UserKind { PARTICIPANT, OBSERVER, SUPERVISOR, MULTIPLE_ROLE }
+    enum class UserKind { PARTICIPANT, OBSERVER, SUPERVISOR }
 
     @BeforeEach
     fun mockHashing() {
@@ -117,7 +115,7 @@ class UserDataBuilderTests {
         verify(exactly = 1) { AccessTokenHash.hashAccessToken("new-token", algorithm = HashAlgorithm.Identity) }
     }
 
-    private fun dataBuilder(kind: UserKind): UserDataBuilder<out UserData> = when (kind) {
+    private fun dataBuilder(kind: UserKind): UserDataBuilder<out SingleRoleUserData> = when (kind) {
         UserKind.PARTICIPANT -> ParticipantDataBuilder().apply {
             competition(10)
             name = "User"
@@ -127,13 +125,9 @@ class UserDataBuilderTests {
             name = "User"
         }
         UserKind.SUPERVISOR -> SupervisorDataBuilder().apply { name = "User" }
-        UserKind.MULTIPLE_ROLE -> MultipleRoleUserDataBuilder().apply {
-            name = "User"
-            email = "user@example.com"
-        }
     }
 
-    private fun storedUser(kind: UserKind): User<*> = when (kind) {
+    private fun storedUser(kind: UserKind): SingleRoleUser = when (kind) {
         UserKind.PARTICIPANT -> participant {
             id = 1
             createdAt = Instant.ofEpochSecond(1)
@@ -163,36 +157,23 @@ class UserDataBuilderTests {
                 storedAccessToken(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.Identity))
             }.build()
         }
-        UserKind.MULTIPLE_ROLE -> multipleRoleUser {
-            id = 1
-            createdAt = Instant.ofEpochSecond(1)
-            version = EntityVersion(7)
-            data = MultipleRoleUserDataBuilder().apply {
-                name = "User"
-                email = "user@example.com"
-                storedAccessToken(AccessTokenHash(value = "stored-token", algorithm = HashAlgorithm.Identity))
-            }.build()
-        }
     }
 
-    private fun userData(user: User<*>): UserData = when (user) {
+    private fun userData(user: SingleRoleUser): SingleRoleUserData = when (user) {
         is Participant -> user.data
         is Observer -> user.data
         is Supervisor -> user.data
-        is MultipleRoleUser -> user.data
     }
 
-    private fun changeName(user: User<*>): User<*> = when (user) {
+    private fun changeName(user: SingleRoleUser): SingleRoleUser = when (user) {
         is Participant -> user.withData { name = "Updated" }
         is Observer -> user.withData { name = "Updated" }
         is Supervisor -> user.withData { name = "Updated" }
-        is MultipleRoleUser -> user.withData { name = "Updated" }
     }
 
-    private fun replaceToken(user: User<*>): User<*> = when (user) {
+    private fun replaceToken(user: SingleRoleUser): SingleRoleUser = when (user) {
         is Participant -> user.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
         is Observer -> user.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
         is Supervisor -> user.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
-        is MultipleRoleUser -> user.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
     }
 }

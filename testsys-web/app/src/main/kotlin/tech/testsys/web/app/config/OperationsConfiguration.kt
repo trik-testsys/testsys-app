@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
 import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.contract.FileContentReader
+import tech.testsys.domain.contract.PasswordHasher
 import tech.testsys.domain.contract.PolygonDiagnostics
 import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.SupervisorCommunityReadPort
@@ -131,6 +132,7 @@ class OperationsConfiguration {
         inviteConfig: CommunityInviteConfig,
         clock: Clock,
         randomGenerator: RandomGenerator,
+        passwordHasher: PasswordHasher,
     ): CommunityConfig {
         val id = PublicCommunityBootstrap(
             communities,
@@ -141,6 +143,7 @@ class OperationsConfiguration {
             inviteConfig,
             clock,
             randomGenerator,
+            passwordHasher,
         ).ensure(environment)
         return object : CommunityConfig {
             override val publicCommunityId = id
@@ -158,12 +161,11 @@ class OperationsConfiguration {
     fun supervisorBootstrap(
         environment: Environment,
         supervisors: SupervisorRepository,
-        multipleRoleUsers: MultipleRoleUserRepository,
         participants: ParticipantRepository,
         observers: ObserverRepository,
         transactions: TransactionOperations,
     ): SmartInitializingSingleton = SmartInitializingSingleton {
-        SupervisorBootstrap(supervisors, multipleRoleUsers, participants, observers, transactions).ensure(environment)
+        SupervisorBootstrap(supervisors, participants, observers, transactions).ensure(environment)
     }
 
     /**
@@ -272,6 +274,7 @@ class OperationsConfiguration {
         emailChangeRequests: EmailChangeRequestRepository,
         accessRestorationRequests: AccessRestorationRequestRepository,
         mailSender: UserMailSender,
+        passwordHasher: PasswordHasher,
         emailConfirmationConfig: EmailConfirmationConfig,
         clock: Clock,
         randomGenerator: RandomGenerator,
@@ -284,6 +287,7 @@ class OperationsConfiguration {
         emailChangeRequestRepository = emailChangeRequests,
         accessRestorationRequestRepository = accessRestorationRequests,
         mailSender = mailSender,
+        passwordHasher = passwordHasher,
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,
         randomGenerator = randomGenerator,
@@ -304,6 +308,7 @@ class OperationsConfiguration {
         users: UserRepository,
         registrationRequests: RegistrationRequestRepository,
         mailSender: UserMailSender,
+        passwordHasher: PasswordHasher,
         communityConfig: CommunityConfig,
         emailConfirmationConfig: EmailConfirmationConfig,
         clock: Clock,
@@ -316,6 +321,7 @@ class OperationsConfiguration {
         userRepository = users,
         registrationRequestRepository = registrationRequests,
         mailSender = mailSender,
+        passwordHasher = passwordHasher,
         communityConfig = communityConfig,
         emailConfirmationConfig = emailConfirmationConfig,
         clock = clock,

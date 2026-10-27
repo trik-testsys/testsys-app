@@ -60,26 +60,6 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should render the access code term in registration access code subject`() {
-            assertEquals("Ваш Код-доступа к TestSys", l.user.registrationAccessCodeSubject())
-        }
-
-        @Test
-        fun `should show the case-sensitive access code verbatim in registration access code body`() {
-            assertEquals(
-                "Здравствуйте, Маша!\n\n" +
-                    "Регистрация в TestSys завершена. Ваш Код-доступа:\n\n" +
-                    "aB3d-x9Yz-0kLm-P7qR\n\n" +
-                    "Чтобы войти в TestSys, введите этот код на странице входа. Больше ничего вводить не нужно.\n\n" +
-                    "Вводите код точно так, как он написан здесь, вместе с дефисами. Большие и маленькие буквы " +
-                    "различаются.\n\n" +
-                    "Сохраните это письмо или запишите код. Никому его не сообщайте: тот, кто знает код, может войти " +
-                    "в TestSys под Вашим именем.",
-                l.user.registrationAccessCodeBody(name = "Маша", accessCode = "aB3d-x9Yz-0kLm-P7qR"),
-            )
-        }
-
-        @Test
         fun `should name the confirmation code in email change confirmation code subject`() {
             assertEquals(
                 "Код подтверждения для смены адреса электронной почты в TestSys",
@@ -110,12 +90,12 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should greet by nickname and render the access code term in accusative in email change notice body`() {
+        fun `should greet by nickname and render the password term in accusative in email change notice body`() {
             assertEquals(
                 "Здравствуйте, Маша!\n\n" +
                     "Ваш адрес электронной почты в TestSys изменён. Письма от TestSys теперь будут приходить " +
                     "на новый адрес, а не на этот.\n\n" +
-                    "Изменить адрес может только тот, кто знает Ваш Код-доступа.",
+                    "Изменить адрес может только тот, кто знает Ваш Пароль.",
                 l.user.emailChangeNoticeBody(name = "Маша"),
             )
         }
@@ -132,7 +112,7 @@ class LocalizationTests {
         fun `should greet without nickname and show the code on its own line in access restoration confirmation code body`() {
             assertEquals(
                 "Здравствуйте!\n\n" +
-                    "Вы запросили восстановление доступа к TestSys. Чтобы получить новый Код-доступа, введите этот " +
+                    "Вы запросили восстановление доступа к TestSys. Чтобы задать новый Пароль, введите этот " +
                     "код на вкладке «Восстановление доступа» страницы входа:\n\n" +
                     "01234567\n\n" +
                     "Никому не сообщайте этот код.\n\n" +
@@ -852,19 +832,13 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should render the access code term in dative in start guide`() {
-            assertEquals(
-                "Начните работу в TestSys: войдите по Коду-доступа или зарегистрируйтесь.",
-                l.pageGuest.startGuide(),
-            )
+        fun `should offer signing in or registration in start guide`() {
+            assertEquals("Начните работу в TestSys: войдите или зарегистрируйтесь.", l.pageGuest.startGuide())
         }
 
         @Test
-        fun `should render the access code term in dative in start block guide`() {
-            assertEquals(
-                "Выберите вход по Коду-доступа или регистрацию нового Пользователя.",
-                l.pageGuest.startBlockGuide(),
-            )
+        fun `should offer signing in or registration in start block guide`() {
+            assertEquals("Выберите вход или регистрацию нового Пользователя.", l.pageGuest.startBlockGuide())
         }
 
         @Test
@@ -873,11 +847,8 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should render the access code term in dative in start text`() {
-            assertEquals(
-                "Войдите по Коду-доступа или зарегистрируйтесь как Ученик.",
-                l.pageGuest.startText(),
-            )
+        fun `should offer signing in or registration as a student in start text`() {
+            assertEquals("Войдите или зарегистрируйтесь как Ученик.", l.pageGuest.startText())
         }
 
         @Test
@@ -891,8 +862,34 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should render the access code term in dative in sign in guide`() {
-            assertEquals("Войдите в TestSys по своему Коду-доступа.", l.pageGuest.signInGuide())
+        fun `should render the password and access code terms in dative in sign in guide`() {
+            assertEquals(
+                "Войдите в TestSys по почте и Паролю или по выданному Коду-доступа.",
+                l.pageGuest.signInGuide(),
+            )
+        }
+
+        @Test
+        fun `should label the email field in sign in email`() {
+            assertEquals("Почта", l.pageGuest.signInEmail())
+        }
+
+        @Test
+        fun `should ask for the bound email in sign in email guide`() {
+            assertEquals("Введите почту, привязанную к вашему Профилю.", l.pageGuest.signInEmailGuide())
+        }
+
+        @Test
+        fun `should render the password term in nominative in sign in password`() {
+            assertEquals("Пароль", l.pageGuest.signInPassword())
+        }
+
+        @Test
+        fun `should warn about case and spaces in sign in password guide`() {
+            assertEquals(
+                "Введите Пароль точно: большие и маленькие буквы различаются, пробелы учитываются.",
+                l.pageGuest.signInPasswordGuide(),
+            )
         }
 
         @Test
@@ -901,16 +898,19 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should explain where the code comes from in sign in access code guide`() {
+        fun `should ask to use the issued code in sign in access code guide`() {
             assertEquals(
-                "Используйте код, выданный при регистрации или Организатором.",
+                "Используйте код, который вам выдали.",
                 l.pageGuest.signInAccessCodeGuide(),
             )
         }
 
         @Test
-        fun `should render the access code term in accusative in sign in block guide`() {
-            assertEquals("Введите свой Код-доступа и нажмите «Войти».", l.pageGuest.signInBlockGuide())
+        fun `should render the password term in accusative in sign in block guide`() {
+            assertEquals(
+                "Введите привязанную почту и свой Пароль, затем нажмите «Войти».",
+                l.pageGuest.signInBlockGuide(),
+            )
         }
 
         @Test
@@ -919,9 +919,46 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should render the access code term in accusative in restore access guide`() {
+        fun `should not reveal which value is wrong in sign in credentials invalid`() {
+            assertEquals("Почта или Пароль неверны", l.pageGuest.signInCredentialsInvalid())
+        }
+
+        @Test
+        fun `should report the closed sign in in sign in blocked title`() {
+            assertEquals("Вход временно закрыт", l.pageGuest.signInBlockedTitle())
+        }
+
+        @Test
+        fun `should state the failure limit and the lock time in sign in blocked description`() {
             assertEquals(
-                "Если вы потеряли Код-доступа, получите новый: укажите привязанную почту и введите код из письма.",
+                "После 5 неудачных попыток за 5 минут вход по этой почте закрывается на 5 минут. Попробуйте позже.",
+                l.pageGuest.signInBlockedDescription(),
+            )
+        }
+
+        @Test
+        fun `should render the access code term in dative in access code title`() {
+            assertEquals("Вход по Коду-доступа", l.pageGuest.accessCodeTitle())
+        }
+
+        @Test
+        fun `should render the access code term in accusative in access code block guide`() {
+            assertEquals(
+                "Если вам выдали Код-доступа, введите его и нажмите «Войти по коду».",
+                l.pageGuest.accessCodeBlockGuide(),
+            )
+        }
+
+        @Test
+        fun `should label the access code sign in button in access code button`() {
+            assertEquals("Войти по коду", l.pageGuest.accessCodeButton())
+        }
+
+        @Test
+        fun `should render the password term in accusative in restore access guide`() {
+            assertEquals(
+                "Если вы забыли Пароль, задайте новый: укажите привязанную почту, затем введите код из письма " +
+                    "и новый Пароль.",
                 l.pageGuest.restoreAccessGuide(),
             )
         }
@@ -971,9 +1008,14 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should explain the code step in restore access code step block guide`() {
+        fun `should render the password term in nominative in restore access password`() {
+            assertEquals("Новый Пароль", l.pageGuest.restoreAccessPassword())
+        }
+
+        @Test
+        fun `should ask for the code and the new password in restore access code step block guide`() {
             assertEquals(
-                "Введите код из письма и нажмите «Восстановить доступ».",
+                "Введите код из письма и новый Пароль, затем нажмите «Восстановить доступ».",
                 l.pageGuest.restoreAccessCodeStepBlockGuide(),
             )
         }
@@ -994,41 +1036,13 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should report the restored access in restore access completed title`() {
-            assertEquals("Доступ восстановлен", l.pageGuest.restoreAccessCompletedTitle())
+        fun `should render the password term in nominative in restore access completed title`() {
+            assertEquals("Пароль изменён", l.pageGuest.restoreAccessCompletedTitle())
         }
 
         @Test
-        fun `should render the access code term in dative in restore access completed description`() {
-            assertEquals("Войдите по новому Коду-доступа.", l.pageGuest.restoreAccessCompletedDescription())
-        }
-
-        @Test
-        fun `should render the access code term in nominative in restore access result title`() {
-            assertEquals("Новый Код-доступа", l.pageGuest.restoreAccessResultTitle())
-        }
-
-        @Test
-        fun `should render the access code term in accusative in restore access result block guide`() {
-            assertEquals(
-                "Сохраните новый Код-доступа и войдите по нему на вкладке «Вход». При повторном открытии страницы " +
-                    "Код-доступа больше не будет показан.",
-                l.pageGuest.restoreAccessResultBlockGuide(),
-            )
-        }
-
-        @Test
-        fun `should render the access code term in accusative in restore access result alert title`() {
-            assertEquals("Сохраните Код-доступа", l.pageGuest.restoreAccessResultAlertTitle())
-        }
-
-        @Test
-        fun `should warn about the old code and the mail in restore access result alert text`() {
-            assertEquals(
-                "По нему вы входите в TestSys. Прежний Код-доступа больше не действует. Новый код на почту " +
-                    "не отправляется.",
-                l.pageGuest.restoreAccessResultAlertText(),
-            )
+        fun `should render the password term in dative in restore access completed description`() {
+            assertEquals("Войдите по почте и новому Паролю.", l.pageGuest.restoreAccessCompletedDescription())
         }
     }
 
@@ -1036,9 +1050,9 @@ class LocalizationTests {
     inner class PageRegistrationTests {
 
         @Test
-        fun `should describe the registration in guide`() {
+        fun `should render the password term in accusative in guide`() {
             assertEquals(
-                "Регистрация Ученика: подтвердите почту и укажите сведения о себе.",
+                "Регистрация Ученика: подтвердите почту, укажите сведения о себе и задайте Пароль.",
                 l.pageRegistration.guide(),
             )
         }
@@ -1077,14 +1091,19 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should render the password term in nominative in password`() {
+            assertEquals("Пароль", l.pageRegistration.password())
+        }
+
+        @Test
         fun `should point to the last letter in code guide`() {
             assertEquals("Введите код из последнего письма с подтверждением.", l.pageRegistration.codeGuide())
         }
 
         @Test
-        fun `should explain the second step in details step block guide`() {
+        fun `should render the password term in accusative in details step block guide`() {
             assertEquals(
-                "Введите код из письма и выберите Псевдоним.",
+                "Введите код из письма, выберите Псевдоним и задайте Пароль.",
                 l.pageRegistration.detailsStepBlockGuide(),
             )
         }
@@ -1123,8 +1142,8 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should render the access code term in dative in email bound description`() {
-            assertEquals("Войдите по Коду-доступа.", l.pageRegistration.emailBoundDescription())
+        fun `should render the password term in dative in email bound description`() {
+            assertEquals("Войдите по почте и Паролю.", l.pageRegistration.emailBoundDescription())
         }
     }
 
@@ -1137,9 +1156,9 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should describe the page in guide`() {
+        fun `should render the password term in accusative in guide`() {
             assertEquals(
-                "Здесь можно просмотреть свой Профиль и изменить привязанную почту.",
+                "Здесь можно просмотреть свой Профиль, изменить привязанную почту и сменить Пароль.",
                 l.pageProfile.guide(),
             )
         }
@@ -1215,6 +1234,80 @@ class LocalizationTests {
         @Test
         fun `should report a missing request in request not found`() {
             assertEquals("Запрос смены почты не найден", l.pageProfile.requestNotFound())
+        }
+
+        @Test
+        fun `should render the password term in genitive in password title`() {
+            assertEquals("Смена Пароля", l.pageProfile.passwordTitle())
+        }
+
+        @Test
+        fun `should warn about other browsers in password block guide`() {
+            assertEquals(
+                "Укажите текущий Пароль и новый. После смены вы выйдете из TestSys в других браузерах, " +
+                    "а в этом останетесь.",
+                l.pageProfile.passwordBlockGuide(),
+            )
+        }
+
+        @Test
+        fun `should render the password term in nominative in password current`() {
+            assertEquals("Текущий Пароль", l.pageProfile.passwordCurrent())
+        }
+
+        @Test
+        fun `should render the password term in nominative in password new`() {
+            assertEquals("Новый Пароль", l.pageProfile.passwordNew())
+        }
+
+        @Test
+        fun `should keep the action in lower case in password button`() {
+            assertEquals("Сменить пароль", l.pageProfile.passwordButton())
+        }
+
+        @Test
+        fun `should render the password term in nominative in password changed title`() {
+            assertEquals("Пароль изменён", l.pageProfile.passwordChangedTitle())
+        }
+
+        @Test
+        fun `should render the password term in instrumental in password changed description`() {
+            assertEquals(
+                "В других браузерах нужно войти заново с новым Паролем.",
+                l.pageProfile.passwordChangedDescription(),
+            )
+        }
+
+        @Test
+        fun `should report a wrong current password in password current invalid`() {
+            assertEquals("Текущий Пароль неверен", l.pageProfile.passwordCurrentInvalid())
+        }
+    }
+
+    @Nested
+    inner class PagePasswordTests {
+
+        @Test
+        fun `should state the length and byte limits in guide`() {
+            assertEquals(
+                "Придумайте Пароль от 8 до 64 символов и не больше 72 байт: латинская буква или цифра занимает " +
+                    "1 байт, русская буква — 2. Большие и маленькие буквы различаются, пробелы учитываются.",
+                l.pagePassword.guide(),
+            )
+        }
+
+        @Test
+        fun `should report a password of wrong length in invalid title`() {
+            assertEquals("Пароль не подходит по длине", l.pagePassword.invalidTitle())
+        }
+
+        @Test
+        fun `should state the length and byte limits in invalid description`() {
+            assertEquals(
+                "Нужен Пароль от 8 до 64 символов и не больше 72 байт: латинская буква или цифра занимает 1 байт, " +
+                    "русская буква — 2.",
+                l.pagePassword.invalidDescription(),
+            )
         }
     }
 
@@ -1403,32 +1496,6 @@ class LocalizationTests {
         @Test
         fun `should report no communities in communities empty`() {
             assertEquals("Сообществ пока нет", l.pageHome.communitiesEmpty())
-        }
-
-        @Test
-        fun `should render the access code term in nominative in access code title`() {
-            assertEquals("Код-доступа", l.pageHome.accessCodeTitle())
-        }
-
-        @Test
-        fun `should render the access code term in accusative in access code guide`() {
-            assertEquals(
-                "Сохраните выданный Код-доступа: он нужен для входа. При повторном открытии страницы этот блок исчезнет.",
-                l.pageHome.accessCodeGuide(),
-            )
-        }
-
-        @Test
-        fun `should render the access code term in accusative in access code alert title`() {
-            assertEquals("Сохраните Код-доступа", l.pageHome.accessCodeAlertTitle())
-        }
-
-        @Test
-        fun `should explain the access code in access code alert text`() {
-            assertEquals(
-                "По нему вы входите в Систему. Код также отправлен на почту.",
-                l.pageHome.accessCodeAlertText(),
-            )
         }
 
         @Test

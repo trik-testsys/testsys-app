@@ -40,7 +40,7 @@
 - Зависимости операций — порты из `tech.testsys.domain.contract` и интерфейсы конфигурации из
   `tech.testsys.operation.config` (см. раздел «Конфигурация») — передаются через конструктор класса.
 - Первый параметр операции — Пользователь, который её выполняет; остальные — входные данные фичи.
-  Исключения — `UserOperations.authenticate`, `UserOperations.requestRegistration`,
+  Исключения — `UserOperations.authenticate`, `UserOperations.authenticateByPassword`, `UserOperations.requestRegistration`,
   `UserOperations.confirmRegistration`, `MultipleRoleUserOperations.requestAccessRestoration` и
   `MultipleRoleUserOperations.confirmAccessRestoration`: до входа Пользователь неизвестен, поэтому операции
   принимают только входные данные фичи (см. разделы «Вход в Систему», «Регистрация» и «Восстановление доступа»).
@@ -358,42 +358,51 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
 ## Вход в Систему
 
 [UserOperations](src/main/kotlin/tech/testsys/operation/user/UserOperations.kt) предоставляет
-`authenticate(accessToken)`. Требования входа определены в `testsys.user.authentication`
-в [features.md](../docs/domain/features.md).
+`authenticate(accessToken)` и `authenticateByPassword(email, password)`. Требования входа определены
+в `testsys.user.authentication` в [features.md](../docs/domain/features.md).
 
-Операция ищет Пользователя по Коду-доступа в портах хранения всех четырёх видов Пользователей и возвращает
-найденного Пользователя как `User<*>`. Если КД не присвоен Пользователю или принадлежит техническому владельцу
-Публичного Сообщества, операция возвращает `InvalidAccessTokenError`. Данные Пользователей операция не изменяет:
-она записывает момент входа через `UserRepository.recordLogin`. `UserOperations` получает `UserRepository` через
-конструктор. Вызов читает время один раз и усекает его до микросекунд.
+- `authenticate` ищет Пользователя по Коду-доступа в портах хранения Участников, Наблюдателей и Супервайзера
+  и возвращает найденного Пользователя как `User<*>`. Если КД не присвоен Пользователю с Фиксированной Ролью,
+  операция возвращает `InvalidAccessTokenError`.
+- `authenticateByPassword` ищет Пользователя по приведённой почте через `MultipleRoleUserRepository.findByEmail`
+  и сравнивает Пароль через порт `PasswordHasher`. Сравнение выполняется и для непривязанной почты, с хешем `null`,
+  чтобы время ответа не показывало, привязана ли почта. Непривязанная почта, неверный Пароль и технический владелец
+  Публичного Сообщества дают одну ошибку `InvalidCredentialsError`. Число попыток операция не ограничивает:
+  это делает вызывающий код, в `testsys-web:app` — `PasswordSignIn`.
+
+Данные Пользователей операции не изменяют: они записывают момент входа через `UserRepository.recordLogin`.
+`UserOperations` получает `UserRepository` через конструктор. Вызов читает время один раз и усекает его
+до микросекунд.
 
 ## Регистрация
 
 [UserOperations](src/main/kotlin/tech/testsys/operation/user/UserOperations.kt) предоставляет
-`requestRegistration(email)` и `confirmRegistration(registrationRequestId, confirmationCode, name)`.
+`requestRegistration(email)` и `confirmRegistration(registrationRequestId, confirmationCode, name, password)`.
 Обе операции помечены кодификатором `testsys.user.registration`; требования определены в этой фиче
 в [features.md](../docs/domain/features.md).
 
 - `requestRegistration` ищет запрос через `RegistrationRequestRepository.findByEmail` и возвращает идентификатор
   `RegistrationRequest`. Действующий запрос операция не сохраняет заново, а недействующий перезаписывает через
   `update`, поэтому идентификатор не меняется.
-- `confirmRegistration` создаёт Пользователя в Роли Ученика и возвращает `Pair<MultipleRoleUser, String>`:
-  сохранённого Пользователя и исходный Код-доступа. До сравнения кода операция сохраняет запрос с уменьшенным
+- `confirmRegistration` проверяет Псевдоним и Пароль до поиска запроса, создаёт Пользователя в Роли Ученика
+  с хешем Пароля от порта `PasswordHasher` и возвращает сохранённого Пользователя. Писем операция не отправляет.
+  До сравнения кода операция сохраняет запрос с уменьшенным
   `attemptsLeft` через `update` с токеном `version`. Если версия устарела, `update` бросает исключение и код
   не сравнивается. Неверный код возвращает `InvalidConfirmationCodeError`. Вызывающий код должен зафиксировать
   транзакцию и при этой ошибке, иначе попытка не будет потрачена; в `testsys-web:app` это делает
   `UserService.confirmRegistration`. После сохранения Пользователя операция удаляет запрос.
-- Письма отправляет порт `UserMailSender`; обе операции вызывают его последним шагом. Исключения порта,
-  как и исключения хранения, выходят из операций; уже сохранённые изменения операция не откатывает.
+- Письмо с кодом отправляет порт `UserMailSender`; `requestRegistration` вызывает его последним шагом. Исключения
+  порта, как и исключения хранения, выходят из операций; уже сохранённые изменения операция не откатывает.
 - Момент отправки письма и обработка сбоев после фиксации транзакции — в
   [mail/README.md](../testsys-infra/mail/README.md).
 
-`UserOperations` получает через конструктор `CommunityConfig` с Публичным Сообществом, `EmailConfirmationConfig`
-со сроком действия кода и числом попыток, `Clock` и `RandomGenerator`. Вызов читает время не более одного раза;
-момент окончания срока нормализуется до микросекунд. Код подтверждения и КД генерируют функции из
-[Credentials.kt](src/main/kotlin/tech/testsys/operation/util/Credentials.kt) с этим `RandomGenerator`. Приложение
+`UserOperations` получает через конструктор `PasswordHasher`, `CommunityConfig` с Публичным Сообществом,
+`EmailConfirmationConfig` со сроком действия кода и числом попыток, `Clock` и `RandomGenerator`. Вызов читает время
+не более одного раза; момент окончания срока нормализуется до микросекунд. Код подтверждения и КД генерируют функции
+из [Credentials.kt](src/main/kotlin/tech/testsys/operation/util/Credentials.kt) с этим `RandomGenerator`. Приложение
 должно передать криптостойкий генератор, например `SecureRandom`. Там же функция `isAccessToken` проверяет, что
-строка записана в формате выдаваемого КД. Приведение и проверку почты, момент окончания срока кода и проверку,
+строка записана в формате выдаваемого КД, а `isValidPassword` — что Пароль содержит от 8 до 64 кодовых точек
+и занимает не больше 72 байт в UTF-8. Пароль проверяется без удаления пробелов. Приведение и проверку почты, момент окончания срока кода и проверку,
 действует ли запрос, выполняют функции из [Email.kt](src/main/kotlin/tech/testsys/operation/util/Email.kt).
 
 ## Смена почты
@@ -414,7 +423,7 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
   `InvalidConfirmationCodeError`. Вызывающий код должен зафиксировать транзакцию и при этой ошибке, иначе попытка
   не будет потрачена. В `testsys-web` это делает `MultipleRoleUserService.confirmEmailChange`.
 - При совпадении кода операция перечитывает Пользователя через `findById` и меняет почту у сохранённой версии,
-  поэтому Код-доступа, Псевдоним и Роли берутся из хранилища, а не из переданного Пользователя. Затем операция
+  поэтому Пароль, Псевдоним и Роли берутся из хранилища, а не из переданного Пользователя. Затем операция
   удаляет запрос и возвращает обновлённого Пользователя.
 - `requestEmailChange` последним шагом отправляет код на новую почту, `confirmEmailChange` — уведомление
   на прежнюю почту через `UserMailSender`. Исключения порта и хранения выходят из операций так же, как
@@ -428,14 +437,23 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
 
 `MultipleRoleUserOperations` получает через конструктор `MultipleRoleUserRepository`, `CommunityRepository`,
 `ManagerCommunityInviteRepository`, `DeveloperCommunityInviteRepository`, `EmailChangeRequestRepository`,
-`AccessRestorationRequestRepository`, `UserMailSender`, `EmailConfirmationConfig`, `Clock`, `RandomGenerator`
-и `CommunityConfig` с Публичным Сообществом.
-Код подтверждения, Код-доступа, срок действия кода и чтение времени — те же, что в регистрации.
+`AccessRestorationRequestRepository`, `UserMailSender`, `PasswordHasher`, `EmailConfirmationConfig`, `Clock`,
+`RandomGenerator` и `CommunityConfig` с Публичным Сообществом.
+Код подтверждения, проверка Пароля, срок действия кода и чтение времени — те же, что в регистрации.
+
+## Смена Пароля
+
+`MultipleRoleUserOperations` предоставляет `changePassword(user, currentPassword, newPassword)` с кодификатором
+`testsys.user.multi.changePassword`; требования определены в этой фиче в [features.md](../docs/domain/features.md).
+Операция перечитывает Пользователя через `findById`, проверяет новый Пароль (`InvalidPasswordError`), затем
+сравнивает текущий Пароль с сохранённым через `PasswordHasher` (`InvalidCurrentPasswordError`) и сохраняет хеш
+нового Пароля. Возвращается обновлённый Пользователь. Отказ при входе Супервайзера под Пользователем
+и завершение других сеансов выполняет `testsys-web:app`.
 
 ## Восстановление доступа
 
 `MultipleRoleUserOperations` предоставляет `requestAccessRestoration(email)` и
-`confirmAccessRestoration(email, confirmationCode)`. Обе операции помечены кодификатором
+`confirmAccessRestoration(email, confirmationCode, password)`. Обе операции помечены кодификатором
 `testsys.user.multi.restoreAccess`; требования определены в этой фиче в [features.md](../docs/domain/features.md).
 
 - Обе операции находят Пользователя по приведённой почте через `MultipleRoleUserRepository.findByEmail`, а его
@@ -444,11 +462,11 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
   Если почта не привязана или принадлежит владельцу Публичного Сообщества (`PublicCommunityOwner.EMAIL`),
   операция ничего не записывает и не отправляет. Действующий запрос операция не сохраняет заново,
   а недействующий перезаписывает через `update`. Последним шагом она отправляет код на почту Пользователя.
-- `confirmAccessRestoration` возвращает новый Код-доступа. Если почта не привязана или у Пользователя нет
-  запроса, операция возвращает `AccessRestorationRequestNotExistsError`. Попытку она тратит так же, как
-  `confirmEmailChange`; в `testsys-web` транзакцию при отказе фиксирует `UserService.confirmAccessRestoration`.
-  При совпадении кода операция сохраняет Пользователя с новым Кодом-доступа и удаляет запрос. Новый
-  Код-доступа письмом не отправляется.
+- `confirmAccessRestoration` сначала проверяет новый Пароль (`InvalidPasswordError`), не тратя попытку. Если почта
+  не привязана или у Пользователя нет запроса, операция возвращает `AccessRestorationRequestNotExistsError`.
+  Попытку она тратит так же, как `confirmEmailChange`; в `testsys-web` транзакцию при отказе фиксирует
+  `UserService.confirmAccessRestoration`. При совпадении кода операция сохраняет хеш нового Пароля, удаляет запрос
+  и возвращает обновлённого Пользователя. Письма она не отправляет.
 
 ## Первое получение Роли
 

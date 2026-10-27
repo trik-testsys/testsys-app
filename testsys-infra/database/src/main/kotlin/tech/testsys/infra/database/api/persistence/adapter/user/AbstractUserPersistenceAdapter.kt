@@ -18,6 +18,7 @@ import tech.testsys.infra.database.internal.utils.toJpaEnum
 /**
  * Base of adapters storing several user kinds in the shared [UserJpaEntity] table: [findById], [findByIds] and
  * [findByAccessToken] keep only rows assembled by [assembleSupported], so a row of another kind is reported as absent.
+ * Only single-role rows hold an access code; multiple-role rows store a password hash instead.
  *
  * @param Data the data type a new entity is created from.
  * @param Id the id type of the entity.

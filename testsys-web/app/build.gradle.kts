@@ -25,6 +25,7 @@ dependencies {
     implementation(project(":testsys-infra:diagnostics"))
     implementation(project(":testsys-infra:grpc"))
     implementation(project(":testsys-infra:mail"))
+    implementation(project(":testsys-infra:crypto"))
     implementation(project(":testsys-infra:monitoring"))
     implementation(project(":testsys-web:components"))
     implementation(libs.bundles.icu.implementation)

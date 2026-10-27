@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import tech.testsys.domain.model.EntityVersion
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUserId
+import tech.testsys.domain.model.user.PasswordHash
 import java.time.Instant
 
 class UserApiTests {
@@ -103,7 +104,7 @@ class UserApiTests {
             createdAt = Instant.ofEpochSecond(1)
             version = EntityVersion(7)
             data = multipleRoleUserData {
-                accessToken("user-token", algorithm = HashAlgorithm.Identity)
+                passwordHash = PasswordHash("user-hash")
                 name = "Alice"
                 email = "alice@example.com"
                 roles {
@@ -125,19 +126,17 @@ class UserApiTests {
             Assertions.assertEquals(origin.id, copy.id)
             Assertions.assertEquals(origin.createdAt, copy.createdAt)
             Assertions.assertEquals(origin.version, copy.version)
-            Assertions.assertEquals(origin.data.accessTokenHash.value, copy.data.accessTokenHash.value)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(origin.data.passwordHash, copy.data.passwordHash)
             Assertions.assertEquals(origin.data.name, copy.data.name)
             Assertions.assertEquals(origin.data.email, copy.data.email)
             Assertions.assertEquals(origin.data.roles, copy.data.roles)
         }
 
         @Test
-        fun `should change accessToken if withData sets accessToken`() {
-            val copy = origin.withData { accessToken("new-token", algorithm = HashAlgorithm.Identity) }
+        fun `should change passwordHash if withData sets passwordHash`() {
+            val copy = origin.withData { passwordHash = PasswordHash("new-hash") }
 
-            Assertions.assertEquals("new-token", copy.data.accessTokenHash.value)
-            Assertions.assertEquals(HashAlgorithm.Identity, copy.data.accessTokenHash.algorithm)
+            Assertions.assertEquals(PasswordHash("new-hash"), copy.data.passwordHash)
         }
     }
 

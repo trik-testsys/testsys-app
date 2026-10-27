@@ -47,6 +47,7 @@ testsys-app/
 | `testsys-infra:grpc`                 | Связь с Проверяющими узлами и балансировка проверок (реализация порта `Grader`).                    | Реализован        |
 | `testsys-infra:localization`         | Типобезопасный API локализованных сообщений, генерируемый из MF2-сообщений и форматируемый ICU4J MF2. | Реализован        |
 | `testsys-infra:mail` | Отправка писем Пользователям по SMTP (реализация порта `UserMailSender`). | Реализован |
+| `testsys-infra:crypto` | Хеширование и проверка Паролей (реализация порта `PasswordHasher`), см. [crypto/README.md](../../testsys-infra/crypto/README.md). | Реализован |
 | `testsys-web:app` | Основное и служебное приложения Vaadin Flow и сервер метрик в одном процессе: точка входа, конфигурация, безопасность, страницы, маршрутизация ошибок и подключение операций через прокси-сервисы, см. [app/README.md](../../testsys-web/app/README.md). | В разработке; состав страниц — в [app/README.md](../../testsys-web/app/README.md#страницы) |
 | `testsys-web:components` | Kotlin-DSL, привязка локализации `UI` (встроенные тексты из бандлов `ui_*`) и визуальная часть страниц ошибок, см. [components/README.md](../../testsys-web/components/README.md). Без Spring и домена. Общие UI-ресурсы и необходимые клиентские реализации находятся в стандартных resources-каталогах. | Реализован |
 
@@ -64,8 +65,9 @@ testsys-app/
 - Инфраструктура зависит от домена, но не наоборот: домен знает только интерфейсы из `tech.testsys.domain.contract`.
 - Сейчас в Gradle прописаны связи `operation → domain`, `database → domain`, `database → codegen-api`,
   `database → codegen` (через `ksp`), `codegen → codegen-api`, `mail → domain`, `mail → localization`,
-  `grpc → domain`, `diagnostics → domain`, `components → localization` (через `api`), `app → components`,
-  `app → domain`, `app → operation`, `app → grpc`, `app → database`, `app → diagnostics` и `app → mail`.
+  `grpc → domain`, `diagnostics → domain`, `crypto → domain`, `components → localization` (через `api`),
+  `app → components`, `app → domain`, `app → operation`, `app → grpc`, `app → database`, `app → diagnostics`,
+  `app → mail` и `app → crypto`.
   Связи настроек: `settings → domain`, `database → settings`, `grpc → settings`, `diagnostics → settings`,
   `app → settings`. Общий протокол принадлежит [settings/README.md](../../testsys-infra/settings/README.md).
   Связи метрик: `settings → monitoring`, `database → monitoring`, `grpc → monitoring`, `mail → monitoring`,

@@ -1,44 +1,54 @@
-package tech.testsys.web.service.security
+package tech.testsys.web.app.security
 
-import org.springframework.stereotype.Component
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
 /**
- * Serializes attempts across sessions by client address and expires in-memory failures after five minutes.
- * Success preserves recent failures; a blocked attempt never invokes authentication or extends its block.
+ * Outcome of a sign-in attempt checked by [LoginAttemptLimiter].
  *
  * @since %CURRENT_VERSION%
  */
-@Component
-class ServiceLoginAttemptLimiter(private val clock: Clock) {
+enum class LoginAttemptResult {
+
+    SUCCESS,
+    FAILURE,
+    BLOCKED,
+}
+
+/**
+ * Serializes sign-in attempts by a string key and blocks the key for five minutes on its fifth failure within five
+ * minutes; a blocked attempt never authenticates or extends the block, and the state lives in instance memory.
+ *
+ * @since %CURRENT_VERSION%
+ */
+class LoginAttemptLimiter(private val clock: Clock) {
     private val attempts = mutableMapOf<String, Attempts>()
 
     /**
-     * Checks [authenticate] for [address] atomically with failure accounting; the fifth failure blocks immediately.
+     * Checks [authenticate] for [key] atomically with failure accounting.
      *
      * @since %CURRENT_VERSION%
      */
     @Synchronized
-    fun attempt(address: String, authenticate: () -> Boolean): ServiceSignInResult {
+    fun attempt(key: String, authenticate: () -> Boolean): LoginAttemptResult {
         val now = clock.instant()
         attempts.entries.removeIf { (_, state) -> state.expired(now) }
-        val state = attempts.getOrPut(address) { Attempts() }
-        if (state.blockedUntil?.isAfter(now) == true) return ServiceSignInResult.Blocked
+        val state = attempts.getOrPut(key) { Attempts() }
+        if (state.blockedUntil?.isAfter(now) == true) return LoginAttemptResult.BLOCKED
 
         state.failures.removeIf { failure -> !failure.isAfter(now.minus(WINDOW)) }
         if (authenticate()) {
-            if (state.failures.isEmpty()) attempts.remove(address)
-            return ServiceSignInResult.Success
+            if (state.failures.isEmpty()) attempts.remove(key)
+            return LoginAttemptResult.SUCCESS
         }
 
         state.failures.add(now)
         return if (state.failures.size >= MAXIMUM_FAILURES) {
             state.blockedUntil = now.plus(WINDOW)
-            ServiceSignInResult.Blocked
+            LoginAttemptResult.BLOCKED
         } else {
-            ServiceSignInResult.InvalidCode
+            LoginAttemptResult.FAILURE
         }
     }
 

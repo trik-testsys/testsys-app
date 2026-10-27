@@ -25,6 +25,7 @@ import tech.testsys.domain.builder.api.verdictData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.builder.task.SubmissionDataBuilder
 import tech.testsys.domain.builder.user.MultipleRoleUserDataBuilder
+import tech.testsys.domain.contract.PasswordHasher
 import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -56,6 +57,7 @@ import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.SingleRoleUser
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.User
 import tech.testsys.operation.config.CommunityConfig
@@ -86,6 +88,7 @@ class AppTestConfiguration {
         recordings: RecordingRepository,
         verdicts: VerdictRepository,
         dataSource: DataSource,
+        passwordHasher: PasswordHasher,
     ): AppFixtures = AppFixtures(
         multipleRoleUsers,
         participants,
@@ -103,6 +106,7 @@ class AppTestConfiguration {
         recordings,
         verdicts,
         dataSource,
+        passwordHasher,
     )
 
     @Bean
@@ -120,7 +124,10 @@ class AppTestConfiguration {
     fun recordedMail(): RecordedMail = RecordedMail()
 }
 
-/** Stores users, groups and submissions with unique access codes, names and e-mail addresses. */
+/**
+ * Stores users, groups and submissions with unique access codes, names and e-mail addresses; every user with non-fixed
+ * roles gets the known [password], hashed once.
+ */
 class AppFixtures(
     private val multipleRoleUsers: MultipleRoleUserRepository,
     private val participants: ParticipantRepository,
@@ -138,7 +145,13 @@ class AppFixtures(
     private val recordings: RecordingRepository,
     private val verdicts: VerdictRepository,
     private val dataSource: DataSource,
+    passwordHasher: PasswordHasher,
 ) {
+    val password = "Known password 1"
+
+    // One slow hash for all fixture users keeps the tests fast.
+    private val passwordHash by lazy { passwordHasher.hash(password) }
+
     fun unique(prefix: String): String = "$prefix-${UUID.randomUUID()}"
 
     /** Returns a confirmation code of the same length that differs from [code] in every digit. */
@@ -146,12 +159,11 @@ class AppFixtures(
 
     fun multipleRoleUser(
         name: String = unique("User"),
-        rawAccessToken: String = unique("token"),
         email: String = "${unique("user")}@example.com",
         roles: MultipleRoleUserDataBuilder.() -> Unit = {},
     ): MultipleRoleUser = multipleRoleUsers.save(
         multipleRoleUserData {
-            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+            passwordHash = this@AppFixtures.passwordHash
             this.name = name
             this.email = email
             roles()
@@ -159,8 +171,9 @@ class AppFixtures(
     )
 
     /**
-     * Returns a new user of [kind] with [name] and [rawAccessToken] or unique defaults; for a supervisor it returns the
-     * single supervisor created at context startup, whose name and access code come from the test configuration.
+     * Returns a new user of [kind] with [name] and [rawAccessToken] or unique defaults, a user with non-fixed roles
+     * without an access code; for a supervisor it returns the single supervisor created at context startup, whose name
+     * and access code come from the test configuration.
      */
     fun userOf(kind: UserKind, name: String? = null, rawAccessToken: String? = null): User<*> {
         if (kind == UserKind.SUPERVISOR) {
@@ -174,16 +187,15 @@ class AppFixtures(
     /** Returns the single supervisor created at context startup. */
     fun supervisor(): Supervisor = checkNotNull(supervisors.findSingle()) { "The supervisor bootstrap has not run" }
 
-    /** Returns the access code of [user]: fixtures store it as is with [HashAlgorithm.Identity]. */
-    fun accessTokenOf(user: User<*>): String = when (user) {
-        is MultipleRoleUser -> user.data.accessTokenHash
+    /** Returns the access code of the fixed-role [user]: fixtures store it as is with [HashAlgorithm.Identity]. */
+    fun accessTokenOf(user: SingleRoleUser): String = when (user) {
         is Participant -> user.data.accessTokenHash
         is Observer -> user.data.accessTokenHash
         is Supervisor -> user.data.accessTokenHash
     }.value
 
     private fun newUserOf(kind: UserKind, name: String, rawAccessToken: String): User<*> = when (kind) {
-        UserKind.MULTIPLE_ROLE -> multipleRoleUser(name = name, rawAccessToken = rawAccessToken)
+        UserKind.MULTIPLE_ROLE -> multipleRoleUser(name = name)
         UserKind.PARTICIPANT -> {
             val competitionId = competitions.save(
                 competitionData {
@@ -392,14 +404,9 @@ class AppFixtures(
 /** Mail port that keeps the codes it was asked to send instead of sending letters. */
 class RecordedMail : UserMailSender {
     val confirmationCodes = mutableMapOf<String, String>()
-    val accessTokens = mutableMapOf<String, String>()
 
     override fun sendRegistrationConfirmationCode(email: String, confirmationCode: String) {
         confirmationCodes[email] = confirmationCode
-    }
-
-    override fun sendAccessToken(email: String, name: String, accessToken: String) {
-        accessTokens[email] = accessToken
     }
 
     override fun sendEmailChangeConfirmationCode(email: String, confirmationCode: String) {

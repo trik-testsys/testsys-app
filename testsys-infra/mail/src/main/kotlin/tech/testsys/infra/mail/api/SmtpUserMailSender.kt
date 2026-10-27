@@ -37,15 +37,6 @@ class SmtpUserMailSender(
         )
     }
 
-    override fun sendAccessToken(email: String, name: String, accessToken: String) {
-        val messages = Localization.forRegion(settings.region, settings.timeZone).user
-        send(
-            to = email,
-            subject = messages.registrationAccessCodeSubject(),
-            text = messages.registrationAccessCodeBody(name = name, accessCode = accessToken),
-        )
-    }
-
     override fun sendEmailChangeConfirmationCode(email: String, confirmationCode: String) {
         val messages = Localization.forRegion(settings.region, settings.timeZone).user
         send(

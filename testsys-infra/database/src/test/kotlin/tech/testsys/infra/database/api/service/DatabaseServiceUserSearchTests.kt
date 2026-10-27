@@ -504,13 +504,13 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
     inner class FindByIdTests {
 
         @Test
-        fun `should find a user with non-fixed roles by id with the stored access code`() {
+        fun `should find a user with non-fixed roles by id with the stored password hash`() {
             val user = fixtures.multipleRoleUser { roles { student { data = studentData {} } } }
 
             val found = search.findById(ServiceUserId(user.id.value))
 
             assertEquals(user.id, (found as? MultipleRoleUser)?.id)
-            assertEquals(user.data.accessTokenHash, (found as? MultipleRoleUser)?.data?.accessTokenHash)
+            assertEquals(user.data.passwordHash, (found as? MultipleRoleUser)?.data?.passwordHash)
         }
 
         @Test

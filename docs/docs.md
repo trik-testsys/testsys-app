@@ -76,6 +76,7 @@
 | [components/README.md](../testsys-web/components/README.md)                            | Справочник | Kotlin-DSL дизайн-системы: страница, сетка, скоупы, компоненты  |
 | [app/README.md](../testsys-web/app/README.md) | Справочник | Основное и служебное веб-приложения: запуск и границы ответственности |
 | [mail/README.md](../testsys-infra/mail/README.md)                     | Справочник | Отправка писем Пользователям по SMTP и настройки                |
+| [crypto/README.md](../testsys-infra/crypto/README.md) | Справочник | Хеширование и проверка Паролей, выравнивание времени ответа |
 | [settings/README.md](../testsys-infra/settings/README.md) | Справочник | Общие служебные настройки, снимки, переключение и восстановление, контракт хранения реестра узлов |
 | [monitoring/README.md](../testsys-infra/monitoring/README.md) | Справочник | Учёт технических сбоев, имена и метки метрик TestSys |
 | [deployment.md](project/deployment.md) | Справочник | Запуск окружений dev, e2e и production, доступ к Prometheus, Grafana и логам, Проверяющий узел |

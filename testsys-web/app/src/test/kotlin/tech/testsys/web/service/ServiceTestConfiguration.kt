@@ -19,6 +19,7 @@ import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.User
 import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
 import tech.testsys.infra.database.api.service.ServiceUserId
@@ -48,7 +49,7 @@ val SERVICE_TEST_USERS: List<User<*>> = listOf(
         id = 1001
         createdAt = Instant.parse("2026-03-14T09:30:00Z")
         data = multipleRoleUserData {
-            accessToken("multiple-role-token", algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash("multiple-role-password-hash")
             name = "Мария Иванова"
             email = "maria@example.com"
             roles {

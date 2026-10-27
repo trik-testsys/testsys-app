@@ -7,6 +7,7 @@ import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -67,15 +68,24 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should show the new access code that signs the user in`() {
+    fun `should set the new password and open signing in with a notice`() {
         requestCode(email)
 
         confirm(code = mail.confirmationCodes.getValue(email))
 
-        val accessToken = accessTokenFields().single().value
-        assertEquals(user.id.value, userService.authenticate(accessToken).userId)
-        assertEquals("Доступ восстановлен", lastToastTitle())
-        assertEquals(RestoreAccessView::class.java, currentView)
+        assertEquals(user.id.value, userService.authenticateByPassword(email, NEW_PASSWORD).userId)
+        assertEquals("Пароль изменён", lastToastTitle())
+        assertEquals(AuthenticationView::class.java, currentView)
+    }
+
+    @Test
+    fun `should show the password rules and keep the code step if the new password is too short`() {
+        requestCode(email)
+
+        confirm(code = mail.confirmationCodes.getValue(email), password = "short")
+
+        assertEquals("Пароль не подходит по длине", lastToastTitle())
+        assertEquals(1, UI.getCurrent()._find<Button> { text = "Восстановить доступ" }.size)
     }
 
     @Test
@@ -146,13 +156,11 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._get<Button> { text = "Получить код" }._click()
     }
 
-    private fun confirm(code: String) {
+    private fun confirm(code: String, password: String = NEW_PASSWORD) {
         UI.getCurrent()._find<TextField>().single().value = code
+        UI.getCurrent()._find<PasswordField>().single().value = password
         UI.getCurrent()._get<Button> { text = "Восстановить доступ" }._click()
     }
-
-    private fun accessTokenFields(): List<TextField> =
-        UI.getCurrent()._find<TextField>().filter { field -> field.ariaLabel.orElse(null) == "Код-доступа" }
 
     private fun lastToastTitle(): String = UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.last().text
 
@@ -160,5 +168,6 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
     private companion object {
         const val MAX_ATTEMPTS = 3
+        const val NEW_PASSWORD = "Restored password 1"
     }
 }

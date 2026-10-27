@@ -3,6 +3,7 @@ package tech.testsys.web.app.view
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import jakarta.annotation.security.RolesAllowed
+import tech.testsys.operation.error.ChangePasswordError
 import tech.testsys.operation.error.ConfirmEmailChangeError
 import tech.testsys.operation.error.ConfirmationAttemptsExhaustedError
 import tech.testsys.operation.error.ConfirmationCodeExpiredError
@@ -10,7 +11,9 @@ import tech.testsys.operation.error.EmailAlreadyBoundError
 import tech.testsys.operation.error.EmailChangeRequestNotExistsError
 import tech.testsys.operation.error.EmailUnchangedError
 import tech.testsys.operation.error.InvalidConfirmationCodeError
+import tech.testsys.operation.error.InvalidCurrentPasswordError
 import tech.testsys.operation.error.InvalidEmailError
+import tech.testsys.operation.error.InvalidPasswordError
 import tech.testsys.operation.error.OperationError
 import tech.testsys.operation.error.OperationException
 import tech.testsys.operation.error.RequestEmailChangeError
@@ -23,13 +26,14 @@ import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
+import tech.testsys.web.components.forms.passwordInput
 import tech.testsys.web.components.forms.textInput
 import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Profile of a user with non-fixed roles (testsys.web.page.multi.profile): the nickname and the e-mail address, and,
  * unless a supervisor is signed in as the user, the change of the e-mail address in two steps, the new address and then
- * the code from the letter.
+ * the code from the letter, and the change of the password.
  *
  * @since %CURRENT_VERSION%
  */
@@ -49,7 +53,8 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
         val localization = currentLocalization()
         val texts = localization.pageProfile
         val confirmation = localization.pageConfirmation
-        // A supervisor signed in as the user does not change their e-mail address (testsys.user.single.supervisor.impersonate).
+        // A supervisor signed in as the user changes neither their e-mail address nor their password
+        // (testsys.user.single.supervisor.impersonate).
         val isImpersonated = CabinetSignIn.principal()?.impersonatedBy != null
         page(headers.cabinet(active = null)) {
             head(texts.title()) { crumb(localization.pageCabinet.home(), MultiMainView::class.java) }
@@ -93,31 +98,57 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
                     }
                 }
             }
+            if (!isImpersonated) {
+                row {
+                    block(title = texts.passwordTitle()) {
+                        lateinit var currentPassword: ValueInput<String>
+                        lateinit var newPassword: ValueInput<String>
+                        row { currentPassword = passwordInput(texts.passwordCurrent(), labelSize = 6, size = 18) }
+                        row { newPassword = passwordInput(texts.passwordNew(), labelSize = 6, size = 18) }
+                        guide(texts.passwordBlockGuide()) {
+                            step(newPassword, title = texts.passwordNew(), description = localization.pagePassword.guide())
+                        }
+                        footer {
+                            mainAction(texts.passwordButton()) {
+                                onClick { changePassword(currentPassword.value, newPassword.value, newEmail) }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
+    /** Changes the password and rebuilds the page with empty password fields, keeping the step of the e-mail change. */
+    private fun changePassword(currentPassword: String, newPassword: String, newEmail: String?) {
+        profileStep { multipleRoleUserService.changePassword(currentPassword, newPassword) } ?: return
+        val texts = currentLocalization().pageProfile
+        toast(FeedbackKind.Success, title = texts.passwordChangedTitle(), description = texts.passwordChangedDescription())
+        show(newEmail)
+    }
+
     private fun requestCode(email: String) {
-        emailChangeStep { multipleRoleUserService.requestEmailChange(email) } ?: return
+        profileStep { multipleRoleUserService.requestEmailChange(email) } ?: return
         toast(FeedbackKind.Success, currentLocalization().pageConfirmation.codeSent())
         // The operation stores the address trimmed and in lower case, so the page shows it the same way.
         show(newEmail = email.trim().lowercase())
     }
 
     private fun resendCode(email: String) {
-        emailChangeStep { multipleRoleUserService.requestEmailChange(email) } ?: return
+        profileStep { multipleRoleUserService.requestEmailChange(email) } ?: return
         val texts = currentLocalization().pageConfirmation
         toast(FeedbackKind.Success, title = texts.codeResentTitle(), description = texts.codeResentDescription(email = email))
     }
 
     private fun confirm(code: String) {
-        val user = emailChangeStep { multipleRoleUserService.confirmEmailChange(code) } ?: return
+        val user = profileStep { multipleRoleUserService.confirmEmailChange(code) } ?: return
         val texts = currentLocalization().pageProfile
         toast(FeedbackKind.Success, title = texts.changedTitle(), description = texts.changedDescription(email = user.email))
         show(newEmail = null)
     }
 
     /** Runs [step] and returns its result, or shows the reason of a refusal and returns `null`. */
-    private fun <T : Any> emailChangeStep(step: () -> T): T? = try {
+    private fun <T : Any> profileStep(step: () -> T): T? = try {
         step()
     } catch (failure: OperationException) {
         val (title, description) = refusalOf(failure.error) ?: throw failure
@@ -141,6 +172,10 @@ class ProfileView(private val headers: CabinetHeaders, private val multipleRoleU
                 ConfirmationAttemptsExhaustedError -> confirmation.attemptsExhausted() to confirmation.resendHint()
                 InvalidConfirmationCodeError -> confirmation.codeMismatch() to null
                 EmailAlreadyBoundError -> texts.emailBound() to texts.anotherEmail()
+            }
+            is ChangePasswordError -> when (error) {
+                InvalidPasswordError -> localization.pagePassword.invalidTitle() to localization.pagePassword.invalidDescription()
+                InvalidCurrentPasswordError -> texts.passwordCurrentInvalid() to null
             }
             else -> null
         }

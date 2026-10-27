@@ -5,8 +5,8 @@ import tech.testsys.domain.builder.DomainEntityWithDataBuilder
 import tech.testsys.domain.builder.util.requireField
 import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.SingleRoleUserData
 import tech.testsys.domain.model.user.User
-import tech.testsys.domain.model.user.UserData
 import tech.testsys.domain.model.user.UserId
 
 /**
@@ -22,12 +22,12 @@ abstract class UserBuilder<UI : UserId, U : User<UI>, Data, DataBuilder : Builde
     DomainEntityWithDataBuilder<U, Data, DataBuilder>()
 
 /**
- * Base class of user data builders. Required: [accessToken] or [storedAccessToken].
+ * Base class of fixed-role user data builders. Required: [accessToken] or [storedAccessToken].
  *
  * @param Data the type of the built user data.
  * @since %CURRENT_VERSION%
  */
-abstract class UserDataBuilder<Data : UserData> : Builder<Data> {
+abstract class UserDataBuilder<Data : SingleRoleUserData> : Builder<Data> {
 
     private var tokenHash: AccessTokenHash? = null
 

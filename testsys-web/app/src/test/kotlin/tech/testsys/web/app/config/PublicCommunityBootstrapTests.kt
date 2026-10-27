@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.mock.env.MockEnvironment
 import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.builder.api.multipleRoleUserData
+import tech.testsys.domain.contract.PasswordHasher
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
 import tech.testsys.domain.contract.persistence.repository.DeveloperCommunityInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ManagerCommunityInviteRepository
@@ -14,7 +15,7 @@ import tech.testsys.domain.contract.persistence.repository.MultipleRoleUserRepos
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CommunityRole
-import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.operation.config.CommunityInviteConfig
 import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.web.app.AppTestConfiguration
@@ -57,6 +58,9 @@ class PublicCommunityBootstrapTests {
 
     @Autowired
     private lateinit var random: RandomGenerator
+
+    @Autowired
+    private lateinit var passwordHasher: PasswordHasher
 
     @Test
     fun `should create the configured public community on application startup`() {
@@ -104,7 +108,7 @@ class PublicCommunityBootstrapTests {
         val email = newEmail()
         users.save(
             multipleRoleUserData {
-                accessToken("token-${UUID.randomUUID()}", HashAlgorithm.Identity)
+                passwordHash = PasswordHash("hash-${UUID.randomUUID()}")
                 name = "Partial"
                 this.email = email
             },
@@ -191,7 +195,7 @@ class PublicCommunityBootstrapTests {
     }
 
     private fun bootstrap(email: String) = PublicCommunityBootstrap(
-        communities, users, managerInvites, developerInvites, transactions, inviteConfig, clock, random, email,
+        communities, users, managerInvites, developerInvites, transactions, inviteConfig, clock, random, passwordHasher, email,
     )
 
     private fun assertRejectName(name: String?) {

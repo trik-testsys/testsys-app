@@ -3,6 +3,7 @@ package tech.testsys.operation.user
 import tech.testsys.domain.builder.api.accessRestorationRequestData
 import tech.testsys.domain.builder.api.emailChangeRequestData
 import tech.testsys.domain.builder.api.withData
+import tech.testsys.domain.contract.PasswordHasher
 import tech.testsys.domain.contract.UserMailSender
 import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequestRepository
 import tech.testsys.domain.contract.persistence.repository.CommunityRepository
@@ -24,6 +25,7 @@ import tech.testsys.operation.config.CommunityConfig
 import tech.testsys.operation.config.EmailConfirmationConfig
 import tech.testsys.operation.config.PublicCommunityOwner
 import tech.testsys.operation.error.AccessRestorationRequestNotExistsError
+import tech.testsys.operation.error.ChangePasswordError
 import tech.testsys.operation.error.CommunityInviteCodeExpiredError
 import tech.testsys.operation.error.CommunityInviteCodeNotValidError
 import tech.testsys.operation.error.ConfirmAccessRestorationError
@@ -34,7 +36,9 @@ import tech.testsys.operation.error.EmailAlreadyBoundError
 import tech.testsys.operation.error.EmailChangeRequestNotExistsError
 import tech.testsys.operation.error.EmailUnchangedError
 import tech.testsys.operation.error.InvalidConfirmationCodeError
+import tech.testsys.operation.error.InvalidCurrentPasswordError
 import tech.testsys.operation.error.InvalidEmailError
+import tech.testsys.operation.error.InvalidPasswordError
 import tech.testsys.operation.error.JoinCommunityError
 import tech.testsys.operation.error.OperationResult
 import tech.testsys.operation.error.RequestAccessRestorationError
@@ -46,8 +50,8 @@ import tech.testsys.operation.error.operation
 import tech.testsys.operation.util.confirmationCodeExpiresAt
 import tech.testsys.operation.util.isConfirmationActive
 import tech.testsys.operation.util.isValidEmail
+import tech.testsys.operation.util.isValidPassword
 import tech.testsys.operation.util.joinCommunity
-import tech.testsys.operation.util.nextAccessToken
 import tech.testsys.operation.util.nextConfirmationCode
 import tech.testsys.operation.util.normalizeEmail
 import tech.testsys.operation.util.normalizeInviteCode
@@ -68,6 +72,7 @@ class MultipleRoleUserOperations(
     private val emailChangeRequestRepository: EmailChangeRequestRepository,
     private val accessRestorationRequestRepository: AccessRestorationRequestRepository,
     private val mailSender: UserMailSender,
+    private val passwordHasher: PasswordHasher,
     private val emailConfirmationConfig: EmailConfirmationConfig,
     private val clock: Clock,
     private val randomGenerator: RandomGenerator,
@@ -193,7 +198,7 @@ class MultipleRoleUserOperations(
             ensure(confirmationCode.trim() == request.data.confirmationCode, InvalidConfirmationCodeError)
             val boundUser = multipleRoleUserRepository.findByEmail(request.data.email)
             ensure(boundUser == null || boundUser.id == user.id, EmailAlreadyBoundError)
-            // The stored user is reread, so the change keeps the current access code, nickname and roles.
+            // The stored user is reread, so the change keeps the current password, nickname and roles.
             val currentUser = checkNotNull(multipleRoleUserRepository.findById(user.id)) {
                 "User ${user.id.value} of e-mail change request ${request.id.value} does not exist"
             }
@@ -241,29 +246,55 @@ class MultipleRoleUserOperations(
         }
 
     /**
-     * Spends an attempt of the access restoration request of the user bound to the trimmed lower-case [email] and
-     * compares the trimmed [confirmationCode] with the sent one; on a match assigns the user a new access code and removes
-     * the request. Returns the new access code; storage exceptions propagate.
+     * Checks the untrimmed [password] and spends an attempt of the restoration request of the user bound to [email];
+     * if the trimmed [confirmationCode] matches, replaces the password, removes the request and returns the user.
      *
      * @since %CURRENT_VERSION%
      */
     @Feature("testsys.user.multi.restoreAccess")
-    fun confirmAccessRestoration(email: String, confirmationCode: String): OperationResult<String, ConfirmAccessRestorationError> =
-        operation<String, ConfirmAccessRestorationError> {
-            val user = multipleRoleUserRepository.findByEmail(normalizeEmail(email))
-            ensure(user != null, AccessRestorationRequestNotExistsError)
-            val request = accessRestorationRequestRepository.findByUser(user.id)
-            ensure(request != null, AccessRestorationRequestNotExistsError)
-            ensure(clock.instant().isBefore(request.data.expiresAt), ConfirmationCodeExpiredError)
-            ensure(request.data.attemptsLeft > 0, ConfirmationAttemptsExhaustedError)
-            val attemptsLeft = request.data.attemptsLeft - 1
-            // The versioned update spends the attempt before the comparison, so concurrent confirmations with a stale
-            // version fail without comparing their codes.
-            val spentRequest = accessRestorationRequestRepository.update(request.withData { this.attemptsLeft = attemptsLeft })
-            ensure(confirmationCode.trim() == request.data.confirmationCode, InvalidConfirmationCodeError)
-            val rawAccessToken = randomGenerator.nextAccessToken()
-            multipleRoleUserRepository.update(user.withData { accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity) })
-            accessRestorationRequestRepository.remove(spentRequest)
-            return rawAccessToken.asSuccess()
+    fun confirmAccessRestoration(
+        email: String,
+        confirmationCode: String,
+        password: String,
+    ): OperationResult<MultipleRoleUser, ConfirmAccessRestorationError> = operation<MultipleRoleUser, ConfirmAccessRestorationError> {
+        // The password is checked first, so an invalid one does not spend an attempt.
+        ensure(isValidPassword(password), InvalidPasswordError)
+        val user = multipleRoleUserRepository.findByEmail(normalizeEmail(email))
+        ensure(user != null, AccessRestorationRequestNotExistsError)
+        val request = accessRestorationRequestRepository.findByUser(user.id)
+        ensure(request != null, AccessRestorationRequestNotExistsError)
+        ensure(clock.instant().isBefore(request.data.expiresAt), ConfirmationCodeExpiredError)
+        ensure(request.data.attemptsLeft > 0, ConfirmationAttemptsExhaustedError)
+        val attemptsLeft = request.data.attemptsLeft - 1
+        // The versioned update spends the attempt before the comparison, so concurrent confirmations with a stale
+        // version fail without comparing their codes.
+        val spentRequest = accessRestorationRequestRepository.update(request.withData { this.attemptsLeft = attemptsLeft })
+        ensure(confirmationCode.trim() == request.data.confirmationCode, InvalidConfirmationCodeError)
+        val updatedUser = multipleRoleUserRepository.update(user.withData { passwordHash = passwordHasher.hash(password) })
+        accessRestorationRequestRepository.remove(spentRequest)
+        return updatedUser.asSuccess()
+    }
+
+    /**
+     * Replaces the password of the stored [user] with the untrimmed [newPassword] if [currentPassword] equals its current
+     * password exactly. Returns the updated user; storage exceptions propagate.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Feature("testsys.user.multi.changePassword")
+    fun changePassword(
+        user: MultipleRoleUser,
+        currentPassword: String,
+        newPassword: String,
+    ): OperationResult<MultipleRoleUser, ChangePasswordError> = operation<MultipleRoleUser, ChangePasswordError> {
+        // The stored user is reread, so a stale [user] neither checks a replaced password nor loses other changes.
+        val currentUser = checkNotNull(multipleRoleUserRepository.findById(user.id)) {
+            "User ${user.id.value} changing the password does not exist"
         }
+        ensure(isValidPassword(newPassword), InvalidPasswordError)
+        ensure(passwordHasher.matches(currentPassword, currentUser.data.passwordHash), InvalidCurrentPasswordError)
+
+        val updatedUser = multipleRoleUserRepository.update(currentUser.withData { passwordHash = passwordHasher.hash(newPassword) })
+        return updatedUser.asSuccess()
+    }
 }

@@ -25,7 +25,8 @@ sealed class User<Id : UserId>(
 ) : DomainEntity<Id>(id, createdAt)
 
 /**
- * Algorithm used to produce the stored access-code representation of a [User] and the stored invite-code representation.
+ * Algorithm used to produce the stored access-code representation of a [SingleRoleUser] and the stored invite-code
+ * representation.
  *
  * @since %CURRENT_VERSION%
  */
@@ -42,7 +43,7 @@ sealed interface HashAlgorithm {
 }
 
 /**
- * Stored access-code representation and the algorithm that produced it.
+ * Stored access-code representation of a [SingleRoleUser] and the algorithm that produced it.
  *
  * @property value the stored representation.
  * @property algorithm the algorithm used to produce [value].
@@ -81,11 +82,9 @@ fun AccessTokenHash.issuedAccessToken(): String = when (algorithm) {
 /**
  * Data common to every kind of [User].
  *
- * @property accessTokenHash the stored access-code representation together with its hashing algorithm.
  * @property name the name of the user.
  * @since %CURRENT_VERSION%
  */
 interface UserData {
-    val accessTokenHash: AccessTokenHash
     val name: String
 }

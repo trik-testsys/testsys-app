@@ -16,11 +16,9 @@ import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.table
 import tech.testsys.web.components.display.tag
 import tech.testsys.web.components.feedback.FeedbackKind
-import tech.testsys.web.components.feedback.alert
 import tech.testsys.web.components.feedback.toast
 import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
-import tech.testsys.web.components.layout.PageScope
 import tech.testsys.web.components.texts.currentLocalization
 
 /** Columns of the roles block; joining a community takes the rest of the row beside it. */
@@ -29,7 +27,6 @@ private const val ROLES_COLUMNS = 12
 /**
  * Main page of the Cabinet of a user with non-fixed roles (testsys.web.page.multi.main): the roles of the user with links
  * to their pages, the communities of the user with the roles in each of them and joining a community by an invite code.
- * Right after registration it shows the access code once.
  *
  * @since %CURRENT_VERSION%
  */
@@ -38,27 +35,17 @@ private const val ROLES_COLUMNS = 12
 class MultiMainView(private val headers: CabinetHeaders, private val multipleRoleUserService: MultipleRoleUserService) :
     TestSysView(), HasDynamicTitle {
     init {
-        show(accessToken = null)
-    }
-
-    /**
-     * Rebuilds the page with [accessToken] of the user who has just registered and a request to save it.
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun showAccessToken(accessToken: String) {
-        show(accessToken)
+        show()
     }
 
     override fun getPageTitle(): String = currentLocalization().pageHome.title()
 
-    private fun show(accessToken: String?) {
+    private fun show() {
         val profile = multipleRoleUserService.viewProfile().roles
         val texts = currentLocalization().pageHome
         page(headers.cabinet(active = CabinetHeaders.MAIN_SECTION)) {
             head(texts.title())
             guide(texts.guide())
-            accessToken?.let { issued -> accessTokenBlock(issued) }
             row {
                 block(size = ROLES_COLUMNS, title = texts.rolesTitle()) {
                     guide(texts.rolesGuide())
@@ -79,7 +66,7 @@ class MultiMainView(private val headers: CabinetHeaders, private val multipleRol
                     footer {
                         mainAction(texts.joinButton()) {
                             clickOnEnter()
-                            onClick { joinCommunity(inviteCode.value, accessToken) }
+                            onClick { joinCommunity(inviteCode.value) }
                         }
                     }
                 }
@@ -103,31 +90,8 @@ class MultiMainView(private val headers: CabinetHeaders, private val multipleRol
         }
     }
 
-    private fun PageScope.accessTokenBlock(accessToken: String) {
-        val texts = currentLocalization().pageHome
-        row {
-            block(title = texts.accessCodeTitle()) {
-                guide(texts.accessCodeGuide())
-                row {
-                    alert(
-                        kind = FeedbackKind.Warning,
-                        title = texts.accessCodeAlertTitle(),
-                        text = texts.accessCodeAlertText(),
-                    )
-                }
-                row {
-                    codeInput(texts.accessCodeTitle(), labelSize = 6, size = 18) {
-                        value = accessToken
-                        isEditable = false
-                        isObscured = true
-                    }
-                }
-            }
-        }
-    }
-
-    /** Joins the community by [inviteCode] and rebuilds the page, keeping the shown [accessToken]. */
-    private fun joinCommunity(inviteCode: String, accessToken: String?) {
+    /** Joins the community by [inviteCode] and rebuilds the page. */
+    private fun joinCommunity(inviteCode: String) {
         val texts = currentLocalization().pageHome
         try {
             multipleRoleUserService.joinCommunity(inviteCode)
@@ -142,7 +106,7 @@ class MultiMainView(private val headers: CabinetHeaders, private val multipleRol
             return
         }
         toast(FeedbackKind.Success, texts.joined())
-        show(accessToken)
+        show()
     }
 
     /** Lists each community of [profile] once, in ascending id order, with the roles of the user in it. */

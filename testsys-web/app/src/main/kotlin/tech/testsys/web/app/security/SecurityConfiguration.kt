@@ -13,6 +13,8 @@ import org.springframework.core.task.TaskDecorator
 import org.springframework.security.concurrent.DelegatingSecurityContextRunnable
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.core.session.SessionRegistry
+import org.springframework.security.core.session.SessionRegistryImpl
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler
 import org.springframework.security.web.session.HttpSessionDestroyedEvent
@@ -85,13 +87,28 @@ class SecurityConfiguration {
         .withLoginView(AuthenticationView::class.java)
 
     /**
-     * Filter chain with the Vaadin defaults except the HTTP access rules: every request is permitted.
+     * Registry of the cabinet sessions in the memory of this instance, filled by [CabinetSignIn] and used by
+     * [CabinetSessions] to end the sessions of a user.
      *
      * @since %CURRENT_VERSION%
      */
     @Bean
-    fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+    fun sessionRegistry(): SessionRegistry = SessionRegistryImpl()
+
+    /**
+     * Filter chain with the Vaadin defaults except the HTTP access rules: every request is permitted. An expired
+     * session in [sessionRegistry] is signed out on its next request, which leads to the root under the context path.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun securityFilterChain(http: HttpSecurity, sessionRegistry: SessionRegistry): SecurityFilterChain {
         http.authorizeHttpRequests { requests -> requests.anyRequest().permitAll() }
+        http.sessionManagement { sessions ->
+            sessions.maximumSessions(-1)
+                .sessionRegistry(sessionRegistry)
+                .expiredSessionStrategy { event -> signedOutHandler().onLogoutSuccess(event.request, event.response, null) }
+        }
         http.with(VaadinSecurityConfigurer.vaadin()) { vaadin ->
             vaadin.enableAuthorizedRequestsConfiguration(false)
             vaadin.logoutSuccessHandler(signedOutHandler())

@@ -8,9 +8,11 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup
+import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,8 +24,9 @@ import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRe
 import tech.testsys.domain.model.user.Student
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.RecordedMail
+import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.CabinetSignIn
-import tech.testsys.web.app.security.UserKind
+import tech.testsys.web.app.service.user.UserService
 import java.time.Instant
 
 @SpringBootTest
@@ -36,6 +39,9 @@ class RegistrationViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var registrationRequests: RegistrationRequestRepository
+
+    @Autowired
+    private lateinit var userService: UserService
 
     private lateinit var email: String
 
@@ -53,15 +59,27 @@ class RegistrationViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should sign the registered user in and show their access code on the main page`() {
+    fun `should sign the registered user in with the chosen password and open the main page`() {
         requestCode(email)
 
         confirm(code = mail.confirmationCodes.getValue(email), name = "Новый Пользователь")
 
+        val user = checkNotNull(multipleRoleUsers.findByEmail(email))
         assertEquals(MultiMainView::class.java, currentView)
-        assertEquals(mail.accessTokens.getValue(email), accessTokenFields().single().value)
-        assertEquals(UserKind.MULTIPLE_ROLE, CabinetSignIn.principal()?.kind)
+        assertEquals(CabinetPrincipal.of(user), CabinetSignIn.principal())
         assertEquals("Регистрация завершена", lastToastTitle())
+        assertEquals(CabinetPrincipal.of(user), userService.authenticateByPassword(email, PASSWORD))
+    }
+
+    @Test
+    fun `should show the password rules and keep the confirmation step if the password is too short`() {
+        requestCode(email)
+
+        confirm(code = mail.confirmationCodes.getValue(email), name = "Новый Пользователь", password = "short")
+
+        assertEquals("Пароль не подходит по длине", lastToastTitle())
+        assertEquals(RegistrationView::class.java, currentView)
+        assertNull(multipleRoleUsers.findByEmail(email))
     }
 
     @Test
@@ -76,18 +94,13 @@ class RegistrationViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should not show the access code again when the main page is opened again`() {
+    fun `should show no access code on the main page after registration`() {
         requestCode(email)
+
         confirm(code = mail.confirmationCodes.getValue(email), name = "Новый Пользователь")
-        UI.getCurrent().navigate(ProfileView::class.java)
 
-        UI.getCurrent().navigate(MultiMainView::class.java)
-
-        assertTrue(accessTokenFields().isEmpty())
+        assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.ariaLabel.orElse(null) == "Код-доступа" })
     }
-
-    private fun accessTokenFields(): List<TextField> =
-        UI.getCurrent()._find<TextField>().filter { field -> field.ariaLabel.orElse(null) == "Код-доступа" }
 
     @Test
     fun `should show the reason and stay on the email step if the email is invalid`() {
@@ -183,10 +196,11 @@ class RegistrationViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._get<Button> { text = "Получить код" }._click()
     }
 
-    private fun confirm(code: String, name: String) {
+    private fun confirm(code: String, name: String, password: String = PASSWORD) {
         val (codeField, nameField) = UI.getCurrent()._find<TextField>()
         codeField.value = code
         nameField.value = name
+        UI.getCurrent()._find<PasswordField>().single().value = password
         UI.getCurrent()._get<Button> { text = "Зарегистрироваться" }._click()
     }
 
@@ -194,5 +208,6 @@ class RegistrationViewTests : MockSpringVaadinTests() {
 
     private companion object {
         const val MAX_ATTEMPTS = 3
+        const val PASSWORD = "Chosen password 1"
     }
 }

@@ -73,6 +73,7 @@ import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.operation.config.ClassInviteConfig
@@ -3463,7 +3464,7 @@ class ManagerOperationsTests {
         data = multipleRoleUserData {
             name = "Student $studentId"
             email = "student$studentId@example.com"
-            accessToken("student-$studentId", algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash("student-$studentId")
         }
     }
 

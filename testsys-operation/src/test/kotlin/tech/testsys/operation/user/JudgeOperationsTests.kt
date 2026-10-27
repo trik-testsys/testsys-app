@@ -80,6 +80,7 @@ import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Participant
+import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.User
 import tech.testsys.domain.model.user.UserId
@@ -1235,7 +1236,7 @@ class JudgeOperationsTests {
         data = multipleRoleUserData {
             name = "Judge $judgeId"
             email = "judge-$judgeId"
-            accessToken("judge-$judgeId", algorithm = HashAlgorithm.Identity)
+            passwordHash = PasswordHash("judge-$judgeId")
             roles { judge { data = judgeData {} } }
         }
     }

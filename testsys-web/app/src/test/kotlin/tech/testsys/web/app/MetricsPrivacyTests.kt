@@ -6,6 +6,7 @@ import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.textfield.PasswordField
+import com.vaadin.flow.component.textfield.TextField
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -25,12 +26,28 @@ class MetricsPrivacyTests : MockSpringVaadinTests() {
     fun `should count a refused sign-in without the entered access code`() {
         val accessCode = "privacy-check-" + fixtures.unique("code")
         UI.getCurrent().navigate(AuthenticationView::class.java)
-        UI.getCurrent()._find<PasswordField>().single().value = accessCode
-        UI.getCurrent()._get<Button> { text = "Войти" }._click()
+        UI.getCurrent()._find<PasswordField>().single { field -> field.ariaLabel.orElse(null) == "Код-доступа" }.value = accessCode
+        UI.getCurrent()._get<Button> { text = "Войти по коду" }._click()
 
         val exported = registry.scrape()
 
         assertTrue("operation=\"UserService.authenticate\"" in exported)
         assertFalse(accessCode in exported)
+    }
+
+    @Test
+    fun `should count a refused sign-in by password without the entered e-mail address and password`() {
+        val email = "privacy-check-${fixtures.unique("email")}@example.com"
+        val password = "privacy-check-" + fixtures.unique("password")
+        UI.getCurrent().navigate(AuthenticationView::class.java)
+        UI.getCurrent()._find<TextField>().single { field -> field.ariaLabel.orElse(null) == "Почта" }.value = email
+        UI.getCurrent()._find<PasswordField>().single { field -> field.ariaLabel.orElse(null) == "Пароль" }.value = password
+        UI.getCurrent()._get<Button> { text = "Войти" }._click()
+
+        val exported = registry.scrape()
+
+        assertTrue("operation=\"UserService.authenticateByPassword\"" in exported)
+        assertFalse(email in exported)
+        assertFalse(password in exported)
     }
 }

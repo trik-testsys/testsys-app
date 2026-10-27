@@ -60,11 +60,13 @@ class UserService(
     }
 
     /**
-     * Runs [MultipleRoleUserOperations.requestAccessRestoration].
+     * Runs [MultipleRoleUserOperations.requestAccessRestoration]; throws `IllegalStateException` while a supervisor is
+     * signed in as some user.
      *
      * @since %CURRENT_VERSION%
      */
     fun requestAccessRestoration(email: String) {
+        checkNotImpersonated()
         multipleRoleUserOperations.requestAccessRestoration(email).getOrThrow()
     }
 
@@ -77,12 +79,15 @@ class UserService(
      */
     @Transactional(noRollbackFor = [OperationException::class])
     fun confirmAccessRestoration(email: String, confirmationCode: String, password: String) {
-        val supervisorId = CabinetSignIn.principal()?.impersonatedBy
-        check(supervisorId == null) { "Supervisor $supervisorId signed in as a user cannot restore access" }
-
+        checkNotImpersonated()
         val user = multipleRoleUserOperations
             .confirmAccessRestoration(email = email, confirmationCode = confirmationCode, password = password)
             .getOrThrow()
         sessions.expire(user.id.value)
+    }
+
+    private fun checkNotImpersonated() {
+        val supervisorId = CabinetSignIn.principal()?.impersonatedBy
+        check(supervisorId == null) { "Supervisor $supervisorId signed in as a user cannot restore access" }
     }
 }

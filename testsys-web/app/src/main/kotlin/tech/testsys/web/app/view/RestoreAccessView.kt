@@ -1,6 +1,8 @@
 package tech.testsys.web.app.view
 
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.router.BeforeEnterEvent
+import com.vaadin.flow.router.BeforeEnterObserver
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.server.auth.AnonymousAllowed
@@ -11,6 +13,7 @@ import tech.testsys.operation.error.ConfirmationCodeExpiredError
 import tech.testsys.operation.error.InvalidConfirmationCodeError
 import tech.testsys.operation.error.InvalidPasswordError
 import tech.testsys.operation.error.OperationException
+import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.service.user.UserService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
@@ -27,7 +30,8 @@ import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Tab «Восстановление доступа» of the sign-in page (testsys.web.page.authentication): the e-mail step and the step
- * of the code with the new password; after restoration the tab «Вход» opens.
+ * of the code with the new password; after restoration the tab «Вход» opens. A supervisor signed in as a user goes to
+ * the start page of the user.
  *
  * @since %CURRENT_VERSION%
  */
@@ -36,12 +40,17 @@ import tech.testsys.web.components.texts.currentLocalization
 class RestoreAccessView(
     private val headers: CabinetHeaders,
     private val userService: UserService,
-) : TestSysView(), HasDynamicTitle {
+) : TestSysView(), HasDynamicTitle, BeforeEnterObserver {
     init {
         showEmailStep(email = "")
     }
 
     override fun getPageTitle(): String = GuestTab.RestoreAccess.label
+
+    override fun beforeEnter(event: BeforeEnterEvent) {
+        val principal = CabinetSignIn.principal() ?: return
+        if (principal.impersonatedBy != null) event.forwardTo(startPageOf(principal.kind))
+    }
 
     private fun showEmailStep(email: String) {
         val localization = currentLocalization()

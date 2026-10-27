@@ -8,7 +8,9 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.concurrent.Callable
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 class LoginAttemptLimiterTests {
     private val clock = MutableClock()
@@ -92,6 +94,34 @@ class LoginAttemptLimiterTests {
 
         assertEquals(4, results.count { it == LoginAttemptResult.FAILURE })
         assertEquals(16, results.count { it == LoginAttemptResult.BLOCKED })
+    }
+
+    @Test
+    fun `should check different keys in parallel`() {
+        val firstStarted = CountDownLatch(1)
+        val secondChecked = CountDownLatch(1)
+        Executors.newSingleThreadExecutor().use { executor ->
+            val first = executor.submit(
+                Callable {
+                    var hasWaited = false
+                    val result = limiter.attempt("a") {
+                        firstStarted.countDown()
+                        hasWaited = secondChecked.await(5, TimeUnit.SECONDS)
+                        true
+                    }
+                    result to hasWaited
+                },
+            )
+            firstStarted.await()
+
+            val second = limiter.attempt("b") {
+                secondChecked.countDown()
+                true
+            }
+
+            assertEquals(LoginAttemptResult.SUCCESS, second)
+            assertEquals(LoginAttemptResult.SUCCESS to true, first.get())
+        }
     }
 
     private class MutableClock : Clock() {

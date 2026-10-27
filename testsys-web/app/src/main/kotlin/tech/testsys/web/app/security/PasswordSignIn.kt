@@ -17,7 +17,6 @@ import java.time.Clock
 @Component
 @OptIn(InternalOperationsApi::class)
 class PasswordSignIn(private val userService: UserService, clock: Clock) {
-    // ponytail: one lock for all addresses serializes password checks; per-address locks if sign-in bursts queue up.
     private val limiter = LoginAttemptLimiter(clock)
 
     /**

@@ -11,16 +11,21 @@ import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.security.core.session.SessionRegistry
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.AccessRestorationRequestRepository
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.RecordedMail
+import tech.testsys.web.app.security.CabinetPrincipal
+import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.service.user.UserService
 import java.time.Instant
 
@@ -34,6 +39,9 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var userService: UserService
+
+    @Autowired
+    private lateinit var sessionRegistry: SessionRegistry
 
     private lateinit var user: MultipleRoleUser
 
@@ -149,6 +157,47 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._get<Button> { text = "Изменить почту" }._click()
 
         assertEquals(email, UI.getCurrent()._find<TextField>().single().value)
+    }
+
+    @Test
+    fun `should open the start page of the user while a supervisor is signed in as the user`() {
+        signInImpersonated()
+
+        UI.getCurrent().navigate(RestoreAccessView::class.java)
+
+        assertEquals(MultiMainView::class.java, currentView)
+    }
+
+    @Test
+    fun `should refuse an access restoration request while a supervisor is signed in as some user`() {
+        signInImpersonated()
+
+        assertThrows<IllegalStateException> { userService.requestAccessRestoration(email) }
+
+        assertFalse(mail.confirmationCodes.containsKey(email))
+        assertNull(requests.findByUser(user.id))
+    }
+
+    @Test
+    fun `should refuse an access restoration confirmation while a supervisor is signed in as some user`() {
+        requestCode(email)
+        val attemptsLeft = checkNotNull(requests.findByUser(user.id)).data.attemptsLeft
+        val userSession = fixtures.unique("session")
+        sessionRegistry.registerNewSession(userSession, CabinetPrincipal.of(user))
+        signInImpersonated()
+
+        assertThrows<IllegalStateException> {
+            userService.confirmAccessRestoration(email, confirmationCode = mail.confirmationCodes.getValue(email), password = NEW_PASSWORD)
+        }
+
+        assertEquals(user.id.value, userService.authenticateByPassword(email, fixtures.password).userId)
+        assertEquals(attemptsLeft, checkNotNull(requests.findByUser(user.id)).data.attemptsLeft)
+        assertFalse(checkNotNull(sessionRegistry.getSessionInformation(userSession)).isExpired)
+    }
+
+    /** Signs the supervisor in as [user]. */
+    private fun signInImpersonated() {
+        CabinetSignIn.signIn(CabinetPrincipal.of(user).copy(impersonatedBy = fixtures.supervisor().id.value))
     }
 
     private fun requestCode(email: String) {

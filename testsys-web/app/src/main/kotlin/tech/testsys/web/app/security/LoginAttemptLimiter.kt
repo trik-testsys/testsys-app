@@ -19,36 +19,40 @@ enum class LoginAttemptResult {
 /**
  * Serializes sign-in attempts by a string key and blocks the key for five minutes on its fifth failure within five
  * minutes; a blocked attempt never authenticates or extends the block, and the state lives in instance memory.
+ * Keys are spread over stripes: attempts of keys in different stripes run in parallel.
  *
  * @since %CURRENT_VERSION%
  */
 class LoginAttemptLimiter(private val clock: Clock) {
-    private val attempts = mutableMapOf<String, Attempts>()
+    // ponytail: keys of one stripe wait for each other; more stripes if sign-in bursts still queue up.
+    private val stripes = Array(STRIPES) { mutableMapOf<String, Attempts>() }
 
     /**
      * Checks [authenticate] for [key] atomically with failure accounting.
      *
      * @since %CURRENT_VERSION%
      */
-    @Synchronized
     fun attempt(key: String, authenticate: () -> Boolean): LoginAttemptResult {
-        val now = clock.instant()
-        attempts.entries.removeIf { (_, state) -> state.expired(now) }
-        val state = attempts.getOrPut(key) { Attempts() }
-        if (state.blockedUntil?.isAfter(now) == true) return LoginAttemptResult.BLOCKED
+        val attempts = stripes[key.hashCode().mod(STRIPES)]
+        synchronized(attempts) {
+            val now = clock.instant()
+            attempts.entries.removeIf { (_, state) -> state.expired(now) }
+            val state = attempts.getOrPut(key) { Attempts() }
+            if (state.blockedUntil?.isAfter(now) == true) return LoginAttemptResult.BLOCKED
 
-        state.failures.removeIf { failure -> !failure.isAfter(now.minus(WINDOW)) }
-        if (authenticate()) {
-            if (state.failures.isEmpty()) attempts.remove(key)
-            return LoginAttemptResult.SUCCESS
-        }
+            state.failures.removeIf { failure -> !failure.isAfter(now.minus(WINDOW)) }
+            if (authenticate()) {
+                if (state.failures.isEmpty()) attempts.remove(key)
+                return LoginAttemptResult.SUCCESS
+            }
 
-        state.failures.add(now)
-        return if (state.failures.size >= MAXIMUM_FAILURES) {
-            state.blockedUntil = now.plus(WINDOW)
-            LoginAttemptResult.BLOCKED
-        } else {
-            LoginAttemptResult.FAILURE
+            state.failures.add(now)
+            return if (state.failures.size >= MAXIMUM_FAILURES) {
+                state.blockedUntil = now.plus(WINDOW)
+                LoginAttemptResult.BLOCKED
+            } else {
+                LoginAttemptResult.FAILURE
+            }
         }
     }
 
@@ -62,6 +66,7 @@ class LoginAttemptLimiter(private val clock: Clock) {
 
     private companion object {
         const val MAXIMUM_FAILURES = 5
+        const val STRIPES = 64
         val WINDOW: Duration = Duration.ofMinutes(5)
     }
 }

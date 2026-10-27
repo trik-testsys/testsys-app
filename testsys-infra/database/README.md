@@ -408,9 +408,12 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 `NULL`; какие из них заполнены, задаёт `CHECK` `ck_ts_user_type_credentials` в
 [changelog.03-init-user.xml](src/main/resources/db/changelog/changes/1.0.0/changelog.03-init-user.xml): у строки
 `MULTIPLE_ROLE` заполнен только `password_hash`, у строки `SINGLE_ROLE` — только `access_token`
-и `access_token_hash_algorithm`. Значений по умолчанию у колонок нет: при записи они передаются явно.
+и `access_token_hash_algorithm`. `CHECK` `ck_ts_user_access_token_hash_algorithm` допускает в
+`access_token_hash_algorithm` только `HMAC_SHA256`: `access_token` хранит HMAC-SHA-256 КД в hex. Значение
+`IDENTITY` из `HashAlgorithmJpaEnum` используют только Коды-приглашения. Значений по умолчанию у колонок нет:
+при записи они передаются явно.
 
-Колонки и ограничение добавлены в changeset'ы `1.0.0-03-1` и `1.0.0-03-init-user-checks`, поэтому их контрольные
+Колонки и ограничения изменены в changeset'ах `1.0.0-03-1` и `1.0.0-03-init-user-checks`, поэтому их контрольные
 суммы изменились. Базы окружений dev и e2e, созданные до этого изменения, пересоздаются командой `clean`,
 см. раздел [«Остановка и очистка»](../../docs/project/deployment.md#остановка-и-очистка) deployment.md.
 
@@ -420,19 +423,21 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 без хэширования. Ввод исходного КД и хеш Пароля описаны в разделе
 [«Пользователи»](../../testsys-domain/README.md#пользователи).
 
-Ограничение `uk_ts_user_access_token` обеспечивает уникальность исходных КД благодаря `Identity`.
-Поэтому `UserJpaEntity` помечен `@RawAccessTokenDependency`. При переходе к хэшированию с индивидуальной солью
-это ограничение нужно пересмотреть. Семантика сохранённого КД и правило аннотации — в разделе
-[«Пользователи»](../../testsys-domain/README.md#пользователи).
+Хеш КД детерминирован, поэтому ограничение `uk_ts_user_access_token` обеспечивает и уникальность исходных КД.
+Хеширование описано в разделе [«Пользователи»](../../testsys-domain/README.md#пользователи).
 
-`AbstractUserPersistenceAdapter.findByAccessToken` хэширует исходный КД алгоритмом `Identity` и ищет строку
-`ts_user` по сохранённому значению и алгоритму
+`DatabaseConfiguration` создаёт бин `AccessTokenHasher` с ключом из обязательного свойства
+`testsys.access-token.secret` длиной не меньше 64 символов
+([DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/api/DatabaseConfiguration.kt)). Без свойства
+или с более коротким значением контекст не запускается. После смены секрета сохранённые КД Участников и
+Наблюдателей перестают находиться. Тесты модуля задают фиксированный секрет в
+`src/test/resources/application.properties`.
+
+`AbstractUserPersistenceAdapter.findByAccessToken` хеширует исходный КД этим бином и ищет строку `ts_user`
+по полученному значению и алгоритму
 ([AbstractUserPersistenceAdapter.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/adapter/user/AbstractUserPersistenceAdapter.kt)).
 Строку Пользователя другого вида метод не возвращает: `assembleSupported` адаптера собирает только строки своего вида.
 Порт `MultipleRoleUserRepository` этот метод не объявляет: у Пользователей с Нефиксированными Ролями нет КД.
-Поиск находит Пользователя, только пока сохранённое значение совпадает с исходным КД, поэтому метод помечен
-`@RawAccessTokenDependency`.
-При переходе к хэшированию с солью этот поиск нужно пересмотреть.
 
 ## Коды-приглашения
 

@@ -492,7 +492,9 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
 - `createParticipants` возвращает `IssuedParticipant`: сохранённого Участника и его исходный Код-доступа. Сохранённое
   значение КД восстанавливать нельзя, поэтому исходный КД есть только в этом ответе. Так же `createObserver`
   Администратора и Супервайзера возвращает `IssuedObserver`. Оба типа объявлены в
-  [IssuedUsers.kt](src/main/kotlin/tech/testsys/operation/user/IssuedUsers.kt).
+  [IssuedUsers.kt](src/main/kotlin/tech/testsys/operation/user/IssuedUsers.kt). Новые КД хеширует
+  `AccessTokenHasher`, который `ManagerOperations`, `AdministratorOperations` и `SupervisorOperations` получают через
+  конструктор.
 - `deleteParticipants` загружает Участников одним вызовом `findByIdsAsMap` и проверяет Посылки всех выбранных
   Участников в Турах Соревнования одним вызовом `SubmissionRepository.findGradingAuthorIds`. Первый в порядке набора
   отсутствующий Участник или Участник с Посылками отклоняет удаление ошибкой `CompetitionParticipantNotExistsError`

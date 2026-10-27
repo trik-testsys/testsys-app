@@ -30,7 +30,7 @@ import tech.testsys.domain.model.group.RawInviteCodeDependency
 import tech.testsys.domain.model.task.Contest
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.Task
-import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.Manager
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -114,6 +114,7 @@ class ManagerOperations(
     private val multipleRoleUserRepository: MultipleRoleUserRepository,
     private val userRepository: UserRepository,
     private val taskRepository: TaskRepository,
+    private val accessTokenHasher: AccessTokenHasher,
 ) {
 
     private val random = SecureRandom()
@@ -566,7 +567,7 @@ class ManagerOperations(
         val participants = participantRepository.saveToCompetition(
             competitionId = competitionId,
             accessTokenHashes = accessTokens.map { accessToken ->
-                AccessTokenHash.hashAccessToken(rawAccessToken = accessToken, algorithm = HashAlgorithm.Identity)
+                accessTokenHasher.hash(accessToken)
             },
         ) { participantId ->
             "st${participantId.value}"

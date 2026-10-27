@@ -3,6 +3,9 @@ package tech.testsys.domain.model.user
 import tech.testsys.domain.model.DomainEntity
 import tech.testsys.domain.model.DomainId
 import java.time.Instant
+import java.util.HexFormat
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 /**
  * Marker for identifiers of [User]s.
@@ -33,13 +36,19 @@ sealed class User<Id : UserId>(
 sealed interface HashAlgorithm {
 
     /**
-     * Temporary algorithm that leaves the original code unchanged and provides no cryptographic protection.
-     * Declarations marked with RawAccessTokenDependency or RawInviteCodeDependency must be checked and corrected
-     * before enabling another algorithm.
+     * Temporary algorithm of invite codes that leaves the original code unchanged and provides no cryptographic
+     * protection. Declarations marked with RawInviteCodeDependency must be checked before invite codes use another one.
      *
      * @since %CURRENT_VERSION%
      */
     object Identity : HashAlgorithm
+
+    /**
+     * HMAC-SHA-256 keyed with the server secret and written as lower-case hex; access codes use it.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    object HmacSha256 : HashAlgorithm
 }
 
 /**
@@ -52,31 +61,40 @@ sealed interface HashAlgorithm {
 data class AccessTokenHash(
     val value: String,
     val algorithm: HashAlgorithm,
-) {
-    companion object {
-        /**
-         * Hashes [rawAccessToken] with [algorithm] without normalizing or validating the input.
-         *
-         * @since %CURRENT_VERSION%
-         */
-        fun hashAccessToken(rawAccessToken: String, algorithm: HashAlgorithm): AccessTokenHash {
-            val value = when (algorithm) {
-                HashAlgorithm.Identity -> rawAccessToken
-            }
-            return AccessTokenHash(value = value, algorithm = algorithm)
-        }
-    }
-}
+)
 
 /**
- * Returns the original access code restored from the stored value; a new algorithm must decide here whether it is
- * recoverable.
+ * Hashes access codes of [SingleRoleUser]s with [HashAlgorithm.HmacSha256] keyed with the UTF-8 bytes of [secret] of
+ * at least 64 characters. The hash is deterministic, so it finds the user by the entered code but cannot restore it.
  *
  * @since %CURRENT_VERSION%
  */
-@RawAccessTokenDependency(reason = "Restores the original access code from the stored value, which only Identity allows.")
-fun AccessTokenHash.issuedAccessToken(): String = when (algorithm) {
-    HashAlgorithm.Identity -> value
+class AccessTokenHasher(secret: String) {
+
+    private val key: SecretKeySpec
+
+    init {
+        require(secret.length >= MIN_SECRET_LENGTH) {
+            "Access code secret must contain at least $MIN_SECRET_LENGTH characters, got ${secret.length}"
+        }
+        key = SecretKeySpec(secret.toByteArray(Charsets.UTF_8), MAC_ALGORITHM)
+    }
+
+    /**
+     * Hashes [rawAccessToken] without normalizing or validating the input.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    fun hash(rawAccessToken: String): AccessTokenHash {
+        val mac = Mac.getInstance(MAC_ALGORITHM).apply { init(key) }
+        val value = HexFormat.of().formatHex(mac.doFinal(rawAccessToken.toByteArray(Charsets.UTF_8)))
+        return AccessTokenHash(value = value, algorithm = HashAlgorithm.HmacSha256)
+    }
+
+    private companion object {
+        const val MIN_SECRET_LENGTH = 64
+        const val MAC_ALGORITHM = "HmacSHA256"
+    }
 }
 
 /**

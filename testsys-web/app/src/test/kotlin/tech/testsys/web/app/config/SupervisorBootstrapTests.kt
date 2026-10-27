@@ -13,8 +13,7 @@ import org.springframework.transaction.support.TransactionOperations
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
-import tech.testsys.domain.model.user.AccessTokenHash
-import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.util.nextAccessToken
@@ -50,6 +49,9 @@ class SupervisorBootstrapTests {
     private lateinit var transactions: TransactionOperations
 
     @Autowired
+    private lateinit var accessTokenHasher: AccessTokenHasher
+
+    @Autowired
     private lateinit var fixtures: AppFixtures
 
     @Autowired
@@ -68,7 +70,7 @@ class SupervisorBootstrapTests {
         val supervisor = assertNotNull(supervisors.findSingle())
 
         assertEquals("Test supervisor", supervisor.data.name)
-        assertEquals(identity("Supe-rvis-or00-0001"), supervisor.data.accessTokenHash)
+        assertEquals(accessTokenHasher.hash("Supe-rvis-or00-0001"), supervisor.data.accessTokenHash)
     }
 
     @Test
@@ -94,7 +96,7 @@ class SupervisorBootstrapTests {
         val found = single()
         assertEquals(before.id, found.id)
         assertEquals("New name", found.data.name)
-        assertEquals(identity(token), found.data.accessTokenHash)
+        assertEquals(accessTokenHasher.hash(token), found.data.accessTokenHash)
         assertNull(supervisors.findByAccessToken(oldToken))
         assertEquals(before.id, supervisors.findByAccessToken(token)?.id)
     }
@@ -116,7 +118,7 @@ class SupervisorBootstrapTests {
         val found = single()
         assertEquals(created.id, found.id)
         assertEquals("Configured supervisor", found.data.name)
-        assertEquals(identity(token), found.data.accessTokenHash)
+        assertEquals(accessTokenHasher.hash(token), found.data.accessTokenHash)
     }
 
     @ParameterizedTest
@@ -213,7 +215,7 @@ class SupervisorBootstrapTests {
         }
     }
 
-    private fun bootstrap() = SupervisorBootstrap(supervisors, participants, observers, transactions)
+    private fun bootstrap() = SupervisorBootstrap(supervisors, participants, observers, transactions, accessTokenHasher)
 
     private fun single(): Supervisor = assertNotNull(supervisors.findSingle())
 
@@ -237,8 +239,6 @@ class SupervisorBootstrapTests {
         .apply {
             name?.let { value -> withProperty("testsys.operation.supervisor.name", value) }
         }
-
-    private fun identity(token: String) = AccessTokenHash.hashAccessToken(token, HashAlgorithm.Identity)
 
     private fun newToken() = random.nextAccessToken()
 }

@@ -30,6 +30,9 @@ vaadin:
   build:
     folder: build
 testsys:
+  access-token:
+    # Required HMAC-SHA-256 key of access codes, at least 64 characters; changing it invalidates every stored code.
+    secret: ${TESTSYS_ACCESS_TOKEN_SECRET}
   service:
     address: 127.0.0.1
     port: 8081

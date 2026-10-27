@@ -60,6 +60,7 @@ internal fun TrikSupportedLanguage.toJpaEnum() = when (this) {
 @InternalDatabaseApi
 internal fun HashAlgorithmJpaEnum.toDomain(): HashAlgorithm = when (this) {
     HashAlgorithmJpaEnum.IDENTITY -> HashAlgorithm.Identity
+    HashAlgorithmJpaEnum.HMAC_SHA256 -> HashAlgorithm.HmacSha256
 }
 
 /** Reads the stored access code of a single-role row; fails when the row has no access code. */
@@ -73,6 +74,7 @@ internal fun UserJpaEntity.requireAccessTokenHash() = AccessTokenHash(
 @InternalDatabaseApi
 internal fun HashAlgorithm.toJpaEnum() = when (this) {
     HashAlgorithm.Identity -> HashAlgorithmJpaEnum.IDENTITY
+    HashAlgorithm.HmacSha256 -> HashAlgorithmJpaEnum.HMAC_SHA256
 }
 
 @InternalDatabaseApi

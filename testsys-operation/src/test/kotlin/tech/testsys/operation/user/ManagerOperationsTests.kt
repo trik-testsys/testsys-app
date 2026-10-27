@@ -98,6 +98,7 @@ import tech.testsys.operation.error.NonPositiveParticipantCountError
 import tech.testsys.operation.error.ParticipantHasSubmissionsError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
+import tech.testsys.operation.util.testAccessTokenHasher
 import tech.testsys.operation.util.testAdministrator
 import tech.testsys.operation.util.testContest
 import tech.testsys.operation.util.testDeveloper
@@ -135,6 +136,7 @@ class ManagerOperationsTests {
         multipleRoleUserRepository = multipleRoleUserRepository,
         userRepository = userRepository,
         taskRepository = taskRepository,
+        accessTokenHasher = testAccessTokenHasher,
     )
 
     @Nested
@@ -1629,7 +1631,7 @@ class ManagerOperationsTests {
             }
 
             @Test
-            fun `should return the issued access code and last login of each participant`() {
+            fun `should return the stored access code hash and last login of each participant`() {
                 val lastLogin = Instant.parse("2026-03-14T09:30:00Z")
                 every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31, 32)) }
                 every { participantRepository.findByIds(any()) } returns
@@ -1640,7 +1642,7 @@ class ManagerOperationsTests {
                 val actual = operations.viewCompetition(user = manager, competitionId = competitionId).getOrThrow()
 
                 val codes = actual.participants.map { (participant, _) -> participant.data.accessTokenHash.value }
-                assertEquals(listOf("code-31", "code-32"), codes)
+                assertEquals(listOf(testAccessTokenHasher.hash("code-31").value, testAccessTokenHasher.hash("code-32").value), codes)
                 assertEquals(listOf(lastLogin, null), actual.participants.map { (_, login) -> login })
             }
 
@@ -2958,6 +2960,7 @@ class ManagerOperationsTests {
         private val competitionId = CompetitionId(21)
         private val manager = testManager { data = managerData {} }
         private val canonicalUuid = Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+        private val lowerCaseHex64 = Regex("[0-9a-f]{64}")
         private val allMocks = arrayOf(
             repository,
             competitionRepository,
@@ -2971,7 +2974,7 @@ class ManagerOperationsTests {
         inner class HappyPathTests {
 
             @Test
-            fun `should save the requested number of canonical UUID access codes hashed by Identity in the competition once`() {
+            fun `should save the requested number of access codes hashed by HMAC-SHA-256 in the competition once`() {
                 val accessTokenHashes = slot<List<AccessTokenHash>>()
                 every { competitionRepository.findById(competitionId) } returns testCompetition()
                 every { competitionConfig.maxParticipants } returns 10
@@ -2980,9 +2983,22 @@ class ManagerOperationsTests {
                 operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 2).getOrThrow()
 
                 assertEquals(2, accessTokenHashes.captured.size)
-                assertCanonicalIdentityUuid(accessTokenHashes.captured[0])
-                assertCanonicalIdentityUuid(accessTokenHashes.captured[1])
+                assertHmacSha256Hash(accessTokenHashes.captured[0])
+                assertHmacSha256Hash(accessTokenHashes.captured[1])
                 verify(exactly = 1) { participantRepository.saveToCompetition(competitionId, any(), any()) }
+            }
+
+            @Test
+            fun `should issue canonical UUID access codes`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition()
+                every { competitionConfig.maxParticipants } returns 10
+                every { participantRepository.saveToCompetition(competitionId, any(), any()) } returns
+                    listOf(testParticipant(41), testParticipant(42))
+
+                val actual = operations.createParticipants(user = manager, competitionId = competitionId, participantCount = 2).getOrThrow()
+
+                assertTrue(canonicalUuid.matches(actual[0].accessToken)) { "Access code is not a canonical UUID: ${actual[0].accessToken}" }
+                assertTrue(canonicalUuid.matches(actual[1].accessToken)) { "Access code is not a canonical UUID: ${actual[1].accessToken}" }
             }
 
             @Test
@@ -3010,7 +3026,7 @@ class ManagerOperationsTests {
                 assertEquals(saved, actual.map { issued -> issued.participant })
                 assertEquals(
                     accessTokenHashes.captured,
-                    actual.map { issued -> AccessTokenHash.hashAccessToken(issued.accessToken, HashAlgorithm.Identity) },
+                    actual.map { issued -> testAccessTokenHasher.hash(issued.accessToken) },
                 )
             }
 
@@ -3204,9 +3220,9 @@ class ManagerOperationsTests {
             }
         }
 
-        private fun assertCanonicalIdentityUuid(hash: AccessTokenHash) {
-            assertEquals(HashAlgorithm.Identity, hash.algorithm)
-            assertTrue(canonicalUuid.matches(hash.value)) { "Access code is not a canonical UUID: ${hash.value}" }
+        private fun assertHmacSha256Hash(hash: AccessTokenHash) {
+            assertEquals(HashAlgorithm.HmacSha256, hash.algorithm)
+            assertTrue(lowerCaseHex64.matches(hash.value)) { "Access code hash is not 64 lower-case hex digits: ${hash.value}" }
         }
 
         private fun testParticipant(participantId: Long): Participant = participant {
@@ -3214,7 +3230,7 @@ class ManagerOperationsTests {
             createdAt = Instant.EPOCH
             version = EntityVersion(0)
             data = participantData {
-                accessToken("code-$participantId", algorithm = HashAlgorithm.Identity)
+                accessToken("code-$participantId", testAccessTokenHasher)
                 competition(21)
                 name = "st$participantId"
             }
@@ -3492,7 +3508,7 @@ class ManagerOperationsTests {
         createdAt = Instant.EPOCH
         version = EntityVersion(0)
         data = participantData {
-            accessToken("code-$participantId", algorithm = HashAlgorithm.Identity)
+            accessToken("code-$participantId", testAccessTokenHasher)
             competition(competitionId)
             name = "st$participantId"
         }

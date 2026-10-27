@@ -41,6 +41,7 @@ import tech.testsys.domain.contract.persistence.repository.TaskValidationRequest
 import tech.testsys.domain.contract.persistence.repository.TestRepository
 import tech.testsys.domain.contract.persistence.repository.UserRepository
 import tech.testsys.domain.contract.persistence.repository.VerdictRepository
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.infra.grpc.api.BalancingGrader
 import tech.testsys.infra.monitoring.api.TechnicalFailures
 import tech.testsys.infra.settings.api.RuntimeSettings
@@ -95,9 +96,10 @@ class OperationsConfiguration {
         administratorOperations: AdministratorOperations,
         contests: ContestRepository,
         observers: ObserverRepository,
+        accessTokenHasher: AccessTokenHasher,
     ): SupervisorOperations = SupervisorOperations(
         users, communities, communityRepository, multipleRoleUsers, userRepository, communityConfig, administratorOperations,
-        contests, observers,
+        contests, observers, accessTokenHasher,
     )
 
     /**
@@ -164,8 +166,9 @@ class OperationsConfiguration {
         participants: ParticipantRepository,
         observers: ObserverRepository,
         transactions: TransactionOperations,
+        accessTokenHasher: AccessTokenHasher,
     ): SmartInitializingSingleton = SmartInitializingSingleton {
-        SupervisorBootstrap(supervisors, participants, observers, transactions).ensure(environment)
+        SupervisorBootstrap(supervisors, participants, observers, transactions, accessTokenHasher).ensure(environment)
     }
 
     /**
@@ -240,6 +243,7 @@ class OperationsConfiguration {
         submissions: SubmissionRepository,
         judgmentOrders: JudgmentOrderRepository,
         verdicts: VerdictRepository,
+        accessTokenHasher: AccessTokenHasher,
     ): AdministratorOperations = AdministratorOperations(
         communityRepository = communities,
         managerInviteRepository = managerInvites,
@@ -258,6 +262,7 @@ class OperationsConfiguration {
         submissionRepository = submissions,
         judgmentOrderRepository = judgmentOrders,
         verdictRepository = verdicts,
+        accessTokenHasher = accessTokenHasher,
     )
 
     /**
@@ -607,6 +612,7 @@ class OperationsConfiguration {
         multipleRoleUsers: MultipleRoleUserRepository,
         users: UserRepository,
         tasks: TaskRepository,
+        accessTokenHasher: AccessTokenHasher,
     ): ManagerOperations = ManagerOperations(
         classRepository = classes,
         competitionRepository = competitions,
@@ -620,6 +626,7 @@ class OperationsConfiguration {
         multipleRoleUserRepository = multipleRoleUsers,
         userRepository = users,
         taskRepository = tasks,
+        accessTokenHasher = accessTokenHasher,
     )
 }
 

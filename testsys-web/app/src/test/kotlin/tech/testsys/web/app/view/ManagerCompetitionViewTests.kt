@@ -32,9 +32,8 @@ import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.model.group.Competition
 import tech.testsys.domain.model.group.CompetitionId
-import tech.testsys.domain.model.user.AccessTokenHash
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.CommunityRole
-import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Participant
 import tech.testsys.web.app.MockSpringVaadinTests
@@ -50,6 +49,9 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
 
     @Autowired
     private lateinit var participants: ParticipantRepository
+
+    @Autowired
+    private lateinit var accessTokenHasher: AccessTokenHasher
 
     @Autowired
     private lateinit var managerService: ManagerService
@@ -257,7 +259,7 @@ class ManagerCompetitionViewTests : MockSpringVaadinTests() {
         fixtures.grantRole(fixtures.multipleRoleUser(), CommunityRole.Manager).also { manager -> signIn(manager) }
 
     private fun participantOf(competition: Competition): Participant {
-        val code = AccessTokenHash.hashAccessToken(rawAccessToken = fixtures.unique("code"), algorithm = HashAlgorithm.Identity)
+        val code = accessTokenHasher.hash(fixtures.unique("code"))
         return participants.saveToCompetition(competitionId = competition.id, accessTokenHashes = listOf(code)) { id -> "st${id.value}" }
             .single()
     }

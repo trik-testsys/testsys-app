@@ -18,6 +18,7 @@ import org.springframework.transaction.PlatformTransactionManager
 import org.springframework.transaction.interceptor.BeanFactoryTransactionAttributeSourceAdvisor
 import org.springframework.transaction.interceptor.TransactionAttributeSource
 import org.springframework.transaction.support.TransactionOperations
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.infra.database.api.persistence.FileStorageCleanupProperties
 import tech.testsys.infra.database.api.persistence.FileStoragePaths
 import tech.testsys.infra.database.api.transaction.RetryingTransactionInterceptor
@@ -35,7 +36,7 @@ import tech.testsys.infra.settings.api.settingsOf
 import java.time.Clock
 
 /**
- * Configures JPA, persistence adapters, file storage and transaction retries for the application.
+ * Configures JPA, persistence adapters, the access-code hasher, file storage and transaction retries for the application.
  * The companion object registers [TransactionRetry] and an advisor outside the transaction interceptor.
  *
  * @since %CURRENT_VERSION%
@@ -104,6 +105,16 @@ class DatabaseConfiguration {
     @Bean
     fun transactionOperations(transactionManager: PlatformTransactionManager, transactionRetry: TransactionRetry): TransactionOperations =
         RetryingTransactionOperations(transactionManager, transactionRetry)
+
+    /**
+     * Hasher of access codes keyed with the required `testsys.access-token.secret` property; changing the secret
+     * invalidates every stored access code.
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Bean
+    fun accessTokenHasher(environment: Environment): AccessTokenHasher =
+        AccessTokenHasher(environment.getRequiredProperty("testsys.access-token.secret"))
 
     /**
      * Static infrastructure beans: they are created before the auto-proxy creator wraps the application beans.

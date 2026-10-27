@@ -6,6 +6,7 @@ import tech.testsys.domain.builder.api.supervisor
 import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
@@ -29,6 +30,9 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     override lateinit var repository: SupervisorRepository
 
     @Autowired
+    private lateinit var accessTokenHasher: AccessTokenHasher
+
+    @Autowired
     private lateinit var userJpaEntityRepository: UserJpaEntityRepository
 
     @Autowired
@@ -40,12 +44,12 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     override fun newData() = newData(fixtures.unique("token"))
 
     private fun newData(rawAccessToken: String) = supervisorData {
-        accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+        accessToken(rawAccessToken, accessTokenHasher)
         name = fixtures.unique("Supervisor")
     }
 
     override fun modified(entity: Supervisor) = entity.withData {
-        accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+        accessToken(fixtures.unique("token"), accessTokenHasher)
         name = fixtures.unique("Renamed supervisor")
     }
 
@@ -83,11 +87,11 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         val row = userJpaEntityRepository.findById(updated.id.value).orElseThrow()
 
         assertEquals(data.accessTokenHash.value, saved.data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, saved.data.accessTokenHash.algorithm)
+        assertEquals(HashAlgorithm.HmacSha256, saved.data.accessTokenHash.algorithm)
         assertEquals(modified.data.accessTokenHash.value, found.data.accessTokenHash.value)
-        assertEquals(HashAlgorithm.Identity, found.data.accessTokenHash.algorithm)
+        assertEquals(HashAlgorithm.HmacSha256, found.data.accessTokenHash.algorithm)
         assertEquals(modified.data.accessTokenHash.value, row.accessToken)
-        assertEquals(HashAlgorithmJpaEnum.IDENTITY, row.accessTokenHashAlgorithm)
+        assertEquals(HashAlgorithmJpaEnum.HMAC_SHA256, row.accessTokenHashAlgorithm)
     }
 
     @Test
@@ -115,7 +119,7 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
     }
 
     @Test
-    fun `should find user by its access code`() {
+    fun `should find user by its access code stored as its HMAC-SHA-256 hash`() {
         val token = fixtures.unique("token")
         val saved = repository.save(newData(token))
 
@@ -124,6 +128,7 @@ class SupervisorPersistenceAdapterTests : UpdatablePersistenceAdapterContractTes
         assertNotNull(found)
         assertEquals(saved.id, found.id)
         assertSameData(saved, found)
+        assertEquals(accessTokenHasher.hash(token).value, userJpaEntityRepository.findById(saved.id.value).orElseThrow().accessToken)
     }
 
     @Test

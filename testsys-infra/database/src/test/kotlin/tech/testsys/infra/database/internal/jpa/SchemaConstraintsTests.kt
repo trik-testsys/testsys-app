@@ -309,7 +309,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
             "email" to "NULL",
             "password_hash" to "NULL",
             "access_token" to "'new'",
-            "access_token_hash_algorithm" to "'IDENTITY'",
+            "access_token_hash_algorithm" to "'HMAC_SHA256'",
         )
 
         private fun insertSql(table: String, values: Map<String, String>): String {
@@ -502,7 +502,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
 
         private fun scalarConstraints(): List<RowCase> = buildList {
             addAll(
-                enumCases("ts_user", "access_token_hash_algorithm", listOf("IDENTITY")).map { case ->
+                (enumCases("ts_user", "access_token_hash_algorithm", listOf("HMAC_SHA256")) + identityAccessTokenCase()).map { case ->
                     case.copy(values = singleRoleCredentials + case.values)
                 },
             )
@@ -571,7 +571,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
             for ((type, email) in listOf("MULTIPLE_ROLE" to "'new@test'", "SINGLE_ROLE" to "NULL")) {
                 for (password in listOf("NULL", "'hash'")) {
                     for (token in listOf("NULL", "'new'")) {
-                        for (algorithm in listOf("NULL", "'IDENTITY'")) {
+                        for (algorithm in listOf("NULL", "'HMAC_SHA256'")) {
                             val credentials = listOf(password, token, algorithm)
                             add(
                                 RowCase(
@@ -585,7 +585,7 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                                     ),
                                     isAccepted = (type to credentials) in listOf(
                                         "MULTIPLE_ROLE" to listOf("'hash'", "NULL", "NULL"),
-                                        "SINGLE_ROLE" to listOf("NULL", "'new'", "'IDENTITY'"),
+                                        "SINGLE_ROLE" to listOf("NULL", "'new'", "'HMAC_SHA256'"),
                                     ),
                                     constraint = "ck_ts_user_type_credentials",
                                 ),
@@ -595,6 +595,14 @@ class SchemaConstraintsTests : DatabaseIntegrationTests() {
                 }
             }
         }
+
+        /** Access codes are stored only as HMAC-SHA-256, although invite codes still use IDENTITY. */
+        private fun identityAccessTokenCase() = RowCase(
+            table = "ts_user",
+            values = mapOf("access_token_hash_algorithm" to "'IDENTITY'"),
+            isAccepted = false,
+            constraint = "ck_ts_user_access_token_hash_algorithm",
+        )
 
         private fun enumCases(table: String, column: String, values: List<String>): List<RowCase> = (values + "UNKNOWN").map { value ->
             RowCase(table = table, values = mapOf(column to "'$value'"), isAccepted = value in values, constraint = "ck_${table}_$column")

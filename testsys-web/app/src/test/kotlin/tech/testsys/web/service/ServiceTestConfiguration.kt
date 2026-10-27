@@ -18,7 +18,7 @@ import tech.testsys.domain.builder.api.supervisorData
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.task.ContestId
-import tech.testsys.domain.model.user.HashAlgorithm
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.PasswordHash
 import tech.testsys.domain.model.user.User
 import tech.testsys.infra.database.api.service.ServiceTrikStudioVersions
@@ -43,6 +43,8 @@ const val SERVICE_TEST_SECRET: String = "test-service-code-that-is-only-used-by-
 
 const val SERVICE_TEST_GRAFANA_URL: String = "https://grafana.example.test/monitoring/"
 
+private val serviceTestAccessTokenHasher = AccessTokenHasher("0123456789abcdef".repeat(4))
+
 /** Users of every kind that the mocked service user search finds by id. */
 val SERVICE_TEST_USERS: List<User<*>> = listOf(
     multipleRoleUser {
@@ -63,7 +65,7 @@ val SERVICE_TEST_USERS: List<User<*>> = listOf(
         createdAt = Instant.parse("2026-03-14T09:30:00Z")
         data = participantData {
             competition(2001)
-            accessToken("participant-token", algorithm = HashAlgorithm.Identity)
+            accessToken("participant-token", serviceTestAccessTokenHasher)
             name = "Участник Пётр"
         }
     },
@@ -73,7 +75,7 @@ val SERVICE_TEST_USERS: List<User<*>> = listOf(
         data = observerData {
             community(3001)
             contests = mutableListOf(ContestId(4001), ContestId(4002))
-            accessToken("observer-token", algorithm = HashAlgorithm.Identity)
+            accessToken("observer-token", serviceTestAccessTokenHasher)
             name = "Наблюдатель Анна"
         }
     },
@@ -81,7 +83,7 @@ val SERVICE_TEST_USERS: List<User<*>> = listOf(
         id = 1004
         createdAt = Instant.parse("2026-03-14T09:30:00Z")
         data = supervisorData {
-            accessToken("supervisor-token", algorithm = HashAlgorithm.Identity)
+            accessToken("supervisor-token", serviceTestAccessTokenHasher)
             name = "Супервайзер Олег"
         }
     },

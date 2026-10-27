@@ -25,8 +25,8 @@ import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.SolutionId
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskValidationRequest
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.CommunityRole
-import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
@@ -101,6 +101,7 @@ class SupervisorOperations(
     private val administratorOperations: AdministratorOperations,
     private val contests: ContestRepository,
     private val observers: ObserverRepository,
+    private val accessTokenHasher: AccessTokenHasher,
 ) {
     /**
      * Returns a page of all non-supervisor users with last logins.
@@ -391,7 +392,7 @@ class SupervisorOperations(
             this.community = communityId
             this.name = name
             this.contests = contestIds.toMutableList()
-            accessToken(accessToken, HashAlgorithm.Identity)
+            accessToken(accessToken, accessTokenHasher)
         }
         IssuedObserver(observer = observers.save(data), accessToken = accessToken)
     }

@@ -181,6 +181,7 @@ HTTP-серверов внутри контейнера, флаг импорта
 | `TESTSYS_SERVICE_ADDRESS`, `TESTSYS_SERVICE_PORT` | `deploy/compose.yml`: `0.0.0.0`, `8081` | `testsys.service.address`, `port` |
 | `TESTSYS_METRICS_PORT` | `deploy/compose.yml`: `8082`; этот порт — цель Prometheus, см. [Сбор метрик](#сбор-метрик) | `testsys.metrics.port` |
 | `TESTSYS_SERVICE_SECRET` | `deploy/compose.dev.yml`, `deploy/compose.e2e.yml`: фиксированное значение; `deploy/compose.prod.yml` из переменной Compose `TESTSYS_SERVICE_SECRET` | `testsys.service.secret` |
+| `TESTSYS_ACCESS_TOKEN_SECRET` | `deploy/compose.dev.yml`, `deploy/compose.e2e.yml`: фиксированное значение; `deploy/compose.prod.yml` из переменной Compose `TESTSYS_ACCESS_TOKEN_SECRET`, см. [Секрет Кодов-доступа](../docs/project/deployment.md#секрет-кодов-доступа) | `testsys.access-token.secret` |
 | `TESTSYS_SERVICE_GRAFANAURL` | Override окружения из переменной Compose `TESTSYS_GRAFANA_URL`, см. [Grafana](#grafana) | `testsys.service.grafana-url` |
 | `TESTSYS_MAIL_HOST`, `TESTSYS_MAIL_PORT` | `deploy/compose.dev.yml`, `deploy/compose.e2e.yml`: `mailpit`, `1025` | `testsys.mail.host`, `port` |
 | `TESTSYS_MAIL_PASSWORD` | `deploy/compose.prod.yml` | `testsys.mail.password` |

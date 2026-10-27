@@ -85,7 +85,7 @@ class LoggedValuesTests {
             val participant = ParticipantVo(
                 id = SingleRoleUserId(31),
                 createdAt = Instant.EPOCH,
-                accessTokenHash = AccessTokenHash(SECRET_VALUE, HashAlgorithm.Identity),
+                accessTokenHash = AccessTokenHash(SECRET_VALUE, HashAlgorithm.HmacSha256),
                 name = "st31",
                 competition = CompetitionId(21),
             )
@@ -103,7 +103,7 @@ class LoggedValuesTests {
         fun `should mask the access code hash inside a data class`() {
             val data = participantData {
                 competition(2001)
-                accessToken(SECRET_VALUE, algorithm = HashAlgorithm.Identity)
+                storedAccessToken(AccessTokenHash(SECRET_VALUE, HashAlgorithm.HmacSha256))
                 name = "Участник Пётр"
             }
 
@@ -156,7 +156,7 @@ class LoggedValuesTests {
 
         @Test
         fun `should mask the access code and invite code hashes`() {
-            assertEquals("***", LoggedValues.value(AccessTokenHash(SECRET_VALUE, HashAlgorithm.Identity)))
+            assertEquals("***", LoggedValues.value(AccessTokenHash(SECRET_VALUE, HashAlgorithm.HmacSha256)))
             assertEquals("***", LoggedValues.value(InviteCodeHash(SECRET_VALUE, HashAlgorithm.Identity)))
         }
 
@@ -187,7 +187,7 @@ class LoggedValuesTests {
                 createdAt = Instant.parse("2026-03-14T09:30:00Z")
                 data = participantData {
                     competition(2001)
-                    accessToken(SECRET_VALUE, algorithm = HashAlgorithm.Identity)
+                    storedAccessToken(AccessTokenHash(SECRET_VALUE, HashAlgorithm.HmacSha256))
                     name = "Участник Пётр"
                 }
             }

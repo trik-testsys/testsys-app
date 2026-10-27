@@ -83,7 +83,6 @@ import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionId
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VerdictId
-import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -117,6 +116,7 @@ import tech.testsys.operation.error.UserNotExistsError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.publicCommunityConfig
+import tech.testsys.operation.util.testAccessTokenHasher
 import tech.testsys.operation.util.testAdministrator
 import tech.testsys.operation.util.testCompetition
 import tech.testsys.operation.util.testContest
@@ -171,6 +171,7 @@ class AdministratorOperationsTests {
         submissionRepository = submissions,
         judgmentOrderRepository = judgmentOrders,
         verdictRepository = verdicts,
+        accessTokenHasher = testAccessTokenHasher,
     )
     private val administrator = testAdministrator {}
     private val nonAdministrator = testMultipleRoleUser {
@@ -196,7 +197,7 @@ class AdministratorOperationsTests {
 
             @ParameterizedTest
             @ValueSource(strings = ["x", "  Mixed Case  "])
-            fun `should save an observer with the exact name the community and a new Identity UUID access code`(name: String) {
+            fun `should save an observer with the exact name the community and a new UUID access code hashed by the hasher`(name: String) {
                 prepareCreation()
                 val saved = captureSave()
 
@@ -205,7 +206,7 @@ class AdministratorOperationsTests {
                 val result = issued.observer
                 assertEquals(name, result.data.name)
                 assertEquals(communityId, result.data.community.id)
-                assertEquals(AccessTokenHash.hashAccessToken(issued.accessToken, HashAlgorithm.Identity), result.data.accessTokenHash)
+                assertEquals(testAccessTokenHasher.hash(issued.accessToken), result.data.accessTokenHash)
                 assertEquals(issued.accessToken, UUID.fromString(issued.accessToken).toString())
                 assertSame(saved.captured, result.data)
             }
@@ -259,7 +260,7 @@ class AdministratorOperationsTests {
                         community(communityId.value)
                         name = "Persisted"
                         contests(listOf(contestId.value))
-                        accessToken("stored", HashAlgorithm.Identity)
+                        accessToken("stored", testAccessTokenHasher)
                     }
                 }
                 every { observers.save(any<ObserverData>()) } returns persisted
@@ -674,7 +675,7 @@ class AdministratorOperationsTests {
             id = 31
             createdAt = Instant.EPOCH
             data = observerData {
-                accessToken("observer", algorithm = HashAlgorithm.Identity)
+                accessToken("observer", testAccessTokenHasher)
                 name = "Observer"
                 community(5)
             }
@@ -727,7 +728,7 @@ class AdministratorOperationsTests {
                     id = 31
                     createdAt = Instant.EPOCH
                     data = observerData {
-                        accessToken("observer", algorithm = HashAlgorithm.Identity)
+                        accessToken("observer", testAccessTokenHasher)
                         name = "Observer"
                         community(5)
                     }
@@ -1844,7 +1845,7 @@ class AdministratorOperationsTests {
                     id = observerId.value
                     createdAt = Instant.EPOCH
                     data = observerData {
-                        accessToken("observer", algorithm = HashAlgorithm.Identity)
+                        accessToken("observer", testAccessTokenHasher)
                         name = "Observer"
                         community(communityId.value)
                     }

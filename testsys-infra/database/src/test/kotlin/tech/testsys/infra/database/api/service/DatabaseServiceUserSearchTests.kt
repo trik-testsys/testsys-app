@@ -520,7 +520,7 @@ class DatabaseServiceUserSearchTests : DatabaseIntegrationTests() {
             val found = search.findById(ServiceUserId(participant.id.value))
 
             assertEquals(participant.id, (found as? Participant)?.id)
-            assertEquals("participant-token", (found as? Participant)?.data?.accessTokenHash?.value)
+            assertEquals(participant.data.accessTokenHash, (found as? Participant)?.data?.accessTokenHash)
         }
 
         @Test

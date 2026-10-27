@@ -41,6 +41,7 @@ import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.VersionBucket
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.Participant
@@ -72,6 +73,7 @@ class StudyFixtures(
     private val studentEntries: StudentContestEntryRepository,
     private val participantEntries: ParticipantContestEntryRepository,
     private val dataSource: DataSource,
+    private val accessTokenHasher: AccessTokenHasher,
 ) {
     /** Returns a new user holding only the student role. */
     fun student(): MultipleRoleUser = fixtures.multipleRoleUser { roles { student { data = studentData {} } } }
@@ -187,7 +189,7 @@ class StudyFixtures(
         return participants.save(
             participantData {
                 competition(competitionId)
-                accessToken(fixtures.unique("token"), algorithm = HashAlgorithm.Identity)
+                accessToken(fixtures.unique("token"), accessTokenHasher)
                 name = fixtures.unique("Participant")
             },
         )

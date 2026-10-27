@@ -87,6 +87,7 @@ import tech.testsys.domain.model.task.TrikSupportedLanguage
 import tech.testsys.domain.model.task.Verdict
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.AccessRestorationRequest
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.EmailChangeRequest
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
@@ -141,6 +142,7 @@ class DatabaseFixtures(
     private val registrationRequests: RegistrationRequestRepository,
     private val emailChangeRequests: EmailChangeRequestRepository,
     private val accessRestorationRequests: AccessRestorationRequestRepository,
+    private val accessTokenHasher: AccessTokenHasher,
 ) {
 
     fun participantContestEntry(
@@ -198,7 +200,7 @@ class DatabaseFixtures(
         return participants.save(
             participantData {
                 competition(competitionId)
-                accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+                accessToken(rawAccessToken, accessTokenHasher)
                 name = unique("Participant")
             },
         )
@@ -213,7 +215,7 @@ class DatabaseFixtures(
         return observers.save(
             observerData {
                 community(communityId)
-                accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+                accessToken(rawAccessToken, accessTokenHasher)
                 name = unique("Observer")
                 this.contests = contests.map { contest -> contest.id }.toMutableList()
             },
@@ -251,7 +253,7 @@ class DatabaseFixtures(
 
     fun supervisor(rawAccessToken: String = unique("token")): Supervisor = supervisors.save(
         supervisorData {
-            accessToken(rawAccessToken, algorithm = HashAlgorithm.Identity)
+            accessToken(rawAccessToken, accessTokenHasher)
             name = unique("Supervisor")
         },
     )

@@ -40,6 +40,7 @@ import tech.testsys.domain.model.task.Submission
 import tech.testsys.domain.model.task.SubmissionStatus
 import tech.testsys.domain.model.task.Task
 import tech.testsys.domain.model.task.TaskValidationRequest
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.Administrator
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.CompatibleUserRole
@@ -139,6 +140,7 @@ class AdministratorOperations(
     private val submissionRepository: SubmissionRepository,
     private val judgmentOrderRepository: JudgmentOrderRepository,
     private val verdictRepository: VerdictRepository,
+    private val accessTokenHasher: AccessTokenHasher,
 ) {
 
     private val random = SecureRandom()
@@ -181,7 +183,7 @@ class AdministratorOperations(
             this.community = communityId
             name = observerName
             this.contests = contestIds.toMutableList()
-            accessToken(accessToken, algorithm = HashAlgorithm.Identity)
+            accessToken(accessToken, accessTokenHasher)
         }
         return IssuedObserver(observer = observerRepository.save(data), accessToken = accessToken).asSuccess()
     }

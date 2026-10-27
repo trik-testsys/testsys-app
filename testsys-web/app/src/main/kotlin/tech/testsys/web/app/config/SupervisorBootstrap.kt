@@ -7,9 +7,7 @@ import tech.testsys.domain.builder.api.withData
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
-import tech.testsys.domain.model.user.AccessTokenHash
-import tech.testsys.domain.model.user.HashAlgorithm
-import tech.testsys.domain.model.user.RawAccessTokenDependency
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.util.isAccessToken
@@ -27,6 +25,7 @@ class SupervisorBootstrap(
     private val participants: ParticipantRepository,
     private val observers: ObserverRepository,
     private val transactions: TransactionOperations,
+    private val accessTokenHasher: AccessTokenHasher,
 ) {
     /**
      * Returns the single Supervisor after creating it or setting its configured name and access code.
@@ -46,9 +45,6 @@ class SupervisorBootstrap(
         return transactions.execute { ensureInTransaction(name, rawAccessToken) }
     }
 
-    @RawAccessTokenDependency(
-        reason = "Compares the stored access code with the configured one hashed by Identity, so another algorithm never matches.",
-    )
     private fun ensureInTransaction(name: String, rawAccessToken: String): Supervisor {
         check(participants.findByAccessToken(rawAccessToken) == null && observers.findByAccessToken(rawAccessToken) == null) {
             "Supervisor access code is already held by a user of another kind"
@@ -56,16 +52,16 @@ class SupervisorBootstrap(
 
         val supervisor = supervisors.findSingle() ?: return supervisors.save(
             supervisorData {
-                accessToken(rawAccessToken, HashAlgorithm.Identity)
+                accessToken(rawAccessToken, accessTokenHasher)
                 this.name = name
             },
         )
 
-        val accessTokenHash = AccessTokenHash.hashAccessToken(rawAccessToken, HashAlgorithm.Identity)
+        val accessTokenHash = accessTokenHasher.hash(rawAccessToken)
         if (supervisor.data.name == name && supervisor.data.accessTokenHash == accessTokenHash) return supervisor
         return supervisors.update(
             supervisor.withData {
-                accessToken(rawAccessToken, HashAlgorithm.Identity)
+                accessToken(rawAccessToken, accessTokenHasher)
                 this.name = name
             },
         )

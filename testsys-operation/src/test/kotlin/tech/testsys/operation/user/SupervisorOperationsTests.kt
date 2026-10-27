@@ -35,7 +35,6 @@ import tech.testsys.domain.model.group.CommunityId
 import tech.testsys.domain.model.group.CommunityInvite
 import tech.testsys.domain.model.task.ContestId
 import tech.testsys.domain.model.task.SolutionId
-import tech.testsys.domain.model.user.AccessTokenHash
 import tech.testsys.domain.model.user.CommunityRole
 import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.ObserverData
@@ -50,6 +49,7 @@ import tech.testsys.operation.error.UserNotExistsError
 import tech.testsys.operation.error.getOrThrow
 import tech.testsys.operation.util.assertRaises
 import tech.testsys.operation.util.publicCommunityConfig
+import tech.testsys.operation.util.testAccessTokenHasher
 import tech.testsys.operation.util.testAdministrator
 import tech.testsys.operation.util.testCommunity
 import tech.testsys.operation.util.testCompetition
@@ -80,7 +80,7 @@ class SupervisorOperationsTests {
     private val pagination = Pagination(0, 20)
     private val operations = SupervisorOperations(
         users, communities, communityRepository, multipleRoleUsers, userRepository,
-        publicCommunityConfig(publicId), administratorOperations, contests, observers,
+        publicCommunityConfig(publicId), administratorOperations, contests, observers, testAccessTokenHasher,
     )
 
     private fun prepareMember() {
@@ -802,7 +802,7 @@ class SupervisorOperationsTests {
                 val result = operations.createObserver(supervisor, targetId, "New observer", setOf(contest.id)).getOrThrow()
 
                 assertSame(saved, result.observer)
-                assertEquals(AccessTokenHash.hashAccessToken(result.accessToken, HashAlgorithm.Identity), data.captured.accessTokenHash)
+                assertEquals(testAccessTokenHasher.hash(result.accessToken), data.captured.accessTokenHash)
                 assertEquals("New observer", data.captured.name)
                 assertEquals(targetId, data.captured.community.id)
                 assertEquals(listOf(contest.id), data.captured.contests.ids)

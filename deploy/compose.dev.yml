@@ -12,6 +12,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: testsys
       # Fixed and not secret, like the database password: the sign-in code of the service interface in dev and e2e.
       TESTSYS_SERVICE_SECRET: local-service-secret-for-dev-and-e2e-environments-only-not-secret
+      # Fixed and not secret as well: the key of access-code hashing in dev and e2e.
+      TESTSYS_ACCESS_TOKEN_SECRET: local-access-token-secret-for-dev-and-e2e-environments-only-not-secret
       TESTSYS_SERVICE_GRAFANAURL: ${TESTSYS_GRAFANA_URL:?set TESTSYS_GRAFANA_URL to the Grafana address}
       TESTSYS_MAIL_HOST: mailpit
       TESTSYS_MAIL_PORT: "1025"

@@ -129,28 +129,23 @@
 получает и проверяет только порт `PasswordHasher` (раздел [«Порты»](#порты)).
 
 `SingleRoleUserData.accessTokenHash` хранит представление Кода-доступа и алгоритм в одном объекте `AccessTokenHash`
-([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)). Сейчас доступен только `HashAlgorithm.Identity`:
-он оставляет Код-доступа без изменений, поэтому сохранённое значение совпадает с исходным КД.
-`Identity` — временное решение и не обеспечивает криптографическую защиту.
-
-Объявления, поведение которых зависит от совпадения сохранённого значения с исходным КД, помечаются
-`@RawAccessTokenDependency` с объяснением зависимости в обязательном параметре `reason`
-([RawAccessTokenDependency.kt](src/main/kotlin/tech/testsys/domain/model/user/RawAccessTokenDependency.kt)).
-При замене `Identity` все отмеченные объявления должны быть проверены и исправлены до включения нового алгоритма.
-Простое копирование значения между объектами такой зависимости не создаёт. Методы,
-показывающие исходный КД, должны получить эту аннотацию.
+([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)). КД хешируются алгоритмом
+`HashAlgorithm.HmacSha256`. `AccessTokenHasher` из того же файла считает HMAC-SHA-256 от UTF-8-байтов КД с ключом
+из UTF-8-байтов серверного секрета и записывает результат 64 символами hex в нижнем регистре. Секрет короче
+64 символов конструктор отклоняет. Хеш детерминирован: по хешу введённого КД адаптер хранения находит Пользователя.
+Исходный КД по хешу восстановить нельзя. Откуда приложение берёт секрет — в разделе
+[«Коды-доступа и Пароли Пользователей»](../testsys-infra/database/README.md#коды-доступа-и-пароли-пользователей)
+database/README.md.
 
 Билдеры данных Пользователей с Фиксированной Ролью наследуют `UserDataBuilder`
 ([UserBuilder.kt](src/main/kotlin/tech/testsys/domain/builder/user/UserBuilder.kt)). `MultipleRoleUserDataBuilder`
 его не наследует: он требует готовый `passwordHash`, а `withData` переносит сохранённый хеш Пароля.
-Метод `accessToken(rawAccessToken, algorithm)` вызывает функцию `AccessTokenHash.hashAccessToken`
-([User.kt](src/main/kotlin/tech/testsys/domain/model/user/User.kt)).
-Она применяет переданный алгоритм и возвращает значение вместе с ним в `AccessTokenHash`.
-Алгоритм исходного КД передаётся явно; сейчас доступен только `HashAlgorithm.Identity`.
+Метод `accessToken(rawAccessToken, hasher)` хеширует исходный КД переданным `AccessTokenHasher` и сохраняет
+результат вместе с алгоритмом в `AccessTokenHash`.
 Метод `storedAccessToken(hash)` принимает готовый `AccessTokenHash` без хэширования.
 `build()` проверяет наличие объекта, но не хэширует его.
 
-`withData` переносит сохранённый `AccessTokenHash`. Для замены КД вызывается `accessToken(newToken, algorithm)` внутри блока `withData`.
+`withData` переносит сохранённый `AccessTokenHash`. Для замены КД вызывается `accessToken(newToken, hasher)` внутри блока `withData`.
 Конструкторы классов данных и их `copy` принимают готовый `AccessTokenHash`.
 
 Порты хранения Пользователей с Фиксированной Ролью `ParticipantRepository`, `ObserverRepository`
@@ -229,7 +224,8 @@
 Поле `codeHash` хранит представление Кода-приглашения и алгоритм в одном объекте `InviteCodeHash`
 ([InviteCodeHash.kt](src/main/kotlin/tech/testsys/domain/model/group/InviteCodeHash.kt)).
 Функция `InviteCodeHash.hashInviteCode` применяет переданный алгоритм без нормализации ввода.
-Как и для КД, сейчас доступен только `HashAlgorithm.Identity`: сохранённое значение совпадает с исходным кодом.
+Коды-приглашения хешируются только `HashAlgorithm.Identity`: сохранённое значение совпадает с исходным кодом,
+а `HashAlgorithm.HmacSha256` функция отклоняет с `IllegalArgumentException`.
 
 `ClassInviteDataBuilder` и `CommunityInviteDataBuilder` наследуют `InviteCodeDataBuilder`
 ([InviteCodeDataBuilder.kt](src/main/kotlin/tech/testsys/domain/builder/group/InviteCodeDataBuilder.kt)).

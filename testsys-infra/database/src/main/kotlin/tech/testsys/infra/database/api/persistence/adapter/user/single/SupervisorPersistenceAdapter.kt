@@ -3,6 +3,7 @@ package tech.testsys.infra.database.api.persistence.adapter.user.single
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.SingleRoleUserId
 import tech.testsys.domain.model.user.Supervisor
 import tech.testsys.domain.model.user.SupervisorData
@@ -31,9 +32,10 @@ import tech.testsys.infra.database.internal.utils.requireVersion
 @OptIn(InternalDatabaseApi::class)
 class SupervisorPersistenceAdapter(
     jpaEntityRepository: UserJpaEntityRepository,
+    accessTokenHasher: AccessTokenHasher,
     private val supervisorDataJpaEntityRepository: SupervisorDataJpaEntityRepository,
     private val singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository,
-) : AbstractUserPersistenceAdapter<SupervisorData, SingleRoleUserId, Supervisor>(jpaEntityRepository),
+) : AbstractUserPersistenceAdapter<SupervisorData, SingleRoleUserId, Supervisor>(jpaEntityRepository, accessTokenHasher),
     SupervisorRepository {
 
     @Transactional

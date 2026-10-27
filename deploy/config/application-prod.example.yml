@@ -2,8 +2,8 @@
 # every <...> placeholder and pass the absolute path of the copy in TESTSYS_APP_CONFIG; deploy/compose.prod.yml
 # mounts it as application-environment.yml. The file must be readable by UID 10001 of the application container.
 # The SMTP password, the database password, the Supervisor access code, the service interface code
-# TESTSYS_SERVICE_SECRET, the Grafana address TESTSYS_GRAFANA_URL and TESTSYS_GRADING_NODES are Compose variables,
-# not part of this file. The email confirmation parameters, the invite TTLs and the participant limit are initial
+# TESTSYS_SERVICE_SECRET, the access-code hashing key TESTSYS_ACCESS_TOKEN_SECRET, the Grafana address
+# TESTSYS_GRAFANA_URL and TESTSYS_GRADING_NODES are Compose variables, not part of this file. The email confirmation parameters, the invite TTLs and the participant limit are initial
 # values: values saved in the service cabinet override them.
 testsys:
   operation:

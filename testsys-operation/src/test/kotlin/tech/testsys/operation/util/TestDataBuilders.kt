@@ -33,8 +33,8 @@ import tech.testsys.domain.model.task.TaskValidationRequest
 import tech.testsys.domain.model.task.TrikStudioVersion
 import tech.testsys.domain.model.task.VersionBucket
 import tech.testsys.domain.model.user.AccessRestorationRequest
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.EmailChangeRequest
-import tech.testsys.domain.model.user.HashAlgorithm
 import tech.testsys.domain.model.user.MultipleRoleUser
 import tech.testsys.domain.model.user.MultipleRoleUserId
 import tech.testsys.domain.model.user.Observer
@@ -174,11 +174,13 @@ fun testStatement(statementId: Long = 0L): Statement = statement {
     }
 }
 
+val testAccessTokenHasher = AccessTokenHasher("0123456789abcdef".repeat(4))
+
 fun testParticipant(builder: ParticipantDataBuilder.() -> Unit = {}): Participant = participant {
     id = 17
     createdAt = Instant.EPOCH
     data = participantData {
-        accessToken("participant", algorithm = HashAlgorithm.Identity)
+        accessToken("participant", testAccessTokenHasher)
         name = "Participant"
         competition(23)
         builder()
@@ -189,7 +191,7 @@ fun testObserver(builder: ObserverDataBuilder.() -> Unit = {}): Observer = obser
     id = 18
     createdAt = Instant.EPOCH
     data = observerData {
-        accessToken("observer", algorithm = HashAlgorithm.Identity)
+        accessToken("observer", testAccessTokenHasher)
         name = "Observer"
         community(29)
         builder()
@@ -200,7 +202,7 @@ fun testSupervisor(builder: SupervisorDataBuilder.() -> Unit = {}): Supervisor =
     id = 19
     createdAt = Instant.EPOCH
     data = supervisorData {
-        accessToken("supervisor", algorithm = HashAlgorithm.Identity)
+        accessToken("supervisor", testAccessTokenHasher)
         name = "Supervisor"
         builder()
     }

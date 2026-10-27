@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tech.testsys.domain.contract.persistence.repository.ObserverRepository
 import tech.testsys.domain.model.task.ContestId
+import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.Observer
 import tech.testsys.domain.model.user.ObserverData
 import tech.testsys.domain.model.user.SingleRoleUserId
@@ -35,10 +36,11 @@ import tech.testsys.infra.database.internal.utils.syncJoinTable
 @OptIn(InternalDatabaseApi::class)
 class ObserverPersistenceAdapter(
     jpaEntityRepository: UserJpaEntityRepository,
+    accessTokenHasher: AccessTokenHasher,
     private val observerDataJpaEntityRepository: ObserverDataJpaEntityRepository,
     private val contestToObserverJpaEntityRepository: ContestToObserverJpaEntityRepository,
     private val singleRoleToUserJpaEntityRepository: SingleRoleToUserJpaEntityRepository,
-) : AbstractUserPersistenceAdapter<ObserverData, SingleRoleUserId, Observer>(jpaEntityRepository),
+) : AbstractUserPersistenceAdapter<ObserverData, SingleRoleUserId, Observer>(jpaEntityRepository, accessTokenHasher),
     ObserverRepository {
 
     @Transactional

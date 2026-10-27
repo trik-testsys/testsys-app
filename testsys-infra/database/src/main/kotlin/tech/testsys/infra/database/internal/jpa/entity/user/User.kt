@@ -4,7 +4,6 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
-import tech.testsys.domain.model.user.RawAccessTokenDependency
 import tech.testsys.infra.database.internal.InternalDatabaseApi
 import tech.testsys.infra.database.internal.jpa.entity.SnowflakeJpaEntity
 import java.time.Instant
@@ -22,7 +21,7 @@ enum class UserTypeJpaEnum {
 }
 
 /**
- * Algorithm used to produce the stored access-code representation of a [UserJpaEntity].
+ * Algorithm used to produce a stored access-code or invite-code representation.
  *
  * @since %CURRENT_VERSION%
  */
@@ -30,13 +29,14 @@ enum class UserTypeJpaEnum {
 enum class HashAlgorithmJpaEnum {
 
     IDENTITY,
+    HMAC_SHA256,
 }
 
 /**
  * JPA entity of [tech.testsys.domain.model.user.User].
  *
  * @property name the name of the user.
- * @property accessToken the stored access-code representation, or `null` for multiple-role users.
+ * @property accessToken the HMAC-SHA-256 hex of the access code, or `null` for multiple-role users.
  * @property accessTokenHashAlgorithm the algorithm used to produce the stored access-code representation, or `null`
  * for multiple-role users.
  * @property passwordHash the stored password representation, or `null` for single-role users.
@@ -48,10 +48,6 @@ enum class HashAlgorithmJpaEnum {
  */
 @Entity
 @InternalDatabaseApi
-@RawAccessTokenDependency(
-    reason = "The uk_ts_user_access_token constraint enforces original access-code uniqueness of single-role users " +
-        "only with Identity.",
-)
 class UserJpaEntity(
     val name: String,
     val accessToken: String?,

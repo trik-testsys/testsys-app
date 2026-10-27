@@ -236,7 +236,7 @@
     <changeSet id="1.0.0-03-init-user-checks" author="testsys">
         <sql><![CDATA[
             ALTER TABLE ts_user ADD CONSTRAINT ck_ts_user_access_token_hash_algorithm CHECK (
-                access_token_hash_algorithm IN ('IDENTITY')
+                access_token_hash_algorithm IN ('HMAC_SHA256')
             );
             ALTER TABLE ts_user ADD CONSTRAINT ck_ts_user_type_email CHECK (
                 (type = 'MULTIPLE_ROLE' AND email IS NOT NULL) OR (type = 'SINGLE_ROLE' AND email IS NULL)

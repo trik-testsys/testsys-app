@@ -1,5 +1,6 @@
 package tech.testsys.web.app.view
 
+import com.github.mvysny.fakeservlet.FakeHttpEnvironment
 import com.github.mvysny.kaributesting.v10._click
 import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10._get
@@ -13,10 +14,12 @@ import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.server.VaadinSession
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -36,6 +39,17 @@ import tech.testsys.web.app.security.UserKind
 class AuthenticationViewTests : MockSpringVaadinTests() {
     @Autowired
     private lateinit var sessionRegistry: SessionRegistry
+
+    // Failed access codes are counted per client address in a limiter shared by the whole Spring context.
+    @BeforeEach
+    fun useOwnClientAddress() {
+        FakeHttpEnvironment.remoteAddr = fixtures.unique("client")
+    }
+
+    @AfterEach
+    fun restoreClientAddress() {
+        FakeHttpEnvironment.remoteAddr = DEFAULT_CLIENT_ADDRESS
+    }
 
     @ParameterizedTest
     @MethodSource("fixedRoleStartPages")
@@ -142,6 +156,41 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should close signing in by the access code from the client address after five failures even with the right code`() {
+        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        UI.getCurrent().navigate(AuthenticationView::class.java)
+        repeat(5) { signInWith("unknown access code") }
+
+        signInWith(accessToken)
+
+        assertEquals("Вход временно закрыт", lastToastTitle())
+        assertNull(CabinetSignIn.principal())
+    }
+
+    @Test
+    fun `should keep signing in by the access code open from another client address when one address is blocked`() {
+        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        UI.getCurrent().navigate(AuthenticationView::class.java)
+        repeat(5) { signInWith("unknown access code") }
+        FakeHttpEnvironment.remoteAddr = fixtures.unique("client")
+
+        signInWith(accessToken)
+
+        assertEquals(SupervisorView::class.java, currentView)
+    }
+
+    @Test
+    fun `should keep signing in by the access code open when an e-mail address equal to the client address is blocked`() {
+        val accessToken = fixtures.accessTokenOf(fixtures.supervisor())
+        UI.getCurrent().navigate(AuthenticationView::class.java)
+        repeat(5) { signInByPassword(FakeHttpEnvironment.remoteAddr, "Wrong password") }
+
+        signInWith(accessToken)
+
+        assertEquals(SupervisorView::class.java, currentView)
+    }
+
+    @Test
     fun `should send a guest from a protected page to sign in`() {
         UI.getCurrent().navigate(DeveloperView::class.java)
 
@@ -240,6 +289,8 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     private fun lastToastTitle(): String = UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.last().text
 
     companion object {
+        private const val DEFAULT_CLIENT_ADDRESS = "127.0.0.1"
+
         @JvmStatic
         fun fixedRoleStartPages(): List<Arguments> = listOf(
             Arguments.of(UserKind.PARTICIPANT, ParticipantView::class.java),

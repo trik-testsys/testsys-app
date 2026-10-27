@@ -17,13 +17,17 @@ enum class LoginAttemptResult {
 }
 
 /**
- * Serializes sign-in attempts by a string key and blocks the key for five minutes on its fifth failure within five
- * minutes; a blocked attempt never authenticates or extends the block, and the state lives in instance memory.
- * Keys are spread over stripes: attempts of keys in different stripes run in parallel.
+ * Serializes sign-in attempts by a string key and blocks the key for [window] on the failure that reaches
+ * [maximumFailures] within [window]; a blocked attempt never authenticates or extends the block, and the state lives
+ * in instance memory. Keys are spread over stripes: attempts of keys in different stripes run in parallel.
  *
  * @since %CURRENT_VERSION%
  */
-class LoginAttemptLimiter(private val clock: Clock) {
+class LoginAttemptLimiter(
+    private val clock: Clock,
+    private val maximumFailures: Int = MAXIMUM_FAILURES,
+    private val window: Duration = WINDOW,
+) {
     // ponytail: keys of one stripe wait for each other; more stripes if sign-in bursts still queue up.
     private val stripes = Array(STRIPES) { mutableMapOf<String, Attempts>() }
 
@@ -36,19 +40,19 @@ class LoginAttemptLimiter(private val clock: Clock) {
         val attempts = stripes[key.hashCode().mod(STRIPES)]
         synchronized(attempts) {
             val now = clock.instant()
-            attempts.entries.removeIf { (_, state) -> state.expired(now) }
+            attempts.entries.removeIf { (_, state) -> state.expired(now, window) }
             val state = attempts.getOrPut(key) { Attempts() }
             if (state.blockedUntil?.isAfter(now) == true) return LoginAttemptResult.BLOCKED
 
-            state.failures.removeIf { failure -> !failure.isAfter(now.minus(WINDOW)) }
+            state.failures.removeIf { failure -> !failure.isAfter(now.minus(window)) }
             if (authenticate()) {
                 if (state.failures.isEmpty()) attempts.remove(key)
                 return LoginAttemptResult.SUCCESS
             }
 
             state.failures.add(now)
-            return if (state.failures.size >= MAXIMUM_FAILURES) {
-                state.blockedUntil = now.plus(WINDOW)
+            return if (state.failures.size >= maximumFailures) {
+                state.blockedUntil = now.plus(window)
                 LoginAttemptResult.BLOCKED
             } else {
                 LoginAttemptResult.FAILURE
@@ -60,8 +64,8 @@ class LoginAttemptLimiter(private val clock: Clock) {
         val failures = mutableListOf<Instant>()
         var blockedUntil: Instant? = null
 
-        fun expired(now: Instant): Boolean = blockedUntil?.let { until -> !until.isAfter(now) }
-            ?: failures.none { failure -> failure.isAfter(now.minus(WINDOW)) }
+        fun expired(now: Instant, window: Duration): Boolean = blockedUntil?.let { until -> !until.isAfter(now) }
+            ?: failures.none { failure -> failure.isAfter(now.minus(window)) }
     }
 
     private companion object {

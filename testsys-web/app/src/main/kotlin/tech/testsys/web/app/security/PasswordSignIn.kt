@@ -6,7 +6,6 @@ import tech.testsys.operation.error.AuthenticateByPasswordError
 import tech.testsys.operation.error.OperationException
 import tech.testsys.operation.util.normalizeEmail
 import tech.testsys.web.app.service.user.UserService
-import java.time.Clock
 
 /**
  * Signs a user with non-fixed roles in by the e-mail address and the password through [UserService] outside its
@@ -16,9 +15,7 @@ import java.time.Clock
  */
 @Component
 @OptIn(InternalOperationsApi::class)
-class PasswordSignIn(private val userService: UserService, clock: Clock) {
-    private val limiter = LoginAttemptLimiter(clock)
-
+class PasswordSignIn(private val userService: UserService, private val limiter: LoginAttemptLimiter) {
     /**
      * Outcome of [signIn], without the entered password.
      *
@@ -57,7 +54,7 @@ class PasswordSignIn(private val userService: UserService, clock: Clock) {
      */
     fun signIn(email: String, password: String): Result {
         var principal: CabinetPrincipal? = null
-        val attempt = limiter.attempt(normalizeEmail(email)) {
+        val attempt = limiter.attempt(EMAIL_KEY_PREFIX + normalizeEmail(email)) {
             principal = authenticate(email, password)
             principal != null
         }
@@ -74,5 +71,10 @@ class PasswordSignIn(private val userService: UserService, clock: Clock) {
     } catch (failure: OperationException) {
         if (failure.error !is AuthenticateByPasswordError) throw failure
         null
+    }
+
+    private companion object {
+        // Keys of the limiter shared with signing in by access code, where they are client addresses.
+        const val EMAIL_KEY_PREFIX = "email:"
     }
 }

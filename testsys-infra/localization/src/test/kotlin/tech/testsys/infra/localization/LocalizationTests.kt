@@ -929,9 +929,9 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should state the failure limit and the lock time in sign in blocked description`() {
+        fun `should report too many failed attempts without numbers in sign in blocked description`() {
             assertEquals(
-                "После 5 неудачных попыток за 5 минут вход по этой почте закрывается на 5 минут. Попробуйте позже.",
+                "Слишком много неудачных попыток входа. Попробуйте позже.",
                 l.pageGuest.signInBlockedDescription(),
             )
         }

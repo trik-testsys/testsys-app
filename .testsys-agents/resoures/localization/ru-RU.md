@@ -943,6 +943,19 @@ Notes collected while moving the Observer and Supervisor pages onto localization
   example «a purely Cyrillic Пароль may have at most 36 letters» follows from it.
 - «Вход временно закрыт» follows features.md («закрывает вход по этой почте»). The description does not promise
   a wait of exactly 5 minutes («Попробуйте позже»), since the remaining lock time can be shorter. Inference.
+- `page_guest.sign_in.blocked.description` was changed (2026-10-28) to «Слишком много неудачных попыток входа.
+  Попробуйте позже.»: the limit and lock time became configurable and the message is shared by sign-in by e-mail
+  and by Код-доступа (counted per client address), so it names neither numbers nor «по этой почте». Викисловарь
+  gives «слишком» one sense, «с избытком, чересчур», without a stylistic label (the entry is marked incomplete);
+  no second reading of «неудачных попыток входа» found. Source: https://ru.wiktionary.org/wiki/слишком
+  (read 2026-10-28).
+- «неудачный» in «неудачных попыток входа» has Викисловарь sense 1 «сопровождающийся неудачами, заканчивающийся
+  неудачей», without a label; sense 2 («не такой, какой ожидали») does not fit. Source:
+  https://ru.wiktionary.org/wiki/неудачный (read 2026-10-28). Usage, not a norm: the Russian ArcGIS Server help
+  says «число неудачных попыток входа в систему»
+  (https://enterprise.arcgis.com/ru/server/11.3/administer/windows/user-account-lockout-policy.htm, read
+  2026-10-28). The impersonal wording fits both counters: failures by e-mail may come from someone else, and
+  several people may share one client address. No normative style guide for lockout messages was found.
 - «72 байт»: after a numeral the counting form «байт» (zero ending) is used; «байтов» only without a numeral.
   Грамота.ру answers № 265242, № 310954 («равен 536 байт… 1220 байт»; «вне сочетания с количественным
   числительным … байтов»), № 237033 («длину 6 байт (4 байта)»); Викисловарь lists the counting form «байт» next

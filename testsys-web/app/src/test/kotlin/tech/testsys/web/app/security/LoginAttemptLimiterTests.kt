@@ -3,10 +3,7 @@ package tech.testsys.web.app.security
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZoneOffset
+import java.time.Duration
 import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
@@ -31,6 +28,20 @@ class LoginAttemptLimiterTests {
         assertFalse(wasChecked)
         clock.now = clock.now.plusSeconds(1)
         assertEquals(LoginAttemptResult.SUCCESS, limiter.attempt("client") { true })
+    }
+
+    @Test
+    fun `should block on the configured failure count for exactly the configured window`() {
+        val configured = LoginAttemptLimiter(clock = clock, maximumFailures = 2, window = Duration.ofSeconds(60))
+        assertEquals(LoginAttemptResult.FAILURE, configured.attempt("client") { false })
+        assertEquals(LoginAttemptResult.BLOCKED, configured.attempt("client") { false })
+        clock.now = clock.now.plusSeconds(59)
+        assertEquals(LoginAttemptResult.BLOCKED, configured.attempt("client") { true })
+        clock.now = clock.now.plusSeconds(1)
+
+        val result = configured.attempt("client") { true }
+
+        assertEquals(LoginAttemptResult.SUCCESS, result)
     }
 
     @Test
@@ -122,13 +133,5 @@ class LoginAttemptLimiterTests {
             assertEquals(LoginAttemptResult.SUCCESS, second)
             assertEquals(LoginAttemptResult.SUCCESS to true, first.get())
         }
-    }
-
-    private class MutableClock : Clock() {
-        var now: Instant = Instant.parse("2026-01-01T00:00:00Z")
-
-        override fun instant(): Instant = now
-        override fun getZone(): ZoneId = ZoneOffset.UTC
-        override fun withZone(zone: ZoneId): Clock = this
     }
 }

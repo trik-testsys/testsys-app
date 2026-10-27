@@ -54,3 +54,9 @@ testsys:
       duration: PT1M
       # false only logs the clients over the limit.
       enforce: true
+    # Failed sign-ins to the main interface per e-mail address or, by access code, per client address; the failure
+    # that reaches the number within the duration closes signing in for the same duration.
+    sign-in-limit:
+      failures: 5
+      # Counting window and block length, an ISO-8601 duration of whole seconds.
+      duration: PT5M

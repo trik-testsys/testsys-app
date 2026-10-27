@@ -4,11 +4,9 @@ import com.vaadin.flow.component.UI
 import com.vaadin.flow.router.HasDynamicTitle
 import com.vaadin.flow.router.Route
 import com.vaadin.flow.server.auth.AnonymousAllowed
-import tech.testsys.operation.error.OperationException
+import tech.testsys.web.app.security.AccessCodeSignIn
 import tech.testsys.web.app.security.CabinetPrincipal
-import tech.testsys.web.app.security.CabinetSignIn
 import tech.testsys.web.app.security.PasswordSignIn
-import tech.testsys.web.app.service.user.UserService
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.feedback.FeedbackKind
@@ -29,8 +27,8 @@ import tech.testsys.web.components.texts.currentLocalization
 @AnonymousAllowed
 class AuthenticationView(
     headers: CabinetHeaders,
-    private val userService: UserService,
     private val passwordSignIn: PasswordSignIn,
+    private val accessCodeSignIn: AccessCodeSignIn,
 ) : TestSysView(), HasDynamicTitle {
     init {
         val texts = currentLocalization().pageGuest
@@ -76,15 +74,13 @@ class AuthenticationView(
     }
 
     private fun signInByAccessCode(accessToken: String) {
-        // The only refusal of signing in by an access code is a code assigned to no fixed-role user.
-        val principal = try {
-            userService.authenticate(accessToken)
-        } catch (_: OperationException) {
-            toast(FeedbackKind.Error, currentLocalization().pageGuest.signInInvalid())
-            return
+        val texts = currentLocalization().pageGuest
+        when (val result = accessCodeSignIn.signIn(accessToken)) {
+            is AccessCodeSignIn.Result.Success -> open(result.principal, result.returnAddress)
+            AccessCodeSignIn.Result.InvalidAccessCode -> toast(FeedbackKind.Error, texts.signInInvalid())
+            AccessCodeSignIn.Result.Blocked ->
+                toast(FeedbackKind.Error, title = texts.signInBlockedTitle(), description = texts.signInBlockedDescription())
         }
-
-        open(principal, CabinetSignIn.signIn(principal))
     }
 
     private fun open(principal: CabinetPrincipal, returnAddress: String?) {

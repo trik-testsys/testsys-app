@@ -475,9 +475,10 @@ Docker-образа версии TRIK Studio. Затем `proceed` отправ�
   значение КД восстанавливать нельзя, поэтому исходный КД есть только в этом ответе. Так же `createObserver`
   Администратора и Супервайзера возвращает `IssuedObserver`. Оба типа объявлены в
   [IssuedUsers.kt](src/main/kotlin/tech/testsys/operation/user/IssuedUsers.kt).
-- `deleteParticipants` загружает Участников одним вызовом `findByIdsAsMap` и проверяет Посылки каждого в Турах
-  Соревнования через `SubmissionRepository.countGrading`. Первый отсутствующий Участник или Участник с Посылками
-  отклоняет удаление ошибкой `CompetitionParticipantNotExistsError` или `ParticipantHasSubmissionsError`. Операция
+- `deleteParticipants` загружает Участников одним вызовом `findByIdsAsMap` и проверяет Посылки всех выбранных
+  Участников в Турах Соревнования одним вызовом `SubmissionRepository.findGradingAuthorIds`. Первый в порядке набора
+  отсутствующий Участник или Участник с Посылками отклоняет удаление ошибкой `CompetitionParticipantNotExistsError`
+  или `ParticipantHasSubmissionsError`. Операция
   удаляет Участников через `ParticipantRepository.removeById` только после всех проверок и возвращает их
   загруженные состояния в порядке набора.
 - `viewAvailableContests` помечена кодификатором `addContest`. Она возвращает страницу Туров, открытых Сообществам

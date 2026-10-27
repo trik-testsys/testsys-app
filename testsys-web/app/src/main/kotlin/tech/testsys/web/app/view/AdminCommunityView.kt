@@ -67,10 +67,11 @@ abstract class CommunityDetailsView(
         // Checks role and community access before the tables load, so a refusal opens its error screen.
         service.viewCommunityInvites(communityId)
         val communities = service.viewCommunities().map { (community, _) -> community }
-        show(communities.first { community -> community.id == communityId }, communities, observer = null)
+        show(communities.first { community -> community.id == communityId }, communities)
     }
 
-    private fun show(community: CommunityVo, communities: List<CommunityVo>, observer: IssuedObserverVo?) {
+    /** Builds the page of [community]; the access code of the just created [observer] is shown in this build only. */
+    private fun show(community: CommunityVo, communities: List<CommunityVo>, observer: IssuedObserverVo? = null) {
         val localization = currentLocalization()
         val texts = localization.pageAdministrator
         page(headers.cabinet(active = CabinetHeaders.MENU_SECTION)) {
@@ -85,7 +86,7 @@ abstract class CommunityDetailsView(
             }
             guide(texts.communityGuide())
             row {
-                detailsBlock(community) { edited -> show(edited, communities, observer) }
+                detailsBlock(community) { edited -> show(edited, communities) }
                 invitesBlock(community.id)
             }
             observer?.let { created -> createdObserverBlock(created) }

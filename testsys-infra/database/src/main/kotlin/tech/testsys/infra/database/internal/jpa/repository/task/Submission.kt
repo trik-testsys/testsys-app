@@ -147,6 +147,24 @@ interface SubmissionJpaEntityRepository : SnowflakeJpaEntityRepository<Submissio
         @Param("authorIds") authorIds: Collection<Long>,
         @Param("contestIds") contestIds: Collection<Long>,
     ): SubmissionCountJpaProjection
+
+    /**
+     * Finds the distinct ids among [authorIds] of the authors of grading submissions in any of [contestIds].
+     *
+     * @since %CURRENT_VERSION%
+     */
+    @Query(
+        """
+            select distinct s.authorId from SubmissionJpaEntity s
+            where s.kind = tech.testsys.infra.database.internal.jpa.entity.task.SubmissionKindJpaEnum.GRADING
+              and s.authorId in :authorIds
+              and s.gradingContestId in :contestIds
+        """,
+    )
+    fun findGradingAuthorIds(
+        @Param("authorIds") authorIds: Collection<Long>,
+        @Param("contestIds") contestIds: Collection<Long>,
+    ): List<Long>
 }
 
 /**

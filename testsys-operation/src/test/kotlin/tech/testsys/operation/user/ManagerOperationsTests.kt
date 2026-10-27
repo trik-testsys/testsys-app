@@ -41,7 +41,6 @@ import tech.testsys.domain.contract.persistence.ContestTaskResult
 import tech.testsys.domain.contract.persistence.Page
 import tech.testsys.domain.contract.persistence.Pagination
 import tech.testsys.domain.contract.persistence.Sort
-import tech.testsys.domain.contract.persistence.SubmissionCount
 import tech.testsys.domain.contract.persistence.repository.ClassInviteRepository
 import tech.testsys.domain.contract.persistence.repository.ClassRepository
 import tech.testsys.domain.contract.persistence.repository.CompetitionRepository
@@ -3242,8 +3241,8 @@ class ManagerOperationsTests {
                     contests(listOf(19, 20))
                 }
                 every { participantRepository.findByIds(listOf(second, first)) } returns listOf(firstParticipant, secondParticipant)
-                every { submissionRepository.countGrading(authorIds = any(), contestIds = contestIds) } returns
-                    SubmissionCount(submissions = 0, authors = 0)
+                every { submissionRepository.findGradingAuthorIds(authorIds = setOf(second, first), contestIds = contestIds) } returns
+                    emptySet()
                 every { participantRepository.removeById(any()) } returns Unit
 
                 val actual = operations.deleteParticipants(
@@ -3254,6 +3253,7 @@ class ManagerOperationsTests {
 
                 assertEquals(listOf(secondParticipant, firstParticipant), actual)
                 verify(exactly = 1) { participantRepository.findByIds(any()) }
+                verify(exactly = 1) { submissionRepository.findGradingAuthorIds(any(), any()) }
                 verify(exactly = 1) { participantRepository.removeById(first) }
                 verify(exactly = 1) { participantRepository.removeById(second) }
                 verify(exactly = 0) { participantRepository.removeById(SingleRoleUserId(33)) }
@@ -3263,12 +3263,13 @@ class ManagerOperationsTests {
             @Test
             fun `should delete nobody and return an empty list for an empty selection`() {
                 every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
+                every { submissionRepository.findGradingAuthorIds(authorIds = emptySet(), contestIds = any()) } returns emptySet()
 
                 val actual = operations.deleteParticipants(user = manager, competitionId = competitionId, participantIds = emptySet())
                     .getOrThrow()
 
                 assertEquals(emptyList<Participant>(), actual)
-                verify { listOf(participantRepository, submissionRepository) wasNot Called }
+                verify { participantRepository wasNot Called }
             }
         }
 
@@ -3353,13 +3354,31 @@ class ManagerOperationsTests {
                     testCompetitionParticipant(31),
                     testCompetitionParticipant(32),
                 )
-                every { submissionRepository.countGrading(authorIds = setOf(first), contestIds = contestIds) } returns
-                    SubmissionCount(submissions = 0, authors = 0)
-                every { submissionRepository.countGrading(authorIds = setOf(second), contestIds = contestIds) } returns
-                    SubmissionCount(submissions = 1, authors = 1)
+                every { submissionRepository.findGradingAuthorIds(authorIds = setOf(first, second), contestIds = contestIds) } returns
+                    setOf(second)
 
                 assertRaises(ParticipantHasSubmissionsError(second)) {
                     operations.deleteParticipants(manager, competitionId, participantIds = linkedSetOf(first, second))
+                }
+
+                verify(exactly = 0) { participantRepository.removeById(any()) }
+            }
+
+            @Test
+            fun `should name the first participant in the selection order if several participants have submissions`() {
+                every { competitionRepository.findById(competitionId) } returns testCompetition {
+                    participants(listOf(31, 32))
+                    contests(listOf(19, 20))
+                }
+                every { participantRepository.findByIds(any()) } returns listOf(
+                    testCompetitionParticipant(31),
+                    testCompetitionParticipant(32),
+                )
+                every { submissionRepository.findGradingAuthorIds(authorIds = setOf(first, second), contestIds = contestIds) } returns
+                    linkedSetOf(first, second)
+
+                assertRaises(ParticipantHasSubmissionsError(second)) {
+                    operations.deleteParticipants(manager, competitionId, participantIds = linkedSetOf(second, first))
                 }
 
                 verify(exactly = 0) { participantRepository.removeById(any()) }
@@ -3374,7 +3393,7 @@ class ManagerOperationsTests {
                 val failure = IllegalStateException("Participant storage unavailable")
                 every { competitionRepository.findById(competitionId) } returns testCompetition { participants(listOf(31)) }
                 every { participantRepository.findByIds(any()) } returns listOf(testCompetitionParticipant(31))
-                every { submissionRepository.countGrading(any(), any()) } returns SubmissionCount(submissions = 0, authors = 0)
+                every { submissionRepository.findGradingAuthorIds(any(), any()) } returns emptySet()
                 every { participantRepository.removeById(first) } throws failure
 
                 val actual = assertThrows(IllegalStateException::class.java) {

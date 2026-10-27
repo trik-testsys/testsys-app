@@ -4,7 +4,10 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
+import com.github.mvysny.kaributesting.v10._click
+import com.github.mvysny.kaributesting.v10._get
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.server.VaadinService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -26,6 +29,7 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.session.HttpSessionDestroyedEvent
 import tech.testsys.web.app.MockSpringVaadinTests
 import tech.testsys.web.app.service.CurrentUser
+import tech.testsys.web.app.view.MultiMainView
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicReference
 
@@ -36,7 +40,13 @@ class SecurityConfigurationTests : MockSpringVaadinTests() {
 
     private val logger =
         assertInstanceOf(Logger::class.java, LoggerFactory.getLogger(SecurityConfiguration::class.java))
-    private val appender = ListAppender<ILoggingEvent>().apply { start() }
+    private val appender = object : ListAppender<ILoggingEvent>() {
+        // Keeps the log context of the moment of writing, which is gone once the listener returns.
+        override fun append(event: ILoggingEvent) {
+            event.prepareForDeferredProcessing()
+            super.append(event)
+        }
+    }.apply { start() }
 
     @AfterEach
     fun detachAppender() {
@@ -103,6 +113,29 @@ class SecurityConfigurationTests : MockSpringVaadinTests() {
         val lines = logged { SecurityConfiguration().sessionDestroyed(event) }
 
         assertEquals(listOf(Level.INFO to "Session of supervisor 7 as user 42 ended"), lines)
+    }
+
+    @Test
+    fun `should write the supervisor and user ids at INFO once when a supervisor signed in as a user signs out`() {
+        val supervisorId = fixtures.supervisor().id.value
+        val member = fixtures.userOf(UserKind.MULTIPLE_ROLE)
+        CabinetSignIn.signIn(CabinetPrincipal.of(member).copy(impersonatedBy = supervisorId))
+        UI.getCurrent().navigate(MultiMainView::class.java)
+
+        val lines = logged { UI.getCurrent()._get<NativeButton> { text = "Выйти" }._click() }
+
+        assertEquals(listOf(Level.INFO to "Session of supervisor $supervisorId as user ${member.id.value} ended"), lines)
+    }
+
+    @Test
+    fun `should put the supervisor and user ids into the log context of the record when a session ends outside a request`() {
+        val event = destroyedSession(CabinetPrincipal(userId = 42, kind = UserKind.MULTIPLE_ROLE, impersonatedBy = 7))
+        MDC.clear()
+
+        logged { SecurityConfiguration().sessionDestroyed(event) }
+
+        assertEquals(listOf(mapOf("user" to "42", "impersonatedBy" to "7")), appender.list.map { line -> line.mdcPropertyMap })
+        assertTrue(MDC.getCopyOfContextMap().isNullOrEmpty())
     }
 
     @Test

@@ -381,6 +381,17 @@ interface SubmissionRepository : EntityRepository<SubmissionData, SubmissionId, 
      * @since %CURRENT_VERSION%
      */
     fun countGrading(authorIds: Set<UserId>, contestIds: Set<ContestId>): SubmissionCount
+
+    /**
+     * Synchronously finds which of [authorIds] made grading submissions in any of [contestIds] in any grading state,
+     * without changing stored state or loading submissions. Storage exceptions propagate to the caller.
+     *
+     * @param authorIds the authors to check; an empty set finds nothing.
+     * @param contestIds the contests to include; an empty set finds nothing.
+     * @return the authors from [authorIds] having at least one matching submission.
+     * @since %CURRENT_VERSION%
+     */
+    fun findGradingAuthorIds(authorIds: Set<UserId>, contestIds: Set<ContestId>): Set<UserId>
 }
 
 /**

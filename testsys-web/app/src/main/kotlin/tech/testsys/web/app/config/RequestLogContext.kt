@@ -15,6 +15,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
+import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.CabinetSignIn
 
 /**
@@ -72,21 +73,7 @@ class RequestLogContext :
         logger.debug("Opened {} ({})", path, event.activeChain.firstOrNull()?.javaClass?.simpleName)
     }
 
-    private fun putUser() {
-        val principal = CabinetSignIn.principal()
-        if (principal == null) {
-            MDC.remove(USER)
-        } else {
-            MDC.put(USER, principal.userId.toString())
-        }
-
-        val supervisorId = principal?.impersonatedBy
-        if (supervisorId == null) {
-            MDC.remove(IMPERSONATED_BY)
-        } else {
-            MDC.put(IMPERSONATED_BY, supervisorId.toString())
-        }
-    }
+    private fun putUser() = putUser(CabinetSignIn.principal())
 
     // A file transfer request carries the UI id in its path instead of the parameter.
     private fun uiIdOf(request: VaadinRequest): String? = request.getParameter(ApplicationConstants.UI_ID_PARAMETER)
@@ -106,12 +93,41 @@ class RequestLogContext :
         }
     }
 
-    private companion object {
-        const val USER = "user"
-        const val IMPERSONATED_BY = "impersonatedBy"
-        const val ROUTE = "route"
-        const val ROUTE_ATTRIBUTE = "testsys.route."
-        const val RESOURCE_PATH = "/" + StreamRequestHandler.DYN_RES_PREFIX
-        val logger: Logger = LoggerFactory.getLogger(RequestLogContext::class.java)
+    companion object {
+        private const val USER = "user"
+        private const val IMPERSONATED_BY = "impersonatedBy"
+        private const val ROUTE = "route"
+        private const val ROUTE_ATTRIBUTE = "testsys.route."
+        private const val RESOURCE_PATH = "/" + StreamRequestHandler.DYN_RES_PREFIX
+        private val logger: Logger = LoggerFactory.getLogger(RequestLogContext::class.java)
+
+        /**
+         * Runs [action] with the ids of [principal] in the log context, also outside a request, and then restores
+         * the ids that were there before.
+         */
+        internal fun withUser(principal: CabinetPrincipal, action: () -> Unit) {
+            val previous = listOf(USER, IMPERSONATED_BY).associateWith { key -> MDC.get(key) }
+            putUser(principal)
+            try {
+                action()
+            } finally {
+                previous.forEach { (key, value) -> if (value == null) MDC.remove(key) else MDC.put(key, value) }
+            }
+        }
+
+        private fun putUser(principal: CabinetPrincipal?) {
+            if (principal == null) {
+                MDC.remove(USER)
+            } else {
+                MDC.put(USER, principal.userId.toString())
+            }
+
+            val supervisorId = principal?.impersonatedBy
+            if (supervisorId == null) {
+                MDC.remove(IMPERSONATED_BY)
+            } else {
+                MDC.put(IMPERSONATED_BY, supervisorId.toString())
+            }
+        }
     }
 }

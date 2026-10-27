@@ -190,6 +190,24 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should hide the created observer and its access code once the community details are saved`() {
+        val community = fixtures.community(owner = signInAdministrator())
+        sharedContest(community)
+        open(community.id)
+        val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
+        UI.getCurrent()._get<Button> { text = "Создать Наблюдателя" }._click()
+        textField("Имя")._value = "Наблюдатель Анна"
+        contestsField().value = setOf(contest)
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+
+        UI.getCurrent()._get<Button> { text = "Изменить" }._click()
+        UI.getCurrent()._get<Button> { text = "Сохранить" }._click()
+
+        assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.ariaLabel.orElse(null) == "Код-доступа" })
+        assertFalse("Наблюдатель «Наблюдатель Анна» создан" in UI.getCurrent().element.textRecursively)
+    }
+
+    @Test
     fun `should show the name and description of the community in read-only fields`() {
         val community = fixtures.community(owner = signInAdministrator(), name = "Кружок")
 

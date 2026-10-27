@@ -82,6 +82,7 @@ import tech.testsys.operation.error.ViewCompetitionsError
 import tech.testsys.operation.error.asSuccess
 import tech.testsys.operation.error.ensure
 import tech.testsys.operation.error.operation
+import tech.testsys.operation.error.raise
 import tech.testsys.operation.util.findByIdsAsMap
 import tech.testsys.operation.util.generateInviteCode
 import tech.testsys.operation.util.hasRole
@@ -394,12 +395,12 @@ class ManagerOperations(
             participant
         }
 
-        // ponytail: one count per participant to name the one with submissions; a grouped count if selections grow large.
-        val contestIds = competition.data.contests.ids.toSet()
-        participantIds.forEach { participantId ->
-            val submissions = submissionRepository.countGrading(authorIds = setOf(participantId), contestIds = contestIds)
-            ensure(submissions.submissions == 0L) { ParticipantHasSubmissionsError(participantId) }
-        }
+        val withSubmissions = submissionRepository.findGradingAuthorIds(
+            authorIds = participantIds,
+            contestIds = competition.data.contests.ids.toSet(),
+        )
+        participantIds.firstOrNull { participantId -> participantId in withSubmissions }
+            ?.let { participantId -> ParticipantHasSubmissionsError(participantId).raise() }
 
         participantIds.forEach(participantRepository::removeById)
         return participants.asSuccess()

@@ -159,6 +159,16 @@ class SubmissionPersistenceAdapter(
         return SubmissionCount(submissions = count.submissions, authors = count.authors)
     }
 
+    @Transactional(readOnly = true)
+    override fun findGradingAuthorIds(authorIds: Set<UserId>, contestIds: Set<ContestId>): Set<UserId> {
+        if (authorIds.isEmpty() || contestIds.isEmpty()) return emptySet()
+
+        val authorsByRawId = authorIds.associateBy { authorId -> authorId.value }
+        return submissionJpaEntityRepository
+            .findGradingAuthorIds(authorIds = authorsByRawId.keys, contestIds = contestIds.map { contestId -> contestId.value })
+            .mapTo(mutableSetOf()) { authorId -> authorsByRawId.getValue(authorId) }
+    }
+
     override fun assembleAll(rows: List<SubmissionJpaEntity>): List<Submission> {
         val judgmentOrderIds = findLinkedIds(
             ownerIds = rows.map { row -> row.requireId() },

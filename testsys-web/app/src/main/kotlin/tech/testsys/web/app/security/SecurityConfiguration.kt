@@ -19,6 +19,7 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler
 import org.springframework.security.web.session.HttpSessionDestroyedEvent
 import org.springframework.security.web.session.HttpSessionEventPublisher
+import tech.testsys.web.app.config.RequestLogContext
 import tech.testsys.web.app.view.AuthenticationView
 
 /**
@@ -64,7 +65,8 @@ class SecurityConfiguration {
 
     /**
      * Writes at INFO the end of the session of a supervisor signed in as a user, by signing out or by expiry, from the
-     * security contexts of the destroyed session [event] (testsys.user.single.supervisor.impersonate).
+     * security contexts of the destroyed session [event], with both ids in the log context of the record
+     * (testsys.user.single.supervisor.impersonate).
      *
      * @since %CURRENT_VERSION%
      */
@@ -73,7 +75,11 @@ class SecurityConfiguration {
         event.securityContexts
             .mapNotNull { context -> context.authentication?.principal as? CabinetPrincipal }
             .filter { principal -> principal.impersonatedBy != null }
-            .forEach { principal -> logger.info("Session of supervisor {} as user {} ended", principal.impersonatedBy, principal.userId) }
+            .forEach { principal ->
+                RequestLogContext.withUser(principal) {
+                    logger.info("Session of supervisor {} as user {} ended", principal.impersonatedBy, principal.userId)
+                }
+            }
     }
 
     /**

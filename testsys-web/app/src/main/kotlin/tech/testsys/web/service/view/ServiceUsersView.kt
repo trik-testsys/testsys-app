@@ -61,11 +61,11 @@ private val ROLE_LABELS: Map<ServiceUserRole, String> = mapOf(
 @Route("users")
 @PageTitle("Пользователи")
 @RolesAllowed("SERVICE")
-class ServiceUsersView(private val search: ServiceUserSearch) : TestSysView() {
+class ServiceUsersView(private val headers: ServiceHeaders, private val search: ServiceUserSearch) : TestSysView() {
     private var applied = ServiceUserFilter()
 
     init {
-        page(ServiceHeaders.header()) {
+        page(headers.header(active = ServiceHeaders.USERS_SECTION)) {
             head("Пользователи")
             row {
                 block(title = "Пользователи") {

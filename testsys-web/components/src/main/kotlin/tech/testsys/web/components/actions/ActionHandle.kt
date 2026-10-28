@@ -6,6 +6,8 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.Key
 import com.vaadin.flow.component.button.Button
 import com.vaadin.flow.component.html.Span
+import com.vaadin.flow.component.page.PendingJavaScriptResult
+import com.vaadin.flow.dom.Element
 import com.vaadin.flow.dom.SignalBinding
 import com.vaadin.flow.signals.BindingActiveException
 import com.vaadin.flow.signals.Signal
@@ -23,6 +25,9 @@ import tech.testsys.web.components.core.setAriaBusy
  * @property isEnabled whether the action can be clicked.
  * @property isLoading whether the action shows a spinner and ignores clicks, keeping its look; a manual change while
  * bound, and a second binding, throw [BindingActiveException].
+ * @property cooldownSeconds how many seconds the action ignores clicks after each attach, for example after each opening
+ * of its dialog; `0` means no cooldown, a negative value throws [IllegalArgumentException]. The cooldown does not cover
+ * [clickOnEnter], so a positive value on an action clicked on Enter throws [IllegalStateException].
  * @since %CURRENT_VERSION%
  */
 @TestSysDsl
@@ -47,6 +52,19 @@ class ActionHandle internal constructor(
         set(value) {
             loading.value = value
         }
+
+    private var hasEnterShortcut = false
+
+    var cooldownSeconds: Int = 0
+        set(value) {
+            require(value >= 0) { "Cooldown of an action must not be negative, got $value seconds" }
+            check(value == 0 || !hasEnterShortcut) { "Action clicked on Enter cannot have a cooldown, got $value seconds" }
+            field = value
+        }
+
+    init {
+        button.addAttachListener { _ -> if (cooldownSeconds > 0) button.element.startCooldown(cooldownSeconds) }
+    }
 
     /**
      * Binds [isEnabled] to [signal]: every value it produces is applied at once. A manual [isEnabled] while bound,
@@ -74,11 +92,35 @@ class ActionHandle internal constructor(
     }
 
     /**
-     * Clicks the action when Enter is pressed anywhere on the page, so that a form submits from the keyboard.
+     * Clicks the action when Enter is pressed anywhere on the page, so that a form submits from the keyboard. The
+     * shortcut ignores [cooldownSeconds], so calling it on an action with a cooldown throws [IllegalStateException].
      *
      * @since %CURRENT_VERSION%
      */
     fun clickOnEnter() {
+        check(cooldownSeconds == 0) { "Action with a cooldown of $cooldownSeconds seconds cannot be clicked on Enter" }
+        hasEnterShortcut = true
         button.addClickShortcut(Key.ENTER)
     }
 }
+
+/**
+ * Makes the button inert on the client for [seconds], showing the seconds left, so a hasty click cannot act. The server
+ * state is untouched; a repeated start replaces the running countdown instead of ending it early.
+ */
+private fun Element.startCooldown(seconds: Int): PendingJavaScriptResult = executeJs(
+    """
+    let left = $0;
+    clearInterval(this.tsCooldown);
+    this.inert = true;
+    this.setAttribute('data-ts-cooldown', left);
+    this.tsCooldown = setInterval(() => {
+      left -= 1;
+      if (left > 0) { this.setAttribute('data-ts-cooldown', left); return; }
+      clearInterval(this.tsCooldown);
+      this.removeAttribute('data-ts-cooldown');
+      this.inert = false;
+    }, 1000);
+    """.trimIndent(),
+    seconds,
+)

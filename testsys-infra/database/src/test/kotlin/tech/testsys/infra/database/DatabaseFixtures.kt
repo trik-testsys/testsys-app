@@ -22,6 +22,7 @@ import tech.testsys.domain.builder.api.participantContestEntryData
 import tech.testsys.domain.builder.api.participantData
 import tech.testsys.domain.builder.api.recordingData
 import tech.testsys.domain.builder.api.registrationRequestData
+import tech.testsys.domain.builder.api.regradeData
 import tech.testsys.domain.builder.api.solutionData
 import tech.testsys.domain.builder.api.statementData
 import tech.testsys.domain.builder.api.studentContestEntryData
@@ -53,6 +54,7 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantContestEnt
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
+import tech.testsys.domain.contract.persistence.repository.RegradeRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
@@ -77,6 +79,7 @@ import tech.testsys.domain.model.task.Exercise
 import tech.testsys.domain.model.task.JudgmentOrder
 import tech.testsys.domain.model.task.Logs
 import tech.testsys.domain.model.task.Recording
+import tech.testsys.domain.model.task.Regrade
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.Statement
 import tech.testsys.domain.model.task.Submission
@@ -135,6 +138,7 @@ class DatabaseFixtures(
     private val contests: ContestRepository,
     private val submissions: SubmissionRepository,
     private val verdicts: VerdictRepository,
+    private val regrades: RegradeRepository,
     private val judgmentOrders: JudgmentOrderRepository,
     private val logs: LogsRepository,
     private val recordings: RecordingRepository,
@@ -462,20 +466,36 @@ class DatabaseFixtures(
         return verdict
     }
 
-    fun verdict(submission: Submission = submission(), polygon: Polygon = polygon()): Verdict {
+    fun verdict(submission: Submission = submission(), polygons: List<Polygon> = listOf(polygon())): Verdict {
         val submissionId = submission.id.value
         val taskId = submission.data.task.id.value
-        val polygonId = polygon.id.value
-        val logsId = logs().id.value
+        val polygonLogIds = polygons.map { polygon -> polygon.id.value to logs().id.value }
         return verdicts.save(
             verdictData {
                 task(taskId)
                 submission(submissionId)
-                testVerdict {
-                    score = 100
-                    test(polygonId)
-                    logs(logsId)
+                polygonLogIds.forEach { (polygonId, logsId) ->
+                    testVerdict {
+                        score = 100
+                        test(polygonId)
+                        logs(logsId)
+                    }
                 }
+            },
+        )
+    }
+
+    fun regrade(
+        task: Task = task(),
+        polygons: List<Polygon> = listOf(polygon()),
+        regraded: List<Submission> = listOf(gradingSubmission(task = task)),
+    ): Regrade {
+        val taskId = task.id.value
+        return regrades.save(
+            regradeData {
+                task(taskId)
+                tests(polygons.map { polygon -> polygon.id.value })
+                submissions(regraded.map { submission -> submission.id.value })
             },
         )
     }

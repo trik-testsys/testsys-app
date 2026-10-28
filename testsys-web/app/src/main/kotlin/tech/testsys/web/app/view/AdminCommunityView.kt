@@ -21,7 +21,6 @@ import tech.testsys.web.app.service.administrator.AdministratorService
 import tech.testsys.web.app.service.administrator.CommunityInviteVo
 import tech.testsys.web.components.TestSysView
 import tech.testsys.web.components.actions.action
-import tech.testsys.web.components.actions.linkAction
 import tech.testsys.web.components.actions.mainAction
 import tech.testsys.web.components.data.Page
 import tech.testsys.web.components.data.TableHandle
@@ -170,12 +169,6 @@ abstract class CommunityDetailsView(
                 }
             }
             footer { dialog ->
-                linkAction(texts.communityObserverOpen()) {
-                    onClick {
-                        dialog.close()
-                        onOpenUser(observer)
-                    }
-                }
                 action(localization.uiOverlay.dialogClose()) { onClick { dialog.close() } }
             }
         }.open()

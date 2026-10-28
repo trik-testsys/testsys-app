@@ -5,7 +5,6 @@ import io.mockk.mockk
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 import tech.testsys.operation.annotation.InternalOperationsApi
 import java.util.random.RandomGenerator
@@ -84,25 +83,27 @@ class CredentialsTests {
     inner class IsValidPasswordTests {
 
         @ParameterizedTest
-        @CsvSource("a,8", "😀,8", "a,64", "п,36")
-        fun `should accept a password of 8 to 64 code points taking at most 72 bytes in UTF-8`(symbol: String, count: Int) {
-            assertTrue(isValidPassword(symbol.repeat(count)))
-        }
-
-        @Test
-        fun `should accept a password with surrounding spaces counted as its symbols`() {
-            assertTrue(isValidPassword("  pass  "))
+        @ValueSource(strings = ["Abcdef1!", "Aa1!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "aA1!@#$%^&*()-_=+.,?"])
+        fun `should accept a password of 8 to 64 allowed characters with every kind of character`(password: String) {
+            assertTrue(isValidPassword(password))
         }
 
         @ParameterizedTest
-        @CsvSource("a,7", "😀,7", "a,65", "a,0")
-        fun `should reject a password shorter than 8 or longer than 64 code points`(symbol: String, count: Int) {
-            assertFalse(isValidPassword(symbol.repeat(count)))
+        @ValueSource(strings = ["Abcde1!", "Aa1!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", ""])
+        fun `should reject a password shorter than 8 or longer than 64 characters`(password: String) {
+            assertFalse(isValidPassword(password))
         }
 
-        @Test
-        fun `should reject a password of 37 code points taking 73 bytes in UTF-8`() {
-            assertFalse(isValidPassword("п".repeat(36) + "a"))
+        @ParameterizedTest
+        @ValueSource(strings = ["abcdef1!", "ABCDEF1!", "Abcdefg!", "Abcdefg1"])
+        fun `should reject a password without a lowercase letter an uppercase letter a digit or a symbol`(password: String) {
+            assertFalse(isValidPassword(password))
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["Abcd ef1!", " Abcdef1!", "Пароль1!a", "Abcdef1!😀", "Abcdef1!~", "Abcdef1!\"", "Abcdef1!/"])
+        fun `should reject a password with a space or a character outside the allowed set`(password: String) {
+            assertFalse(isValidPassword(password))
         }
     }
 }

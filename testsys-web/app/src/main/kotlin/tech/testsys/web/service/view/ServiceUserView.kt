@@ -32,7 +32,7 @@ import java.time.ZoneId
 @Route("users/:$SERVICE_USER_ID_PARAMETER")
 @PageTitle("Пользователь")
 @RolesAllowed("SERVICE")
-class ServiceUserView(private val search: ServiceUserSearch) : TestSysView(), BeforeEnterObserver {
+class ServiceUserView(private val headers: ServiceHeaders, private val search: ServiceUserSearch) : TestSysView(), BeforeEnterObserver {
     override fun beforeEnter(event: BeforeEnterEvent) {
         val user = event.routeParameters.get(SERVICE_USER_ID_PARAMETER).orElse(null)
             ?.toLongOrNull()
@@ -42,7 +42,7 @@ class ServiceUserView(private val search: ServiceUserSearch) : TestSysView(), Be
             return
         }
 
-        page(ServiceHeaders.header()) {
+        page(headers.header(active = ServiceHeaders.USERS_SECTION)) {
             head("Пользователь «${dataOf(user).name}»") { crumb("Пользователи", ServiceUsersView::class.java) }
             detailsBlock(user)
         }

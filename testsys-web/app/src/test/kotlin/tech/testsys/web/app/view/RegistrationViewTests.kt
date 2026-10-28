@@ -77,7 +77,7 @@ class RegistrationViewTests : MockSpringVaadinTests() {
 
         confirm(code = mail.confirmationCodes.getValue(email), name = "Новый Пользователь", password = "short")
 
-        assertEquals("Пароль не подходит по длине", lastToastTitle())
+        assertEquals("Пароль не подходит", lastToastTitle())
         assertEquals(RegistrationView::class.java, currentView)
         assertNull(multipleRoleUsers.findByEmail(email))
     }
@@ -222,6 +222,6 @@ class RegistrationViewTests : MockSpringVaadinTests() {
 
     private companion object {
         const val MAX_ATTEMPTS = 3
-        const val PASSWORD = "Chosen password 1"
+        const val PASSWORD = "Chosen-password-1"
     }
 }

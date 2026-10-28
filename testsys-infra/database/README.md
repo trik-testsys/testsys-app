@@ -85,6 +85,7 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 | Пользователь с несколькими Ролями, `ts_user` | `ts_multiple_role_to_user`, `ts_developer_data`, `ts_student_data`, `ts_judge_data`, `ts_manager_data`, `ts_administrator_data` |
 | Пользователь с одной Ролью, `ts_user` | `ts_single_role_to_user`, `ts_participant_data`, `ts_observer_data`, `ts_supervisor_data`, `ts_contest_to_observer` |
 | Запрос проверки, `ts_task_validation_request` | Четыре таблицы `ts_*_to_task_validation_request`, `ts_test_diagnostic_result`, `ts_diagnostic_report` |
+| Перепроверка, `ts_regrade` | `ts_test_to_regrade`, `ts_submission_to_regrade` |
 | Посылка, Приказ судьи, Вердикт, Коды-приглашения, запросы регистрации, смены почты и восстановления доступа, записи первого входа | Частей нет; у Вердикта часть `ts_test_verdict` |
 
 Некоторые записи меняют чужой агрегат и поэтому повышают его версию:
@@ -259,6 +260,16 @@ PostgreSQL отклоняет запись с SQLSTATE `40001`.
 адаптер возвращает нули и не обращается к БД. Метод `findGradingAuthorIds` находит переданных авторов с такими
 Посылками в переданных Турах одним запросом `select distinct` по автору; если один из наборов пуст, адаптер возвращает
 пустой набор и не обращается к БД. Чтение выполняется в транзакции с `readOnly = true`.
+
+## Прогресс Перепроверок
+
+`RegradePersistenceAdapter.countGraded` считает прогресс каждой Перепроверки из набора. Что входит в прогресс,
+определено в
+[testsys.user.multi.developer.task.commitTask](../../docs/domain/features.md#testsysusermultidevelopertaskcommittask-partially-implemented).
+Полигоны результатов берутся из `ts_test_verdict.test_id`, Полигоны Перепроверки — из `ts_test_to_regrade`.
+Подсчёт выполняет один агрегирующий запрос `RegradeJpaEntityRepository.countGraded` с `count(distinct ...)` и
+подзапросами `not exists`; адаптер не загружает сами Посылки и Вердикты.
+Для пустого набора адаптер возвращает пустой результат и не обращается к БД.
 
 ## Соревнования Туров
 

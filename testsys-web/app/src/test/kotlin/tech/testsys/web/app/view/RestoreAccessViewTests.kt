@@ -93,7 +93,7 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
         confirm(code = mail.confirmationCodes.getValue(email), password = "short")
 
-        assertEquals("Пароль не подходит по длине", lastToastTitle())
+        assertEquals("Пароль не подходит", lastToastTitle())
         assertEquals(1, UI.getCurrent()._find<Button> { text = "Восстановить доступ" }.size)
     }
 
@@ -235,6 +235,6 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
 
     private companion object {
         const val MAX_ATTEMPTS = 3
-        const val NEW_PASSWORD = "Restored password 1"
+        const val NEW_PASSWORD = "Restored-password-1"
     }
 }

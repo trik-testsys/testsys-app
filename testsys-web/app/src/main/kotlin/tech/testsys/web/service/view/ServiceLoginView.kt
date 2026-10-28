@@ -14,7 +14,7 @@ import tech.testsys.web.service.security.ServiceSignIn
 import tech.testsys.web.service.security.ServiceSignInResult
 
 /**
- * Service login with one secret field, cleared after every submitted attempt.
+ * Service login on the guest card with one secret field, cleared after every submitted attempt.
  *
  * @since %CURRENT_VERSION%
  */
@@ -23,21 +23,13 @@ import tech.testsys.web.service.security.ServiceSignInResult
 @AnonymousAllowed
 class ServiceLoginView(private val signIn: ServiceSignIn) : TestSysView() {
     init {
-        page(ServiceHeaders.header()) {
-            head("Служебный вход")
-            row {
-                space(size = 7)
-                block(size = 10) {
-                    lateinit var code: ValueInput<String>
-                    row { code = passwordInput("Код", labelSize = 6, size = 18) }
-                    footer {
-                        mainAction("Войти") {
-                            clickOnEnter()
-                            onClick { submit(code) }
-                        }
-                    }
+        guestPage("Служебный интерфейс") {
+            card(title = "Служебный вход", description = "Введите код входа в служебный интерфейс.") {
+                val code = passwordInput("Код")
+                mainAction("Войти") {
+                    clickOnEnter()
+                    onClick { submit(code) }
                 }
-                space(size = 7)
             }
         }
     }
@@ -52,7 +44,8 @@ class ServiceLoginView(private val signIn: ServiceSignIn) : TestSysView() {
         when (result) {
             ServiceSignInResult.Success -> UI.getCurrent().navigate(ServiceHomeView::class.java)
             ServiceSignInResult.InvalidCode -> toast(FeedbackKind.Error, "Неверный код")
-            ServiceSignInResult.Blocked -> toast(FeedbackKind.Error, "Вход временно заблокирован. Повторите попытку через 5 минут")
+            ServiceSignInResult.Blocked ->
+                toast(FeedbackKind.Error, title = "Вход временно заблокирован", description = "Повторите попытку через 5 минут.")
         }
     }
 }

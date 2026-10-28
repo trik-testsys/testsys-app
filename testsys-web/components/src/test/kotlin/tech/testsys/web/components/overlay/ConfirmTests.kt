@@ -67,6 +67,21 @@ class ConfirmTests : MockVaadinTests() {
             assertTrue(action.isEnabled)
         }
 
+        @ParameterizedTest
+        @CsvSource("5, 1", "0, 0")
+        fun `should hold off the dangerous action for the given seconds`(seconds: Int, holds: Int) {
+            confirm(title = "Удалить тур?", action = "Удалить", isDanger = true, cooldownSeconds = seconds) {}
+
+            val calls = pendingJavaScript()
+
+            val action = button("Удалить")
+            val cooldowns = calls.filter { call ->
+                call.owner == action.element.node && "data-ts-cooldown" in call.invocation.expression
+            }
+            assertEquals(holds, cooldowns.size)
+            cooldowns.forEach { call -> assertEquals(seconds, call.invocation.parameters.first()) }
+        }
+
         @Test
         fun `should open a narrow dialog with the title, text and actions`() {
             confirm(title = "Закрыть тур?", text = "Посылки больше не принимаются", action = "Закрыть тур") {}

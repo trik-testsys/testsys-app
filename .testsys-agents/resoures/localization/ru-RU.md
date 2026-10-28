@@ -937,10 +937,26 @@ Notes collected while moving the Observer and Supervisor pages onto localization
   адрес» above. The block title «Смена Пароля» parallels «Смена почты».
 - «Текущий Пароль»: sense 2 of «текущий» («имеющийся, существующий… сейчас») applies; unlike «текущие Соревнования»
   (see «Текущий» in UI text above) a Пароль has no time span, so no "ongoing" misreading. Inference.
-- Length rule of a new Пароль (8–64 code points, at most 72 bytes in UTF-8) is told without naming the encoding:
+- (Superseded 2026-10-29, see below.) Length rule of a new Пароль (8–64 code points, at most 72 bytes in UTF-8) is told without naming the encoding:
   «латинская буква или цифра занимает 1 байт, русская буква — 2». These are UTF-8 facts for ASCII and Cyrillic;
   other symbols (for example «№», 3 bytes, or emoji, 4) are not listed. Project wording choice; the coordinator's
   example «a purely Cyrillic Пароль may have at most 36 letters» follows from it.
+- Superseded (2026-10-29): the byte-based rule above and the 36-letter Cyrillic limit no longer apply. A Пароль
+  now has 8–64 characters, only Latin letters a–z and A–Z, digits 0–9 and the symbols `!@#$%^&*()-_=+.,?`, at
+  least one of each kind, no spaces. «Большие и маленькие буквы различаются, пробелы учитываются.» was dropped at
+  the user's request (not a requirement).
+- Current `page_password.guide` / `page_password.invalid.description` wording: «… от 8 до 64 символов только из
+  латинских букв a–z и A–Z, цифр 0–9 и знаков ! @ # $ % ^ & * ( ) . , ? - _ = + без пробелов. В нём должны быть
+  хотя бы одна маленькая буква, одна большая, одна цифра и один знак.» Project wording choices:
+  - The symbols are separated by spaces, not commas, because «.» and «,» are themselves allowed.
+  - The list sits mid-sentence and ends with «+» (keyboard order, with «. , ?» moved before «- _ = +»), so neither
+    the sentence period nor «?» can be misread as the list's end or as a question mark.
+  - «знаков» names the symbols so that «символов» keeps only the length sense.
+  - «маленькая / большая буква» follows «Case sensitivity» above instead of «строчная / заглавная» or «регистр».
+  - None of the symbols need MF2 escaping (only `{`, `}`, `|`, `\` do); continuation lines do not start with `!` or
+    `#`, and `=` after the key separator is plain text in `.properties`.
+- «Знаки» next to «буквы, цифры» means written signs (punctuation, symbols); no other sense is plausible in this
+  list. Inference.
 - «Вход временно закрыт» follows features.md («закрывает вход по этой почте»). The description does not promise
   a wait of exactly 5 minutes («Попробуйте позже»), since the remaining lock time can be shorter. Inference.
 - `page_guest.sign_in.blocked.description` was changed (2026-10-28) to «Слишком много неудачных попыток входа.
@@ -972,6 +988,26 @@ Notes collected while moving the Observer and Supervisor pages onto localization
   configuration) without naming one. Lowercase anaphoric «код» after the field label, like «этот код» above.
   Source: https://ru.wiktionary.org/wiki/выдать (read 2026-10-27).
 
+- Password rules (`page_password.*`, independent review 2026-10-29):
+  - «маленькая / большая буква» is a standard synonym pair, not only a project choice: Викисловарь «прописная
+    буква» lists «заглавная буква», «большая буква» as synonyms and «строчная буква», «маленькая буква» as
+    antonyms, without labels. Source: https://ru.wiktionary.org/wiki/прописная_буква (read 2026-10-29).
+  - «знак» for the listed symbols: Викисловарь «знак», sense 1 (a graphic mark conveying a meaning); set phrases
+    «знак препинания», «вопросительный знак». Source: https://ru.wiktionary.org/wiki/знак (read 2026-10-29,
+    fetch summary).
+  - «В нём должны быть хотя бы одна …, одна … и один …»: with the predicate before homogeneous subjects the singular
+    is usual, the plural is acceptable and preferred in business writing (Розенталь, «Согласование сказуемого
+    с однородными подлежащими», п. 1). Source: https://pravopisanie_i_stilistika.academic.ru/191/ (read 2026-10-29,
+    fetch summary, quotes not checked character by character).
+  - «Пароль не подходит» also means "not accepted at sign-in" in everyday use (Яндекс ID help: «пароль может
+    не подходить по нескольким причинам»); Викисловарь «подходить», sense 3, gives the intended "does not meet the
+    requirements". The description and the separate «Текущий Пароль неверен» resolve it in the profile dialog
+    (inference); the unambiguous alternative is «Пароль не отвечает требованиям». Sources:
+    https://ru.wiktionary.org/wiki/подходить, https://yandex.ru/support/id/troubleshooting/other-login-problems.html
+    (read 2026-10-29).
+  - Usage, not a norm: Elsevier Scopus Russian help writes «Длина от 8 до 20 символов» and lists special symbols
+    separated by spaces. Source: https://www.elsevier.support/ru-ru/scopus/answer/Каковы-требования-к-надежности-пароля
+    (read 2026-10-29). The JAL Russian password page returned HTTP 403.
 ## Guest page layout (`page_guest`, `page_registration`, `page_confirmation.send_again`)
 
 Notes from the 2026-10-28 rework of the sign-in, registration and access restoration pages (one card per page, no
@@ -1036,3 +1072,62 @@ notes above about `page_guest.start.text`, `page_guest.sign_in.access_code_guide
 - «Отправили код на {$email}. Введите его, придумайте Псевдоним и Пароль.» speaks for the System with an omitted
   «мы», like «пришлём». «Его» refers to «код». «Придумайте Пароль» repeats `page_password.guide`. `glossary.nickname`
   gained `acc sg` «Псевдоним» (inanimate, Вин. = Им.; see «Псевдоним» above).
+
+## Regrades and the commit dialog (`page_developer.task.regrades.*`, `task.commit_regrade_*`)
+
+- «Перепроверка» (domain term, definitions.md item 34): Викисловарь gives one sense, «повторная проверка с целью
+  выявления ошибок, погрешностей, недочётов», no stylistic label; feminine, inanimate, type 3*a: Им. «перепроверка» /
+  «перепроверки», Р. «перепроверки» / «перепроверок», В. «перепроверку» / «перепроверки». `glossary.regrade` holds
+  `nom sg`, `nom pl`, `gen pl`. The general sense (re-verifying for errors) is close to the TestSys sense (re-sending
+  Посылки for checking after a commit); the capitalized term, the table context and the guide resolve it. The
+  verb in the checkbox «Перепроверить Посылки» and «повторная проверка» in running text are the ordinary words, not
+  the term. Source: https://ru.wiktionary.org/wiki/перепроверка (read 2026-10-28).
+- «Тайм-аут» is written with a hyphen: Русский орфографический словарь via gramota.ru «тайм-а́ут, -а»; the
+  form «таймаут» is not listed. The dictionaries give a sports sense and a general one, «перерыв, временное
+  прекращение работы»; no computing sense ("time limit exceeded"). In «проверок с ошибкой или тайм-аутом» the
+  checking context makes the computing reading the only plausible one (inference). features.md spells «таймаутом»;
+  the user-facing text follows the dictionary. Source: https://gramota.ru/poisk?query=тайм-аут&mode=slovari
+  (read 2026-10-28).
+- «Прогресс» as the column header and in the progress bar label: Викисловарь lists only 1. «поступательное движение,
+  улучшение в процессе развития» and 2. разг. «переход на более высокую ступень развития»; no "degree of completion"
+  sense. That sense is established UI usage: the Russian Android documentation names the component «Индикаторы
+  прогресса» and says «`progress` – текущий прогресс, который показывает индикатор». «Индикатор выполнения» is
+  a common alternative for "progress bar" (search results only, not opened). Kept as the coordinator's wording; the
+  cell «3 из 10» makes the meaning concrete. Sources: https://ru.wiktionary.org/wiki/прогресс,
+  https://developer.android.com/develop/ui/compose/components/progress?hl=ru (both read 2026-10-28).
+- Count after a transitive verb: «отправят 1 Посылку / 2 Посылки / 5 Посылок» uses the accusative governed by
+  «отправят» (inanimate: «две Посылки» = Им.), with CLDR `one` → «Посылку», `few` → «Посылки», `many` → «Посылок»;
+  `glossary.submission` gained `acc one/few/many`. The indefinite-personal «отправят» avoids predicate agreement
+  with a numeral subject (see «Predicate agreement in the batch toast» above). Grammar knowledge, not checked
+  against a handbook on 2026-10-28.
+- «Это первая фиксация Задачи — повторно проверять пока нечего.» and «…не изменился — повторной проверки не будет.»:
+  the second part states a consequence, so a dash (see «Colon or dash when the second clause states a result»).
+- «Указать другую почту» (profile dialog, step 2) differs from the header action «Изменить почту», so the two
+  actions on one page are not confused; `page_profile.another_email` «Укажите другую почту.» is a refusal hint with
+  the same verb. Project wording choice.
+- Independent review, «сколько» with a plural predicate («сколько её Посылок получили Вердикт»): Розенталь,
+  «Справочник по правописанию и стилистике», § 12 — with «много, мало, сколько, столько» the singular predicate
+  prevails, the plural «находит все более широкое распространение». Both are acceptable; «получило» is the more
+  traditional choice. Source: https://pravopisanie_i_stilistika.academic.ru/185/ (read 2026-10-28 by the reviewer).
+- Independent review, «фиксация»: Викисловарь lists «закрепление или удерживание чего-либо в определённом
+  положении» and «регистрация или запоминание чего-либо; запись, отметка», no computing sense and no undesirable
+  meaning; «первая фиксация Задачи» names the action of «зафиксировать» (commit). Source:
+  https://ru.wiktionary.org/wiki/фиксация (read 2026-10-28 by the reviewer).
+- Rewritten guide (2026-10-28), «сколько Посылок Перепроверки получило Вердикт по новому набору Полигонов»: the
+  possessive «её» was replaced by the genitive term «Перепроверки» because «её Посылок» could be read as referring to
+  «повторная проверка» or «фиксация» in the first sentence; `glossary.regrade` gained `gen sg` «Перепроверки»
+  (Викисловарь, see above). Gen sg coincides with nom pl, but after «Посылок» only the genitive reading is possible.
+  The singular «получило» follows the Розенталь note above. «По новому набору Полигонов» refers back to «набор
+  Полигонов изменился» and expresses "results exactly on the Regrade's Polygons" without the technical «ровно».
+  «Прогресс может не дойти до конца» is used instead of «ниже 100 %» because the cell shows «3 из 10», not a
+  percentage. Project wording choices, no separate source.
+- Project observation: Student, Participant and Judge pages call the timeout outcome «Превышено время проверки»;
+  the Developer guide uses «тайм-аут», which the dictionaries list only in the sports and "pause" senses. Context
+  makes it clear; not a defect.
+- Independent review, «не считая проверок»: Грамота.ру answers № 326917 (20.10.2025) and № 313731 (27.05.2024)
+  treat «не считая» as a preposition meaning 'кроме', № 272902 (26.01.2014) glosses it «исключая, не считая
+  кого-либо, чего-либо»; the genitive «проверок» follows from that formula (inference, no explicit case rule found).
+  Source: https://gramota.ru/poisk?query=не считая&mode=spravka (read 2026-10-28 by the reviewer).
+- Independent review, «по новому набору Полигонов»: in a table of several Regrades a reader of an older row could
+  take «новый» as the latest set; «по набору Полигонов, с которым запущена Перепроверка» is a longer alternative.
+  Kept: the natural reading refers back to the first sentence. Inference from the table context, no language source.

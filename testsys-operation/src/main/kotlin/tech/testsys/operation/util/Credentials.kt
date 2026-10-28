@@ -13,9 +13,7 @@ private const val ACCESS_TOKEN_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijk
 
 private const val MIN_PASSWORD_LENGTH = 8
 private const val MAX_PASSWORD_LENGTH = 64
-
-// bcrypt reads only the first 72 bytes of a password.
-private const val MAX_PASSWORD_BYTES = 72
+private const val PASSWORD_SYMBOLS = "!@#$%^&*()-_=+.,?"
 
 /**
  * Generates a registration confirmation code of 8 decimal digits.
@@ -49,14 +47,20 @@ fun isAccessToken(value: String): Boolean {
 }
 
 /**
- * Checks that [password] has 8 to 64 Unicode code points and takes at most 72 bytes in UTF-8; the password is taken
- * exactly as entered, without trimming.
+ * Checks that [password] has 8 to 64 characters, each a Latin letter, a digit or one of `!@#$%^&*()-_=+.,?`, and has
+ * at least one lowercase letter, one uppercase letter, one digit and one of those symbols; the password is taken exactly
+ * as entered, without trimming, so a space makes it invalid. Every allowed character takes one byte, so the password
+ * always fits the 72 bytes bcrypt reads.
  *
  * @since %CURRENT_VERSION%
  */
 @InternalOperationsApi
-fun isValidPassword(password: String): Boolean = password.codePointCount(0, password.length) in MIN_PASSWORD_LENGTH..MAX_PASSWORD_LENGTH &&
-    password.toByteArray(Charsets.UTF_8).size <= MAX_PASSWORD_BYTES
+fun isValidPassword(password: String): Boolean = password.length in MIN_PASSWORD_LENGTH..MAX_PASSWORD_LENGTH &&
+    password.all { char -> char in 'a'..'z' || char in 'A'..'Z' || char in '0'..'9' || char in PASSWORD_SYMBOLS } &&
+    password.any { char -> char in 'a'..'z' } &&
+    password.any { char -> char in 'A'..'Z' } &&
+    password.any { char -> char in '0'..'9' } &&
+    password.any { char -> char in PASSWORD_SYMBOLS }
 
 private fun RandomGenerator.nextString(alphabet: String, length: Int): String = buildString(length) {
     repeat(length) { append(alphabet[nextInt(alphabet.length)]) }

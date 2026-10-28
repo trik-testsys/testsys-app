@@ -3,10 +3,8 @@
 package tech.testsys.web.components.overlay
 
 import com.vaadin.flow.component.html.Div
-import com.vaadin.flow.component.page.PendingJavaScriptResult
 import com.vaadin.flow.component.textfield.TextField
 import com.vaadin.flow.data.value.ValueChangeMode
-import com.vaadin.flow.dom.Element
 import tech.testsys.web.components.actions.ActionHandle
 import tech.testsys.web.components.actions.action
 import tech.testsys.web.components.actions.dangerAction
@@ -22,8 +20,8 @@ private const val DANGER_COOLDOWN_SECONDS = 3
 
 /**
  * Asks to confirm an action: opens a dialog with [title], [text] and the [action] that runs [onConfirm] and closes it.
- * [isDanger] marks an irreversible action, whose button ignores clicks for the first seconds; [typeToConfirm] requires
- * the name with surrounding whitespace ignored on both sides.
+ * [isDanger] marks an irreversible action; [typeToConfirm] requires the name with surrounding whitespace ignored on
+ * both sides. The action ignores clicks for [cooldownSeconds] after opening, three for a dangerous one by default.
  *
  * @since %CURRENT_VERSION%
  */
@@ -33,6 +31,7 @@ fun confirm(
     action: String,
     isDanger: Boolean = false,
     typeToConfirm: String? = null,
+    cooldownSeconds: Int = if (isDanger) DANGER_COOLDOWN_SECONDS else 0,
     onConfirm: () -> Unit,
 ) {
     val texts = currentUiLocalization()
@@ -64,27 +63,7 @@ fun confirm(
         field.addValueChangeListener { event -> confirmAction.isEnabled = event.value.trim() == typeToConfirm.trim() }
     }
 
-    if (isDanger) confirmAction.button.element.startCooldown()
+    confirmAction.cooldownSeconds = cooldownSeconds
     shell.open()
     confirmName?.focus()
 }
-
-/**
- * Makes the button inert on the client for [DANGER_COOLDOWN_SECONDS], showing the seconds left, so a hasty click
- * cannot confirm. The server state is untouched: the type-to-confirm check may still enable the button meanwhile.
- */
-private fun Element.startCooldown(): PendingJavaScriptResult = executeJs(
-    """
-    let left = $0;
-    this.inert = true;
-    this.setAttribute('data-ts-cooldown', left);
-    const tick = setInterval(() => {
-      left -= 1;
-      if (left > 0) { this.setAttribute('data-ts-cooldown', left); return; }
-      clearInterval(tick);
-      this.removeAttribute('data-ts-cooldown');
-      this.inert = false;
-    }, 1000);
-    """.trimIndent(),
-    DANGER_COOLDOWN_SECONDS,
-)

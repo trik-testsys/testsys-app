@@ -209,6 +209,22 @@ class AdminCommunityViewTests : MockSpringVaadinTests() {
     }
 
     @Test
+    fun `should offer only closing in the dialog of the created observer`() {
+        val community = fixtures.community(owner = signInAdministrator())
+        sharedContest(community)
+        open(community.id)
+        val contest = administratorService.viewCommunityContests(community.id, Pagination(page = 0, size = 1)).content.single()
+        UI.getCurrent()._get<Button> { text = "Создать Наблюдателя" }._click()
+        textField("Имя")._value = "Наблюдатель Анна"
+        contestsField().value = setOf(contest)
+
+        UI.getCurrent()._get<Button> { text = "Создать" }._click()
+
+        val actions = UI.getCurrent()._get<Dialog>()._find<Button>().map { button -> button.text }.filter { text -> text.isNotEmpty() }
+        assertEquals(listOf("Закрыть"), actions)
+    }
+
+    @Test
     fun `should show the name and description of the community in read-only fields`() {
         val community = fixtures.community(owner = signInAdministrator(), name = "Кружок")
 

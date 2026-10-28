@@ -92,6 +92,29 @@ class ProfileViewTests : MockSpringVaadinTests() {
         assertEquals(newEmail, multipleRoleUsers.findById(user.id)?.data?.email)
         assertEquals("Почта изменена", lastToastTitle())
         assertEquals(newEmail, textField("Почта").value)
+        assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.ariaLabel.orElse(null) == "Новая почта" })
+    }
+
+    @Test
+    fun `should show no fields on the page besides the read-only nickname and e-mail address`() {
+        open()
+
+        val fields = UI.getCurrent()._find<TextField>().map { field -> field.ariaLabel.orElse(null) to field.isReadOnly }
+        assertEquals(listOf("Псевдоним" to true, "Почта" to true), fields)
+        assertTrue(UI.getCurrent()._find<PasswordField>().isEmpty())
+    }
+
+    @Test
+    fun `should start the e-mail dialog from an empty new address on reopening`() {
+        open()
+        requestCode("${fixtures.unique("new")}@example.com")
+        UI.getCurrent()._get<Button> { text = "Отменить" }._click()
+
+        openEmailDialog()
+
+        assertEquals("", textField("Новая почта").value)
+        assertFalse(textField("Новая почта").isReadOnly)
+        assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.ariaLabel.orElse(null) == "Код из письма" })
     }
 
     @Test
@@ -117,12 +140,15 @@ class ProfileViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should tell that the new e-mail address is invalid`() {
+    fun `should tell that the new e-mail address is invalid and keep the dialog open`() {
         open()
 
         requestCode("no-at-sign")
 
         assertEquals("Почта указана неверно", lastToastTitle())
+        assertEquals("no-at-sign", textField("Новая почта").value)
+        assertFalse(textField("Новая почта").isReadOnly)
+        assertEquals(1, UI.getCurrent()._find<Button> { text = "Получить код" }.size)
     }
 
     @Test
@@ -154,7 +180,7 @@ class ProfileViewTests : MockSpringVaadinTests() {
         open()
         requestCode("${fixtures.unique("new")}@example.com")
 
-        UI.getCurrent()._get<Button> { text = "Изменить почту" }._click()
+        UI.getCurrent()._get<Button> { text = "Указать другую почту" }._click()
 
         assertFalse(textField("Новая почта").isReadOnly)
         assertEquals(1, UI.getCurrent()._find<Button> { text = "Получить код" }.size)
@@ -204,8 +230,8 @@ class ProfileViewTests : MockSpringVaadinTests() {
     fun `should not offer the e-mail change while a supervisor is signed in as the user`() {
         openImpersonated()
 
+        assertTrue(UI.getCurrent()._find<Button> { text = "Изменить почту" }.isEmpty())
         assertTrue(UI.getCurrent()._find<TextField>().none { field -> field.ariaLabel.orElse(null) == "Новая почта" })
-        assertTrue(UI.getCurrent()._find<Button> { text = "Получить код" }.isEmpty())
     }
 
     @Test
@@ -234,16 +260,29 @@ class ProfileViewTests : MockSpringVaadinTests() {
         assertEquals(user.id.value, userService.authenticateByPassword(user.data.email, NEW_PASSWORD).userId)
         assertTrue(checkNotNull(sessionRegistry.getSessionInformation(otherSession)).isExpired)
         assertFalse(checkNotNull(sessionRegistry.getSessionInformation(VaadinSession.getCurrent().session.id)).isExpired)
+        assertTrue(UI.getCurrent()._find<PasswordField>().isEmpty())
     }
 
     @Test
-    fun `should tell that the current password is wrong and keep the password`() {
+    fun `should tell that the current password is wrong and keep the password and the dialog`() {
         val user = open()
 
         changePassword(current = "Wrong password", new = NEW_PASSWORD)
 
         assertEquals("Текущий Пароль неверен", lastToastTitle())
         assertEquals(user.id.value, userService.authenticateByPassword(user.data.email, fixtures.password).userId)
+        assertEquals(2, UI.getCurrent()._find<PasswordField>().size)
+    }
+
+    @Test
+    fun `should start the password dialog from empty fields on reopening`() {
+        open()
+        changePassword(current = "Wrong password", new = NEW_PASSWORD)
+        UI.getCurrent()._get<Button> { text = "Отменить" }._click()
+
+        UI.getCurrent()._get<Button> { text = "Изменить пароль" }._click()
+
+        assertEquals(listOf("", ""), UI.getCurrent()._find<PasswordField>().map { field -> field.value })
     }
 
     @Test
@@ -252,15 +291,15 @@ class ProfileViewTests : MockSpringVaadinTests() {
 
         changePassword(current = fixtures.password, new = "short")
 
-        assertEquals("Пароль не подходит по длине", lastToastTitle())
+        assertEquals("Пароль не подходит", lastToastTitle())
     }
 
     @Test
     fun `should not offer the password change while a supervisor is signed in as the user`() {
         openImpersonated()
 
+        assertTrue(UI.getCurrent()._find<Button> { text = "Изменить пароль" }.isEmpty())
         assertTrue(UI.getCurrent()._find<PasswordField>().isEmpty())
-        assertTrue(UI.getCurrent()._find<Button> { text = "Сменить пароль" }.isEmpty())
     }
 
     @Test
@@ -299,7 +338,13 @@ class ProfileViewTests : MockSpringVaadinTests() {
         UI.getCurrent().navigate(ProfileView::class.java)
     }
 
+    private fun openEmailDialog() {
+        UI.getCurrent()._get<Button> { text = "Изменить почту" }._click()
+    }
+
+    /** Opens the e-mail dialog and requests a code for [email]. */
     private fun requestCode(email: String) {
+        openEmailDialog()
         textField("Новая почта").value = email
         UI.getCurrent()._get<Button> { text = "Получить код" }._click()
     }
@@ -309,7 +354,9 @@ class ProfileViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._get<Button> { text = "Сменить почту" }._click()
     }
 
+    /** Opens the password dialog and changes the password. */
     private fun changePassword(current: String, new: String) {
+        UI.getCurrent()._get<Button> { text = "Изменить пароль" }._click()
         passwordField("Текущий Пароль").value = current
         passwordField("Новый Пароль").value = new
         UI.getCurrent()._get<Button> { text = "Сменить пароль" }._click()
@@ -331,6 +378,6 @@ class ProfileViewTests : MockSpringVaadinTests() {
 
     private companion object {
         const val MAX_ATTEMPTS = 3
-        const val NEW_PASSWORD = "Changed password 1"
+        const val NEW_PASSWORD = "Changed-password-1"
     }
 }

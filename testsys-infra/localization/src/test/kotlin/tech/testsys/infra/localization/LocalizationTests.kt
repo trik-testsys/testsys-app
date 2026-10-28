@@ -1135,6 +1135,16 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should label the dialog action in change open`() {
+            assertEquals("Изменить почту", l.pageProfile.changeOpen())
+        }
+
+        @Test
+        fun `should label the return to the new address in change other email`() {
+            assertEquals("Указать другую почту", l.pageProfile.changeOtherEmail())
+        }
+
+        @Test
         fun `should report the change in changed title`() {
             assertEquals("Почта изменена", l.pageProfile.changedTitle())
         }
@@ -1194,6 +1204,11 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should keep the action in lower case in password open`() {
+            assertEquals("Изменить пароль", l.pageProfile.passwordOpen())
+        }
+
+        @Test
         fun `should render the password term in nominative in password changed title`() {
             assertEquals("Пароль изменён", l.pageProfile.passwordChangedTitle())
         }
@@ -1216,23 +1231,26 @@ class LocalizationTests {
     inner class PagePasswordTests {
 
         @Test
-        fun `should state the length limits without bytes in guide`() {
+        fun `should list the length, allowed characters and required kinds in guide`() {
             assertEquals(
-                "Придумайте Пароль от 8 до 64 символов. Большие и маленькие буквы различаются, пробелы учитываются.",
+                "Придумайте Пароль от 8 до 64 символов только из латинских букв a–z и A–Z, цифр 0–9 и знаков " +
+                    "! @ # $ % ^ & * ( ) . , ? - _ = + без пробелов. В нём должны быть хотя бы одна маленькая буква, " +
+                    "одна большая, одна цифра и один знак.",
                 l.pagePassword.guide(),
             )
         }
 
         @Test
-        fun `should report a password of wrong length in invalid title`() {
-            assertEquals("Пароль не подходит по длине", l.pagePassword.invalidTitle())
+        fun `should report an unsuitable password in invalid title`() {
+            assertEquals("Пароль не подходит", l.pagePassword.invalidTitle())
         }
 
         @Test
-        fun `should state the length limits without bytes in invalid description`() {
+        fun `should list the length, allowed characters and required kinds in invalid description`() {
             assertEquals(
-                "Нужен Пароль от 8 до 64 символов. Если в нём много русских букв или других знаков не из латиницы, " +
-                    "сократите его.",
+                "Нужен Пароль от 8 до 64 символов только из латинских букв a–z и A–Z, цифр 0–9 и знаков " +
+                    "! @ # $ % ^ & * ( ) . , ? - _ = + без пробелов. В нём должны быть хотя бы одна маленькая буква, " +
+                    "одна большая, одна цифра и один знак.",
                 l.pagePassword.invalidDescription(),
             )
         }
@@ -3703,11 +3721,6 @@ class LocalizationTests {
         }
 
         @Test
-        fun `should use the accusative observer term in community observer open`() {
-            assertEquals("Открыть Наблюдателя", l.pageAdministrator.communityObserverOpen())
-        }
-
-        @Test
         fun `should use the user term in user title`() {
             assertEquals("Пользователь", l.pageAdministrator.userTitle())
         }
@@ -5019,6 +5032,57 @@ class LocalizationTests {
         }
 
         @Test
+        fun `should use the nominative plural regrade term in task regrades title`() {
+            assertEquals("Перепроверки", l.pageDeveloper.taskRegradesTitle())
+        }
+
+        @Test
+        fun `should decline the regrade submission polygon and verdict terms in task regrades guide`() {
+            assertEquals(
+                "Перепроверка запускается, если при фиксации выбрана повторная проверка Посылок и набор Полигонов " +
+                    "изменился. Прогресс показывает, сколько Посылок Перепроверки получило Вердикт по новому набору " +
+                    "Полигонов после запуска, не считая проверок с ошибкой или тайм-аутом. Посылка, которая в момент " +
+                    "фиксации уже проверялась, повторно не отправляется, поэтому прогресс может не дойти до конца. " +
+                    "Чтобы обновить его, откройте страницу заново.",
+                l.pageDeveloper.taskRegradesGuide(),
+            )
+        }
+
+        @Test
+        fun `should use the nominative plural submission term in task regrades submissions`() {
+            assertEquals("Посылки", l.pageDeveloper.taskRegradesSubmissions())
+        }
+
+        @Test
+        fun `should name the progress column in task regrades progress`() {
+            assertEquals("Прогресс", l.pageDeveloper.taskRegradesProgress())
+        }
+
+        @ParameterizedTest
+        @CsvSource(
+            "0,    10,         '0 из 10'",
+            "3,    10,         '3 из 10'",
+            "1412, 2147483647, '1412 из 2147483647'",
+        )
+        fun `should keep numbers ungrouped in task regrades progress value`(graded: Int, total: Int, expected: String) {
+            assertEquals(expected, l.pageDeveloper.taskRegradesProgressValue(graded = graded, total = total))
+        }
+
+        @Test
+        fun `should use the genitive plural regrade term in task regrades empty`() {
+            assertEquals("Перепроверок пока нет", l.pageDeveloper.taskRegradesEmpty())
+        }
+
+        @Test
+        fun `should decline the regrade submission and polygon terms in task regrades empty hint`() {
+            assertEquals(
+                "Перепроверка появится после фиксации, при которой выбрана повторная проверка Посылок и изменился " +
+                    "набор Полигонов.",
+                l.pageDeveloper.taskRegradesEmptyHint(),
+            )
+        }
+
+        @Test
         fun `should name the commit action in task commit`() {
             assertEquals("Зафиксировать", l.pageDeveloper.taskCommit())
         }
@@ -5041,11 +5105,50 @@ class LocalizationTests {
             assertEquals("Перепроверить Посылки", l.pageDeveloper.taskCommitRegrade())
         }
 
-        @Test
-        fun `should decline the submission contest and polygon terms in task commit regrade hint`() {
+        @ParameterizedTest
+        @CsvSource(
+            "1,          Посылку",
+            "2,          Посылки",
+            "5,          Посылок",
+            "11,         Посылок",
+            "21,         Посылку",
+            "22,         Посылки",
+            "1412,       Посылок",
+            "1422,       Посылки",
+            "2147483647, Посылок",
+        )
+        fun `should agree the accusative submission count and keep it ungrouped in task commit regrade count`(
+            count: Int,
+            submissions: String,
+        ) {
             assertEquals(
-                "Посылки в Турах будут проверены заново, если изменился набор Полигонов.",
-                l.pageDeveloper.taskCommitRegradeHint(),
+                "Набор Полигонов изменился. Если выбрать повторную проверку, на неё отправят $count $submissions " +
+                    "по этой Задаче в Турах.",
+                l.pageDeveloper.taskCommitRegradeCount(count = count),
+            )
+        }
+
+        @Test
+        fun `should state that there is nothing to recheck in task commit regrade first`() {
+            assertEquals(
+                "Это первая фиксация Задачи — повторно проверять пока нечего.",
+                l.pageDeveloper.taskCommitRegradeFirst(),
+            )
+        }
+
+        @Test
+        fun `should state that the polygon set is unchanged in task commit regrade unchanged`() {
+            assertEquals(
+                "Набор Полигонов не изменился — повторной проверки не будет.",
+                l.pageDeveloper.taskCommitRegradeUnchanged(),
+            )
+        }
+
+        @Test
+        fun `should decline the submission task and contest terms in task commit regrade no submissions`() {
+            assertEquals(
+                "Набор Полигонов изменился, но Посылок по этой Задаче в Турах нет — повторно проверять нечего.",
+                l.pageDeveloper.taskCommitRegradeNoSubmissions(),
             )
         }
 

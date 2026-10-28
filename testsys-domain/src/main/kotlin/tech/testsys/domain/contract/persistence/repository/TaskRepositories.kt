@@ -29,6 +29,9 @@ import tech.testsys.domain.model.task.LogsId
 import tech.testsys.domain.model.task.Recording
 import tech.testsys.domain.model.task.RecordingData
 import tech.testsys.domain.model.task.RecordingId
+import tech.testsys.domain.model.task.Regrade
+import tech.testsys.domain.model.task.RegradeData
+import tech.testsys.domain.model.task.RegradeId
 import tech.testsys.domain.model.task.Solution
 import tech.testsys.domain.model.task.SolutionData
 import tech.testsys.domain.model.task.SolutionId
@@ -250,6 +253,35 @@ interface LogsRepository : EntityRepository<LogsData, LogsId, Logs>
  * @since %CURRENT_VERSION%
  */
 interface RecordingRepository : EntityRepository<RecordingData, RecordingId, Recording>
+
+/**
+ * Persistence port for [Regrade] entities. A regrade is fixed on creation, so `update` is not supported.
+ *
+ * @since %CURRENT_VERSION%
+ */
+interface RegradeRepository : EntityRepository<RegradeData, RegradeId, Regrade> {
+
+    /**
+     * Synchronously finds all regrades of [taskId], without changing stored state; storage exceptions propagate.
+     *
+     * @param taskId the regraded task.
+     * @return the regrades ordered by creation time and then by id, both ascending, or an empty list if none exist.
+     * @since %CURRENT_VERSION%
+     */
+    fun findByTaskId(taskId: TaskId): List<Regrade>
+
+    /**
+     * Synchronously counts, for each of [regradeIds], its submissions that have a verdict created not earlier than the
+     * regrade with test verdicts exactly on the regrade's tests, on each of them and on no other; a submission with
+     * several such verdicts counts once. Storage exceptions propagate.
+     *
+     * @param regradeIds the regrades to count; an empty set returns an empty map without querying storage.
+     * @return the count of graded submissions by regrade; a regrade without graded submissions maps to `0`, a missing
+     * regrade is absent.
+     * @since %CURRENT_VERSION%
+     */
+    fun countGraded(regradeIds: Set<RegradeId>): Map<RegradeId, Int>
+}
 
 /**
  * Persistence port for [Solution] entities. A solution is fixed on creation, so `update` is not supported.

@@ -1171,6 +1171,20 @@ sealed interface ViewTaskValidationRequestsError : OperationError
 sealed interface CommitTaskError : OperationError
 
 /**
+ * Expected failure of counting the submissions a commit of an owned task would send to grading again.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface CountRegradeSubmissionsError : OperationError
+
+/**
+ * Expected failure of viewing the regrades of an owned task.
+ *
+ * @since %CURRENT_VERSION%
+ */
+sealed interface ViewRegradesError : OperationError
+
+/**
  * The working revision has no successfully completed validation request with a matching snapshot.
  *
  * @property taskId the identifier of the task being committed.
@@ -1468,6 +1482,8 @@ sealed interface DetachDeveloperSolutionError : OperationError
 data object MissedDeveloperRoleError :
     TestTaskError,
     ViewTaskValidationRequestsError,
+    CountRegradeSubmissionsError,
+    ViewRegradesError,
     CommitTaskError,
     AttachTaskError,
     DetachTaskError,
@@ -1625,6 +1641,8 @@ data class ContestAlreadySharedError(val contestId: ContestId) : EditContestErro
 data class TaskNotExistsError(val taskId: TaskId) :
     TestTaskError,
     ViewTaskValidationRequestsError,
+    CountRegradeSubmissionsError,
+    ViewRegradesError,
     CommitTaskError,
     AttachTaskError,
     DetachTaskError,
@@ -1731,6 +1749,8 @@ data class CommunityNotExistsError(val communityId: CommunityId) :
 data class TaskAccessDeniedError(val taskId: TaskId) :
     TestTaskError,
     ViewTaskValidationRequestsError,
+    CountRegradeSubmissionsError,
+    ViewRegradesError,
     CommitTaskError,
     AttachTaskError,
     RevertTaskError,
@@ -2304,7 +2324,8 @@ sealed interface AuthenticateByPasswordError : OperationError
 data object InvalidCredentialsError : AuthenticateByPasswordError
 
 /**
- * The new password is shorter than 8 or longer than 64 Unicode code points, or takes more than 72 bytes in UTF-8.
+ * The new password is shorter than 8 or longer than 64 characters, has a character other than a Latin letter, a digit
+ * and `!@#$%^&*()-_=+.,?`, or lacks a lowercase letter, an uppercase letter, a digit or one of those symbols.
  *
  * @since %CURRENT_VERSION%
  */

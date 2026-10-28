@@ -659,14 +659,14 @@ confirm(
 ) { deleteContest() }
 ```
 
-- `confirm(title, text = null, action, isDanger = false, typeToConfirm = null, onConfirm)` вызывается
-  из обработчиков, как `toast`, и открывает диалог шириной 440 px сразу.
+- `confirm(title, text = null, action, isDanger = false, typeToConfirm = null,
+  cooldownSeconds = if (isDanger) 3 else 0, onConfirm)` вызывается из обработчиков, как `toast`, и открывает диалог
+  шириной 440 px сразу.
 - Подвал: «Отменить» (`ui_overlay.dialog.cancel`) и кнопка действия. У обычного подтверждения она главная (`mainAction`).
   `isDanger` включает вид `.ts-dialog--alert` (предупреждающая иконка вместо шапки), а кнопка действия получает
   внутреннюю роль `danger` (см. [Оформление](#оформление)).
-- У опасного подтверждения кнопка действия первые 3 секунды после открытия не реагирует на нажатие: клиент делает её
-  `inert`, ставит атрибут `data-ts-cooldown` с оставшимися секундами, и `vaadin.css` рисует её как выключенную
-  с обратным отсчётом. Серверное состояние кнопки не меняется, поэтому тесты Karibu нажимают её сразу.
+- Кнопка действия первые `cooldownSeconds` секунд после открытия не реагирует на нажатие. Задержку задаёт
+  `ActionHandle.cooldownSeconds`, см. [Ручки и служебные свойства](#ручки-и-служебные-свойства).
 - `typeToConfirm` ставит между текстом и подвалом поле с подписью `ui_overlay.dialog.type_to_confirm` и фокусом
   после открытия. Кнопка действия включена, только когда значение поля без пробелов по краям в точности, с учётом
   регистра, совпадает с `typeToConfirm.trim()`.
@@ -925,7 +925,7 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | `ElementHandle` | `isVisible`, `bindVisible(signal)` (в том числе у `emptyState` и `menu`) |
 | `FieldHandle` | всё из `ElementHandle` и `isObscured`, `bindObscured(signal)`, см. [Скрытые значения](#скрытые-значения) |
 | `TextHandle` | `isVisible`, `bindVisible`, `text`, `bindText(signal)` (значение `counter`, `text`) |
-| `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick`, `clickOnEnter()` — нажатие Enter на странице нажимает действие |
+| `ActionHandle` | `isVisible`, `bindVisible`, `isEnabled`, `bindEnabled(signal)`, `isLoading`, `bindLoading(signal)`, `onClick`, `clickOnEnter()` — нажатие Enter на странице нажимает действие, `cooldownSeconds` — задержка нажатия |
 | `BlockHandle` | `isVisible`, `bindVisible`, `isEditable`, `bindEditable(signal)` (возвращают `block` и `highlightBlock`) |
 | `ChoiceHandle<V>` | `isVisible`, `bindVisible`, `value` (запись из кода не вызывает `onChange`; значение не из группы — `IllegalArgumentException`), `onChange { value -> }` (выбор пользователем; клик по выбранной кнопке его не вызывает; новый слушатель заменяет прежний) — возвращает `pills` |
 | `TabsHandle<V>` | всё из `ChoiceHandle<V>` и `setCount(value, count)`, `bindCount(value, signal)` (`null` и `0` скрывают счётчик) — возвращает `tabs` блока |
@@ -935,6 +935,13 @@ mainAction("Отправить решение", icon = IconName.Upload) {
 | `LoadHandle` | `isVisible`, `bindVisible` (скрывает тело блока с пагинацией загруженной таблицы; шапка и собственный подвал блока остаются), `reload()` (из любого потока) — возвращает `load`, см. [Живые обновления](#живые-обновления) |
 | `DialogHandle` | `open()`, `close()`, `isOpen`, `isEditable`, `bindEditable(signal)`, `onClose { }` (при любом закрытии: кнопкой, крестиком, Esc, кликом по фону, переходом) |
 | `ValueInput<T>` | всё из `FieldHandle`, `isEnabled`, `bindEnabled(signal)`, `isEditable`, `bindEditable(signal)` и всё из `HasValue`, `HasValidation`, `HasValidator`, включая `bindValue(signal, writeCallback)`, `bindReadOnly(signal)`, `bindRequiredIndicatorVisible(signal)` |
+
+`ActionHandle.cooldownSeconds` (по умолчанию `0` — без задержки) задаёт, сколько секунд кнопка не реагирует на нажатие
+после каждого прикрепления к странице, например при каждом открытии диалога. Новое значение действует со следующего
+прикрепления; отрицательное — `IllegalArgumentException`. На время задержки клиент делает кнопку `inert` и ставит
+атрибут `data-ts-cooldown` с оставшимися секундами, а `vaadin.css` рисует её выключенной с обратным отсчётом.
+Серверное состояние кнопки не меняется, поэтому тесты Karibu нажимают её сразу. Задержка не распространяется на
+`clickOnEnter()`, поэтому их сочетание в любом порядке — `IllegalStateException`.
 
 `ValueInput` привязывается к `Binder` как обычное поле: `binder.forField(input)`. Ручка не является компонентом
 Vaadin, поэтому `Binder` не пропускает скрытое поле сам. Явный хелпер `binding.skipWhenHidden()` исключает привязку

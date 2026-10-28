@@ -32,6 +32,7 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantContestEnt
 import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.RecordingRepository
 import tech.testsys.domain.contract.persistence.repository.RegistrationRequestRepository
+import tech.testsys.domain.contract.persistence.repository.RegradeRepository
 import tech.testsys.domain.contract.persistence.repository.SolutionRepository
 import tech.testsys.domain.contract.persistence.repository.StatementRepository
 import tech.testsys.domain.contract.persistence.repository.StudentContestEntryRepository
@@ -421,6 +422,7 @@ class OperationsConfiguration {
         requests: TaskValidationRequestRepository,
         dispatcher: TaskValidationDispatcher,
         submissions: SubmissionRepository,
+        regrades: RegradeRepository,
         grader: AfterCommitGrader,
     ): DeveloperOperations = DeveloperOperations(
         tasks,
@@ -434,6 +436,7 @@ class OperationsConfiguration {
         requests,
         dispatcher,
         submissions,
+        regrades,
         grader,
     )
 

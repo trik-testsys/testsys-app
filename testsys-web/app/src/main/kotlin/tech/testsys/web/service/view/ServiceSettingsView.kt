@@ -29,6 +29,7 @@ import tech.testsys.web.components.forms.textInput
 @PageTitle("Настройки Системы")
 @RolesAllowed("SERVICE")
 class ServiceSettingsView(
+    private val headers: ServiceHeaders,
     private val settings: SettingsService,
     private val runtime: RuntimeSettings,
 ) : TestSysView(), BeforeEnterObserver {
@@ -38,7 +39,7 @@ class ServiceSettingsView(
         val overview = settings.overview()
         val snapshot = overview.snapshot
         val form = ServiceSettingsForm(snapshot)
-        page(ServiceHeaders.header()) {
+        page(headers.header(active = ServiceHeaders.SETTINGS_SECTION)) {
             head("Настройки Системы")
             row {
                 block(title = "Настройки") {

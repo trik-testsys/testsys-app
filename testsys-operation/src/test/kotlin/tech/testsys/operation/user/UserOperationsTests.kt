@@ -113,7 +113,7 @@ class UserOperationsTests {
         every { mailSender.sendRegistrationConfirmationCode(any(), any()) } just runs
         every { passwordHasher.hash(any()) } answers { hashOf(firstArg()) }
         every { passwordHasher.matches(any(), any()) } returns false
-        every { passwordHasher.matches("correct horse", hashOf("correct horse")) } returns true
+        every { passwordHasher.matches("Correct-horse1", hashOf("Correct-horse1")) } returns true
         every { clock.instant() } returns now
         every { random.nextInt(10) } returnsMany listOf(8, 7, 6, 5, 4, 3, 2, 1)
     }
@@ -245,7 +245,7 @@ class UserOperationsTests {
     @Nested
     inner class AuthenticateByPasswordTests {
 
-        private val user = testMultipleRoleUser { passwordHash = hashOf("correct horse") }
+        private val user = testMultipleRoleUser { passwordHash = hashOf("Correct-horse1") }
 
         @Nested
         inner class HappyPathTests {
@@ -254,7 +254,7 @@ class UserOperationsTests {
             fun `should return the user whose email and password match`() {
                 every { multipleRoleUsers.findByEmail("user@example.com") } returns user
 
-                val result = operations.authenticateByPassword(email = "user@example.com", password = "correct horse").getOrThrow()
+                val result = operations.authenticateByPassword(email = "user@example.com", password = "Correct-horse1").getOrThrow()
 
                 assertSame(user, result)
             }
@@ -263,7 +263,7 @@ class UserOperationsTests {
             fun `should find the user by the trimmed lower-case email`() {
                 every { multipleRoleUsers.findByEmail("user@example.com") } returns user
 
-                val result = operations.authenticateByPassword(email = "  User@Example.COM ", password = "correct horse").getOrThrow()
+                val result = operations.authenticateByPassword(email = "  User@Example.COM ", password = "Correct-horse1").getOrThrow()
 
                 assertSame(user, result)
             }
@@ -275,12 +275,12 @@ class UserOperationsTests {
             @Test
             fun `should raise InvalidCredentialsError if the email is bound to no user`() {
                 assertRaises(InvalidCredentialsError) {
-                    operations.authenticateByPassword(email = "unknown@example.com", password = "correct horse")
+                    operations.authenticateByPassword(email = "unknown@example.com", password = "Correct-horse1")
                 }
             }
 
             @ParameterizedTest
-            @ValueSource(strings = ["wrong horse", "Correct horse", " correct horse", "correct horse "])
+            @ValueSource(strings = ["wrong horse", "Correct horse", " Correct-horse1", "Correct-horse1 "])
             fun `should raise InvalidCredentialsError if the password differs exactly`(password: String) {
                 every { multipleRoleUsers.findByEmail("user@example.com") } returns user
 
@@ -293,12 +293,12 @@ class UserOperationsTests {
             fun `should raise InvalidCredentialsError for the technical public community owner even with its password`() {
                 val owner = testMultipleRoleUser {
                     email = PublicCommunityOwner.EMAIL
-                    passwordHash = hashOf("correct horse")
+                    passwordHash = hashOf("Correct-horse1")
                 }
                 every { multipleRoleUsers.findByEmail(PublicCommunityOwner.EMAIL) } returns owner
 
                 assertRaises(InvalidCredentialsError) {
-                    operations.authenticateByPassword(email = PublicCommunityOwner.EMAIL, password = "correct horse")
+                    operations.authenticateByPassword(email = PublicCommunityOwner.EMAIL, password = "Correct-horse1")
                 }
             }
         }
@@ -308,9 +308,9 @@ class UserOperationsTests {
 
             @Test
             fun `should check the password even if the email is bound to no user`() {
-                operations.authenticateByPassword(email = "unknown@example.com", password = "correct horse")
+                operations.authenticateByPassword(email = "unknown@example.com", password = "Correct-horse1")
 
-                verify(exactly = 1) { passwordHasher.matches("correct horse", null) }
+                verify(exactly = 1) { passwordHasher.matches("Correct-horse1", null) }
             }
 
             @Test
@@ -318,7 +318,7 @@ class UserOperationsTests {
                 every { multipleRoleUsers.findByEmail("user@example.com") } returns user
                 every { clock.instant() } returns Instant.parse("2026-01-01T00:00:00.123456789Z")
 
-                operations.authenticateByPassword(email = "user@example.com", password = "correct horse")
+                operations.authenticateByPassword(email = "user@example.com", password = "Correct-horse1")
 
                 verify(exactly = 1) { users.recordLogin(user.id, Instant.parse("2026-01-01T00:00:00.123456Z")) }
             }
@@ -336,10 +336,10 @@ class UserOperationsTests {
             fun `should not record a login of the technical public community owner`() {
                 every { multipleRoleUsers.findByEmail(PublicCommunityOwner.EMAIL) } returns testMultipleRoleUser {
                     email = PublicCommunityOwner.EMAIL
-                    passwordHash = hashOf("correct horse")
+                    passwordHash = hashOf("Correct-horse1")
                 }
 
-                operations.authenticateByPassword(email = PublicCommunityOwner.EMAIL, password = "correct horse")
+                operations.authenticateByPassword(email = PublicCommunityOwner.EMAIL, password = "Correct-horse1")
 
                 verify(exactly = 0) { users.recordLogin(any(), any()) }
             }
@@ -348,7 +348,7 @@ class UserOperationsTests {
             fun `should not update the user when authenticating`() {
                 every { multipleRoleUsers.findByEmail("user@example.com") } returns user
 
-                operations.authenticateByPassword(email = "user@example.com", password = "correct horse")
+                operations.authenticateByPassword(email = "user@example.com", password = "Correct-horse1")
 
                 verify(exactly = 0) { multipleRoleUsers.update(any<MultipleRoleUser>()) }
             }
@@ -623,7 +623,7 @@ class UserOperationsTests {
     @Nested
     inner class ConfirmRegistrationTests {
 
-        private fun confirm(confirmationCode: String = "12345678", name: String = "Nickname", password: String = "correct horse") =
+        private fun confirm(confirmationCode: String = "12345678", name: String = "Nickname", password: String = "Correct-horse1") =
             operations.confirmRegistration(
                 registrationRequestId = RegistrationRequestId(31),
                 confirmationCode = confirmationCode,
@@ -640,34 +640,23 @@ class UserOperationsTests {
                 val data = slot<MultipleRoleUserData>()
                 every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
 
-                confirm(name = "Nickname", password = "correct horse")
+                confirm(name = "Nickname", password = "Correct-horse1")
 
                 assertEquals("Nickname", data.captured.name)
                 assertEquals("user@example.com", data.captured.email)
-                assertEquals(hashOf("correct horse"), data.captured.passwordHash)
+                assertEquals(hashOf("Correct-horse1"), data.captured.passwordHash)
                 val role = assertIs<Student>(data.captured.roles.single())
                 assertEquals(listOf(CommunityId(77)), role.memberOf.ids)
             }
 
-            @Test
-            fun `should hash the password without trimming it`() {
-                every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
-                val data = slot<MultipleRoleUserData>()
-                every { multipleRoleUsers.save(capture(data)) } answers { savedUser(firstArg()) }
-
-                confirm(password = "  correct horse  ")
-
-                assertEquals(hashOf("  correct horse  "), data.captured.passwordHash)
-            }
-
             @ParameterizedTest
-            @CsvSource("a,8", "😀,8", "a,64", "п,36")
-            fun `should accept a password of 8 to 64 code points taking at most 72 bytes in UTF-8`(symbol: String, count: Int) {
+            @ValueSource(strings = ["Abcdef1!", "Aa1!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"])
+            fun `should accept a password of 8 to 64 allowed characters`(password: String) {
                 every { registrationRequests.findById(RegistrationRequestId(31)) } returns testRegistrationRequest()
 
-                val user = confirm(password = symbol.repeat(count)).getOrThrow()
+                val user = confirm(password = password).getOrThrow()
 
-                assertEquals(hashOf(symbol.repeat(count)), user.data.passwordHash)
+                assertEquals(hashOf(password), user.data.passwordHash)
             }
 
             @Test
@@ -814,8 +803,8 @@ class UserOperationsTests {
             }
 
             @ParameterizedTest
-            @CsvSource("a,7", "😀,7", "a,65")
-            fun `should raise InvalidPasswordError if the password is shorter than 8 or longer than 64 code points`(
+            @CsvSource("a,7", "a,65")
+            fun `should raise InvalidPasswordError if the password is shorter than 8 or longer than 64 characters`(
                 symbol: String,
                 count: Int,
             ) {
@@ -825,9 +814,9 @@ class UserOperationsTests {
             }
 
             @Test
-            fun `should raise InvalidPasswordError if the password takes more than 72 bytes in UTF-8`() {
+            fun `should raise InvalidPasswordError if the password has a character outside the allowed set`() {
                 assertRaises(InvalidPasswordError) {
-                    confirm(password = "п".repeat(36) + "a")
+                    confirm(password = "Пароль1!a")
                 }
             }
 
@@ -855,7 +844,7 @@ class UserOperationsTests {
                         registrationRequestId = RegistrationRequestId(99),
                         confirmationCode = "12345678",
                         name = "Nickname",
-                        password = "correct horse",
+                        password = "Correct-horse1",
                     )
                 }
             }

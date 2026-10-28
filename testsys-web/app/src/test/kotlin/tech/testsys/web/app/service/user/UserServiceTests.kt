@@ -183,6 +183,6 @@ class UserServiceTests {
     }
 
     private companion object {
-        const val PASSWORD = "New password 2"
+        const val PASSWORD = "New-password-2"
     }
 }

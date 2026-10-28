@@ -5,10 +5,13 @@ import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.NativeButton
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.core.context.SecurityContextHolder
 import tech.testsys.web.service.SERVICE_TEST_GRAFANA_URL
 import tech.testsys.web.service.SERVICE_TEST_SECRET
 import tech.testsys.web.service.ServiceMockVaadinTests
@@ -32,6 +35,13 @@ class ServiceHomeViewTests : ServiceMockVaadinTests() {
         val transitions = pendingJavaScript().filter { call -> "window.open" in call.invocation.expression }
         assertEquals(listOf(listOf(SERVICE_TEST_GRAFANA_URL, "_self")), transitions.map { call -> call.invocation.parameters })
         assertEquals(ServiceHomeView::class.java, currentView)
+    }
+
+    @Test
+    fun `should sign the service out from the header menu`() {
+        UI.getCurrent()._get<NativeButton> { text = "Выйти" }._click()
+
+        assertNull(SecurityContextHolder.getContext().authentication)
     }
 
     private fun pendingJavaScript() = UI.getCurrent().internals.let { internals ->

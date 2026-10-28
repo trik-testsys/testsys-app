@@ -138,7 +138,7 @@ class MultipleRoleUserOperationsTests {
         every { mailSender.sendAccessRestorationCode(any(), any()) } just runs
         every { passwordHasher.hash(any()) } answers { hashOf(firstArg()) }
         every { passwordHasher.matches(any(), any()) } returns false
-        every { passwordHasher.matches("current password", hashOf("current password")) } returns true
+        every { passwordHasher.matches("Current-password1", hashOf("Current-password1")) } returns true
         every { clock.instant() } returns now
         every { random.nextInt(10) } returnsMany listOf(8, 7, 6, 5, 4, 3, 2, 1)
     }
@@ -1493,7 +1493,7 @@ class MultipleRoleUserOperationsTests {
             every { accessRestorationRequests.findByUser(MultipleRoleUserId(0)) } returns testAccessRestorationRequest()
         }
 
-        private fun confirm(email: String = "old@example.com", confirmationCode: String = "12345678", password: String = "new password") =
+        private fun confirm(email: String = "old@example.com", confirmationCode: String = "12345678", password: String = "New-password1") =
             operations.confirmAccessRestoration(email = email, confirmationCode = confirmationCode, password = password)
 
         @Nested
@@ -1504,26 +1504,26 @@ class MultipleRoleUserOperationsTests {
                 val result = confirm().getOrThrow()
 
                 assertEquals(MultipleRoleUserId(0), result.id)
-                assertEquals(hashOf("new password"), result.data.passwordHash)
+                assertEquals(hashOf("New-password1"), result.data.passwordHash)
             }
 
             @Test
-            fun `should replace the password of the user with a hash of the untrimmed new password`() {
+            fun `should replace the password of the user with a hash of the new password`() {
                 val updated = slot<MultipleRoleUser>()
                 every { multipleRoleUsers.update(capture(updated)) } answers { firstArg() }
 
-                confirm(password = "  new password  ")
+                confirm(password = "New-password1")
 
                 assertEquals(MultipleRoleUserId(0), updated.captured.id)
-                assertEquals(hashOf("  new password  "), updated.captured.data.passwordHash)
+                assertEquals(hashOf("New-password1"), updated.captured.data.passwordHash)
             }
 
             @ParameterizedTest
-            @CsvSource("a,8", "😀,8", "a,64", "п,36")
-            fun `should accept a new password of 8 to 64 code points taking at most 72 bytes in UTF-8`(symbol: String, count: Int) {
-                val result = confirm(password = symbol.repeat(count)).getOrThrow()
+            @ValueSource(strings = ["Abcdef1!", "Aa1!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"])
+            fun `should accept a new password of 8 to 64 allowed characters`(password: String) {
+                val result = confirm(password = password).getOrThrow()
 
-                assertEquals(hashOf(symbol.repeat(count)), result.data.passwordHash)
+                assertEquals(hashOf(password), result.data.passwordHash)
             }
 
             @Test
@@ -1560,7 +1560,7 @@ class MultipleRoleUserOperationsTests {
 
                 val result = confirm().getOrThrow()
 
-                assertEquals(hashOf("new password"), result.data.passwordHash)
+                assertEquals(hashOf("New-password1"), result.data.passwordHash)
             }
 
             @Test
@@ -1570,14 +1570,14 @@ class MultipleRoleUserOperationsTests {
 
                 val result = confirm().getOrThrow()
 
-                assertEquals(hashOf("new password"), result.data.passwordHash)
+                assertEquals(hashOf("New-password1"), result.data.passwordHash)
             }
 
             @Test
             fun `should accept a code with surrounding whitespace`() {
                 val result = confirm(confirmationCode = " \t12345678 \n").getOrThrow()
 
-                assertEquals(hashOf("new password"), result.data.passwordHash)
+                assertEquals(hashOf("New-password1"), result.data.passwordHash)
             }
 
             @Test
@@ -1642,8 +1642,8 @@ class MultipleRoleUserOperationsTests {
             }
 
             @ParameterizedTest
-            @CsvSource("a,7", "😀,7", "a,65")
-            fun `should raise InvalidPasswordError if the new password is shorter than 8 or longer than 64 code points`(
+            @CsvSource("a,7", "a,65")
+            fun `should raise InvalidPasswordError if the new password is shorter than 8 or longer than 64 characters`(
                 symbol: String,
                 count: Int,
             ) {
@@ -1653,9 +1653,9 @@ class MultipleRoleUserOperationsTests {
             }
 
             @Test
-            fun `should raise InvalidPasswordError if the new password takes more than 72 bytes in UTF-8`() {
+            fun `should raise InvalidPasswordError if the new password has a character outside the allowed set`() {
                 assertRaises(InvalidPasswordError) {
-                    confirm(password = "п".repeat(36) + "a")
+                    confirm(password = "Пароль1!a")
                 }
             }
 
@@ -1790,46 +1790,46 @@ class MultipleRoleUserOperationsTests {
 
         @BeforeEach
         fun prepareStoredUser() {
-            every { multipleRoleUsers.findById(MultipleRoleUserId(0)) } returns testUser(passwordHash = hashOf("current password"))
+            every { multipleRoleUsers.findById(MultipleRoleUserId(0)) } returns testUser(passwordHash = hashOf("Current-password1"))
         }
 
-        private fun change(currentPassword: String = "current password", newPassword: String = "new password") =
+        private fun change(currentPassword: String = "Current-password1", newPassword: String = "New-password1") =
             operations.changePassword(user = user, currentPassword = currentPassword, newPassword = newPassword)
 
         @Nested
         inner class HappyPathTests {
 
             @Test
-            fun `should replace the password of the user with a hash of the untrimmed new password`() {
+            fun `should replace the password of the user with a hash of the new password`() {
                 val updated = slot<MultipleRoleUser>()
                 every { multipleRoleUsers.update(capture(updated)) } answers { firstArg() }
 
-                change(newPassword = "  new password  ")
+                change(newPassword = "New-password1")
 
                 assertEquals(MultipleRoleUserId(0), updated.captured.id)
-                assertEquals(hashOf("  new password  "), updated.captured.data.passwordHash)
+                assertEquals(hashOf("New-password1"), updated.captured.data.passwordHash)
             }
 
             @Test
             fun `should return the updated user`() {
                 val result = change().getOrThrow()
 
-                assertEquals(hashOf("new password"), result.data.passwordHash)
+                assertEquals(hashOf("New-password1"), result.data.passwordHash)
             }
 
             @Test
             fun `should accept a new password equal to the current one`() {
-                val result = change(newPassword = "current password").getOrThrow()
+                val result = change(newPassword = "Current-password1").getOrThrow()
 
-                assertEquals(hashOf("current password"), result.data.passwordHash)
+                assertEquals(hashOf("Current-password1"), result.data.passwordHash)
             }
 
             @ParameterizedTest
-            @CsvSource("a,8", "😀,8", "a,64", "п,36")
-            fun `should accept a new password of 8 to 64 code points taking at most 72 bytes in UTF-8`(symbol: String, count: Int) {
-                val result = change(newPassword = symbol.repeat(count)).getOrThrow()
+            @ValueSource(strings = ["Abcdef1!", "Aa1!xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"])
+            fun `should accept a new password of 8 to 64 allowed characters`(password: String) {
+                val result = change(newPassword = password).getOrThrow()
 
-                assertEquals(hashOf(symbol.repeat(count)), result.data.passwordHash)
+                assertEquals(hashOf(password), result.data.passwordHash)
             }
         }
 
@@ -1837,8 +1837,8 @@ class MultipleRoleUserOperationsTests {
         inner class RefusalTests {
 
             @ParameterizedTest
-            @CsvSource("a,7", "😀,7", "a,65")
-            fun `should raise InvalidPasswordError if the new password is shorter than 8 or longer than 64 code points`(
+            @CsvSource("a,7", "a,65")
+            fun `should raise InvalidPasswordError if the new password is shorter than 8 or longer than 64 characters`(
                 symbol: String,
                 count: Int,
             ) {
@@ -1848,14 +1848,14 @@ class MultipleRoleUserOperationsTests {
             }
 
             @Test
-            fun `should raise InvalidPasswordError if the new password takes more than 72 bytes in UTF-8`() {
+            fun `should raise InvalidPasswordError if the new password has a character outside the allowed set`() {
                 assertRaises(InvalidPasswordError) {
-                    change(newPassword = "п".repeat(36) + "a")
+                    change(newPassword = "Пароль1!a")
                 }
             }
 
             @ParameterizedTest
-            @ValueSource(strings = ["wrong password", "Current password", " current password", "current password "])
+            @ValueSource(strings = ["wrong password", "Current password", " Current-password1", "Current-password1 "])
             fun `should raise InvalidCurrentPasswordError if the current password differs exactly`(currentPassword: String) {
                 assertRaises(InvalidCurrentPasswordError) {
                     change(currentPassword = currentPassword)
@@ -1871,10 +1871,10 @@ class MultipleRoleUserOperationsTests {
 
             @Test
             fun `should check the current password against the stored user rather than the given one`() {
-                val staleUser = testUser(passwordHash = hashOf("previous password"))
+                val staleUser = testUser(passwordHash = hashOf("Previous-password1"))
 
                 assertRaises(InvalidCurrentPasswordError) {
-                    operations.changePassword(user = staleUser, currentPassword = "previous password", newPassword = "new password")
+                    operations.changePassword(user = staleUser, currentPassword = "Previous-password1", newPassword = "New-password1")
                 }
             }
         }

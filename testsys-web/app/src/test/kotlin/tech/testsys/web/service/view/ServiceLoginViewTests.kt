@@ -69,7 +69,7 @@ class ServiceLoginViewTests : ServiceMockVaadinTests() {
         assertEquals(ServiceLoginView::class.java, currentView)
         assertEquals("", field.value)
         assertEquals(
-            "Вход временно заблокирован. Повторите попытку через 5 минут",
+            "Вход временно заблокирован",
             UI.getCurrent()._find<Span> { classes = "ts-toast__title" }.last().text,
         )
     }

@@ -92,7 +92,7 @@ vaadin-button[data-ts-role="link"][disabled] {
   --vaadin-button-background: transparent;
   --vaadin-button-border: 1px solid transparent;
 }
-/* Cooldown of a dangerous confirmation: looks disabled and shows the seconds left; the client makes it inert. */
+/* Cooldown of an action button: looks disabled and shows the seconds left; the client makes it inert. */
 vaadin-button[data-ts-cooldown] {
   --vaadin-button-background: var(--canvas);
   --vaadin-button-text-color: var(--text-tertiary);

@@ -32,12 +32,15 @@ import tech.testsys.web.components.overlay.dialog
 @Route("trik-studio-versions")
 @PageTitle("Версии TRIK Studio")
 @RolesAllowed("SERVICE")
-class ServiceTrikStudioVersionsView(private val versions: ServiceTrikStudioVersions) : TestSysView() {
+class ServiceTrikStudioVersionsView(
+    private val headers: ServiceHeaders,
+    private val versions: ServiceTrikStudioVersions,
+) : TestSysView() {
     private lateinit var rows: TableHandle<TrikStudioVersion>
     private var usedTags: Set<String> = emptySet()
 
     init {
-        page(ServiceHeaders.header()) {
+        page(headers.header(active = ServiceHeaders.VERSIONS_SECTION)) {
             head("Версии TRIK Studio")
             row {
                 block(title = "Версии TRIK Studio") {

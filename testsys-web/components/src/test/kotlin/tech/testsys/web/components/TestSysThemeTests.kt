@@ -139,6 +139,17 @@ class TestSysThemeTests {
     }
 
     @Test
+    fun `should let the label of a segment take clicks across the whole segment`() {
+        val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
+
+        assertEquals("relative", rule(overrides, "vaadin-radio-group.ts-seg > vaadin-radio-button")["position"])
+        val area = rule(overrides, "vaadin-radio-group.ts-seg > vaadin-radio-button > label::after")
+        assertEquals("absolute", area["position"])
+        assertEquals("0", area["inset"])
+        assertEquals("inherit", rule(overrides, "vaadin-radio-group.ts-seg > vaadin-radio-button > label")["cursor"])
+    }
+
+    @Test
     fun `should style tooltips through the overlay part of the tooltip`() {
         val overrides = text(TestSysTheme.VAADIN_OVERRIDES)
 

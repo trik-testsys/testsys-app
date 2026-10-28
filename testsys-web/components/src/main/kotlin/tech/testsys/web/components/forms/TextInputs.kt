@@ -8,6 +8,8 @@ import com.vaadin.flow.component.textfield.TextField
 import tech.testsys.web.components.core.InternalComponentsApi
 import tech.testsys.web.components.core.setMono
 import tech.testsys.web.components.layout.BlockRowScope
+import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.layout.GuestCardScope
 
 /**
  * Adds a single-line text field with a [label] and an optional [hint] under it.
@@ -79,3 +81,43 @@ fun BlockRowScope.textArea(
 
     return addInput(label, labelSize, size, area, hint, configure)
 }
+
+/**
+ * Adds a single-line text field to a guest card with the [label] above it, an optional [hint] under it and an optional
+ * [aside], e.g. a link action, on the right of the label.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun GuestCardScope.textInput(
+    label: String,
+    hint: String? = null,
+    aside: (ContentScope.() -> Unit)? = null,
+    configure: ValueInput<String>.() -> Unit = {},
+): ValueInput<String> = addStackedInput(label, TextField(), hint, aside, configure)
+
+/**
+ * Adds a single-line field for codes to a guest card, typed in a monospace font, with the [label] above it, an optional
+ * [hint] under it and an optional [aside], e.g. a link action, on the right of the label.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun GuestCardScope.codeInput(
+    label: String,
+    hint: String? = null,
+    aside: (ContentScope.() -> Unit)? = null,
+    configure: ValueInput<String>.() -> Unit = {},
+): ValueInput<String> = addStackedInput(label, TextField().apply { element.setMono(true) }, hint, aside, configure)
+
+/**
+ * Adds a field for secrets such as passwords to a guest card: the value is masked and typed in a monospace font, and
+ * a button in the field reveals it. The [label] is above the field, an optional [hint] under it and an optional
+ * [aside], e.g. a link action, on the right of the label.
+ *
+ * @since %CURRENT_VERSION%
+ */
+fun GuestCardScope.passwordInput(
+    label: String,
+    hint: String? = null,
+    aside: (ContentScope.() -> Unit)? = null,
+    configure: ValueInput<String>.() -> Unit = {},
+): ValueInput<String> = addStackedInput(label, PasswordField().apply { element.setMono(true) }, hint, aside, configure)

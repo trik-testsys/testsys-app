@@ -9,7 +9,6 @@ import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.HasAriaLabel
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
-import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup
 import com.vaadin.flow.component.textfield.PasswordField
@@ -267,42 +266,44 @@ class AuthenticationViewTests : MockSpringVaadinTests() {
     }
 
     @Test
-    fun `should open the registration page by its tab`() {
+    fun `should open the registration page by its link`() {
         UI.getCurrent().navigate(AuthenticationView::class.java)
 
-        UI.getCurrent()._get<NativeButton> { text = "Регистрация" }._click()
+        UI.getCurrent()._get<Button> { text = "Зарегистрироваться" }._click()
 
         assertEquals(RegistrationView::class.java, currentView)
     }
 
     @Test
-    fun `should open the access restoring page by its tab`() {
+    fun `should open the access restoring page by the forgotten password link`() {
         UI.getCurrent().navigate(AuthenticationView::class.java)
 
-        UI.getCurrent()._get<NativeButton> { text = "Восстановление доступа" }._click()
+        UI.getCurrent()._get<Button> { text = "Забыли Пароль?" }._click()
 
         assertEquals(RestoreAccessView::class.java, currentView)
     }
 
     @Test
-    fun `should return to signing in by its tab`() {
+    fun `should hide the forgotten password link with the password field`() {
+        UI.getCurrent().navigate(AuthenticationView::class.java)
+
+        UI.getCurrent()._get<RadioButtonGroup<SignInMethod?>>().value = SignInMethod.AccessCode
+
+        assertEquals(emptyList<Button>(), UI.getCurrent()._find<Button> { text = "Забыли Пароль?" })
+    }
+
+    @Test
+    fun `should return to signing in from registration by its link`() {
         UI.getCurrent().navigate(RegistrationView::class.java)
 
-        UI.getCurrent()._get<NativeButton> { text = "Вход" }._click()
+        UI.getCurrent()._get<Button> { text = "Войти" }._click()
 
         assertEquals(AuthenticationView::class.java, currentView)
     }
 
-    @Test
-    fun `should select the tab of the open page`() {
-        UI.getCurrent().navigate(RegistrationView::class.java)
-
-        assertEquals("true", UI.getCurrent()._get<NativeButton> { text = "Регистрация" }.element.getAttribute("aria-pressed"))
-    }
-
     @ParameterizedTest
     @MethodSource("guestTitles")
-    fun `should title the browser tab of a guest form page by its tab`(view: Class<out Component>, title: String) {
+    fun `should title the browser tab of a guest page by its card`(view: Class<out Component>, title: String) {
         UI.getCurrent().navigate(view)
 
         assertEquals(title, assertInstanceOf(HasDynamicTitle::class.java, UI.getCurrent().currentView).pageTitle)

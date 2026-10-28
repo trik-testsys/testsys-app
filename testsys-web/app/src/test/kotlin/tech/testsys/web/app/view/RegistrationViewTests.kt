@@ -176,7 +176,7 @@ class RegistrationViewTests : MockSpringVaadinTests() {
         requestCode(email)
         val code = mail.confirmationCodes.remove(email)
 
-        UI.getCurrent()._get<Button> { text = "Отправить код повторно" }._click()
+        UI.getCurrent()._get<Button> { text = "Отправить ещё раз" }._click()
 
         assertEquals(code, mail.confirmationCodes[email])
         assertEquals("Код отправлен повторно", lastToastTitle())
@@ -189,6 +189,20 @@ class RegistrationViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._get<Button> { text = "Изменить почту" }._click()
 
         assertEquals(email, UI.getCurrent()._find<TextField>().single().value)
+    }
+
+    @Test
+    fun `should return to signing in from the confirmation step`() {
+        requestCode(email)
+
+        UI.getCurrent()._get<Button> { text = "Вернуться к входу" }._click()
+
+        assertEquals(AuthenticationView::class.java, currentView)
+    }
+
+    @Test
+    fun `should show the step of the email step`() {
+        assertEquals("Шаг 1 из 2", UI.getCurrent()._get<Span> { classes = "ts-guest-card__step" }.text)
     }
 
     private fun requestCode(email: String) {

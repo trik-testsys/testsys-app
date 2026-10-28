@@ -152,6 +152,21 @@
 .ts-footer__link { color:var(--text-secondary); }
 .ts-footer__link:hover { color:var(--text-primary); }
 .ts-footer__link:focus-visible { outline:1px solid var(--border-focus); outline-offset:0; box-shadow:0 0 0 3px var(--accent-ring); border-radius:var(--radius-sm); }
+/* Guest page (Kotlin DSL): the brand, the tagline, one card and a line of links in the middle; the footer is a muted line. */
+.ts-guest { flex:1 0 auto; display:flex; flex-direction:column; align-items:center; padding:var(--space-12) var(--space-4) var(--space-8); }
+.ts-guest__brand { gap:var(--space-3); }
+.ts-guest__brand .ts-brand__emblem { width:40px; height:40px; border-radius:var(--radius-lg); }
+.ts-guest__brand .ts-brand__wordmark { height:54px; margin:-14px -17px; }
+.ts-guest__tagline { margin-top:var(--space-2); font:var(--fw-regular) var(--fs-sm)/var(--lh-sm) var(--font-sans); color:var(--text-tertiary); text-align:center; }
+.ts-guest-card { width:400px; max-width:100%; box-sizing:border-box; margin-top:var(--space-6); padding:var(--space-6) var(--space-8) var(--space-8); background:var(--surface-card); border:1px solid var(--border-default); border-radius:var(--radius-xl); box-shadow:var(--shadow-block); }
+.ts-guest-card__title { margin:0; font:var(--fw-bold) var(--fs-h2)/var(--lh-h2) var(--font-sans); letter-spacing:-0.01em; color:var(--text-primary); }
+.ts-guest-card__desc { margin:var(--space-1) 0 var(--space-5); font:var(--fw-regular) var(--fs-sm)/var(--lh-sm) var(--font-sans); color:var(--text-secondary); }
+.ts-guest-card__step { display:inline-block; margin-right:var(--space-1); padding:2px var(--space-2); border-radius:var(--radius-pill); background:var(--info-bg); color:var(--accent); font:var(--fw-medium) var(--fs-caption)/var(--lh-caption) var(--font-mono); white-space:nowrap; }
+.ts-guest-card__body { display:flex; flex-direction:column; gap:var(--space-4); }
+.ts-guest__links { margin-top:var(--space-4); display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:var(--space-1) var(--space-2); font:var(--fw-regular) var(--fs-sm)/var(--lh-sm) var(--font-sans); color:var(--text-secondary); }
+.ts-guest__links-separator { color:var(--text-tertiary); }
+.ts-app--guest .ts-footer { border-top:0; background:transparent; }
+.ts-app--guest .ts-footer__inner { justify-content:center; }
 .ts-row { display:grid; grid-template-columns:repeat(var(--grid-columns), minmax(0, 1fr)); gap:var(--grid-gap); align-items:stretch; }
 .ts-row--tight { gap:var(--grid-gap-tight); }
 .ts-stack { display:flex; flex-direction:column; gap:var(--row-gap); min-width:0; }
@@ -214,6 +229,9 @@
 .ts-field--grid { display:grid; grid-template-columns:subgrid; column-gap:normal; row-gap:0; align-items:start; }
 .ts-field__label { padding-top:calc((var(--control-md) - var(--lh-xs)) / 2); font:var(--fw-medium) var(--fs-xs)/var(--lh-xs) var(--font-sans); color:var(--text-secondary); overflow-wrap:anywhere; }
 .ts-field--disabled .ts-field__label { color:var(--text-tertiary); }
+/* Stacked field (guest card): the label row above the value, with an optional link on the right of the label. */
+.ts-field__label-row { display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-2); }
+.ts-field--stacked .ts-field__label { padding-top:0; }
 .ts-field__required { margin-left:2px; color:var(--danger); }
 .ts-field__value { min-width:0; }
 .ts-field__value--inline { display:inline-flex; vertical-align:middle; max-width:100%; }

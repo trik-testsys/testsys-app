@@ -49,7 +49,8 @@ Radio и segmented control реализованы в `forms/RadioChoices.kt`, п
 ## Страница
 
 Страница — класс с `@Route`, унаследованный от `TestSysView`. Метод `page(header) { … }` собирает шапку
-`CabinetHeader`, тело и автоматический футер.
+`CabinetHeader`, тело и автоматический футер. Гостевую страницу без шапки строит `guestPage`, см.
+[Гостевая страница](#гостевая-страница).
 
 ```kotlin
 @Route("profile")
@@ -87,7 +88,7 @@ class ProfileView : TestSysView() {
 
 ## Футер страницы
 
-`Page` и `ErrorPage`, включая `NotFoundPage`, автоматически выводят футер после `main`. На короткой странице
+`Page`, гостевая страница и `ErrorPage`, включая `NotFoundPage`, автоматически выводят футер после `main`. На короткой странице
 тело заполняет свободную высоту окна; на длинной футер следует после содержимого. Состав, размеры и оформление принадлежат
 [ui-design.md](../../docs/project/ui-design.md), раздел «Футер страницы».
 
@@ -110,6 +111,29 @@ class ProfileView : TestSysView() {
 `ui_page.footer.year` форматирует год, `ui_page.footer.links` задаёт доступное имя навигации.
 Подписи ссылок передаёт страница. Футер страницы отличается от `footer { }` блока
 и диалога: это отдельный элемент общей оболочки.
+
+## Гостевая страница
+
+`guestPage(tagline) { … }` в `TestSysView` строит страницу для Пользователя, который не вошёл: бренд без ссылки
+с доступным именем `ui_page.brand.name`, подзаголовок `tagline`, тело и автоматический футер. Шапки, заголовка
+страницы и гайдов у неё нет. Повторный вызов заменяет страницу, вызов из строящегося тела, как и `page(...)`, —
+`IllegalStateException`. Оформление принадлежит [ui-design.md](../../docs/project/ui-design.md#гостевые-страницы).
+
+| Вызов в `GuestPageScope` | Что делает |
+|--------------------------|------------|
+| `card(title, description, step = null) { }` | Карточка: заголовок, одна поясняющая фраза с меткой шага `step` перед ней и содержимое `GuestCardScope` |
+| `links { }` | Строка под карточкой — `ContentScope`; соседние `linkAction` разделяет средняя точка |
+
+- `card` и `links` вызываются не больше одного раза каждый (`IllegalStateException`); строка ссылок всегда стоит
+  под карточкой. Пустые `title` или `description` — `IllegalArgumentException`.
+- Заголовок карточки — `h1` страницы с типографикой h2.
+- `GuestCardScope` размещает элементы друг под другом: `textInput`, `codeInput` и `passwordInput` с параметрами
+  `label`, `hint` и `aside`, `segmentedControl(label, items, itemLabel)` на всю ширину и широкий `mainAction(label)`.
+- Подпись поля карточки — `<label>` над контролом с тем же доступным именем и фокусом по клику, как у поля блока.
+  `aside` — `ContentScope` справа в строке подписи, например `linkAction`. `isVisible` скрывает поле вместе
+  с подписью и `aside`. У `segmentedControl` подпись — только доступное имя.
+
+Образец — [AuthenticationView.kt](../app/src/main/kotlin/tech/testsys/web/app/view/AuthenticationView.kt).
 
 ## Заголовок страницы
 
@@ -195,7 +219,7 @@ class ContestQuestionsView(private val contests: <ContestSource>) : TestSysView(
 в порядке объявления. `target` — существующая ручка `ElementHandle`, например поле или действие.
 К моменту завершения построения блока цель должна находиться внутри него. Селекторы и компоненты Vaadin
 в конфигурацию не передаются. Образец с полями —
-[RegistrationView.kt](../app/src/main/kotlin/tech/testsys/web/app/view/RegistrationView.kt).
+[ProfileView.kt](../app/src/main/kotlin/tech/testsys/web/app/view/ProfileView.kt).
 
 Пустые заголовки и пояснения, повтор цели и цель чужого блока дают `IllegalArgumentException`.
 Повторная настройка гайда страницы или блока даёт `IllegalStateException`.
@@ -254,6 +278,8 @@ Driver перемещает выделение и прокручивает ст�
 | Скоуп | Доступно |
 |-------|----------|
 | `PageScope` | `head` (до рядов и футера), `row`, `guide`, `footer` |
+| `GuestPageScope` | `card`, `links` (гостевая страница) |
+| `GuestCardScope` | `textInput`, `codeInput`, `passwordInput` с подписью сверху, `segmentedControl`, `mainAction` |
 | `PageHeadScope` | `crumb`, `badge`, `meta`, `actions { }`, `tabs { }` |
 | `PageTabsScope` | `tab` (вкладка-маршрут) |
 | `GuideStepsScope` | `step` (пояснение поля или действия блока) |
@@ -1235,7 +1261,8 @@ Detach закрывает карточку и освобождает её тай
 
 ## Ресурсы бренда
 
-`TestSysBrand.ICON` задает путь кремовой эмблемы на синем квадрате, которую шапка и `ErrorPage` показывают рядом с `WORDMARK`;
+`TestSysBrand.ICON` задает путь кремовой эмблемы на синем квадрате, которую шапка, `ErrorPage` и гостевая страница
+показывают рядом с `WORDMARK`;
 `TestSysBrand.FAVICON` — к синей эмблеме на бежевом фоне со скругленными углами.
 `EMBLEM` и `WORDMARK` сохраняют публичные пути к отдельным прозрачным векторным вариантам.
 `AppShell` каждого приложения подключает `TestSysBrand.FAVICON_URL` через `AppShellSettings.addFavIcon`;

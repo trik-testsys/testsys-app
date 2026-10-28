@@ -6,6 +6,7 @@ import com.github.mvysny.kaributesting.v10._find
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.UI
+import com.vaadin.flow.component.html.Div
 import com.vaadin.flow.component.html.NativeButton
 import com.vaadin.flow.component.html.Section
 import com.vaadin.flow.router.InternalServerError
@@ -36,6 +37,7 @@ import tech.testsys.web.app.view.AdminCommunityView
 import tech.testsys.web.app.view.AdminUserSection
 import tech.testsys.web.app.view.AdminUserView
 import tech.testsys.web.app.view.AdminView
+import tech.testsys.web.app.view.AuthenticationView
 import tech.testsys.web.app.view.CLASSES_SECTION
 import tech.testsys.web.app.view.COMMUNITY_ID_PARAMETER
 import tech.testsys.web.app.view.COMPETITIONS_SECTION
@@ -48,6 +50,7 @@ import tech.testsys.web.app.view.DeveloperTestingView
 import tech.testsys.web.app.view.DeveloperView
 import tech.testsys.web.app.view.JudgeSolutionView
 import tech.testsys.web.app.view.JudgeView
+import tech.testsys.web.app.view.MainView
 import tech.testsys.web.app.view.ManagerClassView
 import tech.testsys.web.app.view.ManagerCompetitionView
 import tech.testsys.web.app.view.ManagerContestView
@@ -103,12 +106,17 @@ class PagesTests : MockSpringVaadinTests() {
 
         UI.getCurrent().navigate(page, parameters(fixtures, user))
 
-        assertEquals(page, currentView) {
+        assertEquals(forwardedPages.getOrDefault(page, page), currentView) {
             UI.getCurrent().internals.activeRouterTargetsChain
                 .filterIsInstance<InternalServerError>()
                 .joinToString { error -> error._errorMessage }
         }
         val buttons = _find<NativeButton> { classes = "ts-guide-button" }
+        if (_find<Div> { classes = "ts-app--guest" }.isNotEmpty()) {
+            assertEquals(emptyList<NativeButton>(), buttons)
+            assertEquals(1, _find<Section> { classes = "ts-guest-card" }.size)
+            return
+        }
         assertEquals(1, buttons.count { button -> button.element.getAttribute("data-guide-start") == "page" })
         val blocks = _find<Section> { classes = "ts-block" }
         assertTrue(blocks.isNotEmpty())
@@ -117,6 +125,10 @@ class PagesTests : MockSpringVaadinTests() {
     }
 
     companion object {
+        /** Pages without content of their own that forward a guest to another page. */
+        private val forwardedPages: Map<Class<out Component>, Class<out Component>> =
+            mapOf(MainView::class.java to AuthenticationView::class.java)
+
         private val signedInUsers: Map<UserKind, (AppFixtures) -> User<*>> =
             UserKind.entries.associateWith { kind -> { fixtures: AppFixtures -> fixtures.userOf(kind) } } +
                 (UserKind.MULTIPLE_ROLE to AppFixtures::administrator)

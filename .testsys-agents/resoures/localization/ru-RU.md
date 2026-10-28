@@ -971,3 +971,68 @@ Notes collected while moving the Observer and Supervisor pages onto localization
   Код-доступа». The indefinite-personal «выдали» covers every issuer (Организатор, Администратор, deployment
   configuration) without naming one. Lowercase anaphoric «код» after the field label, like «этот код» above.
   Source: https://ru.wiktionary.org/wiki/выдать (read 2026-10-27).
+
+## Guest page layout (`page_guest`, `page_registration`, `page_confirmation.send_again`)
+
+Notes from the 2026-10-28 rework of the sign-in, registration and access restoration pages (one card per page, no
+tabs and no step guides). `page_guest.start.*`, the field and block guides and `page_guest.tab.*` were deleted; the
+notes above about `page_guest.start.text`, `page_guest.sign_in.access_code_guide` and «вкладка» are historical.
+
+- «Онлайн-соревнования»: the first part «онлайн-» is joined with a hyphen. «Мел» (03.09.2016) states that the first
+  parts «онлайн» and «офлайн» are written in Cyrillic and «присоединяются дефисом», citing the РАН dictionary; the
+  dictionary itself was not opened. The user's source phrase «онлайн соревнований» lacked the hyphen. Lowercase
+  «соревнования» in the tagline is the general sense (any online robotics competitions), not the domain term
+  «Соревнование» (definitions.md); the capital letter only starts the phrase. Source:
+  https://mel.fm/pravopisaniye/184592-online (read 2026-10-28).
+- «Аккаунт»: Викисловарь gives an inanimate masculine noun; sense 1 «идентификационный номер, код какой-либо учётной
+  записи», senses 2–5 labelled computing slang (a user account, a personal cabinet, the person who controls it);
+  synonyms «учётная запись», «учётка». In «Нет аккаунта?» / «Уже есть аккаунт?» it is a user-approved informal
+  word next to the links «Зарегистрироваться» / «Войти»; messages that state facts about binding keep the domain
+  term «Пользователь» («…если почта привязана к Пользователю»). No undesirable connotation found. Source:
+  https://ru.wiktionary.org/wiki/аккаунт (read 2026-10-28).
+- «Вернуться ко входу»: МАС (via kartaslov.ru) says «ко» «употребляется вместо „к“ … перед словами, начинающимися
+  с некоторых групп согласных» and quotes «он повернулся ко входу» (Лэмб, 1951). Both «к входу» and «ко входу»
+  occur; no normative source settling the choice was opened. «Вход» here is the sign-in page (the action sense
+  extended by context, see «вход» above). Source: https://kartaslov.ru/как-правильно-пишется-слово/ко (read
+  2026-10-28).
+- «Рады видеть снова.» omits «вас» (usual full form «Рады видеть вас снова»); an elliptical friendly greeting
+  approved by the user for guest pages. A web search found no usage page with the exact phrase; not verified
+  against a style guide.
+- «…пришлём на неё код для смены Пароля» instead of «…код, чтобы задать новый Пароль»: an infinitive after «чтобы»
+  normally shares the subject of the main clause, and here «пришлём» (мы) and «задать» (вы) differ. Grammar
+  inference, no handbook page opened. «Смена Пароля» repeats `page_profile.password_title`. A comma closes the
+  participial phrase «привязанную к Пользователю» before the dash («…Пользователю, — пришлём…»).
+- Review update for «Вернуться ко входу» (2026-10-28): Грамота.ру answers № 228513 (2007), № 261315 (2010) and
+  № 275490 (2014) prescribe «к входу». № 228513 lists where «ко» is used: before the dative of лев, лёд, лён, лоб,
+  ложь, мох, ров, рожь, рот, before «мне», and before the dative of весь, всякий, всяческий, вторник, второе,
+  второй, многие, многое; «вход» is not among them. МАС only gives the general rule and the usage «повернулся ко
+  входу» (1951), which is attested usage, not a norm. Decision (2026-10-28): the user chose «Вернуться к входу»
+  for `page_guest.back_to_sign_in`, following Грамота.ру; «Вернуться на страницу входа» was not taken. Sources:
+  https://gramota.ru/poisk?query=ко%20входу&mode=spravka, https://gramota.ru/poisk?query=228513&mode=spravka
+  (read 2026-10-28). The earlier «Вернуться ко входу» bullet above is superseded by this decision.
+- Independent review of «Вернуться к входу» (2026-10-28): verdict clear. gramota.ru returned HTTP 502 during this
+  review, so answers № 228513, 261315 and 275490 were not re-read. «Мел» (non-normative, no handbook cited) gives
+  «к» by default and «ко» before monosyllables starting with a consonant cluster («ко дну», «ко лбу», «ко льду»,
+  «ко лжи»), before весь/всякий/второй/вторник/многие and in set phrases; all its cluster examples have a fleeting
+  vowel, which «вход» lacks (reviewer's inference, consistent with Грамота.ру). A close analogue: «презентация к
+  встрече». Sources: https://mel.fm/gramotnost/kak-pisat/6540928-prepositions_problem,
+  https://mel.fm/gramotnost/kak-govorit/7192506-prezentatsiya-ko-vstreche-ili-prezentatsiya-k-vstreche--kak-pravilno-
+  (read 2026-10-28).
+- Review update for «онлайн-» (2026-10-28): Русский орфографический словарь (Лопатин, Иванова) via gramota.ru:
+  «онла́йн-… – первая часть сложных слов, пишется через дефис»; Большой универсальный словарь gives
+  «онлайн-конференция». Source: https://gramota.ru/poisk?query=онлайн-&mode=slovari (read 2026-10-28).
+- Comma and dash (Правила 1956): § 198 — a comma comes before a dash when they meet; § 171 — a dash in a
+  бессоюзное предложение when the second part states a result. Applying them to «…Пользователю, — пришлём…» and
+  «Укажите почту — пришлём…» is an inference. Sources:
+  https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/49,
+  https://www.azbyka.ru/otechnik/Spravochniki/pravila-russkoj-orfografii-i-punktuatsii/42 (read 2026-10-28).
+- «Псевдоним» is inanimate, masculine, type 1a; В. ед. «псевдони́м», which confirms `glossary.nickname` `acc sg`.
+  Source: https://ru.wiktionary.org/wiki/псевдоним (read 2026-10-28).
+- A subjectless past plural («Отправили код…») also reads as a неопределённо-личное предложение («Мне принесли эту
+  книгу»); both readings convey that the code was sent. The source article carries a 2019 missing-sources tag.
+  Source: https://ru.wikipedia.org/wiki/Неопределённо-личное_предложение (read 2026-10-28).
+- Dash in «Укажите почту — пришлём на неё код подтверждения.»: the second part is the result of the action, see
+  «Colon or dash when the second clause states a result» above.
+- «Отправили код на {$email}. Введите его, придумайте Псевдоним и Пароль.» speaks for the System with an omitted
+  «мы», like «пришлём». «Его» refers to «код». «Придумайте Пароль» repeats `page_password.guide`. `glossary.nickname`
+  gained `acc sg` «Псевдоним» (inanimate, Вин. = Им.; see «Псевдоним» above).

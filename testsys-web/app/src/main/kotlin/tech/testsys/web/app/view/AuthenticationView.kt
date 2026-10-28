@@ -8,78 +8,68 @@ import tech.testsys.web.app.security.AccessCodeSignIn
 import tech.testsys.web.app.security.CabinetPrincipal
 import tech.testsys.web.app.security.PasswordSignIn
 import tech.testsys.web.components.TestSysView
+import tech.testsys.web.components.actions.linkAction
 import tech.testsys.web.components.actions.mainAction
+import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
-import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.passwordInput
 import tech.testsys.web.components.forms.segmentedControl
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.texts.currentLocalization
 
 /**
  * Sign-in page (testsys.web.page.authentication): signs a user with non-fixed roles in by the e-mail address and the
- * password and a fixed-role user by the access code, chosen by a switch in the same block, then opens the page saved
- * before signing in, or the start page of the user.
+ * password and a fixed-role user by the access code, chosen by a switch on the guest card, then opens the page saved
+ * before signing in, or the start page of the user. Links lead to access restoration and registration.
  *
  * @since %CURRENT_VERSION%
  */
 @Route("login")
 @AnonymousAllowed
 class AuthenticationView(
-    headers: CabinetHeaders,
     private val passwordSignIn: PasswordSignIn,
     private val accessCodeSignIn: AccessCodeSignIn,
 ) : TestSysView(), HasDynamicTitle {
     init {
         val texts = currentLocalization().pageGuest
-        page(headers.guest(hasSignIn = false)) {
-            guide(texts.signInGuide())
-            guestForm(active = GuestTab.SignIn) {
-                lateinit var method: ValueInput<SignInMethod?>
-                lateinit var email: ValueInput<String>
-                lateinit var password: ValueInput<String>
-                lateinit var accessToken: ValueInput<String>
-                row {
-                    method = segmentedControl(
-                        texts.signInMethod(),
-                        labelSize = 6,
-                        size = 18,
-                        items = SignInMethod.entries,
-                        itemLabel = { item -> item.label },
-                    ) { value = SignInMethod.Password }
+        guestPage(texts.tagline()) {
+            card(title = texts.signInTitle(), description = texts.signInDescription()) {
+                val method =
+                    segmentedControl(texts.signInMethod(), items = SignInMethod.entries, itemLabel = { item -> item.label }) {
+                        value = SignInMethod.Password
+                    }
+                val email = textInput(texts.signInEmail())
+                val forgotPassword: ContentScope.() -> Unit = {
+                    linkAction(texts.signInForgotPassword()) { onClick { UI.getCurrent().navigate(RestoreAccessView::class.java) } }
                 }
-                row { email = textInput(texts.signInEmail(), labelSize = 6, size = 18) }
-                row { password = passwordInput(texts.signInPassword(), labelSize = 6, size = 18) }
-                row { accessToken = passwordInput(texts.signInAccessCode(), labelSize = 6, size = 18) { isVisible = false } }
+                val password = passwordInput(texts.signInPassword(), aside = forgotPassword)
+                val accessToken = passwordInput(texts.signInAccessCode()) { isVisible = false }
                 method.addValueChangeListener { event ->
                     val isPassword = event.value == SignInMethod.Password
                     email.isVisible = isPassword
                     password.isVisible = isPassword
                     accessToken.isVisible = !isPassword
                 }
-                guide(texts.signInBlockGuide(), title = texts.tabSignIn()) {
-                    step(method, title = texts.signInMethod(), description = texts.signInMethodGuide())
-                    step(email, title = texts.signInEmail(), description = texts.signInEmailGuide())
-                    step(password, title = texts.signInPassword(), description = texts.signInPasswordGuide())
-                    step(accessToken, title = texts.signInAccessCode(), description = texts.signInAccessCodeGuide())
-                }
-                footer {
-                    mainAction(texts.signInButton()) {
-                        clickOnEnter()
-                        onClick {
-                            when (method.value) {
-                                SignInMethod.AccessCode -> signInByAccessCode(accessToken.value)
-                                else -> signInByPassword(email.value, password.value)
-                            }
+                mainAction(texts.signInButton()) {
+                    clickOnEnter()
+                    onClick {
+                        when (method.value) {
+                            SignInMethod.AccessCode -> signInByAccessCode(accessToken.value)
+                            else -> signInByPassword(email.value, password.value)
                         }
                     }
                 }
             }
+            links {
+                text(texts.signInNoAccount())
+                linkAction(texts.register()) { onClick { UI.getCurrent().navigate(RegistrationView::class.java) } }
+            }
         }
     }
 
-    override fun getPageTitle(): String = GuestTab.SignIn.label
+    override fun getPageTitle(): String = currentLocalization().pageGuest.signInTitle()
 
     private fun signInByPassword(email: String, password: String) {
         val texts = currentLocalization().pageGuest

@@ -82,20 +82,13 @@ fun rolePageOf(role: RoleVo): Class<out Component> = when (role) {
 }
 
 /**
- * Builds the headers of the pages: the guest header and the Cabinet header of the signed-in user (testsys.web.component.header).
+ * Builds the Cabinet header of the signed-in user (testsys.web.component.header).
  * Its companion holds the keys of the sections «Главная», active on the start pages, and «Меню», active on the role pages.
  *
  * @since %CURRENT_VERSION%
  */
 @SpringComponent
 class CabinetHeaders(private val currentUser: CurrentUser, private val authenticationContext: AuthenticationContext) {
-    /**
-     * Returns the header of a guest with the sign-in link if [hasSignIn].
-     *
-     * @since %CURRENT_VERSION%
-     */
-    fun guest(hasSignIn: Boolean = true): CabinetHeader = CabinetHeader(signIn = AuthenticationView::class.java.takeIf { hasSignIn })
-
     /**
      * Returns the Cabinet header of the signed-in user with the [active] section: the start page, the menu of the roles
      * with search and the nickname menu with the profile, unless the role is fixed, the return of a supervisor signed in

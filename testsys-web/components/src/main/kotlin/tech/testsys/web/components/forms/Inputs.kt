@@ -19,9 +19,11 @@ import tech.testsys.web.components.core.setProperty
 import tech.testsys.web.components.core.setSize
 import tech.testsys.web.components.layout.BlockRowScope
 import tech.testsys.web.components.layout.ContentScope
+import tech.testsys.web.components.layout.GuestCardScope
 import tech.testsys.web.components.layout.LabelAction
 import tech.testsys.web.components.layout.fieldValueArea
 import tech.testsys.web.components.layout.placeField
+import tech.testsys.web.components.layout.placeStackedField
 
 /** Adds [control] as a grid field of [label] with the helper [hint] and returns its configured handle. */
 internal fun <C, T> BlockRowScope.addInput(
@@ -54,6 +56,31 @@ internal fun <C, T> BlockRowScope.addInput(
     )
     input.followBlock(editState)
     return input.apply(configure)
+}
+
+/**
+ * Adds [control] to a guest card as a field of [label] above it, with the helper [hint] under it and [aside] on the right
+ * of the label, and returns its configured handle.
+ */
+internal fun <C, T> GuestCardScope.addStackedInput(
+    label: String,
+    control: C,
+    hint: String?,
+    aside: (ContentScope.() -> Unit)?,
+    configure: ValueInput<T>.() -> Unit,
+): ValueInput<T>
+    where C : AbstractField<*, T>, C : HasValidation, C : HasValidator<T> {
+    (control as? HasHelper)?.helperText = hint
+    nameControl(control, label)
+    control.element.setInput(true)
+    val parts = placeStackedField(body, label, control, aside)
+    return ValueInput(
+        parts = parts,
+        component = control,
+        validation = control,
+        validator = control,
+        valueArea = parts.valueCell,
+    ).apply(configure)
 }
 
 /**

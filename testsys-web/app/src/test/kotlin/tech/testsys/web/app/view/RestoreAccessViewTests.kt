@@ -6,6 +6,7 @@ import com.github.mvysny.kaributesting.v10._get
 import com.github.mvysny.kaributesting.v10.currentView
 import com.vaadin.flow.component.UI
 import com.vaadin.flow.component.button.Button
+import com.vaadin.flow.component.html.Paragraph
 import com.vaadin.flow.component.html.Span
 import com.vaadin.flow.component.textfield.PasswordField
 import com.vaadin.flow.component.textfield.TextField
@@ -144,7 +145,7 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
         requestCode(email)
         val code = mail.confirmationCodes.remove(email)
 
-        UI.getCurrent()._get<Button> { text = "Отправить код повторно" }._click()
+        UI.getCurrent()._get<Button> { text = "Отправить ещё раз" }._click()
 
         assertEquals(code, mail.confirmationCodes[email])
         assertEquals("Запрос принят", lastToastTitle())
@@ -157,6 +158,23 @@ class RestoreAccessViewTests : MockSpringVaadinTests() {
         UI.getCurrent()._get<Button> { text = "Изменить почту" }._click()
 
         assertEquals(email, UI.getCurrent()._find<TextField>().single().value)
+    }
+
+    @Test
+    fun `should return to signing in from the code step`() {
+        requestCode(email)
+
+        UI.getCurrent()._get<Button> { text = "Вернуться к входу" }._click()
+
+        assertEquals(AuthenticationView::class.java, currentView)
+    }
+
+    @Test
+    fun `should show the step and the email in the explanation of the code step`() {
+        requestCode(email)
+
+        assertEquals("Шаг 2 из 2", UI.getCurrent()._get<Span> { classes = "ts-guest-card__step" }.text)
+        assertTrue(email in UI.getCurrent()._get<Paragraph> { classes = "ts-guest-card__desc" }.element.textRecursively)
     }
 
     @Test

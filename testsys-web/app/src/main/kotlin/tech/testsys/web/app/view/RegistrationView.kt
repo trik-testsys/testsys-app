@@ -20,28 +20,27 @@ import tech.testsys.operation.error.RequestRegistrationError
 import tech.testsys.web.app.security.PasswordSignIn
 import tech.testsys.web.app.service.user.UserService
 import tech.testsys.web.components.TestSysView
-import tech.testsys.web.components.actions.action
+import tech.testsys.web.components.actions.linkAction
 import tech.testsys.web.components.actions.mainAction
-import tech.testsys.web.components.display.field
 import tech.testsys.web.components.display.text
 import tech.testsys.web.components.feedback.FeedbackKind
 import tech.testsys.web.components.feedback.toast
-import tech.testsys.web.components.forms.ValueInput
 import tech.testsys.web.components.forms.codeInput
 import tech.testsys.web.components.forms.passwordInput
 import tech.testsys.web.components.forms.textInput
+import tech.testsys.web.components.layout.ContentScope
 import tech.testsys.web.components.texts.currentLocalization
 
 /**
- * Self-registration page (testsys.web.page.registration): the e-mail step and the confirmation step with the password;
- * after registration the new user is signed in by the e-mail address and the password and opens the main page.
+ * Self-registration page (testsys.web.page.registration): the guest card with the e-mail step and the confirmation step
+ * with the password; after registration the new user is signed in by the e-mail address and the password and opens the
+ * main page. Links lead back to signing in.
  *
  * @since %CURRENT_VERSION%
  */
 @Route("registration")
 @AnonymousAllowed
 class RegistrationView(
-    private val headers: CabinetHeaders,
     private val userService: UserService,
     private val passwordSignIn: PasswordSignIn,
 ) : TestSysView(), HasDynamicTitle {
@@ -49,20 +48,20 @@ class RegistrationView(
         showEmailStep(email = "")
     }
 
-    override fun getPageTitle(): String = GuestTab.Registration.label
+    override fun getPageTitle(): String = currentLocalization().pageRegistration.title()
 
     private fun showEmailStep(email: String) {
         val localization = currentLocalization()
         val texts = localization.pageRegistration
-        page(headers.guest(hasSignIn = false)) {
-            guide(texts.guide())
-            guestForm(active = GuestTab.Registration) {
-                lateinit var emailInput: ValueInput<String>
-                row { emailInput = textInput(texts.email(), labelSize = 6, size = 18) { value = email } }
-                guide(texts.emailStepBlockGuide(), title = texts.emailStepBlockGuideTitle()) {
-                    step(emailInput, title = texts.email(), description = texts.emailGuide())
-                }
-                footer { mainAction(localization.pageConfirmation.sendCode()) { onClick { requestCode(emailInput.value) } } }
+        val guest = localization.pageGuest
+        guestPage(guest.tagline()) {
+            card(title = texts.title(), description = texts.emailStepDescription(), step = guest.step(current = 1, total = 2)) {
+                val emailInput = textInput(texts.email()) { value = email }
+                mainAction(localization.pageConfirmation.sendCode()) { onClick { requestCode(emailInput.value) } }
+            }
+            links {
+                text(texts.hasAccount())
+                linkAction(guest.signInButton()) { onClick { UI.getCurrent().navigate(AuthenticationView::class.java) } }
             }
         }
     }
@@ -70,29 +69,25 @@ class RegistrationView(
     private fun showConfirmationStep(email: String, requestId: RegistrationRequestId) {
         val localization = currentLocalization()
         val texts = localization.pageRegistration
+        val guest = localization.pageGuest
         val confirmation = localization.pageConfirmation
-        page(headers.guest(hasSignIn = false)) {
-            guide(texts.guide())
-            guestForm(active = GuestTab.Registration) {
-                lateinit var code: ValueInput<String>
-                lateinit var name: ValueInput<String>
-                lateinit var password: ValueInput<String>
-                row { field(texts.email(), labelSize = 6, size = 18) { text(email) } }
-                row { code = codeInput(confirmation.code(), labelSize = 6, size = 18) }
-                row { name = textInput(texts.nickname(), labelSize = 6, size = 18) }
-                row { password = passwordInput(texts.password(), labelSize = 6, size = 18) }
-                guide(texts.detailsStepBlockGuide(), title = texts.detailsStepBlockGuideTitle()) {
-                    step(code, title = confirmation.code(), description = texts.codeGuide())
-                    step(name, title = texts.nickname(), description = texts.nicknameGuide())
-                    step(password, title = texts.password(), description = localization.pagePassword.guide())
+        guestPage(guest.tagline()) {
+            card(
+                title = texts.title(),
+                description = texts.detailsStepDescription(email = email),
+                step = guest.step(current = 2, total = 2),
+            ) {
+                val sendAgain: ContentScope.() -> Unit = { linkAction(confirmation.sendAgain()) { onClick { resendCode(email) } } }
+                val code = codeInput(confirmation.code(), aside = sendAgain)
+                val name = textInput(texts.nickname(), hint = texts.nicknameHint())
+                val password = passwordInput(texts.password(), hint = localization.pagePassword.guide())
+                mainAction(guest.register()) {
+                    onClick { confirm(requestId, email = email, code = code.value, name = name.value, password = password.value) }
                 }
-                footer {
-                    mainAction(localization.pageGuest.register()) {
-                        onClick { confirm(requestId, email = email, code = code.value, name = name.value, password = password.value) }
-                    }
-                    action(confirmation.resendCode()) { onClick { resendCode(email) } }
-                    action(confirmation.changeEmail()) { onClick { showEmailStep(email) } }
-                }
+            }
+            links {
+                linkAction(confirmation.changeEmail()) { onClick { showEmailStep(email) } }
+                linkAction(guest.backToSignIn()) { onClick { UI.getCurrent().navigate(AuthenticationView::class.java) } }
             }
         }
     }

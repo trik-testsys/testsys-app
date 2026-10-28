@@ -28,7 +28,7 @@ class BrandImageTests : MockVaadinTests() {
 
     @Test
     fun `should configure visibility of the brand representation`() {
-        val root = buildTestContent { brandImage(BrandAsset.Header, label = "TestSys") { isVisible = false } }
+        val root = buildTestContent { brandImage(BrandAsset.Icon, label = "TestSys") { isVisible = false } }
 
         assertFalse(root.find("ts-brand-image").isVisible)
     }
@@ -36,7 +36,7 @@ class BrandImageTests : MockVaadinTests() {
     @Test
     fun `should show the brand representation again through its handle`() {
         lateinit var handle: ElementHandle
-        val root = buildTestContent { handle = brandImage(BrandAsset.Header, label = "TestSys") { isVisible = false } }
+        val root = buildTestContent { handle = brandImage(BrandAsset.Icon, label = "TestSys") { isVisible = false } }
 
         handle.isVisible = true
 
@@ -45,6 +45,6 @@ class BrandImageTests : MockVaadinTests() {
 
     @Test
     fun `should reject a blank accessible name`() {
-        assertThrows(IllegalArgumentException::class.java) { buildTestContent { brandImage(BrandAsset.Header, label = " ") } }
+        assertThrows(IllegalArgumentException::class.java) { buildTestContent { brandImage(BrandAsset.Icon, label = " ") } }
     }
 }

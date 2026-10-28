@@ -102,14 +102,16 @@ class HeaderTests : MockVaadinTests() {
     }
 
     @Test
-    fun `should render the decorative horizontal logo with the localized accessible name`() {
+    fun `should render the decorative emblem and wordmark with the localized accessible name`() {
         val header = buildHeader(CabinetHeader(), testTexts)
 
         assertEquals(testTexts.messages.uiPage.brandName(), header.find("ts-brand").element.getAttribute("aria-label"))
         assertEquals(".", header.find("ts-brand").element.getAttribute("href"))
-        assertEquals(1L, header.find("ts-brand").children.count())
-        assertEquals(TestSysBrand.HEADER, header.find("ts-brand__logo").element.getAttribute("src"))
-        assertEquals("", header.find("ts-brand__logo").element.getAttribute("alt"))
+        assertEquals(2L, header.find("ts-brand").children.count())
+        assertEquals(TestSysBrand.ICON, header.find("ts-brand__emblem").element.getAttribute("src"))
+        assertEquals(TestSysBrand.WORDMARK, header.find("ts-brand__wordmark").element.getAttribute("src"))
+        assertEquals("", header.find("ts-brand__emblem").element.getAttribute("alt"))
+        assertEquals("", header.find("ts-brand__wordmark").element.getAttribute("alt"))
     }
 
     @Test

@@ -9,6 +9,7 @@ import tech.testsys.domain.contract.persistence.repository.ParticipantRepository
 import tech.testsys.domain.contract.persistence.repository.SupervisorRepository
 import tech.testsys.domain.model.user.AccessTokenHasher
 import tech.testsys.domain.model.user.Supervisor
+import tech.testsys.infra.settings.api.strictBinder
 import tech.testsys.operation.annotation.InternalOperationsApi
 import tech.testsys.operation.util.isAccessToken
 
@@ -33,8 +34,11 @@ class SupervisorBootstrap(
      * @since %CURRENT_VERSION%
      */
     fun ensure(environment: Environment): Supervisor {
-        val name = environment.getRequiredProperty("testsys.operation.supervisor.name").trim()
-        val rawAccessToken = environment.getRequiredProperty("testsys.operation.supervisor.access-token")
+        // Bound one by one: a failure report of the binder would show the value of the access code.
+        val binder = strictBinder(environment)
+        fun required(key: String): String = checkNotNull(binder.bind(key, String::class.java).orElse(null)) { "$key is required" }
+        val name = required("testsys.operation.supervisor.name").trim()
+        val rawAccessToken = required("testsys.operation.supervisor.access-token")
         require(name.isNotEmpty() && name.codePointCount(0, name.length) <= MAX_SUPERVISOR_NAME_CODE_POINTS) {
             "Supervisor name must contain 1..512 Unicode characters after trimming"
         }

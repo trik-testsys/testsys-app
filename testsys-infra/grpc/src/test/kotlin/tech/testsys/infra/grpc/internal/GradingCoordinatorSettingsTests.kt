@@ -59,6 +59,11 @@ internal class GradingCoordinatorSettingsTests {
                     "testsys.operation.community-invite.ttl" to "PT24H",
                     "testsys.operation.class-invite.ttl" to "PT24H",
                     "testsys.operation.community.public-community-id" to "42",
+                    // The defaults of the diagnostics and database modules, which the application loads.
+                    "testsys.diagnostics.max-time-limit-millis" to "600000",
+                    "testsys.diagnostics.score-prefix" to "Набрано баллов:",
+                    "testsys.file-storage.cleanup.minimum-age" to "24h",
+                    "testsys.file-storage.cleanup.batch-size" to "500",
                 ),
             ),
         )

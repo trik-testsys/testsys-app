@@ -1,6 +1,20 @@
 # Settings shared by all Compose environments, imported through SPRING_CONFIG_IMPORT in deploy/compose.yml.
 # The environment file application-environment.yml holds the remaining application parameters.
+spring:
+  datasource:
+    # Database testsys of the postgres service and its user; the password comes from TESTSYS_DB_PASSWORD.
+    url: jdbc:postgresql://postgres:5432/testsys
+    username: testsys
 testsys:
+  # The ports of the three HTTP servers are fixed here: deploy/compose.yml publishes them and checks them in the
+  # healthcheck, and deploy/config/prometheus.yml reads the metrics port. The service interface listens on the
+  # loopback interface by default; inside the container it must accept connections forwarded from the published
+  # port.
+  service:
+    address: 0.0.0.0
+    port: 8081
+  metrics:
+    port: 8082
   file-storage:
     # Subdirectories of the files volume mounted at /var/lib/testsys/files.
     paths:

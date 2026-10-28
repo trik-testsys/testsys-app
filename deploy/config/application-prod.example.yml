@@ -1,10 +1,13 @@
 # Template of the production application parameters. Copy it to the server outside the Git checkout, replace
 # every <...> placeholder and pass the absolute path of the copy in TESTSYS_APP_CONFIG; deploy/compose.prod.yml
 # mounts it as application-environment.yml. The file must be readable by UID 10001 of the application container.
-# The SMTP password, the database password, the Supervisor access code, the service interface code
-# TESTSYS_SERVICE_SECRET, the access-code hashing key TESTSYS_ACCESS_TOKEN_SECRET, the Grafana address
-# TESTSYS_GRAFANA_URL and TESTSYS_GRADING_NODES are Compose variables, not part of this file. The email confirmation parameters, the invite TTLs and the participant limit are initial
-# values: values saved in the service cabinet override them.
+# The secrets, the Grafana address and the grading node addresses are variables of the production variable file
+# (template: deploy/env/prod.env.example), not part of this file. The email confirmation parameters, the invite TTLs
+# and the participant limit are initial values: values saved in the service cabinet override them.
+server:
+  # The HTTPS proxy in front of the main interface passes the client address and scheme in forwarded headers.
+  # Applies only to the main interface: the service interface and the metrics server set none.
+  forward-headers-strategy: native
 testsys:
   operation:
     community:
@@ -12,7 +15,7 @@ testsys:
       public-community-id: <id>
       public-community-name: <name>
     supervisor:
-      # The Supervisor access code comes from TESTSYS_SUPERVISOR_ACCESS_TOKEN in the production variable file.
+      # The Supervisor access code is TESTSYS_SUPERVISOR_ACCESS_TOKEN of the production variable file.
       name: <name>
     email-confirmation:
       confirmation-code-lifetime: <ISO-8601 duration, for example PT15M>
@@ -26,6 +29,7 @@ testsys:
       ttl: <ISO-8601 duration>
       refresh-period: <ISO-8601 duration>
   # Every value is required: the module defaults are suitable only for a local SMTP server without authorization.
+  # With smtp-auth true, username and the password TESTSYS_MAIL_PASSWORD must not be empty.
   mail:
     host: <SMTP host>
     port: <SMTP port>

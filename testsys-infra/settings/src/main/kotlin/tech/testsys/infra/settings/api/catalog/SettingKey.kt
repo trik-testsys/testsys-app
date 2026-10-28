@@ -1,18 +1,17 @@
 package tech.testsys.infra.settings.api.catalog
 
 /**
- * Closed catalog of persisted settings; durations use ISO-8601 and strings retain whitespace.
+ * Closed catalog of persisted settings; durations use ISO-8601 and strings retain whitespace. The catalog has no
+ * defaults: the module owning a key sets its default in Environment.
  *
  * @property property the exact Environment key.
  * @property kind the serialized value type.
- * @property defaultValue the fallback when neither an override nor Environment value exists.
  * @property isRestartRequired whether a saved value takes effect only in a new process.
  * @since %CURRENT_VERSION%
  */
 enum class SettingKey(
     val property: String,
     val kind: SettingKind,
-    val defaultValue: String? = null,
     val isRestartRequired: Boolean = false,
 ) {
     /**
@@ -55,77 +54,77 @@ enum class SettingKey(
      *
      * @since %CURRENT_VERSION%
      */
-    GradingMaxAttempts("testsys.grading.max-attempts", SettingKind.Integer, "3"),
+    GradingMaxAttempts("testsys.grading.max-attempts", SettingKind.Integer),
 
     /**
      * Total deadline captured when accepting a grading run.
      *
      * @since %CURRENT_VERSION%
      */
-    TotalTimeout("testsys.grading.total-timeout", SettingKind.Duration, "PT30M"),
+    TotalTimeout("testsys.grading.total-timeout", SettingKind.Duration),
 
     /**
      * Individual RPC deadline captured when accepting a grading run.
      *
      * @since %CURRENT_VERSION%
      */
-    RpcTimeout("testsys.grading.rpc-timeout", SettingKind.Duration, "PT10M"),
+    RpcTimeout("testsys.grading.rpc-timeout", SettingKind.Duration),
 
     /**
      * Recording choice captured when accepting a grading run.
      *
      * @since %CURRENT_VERSION%
      */
-    ShouldRecordVideo("testsys.grading.should-record-video", SettingKind.Boolean, "true"),
+    ShouldRecordVideo("testsys.grading.should-record-video", SettingKind.Boolean),
 
     /**
      * Interval of the currently published polling schedule.
      *
      * @since %CURRENT_VERSION%
      */
-    PollInterval("testsys.grading.poll-interval", SettingKind.Duration, "PT5S"),
+    PollInterval("testsys.grading.poll-interval", SettingKind.Duration),
 
     /**
      * Deadline captured by each new status RPC.
      *
      * @since %CURRENT_VERSION%
      */
-    StatusTimeout("testsys.grading.status-timeout", SettingKind.Duration, "PT5S"),
+    StatusTimeout("testsys.grading.status-timeout", SettingKind.Duration),
 
     /**
      * Saved inbound size limit applied at process startup.
      *
      * @since %CURRENT_VERSION%
      */
-    MaxMessageBytes("testsys.grading.max-message-bytes", SettingKind.Integer, "400000000", isRestartRequired = true),
+    MaxMessageBytes("testsys.grading.max-message-bytes", SettingKind.Integer, isRestartRequired = true),
 
     /**
      * Inclusive maximum captured by each diagnostic call.
      *
      * @since %CURRENT_VERSION%
      */
-    MaxTimeLimitMillis("testsys.diagnostics.max-time-limit-millis", SettingKind.Long, "600000"),
+    MaxTimeLimitMillis("testsys.diagnostics.max-time-limit-millis", SettingKind.Long),
 
     /**
      * Score output text captured by each diagnostic call.
      *
      * @since %CURRENT_VERSION%
      */
-    ScorePrefix("testsys.diagnostics.score-prefix", SettingKind.Text, "Набрано баллов:"),
+    ScorePrefix("testsys.diagnostics.score-prefix", SettingKind.Text),
 
     /**
      * Minimum blob age captured by an explicit cleanup pass.
      *
      * @since %CURRENT_VERSION%
      */
-    CleanupMinimumAge("testsys.file-storage.cleanup.minimum-age", SettingKind.Duration, "PT24H"),
+    CleanupMinimumAge("testsys.file-storage.cleanup.minimum-age", SettingKind.Duration),
 
     /**
      * Batch limit captured by an explicit cleanup pass.
      *
      * @since %CURRENT_VERSION%
      */
-    CleanupBatchSize("testsys.file-storage.cleanup.batch-size", SettingKind.Integer, "500"),
+    CleanupBatchSize("testsys.file-storage.cleanup.batch-size", SettingKind.Integer),
 }
 
 /**

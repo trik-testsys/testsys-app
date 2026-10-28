@@ -224,6 +224,7 @@ Workflow лежат в `.github/workflows`.
 | Локализованное сообщение                        | См. [add-localization.md](../guides/add-localization.md)                                          |
 | Метрику или учёт технического сбоя | Каталог и правила учёта — [monitoring/README.md](../../testsys-infra/monitoring/README.md) |
 | Дашборд, настройку мониторинга или сбора логов | `deploy/config/grafana/dashboards/`, `deploy/config/prometheus.yml`, `deploy/config/loki.yml`, `deploy/config/alloy.alloy`, `deploy/compose.monitoring.yml`, см. раздел «Мониторинг» в [deploy/README.md](../../deploy/README.md#мониторинг) |
+| Параметр конфигурации приложения | Умолчание — в `<тема>-defaults.properties` модуля-владельца, чтение — классом параметров, который привязывает `Binder` при запуске (обязательный параметр без умолчания — `strictBinder` из `testsys-infra:settings`), или `@SettingsProperties` для ключа кабинета; строка — в таблице раздела «Параметры приложения» в [deployment.md](deployment.md#параметры-приложения) |
 | Версию библиотеки                               | `gradle/libs.versions.toml`                                                                       |
 | Токены, стили, бренд и иконки | `components/src/main/resources/META-INF/resources/testsys-ui/`, правила — [ui-design.md](ui-design.md) |
 | Необходимая клиентская реализация компонента | `components/src/main/resources/META-INF/frontend/testsys-ui/`, API — components/README.md |

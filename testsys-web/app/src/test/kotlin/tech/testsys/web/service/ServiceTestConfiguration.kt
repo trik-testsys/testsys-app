@@ -101,10 +101,21 @@ class ServiceTestConfiguration {
     @Bean
     fun runtimeSettings(): RuntimeSettings {
         val values = SettingKey.entries.associateWith { key ->
-            key.defaultValue ?: when (key) {
+            when (key) {
                 SettingKey.MaxParticipants -> "100"
                 SettingKey.ConfirmationCodeLifetime, SettingKey.CommunityInviteTtl, SettingKey.ClassInviteTtl -> "PT5M"
-                else -> "5"
+                SettingKey.MaxConfirmationAttempts -> "5"
+                // The defaults of the owning modules.
+                SettingKey.GradingMaxAttempts -> "3"
+                SettingKey.TotalTimeout -> "PT30M"
+                SettingKey.RpcTimeout -> "PT10M"
+                SettingKey.ShouldRecordVideo -> "true"
+                SettingKey.PollInterval, SettingKey.StatusTimeout -> "PT5S"
+                SettingKey.MaxMessageBytes -> "400000000"
+                SettingKey.MaxTimeLimitMillis -> "600000"
+                SettingKey.ScorePrefix -> "Набрано баллов:"
+                SettingKey.CleanupMinimumAge -> "PT24H"
+                SettingKey.CleanupBatchSize -> "500"
             }
         }
         return RuntimeSettings(SettingsSnapshot(0, SettingsValues(values), 400_000_000), CommunityId(42))

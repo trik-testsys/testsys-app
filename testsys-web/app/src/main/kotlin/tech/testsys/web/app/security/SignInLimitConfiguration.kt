@@ -1,5 +1,6 @@
 package tech.testsys.web.app.security
 
+import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
@@ -21,13 +22,10 @@ class SignInLimitConfiguration {
      */
     @Bean
     fun loginAttemptLimiter(environment: Environment, clock: Clock): LoginAttemptLimiter {
-        val failures = environment.getRequiredProperty("$PREFIX.failures", Int::class.java)
+        val (failures, duration) = Binder.get(environment).bindOrCreate(PREFIX, SignInLimitProperties::class.java)
         require(failures > 0) { "$PREFIX.failures must be positive, got $failures" }
-
-        val rawDuration = environment.getRequiredProperty("$PREFIX.duration")
-        val duration = Duration.parse(rawDuration)
         require(duration.isPositive && duration.nano == 0 && duration.seconds <= Int.MAX_VALUE) {
-            "$PREFIX.duration must be a positive whole number of seconds up to ${Int.MAX_VALUE}, got $rawDuration"
+            "$PREFIX.duration must be a positive whole number of seconds up to ${Int.MAX_VALUE}, got $duration"
         }
 
         return LoginAttemptLimiter(clock = clock, maximumFailures = failures, window = duration)
@@ -37,3 +35,6 @@ class SignInLimitConfiguration {
         const val PREFIX = "testsys.web.sign-in-limit"
     }
 }
+
+/** Sign-in limit parameters bound from `testsys.web.sign-in-limit`; [SignInLimitConfiguration] validates them. */
+private data class SignInLimitProperties(val failures: Int, val duration: Duration)

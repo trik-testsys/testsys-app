@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext
 import org.springframework.core.env.MapPropertySource
+import org.springframework.core.io.support.ResourcePropertySource
 import org.springframework.web.context.support.StandardServletEnvironment
 import tech.testsys.web.app.TestSysApplication
 import tech.testsys.web.service.ServiceWebConfiguration
@@ -59,6 +60,8 @@ class TestSysRuntime private constructor(
             )
             parentApplication.addInitializers(
                 ApplicationContextInitializer<ConfigurableApplicationContext> { context ->
+                    // The listener settings are read before the configuration classes and their @PropertySource.
+                    context.environment.propertySources.addLast(ResourcePropertySource(WEB_DEFAULTS))
                     context.beanFactory.registerSingleton("serviceWebSettings", ServiceWebSettings.from(context.environment))
                     context.beanFactory.registerSingleton("metricsWebSettings", MetricsWebSettings.from(context.environment))
                 },

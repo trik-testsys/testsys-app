@@ -13,8 +13,9 @@ internal class SettingsResolver(private val environment: Environment) {
         }
         return SettingsValues(
             SettingKey.entries.associateWith { key ->
-                val raw = overrides[key.property] ?: environment.getProperty(key.property) ?: key.defaultValue
-                requireNotNull(raw) { "Missing setting ${key.property}" }
+                val raw = requireNotNull(overrides[key.property] ?: environment.getProperty(key.property)) {
+                    "Missing setting ${key.property}"
+                }
                 val value = if (key == SettingKey.CleanupMinimumAge && key.property !in overrides) cleanupDuration(raw) else raw
                 SettingsValidator.canonical(key, value)
             },

@@ -15,6 +15,18 @@ internal fun settingsEnvironment(): StandardEnvironment = StandardEnvironment()
     .withProperty("testsys.operation.community-invite.ttl", "PT24H")
     .withProperty("testsys.operation.class-invite.ttl", "PT24H")
     .withProperty("testsys.operation.community.public-community-id", "42")
+    // The defaults of grpc, diagnostics and database, which load them into Environment in the application.
+    .withProperty("testsys.grading.max-attempts", "3")
+    .withProperty("testsys.grading.total-timeout", "PT30M")
+    .withProperty("testsys.grading.rpc-timeout", "PT10M")
+    .withProperty("testsys.grading.should-record-video", "true")
+    .withProperty("testsys.grading.poll-interval", "PT5S")
+    .withProperty("testsys.grading.status-timeout", "PT5S")
+    .withProperty("testsys.grading.max-message-bytes", "400000000")
+    .withProperty("testsys.diagnostics.max-time-limit-millis", "600000")
+    .withProperty("testsys.diagnostics.score-prefix", "Набрано баллов:")
+    .withProperty("testsys.file-storage.cleanup.minimum-age", "24h")
+    .withProperty("testsys.file-storage.cleanup.batch-size", "500")
 
 internal class MemorySettingsStore : SettingsStore {
     var stored = StoredSettings(0, emptyMap(), null)

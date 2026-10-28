@@ -8,12 +8,12 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.springframework.boot.context.properties.bind.BindException
 import org.springframework.mock.env.MockEnvironment
 import org.springframework.mock.web.MockFilterChain
 import org.springframework.mock.web.MockFilterConfig
 import org.springframework.mock.web.MockHttpServletRequest
 import org.springframework.mock.web.MockHttpServletResponse
-import java.time.format.DateTimeParseException
 
 class RateLimitConfigurationTests {
     private var filter: RateLimitFilter? = null
@@ -36,8 +36,21 @@ class RateLimitConfigurationTests {
     }
 
     @Test
-    fun `should reject duration not in ISO-8601 format`() {
-        assertThrows(DateTimeParseException::class.java) { rateLimitFilter(environment(duration = "60s")) }
+    fun `should apply duration in Spring units as the window`() {
+        val filter = rateLimitFilter(environment(duration = "60s")).also { this.filter = it }
+        filter.setExposeHeaders(true)
+        filter.setPolicyName("window")
+        filter.init(MockFilterConfig())
+        val response = MockHttpServletResponse()
+
+        filter.doFilter(MockHttpServletRequest(), response, MockFilterChain())
+
+        assertEquals("\"window\";q=3;w=60", response.getHeader(RateLimitFilter.HEADER_RATE_LIMIT_POLICY))
+    }
+
+    @Test
+    fun `should reject duration that is not a duration`() {
+        assertThrows(BindException::class.java) { rateLimitFilter(environment(duration = "one minute")) }
     }
 
     @Test

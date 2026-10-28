@@ -1,27 +1,6 @@
-# Application parameters of the e2e environment, mounted by deploy/compose.e2e.yml as application-environment.yml.
-# The Mailpit address, the service interface code and the Grafana address are set in deploy/compose.e2e.yml,
-# the grading node addresses in TESTSYS_GRADING_NODES. The email confirmation parameters, the invite TTLs and
-# the participant limit are initial values: values saved in the service cabinet override them.
+# Differences of the e2e environment from deploy/config/application-dev.yml. deploy/compose.e2e.yml mounts both
+# files and imports this one last, so its values take precedence.
 testsys:
-  operation:
-    community:
-      public-community-id: 1
-      public-community-name: Публичное Сообщество
-    # Supervisor of the environment; its access code is fixed and not secret.
-    supervisor:
-      name: Супервайзер
-      access-token: Supe-rvis-or00-0001
-    email-confirmation:
-      confirmation-code-lifetime: PT15M
-      max-confirmation-attempts: 3
-    community-invite:
-      ttl: P7D
-      refresh-period: PT1H
-    competition:
-      max-participants: 500
-    class-invite:
-      ttl: P7D
-      refresh-period: PT1H
   web:
     # The e2e test process sends every request from one address, so the rate limit only logs.
     rate-limit:

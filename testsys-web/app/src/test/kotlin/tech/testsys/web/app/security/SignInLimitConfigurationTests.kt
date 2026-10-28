@@ -5,8 +5,8 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import org.springframework.boot.context.properties.bind.BindException
 import org.springframework.mock.env.MockEnvironment
-import java.time.format.DateTimeParseException
 
 class SignInLimitConfigurationTests {
     private val clock = MutableClock()
@@ -47,8 +47,21 @@ class SignInLimitConfigurationTests {
     }
 
     @Test
-    fun `should reject duration not in ISO-8601 format`() {
-        assertThrows(DateTimeParseException::class.java) { loginAttemptLimiter(environment(duration = "5m")) }
+    fun `should block for a duration in Spring units`() {
+        val limiter = loginAttemptLimiter(environment(failures = "1", duration = "1m"))
+        assertEquals(LoginAttemptResult.BLOCKED, limiter.attempt("client") { false })
+        clock.now = clock.now.plusSeconds(59)
+        assertEquals(LoginAttemptResult.BLOCKED, limiter.attempt("client") { true })
+        clock.now = clock.now.plusSeconds(1)
+
+        val result = limiter.attempt("client") { true }
+
+        assertEquals(LoginAttemptResult.SUCCESS, result)
+    }
+
+    @Test
+    fun `should reject duration that is not a duration`() {
+        assertThrows(BindException::class.java) { loginAttemptLimiter(environment(duration = "five minutes")) }
     }
 
     private fun loginAttemptLimiter(environment: MockEnvironment): LoginAttemptLimiter =

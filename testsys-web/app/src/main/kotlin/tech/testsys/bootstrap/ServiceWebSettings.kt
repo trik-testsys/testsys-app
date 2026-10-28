@@ -1,6 +1,7 @@
 package tech.testsys.bootstrap
 
 import org.springframework.core.env.Environment
+import tech.testsys.infra.settings.api.strictBinder
 import java.net.URI
 import java.net.URISyntaxException
 import java.security.MessageDigest
@@ -32,29 +33,35 @@ class ServiceWebSettings private constructor(
         private val WEB_SCHEMES = setOf("http", "https")
 
         /**
-         * Reads and validates service settings before any infrastructure starts, without including the secret in errors.
+         * Binds and validates `testsys.service` before any infrastructure starts, without including the secret in errors.
+         *
+         * @throws org.springframework.boot.context.properties.bind.BindException if the address or the port cannot be bound
+         * or a placeholder cannot be resolved.
+         * @throws IllegalArgumentException if the secret or the Grafana address is missing or invalid, the address is blank
+         * or the port is out of range.
          *
          * @since %CURRENT_VERSION%
          */
         fun from(environment: Environment): ServiceWebSettings {
-            val secret = environment.getProperty("testsys.service.secret")
+            val binder = strictBinder(environment)
+            // Bound apart from the other properties, so a failure report of the binder never shows its value.
+            val secret = binder.bind("testsys.service.secret", String::class.java).orElse(null)
             require(secret != null && secret.isNotBlank() && secret.length >= MINIMUM_SECRET_LENGTH) {
                 "testsys.service.secret must contain at least $MINIMUM_SECRET_LENGTH characters"
             }
 
-            val address = environment.getRequiredProperty("testsys.service.address")
-            require(address.isNotBlank()) { "testsys.service.address must not be blank" }
+            val properties = binder.bindOrCreate("testsys.service", ServiceWebProperties::class.java)
+            require(properties.address.isNotBlank()) { "testsys.service.address must not be blank" }
+            require(properties.port in 0..MAXIMUM_PORT) { "testsys.service.port must be between 0 and $MAXIMUM_PORT" }
 
-            val port = environment.getRequiredProperty("testsys.service.port", Int::class.java)
-            require(port in 0..MAXIMUM_PORT) { "testsys.service.port must be between 0 and $MAXIMUM_PORT" }
-
-            val grafanaUrl = environment.getProperty("testsys.service.grafana-url")
+            val grafanaUrl = properties.grafanaUrl
             require(grafanaUrl != null && isWebAddress(grafanaUrl)) {
                 "testsys.service.grafana-url must be an absolute http or https URL without user information"
             }
+
             return ServiceWebSettings(
-                address = address,
-                port = port,
+                address = properties.address,
+                port = properties.port,
                 grafanaUrl = grafanaUrl,
                 secretDigest = digest(secret),
             )
@@ -72,3 +79,6 @@ class ServiceWebSettings private constructor(
         }
     }
 }
+
+/** Non-secret service listener parameters bound from `testsys.service`; [ServiceWebSettings.from] validates them. */
+private class ServiceWebProperties(val address: String, val port: Int, val grafanaUrl: String?)

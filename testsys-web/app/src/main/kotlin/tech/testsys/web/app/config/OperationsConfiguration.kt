@@ -2,6 +2,7 @@ package tech.testsys.web.app.config
 
 import org.springframework.beans.factory.SmartInitializingSingleton
 import org.springframework.beans.factory.annotation.Qualifier
+import org.springframework.boot.context.properties.bind.Binder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.env.Environment
@@ -212,7 +213,7 @@ class OperationsConfiguration {
      */
     @Bean
     fun communityInviteConfig(environment: Environment, settings: Settings<CommunityInviteProperties>): CommunityInviteConfig {
-        val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.community-invite.refresh-period"))
+        val refreshPeriod = environment.requiredDuration("$CONFIG_PREFIX.community-invite.refresh-period")
         return object : CommunityInviteConfig {
             override val ttl get() = settings.current().ttl
             override val refreshPeriod = refreshPeriod
@@ -586,7 +587,7 @@ class OperationsConfiguration {
      */
     @Bean
     fun classInviteConfig(environment: Environment, settings: Settings<ClassInviteProperties>): ClassInviteConfig {
-        val refreshPeriod = Duration.parse(environment.getRequiredProperty("$CONFIG_PREFIX.class-invite.refresh-period"))
+        val refreshPeriod = environment.requiredDuration("$CONFIG_PREFIX.class-invite.refresh-period")
         return object : ClassInviteConfig {
             override val ttl get() = settings.current().ttl
             override val refreshPeriod = refreshPeriod
@@ -633,3 +634,7 @@ class OperationsConfiguration {
 private val DISPATCHER_STOP_TIMEOUT: Duration = Duration.ofSeconds(30)
 
 private const val CONFIG_PREFIX = "testsys.operation"
+
+/** Binds the required duration [key]; a value that is not a duration fails with a `BindException`. */
+private fun Environment.requiredDuration(key: String): Duration =
+    checkNotNull(Binder.get(this).bind(key, Duration::class.java).orElse(null)) { "$key is required" }

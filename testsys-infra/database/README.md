@@ -329,10 +329,10 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 существующие файлы. Путь должен быть абсолютным; `store` создаёт каталог, если его нет.
 
 Адаптер вида Ресурса передаёт `FileStorageKind`, а `FileDataStorage` выбирает путь из
-[FileStoragePaths.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/FileStoragePaths.kt) — класса
-`@ConfigurationProperties` с обязательными свойствами `testsys.file-storage.paths.<вид>`, который регистрирует
-`DatabaseConfiguration`. Виды: `statement`, `exercise`, `test`, `solution`, `recording` и `logs`. Файл Авторского
-Решения хранится по пути `solution`. Если свойства нет, приложение не запустится.
+[FileStoragePaths.kt](src/main/kotlin/tech/testsys/infra/database/api/persistence/FileStoragePaths.kt).
+`DatabaseConfiguration` создаёт бин этого класса и один раз привязывает через `Binder` обязательные свойства
+`testsys.file-storage.paths.<вид>`. Виды: `statement`, `exercise`, `test`, `solution`, `recording` и `logs`.
+Файл Авторского Решения хранится по пути `solution`. Если свойства нет, приложение не запустится.
 
 `StoredBlobRef` из `findFileRef` действителен только вместе с путём своего вида, а путь знает только адаптер.
 Поэтому код вне модуля пока не может загрузить файл по такой ссылке.
@@ -348,12 +348,14 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 дождитесь завершения их транзакций и используйте каталоги, выделенные этой БД. Автоматического расписания нет.
 Возраст файла не исключает незавершённую транзакцию, поэтому проход при работающих писателях небезопасен.
 
-Настройки заданы в [file-storage-defaults.properties](src/main/resources/file-storage-defaults.properties):
+Значения по умолчанию заданы в [file-storage-defaults.properties](src/main/resources/file-storage-defaults.properties)
+и перечислены в таблице раздела «Параметры приложения»
+в [deployment.md](../../docs/project/deployment.md#параметры-приложения):
 
-| Свойство | По умолчанию | Значение |
-|----------|--------------|----------|
-| `testsys.file-storage.cleanup.minimum-age` | `24h` | Минимальное время после изменения физического файла, положительная длительность |
-| `testsys.file-storage.cleanup.batch-size` | `500` | Максимальный размер пакета, положительное целое число |
+| Свойство | Значение |
+|----------|----------|
+| `testsys.file-storage.cleanup.minimum-age` | Минимальное время после изменения физического файла, положительная длительность |
+| `testsys.file-storage.cleanup.batch-size` | Максимальный размер пакета, положительное целое число |
 
 `DatabaseConfiguration` объявляет `Settings<FileStorageCleanupProperties>`, а `FileStorageCleanup` один раз в начале
 `run()` получает из него оба значения. Возраст принимает ISO-8601 и единицы Spring, например `24h`.
@@ -428,8 +430,10 @@ Node id задаётся свойством `spring.jpa.properties.testsys.id.no
 
 `DatabaseConfiguration` создаёт бин `AccessTokenHasher` с ключом из обязательного свойства
 `testsys.access-token.secret` длиной не меньше 64 символов
-([DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/api/DatabaseConfiguration.kt)). Без свойства
-или с более коротким значением контекст не запускается. После смены секрета сохранённые КД Участников и
+([DatabaseConfiguration.kt](src/main/kotlin/tech/testsys/infra/database/api/DatabaseConfiguration.kt)); где его
+задают — в таблице раздела «Параметры приложения»
+в [deployment.md](../../docs/project/deployment.md#параметры-приложения). Без свойства или с более коротким
+значением контекст не запускается. После смены секрета сохранённые КД Участников и
 Наблюдателей перестают находиться. Тесты модуля задают фиксированный секрет в
 `src/test/resources/application.properties`.
 

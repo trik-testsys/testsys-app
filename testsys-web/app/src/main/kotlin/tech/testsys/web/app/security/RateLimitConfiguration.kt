@@ -6,6 +6,8 @@ import jakarta.servlet.ServletResponse
 import jakarta.servlet.http.HttpServletRequest
 import org.apache.catalina.filters.RateLimitFilter
 import org.apache.catalina.util.ExactRateLimiter
+import org.springframework.boot.context.properties.bind.Binder
+import org.springframework.boot.context.properties.bind.Name
 import org.springframework.boot.web.servlet.FilterRegistrationBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -29,13 +31,10 @@ class RateLimitConfiguration {
      */
     @Bean
     fun rateLimitFilter(environment: Environment): FilterRegistrationBean<RateLimitFilter> {
-        val requests = environment.getRequiredProperty("$PREFIX.requests", Int::class.java)
+        val (requests, duration, isEnforced) = Binder.get(environment).bindOrCreate(PREFIX, RateLimitProperties::class.java)
         require(requests > 0) { "$PREFIX.requests must be positive, got $requests" }
-
-        val rawDuration = environment.getRequiredProperty("$PREFIX.duration")
-        val duration = Duration.parse(rawDuration)
         require(duration.isPositive && duration.nano == 0 && duration.seconds <= Int.MAX_VALUE) {
-            "$PREFIX.duration must be a positive whole number of seconds up to ${Int.MAX_VALUE}, got $rawDuration"
+            "$PREFIX.duration must be a positive whole number of seconds up to ${Int.MAX_VALUE}, got $duration"
         }
 
         val filter: RateLimitFilter = object : RateLimitFilter() {
@@ -52,7 +51,7 @@ class RateLimitConfiguration {
             setRateLimitClassName(ExactRateLimiter::class.java.name)
             setBucketRequests(requests)
             setBucketDuration(duration.seconds.toInt())
-            setEnforce(environment.getRequiredProperty("$PREFIX.enforce", Boolean::class.java))
+            setEnforce(isEnforced)
         }
         return FilterRegistrationBean(filter).apply {
             // Inside the request observation, so rejected requests are counted with status 429.
@@ -65,3 +64,6 @@ class RateLimitConfiguration {
         const val VAADIN_PATH = "/VAADIN/"
     }
 }
+
+/** Rate limit parameters bound from `testsys.web.rate-limit`; [RateLimitConfiguration] validates them. */
+private data class RateLimitProperties(val requests: Int, val duration: Duration, @Name("enforce") val isEnforced: Boolean)

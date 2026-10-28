@@ -1,12 +1,13 @@
 # Развёртывание
 
 Документ описывает, как запустить основное приложение `testsys-web:app` в окружениях Docker Compose dev, e2e
-и production, как открыть Prometheus и Grafana этих окружений, как просматривать в Grafana их логи и как запустить
-Проверяющий узел. Он предназначен для разработчиков, которые запускают полный стек локально, и для тех, кто
-разворачивает приложение на сервере. Устройство образа, Compose-файлов, мониторинга, сбора логов и скрипта —
-в [deploy/README.md](../../deploy/README.md); сборка
-Gradle — в разделе «Сборка» в [structure.md](structure.md#сборка). Устройство Проверяющего узла, настройка
-конкретного HTTPS-прокси, оповещения мониторинга, e2e-сценарии и CI в документ не входят.
+и production, где задаётся каждый параметр приложения, как открыть Prometheus и Grafana этих окружений, как
+просматривать в Grafana их логи и как запустить Проверяющий узел. Он предназначен для разработчиков, которые
+запускают полный стек локально, и для тех, кто разворачивает приложение на сервере. Смысл и проверки параметров —
+в документах модулей, на которые ссылается таблица параметров. Устройство образа, Compose-файлов, мониторинга,
+сбора логов и скрипта — в [deploy/README.md](../../deploy/README.md); сборка Gradle — в разделе «Сборка»
+в [structure.md](structure.md#сборка). Устройство Проверяющего узла, настройка конкретного HTTPS-прокси,
+оповещения мониторинга, e2e-сценарии и CI в документ не входят.
 
 ## Скрипт запуска
 
@@ -72,7 +73,7 @@ cp deploy/env/dev.local.env.example deploy/env/dev.local.env
 |--------|------|------------|
 | `dev`, `e2e` без узла | — | Ничего |
 | `dev`, `e2e` с `--node` | `<окружение>.local.env` | `TESTSYS_GRADING_NODE_WORKSPACE`, см. [Рабочий каталог узла](#рабочий-каталог-узла) |
-| `prod` | Файл переменных production | `TESTSYS_DB_PASSWORD`, `TESTSYS_MAIL_PASSWORD`, `TESTSYS_SUPERVISOR_ACCESS_TOKEN` (см. [Супервайзер](#супервайзер)), `TESTSYS_ACCESS_TOKEN_SECRET` (см. [Секрет Кодов-доступа](#секрет-кодов-доступа)), `TESTSYS_SERVICE_SECRET`, `TESTSYS_GRAFANA_URL` и `TESTSYS_GRAFANA_ADMIN_PASSWORD` (см. [Мониторинг в production](#мониторинг-в-production)), `TESTSYS_APP_CONFIG` (см. [Конфигурационный файл на сервере](#конфигурационный-файл-на-сервере)), `TESTSYS_LOG_DIR` (см. [Каталог логов на сервере](#каталог-логов-на-сервере)) |
+| `prod` | Файл переменных production | `TESTSYS_DB_PASSWORD`, `TESTSYS_MAIL_PASSWORD` для SMTP-сервера с авторизацией (см. [Почта](#почта)), `TESTSYS_SUPERVISOR_ACCESS_TOKEN` (см. [Супервайзер](#супервайзер)), `TESTSYS_ACCESS_TOKEN_SECRET` (см. [Секрет Кодов-доступа](#секрет-кодов-доступа)), `TESTSYS_SERVICE_SECRET`, `TESTSYS_GRAFANA_URL` и `TESTSYS_GRAFANA_ADMIN_PASSWORD` (см. [Мониторинг в production](#мониторинг-в-production)), `TESTSYS_APP_CONFIG` (см. [Конфигурационный файл на сервере](#конфигурационный-файл-на-сервере)), `TESTSYS_LOG_DIR` (см. [Каталог логов на сервере](#каталог-логов-на-сервере)) |
 | `prod` с `--node` | Файл переменных production | Те же, а также `TESTSYS_GRADING_NODE_TAG`, `TESTSYS_GRADING_NODE_WORKSPACE`; узел подключают по адресу `grading-node:8080`, см. [Проверяющие узлы в production](#проверяющие-узлы-в-production) |
 | `node` | Файл переменных отдельного узла | `TESTSYS_GRADING_NODE_TAG`, `TESTSYS_GRADING_NODE_WORKSPACE`, `TESTSYS_GRADING_NODE_HOST_IP` (см. [Порт и безопасность](#порт-и-безопасность)) |
 
@@ -82,6 +83,77 @@ cp deploy/env/dev.local.env.example deploy/env/dev.local.env
 По необходимости в `<окружение>.local.env` задают и другие значения, их примеры есть в шаблоне: занятые порты,
 адрес Grafana при другом порте Grafana, внешние адреса узлов и скрипт начальных данных dev `TESTSYS_DB_SEED_SCRIPT`, см.
 [Начальные данные dev](#начальные-данные-dev).
+
+## Параметры приложения
+
+У каждого параметра приложения одно имя — ключ Spring `testsys.*`, `spring.*`, `server.*` или `logging.*`.
+Значение параметра задаётся на одном из четырёх уровней, от низшего к высшему:
+
+1. Умолчание модуля — файл `<тема>-defaults.properties` модуля-владельца, например `web-defaults.properties`
+   в `testsys-web:app` или `mail-defaults.properties` в `testsys-infra:mail`. Код и каталог `SettingKey` своих
+   умолчаний не задают. В `application.yml` внутри jar остаются плейсхолдеры переменных и настройки Spring Boot
+   и Vaadin, общие для всех запусков, например порт основного интерфейса `server.port`.
+2. Несекретное значение окружения — `deploy/config/application.yml`, общий для всех окружений, и файл
+   окружения: `application-dev.yml` в dev и e2e, вместе с `application-e2e.yml` в e2e, и копия
+   `application-prod.example.yml` на сервере в production. Как Compose подключает эти файлы — в разделе
+   «Конфигурация приложения» в [deploy/README.md](../../deploy/README.md#конфигурация-приложения).
+3. Переменная окружения — только секрет или значение, которое нужно и Compose, и приложению. Исключение —
+   `TESTSYS_GRADING_NODES` и `TESTSYS_GRADING_IMPORT_NODES`: адреса Проверяющих узлов зависят от машины и запуска
+   с `--node`. `application.yml` внутри jar объявляет каждую переменную плейсхолдером ключа, а Compose передаёт её
+   приложению под тем же именем из файла переменных окружения.
+4. Значение из служебного кабинета — только для ключей каталога `SettingKey`, порядок источников —
+   в разделе «Значения и источники» в [settings/README.md](../../testsys-infra/settings/README.md#значения-и-источники).
+
+Значения из импортированных файлов окружения важнее `application.yml` внутри jar, но уступают переменным
+окружения, имена которых совпадают с ключами. Имена `TESTSYS_MAIL_PASSWORD`, `TESTSYS_SERVICE_SECRET`,
+`TESTSYS_ACCESS_TOKEN_SECRET`, `TESTSYS_GRADING_NODES` и `TESTSYS_GRADING_IMPORT_NODES` совпадают с их ключами
+по правилам relaxed binding Spring Boot, поэтому значение такой переменной важнее любого файла. Compose передаёт
+эти переменные всегда, так что значение их ключа в файле окружения было бы молча перекрыто. `TESTSYS_DB_PASSWORD`,
+`TESTSYS_SUPERVISOR_ACCESS_TOKEN` и `TESTSYS_GRAFANA_URL` доходят до ключа только через плейсхолдер
+`application.yml` внутри jar, и значение их ключа в файле окружения перекрыло бы переменную. Поэтому ключ
+переменной окружения в эти файлы не записывается.
+
+В таблице «—» в столбце умолчания означает обязательный параметр, а в столбцах dev, e2e и production — что
+значение не задано и действует умолчание. Ссылка ключа ведёт к описанию смысла, формата и проверок параметра.
+
+| Ключ | Переменная окружения | Умолчание | dev, e2e | production | Кабинет |
+|------|----------------------|-----------|----------|------------|---------|
+| [`spring.datasource.url`, `spring.datasource.username`](../../testsys-web/app/README.md#запуск-и-проверка) | — | — | `deploy/config/application.yml`: база и пользователь `testsys` сервиса `postgres` | Как в dev | Нет |
+| [`spring.datasource.password`](../../testsys-web/app/README.md#запуск-и-проверка) | `TESTSYS_DB_PASSWORD` | — | `dev.env`, `e2e.env`: `testsys` | Файл переменных | Нет |
+| [`spring.jpa.properties.testsys.id.node-id`](../../testsys-infra/database/README.md#идентификаторы) | — | `0`, `hibernate-defaults.properties` | — | — | Нет |
+| [`server.port`](../../deploy/README.md#публикация-портов) | — | `8080`, `application.yml` внутри jar | — | — | Нет |
+| [`server.forward-headers-strategy`](#https-прокси) | — | Умолчание Spring Boot | — | Конфигурационный файл: `native` | Нет |
+| [`server.servlet.context-path`](#https-прокси) | — | Корень | — | Конфигурационный файл, при необходимости | Нет |
+| [`logging.*`](../../deploy/README.md#логирование) | — | Умолчания Spring Boot; `logging.pattern.correlation` — `application.yml` внутри jar | `deploy/config/application.yml`: JSON в консоли, файл лога и его ротация | Как в dev | Нет |
+| [`testsys.file-storage.paths.<вид>`](../../testsys-infra/database/README.md#хранение-файлов) | — | — | `deploy/config/application.yml`: подкаталоги тома `files` | Как в dev | Нет |
+| [`testsys.file-storage.cleanup.minimum-age`, `batch-size`](../../testsys-infra/database/README.md#очистка-сирот) | — | `24h`, `500`, `file-storage-defaults.properties` | — | — | Да |
+| [`testsys.access-token.secret`](../../testsys-infra/database/README.md#коды-доступа-и-пароли-пользователей) | `TESTSYS_ACCESS_TOKEN_SECRET` | — | `dev.env`, `e2e.env` | Файл переменных | Нет |
+| [`testsys.service.secret`](../../testsys-web/app/README.md#конфигурация-запуска) | `TESTSYS_SERVICE_SECRET` | — | `dev.env`, `e2e.env` | Файл переменных | Нет |
+| [`testsys.service.address`, `testsys.service.port`](../../testsys-web/app/README.md#конфигурация-запуска) | — | `127.0.0.1`, `8081`, `web-defaults.properties` | `deploy/config/application.yml`: `0.0.0.0`, `8081` | Как в dev | Нет |
+| [`testsys.service.grafana-url`](../../testsys-web/app/README.md#конфигурация-запуска) | `TESTSYS_GRAFANA_URL` | — | `dev.env`, `e2e.env` | Файл переменных | Нет |
+| [`testsys.metrics.address`](../../testsys-web/app/README.md#сервер-метрик) | — | `0.0.0.0`, `web-defaults.properties` | — | — | Нет |
+| [`testsys.metrics.port`](../../testsys-web/app/README.md#сервер-метрик) | — | `8082`, `web-defaults.properties` | `deploy/config/application.yml`: `8082` | Как в dev | Нет |
+| [`testsys.web.localization.default-region`, `default-time-zone`](../../testsys-web/app/README.md#запуск-и-проверка) | — | `RU`, `Europe/Moscow`, `web-defaults.properties` | — | — | Нет |
+| [`testsys.web.rate-limit.requests`, `duration`](../../testsys-web/app/README.md#ограничение-частоты-запросов) | — | `1200`, `PT1M`, `web-defaults.properties` | — | — | Нет |
+| [`testsys.web.rate-limit.enforce`](../../testsys-web/app/README.md#ограничение-частоты-запросов) | — | `true`, `web-defaults.properties` | e2e: `application-e2e.yml`, `false` | — | Нет |
+| [`testsys.web.sign-in-limit.failures`, `duration`](../../testsys-web/app/README.md#вход-в-основной-интерфейс) | — | `5`, `PT5M`, `web-defaults.properties` | — | — | Нет |
+| [`testsys.operation.community.public-community-id`, `public-community-name`](#публичное-сообщество) | — | — | `application-dev.yml` | Конфигурационный файл | Нет |
+| [`testsys.operation.supervisor.name`](#супервайзер) | — | — | `application-dev.yml` | Конфигурационный файл | Нет |
+| [`testsys.operation.supervisor.access-token`](#супервайзер) | `TESTSYS_SUPERVISOR_ACCESS_TOKEN` | — | `dev.env`, `e2e.env`: `Supe-rvis-or00-0001` | Файл переменных | Нет |
+| [`testsys.operation.community-invite.refresh-period`, `class-invite.refresh-period`](../../testsys-web/app/README.md#запуск-и-проверка) | — | — | `application-dev.yml` | Конфигурационный файл | Нет |
+| [`testsys.operation.email-confirmation.*`, `community-invite.ttl`, `class-invite.ttl`, `competition.max-participants`](../../testsys-web/app/README.md#запуск-и-проверка) | — | — | `application-dev.yml` | Конфигурационный файл | Да |
+| [`testsys.mail.host`, `testsys.mail.port`](../../testsys-infra/mail/README.md#настройки) | — | `localhost`, `25`, `mail-defaults.properties` | `application-dev.yml`: `mailpit`, `1025` | Конфигурационный файл | Нет |
+| [`testsys.mail.username`, `from`, `smtp-auth`, `ssl`, `starttls`](../../testsys-infra/mail/README.md#настройки) | — | `mail-defaults.properties` | — | Конфигурационный файл | Нет |
+| [`testsys.mail.password`](../../testsys-infra/mail/README.md#настройки) | `TESTSYS_MAIL_PASSWORD` | Пусто, `mail-defaults.properties` | `dev.env`, `e2e.env`: пусто | Файл переменных | Нет |
+| [`testsys.mail.timeout`, `region`, `time-zone`](../../testsys-infra/mail/README.md#настройки) | — | `PT10S`, `RU`, `Europe/Moscow`, `mail-defaults.properties` | — | — | Нет |
+| [`testsys.grading.nodes`](../../testsys-infra/grpc/README.md#настройки) | `TESTSYS_GRADING_NODES` | Пусто, `grading-defaults.properties` | `dev.env`, `e2e.env`: `grading-node:8080` | Файл переменных, необязательно | Нет |
+| [`testsys.grading.import-nodes`](../../testsys-infra/grpc/README.md#реестр-узлов) | `TESTSYS_GRADING_IMPORT_NODES` | `false`, `grading-defaults.properties` | `dev.env`, `e2e.env`: `true` | Файл переменных, необязательно | Нет |
+| [`testsys.grading.max-attempts`, `total-timeout`, `rpc-timeout`, `status-timeout`, `poll-interval`, `should-record-video`](../../testsys-infra/grpc/README.md#настройки) | — | `3`, `PT30M`, `PT10M`, `PT5S`, `PT5S`, `true`, `grading-defaults.properties` | — | — | Да |
+| [`testsys.grading.max-message-bytes`](../../testsys-infra/grpc/README.md#настройки) | — | `400000000`, `grading-defaults.properties` | — | — | Да, после перезапуска |
+| [`testsys.diagnostics.max-time-limit-millis`, `score-prefix`](../../testsys-infra/diagnostics/README.md#настройка-и-api) | — | `600000`, «Набрано баллов:», `diagnostics-defaults.properties` | — | — | Да |
+
+Для необязательных переменных плейсхолдер в `application.yml` внутри jar повторяет умолчание модуля, поэтому
+без переменной действует то же значение.
 
 ## Dev и e2e
 
@@ -93,11 +165,14 @@ cp deploy/env/dev.local.env.example deploy/env/dev.local.env
 PostgreSQL на хосте доступен пользователю `testsys` с паролем `testsys` в базе `testsys`.
 
 Mailpit принимает все письма приложения и показывает их в веб-интерфейсе; внешним адресатам письма
-не пересылаются. Параметры операций в `application-dev.yml` и `application-e2e.yml` совпадают со значениями
-тестов модуля `app`. Отличаются только название Публичного Сообщества «Публичное Сообщество» и Псевдоним
-Супервайзера «Супервайзер». Значения, сохранённые в служебном кабинете, перекрывают пять динамических параметров
-операций из этих файлов; порядок источников — в разделе «Значения и источники»
-в [settings/README.md](../../testsys-infra/settings/README.md#значения-и-источники).
+не пересылаются. Dev и e2e используют один файл параметров `application-dev.yml`; e2e добавляет к нему только
+`application-e2e.yml`. Параметры операций в `application-dev.yml` совпадают со значениями тестов модуля `app`.
+Отличаются только название Публичного Сообщества «Публичное Сообщество» и Псевдоним Супервайзера «Супервайзер».
+Значения, сохранённые в служебном кабинете, перекрывают пять динамических параметров операций из этого файла;
+порядок источников — в разделе «Значения и источники»
+в [settings/README.md](../../testsys-infra/settings/README.md#значения-и-источники). Пароль базы, Код-доступа
+Супервайзера, код входа в служебный интерфейс и секрет Кодов-доступа dev и e2e лежат в `dev.env` и `e2e.env`
+и не являются секретами.
 
 Реестр Проверяющих узлов хранится в базе. При каждом запуске dev и e2e приложение заносит в реестр включёнными
 адреса из `TESTSYS_GRADING_NODES`. По умолчанию это узел `grading-node:8080`, который запускается в проекте
@@ -213,17 +288,20 @@ sh deploy/testsys.sh prod up --no-build --env-file <путь>
 
 Локального SMTP-сервиса в production нет. Приложение отправляет письма через внешний SMTP-сервер. Адрес, порт,
 имя пользователя, адрес отправителя и флаги `smtp-auth`, `ssl` и `starttls` задаются в конфигурационном файле
-на сервере, пароль — в `TESTSYS_MAIL_PASSWORD`. **Не удаляйте ключи `testsys.mail.*` из файла:** у свойств почты
+на сервере, пароль — в `TESTSYS_MAIL_PASSWORD`. С `smtp-auth: true` приложение не запустится, если имя пользователя
+или пароль пусты. **Не удаляйте ключи `testsys.mail.*` из файла:** у свойств почты
 есть значения по умолчанию, и без ключа приложение запустится с настройкой для локального SMTP-сервера без
 авторизации. Смысл свойств и пример для implicit TLS — в разделе «Настройки»
 в [mail/README.md](../../testsys-infra/mail/README.md#настройки).
 
 ### HTTPS-прокси
 
-Прокси завершает TLS и передаёт запросы на опубликованный порт основного интерфейса. Основной интерфейс берёт
-исходный адрес клиента и схему из заголовков `X-Forwarded-For` и `X-Forwarded-Proto`, поэтому прокси должен
-устанавливать оба заголовка. По адресу из `X-Forwarded-For` основной интерфейс ограничивает частоту запросов
-клиента; без заголовка все клиенты делят счётчик адреса прокси. Ограничение описано в разделе «Ограничение частоты
+Прокси завершает TLS и передаёт запросы на опубликованный порт основного интерфейса. Шаблон конфигурационного
+файла на сервере задаёт `server.forward-headers-strategy: native`. С этим режимом основной интерфейс берёт адрес
+клиента и схему из заголовков `X-Forwarded-For` и `X-Forwarded-Proto`, поэтому прокси должен устанавливать оба
+заголовка. Служебный интерфейс и сервер метрик заменяют этот режим на `none`.
+По адресу из `X-Forwarded-For` основной интерфейс ограничивает частоту запросов клиента; без заголовка все клиенты
+делят счётчик адреса прокси. Ограничение описано в разделе «Ограничение частоты
 запросов» в [app/README.md](../../testsys-web/app/README.md#ограничение-частоты-запросов).
 По этому же адресу считаются неудачные входы по Коду-доступа, поэтому без заголовка неудачи любых клиентов закрывают
 такой вход для всех; см. раздел «Вход в основной интерфейс»
@@ -346,8 +424,8 @@ app/README.md.
 Узел пишет туда журналы и временные файлы проверок, их резервное копирование не нужно.
 
 `TESTSYS_GRADING_NODE_INNER_TIMEOUT_SECONDS` должен быть меньше `testsys.grading.rpc-timeout` приложения, иначе
-приложение прервёт вызов раньше узла; значение по умолчанию — в разделе «Настройки» в
-[grpc/README.md](../../testsys-infra/grpc/README.md#настройки).
+приложение прервёт вызов раньше узла; значение по умолчанию — в таблице раздела
+[«Параметры приложения»](#параметры-приложения).
 
 ## Тома и резервное копирование
 
@@ -432,10 +510,10 @@ sh deploy/testsys.sh node down --env-file <путь>
 ## Супервайзер
 
 Псевдоним и Код-доступа единственного Супервайзера обязательны в каждом окружении: без них приложение
-не запускается. В production Псевдоним задаётся свойством `testsys.operation.supervisor.name` в конфигурационном
-файле на сервере, а Код-доступа — переменной `TESTSYS_SUPERVISOR_ACCESS_TOKEN` в файле переменных production.
-В dev и e2e оба значения записаны в `application-dev.yml` и `application-e2e.yml`: Супервайзер этих окружений
-входит по Коду-доступа `Supe-rvis-or00-0001`.
+не запускается. Псевдоним задаётся свойством `testsys.operation.supervisor.name` в файле параметров окружения,
+а Код-доступа — переменной `TESTSYS_SUPERVISOR_ACCESS_TOKEN` в файле переменных. В dev и e2e Псевдоним записан
+в `application-dev.yml`, а Код-доступа — в `dev.env` и `e2e.env`: Супервайзер этих окружений входит по Коду-доступа
+`Supe-rvis-or00-0001`.
 
 Чтобы сменить Код-доступа Супервайзера, задайте новое значение и перезапустите приложение: прежний Код-доступа
 перестаёт действовать. Как приложение проверяет Супервайзера при запуске — в разделе «Запуск и проверка»
@@ -454,7 +532,7 @@ database/README.md.
 и Наблюдателей перестают действовать. Код-доступа Супервайзера приложение заново хеширует новым секретом при
 следующем запуске.
 
-В dev и e2e значение записано в `deploy/compose.dev.yml` и `deploy/compose.e2e.yml` и не является секретом.
+В dev и e2e значение записано в `deploy/env/dev.env` и `deploy/env/e2e.env` и не является секретом.
 
 ## Служебный интерфейс
 
@@ -469,7 +547,7 @@ database/README.md.
 | `e2e` | `http://localhost:8093/` | Тот же, что в dev |
 | `prod` | `127.0.0.1:8081` сервера | Значение `TESTSYS_SERVICE_SECRET` из файла переменных production |
 
-В dev и e2e код входа записан в `deploy/compose.dev.yml` и `deploy/compose.e2e.yml` и не секретен.
+В dev и e2e код входа записан в `deploy/env/dev.env` и `deploy/env/e2e.env` и не секретен.
 
 **Не ставьте служебный интерфейс за HTTPS-прокси и не публикуйте его порт на внешнем интерфейсе.** Сервер работает
 по HTTP, игнорирует forwarded-заголовки и выдаёт cookie без `Secure`, см. раздел «Конфигурация запуска»

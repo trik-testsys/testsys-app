@@ -7,8 +7,7 @@ import com.vaadin.flow.server.AppShellSettings
 import com.vaadin.flow.theme.lumo.Lumo
 import org.springframework.core.env.Environment
 import tech.testsys.infra.localization.Localization
-import tech.testsys.web.app.config.defaultRegion
-import tech.testsys.web.app.config.defaultTimeZone
+import tech.testsys.web.app.config.localization
 import tech.testsys.web.components.TestSysBrand
 import tech.testsys.web.components.TestSysTheme
 
@@ -22,10 +21,12 @@ import tech.testsys.web.components.TestSysTheme
 @StyleSheet(Lumo.STYLESHEET)
 @StyleSheet(TestSysTheme.DESIGN_SYSTEM)
 @StyleSheet(TestSysTheme.VAADIN_OVERRIDES)
-class AppShell(private val environment: Environment) : AppShellConfigurator {
+class AppShell(environment: Environment) : AppShellConfigurator {
+    private val localization = environment.localization()
+
     override fun configurePage(settings: AppShellSettings) {
         // The shell page is built before any UI, so it uses the default region rather than the user's one.
-        val messages = Localization.forRegion(environment.defaultRegion(), environment.defaultTimeZone())
+        val messages = Localization.forRegion(localization.defaultRegion, localization.defaultTimeZone)
         settings.setPageTitle(messages.uiPage.brandName())
         settings.addBrandFavicon()
     }
